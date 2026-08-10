@@ -315,9 +315,8 @@ s.shrine_hall(950, 1620, "Temple of Jurojin", w=s.px(150), h=s.px(100), kind="te
 # this is the ground-reserving feature, so the complex's ~390x300 ft ground is held NOW and
 # feature 021 draws it. Both registries, like the castle: block_polys is center-tested by the
 # packs, placed is distance-tested and stops a wide building overhanging the precinct.
-for _tpx, _tpy in ((1850, 1620), (950, 1620)):
-    s.block_polys.append([(_tpx - 65, _tpy - 50), (_tpx + 65, _tpy - 50), (_tpx + 65, _tpy + 50), (_tpx - 65, _tpy + 50)])
-    s.placed.append((_tpx, _tpy, 130, 100))
+s.precinct_interior(1850, 1620, rear="north")  # sando south (torii 1700/1820): program gathers north
+s.precinct_interior(950, 1620, rear="south")  # sando north (torii 1583/1547): program gathers south
 
 
 def rim_temple(idx: float, name: str) -> None:
@@ -329,6 +328,7 @@ def rim_temple(idx: float, name: str) -> None:
     tx, ty = round(CX + (RX - 130) * math.cos(a)), round(CY + (RY - 130) * math.sin(a))
     ux, uy = -math.cos(a), -math.sin(a)
     s.shrine_hall(tx, ty, name, w=s.px(96), h=s.px(64), kind="temple", torii=[(tx + ux * 45, ty + uy * 45), (tx + ux * 95, ty + uy * 95)])
+    s.cemetery(tx - ux * 42, ty - uy * 42, 20, 14, parish=True)  # the rim temple's own plot in its backstrip (closes the 020 graveyard claim)
 
 
 rim_temple(2, "Temple of Bishamon")
@@ -505,18 +505,22 @@ s.alley([(2260, 1290), (2260, 1590)])
 
 # the machi + suburb DISTRICTS, declared before the mesh and the packs (kido_mesh and
 # the band checks read them; a mesh run before the declarations bars nothing)
-s.district("southwest machi", "machi", [(615, 1575), (1395, 1575), (1395, 2110), (615, 2110)], rank_band=None)
+s.district("southwest machi", "machi", [(552, 1570), (1395, 1570), (1395, 2110), (552, 2110)], rank_band=None)
 s.district("southeast machi", "machi", [(1405, 1575), (2120, 1575), (2120, 2110), (1405, 2110)], rank_band=None)
 s.district("east gate machi", "machi", [(2145, 635), (2405, 635), (2405, 1310), (2145, 1310)], rank_band=None)
 s.district("east street machi", "machi", [(2140, 1420), (2385, 1420), (2385, 1725), (2140, 1725)], rank_band=None)
 s.district("west rim machi", "machi", [(430, 750), (590, 750), (590, 1445), (430, 1445)], rank_band=None)
+s.district("Benten monzen", "monzen", [(1762, 1636), (1938, 1636), (1938, 1855), (1762, 1855)], rank_band=None)
+s.district("Jurojin monzen", "monzen", [(855, 1478), (1045, 1478), (1045, 1582), (855, 1582)], rank_band=None)
+
 s.district("wharf suburb", "machi", [(2080, 1480), (2620, 1480), (2620, 2145), (2080, 2145)], rank_band=None)
-s.district("south gate ward", "machi", [(1195, 2225), (1605, 2225), (1605, 2660), (1195, 2660)], rank_band=None)
-s.district("east gate ward", "machi", [(2480, 995), (2830, 995), (2830, 1250), (2480, 1250)], rank_band=None)
+s.district("south gate ward", "machi", [(895, 2125), (1605, 2125), (1605, 2660), (895, 2660)], rank_band=None)
+s.district("east gate ward", "machi", [(2480, 995), (2890, 995), (2890, 1250), (2480, 1250)], rank_band=None)
 s.district("towpath shore", "machi", [(1550, 2250), (2100, 2250), (2100, 2620), (1550, 2620)], rank_band=None)
 s.district("northeast riverside", "machi", [(2440, 630), (2740, 630), (2740, 1010), (2440, 1010)], rank_band=None)
-s.district("west approach", "machi", [(240, 1440), (420, 1440), (420, 2140), (240, 2140)], rank_band=None)
-s.district("north gate ward", "machi", [(940, 0), (1810, 0), (1810, 215), (940, 215)], rank_band=None)
+s.district("west approach", "machi", [(128, 1440), (420, 1440), (420, 2140), (128, 2140)], rank_band=None)
+s.district("southwest road wing", "machi", [(430, 1880), (775, 1880), (775, 2075), (430, 2075)], rank_band=None)
+s.district("north gate ward", "machi", [(895, 0), (1810, 0), (1810, 242), (895, 242)], rank_band=None)
 
 # ---- private dojos (count rolled from the samurai cohort - the 1-per-200 formula holds
 # at this tier; the hanko is the capital's gain, not more private halls) and the walled
@@ -589,6 +593,23 @@ s.inn(695, 1712)
 s.stables(642, 1724)
 s.block_polys.append([(587, 1670), (697, 1670), (697, 1778), (587, 1778)])
 s.placed.append((642, 1724, 112, 112))  # SW caravan yard (uniform doctrine)
+s.street([(1850, 1688), (1850, 1852)], width=s.lw(10))  # the Benten sando's monzen lane (the hall faces its own lane - capitals.md)
+s.street([(950, 1482), (950, 1560)], width=s.lw(10))  # the Jurojin sando's monzen lane
+s.frontage([(950, 1492), (950, 1550)], ["shop"] * 4, width=6, spacing=26, setback=9)  # the sando's own stalls
+s.rowpack((1808, 1700, 1844, 1845), ["merchant", "shop"] * 9, court_every=6)  # Benten monzen, west of the sando
+s.rowpack((1856, 1700, 1892, 1845), ["shop", "merchant"] * 9, court_every=6)  # ...and east of it
+s.rowpack((898, 1486, 930, 1550), ["merchant", "shop"] * 5, court_every=6)  # Jurojin monzen flanks its north sando
+s.rowpack((970, 1486, 1002, 1550), ["shop", "merchant"] * 5, court_every=6)
+
+s.animal_ground(736, 961, r=62, label="horse ground")  # the west band's horse lines
+s.commons([(1918, 1478), (2000, 1478), (2000, 1588), (1918, 1588)], role="festival ground")  # Benten's east green: the temple crowd's ground on festival days
+s.commons([(798, 448), (938, 448), (938, 1248), (798, 1248)], role="pasture")  # the castle's cleared WEST ring: umamawari grazing + firebreak between moat and fabric
+s.commons([(1862, 440), (2180, 440), (2180, 1352), (1862, 1352)], role="pasture")  # ...the EAST ring
+s.commons([(1040, 1268), (1365, 1268), (1365, 1522), (1040, 1522)], role="pasture")  # ...the SOUTHWEST approach ground
+s.commons([(1395, 1268), (1665, 1268), (1665, 1560), (1395, 1560)], role="pasture")  # ...the ote front's open ground (the hirokoji)
+s.commons([(1490, 1465), (1900, 1465), (1900, 1568), (1490, 1568)], role="pasture")
+s.commons([(1556, 1292), (1720, 1292), (1720, 1382), (1556, 1382)], role="muster ground")  # the ote flank's assembly ground between the lineage manors
+
 # ---- T016: the kido MESH, before the packs (each gate reserves its ground; the mouths
 # derive from the declared districts + streets via the shared machi_mouths source)
 s.kido_mesh()
@@ -614,6 +635,7 @@ s.place_wells((1080, 1820, 1300, 2050), spacing=52, coverage=False)  # the doss 
 s.place_wells((442, 1250, 588, 1435), spacing=55, coverage=False)
 s.place_wells((2140, 1560, 2280, 1650), spacing=60, coverage=False)
 s.place_wells((1420, 1770, 1520, 1870), spacing=60, coverage=False)
+s.place_wells((600, 1570, 690, 1650), spacing=60, coverage=False)
 s.place_wells((1870, 1855, 1980, 1950), spacing=55, coverage=False)
 s.place_wells((1750, 1290, 1930, 1420), spacing=60, coverage=False)  # the thread-street pocket by Kurogi
 s.place_wells((700, 1800, 1000, 2050), spacing=72, coverage=False)
@@ -658,8 +680,8 @@ s.frontage([(900, 2005), (1355, 2005)], ["merchant", "shop"] * 8, width=8, spaci
 s.frontage([(1455, 2005), (1900, 2005)], ["merchant", "shop"] * 8, width=8, spacing=20, setback=14)
 s.frontage([(1040, 1640), (1040, 2070)], ["merchant"] * 12, width=8, spacing=21, setback=14)  # starts below the x=1040 machi mouth
 s.frontage([(1800, 1710), (1800, 2050)], ["merchant"] * 10, width=8, spacing=21, setback=14)
-s.rowpack((782, 1842, 1018, 2012), (["burakumin"] * 4 + ["servant"]) * 38, court_every=3)
-s.rowpack((1795, 1852, 1985, 2010), (["burakumin"] * 4 + ["servant"]) * 38, court_every=3)
+s.rowpack((775, 1838, 1020, 2016), (["burakumin"] * 4 + ["servant"]) * 40, court_every=3)
+s.rowpack((1792, 1848, 1988, 2012), (["burakumin"] * 4 + ["servant"]) * 40, court_every=3)
 # T011 first: the adept-monk houses by the two sovereign precincts (budget: 2.5/precinct) -
 # seated BEFORE the big packs so the precinct-adjacent ground is theirs
 s.rowpack((1700, 1585, 1780, 1660), ["monk_house"] * 3, court_every=3)
@@ -671,8 +693,8 @@ s.rowpack((1440, 1600, 1900, 1660), _RICH * 14, court_every=6)
 s.rowpack((640, 1690, 1020, 1740), ["laborer_large"] * 24, court_every=6)
 s.rowpack((2160, 940, 2390, 1000), ["laborer_large"] * 24, court_every=6)
 s.rowpack((1440, 1690, 1900, 1740), ["laborer_large"] * 24, court_every=6)
-s.rowpack((560, 1580, 1385, 2125), _MIX * 420, court_every=6)
-s.rowpack((1415, 1580, 1930, 2125), _MIX * 330, court_every=6)
+s.rowpack((560, 1580, 1385, 2125), _MIX * 420, court_every=9)
+s.rowpack((1415, 1580, 1930, 2125), _MIX * 330, court_every=9)
 s.rowpack((2000, 1580, 2115, 2125), (["laborer", "laborer_large", "servant"]) * 34, court_every=6)  # the SE-east strip carries a wealth band (labL toward the 6% floor)
 s.rowpack((2150, 755, 2400, 1310), (["laborer", "merchant_house"]) * 300, court_every=6)
 s.rowpack((2145, 1425, 2330, 1615), _MIX * 26, court_every=6)
@@ -714,13 +736,14 @@ s.rowpack((1560, 2620, 1740, 2662), ["laborer", "servant"] * 9 + ["laborer"] * 5
 s.rowpack((2826, 1132, 2878, 1192), ["laborer", "merchant_house"] * 6, court_every=6)
 s.bound = [[1830, 2260], [2090, 2260], [2090, 2600], [1830, 2600]]
 s.alley([(1950, 2270), (1990, 2590)])
+s.cemetery(1780, 2518, 84, 60, parish=False, label="common ground")
 s.rowpack((1850, 2280, 2050, 2430), ["laborer", "servant"] * 16, court_every=6)
 s.rowpack((1850, 2455, 1898, 2555), ["laborer", "servant"] * 5, court_every=6)  # west of the towpath's bend (the path runs x~1940 at this latitude)
 s.rowpack((2080, 2075, 2210, 2135), ["laborer", "servant"] * 7, court_every=6)
 # the gate wards, each hugging its approach road inside the guan-xiang reach
 s.bound = [[1195, 2225], [1605, 2225], [1605, 2660], [1195, 2660]]
-s.rowpack((1305, 2325, 1390, 2455), ["laborer", "merchant", "servant"] * 16, court_every=6)  # starts below the Imperial Road caption's west seat, ends inside the reach
-s.rowpack((1412, 2235, 1495, 2340), ["laborer", "merchant", "servant"] * 16, court_every=6)
+s.rowpack((1305, 2325, 1390, 2455), ["laborer", "merchant_house", "servant"] * 16, court_every=6)  # starts below the Imperial Road caption's west seat, ends inside the reach
+s.rowpack((1412, 2235, 1495, 2340), ["laborer", "merchant_house", "servant"] * 16, court_every=6)
 s.rowpack((1305, 2405, 1390, 2640), ["laborer", "merchant_house", "servant"] * 26, court_every=6)  # the ribbon ward: guan-xiang suburbs string LINEARLY down the approach (research 021)
 s.rowpack((1412, 2475, 1495, 2640), ["laborer", "servant"] * 18, court_every=6)
 s.alley([(1250, 2405), (1250, 2630)])  # starts below the relay yard  # the ribbon's side alleys - guan-xiang wards ran DEEP as well as long
@@ -728,9 +751,11 @@ s.alley([(1550, 2240), (1550, 2630)])
 s.rowpack((1205, 2330, 1295, 2630), ["laborer", "servant", "merchant_house"] * 22, court_every=6)  # starts below the Imperial Road caption's seat
 # (the x1205-1295 head block stays open: the relay yard takes it)
 s.rowpack((1505, 2245, 1595, 2630), ["laborer", "servant"] * 14, court_every=6)
+s.rowpack((1432, 2554, 1516, 2638), ["laborer", "servant"] * 5, court_every=9)
+s.rowpack((1564, 2334, 1648, 2418), ["laborer", "servant"] * 5, court_every=9)
 s.bound = [[2480, 1000], [2930, 1000], [2930, 1160], [2480, 1160]]
 s.rowpack(
-    (2495, 1012, 2615, 1128), ["laborer", "merchant"] * 20 + ["laborer"], court_every=6
+    (2495, 1012, 2615, 1128), ["laborer", "merchant_house"] * 20 + ["laborer"], court_every=6
 )  # NOTE: the census closes EXACTLY at 2,472 (12,360/5); adjust ONE item here if fabric upstream moves
 s.rowpack((2640, 1030, 2800, 1108), ["laborer", "merchant_house"] * 12, court_every=6)  # the east ribbon, along the Fox-lands road
 s.rowpack((2645, 1170, 2810, 1235), ["laborer", "merchant_house"] * 10, court_every=6)
@@ -741,14 +766,17 @@ s.bound = [[2450, 640], [2730, 640], [2730, 1000], [2450, 1000]]
 s.alley([(2480, 720), (2460, 1140)])  # down to the gate road, west of the aqueduct's cut
 s.alley([(2479, 745), (2690, 745)])
 s.rowpack((2470, 760, 2660, 835), ["laborer", "merchant_house", "servant"] * 14, court_every=6)  # inside the gate's linear reach, clear of the feeder leat
+s.rowpack((2470, 850, 2680, 905), ["laborer", "servant"] * 12, court_every=6)
 s.rowpack((2470, 915, 2680, 985), ["laborer", "servant"] * 12, court_every=6)
 s.rowpack((2690, 915, 2740, 985), ["laborer", "servant"] * 3, court_every=6)
 
 s.bound = [[1300, 55], [1505, 55], [1505, 200], [1300, 200]]
-s.rowpack((1408, 25, 1492, 88), ["laborer", "merchant_house"] * 5, court_every=6)  # the N gate ward, on the Shiro Kyo road
-s.rowpack((1408, 112, 1492, 192), ["laborer", "merchant"] * 6, court_every=6)  # ...split around the y=100 ribbon alley
-s.rowpack((1310, 95, 1392, 192), ["laborer", "merchant_house"] * 9, court_every=6)
+s.rowpack((1425, 25, 1492, 88), ["laborer", "merchant_house"] * 5, court_every=6)  # the N gate ward, on the Shiro Kyo road
+s.rowpack((1425, 112, 1492, 192), ["laborer", "merchant_house"] * 6, court_every=6)  # ...split around the y=100 ribbon alley
+s.rowpack((1310, 95, 1372, 192), ["laborer", "merchant_house"] * 9, court_every=6)
 s.bound = [[950, 0], [1400, 0], [1400, 210], [950, 210]]
+s.alley([(1090, 12), (1090, 235)])
+s.alley([(950, 130), (1355, 130)])  # the NW ward's own lanes, before its packs
 s.rowpack((1010, 20, 1180, 105), ["laborer", "merchant_house", "servant"] * 14, court_every=6)  # the Shiro Kyo road ribbon (the NW guan-xiang)
 s.rowpack((1180, 110, 1360, 195), ["laborer", "merchant_house", "servant"] * 14, court_every=6)
 s.bound = [[1400, 10], [1800, 10], [1800, 205], [1400, 205]]
@@ -756,12 +784,41 @@ s.alley([(1420, 100), (1770, 100)])
 s.rowpack((1440, 25, 1770, 82), ["laborer", "servant"] * 14, court_every=6)
 s.rowpack((1440, 112, 1770, 195), ["laborer", "merchant_house"] * 14, court_every=6)
 s.rowpack((1010, 110, 1175, 195), ["laborer", "servant"] * 12, court_every=6)
+s.bound = [[895, 60], [1170, 242], [1170, 242], [895, 60]]
+s.bound = [[895, 60], [1170, 60], [1170, 242], [895, 242]]
+s.rowpack((905, 135, 1160, 238), ["laborer", "laborer_large", "servant"] * 20, court_every=9)  # the NW ward deepens toward the wall (guan-xiang depth)
 s.bound = [[320, 1930], [520, 1930], [520, 2060], [320, 2060]]
-s.frontage([(548, 1790), (340, 1982)], ["shop"] * 5, width=8, spacing=42, setback=13)  # guan-xiang shops strung along the SW approach road
-s.rowpack((330, 2020, 430, 2058), ["laborer", "merchant"] * 12, court_every=6)  # wholly BELOW the diagonal approach road (its bed crosses y1955-2010 here)
+_SWB = s.bound
+s.bound = [[290, 1740], [575, 1740], [575, 2062], [290, 2062]]
+s.frontage([(548, 1790), (340, 1982)], ["shop"] * 8, width=8, spacing=34, setback=13)  # SW gate market
+s.bound = [[1330, 2170], [1470, 2170], [1470, 2560], [1330, 2560]]
+s.frontage([(1400, 2185), (1400, 2520)], ["shop"] * 10, width=8, spacing=32, setback=21)  # S gate market, down the Imperial road
+s.bound = [[1170, 40], [1470, 40], [1470, 240], [1170, 240]]
+s.frontage([(1400, 232), (1400, 148)], ["shop"] * 6, width=8, spacing=22, setback=21)  # N gate market
+s.frontage([(1385, 142), (1195, 62)], ["shop"] * 7, width=8, spacing=27, setback=21)  # ...continuing along the Shiro Kyo diagonal
+s.bound = [[2440, 1070], [2830, 1070], [2830, 1215], [2440, 1215]]
+s.frontage([(2455, 1196), (2812, 1132)], ["shop"] * 9, width=8, spacing=36, setback=21)  # E gate market on the Fox-lands road
+s.bound = _SWB  # guan-xiang shops strung along the SW approach road
+s.rowpack((330, 2020, 430, 2058), ["laborer", "merchant_house"] * 12, court_every=6)  # wholly BELOW the diagonal approach road (its bed crosses y1955-2010 here)
 s.rowpack((340, 1745, 430, 1830), ["laborer", "servant"] * 8, court_every=6)  # the road's NE-side pocket, clear of the moat band
+s.bound = [[128, 1480], [400, 1480], [400, 2030], [128, 2030]]
+s.alley([(243, 1495), (243, 1995)])
+s.alley([(160, 1602), (368, 1602)])  # the west verge's own lanes
+s.rowpack((150, 1520, 240, 1990), ["laborer", "servant", "laborer_large"] * 22, court_every=9)  # the far verge of the SW road (guan-xiang depth)
+s.rowpack((245, 1530, 375, 1720), ["laborer", "servant"] * 14, court_every=9)
+s.bound = [[430, 1880], [775, 1880], [775, 2075], [430, 2075]]
+s.rowpack((442, 2000, 768, 2066), ["laborer", "laborer_large", "servant"] * 16, court_every=9)  # the road's south verge below the moat band
+s.rowpack((442, 1894, 658, 1956), ["laborer", "servant"] * 10, court_every=9)
+s.bound = [[895, 2130], [1300, 2130], [1300, 2290], [895, 2290]]
+s.alley([(980, 2160), (980, 2282)])
+s.alley([(1120, 2178), (1120, 2282)])
+s.alley([(908, 2225), (1292, 2225)])  # the wing's own lanes (no_isolated_dwelling_cluster)
+s.rowpack((905, 2172, 1054, 2286), ["laborer", "laborer_large", "servant"] * 16, court_every=9)  # the S gate ward's WEST wing along the wall's outer arc
+s.rowpack((1058, 2172, 1186, 2286), ["laborer", "servant"] * 12, court_every=9)
+s.rowpack((1190, 2180, 1296, 2242), ["laborer", "servant"] * 6, court_every=9)
 s.bound = [[255, 1450], [410, 1450], [410, 1720], [255, 1720]]
 s.rowpack((255, 1470, 370, 1700), ["laborer", "servant"] * 12, court_every=6)  # outside-wall west rows within the SW gate's linear reach
+s.rowpack((258, 1730, 408, 1890), ["laborer", "servant"] * 14, court_every=6)  # ...and south toward the gate
 s.rowpack(
     (250, 2060, 430, 2130), ["laborer", "servant"] * 10, court_every=6
 )  # the SW ribbon continues down the domain road  # the SW ward, past the moat band on the road's lee side (the linear guan-xiang reach)

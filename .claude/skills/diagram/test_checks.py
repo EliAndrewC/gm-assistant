@@ -10721,3 +10721,63 @@ def test_kido_close_the_machi_mouths():
     assert "kido_close_the_machi_mouths" in f(M)  # two mouths, no kido
     M["kido"] = [{"x": 312, "y": 500, "parts": [], "guard": None}, {"x": 688, "y": 500, "parts": [], "guard": None}]
     assert "kido_close_the_machi_mouths" not in f(M)
+
+
+def test_precinct_interiors_within_reservation():
+    """T017 red-green: a declared precinct must draw >= 5 halls inside its reserved rect; a
+    dormitory overhanging the reservation fires."""
+    M = _capital_manifest()
+    M["precincts"] = [{"x": 500, "y": 500, "w": 130, "h": 100, "rear": "north", "graveyard": False}]
+    assert "precinct_interiors_within_reservation" in f(M)  # declared, nothing drawn
+    halls = [
+        {"x": 456, "y": 462, "w": 16, "h": 10, "kind": "residence", "precinct": [500, 500]},
+        {"x": 455, "y": 480, "w": 12, "h": 8, "kind": "kitchen", "precinct": [500, 500]},
+        {"x": 492, "y": 460, "w": 19, "h": 7, "kind": "dormitory", "precinct": [500, 500]},
+        {"x": 514, "y": 472, "w": 19, "h": 7, "kind": "dormitory", "precinct": [500, 500]},
+        {"x": 552, "y": 498, "w": 11, "h": 8, "kind": "library", "precinct": [500, 500]},
+        {"x": 446, "y": 502, "w": 14, "h": 9, "kind": "administration", "precinct": [500, 500]},
+    ]
+    M["precinct_halls"] = halls
+    assert "precinct_interiors_within_reservation" not in f(M)
+    M["precinct_halls"] = halls[:-1] + [{"x": 570, "y": 502, "w": 14, "h": 9, "kind": "administration", "precinct": [500, 500]}]
+    assert "precinct_interiors_within_reservation" in f(M)  # administration overhangs east edge
+
+
+def test_precinct_graveyard_claims_closed():
+    """T017 red-green: a temple with graveyard=True and no burial plot within 230px fires; the
+    drawn plot closes the 020 claim."""
+    M = _capital_manifest()
+    M["precincts"] = [{"x": 500, "y": 500, "w": 130, "h": 100, "rear": "north", "graveyard": True}]
+    M["precinct_halls"] = [{"x": 456 + i, "y": 462, "w": 4, "h": 4, "kind": k, "precinct": [500, 500]} for i, k in enumerate(("residence", "kitchen", "dormitory", "dormitory", "library"))]
+    M["religious"] = [{"kind": "temple", "x": 500, "y": 500, "w": 50, "h": 33, "label": "Temple of Benten", "graveyard": True}]
+    assert "precinct_graveyard_claims_closed" in f(M)
+    M["cemeteries"] = [{"x": 544, "y": 464, "w": 24, "h": 16, "parish": True}]
+    assert "precinct_graveyard_claims_closed" not in f(M)
+
+
+def test_monzen_fronts_the_approach():
+    """T018 red-green: a monzen district on the temple's blind side (no torii inside) fires; on
+    the approach with its commercial rows it passes."""
+    M = _capital_manifest()
+    M["precincts"] = [{"x": 500, "y": 500, "w": 130, "h": 100, "rear": "north", "graveyard": False}]
+    M["precinct_halls"] = [{"x": 456 + i, "y": 462, "w": 4, "h": 4, "kind": k, "precinct": [500, 500]} for i, k in enumerate(("residence", "kitchen", "dormitory", "dormitory", "library"))]
+    M["torii"] = [(500, 580), (500, 620)]  # the sando marches SOUTH
+    shops = [{"kind": "shop", "x": 460 + 12 * i, "y": 600, "w": 8, "h": 6} for i in range(7)]
+    M["buildings"] = M.get("buildings", []) + shops
+    M["districts"] = (M.get("districts") or []) + [{"name": "blind monzen", "kind": "monzen", "poly": [[430, 380], [570, 380], [570, 445], [430, 445]]}]
+    assert "monzen_fronts_the_approach" in f(M)  # north of the temple, torii face south
+    M["districts"][-1] = {"name": "monzen", "kind": "monzen", "poly": [[430, 560], [570, 560], [570, 640], [430, 640]]}
+    assert "monzen_fronts_the_approach" not in f(M)
+
+
+def test_teramachi_backstrip_lean():
+    """T019 red-green: a packed dwelling between a rim temple and the rampart fires; a
+    monk_house there is the temple's own and passes."""
+    M = _capital_manifest()
+    wallx = max(p9[0] for p9 in M["wall"])
+    ty = sum(p9[1] for p9 in M["wall"]) / len(M["wall"])
+    M["religious"] = (M.get("religious") or []) + [{"kind": "temple", "x": wallx - 130, "y": ty, "w": 32, "h": 21, "label": "Temple of Ebisu"}]
+    M["buildings"] = M.get("buildings", []) + [{"kind": "laborer", "x": wallx - 60, "y": ty, "w": 10, "h": 7}]
+    assert "teramachi_backstrip_lean" in f(M)
+    M["buildings"][-1]["kind"] = "monk_house"
+    assert "teramachi_backstrip_lean" not in f(M)

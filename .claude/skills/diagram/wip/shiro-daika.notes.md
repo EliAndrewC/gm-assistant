@@ -185,36 +185,46 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   scheduled kind (growing-season rotation of water rights). One closed-board glyph therefore
   stays the honest drawing; no open-variant needed. Nothing else blocks feature 021.
 
-## Feature 021 mid-build state (2026-08-09, checkpoint)
+## Feature 021 mid-build state (updated 2026-08-10, post-compaction grind)
 
-US1+US2+suburbs+trade-works fabric stands; census 2,235 of 2,472 (compounds displaced rows;
-re-close from suburbs after residuals). The unjammed urban battery's REMAINING residuals,
-each understood:
+**6 FAILs remain** (from 24). All geometry/overlap/junction/wells checks are GREEN.
 
-- imperial_road_through: road must end past the CROPPED view (meta.view!) both ends - N end
-  extended to (940,-60); S end needs y > view-bottom (crop south=240 -> extend road S past
-  ~2745).
-- streets_connected 2 groups: in-wall filter landed; find the second group (likely the
-  y1375+x800 pair joined only to the RING - wire one of them to a road-touching street).
-- ministries_front_a_street: include road/roads pts in its street set at capital (the
-  ote-suji IS the avenue).
-- monk housing/shrines: monk rowpacks beside rim temples seated 0? (verify vs 'near' radius);
-  shrines seated? re-check; shrine seats (612,1282),(762,1452),(882,1722).
-- gate_market gates [1,3] (E, SW) still thin: more out-wall "merchant" kind near those gates.
-- caravan facilities: verify per-gate inn/stables/flop counts within 340 in-wall.
-- flophouse_in_humble_quarter: gate exemption landed; the (1180,2050) flop still flagged? check.
-- terraces x flophouses overlap: the (1470,372) flop vs karamete terraces - reseat flop.
-- stable_yard furniture on road/wall: the caravan stables' rails - nudge stables.
-- merchant estate (1080,1736/1760) gate into building + estate overlapping building: reseat/redir.
-- streets_have_buildings/larger_streets_lined: bare stretches (the y1375 west arm, x2130,
-  y1390) - trim street extents or front them.
-- streets_clear_of_wall 2 + moat 1: the x2000 alley (actual line differs - find by grep
-  '2000, 1585'); one more crossing way.
-- wells: density (add wells in flagged cores), 3 unreached dwellings, block-interior strays.
-- caste band: burakumin short (~90 vs >=87 ok now? re-check merchants after kind swaps).
-- singles: no_structure_on_manor/road/stream/street residues - locate via the ways-locator.
-- city_no_large_empty_space 59k = the Benten precinct - resolves when T017 draws interiors.
-- THEN: census re-close exact (suburb knobs + one-item trim), T017-T019 (US3), wind checks
-  red-green tests (T020 tests not yet written!), T024 perf/budget entry, T025 captions,
-  T026 ship+sweep, T027 FULL review, T028 XII bookend, T029 docs (record-the-why for every
-  scale-gate/inversion made this feature), T030 ritual.
+1. `population_consistent_with_housing` - 2074 dwellings vs 2472 (need ~+398).
+2. `capital_housing_matches_band_targets` - packed drawn 1736 vs 2160 (tol 108; commoner
+   dwellings counted ONLY inside declared machi/monzen/entertainment district polys; 38
+   current dwellings sit uncovered - SW machi west edge x~600 and E ward tail x~2800-2930).
+3. `businesses_front_streets` - 54 suburb merchant DWELLINGS >40px from any street/road;
+   fix = merchant-fronts-the-road gradient in the suburb packs (deep rows servant/laborer),
+   NOT new streets. Mind the gate-market floor (>=6 shop|merchant within 520 of each gate,
+   outside) when swapping - SW gate sits at exactly 6.
+4-5. `city_streets_have_buildings` + `city_larger_streets_lined` - bare stretches flank the
+   UNBUILT precinct reserves (y1375 @ x988-1240 + x632-770; y1390 @ x1560-2182) - expected
+   to clear when T017 draws the interiors + monzen; re-check then.
+6. `city_no_large_empty_space` - 3 cores: (1943,1540)=Benten reserve (T017 fills);
+   (985,747) 12.3ac = castle quarter WEST ground (plan: castle horse grounds / drill yard
+   via s.animal_ground + maybe kura row - NOT more yashiki, the band target is at 51/53);
+   (736,961) 4.7ac = west band pocket (plan: grove+shrine or animal ground; decide by eye).
+
+**Lessons encoded this session** (do not re-learn):
+- NEVER hand-seat: every hand-picked coordinate this session landed on something. Scan with
+  the reflow-aware scanner (obstacles = fixed features only, pack kinds excluded; ways incl
+  wall band; streams/rivers use `poly` not `pts`; theater key is `theater_stage`).
+- terrace() now reserves its rotated bbox (was a phantom for rot=90 files).
+- The stables' own-well dig path ignores placed reserves; pre-seed `s.well` in the yard.
+- monk_house is OUT of the have-wells COMMON set (temple's own well; check comment).
+- T010 header/frontage/district block had been quadruplicated by failed hoists - watch for
+  duplicated blocks after any failed patch round; `grep -c` the anchor first.
+- The x1690 alley was DROPPED (ran through the brewery); the NE connector street bends
+  around Ebisu and docks EXACTLY on y1770's east endpoint (2180,1770) - near_miss needs
+  dist<2 or a true crossing.
+- streets_meet_through_lanes judges endpoints within 46px of road/ring: reach the
+  centerline exactly (compute intersection) or stay >46 away. y2005 runs (985,2005)-(1799,2005):
+  west end deliberately >46 off the ring, east end 1px short of x1800 (near-miss dodge).
+
+**Remaining after the close**: T017-19 (US3 precinct interiors: seven-halls program inside
+the two 130x100px reserves at (1850,1620)/(950,1620), monzen rows fronting the torii
+approaches, teramachi backstrip check, graveyard claims), T020-21 wind red-green tests,
+T022 wharf chain verify, T024 perf A/B + GEN_TIME_BUDGETS, T025 captions, T026 pool move +
+single full sweep, T027 FULL settlement-review, T028 XII bookend, T029 record-the-why docs
+(capitals.md + research/cities/capitals.md + ways.md for every new rule/inversion incl the
+monk-well exemption + suburb_packed_frac 0.30 + CIRC_FRAC_CAPITAL 0.20), T030 ritual.
