@@ -472,9 +472,9 @@ _CAPITAL_LINES_AS_SHIPPED = [
 def test_the_shipped_capital_program_prices_and_orders_exactly_as_recorded():
     b = plan_capital(_cap(river=True), canvas=(3200, 2700))
     assert [(ln.label, ln.count, pytest.approx(ln.area_px2, abs=1e-6)) for ln in b.lines] == _CAPITAL_LINES_AS_SHIPPED
-    assert b.required_interior_px2 == pytest.approx(2978887.5, abs=1e-6)  # corrected model (021): suburb_packed_frac 0.30 + CIRC_FRAC_CAPITAL 0.20
-    assert b.wall.rx == pytest.approx(1018.1092769012085, abs=1e-6)  # the MODEL minimum; the drawn map PINS the 018 as-built 1029x957 ellipse, +2.2% over this, inside the wall check's tolerance
-    assert b.wall.ry == pytest.approx(946.841627518124, abs=1e-6)
+    assert b.required_interior_px2 == pytest.approx(4226287.5, abs=1e-6)  # 021 corrected model + C_PACKED_CAPITAL 1350 (the wall-resize lesson: Tango's 690 under-built the rampart ~40%)
+    assert b.wall.rx == pytest.approx(1212.6818073409283, abs=1e-6)  # the MODEL minimum; the drawn map PINS 1185x1177 at (1325,1420), inside the wall check's tolerance
+    assert b.wall.ry == pytest.approx(1127.7940808270635, abs=1e-6)
 
 
 def test_the_capital_civic_rows_are_row_totals_not_per_unit_costs():
