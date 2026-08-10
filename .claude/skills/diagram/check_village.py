@@ -182,6 +182,7 @@ def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, An
 _OVERLAP_STRUCTS = (
     "houses",
     "terraces",
+    "precinct_halls",
     "buildings",
     "flophouses",
     "cemeteries",
@@ -274,6 +275,7 @@ _OVERLAP_EXEMPT = {
     "field_ditches": "in-field irrigation ditches (main/laterals/drain) - water lines drawn ON the paddy, validated by water_channels_obtuse_turns + field_ditches_terminate, not solid structures",
     "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
     "districts": "declarative fabric districts (feature 021), the quarter overlay's sibling - named pack regions validated by capital_districts_declared / capital_rank_gradient, never drawn",
+    "precincts": "a sovereign-temple precinct RESERVATION (feature 021) - a region record like a district; its drawn content is precinct_halls, which carry their own classes",
     "quarters": "declarative zoning overlays (feature 006), not solid structures - they intentionally contain buildings and are validated by the city_quarters_* / per-quarter density checks",
     "mills": "a water mill (水磨) focal feature drawn BESIDE its watercourse with the wheel dipping into the drain/stream - an intentional water-adjacency like a bridge/jetty; reserved in open ground (self.placed) so it does not overlap dwellings",
     "field_ponds": "feature 012: a low-pocket pond sunk INTO one paddy plot, the field tiling around it - drawn ON the paddy like field_ditches, validated by paddy_features_match_archetype",
@@ -301,6 +303,7 @@ _LABEL_GROUP = {
     "flophouses": "flophouse",
     "log_booms": "log boom",
     "religious": "temple",
+    "precinct_halls": "temple",
     "ministries": "ministry",
     "governor_mansion": "governor",
     "gate_structs": "gate",
@@ -367,6 +370,7 @@ _LABEL_GROUP = {
 _LABEL_BY_KIND = ("buildings",)
 _LABEL_EXEMPT = {
     "districts": "a declared district is a REGION overlay like a quarter - it draws nothing, so there is nothing under it for a caption to bury",
+    "precincts": "a reservation region, never drawn - the halls inside it are the drawn features",
     "borders": "a jurisdictional line has no footprint to protect - there is nothing under it to be buried by a caption, and its own caption is drawn in the top layer so no ground feature can paint over it",
     "byres": "a draft-ox byre is an ANNEX abutting its own farmhouse (draft_byres places it against the wall), so it shares the house's ground and any caption cleared for the house is cleared for it",
 }
@@ -392,6 +396,7 @@ OVERLAP_CLASS: dict[str, str] = {
         for k in (
             "houses",
             "terraces",
+            "precinct_halls",
             "buildings",
             "flophouses",
             "manors",
@@ -464,6 +469,7 @@ OVERLAP_CLASS: dict[str, str] = {
     **{k: "COVER" for k in ("commons", "pastures", "marsh", "marshes")},
     "quarters": "OVERLAY",
     "districts": "OVERLAY",
+    "precincts": "OVERLAY",
     # A WARD IS NOT A QUARTER. A quarter is a zoning word; a ward is a walled enclosure whose FENCE
     # is a physical barrier everything except its own kido must stand clear of. Classed OVERLAY it was
     # never extracted, which is why a guard station, a notice board and an oil press all came to rest
@@ -8151,6 +8157,82 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"rank bands out of order from the castle: {cg_bad} - the jokamachi law grades proximity by rank (yashiki nearest, then detached, then terraces)",
         )
 
+    # SOVEREIGN PRECINCT INTERIORS (T017, research item 7): once a precinct reservation is
+    # DECLARED (M['precincts'], the 021 engine path), its head-house program must actually be
+    # drawn - >= 5 halls, every one fully inside the reserved rect (a dormitory overhanging the
+    # reservation is a pack-collision waiting to happen; the reserve is the contract).
+    pr_list = M.get("precincts") or []
+    if pr_list:
+        pr_bad: list[str] = []
+        for pr in pr_list:
+            px0, py0, px1, py1 = pr["x"] - pr["w"] / 2, pr["y"] - pr["h"] / 2, pr["x"] + pr["w"] / 2, pr["y"] + pr["h"] / 2
+            mine = [hh for hh in M.get("precinct_halls", []) if abs(hh["precinct"][0] - pr["x"]) < 2 and abs(hh["precinct"][1] - pr["y"]) < 2]
+            if len(mine) < 5:
+                pr_bad.append(f"precinct ({pr['x']:.0f},{pr['y']:.0f}) draws only {len(mine)} interior halls (want >= 5: residence, administration, library, dormitories, kitchen)")
+            for hh in mine:
+                if hh["x"] - hh["w"] / 2 < px0 - 0.5 or hh["x"] + hh["w"] / 2 > px1 + 0.5 or hh["y"] - hh["h"] / 2 < py0 - 0.5 or hh["y"] + hh["h"] / 2 > py1 + 0.5:
+                    pr_bad.append(f"{hh['kind']} at ({hh['x']:.0f},{hh['y']:.0f}) overhangs its precinct reservation")
+        check(
+            "precinct_interiors_within_reservation",
+            not pr_bad,
+            f"sovereign precinct interior(s) missing or overhanging the reserved ground: {pr_bad} - the 020 reservation is the contract; draw the program inside it",
+        )
+        # the 020 graveyard CLAIMS close when the precincts are drawn: a temple recorded with
+        # graveyard=True must have a burial plot on the ground (claimed but undrawn ground is
+        # exactly the debt 021 exists to pay)
+        pg_bad = [
+            str(rg.get("label") or rg.get("name") or "temple")
+            for rg in M.get("religious", [])
+            if rg.get("graveyard") and not any(math.hypot(cg8["x"] - rg["x"], cg8["y"] - rg["y"]) <= 230 for cg8 in M.get("cemeteries", []))
+        ]
+        check(
+            "precinct_graveyard_claims_closed",
+            not pg_bad,
+            f"temple(s) claiming a graveyard (graveyard=True) with no burial plot drawn within 230px: {pg_bad} - close the 020 claim (draw the parish plot) or drop the claim",
+        )
+        # MONZEN fronts the APPROACH (T018, research item 8): a monzen district is the lay
+        # commercial quarter at the temple's GATE, so its rows stand on the side the torii
+        # face - a monzen on the temple's blind side reads as a generic machi mislabeled.
+        mz_bad = []
+        for dz in M.get("districts", []):
+            if dz.get("kind") != "monzen":
+                continue
+            tor_in = sum(1 for tp in M.get("torii", []) if point_in_poly(tp[0], tp[1], dz["poly"]))
+            comm = sum(1 for bz in M.get("buildings", []) if bz.get("kind") in ("shop", "merchant", "merchant_house") and point_in_poly(bz["x"], bz["y"], dz["poly"]))
+            if tor_in == 0:
+                mz_bad.append(f"{dz.get('name', 'monzen')}: no torii inside the district (it does not front the approach)")
+            elif comm < 6:
+                mz_bad.append(f"{dz.get('name', 'monzen')}: only {comm} commercial buildings (a monzen is a lay COMMERCIAL quarter; want >= 6)")
+        check(
+            "monzen_fronts_the_approach",
+            not mz_bad,
+            f"monzen district(s) not doing a monzen's job: {mz_bad} - the lay quarter stands at the temple's gate, on the side the torii face",
+        )
+    # TERAMACHI BACKSTRIP stays LEAN (T019, research item 9, capitals only): the rim temples
+    # are part of the defensive belt, and the strip BEHIND each (between temple and rampart)
+    # is the temples' own back ground + the patrol strip - never packed housing. Monk houses
+    # are the temples' own and may stand there.
+    if meta.get("scale") == "capital" and len(M.get("wall") or []) >= 3:
+        tb_bad = []
+        _tb_wall = M["wall"]
+        for rg in M.get("religious", []):
+            if rg.get("kind") != "temple":
+                continue
+            tb_d, tb_wp = min(
+                ((seg_dist(rg["x"], rg["y"], _tb_wall[i9], _tb_wall[(i9 + 1) % len(_tb_wall)]), seg_closest(rg["x"], rg["y"], _tb_wall[i9], _tb_wall[(i9 + 1) % len(_tb_wall)])) for i9 in range(len(_tb_wall))),
+                key=lambda t9: t9[0],
+            )
+            if tb_d > 190:
+                continue  # not a rim temple
+            for bz in M.get("buildings", []):
+                if bz.get("kind") in DWELLING_KINDS and bz.get("kind") != "monk_house":
+                    if seg_dist(bz["x"], bz["y"], (rg["x"], rg["y"]), tb_wp) < rg.get("w", 30) / 2 and math.hypot(bz["x"] - rg["x"], bz["y"] - rg["y"]) < tb_d + 40:
+                        tb_bad.append((round(bz["x"]), round(bz["y"])))
+        check(
+            "teramachi_backstrip_lean",
+            not tb_bad,
+            f"packed dwelling(s) silting the teramachi backstrip (between a rim temple and the rampart): {sorted(set(tb_bad))[:4]} - the strip is the temples' back ground and the patrol zone, not housing depth",
+        )
     # THE FABRIC HITS THE BUDGET'S BAND TARGETS (T006): the 018 budget is the housing
     # authority, so each band's drawn count lands on its dwelling_target - yashiki compounds
     # and detached samurai houses by record count, terraces by their UNIT count (one roof,

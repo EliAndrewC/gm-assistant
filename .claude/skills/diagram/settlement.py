@@ -9621,6 +9621,37 @@ class Settlement:
         fine - over-clearing by a few px reads the same)."""
         self._clear_ground(x, y, w, h, extra)
 
+    def precinct_interior(self, x: float, y: float, w: float = 130.0, h: float = 100.0, rear: str = "north", graveyard: bool = True) -> None:
+        """A SOVEREIGN TEMPLE PRECINCT's interior (feature 021, research item 7): the head-house
+        program - abbot's residence, order administration, library/sutra hall, two monk
+        dormitories, kitchen/refectory - drawn INSIDE the ground the 020 reservation held,
+        densest toward the hall axis with the dormitories rearward (the shared Zen/Chinese
+        seven-halls plan; the 390x300 ft reservation was sized for exactly this). `rear` names
+        the side AWAY from the sando (the torii face), where the service program gathers; the
+        front third stays open for the approach. Also claims the reservation itself: records
+        M['precincts'] and holds both placement registries, replacing the hand-rolled 020
+        reserve, and (graveyard=True) draws the parish burial plot that closes the temple's
+        020 `graveyard` claim. Map-scale glyphs are footprint boxes in the religious palette,
+        labeled never - the hall's own caption names the complex (caption-loudness)."""
+        self.M.setdefault("precincts", []).append({"x": round(x, 1), "y": round(y, 1), "w": w, "h": h, "rear": rear, "graveyard": graveyard})
+        self.block_polys.append([(x - w / 2, y - h / 2), (x + w / 2, y - h / 2), (x + w / 2, y + h / 2), (x - w / 2, y + h / 2)])
+        self.placed.append((x, y, w, h))
+        sgn = -1.0 if rear == "north" else 1.0  # rear-edge offsets flip with the sando side
+        ye = y + sgn * h / 2
+        # (dx, dy-from-rear-edge, w-ft, h-ft, kind) - hand-set so nothing clips the 150x100 ft hall
+        prog = [(-44, 12, 48, 30, "residence"), (-45, 30, 36, 24, "kitchen"), (-8, 10, 57, 21, "dormitory"),
+                (14, 22, 57, 21, "dormitory"), (52, None, 33, 24, "library"), (-54, None, 42, 27, "administration")]
+        g = []
+        for dx, dy, wf, hf, kind in prog:
+            bw, bh = wf / self.ftpx, hf / self.ftpx
+            bx = x + dx
+            by = (y + sgn * 2) if dy is None else (ye - sgn * dy)
+            g.append(f'<rect x="{bx - bw / 2:.1f}" y="{by - bh / 2:.1f}" width="{bw:.1f}" height="{bh:.1f}" rx="1.2" fill="#E6DCC4" stroke="#6E5B3A" stroke-width="1.1"/>')
+            self.M.setdefault("precinct_halls", []).append({"x": round(bx, 1), "y": round(by, 1), "w": round(bw, 1), "h": round(bh, 1), "kind": kind, "precinct": [round(x, 1), round(y, 1)]})
+        self.add_top("".join(g))
+        if graveyard:
+            self.cemetery(x + 44, ye - sgn * 14, 24, 16, parish=True)
+
     def cemetery(
         self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool | None = None, label_xy: Pt | None = None
     ) -> None:
