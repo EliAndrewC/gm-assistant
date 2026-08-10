@@ -141,7 +141,7 @@ KAGI_Y = 1560
 s.road(
     [(SGATE[0], 3095), (SGATE[0], SGATE[1]), (SGATE[0], 2450), (1400, 2375), (1400, KAGI_Y), (800, KAGI_Y), (800, 470), (1240, 300), (NGATE[0], NGATE[1]), (1240, 60), (1080, 5), (940, -60)],
     label="Imperial Road",
-    label_xy=(SGATE[0] + 150, 2330),
+    label_xy=(SGATE[0] + 145, 2820),
 )
 # the same road is Imperial on BOTH sides of the city (GM 2026-08-09) - the run toward Shiro
 # Kyo carries its own caption, tilted along the branch per the linear rule
@@ -152,7 +152,7 @@ s.road([(2300, 1340), (EGATE[0], EGATE[1]), (2820, 1270), (3200, 1180)])  # east
 # city gate -> due south -> the castle's rear gate, dead-ending at its moat and tower exactly as
 # a castle-town street aimed at the works should, while the Imperial through-road leaves the
 # street at the (1400, 300) junction and bends west around the castle front (the kagi-no-te).
-s.road([(1240, 300), (1400, 390), (1400, 520)])  # stops at the karamete tower's foot, as the ote-suji stops at the ote-mon's
+s.road([(1240, 240), (1330, 262), (1400, 300), (1400, 520)])  # stops at the karamete tower's foot, as the ote-suji stops at the ote-mon's
 s.road([(470, 1905), (SWGATE[0], SWGATE[1]), (140, 2180), (0, 2260)])  # southwest, into the domain - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
 
 # ---- THE OTE-SUJI (feature 020): the ceremonial avenue from the castle's front gate south to the
@@ -176,7 +176,7 @@ s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=s.lw(45))  # starts just south of
 # approach; the karamete-mon - the rear gate every castle kept, the sortie gate - opens north,
 # its approach road bridging the castle's own moat to join the Imperial road's run to the
 # city's north gate. research/cities/capitals.md, "A castle has TWO gates".
-s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south", karamete_dir="north")
+s.castle(1400, 880, 850, 700, label="Shiro Daika", gate_dir="south", karamete_dir="north")  # the castle keeps ITS axis (x=1400) - the resized wall re-centered SW, and the honmaru sits NE-of-center (the castle-at-the-back pattern); everything castle-anchored (ote-suji, ministries, karamete) reads from this axis, not from CX
 
 # ---- the moat CIRCULATES river-to-river, every drawn drop moving NE -> SW (GM 2026-08-09,
 # third cut - the second still ran its last leg up-screen). Like Minami and Nagahara the moat
@@ -198,9 +198,9 @@ s.sluice_gate(
     3050, 848, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3040, 818), span=26
 )  # the intake board - the frame spans BANK TO BANK (posts on the abutments, the operator walks the crossbeam)
 DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
-s.stream([DRAIN_OUT, (2080, 2420), (2190, 2510)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
+s.stream([DRAIN_OUT, (2000, 2460), (2172, 2557)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
 s.sluice_gate(
-    2020, 2370, rot=math.degrees(math.atan2(2420 - DRAIN_OUT[1], 2080 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(2000, 2340), span=26
+    1980, 2395, rot=math.degrees(math.atan2(2460 - DRAIN_OUT[1], 2000 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1948, 2362), span=26
 )  # the outfall board, bank to bank like the intake
 s.moat_flow(MOAT[4], MOAT[8])
 
@@ -215,7 +215,7 @@ s.moat_flow(MOAT[4], MOAT[8])
 # the whole northeast and crossed the moat on a flume; the corrected route peels off
 # downstream and falls straight to the EAST gate - short and direct because the river is
 # near, where the real ones wound only to HOLD their gradient across long country.
-s.aqueduct([(2952, 1042), (2760, 1180), (2580, 1275), (2425, 1340)])
+s.aqueduct([(2952, 1042), (2760, 1180), (2580, 1275), (2470, 1337)])
 # the two ends carry the words the glyphs cannot (GM 2026-08-09): the river end is the INTAKE
 # WEIR (the Hamura form - a barrier angled across part of the stream, shouldering water into
 # the cut), and the gate end is the SETTLING BASIN, where silt drops before the buried mains
@@ -354,12 +354,12 @@ rim_temple(17.5, "Temple of Hotei")
 # mid-river). A stage runs a boat-length into the stream and no further - the fairway stays
 # clear by law (the log-boom research) - so ~39 ft into a 120 ft river, a third of the channel.
 # One stage per granary complex end: barges tie up AT the kura frontage and unload straight in.
-s.jetty(2304, 2265, rot=36, length=13)  # the domain row's upstream stage
-s.jetty(2222, 2372, rot=36, length=13)  # ...and its downstream one, just past the row's end
+s.jetty(2303, 2265, rot=30, length=13)  # the domain row's upstream stage
+s.jetty(2236, 2381, rot=30, length=13)  # ...and its downstream one, just past the row's end
 # the Emperor's complex gets its OWN landing (GM 2026-08-09: its grain moves by boat - that is
 # the whole reason imperial_granary_seat="wharf" - so it does not borrow the domain quay 200 ft
 # downstream; separate stores, separate barges, separate tally)
-s.jetty(2418, 2114, rot=36, length=13)
+s.jetty(2397, 2102, rot=30, length=13)
 # NO dock basin: the rectangular canal-head cut is Nagahara's in-city vocabulary and read as a
 # floating blue square against this diagonal bank (GM 2026-08-09) - a riverside wharf is jetties
 # and quay, not a basin. The granary rows stand ON the wharf, turned PARALLEL to the bank they
@@ -637,7 +637,7 @@ for _fx, _fy in ((850, 1650), (1200, 1900), (1600, 1900), (1900, 1780), (2250, 9
 # ---- T013/T014: the PUBLIC WELLS, before the packs so the rows ring their courts.
 # The josui-ido band first: cistern-wells on the gate road within ~600 ft of the settling
 # basin (research item 4); dug draw-wells serve everything else.
-s.place_wells((2272, 1080, 2328, 1290), spacing=62, kind="cistern", coverage=False)  # the josui-ido court file on the x=2300 roji (laterals under the alleys, research item 4)
+s.place_wells((2250, 1350, 2400, 1425), spacing=62, kind="cistern", coverage=False)  # the josui-ido file inside the E gate, on the buried main from the new settling basin (laterals under the roji, research item 4)
 s.place_wells((620, 1580, 1385, 2100), spacing=92, coverage=False)
 s.place_wells((1415, 1580, 1930, 2100), spacing=92, coverage=False)
 s.place_wells((2000, 1580, 2115, 2100), spacing=95, coverage=False)
@@ -754,14 +754,14 @@ s.rowpack((2350, 1955, 2475, 2035), ["merchant_house", "laborer"] * 12, court_ev
 s.rowpack((2410, 1885, 2530, 1950), ["merchant_house", "laborer"] * 9, court_every=6)
 # the TOWPATH SHORE (the haulage side of the wharf): porters' and boatmen's rows on the
 # land between the wall's south arc and the river, within the wharf's own reach
-s.bound = [[1560, 2450], [1820, 2450], [1820, 2780], [1560, 2780]]
+s.bound = [[1560, 2540], [1820, 2540], [1820, 2870], [1560, 2870]]
 s.alley([(1672, 2460), (1728, 2760)])  # the shore rows' spine (before its packs)
-s.rowpack((1580, 2470, 1760, 2610), ["laborer", "laborer", "servant"] * 16, court_every=6)
-s.rowpack((1620, 2630, 1800, 2750), ["laborer", "servant"] * 12, court_every=6)
-s.rowpack((1765, 2470, 1815, 2610), ["laborer", "servant"] * 5, court_every=6)
-s.rowpack((1620, 2755, 1790, 2800), ["laborer", "servant"] * 7, court_every=6)
-s.rowpack((1560, 2810, 1740, 2852), ["laborer", "servant"] * 9 + ["laborer"] * 5, court_every=6)
-s.rowpack((2826, 1322, 2878, 1382), ["laborer", "merchant_house"] * 6, court_every=6)
+s.rowpack((1580, 2560, 1760, 2700), ["laborer", "laborer", "servant"] * 16, court_every=6)
+s.rowpack((1620, 2720, 1800, 2840), ["laborer", "servant"] * 12, court_every=6)
+s.rowpack((1765, 2560, 1815, 2700), ["laborer", "servant"] * 5, court_every=6)
+s.rowpack((1620, 2845, 1790, 2890), ["laborer", "servant"] * 7, court_every=6)
+s.rowpack((1560, 2900, 1740, 2942), ["laborer", "servant"] * 9 + ["laborer"] * 5, court_every=6)
+s.rowpack((2826, 1412, 2878, 1472), ["laborer", "merchant_house"] * 6, court_every=6)
 s.bound = [[1830, 2450], [2090, 2450], [2090, 2790], [1830, 2790]]
 s.alley([(1950, 2460), (1990, 2780)])
 s.cemetery(1780, 2708, 84, 60, parish=False, label="common ground")
@@ -791,25 +791,25 @@ s.rowpack((1005, 212, 1175, 244), ["laborer", "servant"] * 10, court_every=6)
 s.bound = [[2450, 780], [2730, 780], [2730, 1140], [2450, 1140]]
 s.alley([(2480, 860), (2460, 1280)])  # down to the gate road, west of the aqueduct's cut
 s.alley([(2479, 885), (2690, 885)])
-s.rowpack((2470, 900, 2660, 975), ["laborer", "merchant_house", "servant"] * 14, court_every=6)  # inside the gate's linear reach, clear of the feeder leat
+s.rowpack((2470, 1005, 2660, 1080), ["laborer", "merchant_house", "servant"] * 14, court_every=6)  # inside the gate's linear reach, clear of the feeder leat
 s.rowpack((2470, 990, 2680, 1045), ["laborer", "servant"] * 12, court_every=6)
-s.rowpack((2470, 1055, 2680, 1125), ["laborer", "servant"] * 12, court_every=6)
+s.rowpack((2470, 1090, 2680, 1160), ["laborer", "servant"] * 12, court_every=6)
 s.rowpack((2690, 1055, 2740, 1125), ["laborer", "servant"] * 3, court_every=6)
 
 s.bound = [[1140, -5], [1345, -5], [1345, 140], [1140, 140]]
 s.rowpack((1265, -35, 1332, 28), ["laborer", "merchant_house"] * 5, court_every=6)  # the N gate ward, on the Shiro Kyo road
-s.rowpack((1265, 52, 1332, 132), ["laborer", "merchant_house"] * 6, court_every=6)  # ...split around the y=100 ribbon alley
-s.rowpack((1150, 35, 1212, 132), ["laborer", "merchant"] * 9, court_every=6)  # the road-side rows carry open shopfront homes (they count into the gate market)
+s.rowpack((1265, 52, 1332, 92), ["laborer", "merchant_house"] * 6, court_every=6)  # ...split around the y=100 ribbon alley
+s.rowpack((1150, 35, 1212, 92), ["laborer", "merchant"] * 9, court_every=6)  # the road-side rows carry open shopfront homes (they count into the gate market)
 s.bound = [[790, -60], [1240, -60], [1240, 150], [790, 150]]
 s.alley([(930, -48), (930, 175)])
 s.alley([(790, 70), (1195, 70)])  # the NW ward's own lanes, before its packs
 s.rowpack((850, -40, 1020, 45), ["laborer", "merchant_house", "servant"] * 14, court_every=6)  # the Shiro Kyo road ribbon (the NW guan-xiang)
-s.rowpack((1020, 50, 1200, 135), ["laborer", "merchant_house", "servant"] * 14, court_every=6)
+s.rowpack((1020, 50, 1200, 92), ["laborer", "merchant_house", "servant"] * 14, court_every=6)
 s.bound = [[1240, -50], [1640, -50], [1640, 145], [1240, 145]]
 s.alley([(1240, 40), (1610, 40)])
 s.rowpack((1280, -35, 1610, 22), ["laborer", "servant"] * 14, court_every=6)
-s.rowpack((1280, 52, 1610, 135), ["laborer", "merchant_house"] * 14, court_every=6)
-s.rowpack((850, 50, 1015, 135), ["laborer", "servant"] * 12, court_every=6)
+s.rowpack((1280, 52, 1610, 92), ["laborer", "merchant_house"] * 14, court_every=6)
+s.rowpack((850, 50, 1015, 92), ["laborer", "servant"] * 12, court_every=6)
 s.bound = [[735, 0], [1010, 182], [1010, 182], [735, 0]]
 s.bound = [[735, 0], [1010, 0], [1010, 182], [735, 182]]
 s.bound = [[90, 2180], [290, 2180], [290, 2310], [90, 2310]]
@@ -835,17 +835,7 @@ s.alley([(13, 1745), (13, 2245)])
 s.alley([(-70, 1852), (138, 1852)])  # the west verge's own lanes
 s.rowpack((15, 1780, 145, 1970), ["laborer", "servant"] * 14, court_every=9)
 s.bound = [[200, 2130], [545, 2130], [545, 2325], [200, 2325]]
-s.alley([(218, 2284), (532, 2284)])  # the verge's own lane
 s.bound = [[665, 2380], [1070, 2380], [1070, 2540], [665, 2540]]
-s.alley([(750, 2410), (750, 2532)])
-s.alley([(890, 2428), (890, 2532)])
-s.alley([(678, 2475), (1062, 2475)])  # the wing's own lanes (no_isolated_dwelling_cluster)
-s.bound = [[25, 1700], [180, 1700], [180, 1970], [25, 1970]]
-s.rowpack((25, 1720, 140, 1950), ["laborer", "servant"] * 12, court_every=6)  # outside-wall west rows within the SW gate's linear reach
-s.rowpack((28, 1980, 178, 2140), ["laborer", "servant"] * 14, court_every=6)  # ...and south toward the gate
-s.rowpack(
-    (250, 2060, 430, 2130), ["laborer", "servant"] * 10, court_every=6
-)  # the SW ribbon continues down the domain road  # the SW ward, past the moat band on the road's lee side (the linear guan-xiang reach)
 s.bound = _CITY_BOUND2
 
 
