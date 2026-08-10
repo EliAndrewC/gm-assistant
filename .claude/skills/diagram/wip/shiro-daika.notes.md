@@ -330,3 +330,59 @@ in a provincial city?") is answered in research/cities/capitals.md and encoded i
 `capital_trade_counts_scaled`: four scaling classes, not one. Bathhouses and pawnshops multiply
 at attested per-capita ratios; kilns and cremation grounds consolidate; theater and the domain
 school are capital-only; the pauper's ground is fixed at one per seat by Song edict.
+
+## THE GM's SECOND RENDER REVIEW (2026-08-10) - the check-gap audit and 16 more rules
+
+The GM read the map again and sent defects in a stream. Every one got a check first, red against
+the artifact, then the fix. The through-line of the whole round is one sentence: **a feature
+defined by a relationship must be DERIVED from that relationship, and the check must be able to
+run.** Two systemic findings dominated:
+
+**1. The capital tier was running 116 fewer checks than a provincial city.** Every urban rule
+tested `scale == "city"` EXACTLY, and the capital, added later, inherited nothing - which is why
+the GM could see there was no cremation ground, no ossuary and no mausoleum on a city of 12,400
+while the gate showed green. `URBAN = scale in ("city", "capital")` now covers both. What made
+the audit trustworthy was classifying the residue rather than switching everything: the wall-
+capacity model stays provincial (it does not know a castle eats 40% of the interior), the three
+capital MOAT inversions were already documented as deliberate and were restored after my bulk
+switch overrode them, the ward-seal pair honors `meta(ward_gates)`, and the farmland family is
+scoped off a sheet that frames only the city. **Diagnostic worth keeping: run `gate()` on two
+maps of different tiers and diff the check names that appear.**
+
+**2. Moving geometry strands whatever was pinned to it.** The river's re-route had left the
+towpath 100+px inland, a sluice on dry ground, the aqueduct's intake mid-channel and its basin
+in the moat, the granary rows and jetties at an angle the bank no longer had. Six checks now
+measure against the CURRENT geometry (`towpath_hugs_the_bank`, `sluice_gates_on_water`,
+`sluice_gates_centered_on_their_channel`, `aqueduct_taps_water_lands_dry`,
+`tanning_yards_on_water`, `waterside_works_follow_the_bank`), and the gen derives `BANK_ROT` and
+every jetty angle from the polyline instead of carrying a constant.
+
+**The calibration discipline that made the numbers defensible.** Three rules were set by
+MEASURING the pool rather than picking: the extramural tether (every shipped works sits 225-1,382
+ft from its wall; the flagged kiln stood at 1,563), the gate-market head (157-273 ft across
+Tango, Minami and Nagahara), and the wash-trade band (18-48 ft). The funerary cap came from
+RESEARCH instead, and overturned the existing draw: see research/cities/capitals.md.
+
+**Six mistakes of my own, each worth more than the fix:**
+
+- **A guard removed as "unreachable" on the evidence of live maps only.** The label-length test
+  in the caption checks looked dead - until five regression fixtures stopped firing, because
+  their legacy label records predate the text field and the gate now CRASHED before reaching each
+  fixture's own check. **The corpus exists to replay shapes the live pool no longer produces.**
+- **A threshold in pixels, not real feet.** The tanning band was three times stricter on a
+  1 ft/px town than on the capital, and failed a town whose yard sits closer than the capital's.
+- **A rule that judged before it could reach its own condition.** The street-reach check's outer
+  window capped at 65px while the new perpendicular case needed 80.
+- **A perpendicular test that compared the LINE OF SIGHT to the other street** rather than its
+  bearing, so any two parallel streets 60px apart read as a failed junction.
+- **...and then flagged free ends past junctions they already had**, which would have truncated
+  five sound streets across Minami and Nagahara had I trusted it. The exclusion needs BOTH
+  crossing and endpoint-touching, in both directions.
+- **A corner-only box test**, when a caption wider than the wall band straddles the line with
+  every corner clear. The same point-vs-footprint trap this skill has paid for before.
+
+**One engine defect the checks found rather than the eye:** the gate guard/inspection caption was
+pushed inward by a fixed radial offset that ignored the label's own 134px width, so on an east or
+west gate the box straddled the rampart however far its centre went - and the adaptive fix then
+read `M["wall"]` before `city_wall` records it, so the clash test passed at step 0. The caption
+LADDER also never knew about the rampart at all; it does now.
