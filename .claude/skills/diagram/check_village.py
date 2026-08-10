@@ -1466,8 +1466,13 @@ def _theater_one_stage(M: Manifest, ts: dict[str, Any], ts_hits: list[str], ts_f
         hits.append("the pond")
     ts_hits += hits
     halls = M.get("religious", [])
-    if not halls or ts.get("kind") == "machi":
+    if not halls:
         return
+    # EVERY stage faces a temple (GM 2026-08-10). A `machi` kind was briefly exempted here on
+    # the research finding that a capital's entertainment district is commercial - but the
+    # SETTING rule is older and governs: a Rokugani stage belongs to a hall and opens toward it,
+    # whoever pays for the troupe. The kind still records which doctrine sited the stage; it no
+    # longer excuses the facing.
     nearest = min(halls, key=lambda h: math.hypot(ts["x"] - h["x"], ts["y"] - h["y"]))
     near = math.hypot(ts["x"] - nearest["x"], ts["y"] - nearest["y"])
     if near > 260:
@@ -2903,13 +2908,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # recorded as manors rather than buildings; membership via the declared districts
             _yp6 = [d6["poly"] for d6 in M.get("districts", []) if d6.get("rank_band") == "yashiki"]
             urban += sum(1 for m6 in M.get("manors", []) if any(point_in_poly(m6["x"], m6["y"], p6) for p6 in _yp6))
-        elif scale == "city" and _wall:
+        elif URBAN and _wall:
             urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], _wall))
             urban += sum(int(_t6.get("units", 0)) for _t6 in M.get("terraces", []) if point_in_poly(_t6["x"], _t6["y"], _wall))
         else:
             urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS)
             urban += sum(int(_t6.get("units", 0)) for _t6 in M.get("terraces", []))
-        if scale == "city" and meta.get("agricultural_district") and M.get("wall"):
+        if URBAN and meta.get("agricultural_district") and M.get("wall"):
             # the unusual agricultural-district city (Tango's canon deviation) HOUSES its in-wall
             # farmers: they are walled residents and count toward the declared figure - the
             # budgets' zero-farmer assumption is precisely what agricultural_district overrides.
@@ -3178,7 +3183,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # rails, teamsters waiting), but left as blank parchment it read as forgotten emptiness. s._stable_yard
     # fills it with a feathered scatter (scuff, straw, hitching rails, trough, dung
     # heaps); this gates that no stables reverts to a blank yard. Each yard links to its stables via `of`.
-    if scale == "city":
+    if URBAN:
         _yards = M.get("stable_yards", [])
         _yardless = [
             (round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") == "stables" and not any(abs(yd["of"][0] - b["x"]) < 1 and abs(yd["of"][1] - b["y"]) < 1 for yd in _yards)
@@ -3255,7 +3260,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         not _fr_tight,
         f"farrier(s) crowding a neighboring structure at {_fr_tight[:3]} - an OPEN forge against a hay-and-timber stall range is the fire a stable yard does not survive, so the smithy stands across the ground, never attached (>= ~6 real ft clear of every footprint; buildings.md's wooden-service fire gap)",
     )
-    if scale == "city":
+    if URBAN:
         check(
             "city_has_farrier",
             bool(_fr_all),
@@ -4641,7 +4646,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # on one side leaving long bare edges. Held to a much higher density (the dense end of village
         # ringing). Only bites when meta(agricultural_district=True) - most cities have no in-wall fields.
         FARM_LD_INWALL = 16.0  # houses per 1000px of edge - a full, all-round ring, not the off-map floor
-        if scale == "city" and meta.get("agricultural_district") and M.get("wall"):
+        if URBAN and meta.get("agricultural_district") and M.get("wall"):
             thin = []
             for f in fields:
                 cx, cy = (f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2
@@ -8544,6 +8549,113 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # plank kept its seat when the drain's re-route moved the ford, and it lay on bare bank for
     # a whole feature - bridges_span_their_water silently skipped it (nothing to measure) and no
     # other rule owned the case. A check that never runs looks exactly like a check that passes.
+    # BANK-PARALLEL WORKS FOLLOW THEIR BANK (GM 2026-08-10: "when we originally rendered the
+    # domain granaries and the imperial granary, they were aligned with the river. However, at
+    # a certain point, it looks like the angle of the river changed slightly, but the angle of
+    # the granaries did not"). A quay granary row is laid ALONG the water it loads from, and a
+    # jetty runs ACROSS it - both angles are properties of the bank, not constants, so a
+    # re-routed river must drag them or they read as a row built by someone who could not see
+    # the water. Same family as towpath_hugs_the_bank: derive the angle from the CURRENT
+    # polyline, never keep a rot that was right before the re-route.
+    bp_riv = [w9["poly"] for w9 in M.get("streams", [])] + [cn9["poly"] for cn9 in M.get("canals", [])]
+    if bp_riv:
+
+        def bp_bearing(px: float, py: float) -> tuple[float, float]:
+            bp_best = (1e9, 0.0)
+            for wp9 in bp_riv:
+                for i9 in range(len(wp9) - 1):
+                    d9 = seg_dist(px, py, wp9[i9], wp9[i9 + 1])
+                    if d9 < bp_best[0]:
+                        bp_best = (d9, math.degrees(math.atan2(wp9[i9 + 1][1] - wp9[i9][1], wp9[i9 + 1][0] - wp9[i9][0])))
+            return bp_best
+
+        bp_bad = []
+        for bp_key, bp_want in (("granaries", 0.0), ("jetties", 90.0)):  # rows lie ALONG the bank; stages run ACROSS it
+            for bp_f in M.get(bp_key, []):
+                if not isinstance(bp_f, dict) or "x" not in bp_f:
+                    continue
+                bp_d, bp_bear = bp_bearing(bp_f["x"], bp_f["y"])
+                if bp_d > 140:
+                    continue  # not a waterside instance (an inland store is not bank-parallel)
+                bp_off = abs(((float(bp_f.get("rot", 0.0)) - bp_bear - bp_want) % 180.0))
+                bp_off = min(bp_off, 180.0 - bp_off)
+                if bp_off > 4.0:
+                    bp_bad.append((bp_key, round(bp_f["x"]), round(bp_f["y"]), round(bp_off, 1)))
+        check(
+            "waterside_works_follow_the_bank",
+            not bp_bad,
+            f"waterside work(s) off their bank's angle (key, x, y, degrees off): {sorted(set(bp_bad))[:4]} - a quay granary row lies "
+            f"ALONG the water and a jetty runs ACROSS it; recompute the rot from the CURRENT river polyline at that point (a bank "
+            f"angle is derived geometry, not a constant that survives a re-route)",
+        )
+
+    # A SLUICE GATE SITS ON ITS CHANNEL'S CENTERLINE (GM 2026-08-10, after the same defect
+    # recurred across several re-lays: "the northern sluice gate is still misaligned with the
+    # irrigated channel that it is gating... I know we have automated checks for this, so I'm
+    # not sure how this keeps happening over and over again"). It kept happening because
+    # `sluice_gates_on_water` measures to the BANK: a gate 15.8px from the centerline of a 22px
+    # channel sits 4.8px past the bank, inside that rule's 6px tolerance, and passed - while
+    # reading as a frame floating beside the water. A sluice's frame spans BANK TO BANK, so the
+    # only correct seat is the centerline itself. Tolerance is a fraction of the channel's own
+    # half-width (a wide river's gate may sit a little off; a narrow ditch's may not) with a
+    # small absolute floor for the linework.
+    sc_waters = [(w9["poly"], float(w9.get("w", 9))) for w9 in M.get("streams", [])] + [(cn9["poly"], float(cn9.get("w", 12))) for cn9 in M.get("canals", [])]
+    sc_waters += [(ch9["poly"], float(ch9.get("w", 2.5))) for ch9 in M.get("channels", []) if ch9.get("poly")]
+    if M.get("moat"):
+        sc_waters.append((list(M["moat"]) + [M["moat"][0]], float(M.get("moat_width", 22))))
+    if sc_waters and M.get("sluice_gates"):
+        sc_bad = []
+        for sg9 in M["sluice_gates"]:
+            sc_best = min((min(seg_dist(sg9["x"], sg9["y"], wp9[i9], wp9[i9 + 1]) for i9 in range(len(wp9) - 1)), ww9) for wp9, ww9 in sc_waters)
+            sc_d, sc_w = sc_best
+            if sc_d > max(3.0, sc_w * 0.3):
+                sc_bad.append((round(sg9["x"]), round(sg9["y"]), round(sc_d, 1)))
+        check(
+            "sluice_gates_centered_on_their_channel",
+            not sc_bad,
+            f"sluice gate(s) off their channel's CENTERLINE (x, y, px off): {sc_bad[:4]} - the frame spans bank to bank, so the "
+            f"gate's center belongs ON the centerline; snap it to the nearest point of the watercourse polyline (being merely "
+            f"inside the water's band is what let this recur - sluice_gates_on_water measures to the bank)",
+        )
+
+    # A ROAD DOES NOT SIMPLY STOP (GM 2026-08-10: "the road leading to the southwest gate comes a
+    # little way into the city and then just stops... we expect that caravans coming into the city
+    # would need to be able to take this road in order to reach the castle keep"). A trunk road
+    # exists to carry traffic THROUGH: each end must leave the map, meet another road, or join a
+    # street/ring bed a wagon can turn onto. An end that dies in open ground is a road to nowhere.
+    if M.get("roads") or M.get("road"):
+        rj_ways = [r9["pts"] if isinstance(r9, dict) else r9 for r9 in M.get("roads", [])] + ([M["road"]] if M.get("road") else [])
+        rj_beds = [(s9["pts"], float(s9.get("w", 18)) / 2) for s9 in M.get("town_streets", [])]
+        if M.get("ring_road"):
+            rj_beds.append((list(M["ring_road"]) + [M["ring_road"][0]], float(M.get("ring_road_width", 15)) / 2))
+        rj_W, rj_H = float(meta.get("W", 1820)), float(meta.get("H", 1180))
+        rj_bad = []
+        for rj_i, rj_pts in enumerate(rj_ways):
+            if len(rj_pts) < 2:
+                continue
+            for rj_E in (rj_pts[0], rj_pts[-1]):
+                if rj_E[0] <= 8 or rj_E[1] <= 8 or rj_E[0] >= rj_W - 8 or rj_E[1] >= rj_H - 8:
+                    continue  # leaves the map
+                if any(min(seg_dist(rj_E[0], rj_E[1], o9[i9], o9[i9 + 1]) for i9 in range(len(o9) - 1)) <= 20 for j9, o9 in enumerate(rj_ways) if j9 != rj_i and len(o9) >= 2):
+                    continue  # meets another road
+                if any(min(seg_dist(rj_E[0], rj_E[1], b9[i9], b9[i9 + 1]) for i9 in range(len(b9) - 1)) <= bh9 + 14 for b9, bh9 in rj_beds if len(b9) >= 2):
+                    continue  # joins a street or the ring
+                # ...and a castle approach legitimately ENDS at the gate it serves: the ote-suji
+                # stops at the ote-mon and the karamete road at the postern tower, exactly as a
+                # real approach does. That is a terminus with a reason, not a road to nowhere.
+                if any(
+                    math.hypot(rj_E[0] - cg9[0], rj_E[1] - cg9[1]) <= 60 for cs9 in M.get("castles", []) for cg9 in (list(cs9.get("gates") or []) + ([cs9["karamete"]] if cs9.get("karamete") else []))
+                ):
+                    continue
+                rj_bad.append((round(rj_E[0]), round(rj_E[1])))
+        check(
+            "roads_join_the_network",
+            not rj_bad,
+            f"road end(s) stopping in open ground (x, y): {sorted(set(rj_bad))[:4]} - a trunk road carries traffic THROUGH: run it "
+            f"off the map, into another road, or onto a street/ring bed a wagon can turn from (a gate road must reach the network "
+            f"that serves the castle and the markets)",
+        )
+
     # NO WAY STANDS IN WATER WITHOUT A DECK (GM 2026-08-10: "roads should not overlap with water
     # without a bridge present"). `roads_bridge_water` already demands a deck wherever a CARRIED
     # way's centerline CROSSES a watercourse's centerline - but it reads only the ways
@@ -9326,7 +9438,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # "near ring" as "all visible countryside" and diluted the fraction with ground the check was never
         # meant to judge. Capping by real distance keeps the check meaning the same at ANY frame size.
         # Towns (no wall) keep their tight frames; unchanged there.
-        nr_band = (800.0 / (meta.get("ftpx") or 1)) if (scale == "city" and nr_wall is not None and len(nr_wall) >= 3) else None
+        nr_band = (800.0 / (meta.get("ftpx") or 1)) if (URBAN and nr_wall is not None and len(nr_wall) >= 3) else None
         # SAMPLING WINDOW: for a walled city the band is sampled in CANVAS space (the wall bbox expanded
         # by the band), NOT the view - the manifest records full-canvas geometry, so the near ring exists
         # whether or not the crop shows it, and the metric must not shift when the frame is tightened
@@ -10776,7 +10888,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"{scale}_has_kosatsuba",
             len(kbs) >= floor_kb,
             f"a city posts the SET: {floor_kb} boards - the principal at the central market node + one per main gate (s.kosatsuba(...); meta(kosatsuba=False) to omit)"
-            if scale == "city"
+            if URBAN
             else "the settlement posts the state's standing law on an official notice board (s.kosatsuba(...) or s.place_kosatsuba(); meta(kosatsuba=False) to omit)",
         )
         routes_kb = ([M["road"]] if M.get("road") else []) + [st["pts"] for st in M.get("town_streets", [])] + ([M["lane"]] if M.get("lane") else []) + [ln["pts"] for ln in M.get("lanes", [])]
@@ -10839,7 +10951,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not edgeon_kb,
                 f"notice board(s) at {edgeon_kb} (x, y, degrees off) stand edge-on to the way they front - a kosatsu is a broadside signboard, so its long axis runs ALONG the road (rot = the road's bearing), never across it",
             )
-        if scale == "city" and kbs and M.get("gates"):
+        if URBAN and kbs and M.get("gates"):
             # every trafficked gate's approach corridor carries a board (~800 real ft of the
             # gate - the corridor, not the furnished throat itself)
             lim_gate_kb = 800.0 / float(meta.get("ftpx") or 1)
@@ -11690,7 +11802,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # of that expected household count, so it is a real quarter, not a token cluster of a few.
         samurai_h = [b for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large")]
         pop = meta.get("population", 0)
-        if pop and scale == "city":
+        if pop and URBAN:
             # CITY-ONLY: at the capital the samurai cohort is majority-HOUSED IN OTHER FORMS
             # (walled yashiki recorded as manors, retainer terraces as unit ranges), and
             # capital_housing_matches_band_targets pins every band to the budget - a detached
@@ -11948,14 +12060,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"merchant homes are not more SPREAD OUT than the laborers (median neighbor gap {mh:.0f}px vs laborer {lh:.0f}px; want >= 1.3x) - "
                     f"give merchant houses more room between them; the laborer warren is the dense, uniform contrast",
                 )
-        if scale == "city":
+        if URBAN:
             # a CAPITAL is fed BY THE RIVER, not its outskirts - the whole wharf/granary
             # doctrine (stipend rice arrives from the six provinces by boat; the frame shows
             # that supply chain: wharf, granaries, towpath). A provincial city's identity IS
             # its farm country, so the comb stays mandatory there. (021; capitals.md)
-            check(
-                "city_has_outside_farmland", bool([f for f in fields if runs_off_edge(f["outline"])]), "a city has extensive farmland outside its walls - at least one field must run off the map edge"
-            )
+            # a CAPITAL sheet frames the walled city and its suburbs; the domain's farmland lies
+            # off-sheet, so this asks for ground the map does not claim to show (audit 2026-08-10)
+            if scale != 'capital':
+                check(
+                    "city_has_outside_farmland",
+                    bool([f for f in fields if runs_off_edge(f["outline"])]),
+                    "a city has extensive farmland outside its walls - at least one field must run off the map edge",
+                )
         # civic amenities ported up from the town tier (a city is a bigger version of the same):
         check(
             "city_has_merchant_storehouses",
@@ -12610,7 +12727,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"{len(buraku_in)} burakumin inside the walls - a walled provincial city must keep >= 1 burakumin neighborhood within (they cannot be without burakumin during a siege)",
             )
             est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]
-            if scale == "city":  # CAPITAL-INVERTED (021): the capital's walled yashiki stand IN-WALL (020 doctrine) and its country cohort is detached houses, not 1-3 dispersed estates
+            if URBAN:  # CAPITAL-INVERTED (021): the capital's walled yashiki stand IN-WALL (020 doctrine) and its country cohort is detached houses, not 1-3 dispersed estates
                 check(
                     "city_samurai_estates_outside",
                     1 <= len(est_out) <= 3,
@@ -12640,7 +12757,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # exactly why the commoner inside-walls check exempts samurai, so this closes that gap
             # (validated instance: Tango's SE top_up sweep leaked 14 houses into the moat berm, 2026-07-20).
             sam_out = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large") and len(w) >= 3 and not point_in_poly(b["x"], b["y"], w)]
-            if scale == "city":  # CAPITAL-INVERTED (021): CAPITAL_SAMURAI_INWALL_FRAC deliberately keeps ~15% of the cohort in country seats on the approaches
+            if URBAN:  # CAPITAL-INVERTED (021): CAPITAL_SAMURAI_INWALL_FRAC deliberately keeps ~15% of the cohort in country seats on the approaches
                 check(
                     "city_samurai_houses_inside_walls",
                     not sam_out,
@@ -12871,12 +12988,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 if any(seg_dist(k["x"], k["y"], st["pts"][i], st["pts"][i + 1]) < st.get("w", 18) / 2 + 8 for st in M.get("town_streets", []) for i in range(len(st["pts"]) - 1))
             ]
             gated = [k for k in on_st_kido if gov and math.hypot(k["x"] - gov["x"], k["y"] - gov["y"]) < 480]
-            if scale == "city":  # CAPITAL-INVERTED (021): the capital adopts the ward MESH (kido at machi mouths; yashiki walls seal the samurai streets) - the 020 ward research's own recommendation
-                check(
-                    "city_samurai_quarter_gated",
-                    len(gated) >= 2,
-                    f"a walled city seals its samurai/government quarter with kido ward gates across the streets entering it (s.kido), not walls - {len(gated)} gate(s) bar the quarter's street entries near the yamen, need >= 2",
-                )
+            if URBAN:  # CAPITAL-INVERTED (021): the capital adopts the ward MESH (kido at machi mouths; yashiki walls seal the samurai streets) - the 020 ward research's own recommendation
+                # the ward SEAL is the interior-gate doctrine, which meta(ward_gates=False) turns
+                # off for a city that does not use it (GM 2026-08-10) - there is nothing to seal with
+                if meta.get('ward_gates', True):
+                    check(
+                        "city_samurai_quarter_gated",
+                        len(gated) >= 2,
+                        f"a walled city seals its samurai/government quarter with kido ward gates across the streets entering it (s.kido), not walls - {len(gated)} gate(s) bar the quarter's street entries near the yamen, need >= 2",
+                    )
             # ...and that ward must be SEALED: a continuous fence whose ends abut the city wall, that
             # a street pierces ONLY at a kido gate. Otherwise the gates can just be walked around, and
             # the road network connects samurai to commoner with no gate between them.
@@ -12898,12 +13018,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 for e in (bnd[0], bnd[-1]):
                     if len(w) >= 3 and edge_dist(e[0], e[1], w) > 45:
                         open_end.append((round(e[0]), round(e[1])))
-            if scale == "city":  # CAPITAL-INVERTED (021): same mesh doctrine - no continuous ward fence at the capital
-                check(
-                    "city_samurai_ward_sealed",
-                    bool(wards) and not bad_cross and not open_end,
-                    f"the samurai/government ward is not SEALED (s.ward): wards={len(wards)}, ungated street crossings={bad_cross}, fence ends not meeting the wall={open_end} - a kido gate can be walked around unless the fence is continuous, ends at the wall, and a street pierces it only at a gate",
-                )
+            if URBAN:  # CAPITAL-INVERTED (021): same mesh doctrine - no continuous ward fence at the capital
+                # the ward SEAL is the interior-gate doctrine, which meta(ward_gates=False) turns
+                # off for a city that does not use it (GM 2026-08-10) - there is nothing to seal with
+                if meta.get('ward_gates', True):
+                    check(
+                        "city_samurai_ward_sealed",
+                        bool(wards) and not bad_cross and not open_end,
+                        f"the samurai/government ward is not SEALED (s.ward): wards={len(wards)}, ungated street crossings={bad_cross}, fence ends not meeting the wall={open_end} - a kido gate can be walked around unless the fence is continuous, ends at the wall, and a street pierces it only at a gate",
+                    )
             # ...and the fence ends must actually TOUCH the wall - a gap (even a small one, which the
             # coarse 45px seal tolerance lets slide) means commoners can simply walk AROUND the end of
             # the fence. The end must abut the rampart within ~10px (about the wall's own half-width).
@@ -13173,8 +13296,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     return False
 
                 fed = [f["name"] for f in big_out if moat_fed(f)]
-                if scale == "city":  # CAPITAL-INVERTED (021): a capital walls its farms out and is fed BY the river (the wharf/granary doctrine)
-                    check("city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)")
+                if URBAN:  # CAPITAL-INVERTED (021): a capital walls its farms out and is fed BY the river (the wharf/granary doctrine)
+                    # a CAPITAL sheet frames the walled city and its suburbs; the domain's farmland lies
+                    # off-sheet, so this asks for ground the map does not claim to show (audit 2026-08-10)
+                    if scale != 'capital':
+                        check(
+                            "city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)"
+                        )
             # a gate market (guan-xiang) OUTSIDE EVERY MAIN-ROAD gate (GM decision 2026-07-22,
             # flophouse-research.md): the extramural gate-suburb formed along the road at each
             # trafficked gate - Beijing's gates all carried one, varying in scale (大关厢 vs small).
