@@ -670,12 +670,14 @@ s.place_wells((600, 1570, 690, 1650), spacing=60, coverage=False)
 s.place_wells((598, 1690, 700, 2050), spacing=55, coverage=False)
 s.place_wells((2000, 1955, 2100, 2062), spacing=50, coverage=False)
 s.place_wells((1870, 1855, 1980, 1950), spacing=55, coverage=False)
-s.place_wells((585, 2120, 1718, 2222), spacing=95, coverage=False)  # the south band's idobata, off the street and the x1760 lane
+s.place_wells((585, 2125, 845, 2220), spacing=90, coverage=False)  # the south band's idobata, split between its lanes
+s.place_wells((910, 2125, 1540, 2220), spacing=90, coverage=False)
+s.place_wells((1600, 2125, 1725, 2220), spacing=85, coverage=False)
 s.place_wells((1800, 2120, 1950, 2222), spacing=90, coverage=False)
 s.place_wells((585, 2282, 1712, 2408), spacing=95, coverage=False)
 s.place_wells((1802, 2282, 1948, 2400), spacing=90, coverage=False)
 s.place_wells((2040, 1800, 2120, 1900), spacing=45, coverage=False)
-s.place_wells((1750, 1290, 1930, 1420), spacing=60, coverage=False)  # the thread-street pocket by Kurogi
+s.place_wells((1690, 1300, 1905, 1425), spacing=62, coverage=False)  # the thread machi's own idobata
 s.place_wells((700, 1800, 1000, 2050), spacing=72, coverage=False)
 s.place_wells((1500, 1800, 1900, 2100), spacing=72, coverage=False)
 s.place_wells((1050, 1900, 1450, 2100), spacing=80, coverage=False)
@@ -695,10 +697,9 @@ s.district("civic west detached", "detached", [(855, 1400), (1145, 1400), (1145,
 s.district("east street detached", "detached", [(2140, 1250), (2445, 1250), (2445, 1428), (2140, 1428)], rank_band="detached")
 s.district("north band detached west", "detached", [(1060, 260), (1340, 260), (1340, 370), (1060, 370)], rank_band="detached")
 s.district("north band detached east", "detached", [(1640, 260), (1840, 260), (1840, 362), (1640, 362)], rank_band="detached")
-s.alley([(1200, 300), (1200, 356)])
 s.alley([(1738, 246), (1738, 348)])
-s.rowpack((1065, 268, 1335, 362), _SAM * 10, court_every=8)  # the tight wall's N band holes take the missing detached files
-s.rowpack((1650, 268, 1832, 352), _SAM * 6, court_every=8)
+s.rowpack((1065, 268, 1335, 362), _SAM * 8, court_every=8)  # the tight wall's N band holes take the missing detached files
+s.rowpack((1688, 268, 1832, 352), _SAM * 4, court_every=8)
 s.district("west crescent machi", "machi", [(445, 1450), (625, 1450), (625, 2075), (445, 2075)], rank_band=None)
 s.block_polys.append([(592, 1738), (662, 1738), (662, 1818), (592, 1818)])
 s.placed.append((627, 1778, 70, 80))  # the crescent kido's crossing (reserved before the rows)
@@ -709,23 +710,28 @@ s.district("south band machi", "machi", [(790, 2050), (1995, 2050), (1995, 2345)
 s.block_polys.append([(895, 2245), (990, 2245), (990, 2340), (895, 2340)])  # Inari's backstrip stays lean (the temple rode the wall inward)
 
 
-s.street([(812, 2250), (2022, 2250)], width=s.lw(15))  # the band's own through-street
+s.street([(812, 2250), (2022, 2250)], width=s.lw(15))
+s.block_polys.append([(815, 2237), (2020, 2237), (2020, 2264), (815, 2264)])  # the band street's own corridor, held against the row pitch  # the band's own through-street
 s.alley([(880, 2060), (880, 2288)])
 s.alley([(1080, 2060), (1080, 2330)])
 
 s.alley([(1560, 2060), (1560, 2330)])
 s.alley([(1760, 2060), (1760, 2358)])
+s.alley([(1990, 1875), (1990, 2140)])
+s.alley([(1900, 2008), (2100, 2008)])
 s.rowpack((800, 2055, 1330, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 116, court_every=8)
 s.rowpack((1350, 2055, 1985, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 92, court_every=8)
 s.rowpack((1060, 1270, 1360, 1515), ["laborer", "servant", "merchant_house"] * 26, court_every=8)  # the freed SW approach ground joins the machi
 s.district("southwest approach machi", "machi", [(1055, 1265), (1365, 1265), (1365, 1520), (1055, 1520)], rank_band=None)
-s.district("thread machi", "machi", [(1670, 1295), (1905, 1295), (1905, 1440), (1670, 1440)], rank_band=None)
+s.district("thread machi", "machi", [(1575, 1295), (1905, 1295), (1905, 1440), (1575, 1440)], rank_band=None)
 for _kx, _ky in ((1055, 1375), (1905, 1390), (1670, 1390), (1995, 2250), (1800, 1440)):
     s.kido(_kx, _ky, horizontal=False)
     s.block_polys.append([(_kx - 40, _ky - 40), (_kx + 40, _ky - 40), (_kx + 40, _ky + 40), (_kx - 40, _ky + 40)])
     s.placed.append((_kx, _ky, 80, 80))
-s.rowpack((1680, 1300, 1900, 1450), ["laborer", "servant", "merchant_house"] * 20, court_every=8)
-s.rowpack((1555, 1448, 1862, 1556), _SAM * 16, court_every=8)  # the magistracy flank keeps its detached files
+s.rowpack((1580, 1300, 1900, 1438), ["laborer", "servant", "merchant_house"] * 26, court_every=8)
+s.rowpack((1555, 1448, 1745, 1556), _SAM * 9, court_every=8)  # the magistracy flank keeps its detached files
+s.district("east rim detached", "detached", [(2245, 1660), (2405, 1660), (2405, 1800), (2245, 1800)], rank_band="detached")
+s.rowpack((2250, 1665, 2335, 1795), _SAM * 4, court_every=8)
 s.rowpack((1565, 1300, 1660, 1435), _SAM * 6, court_every=8)  # the S band's cleared ground inside the new arc
 s.rowpack((628, 1326, 772, 1362), _SAM * 3, court_every=8)
 s.rowpack((628, 1390, 772, 1424), _SAM * 3, court_every=8)
@@ -840,27 +846,18 @@ s.bound = [[250, 2180], [450, 2180], [450, 2310], [250, 2310]]
 _SWB = s.bound
 s.bound = [[220, 1990], [505, 1990], [505, 2430], [220, 2430]]
 _MKB = s.bound
-s.bound = [[281, 1942], [581, 1942], [581, 2227], [281, 2227]]
-s.frontage([(723, 1946), (361, 2137)], ["shop"] * 8, width=8, spacing=26, setback=20, jitter=1)  # SW gate market, on the road itself
+_MKB = s.bound
+s.bound = [[280, 1830], [700, 1830], [700, 2210], [280, 2210]]
+s.frontage([(650, 1885), (502, 1989), (320, 2105)], ["shop"] * 9, width=8, spacing=26, setback=20, jitter=1)  # SW gate market, on the road itself
+s.bound = [[1310, 2470], [1490, 2470], [1490, 2860], [1310, 2860]]
+s.frontage([(1400, 2487), (1400, 2830)], ["shop"] * 13, width=8, spacing=24, setback=20, jitter=1)  # S gate market, down the Imperial road
+s.bound = [[830, 55], [1240, 55], [1240, 205], [830, 205]]
+s.frontage([(1190, 95), (1045, 108), (870, 148)], ["shop"] * 10, width=8, spacing=25, setback=18, jitter=1)  # N gate market, along the road under the wall
+s.bound = [[2430, 1200], [2830, 1200], [2830, 1400], [2430, 1400]]
+s.frontage([(2545, 1306), (2800, 1247)], ["shop"] * 9, width=8, spacing=32, setback=20, jitter=1)  # E gate market on the Fox-lands road
 s.bound = _MKB
-s.bound = [[1321, 2377], [1461, 2377], [1461, 2767], [1321, 2767]]
-_MKB2 = s.bound
-s.bound = [[1531, 2433], [1711, 2433], [1711, 2828], [1531, 2828]]
-s.frontage([(1621, 2448), (1621, 2808)], ["shop"] * 14, width=8, spacing=22, setback=20, jitter=1)  # S gate market
-s.bound = [[1211, -17], [1611, -17], [1611, 93], [1211, 93]]
-s.frontage([(1581, 13), (1421, -5)], ["shop"] * 8, width=8, spacing=19, setback=18, jitter=1)  # N gate market, along the road under the wall
-s.frontage([(1401, -3), (1253, 39)], ["shop"] * 5, width=8, spacing=26, setback=18, jitter=1)
-s.building(1313, 45, *s._dims("shop"), "shop")
-s.building(1329, -7, *s._dims("shop"), "shop")
-s.building(1585, 2464, *s._dims("shop"), "shop")
-s.building(1585, 2488, *s._dims("shop"), "shop")  # scan-seated: the N/S markets each sat one shop short of the floor
-s.bound = _MKB2  # S gate market, down the Imperial road
-s.bound = [[2431, 1277], [2821, 1277], [2821, 1422], [2431, 1422]]
-s.frontage([(2446, 1403), (2803, 1339)], ["shop"] * 9, width=8, spacing=36, setback=20, jitter=1)  # E gate market on the Fox-lands road
 s.bound = _SWB  # guan-xiang shops strung along the SW approach road
 s.bound = [[119, 1687], [391, 1687], [391, 2237], [119, 2237]]
-s.alley([(234, 1702), (234, 2202)])
-s.alley([(151, 1809), (359, 1809)])  # the west verge's own lanes
 s.bound = [[421, 2087], [766, 2087], [766, 2282], [421, 2282]]
 s.bound = [[886, 2337], [1291, 2337], [1291, 2497], [886, 2497]]
 s.bound = _CITY_BOUND2
