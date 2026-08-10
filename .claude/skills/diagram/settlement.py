@@ -12024,8 +12024,24 @@ class Settlement:
             tx, ty = x + sx * (hw - yw / 2), y + sy * (hh - yh / 2)
             self.add_wall(f'<rect x="{tx - yw / 2:.1f}" y="{ty - yh / 2:.1f}" width="{yw:.1f}" height="{yh:.1f}" fill="#B9A882" stroke="{wall}" stroke-width="{ww * 0.6:.1f}"/>')
             self.M.setdefault("castle_towers", []).append({"x": round(tx, 1), "y": round(ty, 1), "w": round(yw, 1), "h": round(yh, 1), "kind": "yagura"})
+        # A GATE TOWER MUST READ AS A GATE (GM 2026-08-10: "I would have expected to just see
+        # gates at the castle keep... these look kind of like guard towers"). It IS a gate - a
+        # YAGURA-MON, the gatehouse with a turret built over its passage, which is the standard
+        # Japanese castle gate; the corner works are sumi-yagura, and the ishigaki carries a
+        # walkway behind its hei parapet, which is why a castle needs far fewer towers than a
+        # European curtain wall. The DRAWING was the problem: a gate tower was the same plain
+        # rectangle as a corner turret, so nothing said "you pass through here". It now carries
+        # the passage - a gap in the tower's footprint on the wall's axis, with the jambs drawn
+        # heavier - so the eye reads a gatehouse straddling an opening.
         gtw, gth = self.px(88), self.px(52)
-        self.add_wall(f'<rect x="{gate[0] - gtw / 2:.1f}" y="{gate[1] - gth / 2:.1f}" width="{gtw:.1f}" height="{gth:.1f}" fill="#B9A882" stroke="{wall}" stroke-width="{ww * 0.75:.1f}"/>')
+        _gx0, _gy0 = gate[0] - gtw / 2, gate[1] - gth / 2
+        _horiz = abs(gate[1] - y) > abs(gate[0] - x)  # a gate on the N or S face: passage runs in y
+        self.add_wall(f'<rect x="{_gx0:.1f}" y="{_gy0:.1f}" width="{gtw:.1f}" height="{gth:.1f}" fill="#B9A882" stroke="{wall}" stroke-width="{ww * 0.75:.1f}"/>')
+        _pw = (gtw if _horiz else gth) * 0.34  # the passage, a third of the gatehouse's span
+        if _horiz:
+            self.add_wall(f'<rect x="{gate[0] - _pw / 2:.1f}" y="{_gy0:.1f}" width="{_pw:.1f}" height="{gth:.1f}" fill="#E3D6B2" stroke="{wall}" stroke-width="{ww * 0.5:.1f}"/>')
+        else:
+            self.add_wall(f'<rect x="{_gx0:.1f}" y="{gate[1] - _pw / 2:.1f}" width="{gtw:.1f}" height="{_pw:.1f}" fill="#E3D6B2" stroke="{wall}" stroke-width="{ww * 0.5:.1f}"/>')
         self.M.setdefault("castle_towers", []).append({"x": round(gate[0], 1), "y": round(gate[1], 1), "w": round(gtw, 1), "h": round(gth, 1), "kind": "gate_tower"})
         # THE KARAMETE-MON (GM 2026-08-09, researched): the ote-mon/karamete-mon pair is the
         # STANDARD gate program - main gate south by aspect divination, rear gate opposite - and

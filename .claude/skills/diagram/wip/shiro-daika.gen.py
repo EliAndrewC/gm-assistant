@@ -440,7 +440,7 @@ s.bound = _CITY_BOUND
 # class stays the ote-suji's alone). Ends meet the ring road for circulation; the E-W pair
 # at y=1350 stops clear of the government band (no street across the ministry fronts).
 s.street([(620, 1770), (2180, 1770)], width=s.lw(18), main=True)  # ends short of the rampart's tower line
-s.street([(880, 2005), (1799, 2005)], width=s.lw(15))  # dropped south of the Temple of Inari's hall (992,1937)
+s.street([(802, 2005), (1799, 2005)], width=s.lw(15))  # dropped south of the Temple of Inari's hall (992,1937)
 s.street([(1040, 1284), (1040, 2238)], width=s.lw(15))  # x=1040 clears the Temple of Inari's hall (~x992)
 s.street([(1800, 1300), (1800, 1540)], width=s.lw(15))  # stops at the Benten precinct's reserved ground
 s.street([(1800, 1700), (1800, 2236)], width=s.lw(15))  # ...and resumes south of it (a precinct blocks a street; the walls are the dead end)
@@ -529,7 +529,7 @@ s.alley([(640, 1375), (640, 1552)])  # the D5/west mid-band pocket (x=640: clear
 # the east gate ward (its road runs ~y1170)
 s.alley([(2305, 2080), (2440, 1910)])  # the wharf's upstream bank boxes
 # the east approach samurai seats
-s.alley([(530, 770), (530, 1430)])  # the west rim's spine (early: wells must not seat on its line)
+s.alley([(530, 770), (532, 1470)])  # the west rim's spine (early: wells must not seat on its line)
 s.alley([(740, 1585), (740, 1880)])  # stops short of the SW terrace window
 s.alley([(880, 1560), (880, 2005)])  # runs THROUGH to the y2005 street (it stopped 23px short)  # snapped: kagi road leg to the ring's SW curve
 s.alley([(1180, 1560), (1180, 2095)])
@@ -592,7 +592,7 @@ s.rowpack((464, 1268, 505, 1313), ["monk_house"] * 2, court_every=3)
 s.rowpack((641, 545, 685, 587), ["monk_house"] * 2, court_every=3)  # west of the Hotei hall, under the ring curve
 s.small_shrine(547, 1395)
 s.small_shrine(681, 1565)
-s.small_shrine(862, 2008)
+s.small_shrine(866, 2032)
 s.small_shrine(619, 1635)
 s.small_shrine(479, 1095)
 s.brewery(1130, 1700)
@@ -615,7 +615,7 @@ s.kiln(
 # everywhere, so carve a laborer-only pocket and seat the doss at its heart
 s.placed.append((1153, 2284, 46, 334))  # hold the doss seat before the rows fill in
 s.placed.append((1837, 1352, 34, 24))  # keep the SE pasture verge clear (a lone well-less seat kept landing here)
-s.rowpack((1045, 1920, 1305, 2040), ["laborer_large"] * 4 + ["laborer"] * 26)
+s.rowpack((1045, 1920, 1330, 2060), ["laborer_large"] * 4 + ["laborer"] * 34)
 s.flophouse(1153, 2284)  # the in-wall doss-house, deep in the laborer core
 s.flophouse(386, 2204)  # outside the SW gate
 # caravan facilities just inside each gate: inn + big stables (open ground kept by their
@@ -753,7 +753,7 @@ s.street([(1040, 2238.1), (2005.3, 2234.1)], width=s.lw(15))
 # list at the moment they run, so an alley drawn after them cannot be dodged (GM
 # 2026-08-10: wells sat on the S band roji for exactly this reason)
 s.alley([(1741, 256), (1738, 348)])
-s.alley([(535, 1470), (535, 1975)])  # the crescent's spine
+s.alley([(532, 1470), (535, 1975)])  # the crescent's spine
 s.alley([(500, 1767), (620, 1760)])
 s.alley([(880, 2005), (879, 2274)])  # starts ON the y2005 street
 s.alley([(1560, 2005), (1560, 2236)])
@@ -835,7 +835,7 @@ _WELL_QUARTERS = (
     (2145, 635, 2405, 1250, 46),  # the E gate machi
     (2140, 1440, 2320, 1640, 60),  # the E street machi
     (430, 750, 590, 1445, 60),  # the W rim machi
-    (445, 1450, 610, 2075, 60),  # the W crescent machi
+    (445, 1450, 610, 2075, 52),  # the W crescent machi
     (1090, 1265, 1365, 1520, 63),  # the SW approach machi
     (1575, 1300, 1836, 1440, 63),  # the thread machi
     (2000, 1620, 2115, 1800, 60),  # the entertainment quarter
@@ -913,8 +913,8 @@ s.block_polys.append([(895, 2245), (990, 2245), (990, 2340), (895, 2340)])  # In
 
 s.block_polys.append([(815, 2237), (2020, 2237), (2020, 2264), (815, 2264)])  # the band street's own corridor, held against the row pitch  # the band's own through-street
 
-s.rowpack((800, 2100, 1330, 2320), ["laborer", "servant", "merchant_house", "laborer"] * 112, court_every=11)
-s.rowpack((1350, 2100, 1985, 2320), ["laborer", "servant", "merchant_house", "laborer"] * 88, court_every=11)
+s.rowpack((800, 2100, 1330, 2320), ["laborer", "servant", "merchant_house", "laborer"] * 124, court_every=11)
+s.rowpack((1350, 2100, 1985, 2320), ["laborer", "servant", "merchant_house", "laborer"] * 104, court_every=11)
 s.rowpack((1060, 1270, 1360, 1515), ["laborer", "servant", "merchant_house"] * 34, court_every=10)  # the freed SW approach ground joins the machi
 s.district("southwest approach machi", "machi", [(1055, 1265), (1365, 1265), (1365, 1520), (1055, 1520)], rank_band=None)
 s.district("thread machi", "machi", [(1575, 1295), (1905, 1295), (1905, 1440), (1575, 1440)], rank_band=None)
@@ -972,8 +972,8 @@ s.rowpack((1440, 1600, 1900, 1660), _RICH * 14, court_every=6)
 s.rowpack((640, 1690, 1020, 1740), ["laborer_large"] * 24, court_every=6)
 s.rowpack((2160, 940, 2390, 1000), ["laborer_large"] * 24, court_every=6)
 s.rowpack((1440, 1690, 1900, 1740), ["laborer_large"] * 24, court_every=6)
-s.rowpack((560, 1580, 1385, 2062), _MIX * 400, court_every=12)
-s.rowpack((1415, 1580, 1930, 2062), _MIX * 330, court_every=12)
+s.rowpack((556, 1576, 1390, 2072), _MIX * 448, court_every=13)
+s.rowpack((1410, 1576, 1934, 2072), _MIX * 372, court_every=13)
 s.rowpack((1080, 2100, 1290, 2240), _MIX * 40, court_every=9)  # the S-band dead-core infill (021 endgame)
 s.rowpack((2000, 1580, 2115, 2085), (["laborer", "laborer_large", "servant"]) * 28, court_every=6)  # the SE-east strip carries a wealth band (labL toward the 6% floor)
 s.rowpack((1950, 560, 1978, 1310), ["laborer", "merchant_house"] * 40, court_every=6)

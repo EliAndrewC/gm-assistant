@@ -11153,3 +11153,18 @@ def test_extramural_housing_serves_its_work():
     assert "extramural_housing_serves_its_work" not in f(beside)
     across = {**base, "buildings": [{"x": 1800 + 12 * i, "y": 2200, "w": 10, "h": 7, "rot": 0, "kind": "laborer"} for i in range(6)]}
     assert "extramural_housing_serves_its_work" in f(across)
+
+
+def test_streets_reach_neighbors_catches_perpendicular_approaches():
+    """GM 2026-08-10: "two city streets which approach each other... generally should
+    intersect." The aligned-only test missed a street ending a short way off one it meets at a
+    CORNER angle - and the first cut of the perpendicular test compared the end's bearing
+    against the LINE OF SIGHT to the other street, which makes two parallel streets 60px apart
+    look perpendicular. It must compare against the other street's own bearing."""
+    base = {"meta": {"scale": "city", "walled": True, "W": 2000, "H": 2000, "ftpx": 3}, "wall": WALLSQ, "gates": [[500, 200]]}
+    tee = {**base, "town_streets": [{"pts": [[400, 300], [400, 900]], "w": 10}, {"pts": [[470, 600], [900, 600]], "w": 10}]}
+    assert "city_streets_reach_their_neighbors" in f(tee)  # the east street stops 70px off the north-south one
+    joined = {**base, "town_streets": [{"pts": [[400, 300], [400, 900]], "w": 10}, {"pts": [[402, 600], [900, 600]], "w": 10}]}
+    assert "city_streets_reach_their_neighbors" not in f(joined)
+    parallel = {**base, "town_streets": [{"pts": [[400, 300], [400, 900]], "w": 10}, {"pts": [[460, 300], [460, 900]], "w": 10}]}
+    assert "city_streets_reach_their_neighbors" not in f(parallel)  # 60px apart and PARALLEL - not a failed junction
