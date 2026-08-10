@@ -5827,12 +5827,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "marshes",
         ):
             for s in M.get(k, []):
-                if (
-                    s.get("poly")
-                    and _box_hits_poly(tb, s["poly"])
-                    or "w" in s
-                    and not (tb[2] < s["x"] - s["w"] / 2 or tb[0] > s["x"] + s["w"] / 2 or tb[3] < s["y"] - s["h"] / 2 or tb[1] > s["y"] + s["h"] / 2)
-                ):
+                # THE POLY IS AUTHORITATIVE WHERE THERE IS ONE (2026-08-10): a scattered marsh
+                # records a w/h AABB spanning its whole scatter - kikuta's pond fringe measures
+                # 5,040 px across - so falling through to the box after the poly MISSES reports a
+                # title sitting on ground the feature does not occupy. Only a record with no
+                # outline is judged by its box.
+                _thit_now = (
+                    _box_hits_poly(tb, s["poly"])
+                    if s.get("poly")
+                    else ("w" in s and not (tb[2] < s["x"] - s["w"] / 2 or tb[0] > s["x"] + s["w"] / 2 or tb[3] < s["y"] - s["h"] / 2 or tb[1] > s["y"] + s["h"] / 2))
+                )
+                if _thit_now:
                     thit.append(k)
                     break
             if thit:
@@ -8661,6 +8666,66 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"naming the defenses; move the label off the wall band (label_xy), keeping it beside the feature it names",
         )
 
+    # A STREET EARNS ITS LENGTH ON BOTH SIDES (GM 2026-08-10: "several city streets extend out
+    # into empty space with nothing on either side of them and also not leading to anywhere...
+    # this is essentially a road to nowhere check"). `city_streets_have_buildings` measures ONE
+    # side and excuses frontage onto claimed open ground, which is right for a street along a
+    # drill ground or a firebreak - but a long stretch bare on BOTH sides is a street nobody
+    # walks, and the GM accepts that placement order may lay one down before that is knowable,
+    # so the CHECK is the backstop. Claimed ground does not excuse this one: the point is that
+    # the street serves nothing, not that the ground beside it is spoken for.
+    if URBAN and M.get("town_streets"):
+        bs_blds = [
+            b9
+            for k9 in (
+                "buildings",
+                "shops",
+                "flophouses",
+                "inns",
+                "manors",
+                "ministries",
+                "religious",
+                "storehouses",
+                "bathhouses",
+                "breweries",
+                "stables",
+                "kura",
+                "precincts",
+                "castles",
+                "mausoleums",
+                "granaries",
+            )
+            for b9 in M.get(k9, [])
+            if isinstance(b9, dict) and "x" in b9
+        ]
+        bs_grid = GridIndex(120.0)
+        for b9 in bs_blds:
+            bs_grid.add(b9["x"] - 60, b9["y"] - 60, b9["x"] + 60, b9["y"] + 60, (b9["x"], b9["y"]))
+        bs_bad = []
+        for st9 in M["town_streets"]:
+            pts9 = st9["pts"]
+            bs_worst = bs_run = 0.0
+            for j9 in range(len(pts9) - 1):
+                a9, b9p = pts9[j9], pts9[j9 + 1]
+                bs_len = math.hypot(b9p[0] - a9[0], b9p[1] - a9[1])
+                for k9 in range(max(1, int(bs_len // 20)) + 1):
+                    t9 = k9 / max(1, int(bs_len // 20))
+                    x9, y9 = a9[0] + (b9p[0] - a9[0]) * t9, a9[1] + (b9p[1] - a9[1]) * t9
+                    if any((bx9 - x9) ** 2 + (by9 - y9) ** 2 < 60 * 60 for bx9, by9 in bs_grid.near(x9, y9)):
+                        bs_run = 0.0
+                    else:
+                        bs_run += 20.0
+                        bs_worst = max(bs_worst, bs_run)
+            if bs_worst >= 300:
+                bs_bad.append((round(pts9[0][0]), round(pts9[0][1]), round(bs_worst)))
+        check(
+            "city_streets_serve_both_sides",
+            not bs_bad,
+            f"city street(s) with a long stretch bare on BOTH sides (start x, y, px): {bs_bad[:4]} - a street nobody fronts is a "
+            f"road to nowhere; shorten it to the fabric it serves, or fill the block it opens (claimed open ground does not excuse "
+            f"this one - the objection is that the street serves nothing)",
+        )
+
     # A SHOP FACES THE WAY IT FRONTS (GM 2026-08-10: "at the northern gate market there is a row
     # of several merchant shops, and then just one of those shops is oriented facing away from
     # the road"). A storefront IS its street face - the noren, the counter and the goods are on
@@ -8865,14 +8930,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     fr_view = meta.get("view")
     if fr_view and len(fr_view) == 4:
         fr_x, fr_y, fr_w, fr_h = fr_view
-        fr_band = 400.0 / float(meta.get("ftpx", 1) or 1)  # 400 real ft: the aggressive city margin plus its own slack
+        fr_band = 150.0 / float(meta.get("ftpx", 1) or 1)  # 150 real ft: the GM's ~100 ft target plus the crop margin's own slack (2026-08-10)
         fr_pts: list[tuple[float, float]] = []
         for fr_k, fr_v in M.items():
-            if fr_k in ("meta", "labels", "title", "scalebar", "districts") or not isinstance(fr_v, list):
+            if fr_k in ("meta", "title", "scalebar", "districts") or not isinstance(fr_v, list):
                 continue
             for fr_r in fr_v:
                 if isinstance(fr_r, dict) and isinstance(fr_r.get("x"), (int, float)):
-                    fr_pts.append((fr_r["x"], fr_r["y"]))
+                    # the EXTENT, not the centre: a kiln's yard reaches 20px past its record, and
+                    # the crop frames boxes - measuring centres reads a tight frame as loose
+                    fr_hw = float(fr_r.get("w", 0) or fr_r.get("r", 0) * 2 or 0) / 2
+                    fr_hh = float(fr_r.get("h", 0) or fr_r.get("r", 0) * 2 or 0) / 2
+                    fr_pts += [(fr_r["x"] - fr_hw, fr_r["y"] - fr_hh), (fr_r["x"] + fr_hw, fr_r["y"] + fr_hh)]
+                elif fr_k == "labels" and isinstance(fr_r, (list, tuple)) and len(fr_r) >= 4:
+                    # a CAPTION is drawn ink and the frame must contain it (labels_within_image),
+                    # so a label box legitimately sets an edge - the crop's own box list includes it
+                    fr_pts += [(float(fr_r[0]), float(fr_r[1])), (float(fr_r[2]), float(fr_r[3]))]
                 elif fr_k in ("alleys", "town_streets", "torii") and isinstance(fr_r, dict) and fr_r.get("pts"):
                     # a drawn WAY inside the frame is content (its end is a real place); the
                     # river/road polylines are not - they leave the map whatever the frame does,
@@ -8891,7 +8964,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             check(
                 "map_frame_hugs_its_content",
                 not fr_bad,
-                f"map frame carrying dead margin on the {fr_bad} side(s) - no drawn feature within 400 ft of the edge; "
+                f"map frame carrying dead margin on the {fr_bad} side(s) - no drawn feature within 150 ft of the edge; "
                 f"drop the stale per-side crop override (s.crop_city(south=..., east=...)) and let the frame follow the content",
             )
 
@@ -8988,11 +9061,25 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # a MOAT pushes the head of the strip out by its own width plus the bridge's
                 # landing - stalls cannot stand on the crossing - so the allowance grows by the
                 # moat band where one runs past this gate (the capital's N gate, 2026-08-10)
-                gm_allow = 450.0 / xm_ftpx
+                # The pool's attested spread is 157-273 ft from the gate (Tango, Minami,
+                # Nagahara). A moated gate adds the ground the market CANNOT occupy: the moat
+                # band, the bridge's deck and landings, and the gate's own furniture apron -
+                # measured from the map rather than assumed, so a gate with more works in front
+                # of it earns more room and a bare gate earns none (GM 2026-08-10).
+                gm_allow = 280.0 / xm_ftpx
+                gm_blocked = 0.0
                 if M.get("moat"):
                     gm_md = min(seg_dist(gm_g[0], gm_g[1], M["moat"][i9], M["moat"][(i9 + 1) % len(M["moat"])]) for i9 in range(len(M["moat"])))
                     if gm_md <= float(M.get("moat_width", 22)) * 2:
-                        gm_allow += float(M.get("moat_width", 22)) * 2 + 60.0 / xm_ftpx
+                        gm_blocked = gm_md + float(M.get("moat_width", 22)) / 2
+                for gm_k in ("bridges", "gate_structs", "inspection_stations"):
+                    for gm_f in M.get(gm_k, []):
+                        if not isinstance(gm_f, dict) or "x" not in gm_f:
+                            continue
+                        gm_fd = math.hypot(gm_f["x"] - gm_g[0], gm_f["y"] - gm_g[1])
+                        if gm_fd < 120:
+                            gm_blocked = max(gm_blocked, gm_fd + max(float(gm_f.get("w", 0)), float(gm_f.get("h", 0)), float(gm_f.get("span", 0))) / 2)
+                gm_allow += gm_blocked
                 if gm_near > gm_allow:
                     gm_bad.append((round(gm_g[0]), round(gm_g[1]), round(gm_near)))
         check(

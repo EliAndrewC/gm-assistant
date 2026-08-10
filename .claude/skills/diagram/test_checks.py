@@ -11095,3 +11095,19 @@ def test_captions_sit_by_their_feature_and_clear_the_defenses():
     assert "captions_clear_of_the_defenses" in f(on_wall)
     off_wall = {"meta": {"scale": "city", "ftpx": 3}, "wall": WALLSQ, "labels": [[600, 470, 680, 480, 1, "settling basin"]]}
     assert "captions_clear_of_the_defenses" not in f(off_wall)
+
+
+def test_city_streets_serve_both_sides():
+    """GM 2026-08-10: "several city streets extend out into empty space with nothing on either
+    side of them and also not leading to anywhere... essentially a road to nowhere check."
+    city_streets_have_buildings measures ONE side and excuses claimed open ground; this one
+    fires when a long stretch is bare on BOTH."""
+    base = {"meta": {"scale": "city", "walled": True, "W": 2000, "H": 2000, "ftpx": 3}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]]}
+    bare = {**base, "town_streets": [{"pts": [[300, 400], [900, 400]], "w": 18}]}
+    assert "city_streets_serve_both_sides" in f(bare)
+    lined = {
+        **base,
+        "town_streets": [{"pts": [[300, 400], [900, 400]], "w": 18}],
+        "buildings": [{"x": 320 + 60 * i, "y": 360, "w": 14, "h": 10, "rot": 0, "kind": "laborer"} for i in range(11)],
+    }
+    assert "city_streets_serve_both_sides" not in f(lined)

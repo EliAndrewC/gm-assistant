@@ -11046,9 +11046,33 @@ class Settlement:
             # capital's east and southwest gates - captions_clear_of_the_defenses).
             _lhw0 = len(_ltext) * 9 * 0.55 / 2
             _lhh0 = 9 * 0.8
-            _reach = ring_inset + self.px(50) + abs(_rix / _rl) * _lhw0 + abs(_riy / _rl) * _lhh0 + 6
-            _lx = gx + _rix / _rl * _reach
-            _ly = gy + _riy / _rl * _reach
+            # ADAPTIVE: step the caption inward only as far as its own box needs to clear the
+            # wall and moat bands. A fixed extra push moved every gate caption on every map -
+            # including the ones already correct, which cost Nagahara's notice board its seat -
+            # while a fixed SMALL push left wide captions straddling the rampart on an east or
+            # west gate, because the box's reach along the radial was never counted (GM
+            # 2026-08-10, captions_clear_of_the_defenses).
+            # NB: read the wall from the ARGUMENT, not the manifest - city_wall records
+            # M["wall"] after this loop, so self.M["wall"] is still empty here and the clash
+            # test silently passed at step 0 (2026-08-10)
+            _wpts = [(float(q[0]), float(q[1])) for q in pts]
+            _wl = [(_wpts + [_wpts[0]], 9.0)] if len(_wpts) >= 3 else []
+            if self.M.get("moat"):
+                _wl.append((list(self.M["moat"]) + [self.M["moat"][0]], float(self.M.get("moat_width", 22)) / 2))
+            _reach = ring_inset + self.px(50)
+            for _lstep in range(24):
+                _lx = gx + _rix / _rl * (_reach + _lstep * 6)
+                _ly = gy + _riy / _rl * (_reach + _lstep * 6)
+                _q = [(_lx - _lhw0, _ly - _lhh0), (_lx + _lhw0, _ly - _lhh0), (_lx + _lhw0, _ly + _lhh0), (_lx - _lhw0, _ly + _lhh0)]
+                _clash = False
+                for _wp, _hw in _wl:
+                    if any(min(seg_dist(_qx, _qy, _wp[_i], _wp[_i + 1]) for _i in range(len(_wp) - 1)) < _hw for _qx, _qy in _q) or any(
+                        segments_cross(_q[_e], _q[(_e + 1) % 4], _wp[_i], _wp[_i + 1]) for _e in range(4) for _i in range(len(_wp) - 1)
+                    ):
+                        _clash = True
+                        break
+                if not _clash:
+                    break
             self.label(_lx, _ly, _ltext, 9, italic=True, color="#5A4326")
             # RESERVE the label's ground so no later pack lands a building under the text. city_wall runs
             # BEFORE the quarters pack, so the label cannot be auto-placed AROUND the buildings the way a
@@ -12550,6 +12574,20 @@ class Settlement:
                 n += 1
         for gx, gy, gw, gh in self.grove_rects:
             if covers(gx, gy, gw, gh):
+                n += 1
+        # THE RAMPART IS AN OBSTACLE TOO (GM 2026-08-10): a caption laid across the wall or the
+        # moat is swallowed by their ink and reads as naming the defenses. The ladder scored
+        # only footprints, so an auto-placed caption beside a wall-hugging feature drifted onto
+        # the wall - Hirameki's monastery and fire-tower captions both crossed it by a hair
+        # (captions_clear_of_the_defenses). Counted like any other hit, so the ladder simply
+        # prefers a clear rung.
+        for _wpts, _whw in ([(list(self.M["wall"]) + [self.M["wall"][0]], 9.0)] if len(self.M.get("wall") or []) >= 3 else []) + (
+            [(list(self.M["moat"]) + [self.M["moat"][0]], float(self.M.get("moat_width", 22)) / 2)] if self.M.get("moat") else []
+        ):
+            _c4 = corners if quad is None else quad
+            if any(seg_dist(_qx, _qy, _wpts[_i], _wpts[_i + 1]) < _whw for _qx, _qy in _c4 for _i in range(len(_wpts) - 1)) or any(
+                segments_cross(_c4[_e], _c4[(_e + 1) % 4], _wpts[_i], _wpts[_i + 1]) for _e in range(4) for _i in range(len(_wpts) - 1)
+            ):
                 n += 1
         for gs in self.M.get("gate_structs", []) + self.M.get("wall_towers", []):
             if covers(gs["x"], gs["y"], gs["w"], gs["h"]):

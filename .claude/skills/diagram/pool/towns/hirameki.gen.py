@@ -373,6 +373,7 @@ s.shrine_hall(
     h=40,
     kind="monastery",
     primary=False,
+    label_below=True,  # the hall is wedged against the west rampart, so the caption sits below it, off the wall band (GM 2026-08-10)
     # Benten ROLLED the full 7 (2026-07-23 per-temple re-roll) - the old Crane-relic monastery
     # turns out to be the heavily-patronized one. The avenue is authored as a CURVING sando:
     # the naive straight-south extension marched five arches through the Imperial chrysanthemum
@@ -683,7 +684,7 @@ s.village_grove([(2290, 1350), (2378, 1345), (2382, 1462), (2295, 1470)], role="
 # Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
 # perturbs nothing and stands on an ACTUAL gap. A FIRE-WATCH TOWER (hinomi-yagura, the magistrate's
 # bell-watch) stands in the tenement warren, watching its packed rooftops. WHY: settlements.md "Fire towers".
-s.fire_tower(1560, 1608, label="fire-watch tower")  # SE warren fringe inside the rampart - the manifest-scanned clearest seam (61px to the nearest roof, 32 to the wall)
+s.fire_tower(1560, 1584, label="fire-watch tower")  # SE warren fringe inside the rampart - the manifest-scanned clearest seam (61px to the nearest roof, 32 to the wall)
 
 s.title("Hirameki")
 
