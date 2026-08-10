@@ -8530,6 +8530,69 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # plank kept its seat when the drain's re-route moved the ford, and it lay on bare bank for
     # a whole feature - bridges_span_their_water silently skipped it (nothing to measure) and no
     # other rule owned the case. A check that never runs looks exactly like a check that passes.
+    # EXTRAMURAL FEATURES STAY TETHERED TO THE CITY (GM 2026-08-10: "the kiln works is wayyyyy
+    # out in the middle of nowhere... the gate markets look pretty far from the actual gates").
+    # Everything outside a wall belongs to something: a gate's market strings along its
+    # approach road FROM the gate, the nuisance works sit on the near ground the city can still
+    # police and reach, and the wharf trades belong to the landing. So an outside feature must
+    # be within reach of a GATE, of the WHARF works, or of a road it stands on - a feature that
+    # is near none of the three is floating, whatever its bearing from the city.
+    if len(M.get("wall") or []) >= 3 and M.get("gates"):
+        xm_wall = M["wall"]
+        xm_ftpx = float(meta.get("ftpx", 1) or 1)
+        xm_gate_reach = 900.0 / xm_ftpx  # 900 real ft: the gate market's own strip
+        xm_road_reach = 150.0 / xm_ftpx  # a works ON its haul road, not adrift beside it
+        xm_wharf = [(j["x"], j["y"]) if isinstance(j, dict) else (j[0], j[1]) for j in M.get("jetties", [])]
+        xm_wharf += [(g["x"], g["y"]) for g in M.get("granaries", []) if isinstance(g, dict) and "x" in g]
+        xm_roads = ([M["road"]] if M.get("road") else []) + [r["pts"] if isinstance(r, dict) else r for r in M.get("roads", [])]
+        xm_bad = []
+        for xm_key in ("kilns", "dye_yards", "tanning_yards", "lumber_yards", "shops", "inns", "stables", "flophouses"):
+            for xm_f in M.get(xm_key, []):
+                if not isinstance(xm_f, dict) or "x" not in xm_f or point_in_poly(xm_f["x"], xm_f["y"], xm_wall):
+                    continue
+                if min(math.hypot(xm_f["x"] - g[0], xm_f["y"] - g[1]) for g in M["gates"]) <= xm_gate_reach:
+                    continue
+                if xm_wharf and min(math.hypot(xm_f["x"] - wx, xm_f["y"] - wy) for wx, wy in xm_wharf) <= 300:
+                    continue
+                if xm_roads and min(min(seg_dist(xm_f["x"], xm_f["y"], rp[i9], rp[i9 + 1]) for i9 in range(len(rp) - 1)) for rp in xm_roads if len(rp) >= 2) <= xm_road_reach:
+                    continue
+                xm_bad.append((xm_key, round(xm_f["x"]), round(xm_f["y"])))
+        check(
+            "extramural_features_tethered",
+            not xm_bad,
+            f"outside feature(s) adrift - not within 900 ft of a gate, on a road, or at the wharf: {sorted(set(xm_bad))[:4]} - "
+            f"every extramural feature belongs to something; pull it onto its approach road (a works hauls on the road it uses), "
+            f"into the gate's market strip, or to the landing",
+        )
+        # ...and a GATE MARKET starts AT its gate. A market strip that begins hundreds of feet
+        # down the road reads as an unrelated hamlet: the stalls crowd the gate mouth because
+        # that is where the toll, the inspection and the traffic are.
+        gm_bad = []
+        for gm_g in M["gates"]:
+            gm_shops = [
+                b
+                for b in M.get("buildings", []) + M.get("shops", [])
+                if isinstance(b, dict) and b.get("kind") in ("shop", "merchant") and not point_in_poly(b["x"], b["y"], xm_wall) and math.hypot(b["x"] - gm_g[0], b["y"] - gm_g[1]) <= xm_gate_reach
+            ]
+            if len(gm_shops) >= 3:
+                gm_near = min(math.hypot(b["x"] - gm_g[0], b["y"] - gm_g[1]) for b in gm_shops)
+                # a MOAT pushes the head of the strip out by its own width plus the bridge's
+                # landing - stalls cannot stand on the crossing - so the allowance grows by the
+                # moat band where one runs past this gate (the capital's N gate, 2026-08-10)
+                gm_allow = 450.0 / xm_ftpx
+                if M.get("moat"):
+                    gm_md = min(seg_dist(gm_g[0], gm_g[1], M["moat"][i9], M["moat"][(i9 + 1) % len(M["moat"])]) for i9 in range(len(M["moat"])))
+                    if gm_md <= float(M.get("moat_width", 22)) * 2:
+                        gm_allow += float(M.get("moat_width", 22)) * 2 + 60.0 / xm_ftpx
+                if gm_near > gm_allow:
+                    gm_bad.append((round(gm_g[0]), round(gm_g[1]), round(gm_near)))
+        check(
+            "gate_markets_start_at_their_gate",
+            not gm_bad,
+            f"gate market(s) whose nearest stall is far down the road (gate x, y, px): {gm_bad[:4]} - a gate market crowds the "
+            f"gate mouth where the toll and the traffic are, then strings outward; move the head of the strip up to the gate",
+        )
+
     # PUBLIC WELLS DO NOT KNOT UP (GM 2026-08-10: "several places with 4-6 wells clustered
     # right next to each other... not how wells are positioned on any other map"). A public
     # well serves a neighborhood, so wellheads spread out - and the whole pool agrees: every
