@@ -11633,6 +11633,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             _sy_stbl = [b9 for b9 in M.get("buildings", []) if b9.get("kind") == "stables"]
             sam_wells = []
             for w in wells:
+                if w.get("kind") == "cistern":
+                    # a josui-ido draw-basin is INFRASTRUCTURE on the buried main, sited by the
+                    # aqueduct's reach (within ~600 ft of the settling basin), not a neighborhood
+                    # idobata - at the E gate that reach falls in the samurai quarter, and everyone
+                    # within reach of the main draws from it (021, the settled-wall pass).
+                    continue
                 if any(math.hypot(w["x"] - s9["x"], w["y"] - s9["y"]) < 80 for s9 in _sy_stbl):
                     continue
                 if len(wp) >= 3 and not inw(w["x"], w["y"]):
