@@ -573,7 +573,7 @@ s.district("entertainment quarter", "entertainment", [(2000, 1620), (2115, 1620)
 # market-day flophouses at the working gates, seated BEFORE the packs (the first seats
 # landed on the moat band and the Shiro Kyo roadbed once the suburbs grew around them)
 s.flophouse(1330, 2511)
-s.flophouse(2821, 1073)
+s.flophouse(2700, 1310)  # on the E gate road's south verge, inside the market's own strip
 s.flophouse(1325, 80)
 s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "north"), (1080, 1768, "south"), (1240, 1898, "east"), (1188, 1816, "west"), (1650, 1700, "south"), (1120, 1930, "north")])
 # ---- the TRADE WORKS + GATE CARAVAN PROGRAM (the urban battery's full demand; all
@@ -598,8 +598,8 @@ s.pawnshop(1245, 1690)
 s.bathhouses([(900, 1750), (1278, 1980), (1668, 1740), (2060, 1640), (1080, 1860), (1550, 1830), (2250, 1050)])
 s.dye_yard(2106, 2570)
 s.tanning_yard(1995, 2522, water="stream")  # ON the moat drain's west bank (its wash water; the towpath owns the river bank here) - GM 2026-08-10
-s.tanning_yard(2052, 2712, water="stream")
-s.kiln(330, 2560)
+s.tanning_yard(2062, 2560, water="stream")  # the pair shares the drain's downstream bank
+s.kiln(268, 2166)  # ON the SW approach road's outer leg (a kiln hauls fuel and clay by cart, so it stands on its haul road, not adrift in the fields - GM 2026-08-10)
 # the in-wall doss-house needs a HUMBLE quarter around it (>=115px merchant/temple-free,
 # research: the doya-gai sat among day-laborer rows) - the 4-mix machi has a merchant
 # everywhere, so carve a laborer-only pocket and seat the doss at its heart
@@ -1000,7 +1000,10 @@ s.frontage([(650, 1885), (502, 1989), (320, 2105)], ["shop"] * 9, width=8, spaci
 s.bound = [[1310, 2470], [1490, 2470], [1490, 2860], [1310, 2860]]
 s.frontage([(1400, 2487), (1400, 2830)], ["shop"] * 13, width=8, spacing=24, setback=20, jitter=1)  # S gate market, down the Imperial road
 s.bound = [[830, 55], [1240, 55], [1240, 205], [830, 205]]
-s.frontage([(1190, 95), (1045, 108), (870, 148)], ["shop"] * 10, width=8, spacing=25, setback=18, jitter=1)  # N gate market, along the road under the wall
+s.frontage([(1400, 120), (1200, 92), (1000, 116)], ["shop"] * 13, width=8, spacing=24, setback=16, jitter=1)
+s.frontage(
+    [(1390, 152), (1210, 128), (1030, 150)], ["shop", "merchant"] * 4, width=8, spacing=26, setback=-16, jitter=1
+)  # the strip's inner file, between road and moat bank  # N gate market: the strip STARTS at the gate mouth and runs west along the road (GM 2026-08-10)
 s.bound = [[2430, 1200], [2830, 1200], [2830, 1400], [2430, 1400]]
 s.frontage([(2545, 1306), (2800, 1247)], ["shop"] * 9, width=8, spacing=32, setback=20, jitter=1)  # E gate market on the Fox-lands road
 s.bound = _MKB

@@ -10974,3 +10974,21 @@ def test_well_density_uses_a_higher_ceiling_for_outcast_rows():
         "buildings": [{"x": 740 + (i % 8) * 6, "y": 740 + (i // 8) * 6, "w": 8, "h": 6, "rot": 0, "kind": "burakumin"} for i in range(40)],
     }  # inside the wall, 340px+ from the only well
     assert "city_neighborhoods_have_wells" in f(far)  # the reach rule still binds on outcast rows
+
+
+def test_extramural_features_tethered_and_gate_markets_start_at_their_gate():
+    """GM 2026-08-10: "the kiln works is wayyyyy out in the middle of nowhere" and "the gate
+    markets look pretty far from the actual gates". Everything outside a wall belongs to
+    something - a gate, a road it hauls on, or the wharf - and a gate market crowds its gate."""
+    base = {
+        "meta": {"scale": "city", "walled": True, "W": 3000, "H": 3000, "ftpx": 3},
+        "wall": WALLSQ,
+        "gates": [[500, 200], [500, 800]],
+        "roads": [{"pts": [[500, 200], [500, -400]], "w": 9}],
+    }
+    assert "extramural_features_tethered" in f({**base, "kilns": [{"x": 2400, "y": 2400, "w": 30, "h": 20, "rot": 0}]})
+    assert "extramural_features_tethered" not in f({**base, "kilns": [{"x": 520, "y": -150, "w": 30, "h": 20, "rot": 0}]})
+    shops_far = [{"x": 500 + 20 * i, "y": -55, "w": 10, "h": 8, "rot": 0, "kind": "shop"} for i in range(4)]  # 255px out: inside the market reach, past the head allowance
+    assert "gate_markets_start_at_their_gate" in f({**base, "buildings": shops_far})
+    shops_at = [{"x": 500 + 20 * i, "y": 130, "w": 10, "h": 8, "rot": 0, "kind": "shop"} for i in range(4)]
+    assert "gate_markets_start_at_their_gate" not in f({**base, "buildings": shops_at})
