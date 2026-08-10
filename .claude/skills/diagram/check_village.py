@@ -8576,10 +8576,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             return bp_best
 
         bp_bad = []
-        for bp_key, bp_want in (("granaries", 0.0), ("jetties", 90.0)):  # rows lie ALONG the bank; stages run ACROSS it
-            for bp_f in M.get(bp_key, []):
-                if not isinstance(bp_f, dict) or "x" not in bp_f:
-                    continue
+        for bp_key, bp_want in (("granaries", 0.0), ("jetties", 90.0), ("tanning_yards", 0.0), ("dye_yards", 0.0)):  # rows and wash yards lie ALONG the bank; stages run ACROSS it
+            for bp_f in M.get(bp_key, []):  # both keys hold records, never raw polygons
                 bp_d, bp_bear = bp_bearing(bp_f["x"], bp_f["y"])
                 if bp_d > 140:
                     continue  # not a waterside instance (an inland store is not bank-parallel)
@@ -8617,8 +8615,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         lb_extra = {"aqueduct": ("intake", "weir", "basin", "settling")}
         lb_bad = []
         for lb in M.get("labels", []):
-            if not isinstance(lb, (list, tuple)) or len(lb) < 6:
-                continue
+            if len(lb) < 6:
+                continue  # legacy fixture labels predate the text field
             lb_text = str(lb[5]).lower()
             lb_cx, lb_cy = (float(lb[0]) + float(lb[2])) / 2, (float(lb[1]) + float(lb[3])) / 2
             for lb_word, lb_pts in lb_named:
@@ -8646,8 +8644,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if cd_lines:
         cd_bad = []
         for lb in M.get("labels", []):
-            if not isinstance(lb, (list, tuple)) or len(lb) < 6:
-                continue
+            if len(lb) < 6:
+                continue  # ...same legacy shape
             cd_quad = [(float(lb[0]), float(lb[1])), (float(lb[2]), float(lb[1])), (float(lb[2]), float(lb[3])), (float(lb[0]), float(lb[3]))]
             for cd_pts, cd_hw in cd_lines:
                 # corners AND edges: a caption box wider than the wall's band straddles the line
@@ -9073,9 +9071,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     if gm_md <= float(M.get("moat_width", 22)) * 2:
                         gm_blocked = gm_md + float(M.get("moat_width", 22)) / 2
                 for gm_k in ("bridges", "gate_structs", "inspection_stations"):
-                    for gm_f in M.get(gm_k, []):
-                        if not isinstance(gm_f, dict) or "x" not in gm_f:
-                            continue
+                    for gm_f in M.get(gm_k, []):  # gate furniture is always recorded, never a bare polygon
                         gm_fd = math.hypot(gm_f["x"] - gm_g[0], gm_f["y"] - gm_g[1])
                         if gm_fd < 120:
                             gm_blocked = max(gm_blocked, gm_fd + max(float(gm_f.get("w", 0)), float(gm_f.get("h", 0)), float(gm_f.get("span", 0))) / 2)
@@ -9276,12 +9272,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         ty_bad = []
         for ty9 in M.get("tanning_yards", []):
             d9 = wsf_bank(ty9["x"], ty9["y"])
-            if d9 > 55:
+            if d9 > 30:  # ~90 real ft: the yard's own working ground, not a field between it and the water
                 ty_bad.append((round(ty9["x"]), round(ty9["y"]), round(d9)))
         check(
             "tanning_yards_on_water",
             not ty_bad,
-            f"tanning yard(s) beached (px past the nearest bank, want <= 55): {ty_bad[:4]} - tanning is a WASH trade, the yard stands at its water; re-seat on the current bank (downwind/downstream arc still applies)",
+            f"tanning yard(s) off their water (px past the nearest bank, want <= 30): {ty_bad[:4]} - tanning is a WASH trade: the yard stands AT the bank it draws from and drains to, its long side along the water (downwind/downstream arc still applies)",
         )
 
     check(

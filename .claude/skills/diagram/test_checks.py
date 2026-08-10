@@ -11111,3 +11111,17 @@ def test_city_streets_serve_both_sides():
         "buildings": [{"x": 320 + 60 * i, "y": 360, "w": 14, "h": 10, "rot": 0, "kind": "laborer"} for i in range(11)],
     }
     assert "city_streets_serve_both_sides" not in f(lined)
+
+
+def test_new_checks_skip_degenerate_records():
+    """The 2026-08-10 checks tolerate the shapes a real manifest holds: an INLAND store that is
+    not a waterside work, a label tuple too short to carry text, and a one-vertex road."""
+    water = {"meta": {"scale": "city", "ftpx": 3}, "streams": [{"poly": [[0, 500], [1000, 500]], "w": 20}]}
+    assert "waterside_works_follow_the_bank" not in f({**water, "granaries": [{"x": 500, "y": 900, "w": 20, "h": 12, "rot": 0}]})
+    assert "roads_join_the_network" not in f({"meta": {"scale": "city", "ftpx": 3, "W": 1000, "H": 1000}, "roads": [{"pts": [[500, 500]], "w": 20}]})
+    # LEGACY LABEL RECORDS: the regression corpus holds manifests whose labels predate the text
+    # field. Removing this guard on the evidence of live maps alone crashed the gate before five
+    # fixtures reached their own check, and they silently stopped firing (2026-08-10).
+    legacy = {"meta": {"scale": "city", "ftpx": 3}, "wall": WALLSQ, "sluice_gates": [{"x": 500, "y": 500, "rot": 0}], "labels": [[760, 470, 840, 480, 7]]}
+    assert "captions_sit_by_their_feature" not in f(legacy)
+    assert "captions_clear_of_the_defenses" not in f(legacy)
