@@ -48,3 +48,14 @@ of the wall; the wall must never be adjusted after them. Implement as
 the capital-build sequence in `settlements/capitals.md`. (This is also the strongest single
 argument for the fabric-first ordering in #2: a wall wrapped around a grown fabric has the
 right slack by construction.)
+
+## 5. Interior fullness DEFERRED on Shiro Daika (GM 2026-08-10, end of the resize day)
+After the third wall derivation the slack check passes (<=15% claimed-open) but the render
+still reads empty to the GM's eye: bare-rendered commons, the model's 20% circulation, and a
+fabric that packs naturally denser than the model prices. Options weighed: a third shrink
+(hour-plus migration each, diminishing returns), raising population (rejected - 12,360 is
+budgets.md-anchored research), or defer. DEFERRED by GM choice: ship the green map as the
+first pass; **wall-to-fabric fullness is the headline requirement of the fabric-first
+feature (#2)**. Cosmetic option noted: a faint ground tint for kept commons (between blank
+and scrub). When fabric-first is specced, start from this map's slack profile as the
+motivating example.
