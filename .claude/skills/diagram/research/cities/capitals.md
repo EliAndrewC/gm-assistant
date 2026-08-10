@@ -905,3 +905,92 @@ rowpack blocks (machi-form fabric), where a country seat is a detached compound 
 re-forming is deferred with the rest of the fabric work - logged in `future-work.md` (#2) as part
 of the fabric-first regeneration, which should draw approach-road country seats as spaced walled
 compounds, not rows.
+
+## Do a capital's trades and funerary program scale from a provincial city's? (research, GM question 2026-08-10)
+
+The GM asked it plainly: "would there be the same number and size of kiln works in a capital
+city as in a provincial city? Same question for dye works, the common burial ground, etc."
+The answer, from the record: **almost nothing is "same number and size," and the four features
+scale in four different ways.** What follows is the WHY; the numbers are encoded in
+`capital_trade_counts_scaled` (check_village.py) and in the gen.
+
+**The four scaling classes, and why each feature lands where it does.**
+
+1. **LINEAR - per-capita services multiply, they do not grow.** Bathhouses are the cleanest
+   case in the whole record: Edo in 1810 ran **523 sento for ~1.1M residents**, one per ~2,100,
+   and each was an ordinary shophouse with a fuel yard. A capital of 12,400 therefore gets
+   **six**, all the same size - the bath did not become grander, there were simply more of
+   them. Pawnbroking is the same shape at a startling ratio (**Edo: 2,700+ pawnshops, one per
+   ~400 residents** - pawnbroking was the commoner's bank), which our maps DISCLOSE as a
+   representative draw: we draw two or three with their pledge-kura courts and imply the rest
+   in the shop rows. Fire towers are linear in built AREA rather than population, because the
+   rule was always a fixed radius: Song Kaifeng from 1023 posted a patrol station with a brick
+   watchtower **every 300 paces**; Edo ran roughly one per ten blocks.
+
+2. **SUBLINEAR - works CONSOLIDATE.** A kiln is a quarter, not a shop: Imado outside Edo,
+   Awataguchi and Kiyomizu outside Kyoto's eastern gates, the registered kiln households of
+   Song and Ming - firing clustered at the clay and the fuel road, immediately beyond a gate,
+   never scattered as singletons. So a capital's second works belongs BESIDE the first, sharing
+   the pit. Cremation is the strongest sublinear case: Song cities ran mass cremation through a
+   small number of Buddhist crematoria, and Edo concentrated a million residents' cremation at
+   a handful of temple kasoba - **a capital needs ONE cremation ground, sized up, not four**.
+   Burial grounds likewise accreted AREA faster than SITES.
+
+3. **SUPERLINEAR / capital-only - the concentration IS the capital.** Permanent theater is the
+   sharpest signal: Northern Song Kaifeng held **50+ goulan** inside its washi pleasure
+   precincts, four of them seating thousands, and Hangzhou 23-24 wazi containing 100+ goulan,
+   while provincial cities made do with touring players on temple ground. Japan reaches the
+   same place by the opposite mechanism - Edo licensed exactly **three** permanent kabuki
+   theaters and provincial towns got shibai-goya on shrine ground. Either way: a permanent
+   roofed theater house is capital grammar. The domain school is the other capital-only
+   institution - **200+ hanko were built by domains, in their castle towns**, each with a
+   bugeijo martial wing (Hagi's Meirinkan, Aizu's Nisshinkan).
+
+4. **FIXED - one per seat, whatever the seat's size.** The pauper's ground is the best-attested
+   fixed feature in the list, and it is an EDICT: from 1104 Huizong ordered a **louzeyuan**
+   (public pauper cemetery) in every prefecture and county of the Song, one per administrative
+   seat regardless of size. Japan corroborates with the muenzuka - Edo at a million ran a
+   handful of muenbotoke sites, not dozens, and even Kozukappara's 100,000+ dead made no great
+   mound, because cremated bone takes almost no volume. So: one pauper mound, 10-30 ft, at
+   every tier. The drum tower is fixed for a different reason (it keeps the time, and a city
+   has one time).
+
+**The two features whose FORM changes rather than their count.**
+
+- **Dye works become a STREET.** Castle towns laid out an occupational **Konya-machi** (dyers'
+  ward) at founding - Yamatokoriyama established one when its castle was rebuilt in the late
+  16th century, and the toponym survives in former castle towns across Japan; Edo concentrated
+  the trade in Kanda Konya-cho, whose visual signature was the DRYING: long bolts on poles
+  dominating the block. Cloth consumption is linear, so vat count scales - but a capital draws
+  three to five contiguous dyer lots on one downstream bank, not one bigger yard. (True court
+  dyeing is a tier above us: the Qing imperial weaving-and-dyeing offices existed in exactly
+  three cities and employed ~7,000 by the mid-18th century. A clan capital gets at most a
+  purveyor-to-the-castle within the row.)
+- **The mausoleum gains a lineage TIER and may leave the walls.** The daimyo pattern is an
+  ancestral mortuary precinct: Sendai's **Zuihoden** - Date Masamune's mausoleum with his son's
+  and grandson's beside it and lesser family tombs around - stands on a forested hill outside
+  the town, across the river from the castle. So a capital carries the ruling family's precinct
+  (in-town bodaiji form or the wooded-rise form) plus two to four small karo-lineage crypts in
+  the teramachi temples. A provincial governor is an APPOINTEE, not a dynasty, which is exactly
+  why their city's single mausoleum belongs to the local great lineage and does not multiply.
+
+**Official kilns: two different attested forms, at two different distances.** A capital may host
+an **official tile works at the fringe** - Beijing's Liulichang was one of the Ming capital's
+five official kilns, ~3 km from the palace, firing glazed tile for palaces and temples, because
+structural ceramic is bulky and follows the construction site. Or the clan's **fine-ware domain
+kiln sits far away and guarded**: the Nabeshima moved theirs to Okawachiyama, ~6 km up a
+barrier-controlled valley, to protect the secret. Both are clean; the on-map choice is the tile
+works, and a prestige-ware kiln is better recorded as off-map.
+
+**Where the record is thinnest** (encode with an inference comment, and do not pretend
+otherwise): the oil-press count (Osaka's guild concentration says it is sublinear, but no count
+survives), the capital kiln count of exactly two, the dyers'-row lot count, the roofed theater's
+footprint, and the karo-crypt count.
+
+**The one place our canon and the research disagree, and the reconciliation.** `city_graveyard_
+count` wants 2-4 graveyards, and the research says a capital carries 3-5 - but our temple
+doctrine gives EVERY temple a parish ground, and a capital has seven or eight temples. The two
+rules are counting different things: the research's "burial grounds" are the community's
+grounds (parish + extramural common), while our cemeteries key also holds each temple's own
+precinct plot. A capital therefore shows more cemetery records than the band, legitimately, and
+the band is not applied at capital scale.

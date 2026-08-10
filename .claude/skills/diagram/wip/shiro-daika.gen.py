@@ -595,11 +595,17 @@ s.brewery(1130, 1700)
 s.brewery(1690, 1935)
 s.oil_press(1000, 1690)
 s.pawnshop(1245, 1690)
+s.pawnshop(1874, 1786)  # the second commercial quarter's pawnshop (Edo ran one per ~400 residents; two drawn, the rest implied in the rows)
 s.bathhouses([(900, 1750), (1278, 1980), (1668, 1740), (2060, 1640), (1080, 1860), (1550, 1830), (2250, 1050)])
-s.dye_yard(2106, 2570)
+s.dye_yard(2149, 2497)
+s.dye_yard(2210, 2578)  # ...the dyers' row (Konya-machi): contiguous lots up the drain's west bank
+s.dye_yard(2098, 2468)
 s.tanning_yard(1995, 2522, water="stream")  # ON the moat drain's west bank (its wash water; the towpath owns the river bank here) - GM 2026-08-10
 s.tanning_yard(2062, 2560, water="stream")  # the pair shares the drain's downstream bank
-s.kiln(268, 2166)  # ON the SW approach road's outer leg (a kiln hauls fuel and clay by cart, so it stands on its haul road, not adrift in the fields - GM 2026-08-10)
+s.kiln(268, 2166)
+s.kiln(
+    176, 2196
+)  # the second works of the kiln quarter - beside the first, sharing the pit and the fuel road  # ON the SW approach road's outer leg (a kiln hauls fuel and clay by cart, so it stands on its haul road, not adrift in the fields - GM 2026-08-10)
 # the in-wall doss-house needs a HUMBLE quarter around it (>=115px merchant/temple-free,
 # research: the doya-gai sat among day-laborer rows) - the 4-mix machi has a merchant
 # everywhere, so carve a laborer-only pocket and seat the doss at its heart
@@ -690,6 +696,9 @@ s.commons([(535, 635), (640, 635), (640, 725), (535, 725)], render="bare")
 s.commons([(830, 470), (945, 470), (945, 560), (830, 560)], render="bare")
 s.commons([(2052, 1662), (2150, 1662), (2150, 1750), (2052, 1750)], render="bare")
 s.commons([(1640, 1250), (1732, 1250), (1732, 1332), (1640, 1332)], render="bare")
+
+_mseat = s.open_seat((1240, 1420, 1720, 1560), 62, 46) or (1466, 1530)
+s.mausoleum(_mseat[0], _mseat[1], 58, 42, label="Ancestral Mausoleum", gate_dir="south")
 
 # ---- T016: the kido MESH, before the packs (each gate reserves its ground; the mouths
 # derive from the declared districts + streets via the shared machi_mouths source)
@@ -987,6 +996,15 @@ s.bound = [[1560, 2540], [1810, 2540], [1810, 2880], [1560, 2880]]
 s.rowpack((1580, 2560, 1790, 2740), ["laborer", "laborer", "servant"] * 9, court_every=6)
 s.bound = [[1820, 2450], [2100, 2450], [2100, 2810], [1820, 2810]]
 s.cemetery(1780, 2708, 84, 60, parish=False, label="common burial ground")
+# THE FULL FUNERARY GEOGRAPHY (GM 2026-08-10: "I don't see a cremation ground or pauper's
+# burial mound at all... I also don't see a mausoleum"). The whole funerary block was gated on
+# scale in (village, town, city) and the capital tier skipped it - a city of 12,400 with no
+# crematory, no ossuary and no clan crypt. Sited by the same doctrine the provincial cities
+# follow: the crematory OUTSIDE the walls beyond a gate (smoke and pollution), the pauper
+# ossuary beside it, both by the common burial ground on the way out; the clan's ancestral
+# mausoleum INSIDE, by the government quarter, a walled crypt precinct.
+s.cremation_ground(1848, 2790)
+s.ossuary(1770, 2828)
 s.rowpack((1850, 2492, 2024, 2740), ["laborer", "servant"] * 12, court_every=6)
 # the gate wards, each hugging its approach road inside the guan-xiang reach
 s.placed.append((1204, 2561, 22, 18))
