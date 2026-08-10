@@ -36,3 +36,15 @@ a mid-feature pivot. Candidate: the next city-tier map.
   never the generator. Batch many fixes per cycle; measure with the check's own data
   (locators, why_placed.py) instead of guessing coordinates - every hand-guessed seat this
   feature landed on something.
+
+## 4. WALL SIZE SETTLES FIRST, against a slack threshold (GM process rule, 2026-08-10)
+Measured at the moment the GM called it from the render: 41% of the walled interior was
+claimed-open commons, and hours of fine adjustments (junction snaps, well boxes, kido
+reserves) had been tuned against a wall that was about to be wrong. The rule: **an interior
+slack check (claimed-open + unclaimed <= ~15% of interior) is an EARLY reconciliation gate**
+- run it, and re-derive the wall, BEFORE any fine iteration. Fine adjustments are downstream
+of the wall; the wall must never be adjusted after them. Implement as
+`capital_interior_slack_in_band` beside the packed-split check, and write the ordering into
+the capital-build sequence in `settlements/capitals.md`. (This is also the strongest single
+argument for the fabric-first ordering in #2: a wall wrapped around a grown fabric has the
+right slack by construction.)
