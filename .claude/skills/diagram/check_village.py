@@ -9227,12 +9227,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     sr_bad = []
     # alley ENDS answer to the same rule - the S band's roji visibly dangled short of (and
     # past) the band street they aim at (GM 2026-08-10, the render's most repeated defect)
-    sr_enders = [(st9, st9.get("w", 18) / 2) for st9 in sr_sts] + [(al9, al9.get("w", 10) / 2) for al9 in M.get("alleys", [])]
-    for st9, sr_myhw in sr_enders:
+    sr_enders = [(st9, st9.get("w", 18) / 2, True) for st9 in sr_sts] + [(al9, al9.get("w", 10) / 2, False) for al9 in M.get("alleys", [])]
+    for st9, sr_myhw, sr_is_street in sr_enders:
         if len(st9.get("pts") or []) < 2:
             continue  # a one-vertex way has no direction of travel to aim with
         for E9, nb9 in ((st9["pts"][0], st9["pts"][1]), (st9["pts"][-1], st9["pts"][-2])):
-            sr_best: tuple[float, float, Pt] = (1e9, 0.0, (0.0, 0.0))
+            sr_best: tuple[float, float, Pt, float] = (1e9, 0.0, (0.0, 0.0), 0.0)
             for ot9 in sr_sts:
                 if ot9 is st9:
                     continue
@@ -9240,17 +9240,61 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     d9 = seg_dist(E9[0], E9[1], ot9["pts"][k9], ot9["pts"][k9 + 1])
                     if d9 < sr_best[0]:
                         cp9c = seg_closest(E9[0], E9[1], ot9["pts"][k9], ot9["pts"][k9 + 1])
-                        sr_best = (d9, ot9.get("w", 18) / 2, (float(cp9c[0]), float(cp9c[1])))
+                        sr_bear = math.degrees(math.atan2(ot9["pts"][k9 + 1][1] - ot9["pts"][k9][1], ot9["pts"][k9 + 1][0] - ot9["pts"][k9][0]))
+                        sr_best = (d9, ot9.get("w", 18) / 2, (float(cp9c[0]), float(cp9c[1])), sr_bear)
             if sr_best[0] >= 1e9:
                 continue
-            d9, otw9, cp9 = sr_best
+            d9, otw9, cp9, ot_bear9 = sr_best
             gap9 = d9 - sr_myhw - otw9
-            if not (gap9 > 2 and d9 < 65):
+            if not (gap9 > 2 and d9 < 95):
                 continue
             dl9 = math.hypot(E9[0] - nb9[0], E9[1] - nb9[1]) or 1.0
             gd9 = math.hypot(cp9[0] - E9[0], cp9[1] - E9[1]) or 1.0
             align9 = ((E9[0] - nb9[0]) / dl9) * ((cp9[0] - E9[0]) / gd9) + ((E9[1] - nb9[1]) / dl9) * ((cp9[1] - E9[1]) / gd9)
-            if align9 > 0.6:
+            # ALIGNMENT IS NOT THE ONLY TELL (GM 2026-08-10: "two city streets which approach
+            # each other... generally should intersect"). A street ending a short way off
+            # another it meets at a CORNER angle is a junction that failed to close, whatever
+            # its end happens to point at - which is how a slightly slanted run slipped past the
+            # aligned-only test. So: aligned and close, OR near-perpendicular and very close.
+            perp9 = False
+            if gd9 > 1:
+                ang_self = math.degrees(math.atan2(E9[1] - nb9[1], E9[0] - nb9[0]))
+                cross9 = abs((ang_self - ot_bear9) % 180.0)
+                # only for a STREET: an alley legitimately dead-ends inside a block (a roji
+                # serves the core it threads and stops), so a blind alley near a parallel street
+                # is not a failed junction. A STREET carries through-traffic and should close.
+                # ...and only if the two do not ALREADY cross somewhere: a street's free end
+                # often lies near a perpendicular street it met 70px back, and calling that a
+                # failed junction is how this rule first tried to truncate five sound streets
+                sr_crossed = False
+                for sr_ot9 in sr_sts:
+                    if sr_ot9 is st9:
+                        continue
+                    if min(seg_dist(E9[0], E9[1], sr_ot9["pts"][k9], sr_ot9["pts"][k9 + 1]) for k9 in range(len(sr_ot9["pts"]) - 1)) > d9 + 1:
+                        continue
+                    # CONNECTED, not merely crossing: a pair that meets at an ENDPOINT (a T) never
+                    # registers as a segment crossing, and treating those as failed junctions is
+                    # how this rule first proposed truncating five sound streets
+                    sr_hw2 = sr_myhw + sr_ot9.get("w", 18) / 2 + 3
+                    if (
+                        any(
+                            segments_cross(tuple(st9["pts"][a9]), tuple(st9["pts"][a9 + 1]), tuple(sr_ot9["pts"][b9]), tuple(sr_ot9["pts"][b9 + 1]))
+                            for a9 in range(len(st9["pts"]) - 1)
+                            for b9 in range(len(sr_ot9["pts"]) - 1)
+                        )
+                        or any(seg_dist(q9[0], q9[1], sr_ot9["pts"][b9], sr_ot9["pts"][b9 + 1]) < sr_hw2 for q9 in (st9["pts"][0], st9["pts"][-1]) for b9 in range(len(sr_ot9["pts"]) - 1))
+                        or any(
+                            # ...and SYMMETRICALLY: the other street's end may be the one lying on
+                            # this street's body, which is the commoner T of the two
+                            seg_dist(q9[0], q9[1], st9["pts"][a9], st9["pts"][a9 + 1]) < sr_hw2
+                            for q9 in (sr_ot9["pts"][0], sr_ot9["pts"][-1])
+                            for a9 in range(len(st9["pts"]) - 1)
+                        )
+                    ):
+                        sr_crossed = True
+                        break
+                perp9 = sr_is_street and not sr_crossed and 45.0 < min(cross9, 180.0 - cross9) <= 90.0 and d9 < 80.0
+            if (align9 > 0.6 and d9 < 65.0) or perp9:
                 sr_bad.append((round(E9[0]), round(E9[1]), round(d9)))
     check(
         "city_streets_reach_their_neighbors",
