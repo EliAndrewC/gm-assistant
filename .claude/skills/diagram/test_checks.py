@@ -11002,3 +11002,18 @@ def test_animal_yards_clear_of_compound_gates():
     assert "animal_yards_clear_of_compound_gates" in f(at_gate)
     behind = {"meta": {"scale": "city", "ftpx": 3}, "manors": [manor], "stable_yards": [{"x": 500, "y": 380, "r": 40, "of": [500, 380], "troughs": 1, "rails": []}]}
     assert "animal_yards_clear_of_compound_gates" not in f(behind)
+
+
+def test_map_frame_hugs_its_content():
+    """GM 2026-08-10: a stale per-side crop override (south=240, east=700) left dead margin on
+    two flanks. Each side of the view needs real drawn content within 260 ft of the edge."""
+    tight = {
+        "meta": {"scale": "city", "ftpx": 3, "view": [0, 0, 900, 900]},
+        "buildings": [{"x": 20, "y": 20, "w": 8, "h": 6, "rot": 0, "kind": "laborer"}, {"x": 880, "y": 880, "w": 8, "h": 6, "rot": 0, "kind": "laborer"}],
+    }
+    assert "map_frame_hugs_its_content" not in f(tight)
+    loose = {
+        "meta": {"scale": "city", "ftpx": 3, "view": [0, 0, 900, 3000]},
+        "buildings": [{"x": 20, "y": 20, "w": 8, "h": 6, "rot": 0, "kind": "laborer"}, {"x": 880, "y": 400, "w": 8, "h": 6, "rot": 0, "kind": "laborer"}],
+    }
+    assert "map_frame_hugs_its_content" in f(loose)

@@ -8530,6 +8530,45 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # plank kept its seat when the drain's re-route moved the ford, and it lay on bare bank for
     # a whole feature - bridges_span_their_water silently skipped it (nothing to measure) and no
     # other rule owned the case. A check that never runs looks exactly like a check that passes.
+    # THE FRAME HUGS THE CONTENT (GM 2026-08-10: "it doesn't look like we're doing [cropping] on
+    # the south or east sides, especially the south"). A crop override outlives the feature it
+    # was added for - Shiro Daika carried south=240/east=700 from a layout three re-lays old -
+    # and dead margin reads as a map that forgot to finish. Each side of the view must have real
+    # DRAWN CONTENT within a reasonable band of the edge; linear features running off-map (the
+    # river, a road) do not count as content for this - they leave whether or not the frame follows.
+    fr_view = meta.get("view")
+    if fr_view and len(fr_view) == 4:
+        fr_x, fr_y, fr_w, fr_h = fr_view
+        fr_band = 400.0 / float(meta.get("ftpx", 1) or 1)  # 400 real ft: the aggressive city margin plus its own slack
+        fr_pts: list[tuple[float, float]] = []
+        for fr_k, fr_v in M.items():
+            if fr_k in ("meta", "labels", "title", "scalebar", "districts") or not isinstance(fr_v, list):
+                continue
+            for fr_r in fr_v:
+                if isinstance(fr_r, dict) and isinstance(fr_r.get("x"), (int, float)):
+                    fr_pts.append((fr_r["x"], fr_r["y"]))
+                elif fr_k in ("alleys", "town_streets", "torii") and isinstance(fr_r, dict) and fr_r.get("pts"):
+                    # a drawn WAY inside the frame is content (its end is a real place); the
+                    # river/road polylines are not - they leave the map whatever the frame does,
+                    # and districts are declarations, not ink
+                    fr_pts += [(q[0], q[1]) for q in fr_r["pts"] if fr_x <= q[0] <= fr_x + fr_w and fr_y <= q[1] <= fr_y + fr_h]
+        if fr_pts:
+            fr_bad = []
+            if not any(p[1] > fr_y + fr_h - fr_band for p in fr_pts):
+                fr_bad.append("south")
+            if not any(p[1] < fr_y + fr_band for p in fr_pts):
+                fr_bad.append("north")
+            if not any(p[0] > fr_x + fr_w - fr_band for p in fr_pts):
+                fr_bad.append("east")
+            if not any(p[0] < fr_x + fr_band for p in fr_pts):
+                fr_bad.append("west")
+            check(
+                "map_frame_hugs_its_content",
+                not fr_bad,
+                f"map frame carrying dead margin on the {fr_bad} side(s) - no drawn feature within 400 ft of the edge; "
+                f"drop the stale per-side crop override (s.crop_city(south=..., east=...)) and let the frame follow the content",
+            )
+
     # NO DUNG AT A SAMURAI'S FRONT DOOR (GM 2026-08-10: "cattle yards should NOT go directly in
     # front of the gates of samurai estates. No samurai wants literal piles of dung outside
     # their front door. I'd expect that oxen yard to be next to the caravan inn anyway.")

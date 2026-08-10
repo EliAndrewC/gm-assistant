@@ -1077,6 +1077,6 @@ s.quarter(
 # purpose: the aqueduct's intake works on the river (~x3140) are the part of the system a reader
 # traces first (spec 020, User Story 3), and the default crop cut them - plus the east road's
 # river bridge - clean off the sheet.
-s.crop_city(margin=140, south=240, east=700)
+s.crop_city(margin=90)  # the south=240/east=700 overrides padded dead margin onto both flanks (GM 2026-08-10); the aggressive default frames the real content
 s.title("Shiro Daika")
 s.finish(os.path.splitext(os.path.abspath(__file__))[0].replace(".gen", ""), png_width=4600)
