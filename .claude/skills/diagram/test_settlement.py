@@ -6582,3 +6582,28 @@ def test_a_dense_row_still_leaves_the_mouth_of_a_crossing_street_clear():
     s.frontage(spine, ["merchant"] * 30, width=6, spacing=20, setback=4, both=False, dense=True)
     at_mouth = [b for b in s.M["buildings"] if b["kind"] == "merchant" and abs(b["y"] - 500) < 16]
     assert not at_mouth, f"the row built across the crossing street's mouth: {[(b['x'], b['y']) for b in at_mouth]}"
+
+
+def test_quay_faces_the_bank_with_stepped_landings():
+    """The working face at a river wharf is the BANK, faced and notched with steps - not the piers
+    (research/cities/river-cities.md: a river's level moves feet across the year, so a flight of
+    steps is the right height at every one of them while a fixed deck is right for weeks). The
+    glyph records its landings and mooring posts so the checks can read them."""
+    s = settlement.Settlement(1200, 1200, seed=4)
+    s.meta(scale="capital", ftpx=3)
+    bank = [(300, 200), (420, 500), (500, 820)]
+    s.quay(bank, steps=3)
+    q = s.M["quays"][0]
+    assert q["pts"] == [[300.0, 200.0], [420.0, 500.0], [500.0, 820.0]]
+    assert len(q["landings"]) == 3, "each landing is a flight of steps notched into the face"
+    assert len(q["posts"]) == 5, "mooring posts along the top of the face"
+    for lx, ly in q["landings"]:
+        assert min(seg_dist(lx, ly, bank[i], bank[i + 1]) for i in range(len(bank) - 1)) < 2.0, "a landing sits ON the face"
+    assert any(cl > q["w"] / 2 for _p, cl in s.corridors), "the face reserves its own working strip"
+
+
+def test_quay_takes_a_default_width_from_the_map_scale():
+    s = settlement.Settlement(1200, 1200, seed=4)
+    s.meta(scale="capital", ftpx=3)
+    s.quay([(100, 100), (400, 100)], steps=1)
+    assert s.M["quays"][0]["w"] >= 2.6

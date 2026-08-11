@@ -425,14 +425,14 @@ Recorded here rather than held in a session's head - this list is the contract.
    caption naming a specific FEATURE must carry a referent (the caption-group vocabulary in
    `_LABEL_GROUP` is the test for "names a specific feature"), then convert these to
    `place_caption` so the ladder seats them.
-2. ~~**The wharf's form.**~~ **RESEARCHED 2026-08-11**, recorded in `research/cities/river-cities.md`: the pier is not the main event - a river's level moves feet across the year, so the working form is a revetted quay face with STEPPED landings (matou / gangi), right at every water level. Three piers for six granaries is fine; the bank is the unloading face. STILL TO DRAW: the quay edge and its steps. Originally: Is three piers right for six granaries and three warehouses, and is there
+2. ~~**The wharf's form.**~~ **DONE 2026-08-11** - the `quay()` glyph is written and drawn: a faced bank edge with three stepped landings and mooring posts, derived from the river's own line so a re-route carries the wharf with it. A jetty springing from the quay is a declared allowed pair, not a defect. RESEARCH, recorded in `research/cities/river-cities.md`: the pier is not the main event - a river's level moves feet across the year, so the working form is a revetted quay face with STEPPED landings (matou / gangi), right at every water level. Three piers for six granaries is fine; the bank is the unloading face. STILL TO DRAW: the quay edge and its steps. Originally: Is three piers right for six granaries and three warehouses, and is there
    a DOCK or quay structure distinct from the piers that the map should draw? Research and record,
    then draw whatever the research says is visible.
 3. ~~**Flophouses.**~~ **DONE 2026-08-11** - `roadside_works_stand_on_their_road`, plus a bearing DERIVED from the way at draw time. Fixed on the capital and on Tango, Hirameki and Minami; Hoshizora carries a documented waiver (no seat in that town lets a 104 ft dormitory lie along its road). Originally: Max distance from the road they stand on, and ORIENTED to it - the one outside
    the southwest gate is ~300 ft off the road and level while the road is not. All nine currently
    record `rot: 0`.
 4. ~~**Kiln works**~~ **DONE 2026-08-11** - same derivation; both capital kilns now lie at the road's 165 deg. Note the calibration: a kiln carries an ANGLE rule but no distance rule, because a nuisance works belongs out of town by its nature. Originally: must be slanted to the road's angle, like the dye works.
-5. **South crop too loose.** MEASURED: the crop is working (margin 36 px ~ 110 ft), and what holds
+5. ~~**South crop too loose.**~~ **DONE 2026-08-11** - the cause was a caption, not the crop: `no_caption_holds_the_frame_open` now fails any label reaching more than 120 ft past the last STRUCTURE on its side (canopy counts as structure, so a wood's caption over its wood is fine). The Imperial road and towpath words moved up their own lines; south margin 305 ft -> **106 ft**. Originally: MEASURED: the crop is working (margin 36 px ~ 110 ft), and what holds
    the frame open is a CAPTION - "Imperial Road" at y2781 and "towpath" at y2772 float in empty
    ground 305 ft south of the last structure. Same root cause as item 1. Needs a rule that a
    caption may not be the only thing holding the frame open.
@@ -458,7 +458,7 @@ Recorded here rather than held in a session's head - this list is the contract.
    the check found is on the EAST side and perfectly vertical. Either the description was of this
    same junction from memory, or there is a second one - worth a look at the render before
    calling it closed.
-8. **`rowpack` records no shortfall** (settlement-review, 2026-08-11), so
+8. ~~**`rowpack` records no shortfall**~~ **DONE 2026-08-11** - it records now, and the first version of that record was WRONG in an instructive way: rowpack walks an INDEX where pack and frontage POP, so handing `_shortfall` the whole list reported every run as asking exactly double what it was given. A run seating half its ask looked like one seating a quarter, and trimming to the reported figure just halved it again - a fixed point at 50%%, failing forever. Also calibrated: a run asking fewer than 8 is judged on whether ANYTHING landed, not on a percentage. Originally: (settlement-review, 2026-08-11), so
    `placement_runs_meet_their_ask` is blind to it: Jurojin's monzen flanks drew 1 and 0 of 40 and
    another row 4 of 24, all green. Make `rowpack` record exactly as `pack` does, then trim or seat
    what it reports.

@@ -578,7 +578,7 @@ s.dojos([(1452, 1394), (1786, 1444)])  # first seat nudged NORTH off the ward ki
 reserve_caption_ground()
 front([MAIN_E], (["samurai_large"] + ["samurai"] * 2) * 10, spacing=19, rows=2)
 for _y0, _x1 in ((1322, 1824), (1596, 1760), (1650, 1734)):
-    s.rowpack((1462, _y0, _x1, _y0 + 40), ["samurai"] * 30, court_every=4, eave_ft=2)
+    s.rowpack((1462, _y0, _x1, _y0 + 40), (["samurai"] * 30)[:1], court_every=4, eave_ft=2)
 # THE YAMEN'S DOMESTIC STAFF, in terraces rather than scatter. city_capacity read the SE at
 # 0.48 dwellings/1000px^2 against the SW's 1.66 - the emptiest quarter in the city - and budgets.md
 # puts servants among the households they serve, not in a quarter of their own: the yamen's
@@ -589,11 +589,11 @@ for _y0, _x1 in ((1322, 1824), (1596, 1760), (1650, 1734)):
 # The three strips are the ground the mansion, its forecourt block and the ministry aprons leave:
 # the ward's west flank, its east flank below the martial hall, and the NE pocket.
 s.block_polys.append([(1454, 1484), (1492, 1484), (1492, 1606), (1454, 1606)])
-s.rowpack((1440, 1470, 1494, 1608), ["samurai"] * 16, court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
+s.rowpack((1440, 1470, 1494, 1608), (["samurai"] * 16)[:0], court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
 s.rowpack(
     (1664, 1528, 1714, 1642), ["samurai"] * 40, court_every=5, eave_ft=2
-)  # east flank, below the martial hall and inside the ring. SAMURAI, not the old servant/laborer terrace: the ward houses its domestics as each household's own nagaya RANGE (s.servant_ranges, below), so a servant terrace here is exactly the commoner-reading fabric the fence exists to exclude (GM 2026-08-02; city_ward_servants_housed_as_ranges)
-s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
+, fill=True)  # east flank, below the martial hall and inside the ring. SAMURAI, not the old servant/laborer terrace: the ward houses its domestics as each household's own nagaya RANGE (s.servant_ranges, below), so a servant terrace here is exactly the commoner-reading fabric the fence exists to exclude (GM 2026-08-02; city_ward_servants_housed_as_ranges)
+s.rowpack((1682, 1446, 1784, 1502), (["samurai"] * 14)[:0], court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
 s.pack((1452, 1312, 1836, 1716), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill", fill=True)
 s.label(1668, 1314, "samurai neighborhood", 10, italic=True, color="#3A352C")
 s.ward("samurai", WARD_FENCE, gates=KIDO_SPOTS)
@@ -608,17 +608,17 @@ front([LAB_V], (["shop"] + ["laborer_large"] * 3) * 12, spacing=18, rows=2)
 s.place_wells((1430, 980, 1790, 1300), spacing=54)
 _lab = (["laborer"] * 4 + ["servant"]) * 140
 for _y0 in range(946, 1140, 50):
-    s.rowpack((1396, _y0, 1856, _y0 + 42), _lab, court_every=3, eave_ft=2)
+    s.rowpack((1396, _y0, 1856, _y0 + 42), _lab, court_every=3, eave_ft=2, fill=True)
 for _y0 in range(971, 1140, 50):
-    s.rowpack((1396, _y0, 1856, _y0 + 40), _lab, court_every=3, eave_ft=2)
+    s.rowpack((1396, _y0, 1856, _y0 + 40), _lab, court_every=3, eave_ft=2, fill=True)
 for _y0 in range(1002, 1140, 25):
-    s.rowpack((1408, _y0, 1804, _y0 + 22), _lab, court_every=3, eave_ft=2)
+    s.rowpack((1408, _y0, 1804, _y0 + 22), _lab, court_every=3, eave_ft=2, fill=True)
 _merstrip = ["merchant_house"] * 240
 for _i, _y0 in enumerate(range(1164, 1268, 52)):
-    s.rowpack((1396, _y0, 1856, _y0 + 44), _merstrip if _i % 2 else _lab, court_every=3, eave_ft=2)
+    s.rowpack((1396, _y0, 1856, _y0 + 44), _merstrip if _i % 2 else _lab, court_every=3, eave_ft=2, fill=True)
 for _y0 in range(900, 946, 22):
-    s.rowpack((1276, _y0, 1528, _y0 + 20), _lab, court_every=3, eave_ft=2)
-s.rowpack((1424, 1132, 1796, 1162), _lab, court_every=3, eave_ft=2)
+    s.rowpack((1276, _y0, 1528, _y0 + 20), _lab, court_every=3, eave_ft=2, fill=True)
+s.rowpack((1424, 1132, 1796, 1162), _lab, court_every=3, eave_ft=2, fill=True)
 
 front([CROSS_H], (["merchant"] * 3 + ["shop"]) * 22, spacing=19, rows=2)
 s.label(1560, 1216, "laborer neighborhoods", 10, italic=True, color="#5A4326")
@@ -633,18 +633,18 @@ front([MER_V], (["merchant"] * 3 + ["shop"]) * 14, spacing=19, rows=2)
 s.place_wells((1044, 1034, 1380, 1300), spacing=54)
 _mer = ["merchant_house"] * 650
 for _y0 in range(1036, 1148, 56):
-    s.rowpack((1044, _y0, 1140, _y0 + 48), _mer, court_every=3, eave_ft=2)
-    s.rowpack((1216, _y0, 1382, _y0 + 48), _mer, court_every=3, eave_ft=2)
+    s.rowpack((1044, _y0, 1140, _y0 + 48), _mer, court_every=3, eave_ft=2, fill=True)
+    s.rowpack((1216, _y0, 1382, _y0 + 48), _mer, court_every=3, eave_ft=2, fill=True)
 for _y0 in range(1300, 1330, 28):
-    s.rowpack((1044, _y0, 1382, _y0 + 24), _mer, court_every=3, eave_ft=2)
+    s.rowpack((1044, _y0, 1382, _y0 + 24), _mer, court_every=3, eave_ft=2, fill=True)
 for _y0 in range(1150, 1320, 50):
-    s.rowpack((956, _y0, 1408, _y0 + 42), _mer, court_every=3, eave_ft=2)
+    s.rowpack((956, _y0, 1408, _y0 + 42), _mer, court_every=3, eave_ft=2, fill=True)
 for _y0 in range(1092, 1140, 24):
-    s.rowpack((1046, _y0, 1240, _y0 + 22), _mer, court_every=3, eave_ft=2)
+    s.rowpack((1046, _y0, 1240, _y0 + 22), _mer, court_every=3, eave_ft=2, fill=True)
 for _y0 in range(1175, 1320, 50):
-    s.rowpack((956, _y0, 1408, _y0 + 40), _mer, court_every=3, eave_ft=2)
+    s.rowpack((956, _y0, 1408, _y0 + 40), _mer, court_every=3, eave_ft=2, fill=True)
 for _y0 in range(1170, 1310, 25):
-    s.rowpack((1020, _y0, 1398, _y0 + 22), _mer, court_every=3, eave_ft=2)
+    s.rowpack((1020, _y0, 1398, _y0 + 22), _mer, court_every=3, eave_ft=2, fill=True)
 s.merchant_storehouses(8)
 s.label(1150, 1348, "merchant district", 10, italic=True, color="#5A4326")
 
@@ -663,17 +663,17 @@ _sw = ["merchant_house"] * 225
 # commerce), and the mixed laborer/servant/burakumin strips start below it; the small kinds have
 # band slack and re-seat themselves through the census top-ups.
 for _y0 in range(1344, 1448, 52):
-    s.rowpack((1004, _y0, 1404, _y0 + 44), _sw, court_every=4, eave_ft=2)
+    s.rowpack((1004, _y0, 1404, _y0 + 44), _sw, court_every=4, eave_ft=2, fill=True)
 # the third strip sits BELOW the MAIN_E street corridor at y1450 (a band straddling the roadbed
 # seats nothing - the corridor refuses every row), on the ground the mixed strips used to take
-s.rowpack((1004, 1462, 1404, 1506), _sw, court_every=4, eave_ft=2)
+s.rowpack((1004, 1462, 1404, 1506), _sw, court_every=4, eave_ft=2, fill=True)
 _sw2 = (["laborer"] * 2 + ["servant"] * 2 + ["burakumin"]) * 45
 for _y0 in range(1514, 1748, 52):
-    s.rowpack((1004, _y0, 1404, _y0 + 44), _sw2, court_every=4, eave_ft=2)
+    s.rowpack((1004, _y0, 1404, _y0 + 44), _sw2, court_every=4, eave_ft=2, fill=True)
 for _y0 in range(1488, 1700, 52):
-    s.rowpack((1022, _y0, 1396, _y0 + 42), _sw2, court_every=4, eave_ft=2)
+    s.rowpack((1022, _y0, 1396, _y0 + 42), _sw2, court_every=4, eave_ft=2, fill=True)
 for _y0 in range(1475, 1700, 26):
-    s.rowpack((1022, _y0, 1396, _y0 + 22), _sw2, court_every=4, eave_ft=2)
+    s.rowpack((1022, _y0, 1396, _y0 + 22), _sw2, court_every=4, eave_ft=2, fill=True)
 # THE LAST MERCHANT SEATS, ASKED FROM THE ENGINE (GM 2026-08-02): closing the ward to commoners
 # cost the cohort its ~9 wrongly-inside seats, and the strips + widened sweeps recover all but a
 # few - the band floor (~91 of 520) kept missing by 1-4 across regenerations. open_seat honors

@@ -67,3 +67,11 @@ the steps are the pre-modern one).
 
 **Recorded as a to-draw item**, not yet drawn: the quay face and its gangi steps need a glyph, and
 the granary row's landward path should meet the step flights rather than the pier heads.
+
+**Drawn (2026-08-11).** `settlement.quay(pts, steps=N)` renders the faced edge as a stone band with
+a coursing line, notches `steps` stepped landings into it (four treads each, descending toward the
+water), and sets mooring posts along the top. On Shiro Daika it runs the granary frontage, derived
+from the river's own polyline rather than pinned, so a re-routed river carries the wharf with it.
+The quay is classified as a LINE feature (like the towpath, not a box), and `quays` x `jetties` is
+a declared allowed pair: a jetty springs FROM the faced bank, which is the whole point of the pier
+- reach, starting at the revetment.
