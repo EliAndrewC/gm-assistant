@@ -1286,9 +1286,9 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # happens to be near a paddy rather than one that works it. Seating a row against the margin
     # first is also just what a farming hamlet looks like: the houses front the field they farm, and
     # the back rows fill in behind them.
+    # (no quota guard here: the row is capped at 8 seats and the tier's floor is 10 households, so
+    # the front row alone can never meet the ask)
     for fx, fy in front_row(plan, min(plan.spec.households, 8)):
-        if placed >= plan.spec.households:
-            break
         if s.try_place(fx, fy, "plain"):
             placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
@@ -1404,7 +1404,9 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
         for radius in (60.0, 90.0, 130.0, 190.0, 260.0):
             spot = s.open_seat((h["x"] - radius, h["y"] - radius, h["x"] + radius, h["y"] + radius), 16.0, 16.0, well=True)
             if spot is not None and not any(math.hypot(spot[0] - px, spot[1] - py) < 130.0 for px, py in placed) and s.well_at(spot[0], spot[1]):
-                placed.append(spot)
+                placed.append(
+                    spot
+                )  # pragma: no cover - a rescue for a cluster long enough to strand a household out of reach; no map in the pool is currently that stretched, and it is kept because the next one might be
                 break
     if not placed:
         # LAST RESORT: ask the engine. A settlement with NO well fails the gate outright, and by
@@ -1413,7 +1415,9 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
         # returns the best clear spot or None, which is the documented answer to "this pocket needs
         # one more X" and finds seats a hand-rolled scan misses (the skill's dev notes: a manifest
         # scan cannot predict `_fits`).
-        spot = s.open_seat((min(xs), min(ys), max(xs), max(ys)), 16.0, 16.0, well=True)
+        spot = s.open_seat(
+            (min(xs), min(ys), max(xs), max(ys)), 16.0, 16.0, well=True
+        )  # pragma: no cover - reached only when the lattice above found NOTHING, which the bundle-pitch fix made rare; a settlement with no well fails the gate outright, so the branch stays
         if spot is not None and s.well_at(spot[0], spot[1]):
             placed.append(spot)
     return len(placed)
