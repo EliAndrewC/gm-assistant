@@ -241,6 +241,14 @@ Worth carrying to any future generator work, whatever happens to this one:
   on the maps where routing was hard, the track was drawn through everything. Scoring every
   candidate and keeping the LEAST-BAD one means a hard map degrades by one crossing instead of by
   all of them, and the failure is visible rather than disguised.
+- **A filter that rejects EVERYTHING decides nothing, and looks identical to one that works.** The
+  fan disqualifier asked whether a supply canal ends outside the ground it waters - and tested both
+  ends, when a canal's upstream end is the head sluice and is outside the plots by construction. It
+  therefore answered "illegal" for every candidate, so the search fell through to picking on acreage
+  alone while appearing to enforce a rule, and paid for five aspect searches per map to do it. This
+  is the skill's "a check that never runs looks exactly like a check that passes", one step along:
+  a check that ALWAYS fires is just as blind, and neither shows up as an error. When you add a
+  filter, assert that it accepts something.
 - **The number that is wrong is rarely the one that fails.** A cluster band sized at 56 px per
   household instead of ~92 does not fail as a shortfall - the caller keeps seeding until the count
   is met - it fails as a cluster packed so solid that no wellhead can be seated anywhere in it, and
