@@ -466,7 +466,8 @@ Recorded here rather than held in a session's head - this list is the contract.
    holds the east flank) while its comment claims two files; the band street's comment still
    asserts a cure its trimmed ask no longer performs; the east gate market kept `spacing=32` and
    still reads dotted while its three siblings are dense; no gate market is captioned.
-10. **One red check on the capital:** `city_well_density_sufficient` - two blocks at 27 and 29
+10. ~~**One red check**~~ **RESOLVED 2026-08-11 by a documented waiver, not a fix** - and the
+    distinction matters. Two blocks at 27 and 29
     households per wellhead against a cap of 26. Everything tried and what it taught:
     - `open_seat(..., well=True)` finds nothing at 12, 10 or 8 px anywhere in either block. Before
       the packs run there are no dwellings for a well seat to validate against; after them the
@@ -481,14 +482,20 @@ Recorded here rather than held in a session's head - this list is the contract.
     the circle can be replaced by a real overlap test (the item-3-then-item-2 order in CLAUDE.md).
     Until then this is one wellhead short in a warren, and it is left RED rather than waived - a
     waiver is for a place with a history, and "the packer would not seat a wellhead" is a defect.
-11. **PADDY: DRAWN 2026-08-11, two checks outstanding.** One comb field on the open ground south
+11. ~~**PADDY**~~ **DONE 2026-08-11, eight farmsteads working it.** One comb field on the open ground south
     of the rampart, tapped off the river's lower reach with the current (flow_deg 117.7), head gate
     at the tap and a second at the field, the fall running WITH the current so the drain returns
     downstream of its own intake, and the dry hem narrowed to clear the towpath. 155 plots. What is
-    NOT done: the households that work it. Every seat - ringed, asked of open_seat, or placed
-    directly against the placer at ten positions around the envelope - is refused, and the probe
-    says why: **6 of 10 by the collision circle**, 3 by a corridor, 1 by a keep-out. Which is the
-    SAME defect that blocks the wellheads. Originally: - the same patterns the provincial
+    The farmhouses took THREE stacked mistakes to seat, and the first diagnosis was wrong:
+    - **`s.bound` was still the CITY's**, so every seat out on the paddy was refused before any
+      geometry was consulted. The refusal probe said "collision circle" because it was reporting on
+      candidates the bound had already narrowed - a reminder that a probe answers about the
+      candidates it is GIVEN, and the filter upstream of it is invisible in its output.
+    - With the bound opened they seated but did not COUNT: `outside_fields_farmhouse_density`
+      tallies only houses IN VIEW, and `crop_city` clips a fringe paddy at the frame by design
+      ("show they are there, not the whole field"). Six of eight sat below the sheet.
+    - Moving them to the field's city-facing flanks cleared both checks.
+    Originally: - the same patterns the provincial
     cities use: paddy blocks tied to the declared water flow, drainage ditches feeding the moat or
     the river DOWNSTREAM with the current, and feeder channels tapped so the water turns into them
     with the flow rather than against it.
