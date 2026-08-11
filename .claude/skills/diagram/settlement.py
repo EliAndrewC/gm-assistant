@@ -5078,7 +5078,7 @@ class Settlement:
         pts = [(x + dx, y + dy) for dx in (-hw, 0.0, hw) for dy in (-hh, 0.0, hh)]
         return not self.bound or all(point_in_poly(px, py, self.bound) for px, py in pts)
 
-    def open_seat(self, rect: Any, w: float, h: float, step: float = 4.0, clear_of: Any = (), well: bool = False, footprint: bool = True) -> Pt | None:
+    def open_seat(self, rect: Any, w: float, h: float, step: float = 4.0, clear_of: Any = (), well: bool = False, footprint: bool = True, disc: bool = False) -> Pt | None:
         """WHERE can a `w` x `h` feature actually stand inside `rect` (x0, y0, x1, y1)? Scans the
         rect and returns the best clear seat, or None if the ground is genuinely full.
 
@@ -5109,7 +5109,11 @@ class Settlement:
         while gy <= y1:
             gx = x0
             while gx <= x1:
-                if (not well or not self._in_scrub_cover(gx, gy)) and self._fits(gx, gy, w, h) and (not footprint or self._footprint_clear(gx, gy, w, h)):
+                # `disc=True` says the CANDIDATE is round, so min(w,h)/2 is its exact reach rather
+                # than the probe box's half-diagonal. Opt-in, not implied by well=True: the derived
+                # well GRID relies on the conservative radius as its padding, and making it exact
+                # there put a wellhead on a building.
+                if (not well or not self._in_scrub_cover(gx, gy)) and self._fits(gx, gy, w, h, disc=disc) and (not footprint or self._footprint_clear(gx, gy, w, h)):
                     apart = min((math.hypot(gx - px, gy - py) for px, py in pts), default=0.0)
                     central = -math.hypot(gx - cx, gy - cy)  # tie-break toward the middle of the rect
                     if best is None or (apart, central) > (best[0], best[1]):
@@ -13100,7 +13104,7 @@ class Settlement:
                 return False
         return True
 
-    def _fits(self, x: float, y: float, w: float, h: float, skip: Any = None, corridors: bool = True, row_mates: Any = None, row_axis: Any = None) -> bool:
+    def _fits(self, x: float, y: float, w: float, h: float, skip: Any = None, corridors: bool = True, row_mates: Any = None, row_axis: Any = None, disc: bool = False) -> bool:
         if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:  # keep clear of edges + title
             return False
         if self.bound and not point_in_poly(x, y, self.bound):  # stay inside a bounding ring (city wall)
@@ -13125,7 +13129,15 @@ class Settlement:
         # the exception is safe: the buildings are AXIS-ALIGNED to the way they front and sit in a
         # straight line, so an axis-aligned edge gap is exact, not an approximation. Only the
         # row's own previously-placed seats are measured this way; everything else keeps the circle.
-        r = math.hypot(w, h) / 2
+        # A WELLHEAD IS A DISC, so its own reach is its RADIUS, not the half-diagonal of the
+        # probe box around it (2026-08-11). The circumscribed circle is the documented
+        # over-restriction in this skill's CLAUDE.md ("CENTER vs FOOTPRINT" item 2); for a round
+        # feature it is not an approximation anyone has to live with - min(w, h) / 2 is EXACT, and
+        # for a 16 px probe that is 8 px of reach instead of 11.3. This is the one case that can be
+        # made exact without first solving the rotated-footprint problem, and it is the case that
+        # was blocking the capital: open_seat refused a wellhead at 12, 10 and 8 px in two blocks
+        # that the well-density rule says need one.
+        r = (min(w, h) / 2) if disc else (math.hypot(w, h) / 2)
         _mates = {(round(m[0], 2), round(m[1], 2)) for m in (row_mates or ())}
         _ax = row_axis or (1.0, 0.0)
         # the angle that matters is the seat's rotation RELATIVE TO THE ROW's bearing, not its

@@ -6607,3 +6607,20 @@ def test_quay_takes_a_default_width_from_the_map_scale():
     s.meta(scale="capital", ftpx=3)
     s.quay([(100, 100), (400, 100)], steps=1)
     assert s.M["quays"][0]["w"] >= 2.6
+
+
+def test_open_seat_disc_uses_the_true_radius_of_a_round_candidate():
+    """A wellhead is a DISC, so its reach is its radius - not the half-diagonal of the probe box
+    around it, which is the documented over-restriction in this skill's CLAUDE.md. Exact rather
+    than a relaxation, and opt-in: the derived well grid leans on the conservative radius as its
+    padding, and making it exact there put a wellhead on a building."""
+
+    def seat(disc):
+        s = settlement.Settlement(600, 600, seed=9)
+        s.meta(scale="city", ftpx=3)
+        s.placed.append((300.0, 300.0, 40.0, 40.0))  # one standing footprint in the middle
+        return s.open_seat((296, 330, 340, 372), 16, 16, step=2.0, footprint=False, disc=disc)
+
+    loose, exact = seat(False), seat(True)
+    assert exact is not None, "the exact disc reach must find the gap the half-diagonal refuses"
+    assert loose is None or math.hypot(exact[0] - 300, exact[1] - 300) <= math.hypot(loose[0] - 300, loose[1] - 300)
