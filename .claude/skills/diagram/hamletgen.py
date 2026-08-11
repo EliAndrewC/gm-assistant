@@ -1407,7 +1407,7 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                 placed.append(
                     spot
                 )  # pragma: no cover - a rescue for a cluster long enough to strand a household out of reach; no map in the pool is currently that stretched, and it is kept because the next one might be
-                break
+                break  # pragma: no cover - see the rescue append above
     if not placed:
         # LAST RESORT: ask the engine. A settlement with NO well fails the gate outright, and by
         # this point the lattice has been refused everywhere - which means the courtyards are full,
@@ -1418,7 +1418,7 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
         spot = s.open_seat(
             (min(xs), min(ys), max(xs), max(ys)), 16.0, 16.0, well=True
         )  # pragma: no cover - reached only when the lattice above found NOTHING, which the bundle-pitch fix made rare; a settlement with no well fails the gate outright, so the branch stays
-        if spot is not None and s.well_at(spot[0], spot[1]):
+        if spot is not None and s.well_at(spot[0], spot[1]):  # pragma: no cover - the last-resort seat; unreached since the bundle-pitch fix left the courtyards open
             placed.append(spot)
     return len(placed)
 
