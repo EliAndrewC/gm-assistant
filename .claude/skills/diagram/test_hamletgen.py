@@ -292,13 +292,12 @@ def test_the_report_line_names_the_map_and_its_verdict() -> None:
 # ---- end to end ---------------------------------------------------------------------------------
 
 
-def test_a_rolled_cohort_mostly_passes_the_whole_gate() -> None:
+def test_a_rolled_cohort_passes_the_whole_gate() -> None:
     """The experiment's actual claim, in miniature, and a RATCHET on it.
 
-    Hamlets rolled from seeds nobody looked at come out correct - MOSTLY. The generator is a proof
-    of concept and the honest figure is a pass RATE, not a guarantee, so this pins the rate instead
-    of asserting perfection: a change that drops it fails here by name. **Raise the threshold when
-    you raise the rate** - a ratchet only works if it is tightened.
+    Hamlets rolled from seeds nobody looked at come out correct. The honest figure is still a pass
+    RATE rather than a guarantee - a cohort of two dozen turns up the odd siting collision - so this
+    pins the rate: a change that drops it fails here by name.
 
     The two things that hold WITHOUT exception, on every map whether it passes the gate or not, are
     asserted for all of them: the declared households are seated, and the paddy acreage lands on the
@@ -313,12 +312,11 @@ def test_a_rolled_cohort_mostly_passes_the_whole_gate() -> None:
         assert abs(report.plan.acres - report.plan.target_acres) / report.plan.target_acres < 0.15, (
             f"{report.plan.spec.name}: {report.plan.acres:.1f} acres against a {report.plan.target_acres:.1f} target"
         )
-    # MEASURED 2026-08-11: 2 of these 4, and 8 of 12 over the first dozen seeds. The residue is
-    # siting collisions - a title placard with nowhere blank to stand on a sheet that is nearly all
-    # field, a coppice patch touching the fengshui belt - each a real defect the gate is right to
-    # reject. RAISE THIS when you raise the rate; a ratchet only works if it is tightened.
+    # MEASURED 2026-08-11, after the collision pass: these 4, and 21+ of 24 over the first two dozen
+    # seeds (`python3 cohort_audit.py --count 24`, which reports the residue by check). RAISE THIS
+    # when you raise the rate; a ratchet only works if it is tightened.
     passed = [r for r in reports if r.ok]
-    assert len(passed) >= 2, f"only {len(passed)}/4 rolled hamlets pass the whole gate: " + "; ".join(f"{r.plan.spec.name}: {r.failures}" for r in reports if not r.ok)
+    assert len(passed) >= 4, f"only {len(passed)}/4 rolled hamlets pass the whole gate: " + "; ".join(f"{r.plan.spec.name}: {r.failures}" for r in reports if not r.ok)
 
 
 def test_the_cli_reports_a_single_hamlet(tmp_path, capsys) -> None:  # type: ignore[no-untyped-def]
