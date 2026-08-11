@@ -11212,3 +11212,29 @@ def test_waterworks_caption_beside_its_point_is_fine():
     M["aqueducts"] = [{"poly": [[100, 100], [300, 300]], "w": 3.0, "intake": [100, 100], "to": [300, 300]}]
     M["labels"] = [[104, 88, 170, 98, 5, "intake weir"]]
     assert "waterworks_captions_stand_at_their_point" not in check_village.gate(M, verbose=False)
+
+
+def test_roadside_works_stand_on_their_road():
+    """A doss-house exists to catch travelers off a particular road, and a kiln carts its fuel
+    along one - so both stand on that way and lie along it. Nine flophouses on the capital came out
+    level while their roads ran at 138-167 degrees, and one sat ~300 ft off the road entirely."""
+    M = manifest()
+    M["town_streets"] = [{"pts": [[100, 100], [900, 100]], "w": 18}]
+    M["flophouses"] = [{"x": 500, "y": 130, "w": 34, "h": 15, "rot": 90, "label": "flophouse"}]
+    assert "roadside_works_stand_on_their_road" in check_village.gate(M, verbose=False)
+
+
+def test_roadside_work_lying_along_its_road_is_fine():
+    M = manifest()
+    M["town_streets"] = [{"pts": [[100, 100], [900, 100]], "w": 18}]
+    M["flophouses"] = [{"x": 500, "y": 130, "w": 34, "h": 15, "rot": 0, "label": "flophouse"}]
+    assert "roadside_works_stand_on_their_road" not in check_village.gate(M, verbose=False)
+
+
+def test_a_kiln_carries_no_distance_rule_only_an_angle():
+    """A nuisance works belongs OUT of town by its nature - the rule for it is alignment, not
+    proximity (the pool's kilns sit 482-1517 ft from the nearest way, correctly)."""
+    M = manifest()
+    M["town_streets"] = [{"pts": [[100, 100], [900, 100]], "w": 18}]
+    M["kilns"] = [{"x": 500, "y": 900, "w": 46, "h": 40, "rot": 0, "label": "kiln works"}]
+    assert "roadside_works_stand_on_their_road" not in check_village.gate(M, verbose=False)

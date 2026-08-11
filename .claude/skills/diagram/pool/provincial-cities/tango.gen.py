@@ -217,8 +217,8 @@ for kx, ky in KIDO_SPOTS:
 # CARAVAN facilities just INSIDE each gate (a transit zone): a flophouse + a prominent INN + a
 # STABLES with open ground for the wagon-trains' draft animals; plus a market flophouse OUTSIDE
 # each gate for late arrivals who find the gate shut at dusk.
-s.flophouse(1509, 780, label_below=True)  # outside the NORTH gate
-s.flophouse(1704, 1862)  # outside the SOUTH gate, by the gate market
+s.flophouse(1560, 780, label_below=True)  # outside the NORTH gate, on the spine it catches travelers from (was 227 ft off it - GM 2026-08-11)
+s.flophouse(1650, 1862)  # outside the SOUTH gate, by the gate market (was 254 ft off the spine - GM 2026-08-11)
 # N-gate caravan cluster, EAST of the road inside the gate (the NW is the agri district's)
 s.flophouse(1645, 991)
 s.inn(1645, 1029)

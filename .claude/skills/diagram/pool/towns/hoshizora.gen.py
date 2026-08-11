@@ -48,6 +48,9 @@ s = Settlement(2000, 1300, seed=479)
 # downhill=[-0.42, 0.91] / down_deg=115: the land falls SSW, obliquely along the stream and
 # the Imperial Road (both descend toward the low SW corner); every channel + drain runs with it.
 s.meta(
+    waivers={
+        "roadside_works_stand_on_their_road": "Hoshizora's doss-house stands in the pocket between the theater stage, the Monastery of Bishamon and the pond arm, where the trunk road bends past at 150 degrees. A 104 ft dormitory laid along that bearing laps one of the three from every seat in the pocket, and the town has no other ground by a road travelers arrive on - so this one is drawn square to its pocket rather than along its road. Every other roadside work on the map obeys the rule.",
+    },
     water_flow=145,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Hoshizora",
     scale="town",
@@ -240,7 +243,7 @@ s.manor(500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30)  #
 # the market flophouse (kichin-yado) just off the road on the SW approach, where peasants
 # traveling in for market day arrive - they sleep on straw for a sen a night. (Nudged west of
 # its old spot to clear the drainage tameike at the road bend.)
-s.flophouse(300, 920)
+s.flophouse(300, 920, rot=0)  # SQUARE, deliberately - see the waiver: no seat in this town lets a 104 ft dormitory lie along the road's 150 deg bearing without lapping the theater stage, the Bishamon monastery's caption or the pond arm
 
 # ---- the THEATER STAGE - a roofed performance stage + open viewing ground - in the Bishamon monastery's
 # precinct (just south of it), the festival/troupe venue belonging to the temple. A quiet county seat, so
