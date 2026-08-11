@@ -701,6 +701,12 @@ def stage_field(s: Settlement, plan: SitePlan) -> None:
     plan.envelope = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]  # routed against BEFORE the field is drawn (see feed_brook)
     s.field_polys.append(list(plan.envelope))
     s.meta(dry_furrows_vary=net["furrows_vary"])
+    # EVERY field ditch is a no-build corridor. Inside the field envelope that is redundant (the
+    # crop is blocked ground already), but a delivery ditch's tail and the collector run out past
+    # the envelope onto open margin, where the placer is otherwise free to seat a homestead squarely
+    # on the water (`no_structure_on_channel`). `s.field_channel` registers no corridor of its own.
+    for _d in s.M.get("field_ditches", []):
+        s.corridors.append(([(float(v[0]), float(v[1])) for v in _d["poly"]], 30.0))
     s.M["meta"]["field_archetype"] = "valley_paddy"
     # The brook that feeds the head, running in from off-map: the visible source. It is drawn as a
     # STREAM ending AT the sluice, where it becomes the head-race - it does not run on over the
@@ -818,7 +824,13 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
             # deliberately. (`streams_avoid_fields` exempts the same anchored leg, for the same
             # reason: the field is where the drain legitimately connects.) `mid` must clear the crop
             # itself, which is what keeps the junction from being drawn across the rice.
-            if not (point_in_poly(mid[0], mid[1], plan.envelope) or crosses_poly(mid, end, plan.envelope)):
+            # The junction leg is exempt only when the outfall really is INSIDE the field - which is
+            # what makes it the anchored connection the gate also exempts. When the drain ends just
+            # OUTSIDE the envelope (a fan whose collector runs past its own rice), the leg back to
+            # the junction can clip a lobe of the crop, and skipping the test unconditionally lets
+            # exactly that through. Exempt what is anchored; test what is not.
+            anchored = point_in_poly(out[0], out[1], plan.envelope)
+            if not (point_in_poly(mid[0], mid[1], plan.envelope) or crosses_poly(mid, end, plan.envelope) or (not anchored and crosses_poly(out, mid, plan.envelope))):
                 s.stream([out, mid, end], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)  # s.stream reserves its own corridor
                 plan.sink_brook = [out, mid, end]
                 return
@@ -1054,11 +1066,15 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     # the frame - are drawn in the two stages before this one and were missing from it, so a track
     # could cross one at a slant and `bridges_span_their_water` would fail on a deck too short for
     # the water beneath it.
+    # ...and the DRAWN lines, not only the recorded ones. `field_channel` fillets its polyline before
+    # drawing it (`fillet_polyline`, so a mitred corner does not spike), and it is the drawn line a
+    # bridge gets placed on - so routing against the recorded one can send a way across a ditch at a
+    # slant the router never saw. Same rule as the connector's own bow: measure what is drawn.
     plan.watercourses = [
         ((float(a[0]), float(a[1])), (float(b[0]), float(b[1])))
         for rec in list(s.M.get("field_ditches", [])) + list(s.M.get("channels", [])) + list(s.M.get("streams", []))
         for a, b in zip(rec["poly"], rec["poly"][1:], strict=False)
-    ]
+    ] + [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
     seat = seat_cluster(plan, dry_plots=crop_polys(s), drain=drain)
     plan.seat = seat
     ax, ay = seat["along"]
