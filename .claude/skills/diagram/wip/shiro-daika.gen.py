@@ -1471,12 +1471,18 @@ def _nearest_on(poly, hint):
     return best[1]
 
 
-def _ring_field(name, water, hint, out_dir, down_deg, seed, fall, canal_a, canal_b, offtakes, src_kind):
+def _ring_field(name, water, hint, out_dir, down_deg, seed, fall, canal_a, canal_b, offtakes, src_kind, hem=(47, 88)):
     """One more paddy on the ring, with the whole water chain the checks require: a tap ON the
     water, a bent head-race to a sluice set inland, gates at both ends, the comb beyond, the source
     and the drain both DECLARED, and the farmsteads that work it."""
     tap = _nearest_on(water, hint)
     _tl = math.hypot(out_dir[0], out_dir[1]) or 1.0
+    if src_kind == "drain-to-moat":
+        # its HEAD comes off the sheet - the high ground beyond the frame - so the race starts at
+        # the map edge in the direction the field lies, not on the moat it discharges into
+        _ex = 0.0 if out_dir[0] < 0 else float(s.W)
+        _ey = 0.0 if out_dir[1] < 0 else float(s.H)
+        tap = (_ex, _ey) if abs(out_dir[0]) > abs(out_dir[1]) else (hint[0] + out_dir[0] / _tl * 400, _ey)
     _ux, _uy = out_dir[0] / _tl, out_dir[1] / _tl
     _sl = (tap[0] + _ux * 78, tap[1] + _uy * 78)
     if src_kind == "moat":
@@ -1484,18 +1490,33 @@ def _ring_field(name, water, hint, out_dir, down_deg, seed, fall, canal_a, canal
         tap = moat_swept_tap(water, _mf["inlet"], _mf["outlet"], _sl, tap, want_deg=42.0, max_back=240.0)  # a short walk: sweeping 300 px upstream turns a 78 px head-race into a long diagonal
     _md = ((tap[0] + _sl[0]) / 2 - _uy * 7, (tap[1] + _sl[1]) / 2 + _ux * 7)
     s.field_channel([tap, _md, _sl], "#9CB4C8", 7, 7)
-    s.sluice_gate(_sl[0], _sl[1], rot=math.degrees(math.atan2(_uy, _ux)) + 90)
+    if src_kind != "drain-to-moat":
+        # a field FED from the water is gated where it draws; one that merely DISCHARGES has its
+        # only gate at the outfall, because there is no watercourse at its head to gate
+        s.sluice_gate(_sl[0], _sl[1], rot=math.degrees(math.atan2(_uy, _ux)) + 90)
     _net, _env, _cen = comb_field(
         name, _sl, down_deg, seed, fall, canal_a, canal_b, offtakes, avoid=(MOAT, RIVER), dry_band=(47, 88)
     )  # the pool cities' 3 ft/px hem: the dry-crop margin is what QUILTS the uncommanded fan head, so a thin one leaves bare parchment
     _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))  # the chain must END IN the field, or nothing anchors it there
-    topo_channel([tap, _sl, _pd], {"kind": src_kind}, {"kind": "field", "name": name})
+    topo_channel([tap, _sl, _pd], {"kind": "offmap"} if src_kind == "drain-to-moat" else {"kind": src_kind}, {"kind": "field", "name": name})
+    if src_kind == "drain-to-moat":
+        # the head comes off the sheet (the high ground beyond the frame), and the DRAIN is what
+        # meets the moat - so the junction is a discharge, gated, and swept with the moat's current
+        _dr0 = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
+        _out = _nearest_on(water, tuple(_dr0[-1]))
+        s.field_channel([tuple(_dr0[-1]), _out], "#9CB4C8", 6, 6)
+        s.sluice_gate(_out[0], _out[1], rot=math.degrees(math.atan2(_out[1] - _dr0[-1][1], _out[0] - _dr0[-1][0])) + 90)
+        topo_channel([tuple(_dr0[-1]), _out], {"kind": "drain", "name": name}, {"kind": "moat"})
+        _od = (_out[0] - _dr0[-1][0], _out[1] - _dr0[-1][1])
+        _ol2 = math.hypot(*_od) or 1.0
+        topo_channel([_out, (_out[0] + _od[0] / _ol2 * 600, _out[1] + _od[1] / _ol2 * 600)], {"kind": "moat"}, {"kind": "offmap"}, draw_w=0.0)
     _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
     _de = tuple(_dr[-1])
     _dd2 = (_de[0] - _dr[-2][0], _de[1] - _dr[-2][1])
     _dl = math.hypot(*_dd2) or 1.0
     _off = (_de[0] + _dd2[0] / _dl * 900, _de[1] + _dd2[1] / _dl * 900)  # carry it clear OFF the sheet - a drain that stops on-canvas is a drain that goes nowhere
-    topo_channel([_de, _off], {"kind": "drain", "name": name}, {"kind": "offmap"}, draw_w=4.0)
+    if src_kind != "drain-to-moat":
+        topo_channel([_de, _off], {"kind": "drain", "name": name}, {"kind": "offmap"}, draw_w=4.0)
     # the households that work it, on the flanks that stay in view once the sheet is cropped
     _xs = [q[0] for q in _env]
     _ys = [q[1] for q in _env]
@@ -1512,24 +1533,41 @@ def _ring_field(name, water, hint, out_dir, down_deg, seed, fall, canal_a, canal
 
 
 _RING = []
-for _nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk in (
-    ("daika-w", MOAT, (264, 1180), (-1.0, 0.12), 180, 71, 174, (188, 239), (123, 159), (0.22, 0.45, 0.68, 0.88), "moat"),
-    ("daika-s2", RIVER, (1950, 2960), (-0.97, 0.24), 175, 73, 114, (130, 167), (81, 104), (0.22, 0.45, 0.68, 0.88), "river"),  # a second bay of the southern paddy, downstream of the first
-    ("daika-e", RIVER, (2700, 1480), (0.6, 0.8), 52, 77, 174, (188, 239), (123, 159), (0.22, 0.45, 0.68, 0.88), "river"),
-    ("daika-w2", MOAT, (264, 800), (-1.0, -0.1), 170, 87, 188, (217, 275), (130, 171), (0.22, 0.45, 0.68, 0.88), "moat"),
+for _nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk, _hm in (
+    ("daika-w", MOAT, (264, 1180), (-1.0, 0.12), 180, 71, 174, (188, 239), (123, 159), (0.22, 0.45, 0.68, 0.88), "moat", (47, 88)),
+    ("daika-s2", RIVER, (1950, 2960), (-0.97, 0.24), 175, 73, 114, (130, 167), (81, 104), (0.22, 0.45, 0.68, 0.88), "river", (47, 88)),  # a second bay of the southern paddy, downstream of the first
+    ("daika-e", RIVER, (2700, 1480), (0.6, 0.8), 52, 77, 174, (188, 239), (123, 159), (0.22, 0.45, 0.68, 0.88), "river", (47, 88)),
+    ("daika-w2", MOAT, (264, 800), (-1.0, -0.1), 170, 87, 188, (217, 275), (130, 171), (0.22, 0.45, 0.68, 0.88), "moat", (47, 88)),
     # THE SOUTHWEST PLAIN - the ground the first pass left bare. Fed from the river's lowest reach,
     # which runs southwest past the city, so these bays lie downstream of everything the city draws
     # and their drains carry on off the sheet in the same direction.
-    ("daika-sw", RIVER, (2010, 2985), (-0.9, -0.44), 236, 101, 100, (120, 152), (74, 95), (0.22, 0.45, 0.68, 0.88), "river"),
-    ("daika-e2", RIVER, (3010, 1980), (0.85, 0.53), 75, 93, 188, (217, 275), (130, 171), (0.22, 0.45, 0.68, 0.88), "river"),
+    ("daika-sw", RIVER, (2010, 2985), (-0.9, -0.44), 236, 101, 100, (120, 152), (74, 95), (0.22, 0.45, 0.68, 0.88), "river", (47, 88)),
+    (
+        "daika-nw",
+        MOAT,
+        (760, 130),
+        (-0.25, -0.97),
+        330,
+        107,
+        46,
+        (56, 74),
+        (36, 48),
+        (0.22, 0.45, 0.68, 0.88),
+        "drain-to-moat",
+        (10, 20),
+    ),  # the north shelf is ~120 px deep between rampart and sheet edge: a pool-sized hem alone would not fit
+    ("daika-e2", RIVER, (3010, 1980), (0.85, 0.53), 75, 93, 188, (217, 275), (130, 171), (0.22, 0.45, 0.68, 0.88), "river", (47, 88)),
 ):
     try:
-        _RING.append(_ring_field(_nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk))
+        _RING.append(_ring_field(_nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk, _hm))
     except (ValueError, IndexError) as _e:
         # a site the comb cannot build on - too little room between the moat, the roads and the
-        # sheet edge for a fan of this size. Report it and carry on: the ring degrades by one
-        # field rather than taking the whole map down with it.
-        print(f"{_nm}: NO FIELD ({_e})")
+        # sheet edge for a fan of this size. Report it, and UNRECORD the half-built field: it is
+        # recorded before its water is declared, so leaving it would put a paddy on the map with
+        # no source, no drain and no farmhouses, invisible to every rule that reads the water.
+        s.M["fields"] = [_f for _f in s.M["fields"] if _f.get("name") != _nm]
+        s.M["field_ditches"] = [_d for _d in s.M.get("field_ditches") or [] if _d.get("field") != _nm]
+        print(f"{_nm}: NO FIELD ({_e}) - withdrawn")
 
 # THE FARMSTEADS, once every field is on the map: each ringed on its upslope side, clear of its
 # own cropland and of every other field's (the check reads them all, and so must the placer).
