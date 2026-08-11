@@ -481,7 +481,14 @@ Recorded here rather than held in a session's head - this list is the contract.
     the circle can be replaced by a real overlap test (the item-3-then-item-2 order in CLAUDE.md).
     Until then this is one wellhead short in a warren, and it is left RED rather than waived - a
     waiver is for a place with a history, and "the packer would not seat a wellhead" is a defect.
-11. **No farmland on the capital map, and there should be** - the same patterns the provincial
+11. **PADDY: DRAWN 2026-08-11, two checks outstanding.** One comb field on the open ground south
+    of the rampart, tapped off the river's lower reach with the current (flow_deg 117.7), head gate
+    at the tap and a second at the field, the fall running WITH the current so the drain returns
+    downstream of its own intake, and the dry hem narrowed to clear the towpath. 155 plots. What is
+    NOT done: the households that work it. Every seat - ringed, asked of open_seat, or placed
+    directly against the placer at ten positions around the envelope - is refused, and the probe
+    says why: **6 of 10 by the collision circle**, 3 by a corridor, 1 by a keep-out. Which is the
+    SAME defect that blocks the wellheads. Originally: - the same patterns the provincial
     cities use: paddy blocks tied to the declared water flow, drainage ditches feeding the moat or
     the river DOWNSTREAM with the current, and feeder channels tapped so the water turns into them
     with the flow rather than against it.

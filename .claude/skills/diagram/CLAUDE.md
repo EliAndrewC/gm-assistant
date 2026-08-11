@@ -935,3 +935,37 @@ Three probes in one session, two of them wrong in ways that cost a full round tr
 The good version of this is cheap: wrap `_shortfall` and walk `inspect.stack()` for the frame in
 the GEN file, and every run is attributed to the exact gen line that wrote it - which is how 10
 call sites across three shipped cities got classified in one run.
+
+## The collision circle is now blocking FEATURES, not just wasting ground
+
+The "CENTER vs FOOTPRINT" entry above records the circumscribed-circle collision as a documented
+inefficiency: `_fits` measures a candidate against `placed` with half-diagonal circles, so a 46x28
+house is forced 57.8 px from its neighbor where true touching is 28. Two 2026-08-11 findings move
+it from *inefficiency* to *blocker*, and they are the same finding twice:
+
+- **The capital cannot seat a wellhead.** Two machi blocks sit at 27 and 29 households per well
+  against a cap of 26, and `open_seat(..., well=True)` refuses a probe at 12, 10 AND 8 px anywhere
+  in either block. Tightening the derived well grid does add wells, but they land close enough to
+  existing ones to trip `wells_not_clustered` before the deficit clears - the two rules meet with
+  one household of daylight between them. Trimming the covering packs does nothing: both are
+  capacity-bound and already placing fewer than asked.
+- **The capital's new paddy cannot seat a farmhouse.** Ten positions around the field envelope,
+  tried three ways (the perimeter ring, `open_seat`, and `try_place` directly): **6 of 10 refused
+  by the collision circle**, 3 by a corridor, 1 by a keep-out.
+
+So the next substantial engine job is the one this file already prescribes, in the order it
+prescribes it: **item 3 first** - make the placer test the ROTATED footprint it is actually going
+to draw - and only then item 2, replacing the circles with a real `sat_overlap` on real corner
+quads. Both of the above clear as a side effect, and so does most of the frontage-seat fighting.
+Budget for the pool re-roll: the naive swap alone moved Tango +21 houses, +20 buildings, +23 wells.
+
+## Two placer bugs of the same shape: INDEX vs POP
+
+`pack` and `frontage` POP each item they seat; `rowpack` walks an INDEX and leaves the list intact.
+So the `_shortfall` call added to `rowpack` on 2026-08-11 - copied from its siblings - handed over
+the WHOLE list as "what did not fit", and every run reported an ask of exactly double what the gen
+gave it. The symptom is nastier than a wrong number: a run seating half its ask reads as seating a
+quarter, and trimming the ask to the reported figure halves it again, so the correction has a fixed
+point at 50% and never converges. Four rounds of automated trimming chased that before anyone read
+the loop. **When you add bookkeeping to a placer, check whether it consumes its work-list or indexes
+it** - and if a correction loop is not converging, suspect the measurement before the geometry.
