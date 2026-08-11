@@ -243,7 +243,7 @@ def grid(streets, width_ft=18):
 def front(streets, kinds, width_ft=18, spacing=19, rows=1):
     # near-contiguous machiya frontage per the GM row-packing doctrine (see tango.gen.py)
     for st in streets:
-        s.frontage(st, list(kinds), width=s.lw(width_ft), spacing=spacing, rows=rows, rowgap=2, jitter=1, setback=s.px(14))
+        s.frontage(st, list(kinds), width=s.lw(width_ft), spacing=spacing, rows=rows, rowgap=2, jitter=1, setback=s.px(14), fill=True)
 
 
 def alleys(lst):
@@ -712,7 +712,7 @@ front(
 # AFTER the flank barracks and the avenue frontage, so the seat is real ground rather than a
 # guess; seat 2 is the ground a 2-roll would use.
 s.dojos([(1186, 1450), (1420, 1440)])  # seat 1 nudged 6px east 2026-07-25: at x1180 the lot sat inside the Ministry of Works' 14px office standoff
-s.pack((1073, 1309, 1469, 1612), (["samurai"] * 3 + ["samurai_large"]) * 150, step=11, face_streets="fill")
+s.pack((1073, 1309, 1469, 1612), (["samurai"] * 3 + ["samurai_large"]) * 150, step=11, face_streets="fill", fill=True)
 s.label(
     1426, 1534, "samurai neighborhood", 10, italic=True, color="#3A352C"
 )  # E of the governor's mansion among the ward's samurai (x1426: the label box's W edge must clear the mansion's E edge at x~1365), clear of the burakumin rows to the S
@@ -753,7 +753,7 @@ alleys([[(1710, 990), (1710, 1134)]])  # top end lands ON the ring bed centerlin
 # on-street headroom is ample (47/227 vs the 50% ceiling before this row).
 s.frontage(
     [(1480, 940), (1480, 1325)], (["laborer_large"] + ["laborer"] * 2) * 20, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14)
-)  # rows=2: the rear row seats back-to-back facing AWAY (the ura-dana pattern the engine's frontage doctrine draws), claiming the deep band the warren rows cannot phase into
+, fill=True)  # rows=2: the rear row seats back-to-back facing AWAY (the ura-dana pattern the engine's frontage doctrine draws), claiming the deep band the warren rows cannot phase into
 # coarse well courts AFTER the alleys (so no wellhead lands on the mid alley) and BEFORE the packs
 # (so the terraces flow around them); tight spacing for the dense warren (~1 well per 10-20 households)
 # pre-reserved wells (the merchant-district pattern below): the warren's densest pockets - the
@@ -814,7 +814,7 @@ s.well_at(1851, 1394)
 s.small_shrine(1800, 1493)
 for _mrx, _mry in [(1580, 1394), (1580, 1614)]:
     s.block_polys.append([(_mrx - 22, _mry - 16), (_mrx + 22, _mry - 16), (_mrx + 22, _mry + 16), (_mrx - 22, _mry + 16)])
-s.frontage([(1501, 1330), (1898, 1330)], (["merchant"] * 3 + ["shop"]) * 16, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))
+s.frontage([(1501, 1330), (1898, 1330)], (["merchant"] * 3 + ["shop"]) * 16, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14), fill=True)
 front(MER_ST, (["merchant"] * 3 + ["shop"]) * 8, spacing=19, rows=1)
 s.merchant_storehouses(8)
 # WALLED COMPOUND COUNT IS ROLLED, 1-3 per city (GM 2026-07-23): a gated compound is a GRANTED
@@ -895,7 +895,7 @@ for jx, jy in ((2044, 1211), (2044, 1296), (2044, 1386)):
 QUAY = [(2009, 1236), (2009, 1424)]
 s.frontage(
     QUAY, ["shop"] * 18, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14)
-)  # the riverfront wharf is warehouses/SHOPS, not merchant residences (commoner dwellings shelter inside the wall - feature 006)
+, fill=True)  # the riverfront wharf is warehouses/SHOPS, not merchant residences (commoner dwellings shelter inside the wall - feature 006)
 s.label(1998, 1201, "wharf", 10, italic=True, color="#5A4326")
 # the river gate's own approach-road stall string (the wharf is the bulk market, but the gate
 # keeps a >= 6-shop guan-xiang slice too - GM 2026-07-24; research: 10-40 structures per

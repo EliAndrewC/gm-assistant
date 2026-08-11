@@ -11168,3 +11168,28 @@ def test_streets_reach_neighbors_catches_perpendicular_approaches():
     assert "city_streets_reach_their_neighbors" not in f(joined)
     parallel = {**base, "town_streets": [{"pts": [[400, 300], [400, 900]], "w": 10}, {"pts": [[460, 300], [460, 900]], "w": 10}]}
     assert "city_streets_reach_their_neighbors" not in f(parallel)  # 60px apart and PARALLEL - not a failed junction
+
+
+def test_placement_runs_meet_their_ask_fires_on_a_run_that_landed_short():
+    """A placer that drops most of what it was asked for is authored-vs-landed drift, and the
+    record _shortfall writes is only worth writing if something reads it back (the capital drew
+    129 of 283 requested frontage seats behind a green gate)."""
+    M = manifest()
+    M["shortfalls"] = [{"by": "frontage", "at": [10, 10, 200, 10], "placed": 3, "wanted": 20, "dropped": "shop x17"}]
+    assert "placement_runs_meet_their_ask" in check_village.gate(M, verbose=False)
+
+
+def test_placement_runs_meet_their_ask_spares_a_run_that_missed_by_a_hair():
+    """A row that seats all but a couple has met its ask - the two pool towns that record a
+    shortfall at all (Ubame 21/23, Hirameki 13/14) are exactly this case and must stay green."""
+    M = manifest()
+    M["shortfalls"] = [{"by": "pack", "at": [10, 10, 200, 200], "placed": 21, "wanted": 23, "dropped": "servant x2"}]
+    assert "placement_runs_meet_their_ask" not in check_village.gate(M, verbose=False)
+
+
+def test_placement_runs_meet_their_ask_is_silent_when_the_ask_is_a_declared_budget():
+    """fill=True means "place up to N" - the engine records no shortfall at all, so a district
+    fill that seats a fraction of its budget is not drift and the check never sees it."""
+    M = manifest()
+    M["shortfalls"] = []
+    assert "placement_runs_meet_their_ask" not in check_village.gate(M, verbose=False)

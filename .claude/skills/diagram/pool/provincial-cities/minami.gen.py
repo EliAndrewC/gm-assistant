@@ -380,7 +380,7 @@ def grid(streets, width_ft=18):
 
 def front(streets, kinds, width_ft=18, spacing=19, rows=2):
     for st in streets:
-        s.frontage(st, list(kinds), width=s.lw(width_ft), spacing=spacing, rows=rows, rowgap=2, jitter=1, setback=s.px(14))
+        s.frontage(st, list(kinds), width=s.lw(width_ft), spacing=spacing, rows=rows, rowgap=2, jitter=1, setback=s.px(14), fill=True)
 
 
 def alleys(lst):
@@ -529,7 +529,7 @@ s.cemetery(
 # the rows were laid seated only 29 of the 48 the Fox clergy program calls for.
 TEMPLE_FAMILY_SEATS = [(1104, 1176), (1366, 1170), (1064, 1428), (1372, 1090), (1470, 1132), (1728, 1156), (1560, 1170), (1200, 1548)]
 for _tx, _ty in TEMPLE_FAMILY_SEATS:
-    s.pack((_tx - 60, _ty - 36, _tx + 60, _ty + 46), ["monk_house"] * MONK_PER_PRECINCT, step=13)  # bbox widened 2026-08-08:
+    s.pack((_tx - 60, _ty - 36, _tx + 60, _ty + 46), ["monk_house"] * MONK_PER_PRECINCT, step=13, fill=True)  # bbox widened 2026-08-08:
     # the RNG-scope re-roll left the Ebisu precinct with a single monk house inside the old 96x68 box, and a
     # temple complex keeps 2-3 of them (city_temples_have_monk_housing). Still a precinct-sized pocket.
 
@@ -594,7 +594,7 @@ s.rowpack(
     (1664, 1528, 1714, 1642), ["samurai"] * 40, court_every=5, eave_ft=2
 )  # east flank, below the martial hall and inside the ring. SAMURAI, not the old servant/laborer terrace: the ward houses its domestics as each household's own nagaya RANGE (s.servant_ranges, below), so a servant terrace here is exactly the commoner-reading fabric the fence exists to exclude (GM 2026-08-02; city_ward_servants_housed_as_ranges)
 s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
-s.pack((1452, 1312, 1836, 1716), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill")
+s.pack((1452, 1312, 1836, 1716), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill", fill=True)
 s.label(1668, 1314, "samurai neighborhood", 10, italic=True, color="#3A352C")
 s.ward("samurai", WARD_FENCE, gates=KIDO_SPOTS)
 
@@ -628,7 +628,7 @@ s.fire_tower(1362, 1120, label="fire tower")
 
 _n_est = s.merchant_estates([(1268, 1372, "north"), (1256, 1104, "east"), (1210, 1620, "east")])
 _ML_SPOTS = [(1344, 1380), (1268, 1104)][_n_est - 1 :]
-s.frontage([(1040, 1330), (1390, 1330)], (["merchant"] * 5 + ["shop"]) * 18, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(46))
+s.frontage([(1040, 1330), (1390, 1330)], (["merchant"] * 5 + ["shop"]) * 18, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(46), fill=True)
 front([MER_V], (["merchant"] * 3 + ["shop"]) * 14, spacing=19, rows=2)
 s.place_wells((1044, 1034, 1380, 1300), spacing=54)
 _mer = ["merchant_house"] * 650
@@ -710,7 +710,7 @@ s.bound = None
 for jy in (1236, 1312, 1388):
     s.jetty(855, jy, rot=180, length=22)  # root ~14px onto the EAST bank, running WEST into the water
 QUAY = [(908, 1188), (908, 1290)]
-s.frontage(QUAY, ["shop"] * 16, skip=ROAD, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(30))
+s.frontage(QUAY, ["shop"] * 16, skip=ROAD, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(30), fill=True)
 s.label(916, 1164, "wharf", 10, italic=True, color="#5A4326")
 # the river gate's own approach-stall string, and the north gate's market
 # The market line IS the road: s.frontage seats a rank on EACH side of its line ~15px out, and
@@ -1108,10 +1108,10 @@ for _tx, _ty in [(1104, 1176), (1366, 1170), (1064, 1428), (1372, 1090), (1470, 
 # a dozen commoner houses came to rest outside the rampart (city_commoner_dwellings_inside_walls).
 s.bound = [list(p) for p in RING]
 reserve_caption_ground()
-s.pack(NE_Q, (["laborer"] * 4 + ["servant"]) * 60, step=13, face_streets="fill")
-s.pack(NW_Q, (["merchant_house"] * 4 + ["merchant"]) * 55, step=13, face_streets="fill")
-s.pack(SW_Q, (["laborer"] * 3 + ["servant"] * 2 + ["burakumin"]) * 55, step=13, face_streets="fill")
-s.pack(SE_Q, (["samurai"] * 3 + ["samurai_large"]) * 30, step=12, face_streets="fill")
+s.pack(NE_Q, (["laborer"] * 4 + ["servant"]) * 60, step=13, face_streets="fill", fill=True)
+s.pack(NW_Q, (["merchant_house"] * 4 + ["merchant"]) * 55, step=13, face_streets="fill", fill=True)
+s.pack(SW_Q, (["laborer"] * 3 + ["servant"] * 2 + ["burakumin"]) * 55, step=13, face_streets="fill", fill=True)
+s.pack(SE_Q, (["samurai"] * 3 + ["samurai_large"]) * 30, step=12, face_streets="fill", fill=True)
 # THE WARD'S SERVANT HOUSING - each household's own nagaya, not a servant quarter. Runs here, with
 # every ward samurai house finally placed and s.ward long since drawn, and BEFORE fill_exactly, so
 # the exact-population pass can top the servant count up in the commoner quarters afterwards.

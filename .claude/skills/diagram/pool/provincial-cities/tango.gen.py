@@ -299,7 +299,7 @@ def front(streets, kinds, width_ft=18, spacing=19, rows=1):
     # spacing ~19px vs an 16-18px storefront = near-CONTIGUOUS frontage (machiya shared party
     # walls; street frontage was taxed and precious), per the GM row-packing doctrine
     for st in streets:
-        s.frontage(st, list(kinds), width=s.lw(width_ft), spacing=spacing, rows=rows, rowgap=2, jitter=1, setback=s.px(14))
+        s.frontage(st, list(kinds), width=s.lw(width_ft), spacing=spacing, rows=rows, rowgap=2, jitter=1, setback=s.px(14), fill=True)
 
 
 def alleys(lst):
@@ -767,11 +767,11 @@ s.block_polys.append(
 # complex for the married adepts among its 15-30 monks - drawn identical to laborer houses
 # (kind "monk_house" exists for the checks/budget/population math, not the eye). Placed before
 # the SW frontages/packs so the merchant quarter flows around them.
-s.pack((1252, 1478, 1316, 1530), ["monk_house"] * 3, step=15)  # Benten's, between the graveyard and the hall
+s.pack((1252, 1478, 1316, 1530), ["monk_house"] * 3, step=15, fill=True)  # Benten's, between the graveyard and the hall
 s.pack((1390, 1540, 1424, 1580), ["monk_house"] * 2, step=14)  # Daikoku's, N of the hall below the theater ground
 s.frontage(
     [(1159, 1455), (1602, 1455)], (["merchant"] * 3 + ["shop"]) * 20, width=s.lw(20), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14), skip=AVENUE
-)  # skip=AVENUE: the sub-segment must match the avenue's REGISTERED corridor or its own street rejects it
+, fill=True)  # skip=AVENUE: the sub-segment must match the avenue's REGISTERED corridor or its own street rejects it
 front(SW_ST, (["merchant"] * 3 + ["shop"]) * 12, width_ft=18, spacing=19, rows=2)
 # a noticeable minority of merchant houses keep a fireproof kura - placed NOW, while the
 # shopfronts still have open back lots (the terraces packed next would fill them)
@@ -813,7 +813,7 @@ s.rowpack((1555, 1498, 1592, 1610), (["merchant_house"] * 3 + ["servant"]) * 8) 
 s.rowpack((1501, 1462, 1582, 1559), (["merchant_house"] * 5 + ["servant"]) * 10)
 WEST_HOMES = (["merchant_large"] + ["merchant_house"] * 2 + ["servant"]) * 8
 s.place_wells((1226, 1460, 1328, 1622), spacing=90)
-s.pack((1191, 1466, 1343, 1693), (["merchant_large"] + ["merchant_house"] * 2 + ["servant"]) * 12, step=20, face_streets="fill")
+s.pack((1191, 1466, 1343, 1693), (["merchant_large"] + ["merchant_house"] * 2 + ["servant"]) * 12, step=20, face_streets="fill", fill=True)
 s.label(1399, 1462, "merchant district", 10, italic=True, color="#5A4326")
 
 # WELL COVERAGE passes, now the commoner housing is all down: any dwelling farther than a
@@ -931,7 +931,7 @@ s.corridors.append(
 )  # reserve the WARD FENCE line before the pack so no samurai house sits ON the fence (city_ward_fence_clear_of_structures)
 s.pack(
     (1624, 1377, 2084, 1742), (["samurai"] * 2 + ["samurai_large"]) * 150, step=11, face_streets="fill"
-)  # 1-in-3 large, not 1-in-4 (GM 2026-07-26): the ward-gate reservations are sized to the real glyph now, and the ground they took back from the quarter cost a senior house - the packer skips a large that will not fit, so offering more of them is what restores the rank mix (city_samurai_housing_varied wants >= 3)
+, fill=True)  # 1-in-3 large, not 1-in-4 (GM 2026-07-26): the ward-gate reservations are sized to the real glyph now, and the ground they took back from the quarter cost a senior house - the packer skips a large that will not fit, so offering more of them is what restores the rank mix (city_samurai_housing_varied wants >= 3)
 s.label(1762, 1691, "samurai neighborhood", 10, italic=True, color="#3A352C")
 # the samurai/government WARD: a continuous earthwork fence (W + N), ends abutting the city
 # wall, so the kido gates can't be walked around. The W leg jogs east below the quarter to
@@ -1157,12 +1157,12 @@ s.place_caption("gate market", s.frontage_box, 10)  # ditto - the ladder also ke
 # COMMERCIAL RIBBON along the Imperial road - a city ON a trade route lines its through-road
 # with shops + traveler services (its prime frontage). The central road-market fills the block
 # between the burakumin lane and the merchant avenue; a smaller row greets northern arrivals.
-s.frontage([(1602, 1328), (1602, 1448)], (["shop"] + ["merchant"] * 2) * 5, skip=IMPROAD, both=False, width=s.lw(22), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))
-s.frontage([(1602, 978), (1602, 1039)], ["shop"] * 3, skip=IMPROAD, both=False, width=s.lw(22), spacing=19, rows=1, jitter=1, setback=s.px(14))
+s.frontage([(1602, 1328), (1602, 1448)], (["shop"] + ["merchant"] * 2) * 5, skip=IMPROAD, both=False, width=s.lw(22), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14), fill=True)
+s.frontage([(1602, 978), (1602, 1039)], ["shop"] * 3, skip=IMPROAD, both=False, width=s.lw(22), spacing=19, rows=1, jitter=1, setback=s.px(14), fill=True)
 # EAST side - a thin shop row in the gap between the road and the NE/SE quarters
 s.frontage(
     [(1602, 1308), (1602, 1155)], (["shop"] + ["merchant"] * 3) * 2, skip=IMPROAD, both=False, width=s.lw(22), spacing=20, rows=1, jitter=1, setback=s.px(14)
-)  # stops at the burakumin-lane latitude: the ministry labels own the flank below
+, fill=True)  # stops at the burakumin-lane latitude: the ministry labels own the flank below
 s.label(1523, 1407, "road market", 9, italic=True, color="#5A4326")
 
 # THE DEAD - a full funerary geography (centuries-old city; remains cremated, then interred):

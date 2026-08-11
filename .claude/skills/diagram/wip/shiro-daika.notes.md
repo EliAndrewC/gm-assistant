@@ -386,3 +386,72 @@ pushed inward by a fixed radial offset that ignored the label's own 134px width,
 west gate the box straddled the rampart however far its centre went - and the adaptive fix then
 read `M["wall"]` before `city_wall` records it, so the clash test passed at step 0. The caption
 LADDER also never knew about the rampart at all; it does now.
+
+## COMMERCIAL ROW DENSITY (2026-08-11)
+
+The GM, on the north gate market: *"Is that the correct amount of space between gate market
+buildings? No objection, they just look more spaced out than I expected."* Median gap between
+neighboring shops was 84 ft - the wrong urban form, not a tuning error. The research and the
+deliberate departure are in `research/cities/fabric.md`, "Machiya row density"; the engine side
+is `frontage(dense=True)`.
+
+Where it landed: N market 18 ft median gap, S 18 ft, SW 9 ft, E 48 ft (a loose roadside market at
+the Fox-lands gate, which should stay loose). Shops and merchants on the map: 173 -> 182.
+
+**The asks were trimmed to the ground truth at the same time.** Ten frontage runs were landing
+under 60% of what they asked for; the refusals were block_polys reservations, crossing ways'
+cleared bands and standing houses - i.e. the ground beside those streets is genuinely taken, not a
+placement bug. Each was sliced to the count it actually seats (a prefix slice, so the drawn map is
+byte-identical), and one run was deleted outright: the north gate market's INNER file, between the
+road and the moat bank, had ~26 ft of usable ground after the road's band and the bank and placed
+exactly zero. The market is the outer file plus the head pocket. Manifest now records 36 of 44
+seats (82%) across 4 runs, against 129 of 283 (46%) across 17 before.
+
+**Knock-on worth remembering:** the denser rows seated 4 more suburb dwellings than the budget band
+allows. Taking them off the wharf hamlet turned `alleys_serve_buildings` red - that alley exists to
+serve those households - so they came off the porters' rows on the towpath shore instead, which no
+alley depends on. A trim in a fabric this tight is a siting decision, not an arithmetic one.
+
+## OPEN QUEUE (GM items raised 2026-08-11, in the order they came in)
+
+Recorded here rather than held in a session's head - this list is the contract.
+
+1. **Aqueduct captions adrift.** "The intake weir and the settling basin labels are really far away
+   from the things they label... if a label can be moved closer because there is literally nothing
+   between the label and the thing it is labeling, we should do it, up to some minimum distance."
+   DIAGNOSED: all three aqueduct captions are hand-placed `s.label(...)` with `ref=None`, so they
+   bypass the standoff ladder (which seats at LABEL_MIN_AIR = 5 px) AND escape
+   `label_hugs_its_referent`, which only governs labels that declare a subject. FIX: a check that a
+   caption naming a specific FEATURE must carry a referent (the caption-group vocabulary in
+   `_LABEL_GROUP` is the test for "names a specific feature"), then convert these to
+   `place_caption` so the ladder seats them.
+2. **The wharf's form.** Is three piers right for six granaries and three warehouses, and is there
+   a DOCK or quay structure distinct from the piers that the map should draw? Research and record,
+   then draw whatever the research says is visible.
+3. **Flophouses.** Max distance from the road they stand on, and ORIENTED to it - the one outside
+   the southwest gate is ~300 ft off the road and level while the road is not. All nine currently
+   record `rot: 0`.
+4. **Kiln works** must be slanted to the road's angle, like the dye works.
+5. **South crop too loose.** MEASURED: the crop is working (margin 36 px ~ 110 ft), and what holds
+   the frame open is a CAPTION - "Imperial Road" at y2781 and "towpath" at y2772 float in empty
+   ground 305 ft south of the last structure. Same root cause as item 1. Needs a rule that a
+   caption may not be the only thing holding the frame open.
+6. **Samurai country estates belong on the side facing the Imperial capital** (northeast here, not
+   northwest). GM: this is a standing question to ASK when making a city, alongside water-flow
+   direction and clan - so it goes in the skill's always-ask list, gets a `capital_dir` meta, and
+   gets a check keyed on it.
+7. **The slanted street north of the southwest gate** still stops just short of the long west-east
+   street. `city_streets_reach_their_neighbors` was supposed to catch exactly this and does not -
+   fix the check FIRST against this map, then the street (and the odd tilt itself).
+8. **`rowpack` records no shortfall** (settlement-review, 2026-08-11), so
+   `placement_runs_meet_their_ask` is blind to it: Jurojin's monzen flanks drew 1 and 0 of 40 and
+   another row 4 of 24, all green. Make `rowpack` record exactly as `pack` does, then trim or seat
+   what it reports.
+9. **Settlement-review's other findings:** the Benten monzen is one-sided (a walled manor court
+   holds the east flank) while its comment claims two files; the band street's comment still
+   asserts a cure its trimmed ask no longer performs; the east gate market kept `spacing=32` and
+   still reads dotted while its three siblings are dense; no gate market is captioned.
+10. **One red check on the capital:** `city_well_density_sufficient` - two warren blocks at 29 and
+    36 households per well against a cap of 26. `open_seat` refuses an 8 px wellhead anywhere in
+    either block, which is the documented over-restrictive collision circle (CLAUDE.md, "CENTER vs
+    FOOTPRINT" item 2) rather than genuinely full ground.
