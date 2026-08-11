@@ -674,24 +674,6 @@ def stage_field(s: Settlement, plan: SitePlan) -> None:
     # water source for the gate.
     up = (sluice[0] - dx * 420, sluice[1] - dy * 420)
     s.draw_comb_field(net, f"{plan.spec.name.lower()}-paddies", {"kind": "stream", "stream": [up, ((up[0] + sluice[0]) / 2 + dy * 26, (up[1] + sluice[1]) / 2 - dx * 26), sluice]})
-    # REGISTER THE DRY HEM AS CROPLAND, which `draw_comb_field` does NOT do - and this is worth
-    # knowing about, because it is a defect in the shared engine rather than in this module.
-    #
-    # The engine keeps two registries for cropland. `block_polys` is the no-build list; `dry_polys`
-    # is the one the GROVE, the LANE and the threshing-yard filters read to keep trees and tracks
-    # out of the hatake strips. `draw_comb_field` appends the hem to `block_polys` only, so a map
-    # built through it has hem plots that stop a house but do not stop a tree - and every
-    # hand-authored comb gen in the pool (hoshigaoka, ueda, hikari, hoshizora, hirameki, ubame)
-    # compensates with its own `s.dry_polys.append(...)` line, which is exactly the shape of bug the
-    # skill's dev notes call out: placement and its check reading DIFFERENT sources. Honda and
-    # Shimizu, the two maps that already roll from a seed, pass only because their clusters happen
-    # to sit away from the hem; a seat that hugs it, as several of this module's cohort do, fails
-    # `groves_clear_of_dry_plots` and `lanes_clear_of_dry_plots` at once.
-    #
-    # Registered here, from the MANIFEST (what was actually drawn - `draw_comb_field` drops hem
-    # plots that landed on water or on another fan's rice, so the net's list is not the map's list).
-    for poly in crop_polys(s):
-        s.dry_polys.append(poly)
 
 
 # ---- STAGE 3: where the runoff goes -------------------------------------------------------------

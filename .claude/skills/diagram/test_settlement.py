@@ -6624,3 +6624,44 @@ def test_open_seat_disc_uses_the_true_radius_of_a_round_candidate():
     loose, exact = seat(False), seat(True)
     assert exact is not None, "the exact disc reach must find the gap the half-diagonal refuses"
     assert loose is None or math.hypot(exact[0] - 300, exact[1] - 300) <= math.hypot(loose[0] - 300, loose[1] - 300)
+
+
+def test_a_comb_hem_is_registered_as_CROPLAND_not_only_as_no_build_ground():
+    """THE RATCHET for the 2026-08-11 engine fix (see `draw_comb_field`).
+
+    The engine keeps two registries for cropland and they are read by different things:
+    `block_polys` stops a FARMSTEAD, `dry_polys` stops a TREE, a lane, a threshing yard and the
+    ground-cover scatters. `draw_comb_field` used to append to the first only, so a map built
+    through it had hem plots that a house respected and a grove did not - invisible for as long as
+    the clusters happened to sit away from the hem, and three simultaneous gate failures the moment
+    one did not. Every hand-authored comb gen carries its own `s.dry_polys.append(...)` to
+    compensate; this holds the line for the ones that do not."""
+    from waterfields import build_comb
+
+    s = Settlement(1800, 1800, seed=5)
+    s.meta(name="Hem", scale="hamlet", ftpx=1, toscale=True, households=12, down_deg=90, water_flow=90)
+    net = build_comb(1800, 1800, (700.0, 380.0), 5, down_deg=90, field_fall=800)
+    s.draw_comb_field(net, "hem-paddies", {"kind": "stream", "stream": [(700.0, -40.0), (700.0, 380.0)]})
+    assert s.M["dry_plots"], "the fixture must actually draw a dry hem, or it proves nothing"
+    assert len(s.dry_polys) == len(s.M["dry_plots"]), "every DRAWN hem plot is registered as cropland"
+    assert all(any(abs(v[0] - p[0]) < 0.05 and abs(v[1] - p[1]) < 0.05 for p in poly) for rec, poly in zip(s.M["dry_plots"], s.dry_polys, strict=True) for v in [rec["poly"][0]]), (
+        "the registered polygon is the one that was drawn, not a re-derivation of it"
+    )
+
+
+def test_a_rolled_cluster_band_is_sized_in_REAL_FEET_at_the_map_s_grain():
+    """THE RATCHET for the other half of that fix (see `roll_village`).
+
+    A cluster band is sized per homestead BUNDLE - house plus its yard and dooryard garden, ~92 ft
+    of pitch once the placer's collision circles are paid for - and that is a REAL-FEET quantity, so
+    the band must shrink with the map's grain. It used to convert through `bscale`, which every tier
+    pins to 1/ftpx except villages, which pin it to 1.0 for legacy reasons; a village band was
+    therefore asked for twice the ground its (half-size) bundles occupy and strung its cluster thin
+    over a hollow hull. The failure mode of the ORIGINAL 56 ft figure is nastier and is why this is
+    pinned: too small does not show up as a shortfall, because the caller keeps seeding until the
+    quota is met - it shows up as a cluster too solid to seat a wellhead in."""
+    hamlet, village = Settlement(900, 900, seed=1), Settlement(900, 900, seed=1)
+    hamlet.meta(scale="hamlet", ftpx=1)
+    village.meta(scale="village", ftpx=2)
+    assert hamlet.px(settlement.BUNDLE_PITCH_FT) == pytest.approx(settlement.BUNDLE_PITCH_FT)
+    assert village.px(settlement.BUNDLE_PITCH_FT) == pytest.approx(settlement.BUNDLE_PITCH_FT / 2)

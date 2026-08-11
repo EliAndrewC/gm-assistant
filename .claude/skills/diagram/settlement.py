@@ -1064,6 +1064,13 @@ class PointGrid:
 _VILLAGE_POP_DIST = ((200, 10), (250, 10), (300, 15), (350, 30), (400, 15), (450, 10), (500, 10))
 
 
+# Ground one HOMESTEAD BUNDLE takes, in real feet, used to size a nucleated cluster's band. The
+# bundle's reserved rects come to ~71 x 57 ft; `_fits` then spaces bundles by circumscribed circles
+# rather than real footprints, so the effective pitch is larger again. See `roll_village`, which
+# explains what the wrong number does and why it does not fail as a shortfall.
+BUNDLE_PITCH_FT = 92.0
+
+
 def village_population(rng: random.Random) -> int:
     """Draw a village population (200-500, mode 350) from the weighted distribution, using the passed
     random.Random so the draw is DETERMINISTIC from the map seed. Returns the integer population."""
@@ -3111,7 +3118,19 @@ class Settlement:
             self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
             self._draw_furrows(p["poly"], p["furrow"], p["theta"])
             self.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in p["poly"]], "crop": p["crop"], "theta": round(p["theta"], 3)})
-            self.block_polys.append(p["poly"])  # dry cropland is no-build ground; keep farmsteads off it
+            # A HEM PLOT GOES IN BOTH REGISTRIES, and the second one is the fix (2026-08-11).
+            # `block_polys` is the no-build list, which keeps a farmstead off the crop. `dry_polys`
+            # is the list the GROVE clump filter, the lane/tree fringe, the threshing-yard and
+            # garden nudges and the ground-cover scatters read - so a map that registered only the
+            # first had hem plots that stopped a house and not a tree. Every hand-authored comb gen
+            # compensates with its own `s.dry_polys.append(...)` line (hoshigaoka, ueda, hikari,
+            # hoshizora, hirameki, ubame all carry one); the maps built THROUGH this method never
+            # did, and passed only because their clusters happened to sit away from the hem. Found
+            # by the scripted-generation experiment, whose clusters do not (hamletgen.md).
+            # Registering here is the same discipline as everywhere else in this file: placement and
+            # its check must read the SAME source, and the source is what was actually drawn.
+            self.block_polys.append(p["poly"])
+            self.dry_polys.append(p["poly"])
         for p in net["plots"]:  # the flooded paddies
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" stroke-width="{aze_w(self.ftpx):.2f}" stroke-linejoin="round"/>')
@@ -13792,10 +13811,33 @@ class Settlement:
         # sprays seeds over the paddy and starves the village (Kikuta at down_deg=45 placed 3 of 55). Size the
         # band's LENGTH from the household count so a village gets the frontage it needs, and keep its DEPTH
         # shallow so the near rows ring the field.
-        # rough bundle pitch per household (house + its yard/garden + the packing gap). Keep this TIGHT: a
-        # nucleated village is a dense fabric, and an over-generous pitch spreads the houses into a thin scatter
-        # and leaves the skeleton's lanes overshooting into empty ground.
-        need = max(1, households) * (56.0 * max(0.6, self.bscale)) ** 2
+        # GROUND PER HOUSEHOLD, and it is the BUNDLE's, not the farmhouse's (corrected 2026-08-11).
+        #
+        # The to-scale tiers do not place a farmhouse, they place a homestead BUNDLE - house (46 x 28
+        # ft) plus its threshing yard below and its dooryard garden beside, ~71 x 57 ft of reserved
+        # ground - and `_fits` then keeps bundles apart by circumscribed circles rather than real
+        # footprints, which costs up to another ~2x in spacing. The old 56 ft pitch is the FARMHOUSE,
+        # so the band was asked to hold roughly three times what fits in it.
+        #
+        # THE SYMPTOM IS NOT A SHORTFALL, which is what kept this hidden: the caller keeps drawing
+        # seeds until the quota is met, so the household count comes out right and the cluster ends
+        # up packed absolutely solid. It surfaces instead as a settlement with nowhere to put a
+        # WELL - `open_seat(..., well=True)` refusing every probe in the cluster, and the map failing
+        # `settlement_has_wells` for a reason that looks nothing like its cause. (Found by the
+        # scripted-generation experiment, hamletgen.md; Honda seating 15 houses for 18 declared
+        # households was the visible edge of it.)
+        #
+        # Still deliberately TIGHT - a nucleated village is a dense fabric, and an over-generous
+        # pitch spreads the houses into a thin scatter and leaves the lanes overshooting into empty
+        # ground. 92 ft is the bundle plus the circles' waste and no more.
+        #
+        # CONVERTED THROUGH `ftpx`, NOT `bscale`. They are the same number everywhere except the
+        # village tier, which declares ftpx=2 but pins bscale=1.0 for legacy reasons (settlements.md)
+        # - and a village bundle really is drawn at half a hamlet's pixel size (measured: house 25x14
+        # px against 53x27). Sizing off bscale therefore asked a village band for twice the ground
+        # its bundles occupy, which strung its cluster thin over a hollow hull and tripped
+        # `village_cluster_compact`. Real feet in, this map's pixels out.
+        need = max(1, households) * self.px(BUNDLE_PITCH_FT) ** 2
         # aim for a ~3:1 band (a nucleated village is a blob, not a hairline ribbon): pick the depth that gives
         # that aspect for the area needed, floored so a hamlet stays shallow and capped so it stays a margin band
         dep = max(112.0, min(math.sqrt(need / (3.0 * math.pi)), 240.0))
@@ -13841,21 +13883,43 @@ class Settlement:
         hs = self.M["houses"]
         if hs:  # wells among the ACTUAL houses (BEFORE the grove, so the grove's canopy skips them)
             hxs, hys = [h["x"] for h in hs], [h["y"] for h in hs]
-            self.place_wells((min(hxs) - 10, min(hys) - 10, max(hxs) + 10, max(hys) + 10), spacing=185, near=104)
+            # INSET, not grown. A well is a HARD crop feature with a ~16 px extent, so one seated
+            # just past the outermost homestead drags the whole frame out after it and leaves a band
+            # of empty ground on that side (`crop_not_held_open_by_one_feature`). The grid used to be
+            # laid over the house bbox GROWN by 10 px, which invites exactly that. Insetting costs no
+            # coverage - `settlement_dwellings_watered` reaches ~760 real feet and a cluster is a
+            # fraction of that across - and the inset is skipped on a cluster too small to take it,
+            # because an inset box that collapses yields no grid cells and hence no wells at all.
+            wx0, wy0, wx1, wy1 = min(hxs), min(hys), max(hxs), max(hys)
+            inset = 40.0 * self.bscale
+            if wx1 - wx0 > 3 * inset and wy1 - wy0 > 3 * inset:
+                wx0, wy0, wx1, wy1 = wx0 + inset, wy0 + inset, wx1 - inset, wy1 - inset
+            self.place_wells((wx0, wy0, wx1, wy1), spacing=185, near=104)
         # --- a COMMUNAL windward windbreak BEHIND the cluster (a nucleated village shelters behind one grove,
         # not per-house belts): a belt in the MARGIN FRAME, spanning the band's length on its far-from-field side ---
         # the belt must sit on the WINDWARD (uphill) side in the FALL frame - that is what shelters the village
         # and what village_windbreak_on_windward_side checks - so project the band onto the fall/cross axes
+        # THE BELT IS MEASURED OFF THE HOUSES, not off the band (corrected 2026-08-11).
+        #
+        # It used to be built from the band's requested extents - so it stood where the cluster was
+        # ASKED to be rather than where it ended up, and the placer routinely seats a tighter, offset
+        # cloud than the band it was handed. The gap is invisible while the two happen to agree and
+        # fatal when they do not: `village_windbreak_embraces_cluster` wants a substantial belt
+        # within 150 px of a farmhouse, and a belt built from a band that got bigger simply walks
+        # away from the houses (measured at 179 and 198 px when the band's own sizing was corrected
+        # above). A grove that shelters nothing is decoration. Derived from what landed, it cannot
+        # drift - which is the project's derive-don't-pin rule applied to an aggregate.
         ux, uy = -dy, dx  # cross-slope
-        ext_d = abs(alx * dx + aly * dy) * lat + abs(tdx * dx + tdy * dy) * dep  # the band's reach along the fall
-        ext_u = abs(alx * ux + aly * uy) * lat + abs(tdx * ux + tdy * uy) * dep  # ...and across it
-        lat_half = ext_u + 34.0
-        bc = (ccx - dx * (ext_d + 46), ccy - dy * (ext_d + 46))
+        hxs_, hys_ = [h["x"] for h in hs], [h["y"] for h in hs]
+        bcx, bcy = sum(hxs_) / len(hxs_), sum(hys_) / len(hys_)
+        reach_up = max((bcx - h["x"]) * dx + (bcy - h["y"]) * dy for h in hs)  # how far the cloud reaches UPHILL
+        lat_half = max(abs((h["x"] - bcx) * ux + (h["y"] - bcy) * uy) for h in hs) + 46.0
+        bc = (bcx - dx * (reach_up + 62), bcy - dy * (reach_up + 62))
         belt = [
-            (bc[0] - ux * lat_half - dx * 28, bc[1] - uy * lat_half - dy * 28),
-            (bc[0] + ux * lat_half - dx * 28, bc[1] + uy * lat_half - dy * 28),
-            (bc[0] + ux * lat_half + dx * 28, bc[1] + uy * lat_half + dy * 28),
-            (bc[0] - ux * lat_half + dx * 28, bc[1] - uy * lat_half + dy * 28),
+            (bc[0] - ux * lat_half - dx * 34, bc[1] - uy * lat_half - dy * 34),
+            (bc[0] + ux * lat_half - dx * 34, bc[1] + uy * lat_half - dy * 34),
+            (bc[0] + ux * lat_half + dx * 34, bc[1] + uy * lat_half + dy * 34),
+            (bc[0] - ux * lat_half + dx * 34, bc[1] - uy * lat_half + dy * 34),
         ]
         belt = [(max(6.0, min(self.W - 6.0, bx)), max(6.0, min(self.H - 6.0, by))) for bx, by in belt]  # keep the belt on-canvas
         self.village_grove(belt, role="windbreak")
