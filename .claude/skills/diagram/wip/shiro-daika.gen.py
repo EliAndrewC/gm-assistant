@@ -1517,6 +1517,10 @@ for _nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk in (
     ("daika-s2", RIVER, (1950, 2960), (-0.97, 0.24), 175, 73, 114, (130, 167), (81, 104), (0.22, 0.45, 0.68, 0.88), "river"),  # a second bay of the southern paddy, downstream of the first
     ("daika-e", RIVER, (2700, 1480), (0.6, 0.8), 52, 77, 174, (188, 239), (123, 159), (0.22, 0.45, 0.68, 0.88), "river"),
     ("daika-w2", MOAT, (264, 800), (-1.0, -0.1), 170, 87, 188, (217, 275), (130, 171), (0.22, 0.45, 0.68, 0.88), "moat"),
+    # THE SOUTHWEST PLAIN - the ground the first pass left bare. Fed from the river's lowest reach,
+    # which runs southwest past the city, so these bays lie downstream of everything the city draws
+    # and their drains carry on off the sheet in the same direction.
+    ("daika-sw", RIVER, (2010, 2985), (-0.9, -0.44), 236, 101, 100, (120, 152), (74, 95), (0.22, 0.45, 0.68, 0.88), "river"),
     ("daika-e2", RIVER, (3010, 1980), (0.85, 0.53), 75, 93, 188, (217, 275), (130, 171), (0.22, 0.45, 0.68, 0.88), "river"),
 ):
     try:
@@ -1538,6 +1542,10 @@ for _renv, _rdd, _rdr in _TORING:
     _FH += _ring_upslope(_renv, _rdd, drain=_rdr)
     s.bound = _rb
 print(f"farmsteads on the ring: {_FH}")
+
+# ...and DECK AGAIN: the ring's head-races are laid long after the first bridges() pass, so any
+# road they cross is still fording them until this runs (roads_bridge_water).
+s.bridges()
 
 s.crop_city(
     margin=36
