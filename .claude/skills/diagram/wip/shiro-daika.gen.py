@@ -51,7 +51,7 @@ while not os.path.exists(os.path.join(_D, "settlement.py")):
     _D = os.path.dirname(_D)
 sys.path.insert(0, _D)
 from citybudget import CapitalProgram, budget_to_manifest, plan_capital  # noqa: E402
-from settlement import Settlement  # noqa: E402
+from settlement import Settlement, moat_swept_tap  # noqa: E402
 from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
 
 PLOT_ACROSS, ROW_STEP = paddy_grain(3)  # the capital's 3 ft/px paddy grain
@@ -1368,6 +1368,80 @@ for _fbox in (
         _PFH += 1
 s.bound = _PB
 print(f"paddy farmhouses: {_PFH}")
+
+
+# ---- THE REST OF THE RING (GM 2026-08-11: "the city should be SURROUNDED by farmland. Cities grow
+# up around fertile land, so keep adding rice paddies and farmhouses until there are no more places
+# to put them"). Each field is tapped off the nearest water DOWNSTREAM of the city's own draw: the
+# moat's flow runs NE->SW (inlet 2480,950 -> outlet 2067,2264), so a west or southwest field takes
+# its head from the moat's lower arc, and the east field taps the river above the wharf.
+def _nearest_on(poly, hint):
+    """The nearest point ON a water polyline to `hint` - so a tap is DERIVED from the watercourse
+    rather than eyeballed beside it (every hand-picked tap in the first cut stood on dry ground)."""
+    best = (float("inf"), poly[0])
+    for k in range(len(poly) - 1):
+        ax, ay = poly[k]
+        bx, by = poly[k + 1]
+        dx, dy = bx - ax, by - ay
+        ll = dx * dx + dy * dy or 1.0
+        t = max(0.0, min(1.0, ((hint[0] - ax) * dx + (hint[1] - ay) * dy) / ll))
+        px_, py_ = ax + t * dx, ay + t * dy
+        d = math.hypot(hint[0] - px_, hint[1] - py_)
+        if d < best[0]:
+            best = (d, (px_, py_))
+    return best[1]
+
+
+def _ring_field(name, water, hint, out_dir, down_deg, seed, fall, canal_a, canal_b, offtakes, src_kind):
+    """One more paddy on the ring, with the whole water chain the checks require: a tap ON the
+    water, a bent head-race to a sluice set inland, gates at both ends, the comb beyond, the source
+    and the drain both DECLARED, and the farmsteads that work it."""
+    tap = _nearest_on(water, hint)
+    if src_kind == "moat":
+        _mf = s.M["moat_flow"]
+        tap = moat_swept_tap(water, _mf["inlet"], _mf["outlet"], (tap[0] + out_dir[0] * 62, tap[1] + out_dir[1] * 62), tap, want_deg=42.0, max_back=320.0)
+    _tl = math.hypot(out_dir[0], out_dir[1]) or 1.0
+    _ux, _uy = out_dir[0] / _tl, out_dir[1] / _tl
+    _sl = (tap[0] + _ux * 62, tap[1] + _uy * 62)
+    _md = ((tap[0] + _sl[0]) / 2 - _uy * 5, (tap[1] + _sl[1]) / 2 + _ux * 5)
+    s.field_channel([tap, _md, _sl], "#9CB4C8", 7, 7)
+    s.sluice_gate(_sl[0], _sl[1], rot=math.degrees(math.atan2(_uy, _ux)) + 90)
+    _net, _env, _cen = comb_field(
+        name, _sl, down_deg, seed, fall, canal_a, canal_b, offtakes, avoid=(MOAT, RIVER), dry_band=(47, 88)
+    )  # the pool cities' 3 ft/px hem: the dry-crop margin is what QUILTS the uncommanded fan head, so a thin one leaves bare parchment
+    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))
+    topo_channel([tap, _sl, _pd], {"kind": src_kind}, {"kind": "field", "name": name})
+    _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
+    _de = tuple(_dr[-1])
+    _dd2 = (_de[0] - _dr[-2][0], _de[1] - _dr[-2][1])
+    _dl = math.hypot(*_dd2) or 1.0
+    _off = (_de[0] + _dd2[0] / _dl * 900, _de[1] + _dd2[1] / _dl * 900)  # carry it clear OFF the sheet - a drain that stops on-canvas is a drain that goes nowhere
+    topo_channel([_de, _off], {"kind": "drain", "name": name}, {"kind": "offmap"}, draw_w=4.0)
+    # the households that work it, on the flanks that stay in view once the sheet is cropped
+    _xs = [q[0] for q in _env]
+    _ys = [q[1] for q in _env]
+    _pb = s.bound
+    s.bound = [[min(_xs) - 200, min(_ys) - 200], [max(_xs) + 200, min(_ys) - 200], [max(_xs) + 200, max(_ys) + 200], [min(_xs) - 200, max(_ys) + 200]]
+    _n = 0
+    for _u, _v in ((-0.28, 0.06), (-0.28, 0.24), (-0.28, 0.42), (0.12, -0.28), (0.38, -0.28), (0.64, -0.28), (0.90, -0.28), (1.22, 0.04)):
+        _bx = min(_xs) + (max(_xs) - min(_xs)) * _u
+        _by = min(_ys) + (max(_ys) - min(_ys)) * _v
+        _seat = s.open_seat((_bx - 46, _by - 46, _bx + 46, _by + 46), s.px(46), s.px(28))
+        if _seat and s.try_place(_seat[0], _seat[1], "plain"):
+            _n += 1
+    s.bound = _pb
+    print(f"{name}: {_n} farmsteads")
+    return _net, _env
+
+
+_RING = []
+for _nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk in (
+    ("daika-w", MOAT, (264, 1180), (-1.0, 0.12), 180, 71, 120, (130, 165), (85, 110), (0.22, 0.45, 0.68, 0.88), "moat"),
+    ("daika-s2", RIVER, (1950, 2960), (-0.97, 0.24), 175, 73, 110, (125, 160), (78, 100), (0.22, 0.45, 0.68, 0.88), "river"),  # a second bay of the southern paddy, downstream of the first
+    ("daika-e", RIVER, (2700, 1480), (0.6, 0.8), 60, 77, 120, (130, 165), (85, 110), (0.22, 0.45, 0.68, 0.88), "river"),
+):
+    _RING.append(_ring_field(_nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk))
+
 s.crop_city(
     margin=36
 )  # ~110 real ft of edge (GM 2026-08-10: 400 ft of empty margin was too much)  # the south=240/east=700 overrides padded dead margin onto both flanks (GM 2026-08-10); the aggressive default frames the real content

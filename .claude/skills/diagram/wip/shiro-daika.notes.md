@@ -482,7 +482,11 @@ Recorded here rather than held in a session's head - this list is the contract.
     the circle can be replaced by a real overlap test (the item-3-then-item-2 order in CLAUDE.md).
     Until then this is one wellhead short in a warren, and it is left RED rather than waived - a
     waiver is for a place with a history, and "the packer would not seat a wellhead" is a defect.
-11. ~~**PADDY**~~ **DONE 2026-08-11, eight farmsteads working it.** One comb field on the open ground south
+11. ~~**PADDY**~~ **DONE 2026-08-11 - and then RINGED, per the GM's ruling that farmland around a
+    city is the DEFAULT.** Four fields across three flanks (south, west, a second southern bay,
+    east) with 28 farmsteads. `city_is_ringed_by_farmland` holds the floor at 4+ fields / 3+ flanks,
+    calibrated from the pool's own practice (Tango 11, Nagahara 7, Minami 6). The recipe and the two
+    numbers that cost the most iterations are in `settlements/cities.md`. The first field: One comb field on the open ground south
     of the rampart, tapped off the river's lower reach with the current (flow_deg 117.7), head gate
     at the tap and a second at the field, the fall running WITH the current so the drain returns
     downstream of its own intake, and the dry hem narrowed to clear the towpath. 155 plots. What is

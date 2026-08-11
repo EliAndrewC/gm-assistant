@@ -40,6 +40,37 @@ Record the answer in `meta` so the checks can hold the map to it, rather than le
 comment: the water flow as `down_deg` / channel anchors, the clan on the temples, and the capital's
 bearing as `capital_dir`.
 
+## A CITY IS RINGED BY ITS FARMLAND - ALWAYS
+
+**GM, 2026-08-11:** *"The city should be surrounded by farmland. Cities grow up around fertile
+land, so we should do as we do for Tango and Nagahara and Minami and keep adding rice paddies and
+farmhouses until there are no more places to put them. Farmland ringing a city is the DEFAULT which
+should always happen in the future."*
+
+This was already the pool's practice before it was written down - Tango draws 11 fields, Nagahara
+7, Minami 6 - and the capital's first pass drew ONE, which is what prompted the ruling. A city is
+not a thing set down on a plain: it is the market and the garrison of the land that feeds it, and a
+single token field on one flank draws that relationship backwards.
+
+`city_is_ringed_by_farmland` holds the floor: **4+ fields across 3+ flanks**. Fewer means the ring
+was not attempted, not that the ground ran out. Keep adding until the ground genuinely refuses.
+
+**Each field is a whole water chain, not a polygon.** The lesson from Shiro Daika's ring, where the
+first cut of every field failed a different water rule: a field needs a tap ON the water (derive it
+from the watercourse's own polyline - every hand-picked tap in the first cut stood on dry ground), a
+head-race that BENDS rather than ruling straight, sluice gates at both ends, a moat offtake SWEPT
+downstream (`moat_swept_tap` - a square tap sheds sediment into its own mouth), the source and the
+drain both DECLARED with `topo_channel`, the drain carried clear OFF the sheet rather than stopping
+on-canvas, and the farmsteads that work it. Two numbers that cost the most iterations:
+
+- **The dry hem is what QUILTS the fan head.** Too thin (or absent) and `city_fan_heads_quilted`
+  fires on bare parchment along the supply canals; `dry_band=(0, 0)` crashes the comb outright. The
+  pool's 3 ft/px value is `(47, 88)` - use it.
+- **Farmsteads go on the UPSLOPE flanks, above the drainage line.** The ground below the drain is
+  the wettest in the valley and nobody builds there (`dwellings_above_field_drain`). They must also
+  sit IN VIEW: the density rule counts only houses inside the cropped frame, and `crop_city` clips
+  a fringe paddy at the sheet edge by design.
+
 ## What a provincial city is
 
 A provincial city is the next tier up from a county town - a provincial governor's seat, ~3,000 inside the walls. Like towns, some are walled and some unwalled; the worked example **Tango** (`pool/provincial-cities/tango.gen.py`) is walled. The drawing vocabulary adds a few city-only methods; the gate adds a city block of checks. (Since the budget-first wall sizing of feature 009, dwelling counts are a near-census: the budget targets the full ~600 households and the gate holds the map to its floor - see Scale and density above.)
