@@ -361,7 +361,7 @@ s.farrier(1508, 1010, rot=90)
 s.animal_ground(1462, 1042, r=38)
 s.block_polys.append([(1004, 1176), (1136, 1176), (1136, 1320), (1004, 1320)])
 s.corridors.append(([(1040, 1200), (1040, 1300)], 46))
-s.flophouse(1040, 1176, label_below=True)
+s.flophouse(1040, 1176, label_below=True, rot=90)  # angle STATED: the north-south way it fronts is laid after this point, so the derivation would take a different way's bearing (GM 2026-08-11, roadside works lie along their road)
 s.inn(1032, 1280)
 s.stables(1082, 1292, rot=90)
 # the river-gate stables' TIE-UP GROUND on its open (east) side. city_gate_caravan_facilities allows

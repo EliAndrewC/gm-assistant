@@ -19,6 +19,27 @@
 
 A dry inland city (Tango) skips `river-cities.md`; a river city (Nagahara) needs it. Everything else is normally in play, but `hinterland.md` and `government.md` can wait until you reach those features.
 
+## ASK THESE THREE BEFORE DRAWING ANYTHING
+
+A city cannot be laid out until the GM has answered three questions, and none of them can be
+guessed from the brief. Ask all three at once, at intake:
+
+1. **Which way does the water flow?** Everything downstream of it: which end of the river the
+   wharf takes, which way drainage ditches discharge, which way a feeder is tapped so the current
+   turns INTO it, where the nuisance trades stand relative to the drinking water.
+2. **Which clan holds it?** The clan's two patron Fortunes get the sovereign temples, and one of
+   the two is drawn larger than every other temple on the map.
+3. **Which direction is the Imperial capital?** (GM 2026-08-11, catching Shiro Daika's country
+   seats on the wrong flank.) **The samurai country estates go on the side of the city that faces
+   the capital** - that is where a clan's senior houses want their land, on the road their lord
+   and their peers travel, and the answer is not derivable from the map's own geography. It is the
+   same class of question as the other two: a single fact from the GM that fixes a whole family of
+   placements.
+
+Record the answer in `meta` so the checks can hold the map to it, rather than leaving it in a
+comment: the water flow as `down_deg` / channel anchors, the clan on the temples, and the capital's
+bearing as `capital_dir`.
+
 ## What a provincial city is
 
 A provincial city is the next tier up from a county town - a provincial governor's seat, ~3,000 inside the walls. Like towns, some are walled and some unwalled; the worked example **Tango** (`pool/provincial-cities/tango.gen.py`) is walled. The drawing vocabulary adds a few city-only methods; the gate adds a city block of checks. (Since the budget-first wall sizing of feature 009, dwelling counts are a near-census: the budget targets the full ~600 households and the gate holds the map to its floor - see Scale and density above.)

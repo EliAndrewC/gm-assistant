@@ -2649,6 +2649,48 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if not ok:
             fails.append(name)
 
+    # A ROADSIDE WORK STANDS ON ITS ROAD, AND LIES ALONG IT (GM 2026-08-11: "the flophouse near
+    # the southwest city gate is absurdly far from the road - about three hundred feet - and it
+    # should be oriented to face the road... the two kiln works should be aligned with the road
+    # too"). Both halves are the same fact: these are features DEFINED by the way they serve. A
+    # doss-house exists to catch travelers arriving on that road; a kiln hauls fuel and clay by
+    # cart and stands on its haul road. Measured in real feet against the CURRENT ways, so a
+    # re-routed road drags them red rather than leaving them adrift.
+    # Distances calibrated from the pool, not guessed: doss-houses sit 84-420 ft off their road
+    # across the shipped maps, and the GM called ~300 ft "absurd" - 200 ft is comfortably past
+    # every reasonable one and short of every complaint. A KILN carries no distance rule at all: a
+    # nuisance works belongs OUT of town by its nature, and the GM's ask for it was alignment ("the
+    # two kiln works should be aligned with the road"), not proximity. None means angle-only.
+    _rw_reg: dict[str, Any] = {"flophouses": 200.0, "kilns": None}
+    _rw_polys = [r["pts"] for _k in ("roads", "streets", "town_streets", "lanes", "alleys") for r in (M.get(_k) or []) if isinstance(r, dict) and r.get("pts")]
+    if M.get("road"):
+        _rw_polys.append(M["road"])
+    _rw_bad = []
+    if _rw_polys:
+        _rwf = float(meta.get("ftpx") or 1.0)
+        for _rk, _rmax in _rw_reg.items():
+            for _r in M.get(_rk) or []:
+                # no coordinate guard: both keys are in _OVERLAP_STRUCTS, so _struct_rect has
+                # already demanded x/y of every record long before this check runs
+                _rbest, _rbear = float("inf"), 0.0
+                for _pp in _rw_polys:
+                    for _i in range(len(_pp) - 1):
+                        _d = seg_dist(_r["x"], _r["y"], _pp[_i], _pp[_i + 1])
+                        if _d < _rbest:
+                            _rbest, _rbear = _d, math.degrees(math.atan2(_pp[_i + 1][1] - _pp[_i][1], _pp[_i + 1][0] - _pp[_i][0])) % 180.0
+                _rgap = (_rbest - max(_r.get("w", 0), _r.get("h", 0)) / 2.0) * _rwf
+                _rerr = abs((float(_r.get("rot", 0.0)) % 180.0) - _rbear)
+                _rerr = min(_rerr, 180.0 - _rerr)
+                if _rmax is not None and _rgap > _rmax:
+                    _rw_bad.append((_rk, round(_r["x"]), round(_r["y"]), f"{round(_rgap)}ft"))
+                elif _rerr > 12.0 and _rgap < 400.0:
+                    _rw_bad.append((_rk, round(_r["x"]), round(_r["y"]), f"{round(_rerr)}deg"))
+    check(
+        "roadside_works_stand_on_their_road",
+        not _rw_bad,
+        f"roadside work(s) adrift from the way they serve, or square to it while it runs at an angle: {sorted(_rw_bad)[:5]} - a doss-house catches travelers off that road and a kiln carts its fuel along it; derive the seat and the angle from the way (settlement._way_bearing_near) instead of pinning them",
+    )
+
     # A CAPTION NAMING A POINT ON A WATERCOURSE MUST STAND AT THAT POINT (GM 2026-08-11: "the
     # aqueduct labels are still really far away from the things that they are labeling... look at
     # how much empty space exists between the intake weir and the label that labels it"). The

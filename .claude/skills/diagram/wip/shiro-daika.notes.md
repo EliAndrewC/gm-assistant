@@ -416,7 +416,7 @@ alley depends on. A trim in a fabric this tight is a siting decision, not an ari
 
 Recorded here rather than held in a session's head - this list is the contract.
 
-1. **Aqueduct captions adrift.** "The intake weir and the settling basin labels are really far away
+1. ~~**Aqueduct captions adrift.**~~ **DONE 2026-08-11** - see `waterworks_captions_stand_at_their_point`; intake weir 195->39 ft, settling basin 348->40 ft, sluice captions 102 ft -> beside their gates. Originally: "The intake weir and the settling basin labels are really far away
    from the things they label... if a label can be moved closer because there is literally nothing
    between the label and the thing it is labeling, we should do it, up to some minimum distance."
    DIAGNOSED: all three aqueduct captions are hand-placed `s.label(...)` with `ref=None`, so they
@@ -425,18 +425,24 @@ Recorded here rather than held in a session's head - this list is the contract.
    caption naming a specific FEATURE must carry a referent (the caption-group vocabulary in
    `_LABEL_GROUP` is the test for "names a specific feature"), then convert these to
    `place_caption` so the ladder seats them.
-2. **The wharf's form.** Is three piers right for six granaries and three warehouses, and is there
+2. ~~**The wharf's form.**~~ **RESEARCHED 2026-08-11**, recorded in `research/cities/river-cities.md`: the pier is not the main event - a river's level moves feet across the year, so the working form is a revetted quay face with STEPPED landings (matou / gangi), right at every water level. Three piers for six granaries is fine; the bank is the unloading face. STILL TO DRAW: the quay edge and its steps. Originally: Is three piers right for six granaries and three warehouses, and is there
    a DOCK or quay structure distinct from the piers that the map should draw? Research and record,
    then draw whatever the research says is visible.
-3. **Flophouses.** Max distance from the road they stand on, and ORIENTED to it - the one outside
+3. ~~**Flophouses.**~~ **DONE 2026-08-11** - `roadside_works_stand_on_their_road`, plus a bearing DERIVED from the way at draw time. Fixed on the capital and on Tango, Hirameki and Minami; Hoshizora carries a documented waiver (no seat in that town lets a 104 ft dormitory lie along its road). Originally: Max distance from the road they stand on, and ORIENTED to it - the one outside
    the southwest gate is ~300 ft off the road and level while the road is not. All nine currently
    record `rot: 0`.
-4. **Kiln works** must be slanted to the road's angle, like the dye works.
+4. ~~**Kiln works**~~ **DONE 2026-08-11** - same derivation; both capital kilns now lie at the road's 165 deg. Note the calibration: a kiln carries an ANGLE rule but no distance rule, because a nuisance works belongs out of town by its nature. Originally: must be slanted to the road's angle, like the dye works.
 5. **South crop too loose.** MEASURED: the crop is working (margin 36 px ~ 110 ft), and what holds
    the frame open is a CAPTION - "Imperial Road" at y2781 and "towpath" at y2772 float in empty
    ground 305 ft south of the last structure. Same root cause as item 1. Needs a rule that a
    caption may not be the only thing holding the frame open.
-6. **Samurai country estates belong on the side facing the Imperial capital** (northeast here, not
+6. ~~**Samurai country estates**~~ **DONE 2026-08-11** - `capital_dir` corrected to northeast and
+    the three walled country seats moved to the northeast approach; the standing question is now
+    recorded in `settlements/cities.md` ("ASK THESE THREE BEFORE DRAWING ANYTHING") alongside water
+    flow and clan. **ONE CONTRADICTION LEFT FOR THE GM:** the Imperial road on this map leaves to
+    the NORTHWEST, so if the capital is northeast the road should too. Not re-routed on my own -
+    moving an Imperial road moves the gate markets, the relay stables and the farrier with it.
+    Originally: (northeast here, not
    northwest). GM: this is a standing question to ASK when making a city, alongside water-flow
    direction and clan - so it goes in the skill's always-ask list, gets a `capital_dir` meta, and
    gets a check keyed on it.

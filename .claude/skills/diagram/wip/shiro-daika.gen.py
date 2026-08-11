@@ -64,7 +64,7 @@ s.meta(
     wall_defense="siege",  # the Crab border lies south: built to survive a siege even after a long peace
     imperial_road=True,
     clan="Scorpion",
-    capital_dir="northwest",  # Shiro Kyo, and the Imperial road beyond it
+    capital_dir="northeast",  # the Imperial capital lies NORTHEAST of Shiro Daika (GM 2026-08-11). NOTE: the Imperial road as drawn leaves this map to the NORTHWEST, so one of the two needs to move - flagged for the GM rather than silently re-routed
     # THE LINEAGE DECLARATION (feature 020). Bands track HOUSEHOLDS HOUSED, never the rank of the
     # head: the chargen weights ([house][[daika]]) give six chancellors (daika 19, hazama 16,
     # utsuro 15, tokiwa 14, anzu 12, kurogi 11) and three below the threshold (yodo 5, nio 4,
@@ -601,7 +601,8 @@ s.theater_stage(1740, 1695, w=64, h=46, rot=-120, label=None)  # opens toward th
 s.district("entertainment quarter", "entertainment", [(2000, 1620), (2115, 1620), (2115, 1800), (2000, 1800)], rank_band=None)
 # market-day flophouses at the working gates, seated BEFORE the packs (the first seats
 # landed on the moat band and the Shiro Kyo roadbed once the suburbs grew around them)
-s.flophouse(1290, 2560)  # far enough out that its caption clears the moat band (GM 2026-08-10)
+_fh_s = s.open_seat((1425, 2515, 1500, 2615), s.px(104), s.px(46)) or (1450, 2560)
+s.flophouse(_fh_s[0], _fh_s[1])  # beside the south gate road, not 278 ft off it (GM 2026-08-11)
 s.flophouse(2700, 1310)  # on the E gate road's south verge, inside the market's own strip
 s.flophouse(1325, 80)
 s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "north"), (1080, 1768, "south"), (1240, 1898, "east"), (1188, 1816, "west"), (1650, 1700, "south"), (1120, 1930, "north")])
@@ -641,8 +642,14 @@ s.kiln(
 s.placed.append((1153, 2284, 46, 334))  # hold the doss seat before the rows fill in
 s.placed.append((1837, 1352, 34, 24))  # keep the SE pasture verge clear (a lone well-less seat kept landing here)
 s.rowpack((1045, 1920, 1330, 2060), ["laborer_large"] * 4 + ["laborer"] * 34)
-s.flophouse(1153, 2284)  # the in-wall doss-house, deep in the laborer core
-s.flophouse(386, 2204)  # outside the SW gate
+# DERIVED from the southwest approach road itself: a point 40% out along it, stepped off its
+# own normal by a verge. A doss-house outside a gate exists to catch travelers coming UP that road.
+_SWR = [(636, 1772), (0, 2200)]
+_swdx, _swdy = _SWR[1][0] - _SWR[0][0], _SWR[1][1] - _SWR[0][1]
+_swl = math.hypot(_swdx, _swdy)
+_swp = (_SWR[0][0] + _swdx * 0.4, _SWR[0][1] + _swdy * 0.4)
+_fh_sw = s.open_seat((_swp[0] - 10, _swp[1] + 8, _swp[0] + 60, _swp[1] + 68), s.px(104), s.px(46)) or (_swp[0] + 24, _swp[1] + 36)
+s.flophouse(_fh_sw[0], _fh_sw[1])  # outside the SW gate, ON its approach road (GM 2026-08-11: it was ~300 ft adrift)
 # caravan facilities just inside each gate: inn + big stables (open ground kept by their
 # own reserves; the packs flow around)
 s.inn(1330, 300)
@@ -676,6 +683,9 @@ s.well(1458, 2416)  # the yard's public well - pre-seeded so the stables' own-we
 s.flophouse(1455, 300)
 s.flophouse(2421, 1343)
 s.flophouse(1370, 2341)
+s.flophouse(
+    1153, 2284, rot=0
+)  # the in-wall doss-house, deep in the laborer core. Its angle is STATED rather than derived: the band street it fronts is laid after this point in the draw order, so the derivation would take the bearing of a way that is merely nearest at THIS moment (it took 90 deg from a vertical lane, against the street's 180)
 s.flophouse(586, 1856)  # INSIDE the SW gate with its inn and stables (city_gate_caravan_facilities); seat computed clear of wall, ring, road and every solid
 s.inn(629, 1938)
 s.stables(673, 1915)
@@ -1105,13 +1115,13 @@ s.bound = _CITY_BOUND2
 # stood here read as suburb tenements with samurai labels, and left 24 free-standing samurai
 # houses outside the walls where city_samurai_houses_inside_walls rightly wants none.
 _CB3 = s.bound
-# ...and they stand on the NORTHWEST approach, the road to Otosan Uchi: an out-wall estate
+# ...and they stand on the NORTHEAST approach, the road to Otosan Uchi: an out-wall estate
 # faces the capital (city_estates_toward_capital), and the three vary in size the way three
 # lineages' seats would. Seats computed clear of wall, moat, roads and every standing solid.
-s.bound = [[120, 60], [700, 60], [700, 520], [120, 520]]
-s.manor(260, 140, 118, 92, None, gate_dir="east")
-s.manor(200, 360, 96, 74, None, gate_dir="east")
-s.manor(460, 240, 78, 62, None, gate_dir="south")
+s.bound = [[2560, 120], [3130, 120], [3130, 640], [2560, 640]]
+s.manor(2680, 210, 118, 92, None, gate_dir="west")
+s.manor(2640, 450, 96, 74, None, gate_dir="west")
+s.manor(2900, 330, 78, 62, None, gate_dir="south")
 s.bound = _CB3
 
 

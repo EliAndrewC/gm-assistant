@@ -485,7 +485,7 @@ s.place_punishment_spot()
 s.label(1120, 1795, "gate market", 10, italic=True, color="#5A4326")
 # the market flophouse (kichin-yado), OUTSIDE the gate beside the gate market: far-traveling
 # peasants who reach the town after the gate shuts at dusk sleep here for a sen before market day
-s.flophouse(1720, 1880)
+s.flophouse(1420, 1935, label_below=True)  # on the road travelers arrive by - it stood 368 ft off it (GM 2026-08-11)
 s.pack((2120, 1690, 2318, 1960), ["burakumin"] * 14, step=46)  # east edge pulled back off the tanning yard: with the laborer pack no longer filling, this quarter had room to seat a house on the yard, and the pack runs BEFORE the yard is drawn so it cannot avoid it
 s.label(2230, 1680, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 # the TANNING YARD (GM 2026-07-24) - the easiest siting in the pool, because Hirameki already put

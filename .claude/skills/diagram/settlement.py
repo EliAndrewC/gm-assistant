@@ -7470,7 +7470,7 @@ class Settlement:
         th_ = math.radians(rot)
         self._trade_record("farriers", x, y, aw_, sh_ + ah_, rot, label, lab_off=abs(aw_ / 2 * math.sin(th_)) + abs((sh_ + ah_) / 2 * math.cos(th_)))
 
-    def kiln(self, x: float, y: float, rot: float = 0.0, cottages: int = 2, label: str = "kiln works") -> None:
+    def kiln(self, x: float, y: float, rot: Any = None, cottages: int = 2, label: str = "kiln works") -> None:
         """A KILN WORKS at the settlement's periphery: the kiln itself, the throwing and drying
         shed, the clay pit, the fuel stack, its own well, and the two or three cottages of the
         households that work it. `rot` lays the kiln's UPSLOPE axis along local +x, so the stoke
@@ -7529,6 +7529,12 @@ class Settlement:
         reach, ward classification, the burakumin standoff - is written about the settlement's own
         housing stock, and a satellite works' two cottages would be adjudicated by rules that were
         never about them."""
+        if rot is None:
+            # a kiln hauls fuel and clay by CART, so it stands on its haul road and lies along it -
+            # derived from the way at draw time, so a re-routed road turns the works with it
+            _kd, _kb = self._way_bearing_near(x, y)
+            rot = _kb if _kd < self.px(400) else 0.0
+        rot = float(rot)
         f, g = self.px, [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         yw_, yh_ = f(140), f(120)
         th_ = math.radians(rot)
@@ -10263,7 +10269,36 @@ class Settlement:
             placed += 1
         return placed
 
-    def flophouse(self, x: float, y: float, w: Any = None, h: Any = None, label: str = "flophouse", label_below: bool = False) -> None:
+    def _way_bearing_near(self, x: float, y: float) -> tuple[float, float]:
+        """(distance, bearing-in-degrees) of the nearest WAY to (x, y) - road, street, lane or
+        alley, including the primary road under its own manifest key. A roadside work is defined by
+        the way it stands on, so its angle is DERIVED from that way at draw time rather than pinned:
+        re-route the road and the flophouse turns with it (GM 2026-08-11, after every flophouse on
+        every map came out level while the roads ran at 138-167 degrees)."""
+        return self._way_seat_near(x, y)[2:]
+
+    def _way_seat_near(self, x: float, y: float) -> tuple[float, float, float, float]:
+        """(seat_x, seat_y, distance, bearing) of the nearest point on the nearest WAY. The seat is
+        what lets a roadside work SNAP: a gen names roughly where the doss-house belongs and the
+        engine puts it on the road, which is the only way the two stay together when the road moves."""
+        best = (float("inf"), 0.0)
+        seat = (x, y)
+        lists: list[Any] = [self.M.get(k) or [] for k in ("roads", "streets", "town_streets", "lanes", "alleys")]
+        polys = [r["pts"] for lst in lists for r in lst if isinstance(r, dict) and r.get("pts")]
+        if self.M.get("road"):
+            polys.append(self.M["road"])
+        for pts in polys:
+            for i in range(len(pts) - 1):
+                a, b = pts[i], pts[i + 1]
+                d = seg_dist(x, y, a, b)
+                if d < best[0]:
+                    best = (d, math.degrees(math.atan2(b[1] - a[1], b[0] - a[0])))
+                    _dx, _dy = b[0] - a[0], b[1] - a[1]
+                    _t = 0.0 if _dx == _dy == 0 else max(0.0, min(1.0, ((x - a[0]) * _dx + (y - a[1]) * _dy) / (_dx * _dx + _dy * _dy)))
+                    seat = (a[0] + _t * _dx, a[1] + _t * _dy)
+        return (seat[0], seat[1], best[0], best[1])
+
+    def flophouse(self, x: float, y: float, w: Any = None, h: Any = None, label: str = "flophouse", label_below: bool = False, rot: Any = None) -> None:
         """Real size ~104x46 ft (town-calibrated), converted at the map's ftpx.
         A large, plain communal lodging - a kichin-yado / market flophouse - where peasants
         who travel a long way to market day sleep on straw under a roof for a sen a night. It is
@@ -10273,13 +10308,32 @@ class Settlement:
         M['flophouses'] and blocks houses - place it BEFORE any nearby pack/ring."""
         if w is None:
             w, h = self.px(104), self.px(46)
+        if rot is None:
+            # a doss-house FRONTS the road travelers arrive on - it exists to catch them - so it
+            # lies along that road, and it SNAPS to it when the gen's hint lands adrift (GM
+            # 2026-08-11: "the flophouse near the southwest gate is absurdly far from the road...
+            # about three hundred feet, which seems absurd"). The gen says roughly where; the way
+            # says exactly where, and the two cannot drift apart when the road is re-routed.
+            # ROTATION ONLY - no snapping. Moving the seat here was tried and reverted: this method
+            # runs before any collision test and has none of its own, so a pulled seat walked
+            # doss-houses into streets, into standing terraces, and one into a quarter its own
+            # siting rule forbids. The gen chooses the SPOT (with open_seat, which asks the
+            # placer); the way chooses the ANGLE, which cannot collide with anything. A work with
+            # no way within ~500 ft is not a roadside work and keeps its square default.
+            _fd, _fb = self._way_bearing_near(x, y)
+            rot = _fb if _fd < self.px(500) else 0.0
+        rot = float(rot)
+        if rot:
+            self.add(f'<g transform="rotate({rot:.1f} {x:.1f} {y:.1f})">')
         x0, y0 = x - w / 2, y - h / 2
         self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="{h}" rx="2" fill="#CDBE96" stroke="#5A4A30" stroke-width="2"/>')
         self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="10" fill="#7A6038"/>')  # long roof ridge
         self.add(f'<line x1="{x0:.0f}" y1="{y:.0f}" x2="{x0 + w:.0f}" y2="{y:.0f}" stroke="#5A4A30" stroke-width="0.7"/>')
         for dx in range(int(x0) + 14, int(x0 + w) - 10, 26):  # a row of plain doorways (a long dormitory)
             self.add(f'<rect x="{dx}" y="{y + h / 2 - 7:.0f}" width="9" height="7" fill="#5A4A30" opacity="0.8"/>')
-        self.M["flophouses"].append({"x": x, "y": y, "w": w, "h": h, "rot": 0, "label": label})
+        if rot:
+            self.add("</g>")
+        self.M["flophouses"].append({"x": x, "y": y, "w": w, "h": h, "rot": rot, "label": label})
         self.placed.append((x, y, w, h))
         bm = 30  # block a RECT + a building-half margin so dwellings keep clear, like the manor
         self.block_polys.append([(x0 - bm, y0 - bm), (x0 + w + bm, y0 - bm), (x0 + w + bm, y0 + h + bm), (x0 - bm, y0 + h + bm)])
