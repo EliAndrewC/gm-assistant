@@ -643,10 +643,24 @@ def build_comb(
     "envelope", "acres"} - the caller draws it (px are map px; acres assume 1px = 2ft).
 
     `grain` scales the PLOT-GEOMETRY thresholds in the carve (minimum sector/row/plot sizes,
-    canal berms, drain set-backs, the gap-closer margins). They are REAL-FEET quantities that
-    were tuned at the village grain of 1px = 2ft; a map at a different scale passes
-    grain = 2 / ftpx (a 3 ft/px provincial city passes 2/3) so a "too narrow to plant" test
-    means the same real-world size on every map. Left unscaled, a city's carve dropped
+    canal berms, drain set-backs, the gap-closer margins) AND the channel widths. They are
+    REAL-FEET quantities that were tuned at the village grain of 1px = 2ft; the principled
+    value is therefore grain = 2 / ftpx, so a "too narrow to plant" test means the same
+    real-world size on every map.
+
+    WHAT ACTUALLY HAPPENS, and it is not that (recorded 2026-08-11 rather than quietly fixed).
+    The provincial cities do pass 2/3. But every 1 ft/px HAMLET in the pool passes the default
+    1.0, not 2.0 - and the engine's downstream constants are calibrated against what that
+    produces. Raising a hamlet to the principled 2.0 doubles its irrigation ditch widths, and
+    `channel_footbridges` then lays planks too short for the water they span, so a deck's
+    abutment stands in the ditch and `bridges_span_their_water` fails. The scripted hamlet
+    generator tried 2.0, met exactly that, and reverted to match the pool (see `GRAIN` in
+    hamletgen.py).
+
+    So the tier is internally consistent and externally under-scaled, and fixing it means
+    re-deriving the footbridge span from the drawn channel width first, then re-rolling every
+    comb map. That is a real job, not a one-line change. Until someone does it, pass what the
+    rest of the tier passes rather than what this paragraph would prefer. Left unscaled, a city's carve dropped
     sectors, head plots, and closers that a village would have planted, leaving parchment
     holes inside the fan - the white-spots bug the villages fixed once (canal-side closers,
     the closing rank) and the cities then re-exposed at their coarser grain (2026-07-21).
