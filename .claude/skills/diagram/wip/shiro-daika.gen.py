@@ -52,6 +52,10 @@ while not os.path.exists(os.path.join(_D, "settlement.py")):
 sys.path.insert(0, _D)
 from citybudget import CapitalProgram, budget_to_manifest, plan_capital  # noqa: E402
 from settlement import Settlement  # noqa: E402
+from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
+
+PLOT_ACROSS, ROW_STEP = paddy_grain(3)  # the capital's 3 ft/px paddy grain
+
 
 s = Settlement(3200, 3050, seed=61)
 s.meta(
@@ -757,7 +761,9 @@ s.commons([(1640, 1250), (1732, 1250), (1732, 1332), (1640, 1332)], render="bare
 _mseat = s.open_seat((1240, 1420, 1720, 1560), 62, 46) or (1466, 1530)
 s.mausoleum(_mseat[0], _mseat[1], 58, 42, label="Ancestral Mausoleum", gate_dir="south")
 
-s.frontage([(1210, 2210), (1580, 2210)], ["shop"], width=8, spacing=25, setback=3, jitter=1, dense=True)  # the band street's north face. The ask is ONE shop: the packed rows either side of this street were already built when it was cut, so its frontage is what the leftover ground holds, not the 1,140 ft of shopfront the first draft asked for - it had 1,140 ft bare on both sides
+s.frontage(
+    [(1210, 2210), (1580, 2210)], ["shop"], width=8, spacing=25, setback=3, jitter=1, dense=True
+)  # the band street's north face. The ask is ONE shop: the packed rows either side of this street were already built when it was cut, so its frontage is what the leftover ground holds, not the 1,140 ft of shopfront the first draft asked for - it had 1,140 ft bare on both sides
 
 # ---- T016: the kido MESH, before the packs (each gate reserves its ground; the mouths
 # derive from the declared districts + streets via the shared machi_mouths source)
@@ -1179,6 +1185,172 @@ s.quarter(
 # purpose: the aqueduct's intake works on the river (~x3140) are the part of the system a reader
 # traces first (spec 020, User Story 3), and the default crop cut them - plus the east road's
 # river bridge - clean off the sheet.
+
+
+# ---- THE PADDY (GM 2026-08-11: no farmland on the capital, and there should be). Comb doctrine,
+# tied to the declared flow: tapped off the river WITH the current, the fall running with it so the
+# drain returns downstream of its own intake. Helper as the provincial-city gens carry it.
+def _pt_seg(px, py, ax, ay, bx, by):
+    vx, vy = bx - ax, by - ay
+    ll = vx * vx + vy * vy or 1.0
+    t = max(0.0, min(1.0, ((px - ax) * vx + (py - ay) * vy) / ll))
+    return math.hypot(px - ax - t * vx, py - ay - t * vy)
+
+
+def _in_poly(x, y, poly):
+    n = len(poly)
+    j = n - 1
+    c = False
+    for i in range(n):
+        if ((poly[i][1] > y) != (poly[j][1] > y)) and (x < (poly[j][0] - poly[i][0]) * (y - poly[i][1]) / (poly[j][1] - poly[i][1]) + poly[i][0]):
+            c = not c
+        j = i
+    return c
+
+
+def furrows(poly, color, theta):
+    xs = [p[0] for p in poly]
+    ys = [p[1] for p in poly]
+    fcx, fcy = sum(xs) / len(xs), sum(ys) / len(ys)
+    diag = math.hypot(max(xs) - min(xs), max(ys) - min(ys))
+    dx, dy = math.cos(theta), math.sin(theta)
+    nx, ny = -dy, dx
+    cid = s._cid("dry")
+    pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in poly)
+    g = [f'<clipPath id="{cid}"><polygon points="{pts}"/></clipPath>', f'<g clip-path="url(#{cid})">']
+    t = -diag / 2
+    while t <= diag / 2:
+        mx, my = fcx + nx * t, fcy + ny * t
+        g.append(f'<line x1="{mx - dx * diag / 2:.1f}" y1="{my - dy * diag / 2:.1f}" x2="{mx + dx * diag / 2:.1f}" y2="{my + dy * diag / 2:.1f}" stroke="{color}" stroke-width="0.8" opacity="0.8"/>')
+        t += 5
+    g.append('</g>')
+    s.add(''.join(g))
+
+
+def plot_centroid(net, key, inset=0.15):
+    cens = [(sum(v[0] for v in p["poly"]) / len(p["poly"]), sum(v[1] for v in p["poly"]) / len(p["poly"])) for p in net["plots"] if not p.get("filler")]
+    cx, cy = key(cens)
+    mx = sum(c[0] for c in cens) / len(cens)
+    my = sum(c[1] for c in cens) / len(cens)
+    return (round(cx + inset * (mx - cx), 1), round(cy + inset * (my - cy), 1))
+
+
+def topo_channel(pts, frm, to, draw_w=0.0, col='#7C9EB0'):
+    ax, ay = pts[0]
+    bx, by = pts[-1]
+    chord = math.hypot(bx - ax, by - ay) or 1.0
+    dev = max(abs((py - ay) * (bx - ax) - (px - ax) * (by - ay)) / chord for px, py in pts[1:-1]) if len(pts) > 2 else 0.0
+    if dev < 6:
+        k = max(range(len(pts) - 1), key=lambda i: math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]))
+        mx, my = (pts[k][0] + pts[k + 1][0]) / 2, (pts[k][1] + pts[k + 1][1]) / 2
+        pts = list(pts[: k + 1]) + [(mx - 12 * (by - ay) / chord, my + 12 * (bx - ax) / chord)] + list(pts[k + 1 :])
+    poly = [[round(px, 1), round(py, 1)] for px, py in pts]
+    s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5, "drawn": bool(draw_w)})
+    s.corridors.append(([(px, py) for px, py in poly], 33))
+    if draw_w:
+        s.field_channel([(px, py) for px, py in poly], col, draw_w, draw_w)
+
+
+def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offtakes_a, offtakes_b=(), dry_band=(47, 88), avoid=(), dry_keepout=()):
+    net = build_comb(
+        3200,
+        3050,
+        sluice,
+        seed,
+        down_deg=down_deg,
+        field_fall=field_fall,
+        canal_a_len=canal_a,
+        canal_b_len=canal_b,
+        offtakes_a=offtakes_a,
+        offtakes_b=offtakes_b,
+        plot_across=PLOT_ACROSS,
+        row_step=ROW_STEP,
+        dry_band=dry_band,
+        dry_keepout=dry_keepout,
+        grain=2 / 3,
+    )
+    env = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]
+    s.field_polys.append([(p[0], p[1]) for p in env])
+    s.comb_base_fill(net, name, color="#CDB78C", full_envelope=True)
+    _prior = [fld["outline"] for fld in s.M["fields"] if fld.get("kind") == "paddy"]
+    for dp in net["dry_plots"]:
+        if any(_pt_seg(x, y, ln[i][0], ln[i][1], ln[i + 1][0], ln[i + 1][1]) < 16 for ln in avoid for (x, y) in dp["poly"] for i in range(len(ln) - 1)):
+            continue
+        if any(hem_on_paddy(dp["poly"], _pol) for _pol in _prior):
+            continue
+        s.dry_polys.append(dp["poly"])
+        pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in dp["poly"])
+        s.add(f'<polygon points="{pts}" fill="{dp["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
+        furrows(dp["poly"], dp["furrow"], dp["theta"])
+        s.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in dp["poly"]], "crop": dp["crop"], "theta": round(dp["theta"], 3)})
+    for p in net["plots"]:
+        pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in p["poly"])
+        s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" stroke-width="{aze_w(s.ftpx):.2f}" stroke-linejoin="round"/>')
+    s.bund_junctions(net["plots"], name)
+    beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
+    s.add(f'<g opacity="0.85">{beads}</g>')
+    for c in sorted(net["channels"], key=lambda c: -c["w"]):
+        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]), late=True)
+    exs = [p[0] for p in env]
+    eys = [p[1] for p in env]
+    pvx = [v[0] for p in net["plots"] for v in p["poly"]]
+    pvy = [v[1] for p in net["plots"] for v in p["poly"]]
+    s.M["fields"].append(
+        {
+            "name": name,
+            "kind": "paddy",
+            "down_deg": down_deg,
+            "outline": [[x, y] for x, y in env],
+            "bbox": [min(exs), min(eys), max(exs), max(eys)],
+            "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
+            "plot_polys": [[[round(v[0], 1), round(v[1], 1)] for v in p["poly"]] for p in net["plots"]],
+        }
+    )
+    for c in net["channels"]:
+        s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)})
+    return net, env, (round(sum(exs) / len(exs), 1), round(sum(eys) / len(eys), 1))
+
+
+# the head is tapped off the river's west bank below the wharf and the fall runs WITH the current
+# (the river's flow_deg is 117.7), so the drain collector returns to the river DOWNSTREAM of its own
+# intake - never above it. The comb spreads inland across the open ground south of the rampart.
+# the TAP is on the river's own bank, upstream of everything the field drains back into, and the
+# head-race runs from it to the sluice gate; the drain leaves the low corner for the river's lower
+# reach. Both ends are DECLARED (topo_channel), which is what grounds the net for the water checks.
+# DERIVED from the river's own lower reach, not eyeballed: a point 12% down the reach below the
+# wharf, with the sluice set inland on the river's west side along that reach's normal.
+_QT = 0.30
+_QRA, _QRB = RIVER[3], RIVER[4]
+_QTAP = (_QRA[0] + (_QRB[0] - _QRA[0]) * _QT, _QRA[1] + (_QRB[1] - _QRA[1]) * _QT)
+_qrl = math.hypot(_QRB[0] - _QRA[0], _QRB[1] - _QRA[1])
+_qnx, _qny = -(_QRB[1] - _QRA[1]) / _qrl, (_QRB[0] - _QRA[0]) / _qrl  # inland (west) normal
+_PSL = (_QTAP[0] + _qnx * 55, _QTAP[1] + _qny * 55)
+_PMID = ((_QTAP[0] + _PSL[0]) / 2 + _qny * 16, (_QTAP[1] + _PSL[1]) / 2 - _qnx * 16)  # a gentle bend: a cut follows the ground, it is not ruled
+s.field_channel([_QTAP, _PMID, _PSL], "#9CB4C8", 7, 7)
+s.sluice_gate(_PSL[0], _PSL[1], rot=math.degrees(math.atan2(_PSL[1] - _QTAP[1], _PSL[0] - _QTAP[0])) + 90)
+s.sluice_gate(_QTAP[0], _QTAP[1], rot=math.degrees(math.atan2(_PSL[1] - _QTAP[1], _PSL[0] - _QTAP[0])) + 90)  # the head gate where the cut leaves the river
+_PADDY, _PENV, _PCEN = comb_field("daika-s", _PSL, 150, 61, 150, (185, 225), (105, 130), (0.35, 0.7), dry_band=(20, 40), avoid=(MOAT, RIVER))
+_PPD = plot_centroid(_PADDY, lambda cs: max(cs, key=lambda pc: pc[1]))
+topo_channel([_QTAP, _PSL, _PPD], {"kind": "river"}, {"kind": "field", "name": "daika-s"})
+_PDR = next(c["pts"] for c in _PADDY["channels"] if c["role"] == "drain")
+topo_channel([tuple(_PDR[-2]), tuple(_PDR[-1])], {"kind": "drain", "name": "daika-s"}, {"kind": "offmap"})
+# the households that work it, ringed on the field's own envelope
+# the households that work it, ringed on the field's own envelope (n seats, gap px apart)
+_PXS = [q[0] for q in _PENV]
+_PYS = [q[1] for q in _PENV]
+_PW = max(_PXS) - min(_PXS)
+_PH = max(_PYS) - min(_PYS)
+# the households that work it. Placed one at a time against the placer rather than ringed: the
+# perimeter ring seats nothing here, because the field's envelope is hemmed by the river on one
+# flank, the towpath on another and the funerary ground on a third, and every candidate the ring
+# offers falls on one of them.
+_PFH = 0
+for _fu, _fv in ((-0.30, 0.25), (-0.34, 0.65), (-0.22, 1.05), (0.20, 1.30), (0.65, 1.34), (1.05, 1.15), (1.30, 0.70), (1.26, 0.30), (0.35, -0.30), (0.80, -0.28)):
+    _fx = min(_PXS) + _PW * _fu
+    _fy = min(_PYS) + _PH * _fv
+    if s.try_place(_fx, _fy, "plain"):
+        _PFH += 1
+print(f"paddy farmhouses: {_PFH}")
 s.crop_city(
     margin=36
 )  # ~110 real ft of edge (GM 2026-08-10: 400 ft of empty margin was too much)  # the south=240/east=700 overrides padded dead margin onto both flanks (GM 2026-08-10); the aggressive default frames the real content
