@@ -2649,6 +2649,42 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if not ok:
             fails.append(name)
 
+    # A CAPTION NAMING A POINT ON A WATERCOURSE MUST STAND AT THAT POINT (GM 2026-08-11: "the
+    # aqueduct labels are still really far away from the things that they are labeling... look at
+    # how much empty space exists between the intake weir and the label that labels it"). The
+    # standoff ladder seats a caption at LABEL_MIN_AIR and `label_hugs_its_referent` measures the
+    # finished gap - but BOTH only govern a caption that declares a subject, and these are placed
+    # by hand with no referent, so they escaped the pair of them. Here the subject is not declared,
+    # it is DERIVED: the manifest records where the intake and the terminus are, so the check reads
+    # the current geometry and a re-routed duct drags its words along instead of stranding them.
+    _wwsub: list[tuple[str, tuple[float, float]]] = []
+    for _aq in M.get("aqueducts") or []:
+        if _aq.get("intake"):
+            _wwsub.append(("intake weir", (float(_aq["intake"][0]), float(_aq["intake"][1]))))
+        _term = _aq.get("to") or ((_aq.get("poly") or [[None, None]]) or [[None, None]])[-1]
+        if _term and len(_term) >= 2 and _term[0] is not None:
+            _wwsub.append(("settling basin", (float(_term[0]), float(_term[1]))))
+    for _sg in M.get("sluice_gates") or []:
+        if isinstance(_sg, dict) and "x" in _sg and "y" in _sg:
+            _wwsub.append(("sluice gate", (float(_sg["x"]), float(_sg["y"]))))
+    _ww_bad = []
+    for _lb in M["labels"]:
+        if len(_lb) < 6:  # a degenerate record carries no text, so it names nothing
+            continue
+        _txt = str(_lb[5]).lower()
+        _wwnear = [pt for nm, pt in _wwsub if nm in _txt]
+        if not _wwnear:
+            continue
+        _g = min(math.hypot(max(0.0, max(pt[0] - _lb[2], _lb[0] - pt[0])), max(0.0, max(pt[1] - _lb[3], _lb[1] - pt[1]))) for pt in _wwnear)
+        _wwf = float(meta.get("ftpx") or 1.0)
+        if _g * _wwf > 90.0:
+            _ww_bad.append((_lb[5], round(_g * _wwf)))
+    check(
+        "waterworks_captions_stand_at_their_point",
+        not _ww_bad,
+        f"caption(s) naming a point on a watercourse, drawn far from it with open ground between (name, ft): {sorted(_ww_bad)} - derive the seat from the point the manifest records (a hand-placed label carries no referent, so neither the standoff ladder nor label_hugs_its_referent governs it)",
+    )
+
     # A placement run that lands far under its ask is authored-vs-landed DRIFT, and _shortfall
     # RECORDING it (GM 2026-08-05, "we definitely want that to be visible") turned out not to be
     # enough on its own: the capital authored 283 frontage seats, drew 129, and the gate stayed

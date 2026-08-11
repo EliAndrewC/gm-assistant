@@ -226,12 +226,12 @@ s.stream([FEED_TAP, (2870, 875), (2650, 880), (MOAT[4][0], MOAT[4][1])], frm={"k
 # junction the local water direction is ambiguous, so the correctly-across board read as a
 # coincidentally axis-aligned bar; astride the clear run, across-the-channel explains itself)
 s.sluice_gate(
-    3051, 863.8, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3040, 818), span=26
+    3051, 863.8, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3040, 845), span=26
 )  # the intake board - the frame spans BANK TO BANK (posts on the abutments, the operator walks the crossbeam)
 DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
 s.stream([DRAIN_OUT, (2000, 2460), (2172, 2557)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
 s.sluice_gate(
-    2018, 2408, rot=math.degrees(math.atan2(2460 - DRAIN_OUT[1], 2000 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1986, 2372), span=26
+    2018, 2408, rot=math.degrees(math.atan2(2460 - DRAIN_OUT[1], 2000 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1994, 2392), span=26
 )  # ON the drain's centerline (the old seat predated the drain's re-route - GM 2026-08-10)  # the outfall board, bank to bank like the intake
 s.moat_flow(MOAT[4], MOAT[8])
 
@@ -246,14 +246,39 @@ s.moat_flow(MOAT[4], MOAT[8])
 # the whole northeast and crossed the moat on a flume; the corrected route peels off
 # downstream and falls straight to the EAST gate - short and direct because the river is
 # near, where the real ones wound only to HOLD their gradient across long country.
-s.aqueduct([(2962.4, 1047.9), (2790, 1130), (2660, 1215), (2554.4, 1294.2)])  # terminus pulled up its own line to land the settling basin CLEAR of the moat (it was IN the channel - GM 2026-08-10)
+AQ = [(2962.4, 1047.9), (2790, 1130), (2660, 1215), (2554.4, 1294.2)]  # the duct, head to terminus
+s.aqueduct(AQ)  # terminus pulled up its own line to land the settling basin CLEAR of the moat (it was IN the channel - GM 2026-08-10)
+
+
+def _beside(a, b, off=17):
+    """A seat `off` px to the UPHILL side of the duct at point `a`, derived from the duct's own
+    bearing there (GM 2026-08-11: the end labels were pinned and drifted 195 and 348 ft from the
+    points they name, with nothing but open ground between). Derived, so a re-routed duct carries
+    its words with it instead of stranding them - and near enough that the label reads as naming
+    the thing rather than floating beside it."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    ln = math.hypot(dx, dy) or 1.0
+    return (a[0] - dy / ln * off, a[1] + dx / ln * off)
+
+
 # the two ends carry the words the glyphs cannot (GM 2026-08-09): the river end is the INTAKE
 # WEIR (the Hamura form - a barrier angled across part of the stream, shouldering water into
 # the cut), and the gate end is the SETTLING BASIN, where silt drops before the buried mains
 # All three aqueduct words share the duct's bearing and the same ~20px uphill offset from the
 # channel line (GM 2026-08-09: the end labels were level while "aqueduct" lay along the cut).
-s.label(2965, 985, "intake weir", 9, italic=True, color="#5E7A8A", rot=151, linear=True, full_tilt=True)
-s.label(2612, 1196, "settling basin", 9, italic=True, color="#5E7A8A", rot=-33, linear=True, full_tilt=True)  # beside the terminus, clear of the rampart band (GM 2026-08-10)
+_IW = _beside(AQ[0], AQ[1])
+s.label(_IW[0], _IW[1], "intake weir", 9, italic=True, color="#5E7A8A", rot=151, linear=True, full_tilt=True)
+# the terminus stands ON the moat's outer bank by design, so BOTH of its flanks are rampart ink -
+# the caption goes back UP the duct instead, over the open ground the cut runs through
+_SBd = math.hypot(AQ[-2][0] - AQ[-1][0], AQ[-2][1] - AQ[-1][1]) or 1.0
+# 26 px back up the cut and 16 px off its uphill flank: the terminus stands ON the moat's outer
+# bank, so both of its own flanks are rampart ink and the caption has to step back along the duct
+# to find open ground. Derived from AQ, so a re-routed duct carries the words with it.
+_SBu, _SBp = 26, 16
+_SBx = AQ[-1][0] + (AQ[-2][0] - AQ[-1][0]) / _SBd * _SBu - (AQ[-2][1] - AQ[-1][1]) / _SBd * _SBp
+_SBy = AQ[-1][1] + (AQ[-2][1] - AQ[-1][1]) / _SBd * _SBu + (AQ[-2][0] - AQ[-1][0]) / _SBd * _SBp
+_SB = (_SBx, _SBy)
+s.label(_SB[0], _SB[1], "settling basin", 9, italic=True, color="#5E7A8A", rot=-33, linear=True, full_tilt=True)  # beside the terminus, on the duct's uphill side
 s.label(2705, 1160, "aqueduct", 10, italic=True, color="#5E7A8A", rot=151, linear=True, full_tilt=True)
 
 # ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -
