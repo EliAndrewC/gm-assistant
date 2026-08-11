@@ -1335,6 +1335,7 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     rng = random.Random((plan.spec.seed * 2654435761) & 0xFFFFFFFF)
     placed = 0
     lat, dep = seat["lat"], seat["dep"]
+
     # THE FRONT ROW GOES DOWN FIRST, along the band's field-facing face. A cluster seeded only by
     # its SHAPE fills its whole depth evenly, and on a small hamlet that can leave the field ringed
     # by four houses where `field_ringed` wants five - the map then reads as a settlement that
@@ -1348,9 +1349,20 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # ground is awkward - the placer refuses a bundle that laps a bund or a ditch, and every refusal
     # is a house that ends up in the back rows instead. Offering the same row again a little further
     # out costs nothing when the first pass filled it and rescues the ring when it did not.
+    # EVERY SEAT MUST LIE IN THE BAND. The front row follows the field OUTLINE and the frontage rows
+    # follow the lanes, and both can wander well past the cluster on a long fan - which produced a
+    # nucleated hamlet with three or four farmsteads strung hundreds of px down the margin. That is
+    # a form defect on its own (a nucleus is supposed to read as a nucleus), and it was ALSO the
+    # cause of three separate gate failures: a windbreak sized off the furthest house became a green
+    # blanket, a copse over the full house bbox left the map no blank ground, and a stray farm past
+    # the last well tripped `settlement_dwellings_watered`. Fixing the seats fixes all of it at the
+    # source, which is why the percentile guards elsewhere are belt-and-braces rather than the cure.
+    def in_band(q: Pt) -> bool:
+        return math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]) <= 1.15 * math.hypot(lat, dep)
+
     for standoff in (46.0, 62.0):
         for fx, fy in front_row(plan, min(plan.spec.households, 10), standoff=standoff):
-            if s.try_place(fx, fy, "plain"):
+            if in_band((fx, fy)) and s.try_place(fx, fy, "plain"):
                 placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
     # cluster seeded only by its shape leaves them running across empty middle: the review of the
@@ -1360,7 +1372,7 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     for lx, ly in lane_frontage(s, seat):
         if placed >= plan.spec.households:
             break
-        if s.try_place(lx, ly, "plain"):
+        if in_band((lx, ly)) and s.try_place(lx, ly, "plain"):
             placed += 1
     for attempt in range(4):
         if placed >= plan.spec.households:
@@ -1708,26 +1720,16 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
     if not plan.belt:  # pragma: no cover - stage_woodland always computes it first
         return
     s.village_grove(plan.belt, role="windbreak")
-    # The COPSE fills the leafy gaps AMONG the homes - so its ground is the cluster's CORE, taken by
-    # the same percentile as the belt above and for the same reason. Over the full house bounding
-    # box it becomes a scatter across everything the outliers reach: on the reference hamlet, 245
-    # clumps spread over 1,446 x 1,244 px, which is not a copse among the houses, it is a wood over
-    # the whole settlement - and every clump is an obstacle the map's own title then cannot find
-    # room around (`title_clear_of_features`).
+    # The COPSE fills the leafy gaps AMONG the homes, over the house cloud. That is only reasonable
+    # ground because `stage_homesteads` now bounds every seat to the cluster band: over a cloud with
+    # a strewn farmstead in it, this became a scatter across 1,446 x 1,244 px - a wood over the whole
+    # settlement rather than a copse among the houses, and every clump an obstacle the map's own
+    # title could then find no room around (`title_clear_of_features`).
     houses = s.M.get("houses", [])
     xs = [h["x"] for h in houses]
     ys = [h["y"] for h in houses]
-    cx0, cy0 = sum(xs) / len(xs), sum(ys) / len(ys)
-    rx = _pct([abs(x - cx0) for x in xs], 0.8) + 16.0
-    ry = _pct([abs(y - cy0) for y in ys], 0.8) + 16.0
-    s.village_grove([(cx0 - rx, cy0 - ry), (cx0 + rx, cy0 - ry), (cx0 + rx, cy0 + ry), (cx0 - rx, cy0 + ry)], role="copse", dense=False)
-
-
-def _pct(values: Sequence[float], q: float) -> float:
-    """The `q` quantile of `values` - used instead of a max wherever one outlying farmstead should
-    not be allowed to size a communal feature."""
-    ordered = sorted(values)
-    return ordered[min(len(ordered) - 1, int(q * (len(ordered) - 1) + 0.5))]
+    pad = 16.0
+    s.village_grove([(min(xs) - pad, min(ys) - pad), (max(xs) + pad, min(ys) - pad), (max(xs) + pad, max(ys) + pad), (min(xs) - pad, max(ys) + pad)], role="copse", dense=False)
 
 
 def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
@@ -1748,8 +1750,14 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
     # homeless. A windbreak shelters the village; it does not run out to every stray farmstead. The
     # 85th percentile is the settlement proper, and `village_windbreak_embraces_cluster` only asks
     # that a substantial belt nestle against A farmhouse, which the cluster core does.
-    reach = _pct([(h["x"] - ccx) * wx + (h["y"] - ccy) * wy for h in houses], 0.85)
-    span = _pct([abs((h["x"] - ccx) * px + (h["y"] - ccy) * py) for h in houses], 0.85) + 90.0
+    # The FULL extent, now that `stage_homesteads` bounds every seat to the cluster band. These were
+    # percentiles for a while, to stop one strewn farmstead stretching the belt into a 2,392 px
+    # green blanket - but a percentile is a workaround for outliers, and with the outliers gone at
+    # source it only makes the belt too short to scale with the cluster
+    # (`village_windbreak_scales_with_cluster`) and too far back to embrace it
+    # (`village_windbreak_embraces_cluster`). Fix the cause, drop the workaround.
+    reach = max((h["x"] - ccx) * wx + (h["y"] - ccy) * wy for h in houses)
+    span = max(abs((h["x"] - ccx) * px + (h["y"] - ccy) * py) for h in houses) + 90.0
     rng = random.Random((plan.spec.seed * 7919) & 0xFFFFFFFF)
 
     def rag(p: Pt, amp: float = 13.0) -> Pt:
