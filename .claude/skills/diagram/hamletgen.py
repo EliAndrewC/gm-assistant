@@ -1360,8 +1360,12 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     def in_band(q: Pt) -> bool:
         return math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]) <= 1.15 * math.hypot(lat, dep)
 
-    for standoff in (46.0, 62.0):
-        for fx, fy in front_row(plan, min(plan.spec.households, 10), standoff=standoff):
+    # THREE standoffs, not two. `field_ringed` wants five farmhouses within 165 px of the field
+    # outline and the placer refuses any bundle that laps a bund or a ditch, so a single ring of
+    # candidates can land four on awkward ground. Each extra pass is free when the earlier one
+    # filled the row.
+    for standoff in (46.0, 62.0, 80.0):
+        for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
             if in_band((fx, fy)) and s.try_place(fx, fy, "plain"):
                 placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
@@ -1763,8 +1767,11 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
     def rag(p: Pt, amp: float = 13.0) -> Pt:
         return (p[0] + rng.uniform(-amp, amp), p[1] + rng.uniform(-amp, amp))
 
-    # The belt's near face sits just behind the windward fringe of the houses (inside the 150 px
-    # embrace band) and it is ~110 px deep - a real wind wall, not a hedge.
+    # The belt's near face sits just behind the windward fringe of the houses and it is ~110 px
+    # deep - a real wind wall, not a hedge. The 24 px stand-off is set by
+    # `village_windbreak_embraces_cluster`, which wants a clump within 150 px of a farmhouse: the
+    # clump grid starts some way inside the polygon, so a 42 px face measured 160 px to the nearest
+    # tree and a belt that shelters nothing is decoration.
     #
     # WHEN IT WOULD STAND IN THE CROP, THE BAND IS TRIMMED, NOT BENT. Pulling each vertex back out
     # of the cropland was tried and is the wrong shape of fix: a vertex deep in a hem plot walks a
@@ -1777,7 +1784,7 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
     steps = 7
 
     def band(span_f: float, back: float) -> Poly:
-        near_, far_ = reach + 42.0 + back, reach + 152.0 + back
+        near_, far_ = reach + 24.0 + back, reach + 134.0 + back
         out: Poly = []
         for i in range(steps + 1):  # the near face, swept across the wind
             t = -1.0 + 2.0 * i / steps
