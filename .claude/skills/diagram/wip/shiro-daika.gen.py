@@ -463,7 +463,7 @@ s.district("west yashiki band", "yashiki", [(590, 555), (945, 555), (945, 1460),
 s.district("ote west yashiki flank", "yashiki", [(1150, 1290), (1315, 1290), (1315, 1540), (1150, 1540)], rank_band="yashiki")
 s.district("ote east yashiki flank", "yashiki", [(1560, 1290), (1855, 1290), (1855, 1390), (1560, 1390)], rank_band="yashiki")
 s.lane([(1140, 475), (1870, 475)], width=7)
-s.lane([(1965, 1270), (1965, 1740)], width=7)  # the southern leg, west of Kurogi + the Benten precinct
+s.lane([(1965, 1270), (1965, 1770)], width=7)  # the southern leg, west of Kurogi + the Benten precinct - it RUNS TO the y1770 street rather than halting 90 ft short of it (GM 2026-08-11)
 s.lane([(1205, 1300), (1205, 1520)], width=7)  # the ote west flank's own lane
 
 _YJ = ((2, -2), (-4, 2), (4, 4), (-2, -4), (0, 2), (3, -3))  # deterministic size jitter, no stream draw
@@ -656,16 +656,6 @@ s.inn(629, 1938)
 s.stables(673, 1915)
 # two more public wells where the warren outgrew its water. ASKED, not guessed: a hand-picked
 # seat here landed on a lane (this skill's CLAUDE.md, "Ask the ENGINE where a feature fits").
-# two more public wells where the warren outgrew its water. ASKED, not guessed - and asked at
-# SEVERAL sizes, because a wellhead is small and the machi is tight: a 12 px probe found nothing
-# in either block while an 8 px one fits the court gaps the rows leave (this skill's CLAUDE.md,
-# "Ask the ENGINE where a feature fits - do not guess coordinates").
-for _wbox in ((1500, 1690, 1790, 1980), (1740, 1900, 1990, 2160)):
-    for _wsize in (12, 10, 8):
-        _wseat = s.open_seat(_wbox, _wsize, _wsize, well=True)
-        if _wseat:
-            s.well(_wseat[0], _wseat[1])
-            break
 s.well(700, 1940)  # pre-seeded: the yard's own-well dig path was putting one on the SW gate road
 s.block_polys.append([(521, 1896), (631, 1896), (631, 2004), (521, 2004)])
 s.placed.append((690, 1912, 150, 130))  # the SW yard's animal ground, east of the stables where the crescent rows press  # SW caravan yard (uniform doctrine) - likewise kept inside the wall
@@ -841,8 +831,8 @@ _WELL_QUARTERS = (
     # Spacings are set from that arithmetic, never by nudging a multiplier (GM 2026-08-10).
     (615, 1575, 1395, 1830, 58),  # SW machi
     (615, 1830, 1395, 2040, 50),  # ...its southern burakumin/doss strip: ~2x the row density
-    (1405, 1575, 2120, 1840, 58),  # SE machi
-    (1405, 1840, 2120, 2040, 50),  # ...and its own dense southern strip
+    (1405, 1575, 2120, 1840, 53),  # SE machi - cell tightened 58->53 when the denser machiya rows raised its household count
+    (1405, 1840, 2120, 2040, 45),  # ...and its own dense southern strip, same reason
     (790, 2100, 1995, 2345, 50),  # the S band machi
     (2145, 635, 2405, 1250, 46),  # the E gate machi
     (2140, 1440, 2320, 1640, 60),  # the E street machi

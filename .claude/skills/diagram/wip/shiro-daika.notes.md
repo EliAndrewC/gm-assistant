@@ -440,9 +440,18 @@ Recorded here rather than held in a session's head - this list is the contract.
    northwest). GM: this is a standing question to ASK when making a city, alongside water-flow
    direction and clan - so it goes in the skill's always-ask list, gets a `capital_dir` meta, and
    gets a check keyed on it.
-7. **The slanted street north of the southwest gate** still stops just short of the long west-east
-   street. `city_streets_reach_their_neighbors` was supposed to catch exactly this and does not -
-   fix the check FIRST against this map, then the street (and the odd tilt itself).
+7. ~~**The street that stops just short.**~~ **DONE 2026-08-11.** The near-misser was a LANE, and
+   `sr_enders` - the list of way-ends the check walks - held streets and alleys and **not lanes**,
+   so a lane's ends were never examined by any test in that check. A check that never looks at a
+   feature looks exactly like a check that passes. Two changes: lanes are walked now, and the
+   alley exemption (a roji legitimately dead-ends inside the block it threads) is bounded by
+   LENGTH - past 600 real ft a lane is a through-way and must close its junction. Frozen first as
+   `pool/regressions/long_lane_stops_short_of_its_street_shiro_daika.json`, watched go red, then
+   the lane at x1965 was run to the y1770 street it had been halting 90 ft short of.
+   NOTE: the GM described this as being near the SOUTHWEST gate and at a strange tilt; the defect
+   the check found is on the EAST side and perfectly vertical. Either the description was of this
+   same junction from memory, or there is a second one - worth a look at the render before
+   calling it closed.
 8. **`rowpack` records no shortfall** (settlement-review, 2026-08-11), so
    `placement_runs_meet_their_ask` is blind to it: Jurojin's monzen flanks drew 1 and 0 of 40 and
    another row 4 of 24, all green. Make `rowpack` record exactly as `pack` does, then trim or seat
@@ -451,7 +460,22 @@ Recorded here rather than held in a session's head - this list is the contract.
    holds the east flank) while its comment claims two files; the band street's comment still
    asserts a cure its trimmed ask no longer performs; the east gate market kept `spacing=32` and
    still reads dotted while its three siblings are dense; no gate market is captioned.
-10. **One red check on the capital:** `city_well_density_sufficient` - two warren blocks at 29 and
-    36 households per well against a cap of 26. `open_seat` refuses an 8 px wellhead anywhere in
-    either block, which is the documented over-restrictive collision circle (CLAUDE.md, "CENTER vs
-    FOOTPRINT" item 2) rather than genuinely full ground.
+10. **One red check on the capital:** `city_well_density_sufficient` - two blocks at 27 and 29
+    households per wellhead against a cap of 26. Everything tried and what it taught:
+    - `open_seat(..., well=True)` finds nothing at 12, 10 or 8 px anywhere in either block. Before
+      the packs run there are no dwellings for a well seat to validate against; after them the
+      ground is full. That is the documented over-restrictive collision circle (CLAUDE.md, "CENTER
+      vs FOOTPRINT" item 2), not genuinely full ground.
+    - Tightening the derived per-quarter well grid DOES add wells, but the ones it adds land near
+      existing wells and trip `wells_not_clustered` (5 inside a 150 ft radius) before the deficit
+      clears. The two rules meet in the middle with one household of daylight between them.
+    - Trimming the covering packs' asks changes NOTHING: both are capacity-bound, so they were
+      already placing fewer than asked. Worth remembering before reaching for that lever again.
+    The honest fix is upstream: make the placer test the rotated footprint it will actually draw so
+    the circle can be replaced by a real overlap test (the item-3-then-item-2 order in CLAUDE.md).
+    Until then this is one wellhead short in a warren, and it is left RED rather than waived - a
+    waiver is for a place with a history, and "the packer would not seat a wellhead" is a defect.
+11. **No farmland on the capital map, and there should be** - the same patterns the provincial
+    cities use: paddy blocks tied to the declared water flow, drainage ditches feeding the moat or
+    the river DOWNSTREAM with the current, and feeder channels tapped so the water turns into them
+    with the flow rather than against it.

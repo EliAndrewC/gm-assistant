@@ -9232,7 +9232,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     sr_bad = []
     # alley ENDS answer to the same rule - the S band's roji visibly dangled short of (and
     # past) the band street they aim at (GM 2026-08-10, the render's most repeated defect)
-    sr_enders = [(st9, st9.get("w", 18) / 2, True) for st9 in sr_sts] + [(al9, al9.get("w", 10) / 2, False) for al9 in M.get("alleys", [])]
+    # LANES were absent from this list entirely (GM 2026-08-11, reporting the same near-miss a
+    # second time), so a lane's ends were never examined by any of the tests below - which looks
+    # exactly like a lane that passes. Alleys were here; lanes, the wider of the two, were not.
+    sr_enders = (
+        [(st9, st9.get("w", 18) / 2, True) for st9 in sr_sts]
+        + [(al9, al9.get("w", 10) / 2, False) for al9 in M.get("alleys", [])]
+        + [(ln9, ln9.get("w", 10) / 2, False) for ln9 in M.get("lanes", []) if isinstance(ln9, dict)]
+    )
     for st9, sr_myhw, sr_is_street in sr_enders:
         if len(st9.get("pts") or []) < 2:
             continue  # a one-vertex way has no direction of travel to aim with
@@ -9298,7 +9305,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     ):
                         sr_crossed = True
                         break
-                perp9 = sr_is_street and not sr_crossed and 45.0 < min(cross9, 180.0 - cross9) <= 90.0 and d9 < 80.0
+                # A LONG lane is a through-way, not a roji (GM 2026-08-11, reporting the same
+                # defect twice: "it stops just short of intersecting"). The alley exemption above
+                # is right for a short service thread that dies inside the block it serves, and
+                # WRONG for a 470 px lane that runs the depth of a quarter and halts 90 ft off a
+                # major street. Measured in real feet so it means the same thing at every tier.
+                sr_len9 = sum(math.dist(st9["pts"][k9], st9["pts"][k9 + 1]) for k9 in range(len(st9["pts"]) - 1)) * float(meta.get("ftpx", 1))
+                perp9 = (sr_is_street or sr_len9 > 600.0) and not sr_crossed and 45.0 < min(cross9, 180.0 - cross9) <= 90.0 and d9 < 80.0
             if (align9 > 0.6 and d9 < 65.0) or perp9:
                 sr_bad.append((round(E9[0]), round(E9[1]), round(d9)))
     check(
