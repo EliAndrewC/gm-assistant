@@ -1043,9 +1043,15 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         if ditch.get("role") == "drain" and len(ditch["poly"]) >= 2:
             drain = [(float(v[0]), float(v[1])) for v in ditch["poly"]]
             break
+    # EVERY watercourse on the map, not just the field's own ditches. The ways are routed to meet
+    # water squarely and to keep their decks off the crop, and that is only as good as the list they
+    # are handed: the STREAMS - the feed brook coming down to the intake, the drain brook leaving
+    # the frame - are drawn in the two stages before this one and were missing from it, so a track
+    # could cross one at a slant and `bridges_span_their_water` would fail on a deck too short for
+    # the water beneath it.
     plan.watercourses = [
         ((float(a[0]), float(a[1])), (float(b[0]), float(b[1])))
-        for rec in list(s.M.get("field_ditches", [])) + list(s.M.get("channels", []))
+        for rec in list(s.M.get("field_ditches", [])) + list(s.M.get("channels", [])) + list(s.M.get("streams", []))
         for a, b in zip(rec["poly"], rec["poly"][1:], strict=False)
     ]
     seat = seat_cluster(plan, dry_plots=crop_polys(s), drain=drain)
