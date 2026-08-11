@@ -969,3 +969,34 @@ quarter, and trimming the ask to the reported figure halves it again, so the cor
 point at 50% and never converges. Four rounds of automated trimming chased that before anyone read
 the loop. **When you add bookkeeping to a placer, check whether it consumes its work-list or indexes
 it** - and if a correction loop is not converging, suspect the measurement before the geometry.
+
+## The scripted-generation EXPERIMENT (2026-08-11) - read before touching `hamletgen.py`
+
+[`hamletgen.md`](hamletgen.md) is the writeup; [`hamletgen.py`](hamletgen.py) is the generator and
+[`pool/experiments/`](pool/experiments/) its four demo maps. It is ADDITIVE and nothing in the live
+method changed, so a session drawing a map today can ignore it entirely.
+
+Two things it found in SHIPPED engine code, both still open, both worth fixing on their own with the
+full sweep rather than inside the experiment:
+
+- **`draw_comb_field` never appends its dry hem to `s.dry_polys`** - only to `block_polys`. But
+  `dry_polys` is the registry the GROVE, LANE and threshing-yard filters read, so a map built
+  through it has hem plots that stop a house and not a tree. Every hand-authored comb gen
+  compensates with its own `s.dry_polys.append(...)`; the two seed-rolled maps (Honda, Shimizu) do
+  not, and pass only because their clusters sit away from the hem. Same shape as "placement and its
+  check must read the SAME manifest source", above.
+- **`roll_village` sizes its cluster band at a 56 px pitch per household**, which is the FARMHOUSE -
+  but the to-scale tiers place a BUNDLE (house + threshing yard + dooryard garden, ~71 x 57 ft) and
+  the placer spaces bundles by circumscribed circles on top of that. The band therefore asks for
+  roughly three times what fits. It does not show up as a shortfall, because the caller keeps
+  seeding until the count is met - it shows up as a cluster packed absolutely solid, in which
+  `open_seat(..., well=True)` can find nowhere at all to put a wellhead. Honda seating 15 houses for
+  18 households is the visible edge of it.
+
+And one methodological result worth carrying to any future generator work: **a cohort is a much
+stronger test bed than a map.** Twenty hamlets rolled from consecutive seeds and gated caught ten
+distinct defects - an intake at mid-slope starving the fan, a pond laid over the crop, a cluster
+seated inside a CONCAVE field margin (the outward normal was taken from the centroid, which is only
+right for a convex polygon), a supply canal's tail dying in bare ground, a brook turning through an
+acute hairpin, and the two engine bugs above. Authoring one map meets perhaps two of them. If you
+add a placement rule, run it against a cohort, not against the map that motivated it.
