@@ -668,7 +668,7 @@ def feed_brook(plan: SitePlan, sluice: Pt, run: float = 420.0) -> Poly:
         if not (crosses_poly(up, mid, plan.envelope) or crosses_poly(mid, near, plan.envelope)):
             return [up, mid, sluice]
     up = (sluice[0] - dx * run, sluice[1] - dy * run)  # pragma: no cover - a fan head never blocks all fifteen
-    return [up, ((up[0] + sluice[0]) / 2 + dy * 26, (up[1] + sluice[1]) / 2 - dx * 26), sluice]
+    return [up, ((up[0] + sluice[0]) / 2 + dy * 26, (up[1] + sluice[1]) / 2 - dx * 26), sluice]  # pragma: no cover - the same unreachable fallback, one line down
 
 
 def stage_field(s: Settlement, plan: SitePlan) -> None:
@@ -701,18 +701,29 @@ def stage_field(s: Settlement, plan: SitePlan) -> None:
     plan.envelope = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]  # routed against BEFORE the field is drawn (see feed_brook)
     s.field_polys.append(list(plan.envelope))
     s.meta(dry_furrows_vary=net["furrows_vary"])
-    # EVERY field ditch is a no-build corridor. Inside the field envelope that is redundant (the
-    # crop is blocked ground already), but a delivery ditch's tail and the collector run out past
-    # the envelope onto open margin, where the placer is otherwise free to seat a homestead squarely
-    # on the water (`no_structure_on_channel`). `s.field_channel` registers no corridor of its own.
-    for _d in s.M.get("field_ditches", []):
-        s.corridors.append(([(float(v[0]), float(v[1])) for v in _d["poly"]], 30.0))
     s.M["meta"]["field_archetype"] = "valley_paddy"
     # The brook that feeds the head, running in from off-map: the visible source. It is drawn as a
     # STREAM ending AT the sluice, where it becomes the head-race - it does not run on over the
     # paddies. `draw_comb_field` then records the hairline topology channel that grounds the field's
     # water source for the gate.
     s.draw_comb_field(net, f"{plan.spec.name.lower()}-paddies", {"kind": "stream", "stream": feed_brook(plan, sluice)})
+    # THE PARTS OF A DITCH THAT RUN OUTSIDE THE CROP become no-build corridors.
+    #
+    # `s.field_channel` registers none of its own, and inside the field envelope it does not need
+    # to - the crop is blocked ground already. But a delivery ditch's tail and the collector run out
+    # past the envelope onto open margin, where the placer is otherwise free to seat a homestead
+    # squarely on the water (`no_structure_on_channel`). Only those stretches are reserved:
+    # blanketing the whole ditch net costs the field its ring of farmhouses, because a comb's
+    # deliveries run right along the margin the front row wants (`field_ringed`, three maps).
+    #
+    # And it goes AFTER `draw_comb_field`, which is where `M['field_ditches']` is written. Placed
+    # before it, the loop had nothing to iterate and reserved nothing at all - silently, since an
+    # empty loop looks exactly like a loop with nothing to do.
+    for ditch in s.M.get("field_ditches", []):
+        run = [(float(v[0]), float(v[1])) for v in ditch["poly"]]
+        outside = [(a, b) for a, b in zip(run, run[1:], strict=False) if not point_in_poly((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, plan.envelope)]
+        for a, b in outside:
+            s.corridors.append(([a, b], 30.0))
 
 
 # ---- STAGE 3: where the runoff goes -------------------------------------------------------------
