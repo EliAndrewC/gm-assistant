@@ -234,9 +234,8 @@ through an acute hairpin. A person authoring one map meets perhaps two of those.
 
 In rough order of value:
 
-0. **Raise the cohort pass rate to 100%** - the residue is siting collisions between the connector,
-   the ditches and the hem, and each one is a real map defect the gate is right to reject.
-1. **Fix the engine defects above**, with the pool sweep, on their own.
+0. ~~**Raise the cohort pass rate to 100%**~~ - WORKED ON 2026-08-11, see "Raising the rate" below.
+1. ~~**Fix the engine defects above**~~ - DONE 2026-08-11, five of six; see the section above.
 2. **Extend to the village tier** - the same pipeline plus a headman, a shrine with its torii count,
    a burial ground and tax-free plots. Most of the machinery already exists in `roll_village`.
 3. **Merge, rather than keep two paths.** If this is adopted, `hamletgen`'s derivations belong
@@ -271,3 +270,30 @@ Worth carrying to any future generator work, whatever happens to this one:
   is met - it fails as a cluster packed so solid that no wellhead can be seated anywhere in it, and
   the gate reports `settlement_has_wells`. When a check fails for a reason that makes no sense,
   suspect a sizing constant upstream of it.
+
+## Raising the rate (2026-08-11)
+
+The GM's follow-up was the two items above: fix the engine defects on their own, and take the
+cohort to 100%. What the second one taught is worth as much as the number.
+
+**Nine of the eleven fixes were one of three shapes**, and none of them was "tune a constant":
+
+- **A test that measured the wrong thing.** `crosses_poly` took a fixed 60 samples whatever the
+  segment measured, so a 4,000 px connector was sampled every 67 px and stepped clean over a field.
+  A way was routed by the straight CHORD to its endpoint and then drawn as a polyline bowing 40 px
+  either side of it. A probe must measure what will be drawn, at a resolution finer than the thing
+  it is testing.
+- **A test that could never pass, which looks exactly like one that always does.** The drain
+  brook's bearing sweep tested the leg starting at the drain OUTFALL - inside the field by
+  definition - so every bearing was rejected and the sweep fell through to an untested fallback.
+  The fan disqualifier had the identical shape earlier. Assert that a filter accepts something.
+- **A feature sized off an aggregate that an outlier could stretch.** The windbreak and the copse
+  were sized off the MAXIMUM extent of the house cloud, so one strewn farmstead turned the belt into
+  a 2,392 px green blanket. Percentiles were tried and are the wrong cure: bounding the SEATS to the
+  cluster band removed the outliers at source, and the percentiles then only made the belt too small
+  to shelter anything.
+
+**And the second-order effects are the reason a cohort beats a map.** The green blanket did not fail
+as "your windbreak is too big" - it failed as `title_clear_of_features`, because with the head of
+the sheet under trees there was no blank ground left for the map's own name. Three checks away from
+its cause. A single map would have been fixed at the symptom.
