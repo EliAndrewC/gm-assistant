@@ -11613,14 +11613,14 @@ class Settlement:
             d = total * (k + 0.5) / max(1, steps)
             x, y, tx, ty = at(d)
             nx, ny = -ty, tx  # toward the water; the caller draws the bank with water on this side
-            tread = self.px(12)
-            run = self.px(16)
+            tread = self.px(20)  # a landing wide enough for two porters to pass
+            run = self.px(22)
             g = []
             for t in range(4):  # four treads stepping down into the water
                 off = width / 2 + run * t / 4.0
                 x0, y0 = x + nx * off - tx * tread / 2, y + ny * off - ty * tread / 2
                 x1, y1 = x + nx * off + tx * tread / 2, y + ny * off + ty * tread / 2
-                g.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="#7D7468" stroke-width="{max(0.7, self.px(2)):.1f}" stroke-linecap="butt"/>')
+                g.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="#665D50" stroke-width="{max(1.1, self.px(3)):.1f}" stroke-linecap="butt"/>')
             self.add("".join(g))
             landings.append([round(x, 1), round(y, 1)])
         for k in range(max(2, steps + 2)):  # mooring posts along the top of the face
