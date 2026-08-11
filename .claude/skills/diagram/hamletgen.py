@@ -819,7 +819,7 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
             # reason: the field is where the drain legitimately connects.) `mid` must clear the crop
             # itself, which is what keeps the junction from being drawn across the rice.
             if not (point_in_poly(mid[0], mid[1], plan.envelope) or crosses_poly(mid, end, plan.envelope)):
-                s.stream([out, mid, end], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)
+                s.stream([out, mid, end], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)  # s.stream reserves its own corridor
                 plan.sink_brook = [out, mid, end]
                 return
         s.stream([out, mid, (mid[0] + dx * run, mid[1] + dy * run)], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)  # pragma: no cover - a fan toe never blocks all nine bearings
@@ -868,6 +868,11 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
     ditch: Poly = [out, mid, (pcx, pcy)]
     s.field_channel(ditch, "#7C9EB0", 2.5, 2.5)
     s.M["channels"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in ditch], "frm": {"kind": "drain"}, "to": {"kind": "pond"}, "w": 2.5})
+    # RESERVE IT AS A NO-BUILD CORRIDOR. `s.channel` and `s.stream` register one; `s.field_channel`
+    # does not - which is fine for the comb's own ditches, because they run inside a field envelope
+    # that is blocked ground already, and wrong for this one, which runs OUT of the field across
+    # open margin where the placer is free to seat a homestead on it (`no_structure_on_channel`).
+    s.corridors.append((list(ditch), 33.0))
     # A reedy fringe rims the shore - the shallow margin of any standing water.
     ring: Poly = [(pcx + (prx + 44) * math.cos(a), pcy + (pry + 44) * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]]
     s.marsh(ring, role="pond_fringe")
