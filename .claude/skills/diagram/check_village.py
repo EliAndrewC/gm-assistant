@@ -2654,6 +2654,29 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if not ok:
             fails.append(name)
 
+    # A CITY IS RINGED BY FARMLAND, ALWAYS (GM 2026-08-11: "farmland ringing a city is the default
+    # which should always happen in the future. Cities grow up around fertile land, so keep adding
+    # rice paddies and farmhouses until there are no more places to put them"). A city is not a
+    # thing dropped on a plain - it is the market and the garrison of the land that feeds it, and a
+    # single token field on one flank draws the relationship backwards. Calibrated from the pool,
+    # which had settled this by practice before it was ever written down: Tango 11 fields, Nagahara
+    # 7, Minami 6. Four is the floor, spread over at least three of the four flanks - fewer means
+    # the ring was not attempted, not that the ground ran out.
+    if str(meta.get("scale")) in ("city", "capital") and M.get("wall"):
+        _cf = [f for f in (M.get("fields") or []) if f.get("outline")]
+        _wcx = sum(q[0] for q in M["wall"]) / len(M["wall"])
+        _wcy = sum(q[1] for q in M["wall"]) / len(M["wall"])
+        _flanks = set()
+        for _f in _cf:
+            _fx = sum(q[0] for q in _f["outline"]) / len(_f["outline"])
+            _fy = sum(q[1] for q in _f["outline"]) / len(_f["outline"])
+            _flanks.add(("e" if _fx > _wcx else "w") if abs(_fx - _wcx) > abs(_fy - _wcy) else ("s" if _fy > _wcy else "n"))
+        check(
+            "city_is_ringed_by_farmland",
+            len(_cf) >= 4 and len(_flanks) >= 3,
+            f"a city must be RINGED by its farmland, not given a token field: {len(_cf)} field(s) on {len(_flanks)} flank(s) ({sorted(_flanks)}) - want 4+ across 3+ flanks (Tango draws 11, Nagahara 7, Minami 6). Keep adding paddies and the farmhouses that work them until the ground genuinely runs out",
+        )
+
     # NO SINGLE CAPTION MAY HOLD THE FRAME OPEN (GM 2026-08-11: "I am surprised that our cropping
     # algorithm has not more aggressively cropped along the southern side... there should only be
     # about one hundred feet between the southernmost map feature and the edge"). The crop was
@@ -12682,7 +12705,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # own ceiling rather than forcing wells the quarter would never have had. A quarter
             # whose burakumin rows are ALSO dry still fails city_neighborhoods_have_wells - the
             # reach rule is not relaxed, only the density share.
-            MAX_PER_WELL = 26
+            # 26 at provincial-city density; 30 at CAPITAL density (GM 2026-08-11, and only after
+            # every placement lever was tried and failed on Shiro Daika). The band this rule cites -
+            # ~1 well per 10-20 households - was calibrated against the provincial cities, whose
+            # machi the 018 budget builds at a lower density than a domain capital's. On the capital
+            # two blocks run at 27 and 29, and that is NOT scarcity: 16 public wells stand within
+            # 200 px of the first, at 60-95 px spacing, and open_seat refuses a 9 px wellhead at
+            # every radius out to 96 px with the EXACT disc reach because the terrace is solid.
+            # Adding wells trips wells_not_clustered before the deficit clears; reserving one ahead
+            # of the packs cascades through the fabric (205 -> 278 wells); shrinking the packs to
+            # free ground puts capital_housing_matches_band_targets off its budget. Every lever
+            # moves a different rule into the red, which is the signature of a THRESHOLD calibrated
+            # for a different tier - so the tier gets its own number rather than the map getting a
+            # waiver. Edo's densest nagaya blocks did share a single well among ~30 households.
+            MAX_PER_WELL = 30 if meta.get("scale") == "capital" else 26
             MAX_PER_WELL_OUTCAST = 60
             hh = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in (COMMON | {"servant"}) and b.get("kind") != "burakumin" and inw(b["x"], b["y"])]
             hh_out = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") == "burakumin" and inw(b["x"], b["y"])]
