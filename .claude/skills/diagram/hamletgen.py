@@ -604,10 +604,19 @@ def tail_dangles(net: Mapping[str, Any], margin: float = 18.0) -> bool:
     if not xs:  # pragma: no cover - a fan with no plots fails long before this
         return True
     x0, y0, x1, y1 = min(xs) - margin, min(ys) - margin, max(xs) + margin, max(ys) + margin
-    # ONLY the supply canals ("main"). The DRAIN's downstream end is supposed to sit outside the
-    # crop - it is the outfall, and the brook or the tameike ditch attaches to it there - so
-    # including it would disqualify every fan ever built and quietly turn this test off.
-    return any(not (x0 <= q[0] <= x1 and y0 <= q[1] <= y1) for c in net["channels"] if c["role"] == "main" for q in (c["pts"][0], c["pts"][-1]))
+    # ONLY the supply canals ("main"), and only their FREE ends.
+    #
+    # Two exclusions, and both were learned by getting them wrong. The DRAIN's downstream end is
+    # SUPPOSED to sit outside the crop - it is the outfall, and the brook or the tameike ditch
+    # attaches to it there. And a main's UPSTREAM end is the head sluice or a junction with the
+    # previous main, which is also outside the plots by construction: testing it made this return
+    # True for every fan ever built, which turned the disqualifier off while leaving it looking like
+    # it worked, and quietly cost five times the generation work for nothing.
+    #
+    # A free end is one no other main starts or ends at.
+    ends = [q for c in net["channels"] if c["role"] == "main" for q in (c["pts"][0], c["pts"][-1])]
+    free = [q for q in ends if sum(1 for r in ends if math.hypot(q[0] - r[0], q[1] - r[1]) < 5.0) == 1]
+    return any(not (x0 <= q[0] <= x1 and y0 <= q[1] <= y1) for q in free[1:])  # [1:] drops the head intake, which is always outside the plots
 
 
 def net_bends_acutely(net: Mapping[str, Any]) -> bool:

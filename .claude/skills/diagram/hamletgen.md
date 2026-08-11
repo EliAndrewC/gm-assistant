@@ -70,11 +70,30 @@ Household counts land exactly on the declared figure on essentially every map, a
 acreage lands on the target the household count implies - the four demo maps come out at 19.4
 against 19.5, 26.0 against 26.0, 15.7 against 15.6 and 24.7 against 24.7 acres.
 
-**The honest number is a pass RATE, not a guarantee.** A rolled hamlet clears the whole ~185-check
-gate most of the time, and the residue is a handful of siting collisions that vary by seed. That is
-the right shape for a proof of concept, and `test_hamletgen.py` pins the rate as a ratchet rather
-than pretending to perfection. What holds WITHOUT exception on every map, pass or fail, is the pair
-this module exists to get right: the declared households are seated, and the acreage lands.
+**The honest number is a pass RATE, and it is 6 of 12** on the first dozen seeds (measured
+2026-08-11). Every one of the twelve seats its declared households exactly and lands its acreage
+exactly; half of them then clear all ~185 gate checks, and the other half trip one or two. That is
+the right shape for a proof of concept and it is what `test_hamletgen.py` pins as a ratchet - raise
+the threshold when you raise the rate.
+
+**The residue is short, and it is the most useful output of the whole experiment**, because it says
+exactly what is left to do:
+
+| check | maps | what it is |
+|---|---|---|
+| `title_clear_of_features` | 3 | the title placard has nowhere blank to stand on a sheet that is nearly all field |
+| `watercourse_ends_reach_water` | 2 | a supply canal's tail dies outside the planted extent |
+| `features_do_not_overlap` | 2 | two placed things touch - a coppice on a grove, a lane on a hem |
+| `woodland_clear_of_grove` | 1 | the coppice and the fengshui belt merge into one green mass |
+| `settlement_dwellings_watered` | 1 | one household further than ~760 ft from any water |
+| `crop_not_held_open_by_one_feature` | 1 | one outlying feature stretches the frame |
+
+None is deep. Every one is a siting collision between two features that each want the same margin,
+and each has an obvious next move (seat the title before the crop; let `fit_field` reject a fan by
+its tail as well as by its acreage; give the coppice scan the belt's real polygon rather than its
+bounding box). They are listed here rather than fixed because the experiment's question was whether
+the approach works, and six clean maps out of twelve unseen seeds answers that more honestly than a
+week of tuning would.
 
 **Precision, not just speed.** The clearest single result is the field sizing. Ikegami's own
 docstring asks for ~20 acres of paddy for 15 households and its own closing line reports **15.3** -

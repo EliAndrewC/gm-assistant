@@ -51,7 +51,13 @@ MODE_B_ENGINES = ("settlement", "hamletgen")
 # Mode A compound gens: they live in pool/ but emit no village manifest, so the sweep skips them.
 # Listed by BASENAME rather than detected, so that a gen which is neither a known compound nor a
 # recognized village gen is a loud failure instead of a silent omission.
-COMPOUND_GENS = ("ochiba-roundtrip-test.gen.py",)
+COMPOUND_GENS = (
+    "hayakawa-magistracy.gen.py",
+    "ubame-magistracy.gen.py",
+    "county-magistracy-example.gen.py",
+    "ochiba-magistracy.gen.py",
+    "ochiba-roundtrip-test.gen.py",
+)
 
 GENERATORS = sorted(g for g in glob.glob(os.path.join(POOL, "*", "*.gen.py")) if _is_village_gen(g))
 
