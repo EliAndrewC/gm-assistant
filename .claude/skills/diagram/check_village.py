@@ -2671,10 +2671,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             _fx = sum(q[0] for q in _f["outline"]) / len(_f["outline"])
             _fy = sum(q[1] for q in _f["outline"]) / len(_f["outline"])
             _flanks.add(("e" if _fx > _wcx else "w") if abs(_fx - _wcx) > abs(_fy - _wcy) else ("s" if _fy > _wcy else "n"))
+        # COUNT IS NOT ENOUGH - the first cut of this rule passed a capital carrying four token
+        # fields on 1.3% of its sheet (GM 2026-08-11: "look at how much empty space there is! The
+        # entire southwest of the city is an open field with no land... only one rice field between
+        # the entire north gate and southwest gate?!"). What separates a ringed city from a
+        # decorated one is AREA: Tango farms 3.8% of its sheet, Minami 3.0%, Nagahara 2.3%. 2.0% is
+        # the floor, with 6+ fields across 3+ flanks, and the farmhouses that work them counted too
+        # - fields without households are scenery, not agriculture.
+        _cfa = 0.0
+        for _f in _cf:
+            _o = _f["outline"]
+            _cfa += abs(sum(_o[_i][0] * _o[(_i + 1) % len(_o)][1] - _o[(_i + 1) % len(_o)][0] * _o[_i][1] for _i in range(len(_o)))) / 2
+        _cshare = 100.0 * _cfa / max(1.0, float(meta.get("W", 1)) * float(meta.get("H", 1)))
+        _cfh = len(M.get("houses") or [])
         check(
             "city_is_ringed_by_farmland",
-            len(_cf) >= 4 and len(_flanks) >= 3,
-            f"a city must be RINGED by its farmland, not given a token field: {len(_cf)} field(s) on {len(_flanks)} flank(s) ({sorted(_flanks)}) - want 4+ across 3+ flanks (Tango draws 11, Nagahara 7, Minami 6). Keep adding paddies and the farmhouses that work them until the ground genuinely runs out",
+            len(_cf) >= 6 and len(_flanks) >= 3 and _cshare >= 2.0 and _cfh >= 8 * len(_cf),
+            f"a city must be RINGED by its farmland, and this is a token ring: {len(_cf)} field(s) on {len(_flanks)} flank(s) ({sorted(_flanks)}), farming {_cshare:.1f}% of the sheet with {_cfh} farmhouse(s) - want 6+ fields across 3+ flanks, 2.0%+ of the sheet, and 8+ farmhouses per field. The pool is the standard: Tango farms 3.8% over 11 fields with 266 farmhouses, Minami 3.0% over 6 with 149, Nagahara 2.3% over 7 with 141. Cities grow up around fertile land - keep adding paddies and the households that work them until the ground genuinely runs out",
         )
 
     # NO SINGLE CAPTION MAY HOLD THE FRAME OPEN (GM 2026-08-11: "I am surprised that our cropping

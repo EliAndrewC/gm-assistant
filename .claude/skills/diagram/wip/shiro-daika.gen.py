@@ -1187,6 +1187,88 @@ s.quarter(
 # river bridge - clean off the sheet.
 
 
+_TORING = []  # (envelope, fall, drain) per field - ringed AFTER every field is drawn
+
+
+def _below_drain(x, y, drain, fx, fy, berth=26.0):
+    """Is (x, y) downslope of the drain COLLECTOR? Measured to the nearest point on the drain
+    polyline and projected along the fall, which is what the check does - a global cut along the
+    fall axis is not the same thing, and let a farmstead sit in the toe where the drain bends."""
+    _best = (float("inf"), drain[0])
+    for _k in range(len(drain) - 1):
+        _ax, _ay = drain[_k]
+        _bx, _by = drain[_k + 1]
+        _dx, _dy = _bx - _ax, _by - _ay
+        _ll = _dx * _dx + _dy * _dy or 1.0
+        _t = max(0.0, min(1.0, ((x - _ax) * _dx + (y - _ay) * _dy) / _ll))
+        _px, _py = _ax + _t * _dx, _ay + _t * _dy
+        _d = math.hypot(x - _px, y - _py)
+        if _d < _best[0]:
+            _best = (_d, (_px, _py))
+    _nx, _ny = _best[1]
+    return (x - _nx) * fx + (y - _ny) * fy > -berth
+
+
+def _on_cropland(x, y, pad=13.0):
+    """Is (x, y) on drawn cropland - any field's paddy plots or its dry hem? Farmsteads stand
+    BESIDE the fields they work, never on them, and the map records both."""
+    for _f in s.M.get("fields") or []:
+        for _pp in _f.get("plot_polys") or ():
+            _xs = [q[0] for q in _pp]
+            _ys = [q[1] for q in _pp]
+            if min(_xs) - pad <= x <= max(_xs) + pad and min(_ys) - pad <= y <= max(_ys) + pad:
+                return True
+    for _d in s.M.get("dry_plots") or []:
+        _pp = _d.get("poly") or _d.get("outline") or ()
+        if _pp:
+            _xs = [q[0] for q in _pp]
+            _ys = [q[1] for q in _pp]
+            if min(_xs) - pad <= x <= max(_xs) + pad and min(_ys) - pad <= y <= max(_ys) + pad:
+                return True
+    return False
+
+
+def _ring_upslope(env, down_deg, drain=None, gaps=(30, 50, 70, 92)):
+    """Seat farmsteads along the UPSLOPE perimeter of a field, at several standoffs. s.ring() walks
+    the whole envelope and projects each seat OUTWARD, so on the low edge it throws households into
+    the wet toe below the drainage line - and clipping the polygon does not help, because the cut
+    edge still projects outward. So the perimeter is walked here and the low side simply skipped."""
+    _fx, _fy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+    # the DRAIN is the real line, not the centroid: the check measures whether a dwelling sits
+    # BELOW the drainage collector, and a seat can be upslope of the field's middle while still
+    # sitting below its drain where that drain cuts across a corner.
+    _dcut = max((q[0] * _fx + q[1] * _fy for q in drain), default=None) if drain else None
+    if _dcut is not None:
+        _dcut -= 30.0  # a clear berth above the drainage line, not a hairline
+    _cx = sum(q[0] for q in env) / len(env)
+    _cy = sum(q[1] for q in env) / len(env)
+    _n = 0
+    for _g in gaps:
+        _k = 0
+        while _k < len(env):
+            _ax, _ay = env[_k]
+            _bx, _by = env[(_k + 1) % len(env)]
+            _seg = math.hypot(_bx - _ax, _by - _ay) or 1.0
+            _steps = max(1, int(_seg // 17))
+            for _t in range(_steps):
+                _px = _ax + (_bx - _ax) * (_t + 0.5) / _steps
+                _py = _ay + (_by - _ay) * (_t + 0.5) / _steps
+                _ox, _oy = _px - _cx, _py - _cy
+                _ol = math.hypot(_ox, _oy) or 1.0
+                if (_ox / _ol) * _fx + (_oy / _ol) * _fy > 0.34:  # only the genuinely LOW side is skipped - a flank that merely tilts downhill still carries farms
+                    continue
+                _sx = _px + _ox / _ol * _g
+                _sy = _py + _oy / _ol * _g
+                if drain and _below_drain(_sx, _sy, drain, _fx, _fy):
+                    continue  # below the drainage line - the wettest ground in the valley
+                if _on_cropland(_sx, _sy):
+                    continue
+                if s.try_place(_sx, _sy, "plain"):
+                    _n += 1
+            _k += 1
+    return _n
+
+
 # ---- THE PADDY (GM 2026-08-11: no farmland on the capital, and there should be). Comb doctrine,
 # tied to the declared flow: tapped off the river WITH the current, the fall running with it so the
 # drain returns downstream of its own intake. Helper as the provincial-city gens carry it.
@@ -1344,28 +1426,13 @@ _PH = max(_PYS) - min(_PYS)
 # perimeter ring seats nothing here, because the field's envelope is hemmed by the river on one
 # flank, the towpath on another and the funerary ground on a third, and every candidate the ring
 # offers falls on one of them.
-_PFH = 0
-_PB = s.bound  # the CITY bound is still in force here, and it refuses every seat out on the paddy
-s.bound = [[min(_PXS) - 240, min(_PYS) - 60], [max(_PXS) + 120, min(_PYS) - 60], [max(_PXS) + 120, max(_PYS) + 240], [min(_PXS) - 240, max(_PYS) + 240]]
-# ASKED over the open ground west and south of the field rather than hugging its envelope: the
-# rows of the machi, the funerary ground, the towpath and the river hem the field on three sides,
-# and every seat within a footprint's reach of the envelope is refused.
-for _fbox in (
-    # the crop CLIPS a fringe paddy at the frame by design ("show they are there, not the whole
-    # field"), so the farmsteads go on the flanks that stay IN VIEW - the west and north sides,
-    # between the field and the city - not on the southern edge that falls off the sheet.
-    (min(_PXS) - 74, min(_PYS) - 10, min(_PXS) - 20, min(_PYS) + 60),
-    (min(_PXS) - 74, min(_PYS) + 70, min(_PXS) - 20, min(_PYS) + 140),
-    (min(_PXS) - 74, min(_PYS) + 150, min(_PXS) - 20, min(_PYS) + 220),
-    (min(_PXS) - 70, min(_PYS) + 230, min(_PXS) - 16, min(_PYS) + 300),
-    (min(_PXS) + 20, min(_PYS) - 72, min(_PXS) + 100, min(_PYS) - 18),
-    (min(_PXS) + 120, min(_PYS) - 72, min(_PXS) + 200, min(_PYS) - 18),
-    (max(_PXS) - 60, min(_PYS) - 72, max(_PXS) + 20, min(_PYS) - 18),
-    (max(_PXS) + 18, min(_PYS) + 40, max(_PXS) + 80, min(_PYS) + 120),
-):
-    _fs = s.open_seat(_fbox, s.px(46), s.px(28))
-    if _fs and s.try_place(_fs[0], _fs[1], "plain"):
-        _PFH += 1
+_PB = s.bound  # the CITY bound refuses every seat out on the paddy
+_PXS = [q[0] for q in _PENV]
+_PYS = [q[1] for q in _PENV]
+s.bound = [[min(_PXS) - 240, min(_PYS) - 240], [max(_PXS) + 240, min(_PYS) - 240], [max(_PXS) + 240, max(_PYS) + 240], [min(_PXS) - 240, max(_PYS) + 240]]
+_PH0 = len(s.M["houses"])
+_TORING.append((_PENV, 118, [tuple(q) for q in next(c["pts"] for c in _PADDY["channels"] if c["role"] == "drain")]))
+_PFH = len(s.M["houses"]) - _PH0
 s.bound = _PB
 print(f"paddy farmhouses: {_PFH}")
 
@@ -1375,6 +1442,18 @@ print(f"paddy farmhouses: {_PFH}")
 # to put them"). Each field is tapped off the nearest water DOWNSTREAM of the city's own draw: the
 # moat's flow runs NE->SW (inlet 2480,950 -> outlet 2067,2264), so a west or southwest field takes
 # its head from the moat's lower arc, and the east field taps the river above the wharf.
+def _upslope(env, down_deg):
+    """The field envelope with its DOWNSLOPE third trimmed off. Farmsteads ring the ground ABOVE
+    the drainage line - below it is the wettest land in the valley (marsh, low reclaimed paddy, the
+    tameike) and nobody builds there (dwellings_above_field_drain). Ringing the whole envelope puts
+    a fifth of the households in the bog."""
+    _fx, _fy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+    _pr = [q[0] * _fx + q[1] * _fy for q in env]
+    _cut = min(_pr) + (max(_pr) - min(_pr)) * 0.66
+    _keep = [q for q, pr in zip(env, _pr, strict=True) if pr <= _cut]
+    return _keep if len(_keep) >= 3 else env
+
+
 def _nearest_on(poly, hint):
     """The nearest point ON a water polyline to `hint` - so a tap is DERIVED from the watercourse
     rather than eyeballed beside it (every hand-picked tap in the first cut stood on dry ground)."""
@@ -1397,19 +1476,19 @@ def _ring_field(name, water, hint, out_dir, down_deg, seed, fall, canal_a, canal
     water, a bent head-race to a sluice set inland, gates at both ends, the comb beyond, the source
     and the drain both DECLARED, and the farmsteads that work it."""
     tap = _nearest_on(water, hint)
-    if src_kind == "moat":
-        _mf = s.M["moat_flow"]
-        tap = moat_swept_tap(water, _mf["inlet"], _mf["outlet"], (tap[0] + out_dir[0] * 62, tap[1] + out_dir[1] * 62), tap, want_deg=42.0, max_back=320.0)
     _tl = math.hypot(out_dir[0], out_dir[1]) or 1.0
     _ux, _uy = out_dir[0] / _tl, out_dir[1] / _tl
-    _sl = (tap[0] + _ux * 62, tap[1] + _uy * 62)
-    _md = ((tap[0] + _sl[0]) / 2 - _uy * 5, (tap[1] + _sl[1]) / 2 + _ux * 5)
+    _sl = (tap[0] + _ux * 78, tap[1] + _uy * 78)
+    if src_kind == "moat":
+        _mf = s.M["moat_flow"]
+        tap = moat_swept_tap(water, _mf["inlet"], _mf["outlet"], _sl, tap, want_deg=42.0, max_back=240.0)  # a short walk: sweeping 300 px upstream turns a 78 px head-race into a long diagonal
+    _md = ((tap[0] + _sl[0]) / 2 - _uy * 7, (tap[1] + _sl[1]) / 2 + _ux * 7)
     s.field_channel([tap, _md, _sl], "#9CB4C8", 7, 7)
     s.sluice_gate(_sl[0], _sl[1], rot=math.degrees(math.atan2(_uy, _ux)) + 90)
     _net, _env, _cen = comb_field(
         name, _sl, down_deg, seed, fall, canal_a, canal_b, offtakes, avoid=(MOAT, RIVER), dry_band=(47, 88)
     )  # the pool cities' 3 ft/px hem: the dry-crop margin is what QUILTS the uncommanded fan head, so a thin one leaves bare parchment
-    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))
+    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))  # the chain must END IN the field, or nothing anchors it there
     topo_channel([tap, _sl, _pd], {"kind": src_kind}, {"kind": "field", "name": name})
     _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
     _de = tuple(_dr[-1])
@@ -1422,13 +1501,11 @@ def _ring_field(name, water, hint, out_dir, down_deg, seed, fall, canal_a, canal
     _ys = [q[1] for q in _env]
     _pb = s.bound
     s.bound = [[min(_xs) - 200, min(_ys) - 200], [max(_xs) + 200, min(_ys) - 200], [max(_xs) + 200, max(_ys) + 200], [min(_xs) - 200, max(_ys) + 200]]
+    # RINGED the way the provincial cities ring theirs - three passes at increasing standoff, which
+    # is what puts 15-35 households on a field instead of the eight a hand-picked list manages.
+    # (The rings seated NOTHING until the bound above was opened: s.bound was still the city's.)
+    _TORING.append((_env, down_deg, [tuple(q) for q in _dr]))
     _n = 0
-    for _u, _v in ((-0.28, 0.06), (-0.28, 0.24), (-0.28, 0.42), (0.12, -0.28), (0.38, -0.28), (0.64, -0.28), (0.90, -0.28), (1.22, 0.04)):
-        _bx = min(_xs) + (max(_xs) - min(_xs)) * _u
-        _by = min(_ys) + (max(_ys) - min(_ys)) * _v
-        _seat = s.open_seat((_bx - 46, _by - 46, _bx + 46, _by + 46), s.px(46), s.px(28))
-        if _seat and s.try_place(_seat[0], _seat[1], "plain"):
-            _n += 1
     s.bound = _pb
     print(f"{name}: {_n} farmsteads")
     return _net, _env
@@ -1436,11 +1513,31 @@ def _ring_field(name, water, hint, out_dir, down_deg, seed, fall, canal_a, canal
 
 _RING = []
 for _nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk in (
-    ("daika-w", MOAT, (264, 1180), (-1.0, 0.12), 180, 71, 120, (130, 165), (85, 110), (0.22, 0.45, 0.68, 0.88), "moat"),
-    ("daika-s2", RIVER, (1950, 2960), (-0.97, 0.24), 175, 73, 110, (125, 160), (78, 100), (0.22, 0.45, 0.68, 0.88), "river"),  # a second bay of the southern paddy, downstream of the first
-    ("daika-e", RIVER, (2700, 1480), (0.6, 0.8), 60, 77, 120, (130, 165), (85, 110), (0.22, 0.45, 0.68, 0.88), "river"),
+    ("daika-w", MOAT, (264, 1180), (-1.0, 0.12), 180, 71, 174, (188, 239), (123, 159), (0.22, 0.45, 0.68, 0.88), "moat"),
+    ("daika-s2", RIVER, (1950, 2960), (-0.97, 0.24), 175, 73, 114, (130, 167), (81, 104), (0.22, 0.45, 0.68, 0.88), "river"),  # a second bay of the southern paddy, downstream of the first
+    ("daika-e", RIVER, (2700, 1480), (0.6, 0.8), 52, 77, 174, (188, 239), (123, 159), (0.22, 0.45, 0.68, 0.88), "river"),
+    ("daika-w2", MOAT, (264, 800), (-1.0, -0.1), 170, 87, 188, (217, 275), (130, 171), (0.22, 0.45, 0.68, 0.88), "moat"),
+    ("daika-e2", RIVER, (3010, 1980), (0.85, 0.53), 75, 93, 188, (217, 275), (130, 171), (0.22, 0.45, 0.68, 0.88), "river"),
 ):
-    _RING.append(_ring_field(_nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk))
+    try:
+        _RING.append(_ring_field(_nm, _wat, _hint, _od, _dd, _sd, _ff, _ca, _cb, _oa, _sk))
+    except (ValueError, IndexError) as _e:
+        # a site the comb cannot build on - too little room between the moat, the roads and the
+        # sheet edge for a fan of this size. Report it and carry on: the ring degrades by one
+        # field rather than taking the whole map down with it.
+        print(f"{_nm}: NO FIELD ({_e})")
+
+# THE FARMSTEADS, once every field is on the map: each ringed on its upslope side, clear of its
+# own cropland and of every other field's (the check reads them all, and so must the placer).
+_FH = 0
+for _renv, _rdd, _rdr in _TORING:
+    _rb = s.bound
+    _rxs = [q[0] for q in _renv]
+    _rys = [q[1] for q in _renv]
+    s.bound = [[min(_rxs) - 260, min(_rys) - 260], [max(_rxs) + 260, min(_rys) - 260], [max(_rxs) + 260, max(_rys) + 260], [min(_rxs) - 260, max(_rys) + 260]]
+    _FH += _ring_upslope(_renv, _rdd, drain=_rdr)
+    s.bound = _rb
+print(f"farmsteads on the ring: {_FH}")
 
 s.crop_city(
     margin=36
