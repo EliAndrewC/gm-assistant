@@ -11963,6 +11963,23 @@ class Settlement:
 
         houses = [_corners(h["x"], h["y"], h["w"], h["h"], h.get("rot", 0)) for h in self.M.get("houses", [])]
         n0 = len(self.M.get("bridges", []))
+        # THREE MORE THINGS A PLANK SLIDES AWAY FROM (2026-08-11, found by rolling cohorts of
+        # scripted hamlets - the shipped maps' ditches happen to run clear of all three):
+        #
+        #  - a DRY CROP PLOT. The slide already avoids houses; a deck laid across a hem strip is a
+        #    board lying on the barley, and it is the same rule (`groves_clear_of_dry_plots` states
+        #    it for trees, `structures_clear_of_dry_plots` for buildings). This became checkable at
+        #    all only once `draw_comb_field` started registering its hem in `dry_polys`.
+        #  - ANOTHER BRIDGE. Two planks drawn on top of each other is a drawing error, and it
+        #    happens where two ditches run close and each independently wants a crossing at the
+        #    same slot. `features_do_not_overlap` reads it as a ('bridges', 'bridges') pair.
+        #  - A CONFLUENCE. The deck is sized from THIS ditch's nominal width, but where another
+        #    watercourse joins, the water at the crossing is wider than that - so the deck comes up
+        #    short and its abutment stands in the water (`bridges_span_their_water`). Rather than
+        #    guess a wider deck, cross where the ditch is a single ditch, which is where a farmer
+        #    would put a plank anyway.
+        dry_quads = [list(poly) for poly in self.dry_polys]
+        other_water = [rec.get("poly") or rec.get("pts") for key in ("streams", "channels") for rec in self.M.get(key, []) or []]
         for d in self.M.get("field_ditches", []):
             pts = d["poly"]
             seg = [math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1)]
@@ -11986,11 +12003,26 @@ class Settlement:
                 # SLIDE along the ditch to a spot that (a) misses every home and (b) lands on
                 # useful ground (field/village/dike) on BOTH banks. If no such spot is near this
                 # slot - a marsh/scrub toe stretch with nothing to cross to - it carries NO plank.
-                for frac in (0.0, 0.12, -0.12, 0.24, -0.24, 0.36, -0.36, 0.5, -0.5):
+                # A FINER SLIDE. Nine offsets were enough when the only obstacles were houses and
+                # unwalkable banks; with the hem, other decks and confluences added above, nine can
+                # step over the one legal spot on a stretch and leave a long ditch with no crossing
+                # at all (`long_ditches_have_a_footbridge`). Twenty-one costs nothing.
+                for frac in sorted((0.06 * k for k in range(-8, 9)), key=abs) + [0.5, -0.5]:
                     px, py, ang = _at(pts, seg, max(0.0, min(total, base + frac * total)))
                     deck = ang + 90  # deck runs ACROSS the ditch (perpendicular)
-                    if any(_sat(_corners(px, py, span, plank_w, deck), hc) for hc in houses):
+                    quad = _corners(px, py, span, plank_w, deck)
+                    if any(_sat(quad, hc) for hc in houses):
                         continue
+                    if any(quad_hits_poly(quad, dp) for dp in dry_quads):
+                        continue  # no plank laid across the hem crop
+                    if any(_sat(quad, _corners(b["x"], b["y"], b.get("span", 8.0), b.get("w", 4.0), b.get("rot", 0.0))) for b in self.M.get("bridges", [])):
+                        continue  # ...nor on top of another deck
+                    if any(quad_hits_seg(quad, tuple(wl[i2]), tuple(wl[i2 + 1]), 3.0) for wl in other_water if wl is not pts for i2 in range(len(wl) - 1)):
+                        continue  # ...nor at a confluence, where the water under the deck is wider than the deck.
+                    # Tested as "another course runs UNDER this deck", not "another course passes
+                    # within a deck's length": the looser form also refused every spot on a ditch
+                    # merely running parallel to a neighbor, which left a long stretch with no
+                    # crossing at all (`long_ditches_have_a_footbridge`).
                     if not self._plank_reaches_useful_ground(px, py, deck, span):
                         continue
                     self.bridge(px, py, deck, span, plank_w)

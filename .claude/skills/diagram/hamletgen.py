@@ -116,6 +116,11 @@ LANE_CLEARANCE = 48.0
 # courtyards, its wells and its byres. See `seat_cluster` for what the wrong number does.
 BUNDLE_PITCH = 92.0
 
+# How far below the drain outfall a tameike may stand before the map is better off without one.
+# Calibrated against the drawn ponds: an ordinary set-back lands well under 200 px, and the case
+# that motivated the limit was 575. See `stage_sink`.
+POND_SETBACK_LIMIT = 300.0
+
 # `build_comb`'s GRAIN, and why it is not what its own docstring prescribes.
 #
 # `grain` scales the carve's real-feet thresholds AND the channel widths, and the docstring says a
@@ -456,11 +461,18 @@ def crosses_disc(a: Pt, b: Pt, center: Pt, r: float) -> bool:
     return seg_dist(center[0], center[1], a, b) < r
 
 
-def crosses_poly(a: Pt, b: Pt, poly: Sequence[Pt], samples: int = 60) -> bool:
-    """Does the segment a->b pass through `poly`? Sampled rather than solved: the callers use it to
-    STEER a lane away from the crop, where a sample every few pixels is ample and an exact
-    segment-polygon intersection would be more code for no better answer."""
-    return any(point_in_poly(a[0] + (b[0] - a[0]) * i / samples, a[1] + (b[1] - a[1]) * i / samples, list(poly)) for i in range(samples + 1))
+def crosses_poly(a: Pt, b: Pt, poly: Sequence[Pt], step: float = 8.0, cap: int = 900) -> bool:
+    """Does the segment a->b pass through `poly`? Sampled rather than solved, but sampled by LENGTH.
+
+    It used to take a fixed 60 samples whatever the segment measured, which is fine for a lane and
+    useless for the thing it is mostly asked about: a connector track or a drain brook runs 4,000 px
+    to the frame, so 60 samples is one every 67 px and the test steps clean over a field lobe. The
+    map then ships a brook drawn through the rice with the router insisting it had checked
+    (`streams_avoid_fields`). One sample every 8 px is under the width of anything it is testing
+    against, and the cap keeps a stray off-canvas endpoint from turning this into a million tests."""
+    ring = list(poly)
+    n = min(cap, max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) / step)))
+    return any(point_in_poly(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, ring) for i in range(n + 1))
 
 
 # ---- STAGE 1: the water frame -------------------------------------------------------------------
@@ -637,6 +649,28 @@ def net_bends_acutely(net: Mapping[str, Any]) -> bool:
     return False
 
 
+def feed_brook(plan: SitePlan, sluice: Pt, run: float = 420.0) -> Poly:
+    """The brook coming down off the high ground to the intake, steered clear of the rice.
+
+    It ends AT the sluice, where it becomes the head-race - it does not run on over the paddies. The
+    sluice sits on the field's head margin, so the LAST stretch is legitimately against the crop and
+    is not tested; everything upstream of it is, because a fan's head can carry a lobe out to one
+    side and a brook coming straight down the fall line then clips it (`streams_avoid_fields`, which
+    is right to object - a stream does not run through a flooded paddy). Bearings are tried outward
+    from straight-upslope, so the brook stays as close to the fall line as the field allows."""
+    dx, dy = plan.fall
+    base = math.degrees(math.atan2(-dy, -dx))  # upslope
+    for swing in sorted((10.0 * k for k in range(-7, 8)), key=abs):
+        th = math.radians(base + swing)
+        up = (sluice[0] + math.cos(th) * run, sluice[1] + math.sin(th) * run)
+        mid = ((up[0] + sluice[0]) / 2 - math.sin(th) * 26, (up[1] + sluice[1]) / 2 + math.cos(th) * 26)
+        near = (sluice[0] + math.cos(th) * 40, sluice[1] + math.sin(th) * 40)  # the last 40 px is the intake itself
+        if not (crosses_poly(up, mid, plan.envelope) or crosses_poly(mid, near, plan.envelope)):
+            return [up, mid, sluice]
+    up = (sluice[0] - dx * run, sluice[1] - dy * run)  # pragma: no cover - a fan head never blocks all fifteen
+    return [up, ((up[0] + sluice[0]) / 2 + dy * 26, (up[1] + sluice[1]) / 2 - dx * 26), sluice]
+
+
 def stage_field(s: Settlement, plan: SitePlan) -> None:
     """Lay the irrigation skeleton and carve the paddies between its threads.
 
@@ -664,7 +698,7 @@ def stage_field(s: Settlement, plan: SitePlan) -> None:
     # `stage_sink` draws the off-map one at a length DERIVED from the distance to the canvas edge.
     net["brook"] = []
 
-    plan.envelope = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]
+    plan.envelope = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]  # routed against BEFORE the field is drawn (see feed_brook)
     s.field_polys.append(list(plan.envelope))
     s.meta(dry_furrows_vary=net["furrows_vary"])
     s.M["meta"]["field_archetype"] = "valley_paddy"
@@ -672,8 +706,7 @@ def stage_field(s: Settlement, plan: SitePlan) -> None:
     # STREAM ending AT the sluice, where it becomes the head-race - it does not run on over the
     # paddies. `draw_comb_field` then records the hairline topology channel that grounds the field's
     # water source for the gate.
-    up = (sluice[0] - dx * 420, sluice[1] - dy * 420)
-    s.draw_comb_field(net, f"{plan.spec.name.lower()}-paddies", {"kind": "stream", "stream": [up, ((up[0] + sluice[0]) / 2 + dy * 26, (up[1] + sluice[1]) / 2 - dx * 26), sluice]})
+    s.draw_comb_field(net, f"{plan.spec.name.lower()}-paddies", {"kind": "stream", "stream": feed_brook(plan, sluice)})
 
 
 # ---- STAGE 3: where the runoff goes -------------------------------------------------------------
@@ -778,7 +811,14 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
         for swing in (0, 12, -12, 24, -24, 38, -38, 54, -54):
             th = math.radians(exit_deg + swing)
             end = (mid[0] + math.cos(th) * run, mid[1] + math.sin(th) * run)
-            if not (crosses_poly(out, mid, plan.envelope) or crosses_poly(mid, end, plan.envelope)):
+            # Only the leg BEYOND the junction is tested. The first leg runs from the drain's
+            # outfall, which sits inside the field envelope by definition - so testing it is true
+            # for every bearing, every bearing is rejected, and the sweep drops through to the
+            # untested fallback. The result is the exact defect the sweep exists to prevent, chosen
+            # deliberately. (`streams_avoid_fields` exempts the same anchored leg, for the same
+            # reason: the field is where the drain legitimately connects.) `mid` must clear the crop
+            # itself, which is what keeps the junction from being drawn across the rice.
+            if not (point_in_poly(mid[0], mid[1], plan.envelope) or crosses_poly(mid, end, plan.envelope)):
                 s.stream([out, mid, end], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)
                 plan.sink_brook = [out, mid, end]
                 return
@@ -798,6 +838,19 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
     # pond walks DOWNSLOPE from the outfall until its rim is genuinely clear, and stops at the first
     # position that is - the nearest legal seat, so the ditch between field and pond stays a ditch.
     back = pond_setback(plan, out, prx, pry)
+    if back > POND_SETBACK_LIMIT:
+        # NO ROOM FOR A RESERVOIR HERE, so the field drains off the frame instead.
+        #
+        # `pond_setback` walks downslope until the pond's rim clears the crop, and on a fan whose
+        # toe reaches well past its own drain outfall that can be most of a canvas - at which point
+        # the pond is a hard crop feature stranded in open scrub, holding the map's frame open by
+        # hundreds of px for its own sake (`crop_not_held_open_by_one_feature` caught one 575 px
+        # proud). A tameike is dug just below the fields it collects; one a quarter mile out is not
+        # a tameike, it is a lake. Falling back to the off-map brook is the honest reading of the
+        # same geometry, and the GM's brief names both sinks as equally ordinary.
+        plan.water_sink = "offmap"
+        stage_sink(s, plan)
+        return
     pcx, pcy = out[0] + dx * back, out[1] + dy * back
     pcx = max(prx + 20.0, min(plan.W - prx - 20.0, pcx))
     pcy = max(pry + 20.0, min(plan.H - pry - 20.0, pcy))
@@ -1165,9 +1218,29 @@ def path_violations(path: Poly, avoid: Sequence[Poly], pond: tuple[float, float,
             or any(seg_intersect(a, b, p, q) is not None for p, q in brook)
             or any(crosses_poly(a, b, poly) for poly in avoid)
             or any(shallow_crossing(a, b, p, q) for p, q in waters)
+            or any(crossing_lands_on_crop(a, b, p, q, avoid) for p, q in waters)
         ):
             bad += 1
+    # ...and a way may not bridge TWICE within a deck's length. `s.bridges()` decks every crossing
+    # it finds, so a way cutting two ditches a few tens of px apart gets two decks drawn on top of
+    # each other - which `features_do_not_overlap` reads as a ('bridges', 'bridges') pair, and which
+    # is a drawing error rather than a siting one. Crossing further along, where the ditches have
+    # separated, is what a track does anyway.
+    hits = [x for i in range(len(path) - 1) for p, q in waters if (x := seg_intersect(path[i], path[i + 1], p, q)) is not None]
+    bad += sum(1 for i, u in enumerate(hits) for v in hits[i + 1 :] if math.hypot(u[0] - v[0], u[1] - v[1]) < 46.0)
     return bad
+
+
+def crossing_lands_on_crop(a: Pt, b: Pt, p: Pt, q: Pt, crops: Sequence[Poly], pad: float = 14.0) -> bool:
+    """Does the way a->b meet the watercourse p->q at a point standing on cropland?
+
+    A crossing gets a DECK, and a deck laid on a hem plot is a bridge across the barley
+    (`features_do_not_overlap` reports it as a dry_plots/bridges pair). The way is free to cross the
+    same ditch a little further along where the crop stops - which is where the bund is anyway."""
+    hit = seg_intersect(a, b, p, q)
+    if hit is None:
+        return False
+    return any(point_in_poly(hit[0], hit[1], list(c)) or min(seg_dist(hit[0], hit[1], c[i], c[(i + 1) % len(c)]) for i in range(len(c))) < pad for c in crops)
 
 
 def shallow_crossing(a: Pt, b: Pt, p: Pt, q: Pt, limit_deg: float = 42.0) -> bool:
@@ -1270,9 +1343,15 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # the back rows fill in behind them.
     # (no quota guard here: the row is capped at 8 seats and the tier's floor is 10 households, so
     # the front row alone can never meet the ask)
-    for fx, fy in front_row(plan, min(plan.spec.households, 8)):
-        if s.try_place(fx, fy, "plain"):
-            placed += 1
+    # TWO passes at two standoffs. `field_ringed` wants five farmhouses within 165 px of the field
+    # outline, and a single row of eight candidates at one standoff can land four when the near
+    # ground is awkward - the placer refuses a bundle that laps a bund or a ditch, and every refusal
+    # is a house that ends up in the back rows instead. Offering the same row again a little further
+    # out costs nothing when the first pass filled it and rescues the ring when it did not.
+    for standoff in (46.0, 62.0):
+        for fx, fy in front_row(plan, min(plan.spec.households, 10), standoff=standoff):
+            if s.try_place(fx, fy, "plain"):
+                placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
     # cluster seeded only by its shape leaves them running across empty middle: the review of the
     # first draft measured a median house-to-lane distance of 94 ft against Ikegami's 55, with one
@@ -1383,13 +1462,26 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
     for h in houses:
         if any(math.hypot(h["x"] - px, h["y"] - py) <= reach for px, py in placed):
             continue
-        for radius in (60.0, 90.0, 130.0, 190.0, 260.0):
-            spot = s.open_seat((h["x"] - radius, h["y"] - radius, h["x"] + radius, h["y"] + radius), 16.0, 16.0, well=True)
-            if spot is not None and not any(math.hypot(spot[0] - px, spot[1] - py) < 130.0 for px, py in placed) and s.well_at(spot[0], spot[1]):
-                placed.append(
-                    spot
-                )  # pragma: no cover - a rescue for a cluster long enough to strand a household out of reach; no map in the pool is currently that stretched, and it is kept because the next one might be
-                break  # pragma: no cover - see the rescue append above
+        # A RING PROBE, spiraling out from the house, asking `well_at` directly.
+        #
+        # `open_seat` was tried here first and is the wrong tool: it optimizes a seat over a
+        # RECTANGLE - furthest from what it is told to clear, ties toward the center - and it
+        # returned None at every radius from 60 to 430 px around a stranded farmstead that had a
+        # perfectly legal spot 40 px to its east. What this needs is not the best seat in a region
+        # but ANY seat near THIS house, so it asks the question that way round, and it asks it of
+        # `well_at`, which is the call that actually places a well.
+        spot = None
+        for radius in range(40, 340, 20):
+            for bearing in range(0, 360, 20):
+                cand = (h["x"] + math.cos(math.radians(bearing)) * radius, h["y"] + math.sin(math.radians(bearing)) * radius)
+                if any(math.hypot(cand[0] - px, cand[1] - py) < 110.0 for px, py in placed):
+                    continue  # `wells_not_clustered`: shared wells serve separate courtyards
+                if s.well_at(cand[0], cand[1]):
+                    spot = cand
+                    break
+            if spot is not None:
+                placed.append(spot)
+                break
     if not placed:
         # LAST RESORT: ask the engine. A settlement with NO well fails the gate outright, and by
         # this point the lattice has been refused everywhere - which means the courtyards are full,
@@ -1451,14 +1543,17 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
     # behind the cluster, and the copse scattered through the gaps among the houses, whose footprint
     # is the house bbox. The margin is generous because a clump's drawn canopy overhangs its
     # recorded radius, and because two woods that nearly touch read as one ragged mass anyway.
+    # Kept clear by RECTANGLE, not by a circle around the bounding box. A belt is a long thin band
+    # and a cluster is usually longer than it is deep, so a circle sized to the LONG side leaves the
+    # short side hugely over-reserved while a circle sized any tighter under-covers the ends - and
+    # the ends are exactly where a patch slips in and merges with the grove.
+    keep_rects: list[tuple[float, float, float, float]] = [title_pocket(s, plan)]
     if plan.belt:
-        bx0, by0 = min(p[0] for p in plan.belt), min(p[1] for p in plan.belt)
-        bx1, by1 = max(p[0] for p in plan.belt), max(p[1] for p in plan.belt)
-        keep.append(((bx0 + bx1) / 2, (by0 + by1) / 2, max(bx1 - bx0, by1 - by0) / 2 + 110.0))
+        keep_rects.append((min(p[0] for p in plan.belt) - 110.0, min(p[1] for p in plan.belt) - 110.0, max(p[0] for p in plan.belt) + 110.0, max(p[1] for p in plan.belt) + 110.0))
     hxs = [h["x"] for h in s.M.get("houses", [])]
     hys = [h["y"] for h in s.M.get("houses", [])]
-    if hxs:  # the copse's ground
-        keep.append(((min(hxs) + max(hxs)) / 2, (min(hys) + max(hys)) / 2, max(max(hxs) - min(hxs), max(hys) - min(hys)) / 2 + 110.0))
+    if hxs:  # the copse's ground, which is the house cloud
+        keep_rects.append((min(hxs) - 110.0, min(hys) - 110.0, max(hxs) + 110.0, max(hys) + 110.0))
     streams: list[tuple[Poly, float]] = [(st["poly"], 60.0) for st in s.M.get("streams", [])]
     crops: list[Poly] = [list(plan.envelope)] + [[(float(v[0]), float(v[1])) for v in d["poly"]] for d in s.M.get("dry_plots", [])]
     _hx = [h["x"] for h in s.M.get("houses", [])] or [plan.W / 2]
@@ -1483,7 +1578,12 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
         x = max(half + 40.0, x0)
         while x <= min(plan.W - half - 40.0, x1):
             gap = _clear_gap((x, y), half, crops, dy)
-            if gap is not None and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep) and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams):
+            if (
+                gap is not None
+                and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
+                and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
+                and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
+            ):
                 # PREFER THE NEAREST QUALIFYING GROUND, leaning upslope. The first version of this
                 # maximized distance from the crop instead, which sounds right and is wrong twice
                 # over: it drove every patch to the canvas's far upslope margin, where the dedupe
@@ -1521,6 +1621,36 @@ def content_box(s: Settlement, plan: SitePlan, pad: float = 0.0) -> tuple[float,
         xs += [pond[0] - pond[2], pond[0] + pond[2]]
         ys += [pond[1] - pond[3], pond[1] + pond[3]]
     return (min(xs) - pad, min(ys) - pad, max(xs) + pad, max(ys) + pad)
+
+
+def title_pocket(s: Settlement, plan: SitePlan, w: float = 300.0, h: float = 190.0) -> tuple[float, float, float, float]:
+    """Ground held back so the map has somewhere to put its NAME.
+
+    `title()` scans the framed window for a box clearing every feature and falls back to a corner
+    overlap when there is none - and on a hamlet the blank ground is a short list: the field takes
+    the middle, the hem the high margin, the marsh the whole low toe, the cluster and its grove one
+    flank. That leaves the lateral corners, which is exactly where the coppice scan wants to go
+    (`open_ground_patches` prefers the nearest qualifying ground). Both cannot have them.
+
+    So one corner of the map's content is reserved before the coppice is sited. The corner chosen is
+    the one furthest from the field's middle AND from the houses - the emptiest quarter of the sheet,
+    which is where a reader would expect the cartouche anyway. It is a reservation, not a placement:
+    `title()` still does its own search and may well sit somewhere else."""
+    x0, y0, x1, y1 = content_box(s, plan, pad=30.0)
+    # ASK THE ENGINE WHICH GROUND IS ACTUALLY BLANK, rather than assuming a corner is.
+    #
+    # `_blank_label_spot` is the same scan `title()` will run, so this reserves ground the title can
+    # really use. Picking "the corner furthest from the field and the houses" was tried first and is
+    # not the same thing: on the reference map that corner already held the reed marsh - which IS a
+    # title obstacle, being a distinct wet surface rather than sparse ground cover - so the pocket
+    # was reserved over ground the title could never have taken, the coppice went somewhere else for
+    # nothing, and the title still landed on the fallback corner. Reserving what is blank NOW works
+    # because this runs after the water, the crops, the houses and the hinterland and before the
+    # only two things left that could fill it (the coppice and the grove).
+    spot = s._blank_label_spot(x0, y0, x1 - x0, y1 - y0, w, h)
+    if spot is None:  # pragma: no cover - the map is already too full to title; nothing to reserve
+        return (x0, y0, x0, y0)
+    return (spot[0], spot[1], spot[0] + w, spot[1] + h)
 
 
 def _clear_gap(center: Pt, half: float, crops: Sequence[Poly], fall_y: float) -> float | None:
@@ -1578,15 +1708,26 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
     if not plan.belt:  # pragma: no cover - stage_woodland always computes it first
         return
     s.village_grove(plan.belt, role="windbreak")
+    # The COPSE fills the leafy gaps AMONG the homes - so its ground is the cluster's CORE, taken by
+    # the same percentile as the belt above and for the same reason. Over the full house bounding
+    # box it becomes a scatter across everything the outliers reach: on the reference hamlet, 245
+    # clumps spread over 1,446 x 1,244 px, which is not a copse among the houses, it is a wood over
+    # the whole settlement - and every clump is an obstacle the map's own title then cannot find
+    # room around (`title_clear_of_features`).
     houses = s.M.get("houses", [])
     xs = [h["x"] for h in houses]
     ys = [h["y"] for h in houses]
-    pad = 16.0
-    s.village_grove(
-        [(min(xs) - pad, min(ys) - pad), (max(xs) + pad, min(ys) - pad), (max(xs) + pad, max(ys) + pad), (min(xs) - pad, max(ys) + pad)],
-        role="copse",
-        dense=False,
-    )
+    cx0, cy0 = sum(xs) / len(xs), sum(ys) / len(ys)
+    rx = _pct([abs(x - cx0) for x in xs], 0.8) + 16.0
+    ry = _pct([abs(y - cy0) for y in ys], 0.8) + 16.0
+    s.village_grove([(cx0 - rx, cy0 - ry), (cx0 + rx, cy0 - ry), (cx0 + rx, cy0 + ry), (cx0 - rx, cy0 + ry)], role="copse", dense=False)
+
+
+def _pct(values: Sequence[float], q: float) -> float:
+    """The `q` quantile of `values` - used instead of a max wherever one outlying farmstead should
+    not be allowed to size a communal feature."""
+    ordered = sorted(values)
+    return ordered[min(len(ordered) - 1, int(q * (len(ordered) - 1) + 0.5))]
 
 
 def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
@@ -1599,28 +1740,53 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
     xs = [h["x"] for h in houses]
     ys = [h["y"] for h in houses]
     ccx, ccy = sum(xs) / len(xs), sum(ys) / len(ys)
-    reach = max((h["x"] - ccx) * wx + (h["y"] - ccy) * wy for h in houses)
-    span = max(abs((h["x"] - ccx) * px + (h["y"] - ccy) * py) for h in houses) + 90.0
+    # SIZED TO THE CLUSTER'S BODY, NOT ITS EXTREMES. The placer hugs each homestead to the field
+    # edge, so a nucleated cluster routinely ends up with an outlier or two strung well down the
+    # margin - and sizing the belt off the MAXIMUM cross-wind offset then stretches it to reach
+    # them: on the reference hamlet that made a "belt" 2,392 px wide with 625 clumps, a green
+    # blanket over the whole head of the map that left the sheet no blank ground and its own title
+    # homeless. A windbreak shelters the village; it does not run out to every stray farmstead. The
+    # 85th percentile is the settlement proper, and `village_windbreak_embraces_cluster` only asks
+    # that a substantial belt nestle against A farmhouse, which the cluster core does.
+    reach = _pct([(h["x"] - ccx) * wx + (h["y"] - ccy) * wy for h in houses], 0.85)
+    span = _pct([abs((h["x"] - ccx) * px + (h["y"] - ccy) * py) for h in houses], 0.85) + 90.0
     rng = random.Random((plan.spec.seed * 7919) & 0xFFFFFFFF)
 
     def rag(p: Pt, amp: float = 13.0) -> Pt:
         return (p[0] + rng.uniform(-amp, amp), p[1] + rng.uniform(-amp, amp))
 
-    # the belt's near face sits just behind the windward fringe of the houses (inside the 150 px
-    # embrace band), and it is ~110 px deep - a real wind wall, not a hedge
-    near = reach + 42.0
-    far = near + 110.0
+    # The belt's near face sits just behind the windward fringe of the houses (inside the 150 px
+    # embrace band) and it is ~110 px deep - a real wind wall, not a hedge.
+    #
+    # WHEN IT WOULD STAND IN THE CROP, THE BAND IS TRIMMED, NOT BENT. Pulling each vertex back out
+    # of the cropland was tried and is the wrong shape of fix: a vertex deep in a hem plot walks a
+    # long way before it clears, the ragged outline folds over itself on the way, and what
+    # `village_grove` then fills is not a belt but a blanket - 752 clumps over the whole head of the
+    # map on the reference hamlet, which left the sheet with no blank ground anywhere and its own
+    # title homeless. A belt is a band; if the band does not fit, it gets shorter and stands further
+    # back, and it stays a band. Both are what a real windbreak does when the fields crowd it.
     crops: list[Poly] = [list(plan.envelope), *crop_polys(s)]
-    belt: Poly = []
     steps = 7
-    for i in range(steps + 1):  # the near face, swept across the wind
-        t = -1.0 + 2.0 * i / steps
-        belt.append(rag((ccx + wx * near + px * span * t, ccy + wy * near + py * span * t)))
-    for i in range(steps + 1):  # ...and back along the far face
-        t = 1.0 - 2.0 * i / steps
-        belt.append(rag((ccx + wx * far + px * span * t, ccy + wy * far + py * span * t)))
-    # bend the belt around any cropland it would otherwise stand in (see `pull_clear`)
-    belt = [pull_clear(p, (ccx, ccy), crops, 34.0) for p in belt]
+
+    def band(span_f: float, back: float) -> Poly:
+        near_, far_ = reach + 42.0 + back, reach + 152.0 + back
+        out: Poly = []
+        for i in range(steps + 1):  # the near face, swept across the wind
+            t = -1.0 + 2.0 * i / steps
+            out.append(rag((ccx + wx * near_ + px * span * span_f * t, ccy + wy * near_ + py * span * span_f * t)))
+        for i in range(steps + 1):  # ...and back along the far face
+            t = 1.0 - 2.0 * i / steps
+            out.append(rag((ccx + wx * far_ + px * span * span_f * t, ccy + wy * far_ + py * span * span_f * t)))
+        return out
+
+    def fouled(poly: Poly) -> bool:
+        return any(point_in_poly(q[0], q[1], list(c)) or min(seg_dist(q[0], q[1], c[i], c[(i + 1) % len(c)]) for i in range(len(c))) < 20.0 for q in poly for c in crops)
+
+    belt = band(1.0, 0.0)
+    for span_f, back in ((1.0, 0.0), (0.86, 26.0), (0.72, 52.0), (0.6, 78.0), (0.5, 104.0)):
+        belt = band(span_f, back)
+        if not fouled(belt):
+            break
     return [(max(6.0, min(plan.W - 6.0, bx)), max(6.0, min(plan.H - 6.0, by))) for bx, by in belt]
 
 
@@ -1657,10 +1823,12 @@ def stage_frame(s: Settlement, plan: SitePlan) -> None:
 
     In that order: the title searches the FRAMED window for blank space to sit in, so the frame has
     to exist first."""
-    # The margin leaves the TITLE somewhere to stand. `title()` scans the framed window for a box
-    # that clears every feature and falls back to a corner overlap when the map is too full - which
-    # `title_clear_of_features` then fails. A tight crop on a sheet that is nearly all field is
-    # exactly that case, and a few px of margin is the cheapest cure.
+    # The margin leaves the TITLE somewhere to stand: `title()` scans the framed window for a box
+    # that clears every feature and falls back to a corner overlap when the map is too full, which
+    # `title_clear_of_features` then fails. But it is bounded above as well as below - `crop_hugs_
+    # content` allows at most 56 px of view past the frame-setting content, because a band whose
+    # only extra is open ground is wasted image. 64 was tried and fails all twelve. 48 is the most
+    # air the frame will give the title.
     s.crop_to_content(margin=48)
     s.title(plan.spec.name)
 
