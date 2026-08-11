@@ -696,8 +696,8 @@ for fan in (
 # corner of the road x main-street crossing (settlements.md "The bell-and-drum tower"); placed
 # before the NE rowpacks so the terraces flow around its reserved block.
 s.drum_tower(1632, 1252)
-s.rowpack((1720, 1003, 2013, 1135), (["laborer"] * 3 + ["servant"]) * 60, court_every=3)
-s.rowpack((1622, 1153, 2054, 1247), (["laborer"] * 3 + ["servant"]) * 50, court_every=3)
+s.rowpack((1720, 1003, 2013, 1135), (["laborer"] * 3 + ["servant"]) * 60, court_every=3, fill=True)
+s.rowpack((1622, 1153, 2054, 1247), (["laborer"] * 3 + ["servant"]) * 50, court_every=3, fill=True)
 s.rowpack((1622, 1251, 2054, 1298), (["laborer"] * 3 + ["servant"]) * 26, court_every=3)
 s.label(1764, 1082, "laborer neighborhoods", 10, italic=True, color="#5A4326")
 
@@ -706,7 +706,7 @@ s.label(1764, 1082, "laborer neighborhoods", 10, italic=True, color="#5A4326")
 alleys([[(1704, 1298), (1704, 1360)], [(1896, 1298), (1896, 1360)]])  # x1800 is a real street now
 for wx in (1663, 1759, 1861, 1952):
     s.well_at(wx, 1338)
-s.rowpack((1622, 1300, 2059, 1350), (["merchant_house"] * 4 + ["servant"]) * 40, court_every=3)
+s.rowpack((1622, 1300, 2059, 1350), (["merchant_house"] * 4 + ["servant"]) * 40, court_every=3, fill=True)
 
 # ====================================================================== SW: merchants
 # the main commercial avenue reaches from the road to the west ring road; two N-S streets
@@ -806,11 +806,11 @@ for _wc in [(1378, 1358), (1390, 1366), (1370, 1372)]:
 for _wc in [(1446, 1360), (1436, 1368), (1454, 1372)]:
     if s.well_at(*_wc):
         break  # E-flank court (same split)
-s.rowpack((1181, 1344, 1559, 1440), (["merchant_house"] * 5 + ["servant"]) * 40, court_every=3)  # reaches the west ring arc (the bound clips the taper)
+s.rowpack((1181, 1344, 1559, 1440), (["merchant_house"] * 5 + ["servant"]) * 40, court_every=3, fill=True)  # reaches the west ring arc (the bound clips the taper)
 # mid-block cores between the two SW streets: more merchant terraces
-s.rowpack((1480, 1561, 1546, 1645), (["merchant_house"] * 5 + ["servant"]) * 12)
-s.rowpack((1555, 1498, 1592, 1610), (["merchant_house"] * 3 + ["servant"]) * 8)  # the road flank south of the avenue
-s.rowpack((1501, 1462, 1582, 1559), (["merchant_house"] * 5 + ["servant"]) * 10)
+s.rowpack((1480, 1561, 1546, 1645), (["merchant_house"] * 5 + ["servant"]) * 12, fill=True)
+s.rowpack((1555, 1498, 1592, 1610), ((["merchant_house"] * 3 + ["servant"]) * 8)[:6])  # the road flank south of the avenue
+s.rowpack((1501, 1462, 1582, 1559), (["merchant_house"] * 5 + ["servant"]) * 10, fill=True)
 WEST_HOMES = (["merchant_large"] + ["merchant_house"] * 2 + ["servant"]) * 8
 s.place_wells((1226, 1460, 1328, 1622), spacing=90)
 s.pack((1191, 1466, 1343, 1693), (["merchant_large"] + ["merchant_house"] * 2 + ["servant"]) * 12, step=20, face_streets="fill", fill=True)
@@ -913,19 +913,19 @@ s.martial_hall(1958, 1552)
 s.dojos([(1856, 1636), (2028, 1412)])
 s.rowpack(
     (1645, 1460, 1700, 1615), (["samurai"] * 4 + ["samurai_large"]) * 12, court_every=8
-)  # the WEST-FENCE nagaya strip (leak-fix re-seat, 2026-07-20): the ward must hold the full ~54-house resident cohort in-wall now that city_samurai_houses_inside_walls bars the SE overflow, and the scatter pack saturates ~40 - junior-samurai row-barracks lining the compound edge are the period-correct denser form (kumi-yashiki rows along the fence); x1 1700 keeps a >=14px gap to the yamen's W wall (city_government_offices_dont_abut), y0 1460 clears the Ministry of Revenue + its label
+, fill=True)  # the WEST-FENCE nagaya strip (leak-fix re-seat, 2026-07-20): the ward must hold the full ~54-house resident cohort in-wall now that city_samurai_houses_inside_walls bars the SE overflow, and the scatter pack saturates ~40 - junior-samurai row-barracks lining the compound edge are the period-correct denser form (kumi-yashiki rows along the fence); x1 1700 keeps a >=14px gap to the yamen's W wall (city_government_offices_dont_abut), y0 1460 clears the Ministry of Revenue + its label
 s.rowpack(
     (1726, 1635, 2003, 1683), (["samurai"] * 5 + ["samurai_large"]) * 10, court_every=8
-)  # kumi-yashiki nagaya: junior-samurai row-barracks south of the yamen (courts thinned further 6->8 for the leak-fix re-seat - the quarter keeps no public wells, so the courts are visual breathing only)
+, fill=True)  # kumi-yashiki nagaya: junior-samurai row-barracks south of the yamen (courts thinned further 6->8 for the leak-fix re-seat - the quarter keeps no public wells, so the courts are visual breathing only)
 s.rowpack(
     (1962, 1381, 2057, 1570), (["samurai"] * 5 + ["samurai_large"]) * 12, court_every=8
-)  # the east-arc barracks strip (courts thinned 6->8 with the other strips for the leak-fix re-seat; extending the region S of 1570 was tried and seats nothing - the arc + ring bound own that ground)
+, fill=True)  # the east-arc barracks strip (courts thinned 6->8 with the other strips for the leak-fix re-seat; extending the region S of 1570 was tried and seats nothing - the arc + ring bound own that ground)
 s.rowpack(
     (1880, 1590, 1955, 1632), (["samurai"] * 4 + ["samurai_large"]) * 8, court_every=8
-)  # the mansion-east pocket between the yamen's E apron, the avenue leg's end and the ring arc - where the 14 houses that leaked outside the SE wall (city_samurai_houses_inside_walls, 2026-07-20) come home; y0 1590 keeps the rows clear of the avenue's street end at (1927,1582)
+, fill=True)  # the mansion-east pocket between the yamen's E apron, the avenue leg's end and the ring arc - where the 14 houses that leaked outside the SE wall (city_samurai_houses_inside_walls, 2026-07-20) come home; y0 1590 keeps the rows clear of the avenue's street end at (1927,1582)
 s.rowpack(
     (1704, 1689, 1882, 1734), (["samurai"] * 4 + ["samurai_large"]) * 11, court_every=8
-)  # the south strip below the mausoleum (bound clips it at the ring road; courts thinned 6->8 with the other strips - extending E of 1882 was tried and seats nothing, the ring diagonal owns that ground)
+, fill=True)  # the south strip below the mausoleum (bound clips it at the ring road; courts thinned 6->8 with the other strips - extending E of 1882 was tried and seats nothing, the ring diagonal owns that ground)
 s.corridors.append(
     ([(1681, 1777), (1622, 1720), (1622, 1364), (2088, 1364)], 16)
 )  # reserve the WARD FENCE line before the pack so no samurai house sits ON the fence (city_ward_fence_clear_of_structures)

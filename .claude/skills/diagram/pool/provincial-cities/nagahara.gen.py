@@ -584,24 +584,24 @@ for _wc in [
 ]:  # a second seeded idobata INSIDE the swamped catchment (28 households, x1176-1318 y1038-1157, centroid ~1228,1090): the true-size temple reflow (2026-07-21) re-packed the warren and its densest well went back over the 26-household ceiling (city_well_density_sufficient). Candidate LIST per the well_at doctrine - the blocked spots no-op; a first single attempt at (1216,1178) sat outside the catchment and a second at (1181,1041) alone failed _fits
     if s.well_at(*_wc):
         break
-s.rowpack((1082, 1114, 1160, 1303), (["laborer"] * 2 + ["laborer_large"] + ["servant"]) * 34, court_every=7, eave_ft=3)  # x0 rides the W ring arc (the bound clips what the curve disallows)
+s.rowpack((1082, 1114, 1160, 1303), (["laborer"] * 2 + ["laborer_large"] + ["servant"]) * 34, court_every=7, eave_ft=3, fill=True)  # x0 rides the W ring arc (the bound clips what the curve disallows)
 # south-strip y1 pulled to 1300: rowpack does not read corridors, so at y1 1310 the bottom row's
 # eave clipped the ward-fence line at y1311 (city_ward_fence_clear_of_structures at (1161,1302));
 # y0 1240 also claims the one open row between the graveyard label and the old 1265 edge
-s.rowpack((1102, 1240, 1271, 1300), (["servant"] + ["laborer"] * 2 + ["laborer_large"]) * 28, court_every=7, eave_ft=3)
+s.rowpack((1102, 1240, 1271, 1300), (["servant"] + ["laborer"] * 2 + ["laborer_large"]) * 28, court_every=7, eave_ft=3, fill=True)
 s.rowpack(
     (1221, 1105, 1344, 1200), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 16, court_every=7, eave_ft=3
-)  # the pocket N of the temple lane, E of Bishamon, W of the theater; y1 1200 (was 1190) - the lane's own frontage band in `lines` is the real stop, the extra depth recovers a pair-cadence row
+, fill=True)  # the pocket N of the temple lane, E of Bishamon, W of the theater; y1 1200 (was 1190) - the lane's own frontage band in `lines` is the real stop, the extra depth recovers a pair-cadence row
 s.rowpack(
     (1225, 1058, 1360, 1102), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 12, court_every=7, eave_ft=3
-)  # the strip between the theater's S face and the Bishamon pocket - open ground the budget-first ring can no longer afford to leave bare
-s.rowpack((1165, 953, 1400, 1005), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 16, court_every=7, eave_ft=3)  # the ring-front strip N of the theater, up against the NW ring arc
+, fill=True)  # the strip between the theater's S face and the Bishamon pocket - open ground the budget-first ring can no longer afford to leave bare
+s.rowpack((1165, 953, 1400, 1005), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 16, court_every=7, eave_ft=3, fill=True)  # the ring-front strip N of the theater, up against the NW ring arc
 s.rowpack(
     (1358, 1228, 1462, 1300), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 12, court_every=7, eave_ft=3
-)  # the temple-lane SE pocket, between the Rites apron and the spine's frontage band
+, fill=True)  # the temple-lane SE pocket, between the Rites apron and the spine's frontage band
 s.rowpack(
     (1130, 1012, 1258, 1102), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 14, court_every=7, eave_ft=3
-)  # the NW-arc wedge W of the theater, N of Bishamon (the ring bound clips its taper)
+, fill=True)  # the NW-arc wedge W of the theater, N of Bishamon (the ring bound clips its taper)
 # NO "monzen" caption (GM 2026-07-21): the quarter already carries the "temple neighborhood" label,
 # and its monzen-machi commerce pocket is part of that same named district - one caption per district,
 # never a second caption for a sub-pocket of an already-labeled neighborhood.
@@ -690,9 +690,9 @@ s.block_polys.append(
 # s.martial_hall takes label_xy at all. The ward lands on EXACTLY the 39-house floor: re-check
 # city_samurai_housing_sufficient before moving anything in this quarter.
 s.martial_hall(1190, 1363, label_xy=(1190, 1366))
-s.rowpack((1122, 1523, 1200, 1604), ["samurai"] * 24, court_every=6, eave_ft=3)  # W flank, below the Ministry of Works apron, riding the SW ring arc (the bound clips the taper)
+s.rowpack((1122, 1523, 1200, 1604), (["samurai"] * 24)[:9], court_every=6, eave_ft=3)  # W flank, below the Ministry of Works apron, riding the SW ring arc (the bound clips the taper)
 s.rowpack(
-    (1390, 1505, 1452, 1565), ["samurai"] * 20, court_every=6, eave_ft=3
+    (1390, 1505, 1452, 1565), (["samurai"] * 20)[:8], court_every=6, eave_ft=3
 )  # E flank, between the Ministry of Justice apron and the E ward fence (x1 1452 keeps every gable >4px off the fence at x1469; y1 1565 keeps the bottom row off the SW fence DIAGONAL, which leaves (1469,1570) heading down-left)
 # senior samurai LINE the ward's own streets (city_samurai_partly_front_streets is the check's
 # form of the same fact): a tight frontage row on the yamen approach + the government avenue
@@ -777,10 +777,10 @@ s.place_wells(
 )  # a DENSER court grid over the N-gate's two swamped catchments (the (1528,1009)=28 and (1545,1090)=30 draw-points): the true-scale gate furniture (2026-07-22) shrank the guard house/tower and freed ground, so the N rows re-packed denser than the 64px grid could water (city_well_density_sufficient). Seeded BEFORE the rows so each terrace breaks into a court around it
 s.rowpack(
     (1496, 927, 1878, 1127), _lab, court_every=4, eave_ft=3
-)  # E edge extended to the ring corridor (court_every stays 4: the parameter sweep showed thinner courts LOSE houses here - row phase beats court count - and the idobata courts carry the well-density check)
+, fill=True)  # E edge extended to the ring corridor (court_every stays 4: the parameter sweep showed thinner courts LOSE houses here - row phase beats court count - and the idobata courts carry the well-density check)
 s.rowpack(
     (1496, 1142, 1878, 1307), _lab, court_every=4, eave_ft=3
-)  # y1 1307 (was 1286): the pair cadence costs the band a row vs the old uniform spacing, and the road's own 28px frontage band (rowpack reads it from `lines`, edge ceiling ~y1307.7) is what actually stops the rows - the extra depth lets the last pair seat
+, fill=True)  # y1 1307 (was 1286): the pair cadence costs the band a row vs the old uniform spacing, and the road's own 28px frontage band (rowpack reads it from `lines`, edge ceiling ~y1307.7) is what actually stops the rows - the extra depth lets the last pair seat
 s.label(1621, 1169, "laborer neighborhoods", 10, italic=True, color="#5A4326")  # W of the E-gate caravan flophouse
 
 # ====================================================================== E-central: merchants + the dock
@@ -841,10 +841,10 @@ s.place_wells((1694, 1357, 1831, 1593), spacing=52)  # extra courts for the brok
 # reserves still hold the x1492-1514 strip open where the fence gates need their ground
 s.rowpack(
     (1492, 1350, 1875, 1456), _mer, court_every=_MER_COURT, eave_ft=3
-)  # y1 1456 (was 1444): the estate-court/canal reserves gate the deep spots individually, so the band may run to the canal strip - recovers a pair-cadence row
-s.rowpack((1492, 1460, 1875, 1570), _mer, court_every=_MER_COURT, eave_ft=3)
-s.rowpack((1492, 1585, 1875, 1656), _mer, court_every=_MER_COURT, eave_ft=3)  # y1 1656: BUR_ST (y1670) is drawn AFTER this pack, so the rows must keep its 12px frontage band clear by construction
-s.rowpack((1640, 1657, 1875, 1676), _mer, court_every=_MER_COURT, eave_ft=3)  # the one extra row E of the S street's end (x1626), running to the SE ring arc
+, fill=True)  # y1 1456 (was 1444): the estate-court/canal reserves gate the deep spots individually, so the band may run to the canal strip - recovers a pair-cadence row
+s.rowpack((1492, 1460, 1875, 1570), _mer, court_every=_MER_COURT, eave_ft=3, fill=True)
+s.rowpack((1492, 1585, 1875, 1656), _mer, court_every=_MER_COURT, eave_ft=3, fill=True)  # y1 1656: BUR_ST (y1670) is drawn AFTER this pack, so the rows must keep its 12px frontage band clear by construction
+s.rowpack((1640, 1657, 1875, 1676), _mer, court_every=_MER_COURT, eave_ft=3, fill=True)  # the one extra row E of the S street's end (x1626), running to the SE ring arc
 s.label(1700, 1349, "merchant district", 10, italic=True, color="#5A4326")
 
 # ====================================================================== SE: burakumin (downstream)
@@ -880,10 +880,10 @@ s.place_wells((1278, 1630, 1634, 1737), spacing=44)  # 44 (was 56): this strip's
 _wpk = s.open_seat((1496, 1656, 1626, 1738), 16, 16, well=True)
 if _wpk:
     s.well(*_wpk)
-s.rowpack((1278, 1626, 1634, 1660), (["burakumin"] * 2 + ["servant"] * 2) * 55, court_every=6, eave_ft=3)
+s.rowpack((1278, 1626, 1634, 1660), (["burakumin"] * 2 + ["servant"] * 2) * 55, court_every=6, eave_ft=3, fill=True)
 s.rowpack(
     (1278, 1683, 1634, 1752), (["burakumin"] * 2 + ["servant"] * 2) * 55, court_every=6, eave_ft=3
-)  # y1 1752 (was 1743): the ring bound clips what the SW arc disallows - the extra depth recovers a pair-cadence row
+, fill=True)  # y1 1752 (was 1743): the ring bound clips what the SW arc disallows - the extra depth recovers a pair-cadence row
 s.label(1443, 1612, "burakumin", 10, italic=True, color="#6B4F2A")
 
 # ====================================================================== OUTSIDE the walls

@@ -6411,7 +6411,7 @@ class Settlement:
                 return float(rot)
         return None
 
-    def rowpack(self, bbox: Any, items: Any, court_every: int = 2, court_ft: float = 21, eave_ft: float = 4, seam: float = 0.4) -> int:
+    def rowpack(self, bbox: Any, items: Any, court_every: int = 2, court_ft: float = 21, eave_ft: float = 4, seam: float = 0.4, fill: bool = False) -> int:
         """CITY row housing - the machiya/nagaya fabric (GM row-packing doctrine, 2026-07):
         urban commoners did not build detached-with-yard; street frontage was taxed and precious,
         back-lot nagaya were literally one roof over a row of family units, and Chinese county-seat
@@ -6528,6 +6528,17 @@ class Settlement:
                 ytop += rowmax + gap
                 if ytop + self._dims("laborer")[1] > y1:
                     break
+            # RECORD THE SHORTFALL, like pack and frontage (settlement-review, 2026-08-11):
+            # rowpack was the ONE placer that dropped what did not fit in silence, so
+            # placement_runs_meet_their_ask - the check written to make exactly this visible - was
+            # blind to it on the very map it was written for. Two monzen flanks drew 1 and 0 of 40
+            # and another row 4 of 24, all behind a green gate.
+            if not fill:  # fill=True declares the ask a capacity BUDGET ("row this ground out"), as in pack/frontage
+                # items[idx:], NOT items: rowpack walks an INDEX where pack and frontage POP, so
+                # handing the whole list over reported every run as asking exactly double what it
+                # was given - and a run that seated half its ask looked like one that seated a
+                # quarter, forever, because trimming to the reported figure just halved it again.
+                self._shortfall("rowpack", bbox, n, list(items[idx:]))
             return n
 
     def pack(self, bbox: Any, items: Any, rot: float = 0, step: float = 46, face_streets: Any = False, fill: bool = False, footpaths: int = 0) -> int:
@@ -11546,6 +11557,76 @@ class Settlement:
         self.add(f'<path d="{dd}" fill="none" stroke="#A9885A" stroke-width="{width:.1f}" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>')
         self.M.setdefault("towpaths", []).append({"pts": [[round(px_, 1), round(py_, 1)] for px_, py_ in pts], "w": round(width, 2)})
         self.corridors.append(([(px_, py_) for px_, py_ in pts], width / 2 + 8))
+
+    def quay(self, pts: Any, steps: int = 3, width: float | None = None) -> None:
+        """A REVETTED QUAY FACE - the bank cut back, faced with stone or timber cribbing, with
+        STEPPED LANDINGS notched into it at intervals, and mooring posts along the top.
+
+        WHY THIS AND NOT MORE PIERS (GM 2026-08-11, asking whether three piers was the right
+        number for six granaries: "is there some sort of dock that is not a boardwalk... I don't
+        know how this would have worked"). Research is in research/cities/river-cities.md, and it
+        inverts what a modern marina suggests. **A river's level moves by many feet across the
+        year**, so a fixed-height deck is at the right height for a few weeks and wrong the rest -
+        unreachable in the dry season, awash in the wet. A flight of steps down a faced bank is
+        correct at EVERY level, because the barge simply lies against a different tread. That is
+        why the stepped quay is the norm on a river and the projecting pier the exception: the
+        Chinese matou is characteristically a stone-stepped landing in a faced bank, and the
+        Japanese kashi district uses the same arrangement with the steps called gangi. The pier
+        exists for REACH, where the bank shelves too gently for a loaded hull to come alongside.
+
+        So the working face is the BANK, continuous along the frontage, and its capacity is
+        measured in feet of mooring rather than in piers - which is why three piers serve six
+        granaries perfectly well while a wharf drawn WITHOUT its quay face reads as three fingers
+        poking into an otherwise natural riverbank.
+
+        `pts` is the bank line, `steps` how many landings are notched into it. Records M['quays']
+        and reserves a shallow corridor so nothing packs onto the working face."""
+        if width is None:
+            width = max(self.px(10), 2.6)
+        dd = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        # the faced edge: a stone band, drawn heavier than a path and with a coursing tick every
+        # few feet so it reads as revetment rather than as another way
+        self.add(f'<path d="{dd}" fill="none" stroke="#8C8377" stroke-width="{width:.1f}" stroke-linejoin="round" stroke-linecap="butt"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#6E6558" stroke-width="{max(0.8, width * 0.18):.1f}" stroke-linejoin="round" stroke-linecap="butt" opacity="0.8"/>')
+        segs = [(pts[i], pts[i + 1]) for i in range(len(pts) - 1)]
+        lens = [math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in segs]
+        total = sum(lens) or 1.0
+
+        def at(d: float) -> tuple[float, float, float, float]:
+            acc = 0.0
+            for (a, b), sl in zip(segs, lens, strict=True):
+                if sl and acc + sl >= d:
+                    f = (d - acc) / sl
+                    return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, (b[0] - a[0]) / sl, (b[1] - a[1]) / sl)
+                acc += sl
+            a, b = segs[-1]  # pragma: no cover - defensive: every caller below asks for a
+            sl = lens[-1] or 1.0  # pragma: no cover   fraction strictly inside the run, so the
+            return (b[0], b[1], (b[0] - a[0]) / sl, (b[1] - a[1]) / sl)  # pragma: no cover  loop always matches
+
+        landings = []
+        posts = []
+        for k in range(max(0, steps)):
+            d = total * (k + 0.5) / max(1, steps)
+            x, y, tx, ty = at(d)
+            nx, ny = -ty, tx  # toward the water; the caller draws the bank with water on this side
+            tread = self.px(12)
+            run = self.px(16)
+            g = []
+            for t in range(4):  # four treads stepping down into the water
+                off = width / 2 + run * t / 4.0
+                x0, y0 = x + nx * off - tx * tread / 2, y + ny * off - ty * tread / 2
+                x1, y1 = x + nx * off + tx * tread / 2, y + ny * off + ty * tread / 2
+                g.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="#7D7468" stroke-width="{max(0.7, self.px(2)):.1f}" stroke-linecap="butt"/>')
+            self.add("".join(g))
+            landings.append([round(x, 1), round(y, 1)])
+        for k in range(max(2, steps + 2)):  # mooring posts along the top of the face
+            x, y, tx, ty = at(total * (k + 0.5) / max(2, steps + 2))
+            nx, ny = ty, -tx  # landward side
+            px_, py_ = x + nx * (width / 2 + self.px(3)), y + ny * (width / 2 + self.px(3))
+            self.add(f'<circle cx="{px_:.1f}" cy="{py_:.1f}" r="{max(0.9, self.px(2)):.1f}" fill="#5A5044"/>')
+            posts.append([round(px_, 1), round(py_, 1)])
+        self.M.setdefault("quays", []).append({"pts": [[round(x, 1), round(y, 1)] for x, y in pts], "w": round(width, 2), "landings": landings, "posts": posts})
+        self.corridors.append(([(x, y) for x, y in pts], width / 2 + 6))
 
     def aqueduct(self, pts: Any, width: float | None = None) -> None:
         """The capital's water-supply channel: intake works on the river, an OPEN cut at grade

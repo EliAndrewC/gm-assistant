@@ -254,6 +254,7 @@ _OVERLAP_LINEAR = (
     "roads",
     "crescent_ponds",
     "towpaths",
+    "quays",  # the revetted bank face at a wharf - a LINE feature, classified WAY like the towpath
     "aqueducts",
 )  # linear / area features structs avoid (canals = the cargo canal; roads = the multi-road list, same ground the single M['road'] covers; crescent_ponds = the fengshui 半月塘 focal pond, reserved as a placement keep-out so the cluster packs around it; towpaths = the riverbank haulage path and aqueducts = the open supply cut, both feature 020 - ground a structure must keep off)
 _OVERLAP_EXEMPT = {
@@ -300,6 +301,7 @@ _OVERLAP_EXEMPT = {
 # NAME to be allowed to cover the feature - and because the group name is the caption word, that
 # permission is derived rather than hand-listed too (see _label_allows).
 _LABEL_GROUP = {
+    "quays": "quay",
     "theater_stage": "theater",
     "granaries": "granary",
     "terraces": "terrace",
@@ -465,7 +467,7 @@ OVERLAP_CLASS: dict[str, str] = {
     # any way over it. `towpaths` is a WAY: a beaten path things keep off, however unlike a road
     # it is drawn.
     **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond", "moat", "aqueducts")},
-    **{k: "WAY" for k in ("road", "roads", "town_streets", "alleys", "lanes", "towpaths")},
+    **{k: "WAY" for k in ("road", "roads", "town_streets", "alleys", "lanes", "towpaths", "quays")},
     # ANNEX - belongs to a named parent and abuts IT (and nothing else)
     **{k: "ANNEX" for k in ("gardens", "threshing_yards", "farm_sheds", "storehouses", "byres")},
     # --- PERMISSIVE CLASSES (never tested; each row below records WHY) ---------------------------
@@ -588,6 +590,9 @@ _MATRIX_ALLOWED_PAIRS: dict[frozenset[str], str] = {
 }
 # per-KEY-PAIR permissions for genuine one-offs the class policy is too coarse to express
 _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
+    frozenset(
+        {"quays", "jetties"}
+    ): "a jetty SPRINGS FROM the quay face - the faced bank is the working surface the stage projects out of, so they meet by construction (research/cities/river-cities.md: the pier exists for REACH where the bank shelves too gently, and it starts at the revetment)",
     **{
         frozenset(
             {"wall", w}
@@ -798,7 +803,7 @@ _MX_FIXTURE_BOX: dict[str, Any] = {
     "jetties": lambda o: (float(o["len"]), 6.4),  # the planked finger, at the width the glyph draws
     "sluice_gates": lambda o: (11.0, 11.0),  # the board and its cheeks - a small square control structure
 }
-_MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0, "roads": 26.0, "towpaths": 2.4, "aqueducts": 4.0}
+_MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0, "roads": 26.0, "towpaths": 2.4, "aqueducts": 4.0, "quays": 3.4}
 
 
 def check_ring_road_clear(M: Mapping[str, Any], check: Any) -> None:
@@ -2649,6 +2654,46 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if not ok:
             fails.append(name)
 
+    # NO SINGLE CAPTION MAY HOLD THE FRAME OPEN (GM 2026-08-11: "I am surprised that our cropping
+    # algorithm has not more aggressively cropped along the southern side... there should only be
+    # about one hundred feet between the southernmost map feature and the edge"). The crop was
+    # working exactly as specified - the margin is ~110 ft - but it frames CONTENT, and a caption
+    # counts as content. Two words floating in open ground 305 ft past the last structure were
+    # holding the whole south edge out, so the map read as badly cropped when it was in fact
+    # correctly cropped around a badly placed label. Measured per side: how far past the last
+    # STRUCTURE a label reaches. A caption naming a long linear feature may sit anywhere along it,
+    # so this costs nothing to satisfy - it just has to sit where the drawing is.
+    # 120 ft: the crop then adds its own ~110 ft margin on top, so a caption at the limit leaves
+    # ~230 ft of apparent emptiness past the last building - already generous. The capital's road
+    # and towpath words sat 180 ft out and read as a badly cropped map.
+    _cf_pad = 120.0
+    _cffx = float(meta.get("ftpx") or 1.0)
+    _cf_struct = [q for _k, q, *_ in matrix_extents(M) if q and _k not in ("roads", "road", "streams", "channels", "aqueducts", "towpaths", "quays", "canals", "field_ditches")]
+    # CANOPY IS CONTENT: a wood's caption sits over the wood, and a forest is drawn as individual
+    # crowns rather than as a footprint - so without them Moritono's "Shirin Forest" scored as a
+    # word floating in emptiness when it is sitting on the very thing it names.
+    _cf_tc = M.get("tree_crowns") or []
+    for _ci in range(0, len(_cf_tc) - 2, 3):
+        _cx, _cy, _cr = _cf_tc[_ci], _cf_tc[_ci + 1], _cf_tc[_ci + 2]
+        _cf_struct.append([(_cx - _cr, _cy - _cr), (_cx + _cr, _cy - _cr), (_cx + _cr, _cy + _cr), (_cx - _cr, _cy + _cr)])
+    _cf_bad = []
+    if _cf_struct and M.get("labels"):
+        _sx0 = min(min(p[0] for p in q) for q in _cf_struct)
+        _sy0 = min(min(p[1] for p in q) for q in _cf_struct)
+        _sx1 = max(max(p[0] for p in q) for q in _cf_struct)
+        _sy1 = max(max(p[1] for p in q) for q in _cf_struct)
+        for _lb in M["labels"]:
+            if len(_lb) < 6:
+                continue
+            _over = max((_sx0 - _lb[0]), (_lb[2] - _sx1), (_sy0 - _lb[1]), (_lb[3] - _sy1)) * _cffx
+            if _over > _cf_pad:
+                _cf_bad.append((str(_lb[5]), round(_over)))
+    check(
+        "no_caption_holds_the_frame_open",
+        not _cf_bad,
+        f"caption(s) reaching far past the last STRUCTURE on their side, which drags the crop out with them (name, ft beyond): {sorted(_cf_bad)[:4]} - the crop frames content and a label IS content, so a word left floating in open ground reads as a badly cropped map; slide the caption along its subject to where the drawing is",
+    )
+
     # A ROADSIDE WORK STANDS ON ITS ROAD, AND LIES ALONG IT (GM 2026-08-11: "the flophouse near
     # the southwest city gate is absurdly far from the road - about three hundred feet - and it
     # should be oriented to face the road... the two kiln works should be aligned with the road
@@ -2734,7 +2779,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # pool that miss an AUTHORED count miss it by a hair - Ubame 21/23, Hirameki 13/14 - while
     # every genuine drift sits far below it. A run that MEANS "place up to N" declares itself with
     # fill=True and is never recorded here at all, so the check governs authored counts only.
-    _ask_bad = [f"{s.get('by')}@{s.get('at')} {s.get('placed')}/{s.get('wanted')}" for s in (M.get("shortfalls") or []) if s.get("wanted") and s.get("placed", 0) < 0.6 * s["wanted"]]
+    # A SMALL ask is not judged by a percentage. A four-house monk terrace that seats two is one
+    # seat of rounding in a pocket, and chasing it just oscillates: trim to two, the neighbour's
+    # trim frees a hair, it seats three, and round it goes. Under eight the rule is simply that
+    # SOMETHING landed - a run that draws nothing at all is a real hole in the map either way.
+    _ask_bad = [
+        f"{s.get('by')}@{s.get('at')} {s.get('placed')}/{s.get('wanted')}"
+        for s in (M.get("shortfalls") or [])
+        if s.get("wanted") and (s.get("placed", 0) == 0 if s["wanted"] < 8 else s.get("placed", 0) < 0.6 * s["wanted"])
+    ]
     check(
         "placement_runs_meet_their_ask",
         not _ask_bad,
