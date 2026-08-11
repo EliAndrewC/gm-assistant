@@ -182,11 +182,15 @@ def watching_fits(x: float, y: float, radius: float = 8.0) -> Iterator[list[Refu
         seen["_hard_clear"] = r
         return r
 
-    def fits(self: Any, px: float, py: float, w: float, h: float, skip: Any = None, corridors: bool = True) -> bool:
+    # *a/**kw passthrough, NOT a restated signature (2026-08-11): this wrapper pinned _fits's
+    # parameter list, so the day _fits gained a keyword the diagnostic died with a TypeError -
+    # in the middle of the gen it was supposed to be observing. A tool that OBSERVES must not
+    # re-declare the thing it observes; same rule as asking the gate instead of re-deriving it.
+    def fits(self: Any, px: float, py: float, w: float, h: float, *a: Any, **kw: Any) -> bool:
         watched = math.hypot(px - x, py - y) <= radius
         if watched:
             seen.clear()
-        verdict = o_fits(self, px, py, w, h, skip, corridors)
+        verdict = o_fits(self, px, py, w, h, *a, **kw)
         if watched:
             if verdict:
                 cause = "-"

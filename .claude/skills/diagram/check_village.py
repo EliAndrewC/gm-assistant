@@ -2649,6 +2649,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if not ok:
             fails.append(name)
 
+    # A placement run that lands far under its ask is authored-vs-landed DRIFT, and _shortfall
+    # RECORDING it (GM 2026-08-05, "we definitely want that to be visible") turned out not to be
+    # enough on its own: the capital authored 283 frontage seats, drew 129, and the gate stayed
+    # green because nothing read the record back. 60% is the line because the only two runs in the
+    # pool that miss an AUTHORED count miss it by a hair - Ubame 21/23, Hirameki 13/14 - while
+    # every genuine drift sits far below it. A run that MEANS "place up to N" declares itself with
+    # fill=True and is never recorded here at all, so the check governs authored counts only.
+    _ask_bad = [f"{s.get('by')}@{s.get('at')} {s.get('placed')}/{s.get('wanted')}" for s in (M.get("shortfalls") or []) if s.get("wanted") and s.get("placed", 0) < 0.6 * s["wanted"]]
+    check(
+        "placement_runs_meet_their_ask",
+        not _ask_bad,
+        f"{len(_ask_bad)} placement run(s) landed under 60% of the gen's ask: {_ask_bad[:6]} - make room for them, TRIM the ask to what the ground really holds, or pass fill=True where the number is a capacity budget ('place up to N') rather than an authored count",
+    )
+
     # EVERY canopy crown the map draws, as (x, y, r) - forest/copse stands, their fringes, the fengshui
     # grove clumps and the per-house yashikirin belts all record here (settlement._record_crowns). Stored
     # flat because a to-scale map draws thousands. This is the DRAWN geometry, not the reserved area, so

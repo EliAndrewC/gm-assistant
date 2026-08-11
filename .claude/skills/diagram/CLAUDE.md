@@ -894,3 +894,44 @@ text diff always shows the whole file and tells you nothing. Only `title`/`scale
 hair, uniformly across every map, is a measurement-environment signature; a house, a ditch, a crown
 or a count moving is a real bug. And when a recorded value depends on something git does not carry,
 pin the dependency rather than re-recording the drift - re-recording just waits for the next rebuild.
+
+## An unmet ASK is a defect, and the gate now says so
+
+`_shortfall` has recorded requested-vs-landed per placement run since 2026-08-05, and recording
+turned out not to be enough on its own: Shiro Daika authored **283 frontage seats and drew 129**
+behind a completely green gate, because nothing ever read the record back. The GM found it from
+the render (*"they look more spaced out than I expected"*). `placement_runs_meet_their_ask` now
+fails any run that lands under **60%** of its ask. The line is calibrated from the pool: the only
+two shipped maps that miss an AUTHORED count miss it by a hair (Ubame 21/23, Hirameki 13/14),
+while every genuine drift sits far below.
+
+Three ways to clear it, and the failure message names all three:
+
+- **Make room** - the honest fix when the ground really should hold them.
+- **TRIM the ask** to what the ground holds. Slicing the item list to a PREFIX is
+  geometry-preserving: a refusal does not consume an item, so a run handed exactly the number it
+  used to place seats the same buildings in the same spots. Verified byte-identical.
+- **`fill=True`** where the number was always a capacity budget ("place up to N"), which is the
+  city gens' district-fill idiom. It is report-only in BOTH `pack` and `frontage` - it suppresses
+  the record and changes no geometry - so declaring it on the three provincial cities moved only
+  the `shortfalls` key of each manifest.
+
+## A DIAGNOSTIC that restates what it observes will lie to you, or die
+
+Three probes in one session, two of them wrong in ways that cost a full round trip each:
+
+- `why_placed.py`'s `_fits` wrapper had **re-declared `_fits`'s parameter list**, so the day
+  `_fits` gained a keyword the tool died with a `TypeError` in the middle of the gen it was
+  supposed to be observing. It takes `*a, **kw` now. Same rule as `site_justice.py` asking the
+  gate instead of re-deriving it: a tool that OBSERVES must not re-declare the thing it observes.
+- A hand-rolled probe listed, for each refused seat, every corridor **covering** it - which is not
+  the same set as the corridors that **refused** it, because it ignored `skip`. It named the very
+  street being fronted as the culprit. Patch the real predicate and read its verdict; do not
+  reconstruct the verdict beside it.
+- The next probe measured refusals **near a point** rather than **inside the run**, so it charged
+  a frontage row for refusals belonging to the pack that ran after it. Attribute by CALL (wrap the
+  helper and tag everything inside it), not by proximity.
+
+The good version of this is cheap: wrap `_shortfall` and walk `inspect.stack()` for the frame in
+the GEN file, and every run is attributed to the exact gen line that wrote it - which is how 10
+call sites across three shipped cities got classified in one run.

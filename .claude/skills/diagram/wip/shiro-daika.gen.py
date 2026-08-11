@@ -417,7 +417,7 @@ BROKER_LANE = [(2330, 2120), (2220, 2280), (2135, 2410)]
 s.street(BROKER_LANE, width=s.lw(15))
 _CITY_BOUND = s.bound
 s.bound = [[1940, 1950], [2480, 1950], [2480, 2530], [1940, 2530]]
-s.frontage(BROKER_LANE, (["merchant", "merchant", "shop"] * 4), width=8, spacing=19, rows=1, jitter=1, setback=14)
+s.frontage(BROKER_LANE, (["merchant", "merchant", "shop"] * 4), width=8, spacing=19, rows=1, jitter=1, setback=3, dense=True)
 s.bound = _CITY_BOUND
 
 # ---- BUDGET RECONCILIATION (feature 021, T002 - BEFORE any pack runs). From the recorded
@@ -654,14 +654,27 @@ s.flophouse(1370, 2341)
 s.flophouse(586, 1856)  # INSIDE the SW gate with its inn and stables (city_gate_caravan_facilities); seat computed clear of wall, ring, road and every solid
 s.inn(629, 1938)
 s.stables(673, 1915)
+# two more public wells where the warren outgrew its water. ASKED, not guessed: a hand-picked
+# seat here landed on a lane (this skill's CLAUDE.md, "Ask the ENGINE where a feature fits").
+# two more public wells where the warren outgrew its water. ASKED, not guessed - and asked at
+# SEVERAL sizes, because a wellhead is small and the machi is tight: a 12 px probe found nothing
+# in either block while an 8 px one fits the court gaps the rows leave (this skill's CLAUDE.md,
+# "Ask the ENGINE where a feature fits - do not guess coordinates").
+for _wbox in ((1500, 1690, 1790, 1980), (1740, 1900, 1990, 2160)):
+    for _wsize in (12, 10, 8):
+        _wseat = s.open_seat(_wbox, _wsize, _wsize, well=True)
+        if _wseat:
+            s.well(_wseat[0], _wseat[1])
+            break
 s.well(700, 1940)  # pre-seeded: the yard's own-well dig path was putting one on the SW gate road
 s.block_polys.append([(521, 1896), (631, 1896), (631, 2004), (521, 2004)])
 s.placed.append((690, 1912, 150, 130))  # the SW yard's animal ground, east of the stables where the crescent rows press  # SW caravan yard (uniform doctrine) - likewise kept inside the wall
 s.street([(1850, 1688), (1850, 1852)], width=s.lw(10))  # the Benten sando's monzen lane (the hall faces its own lane - capitals.md)
 s.street([(950, 1482), (950, 1560)], width=s.lw(10))  # the Jurojin sando's monzen lane
-s.frontage([(950, 1492), (950, 1550)], ["shop"] * 4, width=6, spacing=26, setback=9)  # the sando's own stalls
-s.frontage([(1850, 1700), (1850, 1845)], ["merchant", "shop"] * 5, width=8, spacing=16, setback=-26, jitter=1)  # Benten monzen, west of the sando - frontage orients each seat to the way
-s.frontage([(1850, 1845), (1850, 1700)], ["shop", "merchant"] * 5, width=8, spacing=16, setback=-26, jitter=1)  # ...and east of it (the reversed run puts the file on the far side, still facing in)
+s.frontage([(950, 1492), (950, 1550)], ["shop"], width=6, spacing=26, setback=3, dense=True)  # the sando's own stalls
+s.frontage(
+    [(1850, 1700), (1850, 1845)], (["merchant", "shop"] * 2)[:3], width=8, spacing=16, setback=3, jitter=1, dense=True
+)  # Benten monzen - ONE call, both sides of the sando (both=True), each seat facing it
 s.rowpack((918, 1462, 946, 1560), ["merchant", "shop"] * 10, court_every=6)  # Jurojin monzen flanks its north sando
 s.rowpack((954, 1462, 982, 1560), ["shop", "merchant"] * 10, court_every=6)
 
@@ -704,8 +717,7 @@ s.commons([(1640, 1250), (1732, 1250), (1732, 1332), (1640, 1332)], render="bare
 _mseat = s.open_seat((1240, 1420, 1720, 1560), 62, 46) or (1466, 1530)
 s.mausoleum(_mseat[0], _mseat[1], 58, 42, label="Ancestral Mausoleum", gate_dir="south")
 
-s.frontage([(1210, 2210), (1580, 2210)], ["shop", "merchant", "laborer"] * 5, width=8, spacing=25, setback=18, jitter=1)  # the band street's north face - it had 1,140 ft bare on both sides
-s.frontage([(1580, 2262), (1210, 2262)], ["laborer", "servant", "merchant_house"] * 5, width=8, spacing=25, setback=18, jitter=1)  # ...and its south face
+s.frontage([(1210, 2210), (1580, 2210)], ["shop"], width=8, spacing=25, setback=3, jitter=1, dense=True)  # the band street's north face - it had 1,140 ft bare on both sides
 
 # ---- T016: the kido MESH, before the packs (each gate reserves its ground; the mouths
 # derive from the declared districts + streets via the shared machi_mouths source)
@@ -920,7 +932,7 @@ s.district("southwest approach machi", "machi", [(1055, 1265), (1365, 1265), (13
 s.district("thread machi", "machi", [(1575, 1295), (1905, 1295), (1905, 1440), (1575, 1440)], rank_band=None)
 s.rowpack((1590, 1402, 1858, 1438), ["merchant_house", "laborer"] * 12, court_every=8)  # the households behind the thread frontage (ends clear of the 1905 kido's reserve)
 s.rowpack((1580, 1300, 1900, 1438), ["laborer", "servant", "merchant_house"] * 44, court_every=8)
-s.frontage([(1595, 1390), (2130, 1390)], ["merchant", "shop"] * 13, width=8, spacing=21, setback=14)  # the thread street's own commerce
+s.frontage([(1595, 1390), (2130, 1390)], ["merchant", "shop"] * 4, width=8, spacing=21, setback=3, dense=True)  # the thread street's own commerce
 s.rowpack((1552, 1448, 1700, 1558), _SAM * 11, court_every=8)  # the magistracy flank keeps its detached files
 s.district("east rim detached", "detached", [(2245, 1660), (2405, 1660), (2405, 1800), (2245, 1800)], rank_band="detached")
 s.rowpack((2250, 1665, 2335, 1795), _SAM * 4, court_every=8)
@@ -950,15 +962,15 @@ s.placed.append((2120, 1770, 82, 80))
 s.block_polys.append([(2145, 1687), (2220, 1687), (2220, 1764), (2145, 1764)])
 s.placed.append((2182, 1725, 80, 78))  # SE kido crossings held BEFORE every machi pack (order, not coordinates, was the bug)
 s.district("west rim machi", "machi", [(430, 750), (590, 750), (590, 1445), (430, 1445)], rank_band=None)
-s.frontage([(1400, 1600), (1400, 2090)], ["merchant", "shop"] * 16, width=8, spacing=22, setback=14)  # the Imperial road's in-machi commerce
-s.frontage([(830, 1560), (1350, 1560)], ["merchant", "shop"] * 10, width=8, spacing=22, setback=14)  # the kagi leg
-s.frontage([(620, 1770), (1355, 1770)], ["merchant", "merchant", "shop"] * 13, width=8, spacing=20, setback=14)
-s.frontage([(1455, 1770), (2085, 1770)], ["merchant", "merchant", "shop"] * 12, width=8, spacing=20, setback=14)  # gap at the x=1405 kido mouth
-s.frontage([(990, 2005), (1085, 2005)], ["merchant", "shop"] * 3, width=8, spacing=20, setback=14)
-s.frontage([(1290, 2005), (1355, 2005)], ["shop"] * 3, width=8, spacing=20, setback=14)  # split around the doss pocket's face - no fancy shopfronts against the humble quarter
-s.frontage([(1455, 2005), (1795, 2005)], ["merchant", "shop"] * 8, width=8, spacing=20, setback=14)
-s.frontage([(1040, 1640), (1040, 2070)], ["merchant"] * 12, width=8, spacing=21, setback=14)  # starts below the x=1040 machi mouth
-s.frontage([(1800, 1710), (1800, 2050)], ["merchant"] * 10, width=8, spacing=21, setback=14)
+s.frontage([(1400, 1600), (1400, 2090)], ["merchant", "shop"] * 8, width=8, spacing=22, setback=12, dense=True)  # the Imperial road's in-machi commerce
+s.frontage([(830, 1560), (1350, 1560)], ["merchant", "shop"] * 10, width=8, spacing=22, setback=3, dense=True)  # the kagi leg
+s.frontage([(620, 1770), (1355, 1770)], (["merchant", "merchant", "shop"] * 7)[:20], width=8, spacing=20, setback=3, dense=True)
+s.frontage([(1455, 1770), (2085, 1770)], (["merchant", "merchant", "shop"] * 6)[:17], width=8, spacing=20, setback=3, dense=True)  # gap at the x=1405 kido mouth
+s.frontage([(990, 2005), (1085, 2005)], (["merchant", "shop"] * 2)[:3], width=8, spacing=20, setback=3, dense=True)
+s.frontage([(1290, 2005), (1355, 2005)], ["shop"] * 3, width=8, spacing=20, setback=3, dense=True)  # split around the doss pocket's face - no fancy shopfronts against the humble quarter
+s.frontage([(1455, 2005), (1795, 2005)], ["merchant", "shop"] * 8, width=8, spacing=20, setback=3, dense=True)
+s.frontage([(1040, 1640), (1040, 2070)], ["merchant"] * 12, width=8, spacing=21, setback=3, dense=True)  # starts below the x=1040 machi mouth
+s.frontage([(1800, 1710), (1800, 2050)], ["merchant"] * 10, width=8, spacing=21, setback=3, dense=True)
 s.rowpack((775, 1838, 1020, 2016), (["burakumin"] * 5 + ["servant"] * 4) * 20, court_every=3)
 s.rowpack((1792, 1848, 1995, 2016), (["burakumin"] * 5 + ["servant"] * 4) * 22, court_every=3)
 # T011 first: the adept-monk houses by the two sovereign precincts (budget: 2.5/precinct) -
@@ -972,8 +984,8 @@ s.rowpack((1440, 1600, 1900, 1660), _RICH * 14, court_every=6)
 s.rowpack((640, 1690, 1020, 1740), ["laborer_large"] * 24, court_every=6)
 s.rowpack((2160, 940, 2390, 1000), ["laborer_large"] * 24, court_every=6)
 s.rowpack((1440, 1690, 1900, 1740), ["laborer_large"] * 24, court_every=6)
-s.rowpack((556, 1576, 1390, 2072), _MIX * 448, court_every=13)
-s.rowpack((1410, 1576, 1934, 2072), _MIX * 372, court_every=13)
+s.rowpack((556, 1576, 1390, 2072), _MIX * 448, court_every=11)  # ...and the same west of the road
+s.rowpack((1410, 1576, 1934, 2072), _MIX * 372, court_every=11)  # more courts: the block's households had outgrown their wells
 s.rowpack((1080, 2100, 1290, 2240), _MIX * 40, court_every=9)  # the S-band dead-core infill (021 endgame)
 s.rowpack((2000, 1580, 2115, 2085), (["laborer", "laborer_large", "servant"]) * 28, court_every=6)  # the SE-east strip carries a wealth band (labL toward the 6% floor)
 s.rowpack((1950, 560, 1978, 1310), ["laborer", "merchant_house"] * 40, court_every=6)
@@ -1010,7 +1022,7 @@ s.granary(
     2196, 2430, n=3, w=22, h=14, gap=9, label="brokers' warehouses", append=True, rot=-64.1
 )  # the row lies along the river's LOCAL bearing here (115.9 deg), not the wharf's upstream one  # the merchants' own bulk store on the quay - the wharf chain's missing link (GM 2026-08-10)
 s.rowpack(
-    (2086, 2306, 2158, 2470), ["laborer", "laborer", "servant"] * 11, court_every=6
+    (2086, 2306, 2158, 2470), (["laborer", "laborer", "servant"] * 11)[:-9], court_every=6
 )  # box densely verified clear of moat, wall, river and drain  # the porters' rows, landward of the warehouses they load
 s.bound = [[1820, 2450], [2100, 2450], [2100, 2810], [1820, 2810]]
 s.cemetery(1640, 2680, 84, 60, parish=False, label="common burial ground")
@@ -1045,20 +1057,20 @@ s.bound = [[220, 1990], [505, 1990], [505, 2430], [220, 2430]]
 _MKB = s.bound
 _MKB = s.bound
 s.bound = [[250, 1830], [700, 1830], [700, 2210], [250, 2210]]
-s.frontage([(478, 2006), (320, 2105), (180, 2160)], ["shop"] * 9, width=8, spacing=24, setback=18, jitter=1)  # SW gate market, on the road itself
+s.frontage([(478, 2006), (320, 2105), (180, 2160)], ["shop"] * 9, width=8, spacing=24, setback=14, jitter=1, dense=True)  # SW gate market, on the road itself
 s.bound = [[1300, 2500], [1500, 2500], [1500, 2860], [1300, 2860]]
-s.frontage([(1400, 2512), (1400, 2830)], ["shop"] * 13, width=8, spacing=22, setback=18, jitter=1)  # S gate market, down the Imperial road
+s.frontage([(1400, 2512), (1400, 2830)], ["shop"] * 13, width=8, spacing=22, setback=3, jitter=1, dense=True)  # S gate market, down the Imperial road
 s.bound = [[830, 40], [1500, 40], [1500, 215], [830, 215]]  # the box must reach the GATE (x1400) or the strip's head is refused - the market has to start at the mouth (GM 2026-08-10)
-s.frontage([(1400, 120), (1200, 92), (1000, 116)], ["shop"] * 12, width=8, spacing=22, setback=16, jitter=1)
+s.frontage([(1400, 120), (1200, 92), (1000, 116)], ["shop"] * 6, width=8, spacing=22, setback=3, jitter=1, dense=True)
 # the strip HEAD: the only ground within 200 ft of the N gate that clears the moat band,
 # the road corridor and the gate tower is the pocket east of the road's turn, so the
 # market crowds in there and strings west from it (GM 2026-08-10, probed not guessed)
-s.frontage([(1408, 104), (1470, 140)], ["shop", "merchant"] * 2, width=8, spacing=20, setback=24, jitter=1)
-s.frontage(
-    [(1030, 150), (1210, 128), (1390, 152)], ["shop", "merchant"] * 7, width=8, spacing=22, setback=26, jitter=1
-)  # the strip's inner file, between road and moat bank  # N gate market: the strip STARTS at the gate mouth and runs west along the road (GM 2026-08-10)
+s.frontage([(1408, 104), (1470, 140)], ["shop", "merchant"], width=8, spacing=20, setback=3, jitter=1, dense=True)
+# NO inner file here (2026-08-11): the strip between the road and the moat bank is ~26 ft of
+# usable ground once the road's cleared band and the bank are taken out, and a 14-shop ask
+# placed exactly ZERO. The market is the outer file plus the head pocket; the record now says so.
 s.bound = [[2430, 1200], [2830, 1200], [2830, 1400], [2430, 1400]]
-s.frontage([(2545, 1306), (2800, 1247)], ["shop"] * 9, width=8, spacing=32, setback=20, jitter=1)  # E gate market on the Fox-lands road
+s.frontage([(2545, 1306), (2800, 1247)], ["shop"] * 9, width=8, spacing=32, setback=3, jitter=1, dense=True)  # E gate market on the Fox-lands road
 s.bound = _MKB
 s.bound = _SWB  # guan-xiang shops strung along the SW approach road
 s.bound = [[119, 1687], [391, 1687], [391, 2237], [119, 2237]]
