@@ -11193,3 +11193,22 @@ def test_placement_runs_meet_their_ask_is_silent_when_the_ask_is_a_declared_budg
     M = manifest()
     M["shortfalls"] = []
     assert "placement_runs_meet_their_ask" not in check_village.gate(M, verbose=False)
+
+
+def test_waterworks_captions_stand_at_their_point():
+    """A caption naming the intake weir, the settling basin or a sluice gate names a POINT the
+    manifest records - so the check derives the subject instead of waiting for the gen to declare
+    one. These captions are placed by hand with no referent, which is how they escaped both the
+    standoff ladder and label_hugs_its_referent and ended up 195 and 348 ft from what they name."""
+    M = manifest()
+    M["aqueducts"] = [{"poly": [[100, 100], [300, 300]], "w": 3.0, "intake": [100, 100], "to": [300, 300]}]
+    M["labels"] = [[900, 900, 980, 910, 5, "intake weir"]]
+    assert "waterworks_captions_stand_at_their_point" in check_village.gate(M, verbose=False)
+
+
+def test_waterworks_caption_beside_its_point_is_fine():
+    """Beside it, not on it - a caption that touched its subject would read as part of the glyph."""
+    M = manifest()
+    M["aqueducts"] = [{"poly": [[100, 100], [300, 300]], "w": 3.0, "intake": [100, 100], "to": [300, 300]}]
+    M["labels"] = [[104, 88, 170, 98, 5, "intake weir"]]
+    assert "waterworks_captions_stand_at_their_point" not in check_village.gate(M, verbose=False)
