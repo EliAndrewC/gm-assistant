@@ -382,3 +382,22 @@ def test_a_shallow_crossing_is_distinguished_from_a_square_one() -> None:
     assert not hg.shallow_crossing((50.0, -50.0), (50.0, 50.0), *ditch)  # square
     assert hg.shallow_crossing((0.0, -10.0), (100.0, 10.0), *ditch)  # a slant
     assert not hg.shallow_crossing((0.0, 100.0), (100.0, 100.0), *ditch)  # never meets it
+
+
+@pytest.mark.parametrize(("down_deg", "start", "expect"), [(0.0, (500.0, 500.0), None), (180.0, (500.0, 500.0), 500.0), (90.0, (500.0, 500.0), None)])
+def test_the_run_to_the_frame_is_measured_on_every_axis(down_deg, start, expect) -> None:  # type: ignore[no-untyped-def]
+    """`edge_run` walks whichever axis the fall actually points along - east and west included, which
+    the south-falling fixtures elsewhere in this file never exercise."""
+    plan = hg.plan_site(hg.HamletSpec(name="X", seed=3, households=15, down_deg=down_deg))
+    run = hg.edge_run(plan, start)
+    assert run > 0
+    if expect is not None:
+        assert run == pytest.approx(expect)
+
+
+def test_a_way_that_misses_the_watercourse_lands_on_nothing() -> None:
+    """`crossing_lands_on_crop` answers about the CROSSING POINT, so a way that never meets the
+    course has no crossing point and no verdict to give."""
+    assert not hg.crossing_lands_on_crop((0.0, 0.0), (10.0, 0.0), (0.0, 50.0), (10.0, 50.0), [SQUARE])
+    # ...and one that meets it inside the crop does
+    assert hg.crossing_lands_on_crop((700.0, 300.0), (700.0, 900.0), (400.0, 700.0), (1000.0, 700.0), [SQUARE])

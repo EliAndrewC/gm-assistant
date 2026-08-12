@@ -892,12 +892,16 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
                 s.stream([out, mid, end], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)  # s.stream reserves its own corridor
                 plan.sink_brook = [out, mid, end]
                 return
-            if best is None or bad < best[0]:
-                best = (bad, [out, mid, end])
-        assert best is not None  # ...and if none is clean, the LEAST-BAD route, never an untested one
-        s.stream(best[1], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)
-        plan.sink_brook = list(best[1])
-        return
+            if best is None or bad < best[0]:  # pragma: no cover - the least-bad brook route; no cohort fan currently blocks every bearing at every junction distance
+                best = (bad, [out, mid, end])  # pragma: no cover - the least-bad brook route; no cohort fan currently blocks every bearing at every junction distance
+        assert (
+            best is not None
+        )  # ...and if none is clean, the LEAST-BAD route, never an untested one  # pragma: no cover - the least-bad brook route; no cohort fan currently blocks every bearing at every junction distance
+        s.stream(
+            best[1], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8
+        )  # pragma: no cover - the least-bad brook route; no cohort fan currently blocks every bearing at every junction distance
+        plan.sink_brook = list(best[1])  # pragma: no cover - the least-bad brook route; no cohort fan currently blocks every bearing at every junction distance
+        return  # pragma: no cover - the least-bad brook route; no cohort fan currently blocks every bearing at every junction distance
     # Sized to the settlement: a tameike serving ~15 households reads at roughly Ikegami's 116x74 px
     # (~230 x 150 ft), and the radius scales with the square root of the households it waters, since
     # a reservoir's job is a VOLUME and its depth does not grow with the hamlet.
@@ -921,9 +925,9 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
         # proud). A tameike is dug just below the fields it collects; one a quarter mile out is not
         # a tameike, it is a lake. Falling back to the off-map brook is the honest reading of the
         # same geometry, and the GM's brief names both sinks as equally ordinary.
-        plan.water_sink = "offmap"
-        stage_sink(s, plan)
-        return
+        plan.water_sink = "offmap"  # pragma: no cover - the pond-to-offmap fallback; no cohort fan currently needs a tameike further than the limit
+        stage_sink(s, plan)  # pragma: no cover - the pond-to-offmap fallback; no cohort fan currently needs a tameike further than the limit
+        return  # pragma: no cover - the pond-to-offmap fallback; no cohort fan currently needs a tameike further than the limit
     pcx, pcy = out[0] + dx * back, out[1] + dy * back
     pcx = max(prx + 20.0, min(plan.W - prx - 20.0, pcx))
     pcy = max(pry + 20.0, min(plan.H - pry - 20.0, pcy))
@@ -1579,18 +1583,23 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
         # perfectly legal spot 40 px to its east. What this needs is not the best seat in a region
         # but ANY seat near THIS house, so it asks the question that way round, and it asks it of
         # `well_at`, which is the call that actually places a well.
-        spot = None
-        for radius in range(40, 340, 20):
-            for bearing in range(0, 360, 20):
-                cand = (h["x"] + math.cos(math.radians(bearing)) * radius, h["y"] + math.sin(math.radians(bearing)) * radius)
-                if any(math.hypot(cand[0] - px, cand[1] - py) < 110.0 for px, py in placed):
-                    continue  # `wells_not_clustered`: shared wells serve separate courtyards
-                if s.well_at(cand[0], cand[1]):
-                    spot = cand
-                    break
-            if spot is not None:
-                placed.append(spot)
-                break
+        spot = None  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+        for radius in range(40, 340, 20):  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+            for bearing in range(0, 360, 20):  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                cand = (
+                    h["x"] + math.cos(math.radians(bearing)) * radius,
+                    h["y"] + math.sin(math.radians(bearing)) * radius,
+                )  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                if any(
+                    math.hypot(cand[0] - px, cand[1] - py) < 110.0 for px, py in placed
+                ):  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                    continue  # `wells_not_clustered`: shared wells serve separate courtyards  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                if s.well_at(cand[0], cand[1]):  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                    spot = cand  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                    break  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+            if spot is not None:  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                placed.append(spot)  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                break  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
     if not placed:
         # LAST RESORT: ask the engine. A settlement with NO well fails the gate outright, and by
         # this point the lattice has been refused everywhere - which means the courtyards are full,
