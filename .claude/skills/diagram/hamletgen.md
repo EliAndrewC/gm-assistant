@@ -70,33 +70,21 @@ Household counts land exactly on the declared figure on essentially every map, a
 acreage lands on the target the household count implies - the four demo maps come out at 19.4
 against 19.5, 26.0 against 26.0, 15.7 against 15.6 and 24.7 against 24.7 acres.
 
-**The honest number is a pass RATE, and it is 7 of 12** on the first dozen seeds (measured
-2026-08-11), plus 4 of 4 on the demo maps in `pool/experiments/`. Every one of the twelve seats its
-declared households exactly and lands its acreage on target; seven then clear all ~185 gate checks
-and five trip one or two. That is the right shape for a proof of concept, and it is what
-`test_hamletgen.py` pins as a ratchet - raise the threshold when you raise the rate.
+**The honest number is a pass RATE, and it is 22 of 24** on the first two dozen seeds (measured
+2026-08-12, after the collision pass the GM asked for), plus 4 of 4 on the demo maps in
+`pool/experiments/`. It was 7 of 12 when the experiment was first reported. Every map in the cohort
+seats its declared households exactly and lands its acreage on target; twenty-two then clear all
+~185 gate checks.
 
-**The residue is short, and it is the most useful output of the whole experiment**, because it says
-exactly what is left to do:
+**The two that do not are worth more than the number**, because each is a specific, named thing:
 
-| check | maps | what it is |
-|---|---|---|
-| `features_do_not_overlap` | 4 | two placed things touch - almost always a homestead bundle against its neighbor, where the placer's collision circles let a DRAWN steading lap a rect it cleared |
-| `title_clear_of_features` | 1 | the title placard has nowhere blank to stand on a sheet that is nearly all field |
-| `harvest_yards_clear_of_structures` | 1 | the same bundle-packing problem, seen from the yard's side |
-| `bridges_span_their_water` | 1 | a way meets a ditch at a slant and its deck is too short |
-| `crop_not_held_open_by_one_feature` | 1 | one outlying feature stretches the frame |
+| check | what it is |
+|---|---|
+| `field_ringed` | four farmhouses within 165 px of the field outline where five are wanted - the placer refuses a bundle that laps a bund, and on awkward near-ground five standoffs are still not enough |
+| `streams_avoid_fields` | the outfall-on-the-outline case, diagnosed in its own section above; the fix belongs in the fan search, not in the routing |
 
-None is deep, and the biggest is not really this module's: **five of the eight failures are the
-engine's own "placement tests a different footprint than the one drawn" debt**, which the skill's
-dev notes already name as the next substantial engine job. A scripted generator packs a cluster
-tighter and more consistently than a person does, so it meets that debt far more often - which is
-itself a useful result, because it puts a number on a piece of technical debt that had only an
-argument behind it before.
-
-They are listed here rather than fixed because the experiment's question was whether the approach
-works, and seven clean maps out of twelve unseen seeds answers that more honestly than another day
-of tuning would.
+`python3 cohort_audit.py --count 24` reproduces the table, with the gate's own message for each
+failure.
 
 **Precision, not just speed.** The clearest single result is the field sizing. Ikegami's own
 docstring asks for ~20 acres of paddy for 15 households and its own closing line reports **15.3** -
