@@ -1367,7 +1367,12 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
     seat = plan.seat
     ax, ay = seat["along"]
     # the stretch of outline this cluster fronts: everything within the band's lateral reach
-    span = [(i, p) for i, p in enumerate(env) if abs((p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay) <= seat["lat"]]
+    # The row spans 1.6x the band's own length along the outline. Confined to `lat` exactly, all its
+    # candidates come off one short arc - and if that arc happens to be blocked (crop up to the bund,
+    # a delivery ditch's corridor, the field spur), the whole row is refused together and the field
+    # ends up ringed by four houses instead of five. Wrapping further round the field costs nothing:
+    # a seat too far along is dropped by the caller's own band test.
+    span = [(i, p) for i, p in enumerate(env) if abs((p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay) <= seat["lat"] * 1.6]
     if len(span) < 2:  # pragma: no cover - a band always spans several outline vertices
         return []
     span.sort(key=lambda ip: (ip[1][0] - seat["anchor"][0]) * ax + (ip[1][1] - seat["anchor"][1]) * ay)
@@ -1461,8 +1466,17 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # The FRONT ROW is allowed a little further out than the rest - a house hugging the field is
     # part of the settlement wherever the band's nominal circle happens to fall, and `field_ringed`
     # wants five of them within 165 px of the outline.
-    for standoff in (46.0, 56.0, 66.0, 78.0, 92.0):
+    # Standoffs run out to 150 px, which is still inside `field_ringed`'s 165 px band. The near
+    # ground is often the busiest on the map - crop up to the bund, the collector's out-of-crop
+    # stretches with their corridors, the field spur - so a row that stops at 92 px can land four
+    # houses where five are wanted while perfectly good ground sits at 120. A farmhouse 150 px from
+    # its paddy is still a farmhouse on its paddy.
+    for standoff in (46.0, 56.0, 66.0, 78.0, 92.0, 110.0, 130.0, 150.0):
+        if placed >= plan.spec.households:
+            break  # eight standoffs offer more seats than a hamlet has households; stop at the ask
         for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
+            if placed >= plan.spec.households:
+                break
             if math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
                 placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
@@ -1484,6 +1498,15 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
         for lx, ly in s.cluster_seeds(plan.cluster_shape, 0.0, 0.0, wlat, wdep, want, rng, record=(attempt == 0)):
             if placed >= plan.spec.households:
                 break
+            # THE CLOUD LEANS TOWARD THE FIELD. `cluster_seeds` returns a shape symmetric about the
+            # band's middle, which spreads a hamlet's houses as far behind the settlement as in front
+            # of it - and the ground in FRONT is the ground that matters: `field_ringed` wants five
+            # farmhouses within 165 px of the outline, and on a map whose near margin is largely crop
+            # and ditch corridor only four of them land there. Compressing the away-from-field
+            # coordinate pulls the whole cloud a quarter closer without changing its shape or count,
+            # which is also how a farming hamlet really sits - the houses crowd the fields they work
+            # and thin out behind.
+            ly = -wdep + (ly + wdep) * 0.75
             if s.try_place(seat["cx"] + ax * lx + ox * ly, seat["cy"] + ay * lx + oy * ly, "plain"):
                 placed += 1
     plan.placed = s.farmsteads()

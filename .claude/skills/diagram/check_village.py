@@ -7795,12 +7795,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # the field itself legitimately CONNECTS there, so it starts (or ends) inside the field envelope. Trim
         # the run from that anchored end up to where it first LEAVES the field, then check only the rest - so the
         # legitimate connection is allowed, but a stream that RE-ENTERS or cuts across the crop still fires.
+        # ON the outline counts as anchored, not merely INSIDE it (2026-08-12). A comb's collector
+        # ends where the planted extent does, so its outfall routinely lands within a pixel of the
+        # field's own boundary - inside by the geometry, outside by the rounding. Trimming only the
+        # strictly-inside case leaves such a brook measured from its anchor point, and then NO route
+        # out of it can pass: the collector runs ALONG the boundary there, so every bearing within
+        # `drainage_junction_smooth`'s 65 degrees of it clips the crop and every bearing that clears
+        # the crop is a hairpin. Measured on the case that found this: the clear bearings began 73
+        # degrees off the drain's heading. The rule this check exists for - a stream RE-ENTERING or
+        # cutting across the crop - is untouched; only the anchor's own tolerance moves.
+        ANCHOR_TOL = 2.0
+
+        def _anchored_end(pt: Pt) -> bool:
+            return point_in_poly(pt[0], pt[1], outline) or min(seg_dist(pt[0], pt[1], outline[i], outline[(i + 1) % len(outline)]) for i in range(len(outline))) <= ANCHOR_TOL
+
         pts = list(poly)
         if frm and frm.get("kind") in ("drain", "field"):
-            while len(pts) > 1 and point_in_poly(pts[0][0], pts[0][1], outline):
+            while len(pts) > 1 and _anchored_end(pts[0]):
                 pts = pts[1:]
         if to and to.get("kind") in ("drain", "field"):
-            while len(pts) > 1 and point_in_poly(pts[-1][0], pts[-1][1], outline):
+            while len(pts) > 1 and _anchored_end(pts[-1]):
                 pts = pts[:-1]
         if any(point_in_poly(px, py, outline) for px, py in pts):
             return True
