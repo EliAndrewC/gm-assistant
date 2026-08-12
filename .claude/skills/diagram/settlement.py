@@ -1070,6 +1070,11 @@ _VILLAGE_POP_DIST = ((200, 10), (250, 10), (300, 15), (350, 30), (400, 15), (450
 # explains what the wrong number does and why it does not fail as a shortfall.
 BUNDLE_PITCH_FT = 92.0
 
+# How far a CARRIED-WAY deck's corner must stand back from the water it spans, in real feet - the
+# floor `bridges_span_their_water` applies to anything that is not a standalone footplank. A real
+# abutment sill sits back from the channel edge so scour cannot undercut the bearing.
+CARRIED_LANDING_FLOOR_FT = 6.0
+
 
 def village_population(rng: random.Random) -> int:
     """Draw a village population (200-500, mode 350) from the weighted distribution, using the passed
@@ -11916,7 +11921,32 @@ class Settlement:
                             _wl = math.hypot(wb[0] - wa[0], wb[1] - wa[1]) or 1.0
                             _cs = ((rb[0] - ra[0]) * (wb[0] - wa[0]) + (rb[1] - ra[1]) * (wb[1] - wa[1])) / (_rl * _wl)
                             _sn = max(math.sqrt(max(0.0, 1.0 - _cs * _cs)), 0.25)
-                            self.bridge(p[0], p[1], rot, (ww + rw * abs(_cs)) / _sn + 2 * LANDING_FT / self.ftpx, rw)
+                            _span = (ww + rw * abs(_cs)) / _sn + 2 * LANDING_FT / self.ftpx
+                            # ...AND THE DECK IS GROWN UNTIL ITS CORNERS ACTUALLY CLEAR THE WATER
+                            # (2026-08-12). The formula above solves the crossing against the ONE
+                            # segment the way cuts, and clamps sin at 0.25 so a near-parallel graze
+                            # cannot ask for an absurd deck. Both are reasonable and both under-size
+                            # a deck where the watercourse BENDS near the crossing: the check
+                            # (`bridges_span_their_water`) measures every corner against the whole
+                            # crossed POLYLINE, so a neighbouring segment curving back toward a
+                            # corner is water the formula never saw. Rather than model that, ask the
+                            # same question the check asks and lengthen until the answer is yes.
+                            _need = ww / 2 + CARRIED_LANDING_FLOOR_FT / self.ftpx  # the check's own carried-way floor
+                            _rr = math.radians(rot)
+                            _cu, _su = math.cos(_rr), math.sin(_rr)
+                            for _grow in range(14):
+                                _try = _span * (1.0 + 0.12 * _grow)
+                                if all(
+                                    min(
+                                        seg_dist(p[0] + _qu * _cu * _try / 2 - _qv * _su * rw / 2, p[1] + _qu * _su * _try / 2 + _qv * _cu * rw / 2, wpts[k2], wpts[k2 + 1])
+                                        for k2 in range(len(wpts) - 1)
+                                    )
+                                    >= _need
+                                    for _qu, _qv in ((-1, -1), (-1, 1), (1, -1), (1, 1))
+                                ):
+                                    _span = _try
+                                    break
+                            self.bridge(p[0], p[1], rot, _span, rw)
                             n += 1
         return n
 
