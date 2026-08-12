@@ -6682,6 +6682,43 @@ def _plank_bed(bend=False):
     return s
 
 
+def test_the_way_a_row_FRONTS_does_not_refuse_it_its_own_tread():
+    """`skip` means the same thing to the tread test as it does to `_near_corridor`, and for the same
+    reason: a frontage row lines the way it fronts, so that way's own surface must not be what
+    refuses it. Matched by GEOMETRY as well as identity - a frontage written as a fresh two-point
+    list over a sub-stretch is the shape that once cost the pool two thirds of its shop frontage."""
+    s = Settlement(1400, 1400, seed=3)
+    s.meta(name="Front", scale="hamlet", ftpx=1, toscale=True, households=12)
+    way = [[200.0, 700.0], [1200.0, 700.0]]
+    s.lane(way, width=16, clearance=22)
+    x, y, w, h = 700.0, 706.0, 62.0, 56.0  # a footprint squarely over the tread
+    assert s._on_a_tread(x, y, w, h), "the fixture must actually sit on the tread, or it proves nothing"
+    assert not s._on_a_tread(x, y, w, h, skip=way), "the very polyline registered must be skipped"
+    assert not s._on_a_tread(x, y, w, h, skip=[[400.0, 700.0], [900.0, 700.0]]), "a SUB-STRETCH of the way is the same ground"
+    assert not s._on_a_tread(x, y, w, h, skip=[[[400.0, 700.0], [900.0, 700.0]]]), "a LIST of fronted stretches is accepted too"
+    assert not s._on_a_tread(x, y, w, h, skip=[[100.0, 700.0], [1300.0, 700.0]]), "a stretch LONGER than the way is the same ground too"
+    assert s._on_a_tread(x, y, w, h, skip=[[700.0, 200.0], [700.0, 1200.0]]), "a way merely CROSSING must still refuse"
+    assert s._on_a_tread(x, y, w, h, skip=[[700.0, 700.0]]), "a degenerate one-point skip excuses nothing"
+
+
+def test_a_house_is_refused_a_seat_whose_DRAWN_corner_lands_on_a_lane():
+    """THE RATCHET for the engine's "placement tests a different footprint than the one drawn" debt,
+    at the lane (this skill's CLAUDE.md, "CENTER vs FOOTPRINT" item 3).
+
+    `_near_corridor` measures a candidate's CENTRE against a way's soft clearance, so a homestead
+    whose drawn steading is wider than the placer assumed could stand a legal distance off by its
+    centre and still put a corner on the road - which `houses_clear_of_lanes` reports as a house in
+    the lane. The tread is now tested against the FOOTPRINT, so the same centre is legal for a
+    narrow building and refused for a wide one. Both halves are asserted: a test that refuses
+    everything decides nothing."""
+    s = Settlement(1400, 1400, seed=3)
+    s.meta(name="Tread", scale="hamlet", ftpx=1, toscale=True, households=12)
+    s.lane([[200.0, 700.0], [1200.0, 700.0]], width=16, clearance=22)
+    cx, cy = 700.0, 734.0  # 34 px off the centreline: clear of the 22 px clearance by its centre
+    assert s._fits(cx, cy, 46.0, 28.0), "the base footprint stands clear of the lane and must be allowed"
+    assert not s._fits(cx, cy, 62.0, 56.0), "the DRAWN footprint puts a corner on the tread and must be refused"
+
+
 def test_a_footplank_is_never_laid_across_the_hem_crop():
     """THE RATCHET for the 2026-08-11 slide condition. A plank slides clear of houses and of banks
     that open onto marsh; it must also slide clear of the DRY hem, because a deck laid on a hatake

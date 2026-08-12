@@ -648,28 +648,32 @@ def build_comb(
     value is therefore grain = 2 / ftpx, so a "too narrow to plant" test means the same
     real-world size on every map.
 
-    WHAT THE HAND-AUTHORED HAMLETS PASS is 1.0, not 2.0, and that is a real inconsistency rather
-    than a preference: at 1 ft/px it makes their "too narrow to plant" thresholds mean half the
-    real size they mean on a village sheet, and their irrigation ditches half the width.
+    WHAT THE HAND-AUTHORED HAMLETS PASS is 1.0, not 2.0. That was recorded as a silent
+    inconsistency for a long time - at 1 ft/px it makes their "too narrow to plant" thresholds
+    mean half the real size they mean on a village sheet, and their irrigation ditches half the
+    width - and it has now been settled by testing rather than by preference (2026-08-12).
 
-    IT HAS BEEN TESTED, so this is a decision rather than an oversight (2026-08-12). The old
-    obstacle was the bridge arithmetic: wider ditches produced planks and carried-way decks whose
+    THE PRINCIPLED VALUE WORKS AT THIS TIER. Two obstacles used to stop it, and both are fixed.
+    The first was the bridge arithmetic: wider ditches produced planks and carried-way decks whose
     abutments stood in the channel, because both paths sized a deck from a nominal width rather
-    than from the water actually beneath it. That is FIXED - `channel_footbridges` sizes a plank
-    to the widest course under it, junctions included, and `bridges()` grows a carried-way deck
-    until its corners clear the crossed polyline - and 2.0 now gets much further than it did.
+    than from the water actually beneath it. `channel_footbridges` now sizes a plank to the widest
+    course under it, junctions included, and `bridges()` grows a carried-way deck until its corners
+    clear the crossed polyline. The second was the communal WINDBREAK: at the coarser grain the
+    crop geometry shifts enough that a belt derived from the house cloud's EXTREMES could land off
+    the cluster altogether on a tall narrow settlement (measured: 9 surviving clumps, 350 px from
+    the nearest farmhouse). A belt sampled as a PROFILE across the wind instead of a box around the
+    extremes does not have that failure mode.
 
-    What it still breaks is the communal WINDBREAK. At the coarser grain the crop geometry shifts
-    enough that a belt derived from the house cloud's extremes can end up off the cluster
-    altogether on a tall narrow settlement (measured: 9 surviving clumps, 350 px from the nearest
-    farmhouse, failing both `village_windbreak_embraces_cluster` and `..._scales_with_cluster`).
-    That is a robustness problem in the belt derivation, not an argument about this constant - but
-    it is a piece of work, and moving the tier also means re-rolling every comb map in the pool
-    with a `settlement-review` pass on each.
+    With both fixed, the scripted hamlet tier passes the principled 2.0 and a 36-map cohort gates
+    clean on it (`hamletgen.py`, `GRAIN`, which carries the same reasoning).
 
-    So: the hamlet tier passes 1.0, deliberately, and the scripted generator matches it (`GRAIN` in
-    hamletgen.py carries the same reasoning). The named blocker is the belt, and it is the thing to
-    fix before revisiting this. Left unscaled, a city's carve dropped
+    THE POOL'S HAND-AUTHORED HAMLETS ARE STILL AT 1.0, and moving them is a separate job rather
+    than a leftover: it re-rolls every comb map in the pool and each one needs a `settlement-review`
+    pass, since the change is visible (ditches at their true width, coarser minimum plots). So the
+    disagreement is no longer silent - the principled value is demonstrated, the cost of adopting
+    it pool-wide is named, and a hamlet gen passing 1.0 is doing so knowingly.
+
+    Left unscaled, a city's carve dropped
     sectors, head plots, and closers that a village would have planted, leaving parchment
     holes inside the fan - the white-spots bug the villages fixed once (canal-side closers,
     the closing rank) and the cities then re-exposed at their coarser grain (2026-07-21).

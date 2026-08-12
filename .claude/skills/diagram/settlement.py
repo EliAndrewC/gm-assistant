@@ -2044,6 +2044,11 @@ class Settlement:
         self._pending_farmsteads: list[Any] = []  # farmhouses awaiting their threshing yard (drawn by farmsteads())
         self._rng_scope_n: dict[tuple[Any, ...], int] = {}  # per-key call counter for rng_scope (see its docstring)
         self.corridors: list[Any] = Indexed()  # polylines houses must avoid (Indexed: _near_corridor keeps a spatial index on it)
+        # THE DRAWN TREAD of every way, as (polyline, half-width). Distinct from `corridors`, which
+        # is a SOFT reservation (clearance, slack, standoff) tested against a candidate's CENTRE.
+        # The tread is the hard thing - the surface a cart runs on - and a building's FOOTPRINT may
+        # not overlap it at any angle. See `_fits`, which tests them differently on purpose.
+        self.treads: list[Any] = []
         self._samurai_ward_interiors: list[Poly] = []  # closed samurai-ward region(s), cached by s.ward - s.building refuses WARD_BARRED_KINDS inside them
         self.bound: Any = None  # optional bounding polygon: placement stays inside it (city wall)
         self.view: Any = None  # optional (ox,oy,w,h) viewBox crop - render/checks treat it as the map edge
@@ -4282,6 +4287,7 @@ class Settlement:
         self.M.setdefault("lanes", []).append({"pts": [[x, y] for x, y in pts], "worn": worn, "w": width, "connector": connector})
         self.M["lane"] = [[x, y] for x, y in pts]
         self.corridors.append((pts, clearance))
+        self._record_tread(pts, width / 2)
 
     def street(self, pts: Any, width: float | None = None, label: Any = None, main: bool = False) -> None:
         """A town street (packed earth): the gate-to-yamen main avenue (main=True) or a
@@ -13259,12 +13265,76 @@ class Settlement:
                 return False
         return True
 
+    def _record_tread(self, pts: Any, half: float) -> None:
+        """Register a way's DRAWN tread, so `_fits` can keep whole footprints off it (see `_on_a_tread`).
+
+        ONLY `lane` calls this today, and the scope is a deliberate decision rather than an
+        oversight. WATER (streams, channels, canals, the moat, the aqueduct) is out because its
+        keep-out is `hard_polys`, which is already footprint-tested, and so are the BARRIERS (wall,
+        city wall, ward fence), whose corridors are a standoff rather than a surface anything is
+        drawn on. The other TRAFFICKED ways - street, alley, road, ring road, towpath - were tried
+        (2026-08-12) and reverted the same day: each of them already inflates its corridor by a
+        half-diagonal's worth of margin precisely to cover this gap by hand, so the tread test
+        changes no verdict they were getting wrong, and the extra tightening cost Tango a public
+        well, tipping `city_well_density_sufficient` into the documented well-versus-collision-
+        circle squeeze (this skill's CLAUDE.md, "The collision circle is now blocking FEATURES").
+        Extending the registry is one `_record_tread` call per way plus a pool re-roll with a
+        `settlement-review` per map - a job, not a side effect. Do it when the collision circle is
+        replaced by a real footprint test, which frees the ground those wells need."""
+        self.treads.append(([(float(q[0]), float(q[1])) for q in pts], float(half), pts))
+
+    def _on_a_tread(self, x: float, y: float, w: float, h: float, skip: Any = None) -> bool:
+        """Would a building of this size, at this spot, have any CORNER on a way's drawn tread?
+
+        THE DEBT THIS PAYS (this skill's CLAUDE.md, "placement tests a different footprint than the
+        one drawn"): `_near_corridor` tests a candidate's CENTRE against a way's soft clearance, so
+        a building whose drawn footprint is wider than the placer assumed can stand a legal distance
+        off by its centre and still put a corner on the road. Measured: a well-off farmhouse (the
+        minka's length varies to 1.35x) ended 2.4 px from a track's centreline with its centre a
+        legal 34 px away, which `houses_clear_of_lanes` reports as a house standing in the lane.
+
+        The two tests are kept SEPARATE on purpose. Footprint-testing the whole clearance was tried
+        once for `block_polys` and reverted, because a clearance is slack that a footprint routinely
+        overhangs by a few px; the TREAD is not slack. So the clearance keeps its centre test and
+        the tread gets an exact one, with the same 2 px hair `houses_clear_of_lanes` allows."""
+        if not self.treads:
+            return False
+        quad = rot_rect(x, y, w, h, 0.0)
+        corners = [*quad, (x, y)]
+        return any(not self._tread_skipped(orig, skip) and any(seg_dist(qx, qy, tp[i], tp[i + 1]) < half + 2.0 for qx, qy in corners for i in range(len(tp) - 1)) for tp, half, orig in self.treads)
+
+    def _tread_skipped(self, poly: Any, skip: Any) -> bool:
+        """Is this tread the way the caller is FRONTING, and so exempt?
+
+        `_near_corridor` has excused the fronted way since frontage rows existed, and its own notes
+        record what happens when a skip is matched too narrowly: a frontage written as a fresh
+        two-point list over a sub-stretch of a street stopped matching by identity and the street's
+        own band refused the shops meant to line it - two thirds of the pool's commercial frontage,
+        silently. So this matches the same way that one does: identity OR geometry, with either
+        polyline allowed to contain the other, since a fronted stretch may be shorter than the way
+        or span several of its segments."""
+        if skip is None:
+            return False
+        nested = bool(len(skip)) and isinstance(skip[0], (list, tuple)) and len(skip[0]) == 2 and all(isinstance(v, (int, float)) for v in skip[0])
+        for q in [skip] if nested else list(skip):
+            if q is poly:
+                return True
+            if q is None or len(q) < 2 or len(poly) < 2:
+                continue
+            if all(min(seg_dist(pt[0], pt[1], q[k], q[k + 1]) for k in range(len(q) - 1)) <= 3.0 for pt in poly):
+                return True
+            if all(min(seg_dist(pt[0], pt[1], poly[k], poly[k + 1]) for k in range(len(poly) - 1)) <= 3.0 for pt in q):
+                return True
+        return False
+
     def _fits(self, x: float, y: float, w: float, h: float, skip: Any = None, corridors: bool = True, row_mates: Any = None, row_axis: Any = None, disc: bool = False) -> bool:
         if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:  # keep clear of edges + title
             return False
         if self.bound and not point_in_poly(x, y, self.bound):  # stay inside a bounding ring (city wall)
             return False
         if self._in_blocked(x, y) or (corridors and self._near_corridor(x, y, skip)):
+            return False
+        if corridors and self._on_a_tread(x, y, w, h, skip):
             return False
         if not self._hard_clear(x, y, w, h):
             return False

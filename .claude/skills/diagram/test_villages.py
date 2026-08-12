@@ -100,6 +100,16 @@ GEN_TIME_BUDGETS = {
     "tango": 50.0,  # ~10s solo (24s)
     "kikuta": 50.0,  # ~10s solo (35s): its ground-cover scatter, the pass's first big find
     "hoshizora": 50.0,  # ~10s solo (15s)
+    # THE SCRIPTED HAMLETS (2026-08-12) are slow for a reason that is not the pathological shape this
+    # guard exists for, and the reason is inherent rather than a regression: `hamletgen.fit_field`
+    # BISECTS a size multiplier against the drawn plot area, carving the whole comb several times per
+    # map to land the paddy acreage the household count implies - so one map is several maps' worth of
+    # carve. Passing `build_comb` its principled `grain` of 2.0 (see waterfields.py) added a further
+    # ~35% on top, measured on Sawada: 14.6s solo at 1.0, 19.8s at 2.0, from the wider ditches and the
+    # extra footbridge arithmetic they need. Entries are ~4x the solo measurement, as above.
+    "sawada": 80.0,  # ~20s solo - the biggest cohort map, 19 households
+    "kashikawa": 65.0,  # ~16s solo
+    "inashiro": 50.0,  # ~11s solo
 }
 
 
