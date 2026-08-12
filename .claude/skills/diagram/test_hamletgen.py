@@ -402,3 +402,21 @@ def test_a_way_that_misses_the_watercourse_lands_on_nothing() -> None:
     assert not hg.crossing_lands_on_crop((0.0, 0.0), (10.0, 0.0), (0.0, 50.0), (10.0, 50.0), [SQUARE])
     # ...and one that meets it inside the crop does
     assert hg.crossing_lands_on_crop((700.0, 300.0), (700.0, 900.0), (400.0, 700.0), (1000.0, 700.0), [SQUARE])
+
+
+def test_a_pond_laid_over_the_crop_is_recognized() -> None:
+    """The predicate `stage_sink` uses to check its own clamp: `pond_clear_of_field`'s two tests, on
+    the same envelope, so the siting and the check cannot disagree."""
+    plan = a_plan()
+    assert hg.pond_clear_of_crop(plan, (700.0, 1400.0), 100.0, 60.0), "well below the field: clear"
+    assert not hg.pond_clear_of_crop(plan, (700.0, 700.0), 100.0, 60.0), "sitting in the middle of it: not clear"
+    assert not hg.pond_clear_of_crop(plan, (700.0, 1040.0), 100.0, 60.0), "rim overlapping the low edge: not clear"
+
+
+def test_a_way_is_clipped_at_a_watercourse_as_well_as_at_a_crop() -> None:
+    """A cluster's lane arms stop at the bank: they serve the houses, and a lane that crosses a ditch
+    gets a deck sized for whatever angle it happens to meet the water at."""
+    ditch = [((500.0, 0.0), (500.0, 400.0))]
+    clipped = hg.clip_to_clear([(100.0, 200.0), (900.0, 200.0)], [], 10.0, lines=ditch)
+    assert clipped and max(p[0] for p in clipped) < 500.0, "the arm must stop short of the water"
+    assert hg.clip_to_clear([(100.0, 200.0), (300.0, 200.0)], [], 10.0, lines=ditch) == [(100.0, 200.0), (300.0, 200.0)], "a run that never reaches the water is untouched"
