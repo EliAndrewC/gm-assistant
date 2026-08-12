@@ -1185,7 +1185,15 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         # crossbar can overrun into the barley - and a lane may touch a plot's edge but never cross
         # its interior. Shortening the arm is the honest fix: the lane simply ends where the crop
         # starts, which is what a village lane does.
-        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], crops, 20.0)
+        # The arms are clipped at WATER as well as at crop. A cluster's internal lanes serve the
+        # houses; they have no business crossing a ditch, and a lane that does gets a deck from
+        # `s.bridges()` sized for the angle it happens to meet the water at - which on a slant comes
+        # up short (`bridges_span_their_water`). The spur and the connector are the ways that leave,
+        # and they are routed to meet water squarely; an arm just stops at the bank.
+        # ...clipped against the DRAWN water lines as well as the recorded ones: `field_channel`
+        # fillets its polyline before drawing it, and a bridge is decked on what was drawn.
+        drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
+        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], crops, 20.0, lines=list(plan.watercourses) + drawn_water)
         if len(arm) >= 2:
             s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)
     s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
@@ -1216,7 +1224,7 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     s.lane(connector_track(plan, gate, avoid=[list(plan.envelope), *crops]), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
 
 
-def clip_to_clear(pts: Poly, obstacles: Sequence[Poly], margin: float, step: float = 8.0) -> Poly:
+def clip_to_clear(pts: Poly, obstacles: Sequence[Poly], margin: float, step: float = 8.0, lines: Sequence[tuple[Pt, Pt]] = (), line_margin: float = 14.0) -> Poly:
     """Shorten a polyline so it stops before the first ground it may not cross.
 
     Used on the cluster's lane arms. Dragging an offending VERTEX back toward the cluster was tried
@@ -1224,10 +1232,12 @@ def clip_to_clear(pts: Poly, obstacles: Sequence[Poly], margin: float, step: flo
     allowed, and it distorts the skeleton on the way. Truncating is both simpler and more honest -
     the lane ends where the crop begins, which is what a village lane does. Always returns at least
     a two-point line so the caller still has a lane."""
-    if not obstacles:
+    if not obstacles and not lines:
         return pts
 
     def fouled(q: Pt) -> bool:
+        if any(seg_dist(q[0], q[1], a, b) < line_margin for a, b in lines):
+            return True
         return any(point_in_poly(q[0], q[1], list(o)) or min(seg_dist(q[0], q[1], o[j], o[(j + 1) % len(o)]) for j in range(len(o))) < margin for o in obstacles)
 
     out: Poly = [pts[0]]
