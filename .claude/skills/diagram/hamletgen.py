@@ -772,6 +772,16 @@ def edge_run(plan: SitePlan, frm: Pt) -> float:
     return max(0.0, min(spans)) if spans else 0.0  # pragma: no cover - the fall is never the zero vector
 
 
+def pond_clear_of_crop(plan: SitePlan, center: Pt, prx: float, pry: float) -> bool:
+    """The two tests `pond_clear_of_field` makes, on the same envelope: no rim point inside the crop,
+    no crop vertex inside the pond."""
+    env = list(plan.envelope)
+    rim = [(math.cos(a), math.sin(a)) for a in [i * math.pi / 12 for i in range(24)]]
+    if any(point_in_poly(center[0] + prx * ux, center[1] + pry * uy, env) for ux, uy in rim):
+        return False
+    return not any(((v[0] - center[0]) / prx) ** 2 + ((v[1] - center[1]) / pry) ** 2 <= 1.0 for v in env)
+
+
 def pond_setback(plan: SitePlan, out: Pt, prx: float, pry: float, step: float = 14.0, limit: float = 900.0) -> float:
     """How far DOWNSLOPE of the drain outfall the pond must stand to clear the crop entirely.
 
@@ -929,8 +939,17 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
         stage_sink(s, plan)  # pragma: no cover - the pond-to-offmap fallback; no cohort fan currently needs a tameike further than the limit
         return  # pragma: no cover - the pond-to-offmap fallback; no cohort fan currently needs a tameike further than the limit
     pcx, pcy = out[0] + dx * back, out[1] + dy * back
-    pcx = max(prx + 20.0, min(plan.W - prx - 20.0, pcx))
-    pcy = max(pry + 20.0, min(plan.H - pry - 20.0, pcy))
+    clamped = (max(prx + 20.0, min(plan.W - prx - 20.0, pcx)), max(pry + 20.0, min(plan.H - pry - 20.0, pcy)))
+    if math.hypot(clamped[0] - pcx, clamped[1] - pcy) > 1.0 or not pond_clear_of_crop(plan, clamped, prx, pry):
+        # THE CLAMP UNDOES THE SOLVE, so a clamped pond is no pond. `pond_setback` walks the tameike
+        # downslope until its rim clears the crop; the clamp then pulls it back onto the canvas - and
+        # straight back onto the rice it had just cleared (`pond_clear_of_field`). The reservoir has
+        # nowhere to go on this map, which is the same finding as a set-back over the limit, so it
+        # takes the same answer: the field drains off the frame instead.
+        plan.water_sink = "offmap"
+        stage_sink(s, plan)
+        return
+    pcx, pcy = clamped
     s.pond(pcx, pcy, prx, pry)
     plan.sink_pond = (pcx, pcy, prx, pry)
     s.M["meta"]["pond_role"] = "drainage"
@@ -1074,6 +1093,13 @@ def seat_cluster(plan: SitePlan, dry_plots: Sequence[Poly] = (), drain: Poly | N
         # not enough (that was the first attempt): a point can stand clear of the hem while the belt
         # that goes 250 px behind it lands squarely in the plots.
         if back_fouled(mid, (nx, ny), dep, dry_plots) > 0.30:
+            continue
+        # HARD 3: the band has to FIT ON THE CANVAS. A margin near the canvas edge seats its band
+        # centre outside it - and `_fits` refuses every candidate beyond `s.bound`, so the cluster
+        # simply does not get built: seed 106 seated 7 farmhouses of a declared 15, with the band's
+        # centre 56 px off the east edge. The map is not wrong, the seat is; another margin will do.
+        seat_c = (mid[0] + nx * (dep + 12.0), mid[1] + ny * (dep + 12.0))
+        if not (lat * 0.5 <= seat_c[0] <= plan.W - lat * 0.5 and lat * 0.5 <= seat_c[1] <= plan.H - lat * 0.5):
             continue
         # 1.0 x facing the wind (the back), 0.8 x being upslope. Both express the same siting
         # instinct from two directions, and weighting the wind slightly higher keeps the windbreak
