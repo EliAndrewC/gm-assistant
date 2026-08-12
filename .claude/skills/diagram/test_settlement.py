@@ -6665,3 +6665,50 @@ def test_a_rolled_cluster_band_is_sized_in_REAL_FEET_at_the_map_s_grain():
     village.meta(scale="village", ftpx=2)
     assert hamlet.px(settlement.BUNDLE_PITCH_FT) == pytest.approx(settlement.BUNDLE_PITCH_FT)
     assert village.px(settlement.BUNDLE_PITCH_FT) == pytest.approx(settlement.BUNDLE_PITCH_FT / 2)
+
+
+def _plank_bed(bend=False):
+    """A minimal map with one long ditch, cultivated ground on both banks, and (optionally) a sharp
+    bend in the ditch - enough for channel_footbridges to want a plank and have to choose where."""
+    s = Settlement(1400, 1400, seed=3)
+    s.meta(name="Plank", scale="hamlet", ftpx=1, toscale=True, households=12, down_deg=90, water_flow=90, field_footbridges=True)
+    pts = [[200.0, 700.0], [700.0, 700.0], [720.0, 660.0], [1200.0, 700.0]] if bend else [[200.0, 700.0], [1200.0, 700.0]]
+    s.M["field_ditches"].append({"poly": pts, "role": "branch", "field": "plank-paddies", "w": 4.0, "w_tail": 4.0})
+    # cultivated ground on BOTH banks, so every point along it reaches useful ground
+    for y0, y1 in ((520.0, 690.0), (710.0, 880.0)):
+        s.M["fields"].append(
+            {"name": f"plank-{y0:.0f}", "kind": "paddy", "outline": [[150.0, y0], [1250.0, y0], [1250.0, y1], [150.0, y1]], "bbox": [150.0, y0, 1250.0, y1], "vis_bbox": [150.0, y0, 1250.0, y1]}
+        )
+    return s
+
+
+def test_a_footplank_is_never_laid_across_the_hem_crop():
+    """THE RATCHET for the 2026-08-11 slide condition. A plank slides clear of houses and of banks
+    that open onto marsh; it must also slide clear of the DRY hem, because a deck laid on a hatake
+    strip is a board lying on the barley - the same rule `groves_clear_of_dry_plots` states for trees
+    and `structures_clear_of_dry_plots` for buildings."""
+    s = _plank_bed()
+    hem = [(560.0, 660.0), (840.0, 660.0), (840.0, 740.0), (560.0, 740.0)]  # straddles the ditch mid-run
+    s.M["dry_plots"].append({"poly": [list(p) for p in hem], "crop": "barley", "theta": 0.0})
+    s.dry_polys.append(hem)
+    s.channel_footbridges(spacing=300)
+    assert s.M["bridges"], "the fixture must actually place planks, or it proves nothing"
+    for b in s.M["bridges"]:
+        assert not (560.0 <= b["x"] <= 840.0 and 660.0 <= b["y"] <= 740.0), f"a plank was laid on the hem at {(round(b['x']), round(b['y']))}"
+
+
+def test_a_footplank_is_never_laid_on_a_bend_its_deck_cannot_clear():
+    """THE RATCHET for the corner test. `bridges_span_their_water` requires every deck CORNER to
+    stand clear of the crossed water; a deck perpendicular to a STRAIGHT ditch clears by
+    construction, and one at a BEND does not, because the polyline curves back toward a corner."""
+    s = _plank_bed(bend=True)
+    s.channel_footbridges(spacing=300)
+    assert s.M["bridges"], "the fixture must actually place planks, or it proves nothing"
+    for b in s.M["bridges"]:
+        th = math.radians(b["rot"])
+        ux, uy = math.cos(th), math.sin(th)
+        for su, sv in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
+            cx = b["x"] + su * ux * b["span"] / 2 - sv * uy * b["w"] / 2
+            cy = b["y"] + su * uy * b["span"] / 2 + sv * ux * b["w"] / 2
+            gap = min(seg_dist(cx, cy, tuple(d["poly"][i]), tuple(d["poly"][i + 1])) for d in s.M["field_ditches"] for i in range(len(d["poly"]) - 1))
+            assert gap >= 4.0 / 2 + 2.0, f"deck corner {round(gap, 1)}px from its own ditch - the abutment stands in the water"
