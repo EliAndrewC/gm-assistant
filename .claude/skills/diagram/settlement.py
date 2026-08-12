@@ -12098,7 +12098,7 @@ class Settlement:
                             < _need
                             for su, sv in ((-1, -1), (-1, 1), (1, -1), (1, 1))
                         ):
-                            continue
+                            continue  # pragma: no cover - the corner rejection. It fires on real geometry (a scripted-cohort hamlet's branch ditch, whose gentle curve brought a deck corner back within the water at the ditch's head) but no pool map and no synthetic bed reproduces it: every fixture tried either finds a clear offset first or fails the useful-ground test before reaching here. The guard stays - the case it prevents shipped.
                     self.bridge(px, py, deck, span_here, plank_w)
                     self.M["bridges"][-1]["foot"] = True  # a standalone footplank (checked by footbridges_reach_useful_ground)
                     break
