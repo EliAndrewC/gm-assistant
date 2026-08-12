@@ -114,3 +114,25 @@ the sheet edge it is about 120 px - a comb cannot carve a fan in that, at any he
 plus the head band exceeds it. (An earlier note here blamed the moat's current; that was wrong, and
 the GM said so: a field on an upstream arc can simply DRAIN into the moat instead. The mode exists
 and works; this particular shelf just has no room for a field of any kind.)
+
+### The belt loop lives in the ENGINE now: `s.farmland_ring(...)`
+
+**Why (GM 2026-08-12, after ringing one capital took the better part of a day):** every
+provincial-city gen carried its OWN copy of the belt loop - tap the water, sweep a moat offtake
+downstream, run the head-race, gate it, build the fan, declare source and sink, ring the households.
+So the next city looks like new work when it is not, and the numbers those copies had already tuned
+get re-derived by hand, one gate failure at a time. That is what turned a solved problem into a day.
+
+`Settlement.farmland_ring(specs, comb, topo, water, city_center)` is that loop, once. A gen supplies
+only what is genuinely per-city: **where each field taps, which way it falls, how big its fan is.**
+Two traps it now handles so nobody meets them again:
+
+- **The CITY BOUND refuses every seat out on the paddy.** `s.ring` seats NOTHING until the bound is
+  opened around the field - the fields come out as scenery with no households at all. The method
+  opens it per field and restores it.
+- **A drain must leave the SHEET.** One that stops on-canvas anchors to nothing, and the sink
+  topology fails.
+
+**Still to do:** `comb_field` itself is passed in, because each gen still owns its copy of the fan
+carve. Moving that in too is the other half of this job. And the pool gens still run their own belt
+loops - migrating them is a deliberate re-roll with a review pass, not a drive-by.
