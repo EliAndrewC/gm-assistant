@@ -1857,6 +1857,32 @@ def moat_current_at(ring: Any, inlet: Pt, outlet: Pt, pt: Pt) -> tuple[float, fl
     return None if L == 0 else (vx / L, vy / L)
 
 
+def _seg_point(pt: Pt, a: Pt, b: Pt) -> Pt:
+    """The point on segment a-b nearest `pt` - so a tap is DERIVED from the watercourse rather than
+    eyeballed beside it (every hand-picked tap in the capital's first ring stood on dry ground)."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    ll = dx * dx + dy * dy or 1.0
+    t = max(0.0, min(1.0, ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dy) / ll))
+    return (a[0] + t * dx, a[1] + t * dy)
+
+
+def _poly_centroid(poly: Poly) -> Pt:
+    return (sum(q[0] for q in poly) / len(poly), sum(q[1] for q in poly) / len(poly))
+
+
+def _drain_tail(dr: Any, span: float = 52.0) -> list[Pt]:
+    """The trailing ~`span` px of a drain, as [start, end]. The drain's LAST SEGMENT is only a few
+    px at the current paddy calibration, and a topology bend on a <10 px chord cannot stay obtuse;
+    walking back to a ~52 px chord gives it room, and the start still lies ON the drain."""
+    end = dr[-1]
+    acc = 0.0
+    i = len(dr) - 1
+    while i > 0 and acc < span:
+        acc += math.hypot(dr[i][0] - dr[i - 1][0], dr[i][1] - dr[i - 1][1])
+        i -= 1
+    return [tuple(dr[i]), tuple(end)]
+
+
 def moat_swept_tap(ring: Any, inlet: Pt, outlet: Pt, other: Pt, near: Pt, want_deg: float = 50.0, max_back: float = 220.0, arriving: bool = False) -> Pt:
     """The rim point an offtake should leave from so its throat is SWEPT DOWNSTREAM into the sluice.
 
@@ -11591,6 +11617,98 @@ class Settlement:
         self.add(f'<path d="{dd}" fill="none" stroke="#A9885A" stroke-width="{width:.1f}" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>')
         self.M.setdefault("towpaths", []).append({"pts": [[round(px_, 1), round(py_, 1)] for px_, py_ in pts], "w": round(width, 2)})
         self.corridors.append(([(px_, py_) for px_, py_ in pts], width / 2 + 8))
+
+    def farmland_ring(self, specs: Any, comb: Any, topo: Any, water: Any, city_center: Pt, rings: Any = ((28, 15), (22, 40), (14, 78))) -> list[Any]:
+        """RING A CITY WITH ITS FARMLAND - the belt of comb fields and the households that work them.
+
+        WHY THIS EXISTS AS ONE CALL (GM 2026-08-11/12, after a farmland ring took the better part of
+        a working day): "farmland ringing a city is the DEFAULT which should always happen", and the
+        pool had settled how to draw it long before it was written down - Tango farms 3.8% of its
+        sheet over 11 fields, Nagahara 2.3% over 7, Minami 3.0% over 6. But every one of those gens
+        carries its OWN copy of the belt loop, so the next city looks like new work when it is not,
+        and the numbers each copy has already tuned - tap sweep, gate placement, topology, ring
+        depths - get re-derived by hand one gate-failure at a time. That is what made a solved
+        problem cost a day. This is that loop, once.
+
+        Each spec is (name, hint, out_dir, down_deg, seed, fall, canal_a, canal_b, offtakes, src),
+        where `src` is "moat", "river" or "stream" - the kind the source topology declares. For each:
+
+          - TAP the nearest point on `water` to `hint`. A MOAT tap is swept downstream first
+            (`moat_swept_tap`), because an offtake leaving square sheds sediment into its own mouth
+            and says nothing on the page about which way the water runs.
+          - the head-race runs tap -> sluice, with the gate AT the sluice (the palette seam, where
+            tap water becomes canal water).
+          - `comb(name, sluice, down_deg, seed, fall, canal_a, canal_b, offtakes)` builds the fan and
+            returns (net, envelope, centroid) - the gens' own comb_field, passed in until it too
+            moves in here.
+          - SOURCE topology ends at a plot centroid INSIDE the outline; SINK topology walks back a
+            ~52 px chord of the drain so the declared bend has room to stay obtuse.
+          - the households ring the envelope at three depths. `s.ring` already walks a perimeter and
+            respects every keep-out; hand-rolling that walk is how a day gets spent.
+
+        A field whose ground cannot carry a fan is WITHDRAWN whole - comb_field records the field
+        before its water is declared, so a half-built one would sit on the map with no source, no
+        drain and no farmhouses, invisible to every rule that reads the water."""
+        out: list[Any] = []
+        for spec in specs:
+            name, hint, out_dir, down_deg, seed, fall, canal_a, canal_b, offtakes, src = spec
+            wpts = water(src)
+            tap = min(
+                (
+                    (
+                        seg_dist(hint[0], hint[1], wpts[k], wpts[k + 1]),
+                        _seg_point(hint, wpts[k], wpts[k + 1]),
+                    )
+                    for k in range(len(wpts) - 1)
+                ),
+                key=lambda t: t[0],
+            )[1]
+            _l = math.hypot(out_dir[0], out_dir[1]) or 1.0
+            ux, uy = out_dir[0] / _l, out_dir[1] / _l
+            sl = (tap[0] + ux * 78, tap[1] + uy * 78)
+            if src == "moat" and self.M.get("moat_flow"):
+                mf = self.M["moat_flow"]
+                tap = moat_swept_tap(wpts, mf["inlet"], mf["outlet"], sl, tap, want_deg=42.0, max_back=240.0)
+            mid = ((tap[0] + sl[0]) / 2 - uy * 7, (tap[1] + sl[1]) / 2 + ux * 7)
+            self.field_channel([tap, mid, sl], "#9CB4C8", 7, 7)
+            self.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(uy, ux)) + 90)
+            try:
+                net, env, cen = comb(name, sl, down_deg, seed, fall, canal_a, canal_b, offtakes)
+            except (ValueError, IndexError) as exc:
+                self.M["fields"] = [f for f in self.M.get("fields") or [] if f.get("name") != name]
+                self.M["field_ditches"] = [d for d in self.M.get("field_ditches") or [] if d.get("field") != name]
+                print(f"{name}: NO FIELD ({exc}) - withdrawn")
+                continue
+            plots = [c for c in net["channels"] if c["role"] == "drain"]
+            pd = max((p for pl in net["plots"] for p in [_poly_centroid(pl["poly"])]), key=lambda q: q[1])
+            topo([tap, sl, pd], {"kind": src}, {"kind": "field", "name": name})
+            if plots:
+                # the tail must leave the SHEET: a drain that stops on-canvas is a drain that goes
+                # nowhere, and the sink topology then anchors to nothing
+                tail = _drain_tail(plots[0]["pts"])
+                dvx, dvy = tail[1][0] - tail[0][0], tail[1][1] - tail[0][1]
+                dvl = math.hypot(dvx, dvy) or 1.0
+                reach = 60.0
+                for cand in (60.0, 140.0, 240.0, 380.0):
+                    reach = cand
+                    tx, ty = tail[1][0] + dvx / dvl * cand, tail[1][1] + dvy / dvl * cand
+                    if tx < -20 or ty < -20 or tx > self.W + 20 or ty > self.H + 20:
+                        break
+                topo(tail, {"kind": "drain", "name": name}, {"kind": "offmap"})
+                topo([tail[1], (tail[1][0] + dvx / dvl * reach, tail[1][1] + dvy / dvl * reach)], {"kind": "drain", "name": name}, {"kind": "offmap"}, draw_w=4.0)
+            # THE CITY BOUND REFUSES EVERY SEAT OUT ON THE PADDY, so it is opened around the field
+            # while its households are seated and restored afterwards. Without this the rings seat
+            # NOTHING and the fields come out as scenery - which is exactly what happened the first
+            # time this ring was built by hand.
+            xs = [q[0] for q in env]
+            ys = [q[1] for q in env]
+            keep = self.bound
+            self.bound = [[min(xs) - 260, min(ys) - 260], [max(xs) + 260, min(ys) - 260], [max(xs) + 260, max(ys) + 260], [min(xs) - 260, max(ys) + 260]]
+            for n_, gap in rings:
+                self.ring(("poly", env), n_, gap, ["plain"])
+            self.bound = keep
+            out.append((net, env, cen))
+        return out
 
     def quay(self, pts: Any, steps: int = 3, width: float | None = None) -> None:
         """A REVETTED QUAY FACE - the bank cut back, faced with stone or timber cribbing, with
