@@ -8211,24 +8211,59 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
     # no farm field overlaps a road OR a town street (the roadbed/street band must not clip
     # a field) - the road leading into town must not run through a farm field
+    # EVERY DRAWN WAY, not just the road and the streets (GM 2026-08-12: "Inashiro has village paths
+    # overlapping with rice paddies... I also think there's supposed to be a rule that paths don't
+    # pass through marshland"). Both rules below were written for roads and duly never saw a village
+    # LANE or an alley - the same shape as `ring_road_kept_clear`'s hand-written key list, and it
+    # looks exactly like a passing check. A lane is a narrower way, not a different KIND of thing:
+    # its tread is trodden earth that a farmer walks in the dry, so it belongs on the baulk between
+    # plots and on dry ground, never in the standing water of a paddy or across a reed marsh.
     roadways = []
     if road:
         roadways.append((road, M.get("road_width", 26) / 2 + 2))
     roadways += [(st["pts"], st["w"] / 2 + 2) for st in M.get("town_streets", [])]
+    roadways += [(ln["pts"], ln.get("w", 5) / 2 + 2) for ln in M.get("lanes", [])]
+    roadways += [(al["pts"], al.get("w", 10) / 2 + 2) for al in M.get("alleys", [])]
     if roadways:
+        # MEASURED AGAINST THE DRAWN CROP, not the whole envelope (settlement-review, 2026-08-12).
+        # A field's `outline` is not all rice: a comb fan's envelope carries a tail past the last
+        # plot that exists only to block house placement, and Ueda's gen says so in as many words.
+        # Testing the raw outline therefore reported a lane "in the paddy" where the render shows
+        # bare parchment with ten farmhouses standing on it - and the cure for that phantom broke a
+        # village spine in two, stranded 25 homesteads, and collapsed a shrine's seven-arch sando to
+        # one when the re-pack moved it. `vis_bbox` is the bbox of the drawn plot vertices and every
+        # field records it, so both sides can read the same thing: a way is only in the rice where
+        # it is inside the outline AND inside the drawn extent. The GM sees ink, not envelopes.
         bad_fr = []
         for f in fields:
             ol = f["outline"]
             n = len(ol)
+            vx0, vy0, vx1, vy1 = f.get("vis_bbox") or f.get("bbox") or (-1e9, -1e9, 1e9, 1e9)
+
+            def _drawn(px: float, py: float, _ol: Any = ol, _b: Any = (vx0, vy0, vx1, vy1)) -> bool:
+                return _b[0] <= px <= _b[2] and _b[1] <= py <= _b[3] and point_in_poly(px, py, _ol)
+
             for poly, hw in roadways:
-                if (
-                    any(seg_dist(px, py, poly[k], poly[k + 1]) < hw for px, py in ol for k in range(len(poly) - 1))
-                    or any(point_in_poly(rx, ry, ol) for rx, ry in poly)
-                    or any(segments_cross(poly[k], poly[k + 1], ol[e], ol[(e + 1) % n]) for k in range(len(poly) - 1) for e in range(n))
-                ):
+                # local names are suffixed: `gate()` is one enormous scope and `a`/`b`/`k`/`i` are
+                # all bound to other things in it (this skill's CLAUDE.md warns about exactly this).
+                fcr_hit = False
+                for fcr_k in range(len(poly) - 1):
+                    fcr_a, fcr_b = poly[fcr_k], poly[fcr_k + 1]
+                    fcr_n = max(2, int(math.hypot(fcr_b[0] - fcr_a[0], fcr_b[1] - fcr_a[1]) / 6.0))
+                    if any(_drawn(fcr_a[0] + (fcr_b[0] - fcr_a[0]) * t / fcr_n, fcr_a[1] + (fcr_b[1] - fcr_a[1]) * t / fcr_n) for t in range(fcr_n + 1)):
+                        fcr_hit = True
+                        break
+                if not fcr_hit:  # ...and the way's own tread may not reach a DRAWN plot edge either
+                    fcr_hit = any(_drawn(px, py) and seg_dist(px, py, poly[fcr_k2], poly[fcr_k2 + 1]) < hw for px, py in ol for fcr_k2 in range(len(poly) - 1))
+                if fcr_hit:
                     bad_fr.append(f["name"])
                     break
-        check("fields_clear_of_road", not bad_fr, f"field(s) run under a road/street: {sorted(set(bad_fr))}")
+        check(
+            "fields_clear_of_road",
+            not bad_fr,
+            f"field(s) run under a way: {sorted(set(bad_fr))} - a road, street, lane or alley is trodden ground and a "
+            f"paddy is standing water; a farm track runs on the BAULK between plots or round the field's margin, never through it",
+        )
 
         # ROADS STAY CLEAR OF MARSHLAND (GM, Hoshizora 2026-07: the tameike's reed fringe ran under
         # the Imperial Road). A roadbed is engineered dry ground; none of these maps draw a causeway,
@@ -8252,7 +8287,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         check(
             "roads_clear_of_marsh",
             not wet_road,
-            f"road/street runs through marshland at {sorted(set(wet_road))[:4]} - a roadbed is engineered dry ground; keep reed fringes and wet toes clear of every road and street",
+            f"a way runs through marshland at {sorted(set(wet_road))[:4]} - a roadbed is engineered dry ground and a "
+            f"village lane is trodden earth; neither survives a reed marsh without a causeway, and none of these maps "
+            f"draws one. Route the way round the wet ground, or put the marsh where the way is not",
         )
 
     # THE POND STAYS CLEAR OF THE RICE PADDIES (GM, Hoshizora 2026-07). A pond is a distinct water

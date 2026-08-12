@@ -170,8 +170,11 @@ s.lane([(CX - 150, CY - 4), (CX - 30, CY + 8), (CX + 90, CY + 4), (CX + 210, CY 
 _fp = s._nearest_field_point(CX, CY + 150)
 s.lane([(CX - 10, CY + 4), ((CX + _fp[0]) / 2 - 4, (CY + 4 + _fp[1]) / 2 + 8), (_fp[0] + 2, _fp[1] - 6)],
        width=5, clearance=32, worn=True)
-s.lane([(CX - 150, CY - 4), (CX - 360, CY + 40), (CX - 700, CY + 96), (CX - 1050, CY + 150)],
-       width=6, clearance=32, worn=True, connector=True)   # runs off the W edge to the wider world
+# THE TRACK LEAVES ABOVE THE WET TOE (GM 2026-08-12). The fall here is W, so the reed toe is the
+# WESTERN strip (x <= 536) - and the old route ran due W to x=-100, straight down it. It leaves N
+# instead, along the contour, which is the side the wider world is reached from on dry ground.
+s.lane([(CX - 150, CY - 4), (CX - 190, CY - 140), (CX - 230, CY - 480)],
+       width=6, clearance=32, worn=True, connector=True)   # runs off the N edge, above the reed toe, to the wider world
 
 _placed = 0
 for _ in range(150):

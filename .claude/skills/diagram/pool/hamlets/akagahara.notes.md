@@ -39,3 +39,15 @@ on a village sheet.
 - **No `notes.md` existed for this map until 2026-08-08**, so anything settled between its authoring
   and that date lives only in gen comments and may not be recorded here. Treat gaps as unrecorded
   rather than as decided.
+
+## Settled by the GM (2026-08-12): a path does not pass through marshland
+
+The GM ruled that village paths, not just roads, must keep off marsh - `roads_clear_of_marsh` and
+`fields_clear_of_road` had both built their way-list from the road and the town streets only, so
+neither had ever seen a lane. This map's connector ran 1,163 px through the reed toe - over half its length (it wound S to y=2740; the toe starts at y=1580), so it was re-routed to leave along the
+contour, above the reeds, and off the W edge instead of the S.
+
+The route is not a near miss: it keeps well clear of the recorded marsh polygon along its whole
+length. A `settlement-review` pass on the result is logged in the session that made the change; its
+open points were that the turn should read as terrain rather than as a bend made to satisfy a rule,
+and that the toe band spanning the full canvas is itself what leaves a valley map no downslope exit.

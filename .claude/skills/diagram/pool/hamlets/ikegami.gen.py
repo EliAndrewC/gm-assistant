@@ -158,8 +158,12 @@ s.lane([(CX - 4, CY - 150), (CX + 6, CY - 30), (CX + 4, CY + 90), (CX + 12, CY +
 _fp = s._nearest_field_point(CX + 140, CY)
 s.lane([(CX + 4, CY - 10), ((CX + _fp[0]) / 2 + 8, (CY - 10 + _fp[1]) / 2 - 4), (_fp[0] - 6, _fp[1] + 2)],
        width=5, clearance=32, worn=True)
-s.lane([(CX + 12, CY + 210), (CX - 44, CY + 430), (CX - 120, CY + 760), (CX - 210, CY + 1150), (CX - 300, CY + 1620)],
-       width=6, clearance=32, worn=True, connector=True)   # runs off the SW edge to the wider world
+# THE TRACK LEAVES ABOVE THE WET TOE (GM 2026-08-12: "there's supposed to be a rule that paths
+# don't pass through marshland"). It used to run S to (CX-300, CY+1620), i.e. y=2220, and the reed
+# toe starts at y=1490 - so the last 700 px of it lay in the marsh. A valley road runs ALONG the
+# valley and leaves by its side; only a causeway crosses the wet floor, and this map draws none.
+s.lane([(CX + 12, CY + 210), (CX - 44, CY + 430), (CX - 108, CY + 560), (CX - 190, CY + 620), (CX - 300, CY + 640), (CX - 460, CY + 660)],
+       width=6, clearance=32, worn=True, connector=True)   # runs off the W edge, above the reed toe, to the wider world
 
 _placed = 0
 for _ in range(140):
