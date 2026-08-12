@@ -70,55 +70,38 @@ Household counts land exactly on the declared figure on essentially every map, a
 acreage lands on the target the household count implies - the four demo maps come out at 19.4
 against 19.5, 26.0 against 26.0, 15.7 against 15.6 and 24.7 against 24.7 acres.
 
-**24 of 24 on seeds 1-24, and 11 of 12 on a HELD-OUT cohort (seeds 101-112)** - 35 of 36 overall,
-measured 2026-08-12. It was 7 of 12 when the experiment was first reported.
+**36 of 36: 24 of 24 on seeds 1-24, and 12 of 12 on a HELD-OUT cohort (seeds 101-112)**, measured
+2026-08-12. It was 7 of 12 when the experiment was first reported.
 
-Both numbers matter and neither alone is honest. Seeds 1-24 are the set the fixes were made against,
-so 24/24 is a fitted figure; the held-out dozen is the real measure, and its residue is the useful
-output, because it names the cases the tuning set happened not to contain. Two of the three held-out
-failures were general bugs worth fixing on their own account (a clamped pond put back on the crop it
-had just cleared; a cluster band seated off the canvas edge, which seated 7 farmhouses of 18). Run
-`cohort_audit.py --count 12 --seed <anything>` for a fresh set - that is the tool to reach for
-whenever the rate needs re-measuring, and the number it gives is worth more than this paragraph.
+Both cohorts matter and the held-out one is the honest measure - seeds 1-24 are the set the fixes
+were made against, and a rate measured on the seeds you debugged is a fitted number. The held-out
+dozen earned its keep: three of its failures were general bugs the tuning set never showed (a
+clamped pond put back on the crop it had just cleared, a cluster band seated off the canvas edge
+which built 7 farmhouses of 18, and a carried-way deck under-sized where the water bends). Run
+`cohort_audit.py --count 12 --seed <anything>` for a fresh set whenever the rate needs
+re-measuring; that number is worth more than this paragraph. `test_hamletgen.py` pins 4 of 4 as a
+ratchet.
 
-Every map in either cohort seats its declared households and lands its acreage on target; what
-varies is the siting collisions.
+Every map seats its declared households exactly, lands its acreage on the figure the household count
+implies, and clears all ~185 gate checks.
 
-**The one that still fails** is a carried-way deck: a cluster lane meets a stream at an angle
-`s.bridges()` cannot span, and `bridges_span_their_water` is right to reject the result. The
-routing-side levers are spent - the crossing angle limit is up to 62 degrees and the cluster's own
-lane arms are clipped at the bank against both the recorded and the drawn water lines. What is left
-is the ENGINE's deck sizing, which computes a span for the angle it finds rather than the span that
-angle needs; the footplank half of that was fixed in this pass (see `channel_footbridges`) and the
-carried-way half is the same arithmetic, in `s.bridges()`.
+## The boundary case that cost the most, and what fixed it
 
-`python3 cohort_audit.py --count 24` reproduces the sweep and reports any residue by check, with the
-gate's own message for each failure - which is the tool to reach for first when a change drops the
-rate. `test_hamletgen.py` pins 4 of 4 as a ratchet.
+A fan can put its collector's outfall exactly ON the field outline - inside by the geometry, outside
+by the rounding. `streams_avoid_fields` exempts a drain brook's anchored leg by trimming leading
+vertices STRICTLY INSIDE the outline, so such a brook is measured from its own anchor point, and
+then no route out of it can pass: the collector runs ALONG the boundary there, so every bearing
+within `drainage_junction_smooth`'s 65 degrees of it clips the crop and every bearing that clears
+the crop is a hairpin. Measured: the clear bearings began 73 degrees off the drain's heading.
 
-**Precision, not just speed.** The clearest single result is the field sizing. Ikegami's own
-docstring asks for ~20 acres of paddy for 15 households and its own closing line reports **15.3** -
-a 24% miss that nothing catches, because `field_fall` is a pixel length tuned by eye and no check
-reads acreage. `fit_field` bisects a size multiplier against the drawn plot area and lands the
-target, because `build_comb` is pure and fast and a script can afford to solve what a person has to
-estimate.
+Four routing-side attempts failed before the answer turned out to be one line in the CHECK: an
+outfall on the boundary is just as anchored as one inside it, so the trim now tolerates 2 px. The
+rule the check exists for - a stream RE-ENTERING or cutting across the crop - is untouched, and the
+whole pool, the check tests and the 695-manifest regression corpus stayed green.
 
-**Speed.** A hamlet generates and gates in ~11 seconds. The authored equivalent is a session's work.
-
-## The one map that does not pass, and why it is worth knowing
-
-A fan can put its collector's outfall exactly ON the field outline - neither inside nor out, within
-rounding - while the crop wraps a lobe around it. `streams_avoid_fields` exempts a drain brook's
-anchored leg by trimming leading vertices that are strictly INSIDE the outline, so a brook starting
-on the boundary is never trimmed and every route from it reads as crossing the crop. There is no
-bearing, junction distance or junction angle that fixes it: the START is the problem, and backing
-the start up the drain until it is genuinely inside does not help either, because the collector
-itself runs along the lobe.
-
-The honest fix is upstream, in `fit_field`: a fan whose outfall lands on its own outline should be
-disqualified the way one with a dangling supply-canal tail already is. That is a change to the fan
-SEARCH rather than to the routing, so it re-rolls maps, and it is the obvious next move rather than
-another routing patch. Recorded here rather than papered over.
+The lesson is the one this feature kept teaching: when a placer and a check disagree, the bug is as
+likely to be in the check's tolerance as in the placer's geometry - and a routing search that cannot
+win is worth suspecting before its twentieth variation.
 
 ## Raising the rate (2026-08-11)
 
