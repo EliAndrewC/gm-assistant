@@ -72,7 +72,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:  # so the module works when run as a script from anywhere
     sys.path.insert(0, HERE)  # pragma: no cover - under pytest the skill dir is already on the path
 
-from settlement import Settlement, knob_rng, point_in_poly, seg_closest, seg_dist, seg_intersect, skeleton_layout  # noqa: E402
+from settlement import Settlement, knob_rng, point_in_poly, seg_closest, seg_dist, seg_intersect, segments_cross, skeleton_layout  # noqa: E402
 from waterfields import build_comb  # noqa: E402
 
 Pt = tuple[float, float]
@@ -471,6 +471,14 @@ def crosses_poly(a: Pt, b: Pt, poly: Sequence[Pt], step: float = 8.0, cap: int =
     (`streams_avoid_fields`). One sample every 8 px is under the width of anything it is testing
     against, and the cap keeps a stray off-canvas endpoint from turning this into a million tests."""
     ring = list(poly)
+    # EXACT edge intersection first, which is what `streams_avoid_fields` and its siblings use. A
+    # sampled containment test cannot see a segment that clips a thin sliver of the outline - it
+    # enters and leaves between two samples, and no sample is ever strictly inside - so a brook
+    # routed by sampling alone was drawn across a lobe of the rice with every point it checked
+    # legitimately outside the crop. Sampling stays as the second half, because it also catches the
+    # case exact-crossing cannot: a segment lying wholly INSIDE the polygon, crossing no edge.
+    if any(segments_cross(a, b, ring[i], ring[(i + 1) % len(ring)]) for i in range(len(ring))):
+        return True
     n = min(cap, max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) / step)))
     return any(point_in_poly(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, ring) for i in range(n + 1))
 
@@ -807,46 +815,88 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
     if plan.water_sink != "pond":
         # OFF THE FRAME: the collector's brook runs on downhill and leaves the map, to join a stream
         # or another farm's drain somewhere the map does not have to care about. Its LENGTH is
-        # derived - the distance from the outfall to the canvas edge along the fall, plus a margin -
-        # because a fixed length only works on the canvas it was tuned for.
-        run = edge_run(plan, out) + 260.0
+        # derived per bearing below - the distance from the junction to the canvas edge along the
+        # heading actually taken - because a fixed length only works on the canvas it was tuned for,
+        # and a length derived for the FALL is wrong for any other bearing the search tries.
         heading = drain_heading(s, name) or (dx, dy)
-        # The junction leg runs on the BISECTOR of the drain's heading and the fall, so the brook
-        # turns through half the angle twice instead of all of it once - and half of any angle is
-        # obtuse. Leaving on the drain's own heading and then turning downhill makes ONE turn of the
-        # full angle, which on a collector running well across the fall is an acute hairpin
-        # (`water_channels_obtuse_turns`; a ditch does not fold back on itself).
-        bis = unit(heading[0] + dx, heading[1] + dy)
-        mid = (out[0] + bis[0] * 70.0, out[1] + bis[1] * 70.0)  # a smooth junction off the collector,
-        # ...THEN downhill and out. "Straight downhill" is right on most fans and wrong on the ones
-        # whose toe is concave, where the exit line clips back across the rice
-        # (`streams_avoid_fields`) - so the exit bearing is swung off the fall until it is clear of
-        # the crop, nearest bearing first, exactly the way the connector track is steered. A brook
-        # DOES follow the fall; the swing is small, and the alternative is a watercourse drawn
-        # through a paddy.
+        # THE ROUTE IS CHOSEN AS A WHOLE - junction and exit together.
+        #
+        # The brook leaves the collector at a junction point and then runs downhill off the frame.
+        # The junction sits on the BISECTOR of the drain's heading and the chosen exit, so the brook
+        # turns through half the angle twice rather than all of it once, and half of any angle is
+        # obtuse (`water_channels_obtuse_turns`; a ditch does not fold back on itself). It TURNS WITH
+        # THE BEARING for a reason learned the hard way: pinned to the fall line it was identical for
+        # every candidate, so when that one leg crossed the crop all nine bearings failed alike and
+        # the sweep dropped through to an untested straight line - the exact defect the sweep exists
+        # to prevent, chosen deliberately.
+        #
+        # "Straight downhill" is right on most fans and wrong on the ones whose toe is concave, where
+        # the exit clips back across the rice - so the bearing swings off the fall until the route is
+        # clear, nearest first. A brook does follow the fall; the swing is small, and the alternative
+        # is a watercourse drawn through a paddy.
+        #
+        # The junction leg is exempt from the crop test exactly when the GATE exempts it, on the same
+        # test: `streams_avoid_fields` trims leading vertices that are INSIDE the field outline, so a
+        # leg whose start is outside gets measured in full. Anything looser skips the one leg that
+        # was crossing - a 35%-along start was tried, and the crossing was in the first 35%.
+        # THE BROOK STARTS WHERE THE GATE WILL TRIM IT. `streams_avoid_fields` drops leading vertices
+        # that are strictly INSIDE the field outline, which is how it exempts the anchored end - but a
+        # collector whose outfall lands exactly ON the outline (within rounding) is neither in nor
+        # out, so nothing is trimmed and every route from it reads as crossing the crop. There is no
+        # bearing that fixes that; the start is the problem. Backing up the drain until the point is
+        # genuinely inside costs nothing - the brook is the drain's own continuation, so it still
+        # touches the collector at its end - and it lets the exemption do its job.
+        for back_off in (0.0, 12.0, 24.0, 40.0, 60.0):
+            cand = (out[0] - heading[0] * back_off, out[1] - heading[1] * back_off)
+            if point_in_poly(cand[0], cand[1], plan.envelope):
+                out = cand
+                break
         exit_deg = math.degrees(math.atan2(dy, dx))
-        for swing in (0, 12, -12, 24, -24, 38, -38, 54, -54):
-            th = math.radians(exit_deg + swing)
-            end = (mid[0] + math.cos(th) * run, mid[1] + math.sin(th) * run)
-            # Only the leg BEYOND the junction is tested. The first leg runs from the drain's
-            # outfall, which sits inside the field envelope by definition - so testing it is true
-            # for every bearing, every bearing is rejected, and the sweep drops through to the
-            # untested fallback. The result is the exact defect the sweep exists to prevent, chosen
-            # deliberately. (`streams_avoid_fields` exempts the same anchored leg, for the same
-            # reason: the field is where the drain legitimately connects.) `mid` must clear the crop
-            # itself, which is what keeps the junction from being drawn across the rice.
-            # The junction leg is exempt only when the outfall really is INSIDE the field - which is
-            # what makes it the anchored connection the gate also exempts. When the drain ends just
-            # OUTSIDE the envelope (a fan whose collector runs past its own rice), the leg back to
-            # the junction can clip a lobe of the crop, and skipping the test unconditionally lets
-            # exactly that through. Exempt what is anchored; test what is not.
-            anchored = point_in_poly(out[0], out[1], plan.envelope)
-            if not (point_in_poly(mid[0], mid[1], plan.envelope) or crosses_poly(mid, end, plan.envelope) or (not anchored and crosses_poly(out, mid, plan.envelope))):
+        anchored = point_in_poly(out[0], out[1], plan.envelope)
+        best: tuple[int, Poly] | None = None
+        # ...and the junction's DISTANCE from the outfall is searched too. At a fixed 70 px the
+        # junction can sit inside a lobe of the fan that the collector runs past, so every bearing
+        # crosses on its first leg and the best available route is still a bad one. Letting the brook
+        # run a little further before it turns is what gets it clear, and it is what a brook does.
+        # Ordered SWING-major and capped at +/-54 deg: `drainage_junction_smooth` wants the brook to
+        # leave the collector without a kink, so a wide swing bought to clear a lobe costs more than
+        # it saves. Try the nearest bearings at every junction distance before widening the angle.
+        # Bearings are tried around the FALL first and then around the DRAIN'S OWN HEADING. A brook
+        # continuing along the collector's line before it turns downhill is both perfectly smooth at
+        # the junction (turn = 0) and already clear of the rice, since the collector is - which is the
+        # combination a fan whose toe wraps a lobe cannot get any other way.
+        head_deg = math.degrees(math.atan2(heading[1], heading[0]))
+        for base_deg, swing, jd in ((bd, sw, j) for sw in (0, 12, -12, 24, -24, 38, -38, 54, -54) for bd in (exit_deg, head_deg) for j in (70.0, 110.0, 160.0, 230.0)):
+            th = math.radians(base_deg + swing)
+            bis = unit(heading[0] + math.cos(th), heading[1] + math.sin(th))
+            mid = (out[0] + bis[0] * jd, out[1] + bis[1] * jd)
+            # the run is measured along THIS bearing, not along the fall: a ray sized for the fall
+            # and fired on another heading either stops on the map or sweeps far past it
+            spans = [
+                ((plan.W if math.cos(th) > 0 else 0.0) - mid[0]) / math.cos(th) if abs(math.cos(th)) > 1e-6 else 1e9,
+                ((plan.H if math.sin(th) > 0 else 0.0) - mid[1]) / math.sin(th) if abs(math.sin(th)) > 1e-6 else 1e9,
+            ]
+            run_here = max(120.0, min(spans)) + 260.0
+            end = (mid[0] + math.cos(th) * run_here, mid[1] + math.sin(th) * run_here)
+            # THE JUNCTION ANGLE IS SCORED, not left to the ordering. `drainage_junction_smooth`
+            # wants under 65 degrees between the drain's own heading and the brook's first leg, and
+            # the crop and the angle pull against each other on a fan whose collector runs past a
+            # lobe: clearing the rice wants a wide swing, the smooth junction wants a narrow one.
+            # Scoring both together picks a route that satisfies both when one exists, instead of
+            # ping-ponging between two rules each satisfied at the other's expense.
+            turn = math.degrees(math.acos(max(-1.0, min(1.0, heading[0] * bis[0] + heading[1] * bis[1]))))
+            bad = int(point_in_poly(mid[0], mid[1], plan.envelope)) + int(crosses_poly(mid, end, plan.envelope))
+            bad += int(not anchored and crosses_poly(out, mid, plan.envelope))
+            bad += int(turn > 55.0)
+            if bad == 0:
                 s.stream([out, mid, end], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)  # s.stream reserves its own corridor
                 plan.sink_brook = [out, mid, end]
                 return
-        s.stream([out, mid, (mid[0] + dx * run, mid[1] + dy * run)], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)  # pragma: no cover - a fan toe never blocks all nine bearings
-        plan.sink_brook = [out, mid, (mid[0] + dx * run, mid[1] + dy * run)]
+            if best is None or bad < best[0]:
+                best = (bad, [out, mid, end])
+        assert best is not None  # ...and if none is clean, the LEAST-BAD route, never an untested one
+        s.stream(best[1], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)
+        plan.sink_brook = list(best[1])
         return
     # Sized to the settlement: a tameike serving ~15 households reads at roughly Ikegami's 116x74 px
     # (~230 x 150 ft), and the radius scales with the square root of the households it waters, since
@@ -1395,16 +1445,21 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # blanket, a copse over the full house bbox left the map no blank ground, and a stray farm past
     # the last well tripped `settlement_dwellings_watered`. Fixing the seats fixes all of it at the
     # source, which is why the percentile guards elsewhere are belt-and-braces rather than the cure.
+    bound = 1.15 * math.hypot(lat, dep)
+
     def in_band(q: Pt) -> bool:
-        return math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]) <= 1.15 * math.hypot(lat, dep)
+        return math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]) <= bound
 
     # THREE standoffs, not two. `field_ringed` wants five farmhouses within 165 px of the field
     # outline and the placer refuses any bundle that laps a bund or a ditch, so a single ring of
     # candidates can land four on awkward ground. Each extra pass is free when the earlier one
     # filled the row.
-    for standoff in (46.0, 62.0, 80.0):
+    # The FRONT ROW is allowed a little further out than the rest - a house hugging the field is
+    # part of the settlement wherever the band's nominal circle happens to fall, and `field_ringed`
+    # wants five of them within 165 px of the outline.
+    for standoff in (46.0, 56.0, 66.0, 78.0, 92.0):
         for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
-            if in_band((fx, fy)) and s.try_place(fx, fy, "plain"):
+            if math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
                 placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
     # cluster seeded only by its shape leaves them running across empty middle: the review of the
