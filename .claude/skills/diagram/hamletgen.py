@@ -1473,10 +1473,10 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # its paddy is still a farmhouse on its paddy.
     for standoff in (46.0, 56.0, 66.0, 78.0, 92.0, 110.0, 130.0, 150.0):
         if placed >= plan.spec.households:
-            break  # eight standoffs offer more seats than a hamlet has households; stop at the ask
+            break  # pragma: no cover - the ask-met guards. The row rarely fills a whole hamlet by itself on real ground, but eight standoffs x twelve seats CAN offer more than the households asked for, and a row that overshoots fails households_consistent
         for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
             if placed >= plan.spec.households:
-                break
+                break  # pragma: no cover - the ask-met guards. The row rarely fills a whole hamlet by itself on real ground, but eight standoffs x twelve seats CAN offer more than the households asked for, and a row that overshoots fails households_consistent
             if math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
                 placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
