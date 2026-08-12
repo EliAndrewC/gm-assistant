@@ -648,19 +648,28 @@ def build_comb(
     value is therefore grain = 2 / ftpx, so a "too narrow to plant" test means the same
     real-world size on every map.
 
-    WHAT ACTUALLY HAPPENS, and it is not that (recorded 2026-08-11 rather than quietly fixed).
-    The provincial cities do pass 2/3. But every 1 ft/px HAMLET in the pool passes the default
-    1.0, not 2.0 - and the engine's downstream constants are calibrated against what that
-    produces. Raising a hamlet to the principled 2.0 doubles its irrigation ditch widths, and
-    `channel_footbridges` then lays planks too short for the water they span, so a deck's
-    abutment stands in the ditch and `bridges_span_their_water` fails. The scripted hamlet
-    generator tried 2.0, met exactly that, and reverted to match the pool (see `GRAIN` in
-    hamletgen.py).
+    WHAT THE HAND-AUTHORED HAMLETS PASS is 1.0, not 2.0, and that is a real inconsistency rather
+    than a preference: at 1 ft/px it makes their "too narrow to plant" thresholds mean half the
+    real size they mean on a village sheet, and their irrigation ditches half the width.
 
-    So the tier is internally consistent and externally under-scaled, and fixing it means
-    re-deriving the footbridge span from the drawn channel width first, then re-rolling every
-    comb map. That is a real job, not a one-line change. Until someone does it, pass what the
-    rest of the tier passes rather than what this paragraph would prefer. Left unscaled, a city's carve dropped
+    IT HAS BEEN TESTED, so this is a decision rather than an oversight (2026-08-12). The old
+    obstacle was the bridge arithmetic: wider ditches produced planks and carried-way decks whose
+    abutments stood in the channel, because both paths sized a deck from a nominal width rather
+    than from the water actually beneath it. That is FIXED - `channel_footbridges` sizes a plank
+    to the widest course under it, junctions included, and `bridges()` grows a carried-way deck
+    until its corners clear the crossed polyline - and 2.0 now gets much further than it did.
+
+    What it still breaks is the communal WINDBREAK. At the coarser grain the crop geometry shifts
+    enough that a belt derived from the house cloud's extremes can end up off the cluster
+    altogether on a tall narrow settlement (measured: 9 surviving clumps, 350 px from the nearest
+    farmhouse, failing both `village_windbreak_embraces_cluster` and `..._scales_with_cluster`).
+    That is a robustness problem in the belt derivation, not an argument about this constant - but
+    it is a piece of work, and moving the tier also means re-rolling every comb map in the pool
+    with a `settlement-review` pass on each.
+
+    So: the hamlet tier passes 1.0, deliberately, and the scripted generator matches it (`GRAIN` in
+    hamletgen.py carries the same reasoning). The named blocker is the belt, and it is the thing to
+    fix before revisiting this. Left unscaled, a city's carve dropped
     sectors, head plots, and closers that a village would have planted, leaving parchment
     holes inside the fan - the white-spots bug the villages fixed once (canal-side closers,
     the closing rank) and the cities then re-exposed at their coarser grain (2026-07-21).

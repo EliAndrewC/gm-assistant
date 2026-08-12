@@ -121,17 +121,24 @@ BUNDLE_PITCH = 92.0
 # that motivated the limit was 575. See `stage_sink`.
 POND_SETBACK_LIMIT = 300.0
 
-# `build_comb`'s GRAIN, and why it is not what its own docstring prescribes.
+# `build_comb`'s GRAIN, and why this tier passes 1.0 - which is now a decision rather than a
+# disagreement.
 #
-# `grain` scales the carve's real-feet thresholds AND the channel widths, and the docstring says a
-# map should pass `2 / ftpx` so a "too narrow to plant" test means the same real size at every
-# scale - which for a 1 ft/px hamlet is 2.0. That is the principled number and it was tried. But
-# EVERY authored hamlet in the pool passes the default 1.0, and the engine's downstream constants
-# are calibrated against what they produce: at 2.0 the irrigation ditches come out twice as wide as
-# Ikegami's, and `channel_footbridges` then lays planks too short for the water they span
-# (`bridges_span_their_water`, with an abutment standing in the ditch). Matching the tier's shipped
-# calibration beats matching its documentation - a scripted map should be comparable to the
-# authored ones, and re-deriving the footbridge sizing is a separate job with its own pool sweep.
+# `grain` scales the carve's real-feet thresholds AND the channel widths. `build_comb`'s docstring
+# prescribes `2 / ftpx` so "too narrow to plant" means the same real size at every map scale - 2.0
+# for a 1 ft/px hamlet - and every hand-authored hamlet in the pool passes the default 1.0 instead.
+# That gap was recorded as an open question the first time round; it has now been tested.
+#
+# WHAT 2.0 COSTS, MEASURED (2026-08-12, two cohorts of 36 maps). The obstacle used to be the bridge
+# arithmetic: wider ditches produced planks and decks whose abutments stood in the channel. That is
+# FIXED - both bridging paths now measure the water actually beneath them - and 2.0 gets much
+# further than it used to. What it still breaks is the communal WINDBREAK: at the coarser grain the
+# crop geometry shifts enough that the belt derivation, which measures reach and span off the house
+# cloud's extremes, puts the belt off the cluster entirely on a tall narrow settlement (9 surviving
+# clumps, 350 px clear of the nearest farmhouse). That is a robustness problem in the belt, not an
+# argument about grain - but it is the next piece of work, not a side effect of this constant.
+#
+# So the tier passes 1.0 deliberately, and the docstring in waterfields.py now says the same thing.
 GRAIN = 1.0
 
 # THE HAMLET BAND (settlements.md "Scale and density"): 10-20 households, 50-100 inhabitants. Below
@@ -1967,7 +1974,14 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
         return any(point_in_poly(q[0], q[1], list(c)) or min(seg_dist(q[0], q[1], c[i], c[(i + 1) % len(c)]) for i in range(len(c))) < 20.0 for q in poly for c in crops)
 
     belt = band(1.0, 0.0)
-    for span_f, back in ((1.0, 0.0), (0.86, 26.0), (0.72, 52.0), (0.6, 78.0), (0.5, 104.0)):
+    # THE LADDER STANDS BACK BEFORE IT SHRINKS. Both moves get the belt off the crop, but they cost
+    # different things: standing back spends the embrace budget (`village_windbreak_embraces_cluster`
+    # wants a clump within 150 px of a farmhouse, and the belt starts ~24 px behind the windward
+    # fringe, so there is room), while shrinking spends the SIZE budget
+    # (`village_windbreak_scales_with_cluster` wants canopy worth 40% of the roof area it shelters,
+    # and a belt trimmed to half its length cannot meet that). Shrinking first cost both checks on
+    # two cohort maps; standing back first costs neither.
+    for span_f, back in ((1.0, 0.0), (1.0, 22.0), (1.0, 44.0), (0.88, 44.0), (0.74, 60.0), (0.6, 60.0)):
         belt = band(span_f, back)
         if not fouled(belt):
             break
