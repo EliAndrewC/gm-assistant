@@ -70,15 +70,27 @@ Household counts land exactly on the declared figure on essentially every map, a
 acreage lands on the target the household count implies - the four demo maps come out at 19.4
 against 19.5, 26.0 against 26.0, 15.7 against 15.6 and 24.7 against 24.7 acres.
 
-**24 of 24 on seeds 1-24 - and that is the set the fixes were made against.** It was 7 of 12 when
-the experiment was first reported, so the pass is real work rather than tuning; but a rate measured
-on the seeds you debugged is a fitted number, and the honest one comes from seeds nobody looked at.
-On a HELD-OUT cohort the rate is lower, and the residue there is the useful output: it names the
-cases the tuning set happened not to contain. Both numbers belong in any report of this work, and
-`cohort_audit.py --seed <n>` is how you get a fresh one.
+**24 of 24 on seeds 1-24, and 11 of 12 on a HELD-OUT cohort (seeds 101-112)** - 35 of 36 overall,
+measured 2026-08-12. It was 7 of 12 when the experiment was first reported.
+
+Both numbers matter and neither alone is honest. Seeds 1-24 are the set the fixes were made against,
+so 24/24 is a fitted figure; the held-out dozen is the real measure, and its residue is the useful
+output, because it names the cases the tuning set happened not to contain. Two of the three held-out
+failures were general bugs worth fixing on their own account (a clamped pond put back on the crop it
+had just cleared; a cluster band seated off the canvas edge, which seated 7 farmhouses of 18). Run
+`cohort_audit.py --count 12 --seed <anything>` for a fresh set - that is the tool to reach for
+whenever the rate needs re-measuring, and the number it gives is worth more than this paragraph.
 
 Every map in either cohort seats its declared households and lands its acreage on target; what
 varies is the siting collisions.
+
+**The one that still fails** is a carried-way deck: a cluster lane meets a stream at an angle
+`s.bridges()` cannot span, and `bridges_span_their_water` is right to reject the result. The
+routing-side levers are spent - the crossing angle limit is up to 62 degrees and the cluster's own
+lane arms are clipped at the bank against both the recorded and the drawn water lines. What is left
+is the ENGINE's deck sizing, which computes a span for the angle it finds rather than the span that
+angle needs; the footplank half of that was fixed in this pass (see `channel_footbridges`) and the
+carried-way half is the same arithmetic, in `s.bridges()`.
 
 `python3 cohort_audit.py --count 24` reproduces the sweep and reports any residue by check, with the
 gate's own message for each failure - which is the tool to reach for first when a change drops the
