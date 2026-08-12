@@ -91,6 +91,15 @@ push_cmd() {
     echo "sync-with-main: PUSHED, but the pull auto-merged other sessions' edits into files your commits touched:" >&2
     printf '  %s\n' $overlap >&2
     echo "sync-with-main: rerun the relevant gate NOW and fix forward (CLAUDE.md stop-work step 3)" >&2
+    # ...AND SAY THAT MAIN'S PICTURES ARE NOW STALE. `done` is push-then-render-sync, so this exit
+    # skips render-sync and main keeps whatever renders it had - silently. The GM browses renders in
+    # main, and on 2026-08-12 that cost a round trip: two syncs in a row hit this branch, so a map
+    # whose connector had been re-routed right across the sheet still showed the old route, and the
+    # GM reported the change had not happened. Regenerating from a tip whose gate has not been
+    # re-run would be the wrong cure, so the exit stays - but the tip belongs in the message rather
+    # than in a doc nobody re-reads (project rule: tips live in error output).
+    echo "sync-with-main: NOTE - render-sync did NOT run, so main's diagram renders are now STALE." >&2
+    echo "sync-with-main: once the gate is green again, run:  scripts/sync-with-main.sh render-sync" >&2
     exit 3
   fi
   echo "sync-with-main: pushed clean (no overlap with incoming changes)"
