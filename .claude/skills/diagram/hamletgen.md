@@ -70,21 +70,19 @@ Household counts land exactly on the declared figure on essentially every map, a
 acreage lands on the target the household count implies - the four demo maps come out at 19.4
 against 19.5, 26.0 against 26.0, 15.7 against 15.6 and 24.7 against 24.7 acres.
 
-**The honest number is a pass RATE, and it is 22 of 24** on the first two dozen seeds (measured
-2026-08-12, after the collision pass the GM asked for), plus 4 of 4 on the demo maps in
-`pool/experiments/`. It was 7 of 12 when the experiment was first reported. Every map in the cohort
-seats its declared households exactly and lands its acreage on target; twenty-two then clear all
-~185 gate checks.
+**24 of 24 on seeds 1-24 - and that is the set the fixes were made against.** It was 7 of 12 when
+the experiment was first reported, so the pass is real work rather than tuning; but a rate measured
+on the seeds you debugged is a fitted number, and the honest one comes from seeds nobody looked at.
+On a HELD-OUT cohort the rate is lower, and the residue there is the useful output: it names the
+cases the tuning set happened not to contain. Both numbers belong in any report of this work, and
+`cohort_audit.py --seed <n>` is how you get a fresh one.
 
-**The two that do not are worth more than the number**, because each is a specific, named thing:
+Every map in either cohort seats its declared households and lands its acreage on target; what
+varies is the siting collisions.
 
-| check | what it is |
-|---|---|
-| `field_ringed` | four farmhouses within 165 px of the field outline where five are wanted - the placer refuses a bundle that laps a bund, and on awkward near-ground five standoffs are still not enough |
-| `streams_avoid_fields` | the outfall-on-the-outline case, diagnosed in its own section above; the fix belongs in the fan search, not in the routing |
-
-`python3 cohort_audit.py --count 24` reproduces the table, with the gate's own message for each
-failure.
+`python3 cohort_audit.py --count 24` reproduces the sweep and reports any residue by check, with the
+gate's own message for each failure - which is the tool to reach for first when a change drops the
+rate. `test_hamletgen.py` pins 4 of 4 as a ratchet.
 
 **Precision, not just speed.** The clearest single result is the field sizing. Ikegami's own
 docstring asks for ~20 acres of paddy for 15 households and its own closing line reports **15.3** -
