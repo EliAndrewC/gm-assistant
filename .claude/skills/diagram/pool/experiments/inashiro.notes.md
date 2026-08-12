@@ -61,6 +61,14 @@ pipeline's, and it is the same order a person follows:
 - The wind is derived from the slope (cold air drains downhill off the high ground), which makes the
   windbreak's side a consequence of the terrain rather than an independent regional fact. A GM who
   knows the real prevailing wind for the province should pin it on the spec.
+- **On THIS map the wind is a restatement of the seat, not of the slope.** The fall is 90 deg, from
+  which `windward_for` can only return N, NW or NE - and the manifest declares **W**, because the
+  cluster came to rest on a flank margin and `stage_ways` re-reads the windward quarter off the
+  site's own back when the two disagree by more than ~70 deg (a house whose back is to the wrong
+  quarter has its shelter belt planted in the rice). That override is right, and it does mean the
+  belt's side here is circular: the belt stands west because the cluster's back is west, and the
+  wind was then named to match. On a cluster seated on the field's UPSLOPE margin the two rules
+  agree and the declared wind carries real information; on a flank seat it does not.
 - **Dry hem plots run ~3.5x the size of Ikegami's** and chain single-file rather than packing two or
   three deep, so the hem reads as large fields rather than household strips (`settlement-review`,
   2026-08-11). Parcel size, not acreage - the total is comparable. It wants a researched constant of

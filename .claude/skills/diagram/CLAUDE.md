@@ -475,12 +475,30 @@ actually DRAW, then item 2 becomes a real `sat_overlap` on real corner quads, an
 pool re-roll. Budget for that re-roll: the naive swap alone already moves Tango +21 houses (+8%),
 +20 buildings (+3.2%) and +23 wells (+25%).
 
-**3. Placement tests a DIFFERENT footprint than the one drawn (still open).** `_fits` is called with
-a farmhouse's BASE rect, but the drawn steading can exceed it - a wealth render scale, an attached
-shed, a rotation. So a candidate that genuinely cleared every keep-out at its placement size laps one
-at its drawn size, and no amount of fixing (1) reaches it. Hoshizora's gen already works around this
-by inflating its hem plots ~8 px (`grow_poly`), which treats the symptom locally. The real fix is for
-the placer to test the size it is going to DRAW.
+**3. Placement tests a DIFFERENT footprint than the one drawn (still open, but now measured).**
+`_fits` is called with a farmhouse's BASE rect, but the drawn steading can exceed it - a wealth
+render scale, an attached shed, a rotation. So a candidate that genuinely cleared every keep-out at
+its placement size laps one at its drawn size, and no amount of fixing (1) reaches it. Hoshizora's
+gen already works around this by inflating its hem plots ~8 px (`grow_poly`), which treats the
+symptom locally. The real fix is for the placer to test the size it is going to DRAW.
+
+**Two 2026-08-12 findings sharpen it, and one of them is already banked.** A WAY now records its
+drawn TREAD (`_record_tread`) beside its soft corridor, and `_fits` tests the whole footprint
+against the tread while the clearance keeps its centre test - the split that makes this safe where
+footprint-testing all of `block_polys` was not, since a clearance is slack and a road surface is
+not. Lanes only, deliberately: the other ways already pad their corridors by hand, and tightening
+them cost Tango a public well. No pool manifest moved.
+
+**But the BUNDLE path never reaches `_fits` at all**, which is the bigger half and was not visible
+until a cohort went looking. `_bundle_fits` seats a homestead from its own geometry, and the house
+inside it is offset from the seed point AND scaled by the wealth/length jitter - so the rect the
+placer clears is neither the size nor the position of the rect that gets drawn. Instrumented on a
+failing map: `_fits` was never called at the offending farmhouse's position with its own w/h, and
+12 of 24 cohort maps put a house corner on a lane at the authored clearance. Testing the drawn house
+rect inside `_bundle_common_fits` fixes it in three lines - and re-rolls Ikegami, Kuwabata, Tanada
+and Hoshigaoka, breaking Hoshigaoka's gate. So it is a reviewed pool job (one `settlement-review`
+per map), and the natural companion to item 2's collision-circle swap: do them in one re-roll rather
+than two.
 
 **The general lesson.** A point test is right for a SCATTER (each tuft is a point) and wrong for
 anything with an extent. The same trap bit the ground-cover tiler: `near_ring_cropland` sampled a
@@ -976,16 +994,20 @@ it** - and if a correction loop is not converging, suspect the measurement befor
 [`pool/experiments/`](pool/experiments/) its four demo maps. It is ADDITIVE and nothing in the live
 method changed, so a session drawing a map today can ignore it entirely.
 
-Two things it found in SHIPPED engine code, both still open, both worth fixing on their own with the
-full sweep rather than inside the experiment:
+It found SIX things in shipped engine code. Five are fixed with the full pool sweep (the hem
+registry, the sweep's blind spot, the cluster-band pitch, the windbreak/well-grid derivations, the
+footbridge arithmetic, and `build_comb`'s grain, which the scripted tier now passes at its
+principled `2 / ftpx`); the sixth is half fixed and recorded under "CENTER vs FOOTPRINT" item 3
+above. The two worth reading in full, because their SHAPE recurs:
 
-- **`draw_comb_field` never appends its dry hem to `s.dry_polys`** - only to `block_polys`. But
+- **FIXED: `draw_comb_field` used to append its dry hem only to `block_polys`, never to
+  `s.dry_polys`.** But
   `dry_polys` is the registry the GROVE, LANE and threshing-yard filters read, so a map built
   through it has hem plots that stop a house and not a tree. Every hand-authored comb gen
   compensates with its own `s.dry_polys.append(...)`; the two seed-rolled maps (Honda, Shimizu) do
   not, and pass only because their clusters sit away from the hem. Same shape as "placement and its
   check must read the SAME manifest source", above.
-- **`roll_village` sizes its cluster band at a 56 px pitch per household**, which is the FARMHOUSE -
+- **FIXED: `roll_village` used to size its cluster band at a 56 px pitch per household**, which is the FARMHOUSE -
   but the to-scale tiers place a BUNDLE (house + threshing yard + dooryard garden, ~71 x 57 ft) and
   the placer spaces bundles by circumscribed circles on top of that. The band therefore asks for
   roughly three times what fits. It does not show up as a shortfall, because the caller keeps

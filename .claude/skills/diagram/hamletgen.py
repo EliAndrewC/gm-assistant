@@ -95,19 +95,35 @@ GROSS_ACRES_PER_HOUSEHOLD = 1.3
 
 SQ_FT_PER_ACRE = 43560.0
 
-# LANE CLEARANCE - the no-build corridor a lane reserves, in px, and it is sized against the house
-# the engine will DRAW rather than the one it tests.
+# LANE CLEARANCE - the no-build corridor a lane reserves, in px.
 #
-# `_fits` checks a candidate's CENTER against a lane corridor, and it checks the farmhouse's BASE
-# rect (46 x 28 ft). But a homestead's wealth variation renders the house up to ~1.33x that, so the
-# drawn steading reaches ~34 px from its center where the placer assumed ~27 - and
-# `houses_clear_of_lanes` measures the DRAWN corners. At the authored maps' clearance of 32 a
-# well-off farmhouse's corner ended up 2.4 px from a connector track's centerline while its center
-# stood a legal 34 px off. (This is the engine's known "placement tests a different footprint than
-# the one drawn" debt, recorded in the skill's CLAUDE.md; it is worked around here rather than
-# fixed, since fixing it re-rolls the whole pool.) 48 covers the widest drawn house plus the lane's
-# own tread and a margin.
+# This used to be 48 rather than the authored maps' 32, as a WORKAROUND: `_near_corridor` tests a
+# candidate's CENTRE against the corridor and the placer passed the farmhouse's BASE rect (46 x 28
+# ft), while a homestead's wealth variation renders the house up to ~1.33x that - so at 32 a
+# well-off farmhouse's drawn corner ended 2.4 px from a connector track's centerline with its centre
+# a legal 34 px off, and `houses_clear_of_lanes` measures the DRAWN corners.
+#
+# THE ENGINE FIXED HALF OF IT (2026-08-12): a lane now registers its drawn TREAD as well as its
+# corridor, and `_fits` tests a candidate's whole footprint against the tread, so anything seated
+# THROUGH `_fits` can no longer put a corner on a lane. The other half is not the corridor's size at
+# all, which is why lowering this to 32 did not work: a homestead BUNDLE is seated by its own
+# geometry (`_bundle_fits`), never through `_fits`, and the house inside it is offset from the seed
+# point AND scaled by the wealth/length jitter - so the rect the placer clears is neither the size
+# nor the position of the rect the map draws. Measured: at 32, 12 of 24 cohort maps put a farmhouse
+# corner on a lane, and instrumenting one showed `_fits` was never called at the offending house's
+# position with its own w/h at all. Testing the drawn house rect inside `_bundle_fits` DOES fix it
+# and is the right end state, but it re-rolls four hand-authored maps and breaks Hoshigaoka's gate,
+# so it is a reviewed pool job rather than a side effect (recorded in hamletgen.md, finding 2).
+# Until then this stays wide enough that the drawn steading clears the tread from any seat.
 LANE_CLEARANCE = 48.0
+
+# How far off a lane's centerline a frontage seat is offered. This is a PLACEMENT decision and is
+# deliberately not derived from LANE_CLEARANCE, which is the corridor rule: fronting a lane excuses
+# a seat from the corridor's setback (that is what `skip` means to `_near_corridor`), so the row's
+# own offset is the only thing holding the DRAWN steading off the tread. A wealthy minka renders to
+# ~61 x 37 ft, a half-diagonal of ~36 px; add the lane's own half-tread and a dooryard's working
+# margin. Tying this to the clearance is what made the clearance look like it had to be 48.
+LANE_FRONTAGE_STANDOFF = 70.0
 
 # HOW MUCH GROUND ONE HOMESTEAD TAKES, in px at 1 ft/px - the pitch the cluster band is sized on.
 # A bundle's reserved rects come to ~71 x 57 ft; the placer then keeps bundles apart by
@@ -121,25 +137,27 @@ BUNDLE_PITCH = 92.0
 # that motivated the limit was 575. See `stage_sink`.
 POND_SETBACK_LIMIT = 300.0
 
-# `build_comb`'s GRAIN, and why this tier passes 1.0 - which is now a decision rather than a
-# disagreement.
+# `build_comb`'s GRAIN, and why this tier passes the PRINCIPLED value rather than the pool's.
 #
 # `grain` scales the carve's real-feet thresholds AND the channel widths. `build_comb`'s docstring
 # prescribes `2 / ftpx` so "too narrow to plant" means the same real size at every map scale - 2.0
-# for a 1 ft/px hamlet - and every hand-authored hamlet in the pool passes the default 1.0 instead.
-# That gap was recorded as an open question the first time round; it has now been tested.
+# for a 1 ft/px hamlet - while every hand-authored hamlet in the pool passes the default 1.0, which
+# at this scale means half the real size and half the ditch width. That gap was recorded as an open
+# question the first time round. It is now settled by measurement.
 #
-# WHAT 2.0 COSTS, MEASURED (2026-08-12, two cohorts of 36 maps). The obstacle used to be the bridge
-# arithmetic: wider ditches produced planks and decks whose abutments stood in the channel. That is
-# FIXED - both bridging paths now measure the water actually beneath them - and 2.0 gets much
-# further than it used to. What it still breaks is the communal WINDBREAK: at the coarser grain the
-# crop geometry shifts enough that the belt derivation, which measures reach and span off the house
-# cloud's extremes, puts the belt off the cluster entirely on a tall narrow settlement (9 surviving
-# clumps, 350 px clear of the nearest farmhouse). That is a robustness problem in the belt, not an
-# argument about grain - but it is the next piece of work, not a side effect of this constant.
+# WHAT USED TO BLOCK 2.0, AND WHAT FIXED IT (2026-08-12). First the bridge arithmetic: wider
+# ditches produced planks and carried-way decks whose abutments stood in the channel, because both
+# paths sized a deck from a nominal width rather than from the water actually beneath them. Both
+# now measure the crossed water. Second the communal WINDBREAK: at the coarser grain the crop
+# shifts enough that a belt derived from the house cloud's EXTREMES lands off a tall narrow cluster
+# entirely (measured: 9 clumps, 350 px from the nearest farmhouse). `belt_polygon` samples the
+# windward fringe as a PROFILE in columns across the wind instead, so the belt follows the shape of
+# the cluster rather than a box around it, and the failure mode is gone.
 #
-# So the tier passes 1.0 deliberately, and the docstring in waterfields.py now says the same thing.
-GRAIN = 1.0
+# So this module runs at 2.0 and its cohorts gate clean there. The POOL's hamlets stay at 1.0 until
+# someone re-rolls them, which is a real job (every comb map re-rolls, each wants a
+# settlement-review) rather than an oversight - `build_comb`'s docstring carries the same account.
+GRAIN = 2.0
 
 # THE HAMLET BAND (settlements.md "Scale and density"): 10-20 households, 50-100 inhabitants. Below
 # 10 the place is an outlying farmstead or two rather than a hamlet; above ~20 it is a small village
@@ -1175,6 +1193,21 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     ] + [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
     seat = seat_cluster(plan, dry_plots=crop_polys(s), drain=drain)
     plan.seat = seat
+    # THE SITE'S BACK IS THE WINDWARD SIDE, and where the two disagree the site wins.
+    #
+    # The wind is derived from the slope (cold air drains off the high ground) and the cluster is
+    # seated partly by it - back to the hill, face to the water. But the seat has hard constraints
+    # the wind does not: not below the drain, not on the hem, not off the canvas. When those rule
+    # out every wind-facing margin, the settlement ends up with its back to the FIELD, and a belt
+    # placed on the declared windward side is then planted in the rice - where `village_grove`
+    # throws away almost every clump and the map fails both windbreak checks with a grove of eight
+    # trees. Re-reading the exposure off the seat is the self-consistent answer and the true one: a
+    # settlement's sheltered side is the side it actually turns its back to, and this map is
+    # declaring which quarter that is. A GM who knows the region's real prevailing wind pins it on
+    # the spec, and then the seat search is what bends instead.
+    if plan.wind[0] * seat["out"][0] + plan.wind[1] * seat["out"][1] < 0.34:  # more than ~70 deg apart
+        plan.windward = min(WIND_VECTORS, key=lambda q: -(WIND_VECTORS[q][0] * seat["out"][0] + WIND_VECTORS[q][1] * seat["out"][1]))
+        s.M["meta"]["windward"] = plan.windward
     ax, ay = seat["along"]
     ox, oy = seat["out"]
     cx, cy = seat["cx"], seat["cy"]
@@ -1438,7 +1471,7 @@ def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0) ->
     hamlet along the road instead of nucleating it (that is the `linear` settlement form, a
     different archetype)."""
     out: list[Pt] = []
-    off = LANE_CLEARANCE + 22.0  # the DRAWN bundle exceeds the rect the placer tests, so leave the frontage row real daylight
+    off = LANE_FRONTAGE_STANDOFF
     for lane in s.M.get("lanes", []):
         if lane.get("connector"):
             continue
@@ -1913,74 +1946,85 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
 
 
 def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
-    """The windbreak belt's footprint, derived from the houses that actually landed."""
+    """The windbreak belt's footprint - a band FOLLOWING the cluster's windward fringe.
+
+    The belt used to be a straight band standing off the single windward-most house, its length set
+    by the widest cross-wind pair. That is right for a round cluster and wrong for every other
+    shape: on a tall narrow settlement under a diagonal wind it put the belt 350 px clear of the
+    nearest farmhouse and nearly square, and `village_grove`'s own filters then threw most of its
+    clumps away - nine survived. A belt that shelters nothing fails
+    `village_windbreak_embraces_cluster` and `village_windbreak_scales_with_cluster` together, and
+    both are right to fail it.
+
+    So the near face is sampled ACROSS the wind and, in each column, sits just behind whichever
+    house is furthest upwind THERE. The result hugs the settlement's windward profile whatever its
+    shape - which is what a back-village grove does, being planted where the houses are - and stays
+    a band of constant depth, so `village_grove` still fills it as a belt rather than a blob."""
     houses = s.M.get("houses", [])
     if len(houses) < 3:  # pragma: no cover - fewer houses than this fails the gate first
         return []
     wx, wy = plan.wind
     px, py = -wy, wx  # across the wind
-    xs = [h["x"] for h in houses]
-    ys = [h["y"] for h in houses]
-    ccx, ccy = sum(xs) / len(xs), sum(ys) / len(ys)
-    # SIZED TO THE CLUSTER'S BODY, NOT ITS EXTREMES. The placer hugs each homestead to the field
-    # edge, so a nucleated cluster routinely ends up with an outlier or two strung well down the
-    # margin - and sizing the belt off the MAXIMUM cross-wind offset then stretches it to reach
-    # them: on the reference hamlet that made a "belt" 2,392 px wide with 625 clumps, a green
-    # blanket over the whole head of the map that left the sheet no blank ground and its own title
-    # homeless. A windbreak shelters the village; it does not run out to every stray farmstead. The
-    # 85th percentile is the settlement proper, and `village_windbreak_embraces_cluster` only asks
-    # that a substantial belt nestle against A farmhouse, which the cluster core does.
-    # The FULL extent, now that `stage_homesteads` bounds every seat to the cluster band. These were
-    # percentiles for a while, to stop one strewn farmstead stretching the belt into a 2,392 px
-    # green blanket - but a percentile is a workaround for outliers, and with the outliers gone at
-    # source it only makes the belt too short to scale with the cluster
-    # (`village_windbreak_scales_with_cluster`) and too far back to embrace it
-    # (`village_windbreak_embraces_cluster`). Fix the cause, drop the workaround.
-    reach = max((h["x"] - ccx) * wx + (h["y"] - ccy) * wy for h in houses)
-    span = max(abs((h["x"] - ccx) * px + (h["y"] - ccy) * py) for h in houses) + 90.0
+    ccx, ccy = sum(h["x"] for h in houses) / len(houses), sum(h["y"] for h in houses) / len(houses)
+    uv = [(((h["x"] - ccx) * wx + (h["y"] - ccy) * wy), ((h["x"] - ccx) * px + (h["y"] - ccy) * py)) for h in houses]
+    v_lo, v_hi = min(v for _u, v in uv), max(v for _u, v in uv)
+    COLS = 7
+    half = (v_hi - v_lo) / 2 + 90.0  # a shoulder past the outermost house at each end
+    v_mid = (v_lo + v_hi) / 2
     rng = random.Random((plan.spec.seed * 7919) & 0xFFFFFFFF)
 
-    def rag(p: Pt, amp: float = 13.0) -> Pt:
-        return (p[0] + rng.uniform(-amp, amp), p[1] + rng.uniform(-amp, amp))
+    def rag(q: Pt, amp: float = 13.0) -> Pt:
+        return (q[0] + rng.uniform(-amp, amp), q[1] + rng.uniform(-amp, amp))
 
-    # The belt's near face sits just behind the windward fringe of the houses and it is ~110 px
-    # deep - a real wind wall, not a hedge. The 24 px stand-off is set by
+    # NO COLUMN FALLS BEHIND THE MEDIAN HOUSE. Following the profile is right, but on a cluster
+    # that is long ACROSS the wind the flank columns' own frontrunner sits well downwind of the
+    # middle ones, so the band bows back around the settlement and its centroid can land level with
+    # (or behind) the house cloud - which is exactly what `village_windbreak_on_windward_side`
+    # measures, and it fired on two cohort maps with a belt that looked fine in every other check.
+    # Flooring each column at the cluster's MEDIAN u keeps the belt following the fringe where the
+    # fringe leads it, and keeps the whole band on the windward half where a back-village grove
+    # belongs. The median, not the mean: one house pushed far upwind should not drag the wall out.
+    u_sorted = sorted(u for u, _v in uv)
+    u_floor = u_sorted[len(u_sorted) // 2]
+
+    def profile(span_f: float) -> list[tuple[float, float]]:
+        """(v, u) of the windward fringe, sampled in columns across the wind."""
+        cols: list[tuple[float, float]] = []
+        for k in range(COLS + 1):
+            v = v_mid + half * span_f * (-1.0 + 2.0 * k / COLS)
+            width = half * span_f / COLS + 40.0
+            near = [u for u, vv in uv if abs(vv - v) <= width]
+            if not near:  # a column with no house of its own leans on the whole cluster's fringe
+                near = [max(u for u, _v in uv) - 40.0]
+            cols.append((v, max(max(near), u_floor)))
+        return cols
+
+    # ~110 px deep - a real wind wall, not a hedge. The 24 px stand-off is set by
     # `village_windbreak_embraces_cluster`, which wants a clump within 150 px of a farmhouse: the
     # clump grid starts some way inside the polygon, so a 42 px face measured 160 px to the nearest
-    # tree and a belt that shelters nothing is decoration.
-    #
-    # WHEN IT WOULD STAND IN THE CROP, THE BAND IS TRIMMED, NOT BENT. Pulling each vertex back out
-    # of the cropland was tried and is the wrong shape of fix: a vertex deep in a hem plot walks a
-    # long way before it clears, the ragged outline folds over itself on the way, and what
-    # `village_grove` then fills is not a belt but a blanket - 752 clumps over the whole head of the
-    # map on the reference hamlet, which left the sheet with no blank ground anywhere and its own
-    # title homeless. A belt is a band; if the band does not fit, it gets shorter and stands further
-    # back, and it stays a band. Both are what a real windbreak does when the fields crowd it.
+    # tree.
     crops: list[Poly] = [list(plan.envelope), *crop_polys(s)]
-    steps = 7
 
     def band(span_f: float, back: float) -> Poly:
-        near_, far_ = reach + 24.0 + back, reach + 134.0 + back
-        out: Poly = []
-        for i in range(steps + 1):  # the near face, swept across the wind
-            t = -1.0 + 2.0 * i / steps
-            out.append(rag((ccx + wx * near_ + px * span * span_f * t, ccy + wy * near_ + py * span * span_f * t)))
-        for i in range(steps + 1):  # ...and back along the far face
-            t = 1.0 - 2.0 * i / steps
-            out.append(rag((ccx + wx * far_ + px * span * span_f * t, ccy + wy * far_ + py * span * span_f * t)))
-        return out
+        cols = profile(span_f)
+        # 36 px, not 24. `village_grove` filters clumps against every structure and crop, and it
+        # filters the near face hardest - so a belt whose POLYGON sits clearly windward can still
+        # have its DRAWN clumps average back onto the cluster's own line, which is what
+        # `village_windbreak_on_windward_side` measures (Kashikawa: polygon centroid +137, drawn
+        # centroid -5). The extra 12 px comes out of the 150 px embrace budget and leaves plenty.
+        near = [rag((ccx + wx * (u + 36.0 + back) + px * v, ccy + wy * (u + 36.0 + back) + py * v)) for v, u in cols]
+        far = [rag((ccx + wx * (u + 146.0 + back) + px * v, ccy + wy * (u + 146.0 + back) + py * v)) for v, u in reversed(cols)]
+        return near + far
 
     def fouled(poly: Poly) -> bool:
-        return any(point_in_poly(q[0], q[1], list(c)) or min(seg_dist(q[0], q[1], c[i], c[(i + 1) % len(c)]) for i in range(len(c))) < 20.0 for q in poly for c in crops)
+        return any(point_in_poly(q[0], q[1], list(c)) or min(seg_dist(q[0], q[1], c[i2], c[(i2 + 1) % len(c)]) for i2 in range(len(c))) < 20.0 for q in poly for c in crops)
 
-    belt = band(1.0, 0.0)
     # THE LADDER STANDS BACK BEFORE IT SHRINKS. Both moves get the belt off the crop, but they cost
-    # different things: standing back spends the embrace budget (`village_windbreak_embraces_cluster`
-    # wants a clump within 150 px of a farmhouse, and the belt starts ~24 px behind the windward
-    # fringe, so there is room), while shrinking spends the SIZE budget
-    # (`village_windbreak_scales_with_cluster` wants canopy worth 40% of the roof area it shelters,
-    # and a belt trimmed to half its length cannot meet that). Shrinking first cost both checks on
-    # two cohort maps; standing back first costs neither.
+    # different things: standing back spends the embrace budget (a clump within 150 px of a
+    # farmhouse, and the belt starts 24 px behind the fringe, so there is room), while shrinking
+    # spends the SIZE budget (canopy worth 40% of the roof area it shelters, which a belt trimmed to
+    # half its length cannot meet). Shrinking first cost both checks on two cohort maps.
+    belt = band(1.0, 0.0)
     for span_f, back in ((1.0, 0.0), (1.0, 22.0), (1.0, 44.0), (0.88, 44.0), (0.74, 60.0), (0.6, 60.0)):
         belt = band(span_f, back)
         if not fouled(belt):
