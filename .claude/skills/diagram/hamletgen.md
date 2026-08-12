@@ -271,6 +271,21 @@ Worth carrying to any future generator work, whatever happens to this one:
   the gate reports `settlement_has_wells`. When a check fails for a reason that makes no sense,
   suspect a sizing constant upstream of it.
 
+## The one map that does not pass, and why it is worth knowing
+
+A fan can put its collector's outfall exactly ON the field outline - neither inside nor out, within
+rounding - while the crop wraps a lobe around it. `streams_avoid_fields` exempts a drain brook's
+anchored leg by trimming leading vertices that are strictly INSIDE the outline, so a brook starting
+on the boundary is never trimmed and every route from it reads as crossing the crop. There is no
+bearing, junction distance or junction angle that fixes it: the START is the problem, and backing
+the start up the drain until it is genuinely inside does not help either, because the collector
+itself runs along the lobe.
+
+The honest fix is upstream, in `fit_field`: a fan whose outfall lands on its own outline should be
+disqualified the way one with a dangling supply-canal tail already is. That is a change to the fan
+SEARCH rather than to the routing, so it re-rolls maps, and it is the obvious next move rather than
+another routing patch. Recorded here rather than papered over.
+
 ## Raising the rate (2026-08-11)
 
 The GM's follow-up was the two items above: fix the engine defects on their own, and take the
