@@ -1857,6 +1857,25 @@ def moat_current_at(ring: Any, inlet: Pt, outlet: Pt, pt: Pt) -> tuple[float, fl
     return None if L == 0 else (vx / L, vy / L)
 
 
+def _below_drain(x: float, y: float, drain: Any, fx: float, fy: float, berth: float = 26.0) -> bool:
+    """Is (x, y) downslope of the drain COLLECTOR? Measured to the NEAREST POINT on the drain
+    polyline and projected along the fall - which is what the check does. A global cut along the
+    fall axis is not the same thing and lets a farmstead sit in the toe where the drain bends."""
+    best = (float("inf"), drain[0])
+    for k in range(len(drain) - 1):
+        ax, ay = drain[k]
+        bx, by = drain[k + 1]
+        dx, dy = bx - ax, by - ay
+        ll = dx * dx + dy * dy or 1.0
+        t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / ll))
+        px_, py_ = ax + t * dx, ay + t * dy
+        d = math.hypot(x - px_, y - py_)
+        if d < best[0]:
+            best = (d, (px_, py_))
+    nx, ny = best[1]
+    return bool((x - nx) * fx + (y - ny) * fy > -berth)
+
+
 def _seg_point(pt: Pt, a: Pt, b: Pt) -> Pt:
     """The point on segment a-b nearest `pt` - so a tap is DERIVED from the watercourse rather than
     eyeballed beside it (every hand-picked tap in the capital's first ring stood on dry ground)."""
@@ -1868,19 +1887,6 @@ def _seg_point(pt: Pt, a: Pt, b: Pt) -> Pt:
 
 def _poly_centroid(poly: Poly) -> Pt:
     return (sum(q[0] for q in poly) / len(poly), sum(q[1] for q in poly) / len(poly))
-
-
-def _drain_tail(dr: Any, span: float = 52.0) -> list[Pt]:
-    """The trailing ~`span` px of a drain, as [start, end]. The drain's LAST SEGMENT is only a few
-    px at the current paddy calibration, and a topology bend on a <10 px chord cannot stay obtuse;
-    walking back to a ~52 px chord gives it room, and the start still lies ON the drain."""
-    end = dr[-1]
-    acc = 0.0
-    i = len(dr) - 1
-    while i > 0 and acc < span:
-        acc += math.hypot(dr[i][0] - dr[i - 1][0], dr[i][1] - dr[i - 1][1])
-        i -= 1
-    return [tuple(dr[i]), tuple(end)]
 
 
 def moat_swept_tap(ring: Any, inlet: Pt, outlet: Pt, other: Pt, near: Pt, want_deg: float = 50.0, max_back: float = 220.0, arriving: bool = False) -> Pt:
@@ -11676,60 +11682,126 @@ class Settlement:
         self.M.setdefault("towpaths", []).append({"pts": [[round(px_, 1), round(py_, 1)] for px_, py_ in pts], "w": round(width, 2)})
         self.corridors.append(([(px_, py_) for px_, py_ in pts], width / 2 + 8))
 
-    def farmland_ring(self, specs: Any, comb: Any, topo: Any, water: Any, city_center: Pt, rings: Any = ((28, 15), (22, 40), (14, 78))) -> list[Any]:
+    def _ring_upslope(self, env: Any, down_deg: float, drain: Any, gaps: Any) -> int:
+        """Seat farmsteads along the UPSLOPE perimeter of a field, at several standoffs.
+
+        WHY NOT `s.ring` (GM 2026-08-12, migrating the capital): the ring walks the WHOLE envelope
+        and projects each seat outward, so on the low edge it throws households into the wet toe
+        below the drainage collector - 38 of them on the capital, which is the wettest ground in the
+        valley and the one place nobody builds (`dwellings_above_field_drain`). Clipping the polygon
+        does not help either: the cut edge still projects outward. So the perimeter is walked here
+        and the low side skipped. The provincial cities never meet this because their drains march
+        off-view, which is why the plain ring served them for a year.
+
+        The cropland boxes are snapshotted ONCE - rebuilding them per candidate is the
+        per-candidate scan of unchanging geometry this skill's CLAUDE.md warns about, and it took a
+        gen from 11 seconds to over ten minutes."""
+        boxes = [(min(q[0] for q in pp), min(q[1] for q in pp), max(q[0] for q in pp), max(q[1] for q in pp)) for f in self.M.get("fields") or [] for pp in (f.get("plot_polys") or ())] + [
+            (min(q[0] for q in pp), min(q[1] for q in pp), max(q[0] for q in pp), max(q[1] for q in pp))
+            for d in self.M.get("dry_plots") or []
+            for pp in ([d.get("poly") or d.get("outline")] if (d.get("poly") or d.get("outline")) else [])
+        ]
+        fx, fy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        cx = sum(q[0] for q in env) / len(env)
+        cy = sum(q[1] for q in env) / len(env)
+        span = max(max(q[0] for q in env) - min(q[0] for q in env), max(q[1] for q in env) - min(q[1] for q in env))
+        berth = max(18.0, min(64.0, span * 0.22))
+        placed = 0
+        for gap in gaps:
+            for k in range(len(env)):
+                ax, ay = env[k]
+                bx, by = env[(k + 1) % len(env)]
+                seg = math.hypot(bx - ax, by - ay) or 1.0
+                for t in range(max(1, int(seg // 26))):
+                    f_ = (t + 0.5) / max(1, int(seg // 26))
+                    px_, py_ = ax + (bx - ax) * f_, ay + (by - ay) * f_
+                    ox, oy = px_ - cx, py_ - cy
+                    ol = math.hypot(ox, oy) or 1.0
+                    if (ox / ol) * fx + (oy / ol) * fy > 0.34:
+                        continue  # this stretch faces DOWNslope
+                    sx, sy = px_ + ox / ol * gap, py_ + oy / ol * gap
+                    if drain and _below_drain(sx, sy, drain, fx, fy, berth=berth):
+                        continue
+                    if any(x0 - 18.0 <= sx <= x1 + 18.0 and y0 - 18.0 <= sy <= y1 + 18.0 for x0, y0, x1, y1 in boxes):
+                        continue  # a farmstead stands BESIDE the cropland it works, never on it
+                    if self.try_place(sx, sy, "plain"):
+                        placed += 1
+        return placed
+
+    def farmland_ring(
+        self,
+        specs: Any,
+        comb: Any,
+        topo: Any,
+        water: Any,
+        city_center: Pt,
+        rings: Any = ((26, 15), (20, 40)),
+        standoff: float = 30.0,
+        source_point: Any = None,
+        tap_choices: Any = None,
+        drain_points: Any = None,
+        open_bound: bool = False,
+        outward: Any = None,
+        tap_on_segment: bool = False,
+        upslope: bool = False,
+        upslope_gaps: Any = None,
+    ) -> list[Any]:
         """RING A CITY WITH ITS FARMLAND - the belt of comb fields and the households that work them.
 
-        WHY THIS EXISTS AS ONE CALL (GM 2026-08-11/12, after a farmland ring took the better part of
-        a working day): "farmland ringing a city is the DEFAULT which should always happen", and the
-        pool had settled how to draw it long before it was written down - Tango farms 3.8% of its
-        sheet over 11 fields, Nagahara 2.3% over 7, Minami 3.0% over 6. But every one of those gens
-        carries its OWN copy of the belt loop, so the next city looks like new work when it is not,
-        and the numbers each copy has already tuned - tap sweep, gate placement, topology, ring
-        depths - get re-derived by hand one gate-failure at a time. That is what made a solved
-        problem cost a day. This is that loop, once.
+        WHY THIS EXISTS AS ONE CALL (GM 2026-08-11/12, after ringing one capital took the better
+        part of a working day): "farmland ringing a city is the DEFAULT which should always happen",
+        and the pool had settled HOW long before it was written down - Tango farms 3.8% of its sheet
+        over 11 fields, Minami 3.0% over 6, Nagahara 2.3% over 7. But all three gens carry their own
+        byte-for-byte copy of this loop, so the next city reads as new work when it is not, and the
+        numbers those copies already tuned get re-derived by hand one gate failure at a time.
 
-        Each spec is (name, hint, out_dir, down_deg, seed, fall, canal_a, canal_b, offtakes, src),
-        where `src` is "moat", "river" or "stream" - the kind the source topology declares. For each:
+        THE ALGORITHM IS THEIRS, unchanged, because it is the proven one:
 
-          - TAP the nearest point on `water` to `hint`. A MOAT tap is swept downstream first
-            (`moat_swept_tap`), because an offtake leaving square sheds sediment into its own mouth
-            and says nothing on the page about which way the water runs.
-          - the head-race runs tap -> sluice, with the gate AT the sluice (the palette seam, where
-            tap water becomes canal water).
-          - `comb(name, sluice, down_deg, seed, fall, canal_a, canal_b, offtakes)` builds the fan and
-            returns (net, envelope, centroid) - the gens' own comb_field, passed in until it too
-            moves in here.
-          - SOURCE topology ends at a plot centroid INSIDE the outline; SINK topology walks back a
-            ~52 px chord of the drain so the declared bend has room to stay obtuse.
-          - the households ring the envelope at three depths. `s.ring` already walks a perimeter and
-            respects every keep-out; hand-rolling that walk is how a day gets spent.
+          - the tap is the nearest moat/river VERTEX to the hint (not the nearest point on a
+            segment - the vertex is what the pool's fields were sited against)
+          - the sluice sits `standoff` px OUTWARD from the city center, so a fan falls down the
+            slope the moat sits on top of rather than back over the rampart
+          - a MOAT tap is then swept downstream (`moat_swept_tap`), turning a square offtake into
+            the acute downstream one canal practice calls for. The sluice does not move, so the
+            field does not move: only the moat-side end walks upstream
+          - the source topology ends where `source_point(net, centroid)` says - the gen's own
+            expression, because each one insets and filters differently and a near-miss there moves
+            the declared chain and ripples houses off the map
+          - the households ring the envelope at each (n, gap) in `rings`
 
-        A field whose ground cannot carry a fan is WITHDRAWN whole - comb_field records the field
+        `comb` builds one fan and returns (net, envelope, centroid) - each gen still owns its copy
+        of that carve, which is the other half of this job. `topo` is the gen's topology recorder.
+
+        A field whose ground cannot carry a fan is WITHDRAWN WHOLE: comb_field records the field
         before its water is declared, so a half-built one would sit on the map with no source, no
-        drain and no farmhouses, invisible to every rule that reads the water."""
+        drain and no farmhouses - drawn, recorded, and invisible to every rule that reads water."""
         out: list[Any] = []
-        for spec in specs:
-            name, hint, out_dir, down_deg, seed, fall, canal_a, canal_b, offtakes, src = spec
+        for name, hint, down_deg, seed, fall, canal_a, canal_b, offtakes, src in specs:
             wpts = water(src)
-            tap = min(
-                (
-                    (
-                        seg_dist(hint[0], hint[1], wpts[k], wpts[k + 1]),
-                        _seg_point(hint, wpts[k], wpts[k + 1]),
-                    )
-                    for k in range(len(wpts) - 1)
-                ),
-                key=lambda t: t[0],
-            )[1]
-            _l = math.hypot(out_dir[0], out_dir[1]) or 1.0
-            ux, uy = out_dir[0] / _l, out_dir[1] / _l
-            sl = (tap[0] + ux * 78, tap[1] + uy * 78)
+            # `tap_choices` narrows which vertices may be tapped before the nearest is taken -
+            # Tango only taps the arc UPSTREAM of each hint, because its moat runs southward and a
+            # tap below the hint would feed the field against the current.
+            cand = list(tap_choices(wpts, hint)) if tap_choices else list(wpts)
+            mp: Any = min(cand or wpts, key=lambda q: (q[0] - hint[0]) ** 2 + (q[1] - hint[1]) ** 2)
+            if tap_on_segment:
+                # the nearest POINT on the polyline, not its nearest VERTEX. A dense moat ring makes
+                # the two the same; a river drawn with five vertices does not, and the vertex can be
+                # hundreds of px from where the gen meant to tap.
+                mp = min(
+                    (_seg_point(hint, wpts[k], wpts[k + 1]) for k in range(len(wpts) - 1)),
+                    key=lambda q: (q[0] - hint[0]) ** 2 + (q[1] - hint[1]) ** 2,
+                )
+            # OUTWARD is radial from the city center by default - a fan must fall down the slope
+            # the moat sits on top of, not back over the rampart. A city whose water is not a ring
+            # around that center (the capital's river runs past one flank) supplies its own bearing.
+            ux, uy = outward[name](mp, city_center) if isinstance(outward, dict) else outward(name, mp, city_center) if outward else ((mp[0] - city_center[0]), (mp[1] - city_center[1]))
+            ol = math.hypot(ux, uy) or 1.0
+            sl = (round(mp[0] + standoff * ux / ol), round(mp[1] + standoff * uy / ol))
             if src == "moat" and self.M.get("moat_flow"):
                 mf = self.M["moat_flow"]
-                tap = moat_swept_tap(wpts, mf["inlet"], mf["outlet"], sl, tap, want_deg=42.0, max_back=240.0)
-            mid = ((tap[0] + sl[0]) / 2 - uy * 7, (tap[1] + sl[1]) / 2 + ux * 7)
-            self.field_channel([tap, mid, sl], "#9CB4C8", 7, 7)
-            self.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(uy, ux)) + 90)
+                mp = moat_swept_tap(wpts, mf["inlet"], mf["outlet"], sl, mp)
+            self.field_channel([mp, sl], "#9CB4C8", 7, 7)
+            self.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)
             try:
                 net, env, cen = comb(name, sl, down_deg, seed, fall, canal_a, canal_b, offtakes)
             except (ValueError, IndexError) as exc:
@@ -11737,31 +11809,41 @@ class Settlement:
                 self.M["field_ditches"] = [d for d in self.M.get("field_ditches") or [] if d.get("field") != name]
                 print(f"{name}: NO FIELD ({exc}) - withdrawn")
                 continue
-            plots = [c for c in net["channels"] if c["role"] == "drain"]
-            pd = max((p for pl in net["plots"] for p in [_poly_centroid(pl["poly"])]), key=lambda q: q[1])
-            topo([tap, sl, pd], {"kind": src}, {"kind": "field", "name": name})
-            if plots:
-                # the tail must leave the SHEET: a drain that stops on-canvas is a drain that goes
-                # nowhere, and the sink topology then anchors to nothing
-                tail = _drain_tail(plots[0]["pts"])
-                dvx, dvy = tail[1][0] - tail[0][0], tail[1][1] - tail[0][1]
-                dvl = math.hypot(dvx, dvy) or 1.0
-                reach = 60.0
-                for cand in (60.0, 140.0, 240.0, 380.0):
-                    reach = cand
-                    tx, ty = tail[1][0] + dvx / dvl * cand, tail[1][1] + dvy / dvl * cand
-                    if tx < -20 or ty < -20 or tx > self.W + 20 or ty > self.H + 20:
-                        break
-                topo(tail, {"kind": "drain", "name": name}, {"kind": "offmap"})
-                topo([tail[1], (tail[1][0] + dvx / dvl * reach, tail[1][1] + dvy / dvl * reach)], {"kind": "drain", "name": name}, {"kind": "offmap"}, draw_w=4.0)
-            # THE CITY BOUND REFUSES EVERY SEAT OUT ON THE PADDY, so it is opened around the field
-            # while its households are seated and restored afterwards. Without this the rings seat
-            # NOTHING and the fields come out as scenery - which is exactly what happened the first
-            # time this ring was built by hand.
-            xs = [q[0] for q in env]
-            ys = [q[1] for q in env]
+            # the SOURCE point is the gen's own expression, passed in like `comb` and `topo`.
+            # Reimplementing it here was wrong twice over: each gen's plot_centroid insets toward
+            # the mean of its plot centroids and filters which plots count, and getting that subtly
+            # different moved the declared chain AND rippled four houses off the map.
+            if source_point is not None:
+                pd = source_point(net, cen)
+            else:
+                cs = [_poly_centroid(pl["poly"]) for pl in net["plots"]]
+                pd0 = max(cs, key=lambda q: q[1])
+                pd = (round(pd0[0], 1), round(pd0[1], 1))
+            topo([(mp[0], mp[1]), sl, pd], {"kind": src}, {"kind": "field", "name": name})
+            dr = next((c["pts"] for c in net["channels"] if c["role"] == "drain"), None)
+            if dr:
+                # the sink chord is the gen's: Tango walks back ~52 px so the declared bend has room
+                # to stay obtuse, where its siblings take the drain's last segment
+                topo(drain_points(dr) if drain_points else [tuple(dr[-2]), tuple(dr[-1])], {"kind": "drain", "name": name}, {"kind": "offmap"})
+            # `open_bound` widens the placement bound around the field while its households are
+            # seated. A CITY bound refuses every seat out on the paddy, so a map that sets one (the
+            # capital does; the provincial cities do not at this point in their gens) rings NOTHING
+            # without it - the fields come out as scenery. Default off keeps the pool byte-identical.
             keep = self.bound
-            self.bound = [[min(xs) - 260, min(ys) - 260], [max(xs) + 260, min(ys) - 260], [max(xs) + 260, max(ys) + 260], [min(xs) - 260, max(ys) + 260]]
+            if upslope and open_bound:
+                xs0 = [q[0] for q in env]
+                ys0 = [q[1] for q in env]
+                self.bound = [[min(xs0) - 260, min(ys0) - 260], [max(xs0) + 260, min(ys0) - 260], [max(xs0) + 260, max(ys0) + 260], [min(xs0) - 260, max(ys0) + 260]]
+                # its OWN standoffs, not the ring's: a ring's first band sits inside the dry hem,
+                # which is cropland - a farmstead there stands on the field it works
+                self._ring_upslope(env, down_deg, dr, upslope_gaps or (30, 52, 74, 96))
+                self.bound = keep
+                out.append((net, env, cen))
+                continue
+            if open_bound:
+                xs = [q[0] for q in env]
+                ys = [q[1] for q in env]
+                self.bound = [[min(xs) - 260, min(ys) - 260], [max(xs) + 260, min(ys) - 260], [max(xs) + 260, max(ys) + 260], [min(xs) - 260, max(ys) + 260]]
             for n_, gap in rings:
                 self.ring(("poly", env), n_, gap, ["plain"])
             self.bound = keep

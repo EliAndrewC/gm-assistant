@@ -940,27 +940,18 @@ MOAT_FARMS = [
     ("fs1", (1292, 1811), 130, 38, 170, (130, 170), (85, 115), (0.4, 0.78)),
     ("fss1", (1650, 1800), 100, 39, 170, (120, 160), (80, 110), (0.4, 0.75)),  # S band E of fs1, falling S off-frame (GM 2026-07-23 rollout)
 ]  # fs1's local comb seed 23->38: post-shrink, seed 23's smoothed rim overran the westmost plot by 64px of unplanted claim (field_outline_matches_planting; the drain rim, not the canals - trimming canal spans moved nothing), while seed 38 plants the same footprint to within 34px
-for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
-    mp = min(MOAT, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
-    _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0
-    sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
-    # SWEEP THE THROAT DOWNSTREAM (GM 2026-07-25). `sl` above is untouched, so the comb field this
-    # feeds does not move; only the MOAT-SIDE end walks upstream, turning a square tap into the acute
-    # downstream-pointing offtake canal practice calls for (optimum 15-45 deg, "30 or 45 instead of 90").
-    _mfl = s.M["moat_flow"]
-    mp = moat_swept_tap(MOAT, _mfl["inlet"], _mfl["outlet"], sl, mp)
-    s.field_channel([mp, sl], '#9CB4C8', 7, 7)  # the visible tap, in the MOAT'S OWN water color (confluence, not crossing - GM 2026-07-23)
-    s.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)  # the intake gate AT the palette seam (tap water -> canal water)
-    _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,))
-    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))
-    # pull the delivery endpoint a touch toward the field centroid so it lands a clear >=10px
-    # INSIDE the outline (a bottom-row plot centroid can sit within a bund's width of the edge)
-    _pd = (round(0.80 * _pd[0] + 0.20 * _cen[0], 1), round(0.80 * _pd[1] + 0.20 * _cen[1], 1))
-    topo_channel([(mp[0], mp[1]), sl, _pd], {"kind": "moat"}, {"kind": "field", "name": nm})
-    _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
-    topo_channel([tuple(_dr[-2]), tuple(_dr[-1])], {"kind": "drain", "name": nm}, {"kind": "offmap"})
-    s.ring(('poly', _env), 26, 15, ["plain"])
-    s.ring(('poly', _env), 20, 40, ["plain"])
+# THROUGH THE ENGINE (s.farmland_ring): this loop was byte-for-byte the same in three gens, which
+# is why ringing a new city read as new work. The table above is all that was ever per-city.
+s.farmland_ring(
+    [(nm, tap, dd, sd, ff, ca, cb, oa, "moat") for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS],
+    comb=lambda nm, sl, dd, sd, ff, ca, cb, oa: comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,)),
+    topo=topo_channel,
+    water=lambda _k: MOAT,
+    city_center=(CX, CY),
+    source_point=lambda _net, _cen: (
+        lambda _pd: (round(0.80 * _pd[0] + 0.20 * _cen[0], 1), round(0.80 * _pd[1] + 0.20 * _cen[1], 1))
+    )(plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))),
+)
 
 # fnn1 + fnn2 - the north band fans flanking the north road (GM 2026-07-23 rollout: the wide frame
 # opened bare ground above the moat). Both are fn1-pattern: off-map northern source (the high side
