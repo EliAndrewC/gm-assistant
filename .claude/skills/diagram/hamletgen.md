@@ -95,6 +95,48 @@ estimate.
 
 **Speed.** A hamlet generates and gates in ~11 seconds. The authored equivalent is a session's work.
 
+## The one map that does not pass, and why it is worth knowing
+
+A fan can put its collector's outfall exactly ON the field outline - neither inside nor out, within
+rounding - while the crop wraps a lobe around it. `streams_avoid_fields` exempts a drain brook's
+anchored leg by trimming leading vertices that are strictly INSIDE the outline, so a brook starting
+on the boundary is never trimmed and every route from it reads as crossing the crop. There is no
+bearing, junction distance or junction angle that fixes it: the START is the problem, and backing
+the start up the drain until it is genuinely inside does not help either, because the collector
+itself runs along the lobe.
+
+The honest fix is upstream, in `fit_field`: a fan whose outfall lands on its own outline should be
+disqualified the way one with a dangling supply-canal tail already is. That is a change to the fan
+SEARCH rather than to the routing, so it re-rolls maps, and it is the obvious next move rather than
+another routing patch. Recorded here rather than papered over.
+
+## Raising the rate (2026-08-11)
+
+The GM's follow-up was the two items above: fix the engine defects on their own, and take the
+cohort to 100%. What the second one taught is worth as much as the number.
+
+**Nine of the eleven fixes were one of three shapes**, and none of them was "tune a constant":
+
+- **A test that measured the wrong thing.** `crosses_poly` took a fixed 60 samples whatever the
+  segment measured, so a 4,000 px connector was sampled every 67 px and stepped clean over a field.
+  A way was routed by the straight CHORD to its endpoint and then drawn as a polyline bowing 40 px
+  either side of it. A probe must measure what will be drawn, at a resolution finer than the thing
+  it is testing.
+- **A test that could never pass, which looks exactly like one that always does.** The drain
+  brook's bearing sweep tested the leg starting at the drain OUTFALL - inside the field by
+  definition - so every bearing was rejected and the sweep fell through to an untested fallback.
+  The fan disqualifier had the identical shape earlier. Assert that a filter accepts something.
+- **A feature sized off an aggregate that an outlier could stretch.** The windbreak and the copse
+  were sized off the MAXIMUM extent of the house cloud, so one strewn farmstead turned the belt into
+  a 2,392 px green blanket. Percentiles were tried and are the wrong cure: bounding the SEATS to the
+  cluster band removed the outliers at source, and the percentiles then only made the belt too small
+  to shelter anything.
+
+**And the second-order effects are the reason a cohort beats a map.** The green blanket did not fail
+as "your windbreak is too big" - it failed as `title_clear_of_features`, because with the head of
+the sheet under trees there was no blank ground left for the map's own name. Three checks away from
+its cause. A single map would have been fixed at the symptom.
+
 ## What the experiment found in the EXISTING engine
 
 Six things, found by building on shipped code rather than by auditing it. **Five are now fixed**
@@ -258,45 +300,3 @@ Worth carrying to any future generator work, whatever happens to this one:
   is met - it fails as a cluster packed so solid that no wellhead can be seated anywhere in it, and
   the gate reports `settlement_has_wells`. When a check fails for a reason that makes no sense,
   suspect a sizing constant upstream of it.
-
-## The one map that does not pass, and why it is worth knowing
-
-A fan can put its collector's outfall exactly ON the field outline - neither inside nor out, within
-rounding - while the crop wraps a lobe around it. `streams_avoid_fields` exempts a drain brook's
-anchored leg by trimming leading vertices that are strictly INSIDE the outline, so a brook starting
-on the boundary is never trimmed and every route from it reads as crossing the crop. There is no
-bearing, junction distance or junction angle that fixes it: the START is the problem, and backing
-the start up the drain until it is genuinely inside does not help either, because the collector
-itself runs along the lobe.
-
-The honest fix is upstream, in `fit_field`: a fan whose outfall lands on its own outline should be
-disqualified the way one with a dangling supply-canal tail already is. That is a change to the fan
-SEARCH rather than to the routing, so it re-rolls maps, and it is the obvious next move rather than
-another routing patch. Recorded here rather than papered over.
-
-## Raising the rate (2026-08-11)
-
-The GM's follow-up was the two items above: fix the engine defects on their own, and take the
-cohort to 100%. What the second one taught is worth as much as the number.
-
-**Nine of the eleven fixes were one of three shapes**, and none of them was "tune a constant":
-
-- **A test that measured the wrong thing.** `crosses_poly` took a fixed 60 samples whatever the
-  segment measured, so a 4,000 px connector was sampled every 67 px and stepped clean over a field.
-  A way was routed by the straight CHORD to its endpoint and then drawn as a polyline bowing 40 px
-  either side of it. A probe must measure what will be drawn, at a resolution finer than the thing
-  it is testing.
-- **A test that could never pass, which looks exactly like one that always does.** The drain
-  brook's bearing sweep tested the leg starting at the drain OUTFALL - inside the field by
-  definition - so every bearing was rejected and the sweep fell through to an untested fallback.
-  The fan disqualifier had the identical shape earlier. Assert that a filter accepts something.
-- **A feature sized off an aggregate that an outlier could stretch.** The windbreak and the copse
-  were sized off the MAXIMUM extent of the house cloud, so one strewn farmstead turned the belt into
-  a 2,392 px green blanket. Percentiles were tried and are the wrong cure: bounding the SEATS to the
-  cluster band removed the outliers at source, and the percentiles then only made the belt too small
-  to shelter anything.
-
-**And the second-order effects are the reason a cohort beats a map.** The green blanket did not fail
-as "your windbreak is too big" - it failed as `title_clear_of_features`, because with the head of
-the sheet under trees there was no blank ground left for the map's own name. Three checks away from
-its cause. A single map would have been fixed at the symptom.
