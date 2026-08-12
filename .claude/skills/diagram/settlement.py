@@ -9186,6 +9186,71 @@ class Settlement:
         if role != "pond_fringe":  # the wet valley TOE (and the defensive belt) is UNBUILDABLE: register it as a no-build keep-out
             self.block_polys.append([(round(px, 1), round(py, 1)) for px, py in poly])  # so nothing is placed/dug on a bog (a thin pond-fringe shore ring is exempt)
 
+    def trim_off_marsh(self, pts: Any, margin: float = 6.0) -> Any:
+        """Shorten a way so neither END stands on drawn marshland (GM 2026-08-12).
+
+        A path does not run into a reed bed: it stops on the dry side of it. Only the ENDS are
+        walked back, because a way whose MIDDLE crosses wet ground has a routing problem that
+        trimming cannot fix - that one has to be re-routed, and `roads_clear_of_marsh` says so.
+        Marsh drawn so far is what is checked, so this only helps a way laid AFTER its water; the
+        `defense` belt is exempt for the same reason it is exempt from the check (its approach IS a
+        causeway, and few constricted approaches are the point of it)."""
+        wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in self.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
+        if not wet or len(pts) < 2:  # a caller may hand over an already-clipped stub; there is nothing to walk back
+            return pts
+        out = [(float(q[0]), float(q[1])) for q in pts]
+
+        def soaked(q: Pt) -> bool:
+            return any(point_in_poly(q[0], q[1], r) or min(seg_dist(q[0], q[1], r[k], r[(k + 1) % len(r)]) for k in range(len(r))) < margin for r in wet)
+
+        # A skeleton arm is a TWO-point polyline, so the walk must be able to shorten the last leg
+        # itself rather than only drop vertices - guarding on `len(out) > 2` trimmed nothing at all
+        # on the very map this was written for.
+        for _ in range(2):  # once from each end
+            for _step in range(60):
+                if not soaked(out[-1]):
+                    break
+                a, b = out[-2], out[-1]
+                d = math.hypot(b[0] - a[0], b[1] - a[1])
+                if d <= 30.0:  # this whole leg is wet: drop it, unless dropping it would leave no way at all
+                    if len(out) > 2:
+                        out.pop()
+                        continue
+                    break
+                out[-1] = (b[0] - (b[0] - a[0]) / d * 24.0, b[1] - (b[1] - a[1]) / d * 24.0)
+            out.reverse()
+        return out
+
+    def toe_band(self, down_deg: Any = None, pad: float = 90.0) -> list[Pt]:
+        """The reed-marsh TOE: the contour band below the crop's lowest point, in canvas coordinates.
+
+        FACTORED OUT so it can be asked for BEFORE it is drawn (2026-08-12). `hinterland()` lays the
+        marsh late, after the structures, but a WAY has to be routed early - and the GM's rule is
+        that a path does not pass through marshland, so the router has to know where the wet ground
+        will be while it still has a choice. Deriving it in two places is the trap this skill's notes
+        call "placement and its check must read the SAME source", so there is one derivation and both
+        callers use it.
+
+        It is a CONTOUR band, not a bbox: wet ground is defined by HEIGHT, so the inner edge is
+        perpendicular to the `down_deg` vector like every other height-resolved feature here. An
+        axis-aligned rectangle is only an honest contour at a 0/90/180/270 fall, and at a diagonal it
+        slices across the slope - which is the bug this shape was given to fix."""
+        if down_deg is None:
+            down_deg = self.M.get("meta", {}).get("down_deg", 90)
+        polys = self.field_polys
+        if not polys:
+            return []
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        ux, uy = -dy, dx  # cross-slope unit vector (the contour direction)
+        cult = [p for poly in polys for p in poly] + [p for dp in self.M.get("dry_plots", []) for p in dp["poly"]]
+        v_in = max(p[0] * dx + p[1] * dy for p in cult) - pad  # inner edge: `pad` ABOVE the crop's lowest point, so the reeds still tuck under the crop
+        bleed = 120.0
+        corners = [(-bleed, -bleed), (self.W + bleed, -bleed), (self.W + bleed, self.H + bleed), (-bleed, self.H + bleed)]
+        us = [c[0] * ux + c[1] * uy for c in corners]
+        v_out = max(c[0] * dx + c[1] * dy for c in corners)  # far enough downhill to leave the canvas
+        u0, u1 = min(us), max(us)
+        return [(u * ux + v * dx, u * uy + v * dy) for u, v in ((u0, v_in), (u1, v_in), (u1, v_out), (u0, v_out))]
+
     def hinterland(
         self, down_deg: Any = None, *, marsh: bool = True, commons: bool = True, interior_fill: bool = True, pad: float = 90, marsh_role: str = "toe", scrub_role: str = "grazing", skip_sides: Any = ()
     ) -> None:
@@ -9288,14 +9353,7 @@ class Settlement:
             # Since EVERY collector descends ~19-20 degrees across the contours to reach its tameike, there is
             # genuinely ground below the ditch that is still crop-height on every map; the band now shows that
             # consistently instead of hiding it on two maps out of three.
-            ux, uy = -dy, dx  # cross-slope unit vector (the contour direction)
-            cult = [p for poly in polys for p in poly] + [p for dp in self.M.get("dry_plots", []) for p in dp["poly"]]
-            v_in = max(p[0] * dx + p[1] * dy for p in cult) - pad  # inner edge: `pad` ABOVE the crop's lowest point, so the reeds still tuck under the crop
-            corners = [(-BLEED, -BLEED), (W + BLEED, -BLEED), (W + BLEED, H + BLEED), (-BLEED, H + BLEED)]
-            us = [c[0] * ux + c[1] * uy for c in corners]
-            v_out = max(c[0] * dx + c[1] * dy for c in corners)  # far enough downhill to leave the canvas
-            u0, u1 = min(us), max(us)
-            toe = [(u * ux + v * dx, u * uy + v * dy) for u, v in ((u0, v_in), (u1, v_in), (u1, v_out), (u0, v_out))]
+            toe = self.toe_band(down_deg, pad)
             self.marsh(toe, role=marsh_role, avoid=avoid)  # reed wetland: the low, undrained downhill toe
 
     def near_ring_cropland(self, bbox: tuple[float, float, float, float], density: str | None = None, *, seed: int = 0, garden_frac: float = 0.16, cell_ft: float = 60.0, avoid: Any = ()) -> int:
@@ -14177,7 +14235,10 @@ class Settlement:
         # along the margin and its DERIVED headman/gateway land inside the cluster at any fall direction
         layout = skeleton_layout(lane_kind, 0.0, 0.0, lat, dep)
         for lane_pts in layout["lanes"]:
-            self.lane([to_screen(p) for p in lane_pts], width=5, clearance=40, worn=True)
+            # ...and trimmed off any wet ground already drawn: the pond and its reed fringe are laid
+            # before the skeleton, and a rolled arm reaching the water finished IN the fringe on
+            # Shimizu (GM 2026-08-12). A lane stops at the reeds; it does not wade into them.
+            self.lane(self.trim_off_marsh([to_screen(p) for p in lane_pts]), width=5, clearance=40, worn=True)
         self.M["meta"]["lane_skeleton"] = lane_kind
         sk = {"headman": to_screen(layout["headman"]), "gateway": to_screen(layout["gateway"])}
         placed = 0

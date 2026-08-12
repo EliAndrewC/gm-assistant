@@ -125,6 +125,13 @@ LANE_CLEARANCE = 48.0
 # margin. Tying this to the clearance is what made the clearance look like it had to be 48.
 LANE_FRONTAGE_STANDOFF = 70.0
 
+# How far outside the paddy's outline a field spur's tip stops. The lane is drawn 5 px wide and
+# `fields_clear_of_road` allows w/2 + 2, so 8 px would clear it on paper - but the outline is a
+# rolled, ragged polygon and the tip is placed against a VERTEX, whose two edges may fall away on
+# either side. 14 px is the smallest set-back that keeps every cohort map's tip out of the standing
+# water, and it is still under a farmhouse's width, so the track visibly reaches the field.
+SPUR_SETBACK = 14.0
+
 # HOW MUCH GROUND ONE HOMESTEAD TAKES, in px at 1 ft/px - the pitch the cluster band is sized on.
 # A bundle's reserved rects come to ~71 x 57 ft; the placer then keeps bundles apart by
 # circumscribed circles rather than real footprints, so the effective pitch is larger again. 92 px
@@ -1038,7 +1045,7 @@ def back_fouled(anchor: Pt, out: Pt, dep: float, dry_plots: Sequence[Poly], reac
     return hit / total
 
 
-def seat_cluster(plan: SitePlan, dry_plots: Sequence[Poly] = (), drain: Poly | None = None) -> dict[str, Any]:
+def seat_cluster(plan: SitePlan, dry_plots: Sequence[Poly] = (), drain: Poly | None = None, toe: Poly | None = None) -> dict[str, Any]:
     """WHERE THE HOUSES GO - the one derivation that decides how the whole map reads.
 
     背山面水, "back to the hill, face the water": a farming settlement stands with its back to the
@@ -1126,6 +1133,15 @@ def seat_cluster(plan: SitePlan, dry_plots: Sequence[Poly] = (), drain: Poly | N
         seat_c = (mid[0] + nx * (dep + 12.0), mid[1] + ny * (dep + 12.0))
         if not (lat * 0.5 <= seat_c[0] <= plan.W - lat * 0.5 and lat * 0.5 <= seat_c[1] <= plan.H - lat * 0.5):
             continue
+        # HARD 4: THE CLUSTER IS NOT BUILT ON THE WET TOE (GM 2026-08-12). `hinterland` lays reed
+        # marsh across everything below the crop's low point, and on a crescent cluster hugging the
+        # fan's toe the seat landed INSIDE that band - so the settlement's own lanes started in the
+        # marsh and no amount of routing could save them (3 of 36 cohort maps). No reeds are drawn
+        # on the houses, because the scatter skips the settlement halo, but the ground is still
+        # marsh and the map says so. This is the same instinct as HARD 1 one step further out: you
+        # do not build in the bog, and you do not build where the bog is either.
+        if toe and (point_in_poly(seat_c[0], seat_c[1], toe) or point_in_poly(mid[0], mid[1], toe)):
+            continue
         # 1.0 x facing the wind (the back), 0.8 x being upslope. Both express the same siting
         # instinct from two directions, and weighting the wind slightly higher keeps the windbreak
         # unambiguously behind the houses even on a map whose fall and wind nearly oppose.
@@ -1191,7 +1207,7 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         for rec in list(s.M.get("field_ditches", [])) + list(s.M.get("channels", [])) + list(s.M.get("streams", []))
         for a, b in zip(rec["poly"], rec["poly"][1:], strict=False)
     ] + [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
-    seat = seat_cluster(plan, dry_plots=crop_polys(s), drain=drain)
+    seat = seat_cluster(plan, dry_plots=crop_polys(s), drain=drain, toe=s.toe_band() or None)
     plan.seat = seat
     # THE SITE'S BACK IS THE WINDWARD SIDE, and where the two disagree the site wins.
     #
@@ -1218,6 +1234,7 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         """Seat frame (along the margin, away from the field) -> screen."""
         return (cx + ax * p[0] + ox * p[1], cy + ay * p[0] + oy * p[1])
 
+    toe_now = s.toe_band() or None
     layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, seat["lat"], seat["dep"])
     for lane_pts in layout["lanes"]:
         # ...pulled back out of any hem plot the arm would otherwise reach into. The skeleton is
@@ -1233,7 +1250,12 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         # ...clipped against the DRAWN water lines as well as the recorded ones: `field_channel`
         # fillets its polyline before drawing it, and a bridge is decked on what was drawn.
         drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
-        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], crops, 20.0, lines=list(plan.watercourses) + drawn_water)
+        # ...and the WET TOE is clipped against like any other ground a lane may not cross, not just
+        # trimmed at the ends: `trim_off_marsh` walks an END back, which is the right move for a way
+        # that pokes into the reeds, but an arm whose MIDDLE runs through them needs the truncation
+        # its own docstring points at. An arm ends where the marsh begins - that is what a lane does.
+        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], [*crops, *([toe_now] if toe_now else [])], 20.0, lines=list(plan.watercourses) + drawn_water)
+        arm = s.trim_off_marsh(arm)  # ...and off the pond's reed fringe, which is already drawn by now
         if len(arm) >= 2:
             s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)
     s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
@@ -1246,10 +1268,28 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     # every hem plot wins; if none is, the nearest is used and the gate says so rather than the map
     # quietly shipping a lane through the barley.
     start = to_screen((0.0, 0.0))
+    cen = centroid(plan.envelope)
     brook_segs = [(plan.sink_brook[i], plan.sink_brook[i + 1]) for i in range(len(plan.sink_brook) - 1)]
 
     def spur_path(target: Pt) -> Poly:
-        edge = (target[0] - ox * 8.0, target[1] - oy * 8.0)
+        # THE TIP STOPS OUTSIDE THE FIELD, measured on the LOCAL edge normal (GM 2026-08-12:
+        # "Inashiro has village paths overlapping with rice paddies"). It used to pull back 8 px
+        # along the SEAT's outward normal, which is one fixed direction for the whole map - so at a
+        # target vertex whose own outline runs a different way, the pull-back was sideways and the
+        # tip finished 28 px INSIDE the envelope, a track ending in the standing water. The normal
+        # is taken from the two outline edges meeting at the target and oriented away from the
+        # field's centroid, and the set-back covers the lane's own half-width plus the tolerance
+        # `fields_clear_of_road` allows. A path stops AT the bund; the last few feet are the baulk.
+        env = plan.envelope
+        k = min(range(len(env)), key=lambda i2: math.hypot(env[i2][0] - target[0], env[i2][1] - target[1]))
+        nx, ny = 0.0, 0.0
+        for a2, b2 in ((env[k - 1], env[k]), (env[k], env[(k + 1) % len(env)])):
+            ex, ey = unit(-(b2[1] - a2[1]), b2[0] - a2[0])
+            nx, ny = nx + ex, ny + ey
+        nx, ny = unit(nx, ny)
+        if nx * (target[0] - cen[0]) + ny * (target[1] - cen[1]) < 0:
+            nx, ny = -nx, -ny
+        edge = (target[0] + nx * SPUR_SETBACK, target[1] + ny * SPUR_SETBACK)
         return [start, ((cx + edge[0]) / 2 + ax * 14, (cy + edge[1]) / 2 + ay * 14), edge]
 
     # ...and again the candidate is the DRAWN path, bow and all - see `path_is_clear`.
@@ -1257,11 +1297,104 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         (spur_path(q) for q in sorted(plan.envelope, key=lambda v: math.hypot(v[0] - cx, v[1] - cy))),
         key=lambda p: (path_violations(p, crops, plan.sink_pond, brook_segs, plan.watercourses), polyline_len(p)),
     )
-    s.lane(spur, width=5, clearance=LANE_CLEARANCE, worn=True)
+    s.lane(s.trim_off_marsh(clip_to_clear(spur, [*crops, *([toe_now] if toe_now else [])], 12.0)), width=5, clearance=LANE_CLEARANCE, worn=True)
 
     # the CONNECTOR, out to the frame
-    gate = to_screen((float(layout["gateway"][0]), float(layout["gateway"][1])))
-    s.lane(connector_track(plan, gate, avoid=[list(plan.envelope), *crops]), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
+    # ...and the gate the connector starts FROM must itself be out of the crop. The skeleton's
+    # gateway is a point in the seat frame, so on a cluster that sits against a concave stretch of
+    # the fan it can land INSIDE the field envelope - and the connector then starts in the rice and
+    # crosses the outline twice on its way out (Inashiro, GM 2026-08-12).
+    gate = push_out_of(plan.envelope, to_screen((float(layout["gateway"][0]), float(layout["gateway"][1]))), SPUR_SETBACK)
+    # THE TRACK LEAVES CLEAR OF THE WET TOE (GM 2026-08-12: "there's supposed to be a rule that
+    # paths don't pass through marshland"). The marsh is not drawn until `stage_hinterland`, long
+    # after this, so the router asks the ENGINE where it will be - `toe_band` is the same derivation
+    # `hinterland()` lays the reeds on, factored out precisely so the two cannot disagree. With the
+    # band in the obstacle list every straight-downslope bearing scores as a violation and the sweep
+    # settles on a contour-following one, which is what a real valley track does anyway: roads run
+    # ALONG the valley, they do not dive into the swamp at its foot.
+    # ...and the wet ground is EVERY marsh, not just the toe band: the pond's reed fringe is drawn
+    # back in `stage_sink`, before this, and a cohort sweep found ways ending in it on two maps.
+    toe = s.toe_band()
+    drawn_wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
+    track = connector_track(plan, gate, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet)
+    s.lane(route_around(plan.envelope, track, SPUR_SETBACK), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
+
+
+def push_out_of(poly: Poly, p: Pt, margin: float) -> Pt:
+    """Move `p` OUTSIDE `poly` by `margin`, on the normal of the outline EDGE nearest to it.
+
+    Shared by the field spur's tip and the connector's route, which had the same defect for the same
+    reason: both were pushed clear along one fixed map-wide direction (the seat's outward normal),
+    which is only the right way out where the outline happens to run across it - so a spur tip
+    finished 28 px inside the standing water. Projecting onto the nearest EDGE (not the nearest
+    VERTEX - a point deep inside a lobe can have its nearest vertex right round the far side, and
+    stepping out from there is a detour, not a fix) puts the way exactly where a track meeting a
+    field goes: on the bund, just outside the crop. A point already clear is returned untouched, so
+    this never drags a way back in."""
+    ring = list(poly)
+    n = len(ring)
+    best: tuple[float, Pt, Pt, Pt] | None = None
+    for k in range(n):
+        a, b = ring[k], ring[(k + 1) % n]
+        q = seg_closest(p[0], p[1], a, b)
+        d = math.hypot(q[0] - p[0], q[1] - p[1])
+        if best is None or d < best[0]:
+            best = (d, q, a, b)
+    assert best is not None  # a ring always has an edge
+    d, q, a, b = best
+    inside = point_in_poly(p[0], p[1], ring)
+    if not inside and d > margin:
+        return p
+    nx, ny = unit(-(b[1] - a[1]), b[0] - a[0])
+    cen = centroid(poly)
+    if nx * (q[0] - cen[0]) + ny * (q[1] - cen[1]) < 0:
+        nx, ny = -nx, -ny
+    return (q[0] + nx * margin, q[1] + ny * margin)
+
+
+def route_around(poly: Poly, path: Poly, margin: float, rounds: int = 6) -> Poly:
+    """Bend a drawn way OUT of `poly` by walking its outline round the obstruction.
+
+    `connector_track` sweeps forty bearings and keeps the LEAST-BAD when none is clean, which is the
+    right call for a track that has to reach the frame somehow - but least-bad can still mean a leg
+    cutting straight across a lobe of the fan, which is what the GM saw on Inashiro (2026-08-12).
+
+    A track meeting a field GOES ROUND IT, and that is what this does literally: where a leg enters
+    the outline at one edge and leaves at another, the outline's own vertices between those two
+    edges are spliced in (the shorter way round), each stepped `margin` clear on its local normal.
+    An earlier version inserted ONE waypoint at the mean of the crossings and re-ran; it converged a
+    few pixels per round and ran out of rounds still crossing, because a point pushed off the middle
+    of a lobe lands right beside the leg it came from. Following the boundary is both the correct
+    detour and the one a farmer walks."""
+    ring = list(poly)
+    n = len(ring)
+    out = [push_out_of(poly, q, margin) for q in path]
+    for _ in range(rounds):
+        redo: Poly = []
+        cut = False
+        for i in range(len(out) - 1):
+            redo.append(out[i])
+            a, b = out[i], out[i + 1]
+            hits = [(k, h) for k in range(n) if segments_cross(a, b, ring[k], ring[(k + 1) % n]) and (h := seg_intersect(a, b, ring[k], ring[(k + 1) % n])) is not None]
+            if len(hits) < 2:
+                if (
+                    hits
+                ):  # pragma: no cover - a leg from outside to outside crosses a closed ring an EVEN number of times, so this is the guard for a leg grazing a vertex; no cohort map has produced one
+                    redo.append(push_out_of(poly, hits[0][1], margin))
+                    cut = True
+                continue
+            hits.sort(key=lambda kh: math.hypot(kh[1][0] - a[0], kh[1][1] - a[1]))
+            k0, k1 = hits[0][0], hits[-1][0]
+            fwd = [(k0 + 1 + t) % n for t in range((k1 - k0) % n)]
+            bwd = [(k0 - t) % n for t in range((k0 - k1) % n)]
+            way = fwd if len(fwd) <= len(bwd) else bwd
+            redo += [push_out_of(poly, ring[t], margin) for t in way]
+            cut = True
+        redo.append(out[-1])
+        out = redo
+        if not cut:
+            break
+    return out
 
 
 def clip_to_clear(pts: Poly, obstacles: Sequence[Poly], margin: float, step: float = 8.0, lines: Sequence[tuple[Pt, Pt]] = (), line_margin: float = 14.0) -> Poly:
@@ -1304,7 +1437,7 @@ def polyline_len(pts: Poly) -> float:
     return sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
 
 
-def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach: float = 4000.0) -> Poly:
+def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach: float = 4000.0, wet: Sequence[Poly] = ()) -> Poly:
     """The track from the settlement's gateway to the map edge, steered clear of the crop.
 
     Bearings are tried outward from "away from the field, leaning downslope" - the direction a real
@@ -1336,7 +1469,7 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
     # start point inside a crop makes EVERY bearing fail - which is how the fallback below came to
     # fire at all. Step it clear first.
     start = pull_clear(start, (plan.seat["cx"], plan.seat["cy"]), avoid or [plan.envelope], 12.0)
-    best: tuple[int, Poly] | None = None
+    best: tuple[tuple[int, int], Poly] | None = None
     for swing in sorted((9.0 * k for k in range(-20, 21)), key=abs):
         theta = math.radians(base + swing)
         # THE CANDIDATE IS THE PATH THAT WILL BE DRAWN, not the straight line to its endpoint. A
@@ -1352,11 +1485,19 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
             (start[0] + math.cos(theta) * reach * 0.44 - px * 46, start[1] + math.sin(theta) * reach * 0.44 - py * 46),
             (start[0] + math.cos(theta) * reach, start[1] + math.sin(theta) * reach),
         ]
+        # WET GROUND OUTRANKS EVERYTHING ELSE (GM 2026-08-12). The toe marsh is a contour band
+        # spanning the whole canvas below the crop, so on a map whose cluster sits in a pocket of
+        # the fan NO bearing is clean of both - and a single violation count lets one crop clip
+        # outweigh a thousand feet of swamp. Scoring them separately, wet first, makes the sweep
+        # leave along the contour and exit the frame ABOVE the marsh, which is what a real valley
+        # road does; whatever crop it then clips is bent round afterwards by `route_around`, which
+        # the marsh has no equivalent of because a track through a marsh cannot be nudged dry.
+        soaked = sum(path_violations(path, [w], None, ()) for w in wet)  # the WET POLYGON only - pond and brook are scored once, below
         violations = path_violations(path, avoid or [plan.envelope], pond, brook, waters)
-        if violations == 0:
+        if soaked == 0 and violations == 0:
             return path
-        if best is None or violations < best[0]:
-            best = (violations, path)
+        if best is None or (soaked, violations) < best[0]:
+            best = ((soaked, violations), path)
     # NO CLEAN BEARING: take the LEAST-BAD one rather than a fixed escape route.
     #
     # This used to return `start` plus a ray straight away from the field, and that fallback is what

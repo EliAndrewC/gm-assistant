@@ -23,6 +23,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import hamletgen as hg  # noqa: E402
+from settlement import point_in_poly  # noqa: E402
 
 # A unit square field envelope, big enough for the seat math to be readable.
 SQUARE: list[tuple[float, float]] = [(400.0, 400.0), (1000.0, 400.0), (1000.0, 1000.0), (400.0, 1000.0)]
@@ -311,6 +312,37 @@ def test_a_pond_the_canvas_cannot_hold_falls_back_to_draining_OFF_MAP(monkeypatc
     assert plan.water_sink == "offmap", "a pond the canvas cannot hold must fall back to the off-map brook"
     assert not s.M.get("ponds"), "and no pond may be drawn"
     assert plan.sink_brook, "the fallback must actually cut the brook it promised"
+
+
+def test_a_point_in_the_crop_is_pushed_out_on_the_LOCAL_edge_normal() -> None:
+    """The defect the GM reported: a way's tip stopped 28 px INSIDE the paddy because it was pulled
+    back along one fixed map-wide direction. The way out is the nearest OUTLINE EDGE's normal - and
+    the nearest edge, not the nearest vertex, since a point deep in a lobe can have its nearest
+    vertex round the far side."""
+    square = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
+    out = hg.push_out_of(square, (90.0, 50.0), 10.0)  # nearest edge is the right one, x=100
+    assert out == pytest.approx((110.0, 50.0))
+    assert hg.push_out_of(square, (50.0, 5.0), 10.0) == pytest.approx((50.0, -10.0)), "the bottom edge is nearer here"
+    far = hg.push_out_of(square, (300.0, 50.0), 10.0)
+    assert far == (300.0, 50.0), "a point already clear is returned untouched - this must never drag a way back in"
+
+
+def test_a_way_cutting_the_field_is_bent_ROUND_it_not_nibbled_at() -> None:
+    """`route_around` walks the outline between where a leg enters and where it leaves.
+
+    The first version inserted one waypoint at the mean of the crossings and re-ran; it converged a
+    few px per round and ran out of rounds still crossing, because a point pushed off the middle of
+    a lobe lands right beside the leg it came from. Both the detour and the odd-hit case (a leg that
+    enters and does not leave) are asserted, and so is the do-nothing case."""
+    square = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
+    bent = hg.route_around(square, [(-50.0, 50.0), (150.0, 50.0)], 8.0)
+    assert len(bent) > 2, "a leg straight through the square must gain waypoints"
+    for q in bent:
+        assert not point_in_poly(q[0], q[1], square), f"{q} is still inside the crop"
+    clear = [(-50.0, 200.0), (150.0, 200.0)]
+    assert hg.route_around(square, clear, 8.0) == clear, "a way that never touches the field is left alone"
+    stub = hg.route_around(square, [(50.0, 50.0), (150.0, 50.0)], 8.0)  # STARTS inside: one crossing, not two
+    assert not point_in_poly(stub[0][0], stub[0][1], square)
 
 
 def test_a_rolled_cohort_passes_the_whole_gate() -> None:

@@ -6701,6 +6701,35 @@ def test_the_way_a_row_FRONTS_does_not_refuse_it_its_own_tread():
     assert s._on_a_tread(x, y, w, h, skip=[[700.0, 700.0]]), "a degenerate one-point skip excuses nothing"
 
 
+def test_a_lane_is_walked_back_off_the_reeds_and_dropped_if_the_whole_leg_is_wet():
+    """THE RULE (GM 2026-08-12): "paths don't pass through marshland". A way laid AFTER its water
+    stops on the dry side of the reeds - and a leg that is wet along its whole length is dropped
+    rather than shortened to a stub, except where dropping it would leave no way at all.
+
+    Both directions matter: a two-point skeleton arm has no vertex to drop, which is exactly the
+    case the first version of this silently did nothing for."""
+    s = Settlement(1200, 1200, seed=3)
+    s.meta(name="Reeds", scale="hamlet", ftpx=1, toscale=True, households=12)
+    s.M["marshes"].append({"x": 900, "y": 600, "w": 400, "h": 400, "rot": 0, "role": "toe", "seq": 1, "poly": [[700.0, 400.0], [1100.0, 400.0], [1100.0, 800.0], [700.0, 800.0]]})
+    trimmed = s.trim_off_marsh([(200.0, 600.0), (1000.0, 600.0)])
+    assert trimmed[0] == (200.0, 600.0), "the dry end is left where it is"
+    assert trimmed[-1][0] < 700.0, f"the wet end must be walked back out of the reeds, got {trimmed[-1]}"
+    # a THREE-point way whose last leg lies wholly in the marsh loses that leg outright
+    dropped = s.trim_off_marsh([(200.0, 600.0), (500.0, 600.0), (900.0, 600.0), (920.0, 600.0)])
+    assert all(q[0] < 700.0 for q in dropped), f"every surviving point must be dry, got {dropped}"
+    # ...and a way with nowhere dry to retreat to still returns something drawable
+    assert len(s.trim_off_marsh([(800.0, 600.0), (900.0, 600.0)])) >= 2
+    assert s.trim_off_marsh([(200.0, 600.0)]) == [(200.0, 600.0)], "a stub shorter than a segment is returned untouched"
+
+
+def test_a_map_with_no_field_has_no_wet_toe_to_ask_about():
+    """`toe_band` is asked for BEFORE the marsh is drawn, by a router that may run on a map with no
+    paddy at all. It answers with no band rather than raising, so the caller needs no special case."""
+    s = Settlement(800, 800, seed=1)
+    s.meta(name="Dry", scale="hamlet", ftpx=1, toscale=True, households=12)
+    assert s.toe_band() == []
+
+
 def test_a_house_is_refused_a_seat_whose_DRAWN_corner_lands_on_a_lane():
     """THE RATCHET for the engine's "placement tests a different footprint than the one drawn" debt,
     at the lane (this skill's CLAUDE.md, "CENTER vs FOOTPRINT" item 3).
