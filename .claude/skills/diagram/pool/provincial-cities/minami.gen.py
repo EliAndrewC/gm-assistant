@@ -879,22 +879,18 @@ MOAT_FARMS = [
     ("fs1", (1420, 1800), 85, 39, 185, (155, 200), (95, 130), (0.4, 0.75)),  # S face, falling S
     ("fsw1", (1210, 1852), 120, 44, 175, (150, 195), (92, 125), (0.4, 0.75)),  # SW face, falling SSW - east of the Hayakawa, clear of the re-derived ring's outfall
 ]
-for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
-    mp = min(MOAT, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
-    _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0
-    sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
-    _mfl = s.M["moat_flow"]
-    mp = moat_swept_tap(MOAT, _mfl["inlet"], _mfl["outlet"], sl, mp)
-    s.field_channel([mp, sl], '#9CB4C8', 7, 7)
-    s.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)
-    _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,))
-    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))
-    _pd = (round(0.80 * _pd[0] + 0.20 * _cen[0], 1), round(0.80 * _pd[1] + 0.20 * _cen[1], 1))
-    topo_channel([(mp[0], mp[1]), sl, _pd], {"kind": "moat"}, {"kind": "field", "name": nm})
-    _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
-    topo_channel([tuple(_dr[-2]), tuple(_dr[-1])], {"kind": "drain", "name": nm}, {"kind": "offmap"})
-    s.ring(('poly', _env), 26, 15, ["plain"])
-    s.ring(('poly', _env), 20, 40, ["plain"])
+# THROUGH THE ENGINE (s.farmland_ring): this loop was byte-for-byte the same in three gens, which
+# is why ringing a new city read as new work. The table above is all that was ever per-city.
+s.farmland_ring(
+    [(nm, tap, dd, sd, ff, ca, cb, oa, "moat") for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS],
+    comb=lambda nm, sl, dd, sd, ff, ca, cb, oa: comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,)),
+    topo=topo_channel,
+    water=lambda _k: MOAT,
+    city_center=(CX, CY),
+    source_point=lambda _net, _cen: (
+        lambda _pd: (round(0.80 * _pd[0] + 0.20 * _cen[0], 1), round(0.80 * _pd[1] + 0.20 * _cen[1], 1))
+    )(plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))),
+)
 
 # the FAR-BANK fan, tapped straight off the Hayakawa - the paddy country running on west beyond the
 # frame (city_has_outside_farmland wants at least one field off the map edge).

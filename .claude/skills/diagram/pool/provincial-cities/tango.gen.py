@@ -1016,33 +1016,19 @@ MOAT_FARMS = [
     #    and third estate honestly occupy it; every fs2 variant collided (flophouse/road/groves).
     ("fe1", (2100, 1160), 20, 81, 170, (110, 150), (70, 95), (0.4, 0.75)),
 ]
-for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
-    upstream = [p for p in MOAT if p[1] < tap[1] - 20]  # moat vertices NORTH of the tap (upstream of the southward current)
-    mp = min(upstream, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
-    _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0  # outward: away from the city center
-    sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
-    # SWEEP THE THROAT DOWNSTREAM (GM 2026-07-25). `sl` above is untouched, so the comb field this
-    # feeds does not move; only the MOAT-SIDE end walks upstream, turning a square tap into the acute
-    # downstream-pointing offtake canal practice calls for (optimum 15-45 deg, "30 or 45 instead of 90").
-    _mfl = s.M["moat_flow"]
-    mp = moat_swept_tap(MOAT, _mfl["inlet"], _mfl["outlet"], sl, mp)
-    s.field_channel(
-        [mp, sl], '#9CB4C8', 7, 7
-    )  # the visible tap, in the MOAT'S OWN water color (it carries moat water; the color change happens at the sluice - GM 2026-07-23, mouths must read as confluences, not crossings)
-    s.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)  # the intake gate AT the palette seam (tap water -> canal water)
-    _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,))  # avoid: the moat (the estate driveways are no longer drawn, so no lane keep-outs needed)
-    # source topology: ends at the SOUTHERNMOST plot's centroid - guaranteed inside the outline
-    # (city_moat_irrigates_fields) and downstream of the tap (moat_channels_flow_with_current)
-    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))
-    topo_channel([(mp[0], mp[1]), sl, _pd], {"kind": "moat"}, {"kind": "field", "name": nm})
-    # sink topology: the collector's runoff leaves the cropped map (the drain marches off-view)
-    _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
-    topo_channel(drain_tail(_dr), {"kind": "drain", "name": nm}, {"kind": "offmap"})
-    s.ring(('poly', _env), 28, 15, ["plain"])
-    s.ring(('poly', _env), 22, 40, ["plain"])
-    s.ring(
-        ('poly', _env), 14, 78, ["plain"]
-    )  # an outer ring band past the widened dry hems (2026-07-21): the village-depth quilts claim the near margin, so without it fw1's visible sliver seats no farmhouses (outside_fields_farmhouse_density)
+# THROUGH THE ENGINE (s.farmland_ring): this loop was byte-for-byte the same in three gens, which
+# is why ringing a new city read as new work. The table above is all that was ever per-city.
+s.farmland_ring(
+    [(nm, tap, dd, sd, ff, ca, cb, oa, "moat") for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS],
+    comb=lambda nm, sl, dd, sd, ff, ca, cb, oa: comb_field(nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,)),
+    topo=topo_channel,
+    water=lambda _k: MOAT,
+    city_center=(CX, CY),
+    tap_choices=lambda pts, hint: [q for q in pts if q[1] < hint[1] - 20],  # only the arc upstream of the hint: this moat runs southward
+    drain_points=drain_tail,  # walk back a ~52 px chord so the declared bend can stay obtuse
+    rings=((28, 15), (22, 40), (14, 78)),
+    source_point=lambda _net, _cen: plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1])),  # Tango does not blend toward the field centroid the way its siblings do
+)
 
 # fe2 - the band the old upper-E estate vacated (GM 2026-07-23 paddy-first: "I can definitely see
 # putting another rice paddy in the middle of where the 3 samurai estates are"). Moat-fed like fe1,
