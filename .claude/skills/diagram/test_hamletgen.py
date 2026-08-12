@@ -312,9 +312,10 @@ def test_a_rolled_cohort_passes_the_whole_gate() -> None:
         assert abs(report.plan.acres - report.plan.target_acres) / report.plan.target_acres < 0.15, (
             f"{report.plan.spec.name}: {report.plan.acres:.1f} acres against a {report.plan.target_acres:.1f} target"
         )
-    # MEASURED 2026-08-11, after the collision pass: these 4, and 21+ of 24 over the first two dozen
-    # seeds (`python3 cohort_audit.py --count 24`, which reports the residue by check). RAISE THIS
-    # when you raise the rate; a ratchet only works if it is tightened.
+    # MEASURED 2026-08-12: 24 of 24 over the first two dozen seeds, and 4 of 4 here
+    # (`python3 cohort_audit.py --count 24` reproduces the sweep and reports any residue by check).
+    # It was 7 of 12 when the experiment was first reported. Keep this at 4 of 4: a change that drops
+    # a single rolled hamlet now fails here by name, which is the whole point of a ratchet.
     passed = [r for r in reports if r.ok]
     assert len(passed) >= 4, f"only {len(passed)}/4 rolled hamlets pass the whole gate: " + "; ".join(f"{r.plan.spec.name}: {r.failures}" for r in reports if not r.ok)
 
