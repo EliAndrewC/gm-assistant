@@ -136,3 +136,34 @@ Two traps it now handles so nobody meets them again:
 **Still to do:** `comb_field` itself is passed in, because each gen still owns its copy of the fan
 carve. Moving that in too is the other half of this job. And the pool gens still run their own belt
 loops - migrating them is a deliberate re-roll with a review pass, not a drive-by.
+
+**Migrated (2026-08-12).** Minami, Nagahara and Tango all run `s.farmland_ring` now, and each
+manifest is **byte-identical** - which is the proof the migration changed nothing they draw. Getting
+there took four hooks, and every one of them is a place where the three gens quietly disagreed:
+
+- `source_point` - each gen's own expression for where the supply topology ends. Minami and
+  Nagahara blend 80/20 toward the field centroid; Tango does not. Reimplementing it in the engine
+  moved the declared chain and rippled four houses off Minami.
+- `tap_choices` - Tango taps only the moat arc UPSTREAM of each hint, because its moat runs
+  southward and a tap below the hint would feed the field against the current.
+- `drain_points` - Tango walks back a ~52 px chord so the declared bend can stay obtuse; its
+  siblings take the drain's last segment.
+- `outward` / `tap_on_segment` / `open_bound` / `standoff` - for a city whose water is not a ring
+  around its center, whose river is drawn with five vertices, or which sets a placement bound.
+
+**The upslope ring is BUILT** (`upslope=True`, GM 2026-08-12). A plain ring walks the whole
+envelope and projects each seat outward, so on the low edge it throws households into the ground
+below the drainage collector - 38 of them on the capital, the wettest ground in the valley and the
+one place nobody builds. Clipping the polygon does not help: the cut edge still projects outward.
+So `_ring_upslope` walks the perimeter, skips the stretches facing downslope, measures each seat
+against the drain LINE (not the field's centre - a seat can be upslope of the middle and still below
+the drain where it bends), and keeps farmsteads off every field's cropland. Its cropland boxes are
+snapshotted ONCE; rebuilding them per candidate took a gen from 11 seconds to over ten minutes.
+The provincial cities never needed it because their drains march off-view - which is why the plain
+ring served them for a year.
+
+**The capital still runs its own loop.** On the engine path it builds all 7 fields in 12 seconds,
+but its spec table was tuned against a different tap algorithm (nearest point + explicit bearing,
+where the engine takes the nearest vertex + a radial), so the fans land differently and the map
+needs its table re-tuned before it goes green. That is the remaining step - a tuning pass on one
+map's table, no longer a missing capability.

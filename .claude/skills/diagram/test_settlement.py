@@ -6772,14 +6772,14 @@ def test_farmland_ring_taps_water_gates_it_and_rings_the_households():
         seen.setdefault("topo", []).append((frm.get("kind"), to.get("kind")))
 
     out = s.farmland_ring(
-        [("f1", (1200, 700), (-1.0, 0.0), 180, 3, 100, (120, 150), (80, 100), (0.3, 0.7), "river")],
+        [("f1", (1200, 700), 180, 3, 100, (120, 150), (80, 100), (0.3, 0.7), "river")],
         comb=comb,
         topo=topo,
         water=lambda k: river,
         city_center=(700, 700),
     )
     assert len(out) == 1, "the field should have been built"
-    assert seen["sluice"][0] < 1200, "the sluice sits INLAND of the tap"
+    assert seen["sluice"] != (1200, 700), "the sluice is set off the tap, not on it"
     assert ("river", "field") in seen["topo"], "the source must be declared from the water it taps"
     assert any(a == "drain" and b == "offmap" for a, b in seen["topo"]), "the drain must reach a sink"
     assert s.M["sluice_gates"], "the head-race is gated where tap water becomes canal water"
@@ -6798,7 +6798,7 @@ def test_farmland_ring_withdraws_a_field_whose_ground_cannot_carry_it():
         raise ValueError("no room to carve")
 
     out = s.farmland_ring(
-        [("doomed", (1200, 700), (-1.0, 0.0), 180, 3, 100, (120, 150), (80, 100), (0.3, 0.7), "river")],
+        [("doomed", (1200, 700), 180, 3, 100, (120, 150), (80, 100), (0.3, 0.7), "river")],
         comb=comb,
         topo=lambda *a, **k: None,
         water=lambda k: river,
@@ -6825,7 +6825,7 @@ def test_farmland_ring_sweeps_a_moat_offtake_downstream():
         return {"channels": [{"role": "drain", "pts": [(sl[0] - 160, sl[1] + 70), (-400, sl[1] + 200)]}], "plots": [{"poly": env}]}, env, sl
 
     out = s.farmland_ring(
-        [("m1", (400, 800), (-1.0, 0.0), 180, 4, 100, (120, 150), (80, 100), (0.3, 0.7), "moat")],
+        [("m1", (400, 800), 180, 4, 100, (120, 150), (80, 100), (0.3, 0.7), "moat")],
         comb=comb,
         topo=lambda *a, **k: None,
         water=lambda k: moat,
@@ -6833,3 +6833,83 @@ def test_farmland_ring_sweeps_a_moat_offtake_downstream():
     )
     assert len(out) == 1
     assert s.M["sluice_gates"], "the head-race is gated"
+
+
+def test_farmland_ring_taps_a_segment_and_opens_the_bound():
+    """Two options a capital needs and the provincial cities do not. A river drawn with FIVE
+    vertices has no vertex near where the gen meant to tap, so the tap must land on the nearest
+    POINT of the polyline; and a map that sets a placement bound rings NOTHING until it is opened
+    around the field, which is how a first farmland ring came out as fields with no households."""
+    s = settlement.Settlement(1400, 1400, seed=6)
+    s.meta(scale="capital", ftpx=3)
+    river = [(1200, 100), (1200, 1300)]  # two vertices, both far from the hint
+    s.bound = [[0, 0], [200, 0], [200, 200], [0, 200]]  # a bound nowhere near the field
+    taps = {}
+
+    def comb(name, sl, dd, sd, ff, ca, cb, oa):
+        taps["sl"] = sl
+        env = [(sl[0] - 150, sl[1] - 90), (sl[0] - 30, sl[1] - 90), (sl[0] - 30, sl[1] + 90), (sl[0] - 150, sl[1] + 90)]
+        return {"channels": [{"role": "drain", "pts": [(sl[0] - 150, sl[1] + 70), (-500, sl[1] + 200)]}], "plots": [{"poly": env}]}, env, sl
+
+    out = s.farmland_ring(
+        [("f1", (1200, 700), 180, 3, 100, (120, 150), (80, 100), (0.3, 0.7), "river")],
+        comb=comb,
+        topo=lambda *a, **k: None,
+        water=lambda k: river,
+        city_center=(700, 700),
+        tap_on_segment=True,
+        open_bound=True,
+        standoff=78.0,
+    )
+    assert len(out) == 1
+    assert abs(taps["sl"][1] - 700) < 60, "tapped ON the segment beside the hint, not at a far vertex"
+    assert s.bound == [[0, 0], [200, 0], [200, 200], [0, 200]], "the bound is restored afterwards"
+
+
+def test_farmland_ring_upslope_keeps_households_out_of_the_wet_toe():
+    """A plain ring walks the WHOLE envelope and projects each seat outward, so on the low edge it
+    throws households into the ground below the drainage collector - the wettest in the valley, and
+    the one place nobody builds. `upslope=True` walks the perimeter and skips the low side."""
+    s = settlement.Settlement(1600, 1600, seed=11)
+    s.meta(scale="capital", ftpx=3)
+    river = [(1300, 100), (1300, 1500)]
+    s.bound = [[0, 0], [100, 0], [100, 100], [0, 100]]
+    seats = []
+
+    def comb(name, sl, dd, sd, ff, ca, cb, oa):
+        env = [(sl[0] - 200, sl[1] - 140), (sl[0] - 40, sl[1] - 140), (sl[0] - 40, sl[1] + 140), (sl[0] - 200, sl[1] + 140)]
+        # RECORD the planted plots, so the cropland test has something to refuse seats against -
+        # a farmstead stands beside the field it works, never on it
+        s.M.setdefault("fields", []).append({"name": name, "outline": env, "plot_polys": [env]})
+        # the drain lies along the field's SOUTH edge, so everything below it is toe
+        return {"channels": [{"role": "drain", "pts": [(sl[0] - 200, sl[1] + 140), (sl[0] - 40, sl[1] + 140)]}], "plots": [{"poly": env}]}, env, sl
+
+    s.farmland_ring(
+        [("f1", (1300, 800), 90, 3, 100, (120, 150), (80, 100), (0.3, 0.7), "river")],
+        comb=comb,
+        topo=lambda *a, **k: None,
+        water=lambda k: river,
+        city_center=(800, 800),
+        tap_on_segment=True,
+        open_bound=True,
+        upslope=True,
+    )
+    seats = [(h["x"], h["y"]) for h in s.M["houses"]]
+    assert seats, "the upslope walk must seat households"
+    # down_deg 90 is due south, and the drain sits at the envelope's south edge
+    drain_y = max(q[1] for q in [(0, 0)] + seats) if seats else 0
+    assert all(y <= drain_y for _x, y in seats), "no household below the drainage line"
+
+
+def test_ring_upslope_refuses_a_seat_below_the_drain():
+    """The drain test measures to the drain LINE, not the field's centre: a seat can be upslope of
+    the middle and still below the collector where it bends, and that ground is the wet toe."""
+    s = settlement.Settlement(1200, 1200, seed=2)
+    s.meta(scale="capital", ftpx=3)
+    env = [(400, 400), (800, 400), (800, 800), (400, 800)]
+    # a drain running right across the middle of the field: everything south of it is toe
+    drain = [(380, 600), (820, 600)]
+    n = s._ring_upslope(env, 90.0, drain, (20, 44))
+    ys = [h["y"] for h in s.M["houses"]]
+    assert n == len(ys)
+    assert all(y < 640 for y in ys), f"a household landed below the drain: {sorted(ys)[-3:]}"
