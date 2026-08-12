@@ -6712,3 +6712,87 @@ def test_a_footplank_is_never_laid_on_a_bend_its_deck_cannot_clear():
             cy = b["y"] + su * uy * b["span"] / 2 + sv * ux * b["w"] / 2
             gap = min(seg_dist(cx, cy, tuple(d["poly"][i]), tuple(d["poly"][i + 1])) for d in s.M["field_ditches"] for i in range(len(d["poly"]) - 1))
             assert gap >= 4.0 / 2 + 2.0, f"deck corner {round(gap, 1)}px from its own ditch - the abutment stands in the water"
+
+
+def test_farmland_ring_taps_water_gates_it_and_rings_the_households():
+    """A city is ringed by its farmland, and the belt loop that draws it belongs in ONE place.
+    Every provincial-city gen carried its own copy - which is why ringing a capital read as new
+    work and cost a day (GM 2026-08-12). This is that loop: tap the water, gate the head-race,
+    build the fan, declare source and sink, ring the households."""
+    s = settlement.Settlement(1400, 1400, seed=5)
+    s.meta(scale="city", ftpx=3)
+    river = [(1200, 100), (1200, 1300)]
+    s.M["rivers"] = [{"pts": river, "w": 30}]
+    seen = {}
+
+    def comb(name, sl, dd, sd, ff, ca, cb, oa):
+        env = [(sl[0] - 200, sl[1] - 120), (sl[0] - 40, sl[1] - 120), (sl[0] - 40, sl[1] + 120), (sl[0] - 200, sl[1] + 120)]
+        net = {"channels": [{"role": "drain", "pts": [(sl[0] - 200, sl[1] + 100), (sl[0] - 320, sl[1] + 160)]}], "plots": [{"poly": env}]}
+        seen["sluice"] = sl
+        return net, env, (sl[0] - 120, sl[1])
+
+    def topo(pts, frm, to, draw_w=0.0):
+        seen.setdefault("topo", []).append((frm.get("kind"), to.get("kind")))
+
+    out = s.farmland_ring(
+        [("f1", (1200, 700), (-1.0, 0.0), 180, 3, 100, (120, 150), (80, 100), (0.3, 0.7), "river")],
+        comb=comb,
+        topo=topo,
+        water=lambda k: river,
+        city_center=(700, 700),
+    )
+    assert len(out) == 1, "the field should have been built"
+    assert seen["sluice"][0] < 1200, "the sluice sits INLAND of the tap"
+    assert ("river", "field") in seen["topo"], "the source must be declared from the water it taps"
+    assert any(a == "drain" and b == "offmap" for a, b in seen["topo"]), "the drain must reach a sink"
+    assert s.M["sluice_gates"], "the head-race is gated where tap water becomes canal water"
+
+
+def test_farmland_ring_withdraws_a_field_whose_ground_cannot_carry_it():
+    """comb_field records the field BEFORE its water is declared, so a fan that fails to carve
+    would leave a paddy with no source, no drain and no farmhouses - drawn, recorded, and invisible
+    to every rule that reads the water."""
+    s = settlement.Settlement(1400, 1400, seed=5)
+    s.meta(scale="city", ftpx=3)
+    river = [(1200, 100), (1200, 1300)]
+
+    def comb(name, sl, dd, sd, ff, ca, cb, oa):
+        s.M.setdefault("fields", []).append({"name": name, "outline": [(0, 0)]})
+        raise ValueError("no room to carve")
+
+    out = s.farmland_ring(
+        [("doomed", (1200, 700), (-1.0, 0.0), 180, 3, 100, (120, 150), (80, 100), (0.3, 0.7), "river")],
+        comb=comb,
+        topo=lambda *a, **k: None,
+        water=lambda k: river,
+        city_center=(700, 700),
+    )
+    assert out == [], "a field that cannot be built is not returned"
+    assert not [f for f in s.M.get("fields") or [] if f.get("name") == "doomed"], "...and it is not left on the map"
+
+
+def test_farmland_ring_sweeps_a_moat_offtake_downstream():
+    """A moat offtake leaves at an ACUTE angle pointing downstream - a square tap sheds sediment
+    into its own mouth and says nothing on the page about which way the water runs. The ring does
+    that sweep itself, so no gen has to remember moat_swept_tap."""
+    s = settlement.Settlement(1600, 1600, seed=8)
+    s.meta(scale="city", ftpx=3)
+    moat = [(400, 400), (1200, 400), (1200, 1200), (400, 1200), (400, 400)]
+    s.M["moat_flow"] = {"inlet": [1200, 400], "outlet": [400, 1200]}
+    taps = {}
+
+    def comb(name, sl, dd, sd, ff, ca, cb, oa):
+        taps["sl"] = sl
+        env = [(sl[0] - 160, sl[1] - 90), (sl[0] - 30, sl[1] - 90), (sl[0] - 30, sl[1] + 90), (sl[0] - 160, sl[1] + 90)]
+        # a drain that runs well off the sheet, so the reach loop finds its edge on the first steps
+        return {"channels": [{"role": "drain", "pts": [(sl[0] - 160, sl[1] + 70), (-400, sl[1] + 200)]}], "plots": [{"poly": env}]}, env, sl
+
+    out = s.farmland_ring(
+        [("m1", (400, 800), (-1.0, 0.0), 180, 4, 100, (120, 150), (80, 100), (0.3, 0.7), "moat")],
+        comb=comb,
+        topo=lambda *a, **k: None,
+        water=lambda k: moat,
+        city_center=(800, 800),
+    )
+    assert len(out) == 1
+    assert s.M["sluice_gates"], "the head-race is gated"
