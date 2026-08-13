@@ -157,16 +157,21 @@ s.M["channels"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in _dchan],
 s.M["channels"].append({"poly": [[SLUICE[0], SLUICE[1]], [749.0, 388.0], [774.6, 459.2]],
                         "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "akagahara-paddies"}, "w": 2.5})
 
-# FARMHOUSES: Akagahara is DISPERSED (feature 005 settlement_form) - its ~11 farmsteads are STREWN along the
-# field's high W margin, each a standalone homestead nestled in its OWN yashikirin windbreak grove (drawn
-# per-house since s._nucleated=False), rather than packed into one nucleus. NO HEADMAN (the district headman
-# lives in the main village). A single CONNECTOR track winds S through the strewn farms and off-map. Sized to
-# ~11 so the dispersed farms + their groves fit the margin (a dispersed farm needs ~2x a nucleated one's room).
+# FARMHOUSES: Akagahara is DISPERSED (feature 005 settlement_form) - its 15 farmsteads are STREWN around the
+# field's high N, W and E margins, each a standalone homestead nestled in its OWN yashikirin windbreak grove
+# (drawn per-house since s._nucleated=False), rather than packed into one nucleus. NO HEADMAN (the district
+# headman lives in the main village). A single CONNECTOR track runs S down the far-west back-slope and
+# off-map; it passes the west row at 61-160 ft but does not thread the N and E farms, which have no drawn
+# way of their own. Sized so the dispersed farms + their groves fit the margin (a dispersed farm needs ~2x a
+# nucleated one's room). (Counts and the margin list corrected 2026-08-12 - the comment still said "~11" and
+# "the high W margin" long after the map settled at 15 around three sides; settlement-review caught it.)
 _rng = _random.Random(SEED + 1)
-# THE TRACK LEAVES ABOVE THE WET TOE (GM 2026-08-12). It wound S to y=2740 and the reed toe starts
-# at y=1580, so over half its length lay in the marsh. It now turns W above the wet ground and runs
-# off the side, which is what a track down a back-slope does when the valley floor is undrained.
-s.lane([(345, 300), (318, 840), (292, 1440), (150, 1500), (-120, 1530)], width=6, clearance=30, worn=True, connector=True)   # winds S down the far-W back-slope (clear of the farm groves), then W off the side above the reed toe
+# THE TRACK WINDS S DOWN THE DRY FAR-WEST BACK-SLOPE, past the toe (GM 2026-08-12). It was briefly
+# turned west out of the frame, when the toe marsh was still drawn edge to edge across the canvas
+# and half this route lay in it. The band is now as wide as the ground the fan WATERS (researched:
+# research/water.md), so the toe ends at x=407 and this back-slope route is dry for its whole
+# length - which is where a dispersed hamlet's thread through its strewn farms belongs.
+s.lane([(345, 300), (318, 840), (292, 1440), (266, 2040), (242, 2560), (222, 2740)], width=6, clearance=30, worn=True, connector=True)   # winds S down the far-W back-slope (clear of the farm groves), off the bottom edge (H=2680), on the dry ground west of the toe
 s.meta(settlement_form="dispersed", grove_prevalence=0.6)   # ~60% of the strewn farms carry a grove (still clearly dispersed); the open-yard farms pack without shading a neighbor
 # Strew the farms across the field's high W margin as a DEEP 2D scatter (`scatter_seeds`): the 165px adjacency
 # band is wide enough to stagger them ~1.5 rows, so they read STREWN (an irregular scatter), NOT a single

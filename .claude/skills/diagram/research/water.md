@@ -73,6 +73,68 @@ This is grounded in the fact that **wet rice is reclaimed FROM marsh**: the lowe
 
 Sources: rice domesticated in "naturally marshy areas" + paddy-as-reclaimed-marsh (AAS "Rice, Technology, and History"); Tai-Lake polders diked from marsh/lake; abandoned paddies revert to wetland.
 
+## The wet toe is as wide as the FAN, not as wide as the valley
+
+**Grounds:** `Settlement.toe_band` (the cross-slope extent of `hinterland()`'s reed marsh)
+
+*What prompted it (GM 2026-08-12):* the toe band was being drawn from the CANVAS CORNERS, so it
+crossed the map edge to edge and a settlement whose fall pointed at its own frame had no dry exit
+anywhere - every connector had to turn away over the settlement's back, which contradicts the
+water-mouth doctrine. The GM asked where the wall-to-wall wetness had been established, and the
+honest answer was: nowhere. It arrived as a side effect of the 2026-07 fix that made the toe a
+CONTOUR band so it would rotate with the fall (the rotation was the point, and it was right); the
+only stated rule was and is `marsh_on_low_ground` - the marsh lies downhill of the field. The GM's
+instinct was to derive the width from what the fan waters, and asked for it to be checked against
+real farmland first.
+
+*What the research found:* real wet toes are FEATURE-bounded, not valley-bounded, and two separate
+landforms say so.
+
+- **The alluvial fan (扇状地), which is the landform our comb fans actually depict.** Its three zones
+  are canonical in Japanese physical geography: at the **扇頂** (apex) the gradient is steep; across
+  the **扇央** (mid-fan) the river water sinks into coarse gravels, so streams run dry and the ground
+  is poor for paddy - historically woodland, then mulberry (桑畑), now orchards; and at the **扇端**
+  (toe) that water re-emerges in a **spring line, 湧水帯**, which is why settlements and paddy have
+  clustered there since antiquity. The decisive point for us is WHERE that line runs: it emerges
+  where the permeable fan deposits meet the impermeable floor beneath, so it follows the fan's own
+  geometry rather than the width of the valley the fan sits in. The wetland literature says the same
+  from the other direction - slope wetlands form at breaks in slope where groundwater discharges,
+  and are typically found *on the perimeter of* permeable alluvial fans.
+- **And the mechanism is fed by the command area itself.** In fan-country paddy districts, river
+  infiltration *and seepage from the rice fields* are the significant sources of groundwater
+  recharge - the water that emerges below is largely the water the fan put in. Canal and field
+  seepage causing waterlogging below an irrigated command is the same relationship in the modern
+  engineering literature. So the wet ground below a fan is downstream of what the fan waters in a
+  causal sense, not merely a coincidence of elevation.
+- **The one landform that could have contradicted it does not.** On a floodplain the wet ground is
+  the **後背湿地** (backswamp) - but it is bounded by the **自然堤防** (natural levees) that make it,
+  which is again a feature boundary rather than the valley's width, and in Japan most backswamp was
+  itself converted to paddy rather than left as reed waste. Neither landform gives us wetness from
+  valley wall to valley wall.
+
+*The decision:* `toe_band` takes its cross-slope extent from the CULTIVATED extent (the fan's plots
+plus the dry hem) with a `pad` shoulder each side for the seepage spreading a little past the
+watered ground, clamped to the canvas. The `pad` is the same 90 px the band already used for its
+uphill overlap, so the shoulder is not a new magic number.
+
+*The departure we are taking knowingly:* a real spring line is an ARC following the fan's toe, and
+ours is a straight contour band with square lateral ends. Curving it would be more faithful; the
+band is a ground-cover region whose reeds are scattered and feathered to nothing at the margin, so
+the square end is not visible as an edge. Revisit if a map ever shows one.
+
+*What it changed:* dry ground appears at both lateral ends of every toe (Ikegami's spans x 402-1799
+on a 1900 px canvas, where it used to run -120 to 2020), and with it the settlements get their
+downslope exits back. Two connectors that had been turned out sideways purely because the old band
+left no legal southern route - Ikegami's and Akagahara's - were restored to their original routes,
+which are dry for their whole length under the researched width. Moritono's re-route stands: its
+fall is west, and its original track ran down the wet side.
+
+*Sources:* 扇状地 (Japanese Wikipedia) on 扇頂/扇央/扇端 and the 扇端 spring line; MLIT land-classification
+teaching material "扇状地と人々の暮らし"; Woods, Westbrook et al., "Hydrologic interactions between an
+alluvial fan and a slope wetland" (Wetlands, 2006) on slope wetlands at fan perimeters; the Tedori
+River alluvial fan groundwater studies (Paddy and Water Environment) on paddy-field seepage as a
+recharge source; 後背湿地 / 自然堤防 (Japanese Wikipedia, GSI) on backswamp formation and land use.
+
 ## No toe marsh at town/city scale - the drainage-investment gradient
 
 **Grounds:** village/hamlet gens draw a toe marsh; town/city gens draw none

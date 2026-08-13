@@ -44,8 +44,13 @@ on a village sheet.
 
 The GM ruled that village paths, not just roads, must keep off marsh - `roads_clear_of_marsh` and
 `fields_clear_of_road` had both built their way-list from the road and the town streets only, so
-neither had ever seen a lane. This map's connector ran 1,163 px through the reed toe - over half its length (it wound S to y=2740; the toe starts at y=1580), so it was re-routed to leave along the
-contour, above the reeds, and off the W edge instead of the S.
+neither had ever seen a lane. This map's connector ran 1,163 px through the reed toe - over half its length (it wound S to y=2740; the toe starts at y=1580), so it was briefly re-routed to leave west.
+
+**That re-route was then UNDONE, and the original S back-slope route restored** (same day), for the
+reason recorded on Ikegami: the toe band was taking its width from the canvas rather than from the
+ground the fan waters, which was never a rule. Researched and corrected - an alluvial fan's spring
+line follows the fan's toe. Akagahara's toe now ends at x=407 and the back-slope thread through its
+strewn farms is dry for its whole length. See `research/water.md`, 'The wet toe is as wide as the FAN'.
 
 The route is not a near miss: it keeps well clear of the recorded marsh polygon along its whole
 length. A `settlement-review` pass on the result is logged in the session that made the change; its

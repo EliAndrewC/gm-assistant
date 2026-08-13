@@ -2619,10 +2619,18 @@ def test_hinterland_scrub_ring_and_marsh_downhill_each_cardinal():
         s.hinterland()
         toe = [m for m in s.M["marshes"] if m["role"] == "toe"]
         grazing = [c for c in s.M["commons"] if c["role"] == "grazing"]
-        # 3 outer RING bands (the non-toe sides) PLUS 1 INTERIOR fill (over the cultivated bbox, clothing the
-        # voids an irregular field leaves inside it). The interior fill legitimately spans the paddy box; the
-        # three ring bands each clear it.
-        assert len(toe) == 1 and len(grazing) == 4
+        # 3 outer RING bands (the non-toe sides) + 1 INTERIOR fill (over the cultivated bbox, clothing the
+        # voids an irregular field leaves inside it) + 1 TOE-SIDE band. The interior fill legitimately spans
+        # the paddy box; the ring bands each clear it.
+        #
+        # THE TOE SIDE CARRIES SCRUB TOO, since 2026-08-12. It used to be left bare because the reed toe
+        # covered every inch below the crop - but the toe is now only as wide as the ground the fan waters
+        # (research/water.md, "The wet toe is as wide as the FAN"), so its lateral ends are dry footslope and
+        # were being covered by NOTHING: Ikegami shipped a ~267 x 193 ft corner of blank parchment with the
+        # connector crossing it. The band is handed the marsh as a keep-out, which the reeds-vs-scrub
+        # assertion below pins - a scrub tuft inside the reed flat would mean the two are fighting for the
+        # same ground rather than meeting at its edge.
+        assert len(toe) == 1 and len(grazing) == 5
         interior = [c for c in grazing if 400 <= c["x"] <= 600 and 400 <= c["y"] <= 600]
         assert len(interior) == 1  # exactly the interior fill sits over the field box
         for c in grazing:
@@ -2845,7 +2853,13 @@ def test_hinterland_skip_sides_drops_a_scrub_band():
     # non-toe = top/left/right (3 ring bands); skipping "right" leaves 2 ring bands, PLUS the interior fill = 3.
     s = _hamlet_with_field(90)
     s.hinterland(skip_sides=("right",))
-    assert [c["role"] for c in s.M["commons"]].count("grazing") == 3
+    # 2 ring bands + the interior fill + the toe-side band (see the cardinal test for why the toe side is
+    # now clothed) = 4.
+    assert [c["role"] for c in s.M["commons"]].count("grazing") == 4
+    # ...and skipping the TOE side drops its band too, rather than laying scrub where a gen wants none
+    s2 = _hamlet_with_field(90)
+    s2.hinterland(skip_sides=("bottom",))
+    assert [c["role"] for c in s2.M["commons"]].count("grazing") == 4  # 3 ring (top/left/right) + interior, no toe band
 
 
 def test_hinterland_dispersed_keepout_is_per_homestead():
