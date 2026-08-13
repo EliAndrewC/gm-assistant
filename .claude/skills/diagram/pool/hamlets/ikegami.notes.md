@@ -37,8 +37,21 @@ not beside it.
 
 The GM ruled that village paths, not just roads, must keep off marsh - `roads_clear_of_marsh` and
 `fields_clear_of_road` had both built their way-list from the road and the town streets only, so
-neither had ever seen a lane. This map's connector ran 744 px through the reed toe (it went S to y=2220; the toe starts at y=1490), so it was re-routed to leave along the
-contour, above the reeds, and off the W edge instead of the SW.
+neither had ever seen a lane. This map's connector ran 744 px through the reed toe (it went S to y=2220; the toe starts at y=1490), so it was briefly re-routed to leave west along the contour.
+
+**That re-route was then UNDONE, and the original SW route restored** (same day). The toe band was
+being drawn from the canvas corners - wet edge to edge - which was never a rule, only a side effect
+of the 2026-07 fix that made the toe rotate with the fall. Researched and corrected: an alluvial
+fan's spring line follows the fan's toe, not the valley's width, so the band is now as wide as the
+ground the fan waters. Ikegami's toe ends at x=402, and the original track down the dry west flank
+is clear for its whole length - which is also the right route on the doctrine, since a hamlet
+leaves downslope on dry ground. See `research/water.md`, 'The wet toe is as wide as the FAN'.
+
+Two notes for a reader arriving cold. The review-log paragraph above this one critiques the WESTWARD
+bend - that bend is gone; the critique is history, and the review that produced it is what prompted
+the research that undid it. And "water-mouth" is the wrong word for this route: Ikegami's water
+leaves SE at the drain outfall into the tameike, while the track leaves SW down the flank the
+cluster sits on. The route is right; the doctrinal term names a different corner of the map.
 
 The route is not a near miss: it keeps well clear of the recorded marsh polygon along its whole
 length. A `settlement-review` pass on the result is logged in the session that made the change; its

@@ -9252,9 +9252,24 @@ class Settlement:
         v_in = max(p[0] * dx + p[1] * dy for p in cult) - pad  # inner edge: `pad` ABOVE the crop's lowest point, so the reeds still tuck under the crop
         bleed = 120.0
         corners = [(-bleed, -bleed), (self.W + bleed, -bleed), (self.W + bleed, self.H + bleed), (-bleed, self.H + bleed)]
-        us = [c[0] * ux + c[1] * uy for c in corners]
         v_out = max(c[0] * dx + c[1] * dy for c in corners)  # far enough downhill to leave the canvas
-        u0, u1 = min(us), max(us)
+        # THE BAND IS AS WIDE AS THE GROUND THE FAN WATERS, not as wide as the canvas (GM 2026-08-12;
+        # researched, see research/water.md 'The wet toe is as wide as the fan, not as wide as the
+        # valley'). The cross-slope extent used to come from the CANVAS CORNERS, which drew the
+        # valley wet from edge to edge - so a map falling toward its own frame had no dry exit
+        # anywhere and every connector had to turn away over the settlement's back. That width was
+        # never a rule; it arrived with the 2026-07 fix that made the toe a contour band so it would
+        # rotate with the fall, and the rotation was the point.
+        #
+        # Real wet toes are FEATURE-bounded. On an alluvial fan the water that sinks in the dry
+        # mid-fan re-emerges in a spring line at the fan's toe (扇端の湧水帯), and that line follows
+        # the fan's own geometry - it is where the permeable fan gravels meet the impermeable floor
+        # beneath - not the width of the valley it sits in. Our comb fans ARE that landform. The
+        # `pad` shoulder each side is the seepage spreading a little past the watered ground.
+        us = [p[0] * ux + p[1] * uy for p in cult]
+        u_lo, u_hi = min(us) - pad, max(us) + pad
+        cu = [c[0] * ux + c[1] * uy for c in corners]
+        u0, u1 = max(min(cu), u_lo), min(max(cu), u_hi)
         return [(u * ux + v * dx, u * uy + v * dy) for u, v in ((u0, v_in), (u1, v_in), (u1, v_out), (u0, v_out))]
 
     def hinterland(
@@ -9332,9 +9347,33 @@ class Settlement:
             }
             return [v for k, v in sides.items() if k != toe_side and k not in skip_sides]
 
+        def toe_strip(inner: float, outer: float) -> list[Any]:
+            """The one strip `ring` leaves out - the toe side - for the scrub that flanks the reeds."""
+            ox0, oy0 = max(-BLEED, fx0 - outer), max(-BLEED, fy0 - outer)
+            ox1, oy1 = min(W + BLEED, fx1 + outer), min(H + BLEED, fy1 + outer)
+            ix0, iy0, ix1, iy1 = fx0 - inner, fy0 - inner, fx1 + inner, fy1 + inner
+            return {
+                "top": [(ox0, oy0), (ox1, oy0), (ox1, iy0), (ox0, iy0)],
+                "bottom": [(ox0, iy1), (ox1, iy1), (ox1, oy1), (ox0, oy1)],
+                "left": [(ox0, iy0), (ix0, iy0), (ix0, iy1), (ox0, iy1)],
+                "right": [(ix1, iy0), (ox1, iy0), (ox1, iy1), (ix1, iy1)],
+            }[toe_side]
+
+        # THE TOE SIDE IS NOT ALL MARSH ANY MORE, so the scrub has to finish the job (settlement-review,
+        # 2026-08-12). `ring()` drops the whole toe-side strip, which was right while the toe ran edge
+        # to edge - the reeds covered every inch below the crop. Now the band is only as wide as the
+        # ground the fan waters, so the ground past its lateral ends was covered by NEITHER, and
+        # Ikegami shipped a ~267 x 193 ft corner of blank parchment with the connector crossing it
+        # (measured 2.2% ink against 23.7% in the scrub band immediately above). Rough grazing is
+        # exactly what stands on a dry footslope beside a reed flat, so the toe side gets the same
+        # scrub as the other three - handed the marsh as a keep-out, so it stops where the reeds start
+        # and the two never overlap. Computed BEFORE the commons pass for that reason.
+        toe_poly = self.toe_band(down_deg, pad) if marsh else []
         if commons:
             for p in ring(0, max(W, H)):  # the cut-over SCRUB commons: the DOMINANT denuded-hill cover
                 self.commons(p, role=scrub_role, avoid=avoid)  # (managed woodland is added as a FEW patches by the gen)
+            if toe_poly and toe_side not in skip_sides:
+                self.commons(toe_strip(0, max(W, H)), role=scrub_role, avoid=[*avoid, toe_poly])
             # ...and the INTERIOR. The ring lays strips only OUTSIDE the cultivated bbox, but an irregular field
             # (a comb FAN) does not fill its own bbox: it leaves open VOIDS INSIDE it that nothing else clothes
             # - the strips are outside them and the marsh is a contour band below them - so they render as BARE
@@ -9359,8 +9398,7 @@ class Settlement:
             # Since EVERY collector descends ~19-20 degrees across the contours to reach its tameike, there is
             # genuinely ground below the ditch that is still crop-height on every map; the band now shows that
             # consistently instead of hiding it on two maps out of three.
-            toe = self.toe_band(down_deg, pad)
-            self.marsh(toe, role=marsh_role, avoid=avoid)  # reed wetland: the low, undrained downhill toe
+            self.marsh(toe_poly, role=marsh_role, avoid=avoid)  # reed wetland: the low, undrained downhill toe
 
     def near_ring_cropland(self, bbox: tuple[float, float, float, float], density: str | None = None, *, seed: int = 0, garden_frac: float = 0.16, cell_ft: float = 60.0, avoid: Any = ()) -> int:
         """Fill the flat, CLEAR ground in `bbox` with channel-free DRY-FIELD + GARDEN cropland, so a
