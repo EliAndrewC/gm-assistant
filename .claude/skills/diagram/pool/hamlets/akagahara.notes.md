@@ -77,9 +77,28 @@ now fixed at the ENGINE rather than on this map, so no other map can grow them e
   and carries no reeds, so testing the polygon would flag legitimate wells on that lip.
 - **The connector read as a map border.** 123 px of drift over 2,440 px - a ~3 degree lean with no
   reversal, drawn parallel to the left frame - against a gen comment that had always claimed it
-  "winds". It now bulges east toward the farm row it serves (to x=400 at y=820, still 64 px off the
-  nearest steading's wall) and falls back west past the farm at x=389, which is the farm that sets
-  the corridor's width. Endpoints unchanged, so the crop does not move.
+  "winds". It now MEANDERS within its own corridor: +-20 px of reversal about the old line, five
+  direction changes, sinuosity 1.0001 -> 1.0018, max lateral deviation 10.9 -> 34.2 ft. Endpoints
+  unchanged.
 
-Still open from that review, and NOT fixed: the track passes the west row at 61-160 ft but does not
-thread the six N and E farms, which have no drawn way of their own.
+  **The first attempt at that was worse than the defect.** Bulging east to x=400 swept the wellhead
+  at (373,814) and the farm at (389,1189) out of existence - 4 wells became 2, 15 houses became 14,
+  worst house-to-well went 536 -> 1,129 ft - and the GATE PASSED ALL OF IT, because the coverage
+  checks have tolerances a strewn hamlet stays inside. A way re-shaped for legibility has to be
+  measured against the placements it displaces, not just gated. The shipped meander keeps its
+  eastward peaks at y=520 and y=1000, where the row leaves room.
+
+Still open from that review, and NOT fixed:
+
+- The track passes the west row at 52-137 ft to the walls but does not thread the six N and E farms,
+  which have no drawn way of their own.
+- Its bends are keyed to where there is ROOM rather than to something a walker goes to. Keying the
+  eastward swings to the notice board (388,582) and the well (373,814), and the westward ones to the
+  groves, would make the shape read as history rather than as clearance.
+- The mid-row well stands across the track from every dwelling. Not an oversight - see the gen: the
+  verge between lane and steadings is full, and seven candidate seats along it were all refused.
+- Three east-row farms are 501 / 622 / 741 ft from a well. `farm_wells_within_reach` encodes the
+  500 ft doctrine but is gated to town/city scale, so nothing enforces it at hamlet scale - the
+  argument for these three (map-edge steadings, field ditches 116-315 ft off) is sound but it is an
+  argument, not a check. Whether a dispersed hamlet's ring farms are expected to have a well at all
+  is a GM ruling that would generalize to every dispersed map.

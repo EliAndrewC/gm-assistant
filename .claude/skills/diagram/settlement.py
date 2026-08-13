@@ -4902,11 +4902,13 @@ class Settlement:
             toe = self.toe_band() if self.M.get("meta", {}).get("scale") in ("hamlet", "village") else []
             cult = [p for poly in self.field_polys for p in poly] + [p for dp in self.M.get("dry_plots", []) for p in dp["poly"]]
             if not toe or not cult:
-                self._wt_cache: Any = (None, 0.0, (0.0, 0.0))
+                self._wt_cache: Any = (None, 0.0, (0.0, 0.0), (0.0, 0.0), 0.0, 0.0)
             else:
                 deg = self.M.get("meta", {}).get("down_deg", 90)
                 dv = (math.cos(math.radians(deg)), math.sin(math.radians(deg)))
-                self._wt_cache = (toe, max(p[0] * dv[0] + p[1] * dv[1] for p in cult), dv)
+                u = (-dv[1], dv[0])  # across the slope
+                us = [p[0] * u[0] + p[1] * u[1] for p in cult]
+                self._wt_cache = (toe, max(p[0] * dv[0] + p[1] * dv[1] for p in cult), dv, u, min(us), max(us))
         return self._wt_cache
 
     def _well_ground_clear(self, cx: float, cy: float, vr: float | None = None) -> bool:
@@ -4940,9 +4942,15 @@ class Settlement:
         seg_dist calls, ~90% of gen wall time). The memo is invalidated by a cheap fingerprint
         (record and point counts of everything scanned); the wells are placed long after the
         terrain is drawn, so the geometry is stable across the whole placement pass."""
-        toe, low, dv = self._wet_toe_keepout()
-        if toe is not None and cx * dv[0] + cy * dv[1] > low and point_in_poly(cx, cy, toe):
-            return False
+        # THE CROP DATUM IS ONLY GOOD WHERE THE CROP IS, and the check says the same thing the same
+        # way (`wells_off_the_wet_toe`) - the two must not measure differently or they will disagree
+        # about a seat. The band's uphill lip carries no reeds only where it tucks UNDER the field;
+        # out past the field's cross-slope span the lip is exposed and reeded from its edge.
+        toe, low, dv, uv, u_lo, u_hi = self._wet_toe_keepout()
+        if toe is not None and point_in_poly(cx, cy, toe):
+            u = cx * uv[0] + cy * uv[1]
+            if not (u_lo <= u <= u_hi) or cx * dv[0] + cy * dv[1] > low:
+                return False
         vr = self._well_vr() if vr is None else vr
         water_g, dry_g, wet_g = self._well_index()
         for hw, pa, pb, bx0, by0, bx1, by1 in water_g.near(cx, cy, vr):
