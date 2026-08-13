@@ -4883,9 +4883,35 @@ class Settlement:
         frozen = self._frozen_wells
         return frozen[0] if frozen is not None else self._build_well_index()
 
+    def _wet_toe_keepout(self) -> Any:
+        """The reed toe BELOW all cultivation - ground no wellhead may be sunk in - or None.
+
+        Derived rather than read back, because the marsh is drawn LATE (`hinterland()`, after the
+        structures) and wells are placed EARLY, so by the time the reeds exist the well is already
+        in them. `toe_band` is the same derivation the reeds themselves use, which is the point of
+        its having been factored out. Memoized for the pass: this is consulted once per candidate
+        seat and the band cannot move while a scatter runs (see `frozen_terrain`)."""
+        if getattr(self, "_wt_cache", None) is None:
+            # ONLY WHERE A TOE MARSH IS ACTUALLY DRAWN. `toe_band` is pure geometry and will happily
+            # compute a band below the crop of a map that has no reeds anywhere - and TOWNS AND CITIES
+            # HAVE NO TOE MARSH: their ditch discharge goes into an engineered moat/canal network and
+            # their outskirts are premium intensively-worked land (the drainage-investment gradient,
+            # research/water.md). Reserving that ground as imaginary bog cost Tango six farmhouses'
+            # wells on the first run of this rule. The split is by SCALE because that is how the
+            # doctrine states it.
+            toe = self.toe_band() if self.M.get("meta", {}).get("scale") in ("hamlet", "village") else []
+            cult = [p for poly in self.field_polys for p in poly] + [p for dp in self.M.get("dry_plots", []) for p in dp["poly"]]
+            if not toe or not cult:
+                self._wt_cache: Any = (None, 0.0, (0.0, 0.0))
+            else:
+                deg = self.M.get("meta", {}).get("down_deg", 90)
+                dv = (math.cos(math.radians(deg)), math.sin(math.radians(deg)))
+                self._wt_cache = (toe, max(p[0] * dv[0] + p[1] * dv[1] for p in cult), dv)
+        return self._wt_cache
+
     def _well_ground_clear(self, cx: float, cy: float, vr: float | None = None) -> bool:
-        """Is this ground fit to sink a WELLHEAD in? You do not dig a well in a watercourse, and you
-        do not dig one in the middle of a crop plot.
+        """Is this ground fit to sink a WELLHEAD in? You do not dig a well in a watercourse, you do
+        not dig one in the middle of a crop plot, and you do not dig one in a BOG.
 
         Placement predicted everything else about a well site - lanes, compounds, the bound, its
         neighbors - but never the water or the crop, so the overlap matrix (feature 017) found four
@@ -4899,6 +4925,13 @@ class Settlement:
         the smoothed envelope, are the water), and the same strictness as the dry-plot rule
         applies: the drawn head may not lap the crop.
 
+        THE BOG LEG (settlement-review 2026-08-12, Akagahara: a wellhead standing among the drawn reed
+        glyphs ~50 ft from the drainage pond) is the placement half of `wells_off_the_wet_toe`, and it
+        measures the same thing that check does - ground below the crop's LOWEST point, inside the toe
+        band - rather than the band alone, because the band's uphill lip deliberately tucks under the
+        field and carries no reeds. Placement never saw it before because the marsh is drawn after the
+        wells; `toe_band` closes that by being derivable in advance.
+
         INDEXED, and the index is built ONCE PER PASS rather than validated per call - see
         `frozen_terrain`. This method runs once per CANDIDATE seat: place_wells
         alone probes ~133k candidates on Minami, and farm_wells' fallback ~2,700 per boxed-in
@@ -4907,6 +4940,9 @@ class Settlement:
         seg_dist calls, ~90% of gen wall time). The memo is invalidated by a cheap fingerprint
         (record and point counts of everything scanned); the wells are placed long after the
         terrain is drawn, so the geometry is stable across the whole placement pass."""
+        toe, low, dv = self._wet_toe_keepout()
+        if toe is not None and cx * dv[0] + cy * dv[1] > low and point_in_poly(cx, cy, toe):
+            return False
         vr = self._well_vr() if vr is None else vr
         water_g, dry_g, wet_g = self._well_index()
         for hw, pa, pb, bx0, by0, bx1, by1 in water_g.near(cx, cy, vr):

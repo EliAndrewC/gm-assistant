@@ -56,3 +56,30 @@ The route is not a near miss: it keeps well clear of the recorded marsh polygon 
 length. A `settlement-review` pass on the result is logged in the session that made the change; its
 open points were that the turn should read as terrain rather than as a bend made to satisfy a rule,
 and that the toe band spanning the full canvas is itself what leaves a valley map no downslope exit.
+
+## Two review findings fixed (2026-08-12)
+
+`settlement-review` on the narrowed toe raised two things that pre-dated that change, and both are
+now fixed at the ENGINE rather than on this map, so no other map can grow them either:
+
+- **A wellhead stood in the reeds** at (1763,1757), inside the toe and ~50 ft from the drainage
+  pond. The cause was DRAW ORDER: wells are placed early, the marsh is drawn late by `hinterland()`,
+  so the reeds appeared around a well that was sited before they existed. `_well_ground_clear` now
+  consults `toe_band()` - derivable in advance, which is why it was factored out - and the placer
+  re-sites the well up among the dwellings. New check `wells_off_the_wet_toe` holds the line, and
+  the pre-fix manifest is frozen in `pool/regressions/`. **What it cost:** that well was the nearest
+  water for the two SE ring farms (111 px), and they are now 741 and 622 px from one. That is
+  accepted rather than patched - this gen's own comment says the wells "serve the DENSE W-margin
+  cluster (the E/N ring farms draw from the field ditches beside them)", and `farm_wells_within_reach`
+  exempts map-edge steadings for the same reason - so the reed well was a stray of the grid, not
+  their supply. The grid put a replacement at (278,1188) among the west row. Note the check measures ground below the
+  crop's LOWEST point, not the toe polygon: the band's uphill lip tucks under the field by design
+  and carries no reeds, so testing the polygon would flag legitimate wells on that lip.
+- **The connector read as a map border.** 123 px of drift over 2,440 px - a ~3 degree lean with no
+  reversal, drawn parallel to the left frame - against a gen comment that had always claimed it
+  "winds". It now bulges east toward the farm row it serves (to x=400 at y=820, still 64 px off the
+  nearest steading's wall) and falls back west past the farm at x=389, which is the farm that sets
+  the corridor's width. Endpoints unchanged, so the crop does not move.
+
+Still open from that review, and NOT fixed: the track passes the west row at 61-160 ft but does not
+thread the six N and E farms, which have no drawn way of their own.
