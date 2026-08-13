@@ -167,3 +167,24 @@ but its spec table was tuned against a different tap algorithm (nearest point + 
 where the engine takes the nearest vertex + a radial), so the fans land differently and the map
 needs its table re-tuned before it goes green. That is the remaining step - a tuning pass on one
 map's table, no longer a missing capability.
+
+### Next on the farmland work, in order
+
+1. **`comb_field` into the engine.** Four gens carry their own ~100-line copy of the fan carve, and
+   it is the last thing standing between a new city and *one call*. Tango's copy is the SUPERSET
+   (113 lines: `mirror_ym` chirality, `dry_keepout`, `inwall_drain_bias`); Minami's is 60 and the
+   capital's is Minami's with one literal changed (canvas height 2700 -> 3050). Move TANGO'S, with
+   `_pt_seg` and `furrows` alongside it, taking the canvas from `self.W/H` and the paddy grain from
+   `paddy_grain(self.ftpx)` instead of gen-level constants. It calls `self.add`,
+   `bund_junctions`, `comb_base_fill`, `field_channel`, `inwall_drain_outfall`, and waterfields'
+   `build_comb` / `hem_on_paddy` / `aze_w`. **Test by BYTE-IDENTITY on all three pool maps** - that
+   is what caught a four-house ripple when `farmland_ring` was consolidated, where a green gate
+   would have missed it. Do the move by hand or with an AST tool; a regex pass over 140 lines
+   produced `def _self._furrows(...)` on the first attempt.
+2. **The capital's spec table**, which falls out cheaply once (1) lands: its table was tuned against
+   a different tap algorithm (nearest point + explicit bearing vs the engine's nearest vertex +
+   radial), so its fans need re-siting. It is green on its own loop meanwhile.
+3. **The capital's farmland coverage** - 2.4% of the sheet against Tango's 3.8%, Minami's 3.0%. The
+   GM asked for that level explicitly ("it's extremely fertile land").
+4. **The rotated-footprint work** (this skill's CLAUDE.md, "CENTER vs FOOTPRINT" item 3 then 2) -
+   the largest outstanding engine debt, blocking frontage seats and wellheads on every map.
