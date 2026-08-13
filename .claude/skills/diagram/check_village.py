@@ -10772,6 +10772,36 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"reed marsh {high_marsh[:2]} sits UPHILL of the paddy - marsh is the LOW, undrained valley toe "
                 f"below the field (wet rice is reclaimed from marsh), so it must lie downhill (higher fall)",
             )
+        # A WELLHEAD IS NOT SUNK IN A BOG (settlement-review, 2026-08-12: Akagahara's SE well stood among
+        # the drawn reed glyphs, ~50 ft from the drainage pond). You do not dig a draw-well in standing
+        # surface water - a well wants a water TABLE under dry ground you can stand a curb and a windlass
+        # on; in the bog the water is already at the surface and foul with it.
+        #
+        # MEASURED AGAINST THE GROUND BELOW ALL CULTIVATION, not against the toe polygon, and the
+        # difference is the whole check. `hinterland()`'s band deliberately starts `pad` (90 px) ABOVE the
+        # crop's lowest point so the reeds tuck under the field - so the polygon's uphill lip overlaps
+        # ground that is farmed, built on, and drawn with no reeds at all (the scatter skips paddy and the
+        # settlement halo). Testing the polygon alone would flag every wellhead on that lip, the same
+        # phantom-geometry trap `fields_clear_of_road` fell into against a fan's invisible envelope tail.
+        # Below the crop's lowest point there is no ambiguity: that ground is reed flat and drawn as one.
+        #
+        # AND IT LIVES HERE, at every scale, beside `marsh_on_low_ground`. It was first written inside the
+        # village-scale burial-ground section, where a HAMLET never reaches it - so it sat green on the
+        # very map it was written for. "A check that never runs looks exactly like a check that passes"
+        # (this skill's CLAUDE.md), demonstrated on the day the entry was re-read.
+        wet_toe = [m["poly"] for m in M.get("marshes", []) if m.get("role") == "toe" and m.get("poly")]
+        if wet_toe and M.get("fields"):
+            _wt_cult = [p for f in M["fields"] for p in f["outline"]] + [p for dp in M.get("dry_plots", []) for p in dp["poly"]]
+            _wt_low = max(fall((p[0], p[1])) for p in _wt_cult)  # the fall of the crop's lowest point
+            sunk = [(round(w["x"]), round(w["y"])) for w in M.get("wells", []) if fall((w["x"], w["y"])) > _wt_low and any(point_in_poly(w["x"], w["y"], mp) for mp in wet_toe)]
+            check(
+                "wells_off_the_wet_toe",
+                not sunk,
+                f"wellhead(s) {sorted(set(sunk))[:3]} stand in the reed TOE, below the crop's lowest ground - a draw-well is "
+                f"sunk on DRY ground with a water table under it, not in standing surface water. Site it up among the dwellings "
+                f"it serves (the toe is derivable before it is drawn: see Settlement.toe_band)",
+            )
+
         streams_ = M.get("streams", [])
 
         def _near_stream(pt: Pt) -> bool:

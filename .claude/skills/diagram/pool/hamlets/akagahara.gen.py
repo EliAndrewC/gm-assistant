@@ -171,7 +171,20 @@ _rng = _random.Random(SEED + 1)
 # and half this route lay in it. The band is now as wide as the ground the fan WATERS (researched:
 # research/water.md), so the toe ends at x=407 and this back-slope route is dry for its whole
 # length - which is where a dispersed hamlet's thread through its strewn farms belongs.
-s.lane([(345, 300), (318, 840), (292, 1440), (266, 2040), (242, 2560), (222, 2740)], width=6, clearance=30, worn=True, connector=True)   # winds S down the far-W back-slope (clear of the farm groves), off the bottom edge (H=2680), on the dry ground west of the toe
+# ...and it WINDS, which the comment above has always claimed and the polyline never did
+# (settlement-review 2026-08-12: 123 px of drift over 2,440 px, a ~3 degree lean with no reversal,
+# drawn 30-130 px inside the left frame and parallel to it - "on first fit-zoom pass I read it as a
+# map-edge road, not as the hamlet's own track"). A worn track's correctness is its SHAPE, and no
+# geometric check measures sinuosity. It MEANDERS within its own corridor rather than bulging out of
+# it: +-20 px of reversal about the old line, which breaks the ruled-line read without touching what
+# stands beside it. THE FIRST ATTEMPT DID bulge - to x=400 at y=820 - and the corridor it swept took
+# out the wellhead at (373,814) AND a farmhouse: 4 wells became 2, 15 houses became 14, and the worst
+# house-to-well distance went 536 -> 1,129 px. The GATE PASSED ALL OF THAT (the coverage checks have
+# tolerances a hamlet this strewn stays inside), so a lane re-shaped for legibility has to be
+# measured against the placements it displaces, not just gated. The well at x=373 and the farm at
+# x=389 are the two features that set this corridor's width; the meander stays clear of both, and its
+# eastward peaks sit at y=520 and y=1000 where the row leaves room, not at y=1189 where that farm is.
+s.lane([(345, 300), (352, 520), (338, 760), (344, 1000), (306, 1240), (314, 1560), (296, 1900), (262, 2350), (222, 2740)], width=6, clearance=30, worn=True, connector=True)   # winds S down the far-W back-slope (clear of the farm groves), off the bottom edge (H=2680), on the dry ground west of the toe
 s.meta(settlement_form="dispersed", grove_prevalence=0.6)   # ~60% of the strewn farms carry a grove (still clearly dispersed); the open-yard farms pack without shading a neighbor
 # Strew the farms across the field's high W margin as a DEEP 2D scatter (`scatter_seeds`): the 165px adjacency
 # band is wide enough to stagger them ~1.5 rows, so they read STREWN (an irregular scatter), NOT a single
