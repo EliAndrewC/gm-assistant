@@ -253,6 +253,14 @@ print(f"farmhouses: {n_farms}")
 _wf = [h for h in s.M["houses"] if h["x"] < 640]
 _wx = sorted(h["x"] for h in _wf)
 _wy = sorted(h["y"] for h in _wf)
+# THE MID-ROW WELL SITS ACROSS THE TRACK, and that is the ground, not an oversight
+# (settlement-review 2026-08-12 flagged it as the only well on this map on the far side of the way
+# from every dwelling). The coverage pass seats it 111 px west of the unserved farm at (389,1189)
+# because the strip between the lane and the steading row is FULL: seven hand-picked candidate seats
+# along it - (402,1258), (398,1120), (410,1300), (392,1240), (420,1160), (386,1330), (404,1080) -
+# were every one refused by `well_at`, which asks the engine's own `_fits`. The row's gardens, yards
+# and groves take the whole verge. Leaving it recorded rather than forcing it: to put a well on the
+# house side here, something else has to move first.
 s.place_wells((_wx[1] - 10, _wy[1] - 10, _wx[-2] + 10, _wy[-2] + 10), spacing=215, near=185)
 n_byres = s.draft_byres(fraction=0.22, gap=60)
 print(f"byres: {len(n_byres)}")

@@ -10793,7 +10793,24 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if wet_toe and M.get("fields"):
             _wt_cult = [p for f in M["fields"] for p in f["outline"]] + [p for dp in M.get("dry_plots", []) for p in dp["poly"]]
             _wt_low = max(fall((p[0], p[1])) for p in _wt_cult)  # the fall of the crop's lowest point
-            sunk = [(round(w["x"]), round(w["y"])) for w in M.get("wells", []) if fall((w["x"], w["y"])) > _wt_low and any(point_in_poly(w["x"], w["y"], mp) for mp in wet_toe)]
+            # ...and the crop datum is only good WHERE THE CROP IS (settlement-review, 2026-08-12).
+            # The relaxation exists because the band's uphill lip tucks under the field and carries no
+            # reeds - but that is true only across the field's own cross-slope span. Out at the flanks
+            # the lip is exposed and IS reeded from its very edge, so measuring by the crop's lowest
+            # point there tolerated a well up to ~82 ft inside visible reeds; Akagahara's own west
+            # well stands 12 ft above the reed line and passed with 94 ft of nominal headroom. Beyond
+            # the crop's span the toe polygon itself is the datum, which is what a reader sees.
+            _wt_u = (-_dv[1], _dv[0])  # across the slope
+            _wt_us = [p[0] * _wt_u[0] + p[1] * _wt_u[1] for p in _wt_cult]
+            _wt_ulo, _wt_uhi = min(_wt_us), max(_wt_us)
+
+            def _wt_reedy(wx: float, wy: float) -> bool:
+                if not any(point_in_poly(wx, wy, mp) for mp in wet_toe):
+                    return False
+                u = wx * _wt_u[0] + wy * _wt_u[1]
+                return not (_wt_ulo <= u <= _wt_uhi) or fall((wx, wy)) > _wt_low
+
+            sunk = [(round(w["x"]), round(w["y"])) for w in M.get("wells", []) if _wt_reedy(w["x"], w["y"])]
             check(
                 "wells_off_the_wet_toe",
                 not sunk,
