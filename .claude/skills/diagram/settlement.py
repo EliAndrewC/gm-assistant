@@ -14848,6 +14848,59 @@ class Settlement:
         conjunction is order-independent, so the result is unchanged from the old single test."""
         return self._bundle_common_fits(geom, grove_off_field) and self._bundle_side_fits(geom)
 
+    def _sun_corridor_ok(self, geom: Any) -> bool:
+        """Does this homestead leave every threshing yard - its own and the neighbours' - its sun?
+
+        THE RULE (GM 2026-08-13, researched in research/homesteads.md, "The threshing yard's sun"):
+        rice is dried on the niwa, so a yard needs clear ground to its SOUTH. A thatched roof is
+        pitched 45 deg or steeper, which puts our 46x28 ft minka's ridge ~20 ft up; at 38N in the
+        10th month that throws 21 ft of shadow at noon and 39 ft by 9am. So a farmhouse standing
+        within `sun_corridor` feet south of a yard takes the drying day away from it.
+
+        OPT-IN, and deliberately so. `s.sun_corridor(39)` turns it on; it is OFF by default, because
+        turning it on re-packs every nucleated map in the pool and the GM's decision (2026-08-13) is
+        that the hand-authored maps keep their present packing and inherit the fix as each is
+        converted to a generator script. The engine holds the rule; the scripted path asks for it.
+
+        Both directions are tested, because a bundle is placed among bundles already standing: this
+        house may not shade a yard already placed, and this yard may not be shaded by a house already
+        standing. Testing only one direction leaves the defect to whichever homestead is seated
+        second."""
+        ft = getattr(self, "_sun_corridor_ft", 0.0)
+        if not ft:
+            return True
+        # THE PLACER IS STRICTER THAN THE CHECK BY A HAIR, on purpose. It measures the bundle rects
+        # it is about to commit; `yards_unshaded_by_neighbors` measures the yard record that
+        # `farmsteads()` finally draws, and the two differ by fractions of a pixel. A seat at 39.0
+        # ft therefore passed here and failed there on 2 of 36 cohort maps. Two feet of margin costs
+        # nothing in packing and puts the disagreement where it cannot bite.
+        reach = self.px(ft + 2.0)
+        side = self.px(2.0)  # ...and the same margin ACROSS the corridor: the lateral overlap test is
+        # `|dx| < (yard_w + house_w)/2`, and a seat that missed the placer's version by 0.35 px failed
+        # the check's on a held-out cohort map. Both axes, or the disagreement just moves.
+        hx, hy, hw, hh = geom["house"]
+        yx, yy, yw, yh = geom["yard"]
+        # THE NEIGHBOURS' YARDS ARE READ OFF THE PLACED BUNDLES, not off `M["threshing_yards"]`.
+        # Yards are not drawn until `farmsteads()` flushes, long after every house is seated, so the
+        # manifest list is EMPTY while placement runs - testing it caught nothing in the direction
+        # that matters (a new house shading a yard already standing), and the first version of this
+        # rule cleared only about half the shaded yards because of it. Each bundle's record carries
+        # its own `geom`, so the yard is there to be read.
+        for b in self.M.get("houses", []):
+            g = b.get("geom")
+            ty = g["yard"] if g else None
+            if ty is None:
+                continue
+            if abs(ty[0] - hx) < (ty[2] + hw) / 2 + side and 0 < (hy - hh / 2) - (ty[1] + ty[3] / 2) < reach:
+                return False
+        # ...and this YARD must not sit in a standing house's shadow
+        return not any(abs(b["x"] - yx) < (b["w"] + yw) / 2 + side and 0 < (b["y"] - b["h"] / 2) - (yy + yh / 2) < reach for b in self.M.get("houses", []))
+
+    def sun_corridor(self, feet: float) -> None:
+        """Ask the placer to keep `feet` of open ground SOUTH of every threshing yard (see
+        `_sun_corridor_ok`). Off by default; a generator opts in."""
+        self._sun_corridor_ft = float(feet)
+
     def _bundle_common_fits(self, geom: Any, grove_off_field: bool = True) -> bool:
         """The fit checks that do NOT depend on which side the garden is on - the house, the south threshing
         yard, a north kura, the windward grove (dispersed only), and the yard sun-corridor. Same for every
@@ -14855,6 +14908,8 @@ class Settlement:
         if self._rect_blocked(geom["house"], fields=True) or self._rect_blocked(geom["yard"], fields=True) or ("shed" in geom and self._rect_blocked(geom["shed"], fields=True)):
             return False
         if "grove_n" in geom and any(self._rect_blocked(geom[k], fields=grove_off_field) for k in ("grove_n", "grove_w")):
+            return False
+        if not self._sun_corridor_ok(geom):
             return False
         return not self._yard_sun_conflict(geom)
 

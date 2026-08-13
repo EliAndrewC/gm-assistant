@@ -6744,6 +6744,40 @@ def test_a_map_with_no_field_has_no_wet_toe_to_ask_about():
     assert s.toe_band() == []
 
 
+def test_a_homestead_may_not_stand_in_a_neighbours_drying_sun():
+    """THE RATCHET for the sun corridor (GM 2026-08-13, researched in research/homesteads.md).
+
+    A minka's ~20 ft ridge throws 39 ft of shadow by 9am in the threshing month, so a farmhouse
+    that close south of a yard takes its drying day. Three things are pinned: the rule is OFF by
+    default (the whole hand-authored pool depends on that - turning it on re-packs every nucleated
+    map), it refuses a bundle in BOTH directions once on, and it lets a homestead sit clear."""
+
+    def bed():
+        s = Settlement(1400, 1400, seed=3)
+        s.meta(name="Sun", scale="hamlet", ftpx=1, toscale=True, households=12, nucleated=True)
+        s._nucleated = True
+        return s
+
+    off = bed()
+    assert off._sun_corridor_ok({"house": (700, 700, 46, 28), "yard": (700, 745, 37, 26)}), "OFF by default - the legacy pool depends on it"
+
+    on = bed()
+    on.sun_corridor(39)
+    # a yard standing 20 ft north of this candidate house: the candidate would shade it
+    on.M["houses"].append({"x": 700, "y": 600, "w": 46, "h": 28, "geom": {"yard": (700, 645, 37, 26)}})
+    assert not on._sun_corridor_ok({"house": (700, 700, 46, 28), "yard": (700, 745, 37, 26)}), "a house may not shade a yard already placed"
+    # ...and the mirror: a house already standing, and the candidate's own yard in its shadow
+    on2 = bed()
+    on2.sun_corridor(39)
+    on2.M["houses"].append({"x": 700, "y": 800, "w": 46, "h": 28, "geom": None})
+    assert not on2._sun_corridor_ok({"house": (700, 700, 46, 28), "yard": (700, 745, 37, 26)}), "a yard may not sit in a standing house's shadow"
+    # ...and a homestead well clear of both is allowed
+    on3 = bed()
+    on3.sun_corridor(39)
+    on3.M["houses"].append({"x": 700, "y": 900, "w": 46, "h": 28, "geom": {"yard": (700, 945, 37, 26)}})
+    assert on3._sun_corridor_ok({"house": (700, 700, 46, 28), "yard": (700, 745, 37, 26)}), "clear ground must still be offered"
+
+
 def test_a_house_is_refused_a_seat_whose_DRAWN_corner_lands_on_a_lane():
     """THE RATCHET for the engine's "placement tests a different footprint than the one drawn" debt,
     at the lane (this skill's CLAUDE.md, "CENTER vs FOOTPRINT" item 3).

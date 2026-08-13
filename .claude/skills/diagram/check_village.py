@@ -6823,6 +6823,44 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 cyx, cyy = yd["x"], yd["y"] + yd["h"] / 2 + 11  # the ~22px sun-corridor just south of the yard
                 if any(abs(gv["x"] - cyx) < (gv["w"] + yd["w"]) / 2 and abs(gv["y"] - cyy) < (gv["h"] + 22) / 2 for gv in groves):
                     shaded.append((round(yd["x"]), round(yd["y"])))
+            # ...AND NOT BY A NEIGHBOUR'S FARMHOUSE, which is the taller obstacle and was never
+            # tested (GM 2026-08-13: "would the shadow from the farmhouse directly to the south
+            # block too much light?"). Researched in research/homesteads.md, "The threshing yard's
+            # sun": thatch is pitched 45 deg or steeper, so the 46x28 ft minka's ridge stands ~20 ft
+            # up, and at 38N in the 10th month that throws 21 ft of shadow at noon and 39 ft by 9am.
+            # 39 ft is the rule, because the drying day that matters is 9-to-3.
+            #
+            # GATED ON `meta.generated_by`, and that gate IS the GM's decision (2026-08-13). Every
+            # hand-authored nucleated map in the pool breaks this - Ueda has 45 of 85 yards shaded at
+            # noon, Hoshigaoka 31 of 70, Ubame 21 of 36, with neighbours' walls 2-8 ft off the yard
+            # edge - and re-packing them all was judged the wrong trade. Instead the rule binds the
+            # SCRIPTED path, and each legacy map inherits it at the moment it is converted to a
+            # generator. The exemption therefore cannot rot: it is not a list anyone has to prune,
+            # it is the absence of a tag that conversion adds.
+            if meta.get("generated_by"):
+                sun_ft = 39.0
+                sun_ftpx = float(meta.get("ftpx") or 1)  # derived locally: `ftpx` is bound conditionally in this scope
+                nshade = []
+                for yd in yards:
+                    par = yd.get("of")
+                    for hh_ in houses:
+                        if par and abs(hh_["x"] - par[0]) < 1 and abs(hh_["y"] - par[1]) < 1:
+                            continue  # its own house is NORTH of it by construction
+                        if abs(hh_["x"] - yd["x"]) >= (hh_["w"] + yd["w"]) / 2:
+                            continue  # not in the yard's sun corridor
+                        gap = ((hh_["y"] - hh_["h"] / 2) - (yd["y"] + yd["h"] / 2)) * sun_ftpx
+                        if 0 < gap < sun_ft:
+                            nshade.append((round(yd["x"]), round(yd["y"])))
+                            break
+                check(
+                    "yards_unshaded_by_neighbors",
+                    not nshade,
+                    f"threshing yard(s) {nshade[:3]} stand within {sun_ft:.0f} ft of a NEIGHBOUR's farmhouse to their "
+                    f"SOUTH - a minka's ~20 ft ridge throws 21 ft of shadow at noon in the threshing month and 39 ft by "
+                    f"9am, so that yard loses the drying day. Keep the sun corridor south of every yard clear of houses "
+                    f"(the placer does it with s.sun_corridor(39)); a yard may also stagger east or west out of the shadow",
+                )
+
             check(
                 "yards_unshaded_by_groves",
                 not shaded,

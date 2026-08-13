@@ -132,6 +132,13 @@ LANE_FRONTAGE_STANDOFF = 70.0
 # water, and it is still under a farmhouse's width, so the track visibly reaches the field.
 SPUR_SETBACK = 14.0
 
+# How much open ground a threshing yard needs to its SOUTH, in feet. A thatched roof is pitched 45
+# degrees or steeper, so the 46 x 28 ft minka's ridge stands ~20 ft up; at 38N in the threshing
+# month that is 21 ft of shadow at noon and 39 ft by 9am. 39 protects the 9-to-3 drying day, which
+# is the one that matters - and it costs nothing in row pitch, since house depth (28) + yard depth
+# (~26) + 39 already comes to about the 92 ft the cluster band was independently sized at.
+SUN_CORRIDOR_FT = 39.0
+
 # HOW MUCH GROUND ONE HOMESTEAD TAKES, in px at 1 ft/px - the pitch the cluster band is sized on.
 # A bundle's reserved rects come to ~71 x 57 ft; the placer then keeps bundles apart by
 # circumscribed circles rather than real footprints, so the effective pitch is larger again. 92 px
@@ -525,7 +532,12 @@ def stage_water_frame(s: Settlement, plan: SitePlan) -> None:
     placed, decide the map's drainage bearing and, separately, the land's fall". Everything
     downstream reads them - which end of the fan is the head, which margin the cluster can stand on,
     which way the drain runs, where the marsh is allowed to be."""
+    # THE MAP DECLARES THAT A SCRIPT MADE IT (GM 2026-08-13). Rules that the scripted path adopts
+    # ahead of the hand-authored pool are gated on this tag, so a legacy map keeps its present
+    # packing and starts obeying the new rule the moment it is CONVERTED - the migration enforces
+    # itself instead of needing a list of exemptions that someone has to remember to prune.
     s.meta(
+        generated_by="hamletgen",
         name=plan.spec.name,
         scale="hamlet",
         ftpx=plan.ftpx,
@@ -1643,6 +1655,11 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     whole map to fix a local shortfall - the expensive, whack-a-mole loop the skill's dev notes warn
     about. Widening the band changes only the ground the candidates come from, so the houses already
     seated stay exactly where they are and the map converges instead of churning."""
+    # A YARD KEEPS ITS SUN (GM 2026-08-13; researched in research/homesteads.md, "The threshing
+    # yard's sun"). 39 ft is the 9-to-3 drying window at 38N in the 10th month for a minka's ~20 ft
+    # ridge; the noon figure is 21. The engine's rule is opt-in and this is where the scripted tier
+    # opts in - the hand-authored maps keep their packing until they are converted.
+    s.sun_corridor(SUN_CORRIDOR_FT)
     seat = plan.seat
     ax, ay = seat["along"]
     ox, oy = seat["out"]
