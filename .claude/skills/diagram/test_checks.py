@@ -40,6 +40,29 @@ def bldg(x, y, kind="merchant", rot=0, w=40, h=28, **kw):
 
 
 # ---- the matrix debt register rots loudly ------------------------------------------------------
+def test_yards_unshaded_by_neighbors_fires_only_on_a_scripted_map():
+    """The check that carries the GM's 2026-08-13 migration decision.
+
+    A neighbour's farmhouse in the 39 ft sun corridor south of a threshing yard fails it - but ONLY
+    on a map a generator made (`meta.generated_by`). The whole hand-authored pool breaks this rule
+    and is deliberately exempt until each map is converted, so the tag is what turns it on; if that
+    gate ever inverts, every legacy map goes red at once and this test says so first."""
+    shaded = manifest(
+        houses=[house(x=400, y=400), house(x=400, y=500)],
+        threshing_yards=[yard(x=400, y=445, of=(400, 400))],
+    )
+    shaded["meta"]["ftpx"] = 1
+    assert "yards_unshaded_by_neighbors" not in f(shaded), "an UNTAGGED (hand-authored) map is exempt by decision"
+    shaded["meta"]["generated_by"] = "hamletgen"
+    assert "yards_unshaded_by_neighbors" in f(shaded), "a scripted map must be held to it"
+    clear = manifest(
+        houses=[house(x=400, y=400), house(x=400, y=560)],
+        threshing_yards=[yard(x=400, y=445, of=(400, 400))],
+    )
+    clear["meta"].update(ftpx=1, generated_by="hamletgen")
+    assert "yards_unshaded_by_neighbors" not in f(clear), "a yard with its sun must pass"
+
+
 def test_a_paid_matrix_debt_fires_so_the_line_gets_deleted(monkeypatch):
     """An _MATRIX_OUTSTANDING line is WORK OWED. Once the defect is fixed the line does not just rot -
     it goes on tolerating that many real overlaps of that pair for ever. Minami's five were fixed

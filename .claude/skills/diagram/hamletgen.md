@@ -303,6 +303,41 @@ map's frame open; a windbreak standing in the barley; a cluster seated INSIDE a 
 margin; a supply canal's tail dying in bare ground; a well out in the fields; a brook turning
 through an acute hairpin. A person authoring one map meets perhaps two of those.
 
+## The sun corridor, and the migration it starts (2026-08-13)
+
+The GM asked whether a threshing yard would sit directly north of a neighbour's farmhouse, or
+whether that house's shadow would take its light. It would: thatch is pitched 45 degrees or steeper,
+so a 46 x 28 ft minka's ridge stands ~20 ft up, and at 38N in the threshing month that is 21 ft of
+shadow at noon and 39 ft by 9am. The full derivation and sources are in
+[`research/homesteads.md`](research/homesteads.md), "The threshing yard's sun".
+
+**Every hand-authored nucleated map in the pool breaks it** - Ueda 45 of 85 yards shaded at noon,
+Hoshigaoka 31 of 70, Ubame 21 of 36, the hamlets 3-10 each, with neighbours' walls commonly 2-8 ft
+off a yard's edge. The GM's decision was NOT to re-pack them by hand: the rule binds the SCRIPTED
+path, and each legacy map inherits it when it is converted. `hamletgen` calls `s.sun_corridor(39)`;
+`yards_unshaded_by_neighbors` is gated on `meta.generated_by`, which only a generator sets. **This is
+the first rule the scripted tier holds ahead of the pool, and the pattern is written up in the
+skill's [`CLAUDE.md`](CLAUDE.md)** under "MIGRATION: new rules land in the SCRIPTED path first".
+
+**Result on the scripted maps: 0 shaded yards, from 3-6 each before, with every household still
+seated.** Two implementation notes worth keeping:
+
+- The placer must read the neighbours' yards off the PLACED BUNDLES' `geom`, not off
+  `M["threshing_yards"]` - yards are not drawn until `farmsteads()` flushes, long after the last
+  house is seated, so the manifest list is empty while placement runs and the first version cleared
+  only about half the shadows.
+- The placer runs 2 ft stricter than the check on BOTH axes. It measures the bundle rects it is
+  about to commit; the check measures the yard record finally drawn, and they differ by fractions of
+  a pixel - seats at 39.0 ft and at 0.35 px of lateral overlap passed one and failed the other on
+  cohort maps.
+
+**KNOWN RESIDUE, and it is a real regression to close:** the fitted cohort went 24/24 -> **21/24**.
+The held-out cohort is 12/12. The three failures are knock-ons of the tighter packing rather than
+corridor holes (the corridor is enforced through the slide as well as at the final seat - both go
+through `_bundle_common_fits`): seed 8 puts a footplank across to non-cultivated ground, seed 11
+laps a garden onto a neighbour's house, seed 18 leaves a well in open ground with no dwelling within
+~95 px. All four SHIPPED demo maps pass. Chase these before claiming the tier is clean again.
+
 ## If this is continued
 
 In rough order of value:
