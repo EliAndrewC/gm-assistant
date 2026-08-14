@@ -435,16 +435,32 @@ every bearing fails `crop_hugs_content`, and both pool polders move). The script
 dike **unlabelled** instead: a perimeter dike is the most legible thing on a polder sheet and does
 not need naming.
 
-**WHERE IT STANDS: 6 of 12 cardinal-bearing polders pass** (seed 8 clean on all four bearings; seeds
-3 and 19 fail). The residue is one cause - `channel_field_anchored`, the inlet channel's mouth
-finishing on the field boundary rather than well inside it, which drags
-`watercourse_ends_reach_water` with it - and it is SEED-SENSITIVE, because how far the sluice sits
-from the crop depends on the grid's edge wander. Stepping the sluice inward by a fixed 26 px was
-tried and made it worse (4 of 12): the fix has to derive the inward step from where the planted
-extent actually starts on that seed, not from a constant. Diagonal bearings additionally fail
-`polder_fills_its_bbox`, which is a fair statement about the archetype - a wei-tian polder is a
-SURVEYED orthogonal block and a diagonal one does not fill its own bbox - so the tier should
-probably roll polders on cardinal falls only.
+**WHERE IT STANDS: 4 of 12 cardinal-bearing polders pass, and the split is by SEED, not by bearing.**
+Seed 8 is clean on all four falls; seeds 3 and 19 fail on all four, with the same one cause -
+`channel_field_anchored`, which drags `watercourse_ends_reach_water` with it.
+
+**And the obvious lever is NOT the lever, which is the useful part.** The rule is exact: a channel's
+field end must be inside the field outline AND at least 10 px clear of its edge. `build_polder` puts
+its sluice on the DIKE LINE, i.e. on the boundary, so the natural fix is to move the sluice inward -
+and it does not work. Three tries, each worse than doing nothing:
+
+- a fixed 26 px step along head-to-centre: 4 of 12,
+- snapping the sluice onto the feeder's head: drags the mouth across the grid and puts a farmstead
+  on it,
+- deriving the step from the outline's own edge normal (`pull_inside`, the mirror of the
+  `push_out_of` that fixed the valley spur): still 4 of 12.
+
+**Measured on a failing seed, the drawn mouth lands 2.6 px inside the outline WHEREVER the sluice is
+put** - so `draw_comb_field` is CLIPPING the channel's end back toward the boundary, and no amount of
+moving the anchor changes where the ink finishes. That is the same class as every other
+placement-versus-drawing gap in this file, and the lever is in the engine's channel clipping rather
+than in this generator. That is where the next attempt should start, and it should start by reading
+`_clip_to_pond`/`_clip_to_stream` and whatever the field-end equivalent is - not by moving the
+anchor again.
+
+Diagonal bearings additionally fail `polder_fills_its_bbox`, which is a fair statement about the
+archetype - a wei-tian polder is a SURVEYED orthogonal block and a diagonal one does not fill its own
+bbox - so the tier should roll polders on cardinal falls only when it does start rolling them.
 
 **The roll is deliberately still valley-only** (`ROLLED_ARCHETYPES`). A rolled archetype with known
 failures would mix them into the valley tier's 36/36 and destroy the one number that says the
