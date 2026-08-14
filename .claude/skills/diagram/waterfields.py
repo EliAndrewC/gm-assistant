@@ -2221,13 +2221,30 @@ def build_polder(
     # separate envelope rectangle drifted in and out of it; concatenating the 4 ring sides gives the closed
     # inner-toe loop, so the green is bounded exactly by the ring and the canal draws on top of it.
     floor = [grid(s, t) for s, t in (sides_st[0] + sides_st[1] + sides_st[2] + sides_st[3])]
+    # THE PARCELS STOP AT THE COLLECTOR'S BANK. `hem_to_bank`'s own docstring names this engine as
+    # one of the three that need the pass - "the collector IS the polder's bottom side, so the
+    # parcels front it directly and float error alone put a vertex a half-pixel past" - and the call
+    # was simply never made here, only in the comb, the terraces and the ribbon. It surfaced on a
+    # scripted polder (2026-08-13): 6 bund vertices drawn inside the drain's stroke on 2 of 12 grid
+    # shapes, a bund laid under the ditch. The pass only LIFTS vertices that breach, so a grid whose
+    # parcels already clear the bank is returned untouched - Enokida and Kuwabata are byte-identical.
+    _drn = [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in sides_st[2]]]
+    # ...at the collector's OWN widths. The first version passed the terraces' 1.5 -> 5.0 taper,
+    # copied from the call above it, and this drain is 5.0 throughout - so the pass under-lifted
+    # along most of its run and the bunds it was added to clear stayed in the stroke. The widths a
+    # lift measures against have to be the widths the ditch is drawn at, which are the ones recorded
+    # on its own channel.
+    _dw = next((float(_c.get("w", 5.0)) for _c in channels if _c.get("role") == "drain"), 5.0)
+    _dwt = next((float(_c.get("w_tail", _dw)) for _c in channels if _c.get("role") == "drain"), _dw)
+    for _p in plots:
+        _p["poly"] = hem_to_bank(_p["poly"], _drn, down_deg, _dw, _dwt)
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
     round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     return {
         "channels": channels,
         "plots": plots,
         "threads": [],
-        "drain": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in sides_st[2]]],
+        "drain": _drn,
         "brook": brook,
         "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
         "acres": acres,

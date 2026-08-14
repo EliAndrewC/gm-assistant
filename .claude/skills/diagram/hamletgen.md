@@ -404,10 +404,47 @@ rather than copied from Enokida, and each was the same lesson the valley path ta
 - **The lane arms clip against marsh already drawn.** On a polder the reservoir's reed fringe is laid
   before the ways, and an arm ran through it.
 
-**The two left, both named and both in `build_polder`'s own geometry rather than the siting:** the
-inlet channel's field end lands ~11 px outside the envelope (`watercourse_ends_reach_water`), and six
-paddy bund vertices sit inside the collector's corridor at the low end
-(`paddy_bunds_clear_the_collector`).
+**BOTH OF THOSE ARE NOW FIXED**, and one of them was an engine omission rather than anything this
+generator did:
+
+- **`paddy_bunds_clear_the_collector` was `build_polder` never calling `hem_to_bank`.** That pass
+  lifts a parcel vertex out of the collector's stroke, and its own docstring names POLDER as one of
+  the three engines that need it - *"the collector IS the polder's bottom side, so the parcels front
+  it directly and float error alone put a vertex a half-pixel past"* - but the call existed only in
+  the comb, the terraces and the ribbon. It bit on 2 of 12 grid shapes. Fixed at the engine, and
+  **Enokida and Kuwabata are byte-identical**, because the pass only lifts vertices that breach.
+  One trap on the way: the first version passed the TERRACES' 1.5 -> 5.0 width taper, copied from
+  the call above it, while this drain is 5.0 throughout - so it under-lifted along most of its run
+  and the bunds it was added to clear stayed in the stroke. A lift has to measure against the widths
+  the ditch is actually drawn at.
+- **`watercourse_ends_reach_water` was the reservoir's seat.** `build_polder` puts its sluice on the
+  dike line, up to 70 px from the perimeter feeder's own head, and the feeder's head sits just
+  outside the planted extent - so the ring's head dangled with the inlet water stopping short of it.
+  The pond now sits on the far side of that head, along the head-to-sluice line, so the inlet channel
+  runs straight THROUGH the head on its way in: the ring is charged where it begins. Snapping the
+  sluice onto the head instead was tried and is worse - it drags the mouth across the grid and puts
+  a farmstead on it.
+
+**Also fixed while sweeping bearings the first pass never tried:** the dike's own caption could land
+outside the frame (`labels_within_image` at down_deg=270), because `perimeter_dike` captions itself 8
+px above its band and a dike is not in the crop's hard set. Adding `dikes` to that set was tried
+twice - once alone (no effect at all, because `_crop_boxes` reads `poly` and a dike records
+`outline`, so the extractor could not see it - the same blindness the OVERLAP extractor had) and once
+with the extractor taught to read `outline` (the band then holds the frame open past the content and
+every bearing fails `crop_hugs_content`, and both pool polders move). The scripted tier draws its
+dike **unlabelled** instead: a perimeter dike is the most legible thing on a polder sheet and does
+not need naming.
+
+**WHERE IT STANDS: 6 of 12 cardinal-bearing polders pass** (seed 8 clean on all four bearings; seeds
+3 and 19 fail). The residue is one cause - `channel_field_anchored`, the inlet channel's mouth
+finishing on the field boundary rather than well inside it, which drags
+`watercourse_ends_reach_water` with it - and it is SEED-SENSITIVE, because how far the sluice sits
+from the crop depends on the grid's edge wander. Stepping the sluice inward by a fixed 26 px was
+tried and made it worse (4 of 12): the fix has to derive the inward step from where the planted
+extent actually starts on that seed, not from a constant. Diagonal bearings additionally fail
+`polder_fills_its_bbox`, which is a fair statement about the archetype - a wei-tian polder is a
+SURVEYED orthogonal block and a diagonal one does not fill its own bbox - so the tier should
+probably roll polders on cardinal falls only.
 
 **The roll is deliberately still valley-only** (`ROLLED_ARCHETYPES`). A rolled archetype with known
 failures would mix them into the valley tier's 36/36 and destroy the one number that says the
