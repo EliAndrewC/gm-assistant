@@ -73,6 +73,14 @@ against 19.5, 26.0 against 26.0, 15.7 against 15.6 and 24.7 against 24.7 acres.
 **36 of 36: 24 of 24 on seeds 1-24, and 12 of 12 on a HELD-OUT cohort (seeds 101-112)**, measured
 2026-08-12. It was 7 of 12 when the experiment was first reported.
 
+**THE TWO COHORTS, since the numbers below are quoted in their terms.** A *cohort* is N hamlets
+rolled from consecutive seeds and put through the whole gate. There are two, and the split is the
+point: the **FITTED** cohort (seeds 1-24) is the set every fix was developed against, so its pass
+rate is measured on the very maps the code was tuned to; the **HELD-OUT** cohort (seeds 101-112) is
+never debugged against and only ever run to measure. The terms are borrowed from statistics -
+training set and test set - and the held-out one has earned its keep three times, catching the belt
+derivation, the connector routing and the cluster siting after each had passed all 24 fitted seeds.
+
 Both cohorts matter and the held-out one is the honest measure - seeds 1-24 are the set the fixes
 were made against, and a rate measured on the seeds you debugged is a fitted number. The held-out
 dozen earned its keep: three of its failures were general bugs the tuning set never showed (a
@@ -332,8 +340,10 @@ seated.** Two implementation notes worth keeping:
   cohort maps.
 
 **KNOWN RESIDUE, and it is a real regression to close:** the fitted cohort went 24/24 -> **21/24**.
-The held-out cohort is 12/12. The three failures are knock-ons of the tighter packing rather than
-corridor holes (the corridor is enforced through the slide as well as at the final seat - both go
+The held-out cohort is 12/12. Note which way round that is: the HELD-OUT set is clean and the FITTED set
+regressed, which is backwards from the usual failure and means these are not tuning artifacts - they
+are real defects that happen to fall on seeds 8, 11 and 18. The three are knock-ons of the tighter
+packing rather than corridor holes (the corridor is enforced through the slide as well as at the final seat - both go
 through `_bundle_common_fits`): seed 8 puts a footplank across to non-cultivated ground, seed 11
 laps a garden onto a neighbour's house, seed 18 leaves a well in open ground with no dwelling within
 ~95 px. All four SHIPPED demo maps pass. Chase these before claiming the tier is clean again.
