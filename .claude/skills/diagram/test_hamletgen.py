@@ -15,6 +15,7 @@ So: a rule about SHAPE goes here; a rule about a MAP belongs in the pool.
 import math
 import os
 import sys
+import tempfile
 
 import pytest
 
@@ -343,6 +344,46 @@ def test_a_way_cutting_the_field_is_bent_ROUND_it_not_nibbled_at() -> None:
     assert hg.route_around(square, clear, 8.0) == clear, "a way that never touches the field is left alone"
     stub = hg.route_around(square, [(50.0, 50.0), (150.0, 50.0)], 8.0)  # STARTS inside: one crossing, not two
     assert not point_in_poly(stub[0][0], stub[0][1], square)
+
+
+def test_a_nonsense_field_archetype_is_refused() -> None:
+    with pytest.raises(ValueError, match="field_archetype"):
+        hg.HamletSpec(name="X", seed=1, field_archetype="terraces")
+
+
+def test_the_roll_only_offers_archetypes_that_gate_clean() -> None:
+    """`polder_grid` is opt-in until its own cohort is green (see ROLLED_ARCHETYPES).
+
+    A rolled archetype with known failures mixes them into the valley tier's 36/36 and destroys the
+    one number that says the scripted process is consistent - which is exactly what happened the
+    moment the polder was added to the roll. Pinning it is still honoured; only the ROLL is held
+    back, and this is the test that will fail (correctly) on the day someone promotes it."""
+    assert set(hg.ROLLED_ARCHETYPES) <= set(hg.FIELD_ARCHETYPES)
+    rolled = {hg.plan_site(hg.HamletSpec(name="X", seed=s, households=15)).field_archetype for s in range(1, 30)}
+    assert rolled == set(hg.ROLLED_ARCHETYPES)
+
+
+def test_a_polder_hamlet_draws_its_grid_dike_and_reservoir() -> None:
+    """THE SECOND FIELD ARCHETYPE (GM 2026-08-13), pinned at what it currently guarantees.
+
+    The polder is WORK IN PROGRESS - it has two named gate failures in `build_polder`'s own geometry
+    (see hamletgen.md) - so this does not assert a clean gate, which would be a lie. It asserts the
+    things the substrate is already responsible for and which no other test covers: that the grid is
+    solved to the acreage the households imply, that every household is seated, that the defining
+    perimeter dike exists, and that the header reservoir sits OUTSIDE the crop rather than in it,
+    which two earlier versions of the siting got wrong in two different ways."""
+    plan = hg.plan_site(hg.HamletSpec(name="Polder", seed=8, households=16, field_archetype="polder_grid"))
+    assert plan.field_archetype == "polder_grid"
+    s = hg.build(plan)
+    with tempfile.TemporaryDirectory() as tmp:
+        s.finish(os.path.join(tmp, "scratch"), render=False)
+    assert s.M["meta"]["field_archetype"] == "polder_grid"
+    assert abs(plan.acres - plan.target_acres) / plan.target_acres < 0.12, f"{plan.acres:.1f} acres against a {plan.target_acres:.1f} target"
+    assert plan.placed == plan.spec.households
+    assert s.M.get("dikes"), "a polder without its perimeter dike is not a polder"
+    pond = s.M.get("pond")
+    assert pond, "the header reservoir is the polder's water source"
+    assert not point_in_poly(pond[0], pond[1], list(plan.envelope)), "the reservoir sits BESIDE the crop, never in it"
 
 
 def test_a_rolled_cohort_passes_the_whole_gate() -> None:

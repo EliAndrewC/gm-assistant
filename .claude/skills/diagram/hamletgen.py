@@ -73,7 +73,7 @@ if HERE not in sys.path:  # so the module works when run as a script from anywhe
     sys.path.insert(0, HERE)  # pragma: no cover - under pytest the skill dir is already on the path
 
 from settlement import Settlement, knob_rng, point_in_poly, seg_closest, seg_dist, seg_intersect, segments_cross, skeleton_layout  # noqa: E402
-from waterfields import build_comb  # noqa: E402
+from waterfields import build_comb, build_polder  # noqa: E402
 
 Pt = tuple[float, float]
 Poly = list[Pt]
@@ -138,6 +138,31 @@ SPUR_SETBACK = 14.0
 # is the one that matters - and it costs nothing in row pitch, since house depth (28) + yard depth
 # (~26) + 39 already comes to about the 92 ft the cluster band was independently sized at.
 SUN_CORRIDOR_FT = 39.0
+
+# THE FIELD ARCHETYPES this generator can draw, and why there are two rather than five. The pool's
+# hamlets span five (`valley_paddy`, `polder_grid`, `mulberry_dike_fishpond`, `contour_terraces`,
+# `ribbon_valley`) and they are not variations on one shape - a comb fan is grown around a head-race
+# on sloping ground, a polder is a surveyed orthogonal grid diked out of standing water on flat
+# ground. They share `draw_comb_field` (build_polder deliberately returns build_comb-compatible
+# keys) and almost nothing else: different water entry, different drainage, a perimeter dike, and a
+# village that must sit on the LANDWARD side rather than the upslope one.
+#
+# `mulberry_dike_fishpond` is not a third archetype here - it is an OVERLAY on the polder (see
+# `MULBERRY_ELIGIBLE`), which is what it is historically too.
+FIELD_ARCHETYPES = ("valley_paddy", "polder_grid")
+
+# ...but only the proven one is ROLLED. `polder_grid` is opt-in (`field_archetype="polder_grid"`)
+# until it gates clean on a cohort of its own: rolling an archetype that still has known failures
+# would mix them into the valley tier's 36/36 and destroy the one number that says the scripted
+# process is consistent. Move it into this tuple the day the polder cohort is green - that is the
+# whole ceremony.
+ROLLED_ARCHETYPES = ("valley_paddy",)
+
+# The polder's module size, in feet, before fitting. Enokida's 110 ft cell puts a whole bay at ~1.9
+# mu, a half at ~0.9 and a third at ~0.6 - which is the attested parcel range (build_polder's
+# TRUE-SCALE SIZING note). `fit_polder` scales the GRID, not the cell, so the parcels keep that
+# calibration whatever acreage the household count asks for.
+POLDER_CELL_FT = 110.0
 
 # HOW MUCH GROUND ONE HOMESTEAD TAKES, in px at 1 ft/px - the pitch the cluster band is sized on.
 # A bundle's reserved rects come to ~71 x 57 ft; the placer then keeps bundles apart by
@@ -302,6 +327,7 @@ class HamletSpec:
     water_sink: str | None = None
     cluster_shape: str | None = None
     lane_skeleton: str | None = None
+    field_archetype: str | None = None
     plot_size: str | None = None
     grain_drift: int | None = None
     woodland_patches: int | None = None
@@ -309,6 +335,8 @@ class HamletSpec:
     pins: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        if self.field_archetype is not None and self.field_archetype not in FIELD_ARCHETYPES:
+            raise ValueError(f"field_archetype {self.field_archetype!r} is not one this generator draws: {sorted(FIELD_ARCHETYPES)}")
         lo, hi = HOUSEHOLD_BAND
         if not lo <= self.households <= hi:
             raise ValueError(
@@ -335,6 +363,7 @@ class SitePlan:
     water_sink: str
     cluster_shape: str
     lane_skeleton: str
+    field_archetype: str
     plot_size: str
     grain_drift: int
     woodland_patches: int
@@ -347,6 +376,7 @@ class SitePlan:
     offtakes_b: tuple[float, ...] = ()
     # filled in by the stages as the map is built, so a later stage can read an earlier one's result
     net: dict[str, Any] = field(default_factory=dict)
+
     envelope: Poly = field(default_factory=list)
     sink_pond: tuple[float, float, float, float] | None = None
     sink_brook: Poly = field(default_factory=list)
@@ -436,6 +466,7 @@ def plan_site(spec: HamletSpec) -> SitePlan:
         water_sink=spec.water_sink or str(_roll(spec.seed, "water_sink", SINKS)),
         cluster_shape=spec.cluster_shape or str(_roll(spec.seed, "cluster_shape", CLUSTER_SHAPES)),
         lane_skeleton=spec.lane_skeleton or str(_roll(spec.seed, "lane_skeleton", LANE_SKELETONS)),
+        field_archetype=spec.field_archetype or str(_roll(spec.seed, "field_archetype", ROLLED_ARCHETYPES)),
         plot_size=spec.plot_size or str(_roll(spec.seed, "plot_size", PLOT_SIZES)),
         grain_drift=spec.grain_drift if spec.grain_drift is not None else int(_roll(spec.seed, "grain_drift", GRAIN_DRIFTS)),
         woodland_patches=spec.woodland_patches if spec.woodland_patches is not None else int(_roll(spec.seed, "woodland_patches", (2, 3, 3, 4))),
@@ -730,12 +761,117 @@ def feed_brook(plan: SitePlan, sluice: Pt, run: float = 420.0) -> Poly:
     return [up, ((up[0] + sluice[0]) / 2 + dy * 26, (up[1] + sluice[1]) / 2 - dx * 26), sluice]  # pragma: no cover - the same unreachable fallback, one line down
 
 
+def stage_polder(s: Settlement, plan: SitePlan) -> None:
+    """The POLDER field: a surveyed orthogonal grid diked out of standing water on flat ground.
+
+    Not a variation on the comb - the opposite of it. A comb is grown around a head-race running down
+    a slope and its shape follows the water; a polder is a planned block whose water enters at a
+    corner, rings the module in a perimeter feeder, and drains to the low corner. `build_polder`
+    returns `build_comb`-compatible keys on purpose, so `draw_comb_field` draws either.
+
+    The SOURCE is a header reservoir OUTSIDE the dike above the high corner, charged through a sluice
+    in the dike - not a brook running in over the crop, which is what a valley hamlet has."""
+    net = fit_polder(plan, plan.spec.seed)
+    plan.net = net
+    plan.acres = net_acres(net, plan.ftpx)
+    plan.envelope = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]
+    s.field_polys.append(list(plan.envelope))
+    s.meta(dry_furrows_vary=False)
+    s.M["meta"]["field_archetype"] = "polder_grid"
+    s.M["meta"]["water_source"] = "reservoir"
+    s.M["meta"]["water_source_position"] = "corner_high"
+    # THE HEADER RESERVOIR sits OUTSIDE the dike, above the block's high end, on the fall axis -
+    # derived from the drawn envelope rather than offset from a corner, because which corner is
+    # "high" depends on the bearing. It is the wild water the inlet sluice draws from.
+    env = plan.envelope
+    prx, pry = 82.0, 54.0
+    # SEATED AT THE DIKE'S OWN INLET SLUICE, pushed straight out from the block. `build_polder` says
+    # where the dike is cut for water (`dike_sluices`), and the reservoir is the body that sluice
+    # draws from - so the link between them is the short square one Enokida draws, not a diagonal
+    # across the block's whole head. Two earlier tries measured only in the fall frame: one blended
+    # the high corner with the centroid and put the pond INSIDE the crop; the next centred it across
+    # the block's head, and the inlet channel then ran so far that its field end dangled short of
+    # the envelope (`watercourse_ends_reach_water`). The sluice is the anchor both ends agree on.
+    cen = centroid(env)
+    inlet = (net.get("dike_sluices") or [(min(p[0] for p in env), sum(p[1] for p in env) / len(env))])[0]
+    onx, ony = unit(inlet[0] - cen[0], inlet[1] - cen[1])
+    pond = (inlet[0] + onx * (max(prx, pry) + 46.0), inlet[1] + ony * (max(prx, pry) + 46.0), prx, pry)
+    s.draw_comb_field(net, f"{plan.spec.name.lower()}-polder", {"kind": "pond", "pond": pond})
+    plan.sink_pond = None
+    # THE PERIMETER DIKE - the defining polder feature, and the reason a polder is a polder: an
+    # irregular hand-piled earthwork band following the water edge in organic bends (fish-scale
+    # polder, 鱼鳞圩). Drawn HERE, before the village, so it sits UNDER the houses that line it.
+    # ...gapped WHEREVER a channel actually crosses it, not only at the two sluices `build_polder`
+    # names. A dug gap is what lets water through an earthwork; anywhere else the dike would be
+    # drawn straight over a running channel (`polder_dike_gapped_at_sluices`).
+    ring = list(plan.envelope)
+    gaps = list(net.get("dike_sluices") or [])
+    for ch in net.get("channels", []):
+        pts = ch["pts"]
+        for i in range(len(pts) - 1):
+            for k in range(len(ring)):
+                a, b = ring[k], ring[(k + 1) % len(ring)]
+                if segments_cross(tuple(pts[i]), tuple(pts[i + 1]), a, b):
+                    hit = seg_intersect(tuple(pts[i]), tuple(pts[i + 1]), a, b)
+                    if hit is not None and not any(math.hypot(hit[0] - g[0], hit[1] - g[1]) < 30 for g in gaps):
+                        gaps.append(
+                            hit
+                        )  # pragma: no cover - no polder seed yet runs a channel through its dike away from the two sluices `build_polder` names; the guard stays because its laterals can, and an ungapped crossing draws the earthwork over running water
+    s.perimeter_dike(ring, seed=plan.spec.seed ^ 0x6D, gaps=gaps)
+
+
+def fit_polder(plan: SitePlan, seed: int, tolerance: float = 0.06, rounds: int = 9) -> dict[str, Any]:
+    """SOLVE the polder grid for the acreage the household count demands - the flat-ground sibling of
+    `fit_field`, and it bisects the same way for the same reason.
+
+    What it scales is the GRID (how many modules), never the module: `build_polder`'s cell size is
+    calibrated so a whole bay is ~1.9 mu, a half ~0.9 and a third ~0.6, which is the attested parcel
+    range, and stretching the cell to hit an acreage would silently move every parcel out of it. A
+    polder grows by taking in more of the marsh, not by drawing bigger fields.
+
+    The block keeps a ~1.8:1 tall aspect (Enokida's 15x8 is 1.9), which is what a wei-tian module
+    looks like when it is diked out along a shore rather than around a bay."""
+    # THE ORIGIN IS DERIVED, NOT PINNED. `build_polder` grows its grid from the HIGH corner along the
+    # fall and across it, so a fixed corner only works for one fall bearing - at down_deg=0 the same
+    # corner sends the block off the top of the canvas, which is exactly what the first version did
+    # (bunds at y=-124, the drain outfall at y=-407, water running visibly backwards). Centring the
+    # block and stepping back half its extent along each axis puts it on the canvas at any bearing,
+    # and it has to be recomputed per candidate because the bisection changes the extent.
+    dx, dy = plan.fall
+    ux, uy = -dy, dx  # across the fall
+    cellpx = POLDER_CELL_FT / plan.ftpx
+    lo, hi = 6, 44
+    best: dict[str, Any] | None = None
+    for _ in range(rounds):
+        rows = (lo + hi) // 2
+        cols = max(4, int(round(rows * 0.55)))
+        along, across = rows * cellpx, cols * cellpx
+        cx, cy = plan.W / 2.0, plan.H / 2.0
+        origin = (cx - dx * along / 2 - ux * across / 2, cy - dy * along / 2 - uy * across / 2)
+        net = build_polder(plan.W, plan.H, origin, seed, down_deg=plan.down_deg, rows=rows, cols=cols, cell=cellpx, edge_wander=0.5)
+        got = net_acres(net, plan.ftpx)
+        best = net
+        if abs(got - plan.target_acres) / plan.target_acres <= tolerance:
+            break
+        if got < plan.target_acres:
+            lo = rows + 1
+        else:
+            hi = rows - 1
+        if lo > hi:
+            break  # pragma: no cover - the bisection exhausts its bracket without meeting tolerance; every seed tried lands inside 6% within the rounds allowed, and the guard is what stops a runaway if a future cell size widens the gap between grid steps
+    assert best is not None
+    return best
+
+
 def stage_field(s: Settlement, plan: SitePlan) -> None:
     """Lay the irrigation skeleton and carve the paddies between its threads.
 
     Second, because the water is first and the field is grown AROUND the water (the water-first
     inversion `waterfields.py` exists for). The head sluice comes from `head_sluice`, which puts the
     intake at the field's high head - gravity, not a knob."""
+    if plan.field_archetype == "polder_grid":
+        stage_polder(s, plan)
+        return
     dx, dy = plan.fall
     sluice, position = head_sluice(plan)
     s.M["meta"]["water_source"] = position
@@ -1254,6 +1390,9 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         return (cx + ax * p[0] + ox * p[1], cy + ay * p[0] + oy * p[1])
 
     toe_now = s.toe_band() or None
+    # ...and every marsh ALREADY DRAWN - on a polder the header reservoir's reed fringe is laid in
+    # `stage_polder`, before the ways, and a lane arm ran straight through it.
+    wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
     layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, seat["lat"], seat["dep"])
     for lane_pts in layout["lanes"]:
         # ...pulled back out of any hem plot the arm would otherwise reach into. The skeleton is
@@ -1273,7 +1412,7 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         # trimmed at the ends: `trim_off_marsh` walks an END back, which is the right move for a way
         # that pokes into the reeds, but an arm whose MIDDLE runs through them needs the truncation
         # its own docstring points at. An arm ends where the marsh begins - that is what a lane does.
-        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], [*crops, *([toe_now] if toe_now else [])], 20.0, lines=list(plan.watercourses) + drawn_water)
+        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], [*crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
         arm = s.trim_off_marsh(arm)  # ...and off the pond's reed fringe, which is already drawn by now
         if len(arm) >= 2:
             s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)

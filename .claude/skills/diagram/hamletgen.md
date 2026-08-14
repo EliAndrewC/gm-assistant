@@ -365,6 +365,55 @@ held-out one, and every cure was a different lesson:
   inside the house cloud instead. Popping the board's record left its CAPTION behind, which kept the
   check red after the board had moved: a feature and its deferred caption are removed together.
 
+## A SECOND FIELD ARCHETYPE: the polder (2026-08-13, in progress)
+
+The GM asked for the scripted process to support other hamlet TYPES, naming Kuwabata. The pool's
+hamlets span five field archetypes and this generator drew one:
+
+| hamlet | archetype |
+|---|---|
+| Ikegami, Moritono, Honda, Shimizu | valley comb fan (what the script made) |
+| Enokida | `polder_grid` |
+| **Kuwabata** | `mulberry_dike_fishpond` |
+| Tanada | `contour_terraces` |
+| Yatsuda | `ribbon_valley` |
+
+**Kuwabata decomposes into two pieces**, which is what makes it a good target: it is polder geometry
+carried to the 桑基魚塘 end state - the `mulberry_fishpond` overlay at `eligible="all"`. Its own notes
+insist that end state is the deliberate EXCEPTION and the scattered overlay the norm, so the overlay
+belongs in this generator as a KNOB, not as a map type. The substrate is the prerequisite either
+way, so the polder went first.
+
+**Where it stands: the polder DRAWS and is down to two named failures.** `field_archetype` is a spec
+knob (`valley_paddy` | `polder_grid`), pinnable and validated; a rolled 16-household polder lands
+**20.7 acres against a 20.8 target and seats 16 of 16 households**. Four things had to be derived
+rather than copied from Enokida, and each was the same lesson the valley path taught:
+
+- **The block's ORIGIN is derived from the fall**, not pinned to a corner. `build_polder` grows its
+  grid from the high corner along the fall, so Enokida's north-west corner only works at
+  `down_deg=90`; at 0 the same corner threw the block off the top of the canvas - bunds at y=-124,
+  the drain outfall at y=-407, water visibly running backwards. Centring the block and stepping back
+  half its extent along each axis works at any bearing, recomputed per bisection candidate.
+- **The header reservoir is seated at the dike's own inlet sluice.** Two earlier tries measured only
+  in the fall frame: one blended the high corner with the centroid and put the reservoir inside the
+  crop, the next centred it across the block's head and left the inlet channel dangling short of the
+  envelope. `build_polder` says where the dike is cut for water; the pond is what that sluice draws
+  from, so the sluice is the anchor both ends agree on.
+- **The dike is gapped wherever a channel actually crosses it**, not only at the two sluices the net
+  names - anywhere else the earthwork is drawn straight over running water.
+- **The lane arms clip against marsh already drawn.** On a polder the reservoir's reed fringe is laid
+  before the ways, and an arm ran through it.
+
+**The two left, both named and both in `build_polder`'s own geometry rather than the siting:** the
+inlet channel's field end lands ~11 px outside the envelope (`watercourse_ends_reach_water`), and six
+paddy bund vertices sit inside the collector's corridor at the low end
+(`paddy_bunds_clear_the_collector`).
+
+**The roll is deliberately still valley-only** (`ROLLED_ARCHETYPES`). A rolled archetype with known
+failures would mix them into the valley tier's 36/36 and destroy the one number that says the
+scripted process is consistent. Moving `polder_grid` into that tuple, once its own cohort is green,
+is the whole ceremony.
+
 ## If this is continued
 
 In rough order of value:
