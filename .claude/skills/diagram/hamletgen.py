@@ -792,10 +792,26 @@ def stage_polder(s: Settlement, plan: SitePlan) -> None:
     # the high corner with the centroid and put the pond INSIDE the crop; the next centred it across
     # the block's head, and the inlet channel then ran so far that its field end dangled short of
     # the envelope (`watercourse_ends_reach_water`). The sluice is the anchor both ends agree on.
+    # SEATED ON THE LINE THROUGH THE RING'S HEAD. `draw_comb_field` runs the inlet channel from the
+    # pond to `net["sluice"]`, and `build_polder` puts the perimeter feeder's own head up to 70 px
+    # away from that sluice, just outside the planted extent - so the ring's head dangled in bare
+    # ground with the inlet water stopping short of it (`watercourse_ends_reach_water`, which is
+    # right: an on-map main end outside the crop must JOIN a watercourse). Snapping the sluice onto
+    # the head was tried and is worse - it drags the channel's mouth across the grid and puts a
+    # farmstead on it. Placing the POND on the far side of the head, along the head->sluice line,
+    # leaves the channel running straight THROUGH the head on its way in: the ring is charged where
+    # it begins, which is what the sluice gate does, and nothing else moves.
     cen = centroid(env)
-    inlet = (net.get("dike_sluices") or [(min(p[0] for p in env), sum(p[1] for p in env) / len(env))])[0]
-    onx, ony = unit(inlet[0] - cen[0], inlet[1] - cen[1])
-    pond = (inlet[0] + onx * (max(prx, pry) + 46.0), inlet[1] + ony * (max(prx, pry) + 46.0), prx, pry)
+    sluice = net.get("sluice")
+    main = next((ch for ch in net.get("channels", []) if ch.get("role") == "main" and len(ch.get("pts") or []) >= 2), None)
+    if main is not None and sluice is not None:
+        head = min((tuple(main["pts"][0]), tuple(main["pts"][-1])), key=lambda q: math.hypot(q[0] - sluice[0], q[1] - sluice[1]))
+        onx, ony = unit(head[0] - sluice[0], head[1] - sluice[1])
+        anchor: Pt = head
+    else:  # pragma: no cover - build_polder always returns a main feeder and a sluice
+        anchor = (net.get("dike_sluices") or [(min(p[0] for p in env), sum(p[1] for p in env) / len(env))])[0]
+        onx, ony = unit(anchor[0] - cen[0], anchor[1] - cen[1])
+    pond = (anchor[0] + onx * (max(prx, pry) + 46.0), anchor[1] + ony * (max(prx, pry) + 46.0), prx, pry)
     s.draw_comb_field(net, f"{plan.spec.name.lower()}-polder", {"kind": "pond", "pond": pond})
     plan.sink_pond = None
     # THE PERIMETER DIKE - the defining polder feature, and the reason a polder is a polder: an
@@ -817,7 +833,14 @@ def stage_polder(s: Settlement, plan: SitePlan) -> None:
                         gaps.append(
                             hit
                         )  # pragma: no cover - no polder seed yet runs a channel through its dike away from the two sluices `build_polder` names; the guard stays because its laterals can, and an ungapped crossing draws the earthwork over running water
-    s.perimeter_dike(ring, seed=plan.spec.seed ^ 0x6D, gaps=gaps)
+    # ...and UNLABELLED on this tier. `perimeter_dike` captions itself 8 px above the band it picks,
+    # and the band is not in the crop's hard set (`_CROP_HARD`), so on some bearings that caption
+    # lands outside the frame (`labels_within_image`, seen at down_deg=270). Adding `dikes` to the
+    # crop set was tried: the band then holds the frame open past the content and every bearing
+    # fails `crop_hugs_content` instead, and Enokida and Kuwabata both move. A perimeter dike is not
+    # a feature a reader needs named - it is the most legible thing on a polder sheet - so the
+    # scripted tier draws it without a caption rather than framing slack around a word.
+    s.perimeter_dike(ring, seed=plan.spec.seed ^ 0x6D, gaps=gaps, label="")
 
 
 def fit_polder(plan: SitePlan, seed: int, tolerance: float = 0.06, rounds: int = 9) -> dict[str, Any]:

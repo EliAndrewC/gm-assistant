@@ -1973,9 +1973,16 @@ def crop_boxes(M: Any, city: bool, ftpx: float, W: float, H: float) -> list[tupl
             out.append((min(xs), max(xs), min(ys), max(ys), f"{k}[{i}]"))
             return
         lab = f"{k}[{i}]" + (f" '{o.get('label')}'" if o.get("label") else "")
-        if o.get("poly"):
-            xs = [p[0] for p in o["poly"]]
-            ys = [p[1] for p in o["poly"]]
+        # `outline` counts as well as `poly` (2026-08-13). A record whose ring is called `outline` -
+        # a perimeter dike is the one in this list - matched none of these branches and was extracted
+        # as NOTHING, so it could not hold the frame however carefully it was classified. Exactly the
+        # trap this skill's notes record for the OVERLAP extractor ("a feature the extractor never
+        # reaches is invisible in both directions no matter how carefully it is classified"), one
+        # extractor over: adding the key to _CROP_HARD changed nothing until this line changed too.
+        _ring = o.get("poly") or o.get("outline")
+        if _ring:
+            xs = [p[0] for p in _ring]
+            ys = [p[1] for p in _ring]
             out.append((min(xs), max(xs), min(ys), max(ys), lab))
         elif "r" in o:  # a well records {x, y, r} - no poly, no w/h
             out.append((o["x"] - o["r"], o["x"] + o["r"], o["y"] - o["r"], o["y"] + o["r"], lab))
