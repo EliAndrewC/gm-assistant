@@ -12445,7 +12445,19 @@ class Settlement:
                         continue  # no plank laid across the hem crop
                     if any(_sat(quad, _corners(b["x"], b["y"], b.get("span", 8.0), b.get("w", 4.0), b.get("rot", 0.0))) for b in self.M.get("bridges", [])):
                         continue  # ...nor on top of another deck
-                    if not self._plank_reaches_useful_ground(px, py, deck, span_here):
+                    # ...tested on the EXACT numbers that will be recorded. `footbridges_reach_useful_ground`
+                    # re-derives the bank points from the span and rot in the manifest, which `bridge()`
+                    # rounds to 1 dp, while this used the unrounded values - and a bank sample sitting on
+                    # the 55 px village reach flips between the two (a scripted-cohort hamlet, 2026-08-13:
+                    # bank at 55.0 from the nearest house; placement said useful, the check said marsh).
+                    # A MARGIN IS THE WRONG CURE HERE and was tried first: sampling further out is not
+                    # strictly stricter, because past a strip of scrub the sample can land back INSIDE the
+                    # field, so the wider test PASSED the very plank the check rejects. Rounding the inputs
+                    # the same way the manifest does makes the two sides bit-identical, which is the only
+                    # thing that actually settles a knife-edge. Measured on the plank that motivated it:
+                    # bank-to-house 54.97 px at placement against 55.02 at the end, threshold 55.0 - and
+                    # the 0.05 px came from `bridge()` rounding the deck's recorded POSITION, not its span.
+                    if not self._plank_reaches_useful_ground(round(px, 1), round(py, 1), round(deck, 1), round(span_here, 1)):
                         continue
                     # AND EVERY CORNER LANDS PAST THE BANK - the exact test
                     # `bridges_span_their_water` will make, on the same geometry, before the deck is

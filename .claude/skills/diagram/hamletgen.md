@@ -339,14 +339,31 @@ seated.** Two implementation notes worth keeping:
   a pixel - seats at 39.0 ft and at 0.35 px of lateral overlap passed one and failed the other on
   cohort maps.
 
-**KNOWN RESIDUE, and it is a real regression to close:** the fitted cohort went 24/24 -> **21/24**.
-The held-out cohort is 12/12. Note which way round that is: the HELD-OUT set is clean and the FITTED set
-regressed, which is backwards from the usual failure and means these are not tuning artifacts - they
-are real defects that happen to fall on seeds 8, 11 and 18. The three are knock-ons of the tighter
-packing rather than corridor holes (the corridor is enforced through the slide as well as at the final seat - both go
-through `_bundle_common_fits`): seed 8 puts a footplank across to non-cultivated ground, seed 11
-laps a garden onto a neighbour's house, seed 18 leaves a well in open ground with no dwelling within
-~95 px. All four SHIPPED demo maps pass. Chase these before claiming the tier is clean again.
+**THE RESIDUE IS CLOSED: 24/24 fitted and 12/12 held out** (GM: "the point of a deterministic
+scripted process is consistency"). Landing the sun corridor cost three fitted seeds and then a
+held-out one, and every cure was a different lesson:
+
+- **Seeds 11 and 18 were the same bug, and it was the PITCH.** `BUNDLE_PITCH` was 92 ft, calibrated
+  before the corridor existed; a row now needs house (28) + yard (~26) + 39 ft of sun + gaps, about
+  100. Asking the band for less than a row needs does not tighten the cluster - it spills the
+  overflow OUTSIDE the band, which is how seed 18 grew a two-farm satellite 500 px off the nucleus
+  (777 px from water against a 760 px reach, every legal well seat around it taken by its own two
+  courtyards) and seed 11 lapped a garden onto a neighbour. Raising the pitch to 100 fixed both at
+  once. Chasing either symptom - the well, the garden - would have fixed neither.
+- **Seed 8 was a knife edge, and a margin was the WRONG cure.** A plank's bank sample sat 54.97 px
+  from the nearest house at placement and 55.02 at the check, against a 55 px village reach: the
+  0.05 px is `bridge()` rounding the deck's recorded POSITION. Widening placement's sample by 2 px
+  was tried first and made it worse - sampling further is not strictly stricter, because past a
+  strip of scrub the sample lands back INSIDE the field, so the wider test passed the very plank the
+  check rejects. The cure is to test the exact rounded values the manifest will carry, which makes
+  the two sides bit-identical. A margin papers over a knife edge; identical inputs remove it.
+- **Seed 103 (held out) was a feature the FRAME could not see.** Its notice board sat 87 px north of
+  the northernmost farmhouse on a lane arm serving nobody, and `crop_to_content` ignores linear
+  runners, so board and caption fell off the sheet. Adding `kosatsuba` to the crop's hard set was
+  tried and is worse - it then holds the frame open by itself, which
+  `crop_not_held_open_by_one_feature` exists to stop. The board is re-seated on the nearest verge
+  inside the house cloud instead. Popping the board's record left its CAPTION behind, which kept the
+  check red after the board had moved: a feature and its deferred caption are removed together.
 
 ## If this is continued
 

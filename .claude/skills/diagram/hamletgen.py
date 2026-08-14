@@ -144,7 +144,14 @@ SUN_CORRIDOR_FT = 39.0
 # circumscribed circles rather than real footprints, so the effective pitch is larger again. 92 px
 # per household leaves the cluster dense enough to read as a nucleus and open enough for its
 # courtyards, its wells and its byres. See `seat_cluster` for what the wrong number does.
-BUNDLE_PITCH = 92.0
+#
+# RAISED 92 -> 100 when the SUN CORRIDOR landed (2026-08-13). The pitch was calibrated before the
+# rule existed, and a row now needs house depth (28) + yard (~26) + 39 ft of sun + the gaps between
+# them, which comes to about 100 rather than 92. Asking the band for less than a row needs does not
+# make the cluster tighter - it makes the placer spill the overflow OUTSIDE the band, which is how
+# seed 18 grew a two-farm satellite 500 px off the nucleus, 777 px from the nearest water against a
+# 760 px reach, with every legal well seat around it already taken by its own two courtyards.
+BUNDLE_PITCH = 100.0
 
 # How far below the drain outfall a tameike may stand before the map is better off without one.
 # Calibrated against the drawn ponds: an ordinary set-back lands well under 200 px, and the case
@@ -1803,7 +1810,13 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
     # the NEAREST house stays tight, because `wells_among_dwellings` is a 95 px gap verdict against
     # the served building's edge: a well 220 px from its closest farmhouse is standing in the fields
     # by any measure, and relaxing that rung traded one failure for another.
-    for third, nearest in ((190.0, 105.0), (300.0, 110.0), (520.0, 112.0)):
+    # The last rung also serves a PAIR. Every rung above asks for three homesteads around a seat,
+    # which is the right shape for a nucleus and leaves a two-farm satellite with no well of its own
+    # - and then the coverage pass cannot rescue it either, because the ground among two farms is
+    # their own courtyards. Seed 18 stranded exactly that: a pair 500 px off the cluster, 760 and
+    # 777 px from the nearest well, with all 118 legal-neighbourhood probes around them refused.
+    # Two households sharing a draw-well is an ordinary thing; three is not a threshold nature knows.
+    for third, nearest, want_near in ((190.0, 105.0, 3), (300.0, 110.0, 3), (520.0, 112.0, 3), (520.0, 112.0, 2)):
         if len(placed) >= want:
             break
         seats: list[tuple[float, float, float]] = []
@@ -1813,7 +1826,7 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
             x = min(xs)
             while x <= max(xs):
                 near = sorted(math.hypot(x - h["x"], y - h["y"]) for h in houses)
-                if len(near) >= 3 and near[2] <= third and near[0] <= nearest:
+                if len(near) >= want_near and near[want_near - 1] <= third and near[0] <= nearest:
                     seats.append((math.hypot(x - ccx, y - ccy), x, y))
                 x += step
             y += step
@@ -1833,6 +1846,16 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
         if any(math.hypot(h["x"] - px, h["y"] - py) <= reach for px, py in placed):
             continue
         # A RING PROBE, spiraling out from the house, asking `well_at` directly.
+        #
+        # AND EVERY CANDIDATE MUST STILL STAND AMONG THE DWELLINGS - near SOME house, not necessarily
+        # the one being rescued. `wells_among_dwellings` is a 95 px edge-gap verdict against the
+        # served building, and this probe used to take the first seat `well_at` allowed at any radius
+        # out to 340. That was harmless while nothing reached this branch, and stopped being harmless
+        # the moment the sun corridor (2026-08-13) spread a cluster enough to strand a household:
+        # seed 18 seated a well 161 px from its nearest dwelling. Capping the RADIUS was the obvious
+        # fix and the wrong one - it just traded the failure for `settlement_dwellings_watered`,
+        # leaving the household dry. The honest constraint is the one the check states: a well may
+        # be dug well away from the farm it rescues, as long as it is in somebody's courtyard.
         #
         # `open_seat` was tried here first and is the wrong tool: it optimizes a seat over a
         # RECTANGLE - furthest from what it is told to clear, ties toward the center - and it
@@ -1855,6 +1878,8 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                     # the frame out after it (`crop_not_held_open_by_one_feature`) - the same reason  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
                     # the grid above is laid over the cloud rather than a box grown around it.  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
                     continue  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
+                if not any(math.hypot(cand[0] - hh2["x"], cand[1] - hh2["y"]) <= 95.0 for hh2 in houses):  # pragma: no cover - the rescue's among-the-dwellings floor
+                    continue  # pragma: no cover - centre distance <= 95 is strictly inside the check's 95 px EDGE gap
                 if any(
                     math.hypot(cand[0] - px, cand[1] - py) < 110.0 for px, py in placed
                 ):  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
@@ -2215,7 +2240,56 @@ def stage_notice(s: Settlement, plan: SitePlan) -> None:
     verge and it competes for the same ground the scrub scatter and the grove clumps take. Sited
     after them it silently found nowhere to go on one cohort map in six and the gate reported a
     hamlet with no notice board - a failure of ORDER, not of siting."""
-    s.place_kosatsuba()
+    spot = s.place_kosatsuba()
+    # ...AND IT MUST STAND WHERE THE FRAME WILL KEEP IT. `place_kosatsuba` maximises passing traffic
+    # (dwellings within ~260 px) along the whole way network, and a lane ARM that runs past the
+    # cluster still sees the whole cluster from its far end - so on a held-out cohort hamlet the
+    # board landed 87 px north of the northernmost farmhouse, on a stretch of lane serving nobody.
+    # `crop_to_content` frames the HARD features and deliberately ignores linear runners like lanes,
+    # so the board and its caption fell outside the sheet (`labels_within_image`). Adding the board
+    # to the crop's hard set was tried and is worse: it then holds the frame open by itself, which is
+    # what `crop_not_held_open_by_one_feature` exists to stop. The board belongs among the houses it
+    # is read by, so if the engine's traffic score sends it outside them, re-seat it on the nearest
+    # verge that is inside the cloud.
+    hs = s.M.get("houses", [])
+    if spot is not None and hs:
+        hx0, hx1 = min(h["x"] for h in hs), max(h["x"] for h in hs)
+        hy0, hy1 = min(h["y"] for h in hs), max(h["y"] for h in hs)
+        if not (hx0 - 30 <= spot[0] <= hx1 + 30 and hy0 - 30 <= spot[1] <= hy1 + 30):
+            board = s.M["kosatsuba"].pop()
+            # ...and its CAPTION with it. `kosatsuba` records the board and calls `self.label`, so
+            # popping only the board leaves an orphan "notice board" caption sitting where the board
+            # used to be - which is the very label the frame could not hold, still failing
+            # `labels_within_image` after the board itself had moved.
+            for _li in range(len(s.M.get("labels", [])) - 1, -1, -1):
+                if len(s.M["labels"][_li]) > 5 and s.M["labels"][_li][5] == "notice board":
+                    s.M["labels"].pop(_li)
+                    break
+            best: tuple[float, float, float, float] | None = None
+            for lane in s.M.get("lanes", []):
+                if lane.get("connector"):
+                    continue
+                pts = lane["pts"]
+                for i in range(len(pts) - 1):
+                    (ax, ay), (bx, by) = pts[i], pts[i + 1]
+                    seg = math.hypot(bx - ax, by - ay) or 1.0
+                    ux, uy = -(by - ay) / seg, (bx - ax) / seg
+                    rot = math.degrees(math.atan2(by - ay, bx - ax))
+                    for t in range(int(seg // 12) + 1):
+                        mx, my = ax + (bx - ax) * (t * 12 / seg), ay + (by - ay) * (t * 12 / seg)
+                        for side in (1.0, -1.0):
+                            cx2, cy2 = mx + ux * 16.0 * side, my + uy * 16.0 * side
+                            if not (hx0 <= cx2 <= hx1 and hy0 <= cy2 <= hy1):
+                                continue
+                            if not s._fits(cx2, cy2, 14.0, 8.0, corridors=False):
+                                continue
+                            busy = sum(1 for h in hs if math.hypot(cx2 - h["x"], cy2 - h["y"]) < 260)
+                            if best is None or -busy < best[0]:
+                                best = (-busy, cx2, cy2, rot)
+            if best is not None:
+                s.kosatsuba(best[1], best[2], rot=best[3])
+            else:  # pragma: no cover - no verge inside the cloud takes a board; keep the engine's seat rather than none
+                s.M["kosatsuba"].append(board)
 
 
 def stage_frame(s: Settlement, plan: SitePlan) -> None:
