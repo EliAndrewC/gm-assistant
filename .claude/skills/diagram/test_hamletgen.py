@@ -24,7 +24,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import hamletgen as hg  # noqa: E402
-from settlement import point_in_poly  # noqa: E402
+from settlement import point_in_poly, seg_dist  # noqa: E402
 
 # A unit square field envelope, big enough for the seat math to be readable.
 SQUARE: list[tuple[float, float]] = [(400.0, 400.0), (1000.0, 400.0), (1000.0, 1000.0), (400.0, 1000.0)]
@@ -361,6 +361,32 @@ def test_the_roll_only_offers_archetypes_that_gate_clean() -> None:
     assert set(hg.ROLLED_ARCHETYPES) <= set(hg.FIELD_ARCHETYPES)
     rolled = {hg.plan_site(hg.HamletSpec(name="X", seed=s, households=15)).field_archetype for s in range(1, 30)}
     assert rolled == set(hg.ROLLED_ARCHETYPES)
+
+
+def test_a_polder_inlets_mouth_is_pulled_INSIDE_the_crop() -> None:
+    """THE RATCHET for `draw_comb_field`'s constructed inlet end (2026-08-15).
+
+    That end is not clipped from an anchor - it is BUILT, as the main channel's last point stepped
+    70 px straight downhill, which is a COMB's geometry. On a polder the main is the ring canal
+    running ALONG the high edge, so its last point is a corner and the step skims the boundary:
+    seed 19 landed the mouth 2.6 px inside where `channel_field_anchored` wants 10, and no amount of
+    moving the sluice changed it, because the anchor is not what sets this end.
+
+    Seed 19 is chosen deliberately - it is the case that needed the pull (seed 3 needs it at 6.0 px,
+    seed 8 does not need it at all), so this test exercises the branch rather than merely passing."""
+    plan = hg.plan_site(hg.HamletSpec(name="Polder", seed=19, households=16, field_archetype="polder_grid", down_deg=90))
+    s = hg.build(plan)
+    with tempfile.TemporaryDirectory() as tmp:
+        s.finish(os.path.join(tmp, "scratch"), render=False)
+    env = [(float(a), float(b)) for a, b in s.M["fields"][0]["outline"]]
+    n = len(env)
+    fed = [c for c in s.M["channels"] if (c.get("to") or {}).get("kind") == "field"]
+    assert fed, "the polder is fed by a channel from its header reservoir"
+    for c in fed:
+        end = c["poly"][-1]
+        assert point_in_poly(end[0], end[1], env), f"the inlet mouth {end} must finish INSIDE the crop"
+        gap = min(seg_dist(end[0], end[1], env[k], env[(k + 1) % n]) for k in range(n))
+        assert gap >= 10.0, f"the mouth is {gap:.1f} px from the outline; the rule wants 10 so the field paints over it"
 
 
 def test_a_polder_hamlet_draws_its_grid_dike_and_reservoir() -> None:
