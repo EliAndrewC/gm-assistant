@@ -450,6 +450,15 @@ def hem_to_bank(ring: Poly, dpts: Poly, down_deg: float, w0: float, w1: float) -
     return out
 
 
+def _seg_d(px: float, py: float, a: Pt, b: Pt) -> float:
+    """Distance from a point to a segment (the same arithmetic several passes nest as a local
+    `sd`; module-level here because _bund_beans' burial filter needs it too)."""
+    vx, vy = b[0] - a[0], b[1] - a[1]
+    ll = vx * vx + vy * vy or 1.0
+    t = max(0.0, min(1.0, ((px - a[0]) * vx + (py - a[1]) * vy) / ll))
+    return math.hypot(px - a[0] - t * vx, py - a[1] - t * vy)
+
+
 def _pip(x: float, y: float, poly: Poly) -> bool:
     n = len(poly)
     inside = False
@@ -1675,12 +1684,36 @@ def _dry_fields(
     return plots
 
 
-def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spacing: float = 9.5) -> Poly:
+def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spacing: float = 9.5, tol: float = 1.0) -> Poly:
     """AZEMAME (bund soybeans): sub-pixel at 1px=2ft, so drawn symbolically as a green BEAD
     line along a fraction of the paddy bunds. Returns bead center points; the caller draws
-    small BEAN_GREEN dots. ~`frac` of plots carry beaded bunds (not every bund had beans)."""
+    small BEAN_GREEN dots. ~`frac` of plots carry beaded bunds (not every bund had beans).
+
+    A bead is DROPPED when a plot drawn LATER than its host buries it deeper than `tol` px
+    (GM 2026-08-15, on Inashiro: green dots scattered mid-paddy). `_fill_wedges`' fillers
+    deliberately lap up to ~12 real ft onto a neighbor and paint last - the lapped stretch of
+    the neighbor's bund stroke is not visible ground on the finished map, so a bead line laid
+    along it surfaces as dots floating in the filler's water. Beads must land on the bunds the
+    finished paint actually shows, so each bead is tested against the plots that paint after
+    its host and dropped when buried. `tol` is bead-scale rather than bund-scale: a bead
+    within ~its own 1.4px drawn radius of the burying plot's edge still reads as sitting on
+    that plot's seam. The gate mirrors this at double the tolerance (bund_beans_on_bunds), so
+    a bead this filter allows cannot false-fire there through manifest rounding. The filter
+    runs after all draws from R, so dropping beads never ripples the RNG stream."""
     beans = []
-    for p in plots:
+    boxes = [(min(q[0] for q in p["poly"]), min(q[1] for q in p["poly"]), max(q[0] for q in p["poly"]), max(q[1] for q in p["poly"])) for p in plots]
+
+    def buried(x: float, y: float, host: int) -> bool:
+        for j in range(host + 1, len(plots)):
+            bx0, by0, bx1, by1 = boxes[j]
+            if not (bx0 - tol <= x <= bx1 + tol and by0 - tol <= y <= by1 + tol):
+                continue
+            poly = plots[j]["poly"]
+            if _pip(x, y, poly) and min(_seg_d(x, y, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly))) > tol:
+                return True
+        return False
+
+    for pi, p in enumerate(plots):
         if R.random() > frac:
             continue
         poly = p["poly"]
@@ -1692,7 +1725,9 @@ def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spac
             nd = int(math.dist(a, b) / spacing)
             for t in range(1, nd):
                 s = t / nd
-                beans.append((round(a[0] + s * (b[0] - a[0]), 1), round(a[1] + s * (b[1] - a[1]), 1)))
+                bx, by = round(a[0] + s * (b[0] - a[0]), 1), round(a[1] + s * (b[1] - a[1]), 1)
+                if not buried(bx, by, pi):
+                    beans.append((bx, by))
     return beans
 
 

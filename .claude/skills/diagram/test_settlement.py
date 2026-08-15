@@ -6990,3 +6990,44 @@ def test_ring_upslope_refuses_a_seat_below_the_drain():
     ys = [h["y"] for h in s.M["houses"]]
     assert n == len(ys)
     assert all(y < 640 for y in ys), f"a household landed below the drain: {sorted(ys)[-3:]}"
+
+
+def test_draw_comb_field_records_rings_and_beads():
+    # the field record carries every plot ring IN DRAW ORDER plus the azemame bead points - the
+    # recording bund_beans_on_bunds reads (pdims compacts a plot to extents-and-a-centroid, which
+    # cannot express "this plot paints over that one's bund"). Recording is unconditional at this
+    # one draw site, which is what lets the check skip legacy manifests without going silently
+    # toothless on regenerated ones (GM 2026-08-15).
+    from waterfields import build_comb
+
+    s = Settlement(W=1400, H=1400, seed=5)
+    s.meta(name="Rb", scale="town", ftpx=1, down_deg=90)
+    net = build_comb(1400, 1400, (700, 200), 5, down_deg=90, field_fall=400)
+    net["brook"] = []
+    s.draw_comb_field(net, "f1", {"kind": "stream"})
+    fld = s.M["fields"][-1]
+    assert len(fld["plot_rings"]) == len(net["plots"])
+    assert fld["plot_rings"][0] == [[round(x, 1), round(y, 1)] for x, y in net["plots"][0]["poly"]]
+    assert fld["bund_beans"] == [[round(x, 1), round(y, 1)] for x, y in net["bund_beans"]]
+
+
+def test_bund_beans_drop_beads_buried_by_a_later_plot():
+    # two overlapping squares: the filler (appended last, like _fill_wedges' tiles) laps 60px
+    # onto the host, burying the host's east bund (x=400) under its fill. Beads laid along that
+    # stretch must be dropped (GM 2026-08-15: Inashiro's green dots floating mid-paddy), while
+    # the filler's own beads over the host's interior survive - the filler's stroke paints last,
+    # so it IS the visible bund. Seed 0 is pinned because it beads the host's east edge both runs
+    # (the R stream is positional per plot, so the pin is stable).
+    import random as _random
+
+    from waterfields import _bund_beans, _seg_d
+
+    host = {"poly": [(200.0, 200.0), (400.0, 200.0), (400.0, 400.0), (200.0, 400.0)]}
+    filler = {"poly": [(340.0, 150.0), (500.0, 150.0), (500.0, 450.0), (340.0, 450.0)]}
+    alone = _bund_beans(_random.Random(0), [host], frac=1.0)
+    both = _bund_beans(_random.Random(0), [host, filler], frac=1.0)
+    assert [b for b in alone if b[0] == 400.0 and 205 < b[1] < 395]  # host east edge WAS beaded
+    assert not [b for b in both if b[0] == 400.0 and 205 < b[1] < 395]  # ...and dropped when buried
+    assert [b for b in both if b not in alone]  # the filler's own beads survive
+    # the segment-distance helper's degenerate branch: a zero-length segment is a point
+    assert _seg_d(5.0, 5.0, (1.0, 1.0), (1.0, 1.0)) == pytest.approx(math.hypot(4.0, 4.0))
