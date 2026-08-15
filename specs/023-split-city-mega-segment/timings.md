@@ -36,4 +36,32 @@ feature's work). "Baseline" = pre-split `check_village.py`.
 - Diff confined to the 0563 function span + its registry row (hunk audit); the large raw diff
   line count is the multi-line registry row (~1,400 lines of name tuples) plus 377 new defs.
 
-(oracle sweep + perf numbers below when those tasks land)
+## Oracle battery (T008-T010)
+
+| Sweep | Result | Wall |
+|---|---|---|
+| Full-mode identity (`compare`) | IDENTICAL on all 816 manifests | 78 s |
+| Targeted-vs-full (`targeted`) | 793/793 OK, 0 full-gate fallback, 0 MISMATCH | 71 s |
+| Teeth: `city_has_bathhouse` (outer guard) | red under inversion, green after revert (fixture `city_bathhouse_count_follows_the_population_formula`) | - |
+| Teeth: `city_gate_tower_at_its_gate` (walled guard) | red under inversion, green after revert (fixture `city_gate_tower_at_its_gate_fires_when_a_mural_is_closer`) | - |
+
+## Perf and narrowing (T011)
+
+| Measurement | Baseline | Post-split |
+|---|---|---|
+| `import check_village` | 0.13 s | 0.22 s (+0.09 s: `_SEG_DEPS` quadratic scan over 971 vs 586 rows - negligible against multi-second gate runs, so the indexed-writers fallback from research.md R6 stays unimplemented, recorded here) |
+| Replay (`test_regressions.py -n auto`, 798 tests) | 26.4 s | 20.6 s (-22%) |
+| Targeted closure, `city_has_bathhouse` | 1,040 stmts (whole battery) | 6 segments, 36 stmts |
+| Targeted closure, `city_streets_connected` | 1,040 stmts | 4 segments, 151 stmts |
+| Targeted closure, `city_gate_tower_at_its_gate` | 1,040 stmts | 24 segments, 740 stmts (the walled fabric checks share heavy street/wall derivations) |
+
+## Test surface (T012-T013)
+
+- Whole affected files (`test_checks.py` + `test_regressions.py`, `-n auto`): 1,994 passed, 43.6 s.
+  (The coverage FAIL line on partial runs is the configured 100% gate measured over a partial
+  test selection - the authoritative coverage verdict is `make done`.)
+- `make done`: GREEN - ruff clean, format clean, mypy strict clean, 2,886 passed, 100.00%
+  coverage (161 s test phase). First run failed on 341 SIM102 findings from the nested guards;
+  after ruff's SIM102 autofix (315 sites) + 26 deliberate `# noqa: SIM102` guards, the FULL
+  oracle battery was re-run on the lint-fixed code (IDENTICAL on 816 manifests; 793/793
+  targeted, 0 mismatch) before the gate went green. Details: research.md R10.

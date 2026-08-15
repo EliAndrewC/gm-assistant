@@ -161,3 +161,24 @@ from the skill dir and needs no modification:
 | mypy/ruff churn on ~378 new defs | 022's fixpoint injector reused; `make done` is the gate |
 | Silent loss of record-the-why comment banks between statements | Gap-emission preserved from 022's generator; spot-check the diff for comment survival |
 | Replay slower despite narrowing (row overhead) | Timed baseline vs post; FR-008's ~10% bound |
+
+## R10. What implementation taught (added after the sweeps and the gate, 2026-08-15)
+
+- **The sweeps caught no dataflow hole**: at per-statement granularity the region censused clean
+  on the first pass - zero stale-cell merges, zero opaque check names, zero meta reads - and
+  both oracle sweeps were zero-diff on the first post-transform run (816 manifests full-mode,
+  793 fixtures targeted). The 022 analysis code carried over without modification; the only
+  environment fix was registering the exec'd module in `sys.modules` for 3.14 dataclasses.
+- **The verbatim-first guard design collided with lint, by design**: the zero-re-indentation
+  nested guards (R2) tripped 341 SIM102 findings. Resolution order mattered and is the reusable
+  lesson: land the transform verbatim, prove identity with the oracle FIRST, and only then let
+  `ruff check --select SIM102 --fix --unsafe-fixes` (a second mechanical transformer) combine
+  the guards - then RE-RUN the full oracle battery on the result. Ruff declined 26 sites where
+  a comment bank sits directly under the guard; those keep the nested form under a per-line
+  `# noqa: SIM102` rather than risking comment relocation. Doing the guard-combining by hand
+  inside the transformer would have meant re-indenting bodies during the risky step; letting
+  lint do it after identity was banked kept every step mechanical and separately verified.
+- **`/usr/bin/time` does not exist in this container** - a baseline script that used it
+  "succeeded" with its two most important steps silently skipped (the wrapped-exit-code lesson
+  from memory, in a new costume: the failure was visible only by reading the log body). Use the
+  bash `time` builtin.

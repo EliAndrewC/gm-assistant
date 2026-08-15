@@ -913,8 +913,10 @@ buys and how to work with it:
   urban battery as ONE 1,040-statement segment (it was a single `if scale in ('city',
   'capital'):` statement in the legacy gate, so statement-granularity could not divide it) under
   a clause-12 debt annotation. Feature 023 paid the debt: `_seg_0563_NNN__<name>` segments carry
-  the guard IN THE BODY (`if scale in ('city', 'capital'):`, walled checks nested one deeper
-  under `if meta.get('walled'):`) so bodies stayed verbatim with zero re-indentation. Adding a
+  the guard IN THE BODY (`if scale in ('city', 'capital') and ...:`; a few keep deliberate
+  nested guards under `# noqa: SIM102` where a comment bank sits under the guard) so bodies
+  moved verbatim, then ruff's SIM102 autofix combined the guards with identity re-proven by the
+  oracle battery afterwards. Adding a
   city/capital check = write a small `_seg_0563_NNN`-style function with its guard in the body,
   same registry row mechanics as any other segment (tooling + census: `specs/023-split-city-
   mega-segment/`, retired one-shot like 022's).
