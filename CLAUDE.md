@@ -160,6 +160,24 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 - **Feature work** (new sections of the webapp, new skills, new generators, the upcoming Python backend) → invoke `/speckit-specify` and follow through plan → tasks → implement. The Constitution Check section in `.specify/templates/plan-template.md` is the gate that enforces the constitution at plan-time; skipping spec-kit on feature work means skipping that gate.
 - **Tweaks and iteration** (CSS adjustments, wording fixes, regenerating one item, fixing one bug) → just do the work directly. The constitution still applies, but the formal spec/plan/tasks flow is overkill.
 - **Ambiguous cases** → ask before chain-firing `/speckit-specify`.
+- **Run the chain end-to-end, unattended** (GM 2026-08-15). Spec-kit here is externalized working
+  memory - the same discipline that keeps a handoff to a human from dropping work: break it down,
+  write it down, mark things off only when verified. It is NOT stage-gate ceremony, and the
+  constitution is maintained pragmatically rather than artisanally. When implementing a spec-kit
+  feature, run specify -> plan -> tasks -> implement straight through without pausing for GM
+  approval between stages, answer each stage's own questions yourself, and record every resolved
+  decision in the artifact where it arose.
+- **Stop-and-ask calculus** (GM 2026-08-15): interrupt the run ONLY when a wrong guess would be
+  expensive to unwind - an hour-plus of implementation that might be thrown away buys a question
+  first. When a choice is cheap to adjust after the fact, make the call, finish the task, report
+  what was chosen, and offer the adjustment. Asking beats redoing; redoing beats blocking on
+  trivia.
+- **One constitution for the whole repo, deliberately** (GM 2026-08-15): spec-kit's Constitution
+  Check reads a single file, and the domain separation the project needs already exists in layers -
+  the constitution carries universal principles; each domain's operational doctrine lives in its
+  auto-loading directory CLAUDE.md (the diagram skill's is the exemplar); SKILL.md stays the
+  usage-facing index. A rule that applies to only one domain belongs in that domain's CLAUDE.md,
+  not in a forked constitution.
 - **NO FEATURE BRANCHES - spec-kit work included** (GM 2026-07-27). Isolation already comes from the session clone; a branch on top of it is a second axis that buys nothing and broke the stop-work ritual for a whole session. Branch creation is off (`.specify/extensions.yml`, `before_specify`, `enabled: false`) and [`scripts/no-branch-hooks.sh`](scripts/no-branch-hooks.sh) blocks a hand-rolled `git checkout -b` (escape hatch: `NO_BRANCH_OK` in the command, with a reason). Spec-kit still needs to know which feature is active: **`export SPECIFY_FEATURE=NNN-slug`**, which `common.sh`'s `get_current_branch()` returns ahead of asking git, so `check_feature_branch()` in `setup-plan.sh` / `setup-tasks.sh` is satisfied with no branch at all.
 
 **Verification before reporting "done"** (per Principle VI of the constitution):

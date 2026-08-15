@@ -1,7 +1,34 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.4.1 → 1.4.2
+Version change: 1.4.2 → 1.5.0
+MINOR: Principle X (Python Discipline) materially expanded - clause 12
+(Functions Stay at Human Scale) added (GM-directed, 2026-08-15). A function
+past a few hundred logical statements is suspect; past ~1,000 it is a defect
+unless an inline annotation justifies why it must remain one body. Measured
+in logic units (statements/expressions), never raw lines, so wrapped strings
+and long call signatures never force a split. The 10-line-function dogma is
+explicitly rejected. Motivating case: check_village.py's gate() reached
+12,944 lines one check at a time, and the cost surfaced as an architecture
+problem (nothing inside it could be invoked separately) before anyone chose
+it.
+
+Sections updated:
+  - Core Principles: Principle X clause 12 added.
+
+Templates requiring review/update:
+  ✅ .specify/templates/plan-template.md - Principle X gate entry now names
+                              the function-scale clause.
+  ✅ CLAUDE.md - spec-kit working-style + single-constitution notes land in
+                              Development Workflow the same day.
+
+Deferred TODOs:
+  - Automated expression-counting gate check (fails past threshold unless
+    the function carries the justification annotation) - recorded in
+    Principle X clause 12 as future work, deliberately not implemented as
+    part of the 2026-08-15 gate-registry feature.
+
+PRIOR (1.4.1 → 1.4.2):
 PATCH: Technical Standards runtime bump - Python 3.13 -> 3.14 (GM, 2026-07-20),
 matching the new standard dev container; the Fly prod image, both lockfiles,
 both pyproject.toml pins (webapp + diagram skill), and CLAUDE.md move together.
@@ -359,6 +386,26 @@ any single rule is reason enough to refuse "done" status.
     Magic strings and environment-dependent constants MUST NOT be
     hardcoded in production paths.
 
+12. **Functions stay at human scale** (added v1.5.0, GM-directed
+    2026-08-15): a function that has grown past a few hundred logical
+    statements is suspect and rarely the right shape in Python; past
+    roughly 1,000 it is a defect unless an inline annotation at the
+    definition explains why it must remain one body. Size is measured
+    in LOGIC UNITS (statements/expressions), never raw lines: a call
+    or string literal wrapped across lines counts once, so formatting
+    never forces a split. The 10-line-function dogma is explicitly
+    REJECTED - over-fragmentation damages design more than length
+    does, and a deep-but-cohesive engine function is legitimate at a
+    scale a utility function never is. The failure mode is GROWTH: no
+    single edit crosses the line, so the line must be checked rather
+    than felt. Deferred future work, recorded here so it is not lost:
+    an automated gate check counting expressions per function, failing
+    past the threshold unless the justification annotation is present.
+    Motivating case: `check_village.py`'s `gate()` reached 12,944
+    lines one check at a time, and the cost surfaced as an
+    architecture problem - nothing inside it could be invoked
+    separately - long before anyone would have chosen that shape.
+
 ### XI. Japanese Authenticity (NON-NEGOTIABLE)
 
 Any content this project generates or surfaces in Japanese script - relic
@@ -638,4 +685,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.4.2 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-07-20
+**Version**: 1.5.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-15
