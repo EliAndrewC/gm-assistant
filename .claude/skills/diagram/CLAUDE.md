@@ -885,7 +885,7 @@ with feature 022 - gate() is a registry of segment functions now, each with its 
 ## The gate is a REGISTRY - adding a check, and running one check by itself (feature 022)
 
 `gate()` is no longer a 12,944-line function: it is a small driver over `GATE_SEGMENTS`, an
-ordered registry of ~586 segment functions whose order IS the legacy execution order. What this
+ordered registry of ~1,375 segment functions (per-check granularity since features 023/024) whose order IS the legacy execution order. What this
 buys and how to work with it:
 
 - **Run a subset**: `gate(M, only={"check_base_name", ...})` executes just the segments that can

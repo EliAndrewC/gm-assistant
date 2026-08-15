@@ -48,6 +48,16 @@ binds>)`), add its `_GateSeg` row at the right position in `registry.py`, extend
 imports the shared helpers it uses; add an import only if your new body introduces a new helper
 dependency. Full doctrine: `.claude/skills/diagram/CLAUDE.md` "The gate is a REGISTRY".
 
+## Monkeypatching a policy table
+
+Each submodule binds shared names at import, so `monkeypatch.setattr(check_village, "_OVERLAP_STRUCTS", ...)`
+no longer reaches the code that reads them. Patch every holder instead:
+
+    for m in [m for m in sys.modules.values() if getattr(m, "__name__", "").startswith("check_village") and hasattr(m, "_OVERLAP_STRUCTS")]:
+        monkeypatch.setattr(m, "_OVERLAP_STRUCTS", new_value)
+
+(`test_checks.py::test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key` is the exemplar.)
+
 ## Why the segment files are numbered ranges
 
 The split preserved definition order file-by-file (concatenating the files in name order
