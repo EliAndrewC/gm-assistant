@@ -3284,6 +3284,15 @@ class Settlement:
             "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
             "plots": pdims,
             "drain_hem": _hem_rings,
+            # THE PLOT RINGS, IN DRAW ORDER, plus the azemame bead points (GM 2026-08-15). `pdims`
+            # above deliberately compacts each plot to extents-and-a-centroid, but that record
+            # cannot express "this plot is painted OVER that one's bund" - `_fill_wedges`' fillers
+            # lap up to ~12 real ft onto a neighbor and paint last, and the bead line laid along
+            # the buried stretch surfaced as green dots floating mid-paddy on Inashiro. A check can
+            # only judge bead-on-visible-bund from the real rings in paint order, so they are
+            # recorded in full (bund_beans_on_bunds reads both; draw order IS list order).
+            "plot_rings": [[[round(vx, 1), round(vy, 1)] for vx, vy in p["poly"]] for p in net["plots"]],
+            "bund_beans": [[round(bx, 1), round(by, 1)] for bx, by in net["bund_beans"]],
         }
         if net.get("down_deg") is not None:
             _fld["down_deg"] = net["down_deg"]  # this fan's LOCAL fall (see build_comb)

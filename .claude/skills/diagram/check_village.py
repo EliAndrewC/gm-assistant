@@ -11039,6 +11039,55 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"{len(thru)} paddy bund vertex/vertices {thru[:4]} are drawn INSIDE the drainage collector's stroke or past its centerline - a paddy's low bund IS the ditch's bank, so the field must hem onto the collector (bunds running WITH it), never across it",
         )
 
+    # AN AZEMAME BEAD SITS ON A VISIBLE BUND, NEVER IN OPEN WATER (GM 2026-08-15, on Inashiro:
+    # "random green dots that appear to be scattered in the middle of flooded rice paddies ...
+    # it should be impossible for those green dots to be placed anywhere except on top of
+    # earthen bunds"). The defect was PAINT ORDER, not a bad scatter: `_fill_wedges`' filler
+    # plots deliberately lap up to ~12 real ft onto a neighbor and are appended LAST, so the
+    # lapped stretch of the neighbor's bund stroke is buried under the filler's water fill -
+    # and the bead line `_bund_beans` had already laid along that stretch draws AFTER every
+    # plot, so its dots surfaced floating in the filler's paddy (49 of Inashiro's 777 beads,
+    # 3-10 px deep). The field record carries `plot_rings` in draw order precisely so this is
+    # judgeable from the manifest: a bead is legal iff some ring's edge passes within _BB_TOL
+    # of it AND no ring painted after that one buries the bead deeper than _BB_TOL. Placement
+    # (`waterfields._bund_beans`) enforces the same rule at half this tolerance, so a bead the
+    # placer allowed cannot false-fire here through 1dp manifest rounding. Pre-2026-08-15
+    # manifests record neither key and skip; the recording itself is unconditional at the one
+    # draw site (draw_comb_field), pinned by test_draw_comb_field_records_rings_and_beads.
+    _BB_TOL = 2.0
+    _bb_stray: list[list[float]] = []
+    for _bb_fld in fields:
+        _bb_beans = _bb_fld.get("bund_beans") or []
+        _bb_rings = _bb_fld.get("plot_rings") or []
+        if not _bb_beans or not _bb_rings:
+            continue
+        _bb_gi = GridIndex(64)
+        for _bb_j, _bb_ring in enumerate(_bb_rings):
+            _bb_xs = [float(q[0]) for q in _bb_ring]
+            _bb_ys = [float(q[1]) for q in _bb_ring]
+            # clamp the index box to the canvas (generously): negative fixtures carry deliberately
+            # insane geometry, and an unclamped box allocates a dict entry per 120px cell of it
+            _bx0, _by0 = max(min(_bb_xs) - _BB_TOL, -Wd), max(min(_bb_ys) - _BB_TOL, -Hd)
+            _bx1, _by1 = min(max(_bb_xs) + _BB_TOL, 2 * Wd), min(max(_bb_ys) + _BB_TOL, 2 * Hd)
+            if _bx0 <= _bx1 and _by0 <= _by1:
+                _bb_gi.add(_bx0, _by0, _bx1, _by1, (_bb_j, _bb_ring))
+        for _bb_b in _bb_beans:
+            _bb_x, _bb_y = float(_bb_b[0]), float(_bb_b[1])
+            _bb_edge: dict[int, float] = {}  # ring index -> its nearest-edge distance to the bead
+            _bb_buried: list[int] = []  # rings whose fill buries the bead (inside, deeper than tol)
+            for _bb_j, _bb_ring in _bb_gi.near(_bb_x, _bb_y):
+                _bb_d = min(seg_dist(_bb_x, _bb_y, _bb_ring[i], _bb_ring[(i + 1) % len(_bb_ring)]) for i in range(len(_bb_ring)))
+                _bb_edge[_bb_j] = _bb_d
+                if _bb_d > _BB_TOL and point_in_poly(_bb_x, _bb_y, _bb_ring):
+                    _bb_buried.append(_bb_j)
+            if not any(_bb_d <= _BB_TOL and all(_bb_k <= _bb_j for _bb_k in _bb_buried) for _bb_j, _bb_d in _bb_edge.items()):
+                _bb_stray.append([round(_bb_x), round(_bb_y)])
+    check(
+        "bund_beans_on_bunds",
+        not _bb_stray,
+        f"{len(_bb_stray)} azemame bead(s) {_bb_stray[:4]} float in open paddy water - a bead line marks bund soybeans, so every bead must sit on a bund the finished paint actually shows; a bund stroke buried under a later-drawn plot's fill (the wedge fillers lap their neighbors on purpose) is not visible ground, and `waterfields._bund_beans` must drop the beads it laid there",
+    )
+
     # A drainage brook LEAVES the collector as a smooth BEND, not a hard right-angle corner - a contour
     # collector turns down the valley INTO the stream, it does not meet it at 90 deg. For each drain-fed
     # brook, compare the drain's ARRIVAL heading (into the shared outfall) with the brook's DEPARTURE
