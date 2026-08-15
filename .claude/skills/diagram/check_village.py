@@ -18185,14 +18185,207 @@ def _seg_0523__drain_flows_downhill(
     )
 
 
+# AN AZEMAME BEAD SITS ON A VISIBLE BUND, NEVER IN OPEN WATER (GM 2026-08-15, on Inashiro:
+# "random green dots that appear to be scattered in the middle of flooded rice paddies ...
+# it should be impossible for those green dots to be placed anywhere except on top of
+# earthen bunds"). The defect was PAINT ORDER, not a bad scatter: `_fill_wedges`' filler
+# plots deliberately lap up to ~12 real ft onto a neighbor and are appended LAST, so the
+# lapped stretch of the neighbor's bund stroke is buried under the filler's water fill -
+# and the bead line `_bund_beans` had already laid along that stretch draws AFTER every
+# plot, so its dots surfaced floating in the filler's paddy (49 of Inashiro's 777 beads,
+# 3-10 px deep). The field record carries `plot_rings` in draw order precisely so this is
+# judgeable from the manifest: a bead is legal iff some ring's edge passes within _BB_TOL
+# of it AND no ring painted after that one buries the bead deeper than _BB_TOL. Placement
+# (`waterfields._bund_beans`) enforces the same rule at half this tolerance, so a bead the
+# placer allowed cannot false-fire here through 1dp manifest rounding. Pre-2026-08-15
+# manifests record neither key and skip; the recording itself is unconditional at the one
+# draw site (draw_comb_field), pinned by test_draw_comb_field_records_rings_and_beads.
+# ... and the same rule against WATER paint (GM 2026-08-15, second pass: "fix the water-buried
+# beads so the record stays honest"; settlement-review found 40 of Inashiro's 727 recorded
+# beads invisible under channel/pond paint - opposite polarity from the plot burial, bund and
+# bead buried together, but the record was attesting beads nobody can see). The painted truth
+# is read from the manifest's paint records, not re-derived: `drawn_channels` carries the
+# post-clip stroke geometry + widths (late strokes paint after the beads and bury them),
+# `pond` and `field_ponds` the water ellipses. A bead inside any of those is wrong whichever
+# way the z goes - buried ink under late water, or a green dot floating ON the water for
+# paint that runs under the beads - so the test is position, not stacking.
+
+
+def _seg_0524___BB_TOL() -> dict[str, Any]:
+    """Gate segment 524 (_BB_TOL) - body verbatim from the legacy gate() (feature 022)."""
+    _BB_TOL = 2.0
+    return _kept(locals(), ('_BB_TOL',))
+
+
+def _seg_0525___bb_wet() -> dict[str, Any]:
+    """Gate segment 525 (_bb_wet) - body verbatim from the legacy gate() (feature 022)."""
+    _bb_wet: list[tuple[float, float, float, float]] = []  # water ellipses (cx, cy, rx, ry), shrunk by the tolerance at use
+    return _kept(locals(), ('_bb_wet',))
+
+
+def _seg_0526___bb_wet_1(*, M: Any = _UNBOUND, _bb_wet: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 526 (_bb_wet) - body verbatim from the legacy gate() (feature 022)."""
+    if M.get("pond"):
+        _bb_wet.append((float(M["pond"][0]), float(M["pond"][1]), float(M["pond"][2]), float(M["pond"][3])))
+    return _kept(locals(), ('_bb_wet',))
+
+
+def _seg_0527___bb_fp(*, M: Any = _UNBOUND, _bb_fp: Any = _UNBOUND, _bb_wet: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 527 (_bb_fp, _bb_wet) - body verbatim from the legacy gate() (feature 022)."""
+    for _bb_fp in M.get("field_ponds") or []:
+        _bb_wet.append((float(_bb_fp["x"]), float(_bb_fp["y"]), float(_bb_fp["rx"]), float(_bb_fp["ry"])))
+    return _kept(locals(), ('_bb_fp', '_bb_wet'))
+
+
+def _seg_0528___bb_c(*, M: Any = _UNBOUND, _bb_c: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 528 (_bb_c, _bb_wchan) - body verbatim from the legacy gate() (feature 022)."""
+    _bb_wchan = [_bb_c for _bb_c in (M.get("drawn_channels") or []) if _bb_c.get("late") and len(_bb_c.get("pts") or []) >= 2]
+    return _kept(locals(), ('_bb_c', '_bb_wchan'))
+
+
+def _seg_0529___bb_in_water(
+    *,
+    _BB_TOL: Any = _UNBOUND,
+    _bb_wchan: Any = _UNBOUND,
+    _bb_wet: Any = _UNBOUND,
+    _wcx: Any = _UNBOUND,
+    _wcy: Any = _UNBOUND,
+    _wi: Any = _UNBOUND,
+    _wtot: Any = _UNBOUND,
+    _wx: Any = _UNBOUND,
+    _wy: Any = _UNBOUND,
+    q: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 529 (_bb_in_water) - body verbatim from the legacy gate() (feature 022)."""
+
+    def _bb_in_water(_wx: float, _wy: float) -> bool:
+        for _wcx, _wcy, _wrx, _wry in _bb_wet:
+            if _wrx > _BB_TOL and _wry > _BB_TOL and ((_wx - _wcx) / (_wrx - _BB_TOL)) ** 2 + ((_wy - _wcy) / (_wry - _BB_TOL)) ** 2 <= 1.0:
+                return True
+        for _wc in _bb_wchan:
+            _wp = _wc["pts"]
+            _wcum = polyline_cum([(float(q[0]), float(q[1])) for q in _wp])
+            _wtot = _wcum[-1] or 1.0
+            for _wi in range(len(_wp) - 1):
+                _wd = seg_dist(_wx, _wy, _wp[_wi], _wp[_wi + 1])
+                _wt = _wcum[_wi] / _wtot  # width taper measured at the segment head - within a segment the taper moves less than the tolerance
+                if _wd < (float(_wc["w0"]) + (float(_wc["w1"]) - float(_wc["w0"])) * _wt) / 2 - 1.0:
+                    return True
+        return False
+
+    return _kept(locals(), ('_bb_in_water',))
+
+
+def _seg_0530___bb_stray() -> dict[str, Any]:
+    """Gate segment 530 (_bb_stray) - body verbatim from the legacy gate() (feature 022)."""
+    _bb_stray: list[list[float]] = []
+    return _kept(locals(), ('_bb_stray',))
+
+
+def _seg_0531___bb_b(
+    *,
+    Hd: Any = _UNBOUND,
+    Wd: Any = _UNBOUND,
+    _BB_TOL: Any = _UNBOUND,
+    _bb_b: Any = _UNBOUND,
+    _bb_beans: Any = _UNBOUND,
+    _bb_buried: Any = _UNBOUND,
+    _bb_d: Any = _UNBOUND,
+    _bb_edge: Any = _UNBOUND,
+    _bb_fld: Any = _UNBOUND,
+    _bb_gi: Any = _UNBOUND,
+    _bb_in_water: Any = _UNBOUND,
+    _bb_j: Any = _UNBOUND,
+    _bb_k: Any = _UNBOUND,
+    _bb_ring: Any = _UNBOUND,
+    _bb_rings: Any = _UNBOUND,
+    _bb_stray: Any = _UNBOUND,
+    _bb_x: Any = _UNBOUND,
+    _bb_xs: Any = _UNBOUND,
+    _bb_y: Any = _UNBOUND,
+    _bb_ys: Any = _UNBOUND,
+    _bx0: Any = _UNBOUND,
+    _bx1: Any = _UNBOUND,
+    _by0: Any = _UNBOUND,
+    _by1: Any = _UNBOUND,
+    fields: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    q: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 531 (_bb_b, _bb_beans, _bb_buried, _bb_d) - body verbatim from the legacy gate() (feature 022)."""
+    for _bb_fld in fields:
+        _bb_beans = _bb_fld.get("bund_beans") or []
+        _bb_rings = _bb_fld.get("plot_rings") or []
+        if not _bb_beans or not _bb_rings:
+            continue
+        _bb_gi = GridIndex(64)
+        for _bb_j, _bb_ring in enumerate(_bb_rings):
+            _bb_xs = [float(q[0]) for q in _bb_ring]
+            _bb_ys = [float(q[1]) for q in _bb_ring]
+            # clamp the index box to the canvas (generously): negative fixtures carry deliberately
+            # insane geometry, and an unclamped box allocates a dict entry per 120px cell of it
+            _bx0, _by0 = max(min(_bb_xs) - _BB_TOL, -Wd), max(min(_bb_ys) - _BB_TOL, -Hd)
+            _bx1, _by1 = min(max(_bb_xs) + _BB_TOL, 2 * Wd), min(max(_bb_ys) + _BB_TOL, 2 * Hd)
+            if _bx0 <= _bx1 and _by0 <= _by1:
+                _bb_gi.add(_bx0, _by0, _bx1, _by1, (_bb_j, _bb_ring))
+        for _bb_b in _bb_beans:
+            _bb_x, _bb_y = float(_bb_b[0]), float(_bb_b[1])
+            _bb_edge: dict[int, float] = {}  # type: ignore[no-redef]  # ring index -> its nearest-edge distance to the bead
+            _bb_buried: list[int] = []  # type: ignore[no-redef]  # rings whose fill buries the bead (inside, deeper than tol)
+            for _bb_j, _bb_ring in _bb_gi.near(_bb_x, _bb_y):
+                _bb_d = min(seg_dist(_bb_x, _bb_y, _bb_ring[i], _bb_ring[(i + 1) % len(_bb_ring)]) for i in range(len(_bb_ring)))
+                _bb_edge[_bb_j] = _bb_d
+                if _bb_d > _BB_TOL and point_in_poly(_bb_x, _bb_y, _bb_ring):
+                    _bb_buried.append(_bb_j)
+            if _bb_in_water(_bb_x, _bb_y) or not any(_bb_d <= _BB_TOL and all(_bb_k <= _bb_j for _bb_k in _bb_buried) for _bb_j, _bb_d in _bb_edge.items()):
+                _bb_stray.append([round(_bb_x), round(_bb_y)])
+    return _kept(
+        locals(),
+        (
+            '_bb_b',
+            '_bb_beans',
+            '_bb_buried',
+            '_bb_d',
+            '_bb_edge',
+            '_bb_fld',
+            '_bb_gi',
+            '_bb_j',
+            '_bb_k',
+            '_bb_ring',
+            '_bb_rings',
+            '_bb_stray',
+            '_bb_x',
+            '_bb_xs',
+            '_bb_y',
+            '_bb_ys',
+            '_bx0',
+            '_bx1',
+            '_by0',
+            '_by1',
+            'i',
+            'q',
+        ),
+    )
+
+
+def _seg_0532__bund_beans_on_bunds(*, _bb_stray: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 532 (bund_beans_on_bunds) - body verbatim from the legacy gate() (feature 022)."""
+    check(
+        "bund_beans_on_bunds",
+        not _bb_stray,
+        f"{len(_bb_stray)} azemame bead(s) {_bb_stray[:4]} do not sit on a bund the finished paint shows - a bund stroke buried under a later-drawn plot's fill (the wedge fillers lap their neighbors on purpose) or under WATER paint (a late ditch stroke, the source pond, a pocket pond) is not visible ground; `waterfields._bund_beans` / `draw_comb_field`'s pond filter must drop the beads laid there so the record carries no invisible ink",
+    )
+    return _kept(locals(), ())
+
+
 # A drainage brook LEAVES the collector as a smooth BEND, not a hard right-angle corner - a contour
 # collector turns down the valley INTO the stream, it does not meet it at 90 deg. For each drain-fed
 # brook, compare the drain's ARRIVAL heading (into the shared outfall) with the brook's DEPARTURE
 # heading (each averaged over ~40px, so short jittery segments do not fool it); the turn must be < 65 deg.
 
 
-def _seg_0524___flow_dir(*, end: Any = _UNBOUND, poly: Any = _UNBOUND, q: Any = _UNBOUND, span: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 524 (_flow_dir) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0533___flow_dir(*, end: Any = _UNBOUND, poly: Any = _UNBOUND, q: Any = _UNBOUND, span: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 533 (_flow_dir) - body verbatim from the legacy gate() (feature 022)."""
 
     def _flow_dir(poly: Poly, at_start: bool, span: float = 40.0) -> tuple[float, float]:
         end = poly[0] if at_start else poly[-1]
@@ -18206,19 +18399,19 @@ def _seg_0524___flow_dir(*, end: Any = _UNBOUND, poly: Any = _UNBOUND, q: Any = 
     return _kept(locals(), ('_flow_dir',))
 
 
-def _seg_0525___drains(*, M: Any = _UNBOUND, fd: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 525 (_drains, fd) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0534___drains(*, M: Any = _UNBOUND, fd: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 534 (_drains, fd) - body verbatim from the legacy gate() (feature 022)."""
     _drains = [fd["poly"] for fd in M.get("field_ditches", []) if fd.get("role") == "drain"]
     return _kept(locals(), ('_drains', 'fd'))
 
 
-def _seg_0526__sharp() -> dict[str, Any]:
-    """Gate segment 526 (sharp) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0535__sharp() -> dict[str, Any]:
+    """Gate segment 535 (sharp) - body verbatim from the legacy gate() (feature 022)."""
     sharp = []  # type: ignore[var-annotated]
     return _kept(locals(), ('sharp',))
 
 
-def _seg_0527__ang(
+def _seg_0536__ang(
     *,
     M: Any = _UNBOUND,
     _drains: Any = _UNBOUND,
@@ -18235,7 +18428,7 @@ def _seg_0527__ang(
     sharp: Any = _UNBOUND,
     st: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 527 (ang, arr, bp, dep) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 536 (ang, arr, bp, dep) - body verbatim from the legacy gate() (feature 022)."""
     for st in M.get("streams", []):
         if (st.get("frm") or {}).get("kind") != "drain" or len(st["poly"]) < 2:
             continue
@@ -18260,8 +18453,8 @@ def _seg_0527__ang(
     return _kept(locals(), ('ang', 'arr', 'bp', 'dep', 'dp', 'e', 'la', 'ld', 'near_drain', 'sharp', 'st'))
 
 
-def _seg_0528__drainage_junction_smooth(*, check: Any = _UNBOUND, sharp: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 528 (drainage_junction_smooth) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0537__drainage_junction_smooth(*, check: Any = _UNBOUND, sharp: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 537 (drainage_junction_smooth) - body verbatim from the legacy gate() (feature 022)."""
     check(
         "drainage_junction_smooth",
         not sharp,
@@ -18274,13 +18467,13 @@ def _seg_0528__drainage_junction_smooth(*, check: Any = _UNBOUND, sharp: Any = _
 # torii (if any): clear of the shrine and spread out (universal)
 
 
-def _seg_0529__torii(*, M: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 529 (torii) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0538__torii(*, M: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 538 (torii) - body verbatim from the legacy gate() (feature 022)."""
     torii = M.get("torii", [])
     return _kept(locals(), ('torii',))
 
 
-def _seg_0530__torii_spread_out(
+def _seg_0539__torii_spread_out(
     *,
     M: Any = _UNBOUND,
     _al: Any = _UNBOUND,
@@ -18312,7 +18505,7 @@ def _seg_0530__torii_spread_out(
     torii: Any = _UNBOUND,
     under: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 530 (shrine_avenue_fronts_the_hall, torii_clear_of_fields, torii_clear_of_shrine, torii_spread_out) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 539 (shrine_avenue_fronts_the_hall, torii_clear_of_fields, torii_clear_of_shrine, torii_spread_out) - body verbatim from the legacy gate() (feature 022)."""
     if torii:
         shrine = M.get("shrine")
         if shrine:
@@ -18404,19 +18597,19 @@ def _seg_0530__torii_spread_out(
 # ---- village-specific expectations (from meta) ---------------------------
 
 
-def _seg_0531__abandoned(*, h: Any = _UNBOUND, houses: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 531 (abandoned, h) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0540__abandoned(*, h: Any = _UNBOUND, houses: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 540 (abandoned, h) - body verbatim from the legacy gate() (feature 022)."""
     abandoned = sum(1 for h in houses if h["kind"] == "abandoned")
     return _kept(locals(), ('abandoned', 'h'))
 
 
-def _seg_0532__occupied(*, abandoned: Any = _UNBOUND, houses: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 532 (occupied) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0541__occupied(*, abandoned: Any = _UNBOUND, houses: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 541 (occupied) - body verbatim from the legacy gate() (feature 022)."""
     occupied = len(houses) - abandoned
     return _kept(locals(), ('occupied',))
 
 
-def _seg_0533__households_consistent(
+def _seg_0542__households_consistent(
     *,
     abandoned: Any = _UNBOUND,
     check: Any = _UNBOUND,
@@ -18429,7 +18622,7 @@ def _seg_0533__households_consistent(
     scale: Any = _UNBOUND,
     t: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 533 (house_count_in_range, households_consistent) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 542 (house_count_in_range, households_consistent) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("households"):
         # occupied farmhouses must portray the declared households ~1:1. A ~5-person
         # home is one nuclear/stem family per roof, and population / 5 = households =
@@ -18453,7 +18646,7 @@ def _seg_0533__households_consistent(
     return _kept(locals(), ('hh', 'hi', 'lo', 't'))
 
 
-def _seg_0534__town_farmers_plurality(
+def _seg_0543__town_farmers_plurality(
     *,
     ALONG_TOL: Any = _UNBOUND,
     ANG_TOL: Any = _UNBOUND,
@@ -18550,7 +18743,7 @@ def _seg_0534__town_farmers_plurality(
     want_flop: Any = _UNBOUND,
     why: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 534 (burakumin_quarter_segregated, fire_tower_amid_its_district, fire_tower_clear_of_fields, fire_tower_clear_of_graveyards, fire_tower_clear_of_wells, fire_tower_in_commoner_quarter, fire_tower_standoff, fire_towers_dispersed, housing_aligned_behind_storefronts, inn_faces_the_road, merchant_residences_behind_businesses, theater_stage_by_temple, theater_stage_clear, theater_stage_faces_temple, theater_stage_inside_wall, town_caste_count, town_clan_known, town_declares_monasteries, town_farmers_plurality, town_has_caravan_inn, town_has_field_off_edge, town_has_flophouse, town_has_granary, town_has_magistrate_manor, town_has_merchant_storehouses, town_has_theater_stage, town_laborer_housing_varied, town_merchant_housing_varied, town_monasteries_dedicated, town_monastery_count, town_samurai_housing_varied) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 543 (burakumin_quarter_segregated, fire_tower_amid_its_district, fire_tower_clear_of_fields, fire_tower_clear_of_graveyards, fire_tower_clear_of_wells, fire_tower_in_commoner_quarter, fire_tower_standoff, fire_towers_dispersed, housing_aligned_behind_storefronts, inn_faces_the_road, merchant_residences_behind_businesses, theater_stage_by_temple, theater_stage_clear, theater_stage_faces_temple, theater_stage_inside_wall, town_caste_count, town_clan_known, town_declares_monasteries, town_farmers_plurality, town_has_caravan_inn, town_has_field_off_edge, town_has_flophouse, town_has_granary, town_has_magistrate_manor, town_has_merchant_storehouses, town_has_theater_stage, town_laborer_housing_varied, town_merchant_housing_varied, town_monasteries_dedicated, town_monastery_count, town_samurai_housing_varied) - body verbatim from the legacy gate() (feature 022)."""
     if scale == "town":
         # a town must represent its whole non-farmer population at the per-town household
         # counts documented in budgets.md (Town caste table, Families column ~= one
@@ -18944,7 +19137,7 @@ def _seg_0534__town_farmers_plurality(
 # scale M['manors'] are the scattered country estates, which face their own lanes - city_estate_gates_vary.)
 
 
-def _seg_0535__manor_gate_faces_town(
+def _seg_0544__manor_gate_faces_town(
     *,
     GATE_OUT: Any = _UNBOUND,
     M: Any = _UNBOUND,
@@ -18970,7 +19163,7 @@ def _seg_0535__manor_gate_faces_town(
     tvx: Any = _UNBOUND,
     tvy: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 535 (manor_gate_faces_town) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 544 (manor_gate_faces_town) - body verbatim from the legacy gate() (feature 022)."""
     if scale in ("hamlet", "town") and M.get("manors"):
         GATE_OUT = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
         dwell_all = M.get("houses", []) + M.get("buildings", [])
@@ -19002,8 +19195,8 @@ def _seg_0535__manor_gate_faces_town(
     return _kept(locals(), ('GATE_OUT', 'ang', 'b', 'bad_mg', 'd', 'dirs', 'dwell_all', 'k', 'mn', 'mroad', 'o', 'ovec', 'rl', 'rp', 'rvx', 'rvy', 'tl', 'tvx', 'tvy'))
 
 
-def _seg_0536__walled_town_has_fire_tower(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 536 (walled_town_has_fire_tower) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0545__walled_town_has_fire_tower(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 545 (walled_town_has_fire_tower) - body verbatim from the legacy gate() (feature 022)."""
     if scale == "town" and meta.get("walled") and meta.get("fire_tower", True):
         # WALLED towns only (GM 2026-07-24, REVERTING the 2026-07 audit widening to all towns).
         # The audit argued an unwalled seat's "packed road-front core burns just the same", but an
@@ -19017,7 +19210,7 @@ def _seg_0536__walled_town_has_fire_tower(*, M: Any = _UNBOUND, check: Any = _UN
     return _kept(locals(), ())
 
 
-def _seg_0537__hamlet_has_kosatsuba(
+def _seg_0546__hamlet_has_kosatsuba(
     *,
     M: Any = _UNBOUND,
     URBAN: Any = _UNBOUND,
@@ -19044,7 +19237,7 @@ def _seg_0537__hamlet_has_kosatsuba(
     st: Any = _UNBOUND,
     uncovered_kb: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 537 (capital_has_kosatsuba, city_has_kosatsuba, city_kosatsuba_per_gate, hamlet_has_kosatsuba, kosatsuba_by_the_road, kosatsuba_faces_the_road, kosatsuba_on_a_main_way, town_has_kosatsuba, village_has_kosatsuba) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 546 (capital_has_kosatsuba, city_has_kosatsuba, city_kosatsuba_per_gate, hamlet_has_kosatsuba, kosatsuba_by_the_road, kosatsuba_faces_the_road, kosatsuba_on_a_main_way, town_has_kosatsuba, village_has_kosatsuba) - body verbatim from the legacy gate() (feature 022)."""
     if scale in ("town", "city", "village", "hamlet") and meta.get("kosatsuba", True):
         # THE OFFICIAL NOTICE BOARD (kosatsuba), default-on at EVERY settlement tier
         # (GM 2026-07-24, from the town deep audit; ported to cities, then to villages
@@ -19164,44 +19357,44 @@ def _seg_0537__hamlet_has_kosatsuba(
 # foot traffic - it is a DISPLAY, and the beating itself is a court act inside the magistracy.
 
 
-def _seg_0538__psp_j(*, M: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 538 (psp_j) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0547__psp_j(*, M: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 547 (psp_j) - body verbatim from the legacy gate() (feature 022)."""
     psp_j = M.get("punishment_spots") or []
     return _kept(locals(), ('psp_j',))
 
 
-def _seg_0539__exg_j(*, M: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 539 (exg_j) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0548__exg_j(*, M: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 548 (exg_j) - body verbatim from the legacy gate() (feature 022)."""
     exg_j = M.get("execution_grounds") or []
     return _kept(locals(), ('exg_j',))
 
 
-def _seg_0540__bms_j(*, M: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 540 (bms_j) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0549__bms_j(*, M: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 549 (bms_j) - body verbatim from the legacy gate() (feature 022)."""
     bms_j = M.get("boundary_markers") or []
     return _kept(locals(), ('bms_j',))
 
 
-def _seg_0541__ftpx_j(*, meta: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 541 (ftpx_j) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0550__ftpx_j(*, meta: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 550 (ftpx_j) - body verbatim from the legacy gate() (feature 022)."""
     ftpx_j = float(meta.get("ftpx") or 1)
     return _kept(locals(), ('ftpx_j',))
 
 
-def _seg_0542__b_3(*, M: Any = _UNBOUND, b: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 542 (b, dwell_j) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0551__b_3(*, M: Any = _UNBOUND, b: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 551 (b, dwell_j) - body verbatim from the legacy gate() (feature 022)."""
     dwell_j = M.get("houses", []) + [b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS]
     return _kept(locals(), ('b', 'dwell_j'))
 
 
-def _seg_0543__wall_j(*, M: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 543 (wall_j) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0552__wall_j(*, M: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 552 (wall_j) - body verbatim from the legacy gate() (feature 022)."""
     wall_j: Poly = M.get("wall") or []
     return _kept(locals(), ('wall_j',))
 
 
-def _seg_0544___inwall_j(*, px: Any = _UNBOUND, py: Any = _UNBOUND, wall_j: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 544 (_inwall_j) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0553___inwall_j(*, px: Any = _UNBOUND, py: Any = _UNBOUND, wall_j: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 553 (_inwall_j) - body verbatim from the legacy gate() (feature 022)."""
 
     def _inwall_j(px: float, py: float) -> bool:
         return len(wall_j) >= 3 and point_in_poly(px, py, wall_j)
@@ -19209,8 +19402,8 @@ def _seg_0544___inwall_j(*, px: Any = _UNBOUND, py: Any = _UNBOUND, wall_j: Any 
     return _kept(locals(), ('_inwall_j',))
 
 
-def _seg_0545__punishment_spot_only_at_a_seat_of_justice(*, check: Any = _UNBOUND, exg_j: Any = _UNBOUND, psp_j: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 545 (execution_ground_only_at_a_seat_of_justice, punishment_spot_only_at_a_seat_of_justice) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0554__punishment_spot_only_at_a_seat_of_justice(*, check: Any = _UNBOUND, exg_j: Any = _UNBOUND, psp_j: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 554 (execution_ground_only_at_a_seat_of_justice, punishment_spot_only_at_a_seat_of_justice) - body verbatim from the legacy gate() (feature 022)."""
     if scale in ("hamlet", "village"):
         # Village authority topped out at banishment, and capital sentences were confirmed far above
         # the county. A settlement with no magistrate's court has neither institution.
@@ -19219,7 +19412,7 @@ def _seg_0545__punishment_spot_only_at_a_seat_of_justice(*, check: Any = _UNBOUN
     return _kept(locals(), ())
 
 
-def _seg_0546__punishment_spot_in_the_core(
+def _seg_0555__punishment_spot_in_the_core(
     *,
     M: Any = _UNBOUND,
     _beyond_the_dwellings_j: Any = _UNBOUND,
@@ -19279,7 +19472,7 @@ def _seg_0546__punishment_spot_in_the_core(
     worst_j: Any = _UNBOUND,
     wrong_j: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 546 (capital_has_execution_ground, capital_has_punishment_spot, city_has_execution_ground, city_has_punishment_spot, execution_ground_by_the_road, execution_ground_clear_of_the_dead, execution_ground_no_nearer_the_houses_than_its_stone, execution_ground_off_the_farmland, execution_ground_on_the_outcast_side, execution_ground_outside_the_settlement, execution_ground_past_the_boundary_marker, hamlet_has_execution_ground, hamlet_has_punishment_spot, punishment_spot_by_the_traffic, punishment_spot_in_the_core, town_has_execution_ground, town_has_punishment_spot, village_has_execution_ground, village_has_punishment_spot) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 555 (capital_has_execution_ground, capital_has_punishment_spot, city_has_execution_ground, city_has_punishment_spot, execution_ground_by_the_road, execution_ground_clear_of_the_dead, execution_ground_no_nearer_the_houses_than_its_stone, execution_ground_off_the_farmland, execution_ground_on_the_outcast_side, execution_ground_outside_the_settlement, execution_ground_past_the_boundary_marker, hamlet_has_execution_ground, hamlet_has_punishment_spot, punishment_spot_by_the_traffic, punishment_spot_in_the_core, town_has_execution_ground, town_has_punishment_spot, village_has_execution_ground, village_has_punishment_spot) - body verbatim from the legacy gate() (feature 022)."""
     if scale in ("town", "city"):
         routes_j = ([M["road"]] if M.get("road") else []) + [st["pts"] for st in M.get("town_streets", [])] + ([M["lane"]] if M.get("lane") else []) + [ln["pts"] for ln in M.get("lanes", [])]
 
@@ -19570,7 +19763,7 @@ def _seg_0546__punishment_spot_in_the_core(
     )
 
 
-def _seg_0547__walled_town_has_wall(
+def _seg_0556__walled_town_has_wall(
     *,
     EMPTY_RUN: Any = _UNBOUND,
     M: Any = _UNBOUND,
@@ -19625,7 +19818,7 @@ def _seg_0547__walled_town_has_wall(
     x: Any = _UNBOUND,
     y: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 547 (streets_have_buildings, wall_hugs_the_town, wall_sections_irregular, walled_town_commoners_inside_walls, walled_town_has_gate_market, walled_town_has_main_street, walled_town_has_wall) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 556 (streets_have_buildings, wall_hugs_the_town, wall_sections_irregular, walled_town_commoners_inside_walls, walled_town_has_gate_market, walled_town_has_main_street, walled_town_has_wall) - body verbatim from the legacy gate() (feature 022)."""
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")), "a walled town must have a wall and a gate")
         # COMMONERS SHELTER INSIDE THE RAMPART - the jokamachi doctrine every walled-town docstring
@@ -19803,16 +19996,16 @@ def _seg_0547__walled_town_has_wall(
 # fans drain several ways at once and no single bearing describes them).
 
 
-def _seg_0548___lf_paddies(*, M: Any = _UNBOUND, f: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 548 (_lf_paddies, f) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0557___lf_paddies(*, M: Any = _UNBOUND, f: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 557 (_lf_paddies, f) - body verbatim from the legacy gate() (feature 022)."""
     _lf_paddies = [f for f in M.get("fields") or [] if f.get("kind") == "paddy"]
     return _kept(locals(), ('_lf_paddies', 'f'))
 
 
-def _seg_0549__settlement_declares_a_land_fall(
+def _seg_0558__settlement_declares_a_land_fall(
     *, M: Any = _UNBOUND, _lf_missing: Any = _UNBOUND, _lf_paddies: Any = _UNBOUND, check: Any = _UNBOUND, f: Any = _UNBOUND, meta: Any = _UNBOUND
 ) -> dict[str, Any]:
-    """Gate segment 549 (settlement_declares_a_land_fall) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 558 (settlement_declares_a_land_fall) - body verbatim from the legacy gate() (feature 022)."""
     if _lf_paddies or M.get("field_ditches"):
         _lf_missing = [f.get("name") for f in _lf_paddies if f.get("down_deg") is None]
         check(
@@ -19833,20 +20026,20 @@ def _seg_0549__settlement_declares_a_land_fall(
 # exposed the gap. Angles use the same convention as down_deg (0 = east, 90 = south).
 
 
-def _seg_0550___wf_courses() -> dict[str, Any]:
-    """Gate segment 550 (_wf_courses) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0559___wf_courses() -> dict[str, Any]:
+    """Gate segment 559 (_wf_courses) - body verbatim from the legacy gate() (feature 022)."""
     _wf_courses: list[tuple[str, dict[str, Any]]] = []
     return _kept(locals(), ('_wf_courses',))
 
 
-def _seg_0551___wf_courses_1(*, M: Any = _UNBOUND, _wf_courses: Any = _UNBOUND, _wf_key: Any = _UNBOUND, o: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 551 (_wf_courses, _wf_key, o) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0560___wf_courses_1(*, M: Any = _UNBOUND, _wf_courses: Any = _UNBOUND, _wf_key: Any = _UNBOUND, o: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 560 (_wf_courses, _wf_key, o) - body verbatim from the legacy gate() (feature 022)."""
     for _wf_key in ("streams", "canals"):
         _wf_courses += [(_wf_key, o) for o in (M.get(_wf_key) or [])]
     return _kept(locals(), ('_wf_courses', '_wf_key', 'o'))
 
 
-def _seg_0552__water_flow_declared(
+def _seg_0561__water_flow_declared(
     *,
     M: Any = _UNBOUND,
     _mf: Any = _UNBOUND,
@@ -19866,7 +20059,7 @@ def _seg_0552__water_flow_declared(
     meta: Any = _UNBOUND,
     o: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 552 (moat_declares_circulation, water_flow_consistent_with_slope, water_flow_declared, watercourses_declare_flow, watercourses_flow_downstream) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 561 (moat_declares_circulation, water_flow_consistent_with_slope, water_flow_declared, watercourses_declare_flow, watercourses_flow_downstream) - body verbatim from the legacy gate() (feature 022)."""
     if _wf_courses or M.get("moat"):
         _wf = meta.get("water_flow")
         check(
@@ -19938,7 +20131,7 @@ def _seg_0552__water_flow_declared(
 # at the settlement's edge - the caste's own name for itself was kawaramono, "riverbed people".
 
 
-def _seg_0553__settlement_has_tanning_yard(
+def _seg_0562__settlement_has_tanning_yard(
     *,
     M: Any = _UNBOUND,
     _at: Any = _UNBOUND,
@@ -20028,7 +20221,7 @@ def _seg_0553__settlement_has_tanning_yard(
     x: Any = _UNBOUND,
     y: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 553 (settlement_has_tanning_yard, tanning_yard_below_every_intake, tanning_yard_clear_of_dwellings, tanning_yard_clear_of_fields, tanning_yard_clear_of_water, tanning_yard_discharges_to_nothing_drawn_from, tanning_yard_on_the_outcast_side, tanning_yard_on_water, tanning_yard_outside_walls, tanning_yard_square_to_its_water) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 562 (settlement_has_tanning_yard, tanning_yard_below_every_intake, tanning_yard_clear_of_dwellings, tanning_yard_clear_of_fields, tanning_yard_clear_of_water, tanning_yard_discharges_to_nothing_drawn_from, tanning_yard_on_the_outcast_side, tanning_yard_on_water, tanning_yard_outside_walls, tanning_yard_square_to_its_water) - body verbatim from the legacy gate() (feature 022)."""
     if scale in ("town", "city"):
         _ty_ftpx = float(meta.get("ftpx") or 1.0)
 
@@ -20435,7 +20628,7 @@ def _seg_0553__settlement_has_tanning_yard(
     )
 
 
-def _seg_0554__city_has_six_ministries(
+def _seg_0563__city_has_six_ministries(
     *,
     ADJ: Any = _UNBOUND,
     COMMERCE: Any = _UNBOUND,
@@ -21059,7 +21252,7 @@ def _seg_0554__city_has_six_ministries(
     yards_b: Any = _UNBOUND,
     yd: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 554 (city_canal_reaches_dock, city_canal_shares_moat_mouth, city_capital_dir_valid, city_caste_counts_in_band, city_caste_shifts_are_documented, city_caste_shifts_are_live, city_civic_clear_of_streets, city_civic_label_on_its_own_building, city_clan_known, city_dojo_count_follows_samurai, city_dojos_among_samurai, city_estate_gates_vary, city_estates_clear_of_roads, city_estates_clear_of_wall_moat, city_estates_multiple_shown, city_estates_no_overlap, city_estates_toward_capital, city_fields_clear_of_wall_moat, city_fields_close_to_city, city_flophouse_in_humble_quarter, city_flophouse_inside_walls, city_flophouse_outside_each_gate, city_gate_caravan_facilities, city_gate_furniture_aligned, city_gate_furniture_at_throat, city_gate_guard_inspection_separate, city_gate_has_guardhouse, city_gate_tower_at_its_gate, city_gate_towers_clear_of_gate_furniture, city_government_clear_of_wall_moat, city_government_offices_dont_abut, city_governor_mansion_large, city_graveyard_clear_of_ring_road, city_has_bathhouse, city_has_brewery, city_has_dye_works, city_has_fire_towers, city_has_flophouse, city_has_gate_market, city_has_governor_mansion, city_has_laborer_neighborhoods, city_has_martial_hall, city_has_merchant_district, city_has_merchant_storehouses, city_has_ministry_of_rites, city_has_oil_press, city_has_outside_farmland, city_has_pawnshop, city_has_ring_road, city_has_samurai_neighborhood, city_has_six_ministries, city_has_theater_stage, city_imperial_road_has_commerce, city_imperial_road_through, city_inspection_station_at_each_gate, city_kido_on_ward_fence, city_kiln_outside_walls, city_labels_placed_with_subject, city_laborer_housing_varied, city_lanes_meet_when_aligned, city_lanes_reach_ward_gates, city_larger_streets_lined, city_martial_hall_has_archery_range, city_merchant_estate_gate_clear, city_merchant_estates_clear_of_buildings, city_merchant_estates_clear_of_wall_moat, city_merchant_housing_spread, city_merchant_housing_varied, city_ministries_cluster_at_government, city_ministries_front_a_street, city_moat_fed_offmap, city_moat_feeder_matches_width, city_moat_has_outfall, city_moat_irrigates_fields, city_moat_joins_river, city_moat_junction_angles, city_moat_surrounds_wall, city_monk_houses_by_their_temple, city_multi_temple_exception_declared, city_neighborhoods_have_wells, city_no_inwall_farms, city_no_large_empty_space, city_outside_fields_have_farmhouses, city_pond_clear_of_wall_moat, city_river_port_has_lumber_yard, city_road_label_outside_walls, city_roads_run_offmap, city_row_housing_gap, city_row_housing_touches, city_samurai_estates_dispersed, city_samurai_estates_outside, city_samurai_estates_vary_in_size, city_samurai_houses_inside_walls, city_samurai_housing_sufficient, city_samurai_housing_varied, city_samurai_partly_front_streets, city_samurai_quarter_gated, city_samurai_quarter_has_no_public_wells, city_samurai_ward_residents_only, city_samurai_ward_sealed, city_streets_clear_of_moat, city_streets_clear_of_wall, city_streets_connected, city_streets_have_buildings, city_streets_meet_through_lanes, city_streets_no_intersection_stub, city_streets_no_near_miss, city_temple_approach_has_torii, city_temple_neighborhood_has_shrines, city_temples_clear_of_wall_moat, city_temples_dedicated, city_temples_have_monk_housing, city_temples_inside_walls, city_theater_stage_larger_than_town, city_torii_over_streets, city_wall_furniture_clear_of_moat, city_wall_towers_aligned, city_wall_towers_spaced, city_ward_fence_clear_of_structures, city_ward_fence_meets_wall, city_ward_fence_under_wall, city_ward_servants_housed_as_ranges, city_well_density_sufficient, city_wells_in_block_interiors, city_wharf_jetties_on_bank, fire_tower_amid_its_district, fire_tower_clear_of_fields, fire_tower_clear_of_graveyards, fire_tower_clear_of_wells, fire_tower_in_commoner_quarter, fire_tower_standoff, fire_towers_dispersed, kido_aligned_with_ward_fence, kido_clear_of_buildings, kido_clear_of_wall_towers, kido_guard_box_clear_of_lanes, log_boom_leaves_the_fairway, log_boom_moored_to_the_bank, log_boom_serves_the_lumber_yard, lumber_yard_clear_of_water, merchant_estates_match_roll, no_groves_inside_walls, ring_road_kept_clear, theater_stage_by_temple, theater_stage_clear, theater_stage_faces_temple, walled_city_has_burakumin_inside, walled_city_has_wall_and_gates) - body verbatim from the legacy gate() (feature 022). CONSTITUTION X.12 ANNOTATION: this function exceeds the ~1,000-statement threshold deliberately - it is the ministry-complex audit, one cohesive program mechanically extracted from the legacy gate; splitting it is recorded debt (specs/022 plan.md Complexity Tracking), and re-splitting it by hand during extraction would have turned a zero-diff verbatim move into a semantic rewrite of the largest single check."""
+    """Gate segment 563 (city_canal_reaches_dock, city_canal_shares_moat_mouth, city_capital_dir_valid, city_caste_counts_in_band, city_caste_shifts_are_documented, city_caste_shifts_are_live, city_civic_clear_of_streets, city_civic_label_on_its_own_building, city_clan_known, city_dojo_count_follows_samurai, city_dojos_among_samurai, city_estate_gates_vary, city_estates_clear_of_roads, city_estates_clear_of_wall_moat, city_estates_multiple_shown, city_estates_no_overlap, city_estates_toward_capital, city_fields_clear_of_wall_moat, city_fields_close_to_city, city_flophouse_in_humble_quarter, city_flophouse_inside_walls, city_flophouse_outside_each_gate, city_gate_caravan_facilities, city_gate_furniture_aligned, city_gate_furniture_at_throat, city_gate_guard_inspection_separate, city_gate_has_guardhouse, city_gate_tower_at_its_gate, city_gate_towers_clear_of_gate_furniture, city_government_clear_of_wall_moat, city_government_offices_dont_abut, city_governor_mansion_large, city_graveyard_clear_of_ring_road, city_has_bathhouse, city_has_brewery, city_has_dye_works, city_has_fire_towers, city_has_flophouse, city_has_gate_market, city_has_governor_mansion, city_has_laborer_neighborhoods, city_has_martial_hall, city_has_merchant_district, city_has_merchant_storehouses, city_has_ministry_of_rites, city_has_oil_press, city_has_outside_farmland, city_has_pawnshop, city_has_ring_road, city_has_samurai_neighborhood, city_has_six_ministries, city_has_theater_stage, city_imperial_road_has_commerce, city_imperial_road_through, city_inspection_station_at_each_gate, city_kido_on_ward_fence, city_kiln_outside_walls, city_labels_placed_with_subject, city_laborer_housing_varied, city_lanes_meet_when_aligned, city_lanes_reach_ward_gates, city_larger_streets_lined, city_martial_hall_has_archery_range, city_merchant_estate_gate_clear, city_merchant_estates_clear_of_buildings, city_merchant_estates_clear_of_wall_moat, city_merchant_housing_spread, city_merchant_housing_varied, city_ministries_cluster_at_government, city_ministries_front_a_street, city_moat_fed_offmap, city_moat_feeder_matches_width, city_moat_has_outfall, city_moat_irrigates_fields, city_moat_joins_river, city_moat_junction_angles, city_moat_surrounds_wall, city_monk_houses_by_their_temple, city_multi_temple_exception_declared, city_neighborhoods_have_wells, city_no_inwall_farms, city_no_large_empty_space, city_outside_fields_have_farmhouses, city_pond_clear_of_wall_moat, city_river_port_has_lumber_yard, city_road_label_outside_walls, city_roads_run_offmap, city_row_housing_gap, city_row_housing_touches, city_samurai_estates_dispersed, city_samurai_estates_outside, city_samurai_estates_vary_in_size, city_samurai_houses_inside_walls, city_samurai_housing_sufficient, city_samurai_housing_varied, city_samurai_partly_front_streets, city_samurai_quarter_gated, city_samurai_quarter_has_no_public_wells, city_samurai_ward_residents_only, city_samurai_ward_sealed, city_streets_clear_of_moat, city_streets_clear_of_wall, city_streets_connected, city_streets_have_buildings, city_streets_meet_through_lanes, city_streets_no_intersection_stub, city_streets_no_near_miss, city_temple_approach_has_torii, city_temple_neighborhood_has_shrines, city_temples_clear_of_wall_moat, city_temples_dedicated, city_temples_have_monk_housing, city_temples_inside_walls, city_theater_stage_larger_than_town, city_torii_over_streets, city_wall_furniture_clear_of_moat, city_wall_towers_aligned, city_wall_towers_spaced, city_ward_fence_clear_of_structures, city_ward_fence_meets_wall, city_ward_fence_under_wall, city_ward_servants_housed_as_ranges, city_well_density_sufficient, city_wells_in_block_interiors, city_wharf_jetties_on_bank, fire_tower_amid_its_district, fire_tower_clear_of_fields, fire_tower_clear_of_graveyards, fire_tower_clear_of_wells, fire_tower_in_commoner_quarter, fire_tower_standoff, fire_towers_dispersed, kido_aligned_with_ward_fence, kido_clear_of_buildings, kido_clear_of_wall_towers, kido_guard_box_clear_of_lanes, log_boom_leaves_the_fairway, log_boom_moored_to_the_bank, log_boom_serves_the_lumber_yard, lumber_yard_clear_of_water, merchant_estates_match_roll, no_groves_inside_walls, ring_road_kept_clear, theater_stage_by_temple, theater_stage_clear, theater_stage_faces_temple, walled_city_has_burakumin_inside, walled_city_has_wall_and_gates) - body verbatim from the legacy gate() (feature 022). CONSTITUTION X.12 ANNOTATION: this function exceeds the ~1,000-statement threshold deliberately - it is the ministry-complex audit, one cohesive program mechanically extracted from the legacy gate; splitting it is recorded debt (specs/022 plan.md Complexity Tracking), and re-splitting it by hand during extraction would have turned a zero-diff verbatim move into a semantic rewrite of the largest single check."""
     if scale in ("city", "capital"):  # 021: the urban battery (wells, gate furniture, business fabric) binds the capital too
         # A PROVINCIAL CITY (budgets.md: ~2,000-4,000, avg ~3,000; 600 households - servants 120,
         # laborers 240, merchants 150, burakumin 30, samurai 60; ZERO in-city farmers). Placing
@@ -24049,16 +24242,16 @@ def _seg_0554__city_has_six_ministries(
 # them); a village that does not denote them at all is fine.
 
 
-def _seg_0555__taxfree_plots_in_range(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, tf: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 555 (taxfree_plots_in_range) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0564__taxfree_plots_in_range(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, tf: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 564 (taxfree_plots_in_range) - body verbatim from the legacy gate() (feature 022)."""
     if scale == "village" and (M.get("taxfree") or meta.get("taxfree_expected")):
         tf = M.get("taxfree", [])
         check("taxfree_plots_in_range", 2 <= len(tf) <= 3, f"{len(tf)} tax-free plots (law: ~2 households)")
     return _kept(locals(), ('tf',))
 
 
-def _seg_0556__big_paddies(*, f: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 556 (big_paddies, f) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0565__big_paddies(*, f: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 565 (big_paddies, f) - body verbatim from the legacy gate() (feature 022)."""
     big_paddies = sorted(
         [f for f in fields if f["kind"] == "paddy" and (f["bbox"][2] - f["bbox"][0]) * (f["bbox"][3] - f["bbox"][1]) > 80000],
         key=lambda f: -(f["bbox"][2] - f["bbox"][0]) * (f["bbox"][3] - f["bbox"][1]),
@@ -24066,8 +24259,8 @@ def _seg_0556__big_paddies(*, f: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict
     return _kept(locals(), ('big_paddies', 'f'))
 
 
-def _seg_0557__common_fields_vary_orientation(*, big_paddies: Any = _UNBOUND, check: Any = _UNBOUND, f: Any = _UNBOUND, scale: Any = _UNBOUND, wide: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 557 (common_fields_vary_orientation) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0566__common_fields_vary_orientation(*, big_paddies: Any = _UNBOUND, check: Any = _UNBOUND, f: Any = _UNBOUND, scale: Any = _UNBOUND, wide: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 566 (common_fields_vary_orientation) - body verbatim from the legacy gate() (feature 022)."""
     if scale != "city" and len(big_paddies) >= 2:  # a city's in-wall plots / off-edge fields are not staggered common fields
 
         def wide(f: dict[str, Any]) -> bool:
@@ -24077,10 +24270,10 @@ def _seg_0557__common_fields_vary_orientation(*, big_paddies: Any = _UNBOUND, ch
     return _kept(locals(), ('wide',))
 
 
-def _seg_0558__fallow_has_abandoned(
+def _seg_0567__fallow_has_abandoned(
     *, ADJ: Any = _UNBOUND, ab: Any = _UNBOUND, check: Any = _UNBOUND, f: Any = _UNBOUND, fields: Any = _UNBOUND, h: Any = _UNBOUND, houses: Any = _UNBOUND, meta: Any = _UNBOUND
 ) -> dict[str, Any]:
-    """Gate segment 558 (fallow_has_abandoned) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 567 (fallow_has_abandoned) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("fallow_implies_abandoned"):
         for f in fields:
             if f["kind"] == "fallow":
@@ -24089,7 +24282,7 @@ def _seg_0558__fallow_has_abandoned(
     return _kept(locals(), ('ab', 'f', 'h'))
 
 
-def _seg_0559__shrine_on_hill_summit(
+def _seg_0568__shrine_on_hill_summit(
     *,
     M: Any = _UNBOUND,
     check: Any = _UNBOUND,
@@ -24108,7 +24301,7 @@ def _seg_0559__shrine_on_hill_summit(
     t: Any = _UNBOUND,
     torii: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 559 (shrine_on_hill_summit, torii_on_hill) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 568 (shrine_on_hill_summit, torii_on_hill) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("shrine_on_hill") and M.get("shrine") and M.get("summit") and hill:
         sx, sy, sw, sh = M["shrine"]
         sc = [(sx, sy), (sx + sw, sy), (sx + sw, sy + sh), (sx, sy + sh)]
@@ -24120,8 +24313,8 @@ def _seg_0559__shrine_on_hill_summit(
     return _kept(locals(), ('offhill', 'on_hill', 'on_summit', 'px', 'py', 'sc', 'sh', 'sw', 'sx', 'sy', 't'))
 
 
-def _seg_0560__torii_count(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, torii: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 560 (torii_count) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0569__torii_count(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, torii: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 569 (torii_count) - body verbatim from the legacy gate() (feature 022)."""
     if "torii_expected" in meta:
         check("torii_count", len(torii) == meta["torii_expected"], f"{len(torii)} torii, expected {meta['torii_expected']}")
     return _kept(locals(), ())
@@ -24139,13 +24332,13 @@ def _seg_0560__torii_count(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, torii
 # pair during the first survey). Each recorded torii is attributed to the NEAREST proper hall.
 
 
-def _seg_0561___proper(*, M: Any = _UNBOUND, r: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 561 (_proper, r) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0570___proper(*, M: Any = _UNBOUND, r: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 570 (_proper, r) - body verbatim from the legacy gate() (feature 022)."""
     _proper = [r for r in M.get("religious", []) if r.get("kind") != "small_shrine"]
     return _kept(locals(), ('_proper', 'r'))
 
 
-def _seg_0562__torii_count_canonical(
+def _seg_0571__torii_count_canonical(
     *,
     M: Any = _UNBOUND,
     _THRESH_SLACK_FT: Any = _UNBOUND,
@@ -24194,7 +24387,7 @@ def _seg_0562__torii_count_canonical(
     torii: Any = _UNBOUND,
     v: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 562 (temple_torii_face_the_street, torii_avenue_meets_the_hall, torii_avenue_pitch_capped, torii_count_canonical, torii_match_roll) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 571 (temple_torii_face_the_street, torii_avenue_meets_the_hall, torii_avenue_pitch_capped, torii_count_canonical, torii_match_roll) - body verbatim from the legacy gate() (feature 022)."""
     if _proper:
         _tarch: dict[int, list[Any]] = {id(r): [] for r in _proper}  # type: ignore[no-redef]
         for _t in torii:
@@ -24395,10 +24588,10 @@ def _seg_0562__torii_count_canonical(
     )
 
 
-def _seg_0563__pond_bigger_than_headman(
+def _seg_0572__pond_bigger_than_headman(
     *, M: Any = _UNBOUND, check: Any = _UNBOUND, headman: Any = _UNBOUND, hill: Any = _UNBOUND, pcx: Any = _UNBOUND, pcy: Any = _UNBOUND, prx: Any = _UNBOUND, pry: Any = _UNBOUND
 ) -> dict[str, Any]:
-    """Gate segment 563 (pond_bigger_than_headman, pond_clear_of_hill) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 572 (pond_bigger_than_headman, pond_clear_of_hill) - body verbatim from the legacy gate() (feature 022)."""
     if M.get("pond"):
         pcx, pcy, prx, pry = M["pond"]
         if headman is not None:
@@ -24412,16 +24605,16 @@ def _seg_0563__pond_bigger_than_headman(
 # mulberry-fishpond / rape / lotus / hill-tea must show plots (or a tea fringe) of it, not just a label.
 
 
-def _seg_0564__lu(*, meta: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 564 (lu) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0573__lu(*, meta: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 573 (lu) - body verbatim from the legacy gate() (feature 022)."""
     lu = meta.get("land_use_overlay")
     return _kept(locals(), ('lu',))
 
 
-def _seg_0565__land_use_overlay_drawn(
+def _seg_0574__land_use_overlay_drawn(
     *, M: Any = _UNBOUND, check: Any = _UNBOUND, had_ground: Any = _UNBOUND, lu: Any = _UNBOUND, off: Any = _UNBOUND, p: Any = _UNBOUND, r: Any = _UNBOUND, recs: Any = _UNBOUND, wet: Any = _UNBOUND
 ) -> dict[str, Any]:
-    """Gate segment 565 (land_use_overlay_drawn, overlays_on_wet_ground_only) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 574 (land_use_overlay_drawn, overlays_on_wet_ground_only) - body verbatim from the legacy gate() (feature 022)."""
     if lu and lu != "none":
         recs = [r for r in M.get("land_use", []) if r.get("overlay") == lu]
         wet = {tuple(p) for p in M.get("wet_plots", [])}
@@ -24467,14 +24660,14 @@ def _seg_0565__land_use_overlay_drawn(
 # (written by the field pass) vs the pond record (written by the feature pass), two independent sources.
 
 
-def _seg_0566__arch(*, meta: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 566 (arch) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0575__arch(*, meta: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 575 (arch) - body verbatim from the legacy gate() (feature 022)."""
     arch = meta.get("field_archetype")
     return _kept(locals(), ('arch',))
 
 
-def _seg_0567___ELIG() -> dict[str, Any]:
-    """Gate segment 567 (_ELIG) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0576___ELIG() -> dict[str, Any]:
+    """Gate segment 576 (_ELIG) - body verbatim from the legacy gate() (feature 022)."""
     _ELIG = {
         "field_ponds": ("valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley"),
         "field_rocks": ("contour_terraces", "ribbon_valley"),
@@ -24483,7 +24676,7 @@ def _seg_0567___ELIG() -> dict[str, Any]:
     return _kept(locals(), ('_ELIG',))
 
 
-def _seg_0568__paddy_features_match_archetype(
+def _seg_0577__paddy_features_match_archetype(
     *,
     M: Any = _UNBOUND,
     _ELIG: Any = _UNBOUND,
@@ -24496,7 +24689,7 @@ def _seg_0568__paddy_features_match_archetype(
     p: Any = _UNBOUND,
     wet: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 568 (field_ponds_on_low_ground, paddy_features_match_archetype) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 577 (field_ponds_on_low_ground, paddy_features_match_archetype) - body verbatim from the legacy gate() (feature 022)."""
     if arch:
         mis = [(k, len(M.get(k, []))) for k, ok in _ELIG.items() if M.get(k) and arch not in ok]
         check("paddy_features_match_archetype", not mis, f"in-field feature(s) on the wrong paddy type ({arch}): {mis} - see the archetype matrix in specs/012-in-field-paddy-features/research.md")
@@ -24512,7 +24705,7 @@ def _seg_0568__paddy_features_match_archetype(
 # the slope - a bund that ran downhill would be a channel, not a terrace step). This is the archetype's teeth.
 
 
-def _seg_0569__contour_terraces_are_stepped_bands(
+def _seg_0578__contour_terraces_are_stepped_bands(
     *,
     M: Any = _UNBOUND,
     acrs: Any = _UNBOUND,
@@ -24526,7 +24719,7 @@ def _seg_0569__contour_terraces_are_stepped_bands(
     meta: Any = _UNBOUND,
     n_cross: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 569 (contour_terraces_are_stepped_bands) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 578 (contour_terraces_are_stepped_bands) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("field_archetype") == "contour_terraces":
         bunds = M.get("terrace_bunds", [])
         dd = meta.get("down_deg", 90)
@@ -24552,10 +24745,10 @@ def _seg_0569__contour_terraces_are_stepped_bands(
 # the archetype's teeth: a polder reads as a surveyed rectangle, not an organic field.
 
 
-def _seg_0570__polder_fills_its_bbox(
+def _seg_0579__polder_fills_its_bbox(
     *, b: Any = _UNBOUND, bbox_area: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND, fill_ratio: Any = _UNBOUND, meta: Any = _UNBOUND, pf: Any = _UNBOUND
 ) -> dict[str, Any]:
-    """Gate segment 570 (polder_fills_its_bbox) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 579 (polder_fills_its_bbox) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("field_archetype") == "polder_grid" and fields:
         pf = fields[0]
         b = pf.get("bbox") or [0, 0, 1, 1]
@@ -24574,7 +24767,7 @@ def _seg_0570__polder_fills_its_bbox(
 # land-use over most of it. China-first: the Pearl-delta closed sericulture-aquaculture system.
 
 
-def _seg_0571__dikepond_is_ponds_in_a_block(
+def _seg_0580__dikepond_is_ponds_in_a_block(
     *,
     M: Any = _UNBOUND,
     _chs: Any = _UNBOUND,
@@ -24634,7 +24827,7 @@ def _seg_0571__dikepond_is_ponds_in_a_block(
     wx: Any = _UNBOUND,
     wy: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 571 (dikepond_corners_rounded, dikepond_is_ponds_in_a_block, dikepond_water_within_banks, dikeponds_fed_and_drained, mulberry_banks_clear_of_channels) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 580 (dikepond_corners_rounded, dikepond_is_ponds_in_a_block, dikepond_water_within_banks, dikeponds_fed_and_drained, mulberry_banks_clear_of_channels) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("field_archetype") == "mulberry_dike_fishpond" and fields:
         pf = fields[0]
         b = pf.get("bbox") or [0, 0, 1, 1]
@@ -24813,7 +25006,7 @@ def _seg_0571__dikepond_is_ponds_in_a_block(
 # settlements.md 'Perimeter dike'.
 
 
-def _seg_0572__polder_dike_is_earthwork(
+def _seg_0581__polder_dike_is_earthwork(
     *,
     M: Any = _UNBOUND,
     _a: Any = _UNBOUND,
@@ -24883,7 +25076,7 @@ def _seg_0572__polder_dike_is_earthwork(
     x: Any = _UNBOUND,
     y: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 572 (polder_channels_clear_of_dike, polder_dike_gapped_at_sluices, polder_dike_is_earthwork, polder_edges_wander, polder_floor_is_ring_interior, structures_clear_of_dike) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 581 (polder_channels_clear_of_dike, polder_dike_gapped_at_sluices, polder_dike_is_earthwork, polder_edges_wander, polder_floor_is_ring_interior, structures_clear_of_dike) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("field_archetype") in ("polder_grid", "mulberry_dike_fishpond"):
         dks = M.get("dikes") or []
         dk = dks[0] if dks else None
@@ -25078,16 +25271,16 @@ def _seg_0572__polder_dike_is_earthwork(
 # all, fires.
 
 
-def _seg_0573___dtag(*, M: Any = _UNBOUND, h: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 573 (_dtag, h) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0582___dtag(*, M: Any = _UNBOUND, h: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 582 (_dtag, h) - body verbatim from the legacy gate() (feature 022)."""
     _dtag = [h for h in M.get("houses", []) if h.get("on_dike")]
     return _kept(locals(), ('_dtag', 'h'))
 
 
-def _seg_0574__dike_top_houses_on_the_dike(
+def _seg_0583__dike_top_houses_on_the_dike(
     *, M: Any = _UNBOUND, _dbands: Any = _UNBOUND, _doff: Any = _UNBOUND, _dtag: Any = _UNBOUND, b: Any = _UNBOUND, check: Any = _UNBOUND, dk: Any = _UNBOUND, h: Any = _UNBOUND
 ) -> dict[str, Any]:
-    """Gate segment 574 (dike_top_houses_on_the_dike) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 583 (dike_top_houses_on_the_dike) - body verbatim from the legacy gate() (feature 022)."""
     if _dtag:
         _dbands = [dk["outline"] for dk in M.get("dikes", []) if dk.get("outline")]
         _doff = [(round(h["x"]), round(h["y"])) for h in _dtag if not any(poly_dist(h["x"], h["y"], b) <= 14 for b in _dbands)]
@@ -25108,19 +25301,19 @@ def _seg_0574__dike_top_houses_on_the_dike(
 # pond). Undeclared maps skip (a non-polder map has no dike to face water).
 
 
-def _seg_0575___ww(*, c: Any = _UNBOUND, meta: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 575 (_ww, c) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0584___ww(*, c: Any = _UNBOUND, meta: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 584 (_ww, c) - body verbatim from the legacy gate() (feature 022)."""
     _ww = [str(c) for c in (meta.get("waterward") or [])]
     return _kept(locals(), ('_ww', 'c'))
 
 
-def _seg_0576___dks_all(*, M: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 576 (_dks_all) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0585___dks_all(*, M: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 585 (_dks_all) - body verbatim from the legacy gate() (feature 022)."""
     _dks_all = M.get("dikes") or []
     return _kept(locals(), ('_dks_all',))
 
 
-def _seg_0577__polder_waterward_flanks_wet(
+def _seg_0586__polder_waterward_flanks_wet(
     *,
     M: Any = _UNBOUND,
     _K: Any = _UNBOUND,
@@ -25151,7 +25344,7 @@ def _seg_0577__polder_waterward_flanks_wet(
     py: Any = _UNBOUND,
     wp: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 577 (polder_waterward_flanks_wet) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 586 (polder_waterward_flanks_wet) - body verbatim from the legacy gate() (feature 022)."""
     if _ww and _dks_all:
         _bpts = [p for dk in _dks_all for p in dk.get("outline", [])]
         _bx0, _bx1 = min(p[0] for p in _bpts), max(p[0] for p in _bpts)
@@ -25199,7 +25392,7 @@ def _seg_0577__polder_waterward_flanks_wet(
 # polder manifest that records NO parcel geometry fails rather than passes by omission.
 
 
-def _seg_0578__polder_parcels_vary(
+def _seg_0587__polder_parcels_vary(
     *,
     M: Any = _UNBOUND,
     areas: Any = _UNBOUND,
@@ -25224,7 +25417,7 @@ def _seg_0578__polder_parcels_vary(
     unfronted: Any = _UNBOUND,
     x: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 578 (polder_parcels_are_organic, polder_parcels_front_water, polder_parcels_vary) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 587 (polder_parcels_are_organic, polder_parcels_front_water, polder_parcels_vary) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("field_archetype") in ("polder_grid", "mulberry_dike_fishpond") and fields:
         pl = fields[0].get("plots") or []
         pv_cv = pv_ob = 0.0
@@ -25300,7 +25493,7 @@ def _seg_0578__polder_parcels_vary(
 # teeth: a ribbon reads as a winding valley strip, not a broad fan/block.
 
 
-def _seg_0579__ribbon_is_long_and_narrow(
+def _seg_0588__ribbon_is_long_and_narrow(
     *,
     along_span: Any = _UNBOUND,
     along_vals: Any = _UNBOUND,
@@ -25316,7 +25509,7 @@ def _seg_0579__ribbon_is_long_and_narrow(
     rdx: Any = _UNBOUND,
     rdy: Any = _UNBOUND,
 ) -> dict[str, Any]:
-    """Gate segment 579 (ribbon_is_long_and_narrow) - body verbatim from the legacy gate() (feature 022)."""
+    """Gate segment 588 (ribbon_is_long_and_narrow) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("field_archetype") == "ribbon_valley" and fields:
         dd = meta.get("down_deg", 90)
         rdx, rdy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
@@ -25338,8 +25531,8 @@ def _seg_0579__ribbon_is_long_and_narrow(
 # it just prints a hint. (Unlike a hard invariant, e.g. houses-clear-of-moats, this is a default we accept.)
 
 
-def _seg_0580__adv(*, M: Any = _UNBOUND, adv: Any = _UNBOUND, meta: Any = _UNBOUND, verbose: Any = _UNBOUND, who: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 580 (adv, who) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0589__adv(*, M: Any = _UNBOUND, adv: Any = _UNBOUND, meta: Any = _UNBOUND, verbose: Any = _UNBOUND, who: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 589 (adv, who) - body verbatim from the legacy gate() (feature 022)."""
     if meta.get("crop_advisory", True):
         for adv in crop_relocatable_singletons(M):
             if verbose:
@@ -25357,14 +25550,14 @@ def _seg_0580__adv(*, M: Any = _UNBOUND, adv: Any = _UNBOUND, meta: Any = _UNBOU
 # Runs LAST, because it can only judge the waivers once every check has had its chance to fire.
 
 
-def _seg_0581___wv_thin(*, _waivers: Any = _UNBOUND, k: Any = _UNBOUND, v: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 581 (_wv_thin, k, v) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0590___wv_thin(*, _waivers: Any = _UNBOUND, k: Any = _UNBOUND, v: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 590 (_wv_thin, k, v) - body verbatim from the legacy gate() (feature 022)."""
     _wv_thin = sorted(k for k, v in _waivers.items() if not isinstance(v, str) or len(v.strip()) < WAIVER_MIN_REASON)
     return _kept(locals(), ('_wv_thin', 'k', 'v'))
 
 
-def _seg_0582__waivers_are_documented(*, _wv_thin: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 582 (waivers_are_documented) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0591__waivers_are_documented(*, _wv_thin: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 591 (waivers_are_documented) - body verbatim from the legacy gate() (feature 022)."""
     check(
         "waivers_are_documented",
         not _wv_thin,
@@ -25375,14 +25568,14 @@ def _seg_0582__waivers_are_documented(*, _wv_thin: Any = _UNBOUND, check: Any = 
     return _kept(locals(), ())
 
 
-def _seg_0583___wv_stale(*, _waived: Any = _UNBOUND, _waivers: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 583 (_wv_stale) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0592___wv_stale(*, _waived: Any = _UNBOUND, _waivers: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 592 (_wv_stale) - body verbatim from the legacy gate() (feature 022)."""
     _wv_stale = sorted(set(_waivers) - set(_waived) - WAIVER_META_CHECKS)
     return _kept(locals(), ('_wv_stale',))
 
 
-def _seg_0584__waivers_are_live(*, _ran: Any = _UNBOUND, _wv_stale: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 584 (waivers_are_live) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0593__waivers_are_live(*, _ran: Any = _UNBOUND, _wv_stale: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 593 (waivers_are_live) - body verbatim from the legacy gate() (feature 022)."""
     check(
         "waivers_are_live",
         not _wv_stale,
@@ -25394,8 +25587,8 @@ def _seg_0584__waivers_are_live(*, _ran: Any = _UNBOUND, _wv_stale: Any = _UNBOU
     return _kept(locals(), ())
 
 
-def _seg_0585__k_3(*, _waived: Any = _UNBOUND, fails: Any = _UNBOUND, k: Any = _UNBOUND, v: Any = _UNBOUND, verbose: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 585 (k, v) - body verbatim from the legacy gate() (feature 022)."""
+def _seg_0594__k_3(*, _waived: Any = _UNBOUND, fails: Any = _UNBOUND, k: Any = _UNBOUND, v: Any = _UNBOUND, verbose: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 594 (k, v) - body verbatim from the legacy gate() (feature 022)."""
     if verbose:
         if _waived:
             print("\n" + "\n".join(f"WAIVED {k}: {v}" for k, v in sorted(_waived.items())))
@@ -29851,11 +30044,79 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0524___flow_dir, ('end', 'poly', 'q', 'span'), ('_flow_dir',), (), (), False, False),
-    _GateSeg(_seg_0525___drains, ('M', 'fd'), ('_drains', 'fd'), (), ('M',), False, False),
-    _GateSeg(_seg_0526__sharp, (), ('sharp',), (), (), False, False),
+    _GateSeg(_seg_0524___BB_TOL, (), ('_BB_TOL',), (), (), False, False),
+    _GateSeg(_seg_0525___bb_wet, (), ('_bb_wet',), (), (), False, False),
+    _GateSeg(_seg_0526___bb_wet_1, ('M', '_bb_wet'), ('_bb_wet',), (), ('M', '_bb_wet'), False, False),
+    _GateSeg(_seg_0527___bb_fp, ('M', '_bb_fp', '_bb_wet'), ('_bb_fp', '_bb_wet'), (), ('M', '_bb_wet'), False, False),
+    _GateSeg(_seg_0528___bb_c, ('M', '_bb_c'), ('_bb_c', '_bb_wchan'), (), ('M',), False, False),
+    _GateSeg(_seg_0529___bb_in_water, ('_BB_TOL', '_bb_wchan', '_bb_wet', '_wcx', '_wcy', '_wi', '_wtot', '_wx', '_wy', 'q'), ('_bb_in_water',), (), ('_BB_TOL', '_bb_wchan', '_bb_wet'), False, False),
+    _GateSeg(_seg_0530___bb_stray, (), ('_bb_stray',), (), (), False, False),
     _GateSeg(
-        _seg_0527__ang,
+        _seg_0531___bb_b,
+        (
+            'Hd',
+            'Wd',
+            '_BB_TOL',
+            '_bb_b',
+            '_bb_beans',
+            '_bb_buried',
+            '_bb_d',
+            '_bb_edge',
+            '_bb_fld',
+            '_bb_gi',
+            '_bb_in_water',
+            '_bb_j',
+            '_bb_k',
+            '_bb_ring',
+            '_bb_rings',
+            '_bb_stray',
+            '_bb_x',
+            '_bb_xs',
+            '_bb_y',
+            '_bb_ys',
+            '_bx0',
+            '_bx1',
+            '_by0',
+            '_by1',
+            'fields',
+            'i',
+            'q',
+        ),
+        (
+            '_bb_b',
+            '_bb_beans',
+            '_bb_buried',
+            '_bb_d',
+            '_bb_edge',
+            '_bb_fld',
+            '_bb_gi',
+            '_bb_j',
+            '_bb_k',
+            '_bb_ring',
+            '_bb_rings',
+            '_bb_stray',
+            '_bb_x',
+            '_bb_xs',
+            '_bb_y',
+            '_bb_ys',
+            '_bx0',
+            '_bx1',
+            '_by0',
+            '_by1',
+            'i',
+            'q',
+        ),
+        (),
+        ('Hd', 'Wd', '_BB_TOL', '_bb_buried', '_bb_edge', '_bb_gi', '_bb_in_water', '_bb_stray', 'fields'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0532__bund_beans_on_bunds, ('_bb_stray', 'check'), (), ('bund_beans_on_bunds',), ('_bb_stray', 'check'), False, False),
+    _GateSeg(_seg_0533___flow_dir, ('end', 'poly', 'q', 'span'), ('_flow_dir',), (), (), False, False),
+    _GateSeg(_seg_0534___drains, ('M', 'fd'), ('_drains', 'fd'), (), ('M',), False, False),
+    _GateSeg(_seg_0535__sharp, (), ('sharp',), (), (), False, False),
+    _GateSeg(
+        _seg_0536__ang,
         ('M', '_drains', '_flow_dir', 'ang', 'arr', 'bp', 'dep', 'dp', 'e', 'la', 'ld', 'near_drain', 'sharp', 'st'),
         ('ang', 'arr', 'bp', 'dep', 'dp', 'e', 'la', 'ld', 'near_drain', 'sharp', 'st'),
         (),
@@ -29863,10 +30124,10 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0528__drainage_junction_smooth, ('check', 'sharp'), (), ('drainage_junction_smooth',), ('check', 'sharp'), False, False),
-    _GateSeg(_seg_0529__torii, ('M',), ('torii',), (), ('M',), False, False),
+    _GateSeg(_seg_0537__drainage_junction_smooth, ('check', 'sharp'), (), ('drainage_junction_smooth',), ('check', 'sharp'), False, False),
+    _GateSeg(_seg_0538__torii, ('M',), ('torii',), (), ('M',), False, False),
     _GateSeg(
-        _seg_0530__torii_spread_out,
+        _seg_0539__torii_spread_out,
         (
             'M',
             '_al',
@@ -29930,10 +30191,10 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0531__abandoned, ('h', 'houses'), ('abandoned', 'h'), (), ('houses',), False, False),
-    _GateSeg(_seg_0532__occupied, ('abandoned', 'houses'), ('occupied',), (), ('abandoned', 'houses'), False, False),
+    _GateSeg(_seg_0540__abandoned, ('h', 'houses'), ('abandoned', 'h'), (), ('houses',), False, False),
+    _GateSeg(_seg_0541__occupied, ('abandoned', 'houses'), ('occupied',), (), ('abandoned', 'houses'), False, False),
     _GateSeg(
-        _seg_0533__households_consistent,
+        _seg_0542__households_consistent,
         ('abandoned', 'check', 'hh', 'hi', 'houses', 'lo', 'meta', 'occupied', 'scale', 't'),
         ('hh', 'hi', 'lo', 't'),
         ('house_count_in_range', 'households_consistent'),
@@ -29942,7 +30203,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0534__town_farmers_plurality,
+        _seg_0543__town_farmers_plurality,
         (
             'ALONG_TOL',
             'ANG_TOL',
@@ -30164,7 +30425,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0535__manor_gate_faces_town,
+        _seg_0544__manor_gate_faces_town,
         ('GATE_OUT', 'M', 'ang', 'b', 'bad_mg', 'c', 'check', 'd', 'dirs', 'dwell_all', 'k', 'mn', 'mroad', 'o', 'ovec', 'rl', 'rp', 'rvx', 'rvy', 'scale', 'tl', 'tvx', 'tvy'),
         ('GATE_OUT', 'ang', 'b', 'bad_mg', 'd', 'dirs', 'dwell_all', 'k', 'mn', 'mroad', 'o', 'ovec', 'rl', 'rp', 'rvx', 'rvy', 'tl', 'tvx', 'tvy'),
         ('manor_gate_faces_town',),
@@ -30172,9 +30433,9 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0536__walled_town_has_fire_tower, ('M', 'check', 'meta', 'scale'), (), ('walled_town_has_fire_tower',), ('M', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0545__walled_town_has_fire_tower, ('M', 'check', 'meta', 'scale'), (), ('walled_town_has_fire_tower',), ('M', 'check', 'meta', 'scale'), False, False),
     _GateSeg(
-        _seg_0537__hamlet_has_kosatsuba,
+        _seg_0546__hamlet_has_kosatsuba,
         (
             'M',
             'URBAN',
@@ -30217,15 +30478,15 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0538__psp_j, ('M',), ('psp_j',), (), ('M',), False, False),
-    _GateSeg(_seg_0539__exg_j, ('M',), ('exg_j',), (), ('M',), False, False),
-    _GateSeg(_seg_0540__bms_j, ('M',), ('bms_j',), (), ('M',), False, False),
-    _GateSeg(_seg_0541__ftpx_j, ('meta',), ('ftpx_j',), (), ('meta',), False, False),
-    _GateSeg(_seg_0542__b_3, ('M', 'b'), ('b', 'dwell_j'), (), ('M',), False, False),
-    _GateSeg(_seg_0543__wall_j, ('M',), ('wall_j',), (), ('M',), False, False),
-    _GateSeg(_seg_0544___inwall_j, ('px', 'py', 'wall_j'), ('_inwall_j',), (), ('wall_j',), False, False),
+    _GateSeg(_seg_0547__psp_j, ('M',), ('psp_j',), (), ('M',), False, False),
+    _GateSeg(_seg_0548__exg_j, ('M',), ('exg_j',), (), ('M',), False, False),
+    _GateSeg(_seg_0549__bms_j, ('M',), ('bms_j',), (), ('M',), False, False),
+    _GateSeg(_seg_0550__ftpx_j, ('meta',), ('ftpx_j',), (), ('meta',), False, False),
+    _GateSeg(_seg_0551__b_3, ('M', 'b'), ('b', 'dwell_j'), (), ('M',), False, False),
+    _GateSeg(_seg_0552__wall_j, ('M',), ('wall_j',), (), ('M',), False, False),
+    _GateSeg(_seg_0553___inwall_j, ('px', 'py', 'wall_j'), ('_inwall_j',), (), ('wall_j',), False, False),
     _GateSeg(
-        _seg_0545__punishment_spot_only_at_a_seat_of_justice,
+        _seg_0554__punishment_spot_only_at_a_seat_of_justice,
         ('check', 'exg_j', 'psp_j', 'scale'),
         (),
         ('execution_ground_only_at_a_seat_of_justice', 'punishment_spot_only_at_a_seat_of_justice'),
@@ -30234,7 +30495,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0546__punishment_spot_in_the_core,
+        _seg_0555__punishment_spot_in_the_core,
         (
             'M',
             '_beyond_the_dwellings_j',
@@ -30362,7 +30623,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0547__walled_town_has_wall,
+        _seg_0556__walled_town_has_wall,
         (
             'EMPTY_RUN',
             'M',
@@ -30471,9 +30732,9 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0548___lf_paddies, ('M', 'f'), ('_lf_paddies', 'f'), (), ('M',), False, False),
+    _GateSeg(_seg_0557___lf_paddies, ('M', 'f'), ('_lf_paddies', 'f'), (), ('M',), False, False),
     _GateSeg(
-        _seg_0549__settlement_declares_a_land_fall,
+        _seg_0558__settlement_declares_a_land_fall,
         ('M', '_lf_missing', '_lf_paddies', 'check', 'f', 'meta'),
         ('_lf_missing', 'f'),
         ('settlement_declares_a_land_fall',),
@@ -30481,10 +30742,10 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0550___wf_courses, (), ('_wf_courses',), (), (), False, False),
-    _GateSeg(_seg_0551___wf_courses_1, ('M', '_wf_courses', '_wf_key', 'o'), ('_wf_courses', '_wf_key', 'o'), (), ('M', '_wf_courses'), False, False),
+    _GateSeg(_seg_0559___wf_courses, (), ('_wf_courses',), (), (), False, False),
+    _GateSeg(_seg_0560___wf_courses_1, ('M', '_wf_courses', '_wf_key', 'o'), ('_wf_courses', '_wf_key', 'o'), (), ('M', '_wf_courses'), False, False),
     _GateSeg(
-        _seg_0552__water_flow_declared,
+        _seg_0561__water_flow_declared,
         ('M', '_mf', '_wf', '_wf_against', '_wf_courses', '_wf_dd', '_wf_off', '_wf_undeclared', '_wfd', '_wfk', '_wfo', '_wfv', 'check', 'i', 'kk', 'meta', 'o'),
         ('_mf', '_wf', '_wf_against', '_wf_dd', '_wf_off', '_wf_undeclared', '_wfd', '_wfk', '_wfo', '_wfv', 'i', 'kk', 'o'),
         ('moat_declares_circulation', 'water_flow_consistent_with_slope', 'water_flow_declared', 'watercourses_declare_flow', 'watercourses_flow_downstream'),
@@ -30493,7 +30754,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0553__settlement_has_tanning_yard,
+        _seg_0562__settlement_has_tanning_yard,
         (
             'M',
             '_at',
@@ -30674,7 +30935,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0554__city_has_six_ministries,
+        _seg_0563__city_has_six_ministries,
         (
             'ADJ',
             'COMMERCE',
@@ -32119,13 +32380,13 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0555__taxfree_plots_in_range, ('M', 'check', 'meta', 'scale', 'tf'), ('tf',), ('taxfree_plots_in_range',), ('M', 'check', 'meta', 'scale'), False, False),
-    _GateSeg(_seg_0556__big_paddies, ('f', 'fields'), ('big_paddies', 'f'), (), ('fields',), False, False),
+    _GateSeg(_seg_0564__taxfree_plots_in_range, ('M', 'check', 'meta', 'scale', 'tf'), ('tf',), ('taxfree_plots_in_range',), ('M', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0565__big_paddies, ('f', 'fields'), ('big_paddies', 'f'), (), ('fields',), False, False),
     _GateSeg(
-        _seg_0557__common_fields_vary_orientation, ('big_paddies', 'check', 'f', 'scale', 'wide'), ('wide',), ('common_fields_vary_orientation',), ('big_paddies', 'check', 'scale'), False, False
+        _seg_0566__common_fields_vary_orientation, ('big_paddies', 'check', 'f', 'scale', 'wide'), ('wide',), ('common_fields_vary_orientation',), ('big_paddies', 'check', 'scale'), False, False
     ),
     _GateSeg(
-        _seg_0558__fallow_has_abandoned,
+        _seg_0567__fallow_has_abandoned,
         ('ADJ', 'ab', 'check', 'f', 'fields', 'h', 'houses', 'meta'),
         ('ab', 'f', 'h'),
         ('fallow_has_abandoned',),
@@ -32134,7 +32395,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0559__shrine_on_hill_summit,
+        _seg_0568__shrine_on_hill_summit,
         ('M', 'check', 'hill', 'meta', 'offhill', 'on_hill', 'on_summit', 'px', 'py', 'sc', 'sh', 'sw', 'sx', 'sy', 't', 'torii'),
         ('offhill', 'on_hill', 'on_summit', 'px', 'py', 'sc', 'sh', 'sw', 'sx', 'sy', 't'),
         ('shrine_on_hill_summit', 'torii_on_hill'),
@@ -32142,10 +32403,10 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0560__torii_count, ('check', 'meta', 'torii'), (), ('torii_count',), ('check', 'meta', 'torii'), False, False),
-    _GateSeg(_seg_0561___proper, ('M', 'r'), ('_proper', 'r'), (), ('M',), False, False),
+    _GateSeg(_seg_0569__torii_count, ('check', 'meta', 'torii'), (), ('torii_count',), ('check', 'meta', 'torii'), False, False),
+    _GateSeg(_seg_0570___proper, ('M', 'r'), ('_proper', 'r'), (), ('M',), False, False),
     _GateSeg(
-        _seg_0562__torii_count_canonical,
+        _seg_0571__torii_count_canonical,
         (
             'M',
             '_THRESH_SLACK_FT',
@@ -32243,7 +32504,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0563__pond_bigger_than_headman,
+        _seg_0572__pond_bigger_than_headman,
         ('M', 'check', 'headman', 'hill', 'pcx', 'pcy', 'prx', 'pry'),
         ('pcx', 'pcy', 'prx', 'pry'),
         ('pond_bigger_than_headman', 'pond_clear_of_hill'),
@@ -32251,9 +32512,9 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0564__lu, ('meta',), ('lu',), (), ('meta',), False, False),
+    _GateSeg(_seg_0573__lu, ('meta',), ('lu',), (), ('meta',), False, False),
     _GateSeg(
-        _seg_0565__land_use_overlay_drawn,
+        _seg_0574__land_use_overlay_drawn,
         ('M', 'check', 'had_ground', 'lu', 'off', 'p', 'r', 'recs', 'wet'),
         ('had_ground', 'off', 'p', 'r', 'recs', 'wet'),
         ('land_use_overlay_drawn', 'overlays_on_wet_ground_only'),
@@ -32261,10 +32522,10 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0566__arch, ('meta',), ('arch',), (), ('meta',), False, False),
-    _GateSeg(_seg_0567___ELIG, (), ('_ELIG',), (), (), False, False),
+    _GateSeg(_seg_0575__arch, ('meta',), ('arch',), (), ('meta',), False, False),
+    _GateSeg(_seg_0576___ELIG, (), ('_ELIG',), (), (), False, False),
     _GateSeg(
-        _seg_0568__paddy_features_match_archetype,
+        _seg_0577__paddy_features_match_archetype,
         ('M', '_ELIG', 'arch', 'check', 'k', 'mis', 'off', 'ok', 'p', 'wet'),
         ('k', 'mis', 'off', 'ok', 'p', 'wet'),
         ('field_ponds_on_low_ground', 'paddy_features_match_archetype'),
@@ -32273,7 +32534,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0569__contour_terraces_are_stepped_bands,
+        _seg_0578__contour_terraces_are_stepped_bands,
         ('M', 'acrs', 'along', 'bl', 'bunds', 'check', 'dd', 'ddx', 'ddy', 'meta', 'n_cross'),
         ('acrs', 'along', 'bl', 'bunds', 'dd', 'ddx', 'ddy', 'n_cross'),
         ('contour_terraces_are_stepped_bands',),
@@ -32282,7 +32543,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0570__polder_fills_its_bbox,
+        _seg_0579__polder_fills_its_bbox,
         ('b', 'bbox_area', 'check', 'fields', 'fill_ratio', 'meta', 'pf'),
         ('b', 'bbox_area', 'fill_ratio', 'pf'),
         ('polder_fills_its_bbox',),
@@ -32291,7 +32552,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0571__dikepond_is_ponds_in_a_block,
+        _seg_0580__dikepond_is_ponds_in_a_block,
         (
             'M',
             '_chs',
@@ -32406,7 +32667,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0572__polder_dike_is_earthwork,
+        _seg_0581__polder_dike_is_earthwork,
         (
             'M',
             '_a',
@@ -32539,9 +32800,9 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0573___dtag, ('M', 'h'), ('_dtag', 'h'), (), ('M',), False, False),
+    _GateSeg(_seg_0582___dtag, ('M', 'h'), ('_dtag', 'h'), (), ('M',), False, False),
     _GateSeg(
-        _seg_0574__dike_top_houses_on_the_dike,
+        _seg_0583__dike_top_houses_on_the_dike,
         ('M', '_dbands', '_doff', '_dtag', 'b', 'check', 'dk', 'h'),
         ('_dbands', '_doff', 'b', 'dk', 'h'),
         ('dike_top_houses_on_the_dike',),
@@ -32549,10 +32810,10 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0575___ww, ('c', 'meta'), ('_ww', 'c'), (), ('meta',), False, False),
-    _GateSeg(_seg_0576___dks_all, ('M',), ('_dks_all',), (), ('M',), False, False),
+    _GateSeg(_seg_0584___ww, ('c', 'meta'), ('_ww', 'c'), (), ('meta',), False, False),
+    _GateSeg(_seg_0585___dks_all, ('M',), ('_dks_all',), (), ('M',), False, False),
     _GateSeg(
-        _seg_0577__polder_waterward_flanks_wet,
+        _seg_0586__polder_waterward_flanks_wet,
         (
             'M',
             '_K',
@@ -32590,7 +32851,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0578__polder_parcels_vary,
+        _seg_0587__polder_parcels_vary,
         ('M', 'areas', 'asps', 'check', 'd', 'dp', 'fdits', 'fields', 'i', 'mean_a', 'meta', 'p', 'pl', 'pv_cv', 'pv_ob', 'pv_ok', 'reach', 'ruled', 'shaped', 'sq_mean', 'unfronted', 'x'),
         ('areas', 'asps', 'd', 'dp', 'fdits', 'i', 'mean_a', 'p', 'pl', 'pv_cv', 'pv_ob', 'pv_ok', 'reach', 'ruled', 'shaped', 'sq_mean', 'unfronted', 'x'),
         ('polder_parcels_are_organic', 'polder_parcels_front_water', 'polder_parcels_vary'),
@@ -32599,7 +32860,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
     ),
     _GateSeg(
-        _seg_0579__ribbon_is_long_and_narrow,
+        _seg_0588__ribbon_is_long_and_narrow,
         ('along_span', 'along_vals', 'check', 'cross_span', 'cross_vals', 'dd', 'fields', 'meta', 'ol', 'px', 'py', 'rdx', 'rdy'),
         ('along_span', 'along_vals', 'cross_span', 'cross_vals', 'dd', 'ol', 'px', 'py', 'rdx', 'rdy'),
         ('ribbon_is_long_and_narrow',),
@@ -32607,12 +32868,12 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
-    _GateSeg(_seg_0580__adv, ('M', 'adv', 'meta', 'verbose', 'who'), ('adv', 'who'), (), ('M', 'meta', 'verbose'), False, False),
-    _GateSeg(_seg_0581___wv_thin, ('_waivers', 'k', 'v'), ('_wv_thin', 'k', 'v'), (), ('_waivers',), False, False),
-    _GateSeg(_seg_0582__waivers_are_documented, ('_wv_thin', 'check'), (), ('waivers_are_documented',), ('_wv_thin', 'check'), False, False),
-    _GateSeg(_seg_0583___wv_stale, ('_waived', '_waivers'), ('_wv_stale',), (), ('_waived', '_waivers'), True, False),
-    _GateSeg(_seg_0584__waivers_are_live, ('_ran', '_wv_stale', 'check'), (), ('waivers_are_live',), ('_ran', '_wv_stale', 'check'), True, False),
-    _GateSeg(_seg_0585__k_3, ('_waived', 'fails', 'k', 'v', 'verbose'), ('k', 'v'), (), ('_waived', 'fails', 'verbose'), True, False),
+    _GateSeg(_seg_0589__adv, ('M', 'adv', 'meta', 'verbose', 'who'), ('adv', 'who'), (), ('M', 'meta', 'verbose'), False, False),
+    _GateSeg(_seg_0590___wv_thin, ('_waivers', 'k', 'v'), ('_wv_thin', 'k', 'v'), (), ('_waivers',), False, False),
+    _GateSeg(_seg_0591__waivers_are_documented, ('_wv_thin', 'check'), (), ('waivers_are_documented',), ('_wv_thin', 'check'), False, False),
+    _GateSeg(_seg_0592___wv_stale, ('_waived', '_waivers'), ('_wv_stale',), (), ('_waived', '_waivers'), True, False),
+    _GateSeg(_seg_0593__waivers_are_live, ('_ran', '_wv_stale', 'check'), (), ('waivers_are_live',), ('_ran', '_wv_stale', 'check'), True, False),
+    _GateSeg(_seg_0594__k_3, ('_waived', 'fails', 'k', 'v', 'verbose'), ('k', 'v'), (), ('_waived', 'fails', 'verbose'), True, False),
 )
 # fmt: on
 
