@@ -3112,7 +3112,7 @@ class Settlement:
         if out:
             self.add(f'<g fill="{AZE}" stroke="none">{"".join(out)}</g>')
 
-    def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any], inwall_drain_moat_bias: Pt | None = None) -> list[Pt]:
+    def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any], inwall_drain_moat_bias: Pt | None = None, join_head: bool = False) -> list[Pt]:
         """Draw a `build_comb` net (dry hem + flooded paddies + bunds + channels) AND register the field's
         manifest + water topology, in one call - the ~50 lines every comb gen otherwise repeats inline. Feeds
         the roll-from-seed entrypoint (which cannot hand-place any of it) but is reusable by any comb gen.
@@ -3361,9 +3361,35 @@ class Settlement:
             vx, vy = din[0] - start[0], din[1] - start[1]
             vl = math.hypot(vx, vy) or 1.0
             midx, midy = (start[0] + din[0]) / 2 - vy / vl * 20, (start[1] + din[1]) / 2 + vx / vl * 20
+            # THE RING HEAD IS TOUCHED, not merely passed near (2026-08-15).
+            #
+            # `watercourse_ends_reach_water` lets a main/drain end outside the crop stand only if it
+            # JOINS another watercourse, within ~12 px. On a comb that is free: the sluice IS the
+            # head-race's end, so this channel starts on it. On a POLDER the ring canal's end is a
+            # corner of the block and the reservoir sits uphill of it, so the run passes NEAR the
+            # head - measured 17.6 px - and the ring's end reads as dangling. The bow is what does
+            # it: the polyline kinks 20 px off the chord at its midpoint, and the head lies ON the
+            # chord, so the drawn line bends away from exactly the point it needs to meet.
+            #
+            # Straightening the bow is not available - `channel_winds_gently` requires 5-50 px of
+            # deviation, and a dead-straight cut fails it. So the head is INSERTED as a vertex when
+            # the drawn run does not already reach it. On every comb map the run starts on the head,
+            # the distance is ~0, and nothing is inserted: the pool is byte-identical.
+            _ch_poly = [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]]
+            _fk = (float(fork[0]), float(fork[1]))
+            _fk_d = min(seg_dist(_fk[0], _fk[1], (_ch_poly[_i][0], _ch_poly[_i][1]), (_ch_poly[_i + 1][0], _ch_poly[_i + 1][1])) for _i in range(len(_ch_poly) - 1))
+            # `join_head` is passed by the POLDER path and by nothing else. Conditioning this on
+            # the check's own clauses was tried three times and each attempt missed one - distance
+            # alone moved Ubame and four others, "outside the envelope" moved Honda and Shimizu, and
+            # replicating the vis_bbox/edge/junction trio still moved them, because the check reads
+            # the CROP bounds and per-field bboxes that do not exist yet at draw time. Replicating a
+            # check inside the code it governs is the trap this skill's notes name repeatedly; an
+            # explicit flag from the one caller that needs it cannot drift.
+            if join_head and _fk_d > 10.0:
+                _ch_poly.insert(len(_ch_poly) - 1, [round(_fk[0], 1), round(_fk[1], 1)])
             self.M["channels"].append(
                 {
-                    "poly": [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]],
+                    "poly": _ch_poly,
                     "frm": frm,
                     "to": {"kind": "field", "name": name},
                     "w": 2.5,
