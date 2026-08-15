@@ -153,7 +153,7 @@ Two process rules worth having in front of you at all times:
 
 ## Development Workflow
 
-This project uses spec-driven development governed by [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (currently v1.5.0, 12 principles, 5 NON-NEGOTIABLE). The constitution is the higher-level authority; this CLAUDE.md operationalizes it.
+This project uses spec-driven development governed by [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (currently v1.6.0, 12 principles, 5 NON-NEGOTIABLE). The constitution is the higher-level authority; this CLAUDE.md operationalizes it.
 
 **When to use spec-kit:**
 
@@ -187,6 +187,7 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   - Run `webapp/tests/dom_audit.py`. It must report **zero issues** across all pages × viewports. The audit now covers BOTH clipping (overflow, ellipsis, line-clamp) AND layout balance (sibling-height ratio inside flex/grid containers must not exceed 2.5×).
   - **Persona-driven review pass**: before declaring done, examine at least one contact sheet at GM-200 with the user's task in mind (not the implementer's: "Eli is opening this page; what is he trying to do here?"). If the same agent both implemented and reviewed, **invoke the `frontend-review` subagent** (`.claude/agents/frontend-review.md`) to get an independent pass. Author ≠ reliable reviewer.
 - **Python changes**: `ruff check` + `ruff format --check` + `mypy --strict` + `pytest` + `--cov-fail-under=100` on pure-logic packages (Principle X).
+- **Files stay at human scale** (constitution Principle X clause 13, GM 2026-08-15): a source file past ~1,000 raw lines prompts the question "should this become a package of subfiles with its own CLAUDE.md index?" The cost being managed is context-window tokens - loading a huge file to use one part of it. Exemplar: `.claude/skills/diagram/check_village/`. Ordered-data files (registries) may stay large with an inline justification.
 - **Delegated work**: spot-check actual artifacts before relaying success to the user. "The subagent said it was done" is not sufficient.
 
 **Iteration-loop efficiency.** A transcript profile (2026-07-20, re-confirmed 2026-07-25) found **78% of wall time is model turn latency, not tool execution** - the number of sequential turns is the cost, not tool speed. The rules, shortest form; the incident evidence behind each is in [`docs/iteration-loop.md`](docs/iteration-loop.md):
