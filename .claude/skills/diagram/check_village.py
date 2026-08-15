@@ -20648,11 +20648,10 @@ def _seg_0563_001__b(*, M: Any = _UNBOUND, b: Any = _UNBOUND, bk: Any = _UNBOUND
 
 def _seg_0563_002__city_has_governor_mansion(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.002 (city_has_governor_mansion) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if scale == "city":
-            # a CAPITAL has no governor - the daimyo's court IS the government (020 doctrine,
-            # "Rules that INVERT"); the castle carries what the mansion carries provincially
-            check("city_has_governor_mansion", bool(M.get("governor_mansion")), "a provincial city must have the governor's mansion (s.governor_mansion(...))")
+    if scale in ('city', 'capital') and scale == "city":
+        # a CAPITAL has no governor - the daimyo's court IS the government (020 doctrine,
+        # "Rules that INVERT"); the castle carries what the mansion carries provincially
+        check("city_has_governor_mansion", bool(M.get("governor_mansion")), "a provincial city must have the governor's mansion (s.governor_mansion(...))")
     return _kept(locals(), ())
 
 
@@ -20722,19 +20721,18 @@ def _seg_0563_011__city_samurai_housing_sufficient(
     *, URBAN: Any = _UNBOUND, check: Any = _UNBOUND, need: Any = _UNBOUND, pop: Any = _UNBOUND, samurai_h: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.011 (city_samurai_housing_sufficient) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if pop and URBAN:
-            # CITY-ONLY: at the capital the samurai cohort is majority-HOUSED IN OTHER FORMS
-            # (walled yashiki recorded as manors, retainer terraces as unit ranges), and
-            # capital_housing_matches_band_targets pins every band to the budget - a detached
-            # house count floor would just re-litigate that with the wrong denominator.
-            need = round(0.65 * (0.10 * pop / HOUSEHOLD))
-            check(
-                "city_samurai_housing_sufficient",
-                len(samurai_h) >= need,
-                f"only {len(samurai_h)} samurai houses for a ~{round(0.10 * pop)}-samurai city (~{round(0.10 * pop / HOUSEHOLD)} households); "
-                f"expect >= {need} in the neighborhood (the governor's compound + extramural estates hold the rest)",
-            )
+    if scale in ('city', 'capital') and pop and URBAN:
+        # CITY-ONLY: at the capital the samurai cohort is majority-HOUSED IN OTHER FORMS
+        # (walled yashiki recorded as manors, retainer terraces as unit ranges), and
+        # capital_housing_matches_band_targets pins every band to the budget - a detached
+        # house count floor would just re-litigate that with the wrong denominator.
+        need = round(0.65 * (0.10 * pop / HOUSEHOLD))
+        check(
+            "city_samurai_housing_sufficient",
+            len(samurai_h) >= need,
+            f"only {len(samurai_h)} samurai houses for a ~{round(0.10 * pop)}-samurai city (~{round(0.10 * pop / HOUSEHOLD)} households); "
+            f"expect >= {need} in the neighborhood (the governor's compound + extramural estates hold the rest)",
+        )
     return _kept(locals(), ('need',))
 
 
@@ -20756,13 +20754,10 @@ def _seg_0563_012__city_samurai_partly_front_streets(
     st: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.012 (city_samurai_partly_front_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if samurai_h:
-            slines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
-            near_ct = sum(1 for b in samurai_h if any(seg_dist(b["x"], b["y"], sp[i], sp[i + 1]) < 90 for sp in slines for i in range(len(sp) - 1)))
-            check(
-                "city_samurai_partly_front_streets", near_ct >= len(samurai_h) / 3, f"only {near_ct}/{len(samurai_h)} samurai houses front a street (want >= 1/3) - a samurai quarter lines its streets"
-            )
+    if scale in ('city', 'capital') and samurai_h:
+        slines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
+        near_ct = sum(1 for b in samurai_h if any(seg_dist(b["x"], b["y"], sp[i], sp[i + 1]) < 90 for sp in slines for i in range(len(sp) - 1)))
+        check("city_samurai_partly_front_streets", near_ct >= len(samurai_h) / 3, f"only {near_ct}/{len(samurai_h)} samurai houses front a street (want >= 1/3) - a samurai quarter lines its streets")
     return _kept(locals(), ('b', 'i', 'near_ct', 'slines', 'sp', 'st'))
 
 
@@ -20791,23 +20786,22 @@ def _seg_0563_015__city_samurai_housing_varied(
     *, M: Any = _UNBOUND, check: Any = _UNBOUND, in_est: Any = _UNBOUND, m: Any = _UNBOUND, scale: Any = _UNBOUND, slarge: Any = _UNBOUND, ssmall: Any = _UNBOUND, w: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.015 (city_samurai_housing_varied) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if slarge or ssmall:
-            w = M.get("wall") or []
-            in_est = [m for m in M.get("manors", []) if len(w) >= 3 and point_in_poly(m["x"], m["y"], w)]
-            if scale == "capital":
-                # INVERTED at the capital (020 doctrine): karo and chancellors live in walled
-                # yashiki INSIDE the wall - that is the defining jokamachi texture - and the
-                # senior-heavy mix is policed by capital_housing_matches_band_targets instead
-                in_est = []
-            check(
-                "city_samurai_housing_varied",
-                len(slarge) >= 3 and len(ssmall) > len(slarge) and not in_est,
-                f"samurai housing lacks size variety or has in-wall estates (large city houses={len(slarge)}, "
-                f"small={len(ssmall)}, walled estates inside the city={len(in_est)}) - senior ranks get large city "
-                f"houses, juniors small ones, and samurai walled estates sit OUTSIDE the walls (only the "
-                f"governor's mansion is walled within)",
-            )
+    if scale in ('city', 'capital') and (slarge or ssmall):
+        w = M.get("wall") or []
+        in_est = [m for m in M.get("manors", []) if len(w) >= 3 and point_in_poly(m["x"], m["y"], w)]
+        if scale == "capital":
+            # INVERTED at the capital (020 doctrine): karo and chancellors live in walled
+            # yashiki INSIDE the wall - that is the defining jokamachi texture - and the
+            # senior-heavy mix is policed by capital_housing_matches_band_targets instead
+            in_est = []
+        check(
+            "city_samurai_housing_varied",
+            len(slarge) >= 3 and len(ssmall) > len(slarge) and not in_est,
+            f"samurai housing lacks size variety or has in-wall estates (large city houses={len(slarge)}, "
+            f"small={len(ssmall)}, walled estates inside the city={len(in_est)}) - senior ranks get large city "
+            f"houses, juniors small ones, and samurai walled estates sit OUTSIDE the walls (only the "
+            f"governor's mansion is walled within)",
+        )
     return _kept(locals(), ('in_est', 'm', 'w'))
 
 
@@ -20997,17 +20991,16 @@ def _seg_0563_032__lab_big(*, bk: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict
 
 def _seg_0563_033__city_laborer_housing_varied(*, big_frac: Any = _UNBOUND, check: Any = _UNBOUND, lab_big: Any = _UNBOUND, lab_std: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.033 (city_laborer_housing_varied) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if lab_std + lab_big:
-            big_frac = lab_big / (lab_std + lab_big)
-            check(
-                "city_laborer_housing_varied",
-                0.06 <= big_frac <= 0.20 and lab_std > lab_big,
-                f"laborer houses don't vary by wealth the way budgets.md expects (~12.5% larger 'master/rich' homes, "
-                f"the rest standard): {lab_big} large of {lab_std + lab_big} ({big_frac:.0%}; want a clear minority, "
-                f"~6-20%) - give the wealthier laborers (the ones fronting the back streets, with room) larger homes "
-                f"(kind 'laborer_large')",
-            )
+    if scale in ('city', 'capital') and lab_std + lab_big:
+        big_frac = lab_big / (lab_std + lab_big)
+        check(
+            "city_laborer_housing_varied",
+            0.06 <= big_frac <= 0.20 and lab_std > lab_big,
+            f"laborer houses don't vary by wealth the way budgets.md expects (~12.5% larger 'master/rich' homes, "
+            f"the rest standard): {lab_big} large of {lab_std + lab_big} ({big_frac:.0%}; want a clear minority, "
+            f"~6-20%) - give the wealthier laborers (the ones fronting the back streets, with room) larger homes "
+            f"(kind 'laborer_large')",
+        )
     return _kept(locals(), ('big_frac',))
 
 
@@ -21050,55 +21043,54 @@ def _seg_0563_035__city_caste_counts_in_band(
     v: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.035 (city_caste_counts_in_band, city_caste_shifts_are_documented, city_caste_shifts_are_live) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if cpop:
-            caste = {
-                "laborer": bk.get("laborer", 0) + bk.get("laborer_large", 0),
-                "servant": bk.get("servant", 0),
-                "merchant": bk.get("merchant", 0) + bk.get("merchant_house", 0) + bk.get("merchant_large", 0) + len(M.get("merchant_estates", [])),
-                "samurai": bk.get("samurai", 0) + bk.get("samurai_large", 0) + len(M.get("manors", [])),
-                "burakumin": bk.get("burakumin", 0),
-            }
-            frac = {"laborer": 0.40, "servant": 0.20, "merchant": 0.25, "samurai": 0.10, "burakumin": 0.05}
-            hh = cpop / HOUSEHOLD
-            # A DECLARED CASTE SHIFT (GM 2026-08-05, on Minami's merchants). The generic +/-30% band
-            # is a drift guard, and a clan whose economy genuinely differs will sit against its edge
-            # for a REASON rather than by drift: Fox temples hold much of the commerce other clans
-            # leave to merchants, so Minami's merchant households are fewer and its temple families
-            # more. That map was passing at a ratio of exactly 0.700 - one household from a failure
-            # whose message would have said "mix is off" and taught the reader nothing.
-            # So a shift is DECLARED, the same discipline as a waiver: meta(caste_shifts={caste:
-            # reason}) widens that caste's band to +/-45%, and the two meta-checks below keep the
-            # hatch honest - the reason must be real prose, and the shift must actually be happening.
-            shifts = meta.get("caste_shifts") or {}
-            off, stale = [], []
-            for ck, fr in frac.items():
-                tgt = fr * hh
-                ratio = caste[ck] / tgt if tgt else 1.0
-                lo, hi = (0.55, 1.45) if ck in shifts else (0.70, 1.30)
-                if not (lo <= ratio <= hi):
-                    off.append(f"{ck} {caste[ck]} (want ~{round(tgt)}{', declared shift' if ck in shifts else ''})")
-                elif ck in shifts and 0.80 <= ratio <= 1.20:
-                    stale.append(f"{ck} sits at {ratio:.2f} of target")
-            check(
-                "city_caste_counts_in_band",
-                not off,
-                f"city caste mix is off the budgets.md targets - each caste should be within +/-30% of "
-                f"~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of {round(hh)} households: {off}"
-                f" - if a caste is deliberately shifted by this clan's economy, declare it with meta(caste_shifts=...) and its reason",
-            )
-            check(
-                "city_caste_shifts_are_documented",
-                all(isinstance(v, str) and len(v.strip()) >= 60 for v in shifts.values()),
-                "a declared caste shift must carry 60+ characters of actual REASON (what about this clan's economy moves "
-                f"these households), not True or 'by design': {[k for k, v in shifts.items() if not (isinstance(v, str) and len(v.strip()) >= 60)]}",
-            )
-            check(
-                "city_caste_shifts_are_live",
-                not stale,
-                f"declared caste shift(s) that are not actually happening: {stale} - a shift within 20% of target is "
-                f"ordinary drift, so the declaration is stale and must be dropped rather than left to widen a band nobody needs widened",
-            )
+    if scale in ('city', 'capital') and cpop:
+        caste = {
+            "laborer": bk.get("laborer", 0) + bk.get("laborer_large", 0),
+            "servant": bk.get("servant", 0),
+            "merchant": bk.get("merchant", 0) + bk.get("merchant_house", 0) + bk.get("merchant_large", 0) + len(M.get("merchant_estates", [])),
+            "samurai": bk.get("samurai", 0) + bk.get("samurai_large", 0) + len(M.get("manors", [])),
+            "burakumin": bk.get("burakumin", 0),
+        }
+        frac = {"laborer": 0.40, "servant": 0.20, "merchant": 0.25, "samurai": 0.10, "burakumin": 0.05}
+        hh = cpop / HOUSEHOLD
+        # A DECLARED CASTE SHIFT (GM 2026-08-05, on Minami's merchants). The generic +/-30% band
+        # is a drift guard, and a clan whose economy genuinely differs will sit against its edge
+        # for a REASON rather than by drift: Fox temples hold much of the commerce other clans
+        # leave to merchants, so Minami's merchant households are fewer and its temple families
+        # more. That map was passing at a ratio of exactly 0.700 - one household from a failure
+        # whose message would have said "mix is off" and taught the reader nothing.
+        # So a shift is DECLARED, the same discipline as a waiver: meta(caste_shifts={caste:
+        # reason}) widens that caste's band to +/-45%, and the two meta-checks below keep the
+        # hatch honest - the reason must be real prose, and the shift must actually be happening.
+        shifts = meta.get("caste_shifts") or {}
+        off, stale = [], []
+        for ck, fr in frac.items():
+            tgt = fr * hh
+            ratio = caste[ck] / tgt if tgt else 1.0
+            lo, hi = (0.55, 1.45) if ck in shifts else (0.70, 1.30)
+            if not (lo <= ratio <= hi):
+                off.append(f"{ck} {caste[ck]} (want ~{round(tgt)}{', declared shift' if ck in shifts else ''})")
+            elif ck in shifts and 0.80 <= ratio <= 1.20:
+                stale.append(f"{ck} sits at {ratio:.2f} of target")
+        check(
+            "city_caste_counts_in_band",
+            not off,
+            f"city caste mix is off the budgets.md targets - each caste should be within +/-30% of "
+            f"~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of {round(hh)} households: {off}"
+            f" - if a caste is deliberately shifted by this clan's economy, declare it with meta(caste_shifts=...) and its reason",
+        )
+        check(
+            "city_caste_shifts_are_documented",
+            all(isinstance(v, str) and len(v.strip()) >= 60 for v in shifts.values()),
+            "a declared caste shift must carry 60+ characters of actual REASON (what about this clan's economy moves "
+            f"these households), not True or 'by design': {[k for k, v in shifts.items() if not (isinstance(v, str) and len(v.strip()) >= 60)]}",
+        )
+        check(
+            "city_caste_shifts_are_live",
+            not stale,
+            f"declared caste shift(s) that are not actually happening: {stale} - a shift within 20% of target is "
+            f"ordinary drift, so the declaration is stale and must be dropped rather than left to widen a band nobody needs widened",
+        )
     return _kept(locals(), ('caste', 'ck', 'fr', 'frac', 'hh', 'hi', 'k', 'lo', 'off', 'ratio', 'shifts', 'stale', 'tgt', 'v'))
 
 
@@ -21142,28 +21134,27 @@ def _seg_0563_037__city_row_housing_touches(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.037 (city_row_housing_gap, city_row_housing_touches) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if len(rowk) >= 20:
+    if scale in ('city', 'capital') and len(rowk) >= 20:
 
-            def _egap(a: dict[str, Any], b: dict[str, Any]) -> float:
-                dx = abs(a["x"] - b["x"]) - (a["w"] + b["w"]) / 2
-                dy = abs(a["y"] - b["y"]) - (a["h"] + b["h"]) / 2
-                return float(max(dx, dy))
+        def _egap(a: dict[str, Any], b: dict[str, Any]) -> float:
+            dx = abs(a["x"] - b["x"]) - (a["w"] + b["w"]) / 2
+            dy = abs(a["y"] - b["y"]) - (a["h"] + b["h"]) / 2
+            return float(max(dx, dy))
 
-            _gaps = sorted(min(_egap(a, b) for j, b in enumerate(rowk) if j != i) for i, a in enumerate(rowk))
-            _touch = sum(1 for g in _gaps if g <= 1.2)
-            check(
-                "city_row_housing_touches",
-                _touch >= 0.55 * len(rowk),
-                f"only {_touch}/{len(rowk)} row-class dwellings (laborer/servant/burakumin/merchant_house) TOUCH a "
-                f"neighbor - city commoner housing is contiguous terraces (party walls), not detached houses",
-            )
-            _med = _gaps[len(_gaps) // 2]
-            check(
-                "city_row_housing_gap",
-                _med <= 2.0,
-                f"median nearest-neighbor edge gap among row-class dwellings is {_med:.1f}px - the quarter reads as scattered houses, not terraces (want <= 2px: a party wall or a ~3-6 ft eave gap)",
-            )
+        _gaps = sorted(min(_egap(a, b) for j, b in enumerate(rowk) if j != i) for i, a in enumerate(rowk))
+        _touch = sum(1 for g in _gaps if g <= 1.2)
+        check(
+            "city_row_housing_touches",
+            _touch >= 0.55 * len(rowk),
+            f"only {_touch}/{len(rowk)} row-class dwellings (laborer/servant/burakumin/merchant_house) TOUCH a "
+            f"neighbor - city commoner housing is contiguous terraces (party walls), not detached houses",
+        )
+        _med = _gaps[len(_gaps) // 2]
+        check(
+            "city_row_housing_gap",
+            _med <= 2.0,
+            f"median nearest-neighbor edge gap among row-class dwellings is {_med:.1f}px - the quarter reads as scattered houses, not terraces (want <= 2px: a party wall or a ~3-6 ft eave gap)",
+        )
     return _kept(locals(), ('_egap', '_gaps', '_med', '_touch', 'a', 'b', 'g', 'i', 'j'))
 
 
@@ -21207,14 +21198,13 @@ def _seg_0563_041___mroll(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dic
 
 def _seg_0563_042__merchant_estates_match_roll(*, _mroll: Any = _UNBOUND, check: Any = _UNBOUND, mest: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.042 (merchant_estates_match_roll) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if _mroll is not None:
-            check(
-                "merchant_estates_match_roll",
-                len(mest) == _mroll,
-                f"{len(mest)} walled merchant estate(s) drawn but the seeded roll granted {_mroll} - place exactly the rolled count "
-                f"(the merchant_estates() seat list must carry enough vetted seats; pin with count= only with a recorded reason)",
-            )
+    if scale in ('city', 'capital') and _mroll is not None:
+        check(
+            "merchant_estates_match_roll",
+            len(mest) == _mroll,
+            f"{len(mest)} walled merchant estate(s) drawn but the seeded roll granted {_mroll} - place exactly the rolled count "
+            f"(the merchant_estates() seat list must carry enough vetted seats; pin with count= only with a recorded reason)",
+        )
     return _kept(locals(), ())
 
 
@@ -21239,29 +21229,28 @@ def _seg_0563_043__city_merchant_housing_varied(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.043 (city_merchant_housing_spread, city_merchant_housing_varied) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if mlarge or msmall:  # a merchant district whose homes are drawn
+    if scale in ('city', 'capital') and (mlarge or msmall):  # a merchant district whose homes are drawn
+        check(
+            "city_merchant_housing_varied",
+            len(mest) >= 1 and len(mlarge) >= 3 and len(msmall) >= 1,
+            f"merchant housing lacks variety (walled estates={len(mest)}, large houses={len(mlarge)}, small houses={len(msmall)}) - "
+            f"a merchant quarter mixes small/average houses, LARGE (rich) houses and a few WALLED ESTATES, not one uniform size",
+        )
+        homes = [(b["x"], b["y"]) for b in mlarge + msmall]
+        labor = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") == "laborer"]
+        if len(homes) >= 5 and len(labor) >= 5:
+
+            def med_nn(pts: Sequence[Pt]) -> float:
+                nn = sorted(min(math.hypot(p[0] - q[0], p[1] - q[1]) for j, q in enumerate(pts) if j != i) for i, p in enumerate(pts))
+                return nn[len(nn) // 2]
+
+            mh, lh = med_nn(homes), med_nn(labor)
             check(
-                "city_merchant_housing_varied",
-                len(mest) >= 1 and len(mlarge) >= 3 and len(msmall) >= 1,
-                f"merchant housing lacks variety (walled estates={len(mest)}, large houses={len(mlarge)}, small houses={len(msmall)}) - "
-                f"a merchant quarter mixes small/average houses, LARGE (rich) houses and a few WALLED ESTATES, not one uniform size",
+                "city_merchant_housing_spread",
+                mh >= 1.3 * lh,
+                f"merchant homes are not more SPREAD OUT than the laborers (median neighbor gap {mh:.0f}px vs laborer {lh:.0f}px; want >= 1.3x) - "
+                f"give merchant houses more room between them; the laborer warren is the dense, uniform contrast",
             )
-            homes = [(b["x"], b["y"]) for b in mlarge + msmall]
-            labor = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") == "laborer"]
-            if len(homes) >= 5 and len(labor) >= 5:
-
-                def med_nn(pts: Sequence[Pt]) -> float:
-                    nn = sorted(min(math.hypot(p[0] - q[0], p[1] - q[1]) for j, q in enumerate(pts) if j != i) for i, p in enumerate(pts))
-                    return nn[len(nn) // 2]
-
-                mh, lh = med_nn(homes), med_nn(labor)
-                check(
-                    "city_merchant_housing_spread",
-                    mh >= 1.3 * lh,
-                    f"merchant homes are not more SPREAD OUT than the laborers (median neighbor gap {mh:.0f}px vs laborer {lh:.0f}px; want >= 1.3x) - "
-                    f"give merchant houses more room between them; the laborer warren is the dense, uniform contrast",
-                )
     return _kept(locals(), ('b', 'homes', 'labor', 'lh', 'med_nn', 'mh'))
 
 
@@ -21274,13 +21263,12 @@ def _seg_0563_043__city_merchant_housing_varied(
 
 def _seg_0563_044__city_has_outside_farmland(*, check: Any = _UNBOUND, f: Any = _UNBOUND, fields: Any = _UNBOUND, runs_off_edge: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.044 (city_has_outside_farmland) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if scale == "city":
-            check(
-                "city_has_outside_farmland",
-                bool([f for f in fields if runs_off_edge(f["outline"])]),
-                "a city has extensive farmland outside its walls - at least one field must run off the map edge",
-            )
+    if scale in ('city', 'capital') and scale == "city":
+        check(
+            "city_has_outside_farmland",
+            bool([f for f in fields if runs_off_edge(f["outline"])]),
+            "a city has extensive farmland outside its walls - at least one field must run off the map edge",
+        )
     return _kept(locals(), ('f',))
 
 
@@ -21346,18 +21334,17 @@ def _seg_0563_051__amph(*, a8: Any = _UNBOUND, amph_all3: Any = _UNBOUND, scale:
 
 def _seg_0563_052__city_theater_stage_larger_than_town(*, _ftpx: Any = _UNBOUND, amph: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.052 (city_theater_stage_larger_than_town) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if amph:
-            # compared in REAL FEET via the declared scale (meta ftpx, default 1): a town's stage
-            # is ~150 ft wide, so a provincial city's must be >= 185 ft - the old 185px threshold
-            # assumed the pre-ladder ~1 ft/px grain and would silently pass a to-scale city map
-            # whose stage shrank in pixels while staying honest in feet
-            _ftpx = meta.get("ftpx", 1)
-            check(
-                "city_theater_stage_larger_than_town",
-                amph.get("w", 0) * _ftpx >= 185,
-                f"the city theater stage (viewing ground ~{round(amph.get('w', 0) * _ftpx)} ft wide) is no bigger than a town's - a provincial city's is larger (>= 185 ft)",
-            )
+    if scale in ('city', 'capital') and amph:
+        # compared in REAL FEET via the declared scale (meta ftpx, default 1): a town's stage
+        # is ~150 ft wide, so a provincial city's must be >= 185 ft - the old 185px threshold
+        # assumed the pre-ladder ~1 ft/px grain and would silently pass a to-scale city map
+        # whose stage shrank in pixels while staying honest in feet
+        _ftpx = meta.get("ftpx", 1)
+        check(
+            "city_theater_stage_larger_than_town",
+            amph.get("w", 0) * _ftpx >= 185,
+            f"the city theater stage (viewing ground ~{round(amph.get('w', 0) * _ftpx)} ft wide) is no bigger than a town's - a provincial city's is larger (>= 185 ft)",
+        )
     return _kept(locals(), ('_ftpx',))
 
 
@@ -21367,10 +21354,9 @@ def _seg_0563_052__city_theater_stage_larger_than_town(*, _ftpx: Any = _UNBOUND,
 
 def _seg_0563_053__city_has_fire_towers(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, nft: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.053 (city_has_fire_towers) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get("fire_tower", True):
-            nft = len(M.get("fire_towers", []))
-            check("city_has_fire_towers", nft >= 2, f"{nft} fire towers - a provincial city's dense quarters each need a fire-watch tower (>= 2; s.fire_tower(...); meta(fire_tower=False) to omit)")
+    if scale in ('city', 'capital') and meta.get("fire_tower", True):
+        nft = len(M.get("fire_towers", []))
+        check("city_has_fire_towers", nft >= 2, f"{nft} fire towers - a provincial city's dense quarters each need a fire-watch tower (>= 2; s.fire_tower(...); meta(fire_tower=False) to omit)")
     return _kept(locals(), ('nft',))
 
 
@@ -21417,9 +21403,8 @@ def _seg_0563_057___gv(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str,
 
 def _seg_0563_058__civic_1(*, _bbc: Any = _UNBOUND, _gv: Any = _UNBOUND, civic: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.058 (civic) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if _gv and _gv.get("label"):
-            civic.append((_gv["label"], _bbc(_gv)))
+    if scale in ('city', 'capital') and _gv and _gv.get("label"):
+        civic.append((_gv["label"], _bbc(_gv)))
     return _kept(locals(), ('civic',))
 
 
@@ -21644,7 +21629,7 @@ def _seg_0563_072__city_neighborhoods_have_wells(
     y: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.072 (city_neighborhoods_have_wells, city_samurai_quarter_has_no_public_wells, city_well_density_sufficient, city_wells_in_block_interiors) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if wells:
             wp = M.get("wall") or []
             inw: Any = (lambda x, y: point_in_poly(x, y, wp)) if len(wp) >= 3 else (lambda x, y: True)  # type: ignore[no-redef]  # noqa: E731
@@ -21880,34 +21865,31 @@ def _seg_0563_075__city_imperial_road_has_commerce(
     y1: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.075 (city_imperial_road_has_commerce) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if road_through:
-            wp = M.get("wall") or []
-            if len(wp) >= 3:
-                in_city: Any = lambda x, y: point_in_poly(x, y, wp)  # type: ignore[no-redef]  # noqa: E731
-            else:
-                bx = [b["x"] for b in M.get("buildings", [])] or [EX0, EX1]
-                by = [b["y"] for b in M.get("buildings", [])] or [EY0, EY1]
-                x0, x1, y0, y1 = min(bx) - 40, max(bx) + 40, min(by) - 40, max(by) + 40
-                in_city = lambda x, y: x0 <= x <= x1 and y0 <= y <= y1  # noqa: E731
-            il = 0.0
-            for i in range(len(road) - 1):
-                a, b = road[i], road[i + 1]
-                frac_inside = sum(1 for t in range(11) if in_city(a[0] + (b[0] - a[0]) * t / 10, a[1] + (b[1] - a[1]) * t / 10)) / 11
-                il += math.hypot(b[0] - a[0], b[1] - a[1]) * frac_inside
-            COMMERCE = {"shop", "merchant", "inn"}
-            road_comm = sum(
-                1
-                for bg in M.get("buildings", [])
-                if bg.get("kind") in COMMERCE and in_city(bg["x"], bg["y"]) and min(seg_dist(bg["x"], bg["y"], road[k], road[k + 1]) for k in range(len(road) - 1)) <= 95
-            )
-            need = round(il / 130)
-            check(
-                "city_imperial_road_has_commerce",
-                road_comm >= need,
-                f"only {road_comm} shops/inns front the {round(il)}px of Imperial road running through the city (want >= {need}) - a "
-                f"city on a trade route lines its through-road with commerce to service travelers; don't leave the prime road frontage bare",
-            )
+    if scale in ('city', 'capital') and road_through:
+        wp = M.get("wall") or []
+        if len(wp) >= 3:
+            in_city: Any = lambda x, y: point_in_poly(x, y, wp)  # type: ignore[no-redef]  # noqa: E731
+        else:
+            bx = [b["x"] for b in M.get("buildings", [])] or [EX0, EX1]
+            by = [b["y"] for b in M.get("buildings", [])] or [EY0, EY1]
+            x0, x1, y0, y1 = min(bx) - 40, max(bx) + 40, min(by) - 40, max(by) + 40
+            in_city = lambda x, y: x0 <= x <= x1 and y0 <= y <= y1  # noqa: E731
+        il = 0.0
+        for i in range(len(road) - 1):
+            a, b = road[i], road[i + 1]
+            frac_inside = sum(1 for t in range(11) if in_city(a[0] + (b[0] - a[0]) * t / 10, a[1] + (b[1] - a[1]) * t / 10)) / 11
+            il += math.hypot(b[0] - a[0], b[1] - a[1]) * frac_inside
+        COMMERCE = {"shop", "merchant", "inn"}
+        road_comm = sum(
+            1 for bg in M.get("buildings", []) if bg.get("kind") in COMMERCE and in_city(bg["x"], bg["y"]) and min(seg_dist(bg["x"], bg["y"], road[k], road[k + 1]) for k in range(len(road) - 1)) <= 95
+        )
+        need = round(il / 130)
+        check(
+            "city_imperial_road_has_commerce",
+            road_comm >= need,
+            f"only {road_comm} shops/inns front the {round(il)}px of Imperial road running through the city (want >= {need}) - a "
+            f"city on a trade route lines its through-road with commerce to service travelers; don't leave the prime road frontage bare",
+        )
     return _kept(locals(), ('COMMERCE', 'a', 'b', 'bg', 'bx', 'by', 'frac_inside', 'i', 'il', 'in_city', 'k', 'need', 'road_comm', 't', 'wp', 'x0', 'x1', 'y0', 'y1'))
 
 
@@ -22006,140 +21988,127 @@ def _seg_0563_081__kido_aligned_with_ward_fence(
     wd2: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.081 (kido_aligned_with_ward_fence, kido_guard_box_clear_of_lanes) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if wards_k:
-            kido_off = []
-            for kd2 in M.get("kido", []):
-                best2 = None  # (distance, tangent angle) of the nearest ward-fence segment
-                for wd2 in wards_k:
-                    b2 = wd2["boundary"]
-                    for i8 in range(len(b2) - 1):
-                        d8 = seg_dist(kd2["x"], kd2["y"], b2[i8], b2[i8 + 1])
-                        if best2 is None or d8 < best2[0]:
-                            best2 = (d8, math.degrees(math.atan2(b2[i8 + 1][1] - b2[i8][1], b2[i8 + 1][0] - b2[i8][0])))
-                if best2 is None or best2[0] > 16:
-                    continue  # a free-standing kido (nothing near enough to align to)
-                lane8 = lane_through_gate(M, kd2["x"], kd2["y"], best2[1])
-                want8 = (kido_bar_deg(lane8[0], best2[1]) if lane8 else best2[1]) % 180.0
-                got8 = float(kd2["rot"]) % 180.0 if "rot" in kd2 else (90.0 if kd2.get("horizontal") else 0.0)
-                diff8 = abs(got8 - want8)
-                diff8 = min(diff8, 180.0 - diff8)
-                if diff8 > 7.0:
-                    kido_off.append([round(kd2["x"]), round(kd2["y"]), round(diff8), "lane" if lane8 else "fence"])
-            check(
-                "kido_aligned_with_ward_fence",
-                not kido_off,
-                f"ward gate(s) not square to what they bar (x, y, degrees off, what it should follow): {kido_off} - a kido "
-                f"shuts a WAY, so its roofed bar stands SQUARE ACROSS the lane running through it; only a gate with no lane "
-                f"through it follows the local fence tangent (s.ward computes both; pass rot= to s.kido for a hand-placed gate)",
-            )
-            # ...AND THE GUARD BOX STANDS ON THE VERGE, NOT IN THE ROAD (GM 2026-07-26). The watch
-            # box beside the gate is a small building - the one solid thing in the kido group - and
-            # a patrol road or street with a shack in its bed is not passable. It is not covered by
-            # the overlap registry (the whole kido group is deliberately overlap-exempt, since the
-            # bar MUST span the lane and the fence), so it needs this one rule of its own. The
-            # placement side slides the box out until it clears every bed by a ~12 ft verge; this
-            # fires only on an actual encroachment of the drawn bed, leaving that verge as slack.
-            box_on_lane = []
-            for kd3 in M.get("kido", []):
-                gbox = kd3.get("guard")
-                if not gbox:
-                    continue  # a legacy manifest that never recorded the box
-                gpoly = [(float(c[0]), float(c[1])) for c in gbox]
-                if any(footprint_on_line(gpoly, pts, half) for pts, half in lane_runs(M)):
-                    box_on_lane.append([round(kd3["x"]), round(kd3["y"])])
-            check(
-                "kido_guard_box_clear_of_lanes",
-                not box_on_lane,
-                f"ward gate(s) whose guard box stands IN a roadbed: {box_on_lane} - the gate's watch box is a building on the "
-                f"verge beside the way, never an obstruction in it (s.kido slides it clear; a curving ring road is the case "
-                f"straight-line arithmetic misses)",
-            )
+    if scale in ('city', 'capital') and wards_k:
+        kido_off = []
+        for kd2 in M.get("kido", []):
+            best2 = None  # (distance, tangent angle) of the nearest ward-fence segment
+            for wd2 in wards_k:
+                b2 = wd2["boundary"]
+                for i8 in range(len(b2) - 1):
+                    d8 = seg_dist(kd2["x"], kd2["y"], b2[i8], b2[i8 + 1])
+                    if best2 is None or d8 < best2[0]:
+                        best2 = (d8, math.degrees(math.atan2(b2[i8 + 1][1] - b2[i8][1], b2[i8 + 1][0] - b2[i8][0])))
+            if best2 is None or best2[0] > 16:
+                continue  # a free-standing kido (nothing near enough to align to)
+            lane8 = lane_through_gate(M, kd2["x"], kd2["y"], best2[1])
+            want8 = (kido_bar_deg(lane8[0], best2[1]) if lane8 else best2[1]) % 180.0
+            got8 = float(kd2["rot"]) % 180.0 if "rot" in kd2 else (90.0 if kd2.get("horizontal") else 0.0)
+            diff8 = abs(got8 - want8)
+            diff8 = min(diff8, 180.0 - diff8)
+            if diff8 > 7.0:
+                kido_off.append([round(kd2["x"]), round(kd2["y"]), round(diff8), "lane" if lane8 else "fence"])
+        check(
+            "kido_aligned_with_ward_fence",
+            not kido_off,
+            f"ward gate(s) not square to what they bar (x, y, degrees off, what it should follow): {kido_off} - a kido "
+            f"shuts a WAY, so its roofed bar stands SQUARE ACROSS the lane running through it; only a gate with no lane "
+            f"through it follows the local fence tangent (s.ward computes both; pass rot= to s.kido for a hand-placed gate)",
+        )
+        # ...AND THE GUARD BOX STANDS ON THE VERGE, NOT IN THE ROAD (GM 2026-07-26). The watch
+        # box beside the gate is a small building - the one solid thing in the kido group - and
+        # a patrol road or street with a shack in its bed is not passable. It is not covered by
+        # the overlap registry (the whole kido group is deliberately overlap-exempt, since the
+        # bar MUST span the lane and the fence), so it needs this one rule of its own. The
+        # placement side slides the box out until it clears every bed by a ~12 ft verge; this
+        # fires only on an actual encroachment of the drawn bed, leaving that verge as slack.
+        box_on_lane = []
+        for kd3 in M.get("kido", []):
+            gbox = kd3.get("guard")
+            if not gbox:
+                continue  # a legacy manifest that never recorded the box
+            gpoly = [(float(c[0]), float(c[1])) for c in gbox]
+            if any(footprint_on_line(gpoly, pts, half) for pts, half in lane_runs(M)):
+                box_on_lane.append([round(kd3["x"]), round(kd3["y"])])
+        check(
+            "kido_guard_box_clear_of_lanes",
+            not box_on_lane,
+            f"ward gate(s) whose guard box stands IN a roadbed: {box_on_lane} - the gate's watch box is a building on the "
+            f"verge beside the way, never an obstruction in it (s.kido slides it clear; a curving ring road is the case "
+            f"straight-line arithmetic misses)",
+        )
     return _kept(locals(), ('b2', 'best2', 'box_on_lane', 'c', 'd8', 'diff8', 'gbox', 'got8', 'gpoly', 'half', 'i8', 'kd2', 'kd3', 'kido_off', 'lane8', 'pts', 'want8', 'wd2'))
 
 
 def _seg_0563_082__w(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.082 (w) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            w = M.get("wall") or []
+    if scale in ('city', 'capital') and meta.get('walled'):
+        w = M.get("wall") or []
     return _kept(locals(), ('w',))
 
 
 def _seg_0563_083__gates(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.083 (gates) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gates = M.get("gates", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gates = M.get("gates", [])
     return _kept(locals(), ('gates',))
 
 
 def _seg_0563_084__inwall(*, meta: Any = _UNBOUND, px: Any = _UNBOUND, py: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.084 (inwall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital') and meta.get('walled'):
 
-            def inwall(px: float, py: float) -> bool:
-                return len(w) >= 3 and point_in_poly(px, py, w)
+        def inwall(px: float, py: float) -> bool:
+            return len(w) >= 3 and point_in_poly(px, py, w)
 
     return _kept(locals(), ('inwall',))
 
 
 def _seg_0563_085__walled_city_has_wall_and_gates(*, check: Any = _UNBOUND, gates: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.085 (walled_city_has_wall_and_gates) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("walled_city_has_wall_and_gates", len(w) >= 3 and len(gates) >= 2, f"a walled city needs a closed wall and >= 2 gates (wall={len(w)} pts, {len(gates)} gates)")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("walled_city_has_wall_and_gates", len(w) >= 3 and len(gates) >= 2, f"a walled city needs a closed wall and >= 2 gates (wall={len(w)} pts, {len(gates)} gates)")
     return _kept(locals(), ())
 
 
 def _seg_0563_086__ins(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.086 (ins) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            ins = M.get("inspection_stations", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        ins = M.get("inspection_stations", [])
     return _kept(locals(), ('ins',))
 
 
 def _seg_0563_087__g(*, g: Any = _UNBOUND, gates: Any = _UNBOUND, ins: Any = _UNBOUND, meta: Any = _UNBOUND, s: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.087 (g, no_station, s) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            no_station = [g for g in gates if not any(math.hypot(s["x"] - g[0], s["y"] - g[1]) <= 160 for s in ins)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        no_station = [g for g in gates if not any(math.hypot(s["x"] - g[0], s["y"] - g[1]) <= 160 for s in ins)]
     return _kept(locals(), ('g', 'no_station', 's'))
 
 
 def _seg_0563_088__city_inspection_station_at_each_gate(*, check: Any = _UNBOUND, gates: Any = _UNBOUND, meta: Any = _UNBOUND, no_station: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.088 (city_inspection_station_at_each_gate) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_inspection_station_at_each_gate", len(gates) >= 2 and not no_station, f"every city gate needs an inspection station within ~160px ({len(no_station)} gate(s) without one)")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_inspection_station_at_each_gate", len(gates) >= 2 and not no_station, f"every city gate needs an inspection station within ~160px ({len(no_station)} gate(s) without one)")
     return _kept(locals(), ())
 
 
 def _seg_0563_089__gstructs(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.089 (gstructs) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gstructs = M.get("gate_structs", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gstructs = M.get("gate_structs", [])
     return _kept(locals(), ('gstructs',))
 
 
 def _seg_0563_090__g_1(*, g: Any = _UNBOUND, gates: Any = _UNBOUND, gstructs: Any = _UNBOUND, meta: Any = _UNBOUND, s: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.090 (g, no_guard, s) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            no_guard = [g for g in gates if sum(1 for s in gstructs if math.hypot(s["x"] - g[0], s["y"] - g[1]) <= 180) < 2]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        no_guard = [g for g in gates if sum(1 for s in gstructs if math.hypot(s["x"] - g[0], s["y"] - g[1]) <= 180) < 2]
     return _kept(locals(), ('g', 'no_guard', 's'))
 
 
 def _seg_0563_091__city_gate_has_guardhouse(*, check: Any = _UNBOUND, gates: Any = _UNBOUND, meta: Any = _UNBOUND, no_guard: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.091 (city_gate_has_guardhouse) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_gate_has_guardhouse", len(gates) >= 2 and not no_guard, f"every city gate needs a guard house + guard tower (>= 2 gate structures within ~180px): {len(no_guard)} gate(s) short"
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_gate_has_guardhouse", len(gates) >= 2 and not no_guard, f"every city gate needs a guard house + guard tower (>= 2 gate structures within ~180px): {len(no_guard)} gate(s) short")
     return _kept(locals(), ())
 
 
@@ -22156,17 +22125,15 @@ def _seg_0563_091__city_gate_has_guardhouse(*, check: Any = _UNBOUND, gates: Any
 
 def _seg_0563_092__THROAT(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.092 (THROAT) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            THROAT = 70
+    if scale in ('city', 'capital') and meta.get('walled'):
+        THROAT = 70
     return _kept(locals(), ('THROAT',))
 
 
 def _seg_0563_093__throat_bad(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.093 (throat_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            throat_bad = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        throat_bad = []  # type: ignore[var-annotated]
     return _kept(locals(), ('throat_bad',))
 
 
@@ -22185,13 +22152,12 @@ def _seg_0563_094__g_2(
     throat_bad: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.094 (g, has_gh, has_in, s) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for g in gates:
-                has_gh = any(s.get("kind") == "guardhouse" and math.hypot(s["x"] - g[0], s["y"] - g[1]) <= THROAT for s in gstructs)
-                has_in = any(math.hypot(s["x"] - g[0], s["y"] - g[1]) <= THROAT for s in ins)
-                if not (has_gh and has_in):
-                    throat_bad.append((round(g[0]), round(g[1])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for g in gates:
+            has_gh = any(s.get("kind") == "guardhouse" and math.hypot(s["x"] - g[0], s["y"] - g[1]) <= THROAT for s in gstructs)
+            has_in = any(math.hypot(s["x"] - g[0], s["y"] - g[1]) <= THROAT for s in ins)
+            if not (has_gh and has_in):
+                throat_bad.append((round(g[0]), round(g[1])))
     return _kept(locals(), ('g', 'has_gh', 'has_in', 's', 'throat_bad'))
 
 
@@ -22199,14 +22165,13 @@ def _seg_0563_095__city_gate_furniture_at_throat(
     *, THROAT: Any = _UNBOUND, check: Any = _UNBOUND, gates: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, throat_bad: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.095 (city_gate_furniture_at_throat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_gate_furniture_at_throat",
-                len(gates) >= 2 and not throat_bad,
-                f"gate(s) whose guard house + inspection station are not at the throat (each within {THROAT}px of the opening, flanking the road): {throat_bad} - "
-                f"the checkpoint sits AT the gate so all traffic passes through it, not walked back along the wall",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_gate_furniture_at_throat",
+            len(gates) >= 2 and not throat_bad,
+            f"gate(s) whose guard house + inspection station are not at the throat (each within {THROAT}px of the opening, flanking the road): {throat_bad} - "
+            f"the checkpoint sits AT the gate so all traffic passes through it, not walked back along the wall",
+        )
     return _kept(locals(), ())
 
 
@@ -22220,9 +22185,8 @@ def _seg_0563_095__city_gate_furniture_at_throat(
 
 def _seg_0563_096__g_3(*, g: Any = _UNBOUND, gstructs: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.096 (g, gate_towers_xy) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gate_towers_xy = [(g["x"], g["y"]) for g in gstructs if g.get("kind") == "tower"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gate_towers_xy = [(g["x"], g["y"]) for g in gstructs if g.get("kind") == "tower"]
     return _kept(locals(), ('g', 'gate_towers_xy'))
 
 
@@ -22230,17 +22194,15 @@ def _seg_0563_097__gtx(
     *, M: Any = _UNBOUND, gate_towers_xy: Any = _UNBOUND, gtx: Any = _UNBOUND, gty: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.097 (gtx, gty, murals_xy, t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            murals_xy = [(t["x"], t["y"]) for t in M.get("wall_towers", []) if not any(abs(t["x"] - gtx) < 2 and abs(t["y"] - gty) < 2 for gtx, gty in gate_towers_xy)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        murals_xy = [(t["x"], t["y"]) for t in M.get("wall_towers", []) if not any(abs(t["x"] - gtx) < 2 and abs(t["y"] - gty) < 2 for gtx, gty in gate_towers_xy)]
     return _kept(locals(), ('gtx', 'gty', 'murals_xy', 't'))
 
 
 def _seg_0563_098__stranded(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.098 (stranded) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            stranded = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        stranded = []  # type: ignore[var-annotated]
     return _kept(locals(), ('stranded',))
 
 
@@ -22259,28 +22221,26 @@ def _seg_0563_099__d_gate_tower(
     ty: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.099 (d_gate_tower, d_nearest_mural, g, stranded) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for g in gates:
-                if not gate_towers_xy:
-                    continue
-                d_gate_tower = min(math.hypot(tx - g[0], ty - g[1]) for tx, ty in gate_towers_xy)
-                d_nearest_mural = min((math.hypot(tx - g[0], ty - g[1]) for tx, ty in murals_xy), default=1e9)
-                if d_nearest_mural + 12 < d_gate_tower:  # a mamian sits meaningfully closer to the gate than the gate's own tower
-                    stranded.append((round(g[0]), round(g[1])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for g in gates:
+            if not gate_towers_xy:
+                continue
+            d_gate_tower = min(math.hypot(tx - g[0], ty - g[1]) for tx, ty in gate_towers_xy)
+            d_nearest_mural = min((math.hypot(tx - g[0], ty - g[1]) for tx, ty in murals_xy), default=1e9)
+            if d_nearest_mural + 12 < d_gate_tower:  # a mamian sits meaningfully closer to the gate than the gate's own tower
+                stranded.append((round(g[0]), round(g[1])))
     return _kept(locals(), ('d_gate_tower', 'd_nearest_mural', 'g', 'stranded', 'tx', 'ty'))
 
 
 def _seg_0563_100__city_gate_tower_at_its_gate(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, stranded: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.100 (city_gate_tower_at_its_gate) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_gate_tower_at_its_gate",
-                not stranded,
-                f"gate(s) whose own tower is marooned out along the wall while a mural bastion sits closer to the opening: {stranded} - "
-                f"the gate tower belongs AT the gate (place it on the gate's OTHER flank when one side is blocked, not walked far along the curtain)",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_gate_tower_at_its_gate",
+            not stranded,
+            f"gate(s) whose own tower is marooned out along the wall while a mural bastion sits closer to the opening: {stranded} - "
+            f"the gate tower belongs AT the gate (place it on the gate's OTHER flank when one side is blocked, not walked far along the curtain)",
+        )
     return _kept(locals(), ())
 
 
@@ -22292,39 +22252,35 @@ def _seg_0563_100__city_gate_tower_at_its_gate(*, check: Any = _UNBOUND, meta: A
 
 def _seg_0563_101__towers(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.101 (towers) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            towers = M.get("wall_towers", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        towers = M.get("wall_towers", [])
     return _kept(locals(), ('towers',))
 
 
 def _seg_0563_102__p_1(*, meta: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.102 (p, wcx, wcy) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            wcx, wcy = sum(p[0] for p in w) / len(w), sum(p[1] for p in w) / len(w)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        wcx, wcy = sum(p[0] for p in w) / len(w), sum(p[1] for p in w) / len(w)
     return _kept(locals(), ('p', 'wcx', 'wcy'))
 
 
 def _seg_0563_103__angs(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, towers: Any = _UNBOUND, wcx: Any = _UNBOUND, wcy: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.103 (angs, t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            angs = sorted(math.atan2(t["y"] - wcy, t["x"] - wcx) for t in towers)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        angs = sorted(math.atan2(t["y"] - wcy, t["x"] - wcx) for t in towers)
     return _kept(locals(), ('angs', 't'))
 
 
 def _seg_0563_104__i(*, angs: Any = _UNBOUND, i: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.104 (i, maxgap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            maxgap = max([angs[i + 1] - angs[i] for i in range(len(angs) - 1)] + [angs[0] + 2 * math.pi - angs[-1]]) if angs else 2 * math.pi
+    if scale in ('city', 'capital') and meta.get('walled'):
+        maxgap = max([angs[i + 1] - angs[i] for i in range(len(angs) - 1)] + [angs[0] + 2 * math.pi - angs[-1]]) if angs else 2 * math.pi
     return _kept(locals(), ('i', 'maxgap'))
 
 
 def _seg_0563_105__city_wall_towers_spaced(*, check: Any = _UNBOUND, maxgap: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, towers: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.105 (city_wall_towers_spaced) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_wall_towers_spaced",
@@ -22341,17 +22297,15 @@ def _seg_0563_105__city_wall_towers_spaced(*, check: Any = _UNBOUND, maxgap: Any
 
 def _seg_0563_106__ring2(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.106 (ring2) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            ring2: Any = list(w) + [w[0]]  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        ring2: Any = list(w) + [w[0]]  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('ring2',))
 
 
 def _seg_0563_107__misaligned(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.107 (misaligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            misaligned = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        misaligned = []  # type: ignore[var-annotated]
     return _kept(locals(), ('misaligned',))
 
 
@@ -22371,35 +22325,33 @@ def _seg_0563_108__d(
     twr_off: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.108 (d, edge_ang, ek, misaligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for t in towers:
-                # THE TWO NEAREST EDGES, not just the nearest (GM 2026-07-25). A tower seated near a
-                # VERTEX of the wall N-gon is legitimately square to EITHER of the runs that meet
-                # there - placement takes its tangent from one side, and which side `seg_dist` calls
-                # "nearest" can flip on a sub-pixel move. That is exactly what happened when the
-                # martial hall's budget line grew Nagahara's derived ring by 1px: an untouched tower
-                # at (1909, 1200) kept its rot of 80.4 while the nearest-edge lookup crossed from the
-                # 80.4 deg run to the 61.3 deg one, and a correct tower failed. Scoring the best of
-                # the two nearest edges makes the check read the geometry the way placement wrote it;
-                # it does NOT weaken the rule, because an axis-aligned tower on a slanted stretch is
-                # still off BOTH adjacent runs by more than the tolerance.
-                order = sorted(range(len(ring2) - 1), key=lambda k: seg_dist(t["x"], t["y"], ring2[k], ring2[k + 1]))
-                twr_off = 90.0
-                for ek in order[:2]:
-                    edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
-                    d = (t.get("rot", 0) - edge_ang) % 90
-                    twr_off = min(twr_off, d, 90 - d)
-                if twr_off > 15:
-                    misaligned.append((round(t["x"]), round(t["y"])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for t in towers:
+            # THE TWO NEAREST EDGES, not just the nearest (GM 2026-07-25). A tower seated near a
+            # VERTEX of the wall N-gon is legitimately square to EITHER of the runs that meet
+            # there - placement takes its tangent from one side, and which side `seg_dist` calls
+            # "nearest" can flip on a sub-pixel move. That is exactly what happened when the
+            # martial hall's budget line grew Nagahara's derived ring by 1px: an untouched tower
+            # at (1909, 1200) kept its rot of 80.4 while the nearest-edge lookup crossed from the
+            # 80.4 deg run to the 61.3 deg one, and a correct tower failed. Scoring the best of
+            # the two nearest edges makes the check read the geometry the way placement wrote it;
+            # it does NOT weaken the rule, because an axis-aligned tower on a slanted stretch is
+            # still off BOTH adjacent runs by more than the tolerance.
+            order = sorted(range(len(ring2) - 1), key=lambda k: seg_dist(t["x"], t["y"], ring2[k], ring2[k + 1]))
+            twr_off = 90.0
+            for ek in order[:2]:
+                edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
+                d = (t.get("rot", 0) - edge_ang) % 90
+                twr_off = min(twr_off, d, 90 - d)
+            if twr_off > 15:
+                misaligned.append((round(t["x"]), round(t["y"])))
     return _kept(locals(), ('d', 'edge_ang', 'ek', 'misaligned', 'order', 't', 'twr_off'))
 
 
 def _seg_0563_109__city_wall_towers_aligned(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, misaligned: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.109 (city_wall_towers_aligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_wall_towers_aligned", not misaligned, f"guard tower(s) not square to the wall - a tower should rotate to the wall's tangent there, not stay axis-aligned: {misaligned}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_wall_towers_aligned", not misaligned, f"guard tower(s) not square to the wall - a tower should rotate to the wall's tangent there, not stay axis-aligned: {misaligned}")
     return _kept(locals(), ())
 
 
@@ -22416,17 +22368,15 @@ def _seg_0563_109__city_wall_towers_aligned(*, check: Any = _UNBOUND, meta: Any 
 
 def _seg_0563_110__furn(*, M: Any = _UNBOUND, g: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.110 (furn, g) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            furn = [g for g in M.get("gate_structs", []) if g.get("kind") in ("guardhouse", "inspection")]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        furn = [g for g in M.get("gate_structs", []) if g.get("kind") in ("guardhouse", "inspection")]
     return _kept(locals(), ('furn', 'g'))
 
 
 def _seg_0563_111__fmis(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.111 (fmis) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            fmis = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        fmis = []  # type: ignore[var-annotated]
     return _kept(locals(), ('fmis',))
 
 
@@ -22444,20 +22394,19 @@ def _seg_0563_112__d_1(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.112 (d, edge_ang, ek, fmis) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for gstruct in furn:
-                ek = min(range(len(ring2) - 1), key=lambda k: seg_dist(gstruct["x"], gstruct["y"], ring2[k], ring2[k + 1]))
-                edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
-                d = (gstruct.get("rot", 0) - edge_ang) % 180
-                if min(d, 180 - d) > 6:
-                    fmis.append((round(gstruct["x"]), round(gstruct["y"])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for gstruct in furn:
+            ek = min(range(len(ring2) - 1), key=lambda k: seg_dist(gstruct["x"], gstruct["y"], ring2[k], ring2[k + 1]))
+            edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
+            d = (gstruct.get("rot", 0) - edge_ang) % 180
+            if min(d, 180 - d) > 6:
+                fmis.append((round(gstruct["x"]), round(gstruct["y"])))
     return _kept(locals(), ('d', 'edge_ang', 'ek', 'fmis', 'gstruct'))
 
 
 def _seg_0563_113__city_gate_furniture_aligned(*, check: Any = _UNBOUND, fmis: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.113 (city_gate_furniture_aligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_gate_furniture_aligned",
@@ -22474,43 +22423,39 @@ def _seg_0563_113__city_gate_furniture_aligned(*, check: Any = _UNBOUND, fmis: A
 
 def _seg_0563_114__gpairs(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.114 (gpairs) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gpairs = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gpairs = []  # type: ignore[var-annotated]
     return _kept(locals(), ('gpairs',))
 
 
 def _seg_0563_115__g_4(*, M: Any = _UNBOUND, g: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.115 (g, ghs) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            ghs = [g for g in M.get("gate_structs", []) if g.get("kind") == "guardhouse"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        ghs = [g for g in M.get("gate_structs", []) if g.get("kind") == "guardhouse"]
     return _kept(locals(), ('g', 'ghs'))
 
 
 def _seg_0563_116__gh(*, M: Any = _UNBOUND, gh: Any = _UNBOUND, ghs: Any = _UNBOUND, gpairs: Any = _UNBOUND, ins: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.116 (gh, gpairs, ins) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for ins in M.get("inspection_stations", []):
-                for gh in ghs:
-                    if math.hypot(ins["x"] - gh["x"], ins["y"] - gh["y"]) < 160 and sat_overlap(
-                        rect_corners({"x": ins["x"], "y": ins["y"], "w": ins["w"], "h": ins["h"], "rot": ins.get("rot", 0)}),
-                        rect_corners({"x": gh["x"], "y": gh["y"], "w": gh["w"], "h": gh["h"], "rot": gh.get("rot", 0)}),
-                    ):
-                        gpairs.append((round(ins["x"]), round(ins["y"])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for ins in M.get("inspection_stations", []):
+            for gh in ghs:
+                if math.hypot(ins["x"] - gh["x"], ins["y"] - gh["y"]) < 160 and sat_overlap(
+                    rect_corners({"x": ins["x"], "y": ins["y"], "w": ins["w"], "h": ins["h"], "rot": ins.get("rot", 0)}),
+                    rect_corners({"x": gh["x"], "y": gh["y"], "w": gh["w"], "h": gh["h"], "rot": gh.get("rot", 0)}),
+                ):
+                    gpairs.append((round(ins["x"]), round(ins["y"])))
     return _kept(locals(), ('gh', 'gpairs', 'ins'))
 
 
 def _seg_0563_117__city_gate_guard_inspection_separate(*, check: Any = _UNBOUND, gpairs: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.117 (city_gate_guard_inspection_separate) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_gate_guard_inspection_separate",
-                not gpairs,
-                f"gate inspection station(s) overlapping their guard house: {gpairs} - the two are separate buildings on the ring road; space them along the wall until they clear",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_gate_guard_inspection_separate",
+            not gpairs,
+            f"gate inspection station(s) overlapping their guard house: {gpairs} - the two are separate buildings on the ring road; space them along the wall until they clear",
+        )
     return _kept(locals(), ())
 
 
@@ -22523,9 +22468,8 @@ def _seg_0563_117__city_gate_guard_inspection_separate(*, check: Any = _UNBOUND,
 
 def _seg_0563_118__mo_f(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.118 (mo_f) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            mo_f = M.get("moat")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        mo_f = M.get("moat")
     return _kept(locals(), ('mo_f',))
 
 
@@ -22542,21 +22486,19 @@ def _seg_0563_119__city_wall_furniture_clear_of_moat(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.119 (city_wall_furniture_clear_of_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if mo_f:
-                mhw_f = M.get("moat_width", 22) / 2
-                furn_wet: list[tuple[int, int]] = []  # type: ignore[no-redef]
-                for it in M.get("wall_towers", []) + M.get("gate_structs", []) + M.get("inspection_stations", []):
-                    fc = rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 26), "h": it.get("h", 26), "rot": it.get("rot", 0)})
-                    if footprint_on_line(fc, mo_f, mhw_f + 1):
-                        furn_wet.append((round(it["x"]), round(it["y"])))
-                check(
-                    "city_wall_furniture_clear_of_moat",
-                    not furn_wet,
-                    f"guard tower(s) / gate furniture standing IN the moat: {sorted(set(furn_wet))[:6]} - wall furniture "
-                    f"footings stay on the berm; nudge them inward so only a small outer projection passes the wall face",
-                )
+    if scale in ('city', 'capital') and meta.get('walled') and mo_f:
+        mhw_f = M.get("moat_width", 22) / 2
+        furn_wet: list[tuple[int, int]] = []  # type: ignore[no-redef]
+        for it in M.get("wall_towers", []) + M.get("gate_structs", []) + M.get("inspection_stations", []):
+            fc = rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 26), "h": it.get("h", 26), "rot": it.get("rot", 0)})
+            if footprint_on_line(fc, mo_f, mhw_f + 1):
+                furn_wet.append((round(it["x"]), round(it["y"])))
+        check(
+            "city_wall_furniture_clear_of_moat",
+            not furn_wet,
+            f"guard tower(s) / gate furniture standing IN the moat: {sorted(set(furn_wet))[:6]} - wall furniture "
+            f"footings stay on the berm; nudge them inward so only a small outer projection passes the wall face",
+        )
     return _kept(locals(), ('fc', 'furn_wet', 'it', 'mhw_f'))
 
 
@@ -22571,9 +22513,8 @@ def _seg_0563_119__city_wall_furniture_clear_of_moat(
 
 def _seg_0563_120__k_hit(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.120 (k_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            k_hit = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        k_hit = []  # type: ignore[var-annotated]
     return _kept(locals(), ('k_hit',))
 
 
@@ -22581,30 +22522,28 @@ def _seg_0563_121__g_(
     *, M: Any = _UNBOUND, g_: Any = _UNBOUND, k_hit: Any = _UNBOUND, kc: Any = _UNBOUND, kd: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.121 (g_, k_hit, kc, kd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for kd in M.get("kido", []):
-                for kc in kido_quads(kd):
-                    if any(
-                        sat_overlap(kc, rect_corners({"x": t["x"], "y": t["y"], "w": t.get("w", 38), "h": t.get("h", 38), "rot": t.get("rot", 0)}))
-                        for t in M.get("wall_towers", []) + [g_ for g_ in M.get("gate_structs", []) if g_.get("kind") == "tower"]
-                    ):
-                        k_hit.append((round(kd["x"]), round(kd["y"])))
-                        break
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for kd in M.get("kido", []):
+            for kc in kido_quads(kd):
+                if any(
+                    sat_overlap(kc, rect_corners({"x": t["x"], "y": t["y"], "w": t.get("w", 38), "h": t.get("h", 38), "rot": t.get("rot", 0)}))
+                    for t in M.get("wall_towers", []) + [g_ for g_ in M.get("gate_structs", []) if g_.get("kind") == "tower"]
+                ):
+                    k_hit.append((round(kd["x"]), round(kd["y"])))
+                    break
     return _kept(locals(), ('g_', 'k_hit', 'kc', 'kd', 't'))
 
 
 def _seg_0563_122__kido_clear_of_wall_towers(*, check: Any = _UNBOUND, k_hit: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.122 (kido_clear_of_wall_towers) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "kido_clear_of_wall_towers",
-                not k_hit,
-                f"ward gate(s) overlapping a guard tower: {sorted(set(k_hit))[:4]} - where the ward fence meets the "
-                f"rampart the kido keeps its ground (it gates a fixed crossing); slide the tower along the wall "
-                f"(city_wall tower_skip)",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "kido_clear_of_wall_towers",
+            not k_hit,
+            f"ward gate(s) overlapping a guard tower: {sorted(set(k_hit))[:4]} - where the ward fence meets the "
+            f"rampart the kido keeps its ground (it gates a fixed crossing); slide the tower along the wall "
+            f"(city_wall tower_skip)",
+        )
     return _kept(locals(), ())
 
 
@@ -22617,25 +22556,22 @@ def _seg_0563_122__kido_clear_of_wall_towers(*, check: Any = _UNBOUND, k_hit: An
 
 def _seg_0563_123___gtowers(*, M: Any = _UNBOUND, g: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, x: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.123 (_gtowers, g, x) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _gtowers = [g for g in (M.get("wall_towers", []) + [x for x in M.get("gate_structs", []) if x.get("kind") == "tower"]) if "w" in g]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _gtowers = [g for g in (M.get("wall_towers", []) + [x for x in M.get("gate_structs", []) if x.get("kind") == "tower"]) if "w" in g]
     return _kept(locals(), ('_gtowers', 'g', 'x'))
 
 
 def _seg_0563_124___gfurn(*, M: Any = _UNBOUND, g: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, x: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.124 (_gfurn, g, x) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _gfurn = [g for g in ([x for x in M.get("gate_structs", []) if x.get("kind") in ("inspection", "guardhouse")] + M.get("inspection_stations", [])) if "w" in g]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _gfurn = [g for g in ([x for x in M.get("gate_structs", []) if x.get("kind") in ("inspection", "guardhouse")] + M.get("inspection_stations", [])) if "w" in g]
     return _kept(locals(), ('_gfurn', 'g', 'x'))
 
 
 def _seg_0563_125__gf_hit(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.125 (gf_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gf_hit = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gf_hit = []  # type: ignore[var-annotated]
     return _kept(locals(), ('gf_hit',))
 
 
@@ -22643,27 +22579,25 @@ def _seg_0563_126__gf_hit_1(
     *, _gfurn: Any = _UNBOUND, _gtowers: Any = _UNBOUND, gf_hit: Any = _UNBOUND, meta: Any = _UNBOUND, o: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, tc: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.126 (gf_hit, o, t, tc) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for t in _gtowers:
-                tc = rect_corners({"x": t["x"], "y": t["y"], "w": t["w"], "h": t.get("h", t["w"]), "rot": t.get("rot", 0)})
-                for o in _gfurn:
-                    if sat_overlap(tc, rect_corners({"x": o["x"], "y": o["y"], "w": o["w"], "h": o.get("h", o["w"]), "rot": o.get("rot", 0)})):
-                        gf_hit.append((round(t["x"]), round(t["y"])))
-                        break
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for t in _gtowers:
+            tc = rect_corners({"x": t["x"], "y": t["y"], "w": t["w"], "h": t.get("h", t["w"]), "rot": t.get("rot", 0)})
+            for o in _gfurn:
+                if sat_overlap(tc, rect_corners({"x": o["x"], "y": o["y"], "w": o["w"], "h": o.get("h", o["w"]), "rot": o.get("rot", 0)})):
+                    gf_hit.append((round(t["x"]), round(t["y"])))
+                    break
     return _kept(locals(), ('gf_hit', 'o', 't', 'tc'))
 
 
 def _seg_0563_127__city_gate_towers_clear_of_gate_furniture(*, check: Any = _UNBOUND, gf_hit: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.127 (city_gate_towers_clear_of_gate_furniture) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_gate_towers_clear_of_gate_furniture",
-                not gf_hit,
-                f"guard tower(s) overlapping an inspection station or gate house: {sorted(set(gf_hit))[:4]} - the gate "
-                f"complex packs tight but each footprint sits CLEAR; move the tower (or the furniture) so they abut, not stack",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_gate_towers_clear_of_gate_furniture",
+            not gf_hit,
+            f"guard tower(s) overlapping an inspection station or gate house: {sorted(set(gf_hit))[:4]} - the gate "
+            f"complex packs tight but each footprint sits CLEAR; move the tower (or the furniture) so they abut, not stack",
+        )
     return _kept(locals(), ())
 
 
@@ -22675,9 +22609,8 @@ def _seg_0563_127__city_gate_towers_clear_of_gate_furniture(*, check: Any = _UNB
 
 def _seg_0563_128__kb_hit(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.128 (kb_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            kb_hit = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        kb_hit = []  # type: ignore[var-annotated]
     return _kept(locals(), ('kb_hit',))
 
 
@@ -22685,30 +22618,28 @@ def _seg_0563_129__it(
     *, M: Any = _UNBOUND, it: Any = _UNBOUND, kb_hit: Any = _UNBOUND, kc: Any = _UNBOUND, kd: Any = _UNBOUND, key_: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.129 (it, kb_hit, kc, kd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for kd in M.get("kido", []):
-                for kc in kido_quads(kd):
-                    if any(
-                        sat_overlap(kc, rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 20), "h": it.get("h", 14), "rot": it.get("rot", 0)}))
-                        for key_ in ("buildings", "houses", "flophouses", "storehouses")
-                        for it in M.get(key_, []) or []
-                    ):
-                        kb_hit.append((round(kd["x"]), round(kd["y"])))
-                        break
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for kd in M.get("kido", []):
+            for kc in kido_quads(kd):
+                if any(
+                    sat_overlap(kc, rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 20), "h": it.get("h", 14), "rot": it.get("rot", 0)}))
+                    for key_ in ("buildings", "houses", "flophouses", "storehouses")
+                    for it in M.get(key_, []) or []
+                ):
+                    kb_hit.append((round(kd["x"]), round(kd["y"])))
+                    break
     return _kept(locals(), ('it', 'kb_hit', 'kc', 'kd', 'key_'))
 
 
 def _seg_0563_130__kido_clear_of_buildings(*, check: Any = _UNBOUND, kb_hit: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.130 (kido_clear_of_buildings) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "kido_clear_of_buildings",
-                not kb_hit,
-                f"ward gate(s) overlapping a building: {sorted(set(kb_hit))[:4]} - the kido and its guard box hold "
-                f"their crossing; reserve the gate's ground before the packs run (block_polys around each kido spot)",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "kido_clear_of_buildings",
+            not kb_hit,
+            f"ward gate(s) overlapping a building: {sorted(set(kb_hit))[:4]} - the kido and its guard box hold "
+            f"their crossing; reserve the gate's ground before the packs run (block_polys around each kido spot)",
+        )
     return _kept(locals(), ())
 
 
@@ -22719,21 +22650,19 @@ def _seg_0563_130__kido_clear_of_buildings(*, check: Any = _UNBOUND, kb_hit: Any
 
 def _seg_0563_131__ring_rd(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.131 (ring_rd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            ring_rd: Any = M.get("ring_road")  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        ring_rd: Any = M.get("ring_road")  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('ring_rd',))
 
 
 def _seg_0563_132__city_has_ring_road(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, ring_rd: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.132 (city_has_ring_road) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_has_ring_road",
-                bool(ring_rd) and len(ring_rd) >= 4,
-                "a walled city needs a ring road just inside the wall (the wall-clear patrol zone) - s.ring_road(WALL); set s.bound to the loop it returns",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_has_ring_road",
+            bool(ring_rd) and len(ring_rd) >= 4,
+            "a walled city needs a ring road just inside the wall (the wall-clear patrol zone) - s.ring_road(WALL); set s.bound to the loop it returns",
+        )
     return _kept(locals(), ())
 
 
@@ -22748,35 +22677,29 @@ def _seg_0563_132__city_has_ring_road(*, check: Any = _UNBOUND, meta: Any = _UNB
 
 def _seg_0563_133__through(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.133 (through) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            through = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        through = []  # type: ignore[var-annotated]
     return _kept(locals(), ('through',))
 
 
 def _seg_0563_134__through_1(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, through: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.134 (through) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if M.get("road"):
-                through.append((M["road"], (M.get("road_width", 26) - 8) / 2))
+    if scale in ('city', 'capital') and meta.get('walled') and M.get("road"):
+        through.append((M["road"], (M.get("road_width", 26) - 8) / 2))
     return _kept(locals(), ('through',))
 
 
 def _seg_0563_135__through_2(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, ring_rd: Any = _UNBOUND, scale: Any = _UNBOUND, through: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.135 (through) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if ring_rd:
-                through.append((ring_rd, (M.get("ring_road_width", 15) - 6) / 2))
+    if scale in ('city', 'capital') and meta.get('walled') and ring_rd:
+        through.append((ring_rd, (M.get("ring_road_width", 15) - 6) / 2))
     return _kept(locals(), ('through',))
 
 
 def _seg_0563_136__bad_meet(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.136 (bad_meet) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            bad_meet = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        bad_meet = []  # type: ignore[var-annotated]
     return _kept(locals(), ('bad_meet',))
 
 
@@ -22787,9 +22710,8 @@ def _seg_0563_136__bad_meet(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> d
 
 def _seg_0563_137__a(*, M: Any = _UNBOUND, a: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.137 (a, meeting_lanes, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            meeting_lanes = [(st["pts"], st.get("w", 18) / 2) for st in M.get("town_streets", [])] + [(a["pts"], 5.0) for a in M.get("alleys", [])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        meeting_lanes = [(st["pts"], st.get("w", 18) / 2) for st in M.get("town_streets", [])] + [(a["pts"], 5.0) for a in M.get("alleys", [])]
     return _kept(locals(), ('a', 'meeting_lanes', 'st'))
 
 
@@ -22815,36 +22737,34 @@ def _seg_0563_138__E(
     through: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.138 (E, L, align, bad_meet) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for pts, sh in meeting_lanes:
-                for E, nb in ((pts[0], pts[1]), (pts[-1], pts[-2])):
-                    for L, bedhalf in through:
-                        cp = min((seg_closest(E[0], E[1], L[i], L[i + 1]) for i in range(len(L) - 1)), key=lambda c: math.hypot(E[0] - c[0], E[1] - c[1]))
-                        gap = math.hypot(E[0] - cp[0], E[1] - cp[1])
-                        if gap > 46:
-                            continue
-                        ip = next((seg_intersect(nb, E, L[i], L[i + 1]) for i in range(len(L) - 1) if segments_cross(nb, E, L[i], L[i + 1])), None)
-                        if ip is not None:  # crosses the lane: must END at the junction, not poke a stub past it
-                            if 3 < math.hypot(E[0] - ip[0], E[1] - ip[1]) < 50:
-                                bad_meet.append((round(E[0]), round(E[1])))
-                        else:  # short of the lane: its bed must reach the lane's bed
-                            dl = math.hypot(E[0] - nb[0], E[1] - nb[1]) or 1.0
-                            align = ((E[0] - nb[0]) / dl) * ((cp[0] - E[0]) / max(gap, 1e-6)) + ((E[1] - nb[1]) / dl) * ((cp[1] - E[1]) / max(gap, 1e-6))
-                            if align > 0.6 and gap >= sh + bedhalf:
-                                bad_meet.append((round(E[0]), round(E[1])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for pts, sh in meeting_lanes:
+            for E, nb in ((pts[0], pts[1]), (pts[-1], pts[-2])):
+                for L, bedhalf in through:
+                    cp = min((seg_closest(E[0], E[1], L[i], L[i + 1]) for i in range(len(L) - 1)), key=lambda c: math.hypot(E[0] - c[0], E[1] - c[1]))
+                    gap = math.hypot(E[0] - cp[0], E[1] - cp[1])
+                    if gap > 46:
+                        continue
+                    ip = next((seg_intersect(nb, E, L[i], L[i + 1]) for i in range(len(L) - 1) if segments_cross(nb, E, L[i], L[i + 1])), None)
+                    if ip is not None:  # crosses the lane: must END at the junction, not poke a stub past it
+                        if 3 < math.hypot(E[0] - ip[0], E[1] - ip[1]) < 50:
+                            bad_meet.append((round(E[0]), round(E[1])))
+                    else:  # short of the lane: its bed must reach the lane's bed
+                        dl = math.hypot(E[0] - nb[0], E[1] - nb[1]) or 1.0
+                        align = ((E[0] - nb[0]) / dl) * ((cp[0] - E[0]) / max(gap, 1e-6)) + ((E[1] - nb[1]) / dl) * ((cp[1] - E[1]) / max(gap, 1e-6))
+                        if align > 0.6 and gap >= sh + bedhalf:
+                            bad_meet.append((round(E[0]), round(E[1])))
     return _kept(locals(), ('E', 'L', 'align', 'bad_meet', 'bedhalf', 'cp', 'dl', 'gap', 'i', 'ip', 'nb', 'pts', 'sh'))
 
 
 def _seg_0563_139__city_streets_meet_through_lanes(*, bad_meet: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.139 (city_streets_meet_through_lanes) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_streets_meet_through_lanes",
-                not bad_meet,
-                f"street/alley(s) not meeting the Imperial road / ring road cleanly at a junction - stopping a sliver short of it or poking a sliver past it: {sorted(set(bad_meet))}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_streets_meet_through_lanes",
+            not bad_meet,
+            f"street/alley(s) not meeting the Imperial road / ring road cleanly at a junction - stopping a sliver short of it or poking a sliver past it: {sorted(set(bad_meet))}",
+        )
     return _kept(locals(), ())
 
 
@@ -22875,49 +22795,46 @@ def _seg_0563_140__ring_road_kept_clear(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.140 (city_graveyard_clear_of_ring_road, ring_road_kept_clear) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if ring_rd:
+    if scale in ('city', 'capital') and meta.get('walled') and ring_rd:
 
-                def _foot(it: dict[str, Any]) -> list[tuple[float, float]]:
-                    return rect_corners(it) if "rot" in it else rect_corners_xywh(it, 0)
+        def _foot(it: dict[str, Any]) -> list[tuple[float, float]]:
+            return rect_corners(it) if "rot" in it else rect_corners_xywh(it, 0)
 
-                # ...except an official NOTICE BOARD inside a GATE PRECINCT. A kosatsuba is street
-                # furniture, not a compound: a ~12x5 ft post-and-roof board that must stand within ~60
-                # real ft of a road where people pass (kosatsuba_by_the_road), which at a gate means the
-                # same crowded verge the guard house, inspection station and towers already line. Scoped
-                # to the precinct on purpose - a board out on an open stretch of patrol lane is still a
-                # defect. Radius matches the barbican keep-out city_wall_tower_coverage uses.
-                check_ring_road_clear(M, check)  # factored to module level so the CAPITAL scope runs it too (GM 2026-08-09)
-                # ...and the BURIAL grounds keep off the ring road's FULL drawn width (GM, 2026-07-23:
-                # Tango's two intramural graveyards sat squarely ON the drawn ring road and the gate
-                # waved them through). WHY a second, stricter check: ring_road_kept_clear's bed is
-                # (width - 6) / 2 - a fixed ~3px-per-side eaves forgiveness, sized for the default 15px
-                # ring. At city scale (1px = 3ft) the ring road is a ~20ft lane = ~6.7px, so that
-                # forgiveness swallows nearly the whole bed and only a dead-center footprint could fire.
-                # A burial ground has no eaves to forgive - its fence line IS its footprint, and graves
-                # spilling onto the patrol road read as a plain collision - so it clears the full
-                # half-width, no tolerance.
-                rhalf = M.get("ring_road_width", 15) / 2
-                grave_on_ring = [
-                    (round(it["x"]), round(it["y"]))
-                    for it in M.get("cemeteries", []) + M.get("mausoleums", []) + M.get("cremation_grounds", []) + M.get("ossuaries", [])
-                    if footprint_on_line(_foot(it), ring_rd, rhalf)
-                ]
-                check(
-                    "city_graveyard_clear_of_ring_road",
-                    not grave_on_ring,
-                    f"burial ground(s) overlapping the drawn ring road: {grave_on_ring[:4]} - graves do not encroach "
-                    f"on the patrol road at all (no eaves forgiveness on a fence line); shift the ground clear of the ring's full width",
-                )
+        # ...except an official NOTICE BOARD inside a GATE PRECINCT. A kosatsuba is street
+        # furniture, not a compound: a ~12x5 ft post-and-roof board that must stand within ~60
+        # real ft of a road where people pass (kosatsuba_by_the_road), which at a gate means the
+        # same crowded verge the guard house, inspection station and towers already line. Scoped
+        # to the precinct on purpose - a board out on an open stretch of patrol lane is still a
+        # defect. Radius matches the barbican keep-out city_wall_tower_coverage uses.
+        check_ring_road_clear(M, check)  # factored to module level so the CAPITAL scope runs it too (GM 2026-08-09)
+        # ...and the BURIAL grounds keep off the ring road's FULL drawn width (GM, 2026-07-23:
+        # Tango's two intramural graveyards sat squarely ON the drawn ring road and the gate
+        # waved them through). WHY a second, stricter check: ring_road_kept_clear's bed is
+        # (width - 6) / 2 - a fixed ~3px-per-side eaves forgiveness, sized for the default 15px
+        # ring. At city scale (1px = 3ft) the ring road is a ~20ft lane = ~6.7px, so that
+        # forgiveness swallows nearly the whole bed and only a dead-center footprint could fire.
+        # A burial ground has no eaves to forgive - its fence line IS its footprint, and graves
+        # spilling onto the patrol road read as a plain collision - so it clears the full
+        # half-width, no tolerance.
+        rhalf = M.get("ring_road_width", 15) / 2
+        grave_on_ring = [
+            (round(it["x"]), round(it["y"]))
+            for it in M.get("cemeteries", []) + M.get("mausoleums", []) + M.get("cremation_grounds", []) + M.get("ossuaries", [])
+            if footprint_on_line(_foot(it), ring_rd, rhalf)
+        ]
+        check(
+            "city_graveyard_clear_of_ring_road",
+            not grave_on_ring,
+            f"burial ground(s) overlapping the drawn ring road: {grave_on_ring[:4]} - graves do not encroach "
+            f"on the patrol road at all (no eaves forgiveness on a fence line); shift the ground clear of the ring's full width",
+        )
     return _kept(locals(), ('_foot', 'grave_on_ring', 'it', 'rhalf'))
 
 
 def _seg_0563_141__b_7(*, M: Any = _UNBOUND, b: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.141 (b, buraku_in) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            buraku_in = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin" and inwall(b["x"], b["y"])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        buraku_in = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin" and inwall(b["x"], b["y"])]
     return _kept(locals(), ('b', 'buraku_in'))
 
 
@@ -22926,28 +22843,26 @@ def _seg_0563_141__b_7(*, M: Any = _UNBOUND, b: Any = _UNBOUND, inwall: Any = _U
 
 def _seg_0563_142__walled_city_has_burakumin_inside(*, buraku_in: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.142 (walled_city_has_burakumin_inside) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "walled_city_has_burakumin_inside",
-                len(buraku_in) >= 3,
-                f"{len(buraku_in)} burakumin inside the walls - a walled provincial city must keep >= 1 burakumin neighborhood within (they cannot be without burakumin during a siege)",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "walled_city_has_burakumin_inside",
+            len(buraku_in) >= 3,
+            f"{len(buraku_in)} burakumin inside the walls - a walled provincial city must keep >= 1 burakumin neighborhood within (they cannot be without burakumin during a siege)",
+        )
     return _kept(locals(), ())
 
 
 def _seg_0563_143__est_out(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.143 (est_out, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]
     return _kept(locals(), ('est_out', 'mn'))
 
 
 def _seg_0563_144__city_samurai_estates_outside(*, URBAN: Any = _UNBOUND, check: Any = _UNBOUND, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.144 (city_samurai_estates_outside) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
+        if meta.get('walled'):  # noqa: SIM102
             if URBAN:  # CAPITAL-INVERTED (021): the capital's walled yashiki stand IN-WALL (020 doctrine) and its country cohort is detached houses, not 1-3 dispersed estates
                 check(
                     "city_samurai_estates_outside",
@@ -22966,36 +22881,33 @@ def _seg_0563_144__city_samurai_estates_outside(*, URBAN: Any = _UNBOUND, check:
 
 def _seg_0563_145__est_pts(*, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.145 (est_pts, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            est_pts = [(mn["x"], mn["y"]) for mn in est_out]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        est_pts = [(mn["x"], mn["y"]) for mn in est_out]
     return _kept(locals(), ('est_pts', 'mn'))
 
 
 def _seg_0563_146__EST_MIN_SEP(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.146 (EST_MIN_SEP) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            EST_MIN_SEP = 200
+    if scale in ('city', 'capital') and meta.get('walled'):
+        EST_MIN_SEP = 200
     return _kept(locals(), ('EST_MIN_SEP',))
 
 
 def _seg_0563_147__est_too_close(*, EST_MIN_SEP: Any = _UNBOUND, est_pts: Any = _UNBOUND, i: Any = _UNBOUND, j: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.147 (est_too_close, i, j) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            est_too_close = [
-                (round(est_pts[i][0]), round(est_pts[i][1]))
-                for i in range(len(est_pts))
-                for j in range(i + 1, len(est_pts))
-                if math.hypot(est_pts[i][0] - est_pts[j][0], est_pts[i][1] - est_pts[j][1]) < EST_MIN_SEP
-            ]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        est_too_close = [
+            (round(est_pts[i][0]), round(est_pts[i][1]))
+            for i in range(len(est_pts))
+            for j in range(i + 1, len(est_pts))
+            if math.hypot(est_pts[i][0] - est_pts[j][0], est_pts[i][1] - est_pts[j][1]) < EST_MIN_SEP
+        ]
     return _kept(locals(), ('est_too_close', 'i', 'j'))
 
 
 def _seg_0563_148__city_samurai_estates_dispersed(*, EST_MIN_SEP: Any = _UNBOUND, check: Any = _UNBOUND, est_too_close: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.148 (city_samurai_estates_dispersed) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_samurai_estates_dispersed",
@@ -23014,44 +22926,40 @@ def _seg_0563_148__city_samurai_estates_dispersed(*, EST_MIN_SEP: Any = _UNBOUND
 
 def _seg_0563_149__b_8(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.149 (b, sam_out) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            sam_out = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large") and len(w) >= 3 and not point_in_poly(b["x"], b["y"], w)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        sam_out = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large") and len(w) >= 3 and not point_in_poly(b["x"], b["y"], w)]
     return _kept(locals(), ('b', 'sam_out'))
 
 
 def _seg_0563_150__city_samurai_houses_inside_walls(*, URBAN: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, sam_out: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.150 (city_samurai_houses_inside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if URBAN:  # CAPITAL-INVERTED (021): CAPITAL_SAMURAI_INWALL_FRAC deliberately keeps ~15% of the cohort in country seats on the approaches
-                check(
-                    "city_samurai_houses_inside_walls",
-                    not sam_out,
-                    f"{len(sam_out)} free-standing samurai house(s) sit OUTSIDE the walls {sorted(set(sam_out))[:5]} - in-city "
-                    f"samurai live unwalled INSIDE the sealed ward; the only extramural samurai residences are the walled "
-                    f"country estates (s.manor). Re-seat these houses in the samurai quarter.",
-                )
+    if scale in ('city', 'capital') and meta.get('walled'):  # noqa: SIM102
+        if URBAN:  # CAPITAL-INVERTED (021): CAPITAL_SAMURAI_INWALL_FRAC deliberately keeps ~15% of the cohort in country seats on the approaches
+            check(
+                "city_samurai_houses_inside_walls",
+                not sam_out,
+                f"{len(sam_out)} free-standing samurai house(s) sit OUTSIDE the walls {sorted(set(sam_out))[:5]} - in-city "
+                f"samurai live unwalled INSIDE the sealed ward; the only extramural samurai residences are the walled "
+                f"country estates (s.manor). Re-seat these houses in the samurai quarter.",
+            )
     return _kept(locals(), ())
 
 
 def _seg_0563_151__areas(*, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.151 (areas, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            areas = sorted((mn["w"] * mn["h"]) for mn in est_out)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        areas = sorted((mn["w"] * mn["h"]) for mn in est_out)
     return _kept(locals(), ('areas', 'mn'))
 
 
 def _seg_0563_152__city_samurai_estates_vary_in_size(*, areas: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.152 (city_samurai_estates_vary_in_size) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_samurai_estates_vary_in_size",
-                len(areas) < 2 or areas[-1] >= 1.5 * areas[0],
-                "the samurai estates should vary in size (some larger than others) - largest area >= 1.5x the smallest",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_samurai_estates_vary_in_size",
+            len(areas) < 2 or areas[-1] >= 1.5 * areas[0],
+            "the samurai estates should vary in size (some larger than others) - largest area >= 1.5x the smallest",
+        )
     return _kept(locals(), ())
 
 
@@ -23063,30 +22971,26 @@ def _seg_0563_152__city_samurai_estates_vary_in_size(*, areas: Any = _UNBOUND, c
 
 def _seg_0563_153__egd(*, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.153 (egd, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            egd = [mn.get("gate_dir") for mn in est_out]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        egd = [mn.get("gate_dir") for mn in est_out]
     return _kept(locals(), ('egd', 'mn'))
 
 
 def _seg_0563_154__city_estate_gates_vary(*, check: Any = _UNBOUND, egd: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.154 (city_estate_gates_vary) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_estate_gates_vary",
-                len(egd) < 3 or len(set(egd)) >= 2,
-                f"all {len(egd)} country estate gates open the same way ({egd[0] if egd else None}) - scattered "
-                f"estates each front their own approach, so vary the gate_dir (some south, some cityward)",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_estate_gates_vary",
+            len(egd) < 3 or len(set(egd)) >= 2,
+            f"all {len(egd)} country estate gates open the same way ({egd[0] if egd else None}) - scattered estates each front their own approach, so vary the gate_dir (some south, some cityward)",
+        )
     return _kept(locals(), ())
 
 
 def _seg_0563_155__moat(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.155 (moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            moat: Any = M.get("moat")  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        moat: Any = M.get("moat")  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('moat',))
 
 
@@ -23095,25 +22999,22 @@ def _seg_0563_155__moat(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any =
 
 def _seg_0563_156__rel(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.156 (rel) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            rel = M.get("religious", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        rel = M.get("religious", [])
     return _kept(locals(), ('rel',))
 
 
 def _seg_0563_157__out_rel(*, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, r: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.157 (out_rel, r) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            out_rel = [r.get("label") for r in rel if not inwall(r["x"], r["y"])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        out_rel = [r.get("label") for r in rel if not inwall(r["x"], r["y"])]
     return _kept(locals(), ('out_rel', 'r'))
 
 
 def _seg_0563_158__city_temples_inside_walls(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, out_rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.158 (city_temples_inside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_temples_inside_walls", not out_rel, f"temple(s) outside the city walls (all of a city's temples belong inside): {out_rel}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_temples_inside_walls", not out_rel, f"temple(s) outside the city walls (all of a city's temples belong inside): {out_rel}")
     return _kept(locals(), ())
 
 
@@ -23121,17 +23022,15 @@ def _seg_0563_159__r(
     *, meta: Any = _UNBOUND, moat: Any = _UNBOUND, r: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.159 (r, rel_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            rel_bad = [r.get("label") for r in rel if footprint_on_line(rect_corners_xywh(r, 0), w, 9) or (moat and footprint_on_line(rect_corners_xywh(r, 0), moat, 13))]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        rel_bad = [r.get("label") for r in rel if footprint_on_line(rect_corners_xywh(r, 0), w, 9) or (moat and footprint_on_line(rect_corners_xywh(r, 0), moat, 13))]
     return _kept(locals(), ('r', 'rel_bad'))
 
 
 def _seg_0563_160__city_temples_clear_of_wall_moat(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, rel_bad: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.160 (city_temples_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_temples_clear_of_wall_moat", not rel_bad, f"temple(s) overlapping the wall or moat: {rel_bad}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_temples_clear_of_wall_moat", not rel_bad, f"temple(s) overlapping the wall or moat: {rel_bad}")
     return _kept(locals(), ())
 
 
@@ -23146,28 +23045,24 @@ def _seg_0563_160__city_temples_clear_of_wall_moat(*, check: Any = _UNBOUND, met
 
 def _seg_0563_161__declared_t(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.161 (declared_t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            declared_t = meta.get("temple_fortunes")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        declared_t = meta.get("temple_fortunes")
     return _kept(locals(), ('declared_t',))
 
 
 def _seg_0563_162__clan_t(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.162 (clan_t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            clan_t = meta.get("clan")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        clan_t = meta.get("clan")
     return _kept(locals(), ('clan_t',))
 
 
 def _seg_0563_163__city_clan_known(*, cf: Any = _UNBOUND, check: Any = _UNBOUND, clan_t: Any = _UNBOUND, declared_t: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.163 (city_clan_known) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if declared_t is None and clan_t:
-                cf = CLAN_FORTUNES.get(clan_t.lower())
-                check("city_clan_known", cf is not None, f"unknown clan {clan_t!r} - no patron fortunes")
-                declared_t = sorted(cf) if cf else None
+    if scale in ('city', 'capital') and meta.get('walled') and declared_t is None and clan_t:
+        cf = CLAN_FORTUNES.get(clan_t.lower())
+        check("city_clan_known", cf is not None, f"unknown clan {clan_t!r} - no patron fortunes")
+        declared_t = sorted(cf) if cf else None
     return _kept(locals(), ('cf', 'declared_t'))
 
 
@@ -23189,29 +23084,27 @@ def _seg_0563_164__city_temples_dedicated(
     stray_t: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.164 (city_temples_dedicated) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if declared_t is not None:
+    if scale in ('city', 'capital') and meta.get('walled') and declared_t is not None:
 
-                def _tfortune(r: dict[str, Any]) -> str:
-                    lab = (r.get("label") or "").strip()
-                    return lab.rsplit(" of ", 1)[-1].strip() if " of " in lab else lab
+        def _tfortune(r: dict[str, Any]) -> str:
+            lab = (r.get("label") or "").strip()
+            return lab.rsplit(" of ", 1)[-1].strip() if " of " in lab else lab
 
-                major = [_tfortune(r) for r in rel if r.get("kind") == "temple"]
-                # every major temple honors a PATRON fortune (or Bishamon, the warrior fortune of
-                # any clan's samurai quarter - for Crab it IS a patron; for Crane/Tango it stands
-                # beside the two patron temples), and BOTH patrons must be present. A great temple to
-                # a non-patron (Nagahara's Suitengu) fails; small wayside shrines carry the rest.
-                allowed = set(declared_t) | {"Bishamon"}
-                stray_t = sorted(set(f for f in major if f not in allowed))
-                missing = sorted(f for f in declared_t if f not in major)
-                check(
-                    "city_temples_dedicated",
-                    not stray_t and not missing,
-                    f"major city temples {sorted(set(major))}: stray non-patron {stray_t}, missing patron {missing} "
-                    f"(clan {clan_t!r} patrons {sorted(declared_t)}); a city has a great temple to each of its two "
-                    f"patron fortunes (+ optionally Bishamon in the samurai quarter), the rest small shrines",
-                )
+        major = [_tfortune(r) for r in rel if r.get("kind") == "temple"]
+        # every major temple honors a PATRON fortune (or Bishamon, the warrior fortune of
+        # any clan's samurai quarter - for Crab it IS a patron; for Crane/Tango it stands
+        # beside the two patron temples), and BOTH patrons must be present. A great temple to
+        # a non-patron (Nagahara's Suitengu) fails; small wayside shrines carry the rest.
+        allowed = set(declared_t) | {"Bishamon"}
+        stray_t = sorted(set(f for f in major if f not in allowed))
+        missing = sorted(f for f in declared_t if f not in major)
+        check(
+            "city_temples_dedicated",
+            not stray_t and not missing,
+            f"major city temples {sorted(set(major))}: stray non-patron {stray_t}, missing patron {missing} "
+            f"(clan {clan_t!r} patrons {sorted(declared_t)}); a city has a great temple to each of its two "
+            f"patron fortunes (+ optionally Bishamon in the samurai quarter), the rest small shrines",
+        )
     return _kept(locals(), ('_tfortune', 'allowed', 'f', 'major', 'missing', 'r', 'stray_t'))
 
 
@@ -23225,25 +23118,22 @@ def _seg_0563_164__city_temples_dedicated(
 
 def _seg_0563_165__major_t(*, meta: Any = _UNBOUND, r: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.165 (major_t, r) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            major_t = [r for r in rel if r.get("kind") == "temple"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        major_t = [r for r in rel if r.get("kind") == "temple"]
     return _kept(locals(), ('major_t', 'r'))
 
 
 def _seg_0563_166__city_multi_temple_exception_declared(*, check: Any = _UNBOUND, exc: Any = _UNBOUND, major_t: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.166 (city_multi_temple_exception_declared) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if len(major_t) > 2:
-                exc = meta.get("temple_exception")
-                check(
-                    "city_multi_temple_exception_declared",
-                    exc in TEMPLE_EXCEPTIONS,
-                    f"{len(major_t)} major temples but meta(temple_exception=...) is {exc!r} - a city defaults to TWO great "
-                    f"complexes (one per patron fortune); more is the marked exception and must name its reason, one of "
-                    f"{sorted(TEMPLE_EXCEPTIONS)} (see settlements/religion-and-death.md)",
-                )
+    if scale in ('city', 'capital') and meta.get('walled') and len(major_t) > 2:
+        exc = meta.get("temple_exception")
+        check(
+            "city_multi_temple_exception_declared",
+            exc in TEMPLE_EXCEPTIONS,
+            f"{len(major_t)} major temples but meta(temple_exception=...) is {exc!r} - a city defaults to TWO great "
+            f"complexes (one per patron fortune); more is the marked exception and must name its reason, one of "
+            f"{sorted(TEMPLE_EXCEPTIONS)} (see settlements/religion-and-death.md)",
+        )
     return _kept(locals(), ('exc',))
 
 
@@ -23254,25 +23144,22 @@ def _seg_0563_166__city_multi_temple_exception_declared(*, check: Any = _UNBOUND
 
 def _seg_0563_167__r_1(*, meta: Any = _UNBOUND, r: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.167 (r, temples) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            temples = [r for r in rel if r.get("kind") == "temple"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        temples = [r for r in rel if r.get("kind") == "temple"]
     return _kept(locals(), ('r', 'temples'))
 
 
 def _seg_0563_168__r_2(*, meta: Any = _UNBOUND, r: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.168 (r, shrines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            shrines = [r for r in rel if r.get("kind") == "small_shrine"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        shrines = [r for r in rel if r.get("kind") == "small_shrine"]
     return _kept(locals(), ('r', 'shrines'))
 
 
 def _seg_0563_169__clustered(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, temples: Any = _UNBOUND, u: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.169 (clustered, t, u) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            clustered = [t for t in temples if any(u is not t and math.hypot(t["x"] - u["x"], t["y"] - u["y"]) < 400 for u in temples)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        clustered = [t for t in temples if any(u is not t and math.hypot(t["x"] - u["x"], t["y"] - u["y"]) < 400 for u in temples)]
     return _kept(locals(), ('clustered', 't', 'u'))
 
 
@@ -23280,15 +23167,13 @@ def _seg_0563_170__city_temple_neighborhood_has_shrines(
     *, check: Any = _UNBOUND, clustered: Any = _UNBOUND, meta: Any = _UNBOUND, near_sh: Any = _UNBOUND, scale: Any = _UNBOUND, sh: Any = _UNBOUND, shrines: Any = _UNBOUND, t: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.170 (city_temple_neighborhood_has_shrines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if len(clustered) >= 2:
-                near_sh = sum(1 for sh in shrines if any(math.hypot(sh["x"] - t["x"], sh["y"] - t["y"]) < 350 for t in clustered))
-                check(
-                    "city_temple_neighborhood_has_shrines",
-                    near_sh >= 3,
-                    f"the temple neighborhood ({len(clustered)} clustered temples) has only {near_sh} small wayside shrine(s) - dot it with a few more (s.small_shrine)",
-                )
+    if scale in ('city', 'capital') and meta.get('walled') and len(clustered) >= 2:
+        near_sh = sum(1 for sh in shrines if any(math.hypot(sh["x"] - t["x"], sh["y"] - t["y"]) < 350 for t in clustered))
+        check(
+            "city_temple_neighborhood_has_shrines",
+            near_sh >= 3,
+            f"the temple neighborhood ({len(clustered)} clustered temples) has only {near_sh} small wayside shrine(s) - dot it with a few more (s.small_shrine)",
+        )
     return _kept(locals(), ('near_sh', 'sh', 't'))
 
 
@@ -23305,51 +23190,46 @@ def _seg_0563_170__city_temple_neighborhood_has_shrines(
 
 def _seg_0563_171__b_9(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.171 (b, monk_h) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            monk_h = [b for b in M.get("buildings", []) if b.get("kind") == "monk_house"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        monk_h = [b for b in M.get("buildings", []) if b.get("kind") == "monk_house"]
     return _kept(locals(), ('b', 'monk_h'))
 
 
 def _seg_0563_172__m_1(*, m: Any = _UNBOUND, meta: Any = _UNBOUND, monk_h: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, temples: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.172 (m, t, t_unserved) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            t_unserved = [t.get("label", (round(t["x"]), round(t["y"]))) for t in temples if sum(1 for m in monk_h if math.hypot(m["x"] - t["x"], m["y"] - t["y"]) <= 170) < 2]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        t_unserved = [t.get("label", (round(t["x"]), round(t["y"]))) for t in temples if sum(1 for m in monk_h if math.hypot(m["x"] - t["x"], m["y"] - t["y"]) <= 170) < 2]
     return _kept(locals(), ('m', 't', 't_unserved'))
 
 
 def _seg_0563_173__city_temples_have_monk_housing(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t_unserved: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.173 (city_temples_have_monk_housing) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_temples_have_monk_housing",
-                not t_unserved,
-                f"major temple(s) without adept-monk housing nearby: {t_unserved} - each temple complex keeps 2-3 "
-                f"ordinary homes (kind 'monk_house', drawn identical to a laborer house) in its neighborhood for the "
-                f"married adepts among its 15-30 monks (the celibate monks live inside the precinct, implied)",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_temples_have_monk_housing",
+            not t_unserved,
+            f"major temple(s) without adept-monk housing nearby: {t_unserved} - each temple complex keeps 2-3 "
+            f"ordinary homes (kind 'monk_house', drawn identical to a laborer house) in its neighborhood for the "
+            f"married adepts among its 15-30 monks (the celibate monks live inside the precinct, implied)",
+        )
     return _kept(locals(), ())
 
 
 def _seg_0563_174__m_2(*, m: Any = _UNBOUND, meta: Any = _UNBOUND, monk_h: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, temples: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.174 (m, stray_mh, t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            stray_mh = [(round(m["x"]), round(m["y"])) for m in monk_h if not temples or min(math.hypot(m["x"] - t["x"], m["y"] - t["y"]) for t in temples) > 170]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        stray_mh = [(round(m["x"]), round(m["y"])) for m in monk_h if not temples or min(math.hypot(m["x"] - t["x"], m["y"] - t["y"]) for t in temples) > 170]
     return _kept(locals(), ('m', 'stray_mh', 't'))
 
 
 def _seg_0563_175__city_monk_houses_by_their_temple(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, stray_mh: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.175 (city_monk_houses_by_their_temple) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_monk_houses_by_their_temple",
-                not stray_mh,
-                f"monk house(s) stranded away from every temple (>170px): {stray_mh} - an adept's household lives in its temple's neighborhood, not scattered across the city",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_monk_houses_by_their_temple",
+            not stray_mh,
+            f"monk house(s) stranded away from every temple (>170px): {stray_mh} - an adept's household lives in its temple's neighborhood, not scattered across the city",
+        )
     return _kept(locals(), ())
 
 
@@ -23358,25 +23238,22 @@ def _seg_0563_175__city_monk_houses_by_their_temple(*, check: Any = _UNBOUND, me
 
 def _seg_0563_176__est_corners(*, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.176 (est_corners, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            est_corners = [rect_corners_xywh(mn, 0) for mn in est_out]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        est_corners = [rect_corners_xywh(mn, 0) for mn in est_out]
     return _kept(locals(), ('est_corners', 'mn'))
 
 
 def _seg_0563_177__est_overlap(*, est_corners: Any = _UNBOUND, est_out: Any = _UNBOUND, i: Any = _UNBOUND, j: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.177 (est_overlap, i, j) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            est_overlap = [1 for i in range(len(est_out)) for j in range(i + 1, len(est_out)) if sat_overlap(est_corners[i], est_corners[j])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        est_overlap = [1 for i in range(len(est_out)) for j in range(i + 1, len(est_out)) if sat_overlap(est_corners[i], est_corners[j])]
     return _kept(locals(), ('est_overlap', 'i', 'j'))
 
 
 def _seg_0563_178__city_estates_no_overlap(*, check: Any = _UNBOUND, est_overlap: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.178 (city_estates_no_overlap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_estates_no_overlap", not est_overlap, f"{len(est_overlap)} overlapping estate pair(s)")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_estates_no_overlap", not est_overlap, f"{len(est_overlap)} overlapping estate pair(s)")
     return _kept(locals(), ())
 
 
@@ -23384,17 +23261,15 @@ def _seg_0563_179__est_bad(
     *, est_corners: Any = _UNBOUND, est_out: Any = _UNBOUND, i: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.179 (est_bad, i) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            est_bad = [1 for i in range(len(est_out)) if footprint_on_line(est_corners[i], w, 9) or (moat and footprint_on_line(est_corners[i], moat, 13))]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        est_bad = [1 for i in range(len(est_out)) if footprint_on_line(est_corners[i], w, 9) or (moat and footprint_on_line(est_corners[i], moat, 13))]
     return _kept(locals(), ('est_bad', 'i'))
 
 
 def _seg_0563_180__city_estates_clear_of_wall_moat(*, check: Any = _UNBOUND, est_bad: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.180 (city_estates_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_estates_clear_of_wall_moat", not est_bad, f"{len(est_bad)} estate(s) overlapping the wall or moat")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_estates_clear_of_wall_moat", not est_bad, f"{len(est_bad)} estate(s) overlapping the wall or moat")
     return _kept(locals(), ())
 
 
@@ -23405,17 +23280,15 @@ def _seg_0563_180__city_estates_clear_of_wall_moat(*, check: Any = _UNBOUND, est
 
 def _seg_0563_181__mest_1(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.181 (mest) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            mest = M.get("merchant_estates", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        mest = M.get("merchant_estates", [])
     return _kept(locals(), ('mest',))
 
 
 def _seg_0563_182__e(*, e: Any = _UNBOUND, mest: Any = _UNBOUND, meta: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.182 (e, mest_corners) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            mest_corners = [rect_corners_xywh(e, 0) for e in mest]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        mest_corners = [rect_corners_xywh(e, 0) for e in mest]
     return _kept(locals(), ('e', 'mest_corners'))
 
 
@@ -23423,25 +23296,22 @@ def _seg_0563_183__i_1(
     *, i: Any = _UNBOUND, mest: Any = _UNBOUND, mest_corners: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.183 (i, mest_wm) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            mest_wm = [(round(mest[i]["x"]), round(mest[i]["y"])) for i in range(len(mest)) if footprint_on_line(mest_corners[i], w, 9) or (moat and footprint_on_line(mest_corners[i], moat, 13))]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        mest_wm = [(round(mest[i]["x"]), round(mest[i]["y"])) for i in range(len(mest)) if footprint_on_line(mest_corners[i], w, 9) or (moat and footprint_on_line(mest_corners[i], moat, 13))]
     return _kept(locals(), ('i', 'mest_wm'))
 
 
 def _seg_0563_184__city_merchant_estates_clear_of_wall_moat(*, check: Any = _UNBOUND, mest_wm: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.184 (city_merchant_estates_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_merchant_estates_clear_of_wall_moat", not mest_wm, f"walled merchant estate(s) overlapping the city wall or moat (keep them well inside the rampart): {mest_wm}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_merchant_estates_clear_of_wall_moat", not mest_wm, f"walled merchant estate(s) overlapping the city wall or moat (keep them well inside the rampart): {mest_wm}")
     return _kept(locals(), ())
 
 
 def _seg_0563_185__civics(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.185 (civics) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            civics = M.get("religious", []) + M.get("ministries", []) + ([M["governor_mansion"]] if M.get("governor_mansion") else [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        civics = M.get("religious", []) + M.get("ministries", []) + ([M["governor_mansion"]] if M.get("governor_mansion") else [])
     return _kept(locals(), ('civics',))
 
 
@@ -23450,33 +23320,29 @@ def _seg_0563_185__civics(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any
 
 def _seg_0563_186__o(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, o: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.186 (o, others_me) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            others_me = [o for o in solid_structs(M, "religious") if o is not None]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        others_me = [o for o in solid_structs(M, "religious") if o is not None]
     return _kept(locals(), ('o', 'others_me'))
 
 
 def _seg_0563_187__o_1(*, meta: Any = _UNBOUND, o: Any = _UNBOUND, others_me: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.187 (o, other_struct) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            other_struct = [rect_corners(o) if "rot" in o else rect_corners_xywh(o, 0) for o in others_me]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        other_struct = [rect_corners(o) if "rot" in o else rect_corners_xywh(o, 0) for o in others_me]
     return _kept(locals(), ('o', 'other_struct'))
 
 
 def _seg_0563_188__o_2(*, meta: Any = _UNBOUND, o: Any = _UNBOUND, others_me: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.188 (o, other_xy) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            other_xy = [(o["x"], o["y"]) for o in others_me]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        other_xy = [(o["x"], o["y"]) for o in others_me]
     return _kept(locals(), ('o', 'other_xy'))
 
 
 def _seg_0563_189__mest_bld(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.189 (mest_bld) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            mest_bld = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        mest_bld = []  # type: ignore[var-annotated]
     return _kept(locals(), ('mest_bld',))
 
 
@@ -23497,29 +23363,27 @@ def _seg_0563_190__e_1(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.190 (e, i, j, mest_bld) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for i in range(len(mest)):
-                e = mest[i]
-                for oc, (ox, oy) in zip(other_struct, other_xy, strict=False):
-                    if abs(ox - e["x"]) <= e["w"] / 2 and abs(oy - e["y"]) <= e["h"] / 2:
-                        continue  # a structure centered INSIDE the court = the estate's own house
-                    if sat_overlap(mest_corners[i], oc):
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for i in range(len(mest)):
+            e = mest[i]
+            for oc, (ox, oy) in zip(other_struct, other_xy, strict=False):
+                if abs(ox - e["x"]) <= e["w"] / 2 and abs(oy - e["y"]) <= e["h"] / 2:
+                    continue  # a structure centered INSIDE the court = the estate's own house
+                if sat_overlap(mest_corners[i], oc):
+                    mest_bld.append((round(e["x"]), round(e["y"])))
+                    break
+            else:
+                for j in range(len(mest)):
+                    if j != i and sat_overlap(mest_corners[i], mest_corners[j]):
                         mest_bld.append((round(e["x"]), round(e["y"])))
                         break
-                else:
-                    for j in range(len(mest)):
-                        if j != i and sat_overlap(mest_corners[i], mest_corners[j]):
-                            mest_bld.append((round(e["x"]), round(e["y"])))
-                            break
     return _kept(locals(), ('e', 'i', 'j', 'mest_bld', 'oc', 'ox', 'oy'))
 
 
 def _seg_0563_191__city_merchant_estates_clear_of_buildings(*, check: Any = _UNBOUND, mest_bld: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.191 (city_merchant_estates_clear_of_buildings) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_merchant_estates_clear_of_buildings", not mest_bld, f"walled merchant estate(s) overlapping a building (temple, compound, house, or another estate): {sorted(set(mest_bld))}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_merchant_estates_clear_of_buildings", not mest_bld, f"walled merchant estate(s) overlapping a building (temple, compound, house, or another estate): {sorted(set(mest_bld))}")
     return _kept(locals(), ())
 
 
@@ -23530,9 +23394,8 @@ def _seg_0563_191__city_merchant_estates_clear_of_buildings(*, check: Any = _UNB
 
 def _seg_0563_192__GDIR(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.192 (GDIR) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            GDIR = {"south": (0, 1), "north": (0, -1), "east": (1, 0), "west": (-1, 0)}
+    if scale in ('city', 'capital') and meta.get('walled'):
+        GDIR = {"south": (0, 1), "north": (0, -1), "east": (1, 0), "west": (-1, 0)}
     return _kept(locals(), ('GDIR',))
 
 
@@ -23540,17 +23403,15 @@ def _seg_0563_193__compounds(
     *, civics: Any = _UNBOUND, mest_corners: Any = _UNBOUND, meta: Any = _UNBOUND, o: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.193 (compounds, o) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            compounds = [rect_corners_xywh(o, 0) for o in civics] + list(mest_corners)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        compounds = [rect_corners_xywh(o, 0) for o in civics] + list(mest_corners)
     return _kept(locals(), ('compounds', 'o'))
 
 
 def _seg_0563_194__gate_bad(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.194 (gate_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gate_bad = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gate_bad = []  # type: ignore[var-annotated]
     return _kept(locals(), ('gate_bad',))
 
 
@@ -23576,34 +23437,32 @@ def _seg_0563_195__cc(
     tw: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.195 (cc, g, gate_bad, i) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for i in range(len(mest)):
-                g = mest[i].get("gate")
-                if not g:
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for i in range(len(mest)):
+            g = mest[i].get("gate")
+            if not g:
+                continue
+            ox, oy = GDIR.get(mest[i].get("gate_dir", "south"), (0, 1))
+            tcx, tcy = g[0] + ox * 11, g[1] + oy * 11  # a threshold box just OUTSIDE the gate
+            tw, th = (24, 22) if ox == 0 else (22, 24)
+            thr = [(tcx - tw / 2, tcy - th / 2), (tcx + tw / 2, tcy - th / 2), (tcx + tw / 2, tcy + th / 2), (tcx - tw / 2, tcy + th / 2)]
+            for j, cc in enumerate(compounds):
+                if j == len(civics) + i:  # skip the estate's OWN court
                     continue
-                ox, oy = GDIR.get(mest[i].get("gate_dir", "south"), (0, 1))
-                tcx, tcy = g[0] + ox * 11, g[1] + oy * 11  # a threshold box just OUTSIDE the gate
-                tw, th = (24, 22) if ox == 0 else (22, 24)
-                thr = [(tcx - tw / 2, tcy - th / 2), (tcx + tw / 2, tcy - th / 2), (tcx + tw / 2, tcy + th / 2), (tcx - tw / 2, tcy + th / 2)]
-                for j, cc in enumerate(compounds):
-                    if j == len(civics) + i:  # skip the estate's OWN court
-                        continue
-                    if sat_overlap(thr, cc):
-                        gate_bad.append((round(mest[i]["x"]), round(mest[i]["y"])))
-                        break
+                if sat_overlap(thr, cc):
+                    gate_bad.append((round(mest[i]["x"]), round(mest[i]["y"])))
+                    break
     return _kept(locals(), ('cc', 'g', 'gate_bad', 'i', 'j', 'ox', 'oy', 'tcx', 'tcy', 'th', 'thr', 'tw'))
 
 
 def _seg_0563_196__city_merchant_estate_gate_clear(*, check: Any = _UNBOUND, gate_bad: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.196 (city_merchant_estate_gate_clear) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_merchant_estate_gate_clear",
-                not gate_bad,
-                f"walled merchant estate gate(s) opening INTO a building (a temple/compound/another estate) - point the gate at open ground: {gate_bad}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_merchant_estate_gate_clear",
+            not gate_bad,
+            f"walled merchant estate gate(s) opening INTO a building (a temple/compound/another estate) - point the gate at open ground: {gate_bad}",
+        )
     return _kept(locals(), ())
 
 
@@ -23615,17 +23474,15 @@ def _seg_0563_196__city_merchant_estate_gate_clear(*, check: Any = _UNBOUND, gat
 
 def _seg_0563_197__gov(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.197 (gov) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gov = M.get("governor_mansion")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gov = M.get("governor_mansion")
     return _kept(locals(), ('gov',))
 
 
 def _seg_0563_198__gov_items(*, M: Any = _UNBOUND, gov: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.198 (gov_items) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gov_items = ([gov] if gov else []) + M.get("ministries", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gov_items = ([gov] if gov else []) + M.get("ministries", [])
     return _kept(locals(), ('gov_items',))
 
 
@@ -23633,21 +23490,19 @@ def _seg_0563_199__g_5(
     *, g: Any = _UNBOUND, gov_items: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.199 (g, gov_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gov_bad = [
-                g.get("name") or g.get("label") or "governor's mansion"
-                for g in gov_items
-                if footprint_on_line(rect_corners_xywh(g, 0), w, 9) or (moat and footprint_on_line(rect_corners_xywh(g, 0), moat, 13))
-            ]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gov_bad = [
+            g.get("name") or g.get("label") or "governor's mansion"
+            for g in gov_items
+            if footprint_on_line(rect_corners_xywh(g, 0), w, 9) or (moat and footprint_on_line(rect_corners_xywh(g, 0), moat, 13))
+        ]
     return _kept(locals(), ('g', 'gov_bad'))
 
 
 def _seg_0563_200__city_government_clear_of_wall_moat(*, check: Any = _UNBOUND, gov_bad: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.200 (city_government_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_government_clear_of_wall_moat", not gov_bad, f"government compound(s) overlapping the wall or moat: {gov_bad}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_government_clear_of_wall_moat", not gov_bad, f"government compound(s) overlapping the wall or moat: {gov_bad}")
     return _kept(locals(), ())
 
 
@@ -23671,27 +23526,25 @@ def _seg_0563_201__city_governor_mansion_large(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.201 (city_governor_mansion_large, city_ministries_cluster_at_government) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if gov:
-                ga = gov["w"] * gov["h"]
-                # the absolute floor is REAL area (~1.4 ha): 24000px2 was tuned at the pre-ladder
-                # ~2.55 ft/px grain and would demand a 2 ha yamen at 3 ft/px
-                _floor = round(24000 * (2.55 / meta.get("ftpx", 2.55)) ** 2)
-                big_other = max([mn["w"] * mn["h"] for mn in est_out] + [3 * m["w"] * m["h"] for m in M.get("ministries", [])] + [_floor])
-                check(
-                    "city_governor_mansion_large",
-                    ga >= big_other,
-                    f"the governor's mansion ({ga:.0f}px2) must be the grandest compound - a city-block yamen at least as large as any estate and >= 3x any ministry (need >= {big_other:.0f})",
-                )
-                # the ministries cluster around the yamen (the government district), threading into the
-                # samurai quarter; only the Ministry of Rites sits apart, with the temples it oversees
-                far_min = [m.get("name") for m in M.get("ministries", []) if "rites" not in (m.get("name") or "").lower() and math.hypot(m["x"] - gov["x"], m["y"] - gov["y"]) > 480]
-                check(
-                    "city_ministries_cluster_at_government",
-                    not far_min,
-                    f"ministry office(s) far from the governor's mansion - the ministries belong around the yamen / in the samurai quarter (only Rites sits with the temples): {far_min}",
-                )
+    if scale in ('city', 'capital') and meta.get('walled') and gov:
+        ga = gov["w"] * gov["h"]
+        # the absolute floor is REAL area (~1.4 ha): 24000px2 was tuned at the pre-ladder
+        # ~2.55 ft/px grain and would demand a 2 ha yamen at 3 ft/px
+        _floor = round(24000 * (2.55 / meta.get("ftpx", 2.55)) ** 2)
+        big_other = max([mn["w"] * mn["h"] for mn in est_out] + [3 * m["w"] * m["h"] for m in M.get("ministries", [])] + [_floor])
+        check(
+            "city_governor_mansion_large",
+            ga >= big_other,
+            f"the governor's mansion ({ga:.0f}px2) must be the grandest compound - a city-block yamen at least as large as any estate and >= 3x any ministry (need >= {big_other:.0f})",
+        )
+        # the ministries cluster around the yamen (the government district), threading into the
+        # samurai quarter; only the Ministry of Rites sits apart, with the temples it oversees
+        far_min = [m.get("name") for m in M.get("ministries", []) if "rites" not in (m.get("name") or "").lower() and math.hypot(m["x"] - gov["x"], m["y"] - gov["y"]) > 480]
+        check(
+            "city_ministries_cluster_at_government",
+            not far_min,
+            f"ministry office(s) far from the governor's mansion - the ministries belong around the yamen / in the samurai quarter (only Rites sits with the temples): {far_min}",
+        )
     return _kept(locals(), ('_floor', 'big_other', 'far_min', 'ga', 'm', 'mn'))
 
 
@@ -23702,31 +23555,28 @@ def _seg_0563_201__city_governor_mansion_large(
 
 def _seg_0563_202__r23(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, r23: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.202 (r23, st, st_pts) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            st_pts = (
-                [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r23["pts"] for r23 in M.get("roads", [])]
-            )  # the ote-suji IS the avenue (021: capital ministries front the road)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        st_pts = (
+            [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r23["pts"] for r23 in M.get("roads", [])]
+        )  # the ote-suji IS the avenue (021: capital ministries front the road)
     return _kept(locals(), ('r23', 'st', 'st_pts'))
 
 
 def _seg_0563_203__i_2(*, M: Any = _UNBOUND, i: Any = _UNBOUND, m: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, sp: Any = _UNBOUND, st_pts: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.203 (i, m, no_front, sp) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            no_front = [m.get("name") for m in M.get("ministries", []) if not any(seg_dist(m["x"], m["y"], sp[i], sp[i + 1]) < 85 for sp in st_pts for i in range(len(sp) - 1))]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        no_front = [m.get("name") for m in M.get("ministries", []) if not any(seg_dist(m["x"], m["y"], sp[i], sp[i + 1]) < 85 for sp in st_pts for i in range(len(sp) - 1))]
     return _kept(locals(), ('i', 'm', 'no_front', 'sp'))
 
 
 def _seg_0563_204__city_ministries_front_a_street(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, no_front: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.204 (city_ministries_front_a_street) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_ministries_front_a_street",
-                not no_front,
-                f"ministry office(s) not fronting any city street - government offices line the avenues around the yamen, they do not float mid-block: {no_front}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_ministries_front_a_street",
+            not no_front,
+            f"ministry office(s) not fronting any city street - government offices line the avenues around the yamen, they do not float mid-block: {no_front}",
+        )
     return _kept(locals(), ())
 
 
@@ -23737,21 +23587,19 @@ def _seg_0563_204__city_ministries_front_a_street(*, check: Any = _UNBOUND, meta
 
 def _seg_0563_205__i_3(*, M: Any = _UNBOUND, i: Any = _UNBOUND, k: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.205 (i, k, on_st_kido, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            on_st_kido = [
-                k
-                for k in M.get("kido", [])
-                if any(seg_dist(k["x"], k["y"], st["pts"][i], st["pts"][i + 1]) < st.get("w", 18) / 2 + 8 for st in M.get("town_streets", []) for i in range(len(st["pts"]) - 1))
-            ]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        on_st_kido = [
+            k
+            for k in M.get("kido", [])
+            if any(seg_dist(k["x"], k["y"], st["pts"][i], st["pts"][i + 1]) < st.get("w", 18) / 2 + 8 for st in M.get("town_streets", []) for i in range(len(st["pts"]) - 1))
+        ]
     return _kept(locals(), ('i', 'k', 'on_st_kido', 'st'))
 
 
 def _seg_0563_206__gated(*, gov: Any = _UNBOUND, k: Any = _UNBOUND, meta: Any = _UNBOUND, on_st_kido: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.206 (gated, k) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gated = [k for k in on_st_kido if gov and math.hypot(k["x"] - gov["x"], k["y"] - gov["y"]) < 480]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gated = [k for k in on_st_kido if gov and math.hypot(k["x"] - gov["x"], k["y"] - gov["y"]) < 480]
     return _kept(locals(), ('gated', 'k'))
 
 
@@ -23763,8 +23611,8 @@ def _seg_0563_206__gated(*, gov: Any = _UNBOUND, k: Any = _UNBOUND, meta: Any = 
 
 def _seg_0563_207__city_samurai_quarter_gated(*, URBAN: Any = _UNBOUND, check: Any = _UNBOUND, gated: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.207 (city_samurai_quarter_gated) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
+        if meta.get('walled'):  # noqa: SIM102
             if URBAN and meta.get("ward_gates", True):
                 check(
                     "city_samurai_quarter_gated",
@@ -23781,35 +23629,29 @@ def _seg_0563_207__city_samurai_quarter_gated(*, URBAN: Any = _UNBOUND, check: A
 
 def _seg_0563_208__wards(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.208 (wards) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            wards = M.get("wards", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        wards = M.get("wards", [])
     return _kept(locals(), ('wards',))
 
 
 def _seg_0563_209__kido(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.209 (kido) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            kido = M.get("kido", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        kido = M.get("kido", [])
     return _kept(locals(), ('kido',))
 
 
 def _seg_0563_210__a_1(*, M: Any = _UNBOUND, a: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.210 (a, netlines, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            netlines = (
-                [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [a["pts"] for a in M.get("alleys", [])] + ([M["ring_road"]] if M.get("ring_road") else [])
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        netlines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [a["pts"] for a in M.get("alleys", [])] + ([M["ring_road"]] if M.get("ring_road") else [])
     return _kept(locals(), ('a', 'netlines', 'st'))
 
 
 def _seg_0563_211__bad_cross(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.211 (bad_cross, open_end) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            bad_cross, open_end = [], []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        bad_cross, open_end = [], []  # type: ignore[var-annotated]
     return _kept(locals(), ('bad_cross', 'open_end'))
 
 
@@ -23833,20 +23675,19 @@ def _seg_0563_212__bad_cross_1(
     wd: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.212 (bad_cross, bnd, e, g) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for wd in wards:
-                bnd = wd["boundary"]
-                for sp in netlines:
-                    for i in range(len(sp) - 1):
-                        for ki in range(len(bnd) - 1):
-                            if segments_cross(sp[i], sp[i + 1], bnd[ki], bnd[ki + 1]):
-                                ip = seg_intersect(sp[i], sp[i + 1], bnd[ki], bnd[ki + 1])
-                                if ip and not any(math.hypot(g["x"] - ip[0], g["y"] - ip[1]) < 32 for g in kido):
-                                    bad_cross.append((round(ip[0]), round(ip[1])))
-                for e in (bnd[0], bnd[-1]):
-                    if len(w) >= 3 and edge_dist(e[0], e[1], w) > 45:
-                        open_end.append((round(e[0]), round(e[1])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for wd in wards:
+            bnd = wd["boundary"]
+            for sp in netlines:
+                for i in range(len(sp) - 1):
+                    for ki in range(len(bnd) - 1):
+                        if segments_cross(sp[i], sp[i + 1], bnd[ki], bnd[ki + 1]):
+                            ip = seg_intersect(sp[i], sp[i + 1], bnd[ki], bnd[ki + 1])
+                            if ip and not any(math.hypot(g["x"] - ip[0], g["y"] - ip[1]) < 32 for g in kido):
+                                bad_cross.append((round(ip[0]), round(ip[1])))
+            for e in (bnd[0], bnd[-1]):
+                if len(w) >= 3 and edge_dist(e[0], e[1], w) > 45:
+                    open_end.append((round(e[0]), round(e[1])))
     return _kept(locals(), ('bad_cross', 'bnd', 'e', 'g', 'i', 'ip', 'ki', 'open_end', 'sp', 'wd'))
 
 
@@ -23857,8 +23698,8 @@ def _seg_0563_213__city_samurai_ward_sealed(
     *, URBAN: Any = _UNBOUND, bad_cross: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, open_end: Any = _UNBOUND, scale: Any = _UNBOUND, wards: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.213 (city_samurai_ward_sealed) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
+        if meta.get('walled'):  # noqa: SIM102
             if URBAN and meta.get("ward_gates", True):
                 check(
                     "city_samurai_ward_sealed",
@@ -23875,9 +23716,8 @@ def _seg_0563_213__city_samurai_ward_sealed(
 
 def _seg_0563_214__fence_gap(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.214 (fence_gap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            fence_gap = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        fence_gap = []  # type: ignore[var-annotated]
     return _kept(locals(), ('fence_gap',))
 
 
@@ -23895,27 +23735,25 @@ def _seg_0563_215__bnd(
     wd: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.215 (bnd, e, fence_gap, g) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for wd in wards:
-                bnd = wd["boundary"]
-                for e in (bnd[0], bnd[-1]):
-                    if len(w) >= 3 and edge_dist(e[0], e[1], w) > 10:
-                        fence_gap.append((round(e[0]), round(e[1]), "gap to the wall"))
-                    elif any(math.hypot(e[0] - g[0], e[1] - g[1]) < 45 for g in gates):
-                        fence_gap.append((round(e[0]), round(e[1]), "lands in a gate OPENING (the wall is cut there, so the fence meets nothing)"))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for wd in wards:
+            bnd = wd["boundary"]
+            for e in (bnd[0], bnd[-1]):
+                if len(w) >= 3 and edge_dist(e[0], e[1], w) > 10:
+                    fence_gap.append((round(e[0]), round(e[1]), "gap to the wall"))
+                elif any(math.hypot(e[0] - g[0], e[1] - g[1]) < 45 for g in gates):
+                    fence_gap.append((round(e[0]), round(e[1]), "lands in a gate OPENING (the wall is cut there, so the fence meets nothing)"))
     return _kept(locals(), ('bnd', 'e', 'fence_gap', 'g', 'wd'))
 
 
 def _seg_0563_216__city_ward_fence_meets_wall(*, check: Any = _UNBOUND, fence_gap: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.216 (city_ward_fence_meets_wall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_ward_fence_meets_wall",
-                not fence_gap,
-                f"ward-fence end(s) not abutting SOLID city wall (commoners could walk around the fence end): {fence_gap} - extend the fence to solid rampart, clear of any gate opening",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_ward_fence_meets_wall",
+            not fence_gap,
+            f"ward-fence end(s) not abutting SOLID city wall (commoners could walk around the fence end): {fence_gap} - extend the fence to solid rampart, clear of any gate opening",
+        )
     return _kept(locals(), ())
 
 
@@ -23937,17 +23775,15 @@ def _seg_0563_216__city_ward_fence_meets_wall(*, check: Any = _UNBOUND, fence_ga
 
 def _seg_0563_217__barred(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.217 (barred) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            barred = ("laborer", "laborer_large", "merchant", "merchant_house", "merchant_large", "burakumin", "shop", "inn")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        barred = ("laborer", "laborer_large", "merchant", "merchant_house", "merchant_large", "burakumin", "shop", "inn")
     return _kept(locals(), ('barred',))
 
 
 def _seg_0563_218__commoner_in(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.218 (commoner_in) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            commoner_in = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        commoner_in = []  # type: ignore[var-annotated]
     return _kept(locals(), ('commoner_in',))
 
 
@@ -23965,15 +23801,14 @@ def _seg_0563_219__b_10(
     wd: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.219 (b, commoner_in, region, wd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for wd in wards:
-                if wd.get("name") != "samurai":
-                    continue
-                region = _ward_interior(wd["boundary"], w)
-                for b in M.get("buildings", []):
-                    if region and b.get("kind") in barred and point_in_poly(b["x"], b["y"], region):
-                        commoner_in.append((b["kind"], round(b["x"]), round(b["y"])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for wd in wards:
+            if wd.get("name") != "samurai":
+                continue
+            region = _ward_interior(wd["boundary"], w)
+            for b in M.get("buildings", []):
+                if region and b.get("kind") in barred and point_in_poly(b["x"], b["y"], region):
+                    commoner_in.append((b["kind"], round(b["x"]), round(b["y"])))
     return _kept(locals(), ('b', 'commoner_in', 'region', 'wd'))
 
 
@@ -23995,9 +23830,8 @@ def _seg_0563_219__b_10(
 
 def _seg_0563_220__loose_servants(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.220 (loose_servants) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            loose_servants = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        loose_servants = []  # type: ignore[var-annotated]
     return _kept(locals(), ('loose_servants',))
 
 
@@ -24017,47 +23851,45 @@ def _seg_0563_221__b_11(
     wd: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.221 (b, host, hosts, loose_servants) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for wd in wards:
-                if wd.get("name") != "samurai":
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for wd in wards:
+            if wd.get("name") != "samurai":
+                continue
+            region = _ward_interior(wd["boundary"], w)
+            if not region:
+                continue
+            hosts = {(round(b["x"], 1), round(b["y"], 1)): b for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large")}
+            for b in M.get("buildings", []):
+                if b.get("kind") != "servant" or "w" not in b or not point_in_poly(b["x"], b["y"], region):
                     continue
-                region = _ward_interior(wd["boundary"], w)
-                if not region:
-                    continue
-                hosts = {(round(b["x"], 1), round(b["y"], 1)): b for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large")}
-                for b in M.get("buildings", []):
-                    if b.get("kind") != "servant" or "w" not in b or not point_in_poly(b["x"], b["y"], region):
-                        continue
-                    of = b.get("of")
-                    host = hosts.get((round(of[0], 1), round(of[1], 1))) if of else None
-                    if host is None:
-                        loose_servants.append((round(b["x"]), round(b["y"]), "freestanding - no samurai household"))
-                    elif edge_gap(b, host) > 2.5:
-                        loose_servants.append((round(b["x"]), round(b["y"]), f"detached from its household by {edge_gap(b, host):.0f}px"))
-                    elif max(b["w"], b["h"]) < 2.2 * min(b["w"], b["h"]):
-                        loose_servants.append((round(b["x"]), round(b["y"]), "drawn as a cottage, not a range"))
+                of = b.get("of")
+                host = hosts.get((round(of[0], 1), round(of[1], 1))) if of else None
+                if host is None:
+                    loose_servants.append((round(b["x"]), round(b["y"]), "freestanding - no samurai household"))
+                elif edge_gap(b, host) > 2.5:
+                    loose_servants.append((round(b["x"]), round(b["y"]), f"detached from its household by {edge_gap(b, host):.0f}px"))
+                elif max(b["w"], b["h"]) < 2.2 * min(b["w"], b["h"]):
+                    loose_servants.append((round(b["x"]), round(b["y"]), "drawn as a cottage, not a range"))
     return _kept(locals(), ('b', 'host', 'hosts', 'loose_servants', 'of', 'region', 'wd'))
 
 
 def _seg_0563_222__city_ward_servants_housed_as_ranges(*, check: Any = _UNBOUND, loose_servants: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.222 (city_ward_servants_housed_as_ranges) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_ward_servants_housed_as_ranges",
-                not loose_servants,
-                f"servant dwelling(s) inside the samurai ward not drawn as their household's RANGE: {loose_servants[:6]} - a samurai household's "
-                f"domestics live in the nagaya along its own frontage, not in a freestanding cottage among the compounds (which reads as the very "
-                f"commoner fabric the fence excludes); place them with s.servant_ranges() AFTER the ward's samurai houses, and put any genuinely "
-                f"ranked small housing outside the fence, where ashigaru kumi-yashiki belong",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_ward_servants_housed_as_ranges",
+            not loose_servants,
+            f"servant dwelling(s) inside the samurai ward not drawn as their household's RANGE: {loose_servants[:6]} - a samurai household's "
+            f"domestics live in the nagaya along its own frontage, not in a freestanding cottage among the compounds (which reads as the very "
+            f"commoner fabric the fence excludes); place them with s.servant_ranges() AFTER the ward's samurai houses, and put any genuinely "
+            f"ranked small housing outside the fence, where ashigaru kumi-yashiki belong",
+        )
     return _kept(locals(), ())
 
 
 def _seg_0563_223__city_samurai_ward_residents_only(*, check: Any = _UNBOUND, commoner_in: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.223 (city_samurai_ward_residents_only) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_samurai_ward_residents_only",
@@ -24074,17 +23906,15 @@ def _seg_0563_223__city_samurai_ward_residents_only(*, check: Any = _UNBOUND, co
 
 def _seg_0563_224__fence_hit(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.224 (fence_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            fence_hit = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        fence_hit = []  # type: ignore[var-annotated]
     return _kept(locals(), ('fence_hit',))
 
 
 def _seg_0563_225___ftargets(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.225 (_ftargets, b) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _ftargets = [b for b in (M.get("buildings", []) + M.get("houses", []) + M.get("mausoleums", [])) if "w" in b]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _ftargets = [b for b in (M.get("buildings", []) + M.get("houses", []) + M.get("mausoleums", [])) if "w" in b]
     return _kept(locals(), ('_ftargets', 'b'))
 
 
@@ -24105,33 +23935,31 @@ def _seg_0563_226__b_12(
     wd2: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.226 (b, b2, bc, bnd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for wd in wards:
-                bnd = wd["boundary"]
-                for b in _ftargets:
-                    bc = rect_corners({"x": b["x"], "y": b["y"], "w": b["w"], "h": b.get("h", b["w"]), "rot": b.get("rot", 0)})
-                    if footprint_on_line(bc, bnd, 4):
-                        fence_hit.append((round(b["x"]), round(b["y"])))
-                for wd2 in wards:
-                    if wd2 is wd:
-                        continue
-                    b2 = wd2["boundary"]
-                    if any(segments_cross(bnd[i], bnd[i + 1], b2[j], b2[j + 1]) for i in range(len(bnd) - 1) for j in range(len(b2) - 1)):
-                        fence_hit.append(("ward-x-ward", round(bnd[0][0])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for wd in wards:
+            bnd = wd["boundary"]
+            for b in _ftargets:
+                bc = rect_corners({"x": b["x"], "y": b["y"], "w": b["w"], "h": b.get("h", b["w"]), "rot": b.get("rot", 0)})
+                if footprint_on_line(bc, bnd, 4):
+                    fence_hit.append((round(b["x"]), round(b["y"])))
+            for wd2 in wards:
+                if wd2 is wd:
+                    continue
+                b2 = wd2["boundary"]
+                if any(segments_cross(bnd[i], bnd[i + 1], b2[j], b2[j + 1]) for i in range(len(bnd) - 1) for j in range(len(b2) - 1)):
+                    fence_hit.append(("ward-x-ward", round(bnd[0][0])))
     return _kept(locals(), ('b', 'b2', 'bc', 'bnd', 'fence_hit', 'i', 'j', 'wd', 'wd2'))
 
 
 def _seg_0563_227__city_ward_fence_clear_of_structures(*, check: Any = _UNBOUND, fence_hit: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.227 (city_ward_fence_clear_of_structures) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_ward_fence_clear_of_structures",
-                not fence_hit,
-                f"ward fence passing THROUGH a structure (building / mausoleum / another fence): {sorted(set(fence_hit))[:4]} - "
-                f"the fence runs in open ground; move the structure clear of the fence line or reroute the fence",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_ward_fence_clear_of_structures",
+            not fence_hit,
+            f"ward fence passing THROUGH a structure (building / mausoleum / another fence): {sorted(set(fence_hit))[:4]} - "
+            f"the fence runs in open ground; move the structure clear of the fence line or reroute the fence",
+        )
     return _kept(locals(), ())
 
 
@@ -24142,9 +23970,8 @@ def _seg_0563_227__city_ward_fence_clear_of_structures(*, check: Any = _UNBOUND,
 
 def _seg_0563_228__off_fence(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.228 (off_fence) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            off_fence = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        off_fence = []  # type: ignore[var-annotated]
     return _kept(locals(), ('off_fence',))
 
 
@@ -24152,24 +23979,22 @@ def _seg_0563_229__i_4(
     *, i: Any = _UNBOUND, kd: Any = _UNBOUND, kido: Any = _UNBOUND, meta: Any = _UNBOUND, off_fence: Any = _UNBOUND, scale: Any = _UNBOUND, wards: Any = _UNBOUND, wd: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.229 (i, kd, off_fence, wd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for kd in kido:
-                if wards and min((seg_dist(kd["x"], kd["y"], wd["boundary"][i], wd["boundary"][i + 1]) for wd in wards for i in range(len(wd["boundary"]) - 1)), default=999) > 8:
-                    off_fence.append((round(kd["x"]), round(kd["y"])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for kd in kido:
+            if wards and min((seg_dist(kd["x"], kd["y"], wd["boundary"][i], wd["boundary"][i + 1]) for wd in wards for i in range(len(wd["boundary"]) - 1)), default=999) > 8:
+                off_fence.append((round(kd["x"]), round(kd["y"])))
     return _kept(locals(), ('i', 'kd', 'off_fence', 'wd'))
 
 
 def _seg_0563_230__city_kido_on_ward_fence(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, off_fence: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.230 (city_kido_on_ward_fence) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_kido_on_ward_fence",
-                not off_fence,
-                f"ward gate(s) sitting BESIDE the fence, not on it: {off_fence[:4]} - a kido gates a crossing THROUGH the "
-                f"fence, so its point must lie ON the fence line (overlap it), not offset into the ward",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_kido_on_ward_fence",
+            not off_fence,
+            f"ward gate(s) sitting BESIDE the fence, not on it: {off_fence[:4]} - a kido gates a crossing THROUGH the "
+            f"fence, so its point must lie ON the fence line (overlap it), not offset into the ward",
+        )
     return _kept(locals(), ())
 
 
@@ -24181,9 +24006,8 @@ def _seg_0563_230__city_kido_on_ward_fence(*, check: Any = _UNBOUND, meta: Any =
 
 def _seg_0563_231__not_under(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.231 (not_under) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            not_under = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        not_under = []  # type: ignore[var-annotated]
     return _kept(locals(), ('not_under',))
 
 
@@ -24201,28 +24025,26 @@ def _seg_0563_232__c(
     wd: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.232 (c, caps, e, fz) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for wd in wards:
-                fz = wd.get("z")
-                caps = wd.get("wall_caps", [])
-                if fz is None:
-                    continue
-                for e in (wd["boundary"][0], wd["boundary"][-1]):
-                    if len(w) >= 3 and edge_dist(e[0], e[1], w) <= 15 and not any(c.get("z", -1) > fz and math.hypot(c["x"] - e[0], c["y"] - e[1]) < 30 for c in caps):
-                        not_under.append((round(e[0]), round(e[1])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for wd in wards:
+            fz = wd.get("z")
+            caps = wd.get("wall_caps", [])
+            if fz is None:
+                continue
+            for e in (wd["boundary"][0], wd["boundary"][-1]):
+                if len(w) >= 3 and edge_dist(e[0], e[1], w) <= 15 and not any(c.get("z", -1) > fz and math.hypot(c["x"] - e[0], c["y"] - e[1]) < 30 for c in caps):
+                    not_under.append((round(e[0]), round(e[1])))
     return _kept(locals(), ('c', 'caps', 'e', 'fz', 'not_under', 'wd'))
 
 
 def _seg_0563_233__city_ward_fence_under_wall(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, not_under: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.233 (city_ward_fence_under_wall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_ward_fence_under_wall",
-                not not_under,
-                f"ward-fence end(s) NOT rendered under the city wall - no wall cap on top of the junction, so the fence paints over the rampart: {not_under}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_ward_fence_under_wall",
+            not not_under,
+            f"ward-fence end(s) NOT rendered under the city wall - no wall cap on top of the junction, so the fence paints over the rampart: {not_under}",
+        )
     return _kept(locals(), ())
 
 
@@ -24234,33 +24056,29 @@ def _seg_0563_233__city_ward_fence_under_wall(*, check: Any = _UNBOUND, meta: An
 
 def _seg_0563_234__cx(*, meta: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.234 (cx, cy, p) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            cx, cy = sum(p[0] for p in w) / len(w), sum(p[1] for p in w) / len(w)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        cx, cy = sum(p[0] for p in w) / len(w), sum(p[1] for p in w) / len(w)
     return _kept(locals(), ('cx', 'cy', 'p'))
 
 
 def _seg_0563_235__cap(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.235 (cap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            cap = meta.get("capital_dir", "southeast")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        cap = meta.get("capital_dir", "southeast")
     return _kept(locals(), ('cap',))
 
 
 def _seg_0563_236__cd(*, cap: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.236 (cd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            cd = unit_dir(cap)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        cd = unit_dir(cap)
     return _kept(locals(), ('cd',))
 
 
 def _seg_0563_237__city_capital_dir_valid(*, cap: Any = _UNBOUND, cd: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.237 (city_capital_dir_valid) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_capital_dir_valid", cd is not None, f"meta(capital_dir={cap!r}) is not a cardinal direction")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_capital_dir_valid", cd is not None, f"meta(capital_dir={cap!r}) is not a cardinal direction")
     return _kept(locals(), ())
 
 
@@ -24279,21 +24097,19 @@ def _seg_0563_238__city_estates_toward_capital(
     toward: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.238 (city_estates_toward_capital) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if cd:
+    if scale in ('city', 'capital') and meta.get('walled') and cd:
 
-                def toward(mn: dict[str, Any]) -> bool:
-                    okx = (mn["x"] > cx) if cd[0] > 0.3 else (mn["x"] < cx) if cd[0] < -0.3 else True
-                    oky = (mn["y"] > cy) if cd[1] > 0.3 else (mn["y"] < cy) if cd[1] < -0.3 else True
-                    return okx and oky
+        def toward(mn: dict[str, Any]) -> bool:
+            okx = (mn["x"] > cx) if cd[0] > 0.3 else (mn["x"] < cx) if cd[0] < -0.3 else True
+            oky = (mn["y"] > cy) if cd[1] > 0.3 else (mn["y"] < cy) if cd[1] < -0.3 else True
+            return okx and oky
 
-                not_cap = [(round(mn["x"]), round(mn["y"])) for mn in est_out if not toward(mn)]
-                check(
-                    "city_estates_toward_capital",
-                    not not_cap,
-                    f"{len(not_cap)} samurai estate(s) not toward the capital ({cap}): {not_cap[:3]} - a city's extramural estates cluster on the Otosan-Uchi-facing side (meta(capital_dir=...))",
-                )
+        not_cap = [(round(mn["x"]), round(mn["y"])) for mn in est_out if not toward(mn)]
+        check(
+            "city_estates_toward_capital",
+            not not_cap,
+            f"{len(not_cap)} samurai estate(s) not toward the capital ({cap}): {not_cap[:3]} - a city's extramural estates cluster on the Otosan-Uchi-facing side (meta(capital_dir=...))",
+        )
     return _kept(locals(), ('mn', 'not_cap', 'toward'))
 
 
@@ -24304,9 +24120,8 @@ def _seg_0563_238__city_estates_toward_capital(
 
 def _seg_0563_239__r_3(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, r: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.239 (r, roads_all) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            roads_all = [r["pts"] for r in M.get("roads", [])] or ([M["road"]] if M.get("road") else [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        roads_all = [r["pts"] for r in M.get("roads", [])] or ([M["road"]] if M.get("road") else [])
     return _kept(locals(), ('r', 'roads_all'))
 
 
@@ -24314,21 +24129,19 @@ def _seg_0563_240__est_on_road(
     *, M: Any = _UNBOUND, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, roads_all: Any = _UNBOUND, rp: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.240 (est_on_road, mn, rp) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            est_on_road = [(round(mn["x"]), round(mn["y"])) for mn in est_out if any(footprint_on_line(rect_corners(_struct_rect(mn)), rp, (M.get("road_width", 26) / 2 + 4)) for rp in roads_all)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        est_on_road = [(round(mn["x"]), round(mn["y"])) for mn in est_out if any(footprint_on_line(rect_corners(_struct_rect(mn)), rp, (M.get("road_width", 26) / 2 + 4)) for rp in roads_all)]
     return _kept(locals(), ('est_on_road', 'mn', 'rp'))
 
 
 def _seg_0563_241__city_estates_clear_of_roads(*, check: Any = _UNBOUND, est_on_road: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.241 (city_estates_clear_of_roads) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_estates_clear_of_roads",
-                not est_on_road,
-                f"samurai estate(s) straddling a road out of the city: {est_on_road[:3]} - an estate fronts its own approach lane but must not sit ON the highway",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_estates_clear_of_roads",
+            not est_on_road,
+            f"samurai estate(s) straddling a road out of the city: {est_on_road[:3]} - an estate fronts its own approach lane but must not sit ON the highway",
+        )
     return _kept(locals(), ())
 
 
@@ -24340,20 +24153,18 @@ def _seg_0563_241__city_estates_clear_of_roads(*, check: Any = _UNBOUND, est_on_
 
 def _seg_0563_242__a_2(*, M: Any = _UNBOUND, a: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.242 (a, lanes_pts, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            lanes_pts = [st["pts"] for st in M.get("town_streets", [])] + [a["pts"] for a in M.get("alleys", [])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        lanes_pts = [st["pts"] for st in M.get("town_streets", [])] + [a["pts"] for a in M.get("alleys", [])]
     return _kept(locals(), ('a', 'lanes_pts', 'st'))
 
 
 def _seg_0563_243__crosses_ring(*, i: Any = _UNBOUND, k: Any = _UNBOUND, meta: Any = _UNBOUND, pts: Any = _UNBOUND, ring: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.243 (crosses_ring) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital') and meta.get('walled'):
 
-            def crosses_ring(pts: Poly, ring: Poly, closed: bool) -> bool:
-                rng = range(len(ring)) if closed else range(len(ring) - 1)
-                return any(segments_cross(pts[k], pts[k + 1], ring[i], ring[(i + 1) % len(ring)]) for k in range(len(pts) - 1) for i in rng)
+        def crosses_ring(pts: Poly, ring: Poly, closed: bool) -> bool:
+            rng = range(len(ring)) if closed else range(len(ring) - 1)
+            return any(segments_cross(pts[k], pts[k + 1], ring[i], ring[(i + 1) % len(ring)]) for k in range(len(pts) - 1) for i in rng)
 
     return _kept(locals(), ('crosses_ring',))
 
@@ -24367,25 +24178,22 @@ def _seg_0563_244__p_2(
     *, crosses_ring: Any = _UNBOUND, inwall: Any = _UNBOUND, lanes_pts: Any = _UNBOUND, meta: Any = _UNBOUND, p: Any = _UNBOUND, pts: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.244 (p, pts, wall_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            wall_hit = [pts[0] for pts in lanes_pts if crosses_ring(pts, w, True) or (any(not inwall(p[0], p[1]) for p in pts) and any(inwall(p[0], p[1]) for p in pts))]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        wall_hit = [pts[0] for pts in lanes_pts if crosses_ring(pts, w, True) or (any(not inwall(p[0], p[1]) for p in pts) and any(inwall(p[0], p[1]) for p in pts))]
     return _kept(locals(), ('p', 'pts', 'wall_hit'))
 
 
 def _seg_0563_245__city_streets_clear_of_wall(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, wall_hit: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.245 (city_streets_clear_of_wall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_streets_clear_of_wall", not wall_hit, f"{len(wall_hit)} street/alley(s) crossing the city wall (a lane running outside the rampart): {wall_hit}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_streets_clear_of_wall", not wall_hit, f"{len(wall_hit)} street/alley(s) crossing the city wall (a lane running outside the rampart): {wall_hit}")
     return _kept(locals(), ())
 
 
 def _seg_0563_246__moat_1(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.246 (moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            moat = M.get("moat")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        moat = M.get("moat")
     return _kept(locals(), ('moat',))
 
 
@@ -24393,11 +24201,9 @@ def _seg_0563_247__city_streets_clear_of_moat(
     *, check: Any = _UNBOUND, crosses_ring: Any = _UNBOUND, lanes_pts: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, moat_hit: Any = _UNBOUND, pts: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.247 (city_streets_clear_of_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if moat:
-                moat_hit = [pts[0] for pts in lanes_pts if crosses_ring(pts, moat, False)]
-                check("city_streets_clear_of_moat", not moat_hit, f"{len(moat_hit)} street/alley(s) crossing the moat: {moat_hit}")
+    if scale in ('city', 'capital') and meta.get('walled') and moat:
+        moat_hit = [pts[0] for pts in lanes_pts if crosses_ring(pts, moat, False)]
+        check("city_streets_clear_of_moat", not moat_hit, f"{len(moat_hit)} street/alley(s) crossing the moat: {moat_hit}")
     return _kept(locals(), ('moat_hit', 'pts'))
 
 
@@ -24407,17 +24213,15 @@ def _seg_0563_247__city_streets_clear_of_moat(
 
 def _seg_0563_248__f(*, f: Any = _UNBOUND, fields: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.248 (f, fld_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            fld_bad = [f["name"] for f in fields if footprint_on_line(f["outline"], w, 10) or (moat and footprint_on_line(f["outline"], moat, 13))]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        fld_bad = [f["name"] for f in fields if footprint_on_line(f["outline"], w, 10) or (moat and footprint_on_line(f["outline"], moat, 13))]
     return _kept(locals(), ('f', 'fld_bad'))
 
 
 def _seg_0563_249__city_fields_clear_of_wall_moat(*, check: Any = _UNBOUND, fld_bad: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.249 (city_fields_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_fields_clear_of_wall_moat", not fld_bad, f"field(s) overlapping the city wall or moat: {fld_bad}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_fields_clear_of_wall_moat", not fld_bad, f"field(s) overlapping the city wall or moat: {fld_bad}")
     return _kept(locals(), ())
 
 
@@ -24426,9 +24230,8 @@ def _seg_0563_249__city_fields_clear_of_wall_moat(*, check: Any = _UNBOUND, fld_
 
 def _seg_0563_250__pnd(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.250 (pnd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            pnd = M.get("pond")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        pnd = M.get("pond")
     return _kept(locals(), ('pnd',))
 
 
@@ -24448,12 +24251,10 @@ def _seg_0563_251__city_pond_clear_of_wall_moat(
     w: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.251 (city_pond_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if pnd:
-                pcx, pcy, prx, pry = pnd
-                p_out = [(pcx + math.cos(math.tau * k / 28) * prx, pcy + math.sin(math.tau * k / 28) * pry) for k in range(28)]
-                check("city_pond_clear_of_wall_moat", not (footprint_on_line(p_out, w, 9) or (moat and footprint_on_line(p_out, moat, 13))), "the in-wall pond overlaps the city wall or moat")
+    if scale in ('city', 'capital') and meta.get('walled') and pnd:
+        pcx, pcy, prx, pry = pnd
+        p_out = [(pcx + math.cos(math.tau * k / 28) * prx, pcy + math.sin(math.tau * k / 28) * pry) for k in range(28)]
+        check("city_pond_clear_of_wall_moat", not (footprint_on_line(p_out, w, 9) or (moat and footprint_on_line(p_out, moat, 13))), "the in-wall pond overlaps the city wall or moat")
     return _kept(locals(), ('k', 'p_out', 'pcx', 'pcy', 'prx', 'pry'))
 
 
@@ -24463,9 +24264,8 @@ def _seg_0563_251__city_pond_clear_of_wall_moat(
 
 def _seg_0563_252__civic_3(*, M: Any = _UNBOUND, gov: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.252 (civic) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            civic = M.get("ministries", []) + M.get("religious", []) + M.get("inspection_stations", []) + ([gov] if gov else [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        civic = M.get("ministries", []) + M.get("religious", []) + M.get("inspection_stations", []) + ([gov] if gov else [])
     return _kept(locals(), ('civic',))
 
 
@@ -24473,19 +24273,17 @@ def _seg_0563_253__c_1(
     *, M: Any = _UNBOUND, c: Any = _UNBOUND, civic: Any = _UNBOUND, meta: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.253 (c, civic_on_street, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            civic_on_street = [
-                c.get("name") or c.get("label") or "compound" for st in M.get("town_streets", []) for c in civic if footprint_on_line(rect_corners_xywh(c, 0), st["pts"], st.get("w", 24) / 2 + 2)
-            ]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        civic_on_street = [
+            c.get("name") or c.get("label") or "compound" for st in M.get("town_streets", []) for c in civic if footprint_on_line(rect_corners_xywh(c, 0), st["pts"], st.get("w", 24) / 2 + 2)
+        ]
     return _kept(locals(), ('c', 'civic_on_street', 'st'))
 
 
 def _seg_0563_254__city_civic_clear_of_streets(*, check: Any = _UNBOUND, civic_on_street: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.254 (city_civic_clear_of_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_civic_clear_of_streets", not civic_on_street, f"city street(s) running through a civic compound: {civic_on_street}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_civic_clear_of_streets", not civic_on_street, f"city street(s) running through a civic compound: {civic_on_street}")
     return _kept(locals(), ())
 
 
@@ -24513,35 +24311,33 @@ def _seg_0563_255__subject_of(
     txt: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.255 (subject_of) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital') and meta.get('walled'):
 
-            def subject_of(txt: str) -> tuple[list[tuple[float, float]], float, bool]:
-                t = txt.lower()
-                if "estate" in t:
-                    return [(m["x"], m["y"]) for m in M.get("manors", [])], 230, True
-                if "agricultur" in t:  # the in-wall agricultural district, NOT the extramural farmland
-                    return [c for c in (((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2) for f in fields) if inwall(*c)], 260, True
-                if "temple" in t:
-                    return [(r["x"], r["y"]) for r in M.get("religious", [])], 230, True
-                for key, kinds in (
-                    ("samurai", {"samurai", "samurai_large"}),
-                    ("laborer", {"laborer", "laborer_large"}),
-                    ("burakumin", {"burakumin"}),
-                    ("merchant", {"merchant", "merchant_house", "merchant_large"}),
-                ):
-                    if key in t:
-                        return [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in kinds], 130, False
-                return [], 0, True
+        def subject_of(txt: str) -> tuple[list[tuple[float, float]], float, bool]:
+            t = txt.lower()
+            if "estate" in t:
+                return [(m["x"], m["y"]) for m in M.get("manors", [])], 230, True
+            if "agricultur" in t:  # the in-wall agricultural district, NOT the extramural farmland
+                return [c for c in (((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2) for f in fields) if inwall(*c)], 260, True
+            if "temple" in t:
+                return [(r["x"], r["y"]) for r in M.get("religious", [])], 230, True
+            for key, kinds in (
+                ("samurai", {"samurai", "samurai_large"}),
+                ("laborer", {"laborer", "laborer_large"}),
+                ("burakumin", {"burakumin"}),
+                ("merchant", {"merchant", "merchant_house", "merchant_large"}),
+            ):
+                if key in t:
+                    return [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in kinds], 130, False
+            return [], 0, True
 
     return _kept(locals(), ('subject_of',))
 
 
 def _seg_0563_256__bad_lab(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.256 (bad_lab) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            bad_lab = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        bad_lab = []  # type: ignore[var-annotated]
     return _kept(locals(), ('bad_lab',))
 
 
@@ -24571,31 +24367,29 @@ def _seg_0563_257___z(
     y1: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.257 (_z, area_subj, bad_lab, cx) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for lab in M.get("labels", []):
-                if len(lab) <= 5 or not (lab[5].lower().endswith(("neighborhood", "neighborhoods", "district")) or "estates" in lab[5].lower()):
-                    continue
-                x0, y0, x1, y1, _z, txt = lab[:6]
-                pts, reach, area_subj = subject_of(txt)
-                if not pts:
-                    continue  # nothing of that kind drawn - can't verify
-                cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-                subj_in = sum(1 for px, py in pts if inwall(px, py)) * 2 >= len(pts)
-                if not all(inwall(px, py) == subj_in for px, py in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))):
-                    bad_lab.append(f"{txt!r} not entirely {'inside' if subj_in else 'outside'} the wall (its cluster is)")
-                elif min(math.hypot(px - cx, py - cy) for px, py in pts) > reach:
-                    bad_lab.append(f"{txt!r} sits >{reach}px from any of its buildings - place it among them")
-                elif not area_subj and any(point_in_poly(cx, cy, f["outline"]) for f in fields):
-                    bad_lab.append(f"{txt!r} floats over a farm field, not its own houses")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for lab in M.get("labels", []):
+            if len(lab) <= 5 or not (lab[5].lower().endswith(("neighborhood", "neighborhoods", "district")) or "estates" in lab[5].lower()):
+                continue
+            x0, y0, x1, y1, _z, txt = lab[:6]
+            pts, reach, area_subj = subject_of(txt)
+            if not pts:
+                continue  # nothing of that kind drawn - can't verify
+            cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+            subj_in = sum(1 for px, py in pts if inwall(px, py)) * 2 >= len(pts)
+            if not all(inwall(px, py) == subj_in for px, py in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))):
+                bad_lab.append(f"{txt!r} not entirely {'inside' if subj_in else 'outside'} the wall (its cluster is)")
+            elif min(math.hypot(px - cx, py - cy) for px, py in pts) > reach:
+                bad_lab.append(f"{txt!r} sits >{reach}px from any of its buildings - place it among them")
+            elif not area_subj and any(point_in_poly(cx, cy, f["outline"]) for f in fields):
+                bad_lab.append(f"{txt!r} floats over a farm field, not its own houses")
     return _kept(locals(), ('_z', 'area_subj', 'bad_lab', 'cx', 'cy', 'f', 'lab', 'pts', 'px', 'py', 'reach', 'subj_in', 'txt', 'x0', 'x1', 'y0', 'y1'))
 
 
 def _seg_0563_258__city_labels_placed_with_subject(*, bad_lab: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.258 (city_labels_placed_with_subject) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_labels_placed_with_subject", not bad_lab, f"neighborhood/zone label(s) misplaced relative to what they name: {bad_lab}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_labels_placed_with_subject", not bad_lab, f"neighborhood/zone label(s) misplaced relative to what they name: {bad_lab}")
     return _kept(locals(), ())
 
 
@@ -24605,41 +24399,36 @@ def _seg_0563_258__city_labels_placed_with_subject(*, bad_lab: Any = _UNBOUND, c
 
 def _seg_0563_259__f_1(*, f: Any = _UNBOUND, fields: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.259 (f, out_fields) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            out_fields = [f for f in fields if not inwall((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        out_fields = [f for f in fields if not inwall((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2)]
     return _kept(locals(), ('f', 'out_fields'))
 
 
 def _seg_0563_260__f_2(*, ADJ: Any = _UNBOUND, f: Any = _UNBOUND, h: Any = _UNBOUND, houses: Any = _UNBOUND, meta: Any = _UNBOUND, out_fields: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.260 (f, h, no_farm) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            no_farm = [f["name"] for f in out_fields if sum(1 for h in houses if poly_dist(h["x"], h["y"], f["outline"]) <= ADJ) < 2]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        no_farm = [f["name"] for f in out_fields if sum(1 for h in houses if poly_dist(h["x"], h["y"], f["outline"]) <= ADJ) < 2]
     return _kept(locals(), ('f', 'h', 'no_farm'))
 
 
 def _seg_0563_261__city_outside_fields_have_farmhouses(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, no_farm: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.261 (city_outside_fields_have_farmhouses) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_outside_fields_have_farmhouses", not no_farm, f"outside field(s) with < 2 farmhouses (even off-edge fields are worked by nearby villagers): {no_farm}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_outside_fields_have_farmhouses", not no_farm, f"outside field(s) with < 2 farmhouses (even off-edge fields are worked by nearby villagers): {no_farm}")
     return _kept(locals(), ())
 
 
 def _seg_0563_262__f_3(*, f: Any = _UNBOUND, meta: Any = _UNBOUND, out_fields: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.262 (f, far, p) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            far = [f["name"] for f in out_fields if len(w) >= 3 and min(poly_dist(p[0], p[1], w) for p in f["outline"]) > 520]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        far = [f["name"] for f in out_fields if len(w) >= 3 and min(poly_dist(p[0], p[1], w) for p in f["outline"]) > 520]
     return _kept(locals(), ('f', 'far', 'p'))
 
 
 def _seg_0563_263__city_fields_close_to_city(*, check: Any = _UNBOUND, far: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.263 (city_fields_close_to_city) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_fields_close_to_city", not far, f"outside field(s) too far from the city (cities grow up around fertile land, fields stay close): {far}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_fields_close_to_city", not far, f"outside field(s) too far from the city (cities grow up around fertile land, fields stay close): {far}")
     return _kept(locals(), ())
 
 
@@ -24667,27 +24456,25 @@ def _seg_0563_264__city_moat_irrigates_fields(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.264 (city_moat_irrigates_fields) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if moat:
-                chans = M.get("channels", [])
-                big_out = [f for f in out_fields if (f["bbox"][2] - f["bbox"][0]) * (f["bbox"][3] - f["bbox"][1]) > 55000]
+    if scale in ('city', 'capital') and meta.get('walled') and moat:
+        chans = M.get("channels", [])
+        big_out = [f for f in out_fields if (f["bbox"][2] - f["bbox"][0]) * (f["bbox"][3] - f["bbox"][1]) > 55000]
 
-                def moat_fed(fo: dict[str, Any]) -> bool:
-                    for c in chans:
-                        ends = (c["poly"][0], c["poly"][-1])
-                        near_moat = any(any(seg_dist(e[0], e[1], moat[i], moat[i + 1]) < 34 for i in range(len(moat) - 1)) for e in ends)
-                        in_field = any(point_in_poly(e[0], e[1], fo["outline"]) for e in ends)
-                        if near_moat and in_field:
-                            return True
-                    return False
+        def moat_fed(fo: dict[str, Any]) -> bool:
+            for c in chans:
+                ends = (c["poly"][0], c["poly"][-1])
+                near_moat = any(any(seg_dist(e[0], e[1], moat[i], moat[i + 1]) < 34 for i in range(len(moat) - 1)) for e in ends)
+                in_field = any(point_in_poly(e[0], e[1], fo["outline"]) for e in ends)
+                if near_moat and in_field:
+                    return True
+            return False
 
-                fed = [f["name"] for f in big_out if moat_fed(f)]
-                # CAPITAL-INVERTED (021): a capital walls its farms out and is fed BY the river
-                # (the wharf/granary doctrine), and its sheet frames only the city and suburbs -
-                # the domain's farmland is off-sheet, so this asks for ground the map never shows
-                if scale == "city":
-                    check("city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)")
+        fed = [f["name"] for f in big_out if moat_fed(f)]
+        # CAPITAL-INVERTED (021): a capital walls its farms out and is fed BY the river
+        # (the wharf/granary doctrine), and its sheet frames only the city and suburbs -
+        # the domain's farmland is off-sheet, so this asks for ground the map never shows
+        if scale == "city":
+            check("city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)")
     return _kept(locals(), ('big_out', 'chans', 'f', 'fed', 'moat_fed'))
 
 
@@ -24707,23 +24494,21 @@ def _seg_0563_264__city_moat_irrigates_fields(
 
 def _seg_0563_265__b_13(*, M: Any = _UNBOUND, b: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.265 (b, biz_out) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            biz_out = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant") and not inwall(b["x"], b["y"])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        biz_out = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant") and not inwall(b["x"], b["y"])]
     return _kept(locals(), ('b', 'biz_out'))
 
 
 def _seg_0563_266__b_14(*, b: Any = _UNBOUND, biz_out: Any = _UNBOUND, g: Any = _UNBOUND, gates: Any = _UNBOUND, i: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.266 (b, g, gates_wo_market, i) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gates_wo_market = [i for i, g in enumerate(gates) if sum(1 for b in biz_out if math.hypot(b["x"] - g[0], b["y"] - g[1]) <= 520) < 6]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gates_wo_market = [i for i, g in enumerate(gates) if sum(1 for b in biz_out if math.hypot(b["x"] - g[0], b["y"] - g[1]) <= 520) < 6]
     return _kept(locals(), ('b', 'g', 'gates_wo_market', 'i'))
 
 
 def _seg_0563_267__city_has_gate_market(*, check: Any = _UNBOUND, gates_wo_market: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.267 (city_has_gate_market) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_has_gate_market",
@@ -24751,15 +24536,14 @@ def _seg_0563_267__city_has_gate_market(*, check: Any = _UNBOUND, gates_wo_marke
 
 def _seg_0563_268___tw_brews(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.268 (_tw_brews) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _tw_brews = M.get("breweries", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _tw_brews = M.get("breweries", [])
     return _kept(locals(), ('_tw_brews',))
 
 
 def _seg_0563_269__city_has_brewery(*, _tw_brews: Any = _UNBOUND, b_: Any = _UNBOUND, check: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.269 (city_has_brewery) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_has_brewery",
@@ -24771,35 +24555,30 @@ def _seg_0563_269__city_has_brewery(*, _tw_brews: Any = _UNBOUND, b_: Any = _UNB
 
 def _seg_0563_270___tw_water(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.270 (_tw_water) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _tw_water: list[tuple[list[Any], float]] = []  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _tw_water: list[tuple[list[Any], float]] = []  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('_tw_water',))
 
 
 def _seg_0563_271___tw_water_1(*, M: Any = _UNBOUND, _tw_water: Any = _UNBOUND, _tw_wc: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.271 (_tw_water, _tw_wc) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for _tw_wc in M.get("streams", []) + M.get("channels", []) + M.get("canals", []):
-                _tw_water.append((_tw_wc["poly"], _tw_wc.get("w", 6) / 2))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for _tw_wc in M.get("streams", []) + M.get("channels", []) + M.get("canals", []):
+            _tw_water.append((_tw_wc["poly"], _tw_wc.get("w", 6) / 2))
     return _kept(locals(), ('_tw_water', '_tw_wc'))
 
 
 def _seg_0563_272___tw_water_2(*, M: Any = _UNBOUND, _tw_water: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.272 (_tw_water) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if M.get("moat"):
-                _tw_water.append((M["moat"], M.get("moat_width", 22) / 2))
+    if scale in ('city', 'capital') and meta.get('walled') and M.get("moat"):
+        _tw_water.append((M["moat"], M.get("moat_width", 22) / 2))
     return _kept(locals(), ('_tw_water',))
 
 
 def _seg_0563_273___tw_pond(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.273 (_tw_pond) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _tw_pond = M.get("pond")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _tw_pond = M.get("pond")
     return _kept(locals(), ('_tw_pond',))
 
 
@@ -24817,23 +24596,21 @@ def _seg_0563_274___tw_on_water(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.274 (_tw_on_water) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital') and meta.get('walled'):
 
-            def _tw_on_water(o_: dict[str, Any], reach: float) -> bool:
-                r_ = max(o_["w"], o_["h"]) / 2  # family: ASSOCIATION/REACH, as _ty_on_water above
-                if any(seg_dist(o_["x"], o_["y"], _pl[i], _pl[i + 1]) < _hw + r_ + reach for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
-                    return True
-                return _tw_pond is not None and math.hypot(o_["x"] - _tw_pond[0], o_["y"] - _tw_pond[1]) < max(_tw_pond[2], _tw_pond[3]) + r_ + reach
+        def _tw_on_water(o_: dict[str, Any], reach: float) -> bool:
+            r_ = max(o_["w"], o_["h"]) / 2  # family: ASSOCIATION/REACH, as _ty_on_water above
+            if any(seg_dist(o_["x"], o_["y"], _pl[i], _pl[i + 1]) < _hw + r_ + reach for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
+                return True
+            return _tw_pond is not None and math.hypot(o_["x"] - _tw_pond[0], o_["y"] - _tw_pond[1]) < max(_tw_pond[2], _tw_pond[3]) + r_ + reach
 
     return _kept(locals(), ('_tw_on_water',))
 
 
 def _seg_0563_275___tw_dyes(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.275 (_tw_dyes) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _tw_dyes = M.get("dye_yards", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _tw_dyes = M.get("dye_yards", [])
     return _kept(locals(), ('_tw_dyes',))
 
 
@@ -24841,7 +24618,7 @@ def _seg_0563_276__city_has_dye_works(
     *, _tw_dyes: Any = _UNBOUND, _tw_on_water: Any = _UNBOUND, check: Any = _UNBOUND, d_: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.276 (city_has_dye_works) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_has_dye_works",
@@ -24853,17 +24630,15 @@ def _seg_0563_276__city_has_dye_works(
 
 def _seg_0563_277__city_has_oil_press(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.277 (city_has_oil_press) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_has_oil_press", bool(M.get("oil_presses")), "no oil press - every city keeps a presser's barn (s.oil_press: wedge-and-beam press + ox-driven mill ring, toward the edge)")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_has_oil_press", bool(M.get("oil_presses")), "no oil press - every city keeps a presser's barn (s.oil_press: wedge-and-beam press + ox-driven mill ring, toward the edge)")
     return _kept(locals(), ())
 
 
 def _seg_0563_278__city_has_pawnshop(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.278 (city_has_pawnshop) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_has_pawnshop", bool(M.get("pawnshops")), "no pawnshop - every city keeps one (s.pawnshop: shopfront + 2 pledge kura in a walled rear court)")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_has_pawnshop", bool(M.get("pawnshops")), "no pawnshop - every city keeps one (s.pawnshop: shopfront + 2 pledge kura in a walled rear court)")
     return _kept(locals(), ())
 
 
@@ -24877,41 +24652,36 @@ def _seg_0563_278__city_has_pawnshop(*, M: Any = _UNBOUND, check: Any = _UNBOUND
 
 def _seg_0563_279___bh_n(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.279 (_bh_n) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _bh_n = len(M.get("bathhouses", []))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _bh_n = len(M.get("bathhouses", []))
     return _kept(locals(), ('_bh_n',))
 
 
 def _seg_0563_280___bh_pop(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.280 (_bh_pop) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _bh_pop = int(meta.get("population") or 3000)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _bh_pop = int(meta.get("population") or 3000)
     return _kept(locals(), ('_bh_pop',))
 
 
 def _seg_0563_281___bh_floor(*, _bh_pop: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.281 (_bh_floor) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _bh_floor = max(1, _bh_pop // 2000)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _bh_floor = max(1, _bh_pop // 2000)
     return _kept(locals(), ('_bh_floor',))
 
 
 def _seg_0563_282___bh_allowed(*, _bh_floor: Any = _UNBOUND, _bh_pop: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.282 (_bh_allowed) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _bh_allowed = {_bh_floor} if _bh_pop % 2000 == 0 else {_bh_floor, _bh_floor + 1}
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _bh_allowed = {_bh_floor} if _bh_pop % 2000 == 0 else {_bh_floor, _bh_floor + 1}
     return _kept(locals(), ('_bh_allowed',))
 
 
 def _seg_0563_283___bh_roll(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.283 (_bh_roll) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _bh_roll = meta.get("bathhouse_roll")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _bh_roll = meta.get("bathhouse_roll")
     return _kept(locals(), ('_bh_roll',))
 
 
@@ -24919,24 +24689,22 @@ def _seg_0563_284__city_has_bathhouse(
     *, _bh_allowed: Any = _UNBOUND, _bh_n: Any = _UNBOUND, _bh_pop: Any = _UNBOUND, _bh_roll: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.284 (city_has_bathhouse) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_has_bathhouse",
-                _bh_n in _bh_allowed and (_bh_roll is None or _bh_n == _bh_roll),
-                f"{_bh_n} bathhouse(s) at population {_bh_pop} (rolled {_bh_roll}) - the sento count follows the "
-                f"GM formula (s.bathhouses: 1 per full 2,000 population + a remainder-fraction chance of one "
-                f"extra, so 2,500 -> 1 + 25%, 3,000 -> 1 + 50%, 4,000 -> exactly 2; Edo's peak ratio was ~1 per "
-                f"~2,100 residents), and a recorded roll must match the drawn count",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_has_bathhouse",
+            _bh_n in _bh_allowed and (_bh_roll is None or _bh_n == _bh_roll),
+            f"{_bh_n} bathhouse(s) at population {_bh_pop} (rolled {_bh_roll}) - the sento count follows the "
+            f"GM formula (s.bathhouses: 1 per full 2,000 population + a remainder-fraction chance of one "
+            f"extra, so 2,500 -> 1 + 25%, 3,000 -> 1 + 50%, 4,000 -> exactly 2; Edo's peak ratio was ~1 per "
+            f"~2,100 residents), and a recorded roll must match the drawn count",
+        )
     return _kept(locals(), ())
 
 
 def _seg_0563_285___tw_kilns(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.285 (_tw_kilns) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _tw_kilns = M.get("kilns", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _tw_kilns = M.get("kilns", [])
     return _kept(locals(), ('_tw_kilns',))
 
 
@@ -24944,7 +24712,7 @@ def _seg_0563_286__city_kiln_outside_walls(
     *, _tw_kilns: Any = _UNBOUND, check: Any = _UNBOUND, inwall: Any = _UNBOUND, k_: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.286 (city_kiln_outside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_kiln_outside_walls",
@@ -24958,8 +24726,8 @@ def _seg_0563_287__city_river_port_has_lumber_yard(
     *, L_: Any = _UNBOUND, M: Any = _UNBOUND, _tw_lys: Any = _UNBOUND, _tw_on_water: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.287 (city_river_port_has_lumber_yard) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
+        if meta.get('walled'):  # noqa: SIM102
             if meta.get("river_port"):
                 _tw_lys = M.get("lumber_yards", [])
                 check(
@@ -24983,9 +24751,8 @@ def _seg_0563_287__city_river_port_has_lumber_yard(
 
 def _seg_0563_288___ly_wet(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.288 (_ly_wet) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _ly_wet = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _ly_wet = []  # type: ignore[var-annotated]
     return _kept(locals(), ('_ly_wet',))
 
 
@@ -25009,19 +24776,18 @@ def _seg_0563_289__L_(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.289 (L_, _hw, _ldx, _ldy) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for L_ in M.get("lumber_yards", []):
-                _lw2, _lh2 = L_["w"] / 2, L_["h"] / 2
-                _lpts = [(L_["x"] + _ldx, L_["y"] + _ldy) for _ldx in (-_lw2, 0.0, _lw2) for _ldy in (-_lh2, 0.0, _lh2)]
-                if any(seg_dist(_qx, _qy, _pl[i], _pl[i + 1]) < _hw for _qx, _qy in _lpts for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
-                    _ly_wet.append((round(L_["x"]), round(L_["y"])))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for L_ in M.get("lumber_yards", []):
+            _lw2, _lh2 = L_["w"] / 2, L_["h"] / 2
+            _lpts = [(L_["x"] + _ldx, L_["y"] + _ldy) for _ldx in (-_lw2, 0.0, _lw2) for _ldy in (-_lh2, 0.0, _lh2)]
+            if any(seg_dist(_qx, _qy, _pl[i], _pl[i + 1]) < _hw for _qx, _qy in _lpts for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
+                _ly_wet.append((round(L_["x"]), round(L_["y"])))
     return _kept(locals(), ('L_', '_hw', '_ldx', '_ldy', '_lh2', '_lpts', '_lw2', '_ly_wet', '_pl', '_qx', '_qy', 'i'))
 
 
 def _seg_0563_290__lumber_yard_clear_of_water(*, _ly_wet: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.290 (lumber_yard_clear_of_water) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "lumber_yard_clear_of_water",
@@ -25037,9 +24803,8 @@ def _seg_0563_290__lumber_yard_clear_of_water(*, _ly_wet: Any = _UNBOUND, check:
 
 def _seg_0563_291__flops(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.291 (flops) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            flops = M.get("flophouses", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        flops = M.get("flophouses", [])
     return _kept(locals(), ('flops',))
 
 
@@ -25047,9 +24812,8 @@ def _seg_0563_292__city_flophouse_inside_walls(
     *, check: Any = _UNBOUND, fl: Any = _UNBOUND, flops: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.292 (city_flophouse_inside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_flophouse_inside_walls", any(inwall(fl["x"], fl["y"]) for fl in flops), "a city needs market-day lodging inside the walls (a flophouse)")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_flophouse_inside_walls", any(inwall(fl["x"], fl["y"]) for fl in flops), "a city needs market-day lodging inside the walls (a flophouse)")
     return _kept(locals(), ('fl',))
 
 
@@ -25057,21 +24821,19 @@ def _seg_0563_293__fl(
     *, fl: Any = _UNBOUND, flops: Any = _UNBOUND, g: Any = _UNBOUND, gates: Any = _UNBOUND, i: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.293 (fl, g, gates_wo_flop, i) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gates_wo_flop = [i for i, g in enumerate(gates) if not any((not inwall(fl["x"], fl["y"])) and math.hypot(fl["x"] - g[0], fl["y"] - g[1]) <= 520 for fl in flops)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gates_wo_flop = [i for i, g in enumerate(gates) if not any((not inwall(fl["x"], fl["y"])) and math.hypot(fl["x"] - g[0], fl["y"] - g[1]) <= 520 for fl in flops)]
     return _kept(locals(), ('fl', 'g', 'gates_wo_flop', 'i'))
 
 
 def _seg_0563_294__city_flophouse_outside_each_gate(*, check: Any = _UNBOUND, gates_wo_flop: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.294 (city_flophouse_outside_each_gate) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_flophouse_outside_each_gate",
-                not gates_wo_flop,
-                f"every city gate needs a flophouse just outside it (travelers who arrive after the gate shuts sleep there); gate(s) without one: {gates_wo_flop}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_flophouse_outside_each_gate",
+            not gates_wo_flop,
+            f"every city gate needs a flophouse just outside it (travelers who arrive after the gate shuts sleep there); gate(s) without one: {gates_wo_flop}",
+        )
     return _kept(locals(), ())
 
 
@@ -25083,41 +24845,36 @@ def _seg_0563_294__city_flophouse_outside_each_gate(*, check: Any = _UNBOUND, ga
 
 def _seg_0563_295__b_15(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.295 (b, nice) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            nice = [b for b in M.get("buildings", []) if b.get("kind") in ("merchant", "samurai", "samurai_large")] + M.get("religious", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        nice = [b for b in M.get("buildings", []) if b.get("kind") in ("merchant", "samurai", "samurai_large")] + M.get("religious", [])
     return _kept(locals(), ('b', 'nice'))
 
 
 def _seg_0563_296__b_16(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.296 (b, bura) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            bura = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        bura = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin"]
     return _kept(locals(), ('b', 'bura'))
 
 
 def _seg_0563_297__b_17(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.297 (b, inns) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            inns = [b for b in M.get("buildings", []) if b.get("kind") == "inn"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        inns = [b for b in M.get("buildings", []) if b.get("kind") == "inn"]
     return _kept(locals(), ('b', 'inns'))
 
 
 def _seg_0563_298__b_18(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.298 (b, stbl) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            stbl = [b for b in M.get("buildings", []) if b.get("kind") == "stables"]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        stbl = [b for b in M.get("buildings", []) if b.get("kind") == "stables"]
     return _kept(locals(), ('b', 'stbl'))
 
 
 def _seg_0563_299__bad_flop(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.299 (bad_flop) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            bad_flop = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        bad_flop = []  # type: ignore[var-annotated]
     return _kept(locals(), ('bad_flop',))
 
 
@@ -25141,19 +24898,18 @@ def _seg_0563_300__b_19(
     stbl: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.300 (b, bad_flop, fl) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for fl in flops:
-                if not inwall(fl["x"], fl["y"]):
-                    continue
-                # a CARAVAN flophouse (one paired with an inn AND a stables, a gate transit cluster) is
-                # exempt from the humble-quarter rule - the gate is a transit zone, not a nice neighborhood
-                if any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 170 for b in inns) and any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 170 for b in stbl):
-                    continue
-                if any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 110 for b in nice):
-                    bad_flop.append((round(fl["x"]), round(fl["y"]), "next to a temple/merchant/samurai"))
-                elif any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 150 for b in bura):
-                    bad_flop.append((round(fl["x"]), round(fl["y"]), "in/next to the burakumin quarter"))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for fl in flops:
+            if not inwall(fl["x"], fl["y"]):
+                continue
+            # a CARAVAN flophouse (one paired with an inn AND a stables, a gate transit cluster) is
+            # exempt from the humble-quarter rule - the gate is a transit zone, not a nice neighborhood
+            if any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 170 for b in inns) and any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 170 for b in stbl):
+                continue
+            if any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 110 for b in nice):
+                bad_flop.append((round(fl["x"]), round(fl["y"]), "next to a temple/merchant/samurai"))
+            elif any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 150 for b in bura):
+                bad_flop.append((round(fl["x"]), round(fl["y"]), "in/next to the burakumin quarter"))
     return _kept(locals(), ('b', 'bad_flop', 'fl'))
 
 
@@ -25166,29 +24922,26 @@ def _seg_0563_300__b_19(
 
 def _seg_0563_301___g21(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.301 (_g21) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            _g21 = M.get("gates") or []
+    if scale in ('city', 'capital') and meta.get('walled'):
+        _g21 = M.get("gates") or []
     return _kept(locals(), ('_g21',))
 
 
 def _seg_0563_302__bad_flop_1(*, _g21: Any = _UNBOUND, bad_flop: Any = _UNBOUND, bf: Any = _UNBOUND, g21: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.302 (bad_flop, bf, g21) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            bad_flop = [bf for bf in bad_flop if not any(math.hypot(bf[0] - g21[0], bf[1] - g21[1]) <= 250 for g21 in _g21)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        bad_flop = [bf for bf in bad_flop if not any(math.hypot(bf[0] - g21[0], bf[1] - g21[1]) <= 250 for g21 in _g21)]
     return _kept(locals(), ('bad_flop', 'bf', 'g21'))
 
 
 def _seg_0563_303__city_flophouse_in_humble_quarter(*, bad_flop: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.303 (city_flophouse_in_humble_quarter) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_flophouse_in_humble_quarter",
-                not bad_flop,
-                f"in-wall flophouse(s) sited in/beside a nicer or burakumin neighborhood (a doss-house belongs in the laborer/agrarian sector): {bad_flop}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_flophouse_in_humble_quarter",
+            not bad_flop,
+            f"in-wall flophouse(s) sited in/beside a nicer or burakumin neighborhood (a doss-house belongs in the laborer/agrarian sector): {bad_flop}",
+        )
     return _kept(locals(), ())
 
 
@@ -25199,9 +24952,8 @@ def _seg_0563_303__city_flophouse_in_humble_quarter(*, bad_flop: Any = _UNBOUND,
 
 def _seg_0563_304__caravan_bad(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.304 (caravan_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            caravan_bad = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        caravan_bad = []  # type: ignore[var-annotated]
     return _kept(locals(), ('caravan_bad',))
 
 
@@ -25226,32 +24978,30 @@ def _seg_0563_305__b_20(
     stbl: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.305 (b, caravan_bad, crowd, g) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for g in gates:
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for g in gates:
 
-                def gnear(items: Sequence[dict[str, Any]], r: float = 340, g: Any = g) -> list[dict[str, Any]]:  # bind loop var (used within this iteration)
-                    return [b for b in items if inwall(b["x"], b["y"]) and math.hypot(b["x"] - g[0], b["y"] - g[1]) <= r]
+            def gnear(items: Sequence[dict[str, Any]], r: float = 340, g: Any = g) -> list[dict[str, Any]]:  # bind loop var (used within this iteration)
+                return [b for b in items if inwall(b["x"], b["y"]) and math.hypot(b["x"] - g[0], b["y"] - g[1]) <= r]
 
-                gi, gs, gf = gnear(inns), gnear(stbl), gnear(flops)
-                if not (gi and gs and gf):
-                    caravan_bad.append((g, f"inn={len(gi)} stables={len(gs)} flophouse={len(gf)}"))
-                    continue
-                crowd = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and math.hypot(b["x"] - gs[0]["x"], b["y"] - gs[0]["y"]) < 75)
-                if crowd > 4:
-                    caravan_bad.append((g, f"stables hemmed in by {crowd} dwellings (needs open ground for animals)"))
+            gi, gs, gf = gnear(inns), gnear(stbl), gnear(flops)
+            if not (gi and gs and gf):
+                caravan_bad.append((g, f"inn={len(gi)} stables={len(gs)} flophouse={len(gf)}"))
+                continue
+            crowd = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and math.hypot(b["x"] - gs[0]["x"], b["y"] - gs[0]["y"]) < 75)
+            if crowd > 4:
+                caravan_bad.append((g, f"stables hemmed in by {crowd} dwellings (needs open ground for animals)"))
     return _kept(locals(), ('b', 'caravan_bad', 'crowd', 'g', 'gf', 'gi', 'gnear', 'gs'))
 
 
 def _seg_0563_306__city_gate_caravan_facilities(*, caravan_bad: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.306 (city_gate_caravan_facilities) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_gate_caravan_facilities",
-                not caravan_bad,
-                f"city gate(s) lacking inside caravan facilities (a prominent inn + large stables + flophouse + open ground close to the gate): {caravan_bad}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_gate_caravan_facilities",
+            not caravan_bad,
+            f"city gate(s) lacking inside caravan facilities (a prominent inn + large stables + flophouse + open ground close to the gate): {caravan_bad}",
+        )
     return _kept(locals(), ())
 
 
@@ -25266,33 +25016,30 @@ def _seg_0563_307___shown(
     *, EX0: Any = _UNBOUND, EX1: Any = _UNBOUND, EY0: Any = _UNBOUND, EY1: Any = _UNBOUND, hh: Any = _UNBOUND, hw: Any = _UNBOUND, m: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.307 (_shown) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital') and meta.get('walled'):
 
-            def _shown(m: dict[str, Any]) -> bool:
-                hw, hh = m["w"] / 2, m["h"] / 2
-                return bool(m["x"] + hw > EX0 and m["x"] - hw < EX1 and m["y"] + hh > EY0 and m["y"] - hh < EY1)
+        def _shown(m: dict[str, Any]) -> bool:
+            hw, hh = m["w"] / 2, m["h"] / 2
+            return bool(m["x"] + hw > EX0 and m["x"] - hw < EX1 and m["y"] + hh > EY0 and m["y"] - hh < EY1)
 
     return _kept(locals(), ('_shown',))
 
 
 def _seg_0563_308__m_3(*, M: Any = _UNBOUND, _shown: Any = _UNBOUND, m: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.308 (m, shown_est) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            shown_est = [m for m in M.get("manors", []) if _shown(m)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        shown_est = [m for m in M.get("manors", []) if _shown(m)]
     return _kept(locals(), ('m', 'shown_est'))
 
 
 def _seg_0563_309__city_estates_multiple_shown(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, shown_est: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.309 (city_estates_multiple_shown) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_estates_multiple_shown",
-                len(shown_est) >= 1,
-                f"{len(shown_est)} samurai estates fall inside the map window - show at least 1 (a fraction cropped at the edge is fine); the rest of the gentry sit farther out, implied off-map",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_estates_multiple_shown",
+            len(shown_est) >= 1,
+            f"{len(shown_est)} samurai estates fall inside the map window - show at least 1 (a fraction cropped at the edge is fine); the rest of the gentry sit farther out, implied off-map",
+        )
     return _kept(locals(), ())
 
 
@@ -25301,42 +25048,37 @@ def _seg_0563_309__city_estates_multiple_shown(*, check: Any = _UNBOUND, meta: A
 
 def _seg_0563_310__rlab(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.310 (rlab) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            rlab = M.get("road_label")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        rlab = M.get("road_label")
     return _kept(locals(), ('rlab',))
 
 
 def _seg_0563_311__city_road_label_outside_walls(*, check: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, rlab: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.311 (city_road_label_outside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if rlab:
-                check(
-                    "city_road_label_outside_walls",
-                    not inwall(rlab[0], rlab[1]),
-                    "the 'Imperial Road' label must sit outside the walls - inside the gates the same roadway is a city street, a city (not Imperial) responsibility",
-                )
+    if scale in ('city', 'capital') and meta.get('walled') and rlab:
+        check(
+            "city_road_label_outside_walls",
+            not inwall(rlab[0], rlab[1]),
+            "the 'Imperial Road' label must sit outside the walls - inside the gates the same roadway is a city street, a city (not Imperial) responsibility",
+        )
     return _kept(locals(), ())
 
 
 def _seg_0563_312__empty_city_streets(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.312 (empty_city_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            empty_city_streets = empty_street_runs(M, w)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        empty_city_streets = empty_street_runs(M, w)
     return _kept(locals(), ('empty_city_streets',))
 
 
 def _seg_0563_313__city_streets_have_buildings(*, check: Any = _UNBOUND, empty_city_streets: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.313 (city_streets_have_buildings) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_streets_have_buildings",
-                not empty_city_streets,
-                f"city street(s) with a stretch inside the walls with no building fronting it (a street network earns its length from the buildings it serves): {empty_city_streets}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_streets_have_buildings",
+            not empty_city_streets,
+            f"city street(s) with a stretch inside the walls with no building fronting it (a street network earns its length from the buildings it serves): {empty_city_streets}",
+        )
     return _kept(locals(), ())
 
 
@@ -25353,33 +25095,29 @@ def _seg_0563_313__city_streets_have_buildings(*, check: Any = _UNBOUND, empty_c
 
 def _seg_0563_314__line_blds(*, M: Any = _UNBOUND, gov: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.314 (line_blds) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            line_blds = M.get("buildings", []) + M.get("religious", []) + M.get("ministries", []) + M.get("flophouses", []) + ([gov] if gov else [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        line_blds = M.get("buildings", []) + M.get("religious", []) + M.get("ministries", []) + M.get("flophouses", []) + ([gov] if gov else [])
     return _kept(locals(), ('line_blds',))
 
 
 def _seg_0563_315__gov_pts(*, M: Any = _UNBOUND, gov: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.315 (gov_pts) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            gov_pts = M.get("ministries", []) + ([gov] if gov else [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        gov_pts = M.get("ministries", []) + ([gov] if gov else [])
     return _kept(locals(), ('gov_pts',))
 
 
 def _seg_0563_316__LINE_D(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.316 (LINE_D, LINE_RUN) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            LINE_D, LINE_RUN = 58, 140
+    if scale in ('city', 'capital') and meta.get('walled'):
+        LINE_D, LINE_RUN = 58, 140
     return _kept(locals(), ('LINE_D', 'LINE_RUN'))
 
 
 def _seg_0563_317__bare_streets(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.317 (bare_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            bare_streets = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        bare_streets = []  # type: ignore[var-annotated]
     return _kept(locals(), ('bare_streets',))
 
 
@@ -25415,51 +25153,48 @@ def _seg_0563_318___lg_open(
     y: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.318 (_lg_open, a, b, bare_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for st in M.get("town_streets", []):
-                pts = st["pts"]
-                if sum(1 for m in gov_pts if min(seg_dist(m["x"], m["y"], pts[i], pts[i + 1]) for i in range(len(pts) - 1)) < 70) >= 2:
-                    continue  # a government avenue - lined by ministry compounds
-                worst = run = 0
-                for ki in range(len(pts) - 1):
-                    a, b = pts[ki], pts[ki + 1]
-                    steps = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) // 20))
-                    for j in range(steps):
-                        t = j / steps
-                        x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
-                        _lg_open = any(
-                            point_in_poly(x, y, gp9) or min(seg_dist(x, y, gp9[i9], gp9[(i9 + 1) % len(gp9)]) for i9 in range(len(gp9))) < 70
-                            for gp9 in (cg9["poly"] for cg9 in M.get("commons", []) if cg9.get("poly"))
-                        )  # open-ground frontage (commons/pasture): same exemption as empty_street_runs (021)
-                        if not point_in_poly(x, y, w) or any((bl["x"] - x) ** 2 + (bl["y"] - y) ** 2 < LINE_D * LINE_D for bl in line_blds) or _lg_open:
-                            run = 0
-                        else:
-                            run += 20
-                            worst = max(worst, run)
-                if worst > LINE_RUN:
-                    bare_streets.append(("main" if st.get("main") else f"@{(round(pts[0][0]), round(pts[0][1]))}", worst))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for st in M.get("town_streets", []):
+            pts = st["pts"]
+            if sum(1 for m in gov_pts if min(seg_dist(m["x"], m["y"], pts[i], pts[i + 1]) for i in range(len(pts) - 1)) < 70) >= 2:
+                continue  # a government avenue - lined by ministry compounds
+            worst = run = 0
+            for ki in range(len(pts) - 1):
+                a, b = pts[ki], pts[ki + 1]
+                steps = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) // 20))
+                for j in range(steps):
+                    t = j / steps
+                    x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+                    _lg_open = any(
+                        point_in_poly(x, y, gp9) or min(seg_dist(x, y, gp9[i9], gp9[(i9 + 1) % len(gp9)]) for i9 in range(len(gp9))) < 70
+                        for gp9 in (cg9["poly"] for cg9 in M.get("commons", []) if cg9.get("poly"))
+                    )  # open-ground frontage (commons/pasture): same exemption as empty_street_runs (021)
+                    if not point_in_poly(x, y, w) or any((bl["x"] - x) ** 2 + (bl["y"] - y) ** 2 < LINE_D * LINE_D for bl in line_blds) or _lg_open:
+                        run = 0
+                    else:
+                        run += 20
+                        worst = max(worst, run)
+            if worst > LINE_RUN:
+                bare_streets.append(("main" if st.get("main") else f"@{(round(pts[0][0]), round(pts[0][1]))}", worst))
     return _kept(locals(), ('_lg_open', 'a', 'b', 'bare_streets', 'bl', 'cg9', 'gp9', 'i', 'i9', 'j', 'ki', 'm', 'pts', 'run', 'st', 'steps', 't', 'worst', 'x', 'y'))
 
 
 def _seg_0563_319__city_larger_streets_lined(*, bare_streets: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.319 (city_larger_streets_lined) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check(
-                "city_larger_streets_lined",
-                not bare_streets,
-                f"larger city street(s) with a long bare stretch of roadside land - a commercial/residential through-street should be "
-                f"LINED with buildings close to it (only narrow alleys may run unlined): {bare_streets}",
-            )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check(
+            "city_larger_streets_lined",
+            not bare_streets,
+            f"larger city street(s) with a long bare stretch of roadside land - a commercial/residential through-street should be "
+            f"LINED with buildings close to it (only narrow alleys may run unlined): {bare_streets}",
+        )
     return _kept(locals(), ())
 
 
 def _seg_0563_320__road_1(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.320 (road) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            road = M.get("road") or []
+    if scale in ('city', 'capital') and meta.get('walled'):
+        road = M.get("road") or []
     return _kept(locals(), ('road',))
 
 
@@ -25484,29 +25219,27 @@ def _seg_0563_321__city_imperial_road_through(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.321 (city_imperial_road_through, city_roads_run_offmap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if meta.get("imperial_road", True):
-                road_through = bool(road) and any(p[1] < EY0 for p in road) and any(p[1] > EY1 for p in road)
-                check("city_imperial_road_through", road_through, "the Imperial road must run N-S through a walled city - off both the top and bottom edges, via the gates")
-            else:
-                # NO Imperial road (it passes miles away): the city still lives on through-traffic,
-                # so its road net must leave the map in at least TWO directions (one polyline
-                # bending through the city - off-map N, through the gates, off-map SE - counts
-                # as two; a dead-end road serves nobody)
-                rds = [r["pts"] for r in M.get("roads", [])] or ([road] if road else [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        if meta.get("imperial_road", True):
+            road_through = bool(road) and any(p[1] < EY0 for p in road) and any(p[1] > EY1 for p in road)
+            check("city_imperial_road_through", road_through, "the Imperial road must run N-S through a walled city - off both the top and bottom edges, via the gates")
+        else:
+            # NO Imperial road (it passes miles away): the city still lives on through-traffic,
+            # so its road net must leave the map in at least TWO directions (one polyline
+            # bending through the city - off-map N, through the gates, off-map SE - counts
+            # as two; a dead-end road serves nobody)
+            rds = [r["pts"] for r in M.get("roads", [])] or ([road] if road else [])
 
-                def offend(p: Pt) -> bool:
-                    return p[0] < EX0 or p[0] > EX1 or p[1] < EY0 or p[1] > EY1  # type: ignore[no-any-return]
+            def offend(p: Pt) -> bool:
+                return p[0] < EX0 or p[0] > EX1 or p[1] < EY0 or p[1] > EY1  # type: ignore[no-any-return]
 
-                exits = sum(1 for r in rds for e in (r[0], r[-1]) if offend(e))
-                dead = [(round(e[0]), round(e[1])) for r in rds for e in (r[0], r[-1]) if not offend(e)]
-                check(
-                    "city_roads_run_offmap",
-                    exits >= 2 and not dead,
-                    f"{exits} off-map road end(s), dead end(s) at {dead[:3]} - a provincial city without an "
-                    f"Imperial spine still connects to the wider world in >= 2 directions, and no road stops dead",
-                )
+            exits = sum(1 for r in rds for e in (r[0], r[-1]) if offend(e))
+            dead = [(round(e[0]), round(e[1])) for r in rds for e in (r[0], r[-1]) if not offend(e)]
+            check(
+                "city_roads_run_offmap",
+                exits >= 2 and not dead,
+                f"{exits} off-map road end(s), dead end(s) at {dead[:3]} - a provincial city without an Imperial spine still connects to the wider world in >= 2 directions, and no road stops dead",
+            )
     return _kept(locals(), ('dead', 'e', 'exits', 'offend', 'p', 'r', 'rds', 'road_through'))
 
 
@@ -25514,11 +25247,9 @@ def _seg_0563_322__city_no_inwall_farms(
     *, check: Any = _UNBOUND, f: Any = _UNBOUND, fields: Any = _UNBOUND, inwall: Any = _UNBOUND, inwall_fields: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.322 (city_no_inwall_farms) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if not meta.get("agricultural_district"):
-                inwall_fields = [f["name"] for f in fields if inwall((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2)]
-                check("city_no_inwall_farms", not inwall_fields, f"farms inside a city wall are uncharacteristic - set meta(agricultural_district=True) to allow them: {inwall_fields}")
+    if scale in ('city', 'capital') and meta.get('walled') and not meta.get("agricultural_district"):
+        inwall_fields = [f["name"] for f in fields if inwall((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2)]
+        check("city_no_inwall_farms", not inwall_fields, f"farms inside a city wall are uncharacteristic - set meta(agricultural_district=True) to allow them: {inwall_fields}")
     return _kept(locals(), ('f', 'inwall_fields'))
 
 
@@ -25531,24 +25262,21 @@ def _seg_0563_323__no_groves_inside_walls(
     *, M: Any = _UNBOUND, check: Any = _UNBOUND, gv: Any = _UNBOUND, inwall: Any = _UNBOUND, inwall_groves: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.323 (no_groves_inside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if not meta.get("inwall_groves"):
-                inwall_groves = sorted({(round(gv["of"][0]), round(gv["of"][1])) for gv in M.get("groves", []) if inwall(gv["of"][0], gv["of"][1])})
-                check(
-                    "no_groves_inside_walls",
-                    not inwall_groves,
-                    f"farm(s) inside the city wall carry a windbreak grove {inwall_groves[:3]} - an intramural plot is "
-                    f"sheltered by the urban fabric and on land too precious for one (meta(inwall_groves=True) to allow)",
-                )
+    if scale in ('city', 'capital') and meta.get('walled') and not meta.get("inwall_groves"):
+        inwall_groves = sorted({(round(gv["of"][0]), round(gv["of"][1])) for gv in M.get("groves", []) if inwall(gv["of"][0], gv["of"][1])})
+        check(
+            "no_groves_inside_walls",
+            not inwall_groves,
+            f"farm(s) inside the city wall carry a windbreak grove {inwall_groves[:3]} - an intramural plot is "
+            f"sheltered by the urban fabric and on land too precious for one (meta(inwall_groves=True) to allow)",
+        )
     return _kept(locals(), ('gv', 'inwall_groves'))
 
 
 def _seg_0563_324__moat_2(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.324 (moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            moat = M.get("moat")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        moat = M.get("moat")
     return _kept(locals(), ('moat',))
 
 
@@ -25596,8 +25324,8 @@ def _seg_0563_325__city_moat_feeder_matches_width(
     wy: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.325 (city_moat_fed_offmap, city_moat_feeder_matches_width, city_moat_has_outfall, city_moat_joins_river, city_moat_junction_angles, city_moat_surrounds_wall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
+        if meta.get('walled'):  # noqa: SIM102
             if moat:
                 rv = M.get("river")
                 if rv:
@@ -25755,25 +25483,22 @@ def _seg_0563_325__city_moat_feeder_matches_width(
 
 def _seg_0563_326__river_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.326 (river_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            river_c: Any = M.get("river")  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        river_c: Any = M.get("river")  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('river_c',))
 
 
 def _seg_0563_327__canals_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.327 (canals_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            canals_c = M.get("canals", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        canals_c = M.get("canals", [])
     return _kept(locals(), ('canals_c',))
 
 
 def _seg_0563_328__docks_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.328 (docks_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            docks_c = M.get("docks", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        docks_c = M.get("docks", [])
     return _kept(locals(), ('docks_c',))
 
 
@@ -25810,59 +25535,57 @@ def _seg_0563_329__city_canal_reaches_dock(
     unreached: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.329 (city_canal_reaches_dock, city_canal_shares_moat_mouth) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if canals_c:
-                moat_for_canal = M.get("moat") or []
-                mw_for_canal = M.get("moat_width", 22)
+    if scale in ('city', 'capital') and meta.get('walled') and canals_c:
+        moat_for_canal = M.get("moat") or []
+        mw_for_canal = M.get("moat_width", 22)
 
-                def _end_near_river(e: Pt) -> bool:
-                    return bool(river_c) and min(seg_dist(e[0], e[1], river_c["pts"][i], river_c["pts"][i + 1]) for i in range(len(river_c["pts"]) - 1)) <= river_c["w"] / 2 + 14
+        def _end_near_river(e: Pt) -> bool:
+            return bool(river_c) and min(seg_dist(e[0], e[1], river_c["pts"][i], river_c["pts"][i + 1]) for i in range(len(river_c["pts"]) - 1)) <= river_c["w"] / 2 + 14
 
-                def _end_near_moat(e: Pt, chw: float) -> bool:
-                    # the handoff confluence: the canal end sits ON the moat's stroke (bed meets bed)
-                    return len(moat_for_canal) >= 2 and poly_dist(e[0], e[1], moat_for_canal) <= mw_for_canal / 2 + chw + 4
+        def _end_near_moat(e: Pt, chw: float) -> bool:
+            # the handoff confluence: the canal end sits ON the moat's stroke (bed meets bed)
+            return len(moat_for_canal) >= 2 and poly_dist(e[0], e[1], moat_for_canal) <= mw_for_canal / 2 + chw + 4
 
-                def _end_near_dock(e: Pt, chw: float) -> bool:
-                    # the canal MOUTH opens into the basin: the endpoint sits at the quay edge or
-                    # inside it (a visible gap to the dock = not connected), so no slack beyond ~3px
-                    return any(abs(e[0] - d["x"]) <= d["w"] / 2 + 3 and abs(e[1] - d["y"]) <= d["h"] / 2 + 3 for d in docks_c)
+        def _end_near_dock(e: Pt, chw: float) -> bool:
+            # the canal MOUTH opens into the basin: the endpoint sits at the quay edge or
+            # inside it (a visible gap to the dock = not connected), so no slack beyond ~3px
+            return any(abs(e[0] - d["x"]) <= d["w"] / 2 + 3 and abs(e[1] - d["y"]) <= d["h"] / 2 + 3 for d in docks_c)
 
-                unreached = []
-                for c in canals_c:
-                    chw = c.get("w", 12) / 2
-                    ends = (c["poly"][0], c["poly"][-1])
-                    if not (any(_end_near_river(e) or _end_near_moat(e, chw) for e in ends) and (not docks_c or any(_end_near_dock(e, chw) for e in ends))):
-                        unreached.append([round(c["poly"][0][0]), round(c["poly"][0][1])])
-                check(
-                    "city_canal_reaches_dock",
-                    not unreached,
-                    f"cargo canal(s) not connecting the water to the dock basin: {unreached[:3]} - one end taps the "
-                    f"river or hands off to the moat (at the water gate), the other must feed the in-city dock "
-                    f"(extend it to the quay, like a street reaching the road)",
-                )
-                # (1b) ONE MOUTH ON THE RIVER, NOT TWO (GM 2026-07-23, Nagahara's water-gate corner):
-                # where a moat is drawn, a canal must not open its OWN river mouth inside the moat's
-                # stroke corridor - Nagahara's canal tapped the river 36 real ft beside the moat's
-                # downstream junction and rode collinearly inside the moat arm across the whole bank
-                # strip, a smeared doubled channel with a sliver fork at the mouth. Historically the
-                # mouths MERGE: the canal hands off to the moat and the moat's junction is the single
-                # navigation entrance (see settlements.md river-cities, "one mouth on the river").
-                # A canal mouth on open bank AWAY from the moat remains legitimate (real cities had
-                # water gates on the river face itself); only the near-duplicate mouth is the defect.
-                canal_second_mouths = []
-                for c in canals_c:
-                    chw = c.get("w", 12) / 2
-                    for e in (c["poly"][0], c["poly"][-1]):
-                        if _end_near_river(e) and len(moat_for_canal) >= 2 and poly_dist(e[0], e[1], moat_for_canal) <= mw_for_canal / 2 + chw + 8:
-                            canal_second_mouths.append([round(e[0]), round(e[1])])
-                check(
-                    "city_canal_shares_moat_mouth",
-                    not canal_second_mouths,
-                    f"cargo canal end(s) opening a second river mouth alongside the moat's junction: {canal_second_mouths[:3]} - "
-                    f"the canal and the moat share ONE mouth (the Suzhou pattern: end the canal ON the moat and let the "
-                    f"moat's downstream junction be the navigation entrance)",
-                )
+        unreached = []
+        for c in canals_c:
+            chw = c.get("w", 12) / 2
+            ends = (c["poly"][0], c["poly"][-1])
+            if not (any(_end_near_river(e) or _end_near_moat(e, chw) for e in ends) and (not docks_c or any(_end_near_dock(e, chw) for e in ends))):
+                unreached.append([round(c["poly"][0][0]), round(c["poly"][0][1])])
+        check(
+            "city_canal_reaches_dock",
+            not unreached,
+            f"cargo canal(s) not connecting the water to the dock basin: {unreached[:3]} - one end taps the "
+            f"river or hands off to the moat (at the water gate), the other must feed the in-city dock "
+            f"(extend it to the quay, like a street reaching the road)",
+        )
+        # (1b) ONE MOUTH ON THE RIVER, NOT TWO (GM 2026-07-23, Nagahara's water-gate corner):
+        # where a moat is drawn, a canal must not open its OWN river mouth inside the moat's
+        # stroke corridor - Nagahara's canal tapped the river 36 real ft beside the moat's
+        # downstream junction and rode collinearly inside the moat arm across the whole bank
+        # strip, a smeared doubled channel with a sliver fork at the mouth. Historically the
+        # mouths MERGE: the canal hands off to the moat and the moat's junction is the single
+        # navigation entrance (see settlements.md river-cities, "one mouth on the river").
+        # A canal mouth on open bank AWAY from the moat remains legitimate (real cities had
+        # water gates on the river face itself); only the near-duplicate mouth is the defect.
+        canal_second_mouths = []
+        for c in canals_c:
+            chw = c.get("w", 12) / 2
+            for e in (c["poly"][0], c["poly"][-1]):
+                if _end_near_river(e) and len(moat_for_canal) >= 2 and poly_dist(e[0], e[1], moat_for_canal) <= mw_for_canal / 2 + chw + 8:
+                    canal_second_mouths.append([round(e[0]), round(e[1])])
+        check(
+            "city_canal_shares_moat_mouth",
+            not canal_second_mouths,
+            f"cargo canal end(s) opening a second river mouth alongside the moat's junction: {canal_second_mouths[:3]} - "
+            f"the canal and the moat share ONE mouth (the Suzhou pattern: end the canal ON the moat and let the "
+            f"moat's downstream junction be the navigation entrance)",
+        )
     return _kept(locals(), ('_end_near_dock', '_end_near_moat', '_end_near_river', 'c', 'canal_second_mouths', 'chw', 'e', 'ends', 'moat_for_canal', 'mw_for_canal', 'unreached'))
 
 
@@ -25875,9 +25598,8 @@ def _seg_0563_329__city_canal_reaches_dock(
 
 def _seg_0563_330__jetties_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.330 (jetties_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            jetties_c = M.get("jetties", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        jetties_c = M.get("jetties", [])
     return _kept(locals(), ('jetties_c',))
 
 
@@ -25913,42 +25635,40 @@ def _seg_0563_331__city_wharf_jetties_on_bank(
     w: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.331 (city_wharf_jetties_on_bank) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if jetties_c and river_c:
-                rp = river_c["pts"]
-                rhw = river_c["w"] / 2
-                cx_r = sum(p[0] for p in w) / len(w) if len(w) >= 3 else EX0
-                cy_r = sum(p[1] for p in w) / len(w) if len(w) >= 3 else EY0
-                floats = []
-                for j in jetties_c:
-                    jends = [(j["x"], j["y"]), (j["x"] + math.cos(math.radians(j["rot"])) * j["len"], j["y"] + math.sin(math.radians(j["rot"])) * j["len"])]
+    if scale in ('city', 'capital') and meta.get('walled') and jetties_c and river_c:
+        rp = river_c["pts"]
+        rhw = river_c["w"] / 2
+        cx_r = sum(p[0] for p in w) / len(w) if len(w) >= 3 else EX0
+        cy_r = sum(p[1] for p in w) / len(w) if len(w) >= 3 else EY0
+        floats = []
+        for j in jetties_c:
+            jends = [(j["x"], j["y"]), (j["x"] + math.cos(math.radians(j["rot"])) * j["len"], j["y"] + math.sin(math.radians(j["rot"])) * j["len"])]
 
-                    # a jetty runs out from the CITYWARD bank into the water. At least one end must
-                    # sit on that near bank: within ~14px of the bank line (|dist-to-centerline - rhw|
-                    # small) AND on the city's side of the centerline (dot of (end - foot) with the
-                    # direction to the wall centroid is positive).
-                    def cityward_dist(px: float, py: float) -> tuple[float, bool]:
-                        # (distance to the river centerline, is-it-on-the-city-side-of-the-centerline)
-                        k = min(range(len(rp) - 1), key=lambda i: seg_dist(px, py, rp[i], rp[i + 1]))
-                        fx, fy = seg_closest(px, py, rp[k], rp[k + 1])
-                        d = math.hypot(px - fx, py - fy)
-                        cityward = (px - fx) * (cx_r - fx) + (py - fy) * (cy_r - fy) > 0
-                        return d, cityward
+            # a jetty runs out from the CITYWARD bank into the water. At least one end must
+            # sit on that near bank: within ~14px of the bank line (|dist-to-centerline - rhw|
+            # small) AND on the city's side of the centerline (dot of (end - foot) with the
+            # direction to the wall centroid is positive).
+            def cityward_dist(px: float, py: float) -> tuple[float, bool]:
+                # (distance to the river centerline, is-it-on-the-city-side-of-the-centerline)
+                k = min(range(len(rp) - 1), key=lambda i: seg_dist(px, py, rp[i], rp[i + 1]))
+                fx, fy = seg_closest(px, py, rp[k], rp[k + 1])
+                d = math.hypot(px - fx, py - fy)
+                cityward = (px - fx) * (cx_r - fx) + (py - fy) * (cy_r - fy) > 0
+                return d, cityward
 
-                    # a jetty is a FINGER: its ROOT sits at the near bank or just onto land (cityward,
-                    # >= rhw-6 from the centerline - so the plank visibly connects to the shore, not
-                    # floating a stride out in the water), and its TIP runs INTO the near-half water
-                    # (cityward, <= rhw - it neither floats mid-stream nor spans past the far bank).
-                    root = any((lambda dc: dc[1] and dc[0] >= rhw - 6)(cityward_dist(*e)) for e in jends)
-                    tip = any((lambda dc: dc[1] and dc[0] <= rhw)(cityward_dist(*e)) for e in jends)
-                    if not (root and tip):
-                        floats.append([round(jends[0][0]), round(jends[0][1])])
-                check(
-                    "city_wharf_jetties_on_bank",
-                    not floats,
-                    f"wharf jetties floating off the bank: {floats[:3]} - a jetty's landward end must touch the river's near bank, running out into the water from there, not float mid-stream",
-                )
+            # a jetty is a FINGER: its ROOT sits at the near bank or just onto land (cityward,
+            # >= rhw-6 from the centerline - so the plank visibly connects to the shore, not
+            # floating a stride out in the water), and its TIP runs INTO the near-half water
+            # (cityward, <= rhw - it neither floats mid-stream nor spans past the far bank).
+            root = any((lambda dc: dc[1] and dc[0] >= rhw - 6)(cityward_dist(*e)) for e in jends)
+            tip = any((lambda dc: dc[1] and dc[0] <= rhw)(cityward_dist(*e)) for e in jends)
+            if not (root and tip):
+                floats.append([round(jends[0][0]), round(jends[0][1])])
+        check(
+            "city_wharf_jetties_on_bank",
+            not floats,
+            f"wharf jetties floating off the bank: {floats[:3]} - a jetty's landward end must touch the river's near bank, running out into the water from there, not float mid-stream",
+        )
     return _kept(locals(), ('cityward_dist', 'cx_r', 'cy_r', 'e', 'floats', 'j', 'jends', 'p', 'rhw', 'root', 'rp', 'tip'))
 
 
@@ -25968,9 +25688,8 @@ def _seg_0563_331__city_wharf_jetties_on_bank(
 
 def _seg_0563_332__booms_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.332 (booms_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            booms_c = M.get("log_booms", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        booms_c = M.get("log_booms", [])
     return _kept(locals(), ('booms_c',))
 
 
@@ -26020,8 +25739,8 @@ def _seg_0563_333__log_boom_moored_to_the_bank(
     yd: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.333 (log_boom_leaves_the_fairway, log_boom_moored_to_the_bank, log_boom_serves_the_lumber_yard) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
+        if meta.get('walled'):  # noqa: SIM102
             if booms_c and river_c:
                 rpb = river_c["pts"]
                 rhwb = river_c["w"] / 2
@@ -26125,9 +25844,8 @@ def _seg_0563_333__log_boom_moored_to_the_bank(
 
 def _seg_0563_334__streets(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.334 (streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            streets = M.get("town_streets", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        streets = M.get("town_streets", [])
     return _kept(locals(), ('streets',))
 
 
@@ -26166,8 +25884,8 @@ def _seg_0563_335__city_streets_connected(
     widths: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.335 (city_streets_connected, city_streets_no_intersection_stub, city_streets_no_near_miss) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
+        if meta.get('walled'):  # noqa: SIM102
             if streets:
                 # at the CAPITAL the suburb streets (wholly outside the rampart - the kashi
                 # quay street) are their own lawful networks reached through the gates; the
@@ -26292,30 +26010,27 @@ def _seg_0563_335__city_streets_connected(
 
 def _seg_0563_336__torii(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.336 (torii) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            torii = M.get("torii", [])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        torii = M.get("torii", [])
     return _kept(locals(), ('torii',))
 
 
 def _seg_0563_337__pt_rect(*, dx: Any = _UNBOUND, dy: Any = _UNBOUND, meta: Any = _UNBOUND, px: Any = _UNBOUND, py: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.337 (pt_rect) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital') and meta.get('walled'):
 
-            def pt_rect(px: float, py: float, t: dict[str, Any]) -> float:
-                dx = max(t["x"] - t["w"] / 2 - px, 0, px - t["x"] - t["w"] / 2)
-                dy = max(t["y"] - t["h"] / 2 - py, 0, py - t["y"] - t["h"] / 2)
-                return math.hypot(dx, dy)
+        def pt_rect(px: float, py: float, t: dict[str, Any]) -> float:
+            dx = max(t["x"] - t["w"] / 2 - px, 0, px - t["x"] - t["w"] / 2)
+            dy = max(t["y"] - t["h"] / 2 - py, 0, py - t["y"] - t["h"] / 2)
+            return math.hypot(dx, dy)
 
     return _kept(locals(), ('pt_rect',))
 
 
 def _seg_0563_338__no_torii(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.338 (no_torii) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            no_torii = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        no_torii = []  # type: ignore[var-annotated]
     return _kept(locals(), ('no_torii',))
 
 
@@ -26335,20 +26050,18 @@ def _seg_0563_339__e_2(
     torii: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.339 (e, no_torii, r, runs_up) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for t in [r for r in M.get("religious", []) if r.get("kind") == "temple"]:
-                runs_up = any(min(pt_rect(e[0], e[1], t) for e in (st["pts"][0], st["pts"][-1])) < 28 for st in M.get("town_streets", []))
-                if runs_up and not any(math.hypot(to[0] - t["x"], to[1] - t["y"]) < 95 for to in torii):
-                    no_torii.append(t.get("label"))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for t in [r for r in M.get("religious", []) if r.get("kind") == "temple"]:
+            runs_up = any(min(pt_rect(e[0], e[1], t) for e in (st["pts"][0], st["pts"][-1])) < 28 for st in M.get("town_streets", []))
+            if runs_up and not any(math.hypot(to[0] - t["x"], to[1] - t["y"]) < 95 for to in torii):
+                no_torii.append(t.get("label"))
     return _kept(locals(), ('e', 'no_torii', 'r', 'runs_up', 'st', 't', 'to'))
 
 
 def _seg_0563_340__city_temple_approach_has_torii(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, no_torii: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.340 (city_temple_approach_has_torii) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_temple_approach_has_torii", not no_torii, f"temple(s) a city street runs straight up to, with no torii arch in front: {no_torii}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_temple_approach_has_torii", not no_torii, f"temple(s) a city street runs straight up to, with no torii arch in front: {no_torii}")
     return _kept(locals(), ())
 
 
@@ -26365,9 +26078,8 @@ def _seg_0563_340__city_temple_approach_has_torii(*, check: Any = _UNBOUND, meta
 
 def _seg_0563_341__to_under(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.341 (to_under) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            to_under = []  # type: ignore[var-annotated]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        to_under = []  # type: ignore[var-annotated]
     return _kept(locals(), ('to_under',))
 
 
@@ -26375,21 +26087,19 @@ def _seg_0563_342__i_5(
     *, M: Any = _UNBOUND, i: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, sp: Any = _UNBOUND, st: Any = _UNBOUND, t: Any = _UNBOUND, to_under: Any = _UNBOUND, torii: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.342 (i, sp, st, t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for t in torii:
-                for st in M.get("town_streets", []):
-                    sp = st["pts"]
-                    if any(seg_dist(t[0], t[1], sp[i], sp[i + 1]) <= st.get("w", 24) / 2 + 12 for i in range(len(sp) - 1)) and t[2] <= st.get("z", 0):
-                        to_under.append((t[0], t[1]))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for t in torii:
+            for st in M.get("town_streets", []):
+                sp = st["pts"]
+                if any(seg_dist(t[0], t[1], sp[i], sp[i + 1]) <= st.get("w", 24) / 2 + 12 for i in range(len(sp) - 1)) and t[2] <= st.get("z", 0):
+                    to_under.append((t[0], t[1]))
     return _kept(locals(), ('i', 'sp', 'st', 't', 'to_under'))
 
 
 def _seg_0563_343__city_torii_over_streets(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, to_under: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.343 (city_torii_over_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            check("city_torii_over_streets", not to_under, f"torii arch(es) drawn UNDER a street they span (the street must pass beneath the arch): {to_under}")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        check("city_torii_over_streets", not to_under, f"torii arch(es) drawn UNDER a street they span (the street must pass beneath the arch): {to_under}")
     return _kept(locals(), ())
 
 
@@ -26413,25 +26123,22 @@ def _seg_0563_343__city_torii_over_streets(*, check: Any = _UNBOUND, meta: Any =
 
 def _seg_0563_344__ES_MARGIN(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.344 (ES_MARGIN, ES_MIN, ES_STEP) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            ES_STEP, ES_MARGIN, ES_MIN = 32, 20.0, 4000
+    if scale in ('city', 'capital') and meta.get('walled'):
+        ES_STEP, ES_MARGIN, ES_MIN = 32, 20.0, 4000
     return _kept(locals(), ('ES_MARGIN', 'ES_MIN', 'ES_STEP'))
 
 
 def _seg_0563_345__es_rects(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.345 (es_rects) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_rects: list[tuple[float, float, float, float]] = []  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_rects: list[tuple[float, float, float, float]] = []  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('es_rects',))
 
 
 def _seg_0563_346__es_s(*, M: Any = _UNBOUND, es_s: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.346 (es_s, es_singles) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_singles = [es_s for es_s in [M.get("governor_mansion"), *(M.get("theater_stage") or [])] if isinstance(es_s, dict)]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_singles = [es_s for es_s in [M.get("governor_mansion"), *(M.get("theater_stage") or [])] if isinstance(es_s, dict)]
     return _kept(locals(), ('es_s', 'es_singles'))
 
 
@@ -26450,105 +26157,95 @@ def _seg_0563_347__es_grp(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.347 (es_grp, es_hh, es_hw, es_k) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_grp in [
-                M.get(es_k, []) or []
-                for es_k in (
-                    "buildings",
-                    "flophouses",
-                    "storehouses",
-                    "manors",
-                    "ministries",
-                    "religious",
-                    "inspection_stations",
-                    "byres",
-                    "cemeteries",
-                    "mausoleums",
-                    "merchant_estates",
-                    "farm_sheds",
-                    "gardens",
-                    "threshing_yards",
-                    "fire_towers",
-                    "drum_towers",
-                    "gate_structs",
-                    "groves",
-                    "breweries",
-                    "dye_yards",
-                    "lumber_yards",
-                    "oil_presses",
-                    "pawnshops",
-                    "bathhouses",
-                    "kilns",
-                    "tanning_yards",
-                    "martial_halls",
-                    "dojos",
-                )
-            ] + [houses, es_singles]:
-                for es_o in es_grp:
-                    es_hw, es_hh = es_o["w"] / 2, es_o["h"] / 2
-                    if es_o.get("rot"):
-                        es_hw = es_hh = math.hypot(es_hw, es_hh)
-                    es_rects.append((es_o["x"], es_o["y"], es_hw, es_hh))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_grp in [
+            M.get(es_k, []) or []
+            for es_k in (
+                "buildings",
+                "flophouses",
+                "storehouses",
+                "manors",
+                "ministries",
+                "religious",
+                "inspection_stations",
+                "byres",
+                "cemeteries",
+                "mausoleums",
+                "merchant_estates",
+                "farm_sheds",
+                "gardens",
+                "threshing_yards",
+                "fire_towers",
+                "drum_towers",
+                "gate_structs",
+                "groves",
+                "breweries",
+                "dye_yards",
+                "lumber_yards",
+                "oil_presses",
+                "pawnshops",
+                "bathhouses",
+                "kilns",
+                "tanning_yards",
+                "martial_halls",
+                "dojos",
+            )
+        ] + [houses, es_singles]:
+            for es_o in es_grp:
+                es_hw, es_hh = es_o["w"] / 2, es_o["h"] / 2
+                if es_o.get("rot"):
+                    es_hw = es_hh = math.hypot(es_hw, es_hh)
+                es_rects.append((es_o["x"], es_o["y"], es_hw, es_hh))
     return _kept(locals(), ('es_grp', 'es_hh', 'es_hw', 'es_k', 'es_o', 'es_rects'))
 
 
 def _seg_0563_348__es_discs(*, M: Any = _UNBOUND, es_o: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.348 (es_discs, es_o) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_discs = [(es_o["x"], es_o["y"], es_o.get("r", 8.0)) for es_o in M.get("wells", []) + M.get("stable_yards", [])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_discs = [(es_o["x"], es_o["y"], es_o.get("r", 8.0)) for es_o in M.get("wells", []) + M.get("stable_yards", [])]
     return _kept(locals(), ('es_discs', 'es_o'))
 
 
 def _seg_0563_349__es_discs_1(*, M: Any = _UNBOUND, es_discs: Any = _UNBOUND, es_t: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.349 (es_discs, es_t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_discs += [(es_t[0], es_t[1], 14.0) for es_t in M.get("torii", [])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_discs += [(es_t[0], es_t[1], 14.0) for es_t in M.get("torii", [])]
     return _kept(locals(), ('es_discs', 'es_t'))
 
 
 def _seg_0563_350__es_polys(*, M: Any = _UNBOUND, f: Any = _UNBOUND, fields: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.350 (es_polys, f) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_polys = [f["outline"] for f in fields] + list((M.get("comb_floors") or {}).values())
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_polys = [f["outline"] for f in fields] + list((M.get("comb_floors") or {}).values())
     return _kept(locals(), ('es_polys', 'f'))
 
 
 def _seg_0563_351__es_k(*, M: Any = _UNBOUND, es_k: Any = _UNBOUND, es_o: Any = _UNBOUND, es_polys: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.351 (es_k, es_o, es_polys) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_k in ("dry_plots", "pastures", "commons", "marshes", "forest_patches", "village_groves", "clearings"):
-                es_polys += [es_o["poly"] for es_o in M.get(es_k, []) or []]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_k in ("dry_plots", "pastures", "commons", "marshes", "forest_patches", "village_groves", "clearings"):
+            es_polys += [es_o["poly"] for es_o in M.get(es_k, []) or []]
     return _kept(locals(), ('es_k', 'es_o', 'es_polys'))
 
 
 def _seg_0563_352__es_lines(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.352 (es_lines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_lines: list[tuple[list[Any], float]] = [(w, 20.0)]  # type: ignore[no-redef,unused-ignore]  # the rampart + its patrol strip is claimed ground
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_lines: list[tuple[list[Any], float]] = [(w, 20.0)]  # type: ignore[no-redef,unused-ignore]  # the rampart + its patrol strip is claimed ground
     return _kept(locals(), ('es_lines',))
 
 
 def _seg_0563_353__es_lines_1(*, M: Any = _UNBOUND, es_lines: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.353 (es_lines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if M.get("road"):
-                es_lines.append((M["road"], M.get("road_width", 30) / 2))
+    if scale in ('city', 'capital') and meta.get('walled') and M.get("road"):
+        es_lines.append((M["road"], M.get("road_width", 30) / 2))
     return _kept(locals(), ('es_lines',))
 
 
 def _seg_0563_354__es_lines_2(*, M: Any = _UNBOUND, es_lines: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.354 (es_lines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if M.get("ring_road"):
-                es_lines.append((M["ring_road"], M.get("ring_road_width", 24) / 2))
+    if scale in ('city', 'capital') and meta.get('walled') and M.get("ring_road"):
+        es_lines.append((M["ring_road"], M.get("ring_road_width", 24) / 2))
     return _kept(locals(), ('es_lines',))
 
 
@@ -26556,64 +26253,57 @@ def _seg_0563_355__es_dw(
     *, M: Any = _UNBOUND, es_dw: Any = _UNBOUND, es_grp2: Any = _UNBOUND, es_lines: Any = _UNBOUND, es_o: Any = _UNBOUND, es_pk: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.355 (es_dw, es_grp2, es_lines, es_o) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_grp2, es_pk, es_dw in (
-                (M.get("roads", []), "pts", 24),
-                (M.get("town_streets", []), "pts", 24),
-                (M.get("alleys", []), "pts", 12),
-                (M.get("streams", []), "poly", 12),
-                (M.get("channels", []), "poly", 8),
-            ):
-                es_lines += [(es_o[es_pk], es_o.get("w", es_dw) / 2) for es_o in es_grp2 or []]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_grp2, es_pk, es_dw in (
+            (M.get("roads", []), "pts", 24),
+            (M.get("town_streets", []), "pts", 24),
+            (M.get("alleys", []), "pts", 12),
+            (M.get("streams", []), "poly", 12),
+            (M.get("channels", []), "poly", 8),
+        ):
+            es_lines += [(es_o[es_pk], es_o.get("w", es_dw) / 2) for es_o in es_grp2 or []]
     return _kept(locals(), ('es_dw', 'es_grp2', 'es_lines', 'es_o', 'es_pk'))
 
 
 def _seg_0563_356__es_lines_3(*, M: Any = _UNBOUND, es_lines: Any = _UNBOUND, es_o: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.356 (es_lines, es_o) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_lines += [(es_o["boundary"], 8.0) for es_o in M.get("wards", [])]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_lines += [(es_o["boundary"], 8.0) for es_o in M.get("wards", [])]
     return _kept(locals(), ('es_lines', 'es_o'))
 
 
 def _seg_0563_357__es_pond(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.357 (es_pond) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_pond = M.get("pond")
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_pond = M.get("pond")
     return _kept(locals(), ('es_pond',))
 
 
 def _seg_0563_358__es_wx0(*, meta: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.358 (es_wx0, es_wy0, p) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_wx0, es_wy0 = min(p[0] for p in w), min(p[1] for p in w)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_wx0, es_wy0 = min(p[0] for p in w), min(p[1] for p in w)
     return _kept(locals(), ('es_wx0', 'es_wy0', 'p'))
 
 
 def _seg_0563_359__es_wx1(*, meta: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.359 (es_wx1, es_wy1, p) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_wx1, es_wy1 = max(p[0] for p in w), max(p[1] for p in w)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_wx1, es_wy1 = max(p[0] for p in w), max(p[1] for p in w)
     return _kept(locals(), ('es_wx1', 'es_wy1', 'p'))
 
 
 def _seg_0563_360__es_ci0(*, ES_STEP: Any = _UNBOUND, es_wx0: Any = _UNBOUND, es_wy0: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.360 (es_ci0, es_cj0) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_ci0, es_cj0 = int(es_wx0 // ES_STEP), int(es_wy0 // ES_STEP)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_ci0, es_cj0 = int(es_wx0 // ES_STEP), int(es_wy0 // ES_STEP)
     return _kept(locals(), ('es_ci0', 'es_cj0'))
 
 
 def _seg_0563_361__es_ci1(*, ES_STEP: Any = _UNBOUND, es_wx1: Any = _UNBOUND, es_wy1: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.361 (es_ci1, es_cj1) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_ci1, es_cj1 = int(es_wx1 // ES_STEP) + 1, int(es_wy1 // ES_STEP) + 1
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_ci1, es_cj1 = int(es_wx1 // ES_STEP) + 1, int(es_wy1 // ES_STEP) + 1
     return _kept(locals(), ('es_ci1', 'es_cj1'))
 
 
@@ -26632,25 +26322,23 @@ def _seg_0563_362__es_cells(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.362 (es_cells) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
+    if scale in ('city', 'capital') and meta.get('walled'):
 
-            def es_cells(bx0: float, by0: float, bx1: float, by1: float) -> list[tuple[int, int]]:
-                """Grid cells whose sample point falls inside the bbox (clamped to the wall window)."""
-                return [
-                    (eci, ecj)
-                    for eci in range(max(es_ci0, math.ceil(bx0 / ES_STEP)), min(es_ci1, math.floor(bx1 / ES_STEP)) + 1)
-                    for ecj in range(max(es_cj0, math.ceil(by0 / ES_STEP)), min(es_cj1, math.floor(by1 / ES_STEP)) + 1)
-                ]
+        def es_cells(bx0: float, by0: float, bx1: float, by1: float) -> list[tuple[int, int]]:
+            """Grid cells whose sample point falls inside the bbox (clamped to the wall window)."""
+            return [
+                (eci, ecj)
+                for eci in range(max(es_ci0, math.ceil(bx0 / ES_STEP)), min(es_ci1, math.floor(bx1 / ES_STEP)) + 1)
+                for ecj in range(max(es_cj0, math.ceil(by0 / ES_STEP)), min(es_cj1, math.floor(by1 / ES_STEP)) + 1)
+            ]
 
     return _kept(locals(), ('es_cells',))
 
 
 def _seg_0563_363__es_covered(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.363 (es_covered) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_covered: set[tuple[int, int]] = set()  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_covered: set[tuple[int, int]] = set()  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('es_covered',))
 
 
@@ -26668,10 +26356,9 @@ def _seg_0563_364__es_covered_1(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.364 (es_covered, es_rhh, es_rhw, es_rx) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_rx, es_ry, es_rhw, es_rhh in es_rects:
-                es_covered.update(es_cells(es_rx - es_rhw - ES_MARGIN, es_ry - es_rhh - ES_MARGIN, es_rx + es_rhw + ES_MARGIN, es_ry + es_rhh + ES_MARGIN))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_rx, es_ry, es_rhw, es_rhh in es_rects:
+            es_covered.update(es_cells(es_rx - es_rhw - ES_MARGIN, es_ry - es_rhh - ES_MARGIN, es_rx + es_rhw + ES_MARGIN, es_ry + es_rhh + ES_MARGIN))
     return _kept(locals(), ('es_covered', 'es_rhh', 'es_rhw', 'es_rx', 'es_ry'))
 
 
@@ -26691,11 +26378,10 @@ def _seg_0563_365__c_2(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.365 (c, es_covered, es_dr, es_dx) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_dx, es_dy, es_dr in es_discs:
-                es_rr = es_dr + ES_MARGIN
-                es_covered.update([c for c in es_cells(es_dx - es_rr, es_dy - es_rr, es_dx + es_rr, es_dy + es_rr) if (c[0] * ES_STEP - es_dx) ** 2 + (c[1] * ES_STEP - es_dy) ** 2 <= es_rr * es_rr])
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_dx, es_dy, es_dr in es_discs:
+            es_rr = es_dr + ES_MARGIN
+            es_covered.update([c for c in es_cells(es_dx - es_rr, es_dy - es_rr, es_dx + es_rr, es_dy + es_rr) if (c[0] * ES_STEP - es_dx) ** 2 + (c[1] * ES_STEP - es_dy) ** 2 <= es_rr * es_rr])
     return _kept(locals(), ('c', 'es_covered', 'es_dr', 'es_dx', 'es_dy', 'es_rr'))
 
 
@@ -26717,19 +26403,18 @@ def _seg_0563_366__c_3(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.366 (c, es_a, es_b, es_covered) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_pts, es_hwid in es_lines:
-                es_rr = es_hwid + ES_MARGIN
-                for es_i in range(len(es_pts) - 1):
-                    es_a, es_b = es_pts[es_i], es_pts[es_i + 1]
-                    es_covered.update(
-                        [
-                            c
-                            for c in es_cells(min(es_a[0], es_b[0]) - es_rr, min(es_a[1], es_b[1]) - es_rr, max(es_a[0], es_b[0]) + es_rr, max(es_a[1], es_b[1]) + es_rr)
-                            if c not in es_covered and seg_dist(c[0] * ES_STEP, c[1] * ES_STEP, es_a, es_b) <= es_rr
-                        ]
-                    )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_pts, es_hwid in es_lines:
+            es_rr = es_hwid + ES_MARGIN
+            for es_i in range(len(es_pts) - 1):
+                es_a, es_b = es_pts[es_i], es_pts[es_i + 1]
+                es_covered.update(
+                    [
+                        c
+                        for c in es_cells(min(es_a[0], es_b[0]) - es_rr, min(es_a[1], es_b[1]) - es_rr, max(es_a[0], es_b[0]) + es_rr, max(es_a[1], es_b[1]) + es_rr)
+                        if c not in es_covered and seg_dist(c[0] * ES_STEP, c[1] * ES_STEP, es_a, es_b) <= es_rr
+                    ]
+                )
     return _kept(locals(), ('c', 'es_a', 'es_b', 'es_covered', 'es_hwid', 'es_i', 'es_pts', 'es_rr'))
 
 
@@ -26746,16 +26431,15 @@ def _seg_0563_367__c_4(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.367 (c, es_covered, es_p, q) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_p in es_polys:
-                es_covered.update(
-                    [
-                        c
-                        for c in es_cells(min(q[0] for q in es_p), min(q[1] for q in es_p), max(q[0] for q in es_p), max(q[1] for q in es_p))
-                        if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, es_p)
-                    ]
-                )
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_p in es_polys:
+            es_covered.update(
+                [
+                    c
+                    for c in es_cells(min(q[0] for q in es_p), min(q[1] for q in es_p), max(q[0] for q in es_p), max(q[1] for q in es_p))
+                    if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, es_p)
+                ]
+            )
     return _kept(locals(), ('c', 'es_covered', 'es_p', 'q'))
 
 
@@ -26763,16 +26447,14 @@ def _seg_0563_368__c_5(
     *, ES_STEP: Any = _UNBOUND, c: Any = _UNBOUND, es_cells: Any = _UNBOUND, es_covered: Any = _UNBOUND, es_pond: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.368 (c, es_covered) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            if es_pond:
-                es_covered.update(
-                    [
-                        c
-                        for c in es_cells(es_pond[0] - es_pond[2] * 1.2, es_pond[1] - es_pond[3] * 1.2, es_pond[0] + es_pond[2] * 1.2, es_pond[1] + es_pond[3] * 1.2)
-                        if c not in es_covered and in_ellipse(c[0] * ES_STEP, c[1] * ES_STEP, es_pond, 1.15)
-                    ]
-                )
+    if scale in ('city', 'capital') and meta.get('walled') and es_pond:
+        es_covered.update(
+            [
+                c
+                for c in es_cells(es_pond[0] - es_pond[2] * 1.2, es_pond[1] - es_pond[3] * 1.2, es_pond[0] + es_pond[2] * 1.2, es_pond[1] + es_pond[3] * 1.2)
+                if c not in es_covered and in_ellipse(c[0] * ES_STEP, c[1] * ES_STEP, es_pond, 1.15)
+            ]
+        )
     return _kept(locals(), ('c', 'es_covered'))
 
 
@@ -26782,10 +26464,9 @@ def _seg_0563_368__c_5(
 
 def _seg_0563_369__es_ca(*, M: Any = _UNBOUND, es_ca: Any = _UNBOUND, es_cells: Any = _UNBOUND, es_covered: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.369 (es_ca, es_covered) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_ca in M.get("castles", []):
-                es_covered.update(es_cells(es_ca["x"] - es_ca["w"] / 2 - 45, es_ca["y"] - es_ca["h"] / 2 - 45, es_ca["x"] + es_ca["w"] / 2 + 45, es_ca["y"] + es_ca["h"] / 2 + 45))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_ca in M.get("castles", []):
+            es_covered.update(es_cells(es_ca["x"] - es_ca["w"] / 2 - 45, es_ca["y"] - es_ca["h"] / 2 - 45, es_ca["x"] + es_ca["w"] / 2 + 45, es_ca["y"] + es_ca["h"] / 2 + 45))
     return _kept(locals(), ('es_ca', 'es_covered'))
 
 
@@ -26804,25 +26485,22 @@ def _seg_0563_370__c_6(
     w: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.370 (c, es_empty) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_empty = {c for c in es_cells(es_wx0, es_wy0, es_wx1, es_wy1) if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, w)}
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_empty = {c for c in es_cells(es_wx0, es_wy0, es_wx1, es_wy1) if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, w)}
     return _kept(locals(), ('c', 'es_empty'))
 
 
 def _seg_0563_371__es_seen(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.371 (es_seen) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_seen: set[tuple[int, int]] = set()  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_seen: set[tuple[int, int]] = set()  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('es_seen',))
 
 
 def _seg_0563_372__es_flagged(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.372 (es_flagged) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_flagged: list[tuple[int, tuple[int, int]]] = []  # type: ignore[no-redef,unused-ignore]
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_flagged: list[tuple[int, tuple[int, int]]] = []  # type: ignore[no-redef,unused-ignore]
     return _kept(locals(), ('es_flagged',))
 
 
@@ -26846,40 +26524,37 @@ def _seg_0563_373__c_7(
     scale: Any = _UNBOUND,
 ) -> dict[str, Any]:
     """Gate segment 563.373 (c, es_area, es_c, es_cell) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            for es_cell in es_empty:
-                if es_cell in es_seen:
-                    continue
-                es_stack, es_comp = [es_cell], []
-                es_seen.add(es_cell)
-                while es_stack:
-                    es_c = es_stack.pop()
-                    es_comp.append(es_c)
-                    for es_di, es_dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                        es_nb = (es_c[0] + es_di, es_c[1] + es_dj)
-                        if es_nb in es_empty and es_nb not in es_seen:
-                            es_seen.add(es_nb)
-                            es_stack.append(es_nb)
-                es_area = len(es_comp) * ES_STEP * ES_STEP
-                if es_area >= ES_MIN:
-                    es_flagged.append((es_area, (sum(c[0] for c in es_comp) * ES_STEP // len(es_comp), sum(c[1] for c in es_comp) * ES_STEP // len(es_comp))))
+    if scale in ('city', 'capital') and meta.get('walled'):
+        for es_cell in es_empty:
+            if es_cell in es_seen:
+                continue
+            es_stack, es_comp = [es_cell], []
+            es_seen.add(es_cell)
+            while es_stack:
+                es_c = es_stack.pop()
+                es_comp.append(es_c)
+                for es_di, es_dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    es_nb = (es_c[0] + es_di, es_c[1] + es_dj)
+                    if es_nb in es_empty and es_nb not in es_seen:
+                        es_seen.add(es_nb)
+                        es_stack.append(es_nb)
+            es_area = len(es_comp) * ES_STEP * ES_STEP
+            if es_area >= ES_MIN:
+                es_flagged.append((es_area, (sum(c[0] for c in es_comp) * ES_STEP // len(es_comp), sum(c[1] for c in es_comp) * ES_STEP // len(es_comp))))
     return _kept(locals(), ('c', 'es_area', 'es_c', 'es_cell', 'es_comp', 'es_di', 'es_dj', 'es_flagged', 'es_nb', 'es_seen', 'es_stack'))
 
 
 def _seg_0563_374__es_flagged_1(*, es_flagged: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.374 (es_flagged) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_flagged.sort(reverse=True)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_flagged.sort(reverse=True)
     return _kept(locals(), ('es_flagged',))
 
 
 def _seg_0563_375__es_ftpx(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 563.375 (es_ftpx) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
-        if meta.get('walled'):
-            es_ftpx = meta.get("ftpx", 3)
+    if scale in ('city', 'capital') and meta.get('walled'):
+        es_ftpx = meta.get("ftpx", 3)
     return _kept(locals(), ('es_ftpx',))
 
 
@@ -26887,7 +26562,7 @@ def _seg_0563_376__city_no_large_empty_space(
     *, check: Any = _UNBOUND, ea: Any = _UNBOUND, ec: Any = _UNBOUND, es_flagged: Any = _UNBOUND, es_ftpx: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
 ) -> dict[str, Any]:
     """Gate segment 563.376 (city_no_large_empty_space) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
-    if scale in ('city', 'capital'):
+    if scale in ('city', 'capital'):  # noqa: SIM102
         if meta.get('walled'):
             check(
                 "city_no_large_empty_space",

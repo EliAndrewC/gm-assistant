@@ -48,10 +48,10 @@ segment; AST census shows no function past the lines.
 
 **Independent test**: spec.md US2 acceptance - oracle sweeps green; closure shrinks.
 
-- [ ] T008 [US2] Full-mode byte identity (spec FR-003/SC-002): `python3 022/oracle_sweep.py compare <scratch>/oracle-baseline-023.json` from `diagram/` - zero diffs, zero missing; on ANY diff, fix the transformer and re-run generate from a clean checkout of check_village.py (never hand-patch generated bodies mid-feature - 022 R7 rule)
-- [ ] T009 [US2] Targeted-vs-full sweep (spec FR-004/FR-005): `python3 022/oracle_sweep.py targeted` - zero MISMATCH; investigate any new FALLBACK count (baseline: 0)
-- [ ] T010 [US2] Teeth check: invert the condition of one outer-guard check and one walled-guard check in the NEW segments, confirm their regression fixtures go red in targeted mode, revert both edits and re-confirm green (record which two checks in 023/timings.md)
-- [ ] T011 [US2] Narrowing + perf measurement (spec FR-008/SC-004): re-time `import check_village` and the `test_regressions.py -n auto` replay vs T002; compute the closure size (segments + total statements executed) for one representative city check (e.g. `city_has_bathhouse`) before/after (before = 1,040 statements by construction); record in 023/timings.md; if import time regressed noticeably, implement the indexed-writers `_SEG_DEPS` builder from research.md R6 with a unit test, and re-measure
+- [X] T008 [US2] Full-mode byte identity (spec FR-003/SC-002): `python3 022/oracle_sweep.py compare <scratch>/oracle-baseline-023.json` from `diagram/` - zero diffs, zero missing; on ANY diff, fix the transformer and re-run generate from a clean checkout of check_village.py (never hand-patch generated bodies mid-feature - 022 R7 rule)
+- [X] T009 [US2] Targeted-vs-full sweep (spec FR-004/FR-005): `python3 022/oracle_sweep.py targeted` - zero MISMATCH; investigate any new FALLBACK count (baseline: 0)
+- [X] T010 [US2] Teeth check: invert the condition of one outer-guard check and one walled-guard check in the NEW segments, confirm their regression fixtures go red in targeted mode, revert both edits and re-confirm green (record which two checks in 023/timings.md)
+- [X] T011 [US2] Narrowing + perf measurement (spec FR-008/SC-004): re-time `import check_village` and the `test_regressions.py -n auto` replay vs T002; compute the closure size (segments + total statements executed) for one representative city check (e.g. `city_has_bathhouse`) before/after (before = 1,040 statements by construction); record in 023/timings.md; if import time regressed noticeably, implement the indexed-writers `_SEG_DEPS` builder from research.md R6 with a unit test, and re-measure
 
 ## Phase 5: User Story 3 - the existing test surface stays green (P3) [US3]
 
@@ -59,13 +59,13 @@ segment; AST census shows no function past the lines.
 
 **Independent test**: spec.md US3 acceptance - pin test + replay + whole files pass.
 
-- [ ] T012 [US3] Run the whole affected test files from `diagram/` (never `-k`): `python3 -m pytest test_checks.py test_regressions.py -n auto -q`; fix any breakage at the transformer level (regenerate), not by editing generated bodies
-- [ ] T013 [US3] Background `make done > <scratch>/make-done-023.log 2>&1` in `diagram/` (nothing appended after the redirect - the exit code must be honest); on the completion notification, tail the log and confirm ruff + format + mypy strict + pytest + 100% coverage all green
+- [X] T012 [US3] Run the whole affected test files from `diagram/` (never `-k`): `python3 -m pytest test_checks.py test_regressions.py -n auto -q`; fix any breakage at the transformer level (regenerate), not by editing generated bodies
+- [X] T013 [US3] Background `make done > <scratch>/make-done-023.log 2>&1` in `diagram/` (nothing appended after the redirect - the exit code must be honest); on the completion notification, tail the log and confirm ruff + format + mypy strict + pytest + 100% coverage all green
 
 ## Phase 6: Polish and record-the-why
 
 - [X] T014 [P] Update the "The gate is a REGISTRY" section of diagram/CLAUDE.md (spec FR-009): the city battery is now per-statement segments under in-body scale guards (`_seg_0563_NNN__*`), the clause-12 debt is retired, adding-a-check guidance now points at the sub-segment convention for city/capital checks; one short paragraph, not a rewrite
-- [ ] T015 [P] Close out 023 artifacts: research.md gains a short "what implementation taught" addendum ONLY if the sweeps caught a new dataflow hole (mirror 022 R9; skip if none), timings.md gets the final measured table (baseline vs post: import, replay, closure sizes, largest-function census); mark tasks.md checkboxes as each task verified
+- [X] T015 [P] Close out 023 artifacts: research.md gains a short "what implementation taught" addendum ONLY if the sweeps caught a new dataflow hole (mirror 022 R9; skip if none), timings.md gets the final measured table (baseline vs post: import, replay, closure sizes, largest-function census); mark tasks.md checkboxes as each task verified
 - [ ] T016 Stop-work ritual: commit in the clone, run `scripts/sync-with-main.sh done` from the clone root
 
 ## Dependencies
