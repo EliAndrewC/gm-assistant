@@ -11,7 +11,8 @@ feature's work). "Baseline" = pre-split `check_village.py`.
 | Largest functions (AST stmt count) | `_seg_0563__city_has_six_ministries` 1,040; `_seg_0285__wells_clear_of_shrine_and_torii` 427; `_seg_0543__town_farmers_plurality` 161 |
 | `gate_check_names.json` sha256 | `1c56c8073870764c51e9b3ce351a3725f72d2e2f5b4a6db2b74a1728a076924d` |
 | Oracle baseline capture | `<scratchpad>/oracle-baseline-023.json` (fresh at this tip - NOT the stale 022 capture) |
-| Replay wall (`pytest test_regressions.py -n auto`) | (recorded below when the background run lands) |
+| Replay wall (`pytest test_regressions.py -n auto`) | 26.4 s (798 passed) |
+| Oracle capture wall | 67.8 s, 816 manifests |
 
 ## Census (T004/T006)
 
@@ -26,4 +27,13 @@ feature's work). "Baseline" = pre-split `check_village.py`.
 
 ## Post-split (T007/T011/T013)
 
-(filled in as tasks complete)
+- Transform (`split_megaseg.py generate`): 7.4 s, mypy clean after 1 type-ignore round.
+- 377 new segments replace the mega-segment at registry position 563; registry now 971 rows.
+- Largest function in check_village.py: `_seg_0285__wells_clear_of_shrine_and_torii` at 427
+  statements (pre-existing); largest NEW segment: `_seg_0563_335__city_streets_connected` at 56.
+  Clause-12 annotations remaining: 0 (the debt is retired).
+- `gate_check_names.json` sha256 unchanged (`1c56c807...`); 148 names re-emitted by the new rows.
+- Diff confined to the 0563 function span + its registry row (hunk audit); the large raw diff
+  line count is the multi-line registry row (~1,400 lines of name tuples) plus 377 new defs.
+
+(oracle sweep + perf numbers below when those tasks land)
