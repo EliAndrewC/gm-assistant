@@ -878,9 +878,37 @@ BEFORE `make done`, run the seconds-long prefix yourself:
 
     python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy
 
-That catches format + lint + type errors in one cheap shot (a common one: a local variable name
-like `a`/`ux` that collides with an existing binding in the huge `gate()` scope - mypy flags it,
-the full gate would too but slower). Only then spend the gate run on tests + coverage.
+That catches format + lint + type errors in one cheap shot. Only then spend the gate run on tests
++ coverage. (The old warning here about local names colliding "in the huge gate() scope" retired
+with feature 022 - gate() is a registry of segment functions now, each with its own scope.)
+
+## The gate is a REGISTRY - adding a check, and running one check by itself (feature 022)
+
+`gate()` is no longer a 12,944-line function: it is a small driver over `GATE_SEGMENTS`, an
+ordered registry of ~586 segment functions whose order IS the legacy execution order. What this
+buys and how to work with it:
+
+- **Run a subset**: `gate(M, only={"check_base_name", ...})` executes just the segments that can
+  emit those names plus their dependency closure (median 7 segments), with verdicts guaranteed
+  identical to the full run. Unknown names and META checks (`META_CHECKS` - whole-run state like
+  `waivers_are_live`) raise ValueError rather than silently running nothing.
+- **The regression replay runs targeted** (`test_regressions.py`): each fixture verifies only its
+  `_regression.fires` (meta names fall back to the full gate). This is what took the 210
+  frozen-city fixtures from ~480 s to ~58 s serial. The fixture format is unchanged.
+- **Adding a check**: write a new `_seg_NNNN__<name>` -style function next to its neighbors (body
+  reads its inputs as keyword params defaulting to `_UNBOUND`, returns `_kept(locals(), <names it
+  binds>)`) and add its `_GateSeg` row at the right position in `GATE_SEGMENTS` - the row's
+  `checks` names what it emits, `needs` what it reads from earlier segments, `writes` what it
+  provides. Then extend `test_fixtures/gate_check_names.json` (the registry-pin test compares the
+  two). The `every_feature_classified_*` and KEEP-CLEAR contracts above are unchanged.
+- **The migration tooling** (one-shot, retired): `specs/022-gate-check-registry/` holds the
+  transformer, the oracle sweeps (`oracle_sweep.py capture/compare/targeted`), and research.md
+  with the dataflow model and the three holes the sweeps caught (helper-closure mutation,
+  upward-exposed reads vs raw loads, comprehension-target scoping). Read R9 there before any
+  future dataflow-over-gate work.
+- **Never trust a dependency edge you have not swept**: the targeted-vs-full sweep over all 791
+  fixtures is the empirical guard on the closure rules. If you change `needs`/`writes` semantics
+  or add segments with unusual dataflow, re-run `oracle_sweep.py targeted`.
 
 ## Update the predictably-affected tests in the SAME edit
 

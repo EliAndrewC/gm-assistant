@@ -11261,3 +11261,51 @@ def test_a_kiln_carries_no_distance_rule_only_an_angle():
     M["town_streets"] = [{"pts": [[100, 100], [900, 100]], "w": 18}]
     M["kilns"] = [{"x": 500, "y": 900, "w": 46, "h": 40, "rot": 0, "label": "kiln works"}]
     assert "roadside_works_stand_on_their_road" not in check_village.gate(M, verbose=False)
+
+
+# ---- feature 022: the gate registry and targeted execution --------------------------------------
+# Red-first (Principle X): written against the legacy monolithic gate() where all four MUST fail;
+# the 022 registry driver turns them green.
+
+
+def _feature_022_manifest():
+    return json.loads(json.dumps(manifest()))  # deep copy - the gate shares nested values
+
+
+def test_feature_022_gate_refuses_an_unknown_check_name():
+    with pytest.raises(ValueError, match="no_such_check_anywhere"):
+        check_village.gate(_feature_022_manifest(), verbose=False, only={"no_such_check_anywhere"})
+
+
+def test_feature_022_gate_refuses_a_meta_check_in_targeted_mode():
+    # measured (census 2026-08-15): waivers_are_documented reads only the DECLARED waivers (pure
+    # manifest input), so it is legitimately targetable; waivers_are_live reads what actually
+    # FIRED this run and is the true meta-check.
+    assert "waivers_are_live" in set(check_village.META_CHECKS)
+    with pytest.raises(ValueError, match="waivers_are_live"):
+        check_village.gate(_feature_022_manifest(), verbose=False, only={"waivers_are_live"})
+
+
+def test_feature_022_targeted_verdict_matches_the_full_gate():
+    name = "settlement_has_wells"
+    full = name in set(check_village.gate(_feature_022_manifest(), verbose=False))
+    targ = name in set(check_village.gate(_feature_022_manifest(), verbose=False, only={name}))
+    assert full == targ
+
+
+def test_feature_022_registry_base_names_match_the_frozen_legacy_set():
+    frozen = json.loads((pathlib.Path(__file__).parent / "test_fixtures" / "gate_check_names.json").read_text())
+    registry = sorted({c for seg in check_village.GATE_SEGMENTS for c in seg.checks})
+    assert registry == frozen
+
+
+def test_manor_walls_fire_when_a_way_ENDS_inside_the_compound():
+    """The _mw_gap helper returns 0.0 the moment a way SEGMENT ENDPOINT lies inside the wall
+    rect - the crossing loop never runs. Before feature 022 this branch was only reached
+    incidentally by regression fixtures' full-gate replays; the targeted replay no longer runs it
+    there, so the branch gets the deterministic unit test it always deserved: a road DEAD-ENDING
+    in the court is as illegal as one passing through."""
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1200, "H": 1200})
+    M["manors"] = [{"x": 600, "y": 300, "w": 290, "h": 200, "rot": 0, "label": "Magistrate's Manor"}]
+    M["road"], M["road_width"] = [[0, 300], [600, 300]], 26  # terminates ON the manor center
+    assert "manor_walls_clear_of_ways" in f(M)

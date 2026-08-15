@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-15
 
-**Status**: Draft
+**Status**: Implemented (2026-08-15)
 
 **Input**: User description: "Split check_village.py's gate() (12,944 lines, 189 checks, one local check() closure) into a per-check registry of human-scale functions so the gate can run a requested subset of checks; switch the regression replay to targeted mode; preserve full-gate behavior exactly; oracle = identical verdicts on all 791 fixtures + 28 pool maps; measurable replay speedup in timings.md. Discharges constitution Principle X clause 12 for the repo's worst offender."
 

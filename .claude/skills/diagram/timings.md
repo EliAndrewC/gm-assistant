@@ -137,3 +137,39 @@ things nobody would have guessed from the totals alone.
 | &nbsp;&nbsp;↳ format (ruff format --check) | | 0.1 s | 0% |
 | &nbsp;&nbsp;↳ typecheck (mypy --strict, 9 modules) | | 0.2 s | 0% |
 | &nbsp;&nbsp;↳ test (pytest -n auto + 100% coverage gate) | | 4 min 08.5 s | 99% |
+
+### 2026-08-15
+
+*22 cpus, python 3.14.4, resvg 0.46.0, at commit `19fa16f` - 28 hand-authored maps, 2872 tests.* regression replay switched to targeted check execution (feature 022): gate() split into a 586-segment registry, replay runs only each fixture's fires
+
+| loop / part | what | wall clock | share |
+|---|---|---|---|
+| **`hamlet_gen_gate`** | scripted hamlet: one map, generated + gated + rendered (THE inner loop) | **14.4 s** | |
+| &nbsp;&nbsp;↳ generate (compose + draw) | | 11.8 s | 82% |
+| &nbsp;&nbsp;↳ gate (check_village, 189 checks) | | 0.7 s | 5% |
+| &nbsp;&nbsp;↳ render PNG (resvg) | | 2.0 s | 14% |
+| **`cohort_4`** | cohort of 4 hamlets (does a fix generalize?) | **13.5 s** | |
+| &nbsp;&nbsp;↳ per map | | 3.4 s | - |
+| &nbsp;&nbsp;*parts do not sum to the total: `per map` is the average, not a component* | | | |
+| **`map_regen_minami`** | heaviest hand-authored map through `regen.py` | **15.9 s** | |
+| &nbsp;&nbsp;↳ cold (cache miss: compose + draw + gate) | | 15.9 s | - |
+| &nbsp;&nbsp;↳ warm (cache hit) | | 1.5 s | - |
+| &nbsp;&nbsp;*the total is the COLD run; the warm row is what the cache buys* | | | |
+| **`cohort_24`** | cohort of 24 hamlets (the bar for an archetype) | **31.4 s** | |
+| &nbsp;&nbsp;↳ per map | | 1.3 s | - |
+| &nbsp;&nbsp;*parts do not sum to the total: `per map` is the average, not a component* | | | |
+| **`pool_sweep`** | regenerate + gate all hand-authored maps, 22 workers | **39.9 s** | |
+| &nbsp;&nbsp;↳ test_a_map_is_immune_to_an_upstream_change_in_the_nu | | 31.7 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[sawada.gen.py] | | 20.1 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[kashikawa.gen.py] | | 18.5 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[tango.gen.py] | | 18.4 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[minami.gen.py] | | 18.2 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[nagahara.gen.py] | | 15.7 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[inashiro.gen.py] | | 14.8 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[hoshizora.gen.py] | | 12.9 s | - |
+| &nbsp;&nbsp;*parts are the 8 slowest tests' own CPU time; they overlap in wall clock because the sweep runs parallel* | | | |
+| **`full_gate`** | `make done` - the whole gate | **2 min 38.6 s** | |
+| &nbsp;&nbsp;↳ lint (ruff check + duplicate-def scan) | | 1.5 s | 1% |
+| &nbsp;&nbsp;↳ format (ruff format --check) | | 0.1 s | 0% |
+| &nbsp;&nbsp;↳ typecheck (mypy --strict, 9 modules) | | 0.2 s | 0% |
+| &nbsp;&nbsp;↳ test (pytest -n auto + 100% coverage gate) | | 2 min 36.8 s | 99% |
