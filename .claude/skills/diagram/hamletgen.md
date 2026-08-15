@@ -478,22 +478,45 @@ lesson the held-out cohort taught the valley tier three times, now taught by the
 So `polder_grid` is **demoted back to opt-in** and the bar for promotion is a green COHORT, not a
 green sweep. The valley tier is 24/24 and 12/12 again.
 
-**What is left on the polder, all of it surfaced by the cohort's varied conditions:**
+**WHERE THE POLDER ACTUALLY STANDS (2026-08-15, end of the session's work):**
 
-- `watercourse_ends_reach_water` on ~5 maps. The ring canal's inlet end finishes ~17.6 px from the
-  drawn inlet channel, against a 12 px touch tolerance. The cause is the inlet's BOW: the channel is
-  `[pond, mid, din]` with `mid` offset 20 px perpendicular (which `channel_winds_gently` requires -
-  a dead straight cut fails it), so the run passes NEAR the ring head rather than through it. The
-  reservoir is now seated correctly against all three rules that bind it - outside the crop, uphill
-  of the field, and anchored on the main's LAST point, which is the end `draw_comb_field` draws from
-  - and the residue is the bow, not the seat. Do not move the pond again; the next attempt should
-  look at how the mid is offset.
-- `fields_clear_of_road` and `polder_fills_its_bbox`, one map each, not yet diagnosed.
+| measure | state |
+|---|---|
+| valley tier (the shipped one) | **24/24 fitted, 12/12 held out** - untouched throughout |
+| hand-authored pool | **byte-identical**, verified after every engine change |
+| polder, cohort-style households, 8 seeds x 4 cardinal falls | **29 of 32** |
+| polder, in the ROLL | **not promoted** - opt-in via `field_archetype="polder_grid"` |
 
-**A note on method, since this stretch cost several reversals:** the reservoir was moved five times
-before the constraint set was written down (outside the crop / uphill / anchored on the end the
-engine draws from). Seating it against two of the three and testing produced a different failure each
-time. Enumerate what binds a feature BEFORE moving it.
+**Fixed in this stretch, all with the pool unmoved:**
+
+- `watercourse_ends_reach_water` - the inlet channel now meets the ring canal's head. The end is
+  CONSTRUCTED (`fork` stepped 70 px downhill), not clipped, and the 20 px bow that
+  `channel_winds_gently` requires pushed the drawn line ~17.6 px off the head against a 12 px touch
+  tolerance. The head is inserted as a vertex when the run misses it, under an explicit
+  `join_head=True` flag that only the polder passes. **Three attempts to condition it on the
+  check's own clauses each missed one** - distance alone moved Ubame and four others, "outside the
+  envelope" moved Honda and Shimizu, and replicating the vis_bbox/edge/junction trio still moved
+  them, because the check reads crop bounds and per-field bboxes that do not exist at draw time.
+  Replicating a check inside the code it governs is the trap the skill's notes name repeatedly; the
+  flag cannot drift.
+- `polder_fills_its_bbox` - `edge_wander` is fitted to the block instead of fixed at Enokida's 0.5.
+  The wobble is a fixed size in cells, so on a small grid it eats a much larger share of the bbox
+  (measured: a 9x5 fills 79% where the rule wants 82%, while Enokida's 15x8 clears it). The wander
+  walks down 0.5 -> 0.12 until the block reads as surveyed.
+- Earlier the same day: the byre-on-the-water (a corridor loop testing segment MIDPOINTS and
+  iterating one water list of two), and `build_polder`'s ring closing on a 75-degree stub.
+
+**WHAT IS STILL BROKEN: 3 of 32, all `title_clear_of_features`, all on one seed** (seed 8 at 11
+households, three of four falls). The map's title lands on the WINDBREAK BELT. `stage_woodland`
+reserves blank ground for the name (`title_pocket`) and keeps the woods out of it, but the belt is
+drawn later by `village_grove`, which takes only a polygon and honours no keep-out list - so on a
+tightly framed map the belt covers the reservation and `title()` has nowhere clear to sit. The fix
+in progress was to dent the belt's vertices out of the pocket; it was not applied. A cleaner
+alternative worth considering first: give `village_grove` a keep-out list, since this is the second
+feature (after the woodland patches) that needs to stay off reserved ground.
+
+**NOT diagnosed:** whether the same title collision appears on valley maps at unusual framings - it
+has not, in 36 cohort maps, but the belt/pocket conflict is not polder-specific in principle.
 
 Diagonal bearings additionally fail `polder_fills_its_bbox`, which is a fair statement about the
 archetype - a wei-tian polder is a SURVEYED orthogonal block and a diagonal one does not fill its own

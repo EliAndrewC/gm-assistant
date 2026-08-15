@@ -846,7 +846,11 @@ def stage_polder(s: Settlement, plan: SitePlan) -> None:
         if not any(point_in_poly(q[0], q[1], plan.envelope) for q in rim):
             break
         pond = (pond[0] + ux * 12.0, pond[1] + uy * 12.0, pond[2], pond[3])
-    s.draw_comb_field(net, f"{plan.spec.name.lower()}-polder", {"kind": "pond", "pond": pond})
+    # `join_head=True`: a polder's ring canal ENDS on the block's corner, outside the planted
+    # extent, so the inlet must visibly meet it or the ring reads as dangling
+    # (`watercourse_ends_reach_water`). A comb's head-race ends among its own plots and needs no
+    # such junction, which is why this is the polder's flag rather than the engine's default.
+    s.draw_comb_field(net, f"{plan.spec.name.lower()}-polder", {"kind": "pond", "pond": pond}, join_head=True)
     plan.sink_pond = None
     # THE PERIMETER DIKE - the defining polder feature, and the reason a polder is a polder: an
     # irregular hand-piled earthwork band following the water edge in organic bends (fish-scale
@@ -930,7 +934,23 @@ def fit_polder(plan: SitePlan, seed: int, tolerance: float = 0.06, rounds: int =
         along, across = rows * cellpx, cols * cellpx
         cx, cy = plan.W / 2.0, plan.H / 2.0
         origin = (cx - dx * along / 2 - ux * across / 2, cy - dy * along / 2 - uy * across / 2)
-        net = build_polder(plan.W, plan.H, origin, seed, down_deg=plan.down_deg, rows=rows, cols=cols, cell=cellpx, edge_wander=0.5)
+        # EDGE WANDER IS FITTED TO THE BLOCK, not fixed at Enokida's 0.5. `polder_fills_its_bbox`
+        # wants the outline to cover >= 82% of its bbox - the archetype's teeth, since a polder
+        # reads as a SURVEYED rectangle rather than an organic field - and the wander's wobble is a
+        # fixed size in cells, so on a small block it eats a much larger share of the bbox: measured,
+        # a 9x5 grid fills 79% at wander 0.5 where Enokida's 15x8 clears the bar comfortably. So the
+        # wander is walked down until the block reads as surveyed, keeping as much of the
+        # hand-piled, fish-scale irregularity as the archetype can carry at that size.
+        net = None
+        for wander in (0.5, 0.4, 0.3, 0.2, 0.12):
+            net = build_polder(plan.W, plan.H, origin, seed, down_deg=plan.down_deg, rows=rows, cols=cols, cell=cellpx, edge_wander=wander)
+            _env = [(float(a), float(b)) for a, b in net["envelope"]]
+            _xs = [q[0] for q in _env]
+            _ys = [q[1] for q in _env]
+            _bb = max(1.0, (max(_xs) - min(_xs)) * (max(_ys) - min(_ys)))
+            if poly_area(_env) / _bb >= 0.86:  # 0.82 is the rule; the margin absorbs the drawn outline's rounding
+                break
+        assert net is not None
         got = net_acres(net, plan.ftpx)
         best = net
         if abs(got - plan.target_acres) / plan.target_acres <= tolerance:
@@ -2357,7 +2377,21 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
     already standing and no tree is drawn on a roof."""
     if not plan.belt:  # pragma: no cover - stage_woodland always computes it first
         return
-    s.village_grove(plan.belt, role="windbreak")
+    # ...DENTED AROUND THE TITLE'S POCKET. `stage_woodland` reserves blank ground for the map's name
+    # (`title_pocket`) and keeps the woods out of it, but the BELT is drawn later and honours
+    # nothing - `village_grove` takes only a polygon, with no keep-out list - so on a tightly framed
+    # map the belt simply covered the reservation and `title()` had nowhere clear to sit (seed 8's
+    # polder, 3 of 4 falls). Pushing the belt's vertices out of that rectangle costs the band a
+    # local dent where a hamlet's own name goes, which is cheaper than the alternative of moving a
+    # windbreak that is correct on every other count.
+    _tp = title_pocket(s, plan)
+    _belt = []
+    for _bx, _by in plan.belt:
+        if _tp[0] <= _bx <= _tp[2] and _tp[1] <= _by <= _tp[3]:
+            _cands = ((_tp[0] - 6.0, _by), (_tp[2] + 6.0, _by), (_bx, _tp[1] - 6.0), (_bx, _tp[3] + 6.0))
+            _bx, _by = min(_cands, key=lambda q: (q[0] - _bx) ** 2 + (q[1] - _by) ** 2)
+        _belt.append((_bx, _by))
+    s.village_grove(_belt, role="windbreak")
     # The COPSE fills the leafy gaps AMONG the homes, over the house cloud. That is only reasonable
     # ground because `stage_homesteads` now bounds every seat to the cluster band: over a cloud with
     # a strewn farmstead in it, this became a scatter across 1,446 x 1,244 px - a wood over the whole
