@@ -435,28 +435,36 @@ every bearing fails `crop_hugs_content`, and both pool polders move). The script
 dike **unlabelled** instead: a perimeter dike is the most legible thing on a polder sheet and does
 not need naming.
 
-**WHERE IT STANDS: 4 of 12 cardinal-bearing polders pass, and the split is by SEED, not by bearing.**
-Seed 8 is clean on all four falls; seeds 3 and 19 fail on all four, with the same one cause -
-`channel_field_anchored`, which drags `watercourse_ends_reach_water` with it.
+**WHERE IT STANDS: 11 of 12 cardinal-bearing polders pass** (was 4). Four fixes, and the first was
+the one the previous pass could not find:
 
-**And the obvious lever is NOT the lever, which is the useful part.** The rule is exact: a channel's
-field end must be inside the field outline AND at least 10 px clear of its edge. `build_polder` puts
-its sluice on the DIKE LINE, i.e. on the boundary, so the natural fix is to move the sluice inward -
-and it does not work. Three tries, each worse than doing nothing:
+- **The inlet's field end is CONSTRUCTED, not clipped** - which is why moving the sluice never
+  helped. `draw_comb_field` builds it as `net["channels"][0]["pts"][-1]` stepped **70 px straight
+  downhill**. That is a COMB's geometry: a head-race ends at the field's head, so downhill runs into
+  the crop. A polder's "main" is the ring canal running ALONG the high edge, so its last point is a
+  corner and the same step skims the boundary - the mouth landed 2.6 px inside where the rule wants
+  10. It now checks the envelope and, only if that step does not land well inside, pulls the end in
+  on the nearest edge's inward normal. **Every comb map is byte-identical**, because their downhill
+  step was already clear. This killed BOTH `channel_field_anchored` and
+  `watercourse_ends_reach_water` on all twelve.
+- **A polder has no field spur.** The valley hamlet's spur runs from the cluster to the paddy's
+  edge; a polder is ringed by its dike and, inside that, the ring canal, so the way in is over the
+  dike at its sluice gaps. Drawn anyway it was worse than pointless: every near target crosses the
+  ring canal, so the least-bad candidate ran from the cluster straight ACROSS the block to a vertex
+  on the far side (`fields_clear_of_road`, 4 of 12).
+- **Lane arms are clipped against the WET field, not only the dry plots.** `crop_polys` returns
+  `dry_plots`; the connector always listed the envelope and the arms never did. Invisible on a
+  valley map, where the arms point away from the fan.
+- **The polder's out-of-crop ditch runs are no-build corridors**, the loop the valley path already
+  had and that was never carried across - a polder's ring canal hugs the envelope edge and its outer
+  stretches lie on the open margin where the village stands.
 
-- a fixed 26 px step along head-to-centre: 4 of 12,
-- snapping the sluice onto the feeder's head: drags the mouth across the grid and puts a farmstead
-  on it,
-- deriving the step from the outline's own edge normal (`pull_inside`, the mirror of the
-  `push_out_of` that fixed the valley spur): still 4 of 12.
-
-**Measured on a failing seed, the drawn mouth lands 2.6 px inside the outline WHEREVER the sluice is
-put** - so `draw_comb_field` is CLIPPING the channel's end back toward the boundary, and no amount of
-moving the anchor changes where the ink finishes. That is the same class as every other
-placement-versus-drawing gap in this file, and the lever is in the engine's channel clipping rather
-than in this generator. That is where the next attempt should start, and it should start by reading
-`_clip_to_pond`/`_clip_to_stream` and whatever the field-end equivalent is - not by moving the
-anchor again.
+**The one left is the known CENTRE-vs-FOOTPRINT debt, not anything polder-shaped.** On fall 180 seed
+19 a draft byre comes to rest 33 px off the ring canal's centreline - `_fits` tests its CENTRE
+against the corridor, so it passes - and its drawn glyph laps the water (`no_structure_on_channel`).
+Widening the reserve to 48 px was tried and made things WORSE (10 of 12): it just pushes byres into
+other bad seats. The real fix is the one this skill's CLAUDE.md has prescribed for a while - make the
+placer test the footprint it draws - and it belongs with that work, not here.
 
 Diagonal bearings additionally fail `polder_fills_its_bbox`, which is a fair statement about the
 archetype - a wei-tian polder is a SURVEYED orthogonal block and a diagonal one does not fill its own

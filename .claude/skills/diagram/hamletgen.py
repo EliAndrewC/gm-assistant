@@ -841,6 +841,18 @@ def stage_polder(s: Settlement, plan: SitePlan) -> None:
     # a feature a reader needs named - it is the most legible thing on a polder sheet - so the
     # scripted tier draws it without a caption rather than framing slack around a word.
     s.perimeter_dike(ring, seed=plan.spec.seed ^ 0x6D, gaps=gaps, label="")
+    # ...and the ditch runs OUTSIDE the crop become no-build corridors, exactly as on the valley
+    # path. `field_channel` registers none of its own because inside the envelope the crop already
+    # blocks building - but a polder's RING CANAL hugs the envelope's edge and its outer stretches
+    # lie on the open margin where the village stands, so a farmstead landed squarely on the water
+    # (`no_structure_on_channel`, 1 of 12 cardinal polders). The same loop the valley path runs, and
+    # like that one it must come AFTER the field is drawn, since `M["field_ditches"]` is written
+    # there - placed before it, the loop iterates nothing and reserves nothing, silently.
+    for ditch in s.M.get("field_ditches", []):
+        run = [(float(v[0]), float(v[1])) for v in ditch["poly"]]
+        for a, b in zip(run, run[1:], strict=False):
+            if not point_in_poly((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, plan.envelope):
+                s.corridors.append(([a, b], 30.0))
 
 
 def fit_polder(plan: SitePlan, seed: int, tolerance: float = 0.06, rounds: int = 9) -> dict[str, Any]:
@@ -1435,7 +1447,12 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         # trimmed at the ends: `trim_off_marsh` walks an END back, which is the right move for a way
         # that pokes into the reeds, but an arm whose MIDDLE runs through them needs the truncation
         # its own docstring points at. An arm ends where the marsh begins - that is what a lane does.
-        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], [*crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
+        # ...and the WET field too, not only the dry plots. `crop_polys` returns `dry_plots`, so a
+        # lane arm was never clipped against the paddy itself - invisible on a valley map, where the
+        # cluster sits on a margin and the arms point away from the fan, and immediate on a POLDER,
+        # where the block lies right beside the village and an arm reached into the rice. The
+        # connector has always listed the envelope; the arms simply never did.
+        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
         arm = s.trim_off_marsh(arm)  # ...and off the pond's reed fringe, which is already drawn by now
         if len(arm) >= 2:
             s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)
@@ -1448,6 +1465,22 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     # hem). So candidates are ordered by distance and the first one whose straight run is clear of
     # every hem plot wins; if none is, the nearest is used and the gate says so rather than the map
     # quietly shipping a lane through the barley.
+    # A POLDER HAS NO FIELD SPUR. The valley hamlet's spur is a path from the cluster to the paddy's
+    # edge, and it is meaningful there because the crop's margin is walkable ground. A polder is
+    # ringed by its perimeter DIKE and, just inside that, the ring canal - so the way in is over the
+    # dike at its sluice gaps, and a spur to the crop edge is a path to a bank. Drawn anyway it was
+    # worse than pointless: every near target crosses the ring canal, so `path_violations` scored the
+    # nearby vertices badly and the least-bad candidate ran from the cluster straight ACROSS the
+    # block to a vertex on the far side (`fields_clear_of_road` on 4 of 12 cardinal polders).
+    if plan.field_archetype == "polder_grid":
+        s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
+        toe = s.toe_band()
+        drawn_wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
+        gate_pt = push_out_of(plan.envelope, to_screen((float(layout["gateway"][0]), float(layout["gateway"][1]))), SPUR_SETBACK)
+        track = connector_track(plan, gate_pt, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet)
+        s.lane(route_around(plan.envelope, track, SPUR_SETBACK), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
+        return
+
     start = to_screen((0.0, 0.0))
     cen = centroid(plan.envelope)
     brook_segs = [(plan.sink_brook[i], plan.sink_brook[i + 1]) for i in range(len(plan.sink_brook) - 1)]

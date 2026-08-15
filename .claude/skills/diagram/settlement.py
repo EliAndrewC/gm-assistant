@@ -3307,6 +3307,39 @@ class Settlement:
             dd = self.M["meta"].get("down_deg", 90)
             dx, dy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
             din = (fork[0] + dx * 70, fork[1] + dy * 70)
+            # ...AND IT MUST LAND INSIDE THE CROP, whatever the field's shape (2026-08-15).
+            #
+            # `channel_field_anchored` wants this end inside the outline and >= 10 px clear of its
+            # edge, "so the field paints over the end". Stepping 70 px downhill from the main
+            # channel's last point is a COMB's geometry: a head-race ends at the field's head, so
+            # downhill goes into the crop. A POLDER's main is the perimeter ring running ALONG the
+            # high edge, so its last point is a corner and the same step skims the boundary - the
+            # mouth landed 2.6 px inside on two scripted seeds in three, and no amount of moving the
+            # SLUICE changed it, because this end is constructed here rather than taken from the
+            # anchor. Fixed by asking the envelope: if the downhill step is already well inside,
+            # nothing moves (every comb map is byte-identical); otherwise the end is pulled in along
+            # the nearest edge's inward normal until it clears.
+            _env_in = net.get("envelope") or []
+            if len(_env_in) >= 3:
+                _n_in = len(_env_in)
+                _din_d = min(seg_dist(din[0], din[1], _env_in[_k], _env_in[(_k + 1) % _n_in]) for _k in range(_n_in))
+                if not point_in_poly(din[0], din[1], _env_in) or _din_d < 12.0:
+                    _best_in = min(
+                        ((seg_closest(din[0], din[1], _env_in[_k], _env_in[(_k + 1) % _n_in]), _env_in[_k], _env_in[(_k + 1) % _n_in]) for _k in range(_n_in)),
+                        key=lambda t: math.hypot(t[0][0] - din[0], t[0][1] - din[1]),
+                    )
+                    _q_in, _a_in, _b_in = _best_in
+                    _ex_in, _ey_in = -(_b_in[1] - _a_in[1]), _b_in[0] - _a_in[0]
+                    _el_in = math.hypot(_ex_in, _ey_in) or 1.0
+                    _nx_in, _ny_in = _ex_in / _el_in, _ey_in / _el_in
+                    _cx_in = sum(q[0] for q in _env_in) / _n_in
+                    _cy_in = sum(q[1] for q in _env_in) / _n_in
+                    if _nx_in * (_q_in[0] - _cx_in) + _ny_in * (_q_in[1] - _cy_in) > 0:  # point it INWARD
+                        _nx_in, _ny_in = (
+                            -_nx_in,
+                            -_ny_in,
+                        )  # pragma: no cover - the winding-order guard. `build_polder` winds its envelope so the raw edge normal already points inward (measured: dot -324 and -355 on the two seeds that need the pull), but a ring wound the other way would send the mouth OUT of the field, so the orientation is asserted rather than assumed
+                    din = (_q_in[0] + _nx_in * 14.0, _q_in[1] + _ny_in * 14.0)
             start = pond_rec if pond_rec else (sluice[0], sluice[1])
             frm = {"kind": "pond"} if pond_rec else {"kind": "stream"}
             if not pond_rec:
