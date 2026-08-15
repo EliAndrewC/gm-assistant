@@ -138,3 +138,29 @@ hand-maintained source of truth the moment it lands; the transformer is not re-r
 | Coverage regression from never-taken wrapper returns | full-mode gate still executes every segment on some manifest, same as today; driver branches get dedicated unit tests |
 | Concurrency (pytest -n auto) | no module-level mutable state introduced; namespace is per-invocation |
 | Budgets in test_villages calibrated against a slower gate | budgets are upper bounds; a faster suite cannot trip them |
+
+## R9. What implementation taught the model (added after the sweeps, 2026-08-15)
+
+The targeted-vs-full sweep (R4 sweep 2) and the big-fixture timing each caught a real hole in the
+R2/R3 dataflow model; all three fixes are in the transformer, and the sweep re-validated 791/791
+after each. Recorded because the SHAPE of each recurs in any dataflow-over-real-code work:
+
+- **Mutation through a helper closure** (caught as 3 MISMATCHes): `_wtr_add` - a gate-local helper
+  - appends into `_wtr`, so the segment CALLING the helper mutates a list it never names. Fix:
+  calling a gate-local helper counts as writing everything that helper transitively mutates.
+  Without it the closure skipped the producer and the check saw an empty list - a silent PASS,
+  the worst failure direction.
+- **Raw loads are not dependencies** (caught as "no speedup": 473.9 s ≈ the full-gate 480 s).
+  Leaked generic loop variables (`b`, `c`, `i`, `p` - bound by 20-40 segments each) made almost
+  every segment depend on almost every earlier one. Dependency edges must be UPWARD-EXPOSED reads
+  (readable before definitely bound), while parameters keep the raw free set so runtime semantics
+  are untouched. Closures fell from median 232 segments to median 7.
+- **A comprehension's target is not a read of the outer name** (caught as "still only 1.4x"):
+  `[.. for c in xs]` counted as reading outer `c`. Expression-scoped free-loads (comprehension
+  targets and lambda params excluded) took the big-fixture cohort from 331 s to **57.8 s - 8.3x
+  against the full-gate baseline**, closures median 7 / p90 48 / max 55 of 586.
+
+Final measured state: full-mode byte-identity on all 814 manifests; targeted-vs-full identity on
+all 791 fixtures with 0 meta fallbacks needed; teeth check red on 3 neutered checks; exactly one
+function over the clause-12 threshold (1,040 logical statements, annotated); whole affected test
+files 2,006 passed in 49 s.
