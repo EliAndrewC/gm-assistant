@@ -1040,11 +1040,17 @@ every affected map and by how much - so a reader can see the size of the debt ra
 it. Reach for this pattern when a rule is right but re-packing the pool is the wrong trade; do NOT
 reach for it to avoid fixing a map that is simply inconvenient, which is what waivers are for.
 
-## The scripted-generation EXPERIMENT (2026-08-11) - read before touching `hamletgen.py`
+## Scripted generation - read before touching `hamletgen.py`
+
+**The experiment is over and the project has committed to it** (GM, 2026-08-15). The standing plan -
+what is converted, what order the rest goes in, the bar a conversion has to clear, and the measured
+iteration budget - is [`migration-plan.md`](migration-plan.md). **Update its status table as part of
+finishing any conversion.**
 
 [`hamletgen.md`](hamletgen.md) is the writeup; [`hamletgen.py`](hamletgen.py) is the generator and
-[`pool/experiments/`](pool/experiments/) its four demo maps. It is ADDITIVE and nothing in the live
-method changed, so a session drawing a map today can ignore it entirely.
+[`pool/experiments/`](pool/experiments/) its demo maps. It remains ADDITIVE - the hand-authored pool
+is held byte-identical through every engine change, and a session drawing anything but a
+`valley_paddy` hamlet still follows `settlements.md`.
 
 It found SIX things in shipped engine code. Five are fixed with the full pool sweep (the hem
 registry, the sweep's blind spot, the cluster-band pitch, the windbreak/well-grid derivations, the
