@@ -389,6 +389,27 @@ def test_a_polder_inlets_mouth_is_pulled_INSIDE_the_crop() -> None:
         assert gap >= 10.0, f"the mouth is {gap:.1f} px from the outline; the rule wants 10 so the field paints over it"
 
 
+def test_a_polder_reservoir_backs_off_until_its_rim_clears_the_crop() -> None:
+    """The seat is measured from the ring canal's HEAD, so anything that moves that head moves the
+    reservoir - trimming the ring's doubling-back stub did exactly that and slid the pond onto the
+    crop. A fixed stand-off from a moving anchor is the pinned-constant mistake in miniature, so the
+    rim is tested and the pond walks uphill until it is clear.
+
+    Seed 12 is chosen because it NEEDS the walk (one step at falls 0 and 180); seeds 3, 8, 19 and 22
+    clear on the first try, so testing one of those would exercise nothing."""
+    plan = hg.plan_site(hg.HamletSpec(name="Polder", seed=12, households=16, field_archetype="polder_grid", down_deg=0))
+    s = hg.build(plan)
+    with tempfile.TemporaryDirectory() as tmp:
+        s.finish(os.path.join(tmp, "scratch"), render=False)
+    pond = s.M.get("pond")
+    assert pond, "the polder's water source is its header reservoir"
+    rim = [(pond[0] + pond[2] * math.cos(a), pond[1] + pond[3] * math.sin(a)) for a in (k * math.pi / 8 for k in range(16))]
+    assert not any(point_in_poly(q[0], q[1], list(plan.envelope)) for q in rim), "no part of the rim may lie on the crop"
+    # ...and it stays UPHILL of the field, which is the rule the walk must not trade away
+    dx, dy = plan.fall
+    assert pond[0] * dx + pond[1] * dy < min(p[0] * dx + p[1] * dy for p in plan.envelope), "the source sits above what it waters"
+
+
 def test_a_polder_hamlet_draws_its_grid_dike_and_reservoir() -> None:
     """THE SECOND FIELD ARCHETYPE (GM 2026-08-13), pinned at what it currently guarantees.
 

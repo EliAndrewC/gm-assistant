@@ -151,11 +151,18 @@ SUN_CORRIDOR_FT = 39.0
 # `MULBERRY_ELIGIBLE`), which is what it is historically too.
 FIELD_ARCHETYPES = ("valley_paddy", "polder_grid")
 
-# ...but only the proven one is ROLLED. `polder_grid` is opt-in (`field_archetype="polder_grid"`)
-# until it gates clean on a cohort of its own: rolling an archetype that still has known failures
-# would mix them into the valley tier's 36/36 and destroy the one number that says the scripted
-# process is consistent. Move it into this tuple the day the polder cohort is green - that is the
-# whole ceremony.
+# ...but only the proven one is ROLLED, and `polder_grid` is opt-in until it survives a COHORT.
+#
+# It was promoted on 2026-08-15 after sweeping 48 of 48 (8 seeds x 4 cardinal bearings, plus the
+# household band's ends) and demoted the same day, because the cohort is a harder test than that
+# sweep: `cohort_audit` varies HOUSEHOLDS per seed and rolls water_sink, cluster_shape and
+# lane_skeleton, where the sweep pinned households at 16 and took the default rolls. Under those
+# conditions the fitted cohort fell to 19 of 24. That is the cohort earning its keep exactly as it
+# did three times for the valley tier - a fixed-parameter sweep is not evidence of consistency.
+#
+# THE BAR FOR PROMOTION is therefore a green COHORT, not a green sweep: 24/24 and 12/12 with polders
+# in the mix. Rolling an archetype with open failures mixes them into the valley tier's own numbers
+# and destroys the one measurement that says this process is consistent.
 ROLLED_ARCHETYPES = ("valley_paddy",)
 
 # The polder's module size, in feet, before fitting. Enokida's 110 ft cell puts a whole bay at ~1.9
@@ -253,6 +260,7 @@ OFFTAKE_LADDER: tuple[tuple[int, tuple[float, ...], tuple[float, ...]], ...] = (
 # cannot know that, so an unpinned bearing is ROLLED and the spec always lets the GM pin the real
 # one. The roll exists so a cohort varies, not because a rolled bearing is as good as a known one.
 FALL_BEARINGS = (0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0)
+CARDINAL_BEARINGS = (0.0, 90.0, 180.0, 270.0)  # the survey grid a polder is laid to; see plan_site
 
 # WHICH WAY THE COLD WIND COMES FROM - and why it is DERIVED from the slope rather than rolled.
 #
@@ -448,7 +456,16 @@ def windward_for(down_deg: float, seed: int) -> str:
 
 def plan_site(spec: HamletSpec) -> SitePlan:
     """Turn a spec into a fully-resolved plan. PURE - no drawing, no engine, no RNG stream."""
-    down_deg = spec.down_deg if spec.down_deg is not None else float(_roll(spec.seed, "down_deg", FALL_BEARINGS))
+    # A POLDER IS LAID TO THE CARDINAL SURVEY GRID, so its fall is rolled from the four cardinals
+    # rather than the eight compass points. This is not a workaround for `polder_fills_its_bbox`
+    # (which a diagonal block fails, correctly - a rotated rectangle cannot fill an axis-aligned
+    # bbox): it is what the archetype IS. A wei-tian polder is a SURVEYED orthogonal module diked
+    # out of standing water, and the survey runs with the cardinal directions; the organic comb fan,
+    # which follows its own water down whatever slope it finds, is the one that sits on a diagonal.
+    # A GM who pins `down_deg` is still honoured - the pin is a fact about that place.
+    _archetype = spec.field_archetype or str(_roll(spec.seed, "field_archetype", ROLLED_ARCHETYPES))
+    _falls = CARDINAL_BEARINGS if _archetype == "polder_grid" else FALL_BEARINGS
+    down_deg = spec.down_deg if spec.down_deg is not None else float(_roll(spec.seed, "down_deg", _falls))
     # A hamlet is ONE comb draining down ONE valley, so its drainage bearing IS its fall unless the
     # GM declares otherwise. Recording both separately keeps the map honest about which fact is
     # which (skill SKILL.md: "these are not the same fact and must not be derived from each other")
@@ -466,7 +483,7 @@ def plan_site(spec: HamletSpec) -> SitePlan:
         water_sink=spec.water_sink or str(_roll(spec.seed, "water_sink", SINKS)),
         cluster_shape=spec.cluster_shape or str(_roll(spec.seed, "cluster_shape", CLUSTER_SHAPES)),
         lane_skeleton=spec.lane_skeleton or str(_roll(spec.seed, "lane_skeleton", LANE_SKELETONS)),
-        field_archetype=spec.field_archetype or str(_roll(spec.seed, "field_archetype", ROLLED_ARCHETYPES)),
+        field_archetype=_archetype,
         plot_size=spec.plot_size or str(_roll(spec.seed, "plot_size", PLOT_SIZES)),
         grain_drift=spec.grain_drift if spec.grain_drift is not None else int(_roll(spec.seed, "grain_drift", GRAIN_DRIFTS)),
         woodland_patches=spec.woodland_patches if spec.woodland_patches is not None else int(_roll(spec.seed, "woodland_patches", (2, 3, 3, 4))),
@@ -801,17 +818,34 @@ def stage_polder(s: Settlement, plan: SitePlan) -> None:
     # farmstead on it. Placing the POND on the far side of the head, along the head->sluice line,
     # leaves the channel running straight THROUGH the head on its way in: the ring is charged where
     # it begins, which is what the sluice gate does, and nothing else moves.
-    cen = centroid(env)
+    # THE RESERVOIR ANSWERS THREE RULES AT ONCE, and seating it against fewer than three is what
+    # made this oscillate. It must sit OUTSIDE the crop (`pond_clear_of_field`), close enough to the
+    # ring canal's head that the inlet channel is a short square run rather than a diagonal across
+    # the block, and UPHILL of the field, because the source of an irrigation system has to be above
+    # what it waters (`channels_flow_downhill`). Earlier versions had two of the three: seating it on
+    # the head-to-sluice line satisfied the first two and let the fall push it downhill; backing it
+    # off along that same line to clear the crop then dragged it further from the head.
+    #
+    # So: start at the ring's head and walk UPHILL - straight against the fall, which is the one
+    # direction that cannot make the feed run backwards - until the rim is clear of the envelope.
     sluice = net.get("sluice")
     main = next((ch for ch in net.get("channels", []) if ch.get("role") == "main" and len(ch.get("pts") or []) >= 2), None)
+    # THE ANCHOR IS THE MAIN'S LAST POINT, because that is the one `draw_comb_field` draws the inlet
+    # from (`fork = net["channels"][0]["pts"][-1]`). Choosing the end nearest the SLUICE instead put
+    # the reservoir uphill of one end of the ring while the channel was drawn from the other, so the
+    # inlet ran diagonally across the head and the far end dangled with nothing joining it
+    # (`watercourse_ends_reach_water`, 5 cohort maps). Same point, or the two disagree.
     if main is not None and sluice is not None:
-        head = min((tuple(main["pts"][0]), tuple(main["pts"][-1])), key=lambda q: math.hypot(q[0] - sluice[0], q[1] - sluice[1]))
-        onx, ony = unit(head[0] - sluice[0], head[1] - sluice[1])
-        anchor: Pt = head
+        anchor: Pt = (float(main["pts"][-1][0]), float(main["pts"][-1][1]))
     else:  # pragma: no cover - build_polder always returns a main feeder and a sluice
         anchor = (net.get("dike_sluices") or [(min(p[0] for p in env), sum(p[1] for p in env) / len(env))])[0]
-        onx, ony = unit(anchor[0] - cen[0], anchor[1] - cen[1])
-    pond = (anchor[0] + onx * (max(prx, pry) + 46.0), anchor[1] + ony * (max(prx, pry) + 46.0), prx, pry)
+    ux, uy = -plan.fall[0], -plan.fall[1]  # uphill
+    pond = (anchor[0] + ux * (pry + 30.0), anchor[1] + uy * (pry + 30.0), prx, pry)
+    for _ in range(60):
+        rim = [(pond[0] + pond[2] * math.cos(a), pond[1] + pond[3] * math.sin(a)) for a in (k * math.pi / 8 for k in range(16))]
+        if not any(point_in_poly(q[0], q[1], plan.envelope) for q in rim):
+            break
+        pond = (pond[0] + ux * 12.0, pond[1] + uy * 12.0, pond[2], pond[3])
     s.draw_comb_field(net, f"{plan.spec.name.lower()}-polder", {"kind": "pond", "pond": pond})
     plan.sink_pond = None
     # THE PERIMETER DIKE - the defining polder feature, and the reason a polder is a polder: an
@@ -848,10 +882,23 @@ def stage_polder(s: Settlement, plan: SitePlan) -> None:
     # (`no_structure_on_channel`, 1 of 12 cardinal polders). The same loop the valley path runs, and
     # like that one it must come AFTER the field is drawn, since `M["field_ditches"]` is written
     # there - placed before it, the loop iterates nothing and reserves nothing, silently.
-    for ditch in s.M.get("field_ditches", []):
+    # A SEGMENT IS RESERVED UNLESS IT LIES WHOLLY INSIDE THE CROP - tested at both ENDS, not at the
+    # midpoint. A ditch segment that straddles the envelope has its midpoint inside, so a midpoint
+    # test reserves nothing while half the segment runs out onto the margin where the village is;
+    # that is where the last byre came to rest, with the ring canal's vertex landing inside its
+    # drawn quad (measured: channel vertex (2301.0, 1864.6) inside a byre spanning 2294-2310 x
+    # 1862-1873). The crop already blocks building for the part that IS inside, so reserving a
+    # straddling segment costs nothing and closes the gap the midpoint left open.
+    # ...over `channels` AS WELL as `field_ditches`. The polder's ring and laterals are field
+    # ditches, but the inlet link and the topology hairline `draw_comb_field` records live in
+    # `M["channels"]` - and it was one of THOSE that the last byre sat on, its vertex 3.4 px from
+    # the byre's centre. Reserving one list and not the other is the same shape as a check that
+    # reads one manifest key and not its sibling: the ground does not care which list the water
+    # was written to.
+    for ditch in list(s.M.get("field_ditches", [])) + list(s.M.get("channels", [])):
         run = [(float(v[0]), float(v[1])) for v in ditch["poly"]]
         for a, b in zip(run, run[1:], strict=False):
-            if not point_in_poly((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, plan.envelope):
+            if not (point_in_poly(a[0], a[1], plan.envelope) and point_in_poly(b[0], b[1], plan.envelope)):
                 s.corridors.append(([a, b], 30.0))
 
 
