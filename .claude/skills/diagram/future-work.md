@@ -95,3 +95,22 @@ fix established - no ink over water, no water under ink - one class over: the po
 keep-out the hinterland scatter and the late water honor (or `_plot_pond` should refuse a plot
 whose ellipse leaves the field envelope). Barely visible at fit zoom; logged rather than fixed
 because it is baseline-adjacent, not part of the bead delta.
+
+## Review residue from the supply-bank hem re-roll (settlement-review, 2026-08-15)
+
+Three judgment items the four DELTA reviews surfaced that are real but were deliberately logged
+rather than fixed with the hem work (none is a gate failure; each is an idea for the next pass at
+its area):
+
+- **A sluice-gate glyph at the hamlet intake.** Mizuguchi is NAMED for its sluice (水口) and draws
+  none - the brook simply necks into the head-race. The engine has sluice-gate furniture at other
+  water handoffs; the comb intake could carry one at every tier, and on Mizuguchi it is the point
+  of the map.
+- **Kashikawa's woodland commons all land off-frame.** The crop is content-derived and the three
+  coppice patches sit past it, so the "oaks on the high ground" of the name story are implied
+  rather than drawn. Worth deciding whether commons should count toward the content bbox, or be
+  seated with a preference for on-frame ground.
+- **The kept/dropped read along hemmed ditch banks.** Inashiro's first lateral carries an
+  alternating chain of kept bank plots and dropped slivers that reads as a dashed line of boxes; a
+  coarser keep-or-drop over a whole bank strip would read cleaner. Same area as the hem work but a
+  presentation refinement, not a correctness one.

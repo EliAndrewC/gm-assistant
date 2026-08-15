@@ -23,3 +23,13 @@ the low side where the gate requires it.
 
 **Known open**: shares Inashiro's two - the bare comb floor on the fan's shoulders (inherited from
 `build_comb`), and a windward quarter derived from the slope rather than declared regionally.
+
+- 2026-08-15 (supply-bank hem re-roll): bunds hem onto the supply channels' banks; the map
+  re-rolled downstream. `settlement-review` (DELTA) confirmed the banks read correctly on every
+  straight run and caught the two things the first cut missed, both fixed the same day: junction
+  WEDGE plots whose corners were dry while their edges crossed the water (the carve and the gate
+  now walk every bund EDGE at a 3 px step - pre-fix manifest frozen as
+  `pool/regressions/paddy_bunds_clear_the_supply_channels_fires_on_edge_crossing_sawada.json`),
+  and the collapsed micro-plot jumble in the branch-6/canal wedge (gone with the edge-walk drops;
+  the drain-hem pass was the fourth quad producer needing the same guard). The dry SE arm the
+  review flagged got its well via the coverage-greedy well sort.

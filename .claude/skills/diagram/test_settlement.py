@@ -3498,6 +3498,41 @@ def test_plot_texture_drives_build_comb_grain():
             s.plot_texture(*bad)
 
 
+def test_build_comb_supply_banks_hems_bunds_onto_the_channel_banks():
+    # GM 2026-08-15 (Inashiro): a bund bordering the irrigated channel is the channel's BANK - it
+    # runs parallel to and along the water's edge, never down the middle of the water.
+    # supply_banks=True holds every carved corner off every supply stroke by its local half-width
+    # + BANK_MARGIN*grain, perpendicular to the stroke; the default (False) keeps the legacy carve
+    # so the hand-authored pool re-runs byte-identical.
+    from waterfields import BANK_MARGIN, build_comb, polyline_cum, supply_bank_clearance
+
+    def buried_corners(net, line_off):
+        n = 0
+        for c in net["channels"]:
+            if c.get("role") == "drain":
+                continue
+            pts = [(float(p[0]), float(p[1])) for p in c["pts"]]
+            if len(pts) < 2:
+                continue
+            cum = polyline_cum(pts)
+            w0, w1 = float(c["w"]), float(c.get("w_tail", c["w"]))
+            for pl in net["plots"]:
+                for q in pl["poly"]:
+                    gap, halfw, past, _foot, _nrm = supply_bank_clearance(q, pts, w0, w1, cum)
+                    if not past and gap < halfw + line_off:
+                        n += 1
+        return n
+
+    kw = dict(down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=(0.5,))
+    net = build_comb(1900, 2680, (760, 320), 5, supply_banks=True, **kw)
+    assert any(c.get("role") != "drain" for c in net["channels"])  # the comb drew supply strokes
+    assert buried_corners(net, BANK_MARGIN - 0.15) == 0  # every corner clear of every bank (the gate's own line)
+    # ... and the legacy default really is the legacy carve: the same comb without the flag lays
+    # sector-boundary bunds ON the thread centerlines, i.e. inside the drawn water. If this half
+    # ever goes green, the fix has become the default and the flag (plus this guard) can retire.
+    assert buried_corners(build_comb(1900, 2680, (760, 320), 5, **kw), -0.15) > 0
+
+
 def test_paddy_grain_hits_the_real_feet_target():
     # the real-feet paddy calibration (GM 2026-07-22): plot_across x mean row_step, converted at the
     # map's ftpx, must equal the ~0.05-acre target - the SAME real cell at every scale (see paddy_grain)

@@ -14,7 +14,19 @@ stands on the western margin and the comb fans away from it across the map.
 **What it is here to show**: that the pipeline is not oriented. Every stage works in the fall frame,
 so a map whose land falls east is not a special case: the intake is still at the head, the drain
 still crosses the low side, the marsh is still on the toe, and the cluster still takes a margin with
-its back to the high ground. Its `cross` lane skeleton and `round` cluster were rolled, not chosen.
+its back to the high ground. Its lane skeleton and cluster shape are rolled, not chosen - the
+2026-08-15 re-roll landed a `Y` skeleton and a linear band along the field's west margin (the
+original 2026-08-11 roll had drawn `cross`/round; a rolled knob re-rolls with the map, so this
+paragraph describes the mechanism, not a fixed outcome).
 
 **Known open**: shares Inashiro's two - the bare comb floor on the fan's shoulders (inherited from
-`build_comb`), and a windward quarter derived from the slope rather than declared regionally.
+`build_comb`), and a windward quarter derived from the slope rather than declared regionally. Also:
+a hamlet NAMED for its sluice draws no sluice glyph at the intake (the brook necks into the
+head-race) - a pipeline note, logged in `future-work.md`.
+
+- 2026-08-15 (supply-bank hem re-roll): bunds hem onto the supply channels' banks; the map
+  re-rolled downstream and gained a second well. `settlement-review` (DELTA) passed the
+  bund/channel read and caught both wells serving the same lobe - fixed the same day by making
+  every well after the first take the legal seat FARTHEST from the wells already placed
+  (`hamletgen.place_wells`), which put the second well by the eastern houses. It also caught this
+  file's stale `cross`/round claim and a gen docstring copied from Inashiro's - both fixed.

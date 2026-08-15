@@ -641,7 +641,14 @@ def fit_field(plan: SitePlan, sluice: Pt, seed: int, plot_across: float, row_ste
         found = _fit_at_aspect(plan, sluice, seed, plot_across, row_step, aspect, tolerance, rounds)
         if best is None or found[0] < best[0]:
             best = found
-        if not found[0][0]:
+        # a legal fan alone is not enough to stop the search: the supply-bank hem (2026-08-15)
+        # drops the quads wedged between near-parallel channels, and on some seeds the first
+        # LEGAL aspect leaves the acreage well short of the household target (cohort seed 44:
+        # 11.0 against 13.0, past the 15% ratchet, with the gate itself green). Keep trying
+        # aspects until one is legal AND lands the acreage; `best` already orders (illegal, err),
+        # so a seed whose first legal aspect met tolerance breaks exactly where it always did and
+        # every such map is byte-identical.
+        if not found[0][0] and found[0][1] <= tolerance:
             break
     assert best is not None
     return best[1]
@@ -668,6 +675,7 @@ def _fit_at_aspect(plan: SitePlan, sluice: Pt, seed: int, plot_across: float, ro
             row_step=row_step,
             grain_drift=plan.grain_drift,
             grain=GRAIN,
+            supply_banks=True,  # bunds hem onto the supply strokes' banks (GM 2026-08-15); scripted tier only, see paddy_bunds_clear_the_supply_channels
         )
         acres = net_acres(net, plan.ftpx)
         err = abs(acres - plan.target_acres) / plan.target_acres
@@ -2083,18 +2091,36 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
             break
         seats: list[tuple[float, float, float]] = []
         step = 22.0
-        y = min(ys)
-        while y <= max(ys):
-            x = min(xs)
-            while x <= max(xs):
+        # THE SWEEP BOX IS THE HOMESTEADS', NOT THE HOUSE CENTERS' (2026-08-15, cohort seed 44).
+        # A bundle's courtyard ground extends ~a house-length past its house CENTER, so a cluster
+        # strung along its field margin can keep every legal well pocket just OUTSIDE the centers'
+        # bbox - seed 44 had 84 legal seats, nearly all north-west of min(xs)/min(ys), and the
+        # unpadded grid visited none of them (0 of 1440 probes passed; the map shipped well-less).
+        # The pad only restores ground the bundles themselves cover: every rung still demands
+        # near[0] <= ~105 px, so an open-field corner of the padded box is rejected exactly as the
+        # docstring above promises.
+        pad = 120.0
+        y = min(ys) - pad
+        while y <= max(ys) + pad:
+            x = min(xs) - pad
+            while x <= max(xs) + pad:
                 near = sorted(math.hypot(x - h["x"], y - h["y"]) for h in houses)
                 if len(near) >= want_near and near[want_near - 1] <= third and near[0] <= nearest:
                     seats.append((math.hypot(x - ccx, y - ccy), x, y))
                 x += step
             y += step
-        for _, x, y in sorted(seats):
-            if len(placed) >= want:
-                break
+        # GREEDY COVERAGE, not central-first throughout (settlement-review, Mizuguchi/Sawada
+        # 2026-08-15): sorting every well toward the centroid put both of Mizuguchi's wells in one
+        # lobe of a two-lobed cluster - the six eastern households walked 248-424 ft while the west
+        # had a well within 63. The FIRST well is central (innermost legal seat, as before); every
+        # LATER well takes the legal seat FARTHEST from the wells already standing, ties toward the
+        # center - i.e. it serves the households the placed wells do not, which is why a real hamlet
+        # digs a second well at all.
+        pool = sorted(seats)
+        while pool and len(placed) < want:
+            if placed:
+                pool.sort(key=lambda c: (-min(math.hypot(c[1] - px, c[2] - py) for px, py in placed), c[0]))
+            _, x, y = pool.pop(0)
             if any(math.hypot(x - px, y - py) < 170.0 for px, py in placed):
                 continue  # `wells_not_clustered`: shared wells serve separate courtyards
             if s.well_at(x, y):

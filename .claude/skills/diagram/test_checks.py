@@ -536,6 +536,76 @@ def test_paddy_bunds_clear_the_collector_skips_a_field_with_no_recorded_hem():
     assert "paddy_bunds_clear_the_collector" not in f(M)
 
 
+# ---- paddy_bunds_clear_the_supply_channels: a paddy's canal-side bund is the SUPPLY channel's
+# bank, never drawn down the middle of the water (GM 2026-08-15, Inashiro). Scripted maps only
+# (meta.generated_by - the migration doctrine; legacy comb maps inherit the rule at conversion).
+# The ditch below runs straight down x=500 at 8px drawn width, so the gate's line is
+# halfw + BANK_MARGIN - 0.15 = 4.6px and a vertex nearer x=500 than that is inside the stroke.
+def _sup_M(ring, role="main", gen="hamletgen", ditch=None, name="f"):
+    M = {
+        "meta": {"scale": "hamlet", "down_deg": 90, "W": 1200, "H": 1200},
+        "fields": [{**_field(name, 200, 200, 900, 900), "plot_rings": [ring]}],
+        "field_ditches": [ditch or {"poly": [[500, 200], [500, 800]], "role": role, "field": name, "w": 8.0, "w_tail": 8.0}],
+    }
+    if gen:
+        M["meta"]["generated_by"] = gen
+    return M
+
+
+def test_paddy_bunds_clear_the_supply_channels_fires_on_a_bund_down_the_channels_centerline():
+    # the pre-fix Inashiro shape: a sector-boundary bund laid exactly ON the supply thread's line
+    assert "paddy_bunds_clear_the_supply_channels" in f(_sup_M([[500, 300], [500, 400], [540, 400], [540, 300]]))
+
+
+def test_paddy_bunds_clear_the_supply_channels_fires_on_a_bund_inside_the_stroke():
+    # on the field side of the centerline but still inside the drawn water (gap 3 < 4.6)
+    assert "paddy_bunds_clear_the_supply_channels" in f(_sup_M([[503, 300], [503, 400], [540, 400], [540, 300]]))
+
+
+def test_paddy_bunds_clear_the_supply_channels_fires_on_a_branch_ditch_too():
+    # delivery ditches are supply strokes exactly like the canal pieces
+    assert "paddy_bunds_clear_the_supply_channels" in f(_sup_M([[500, 300], [500, 400], [540, 400], [540, 300]], role="branch"))
+
+
+def test_paddy_bunds_clear_the_supply_channels_passes_when_the_bund_sits_on_the_bank():
+    # held off past halfw + BANK_MARGIN: the bund ABUTS the water's edge and runs along it
+    assert "paddy_bunds_clear_the_supply_channels" not in f(_sup_M([[505.5, 300], [505.5, 400], [540, 400], [540, 300]]))
+
+
+def test_paddy_bunds_clear_the_supply_channels_fires_on_an_edge_through_the_water_with_dry_corners():
+    # the Sawada junction wedge (settlement-review 2026-08-15): every corner projects past the
+    # stroke's ends (governed by nothing) but the long edges run straight down the channel - the
+    # drawn bund crosses the water even though a vertex-only test sees nothing
+    assert "paddy_bunds_clear_the_supply_channels" in f(_sup_M([[498, 150], [502, 150], [502, 850], [498, 850]]))
+
+
+def test_paddy_bunds_clear_the_supply_channels_skips_ground_past_the_strokes_ends():
+    # inside the stroke's bbox but projecting past its tail: that ground is not governed by it
+    assert "paddy_bunds_clear_the_supply_channels" not in f(_sup_M([[500, 803], [503, 804], [540, 850], [540, 900]]))
+
+
+def test_paddy_bunds_clear_the_supply_channels_does_not_govern_the_drain():
+    # the drain side is the collector rule's business (its bunds hem onto the bank IN FALL)
+    assert "paddy_bunds_clear_the_supply_channels" not in f(_sup_M([[500, 300], [500, 400], [540, 400], [540, 300]], role="drain"))
+
+
+def test_paddy_bunds_clear_the_supply_channels_skips_legacy_maps():
+    # no meta.generated_by = a legacy comb map; it inherits the rule when converted (migration doctrine)
+    assert "paddy_bunds_clear_the_supply_channels" not in f(_sup_M([[500, 300], [500, 400], [540, 400], [540, 300]], gen=None))
+
+
+def test_paddy_bunds_clear_the_supply_channels_skips_a_field_with_no_recorded_rings():
+    # pre-2026-08-15 manifests record no plot_rings: nothing to judge (same line the bead checks hold)
+    M = _sup_M([[500, 300], [500, 400], [540, 400], [540, 300]])
+    M["fields"][0].pop("plot_rings")
+    assert "paddy_bunds_clear_the_supply_channels" not in f(M)
+
+
+def test_paddy_bunds_clear_the_supply_channels_skips_a_degenerate_ditch_record():
+    # a 1-point poly has no stroke to govern with
+    assert "paddy_bunds_clear_the_supply_channels" not in f(_sup_M([[500, 300], [500, 400], [540, 400], [540, 300]], ditch={"poly": [[500, 200]], "role": "main", "field": "f", "w": 8.0}))
+
+
 def test_paddy_bunds_clear_the_collector_skips_a_hem_whose_field_declares_no_fall():
     # the block runs (another field declares a fall) but THIS field's drain has no fall to judge by,
     # so "which side is downhill" is unanswerable - settlement_declares_a_land_fall is what catches that
