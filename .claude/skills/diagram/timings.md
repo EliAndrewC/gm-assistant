@@ -44,7 +44,10 @@ things nobody would have guessed from the totals alone.
   minutes of wall clock on a 22-cpu box that sits idle for all of it. The same work fanned out
   should land near 40 s. This is the verification loop of every future conversion, so it gets slower
   and more central as the migration proceeds. NOT DONE - flagged here as the first thing to reach for
-  when we turn to efficiency.
+  when we turn to efficiency. **(DONE same day: `cohort_audit.py` and `regen.py` now fan out across
+  worker processes - cpus minus 2 by default, `--jobs 1` for serial. Safe because a map is a pure
+  function of its spec, verified by diffing parallel against serial output. Measured in the next
+  ledger block; a fanned-out loop's floor is its single slowest map.)**
 - **The gen cache is earning its keep**: the heaviest hand-authored map costs **15.5 s** cold and
   **1.3 s** warm, a 12x saving on every regeneration that did not need to happen.
 
@@ -98,3 +101,39 @@ things nobody would have guessed from the totals alone.
 | &nbsp;&nbsp;↳ format (ruff format --check) | | 0.1 s | 0% |
 | &nbsp;&nbsp;↳ typecheck (mypy --strict, 9 modules) | | 0.2 s | 0% |
 | &nbsp;&nbsp;↳ test (pytest -n auto + 100% coverage gate) | | 4 min 13.4 s | 99% |
+
+### 2026-08-15
+
+*22 cpus, python 3.14.4, resvg 0.46.0, at commit `9778593` - 28 hand-authored maps, 2863 tests.* cohort_audit.py + regen.py fan out across processes (cpus-2); cohort/sweep wall clock now bounded by the slowest single map
+
+| loop / part | what | wall clock | share |
+|---|---|---|---|
+| **`hamlet_gen_gate`** | scripted hamlet: one map, generated + gated + rendered (THE inner loop) | **14.2 s** | |
+| &nbsp;&nbsp;↳ generate (compose + draw) | | 11.6 s | 81% |
+| &nbsp;&nbsp;↳ gate (check_village, 189 checks) | | 0.7 s | 5% |
+| &nbsp;&nbsp;↳ render PNG (resvg) | | 1.9 s | 14% |
+| **`cohort_4`** | cohort of 4 hamlets (does a fix generalize?) | **13.8 s** | |
+| &nbsp;&nbsp;↳ per map | | 3.4 s | - |
+| &nbsp;&nbsp;*parts do not sum to the total: `per map` is the average, not a component* | | | |
+| **`map_regen_minami`** | heaviest hand-authored map through `regen.py` | **14.2 s** | |
+| &nbsp;&nbsp;↳ cold (cache miss: compose + draw + gate) | | 14.2 s | - |
+| &nbsp;&nbsp;↳ warm (cache hit) | | 1.3 s | - |
+| &nbsp;&nbsp;*the total is the COLD run; the warm row is what the cache buys* | | | |
+| **`cohort_24`** | cohort of 24 hamlets (the bar for an archetype) | **28.5 s** | |
+| &nbsp;&nbsp;↳ per map | | 1.2 s | - |
+| &nbsp;&nbsp;*parts do not sum to the total: `per map` is the average, not a component* | | | |
+| **`pool_sweep`** | regenerate + gate all hand-authored maps, 22 workers | **46.0 s** | |
+| &nbsp;&nbsp;↳ test_a_map_is_immune_to_an_upstream_change_in_the_nu | | 37.8 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[sawada.gen.py] | | 30.8 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[minami.gen.py] | | 25.4 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[tango.gen.py] | | 25.2 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[kashikawa.gen.py] | | 23.6 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[kikuta.gen.py] | | 23.0 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[inashiro.gen.py] | | 21.6 s | - |
+| &nbsp;&nbsp;↳ test_village_passes_gate[nagahara.gen.py] | | 20.5 s | - |
+| &nbsp;&nbsp;*parts are the 8 slowest tests' own CPU time; they overlap in wall clock because the sweep runs parallel* | | | |
+| **`full_gate`** | `make done` - the whole gate | **4 min 10.2 s** | |
+| &nbsp;&nbsp;↳ lint (ruff check + duplicate-def scan) | | 1.4 s | 1% |
+| &nbsp;&nbsp;↳ format (ruff format --check) | | 0.1 s | 0% |
+| &nbsp;&nbsp;↳ typecheck (mypy --strict, 9 modules) | | 0.2 s | 0% |
+| &nbsp;&nbsp;↳ test (pytest -n auto + 100% coverage gate) | | 4 min 08.5 s | 99% |
