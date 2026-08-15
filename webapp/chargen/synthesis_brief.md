@@ -151,6 +151,12 @@ What separates them is what they actually do when virtue becomes expensive.
   their own death to bring them about - in the sincere belief that doing so is
   virtuous. The result is principled and self-sacrificing, but as readily rigid,
   fanatical, or dangerous as it is noble.
+- **Middle honor is the human norm.** Most people fall short of the high-honor
+  ideal despite being genuinely motivated by virtue - which is exactly what the
+  honor scores between the minimum and maximum represent. Everyone bears the
+  moral responsibility to be better than their incentives; a mid-honor character
+  has real convictions and sometimes pays for them, just not reliably, and
+  rarely when the price runs high.
 
 When honor sits in tension with other traits (a "humble" samurai with low honor,
 say), resolve the tension into a specific, coherent person rather than treating
