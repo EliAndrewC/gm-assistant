@@ -102,7 +102,11 @@ approval before /speckit-tasks may run.
   dependencies via `requirements.in` → `requirements.txt` (or `uv.lock`),
   no swallowed exceptions, no `print` in production paths, behavior-named
   tests, parametrized variants, and ConfigObj / pydantic-settings for
-  configuration (no hardcoded magic).
+  configuration (no hardcoded magic). Functions stay at human scale
+  (clause 12): a plan whose implementation would grow any function past a
+  few hundred logical statements MUST say so and justify it, and past
+  ~1,000 the function carries an inline justification annotation or gets
+  split - measured in statements/expressions, never raw lines.
 
 - **XII. Historical Grounding Bookends (NON-NEGOTIABLE)**: Does the feature
   change what a generator ASSERTS ABOUT THE WORLD (any `/diagram` settlement
