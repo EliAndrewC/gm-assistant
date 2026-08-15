@@ -75,3 +75,12 @@ data points for the fabric-first design:
   neighboring packs, so single-defect fixes rotate the defect population instead of shrinking it
   (three "dead cores" moved five times). Fabric-first should place service features and packs in
   one deterministic order per district, so a local edit stays local.
+
+## Azemame record hygiene: water-buried beads are invisible ink (settlement-review, 2026-08-15)
+
+The bead-burial fix (`_bund_beans` dropping beads a later-painted PLOT buries; `bund_beans_on_bunds`)
+has a harmless sibling the review's pixel scan surfaced on Inashiro: ~40 of 727 recorded beads have
+no visible dot because the field CHANNELS and pond rim paint after the beads and bury bund and bead
+together - nothing surfaces visually (opposite polarity from the fixed class), but the manifest
+carries ~5% invisible ink and the check is attesting beads nobody can see. If record hygiene ever
+matters, extend the same burial filter to the drawn channel strokes / pond; no map change needed.
