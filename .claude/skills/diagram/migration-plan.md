@@ -96,7 +96,7 @@ STARTED = partial. NOT STARTED = hand-authored only.
 | `mulberry_dike_fishpond` | NOT STARTED | needs the `mulberry_fishpond` overlay first | Kuwabata |
 | overlays (`mulberry_fishpond`, `lotus`, `tea_fringe`) | NOT STARTED | `apply_land_use` exists engine-side | Honda, Shimizu, Kuwabata |
 
-Generated so far: Inashiro, Kashikawa, Mizuguchi, Sawada (`pool/experiments/`).
+Generated so far: Inashiro, Kashikawa, Mizuguchi, Sawada (`pool/hamlets/`, beside the hand-authored hamlets - the pool is foldered by tier, and `meta.generated_by` marks the scripted maps).
 
 ### Above hamlet
 

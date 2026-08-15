@@ -40,6 +40,8 @@ import re
 import subprocess
 import sys
 
+import pool_index
+
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Bump to force a one-time full refresh after any change to how the stamp is computed: an old
@@ -196,6 +198,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"render-cache: {len(ran)} regenerated, {len(skipped)} cached (fresh)")
     for gen in ran:
         print(f"  regen  {os.path.relpath(gen, args.pool)}")
+    # The pool index is derived from the same tree the renders live in, so refresh it whenever the
+    # renders are refreshed - this is what keeps main's index.html current (GM 2026-08-15).
+    index_path = pool_index.write_index(args.pool)
+    print(f"render-cache: index refreshed ({os.path.relpath(index_path, args.pool)})")
     return 0
 
 

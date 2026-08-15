@@ -10,8 +10,8 @@ the rice-farming hamlet, with `pool/hamlets/ikegami.gen.py` as the reference sub
 
 IT DOES NOT REPLACE ANYTHING. Nothing here is imported by `settlement.py`, `check_village.py`,
 `waterfields.py` or any pool generator, and no existing map changes by a byte. It is additive: a
-new module, its own tests, and its own demo maps under `pool/experiments/`. Delete the module and
-that folder and the current method is exactly as it was.
+new module, its own tests, and its own demo maps in `pool/hamlets/` (marked `meta.generated_by` in
+their manifests). Delete the module and those maps and the current method is exactly as it was.
 
 WHAT IT IS NOT. It is not the knob engine - `Settlement.roll_village` (feature 005) already rolls a
 gate-passing hamlet from a seed, and Honda and Shimizu in `pool/hamlets/` are the proof. This module
@@ -53,7 +53,7 @@ map. Where a stage can fail locally and recover (the cluster not seating every h
 INSIDE the stage against the placer's own verdict, which is cheaper and more precise than a gate run.
 
 Run it:
-    python3 hamletgen.py --name Ikegami-scripted --seed 4 --households 15 --out pool/experiments/x
+    python3 hamletgen.py --name Ikegami-scripted --seed 4 --households 15 --out wip/x
     python3 hamletgen.py --batch 12          # roll a whole cohort and gate every one
 """
 

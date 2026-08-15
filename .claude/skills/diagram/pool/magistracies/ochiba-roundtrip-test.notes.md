@@ -1,5 +1,7 @@
 # ochiba-roundtrip-test - design notes (round-trip TEST artifact)
 
+**Program type**: magistrate's manor (county magistracy) - round-trip TEST artifact.
+
 This is NOT a replacement for `ochiba-magistracy.svg`. It is the OUTPUT of feeding the
 EXISTING hand-authored Ochiba's real program (envelope, court-spine, and building masses
 measured off the finished map at 3 px = 1 ft) back through the perimeter-first placer
