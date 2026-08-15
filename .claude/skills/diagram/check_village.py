@@ -56,7 +56,7 @@ from settlement import (
     trough_quad,
     wellhead_quad,
 )
-from waterfields import drain_bank_clearance, hem_on_paddy, polyline_cum
+from waterfields import BANK_MARGIN, drain_bank_clearance, hem_on_paddy, polyline_cum, supply_bank_clearance
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
 
@@ -11118,6 +11118,86 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         not _bb_stray,
         f"{len(_bb_stray)} azemame bead(s) {_bb_stray[:4]} do not sit on a bund the finished paint shows - a bund stroke buried under a later-drawn plot's fill (the wedge fillers lap their neighbors on purpose) or under WATER paint (a late ditch stroke, the source pond, a pocket pond) is not visible ground; `waterfields._bund_beans` / `draw_comb_field`'s pond filter must drop the beads laid there so the record carries no invisible ink",
     )
+
+    # A PADDY'S CANAL-SIDE BUND IS THE SUPPLY CHANNEL'S BANK - NEVER DRAWN DOWN THE MIDDLE OF THE
+    # WATER (GM 2026-08-15, on Inashiro: "the earth bunds which border the irrigated channel ...
+    # are actually in the middle of the water instead of along the water's edge. I think they are
+    # supposed to be along the water's edge"). The supply half of paddy_bunds_clear_the_collector,
+    # and the same physical rule: the bund holds the basin's water IN and the channel carries other
+    # water PAST, so the two can only ABUT at the bank - and a bund hemmed onto the bank runs
+    # parallel to and along the water's edge, which is exactly the read the GM asked for.
+    #
+    # The defect was construction, not a stray plot: `_carve`'s `bnd` returns thread CENTERLINES,
+    # and the supply strokes (the tapering canal pieces, the delivery ditches) are drawn centered
+    # on those same lines - so the first and last column of every sector, and the head wedge's
+    # boundary where `bnd` falls back onto canal A's own path, carried bunds running down the
+    # middle of the drawn water. Measured on the pre-fix Inashiro: 266 sampled bund-edge points
+    # inside a supply stroke, the worst 6.1 px deep in a ~12 px channel - i.e. ON its centerline.
+    #
+    # POSITION, not angle, for the reasons the collector check records above; measured
+    # perpendicular to the stroke with its taper honored, and vertices projecting past a stroke's
+    # ends skipped (ground beyond the span is not governed by it - a delivery ditch's takeoff sits
+    # ON its parent canal, which governs there in its own right). The predicate is
+    # `supply_bank_clearance`, imported from the engine and NOT restated - the same call `_carve`'s
+    # `clear_supply` makes when it lays the bund. The placer holds a corner at halfw +
+    # BANK_MARGIN * grain and this fires below halfw + BANK_MARGIN - 0.15 (the collector check's
+    # 1dp-rounding slack), so a bund the placer allowed cannot false-fire here.
+    #
+    # GATED ON `meta.generated_by` (the migration doctrine, GM 2026-08-13, same gate as the
+    # sun-corridor rule above): the legacy comb maps carry this defect pool-wide - measured
+    # 2026-08-15 by this same predicate over their recorded plot_polys: kikuta 524 buried bund
+    # vertices, minami 208, honda 203, tango 190, nagahara 121, shimizu 90, hirameki 33, ubame 17,
+    # yatsuda 15, hoshizora 11, tanada 9, enokida 1 - re-carving them all was judged the wrong
+    # trade once already.
+    # The rule binds the SCRIPTED path (`build_comb(supply_banks=True)`); each legacy map inherits
+    # it at the moment it is converted. Manifests that record no plot_rings (pre-2026-08-15) skip,
+    # the same line the bead checks hold.
+    if M["meta"].get("generated_by"):
+        _sb_thru: dict[tuple[int, int], None] = {}  # dedupe: a corner is shared by up to 4 rings
+        for _sb_fld in fields:
+            _sb_rings = _sb_fld.get("plot_rings") or []
+            if not _sb_rings:
+                continue
+            for _sb_fd in M.get("field_ditches", []):
+                if _sb_fd.get("role") not in ("main", "branch") or _sb_fd.get("field") != _sb_fld.get("name"):
+                    continue
+                _sb_pts = [(float(p[0]), float(p[1])) for p in _sb_fd.get("poly") or []]
+                if len(_sb_pts) < 2:
+                    continue
+                _sb_cum = polyline_cum(_sb_pts)
+                _sb_w0 = float(_sb_fd.get("w", 2.0))
+                _sb_w1 = float(_sb_fd.get("w_tail", _sb_w0))
+                # bbox prefilter (prunes only): a vertex outside the stroke's box grown by its
+                # widest half-width + margin cannot be inside the stroke
+                _sb_reach = max(_sb_w0, _sb_w1) / 2 + BANK_MARGIN + 1.0
+                _sb_x0 = min(p[0] for p in _sb_pts) - _sb_reach
+                _sb_x1 = max(p[0] for p in _sb_pts) + _sb_reach
+                _sb_y0 = min(p[1] for p in _sb_pts) - _sb_reach
+                _sb_y1 = max(p[1] for p in _sb_pts) + _sb_reach
+                # EDGES, not just vertices (settlement-review, Sawada 2026-08-15): a junction wedge
+                # can keep every corner dry while its two long edges converge THROUGH the canal, so
+                # each bund edge is walked at a 3 px step - bbox-gated, so only near-stroke edges pay
+                for _sb_ring in _sb_rings:
+                    for _sb_i in range(len(_sb_ring)):
+                        _sb_a, _sb_b = _sb_ring[_sb_i], _sb_ring[(_sb_i + 1) % len(_sb_ring)]
+                        _sb_ax, _sb_ay = float(_sb_a[0]), float(_sb_a[1])
+                        _sb_bx, _sb_by = float(_sb_b[0]), float(_sb_b[1])
+                        if max(_sb_ax, _sb_bx) < _sb_x0 or min(_sb_ax, _sb_bx) > _sb_x1 or max(_sb_ay, _sb_by) < _sb_y0 or min(_sb_ay, _sb_by) > _sb_y1:
+                            continue
+                        _sb_nstep = max(1, int(math.hypot(_sb_bx - _sb_ax, _sb_by - _sb_ay) / 3.0))
+                        for _sb_k in range(_sb_nstep + 1):
+                            _sb_t = _sb_k / _sb_nstep
+                            _sb_x = _sb_ax + _sb_t * (_sb_bx - _sb_ax)
+                            _sb_y = _sb_ay + _sb_t * (_sb_by - _sb_ay)
+                            _sb_gap, _sb_halfw, _sb_past, _sb_foot, _sb_nrm = supply_bank_clearance((_sb_x, _sb_y), _sb_pts, _sb_w0, _sb_w1, _sb_cum)
+                            if not _sb_past and _sb_gap < _sb_halfw + BANK_MARGIN - 0.15:
+                                _sb_thru[(round(_sb_x), round(_sb_y))] = None
+                                break
+        check(
+            "paddy_bunds_clear_the_supply_channels",
+            not _sb_thru,
+            f"{len(_sb_thru)} paddy bund vertex/vertices {[list(_sb_k) for _sb_k in list(_sb_thru)[:4]]} are drawn inside a SUPPLY channel's stroke - a bund bordering the irrigated channel is the channel's BANK, so it runs parallel to and along the water's edge, never down the middle of the water; carve with build_comb(supply_banks=True) so the bunds hem onto the drawn strokes",
+        )
 
     # A drainage brook LEAVES the collector as a smooth BEND, not a hard right-angle corner - a contour
     # collector turns down the valley INTO the stream, it does not meet it at 90 deg. For each drain-fed
