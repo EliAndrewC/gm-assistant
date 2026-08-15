@@ -27,7 +27,8 @@ would still be generated normally and then modified by hand.
   water frame, the field, the sink, the ways, the homesteads, their appurtenances, the notice board,
   the hinterland, the woodland, the windbreak, the crossings, the frame.
 - **[`test_hamletgen.py`](test_hamletgen.py)** - unit tests for the derivations and the failure modes.
-- **[`pool/experiments/`](pool/experiments/)** - four generated maps, each a nine-line `.gen.py`:
+- **[`pool/hamlets/`](pool/hamlets/)** - four generated maps living beside the hand-authored hamlets
+  (`meta.generated_by` marks a scripted map), each a nine-line `.gen.py`:
   **Inashiro** (the head-to-head with Ikegami), **Sawada**, **Mizuguchi**, **Kashikawa**. They are
   regenerated and gated by `test_villages.py` like every other pool map.
 
