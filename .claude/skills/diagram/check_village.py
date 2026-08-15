@@ -11054,7 +11054,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # placer allowed cannot false-fire here through 1dp manifest rounding. Pre-2026-08-15
     # manifests record neither key and skip; the recording itself is unconditional at the one
     # draw site (draw_comb_field), pinned by test_draw_comb_field_records_rings_and_beads.
+    # ... and the same rule against WATER paint (GM 2026-08-15, second pass: "fix the water-buried
+    # beads so the record stays honest"; settlement-review found 40 of Inashiro's 727 recorded
+    # beads invisible under channel/pond paint - opposite polarity from the plot burial, bund and
+    # bead buried together, but the record was attesting beads nobody can see). The painted truth
+    # is read from the manifest's paint records, not re-derived: `drawn_channels` carries the
+    # post-clip stroke geometry + widths (late strokes paint after the beads and bury them),
+    # `pond` and `field_ponds` the water ellipses. A bead inside any of those is wrong whichever
+    # way the z goes - buried ink under late water, or a green dot floating ON the water for
+    # paint that runs under the beads - so the test is position, not stacking.
     _BB_TOL = 2.0
+    _bb_wet: list[tuple[float, float, float, float]] = []  # water ellipses (cx, cy, rx, ry), shrunk by the tolerance at use
+    if M.get("pond"):
+        _bb_wet.append((float(M["pond"][0]), float(M["pond"][1]), float(M["pond"][2]), float(M["pond"][3])))
+    for _bb_fp in M.get("field_ponds") or []:
+        _bb_wet.append((float(_bb_fp["x"]), float(_bb_fp["y"]), float(_bb_fp["rx"]), float(_bb_fp["ry"])))
+    _bb_wchan = [_bb_c for _bb_c in (M.get("drawn_channels") or []) if _bb_c.get("late") and len(_bb_c.get("pts") or []) >= 2]
+
+    def _bb_in_water(_wx: float, _wy: float) -> bool:
+        for _wcx, _wcy, _wrx, _wry in _bb_wet:
+            if _wrx > _BB_TOL and _wry > _BB_TOL and ((_wx - _wcx) / (_wrx - _BB_TOL)) ** 2 + ((_wy - _wcy) / (_wry - _BB_TOL)) ** 2 <= 1.0:
+                return True
+        for _wc in _bb_wchan:
+            _wp = _wc["pts"]
+            _wcum = polyline_cum([(float(q[0]), float(q[1])) for q in _wp])
+            _wtot = _wcum[-1] or 1.0
+            for _wi in range(len(_wp) - 1):
+                _wd = seg_dist(_wx, _wy, _wp[_wi], _wp[_wi + 1])
+                _wt = _wcum[_wi] / _wtot  # width taper measured at the segment head - within a segment the taper moves less than the tolerance
+                if _wd < (float(_wc["w0"]) + (float(_wc["w1"]) - float(_wc["w0"])) * _wt) / 2 - 1.0:
+                    return True
+        return False
+
     _bb_stray: list[list[float]] = []
     for _bb_fld in fields:
         _bb_beans = _bb_fld.get("bund_beans") or []
@@ -11080,12 +11111,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 _bb_edge[_bb_j] = _bb_d
                 if _bb_d > _BB_TOL and point_in_poly(_bb_x, _bb_y, _bb_ring):
                     _bb_buried.append(_bb_j)
-            if not any(_bb_d <= _BB_TOL and all(_bb_k <= _bb_j for _bb_k in _bb_buried) for _bb_j, _bb_d in _bb_edge.items()):
+            if _bb_in_water(_bb_x, _bb_y) or not any(_bb_d <= _BB_TOL and all(_bb_k <= _bb_j for _bb_k in _bb_buried) for _bb_j, _bb_d in _bb_edge.items()):
                 _bb_stray.append([round(_bb_x), round(_bb_y)])
     check(
         "bund_beans_on_bunds",
         not _bb_stray,
-        f"{len(_bb_stray)} azemame bead(s) {_bb_stray[:4]} float in open paddy water - a bead line marks bund soybeans, so every bead must sit on a bund the finished paint actually shows; a bund stroke buried under a later-drawn plot's fill (the wedge fillers lap their neighbors on purpose) is not visible ground, and `waterfields._bund_beans` must drop the beads it laid there",
+        f"{len(_bb_stray)} azemame bead(s) {_bb_stray[:4]} do not sit on a bund the finished paint shows - a bund stroke buried under a later-drawn plot's fill (the wedge fillers lap their neighbors on purpose) or under WATER paint (a late ditch stroke, the source pond, a pocket pond) is not visible ground; `waterfields._bund_beans` / `draw_comb_field`'s pond filter must drop the beads laid there so the record carries no invisible ink",
     )
 
     # A drainage brook LEAVES the collector as a smooth BEND, not a hard right-angle corner - a contour
