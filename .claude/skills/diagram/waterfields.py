@@ -418,6 +418,44 @@ def drain_bank_clearance(q: Pt, dpts: Poly, dv: Pt, w0: float, w1: float, cum: l
     return gap, need, -(dv[0] * nrm[0] + dv[1] * nrm[1]), past
 
 
+def supply_bank_clearance(q: Pt, pts: Poly, w0: float, w1: float, cum: list[float]) -> tuple[float, float, bool, Pt, Pt]:
+    """How one point stands against a SUPPLY channel's drawn stroke: `(gap, halfw, past, foot, nrm)`.
+
+    The supply half of `drain_bank_clearance`, and simpler for a reason: a drain-side bund is held
+    off IN FALL (the hem climbs up its own column, so that verdict needs the fall geometry), while
+    a supply-side bund runs ALONGSIDE its channel and is held off PERPENDICULAR - the bund is the
+    channel's bank wherever the channel goes, which is also what makes the bordering bund run
+    parallel to the water (GM 2026-08-15).
+
+    - `gap` - unsigned perpendicular distance from `q` to the nearest stroke segment.
+    - `halfw` - half the stroke's DRAWN width at that point (`w0` -> `w1` taper along its arc).
+    - `past` - `q` projects beyond the stroke's head or tail; ground beyond the span is not
+      governed by this stroke (a delivery ditch's takeoff sits on its parent canal, which governs).
+    - `foot` - the nearest point on the centerline.
+    - `nrm` - the nearest segment's unit normal, side arbitrary; the caller orients it.
+
+    ONE predicate, shared by the placer (`_carve`'s `clear_supply`) and by the gate
+    (`paddy_bunds_clear_the_supply_channels`), for the same reason `drain_bank_clearance` is: a
+    placer and a checker that classify the same ground from two formulas drift into disagreeing
+    about which side of a ditch a point is on."""
+    off, foot, arc, past, nrm = 1e9, (0.0, 0.0), 0.0, False, (0.0, 1.0)
+    for i in range(len(pts) - 1):
+        ax, ay = pts[i]
+        vx, vy = pts[i + 1][0] - ax, pts[i + 1][1] - ay
+        t = ((q[0] - ax) * vx + (q[1] - ay) * vy) / ((vx * vx + vy * vy) or 1.0)
+        tc = max(0.0, min(1.0, t))
+        sx, sy = ax + tc * vx, ay + tc * vy
+        d = math.hypot(q[0] - sx, q[1] - sy)
+        if d < off:
+            off, foot = d, (sx, sy)
+            arc = cum[i] + tc * math.hypot(vx, vy)
+            past = (i == 0 and t < 0.0) or (i == len(pts) - 2 and t > 1.0)
+            nl = math.hypot(vx, vy) or 1.0
+            nrm = (-vy / nl, vx / nl)
+    halfw = (w0 + (w1 - w0) * arc / (cum[-1] or 1.0)) / 2
+    return off, halfw, past, foot, nrm
+
+
 def hem_to_bank(ring: Poly, dpts: Poly, down_deg: float, w0: float, w1: float) -> Poly:
     """Lift any vertex of `ring` that lies inside the collector's drawn stroke - or past its
     centerline - up-fall onto the ditch's BANK. Returns a new ring; vertices already clear are
@@ -645,6 +683,7 @@ def build_comb(
     furrow_spread: float = 1.1,
     grain_drift: float = 0.0,
     grain: float = 1.0,
+    supply_banks: bool = False,
 ) -> dict[str, Any]:
     """The COMB layout (the historical default - Kishu school / Chinese canal doctrine):
     the sluice's head-race forks at one division point into TWO supply canals hugging the
@@ -960,7 +999,26 @@ def build_comb(
             # narrow end so the gen draws it dwindling, not a blunt constant-width stub that stops dead.
             channels.append({"pts": pre, "w": (5.6 if t is bc else 4.0) * grain, "w_tail": 1.5 * grain, "role": "branch"})
 
-    plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step, grain, seed, drain_bank)
+    # `supply_banks` hands the carve the very strokes assembled above, so the bunds hem onto the
+    # banks that will actually be painted - placer and paint reading the same source. OPT-IN
+    # (default False) so every legacy comb gen re-runs byte-identical; the scripted tier passes
+    # True and the gate holds it there (paddy_bunds_clear_the_supply_channels, gated on
+    # meta.generated_by per the migration doctrine - legacy maps inherit the rule at conversion).
+    plots = _carve(
+        R,
+        F,
+        threads,
+        a_pts,
+        dpts,
+        W,
+        H,
+        plot_across,
+        row_step,
+        grain,
+        seed,
+        drain_bank,
+        supply=[c for c in channels if c.get("role") != "drain"] if supply_banks else None,
+    )
 
     envelope = [p for p in a_pts] + [p for p in threads[-1].pts] + list(reversed(dpts)) + list(reversed(threads[0].pts))
 
@@ -1216,11 +1274,30 @@ def _fill_wedges(
         # edge cleanly and the seam just reads as the bund between two plots.
         cx = sum(q[0] for q in quad) / 4
         cy = sum(q[1] for q in quad) / 4
+
+        def touches_channel(qd: Poly) -> bool:
+            """EDGE-walked at a 3 px step, not 8-point-probed (settlement-review, Sawada
+            2026-08-15): two filler tiles near branch TAILS kept every corner and midpoint clear
+            of the water while an edge interior dipped within a pixel of the stroke - the same
+            probe-sparsity class as the carve's own vertex-only miss, fixed the same way."""
+            for qi in range(4):
+                qa, qb = qd[qi], qd[(qi + 1) % 4]
+                for qk in range(max(1, int(math.dist(qa, qb) / 3.0)) + 1):
+                    qt = qk / max(1, int(math.dist(qa, qb) / 3.0))
+                    qx, qy = qa[0] + qt * (qb[0] - qa[0]), qa[1] + qt * (qb[1] - qa[1])
+                    if any(any(sd(qx, qy, c["pts"][ci], c["pts"][ci + 1]) < c["w"] / 2 + 2 * g for ci in range(len(c["pts"]) - 1)) for c in channels):
+                        return True
+            return False
+
         for _ in range(12):
             probes = list(quad) + [((quad[i][0] + quad[(i + 1) % 4][0]) / 2, (quad[i][1] + quad[(i + 1) % 4][1]) / 2) for i in range(4)]
-            if all(depth_in_plots(px, py) <= 6 * g for px, py in probes) and not any(
-                any(sd(px, py, c["pts"][i], c["pts"][i + 1]) < c["w"] / 2 + 2 * g for i in range(len(c["pts"]) - 1)) for px, py in probes for c in channels
-            ):
+            # ... and at least one probe must stand on genuinely BARE ground (settlement-review,
+            # Inashiro 2026-08-15): the shallow-lap allowance alone is satisfiable by FULL
+            # containment inside a slightly-larger quad, so the shrink nested 12 fillers wholly
+            # within carved paddies - a bund ring drawn inside a paddy. A filler that fills no
+            # bare ground is not a filler; shrinking cannot cure containment, so it falls through
+            # to the bail-out below and the sliver is left to the bunds.
+            if any(depth_in_plots(px, py) == 0.0 for px, py in probes) and all(depth_in_plots(px, py) <= 6 * g for px, py in probes) and not touches_channel(quad):
                 break
             quad = [(cx + (q[0] - cx) * 0.88, cy + (q[1] - cy) * 0.88) for q in quad]
         else:
@@ -1245,6 +1322,7 @@ def _carve(
     g: float = 1.0,
     seed: int = 0,
     bank: Callable[[float], float] | None = None,
+    supply: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Carve paddy plots between adjacent threads. Above a thread's takeoff the boundary
     falls back to its parent path (canal / parent ditch); below its end, to the DRAIN - so
@@ -1257,6 +1335,78 @@ def _carve(
     # onto (and through) its drawn stroke. See `_drain_bank`. The fallback keeps `_carve` callable
     # on its own in a test without a collector width to hand.
     bank_at: Callable[[float], float] = bank if bank is not None else (lambda _u: 2.0 * g)
+
+    # SUPPLY-SIDE BANKS (GM 2026-08-15, Inashiro: "the earth bunds which border the irrigated
+    # channel ... are actually in the middle of the water instead of along the water's edge").
+    # `bnd` returns thread/canal CENTERLINES, and the supply strokes (the canal pieces, the
+    # delivery ditches) are drawn centered on those same lines - so without this pass the first
+    # and last column's bunds, and the head wedge's boundary where `bnd` falls back onto canal A's
+    # own path, run down the middle of the drawn water. The drain has hemmed onto its bank by
+    # construction since 2026-08-08 (`_drain_bank`); this is the supply half of the same physical
+    # rule: the bund holds the basin's water IN, the channel carries other water PAST, so the two
+    # can only ABUT at the bank. Every carved corner is held off every supply stroke by the
+    # stroke's local half-width (they taper) plus half a bund stroke, PERPENDICULAR to the stroke.
+    # `supply=None` (the legacy default) skips all of it, so the hand-authored pool is unmoved.
+    sup_idx: list[tuple[Poly, list[float], float, float, tuple[float, float, float, float]]] = []
+    for sc in supply or []:
+        spts = [(float(p[0]), float(p[1])) for p in sc["pts"]]
+        if len(spts) >= 2:
+            _sw0, _sw1 = float(sc["w"]), float(sc.get("w_tail", sc["w"]))
+            _sreach = max(_sw0, _sw1) / 2 + BANK_MARGIN * g + 2.0  # bbox prefilter: prunes only, never decides
+            _sbb = (min(p[0] for p in spts) - _sreach, min(p[1] for p in spts) - _sreach, max(p[0] for p in spts) + _sreach, max(p[1] for p in spts) + _sreach)
+            sup_idx.append((spts, polyline_cum(spts), _sw0, _sw1, _sbb))
+
+    def clear_supply(x: float, y: float, hx: float, hy: float) -> Pt:
+        """Hold a carved corner off every supply stroke's bank. `(hx, hy)` breaks the tie for a
+        point sitting exactly ON a centerline (the sector-boundary case): it points toward the
+        sector's own interior, so the two sectors sharing a ditch are pushed onto opposite banks."""
+        for _ in range(6):  # a corner near a takeoff can sit in two strokes; re-test until clear
+            moved = False
+            for spts, scum, w0, w1, sbb in sup_idx:
+                if not (sbb[0] <= x <= sbb[2] and sbb[1] <= y <= sbb[3]):
+                    continue
+                gap, halfw, past, foot, nrm = supply_bank_clearance((x, y), spts, w0, w1, scum)
+                need = halfw + BANK_MARGIN * g
+                if past or gap >= need:
+                    continue
+                if gap > 0.5:
+                    nx, ny = (x - foot[0]) / gap, (y - foot[1]) / gap
+                elif hx * nrm[0] + hy * nrm[1] >= 0:
+                    nx, ny = nrm
+                else:
+                    nx, ny = -nrm[0], -nrm[1]
+                x, y = foot[0] + nx * need, foot[1] + ny * need
+                moved = True
+            if not moved:
+                break
+        return (x, y)
+
+    def quad_in_supply(quad: Poly) -> bool:
+        """A quad with a corner - or ANY point of any EDGE - still inside a supply stroke's bank
+        after the push. Near a takeoff the ground between a parent channel and its child ditch is
+        narrower than the two banks, so no legal corner exists there; the alternating push cannot
+        resolve it, and the quad is DROPPED, the same way the toe drops its unbundable slivers:
+        the fan's base floor shows and the ground reads as the junction's own margin.
+
+        EDGES, not just vertices (settlement-review, Sawada 2026-08-15): at an acute junction a
+        wedge plot can keep every corner dry while its two long edges converge THROUGH the canal
+        between them - the drawn bund crosses the water with all four vertices on land. So each
+        edge is walked at a 3 px step, bbox-gated so only edges near a stroke pay for it. 0.5 px
+        under the placer's line keeps the drop to the genuinely unresolvable (the gate fires
+        further down, at BANK_MARGIN - 0.15 over halfw)."""
+        for i in range(len(quad)):
+            a, b = quad[i], quad[(i + 1) % len(quad)]
+            for spts, scum, w0, w1, sbb in sup_idx:
+                if max(a[0], b[0]) < sbb[0] or min(a[0], b[0]) > sbb[2] or max(a[1], b[1]) < sbb[1] or min(a[1], b[1]) > sbb[3]:
+                    continue
+                nstep = max(1, int(math.dist(a, b) / 3.0))
+                for k in range(nstep + 1):
+                    t = k / nstep
+                    q = (a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]))
+                    gap, halfw, past, _foot, _nrm = supply_bank_clearance(q, spts, w0, w1, scum)
+                    if not past and gap < halfw + BANK_MARGIN * g - 0.5:
+                        return True
+        return False
 
     def bnd(t: _Thread, f: float) -> Pt:
         if f < t.f0 and t.fallback is not None:
@@ -1391,6 +1541,11 @@ def _carve(
                     rw = rowamp * math.sin(fv / 47 + rphase[min(j, nsub + 1)]) * math.sin(math.pi * ft)
                     x += F.d[0] * rw
                     y += F.d[1] * rw
+            if sup_idx:
+                # toward the sector's own interior - the tie-break side for an on-centerline point
+                mx, my = (a[0] + b[0]) / 2 - x, (a[1] + b[1]) / 2 - y
+                ml = math.hypot(mx, my)
+                return clear_supply(x, y, mx / ml, my / ml) if ml > 1e-9 else clear_supply(x, y, F.d[0], F.d[1])
             return (x, y)
 
         def drain_f_at(fv: float, j_: int, n_: int) -> float:
@@ -1421,7 +1576,7 @@ def _carve(
                     continue
                 if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
                     continue
-                if any(spills_drain(pq) for pq in quad) or above_canal(quad):
+                if any(spills_drain(pq) for pq in quad) or above_canal(quad) or quad_in_supply(quad):
                     continue
                 # CROP: within the irrigated command area everything is RICE (paddy land was
                 # too valuable for anything else - dry crops belong on ground the water cannot
@@ -1462,6 +1617,8 @@ def _carve(
             cy = sum(pq[1] for pq in quad) / 4
             if any(_pip(cx, cy, pl["poly"]) for pl in plots[sector_start:]):
                 continue  # this ground already planted (fork wedges)
+            if quad_in_supply(quad):
+                continue  # a head closer wedged between a canal and its offtake - no bank to sit on
             plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad], "fill": R.choice(RICE_GREENS)})
 
         # the CLOSING rank: hem EVERY column down onto the collector, so the whole field
@@ -1509,6 +1666,8 @@ def _carve(
                     continue
                 if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
                     continue
+                if quad_in_supply(quad):
+                    continue  # a closing-rank corner wedged against a ditch tail - no bank to sit on
                 # only the level whose BOTTOM edge lies on the collector floods (the wettest,
                 # lowest ground); an upper split level cascades into it and stays green - so a
                 # blue plot always abuts the drain
@@ -1575,6 +1734,14 @@ def _carve(
                 fa0, fa1 = b0 - depth * (levels - li) / levels, b1 - depth * (levels - li) / levels
                 fz0, fz1 = b0 - depth * (levels - li - 1) / levels, b1 - depth * (levels - li - 1) / levels
                 quad = [F.to_xy(uu, fa0), F.to_xy(uv, fa1), F.to_xy(uv, fz1), F.to_xy(uu, fz0)]
+                # the hem pass builds its quads directly (not through `edge`), so it is the fourth
+                # producer that must honor the supply banks: where a delivery ditch's TAIL comes
+                # down near the collector, an unguarded hem quad laps its stroke (Sawada ring 669,
+                # 2026-08-15 - found by the gate the same day the other three sites were guarded).
+                # Same treatment: slide the corners onto the bank, drop what still cannot clear.
+                quad = [clear_supply(q[0], q[1], F.d[0], F.d[1]) for q in quad]
+                if quad_in_supply(quad):
+                    continue  # no bank ground between the branch tail and the collector - leave it to the floor
                 plots.append({"poly": [(round(q[0], 1), round(q[1], 1)) for q in quad], "fill": R.choice(RICE_GREENS)})
     return plots
 

@@ -79,3 +79,21 @@ pipeline's, and it is the same order a person follows:
 - 2026-08-15 (bead recolor + water-honesty review): known residue - the pocket pond at (2144, 1724)
   has the margin-drain stroke and some hinterland tufts painting over its fill. Logged in
   future-work.md ("Pocket ponds carry ink-on-water of their own"); not part of the bead delta.
+
+- 2026-08-15 (supply-bank hem): the GM caught the bunds bordering the irrigated channels drawn
+  down the MIDDLE of the water rather than along its edge - `_carve`'s `bnd` returned thread/canal
+  centerlines and the supply strokes are drawn centered on those same lines, so the pre-fix sheet
+  carried 266 sampled bund points inside a supply stroke (the worst ON the centerline of a ~12 px
+  channel). `build_comb(supply_banks=True)` now holds every carved corner off every supply stroke
+  by its local half-width + `BANK_MARGIN`*grain, perpendicular - so the bordering bunds run
+  parallel to and along the banks - and quads wedged between a parent channel and its child ditch
+  near a takeoff (ground narrower than the two banks; no legal corner exists) are dropped for the
+  base floor to show, the same idiom as the toe slivers. Second pass the same day (via Sawada's
+  review): both the carve's drop test and the gate walk every bund EDGE at a 3 px step, not just
+  the vertices - an acute junction wedge can keep every corner dry while its edges cross the
+  water. Gate: `paddy_bunds_clear_the_supply_channels` (scripted maps only, per the migration
+  doctrine; pre-fix manifests are frozen in `pool/regressions/`). The whole map re-rolled
+  downstream of the carve. `settlement-review` (DELTA) passed the delta and caught `_fill_wedges`
+  nesting 12 fillers wholly inside carved paddies (pre-existing, verified against the frozen
+  manifest) - fixed the same day: a filler must now cover at least one probe of genuinely bare
+  ground.
