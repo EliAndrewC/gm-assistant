@@ -159,3 +159,33 @@ Principle X gate text gains one sentence ("Files stay at human scale too..."); C
 Development Workflow gets a one-line operational mirror. The amendment procedure (edit +
 sync-report + dependent-template review) is followed literally; the GM directed the change in
 conversation on 2026-08-15, which is the approval the procedure requires.
+
+## R13 - What implementation taught the plan (added after the sweeps, 2026-08-15)
+
+- **R2 amended - the common region is a MESH, not a sequence.** Contiguous cuts left 9
+  forward-reference edges (`matrix_violations` -> `GridIndex`, `_box_hits_poly` ->
+  `point_in_poly`/`segments_cross`, `check_ring_road_clear` -> `footprint_on_line`, ...), so the
+  mover packs it by SCC condensation in topological order instead: functions/classes move
+  freely, every constant lands at or after its dependencies, statements keep source order within
+  a file. Result: 3 common files (946/859/853 lines), provably acyclic imports. The SEGMENT
+  region stayed contiguous as planned. Segment census also generalized: every target was one
+  guarded `if` statement (023's mega-segment shape), so the per-statement split hoists guards
+  exactly like 023 - two targets needed a second flatten level (0285's 372-unit inner if,
+  0562's 96-unit `_ty_yards` guard, whose free names are PRODUCED by earlier spans; the census
+  therefore allows stores strictly before a guard's first use and hard-fails after).
+- **R6 amended - the legacy surface includes the monolith's own imports.** `import
+  check_village; check_village.sat_overlap` worked because the monolith's `from settlement
+  import ...` block bound those names as module attributes. The package `__init__` restores
+  that block verbatim (40 names) alongside the package re-exports, all listed in `__all__`
+  (mypy --strict no-implicit-reexport needs the explicit list).
+- **NEW - monkeypatch semantics changed by the split.** Patching
+  `check_village._OVERLAP_STRUCTS` no longer reaches submodules that bound the name at import
+  time. The one affected test now patches every `check_village.*` module holding the
+  attribute. Rule for future tests: patch the HOLDERS, not the package namespace. (Noted in
+  check_village/CLAUDE.md.)
+- **Process note:** the first stage-2 test run went through `pytest | tail`, which masked a
+  red exit code behind the pipe - exactly the background-gate trap already on record. The two
+  real failures above were found because the log was read, not trusted.
+- **Final file census:** 20 modules; only registry.py (8,420 lines - 1,375 ordered rows +
+  the per-segment import block, clause-13 justification header) exceeds the threshold; largest
+  logic file segments_01_city_frame_and_yards.py at 2,413 lines; commons 946/859/853.

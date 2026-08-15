@@ -1642,6 +1642,22 @@ def test_groves_where_possible_passes_when_windward_is_blocked():
     assert "groves_where_possible" not in f(M)
 
 
+def test_groves_where_possible_tolerates_a_yard_strip_shaded_windward_side():
+    """A farm whose windward clump seat lands on a threshing yard's DRYING STRIP (the 11px band
+    below the yard - which the avoid center-box test deliberately cannot see) is legitimately
+    grove-less. Deterministic cover for the yard-strip rejection in clump_clear: before feature
+    024's per-check split this branch was reached only incidentally via the mega-segment's full
+    replay (same shape as the feature-022 manor-walls precedent)."""
+    houses = [_farmhouse(300 + 60 * i, 400) for i in range(12)]
+    dm = 13 * 46 / 44.0  # minimal-clump depth for the 46px farmhouse (mirrors min_clump)
+    cy = 400 - (28 / 2 + dm / 2 + 1.5)  # the windward-"N" clump seat's center
+    # yard 30px above the seat: outside the avoid box (30 >= (dm+26)/2+7) but its strip center
+    # (yd.y + h/2 + 11) sits 6px from the seat, well inside the strip test
+    yards = [yard(300 + 60 * i, cy - 30, of=(300 + 60 * i, 400)) for i in range(12)]
+    M = {"meta": {"scale": "village", "windward": "N"}, "houses": houses, "threshing_yards": yards, "groves": []}
+    assert "groves_where_possible" not in f(M)
+
+
 def _nuc_grid(n=12):
     return [_farmhouse(300 + 40 * (i % 6), 400 + 40 * (i // 6)) for i in range(n)]
 

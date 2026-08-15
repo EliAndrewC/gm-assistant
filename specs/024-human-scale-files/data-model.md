@@ -1,22 +1,29 @@
 # Data Model: Human-Scale Files (024)
 
-## Package layout (target state)
+## Package layout (AS BUILT - see research.md R13 for why it differs from the projection)
 
-| module | contents | source lines (monolith) | size bound |
-|---|---|---|---|
-| `check_village/__init__.py` | generated explicit re-exports, original definition order | n/a | small |
-| `check_village/__main__.py` | CLI entry (old `__main__` block via `main()`) | 35566-35602 | small |
-| `check_village/common_01_spatial.py` | geometry/spatial helpers, GridIndex, hull/gap math | ~1-1360 (contiguous cut at a def boundary) | ≤ ~1,500 |
-| `check_village/common_02_policy.py` | overlap matrix + label taxonomy tables, theater/fire/ward/lane helpers | ~1361-2138 | ≤ ~1,500 |
-| `check_village/common_03_capacity.py` | crop/capacity helpers, city_capacity, waiver consts, `_UnboundType`/`_UNBOUND`/`_kept` | ~2139-2630 | ≤ ~1,500 |
-| `check_village/segments_NN_<theme>.py` (~10-14 files) | segment functions, contiguous ranges | 2632-28021 | ≤ ~3,000 each |
-| `check_village/registry.py` | `_GateSeg`, `GATE_SEGMENTS`, `META_CHECKS`, `_SEG_DEPS` build loop | 28024-35352 | EXCEEDS - inline clause-13 justification (ordered data) |
-| `check_village/driver.py` | `gate()`, `_dir8`, twin helpers, `main()` | 35355-35565 | small |
-| `check_village/CLAUDE.md` | index: one line per module, "look here when" | new | small |
-
-Exact `common_*` cut lines and segment-file ranges are computed by `split_package.py`'s census
-and recorded in the package CLAUDE.md; the invariant is CONTIGUITY (concatenation in file order
-reproduces monolith definition order) and every cut lands on a top-level statement boundary.
+| module | contents | lines |
+|---|---|---|
+| `__init__.py` | docstring, the monolith's legacy import block (40 names), explicit re-exports, `__all__` | 121 |
+| `__main__.py` | CLI (`python3 -m check_village`, `--capacity`) | 38 |
+| `common_01_geometry.py` | types, `load`/`rect_corners`/hulls, overlap+label taxonomy tables, size constants | 946 |
+| `common_02_overlap_policy.py` | matrix engine, `GridIndex`, ring-road/theater/fire helpers, torii/dojo consts | 859 |
+| `common_03_capacity.py` | street/lane/crop helpers, `DEFAULT_MANIFEST`, kind tables, `city_capacity`, `_UNBOUND`/`_kept` | 853 |
+| `segments_01_city_frame_and_yards.py` | segs 0000-0096 | 2,413 |
+| `segments_02_capital_and_walls.py` | segs 0097-0133_030 | 2,358 |
+| `segments_03_structures_and_wards.py` | segs 0133_031-0267 | 2,397 |
+| `segments_04_homesteads.py` | segs 0268-0285_091 | 2,363 |
+| `segments_05_fields_and_funerary.py` | segs 0285_092-0333 | 2,345 |
+| `segments_06_ways_and_bridges.py` | segs 0334-0409 | 2,339 |
+| `segments_07_water.py` | segs 0410-0512 | 2,348 |
+| `segments_08_town_and_fire.py` | segs 0513-0554 | 2,271 |
+| `segments_09_justice_and_tanning.py` | segs 0555_000-0562_042 | 1,478 |
+| `segments_10_city_battery_a.py` | segs 0563_000-0563_125 | 1,958 |
+| `segments_10_city_battery_b.py` | segs 0563_126-0563_251 | 1,707 |
+| `segments_10_city_battery_c.py` | segs 0563_252-0563_376 | 2,324 |
+| `segments_11_polders_and_edges.py` | segs 0564-0594 | 1,366 |
+| `registry.py` | `_GateSeg`, `GATE_SEGMENTS` (1,375 rows), `META_CHECKS`, `_SEG_DEPS` - clause-13 justified | 8,420 |
+| `driver.py` | `gate()`, twin detector, `main()` | 224 |
 
 ## Split tooling data shapes
 
