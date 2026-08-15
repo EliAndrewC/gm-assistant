@@ -163,23 +163,32 @@ These are the failure modes that have actually cost this project time. They are 
 - **A green gate is not a good map.** A connector re-shape once deleted a well and a farmhouse and
   the gate passed it. Diff the manifest's feature counts against the previous run.
 
-## 7. Iteration cost - the budget, measured
+## 7. Iteration cost - measured, dated, and tracked
 
 The GM's standing constraint: *the difference between 5 minutes and 50 minutes to implement a change
-is huge, and inefficient loops have been the single biggest stumbling block.* Measured on this
-container, 2026-08-15:
+is huge, and inefficient loops have been the single biggest stumbling block.*
 
-| Loop | Cost | When to run it |
-|---|---|---|
-| Generate + gate ONE map | **14.7 s** | the inner loop - almost every iteration should be this |
-| Cohort of 4 | 44 s | quick check that a fix generalizes |
-| Cohort of 24 | ~4.4 min | before claiming an archetype is done |
-| Hand-authored pool sweep (`test_villages.py -n auto`) | 40 s | after ANY engine change, to prove byte-identity |
-| Full gate (`make done`, 2863 tests) | **4 min 9 s** | once, at the end, in the background |
+**The numbers live in [`timings.md`](timings.md), not here** - one dated block per measurement,
+appended by `python3 timings.py`. They are deliberately NOT duplicated into this plan, because a
+number written in two places eventually disagrees with itself, which is exactly how the skill's
+CLAUDE.md came to claim a "~2 to 2.5 minute" sweep long after it had passed four minutes.
 
-**Design rule that follows:** if a change can only be tested by a multi-minute run, the loop is
-wrong and fixing the loop comes first. Reach for the smallest artifact that can show the defect -
-one seed, one fall, one stage - and only widen once it is fixed. The gate is proof, not a probe.
+**Every benchmark records its BREAKDOWN, not just its total** (GM, 2026-08-15). A total says a loop
+is slow; only the parts say what to do about it. This is Amdahl's law as a working rule: a phase
+worth optimizing is one that dominates its parent, and a phase at 5% cannot be worth optimizing no
+matter how badly it is written. The breakdown is coarse on purpose - phases, not functions.
+Function-level profiling is the right tool once a phase is the identified target, and the wrong tool
+for a standing record that has to stay cheap enough to re-run.
+
+Three rules follow, and they bind:
+
+- **If a change can only be tested by a multi-minute run, the loop is wrong and fixing the loop comes
+  first.** Reach for the smallest artifact that can show the defect - one seed, one fall, one stage -
+  and widen only once it is fixed. The gate is proof, not a probe.
+- **Re-measure and append a block** after performance work, after adding a tier or archetype, and
+  whenever a loop starts to feel slow. Feeling slow is how the last drift went unnoticed for a week.
+- **These costs only grow as the pool grows.** Every conversion adds maps to sweep and checks to
+  run, so the budget has to be watched on the way up rather than rediscovered at the top.
 
 Wall-clock is dominated by model turn latency, not tool execution (78% in the last profile), so the
 count of sequential turns is the real cost. Batch independent work into one turn; background the

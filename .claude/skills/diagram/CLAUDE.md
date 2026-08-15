@@ -63,10 +63,14 @@ against code that no longer exists. Testing "does an edit to X invalidate?" ther
 baseline re-established (run until you see `CACHED`) before each trial, or the previous trial's
 cleanup produces the miss and you conclude the cache is broken when it is working perfectly.
 
-The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
-it - is **~2 to 2.5 minutes**. Do not read that number as the score for a perf change: it also
-carries every unit test (2,500+ and growing) and whatever rules other sessions added this week, so
-it drifts upward for reasons unrelated to generator speed. **Score a perf change by A/B-ing the
+**TIMINGS ARE TRACKED IN [`timings.md`](timings.md), MEASURED BY `python3 timings.py`** - one dated
+block per run, each benchmark carrying its BREAKDOWN as well as its total, so a slow loop can be
+attributed instead of merely noticed. Do not write fresh timings into prose here: this paragraph
+used to say the full sweep was "~2 to 2.5 minutes" and was still saying it on 2026-08-15, when the
+measured gate was past four. Nobody was wrong; nobody re-measured, and prose cannot tell you that.
+
+Read the gate's own total as a BUDGET rather than a score - it carries every unit test in the skill
+and grows as rules are added, for reasons unrelated to generator speed. **Score a perf change by A/B-ing the
 ONE map against HEAD**, which is how both passes were measured.
 
 **The one performance bug this engine keeps growing, and how to find it.** Every slow gen ever
