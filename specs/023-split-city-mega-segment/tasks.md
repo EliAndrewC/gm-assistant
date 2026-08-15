@@ -66,7 +66,7 @@ segment; AST census shows no function past the lines.
 
 - [X] T014 [P] Update the "The gate is a REGISTRY" section of diagram/CLAUDE.md (spec FR-009): the city battery is now per-statement segments under in-body scale guards (`_seg_0563_NNN__*`), the clause-12 debt is retired, adding-a-check guidance now points at the sub-segment convention for city/capital checks; one short paragraph, not a rewrite
 - [X] T015 [P] Close out 023 artifacts: research.md gains a short "what implementation taught" addendum ONLY if the sweeps caught a new dataflow hole (mirror 022 R9; skip if none), timings.md gets the final measured table (baseline vs post: import, replay, closure sizes, largest-function census); mark tasks.md checkboxes as each task verified
-- [ ] T016 Stop-work ritual: commit in the clone, run `scripts/sync-with-main.sh done` from the clone root
+- [X] T016 Stop-work ritual: commit in the clone, run `scripts/sync-with-main.sh done` from the clone root
 
 ## Dependencies
 
