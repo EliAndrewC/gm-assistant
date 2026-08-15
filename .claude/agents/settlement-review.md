@@ -11,7 +11,7 @@ village, town or provincial city drawn in its fields. **You did not draw it.**
 
 Your job is deliberately NARROW, and understanding the boundary is most of the job.
 
-**`check_village.py` already gates ~300 geometric rules on this map** - overlaps, corridor
+**`check_village/` already gates ~300 geometric rules on this map** - overlaps, corridor
 clearances, caste counts, water topology, field adjacency, well coverage, population arithmetic. If
 the main agent is showing you this map, that gate is **green**. Re-deriving those rules wastes the
 run and buries the findings that matter.
@@ -256,7 +256,7 @@ counterpart. Hyphens only - no em-dashes or en-dashes. Read EVERY drawn string.
 
 ## What to ignore
 
-- **Anything `check_village.py` gates.** Overlaps, clearances, counts, water topology, coverage
+- **Anything `check_village/` gates.** Overlaps, clearances, counts, water topology, coverage
   percentages, population arithmetic. It is green; say nothing about it.
 - **Settled choices** recorded in the gen docstring, the notes, or the Review log.
 - **Absent features the docs say a settlement of this tier does not have** (an unwalled town has no

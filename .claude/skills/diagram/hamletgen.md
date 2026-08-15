@@ -12,7 +12,7 @@ still describe the live method.
 
 The GM's framing: a Mode B map is currently made by hand - a session writes a `.gen.py` choosing the
 canvas, the sluice, the cluster center, the lane polylines, the pond rectangle, the woodland patches
-and the windbreak belt as literal coordinates, then iterates against `check_village.py` until the
+and the windbreak belt as literal coordinates, then iterates against `check_village/` until the
 gate goes green. It works. It is slow. *"It might be faster to create a scripted process."*
 
 The instruction was to try it on the simplest tier - a rice hamlet, with `pool/hamlets/ikegami` as
@@ -62,7 +62,7 @@ map like Ikegami contains:
 ## The evidence
 
 **A cohort of twenty hamlets from consecutive seeds, none of them looked at, all put through the
-full `check_village.py` gate.** That is the test that matters: one good map proves a person can
+full `check_village/` gate.** That is the test that matters: one good map proves a person can
 drive the script to a good map; a correct cohort proves the script is doing the work.
 
     python3 hamletgen.py --batch 20

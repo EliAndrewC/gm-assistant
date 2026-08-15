@@ -1,6 +1,6 @@
 # /diagram engine - dev loop
 
-Guidance for *working on the diagram engine* (`settlement.py`, `check_village.py`, the pool
+Guidance for *working on the diagram engine* (`settlement.py`, the `check_village/` package, the pool
 generators), as opposed to *invoking* `/diagram` to draw a map (that is `SKILL.md`). This file
 auto-loads whenever a session edits files in this directory - which is exactly when it applies.
 
@@ -18,7 +18,7 @@ numbers. A single map's regen + gate is ~1-7s; the heavy maps, after three optim
 (2026-08-03, 2026-08-04 and the 2026-08-08 seat memo), are Minami ~14.5s and Nagahara / Tango /
 Kikuta / Hoshizora ~10s solo CPU - down from 54s / 37s / 24s / 35s / 15s before them:
 
-    DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json
+    DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 -m check_village pool/<type>/<map>.json
 
 **...or let the CACHE skip the work entirely** (2026-08-08). `regen.py` regenerates a map only if
 something that map depends on actually changed, and prints `CACHED` or `REGENERATED` every time:
@@ -183,7 +183,7 @@ brought it back to 77s. Re-measure and update this number when it drifts again -
 is what makes a session mis-plan its loop.) So run the red/green loop against the ONE map
 (or fixture) that shows the defect, where cycles are near-free, and reserve the full sweep for AFTER
 that map is green. The sweep is MANDATORY, though, whenever shared engine code changed
-(`settlement.py`, `check_village.py`, `waterfields.py`): every pool map is a downstream artifact of
+(`settlement.py`, the `check_village/` package, `waterfields.py`): every pool map is a downstream artifact of
 the engine, so the sweep is what proves "no other map regressed" instead of hoping it.
 Anti-patterns on record: the scale-bar feature used the full suite as its FIRST check of an engine
 change - a failure that would have surfaced in ~6s on one map surfaced 17 minutes in; the
@@ -606,7 +606,7 @@ should not overlap with X'."* That is now a solved problem, and this is the whol
 to do.
 
 **One registry, and everything follows from it.** A new footprint feature goes in
-`_OVERLAP_STRUCTS` (check_village.py) - or, if it is MEANT to overlap something, in
+`_OVERLAP_STRUCTS` (check_village/common_01_geometry.py) - or, if it is MEANT to overlap something, in
 `_OVERLAP_EXEMPT` with the reason. You cannot forget: `every_feature_classified_for_overlap` fires
 when a generator emits a feature key nobody classified. Membership alone then gates the feature off
 **fifteen hazards** - the wall, the moat, the road, streets and alleys, streams, channels, the
@@ -788,7 +788,7 @@ Profile before guessing (`cProfile` around `check_village.gate` on `tango.json`,
 2026-07-25 found `city_fan_heads_quilted` testing ~3,000 canal-side samples against EVERY plot
 polygon and ditch (14M `seg_dist` calls, ~58% of a 17s city gate) and `structures_clear_of_dry_plots`
 testing every structure against every dry plot (3.5M `segments_cross` calls). Both were fixed with
-`GridIndex` (a uniform-grid spatial index at the top of `check_village.py`): insert each feature
+`GridIndex` (a uniform-grid spatial index in `check_village/common_02_overlap_policy.py`): insert each feature
 under the cells its influence bbox touches, query the cell, then run the SAME exact test on the few
 candidates. Result: Tango 17.3s -> 2.9s, whole-pool gate 34.1s -> 11.8s, `make done` ~2min -> 77s,
 with **byte-identical verdicts on all 695 manifests** (pool + regression corpus).
@@ -895,7 +895,7 @@ buys and how to work with it:
 - **The regression replay runs targeted** (`test_regressions.py`): each fixture verifies only its
   `_regression.fires` (meta names fall back to the full gate). This is what took the 210
   frozen-city fixtures from ~480 s to ~58 s serial. The fixture format is unchanged.
-- **Adding a check**: write a new `_seg_NNNN__<name>` -style function next to its neighbors (body
+- **Adding a check**: write a new `_seg_NNNN__<name>` -style function next to its neighbors, in whichever `check_village/segments_*` file covers its theme (`check_village/CLAUDE.md` is the index) (body
   reads its inputs as keyword params defaulting to `_UNBOUND`, returns `_kept(locals(), <names it
   binds>)`) and add its `_GateSeg` row at the right position in `GATE_SEGMENTS` - the row's
   `checks` names what it emits, `needs` what it reads from earlier segments, `writes` what it
@@ -959,7 +959,7 @@ always the same: a rule gated on an OPTIONAL declaration that almost nothing dec
 the lines are covered while other maps never reach them. What catches it is asking, per map, whether
 the check appears in the output at all:
 
-    python3 check_village.py pool/<type>/<map>.json | grep -c "<check_name>"     # 0 = never ran
+    python3 -m check_village pool/<type>/<map>.json | grep -c "<check_name>"     # 0 = never ran
 
 Run that across the pool for any check whose body sits behind `if meta.get(...)` or
 `if <thing> is not None:`. A `0` on a map that plainly has the feature is the bug.
@@ -985,7 +985,7 @@ ambushing the next person to write a test.
 ## Placement and its check must read the SAME manifest source
 
 A recurring engine trap (footbridges 2026-07-22; recorded in [`settlements.md`](settlements.md)
-under "PLANK BRIDGES"): the generator in `settlement.py` and the validator in `check_village.py`
+under "PLANK BRIDGES"): the generator in `settlement.py` and the validator in `check_village/`
 must classify terrain from the SAME data, or they disagree and a feature the generator dropped is
 demanded by the check (or vice versa). Read the MANIFEST fields (`M["fields"]` outlines +
 `M["dry_plots"]`), NOT engine-internal blocking lists like `self.field_polys` that some gens leave
