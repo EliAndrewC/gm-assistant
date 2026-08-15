@@ -247,6 +247,25 @@ have caught: the change altered geometry an existing test depended on, and the p
     python3 -m pytest test_settlement.py test_checks.py -q -n auto --no-cov    # the files you touched, WHOLE
     make done                                                                  # once, backgrounded, not watched
 
+### Probe vs survey: when `-x` pays (GM 2026-08-15)
+
+Every test run is one of two things, and fail-fast is right for exactly one of them:
+
+- **A PROBE** - "did anything break?", and you will fix whatever surfaces one at a time. Add `-x`:
+  the first failure arrives in seconds and you were going straight back to the code anyway. This is
+  the mid-iteration whole-file run after an engine change.
+- **A SURVEY** - you need the failure SET to scope a problem: how far did this ripple, is this one
+  bug or five? Run everything, no `-x`. The pattern of failures is the diagnostic.
+
+The decision follows from RERUN COST: when a rerun is cheap, `-x` costs nothing; when a rerun
+costs minutes, one complete run beats N fail-fast runs. That is why `make done` stays
+report-everything (the GM's 2026-07-25 decision - every phase runs, all failures report together,
+fix them all, re-run once) and why the coverage gate could not take `-x` anyway - coverage needs
+the full run. Two caveats: a `-x` run that fails says nothing about the tests it never reached, so
+it never substitutes for the whole-file pass before the gate - it is for iterating, not for
+clearing; and under `-n auto`, xdist stops soon after the first failure rather than instantly,
+which is still most of the saving.
+
 ## Ask the ENGINE where a feature fits - do not guess coordinates
 
 When a map change ripples (an avenue shortens, ground frees, a pack seats more houses, a well goes
