@@ -7031,3 +7031,36 @@ def test_bund_beans_drop_beads_buried_by_a_later_plot():
     assert [b for b in both if b not in alone]  # the filler's own beads survive
     # the segment-distance helper's degenerate branch: a zero-length segment is a point
     assert _seg_d(5.0, 5.0, (1.0, 1.0), (1.0, 1.0)) == pytest.approx(math.hypot(4.0, 4.0))
+
+
+def test_bund_beans_drop_beads_under_the_ditch_net():
+    # a channel running down the host's east bund (x=400): its stroke draws late, over every
+    # plot and bead, so the beads along that edge are buried under water paint and dropped -
+    # the record-honesty half of the azemame fix (GM 2026-08-15). The 1-point channel is
+    # unpaintable and must be skipped, not crash.
+    import random as _random
+
+    from waterfields import _bund_beans
+
+    host = {"poly": [(200.0, 200.0), (400.0, 200.0), (400.0, 400.0), (200.0, 400.0)]}
+    chan = {"pts": [(400.0, 190.0), (400.0, 410.0)], "w": 8.0, "w_tail": 4.0}
+    alone = _bund_beans(_random.Random(0), [host], frac=1.0)
+    both = _bund_beans(_random.Random(0), [host], frac=1.0, channels=[chan, {"pts": [(0.0, 0.0)], "w": 4.0}])
+    assert [b for b in alone if b[0] == 400.0]  # the east edge was beaded
+    assert not [b for b in both if b[0] == 400.0]  # ...and dropped under the stroke
+    assert [b for b in both if b[0] != 400.0] == [b for b in alone if b[0] != 400.0]  # others untouched
+
+
+def test_draw_comb_field_drops_beads_in_pond_water():
+    # the draw-site half of the water-honesty rule: beads inside the source pond's ellipse or a
+    # pocket pond's are dropped BEFORE the bead line draws and records, so dots and manifest agree
+    from waterfields import build_comb
+
+    s = Settlement(W=1400, H=1400, seed=7)
+    s.meta(name="Pw", scale="town", ftpx=1, down_deg=90)
+    net = build_comb(1400, 1400, (700, 200), 7, down_deg=90, field_fall=400)
+    net["brook"] = []
+    net["bund_beans"] = [(700.0, 1000.0), (300.0, 300.0), (500.0, 180.0)]
+    s.M["field_ponds"] = [{"x": 300.0, "y": 300.0, "rx": 20.0, "ry": 15.0}]
+    s.draw_comb_field(net, "f1", {"kind": "pond", "pond": (700, 1000, 60, 40)})
+    assert s.M["fields"][-1]["bund_beans"] == [[500.0, 180.0]]

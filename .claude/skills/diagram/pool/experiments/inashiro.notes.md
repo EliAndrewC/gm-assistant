@@ -75,3 +75,7 @@ pipeline's, and it is the same order a person follows:
   its own.
 - The **lane stand-off** is wider than an authored map's, because `LANE_CLEARANCE` is set to work
   around the engine's "placement tests a different footprint than the one drawn" debt.
+
+- 2026-08-15 (bead recolor + water-honesty review): known residue - the pocket pond at (2144, 1724)
+  has the margin-drain stroke and some hinterland tufts painting over its fill. Logged in
+  future-work.md ("Pocket ponds carry ink-on-water of their own"); not part of the bead delta.

@@ -3190,6 +3190,22 @@ class Settlement:
             if p.get("low"):
                 self.M.setdefault("wet_plots", []).append(_centroid(p["poly"]))
         self.bund_junctions(net["plots"], name)
+        # WATER-HONEST BEADS, the draw-site half (GM 2026-08-15: "fix the water-buried beads so
+        # the record stays honest"; settlement-review found 40 of Inashiro's 727 recorded beads
+        # invisible under water paint). `_bund_beans` already drops plot-buried beads and beads
+        # under the ditch net's late strokes; the POND paint is only known here. The flavor pass
+        # runs first (moved up from the tail of this method - its pocket ponds paint over a plot's
+        # interior, so their geometry must exist before the bead line commits; it draws from its
+        # own seeded rng, so the move ripples no stream), then every bead inside the source pond
+        # or a pocket pond is dropped BEFORE drawing and recording, so dots and manifest agree.
+        self._paddy_features(net)
+        _bw: list[tuple[float, float, float, float]] = []
+        if source.get("kind") == "pond":
+            _bwx, _bwy, _bwrx, _bwry = source["pond"]
+            _bw.append((_bwx, _bwy, _bwrx + 3.0, _bwry + 3.0))  # +3: the rim stroke and a bead radius
+        _bw += [(fp["x"], fp["y"], fp["rx"] + 3.0, fp["ry"] + 3.0) for fp in self.M.get("field_ponds") or []]
+        if _bw:
+            net["bund_beans"] = [q for q in net["bund_beans"] if all(((q[0] - _wx) / _wrx) ** 2 + ((q[1] - _wy) / _wry) ** 2 > 1.0 for _wx, _wy, _wrx, _wry in _bw)]
         beads = "".join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
         self.add(f'<g opacity="0.85">{beads}</g>')
         sluice = net["channels"][0]["pts"][0]
@@ -3404,7 +3420,6 @@ class Settlement:
                     "w": 2.5,
                 }
             )
-        self._paddy_features(net)
         return cast("list[Pt]", net["envelope"])
 
     # ---- feature 012: deliberate non-rice features the paddy tiles around --------------------------------

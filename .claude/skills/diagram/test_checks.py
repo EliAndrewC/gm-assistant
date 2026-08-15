@@ -11305,3 +11305,32 @@ def test_bund_beans_on_bunds_survives_geometry_far_off_the_canvas():
     # canvas on insert, so an off-map ring is skipped (it is not visible ground - a bead
     # claiming to sit on it still fires) instead of allocating billions of grid cells
     assert "bund_beans_on_bunds" in f(_bb_M([[9000000, 300]], [[[8999900, 200], [9000100, 200], [9000100, 400], [8999900, 400]]]))
+
+
+def test_bund_beans_on_bunds_fires_on_a_bead_under_the_ditch_nets_stroke():
+    # the ditch net draws LATE - over bund and bead alike - so a bead inside a late stroke's
+    # drawn band is buried ink: the record attests a bead nobody can see
+    M = {**_bb_M([[200, 300]], [_BB_HOST]), "drawn_channels": [{"pts": [[200, 180], [200, 420]], "late": True, "w0": 8.0, "w1": 8.0}]}
+    assert "bund_beans_on_bunds" in f(M)
+
+
+def test_bund_beans_on_bunds_ignores_early_water_and_the_banks():
+    # a non-late stroke composites UNDER the plots, so it cannot bury a bead; a 1-point stroke
+    # is unpaintable; and a bead 5px off an 8px stroke's centerline rides the BANK, not the water
+    M = {
+        **_bb_M([[200, 300]], [_BB_HOST]),
+        "drawn_channels": [
+            {"pts": [[200, 180], [200, 420]], "late": False, "w0": 8.0, "w1": 8.0},
+            {"pts": [[205, 180]], "late": True, "w0": 8.0, "w1": 8.0},
+            {"pts": [[205, 180], [205, 420]], "late": True, "w0": 8.0, "w1": 8.0},
+        ],
+    }
+    assert "bund_beans_on_bunds" not in f(M)
+
+
+def test_bund_beans_on_bunds_fires_on_a_bead_in_pond_water():
+    # the source pond and a pocket pond both paint water over the bead's ground; a degenerate
+    # pond thinner than the tolerance cannot bury anything (the guard, not a verdict)
+    assert "bund_beans_on_bunds" in f({**_bb_M([[200, 300]], [_BB_HOST]), "pond": [200, 300, 30, 20]})
+    assert "bund_beans_on_bunds" in f({**_bb_M([[200, 300]], [_BB_HOST]), "field_ponds": [{"x": 200, "y": 300, "rx": 30, "ry": 20}]})
+    assert "bund_beans_on_bunds" not in f({**_bb_M([[200, 300]], [_BB_HOST]), "pond": [200, 300, 1.5, 1.5]})
