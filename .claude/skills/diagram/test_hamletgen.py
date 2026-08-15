@@ -26,6 +26,21 @@ if HERE not in sys.path:
 import hamletgen as hg  # noqa: E402
 from settlement import point_in_poly, seg_dist  # noqa: E402
 
+
+def test_place_wells_never_clusters_two_wells_inside_the_spacing_floor():
+    """The greedy coverage sort (2026-08-15) pops FAR seats first, so the 170 px spacing guard can
+    only fire when every seat the engine will accept sits beside an existing well. Build exactly
+    that: `well_at` accepts only a small disc, so after the first (central) well every acceptable
+    candidate is inside the spacing floor and must be skipped - one well places, never a clustered
+    pair (`wells_not_clustered` is the rule the guard exists for)."""
+    from types import SimpleNamespace
+
+    houses = [{"x": 500, "y": 500}, {"x": 520, "y": 500}, {"x": 500, "y": 520}, {"x": 520, "y": 520}]
+    s = SimpleNamespace(well_at=lambda x, y: math.hypot(x - 510, y - 510) < 60.0)
+    plan = SimpleNamespace(spec=SimpleNamespace(households=12), ftpx=1.0)
+    assert hg.place_wells(s, plan, houses) == 1  # type: ignore[arg-type]
+
+
 # A unit square field envelope, big enough for the seat math to be readable.
 SQUARE: list[tuple[float, float]] = [(400.0, 400.0), (1000.0, 400.0), (1000.0, 1000.0), (400.0, 1000.0)]
 
