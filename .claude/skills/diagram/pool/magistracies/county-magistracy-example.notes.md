@@ -5,6 +5,8 @@ placer ([`../compound.py`](../../compound.py), feature 008): `county_magistracy_
 declares a generic county magistracy entirely in FEET (envelope, the reserved court-spine,
 and buildings sized in feet with wall tags), and `place()` + `emit_svg()` compose it.
 
+**Program type**: magistrate's manor (county magistracy) - the generic worked example.
+
 Regenerate: `python3 pool/magistracies/county-magistracy-example.gen.py` (from the skill dir).
 
 Purpose: demonstrate that the toolchain can get the COMPOSITION right - buildings ring the

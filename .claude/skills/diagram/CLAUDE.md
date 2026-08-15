@@ -1117,7 +1117,8 @@ iteration budget - is [`migration-plan.md`](migration-plan.md). **Update its sta
 finishing any conversion.**
 
 [`hamletgen.md`](hamletgen.md) is the writeup; [`hamletgen.py`](hamletgen.py) is the generator and
-[`pool/experiments/`](pool/experiments/) its demo maps. It remains ADDITIVE - the hand-authored pool
+[`pool/hamlets/`](pool/hamlets/) holds its demo maps beside the hand-authored hamlets (the pool is
+foldered by tier, not by method; `meta.generated_by` marks a scripted map). It remains ADDITIVE - the hand-authored pool
 is held byte-identical through every engine change, and a session drawing anything but a
 `valley_paddy` hamlet still follows `settlements.md`.
 
