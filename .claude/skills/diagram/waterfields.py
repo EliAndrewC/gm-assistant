@@ -2234,6 +2234,30 @@ def build_polder(
     # along most of its run and the bunds it was added to clear stayed in the stroke. The widths a
     # lift measures against have to be the widths the ditch is drawn at, which are the ones recorded
     # on its own channel.
+    # A RING THAT CLOSES ON A SHORT STUB MAKES AN ACUTE TURN, and water does not (2026-08-15).
+    # The perimeter feeder is built by walking the block's sides, so on some edge-wander draws its
+    # last vertex lands a short way back ALONG the run it just made - measured on a scripted polder:
+    # ...(2093,1958) -> (2059,1838) -> (2120,1837), a 61 px stub doubling back at 75 degrees, which
+    # `water_channels_obtuse_turns` reads (correctly) as impossible topology. A trailing stub carries
+    # no water anywhere the run has not already been, so it is dropped rather than swept: rounding it
+    # would keep the hairpin and merely soften its corner.
+    for _c in channels:
+        _pts = _c.get("pts") or []
+        while len(_pts) >= 3:
+            _a, _b, _cc = _pts[-3], _pts[-2], _pts[-1]
+            _v1 = (_a[0] - _b[0], _a[1] - _b[1])
+            _v2 = (_cc[0] - _b[0], _cc[1] - _b[1])
+            _n1 = math.hypot(*_v1) or 1.0
+            _n2 = math.hypot(*_v2) or 1.0
+            _ang = math.degrees(math.acos(max(-1.0, min(1.0, (_v1[0] * _v2[0] + _v1[1] * _v2[1]) / (_n1 * _n2)))))
+            # 90 EXACTLY, which is the check's own boundary ("ACUTE (<90 deg)") rather than a
+            # margin of my choosing. Enokida's ring closes on a trailing turn of precisely 90.0 - a
+            # right-angle corner, which is what a surveyed block does and which the check allows -
+            # and a 95 degree threshold trimmed it, moving a shipped map for nothing.
+            if _ang >= 90.0 or _n2 > 0.75 * _n1:
+                break
+            _pts.pop()
+        _c["pts"] = _pts
     _dw = next((float(_c.get("w", 5.0)) for _c in channels if _c.get("role") == "drain"), 5.0)
     _dwt = next((float(_c.get("w_tail", _dw)) for _c in channels if _c.get("role") == "drain"), _dw)
     for _p in plots:

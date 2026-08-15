@@ -459,12 +459,41 @@ the one the previous pass could not find:
   had and that was never carried across - a polder's ring canal hugs the envelope edge and its outer
   stretches lie on the open margin where the village stands.
 
-**The one left is the known CENTRE-vs-FOOTPRINT debt, not anything polder-shaped.** On fall 180 seed
-19 a draft byre comes to rest 33 px off the ring canal's centreline - `_fits` tests its CENTRE
-against the corridor, so it passes - and its drawn glyph laps the water (`no_structure_on_channel`).
-Widening the reserve to 48 px was tried and made things WORSE (10 of 12): it just pushes byres into
-other bad seats. The real fix is the one this skill's CLAUDE.md has prescribed for a while - make the
-placer test the footprint it draws - and it belongs with that work, not here.
+**THE LAST ONE IS GONE TOO, and it was two lists rather than one.** The byre sat on a water line
+that my corridor loop never reserved, for two compounding reasons: the loop tested each segment's
+MIDPOINT (so a segment straddling the envelope, half of it out on the margin where the village
+stands, reserved nothing), and it iterated `field_ditches` only - while the line the byre sat on was
+in `M["channels"]`, the inlet link and topology hairline `draw_comb_field` records. Reserving a
+segment unless BOTH ends are inside, over both lists, closed it. **12 of 12 cardinal polders**, and
+then **48 of 48** over 8 seeds x 4 bearings plus the household band's ends.
+
+**Then the cohort said no, and it was right.** `polder_grid` was promoted into `ROLLED_ARCHETYPES`
+(with polder falls constrained to the four cardinals - a wei-tian polder is a SURVEYED orthogonal
+module laid to the survey grid, which is what the archetype IS, not a workaround for
+`polder_fills_its_bbox`). The fitted cohort fell to **19 of 24**. `cohort_audit` varies HOUSEHOLDS
+per seed and rolls water_sink, cluster_shape and lane_skeleton; the 48-map sweep pinned households
+at 16 and took the defaults. A fixed-parameter sweep is not evidence of consistency - the same
+lesson the held-out cohort taught the valley tier three times, now taught by the fitted one.
+
+So `polder_grid` is **demoted back to opt-in** and the bar for promotion is a green COHORT, not a
+green sweep. The valley tier is 24/24 and 12/12 again.
+
+**What is left on the polder, all of it surfaced by the cohort's varied conditions:**
+
+- `watercourse_ends_reach_water` on ~5 maps. The ring canal's inlet end finishes ~17.6 px from the
+  drawn inlet channel, against a 12 px touch tolerance. The cause is the inlet's BOW: the channel is
+  `[pond, mid, din]` with `mid` offset 20 px perpendicular (which `channel_winds_gently` requires -
+  a dead straight cut fails it), so the run passes NEAR the ring head rather than through it. The
+  reservoir is now seated correctly against all three rules that bind it - outside the crop, uphill
+  of the field, and anchored on the main's LAST point, which is the end `draw_comb_field` draws from
+  - and the residue is the bow, not the seat. Do not move the pond again; the next attempt should
+  look at how the mid is offset.
+- `fields_clear_of_road` and `polder_fills_its_bbox`, one map each, not yet diagnosed.
+
+**A note on method, since this stretch cost several reversals:** the reservoir was moved five times
+before the constraint set was written down (outside the crop / uphill / anchored on the end the
+engine draws from). Seating it against two of the three and testing produced a different failure each
+time. Enumerate what binds a feature BEFORE moving it.
 
 Diagonal bearings additionally fail `polder_fills_its_bbox`, which is a fair statement about the
 archetype - a wei-tian polder is a SURVEYED orthogonal block and a diagonal one does not fill its own
