@@ -24,8 +24,15 @@ Kikuta / Hoshizora ~10s solo CPU - down from 54s / 37s / 24s / 35s / 15s before 
 something that map depends on actually changed, and prints `CACHED` or `REGENERATED` every time:
 
     python3 regen.py pool/provincial-cities/minami.gen.py    # ~15s cold, 1.1s cached
-    python3 regen.py pool/*/*.gen.py                         # the whole pool
+    python3 regen.py pool/*/*.gen.py                         # the whole pool, fanned out
     python3 regen.py --no-cache pool/towns/ubame.gen.py      # force the work
+
+Multi-map runs fan out across worker processes (cpus minus 2; `--jobs 1` for serial), as does
+`cohort_audit.py` - since 2026-08-15, when the timings ledger showed the serial cohort was the
+biggest available win. Wall clock for a fanned-out sweep is bounded by its single slowest map, so
+per-map cost is what remains worth optimizing. Parallelism cannot change a verdict (each map is a
+pure function of its spec; `gencache.store` publishes atomically), and the per-map output is
+captured in the worker and printed in order, so a parallel run reads like a serial one.
 
 The key covers the gen's bytes, the MODULE-LEVEL source of every engine module, the source of
 every function that map actually EXECUTED, every non-source file the run opened, and the
