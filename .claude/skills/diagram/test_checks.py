@@ -22,6 +22,7 @@ caught next time.
 import json
 import math
 import pathlib
+import sys
 
 import pytest
 
@@ -9540,7 +9541,11 @@ def test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key(
     this replaced fell behind twice."""
     M = _label_map("Temple of Benten", "martial_halls")
     assert "every_solid_feature_classified_for_labels" not in f(M)
-    monkeypatch.setattr(check_village, "_OVERLAP_STRUCTS", check_village._OVERLAP_STRUCTS + ("hawk_mews",))
+    # since feature 024 the gate is a package: each submodule that imported _OVERLAP_STRUCTS holds
+    # its own binding, so patch every holder, not just the package namespace
+    _new = check_village._OVERLAP_STRUCTS + ("hawk_mews",)
+    for _m in [m for m in list(sys.modules.values()) if getattr(m, "__name__", "").startswith("check_village") and hasattr(m, "_OVERLAP_STRUCTS")]:
+        monkeypatch.setattr(_m, "_OVERLAP_STRUCTS", _new)
     assert "every_solid_feature_classified_for_labels" in f(M)
 
 
