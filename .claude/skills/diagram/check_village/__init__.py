@@ -20,6 +20,45 @@ section; such checks below carry a brief `# WHY:` pointer to it. (Project policy
 rules record their why next to the rule - see CLAUDE.md "Generation Behavior".)
 """
 
+# the monolith bound these into its namespace via its own import block; tests and tools
+# reach them as check_village.<name>, so the package restores that surface verbatim (feature 024)
+import collections
+import json
+import math
+import sys
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, NamedTuple
+
+from settlement import (
+    BOUNDARY_STONE_CLEAR_FT,
+    EXECUTION_GROUND_DEAD_CLEAR_FT,
+    KIDO_TOWER_KEEPCLEAR,
+    LABEL_AIR_CAP,
+    WALL_DEFENSE,
+    _assert_not_main_tree,
+    box_gap,
+    bridge_carried_ways,
+    bridge_crossed_waters,
+    crop_boxes,
+    forest_frame_span,
+    kido_bar_deg,
+    label_aabb,
+    label_quad,
+    lane_runs,
+    lane_through_gate,
+    linear_tilt,
+    machi_mouths,
+    moat_current_at,
+    paddy_wet_rings,
+    rail_quad,
+    ring_touches,
+    sat_overlap,
+    torii_wall_conflicts,
+    trough_quad,
+    wellhead_quad,
+)
+from waterfields import BANK_MARGIN, drain_bank_clearance, hem_on_paddy, polyline_cum, supply_bank_clearance
+
 from .common_01_geometry import (
     _FIXTURE_MOUNTS,
     _LABEL_BY_KIND,
@@ -1555,6 +1594,46 @@ from .segments_11_polders_and_edges import (
 
 # explicit re-export for mypy --strict (no-implicit-reexport): the package IS the legacy surface
 __all__ = [
+    "collections",
+    "json",
+    "math",
+    "sys",
+    "Callable",
+    "Mapping",
+    "Sequence",
+    "Any",
+    "NamedTuple",
+    "BOUNDARY_STONE_CLEAR_FT",
+    "EXECUTION_GROUND_DEAD_CLEAR_FT",
+    "KIDO_TOWER_KEEPCLEAR",
+    "LABEL_AIR_CAP",
+    "WALL_DEFENSE",
+    "_assert_not_main_tree",
+    "box_gap",
+    "bridge_carried_ways",
+    "bridge_crossed_waters",
+    "crop_boxes",
+    "forest_frame_span",
+    "kido_bar_deg",
+    "label_aabb",
+    "label_quad",
+    "lane_runs",
+    "lane_through_gate",
+    "linear_tilt",
+    "machi_mouths",
+    "moat_current_at",
+    "paddy_wet_rings",
+    "rail_quad",
+    "ring_touches",
+    "sat_overlap",
+    "torii_wall_conflicts",
+    "trough_quad",
+    "wellhead_quad",
+    "BANK_MARGIN",
+    "drain_bank_clearance",
+    "hem_on_paddy",
+    "polyline_cum",
+    "supply_bank_clearance",
     "_FIXTURE_MOUNTS",
     "_LABEL_BY_KIND",
     "_LABEL_CLASSIFIED",
