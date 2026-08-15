@@ -6990,3 +6990,77 @@ def test_ring_upslope_refuses_a_seat_below_the_drain():
     ys = [h["y"] for h in s.M["houses"]]
     assert n == len(ys)
     assert all(y < 640 for y in ys), f"a household landed below the drain: {sorted(ys)[-3:]}"
+
+
+def test_draw_comb_field_records_rings_and_beads():
+    # the field record carries every plot ring IN DRAW ORDER plus the azemame bead points - the
+    # recording bund_beans_on_bunds reads (pdims compacts a plot to extents-and-a-centroid, which
+    # cannot express "this plot paints over that one's bund"). Recording is unconditional at this
+    # one draw site, which is what lets the check skip legacy manifests without going silently
+    # toothless on regenerated ones (GM 2026-08-15).
+    from waterfields import build_comb
+
+    s = Settlement(W=1400, H=1400, seed=5)
+    s.meta(name="Rb", scale="town", ftpx=1, down_deg=90)
+    net = build_comb(1400, 1400, (700, 200), 5, down_deg=90, field_fall=400)
+    net["brook"] = []
+    s.draw_comb_field(net, "f1", {"kind": "stream"})
+    fld = s.M["fields"][-1]
+    assert len(fld["plot_rings"]) == len(net["plots"])
+    assert fld["plot_rings"][0] == [[round(x, 1), round(y, 1)] for x, y in net["plots"][0]["poly"]]
+    assert fld["bund_beans"] == [[round(x, 1), round(y, 1)] for x, y in net["bund_beans"]]
+
+
+def test_bund_beans_drop_beads_buried_by_a_later_plot():
+    # two overlapping squares: the filler (appended last, like _fill_wedges' tiles) laps 60px
+    # onto the host, burying the host's east bund (x=400) under its fill. Beads laid along that
+    # stretch must be dropped (GM 2026-08-15: Inashiro's green dots floating mid-paddy), while
+    # the filler's own beads over the host's interior survive - the filler's stroke paints last,
+    # so it IS the visible bund. Seed 0 is pinned because it beads the host's east edge both runs
+    # (the R stream is positional per plot, so the pin is stable).
+    import random as _random
+
+    from waterfields import _bund_beans, _seg_d
+
+    host = {"poly": [(200.0, 200.0), (400.0, 200.0), (400.0, 400.0), (200.0, 400.0)]}
+    filler = {"poly": [(340.0, 150.0), (500.0, 150.0), (500.0, 450.0), (340.0, 450.0)]}
+    alone = _bund_beans(_random.Random(0), [host], frac=1.0)
+    both = _bund_beans(_random.Random(0), [host, filler], frac=1.0)
+    assert [b for b in alone if b[0] == 400.0 and 205 < b[1] < 395]  # host east edge WAS beaded
+    assert not [b for b in both if b[0] == 400.0 and 205 < b[1] < 395]  # ...and dropped when buried
+    assert [b for b in both if b not in alone]  # the filler's own beads survive
+    # the segment-distance helper's degenerate branch: a zero-length segment is a point
+    assert _seg_d(5.0, 5.0, (1.0, 1.0), (1.0, 1.0)) == pytest.approx(math.hypot(4.0, 4.0))
+
+
+def test_bund_beans_drop_beads_under_the_ditch_net():
+    # a channel running down the host's east bund (x=400): its stroke draws late, over every
+    # plot and bead, so the beads along that edge are buried under water paint and dropped -
+    # the record-honesty half of the azemame fix (GM 2026-08-15). The 1-point channel is
+    # unpaintable and must be skipped, not crash.
+    import random as _random
+
+    from waterfields import _bund_beans
+
+    host = {"poly": [(200.0, 200.0), (400.0, 200.0), (400.0, 400.0), (200.0, 400.0)]}
+    chan = {"pts": [(400.0, 190.0), (400.0, 410.0)], "w": 8.0, "w_tail": 4.0}
+    alone = _bund_beans(_random.Random(0), [host], frac=1.0)
+    both = _bund_beans(_random.Random(0), [host], frac=1.0, channels=[chan, {"pts": [(0.0, 0.0)], "w": 4.0}])
+    assert [b for b in alone if b[0] == 400.0]  # the east edge was beaded
+    assert not [b for b in both if b[0] == 400.0]  # ...and dropped under the stroke
+    assert [b for b in both if b[0] != 400.0] == [b for b in alone if b[0] != 400.0]  # others untouched
+
+
+def test_draw_comb_field_drops_beads_in_pond_water():
+    # the draw-site half of the water-honesty rule: beads inside the source pond's ellipse or a
+    # pocket pond's are dropped BEFORE the bead line draws and records, so dots and manifest agree
+    from waterfields import build_comb
+
+    s = Settlement(W=1400, H=1400, seed=7)
+    s.meta(name="Pw", scale="town", ftpx=1, down_deg=90)
+    net = build_comb(1400, 1400, (700, 200), 7, down_deg=90, field_fall=400)
+    net["brook"] = []
+    net["bund_beans"] = [(700.0, 1000.0), (300.0, 300.0), (500.0, 180.0)]
+    s.M["field_ponds"] = [{"x": 300.0, "y": 300.0, "rx": 20.0, "ry": 15.0}]
+    s.draw_comb_field(net, "f1", {"kind": "pond", "pond": (700, 1000, 60, 40)})
+    assert s.M["fields"][-1]["bund_beans"] == [[500.0, 180.0]]

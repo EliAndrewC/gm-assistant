@@ -11309,3 +11309,76 @@ def test_manor_walls_fire_when_a_way_ENDS_inside_the_compound():
     M["manors"] = [{"x": 600, "y": 300, "w": 290, "h": 200, "rot": 0, "label": "Magistrate's Manor"}]
     M["road"], M["road_width"] = [[0, 300], [600, 300]], 26  # terminates ON the manor center
     assert "manor_walls_clear_of_ways" in f(M)
+
+
+# ---- bund_beans_on_bunds: an azemame bead sits on a bund the finished paint SHOWS - never
+# floating in a later-drawn plot's water (GM 2026-08-15, Inashiro: "random green dots ...
+# scattered in the middle of flooded rice patties"). The wedge fillers lap their neighbors on
+# purpose and paint LAST, so the lapped stretch of the neighbor's bund stroke is buried under
+# their fill; a bead line laid there must be dropped by the placer and caught by the gate.
+def _bb_M(beads, rings):
+    return manifest(fields=[{**_field("f", 100, 100, 900, 900), "plot_rings": rings, "bund_beans": beads}])
+
+
+_BB_HOST = [[200, 200], [400, 200], [400, 400], [200, 400]]  # painted first
+_BB_FILLER = [[300, 150], [500, 150], [500, 450], [300, 450]]  # painted last, laps the host's east bund
+
+
+def test_bund_beans_on_bunds_fires_on_a_bead_buried_by_a_later_plot():
+    # a bead on the host's east bund (x=400) sits 100px inside the filler, which paints after
+    # its host - the bund stroke under it is not visible ground on the finished map
+    assert "bund_beans_on_bunds" in f(_bb_M([[400, 300]], [_BB_HOST, _BB_FILLER]))
+
+
+def test_bund_beans_on_bunds_fires_on_a_bead_in_open_ground():
+    # a bead near no bund at all (the bare fan floor)
+    assert "bund_beans_on_bunds" in f(_bb_M([[700, 700]], [_BB_HOST, _BB_FILLER]))
+
+
+def test_bund_beans_on_bunds_passes_beads_on_visible_bunds():
+    # the host's west bund (x=200) stands clear of the filler; and a bead on the FILLER's own
+    # west bund (x=300), though it lies deep inside the host, is legal - the filler paints
+    # last, so its stroke is the visible one and the bead reads as sitting on that seam
+    assert "bund_beans_on_bunds" not in f(_bb_M([[200, 300], [300, 300]], [_BB_HOST, _BB_FILLER]))
+
+
+def test_bund_beans_on_bunds_skips_manifests_without_the_recording():
+    # pre-2026-08-15 manifests record no plot_rings; regeneration adds them (the recording is
+    # unconditional at the one draw site - see test_draw_comb_field_records_rings_and_beads)
+    assert "bund_beans_on_bunds" not in f(_bb_M([[400, 300]], []))
+
+
+def test_bund_beans_on_bunds_survives_geometry_far_off_the_canvas():
+    # negative fixtures carry deliberately insane geometry; the index box is clamped to the
+    # canvas on insert, so an off-map ring is skipped (it is not visible ground - a bead
+    # claiming to sit on it still fires) instead of allocating billions of grid cells
+    assert "bund_beans_on_bunds" in f(_bb_M([[9000000, 300]], [[[8999900, 200], [9000100, 200], [9000100, 400], [8999900, 400]]]))
+
+
+def test_bund_beans_on_bunds_fires_on_a_bead_under_the_ditch_nets_stroke():
+    # the ditch net draws LATE - over bund and bead alike - so a bead inside a late stroke's
+    # drawn band is buried ink: the record attests a bead nobody can see
+    M = {**_bb_M([[200, 300]], [_BB_HOST]), "drawn_channels": [{"pts": [[200, 180], [200, 420]], "late": True, "w0": 8.0, "w1": 8.0}]}
+    assert "bund_beans_on_bunds" in f(M)
+
+
+def test_bund_beans_on_bunds_ignores_early_water_and_the_banks():
+    # a non-late stroke composites UNDER the plots, so it cannot bury a bead; a 1-point stroke
+    # is unpaintable; and a bead 5px off an 8px stroke's centerline rides the BANK, not the water
+    M = {
+        **_bb_M([[200, 300]], [_BB_HOST]),
+        "drawn_channels": [
+            {"pts": [[200, 180], [200, 420]], "late": False, "w0": 8.0, "w1": 8.0},
+            {"pts": [[205, 180]], "late": True, "w0": 8.0, "w1": 8.0},
+            {"pts": [[205, 180], [205, 420]], "late": True, "w0": 8.0, "w1": 8.0},
+        ],
+    }
+    assert "bund_beans_on_bunds" not in f(M)
+
+
+def test_bund_beans_on_bunds_fires_on_a_bead_in_pond_water():
+    # the source pond and a pocket pond both paint water over the bead's ground; a degenerate
+    # pond thinner than the tolerance cannot bury anything (the guard, not a verdict)
+    assert "bund_beans_on_bunds" in f({**_bb_M([[200, 300]], [_BB_HOST]), "pond": [200, 300, 30, 20]})
+    assert "bund_beans_on_bunds" in f({**_bb_M([[200, 300]], [_BB_HOST]), "field_ponds": [{"x": 200, "y": 300, "rx": 30, "ry": 20}]})
+    assert "bund_beans_on_bunds" not in f({**_bb_M([[200, 300]], [_BB_HOST]), "pond": [200, 300, 1.5, 1.5]})

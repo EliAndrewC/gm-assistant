@@ -75,3 +75,23 @@ data points for the fabric-first design:
   neighboring packs, so single-defect fixes rotate the defect population instead of shrinking it
   (three "dead cores" moved five times). Fabric-first should place service features and packs in
   one deterministic order per district, so a local edit stays local.
+
+## DONE: azemame record hygiene - water-buried beads (2026-08-15, same day)
+
+Resolved the day it was filed, on the GM's ask ("fix the water-buried beads so the record stays
+honest"). `_bund_beans` now drops beads under the ditch net's late strokes, `draw_comb_field` drops
+beads inside the source pond / pocket ponds (the flavor pass moved above the bead line so pocket
+ponds exist before beads commit), and `bund_beans_on_bunds` reads the painted truth from
+`drawn_channels` (post-clip strokes, late flag) / `pond` / `field_ponds`. Regression fixture:
+`pool/regressions/bund_beans_on_bunds_fires_on_water_buried_beads_inashiro.json`.
+
+## Pocket ponds carry ink-on-water of their own (settlement-review, 2026-08-15)
+
+Found while confirming the azemame water-honesty fix: Inashiro's pocket pond at (2144, 1724) has
+the field-foot margin drain stroke painting across its lower-left quadrant, and hinterland
+scrub/grass tufts drawn on top of its fill (the pond's lower half hangs outside the field envelope
+over hinterland ground, and the late drain + phase-5 scatter both lap it). Same principle the bead
+fix established - no ink over water, no water under ink - one class over: the pocket pond needs a
+keep-out the hinterland scatter and the late water honor (or `_plot_pond` should refuse a plot
+whose ellipse leaves the field envelope). Barely visible at fit zoom; logged rather than fixed
+because it is baseline-adjacent, not part of the bead delta.

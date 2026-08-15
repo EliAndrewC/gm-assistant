@@ -3190,6 +3190,22 @@ class Settlement:
             if p.get("low"):
                 self.M.setdefault("wet_plots", []).append(_centroid(p["poly"]))
         self.bund_junctions(net["plots"], name)
+        # WATER-HONEST BEADS, the draw-site half (GM 2026-08-15: "fix the water-buried beads so
+        # the record stays honest"; settlement-review found 40 of Inashiro's 727 recorded beads
+        # invisible under water paint). `_bund_beans` already drops plot-buried beads and beads
+        # under the ditch net's late strokes; the POND paint is only known here. The flavor pass
+        # runs first (moved up from the tail of this method - its pocket ponds paint over a plot's
+        # interior, so their geometry must exist before the bead line commits; it draws from its
+        # own seeded rng, so the move ripples no stream), then every bead inside the source pond
+        # or a pocket pond is dropped BEFORE drawing and recording, so dots and manifest agree.
+        self._paddy_features(net)
+        _bw: list[tuple[float, float, float, float]] = []
+        if source.get("kind") == "pond":
+            _bwx, _bwy, _bwrx, _bwry = source["pond"]
+            _bw.append((_bwx, _bwy, _bwrx + 3.0, _bwry + 3.0))  # +3: the rim stroke and a bead radius
+        _bw += [(fp["x"], fp["y"], fp["rx"] + 3.0, fp["ry"] + 3.0) for fp in self.M.get("field_ponds") or []]
+        if _bw:
+            net["bund_beans"] = [q for q in net["bund_beans"] if all(((q[0] - _wx) / _wrx) ** 2 + ((q[1] - _wy) / _wry) ** 2 > 1.0 for _wx, _wy, _wrx, _wry in _bw)]
         beads = "".join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
         self.add(f'<g opacity="0.85">{beads}</g>')
         sluice = net["channels"][0]["pts"][0]
@@ -3284,6 +3300,15 @@ class Settlement:
             "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
             "plots": pdims,
             "drain_hem": _hem_rings,
+            # THE PLOT RINGS, IN DRAW ORDER, plus the azemame bead points (GM 2026-08-15). `pdims`
+            # above deliberately compacts each plot to extents-and-a-centroid, but that record
+            # cannot express "this plot is painted OVER that one's bund" - `_fill_wedges`' fillers
+            # lap up to ~12 real ft onto a neighbor and paint last, and the bead line laid along
+            # the buried stretch surfaced as green dots floating mid-paddy on Inashiro. A check can
+            # only judge bead-on-visible-bund from the real rings in paint order, so they are
+            # recorded in full (bund_beans_on_bunds reads both; draw order IS list order).
+            "plot_rings": [[[round(vx, 1), round(vy, 1)] for vx, vy in p["poly"]] for p in net["plots"]],
+            "bund_beans": [[round(bx, 1), round(by, 1)] for bx, by in net["bund_beans"]],
         }
         if net.get("down_deg") is not None:
             _fld["down_deg"] = net["down_deg"]  # this fan's LOCAL fall (see build_comb)
@@ -3395,7 +3420,6 @@ class Settlement:
                     "w": 2.5,
                 }
             )
-        self._paddy_features(net)
         return cast("list[Pt]", net["envelope"])
 
     # ---- feature 012: deliberate non-rice features the paddy tiles around --------------------------------

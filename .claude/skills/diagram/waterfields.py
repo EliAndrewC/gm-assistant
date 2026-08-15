@@ -105,7 +105,12 @@ def aze_w(ftpx: float) -> float:
     return max(AZE_FT / ftpx, 0.5)
 
 
-BEAN_GREEN = '#7C9A4E'  # azemame (bund soybeans) - the beaded-bund accent
+BEAN_GREEN = '#2F6B35'  # azemame (bund soybeans) - the beaded-bund accent. Deep PINE green
+# (GM 2026-08-15): the old olive #7C9A4E sat between the rice green and the bund brown and read as
+# neither - the beads were nearly invisible at map zoom. A glyph rendering convention, not botany
+# (real soybean foliage is lighter): dark enough to punch against the pale rice, green enough to
+# still read as a plant against the near-black bund stroke. Picked from a 3-color ladder rendered
+# on Inashiro (hunter #355E3B grayed out, forest #1F4A28 read as black).
 
 
 # HAND-PILED EARTHWORK IS NEVER RULED (GM 2026-07-24). A farmer building a rectangular basin out of
@@ -448,6 +453,15 @@ def hem_to_bank(ring: Poly, dpts: Poly, down_deg: float, w0: float, w1: float) -
         shift = (need - gap) / lean
         out.append((round(q[0] - dv[0] * shift, 1), round(q[1] - dv[1] * shift, 1)))
     return out
+
+
+def _seg_d(px: float, py: float, a: Pt, b: Pt) -> float:
+    """Distance from a point to a segment (the same arithmetic several passes nest as a local
+    `sd`; module-level here because _bund_beans' burial filter needs it too)."""
+    vx, vy = b[0] - a[0], b[1] - a[1]
+    ll = vx * vx + vy * vy or 1.0
+    t = max(0.0, min(1.0, ((px - a[0]) * vx + (py - a[1]) * vy) / ll))
+    return math.hypot(px - a[0] - t * vx, py - a[1] - t * vy)
 
 
 def _pip(x: float, y: float, poly: Poly) -> bool:
@@ -1029,7 +1043,7 @@ def build_comb(
                 R, F, _bc_supply, W, H, dry_keepout, band=(dry_band[0] * 0.6, dry_band[1] * 0.6), g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift
             )  # thinner than the a-side hem: it only needs to cover the fork triangle, and a full-depth band crowds the farmhouse ring off the fan's visible edge
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
-    bund_beans = _bund_beans(R, plots, bean_frac)
+    bund_beans = _bund_beans(R, plots, bean_frac, channels=channels)
     # furrows_vary tells the checker whether to REQUIRE neighboring dry plots to differ in row direction: a
     # gentle-valley village spreads them (the patchwork quilt, default); a STEEP/terraced village narrows the
     # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
@@ -1675,12 +1689,61 @@ def _dry_fields(
     return plots
 
 
-def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spacing: float = 9.5) -> Poly:
+def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spacing: float = 9.5, tol: float = 1.0, channels: list[dict[str, Any]] | None = None) -> Poly:
     """AZEMAME (bund soybeans): sub-pixel at 1px=2ft, so drawn symbolically as a green BEAD
     line along a fraction of the paddy bunds. Returns bead center points; the caller draws
-    small BEAN_GREEN dots. ~`frac` of plots carry beaded bunds (not every bund had beans)."""
+    small BEAN_GREEN dots. ~`frac` of plots carry beaded bunds (not every bund had beans).
+
+    A bead is DROPPED when a plot drawn LATER than its host buries it deeper than `tol` px
+    (GM 2026-08-15, on Inashiro: green dots scattered mid-paddy). `_fill_wedges`' fillers
+    deliberately lap up to ~12 real ft onto a neighbor and paint last - the lapped stretch of
+    the neighbor's bund stroke is not visible ground on the finished map, so a bead line laid
+    along it surfaces as dots floating in the filler's water. Beads must land on the bunds the
+    finished paint actually shows, so each bead is tested against the plots that paint after
+    its host and dropped when buried. `tol` is bead-scale rather than bund-scale: a bead
+    within ~its own 1.4px drawn radius of the burying plot's edge still reads as sitting on
+    that plot's seam. The gate mirrors this at double the tolerance (bund_beans_on_bunds), so
+    a bead this filter allows cannot false-fire there through manifest rounding. The filter
+    runs after all draws from R, so dropping beads never ripples the RNG stream.
+
+    `channels` extends the same honesty to the ditch net (GM 2026-08-15, second pass): the net's
+    strokes draw LATE - over every plot and bead - so a bead within a stroke's local half-width
+    (tapering w -> w_tail along the run) + tol is buried under water paint and dropped. Pond
+    burial is filtered at the draw site (draw_comb_field), where the pond geometry lives."""
     beans = []
-    for p in plots:
+    boxes = [(min(q[0] for q in p["poly"]), min(q[1] for q in p["poly"]), max(q[0] for q in p["poly"]), max(q[1] for q in p["poly"])) for p in plots]
+
+    def buried(x: float, y: float, host: int) -> bool:
+        for j in range(host + 1, len(plots)):
+            bx0, by0, bx1, by1 = boxes[j]
+            if not (bx0 - tol <= x <= bx1 + tol and by0 - tol <= y <= by1 + tol):
+                continue
+            poly = plots[j]["poly"]
+            if _pip(x, y, poly) and min(_seg_d(x, y, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly))) > tol:
+                return True
+        return False
+
+    chans = []
+    for c in channels or []:
+        cpts = c["pts"]
+        if len(cpts) < 2:
+            continue
+        cum = polyline_cum(cpts)
+        pad = max(c["w"], c.get("w_tail", c["w"])) / 2 + tol
+        cbox = (min(q[0] for q in cpts) - pad, min(q[1] for q in cpts) - pad, max(q[0] for q in cpts) + pad, max(q[1] for q in cpts) + pad)
+        chans.append((cpts, cum, cum[-1] or 1.0, c["w"], c.get("w_tail", c["w"]), cbox))
+
+    def wet(x: float, y: float) -> bool:
+        for cpts, cum, tot, w0, w1, (bx0, by0, bx1, by1) in chans:
+            if not (bx0 <= x <= bx1 and by0 <= y <= by1):
+                continue
+            for i in range(len(cpts) - 1):
+                # taper measured at the segment head - within one segment it moves less than tol
+                if _seg_d(x, y, cpts[i], cpts[i + 1]) < (w0 + (w1 - w0) * cum[i] / tot) / 2 + tol:
+                    return True
+        return False
+
+    for pi, p in enumerate(plots):
         if R.random() > frac:
             continue
         poly = p["poly"]
@@ -1692,7 +1755,9 @@ def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spac
             nd = int(math.dist(a, b) / spacing)
             for t in range(1, nd):
                 s = t / nd
-                beans.append((round(a[0] + s * (b[0] - a[0]), 1), round(a[1] + s * (b[1] - a[1]), 1)))
+                bx, by = round(a[0] + s * (b[0] - a[0]), 1), round(a[1] + s * (b[1] - a[1]), 1)
+                if not buried(bx, by, pi) and not wet(bx, by):
+                    beans.append((bx, by))
     return beans
 
 
