@@ -21,7 +21,7 @@ A `/diagram` Mode B map has three layers, and only ONE of them is changing.
 | Layer | What it is | Size | Converting? |
 |---|---|---|---|
 | The **engine** - `settlement.py` | 371 methods that DRAW things: farmhouses, paddy combs, torii, city walls, castles, markets, wards | 16.0k lines | **No.** Already spans hamlet to capital. |
-| The **validator** - `check_village.py` | The gate. 189 checks run on a single hamlet; more at larger tiers | 15.7k lines | **No.** It is the reason this migration is safe. |
+| The **validator** - `check_village/` | The gate. 189 checks run on a single hamlet; more at larger tiers | 15.7k lines | **No.** It is the reason this migration is safe. |
 | The **composition** - `pool/*/<name>.gen.py` | Which features exist on THIS map, where each one sits, how they relate | ~200-900 lines **per map**, hand-written | **Yes. This is the whole migration.** |
 
 The composition layer is what costs hours per map, is where every placement bug lives, and is what
@@ -226,4 +226,4 @@ Ordered by value per unit of effort, not by tier.
   one. An archetype that generates but is not in the roll is opt-in only.
 - **`meta.generated_by`** - the manifest tag marking a map as scripted. Checks gated on it apply new
   rules to generated maps without moving hand-authored ones.
-- **The gate** - `check_village.py`. **`make done`** - the full lint/type/test/coverage run.
+- **The gate** - `check_village/`. **`make done`** - the full lint/type/test/coverage run.

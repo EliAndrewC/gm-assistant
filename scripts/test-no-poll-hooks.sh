@@ -44,7 +44,7 @@ echo "3. legitimate commands are NOT blocked (no false positives)"
 check "the gate itself" ok 'make done'
 check "pytest" ok 'python3 -m pytest test_settlement.py -n auto'
 check "a loop with no sleep" ok 'while read -r line; do echo "$line"; done < /tmp/f'
-check "a for loop over maps, regenerating each" ok 'for g in a b c; do python3 $g.gen.py && python3 check_village.py $g.json; done'
+check "a for loop over maps, regenerating each" ok 'for g in a b c; do python3 $g.gen.py && python3 -m check_village $g.json; done'
 check "pgrep with the bracket trick" ok "pgrep -f '[m]ake done'"
 check "pgrep -f on a variable pattern" ok 'pgrep -f "$PATTERN"'
 check "pgrep without -f (matches process NAME, not the command line)" ok 'pgrep resvg'
