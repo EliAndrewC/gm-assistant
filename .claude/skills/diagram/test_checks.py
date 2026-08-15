@@ -11261,3 +11261,47 @@ def test_a_kiln_carries_no_distance_rule_only_an_angle():
     M["town_streets"] = [{"pts": [[100, 100], [900, 100]], "w": 18}]
     M["kilns"] = [{"x": 500, "y": 900, "w": 46, "h": 40, "rot": 0, "label": "kiln works"}]
     assert "roadside_works_stand_on_their_road" not in check_village.gate(M, verbose=False)
+
+
+# ---- bund_beans_on_bunds: an azemame bead sits on a bund the finished paint SHOWS - never
+# floating in a later-drawn plot's water (GM 2026-08-15, Inashiro: "random green dots ...
+# scattered in the middle of flooded rice patties"). The wedge fillers lap their neighbors on
+# purpose and paint LAST, so the lapped stretch of the neighbor's bund stroke is buried under
+# their fill; a bead line laid there must be dropped by the placer and caught by the gate.
+def _bb_M(beads, rings):
+    return manifest(fields=[{**_field("f", 100, 100, 900, 900), "plot_rings": rings, "bund_beans": beads}])
+
+
+_BB_HOST = [[200, 200], [400, 200], [400, 400], [200, 400]]  # painted first
+_BB_FILLER = [[300, 150], [500, 150], [500, 450], [300, 450]]  # painted last, laps the host's east bund
+
+
+def test_bund_beans_on_bunds_fires_on_a_bead_buried_by_a_later_plot():
+    # a bead on the host's east bund (x=400) sits 100px inside the filler, which paints after
+    # its host - the bund stroke under it is not visible ground on the finished map
+    assert "bund_beans_on_bunds" in f(_bb_M([[400, 300]], [_BB_HOST, _BB_FILLER]))
+
+
+def test_bund_beans_on_bunds_fires_on_a_bead_in_open_ground():
+    # a bead near no bund at all (the bare fan floor)
+    assert "bund_beans_on_bunds" in f(_bb_M([[700, 700]], [_BB_HOST, _BB_FILLER]))
+
+
+def test_bund_beans_on_bunds_passes_beads_on_visible_bunds():
+    # the host's west bund (x=200) stands clear of the filler; and a bead on the FILLER's own
+    # west bund (x=300), though it lies deep inside the host, is legal - the filler paints
+    # last, so its stroke is the visible one and the bead reads as sitting on that seam
+    assert "bund_beans_on_bunds" not in f(_bb_M([[200, 300], [300, 300]], [_BB_HOST, _BB_FILLER]))
+
+
+def test_bund_beans_on_bunds_skips_manifests_without_the_recording():
+    # pre-2026-08-15 manifests record no plot_rings; regeneration adds them (the recording is
+    # unconditional at the one draw site - see test_draw_comb_field_records_rings_and_beads)
+    assert "bund_beans_on_bunds" not in f(_bb_M([[400, 300]], []))
+
+
+def test_bund_beans_on_bunds_survives_geometry_far_off_the_canvas():
+    # negative fixtures carry deliberately insane geometry; the index box is clamped to the
+    # canvas on insert, so an off-map ring is skipped (it is not visible ground - a bead
+    # claiming to sit on it still fires) instead of allocating billions of grid cells
+    assert "bund_beans_on_bunds" in f(_bb_M([[9000000, 300]], [[[8999900, 200], [9000100, 200], [9000100, 400], [8999900, 400]]]))
