@@ -909,6 +909,15 @@ buys and how to work with it:
 - **Never trust a dependency edge you have not swept**: the targeted-vs-full sweep over all 791
   fixtures is the empirical guard on the closure rules. If you change `needs`/`writes` semantics
   or add segments with unusual dataflow, re-run `oracle_sweep.py targeted`.
+- **The city/capital battery is per-statement segments too (feature 023)**: 022 left the whole
+  urban battery as ONE 1,040-statement segment (it was a single `if scale in ('city',
+  'capital'):` statement in the legacy gate, so statement-granularity could not divide it) under
+  a clause-12 debt annotation. Feature 023 paid the debt: `_seg_0563_NNN__<name>` segments carry
+  the guard IN THE BODY (`if scale in ('city', 'capital'):`, walled checks nested one deeper
+  under `if meta.get('walled'):`) so bodies stayed verbatim with zero re-indentation. Adding a
+  city/capital check = write a small `_seg_0563_NNN`-style function with its guard in the body,
+  same registry row mechanics as any other segment (tooling + census: `specs/023-split-city-
+  mega-segment/`, retired one-shot like 022's).
 
 ## Update the predictably-affected tests in the SAME edit
 

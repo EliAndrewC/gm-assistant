@@ -20628,656 +20628,101 @@ def _seg_0562__settlement_has_tanning_yard(
     )
 
 
-def _seg_0563__city_has_six_ministries(
-    *,
-    ADJ: Any = _UNBOUND,
-    COMMERCE: Any = _UNBOUND,
-    COMMON: Any = _UNBOUND,
-    E: Any = _UNBOUND,
-    EST_MIN_SEP: Any = _UNBOUND,
-    ES_MARGIN: Any = _UNBOUND,
-    ES_MIN: Any = _UNBOUND,
-    ES_STEP: Any = _UNBOUND,
-    EX0: Any = _UNBOUND,
-    EX1: Any = _UNBOUND,
-    EY0: Any = _UNBOUND,
-    EY1: Any = _UNBOUND,
-    GDIR: Any = _UNBOUND,
-    HOUSEK: Any = _UNBOUND,
-    L: Any = _UNBOUND,
-    LINE_D: Any = _UNBOUND,
-    LINE_RUN: Any = _UNBOUND,
-    L_: Any = _UNBOUND,
-    M: Any = _UNBOUND,
-    MAX_PER_WELL: Any = _UNBOUND,
-    MAX_PER_WELL_OUTCAST: Any = _UNBOUND,
-    OFFICE_GAP: Any = _UNBOUND,
-    REACH: Any = _UNBOUND,
-    SAMK: Any = _UNBOUND,
-    THROAT: Any = _UNBOUND,
-    URBAN: Any = _UNBOUND,
-    _bbc: Any = _UNBOUND,
-    _bh_allowed: Any = _UNBOUND,
-    _bh_floor: Any = _UNBOUND,
-    _bh_n: Any = _UNBOUND,
-    _bh_pop: Any = _UNBOUND,
-    _bh_roll: Any = _UNBOUND,
-    _cdojos: Any = _UNBOUND,
-    _dj_allowed: Any = _UNBOUND,
-    _dj_far: Any = _UNBOUND,
-    _dj_floor: Any = _UNBOUND,
-    _dj_roll: Any = _UNBOUND,
-    _dj_sam: Any = _UNBOUND,
-    _edge_gap: Any = _UNBOUND,
-    _egap: Any = _UNBOUND,
-    _end_near_dock: Any = _UNBOUND,
-    _end_near_moat: Any = _UNBOUND,
-    _end_near_river: Any = _UNBOUND,
-    _floor: Any = _UNBOUND,
-    _foot: Any = _UNBOUND,
-    _ftargets: Any = _UNBOUND,
-    _ftpx: Any = _UNBOUND,
-    _g21: Any = _UNBOUND,
-    _gaps: Any = _UNBOUND,
-    _gfurn: Any = _UNBOUND,
-    _gtowers: Any = _UNBOUND,
-    _gv: Any = _UNBOUND,
-    _hw: Any = _UNBOUND,
-    _la: Any = _UNBOUND,
-    _ldx: Any = _UNBOUND,
-    _ldy: Any = _UNBOUND,
-    _lg_open: Any = _UNBOUND,
-    _lh2: Any = _UNBOUND,
-    _lpts: Any = _UNBOUND,
-    _lw2: Any = _UNBOUND,
-    _ly_wet: Any = _UNBOUND,
-    _med: Any = _UNBOUND,
-    _mhalls: Any = _UNBOUND,
-    _mhout: Any = _UNBOUND,
-    _mhshort: Any = _UNBOUND,
-    _mhwall: Any = _UNBOUND,
-    _mroll: Any = _UNBOUND,
-    _pl: Any = _UNBOUND,
-    _qx: Any = _UNBOUND,
-    _qy: Any = _UNBOUND,
-    _shown: Any = _UNBOUND,
-    _sy_stbl: Any = _UNBOUND,
-    _tfortune: Any = _UNBOUND,
-    _touch: Any = _UNBOUND,
-    _tw_brews: Any = _UNBOUND,
-    _tw_dyes: Any = _UNBOUND,
-    _tw_kilns: Any = _UNBOUND,
-    _tw_lys: Any = _UNBOUND,
-    _tw_on_water: Any = _UNBOUND,
-    _tw_pond: Any = _UNBOUND,
-    _tw_water: Any = _UNBOUND,
-    _tw_wc: Any = _UNBOUND,
-    _w21: Any = _UNBOUND,
-    a: Any = _UNBOUND,
-    a8: Any = _UNBOUND,
-    abut: Any = _UNBOUND,
-    adrift_lb: Any = _UNBOUND,
-    ai: Any = _UNBOUND,
-    align: Any = _UNBOUND,
-    allowed: Any = _UNBOUND,
-    amph: Any = _UNBOUND,
-    amph_all3: Any = _UNBOUND,
-    amph_raw3: Any = _UNBOUND,
-    angs: Any = _UNBOUND,
-    area_subj: Any = _UNBOUND,
-    areas: Any = _UNBOUND,
-    ax0: Any = _UNBOUND,
-    ax1: Any = _UNBOUND,
-    ay0: Any = _UNBOUND,
-    ay1: Any = _UNBOUND,
-    b: Any = _UNBOUND,
-    b2: Any = _UNBOUND,
-    b9: Any = _UNBOUND,
-    b_: Any = _UNBOUND,
-    bad_cross: Any = _UNBOUND,
-    bad_flop: Any = _UNBOUND,
-    bad_lab: Any = _UNBOUND,
-    bad_meet: Any = _UNBOUND,
-    bad_well: Any = _UNBOUND,
-    bare: Any = _UNBOUND,
-    bare_streets: Any = _UNBOUND,
-    barred: Any = _UNBOUND,
-    bc: Any = _UNBOUND,
-    bedhalf: Any = _UNBOUND,
-    beds_meet: Any = _UNBOUND,
-    best2: Any = _UNBOUND,
-    bf: Any = _UNBOUND,
-    bg: Any = _UNBOUND,
-    bi: Any = _UNBOUND,
-    big_frac: Any = _UNBOUND,
-    big_other: Any = _UNBOUND,
-    big_out: Any = _UNBOUND,
-    biz_out: Any = _UNBOUND,
-    bk: Any = _UNBOUND,
-    bl: Any = _UNBOUND,
-    bmx: Any = _UNBOUND,
-    bmy: Any = _UNBOUND,
-    bnd: Any = _UNBOUND,
-    bo: Any = _UNBOUND,
-    bod_: Any = _UNBOUND,
-    boom_off: Any = _UNBOUND,
-    booms_c: Any = _UNBOUND,
-    box_: Any = _UNBOUND,
-    box_on_lane: Any = _UNBOUND,
-    boy_: Any = _UNBOUND,
-    bura: Any = _UNBOUND,
-    buraku_in: Any = _UNBOUND,
-    bx: Any = _UNBOUND,
-    bx0: Any = _UNBOUND,
-    bx1: Any = _UNBOUND,
-    by: Any = _UNBOUND,
-    by0: Any = _UNBOUND,
-    by1: Any = _UNBOUND,
-    c: Any = _UNBOUND,
-    canal_second_mouths: Any = _UNBOUND,
-    canals_c: Any = _UNBOUND,
-    cap: Any = _UNBOUND,
-    caps: Any = _UNBOUND,
-    caravan_bad: Any = _UNBOUND,
-    caste: Any = _UNBOUND,
-    cc: Any = _UNBOUND,
-    cd: Any = _UNBOUND,
-    cf: Any = _UNBOUND,
-    cg9: Any = _UNBOUND,
-    chans: Any = _UNBOUND,
-    check: Any = _UNBOUND,
-    chw: Any = _UNBOUND,
-    cityward_dist: Any = _UNBOUND,
-    civic: Any = _UNBOUND,
-    civic_names: Any = _UNBOUND,
-    civic_on_street: Any = _UNBOUND,
-    civics: Any = _UNBOUND,
-    ck: Any = _UNBOUND,
-    clan_t: Any = _UNBOUND,
-    clustered: Any = _UNBOUND,
-    commoner_in: Any = _UNBOUND,
-    compounds: Any = _UNBOUND,
-    comps: Any = _UNBOUND,
-    cp: Any = _UNBOUND,
-    cpop: Any = _UNBOUND,
-    cross: Any = _UNBOUND,
-    crosses_ring: Any = _UNBOUND,
-    crowd: Any = _UNBOUND,
-    cthb: Any = _UNBOUND,
-    cx: Any = _UNBOUND,
-    cx_r: Any = _UNBOUND,
-    cy: Any = _UNBOUND,
-    cy_r: Any = _UNBOUND,
-    d: Any = _UNBOUND,
-    d8: Any = _UNBOUND,
-    d_: Any = _UNBOUND,
-    d_gate_tower: Any = _UNBOUND,
-    d_nearest_mural: Any = _UNBOUND,
-    damming_lb: Any = _UNBOUND,
-    dc: Any = _UNBOUND,
-    dead: Any = _UNBOUND,
-    declared_t: Any = _UNBOUND,
-    diff8: Any = _UNBOUND,
-    disp_a: Any = _UNBOUND,
-    disp_b: Any = _UNBOUND,
-    dl: Any = _UNBOUND,
-    docks_c: Any = _UNBOUND,
-    dry: Any = _UNBOUND,
-    dwl: Any = _UNBOUND,
-    dx: Any = _UNBOUND,
-    dy: Any = _UNBOUND,
-    e: Any = _UNBOUND,
-    e0: Any = _UNBOUND,
-    e1: Any = _UNBOUND,
-    ea: Any = _UNBOUND,
-    ec: Any = _UNBOUND,
-    edge_ang: Any = _UNBOUND,
-    egd: Any = _UNBOUND,
-    ek: Any = _UNBOUND,
-    empty_city_streets: Any = _UNBOUND,
-    end: Any = _UNBOUND,
-    ends: Any = _UNBOUND,
-    es_a: Any = _UNBOUND,
-    es_area: Any = _UNBOUND,
-    es_b: Any = _UNBOUND,
-    es_c: Any = _UNBOUND,
-    es_ca: Any = _UNBOUND,
-    es_cell: Any = _UNBOUND,
-    es_cells: Any = _UNBOUND,
-    es_ci0: Any = _UNBOUND,
-    es_ci1: Any = _UNBOUND,
-    es_cj0: Any = _UNBOUND,
-    es_cj1: Any = _UNBOUND,
-    es_comp: Any = _UNBOUND,
-    es_covered: Any = _UNBOUND,
-    es_di: Any = _UNBOUND,
-    es_discs: Any = _UNBOUND,
-    es_dj: Any = _UNBOUND,
-    es_dr: Any = _UNBOUND,
-    es_dw: Any = _UNBOUND,
-    es_dx: Any = _UNBOUND,
-    es_dy: Any = _UNBOUND,
-    es_empty: Any = _UNBOUND,
-    es_flagged: Any = _UNBOUND,
-    es_ftpx: Any = _UNBOUND,
-    es_grp: Any = _UNBOUND,
-    es_grp2: Any = _UNBOUND,
-    es_hh: Any = _UNBOUND,
-    es_hw: Any = _UNBOUND,
-    es_hwid: Any = _UNBOUND,
-    es_i: Any = _UNBOUND,
-    es_k: Any = _UNBOUND,
-    es_lines: Any = _UNBOUND,
-    es_nb: Any = _UNBOUND,
-    es_o: Any = _UNBOUND,
-    es_p: Any = _UNBOUND,
-    es_pk: Any = _UNBOUND,
-    es_polys: Any = _UNBOUND,
-    es_pond: Any = _UNBOUND,
-    es_pts: Any = _UNBOUND,
-    es_rects: Any = _UNBOUND,
-    es_rhh: Any = _UNBOUND,
-    es_rhw: Any = _UNBOUND,
-    es_rr: Any = _UNBOUND,
-    es_rx: Any = _UNBOUND,
-    es_ry: Any = _UNBOUND,
-    es_s: Any = _UNBOUND,
-    es_seen: Any = _UNBOUND,
-    es_singles: Any = _UNBOUND,
-    es_stack: Any = _UNBOUND,
-    es_t: Any = _UNBOUND,
-    es_wx0: Any = _UNBOUND,
-    es_wx1: Any = _UNBOUND,
-    es_wy0: Any = _UNBOUND,
-    es_wy1: Any = _UNBOUND,
-    est_bad: Any = _UNBOUND,
-    est_corners: Any = _UNBOUND,
-    est_on_road: Any = _UNBOUND,
-    est_out: Any = _UNBOUND,
-    est_overlap: Any = _UNBOUND,
-    est_pts: Any = _UNBOUND,
-    est_too_close: Any = _UNBOUND,
-    exc: Any = _UNBOUND,
-    exits: Any = _UNBOUND,
-    f: Any = _UNBOUND,
-    far: Any = _UNBOUND,
-    far_min: Any = _UNBOUND,
-    fc: Any = _UNBOUND,
-    fed: Any = _UNBOUND,
-    feeders: Any = _UNBOUND,
-    fence_gap: Any = _UNBOUND,
-    fence_hit: Any = _UNBOUND,
-    fields: Any = _UNBOUND,
-    find2: Any = _UNBOUND,
-    fl: Any = _UNBOUND,
-    fld_bad: Any = _UNBOUND,
-    floats: Any = _UNBOUND,
-    flops: Any = _UNBOUND,
-    fmis: Any = _UNBOUND,
-    fo: Any = _UNBOUND,
-    fr: Any = _UNBOUND,
-    frac: Any = _UNBOUND,
-    frac_inside: Any = _UNBOUND,
-    furn: Any = _UNBOUND,
-    furn_wet: Any = _UNBOUND,
-    fx: Any = _UNBOUND,
-    fy: Any = _UNBOUND,
-    fz: Any = _UNBOUND,
-    g: Any = _UNBOUND,
-    g21: Any = _UNBOUND,
-    g_: Any = _UNBOUND,
-    ga: Any = _UNBOUND,
-    gap: Any = _UNBOUND,
-    gate_bad: Any = _UNBOUND,
-    gate_towers_xy: Any = _UNBOUND,
-    gated: Any = _UNBOUND,
-    gates: Any = _UNBOUND,
-    gates_wo_flop: Any = _UNBOUND,
-    gates_wo_market: Any = _UNBOUND,
-    gbox: Any = _UNBOUND,
-    gf: Any = _UNBOUND,
-    gf_hit: Any = _UNBOUND,
-    gh: Any = _UNBOUND,
-    ghs: Any = _UNBOUND,
-    gi: Any = _UNBOUND,
-    gnear: Any = _UNBOUND,
-    got8: Any = _UNBOUND,
-    gov: Any = _UNBOUND,
-    gov_bad: Any = _UNBOUND,
-    gov_items: Any = _UNBOUND,
-    gov_pts: Any = _UNBOUND,
-    gp9: Any = _UNBOUND,
-    gpairs: Any = _UNBOUND,
-    gpoly: Any = _UNBOUND,
-    grave_on_ring: Any = _UNBOUND,
-    gs: Any = _UNBOUND,
-    gstruct: Any = _UNBOUND,
-    gstructs: Any = _UNBOUND,
-    gtx: Any = _UNBOUND,
-    gty: Any = _UNBOUND,
-    gv: Any = _UNBOUND,
-    h: Any = _UNBOUND,
-    half: Any = _UNBOUND,
-    has_gh: Any = _UNBOUND,
-    has_in: Any = _UNBOUND,
-    has_outfall: Any = _UNBOUND,
-    hh: Any = _UNBOUND,
-    hh_out: Any = _UNBOUND,
-    hi: Any = _UNBOUND,
-    hlb: Any = _UNBOUND,
-    homes: Any = _UNBOUND,
-    host: Any = _UNBOUND,
-    hosts: Any = _UNBOUND,
-    houses: Any = _UNBOUND,
-    hpb: Any = _UNBOUND,
-    hw: Any = _UNBOUND,
-    hx: Any = _UNBOUND,
-    hy: Any = _UNBOUND,
-    i: Any = _UNBOUND,
-    i8: Any = _UNBOUND,
-    i9: Any = _UNBOUND,
-    ia: Any = _UNBOUND,
-    ib: Any = _UNBOUND,
-    il: Any = _UNBOUND,
-    in_city: Any = _UNBOUND,
-    in_est: Any = _UNBOUND,
-    in_field: Any = _UNBOUND,
-    inlet_disp: Any = _UNBOUND,
-    inns: Any = _UNBOUND,
-    ins: Any = _UNBOUND,
-    inw: Any = _UNBOUND,
-    inwall: Any = _UNBOUND,
-    inwall_fields: Any = _UNBOUND,
-    inwall_groves: Any = _UNBOUND,
-    ip: Any = _UNBOUND,
-    it: Any = _UNBOUND,
-    j: Any = _UNBOUND,
-    j_arc: Any = _UNBOUND,
-    jends: Any = _UNBOUND,
-    jetties_c: Any = _UNBOUND,
-    k: Any = _UNBOUND,
-    k_: Any = _UNBOUND,
-    k_hit: Any = _UNBOUND,
-    kb_hit: Any = _UNBOUND,
-    kc: Any = _UNBOUND,
-    kd: Any = _UNBOUND,
-    kd2: Any = _UNBOUND,
-    kd3: Any = _UNBOUND,
-    key: Any = _UNBOUND,
-    key_: Any = _UNBOUND,
-    ki: Any = _UNBOUND,
-    kido: Any = _UNBOUND,
-    kido_off: Any = _UNBOUND,
-    lab: Any = _UNBOUND,
-    lab_big: Any = _UNBOUND,
-    lab_std: Any = _UNBOUND,
-    labor: Any = _UNBOUND,
-    lane8: Any = _UNBOUND,
-    lane_w: Any = _UNBOUND,
-    lanes_pts: Any = _UNBOUND,
-    lh: Any = _UNBOUND,
-    line_blds: Any = _UNBOUND,
-    ln: Any = _UNBOUND,
-    lo: Any = _UNBOUND,
-    loose: Any = _UNBOUND,
-    loose_servants: Any = _UNBOUND,
-    lw: Any = _UNBOUND,
-    lx: Any = _UNBOUND,
-    ly: Any = _UNBOUND,
-    m: Any = _UNBOUND,
-    major: Any = _UNBOUND,
-    major_t: Any = _UNBOUND,
-    maxgap: Any = _UNBOUND,
-    mcx: Any = _UNBOUND,
-    mcy: Any = _UNBOUND,
-    med_nn: Any = _UNBOUND,
-    meeting_lanes: Any = _UNBOUND,
-    mest: Any = _UNBOUND,
-    mest_bld: Any = _UNBOUND,
-    mest_corners: Any = _UNBOUND,
-    mest_wm: Any = _UNBOUND,
-    meta: Any = _UNBOUND,
-    mh: Any = _UNBOUND,
-    mh_: Any = _UNBOUND,
-    mhw_f: Any = _UNBOUND,
-    mi: Any = _UNBOUND,
-    mins: Any = _UNBOUND,
-    misaligned: Any = _UNBOUND,
-    misses: Any = _UNBOUND,
-    missing: Any = _UNBOUND,
-    mlarge: Any = _UNBOUND,
-    mn: Any = _UNBOUND,
-    mo_f: Any = _UNBOUND,
-    moat: Any = _UNBOUND,
-    moat_fed: Any = _UNBOUND,
-    moat_for_canal: Any = _UNBOUND,
-    moat_hit: Any = _UNBOUND,
-    moat_is_fed: Any = _UNBOUND,
-    monk_h: Any = _UNBOUND,
-    moored_lb: Any = _UNBOUND,
-    msmall: Any = _UNBOUND,
-    murals_xy: Any = _UNBOUND,
-    mw: Any = _UNBOUND,
-    mw_for_canal: Any = _UNBOUND,
-    n: Any = _UNBOUND,
-    narrow: Any = _UNBOUND,
-    nb: Any = _UNBOUND,
-    nbr: Any = _UNBOUND,
-    near_ct: Any = _UNBOUND,
-    near_dw: Any = _UNBOUND,
-    near_miss: Any = _UNBOUND,
-    near_sh: Any = _UNBOUND,
-    need: Any = _UNBOUND,
-    netlines: Any = _UNBOUND,
-    nft: Any = _UNBOUND,
-    nice: Any = _UNBOUND,
-    nm: Any = _UNBOUND,
-    no_farm: Any = _UNBOUND,
-    no_front: Any = _UNBOUND,
-    no_guard: Any = _UNBOUND,
-    no_station: Any = _UNBOUND,
-    no_torii: Any = _UNBOUND,
-    not_cap: Any = _UNBOUND,
-    not_under: Any = _UNBOUND,
-    nxb: Any = _UNBOUND,
-    nyb: Any = _UNBOUND,
-    o: Any = _UNBOUND,
-    o_: Any = _UNBOUND,
-    oc: Any = _UNBOUND,
-    of: Any = _UNBOUND,
-    off: Any = _UNBOUND,
-    off_fence: Any = _UNBOUND,
-    offend: Any = _UNBOUND,
-    offices: Any = _UNBOUND,
-    on_st_kido: Any = _UNBOUND,
-    open_end: Any = _UNBOUND,
-    order: Any = _UNBOUND,
-    other_struct: Any = _UNBOUND,
-    other_xy: Any = _UNBOUND,
-    others: Any = _UNBOUND,
-    others_me: Any = _UNBOUND,
-    out_fields: Any = _UNBOUND,
-    out_rel: Any = _UNBOUND,
-    outlet_disp: Any = _UNBOUND,
-    ox: Any = _UNBOUND,
-    oy: Any = _UNBOUND,
-    p: Any = _UNBOUND,
-    p_out: Any = _UNBOUND,
-    parent: Any = _UNBOUND,
-    pcx: Any = _UNBOUND,
-    pcy: Any = _UNBOUND,
-    pnd: Any = _UNBOUND,
-    pop: Any = _UNBOUND,
-    prx: Any = _UNBOUND,
-    pry: Any = _UNBOUND,
-    pt_rect: Any = _UNBOUND,
-    pts: Any = _UNBOUND,
-    px: Any = _UNBOUND,
-    px_: Any = _UNBOUND,
-    py: Any = _UNBOUND,
-    py_: Any = _UNBOUND,
-    q: Any = _UNBOUND,
-    q21: Any = _UNBOUND,
-    qd_lb: Any = _UNBOUND,
-    qdx_lb: Any = _UNBOUND,
-    qdy_lb: Any = _UNBOUND,
-    quadb: Any = _UNBOUND,
-    qx_lb: Any = _UNBOUND,
-    qy_lb: Any = _UNBOUND,
-    r: Any = _UNBOUND,
-    r23: Any = _UNBOUND,
-    r_: Any = _UNBOUND,
-    ratio: Any = _UNBOUND,
-    rcum: Any = _UNBOUND,
-    rdist: Any = _UNBOUND,
-    rds: Any = _UNBOUND,
-    reach: Any = _UNBOUND,
-    rect_corners_xywh: Any = _UNBOUND,
-    region: Any = _UNBOUND,
-    rel: Any = _UNBOUND,
-    rel_bad: Any = _UNBOUND,
-    rhalf: Any = _UNBOUND,
-    rhw: Any = _UNBOUND,
-    rhwb: Any = _UNBOUND,
-    ri2: Any = _UNBOUND,
-    ring: Any = _UNBOUND,
-    ring2: Any = _UNBOUND,
-    ring_rd: Any = _UNBOUND,
-    rites: Any = _UNBOUND,
-    river_c: Any = _UNBOUND,
-    rlab: Any = _UNBOUND,
-    road: Any = _UNBOUND,
-    road_comm: Any = _UNBOUND,
-    road_through: Any = _UNBOUND,
-    roads_all: Any = _UNBOUND,
-    root: Any = _UNBOUND,
-    rowk: Any = _UNBOUND,
-    rp: Any = _UNBOUND,
-    rpb: Any = _UNBOUND,
-    rpts: Any = _UNBOUND,
-    run: Any = _UNBOUND,
-    runs_off_edge: Any = _UNBOUND,
-    runs_up: Any = _UNBOUND,
-    rv: Any = _UNBOUND,
-    s: Any = _UNBOUND,
-    s9: Any = _UNBOUND,
-    sa: Any = _UNBOUND,
-    sam_n: Any = _UNBOUND,
-    sam_out: Any = _UNBOUND,
-    sam_wells: Any = _UNBOUND,
-    samurai_h: Any = _UNBOUND,
-    sb: Any = _UNBOUND,
-    scale: Any = _UNBOUND,
-    seg_seg_dist: Any = _UNBOUND,
-    served: Any = _UNBOUND,
-    served_out: Any = _UNBOUND,
-    sh: Any = _UNBOUND,
-    shifts: Any = _UNBOUND,
-    shortfalls: Any = _UNBOUND,
-    shown_est: Any = _UNBOUND,
-    shrines: Any = _UNBOUND,
-    slarge: Any = _UNBOUND,
-    slines: Any = _UNBOUND,
-    sp: Any = _UNBOUND,
-    sseg: Any = _UNBOUND,
-    ssmall: Any = _UNBOUND,
-    st: Any = _UNBOUND,
-    st_pts: Any = _UNBOUND,
-    stale: Any = _UNBOUND,
-    stbl: Any = _UNBOUND,
-    steps: Any = _UNBOUND,
-    sthb: Any = _UNBOUND,
-    stranded: Any = _UNBOUND,
-    stray_b: Any = _UNBOUND,
-    stray_mh: Any = _UNBOUND,
-    stray_t: Any = _UNBOUND,
-    streets: Any = _UNBOUND,
-    structs: Any = _UNBOUND,
-    stub: Any = _UNBOUND,
-    subj_in: Any = _UNBOUND,
-    subject_of: Any = _UNBOUND,
-    swamped: Any = _UNBOUND,
-    t: Any = _UNBOUND,
-    t_unserved: Any = _UNBOUND,
-    taps: Any = _UNBOUND,
-    tc: Any = _UNBOUND,
-    tcx: Any = _UNBOUND,
-    tcy: Any = _UNBOUND,
-    temples: Any = _UNBOUND,
-    tgt: Any = _UNBOUND,
-    th: Any = _UNBOUND,
-    thb: Any = _UNBOUND,
-    thr: Any = _UNBOUND,
-    throat_bad: Any = _UNBOUND,
-    through: Any = _UNBOUND,
-    tip: Any = _UNBOUND,
-    to: Any = _UNBOUND,
-    to_under: Any = _UNBOUND,
-    tol: Any = _UNBOUND,
-    torii: Any = _UNBOUND,
-    toward: Any = _UNBOUND,
-    towers: Any = _UNBOUND,
-    tw: Any = _UNBOUND,
-    twr_off: Any = _UNBOUND,
-    tx: Any = _UNBOUND,
-    txt: Any = _UNBOUND,
-    ty: Any = _UNBOUND,
-    u: Any = _UNBOUND,
-    unreached: Any = _UNBOUND,
-    v: Any = _UNBOUND,
-    w: Any = _UNBOUND,
-    w_: Any = _UNBOUND,
-    wall_hit: Any = _UNBOUND,
-    want8: Any = _UNBOUND,
-    wards: Any = _UNBOUND,
-    wards_k: Any = _UNBOUND,
-    wcx: Any = _UNBOUND,
-    wcy: Any = _UNBOUND,
-    wd: Any = _UNBOUND,
-    wd2: Any = _UNBOUND,
-    wells: Any = _UNBOUND,
-    widths: Any = _UNBOUND,
-    wlanes: Any = _UNBOUND,
-    worst: Any = _UNBOUND,
-    wp: Any = _UNBOUND,
-    wr: Any = _UNBOUND,
-    wx: Any = _UNBOUND,
-    wy: Any = _UNBOUND,
-    x: Any = _UNBOUND,
-    x0: Any = _UNBOUND,
-    x1: Any = _UNBOUND,
-    y: Any = _UNBOUND,
-    y0: Any = _UNBOUND,
-    y1: Any = _UNBOUND,
-    yards_b: Any = _UNBOUND,
-    yd: Any = _UNBOUND,
-) -> dict[str, Any]:
-    """Gate segment 563 (city_canal_reaches_dock, city_canal_shares_moat_mouth, city_capital_dir_valid, city_caste_counts_in_band, city_caste_shifts_are_documented, city_caste_shifts_are_live, city_civic_clear_of_streets, city_civic_label_on_its_own_building, city_clan_known, city_dojo_count_follows_samurai, city_dojos_among_samurai, city_estate_gates_vary, city_estates_clear_of_roads, city_estates_clear_of_wall_moat, city_estates_multiple_shown, city_estates_no_overlap, city_estates_toward_capital, city_fields_clear_of_wall_moat, city_fields_close_to_city, city_flophouse_in_humble_quarter, city_flophouse_inside_walls, city_flophouse_outside_each_gate, city_gate_caravan_facilities, city_gate_furniture_aligned, city_gate_furniture_at_throat, city_gate_guard_inspection_separate, city_gate_has_guardhouse, city_gate_tower_at_its_gate, city_gate_towers_clear_of_gate_furniture, city_government_clear_of_wall_moat, city_government_offices_dont_abut, city_governor_mansion_large, city_graveyard_clear_of_ring_road, city_has_bathhouse, city_has_brewery, city_has_dye_works, city_has_fire_towers, city_has_flophouse, city_has_gate_market, city_has_governor_mansion, city_has_laborer_neighborhoods, city_has_martial_hall, city_has_merchant_district, city_has_merchant_storehouses, city_has_ministry_of_rites, city_has_oil_press, city_has_outside_farmland, city_has_pawnshop, city_has_ring_road, city_has_samurai_neighborhood, city_has_six_ministries, city_has_theater_stage, city_imperial_road_has_commerce, city_imperial_road_through, city_inspection_station_at_each_gate, city_kido_on_ward_fence, city_kiln_outside_walls, city_labels_placed_with_subject, city_laborer_housing_varied, city_lanes_meet_when_aligned, city_lanes_reach_ward_gates, city_larger_streets_lined, city_martial_hall_has_archery_range, city_merchant_estate_gate_clear, city_merchant_estates_clear_of_buildings, city_merchant_estates_clear_of_wall_moat, city_merchant_housing_spread, city_merchant_housing_varied, city_ministries_cluster_at_government, city_ministries_front_a_street, city_moat_fed_offmap, city_moat_feeder_matches_width, city_moat_has_outfall, city_moat_irrigates_fields, city_moat_joins_river, city_moat_junction_angles, city_moat_surrounds_wall, city_monk_houses_by_their_temple, city_multi_temple_exception_declared, city_neighborhoods_have_wells, city_no_inwall_farms, city_no_large_empty_space, city_outside_fields_have_farmhouses, city_pond_clear_of_wall_moat, city_river_port_has_lumber_yard, city_road_label_outside_walls, city_roads_run_offmap, city_row_housing_gap, city_row_housing_touches, city_samurai_estates_dispersed, city_samurai_estates_outside, city_samurai_estates_vary_in_size, city_samurai_houses_inside_walls, city_samurai_housing_sufficient, city_samurai_housing_varied, city_samurai_partly_front_streets, city_samurai_quarter_gated, city_samurai_quarter_has_no_public_wells, city_samurai_ward_residents_only, city_samurai_ward_sealed, city_streets_clear_of_moat, city_streets_clear_of_wall, city_streets_connected, city_streets_have_buildings, city_streets_meet_through_lanes, city_streets_no_intersection_stub, city_streets_no_near_miss, city_temple_approach_has_torii, city_temple_neighborhood_has_shrines, city_temples_clear_of_wall_moat, city_temples_dedicated, city_temples_have_monk_housing, city_temples_inside_walls, city_theater_stage_larger_than_town, city_torii_over_streets, city_wall_furniture_clear_of_moat, city_wall_towers_aligned, city_wall_towers_spaced, city_ward_fence_clear_of_structures, city_ward_fence_meets_wall, city_ward_fence_under_wall, city_ward_servants_housed_as_ranges, city_well_density_sufficient, city_wells_in_block_interiors, city_wharf_jetties_on_bank, fire_tower_amid_its_district, fire_tower_clear_of_fields, fire_tower_clear_of_graveyards, fire_tower_clear_of_wells, fire_tower_in_commoner_quarter, fire_tower_standoff, fire_towers_dispersed, kido_aligned_with_ward_fence, kido_clear_of_buildings, kido_clear_of_wall_towers, kido_guard_box_clear_of_lanes, log_boom_leaves_the_fairway, log_boom_moored_to_the_bank, log_boom_serves_the_lumber_yard, lumber_yard_clear_of_water, merchant_estates_match_roll, no_groves_inside_walls, ring_road_kept_clear, theater_stage_by_temple, theater_stage_clear, theater_stage_faces_temple, walled_city_has_burakumin_inside, walled_city_has_wall_and_gates) - body verbatim from the legacy gate() (feature 022). CONSTITUTION X.12 ANNOTATION: this function exceeds the ~1,000-statement threshold deliberately - it is the ministry-complex audit, one cohesive program mechanically extracted from the legacy gate; splitting it is recorded debt (specs/022 plan.md Complexity Tracking), and re-splitting it by hand during extraction would have turned a zero-diff verbatim move into a semantic rewrite of the largest single check."""
-    if scale in ("city", "capital"):  # 021: the urban battery (wells, gate furniture, business fabric) binds the capital too
-        # A PROVINCIAL CITY (budgets.md: ~2,000-4,000, avg ~3,000; 600 households - servants 120,
-        # laborers 240, merchants 150, burakumin 30, samurai 60; ZERO in-city farmers). Placing
-        # all 600 is unreadable, so the map shows REPRESENTATIVE neighborhoods and these checks
-        # verify the required STRUCTURES + neighborhood presence, not a full per-caste headcount.
-        bk = {}
+def _seg_0563_000__bk(*, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.000 (bk) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        bk = {}  # type: ignore[var-annotated]
+    return _kept(locals(), ('bk',))
+
+
+def _seg_0563_001__b(*, M: Any = _UNBOUND, b: Any = _UNBOUND, bk: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.001 (b, bk) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         for b in M.get("buildings", []):
             bk[b.get("kind")] = bk.get(b.get("kind"), 0) + 1
-        # every provincial city's interior carries the provincial government:
+    return _kept(locals(), ('b', 'bk'))
+
+
+# every provincial city's interior carries the provincial government:
+
+
+def _seg_0563_002__city_has_governor_mansion(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.002 (city_has_governor_mansion) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if scale == "city":
             # a CAPITAL has no governor - the daimyo's court IS the government (020 doctrine,
             # "Rules that INVERT"); the castle carries what the mansion carries provincially
             check("city_has_governor_mansion", bool(M.get("governor_mansion")), "a provincial city must have the governor's mansion (s.governor_mansion(...))")
+    return _kept(locals(), ())
+
+
+def _seg_0563_003__mins(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.003 (mins) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         mins = M.get("ministries", [])
+    return _kept(locals(), ('mins',))
+
+
+def _seg_0563_004__city_has_six_ministries(*, check: Any = _UNBOUND, mins: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.004 (city_has_six_ministries) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check("city_has_six_ministries", len(mins) == 6, f"{len(mins)} provincial ministry offices, expected exactly 6 (s.ministry(...))")
+    return _kept(locals(), ())
+
+
+def _seg_0563_005__m(*, m: Any = _UNBOUND, mins: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.005 (m, rites) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         rites = [m for m in mins if "rites" in (m.get("name") or "").lower()]
+    return _kept(locals(), ('m', 'rites'))
+
+
+def _seg_0563_006__city_has_ministry_of_rites(*, check: Any = _UNBOUND, rites: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.006 (city_has_ministry_of_rites) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check("city_has_ministry_of_rites", len(rites) == 1, f"{len(rites)} Ministry of Rites office(s), expected exactly 1 (sited in the temple neighborhood)")
+    return _kept(locals(), ())
+
+
+def _seg_0563_007__sam_n(*, bk: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.007 (sam_n) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         sam_n = bk.get("samurai", 0) + bk.get("samurai_large", 0)
+    return _kept(locals(), ('sam_n',))
+
+
+def _seg_0563_008__city_has_samurai_neighborhood(*, check: Any = _UNBOUND, sam_n: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.008 (city_has_samurai_neighborhood) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check("city_has_samurai_neighborhood", sam_n >= 8, f"{sam_n} samurai houses - a provincial city needs a samurai neighborhood")
-        # a provincial city is ~10% samurai (~300 of ~3,000, budgets.md) - about pop/50 households.
-        # Most are housed in the samurai neighborhood as individual houses; the governor's compound
-        # and the extramural estates hold the rest. Require the neighborhood to depict at least ~65%
-        # of that expected household count, so it is a real quarter, not a token cluster of a few.
+    return _kept(locals(), ())
+
+
+# a provincial city is ~10% samurai (~300 of ~3,000, budgets.md) - about pop/50 households.
+# Most are housed in the samurai neighborhood as individual houses; the governor's compound
+# and the extramural estates hold the rest. Require the neighborhood to depict at least ~65%
+# of that expected household count, so it is a real quarter, not a token cluster of a few.
+
+
+def _seg_0563_009__b_1(*, M: Any = _UNBOUND, b: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.009 (b, samurai_h) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         samurai_h = [b for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large")]
+    return _kept(locals(), ('b', 'samurai_h'))
+
+
+def _seg_0563_010__pop(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.010 (pop) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         pop = meta.get("population", 0)
+    return _kept(locals(), ('pop',))
+
+
+def _seg_0563_011__city_samurai_housing_sufficient(
+    *, URBAN: Any = _UNBOUND, check: Any = _UNBOUND, need: Any = _UNBOUND, pop: Any = _UNBOUND, samurai_h: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.011 (city_samurai_housing_sufficient) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if pop and URBAN:
             # CITY-ONLY: at the capital the samurai cohort is majority-HOUSED IN OTHER FORMS
             # (walled yashiki recorded as manors, retainer terraces as unit ranges), and
@@ -21290,21 +20735,63 @@ def _seg_0563__city_has_six_ministries(
                 f"only {len(samurai_h)} samurai houses for a ~{round(0.10 * pop)}-samurai city (~{round(0.10 * pop / HOUSEHOLD)} households); "
                 f"expect >= {need} in the neighborhood (the governor's compound + extramural estates hold the rest)",
             )
-        # samurai (unlike the poor, who sit in the deep block cores) LINE their streets - many houses
-        # front a street even if deeper lots sit behind. Require at least a third near a street/road.
+    return _kept(locals(), ('need',))
+
+
+# samurai (unlike the poor, who sit in the deep block cores) LINE their streets - many houses
+# front a street even if deeper lots sit behind. Require at least a third near a street/road.
+
+
+def _seg_0563_012__city_samurai_partly_front_streets(
+    *,
+    M: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    near_ct: Any = _UNBOUND,
+    samurai_h: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    slines: Any = _UNBOUND,
+    sp: Any = _UNBOUND,
+    st: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.012 (city_samurai_partly_front_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if samurai_h:
             slines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
             near_ct = sum(1 for b in samurai_h if any(seg_dist(b["x"], b["y"], sp[i], sp[i + 1]) < 90 for sp in slines for i in range(len(sp) - 1)))
             check(
                 "city_samurai_partly_front_streets", near_ct >= len(samurai_h) / 3, f"only {near_ct}/{len(samurai_h)} samurai houses front a street (want >= 1/3) - a samurai quarter lines its streets"
             )
-        # SAMURAI HOUSING varies in size by rank, UNLIKE a uniform cluster. budgets.md's provincial-city
-        # rank table puts ~25% of resident samurai in the senior ranks (R5-7) and the rest in R1-4; so the
-        # in-city neighborhood mixes a MINORITY of large houses (senior) among many small ones (junior).
-        # Crucially, samurai walled ESTATES are OUTSIDE the walls (rural goshi) - the only walled samurai
-        # compound inside the city is the governor's mansion - so NO manor may sit inside the wall ring.
+    return _kept(locals(), ('b', 'i', 'near_ct', 'slines', 'sp', 'st'))
+
+
+# SAMURAI HOUSING varies in size by rank, UNLIKE a uniform cluster. budgets.md's provincial-city
+# rank table puts ~25% of resident samurai in the senior ranks (R5-7) and the rest in R1-4; so the
+# in-city neighborhood mixes a MINORITY of large houses (senior) among many small ones (junior).
+# Crucially, samurai walled ESTATES are OUTSIDE the walls (rural goshi) - the only walled samurai
+# compound inside the city is the governor's mansion - so NO manor may sit inside the wall ring.
+
+
+def _seg_0563_013__b_2(*, M: Any = _UNBOUND, b: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.013 (b, slarge) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         slarge = [b for b in M.get("buildings", []) if b.get("kind") == "samurai_large"]
+    return _kept(locals(), ('b', 'slarge'))
+
+
+def _seg_0563_014__b_3(*, M: Any = _UNBOUND, b: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.014 (b, ssmall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         ssmall = [b for b in M.get("buildings", []) if b.get("kind") == "samurai"]
+    return _kept(locals(), ('b', 'ssmall'))
+
+
+def _seg_0563_015__city_samurai_housing_varied(
+    *, M: Any = _UNBOUND, check: Any = _UNBOUND, in_est: Any = _UNBOUND, m: Any = _UNBOUND, scale: Any = _UNBOUND, slarge: Any = _UNBOUND, ssmall: Any = _UNBOUND, w: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.015 (city_samurai_housing_varied) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if slarge or ssmall:
             w = M.get("wall") or []
             in_est = [m for m in M.get("manors", []) if len(w) >= 3 and point_in_poly(m["x"], m["y"], w)]
@@ -21321,26 +20808,52 @@ def _seg_0563__city_has_six_ministries(
                 f"houses, juniors small ones, and samurai walled estates sit OUTSIDE the walls (only the "
                 f"governor's mansion is walled within)",
             )
-        # MARTIAL TRAINING (GM 2026-07-25; settlements.md "Historical grounding: martial training in
-        # a provincial city"). The provincial city is the FIRST tier that supports a dojo at all -
-        # a county town's ~20 resident samurai are no student body and no living for a sensei, which
-        # is why the county magistracy draws a practice ground and no dojo (buildings.md). It
-        # supports two kinds, and both are required here:
-        #   - EXACTLY ONE state PROVINCIAL MARTIAL HALL, inside the walls. Historically the hanko's
-        #     bugeijo, and hanko were built in castle towns for the domain's own retainers - the
-        #     tier that seats a governor and ~225 working samurai is the tier that seats the hall.
-        #     It is its OWN compound, not a wing of the governor's yamen.
-        #   - PRIVATE dojos, count rolled from the samurai cohort (s.dojos): 1 per full 200 samurai
-        #     plus a remainder-fraction chance of one extra, floored at 1. A ~3,000 city is ~10%
-        #     samurai = ~300, so 1 + a 50% roll. Total martial establishments therefore land at 2-3,
-        #     matching the ~1 per ~100 resident samurai the research put a provincial city at.
-        # The ARCHERY LANE is the state hall's alone and sits INSIDE its compound wall: 90 ft is the
-        # kyudo standard 28 m shot (the same clear lane the Mode A azuchi uses), and a private lot
-        # has no room for it. A recorded roll must match the drawn count, so a stale hand count
-        # cannot ship - the bathhouse ratchet, applied to a samurai-driven institution.
+    return _kept(locals(), ('in_est', 'm', 'w'))
+
+
+# MARTIAL TRAINING (GM 2026-07-25; settlements.md "Historical grounding: martial training in
+# a provincial city"). The provincial city is the FIRST tier that supports a dojo at all -
+# a county town's ~20 resident samurai are no student body and no living for a sensei, which
+# is why the county magistracy draws a practice ground and no dojo (buildings.md). It
+# supports two kinds, and both are required here:
+#   - EXACTLY ONE state PROVINCIAL MARTIAL HALL, inside the walls. Historically the hanko's
+#     bugeijo, and hanko were built in castle towns for the domain's own retainers - the
+#     tier that seats a governor and ~225 working samurai is the tier that seats the hall.
+#     It is its OWN compound, not a wing of the governor's yamen.
+#   - PRIVATE dojos, count rolled from the samurai cohort (s.dojos): 1 per full 200 samurai
+#     plus a remainder-fraction chance of one extra, floored at 1. A ~3,000 city is ~10%
+#     samurai = ~300, so 1 + a 50% roll. Total martial establishments therefore land at 2-3,
+#     matching the ~1 per ~100 resident samurai the research put a provincial city at.
+# The ARCHERY LANE is the state hall's alone and sits INSIDE its compound wall: 90 ft is the
+# kyudo standard 28 m shot (the same clear lane the Mode A azuchi uses), and a private lot
+# has no room for it. A recorded roll must match the drawn count, so a stale hand count
+# cannot ship - the bathhouse ratchet, applied to a samurai-driven institution.
+
+
+def _seg_0563_016___mhalls(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.016 (_mhalls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _mhalls = M.get("martial_halls", [])
+    return _kept(locals(), ('_mhalls',))
+
+
+def _seg_0563_017___mhwall(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.017 (_mhwall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _mhwall = M.get("wall") or []
+    return _kept(locals(), ('_mhwall',))
+
+
+def _seg_0563_018___mhout(*, _mhalls: Any = _UNBOUND, _mhwall: Any = _UNBOUND, mh_: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.018 (_mhout, mh_) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _mhout = [(round(mh_["x"]), round(mh_["y"])) for mh_ in _mhalls if len(_mhwall) >= 3 and not point_in_poly(mh_["x"], mh_["y"], _mhwall)]
+    return _kept(locals(), ('_mhout', 'mh_'))
+
+
+def _seg_0563_019__city_has_martial_hall(*, _mhalls: Any = _UNBOUND, _mhout: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.019 (city_has_martial_hall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check(
             "city_has_martial_hall",
             len(_mhalls) == 1 and not _mhout,
@@ -21349,10 +20862,24 @@ def _seg_0563__city_has_six_ministries(
             f"of the provincial school, where the province's youth are schooled and the officer cohort drills; the "
             f"hanko's bugeijo, built in castle towns for the domain's own retainers - a county town has none)",
         )
-        # the HANKO's court is deliberately BLANK (synced doctrine, GM 2026-08-09: a real
-        # hanko is building-dense, so its faithful interior - bugeijo and archery lane
-        # included - lives on its Mode A sheet); only provincially-drawn halls owe the lane
+    return _kept(locals(), ())
+
+
+# the HANKO's court is deliberately BLANK (synced doctrine, GM 2026-08-09: a real
+# hanko is building-dense, so its faithful interior - bugeijo and archery lane
+# included - lives on its Mode A sheet); only provincially-drawn halls owe the lane
+
+
+def _seg_0563_020___mhshort(*, _mhalls: Any = _UNBOUND, mh_: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.020 (_mhshort, mh_) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _mhshort = [(round(mh_["x"]), round(mh_["y"]), mh_.get("range_ft", 0)) for mh_ in _mhalls if mh_.get("kind") != "hanko" and mh_.get("range_ft", 0) < DOJO_RANGE_FT]
+    return _kept(locals(), ('_mhshort', 'mh_'))
+
+
+def _seg_0563_021__city_martial_hall_has_archery_range(*, _mhshort: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.021 (city_martial_hall_has_archery_range) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check(
             "city_martial_hall_has_archery_range",
             not _mhshort,
@@ -21360,11 +20887,49 @@ def _seg_0563__city_has_six_ministries(
             f"the hall's yard carries a full-length lane with an azuchi butt at its head (kyudo shoots at 28 m / 92 ft), "
             f"drawn inside the compound wall where a shooting lane belongs",
         )
+    return _kept(locals(), ())
+
+
+def _seg_0563_022___cdojos(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.022 (_cdojos) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _cdojos = M.get("dojos", [])
+    return _kept(locals(), ('_cdojos',))
+
+
+def _seg_0563_023___dj_sam(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.023 (_dj_sam) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _dj_sam = round((meta.get("population") or 3000) * DOJO_SAMURAI_FRAC)
+    return _kept(locals(), ('_dj_sam',))
+
+
+def _seg_0563_024___dj_floor(*, _dj_sam: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.024 (_dj_floor) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _dj_floor = max(1, _dj_sam // DOJO_PER_SAMURAI)
+    return _kept(locals(), ('_dj_floor',))
+
+
+def _seg_0563_025___dj_allowed(*, _dj_floor: Any = _UNBOUND, _dj_sam: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.025 (_dj_allowed) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _dj_allowed = {_dj_floor} if _dj_sam % DOJO_PER_SAMURAI == 0 else {_dj_floor, _dj_floor + 1}
+    return _kept(locals(), ('_dj_allowed',))
+
+
+def _seg_0563_026___dj_roll(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.026 (_dj_roll) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _dj_roll = meta.get("dojo_roll")
+    return _kept(locals(), ('_dj_roll',))
+
+
+def _seg_0563_027__city_dojo_count_follows_samurai(
+    *, _cdojos: Any = _UNBOUND, _dj_allowed: Any = _UNBOUND, _dj_roll: Any = _UNBOUND, _dj_sam: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.027 (city_dojo_count_follows_samurai) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check(
             "city_dojo_count_follows_samurai",
             len(_cdojos) in _dj_allowed and (_dj_roll is None or len(_cdojos) == _dj_roll),
@@ -21374,7 +20939,19 @@ def _seg_0563__city_has_six_ministries(
             f"count. The countryside cohort is deliberately not counted - a city's size already scales with the "
             f"countryside that feeds it",
         )
+    return _kept(locals(), ())
+
+
+def _seg_0563_028___dj_far(*, _cdojos: Any = _UNBOUND, _mhalls: Any = _UNBOUND, b_: Any = _UNBOUND, o_: Any = _UNBOUND, samurai_h: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.028 (_dj_far, b_, o_) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _dj_far = [(round(o_["x"]), round(o_["y"])) for o_ in _mhalls + _cdojos if not any(math.hypot(o_["x"] - b_["x"], o_["y"] - b_["y"]) < DOJO_QUARTER_PX for b_ in samurai_h)]
+    return _kept(locals(), ('_dj_far', 'b_', 'o_'))
+
+
+def _seg_0563_029__city_dojos_among_samurai(*, _dj_far: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.029 (city_dojos_among_samurai) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check(
             "city_dojos_among_samurai",
             not _dj_far,
@@ -21382,19 +20959,45 @@ def _seg_0563__city_has_six_ministries(
             f"samurai and nobody else, so both the state hall and the private halls stand in or against the samurai "
             f"neighborhood, not out among the merchant rows or the laborer warrens",
         )
+    return _kept(locals(), ())
+
+
+def _seg_0563_030__city_has_merchant_district(*, bk: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.030 (city_has_merchant_district) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check("city_has_merchant_district", bk.get("merchant", 0) >= 12, f"{bk.get('merchant', 0)} merchant houses - a provincial city needs a merchant district")
+    return _kept(locals(), ())
+
+
+def _seg_0563_031__city_has_laborer_neighborhoods(*, bk: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.031 (city_has_laborer_neighborhoods) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check(
             "city_has_laborer_neighborhoods",
             bk.get("laborer", 0) + bk.get("laborer_large", 0) >= 12,
             f"{bk.get('laborer', 0) + bk.get('laborer_large', 0)} laborer dwellings - a provincial city needs laborer neighborhoods",
         )
-        # LABORER HOUSING VARIES BY WEALTH, like the samurai and merchant tiers: budgets.md's provincial-city
-        # laborer cohort is ~12.5% "master" (rich) laborers, the rest standard - so a MINORITY of larger homes
-        # (kind "laborer_large", the wealthier hinin who line the prime back-street frontage, with room around
-        # them) among the overwhelming majority of small standard dwellings. The exact share is room-limited
-        # (the big homes need street frontage), so the band is generous around the 12.5% target; the point is
-        # that the variety is PRESENT and a clear minority, not that every laborer dwelling is identical.
+    return _kept(locals(), ())
+
+
+# LABORER HOUSING VARIES BY WEALTH, like the samurai and merchant tiers: budgets.md's provincial-city
+# laborer cohort is ~12.5% "master" (rich) laborers, the rest standard - so a MINORITY of larger homes
+# (kind "laborer_large", the wealthier hinin who line the prime back-street frontage, with room around
+# them) among the overwhelming majority of small standard dwellings. The exact share is room-limited
+# (the big homes need street frontage), so the band is generous around the 12.5% target; the point is
+# that the variety is PRESENT and a clear minority, not that every laborer dwelling is identical.
+
+
+def _seg_0563_032__lab_big(*, bk: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.032 (lab_big, lab_std) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         lab_std, lab_big = bk.get("laborer", 0), bk.get("laborer_large", 0)
+    return _kept(locals(), ('lab_big', 'lab_std'))
+
+
+def _seg_0563_033__city_laborer_housing_varied(*, big_frac: Any = _UNBOUND, check: Any = _UNBOUND, lab_big: Any = _UNBOUND, lab_std: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.033 (city_laborer_housing_varied) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if lab_std + lab_big:
             big_frac = lab_big / (lab_std + lab_big)
             check(
@@ -21405,13 +21008,49 @@ def _seg_0563__city_has_six_ministries(
                 f"~6-20%) - give the wealthier laborers (the ones fronting the back streets, with room) larger homes "
                 f"(kind 'laborer_large')",
             )
-        # the city's CASTE MIX must match budgets.md, not just the total head-count: a provincial city is
-        # ~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of its ~600 households.
-        # The total-population check alone lets the mix DRIFT (e.g. laborers absorbing everyone else's
-        # slots, servants starved to near-zero because they were appended to the END of a pack list), so
-        # each caste is held within +/-30% of its target. Servants live among the merchants/samurai they
-        # serve - INTERLEAVE them into those packs rather than tacking them on the end.
+    return _kept(locals(), ('big_frac',))
+
+
+# the city's CASTE MIX must match budgets.md, not just the total head-count: a provincial city is
+# ~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of its ~600 households.
+# The total-population check alone lets the mix DRIFT (e.g. laborers absorbing everyone else's
+# slots, servants starved to near-zero because they were appended to the END of a pack list), so
+# each caste is held within +/-30% of its target. Servants live among the merchants/samurai they
+# serve - INTERLEAVE them into those packs rather than tacking them on the end.
+
+
+def _seg_0563_034__cpop(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.034 (cpop) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         cpop = meta.get("population", 0)
+    return _kept(locals(), ('cpop',))
+
+
+def _seg_0563_035__city_caste_counts_in_band(
+    *,
+    M: Any = _UNBOUND,
+    bk: Any = _UNBOUND,
+    caste: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    ck: Any = _UNBOUND,
+    cpop: Any = _UNBOUND,
+    fr: Any = _UNBOUND,
+    frac: Any = _UNBOUND,
+    hh: Any = _UNBOUND,
+    hi: Any = _UNBOUND,
+    k: Any = _UNBOUND,
+    lo: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    off: Any = _UNBOUND,
+    ratio: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    shifts: Any = _UNBOUND,
+    stale: Any = _UNBOUND,
+    tgt: Any = _UNBOUND,
+    v: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.035 (city_caste_counts_in_band, city_caste_shifts_are_documented, city_caste_shifts_are_live) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if cpop:
             caste = {
                 "laborer": bk.get("laborer", 0) + bk.get("laborer_large", 0),
@@ -21460,20 +21099,50 @@ def _seg_0563__city_has_six_ministries(
                 f"declared caste shift(s) that are not actually happening: {stale} - a shift within 20% of target is "
                 f"ordinary drift, so the declaration is stale and must be dropped rather than left to widen a band nobody needs widened",
             )
-        # MERCHANT HOUSING is varied and roomy, UNLIKE the uniform, jammed laborer warren. Behind the
-        # storefronts the homes mix sizes by wealth band (budgets.md: very rich -> walled ESTATES, rich
-        # -> LARGE houses, the rest -> small houses) and are SPREAD OUT - more room between them than the
-        # densely-packed laborers (a few denser merchant blocks are fine; the median is robust to those).
-        # ROW-PACKING doctrine (GM, 2026-07): city commoner housing is CONTIGUOUS - the
-        # machiya/nagaya fabric of party walls and touching eaves, not detached-with-yard.
-        # Real urban commoners packed into terraces (street frontage was taxed and precious;
-        # a back-lot nagaya was one roof over a row of family units; Chinese county-seat
-        # courtyard housing shared party walls in continuous street walls). Measured on the
-        # pre-doctrine Tango: median nearest-neighbor gap was 12px (~31 ft) with ZERO
-        # touching pairs - a suburb, not a city quarter. Gaps allowed: a hairline seam
-        # (<=1.2px, touching), the ~3-6 ft eave gap between back-to-back rows, courts,
-        # and street/roji breaks - but the QUARTER-WIDE stats must read as terraces.
+    return _kept(locals(), ('caste', 'ck', 'fr', 'frac', 'hh', 'hi', 'k', 'lo', 'off', 'ratio', 'shifts', 'stale', 'tgt', 'v'))
+
+
+# MERCHANT HOUSING is varied and roomy, UNLIKE the uniform, jammed laborer warren. Behind the
+# storefronts the homes mix sizes by wealth band (budgets.md: very rich -> walled ESTATES, rich
+# -> LARGE houses, the rest -> small houses) and are SPREAD OUT - more room between them than the
+# densely-packed laborers (a few denser merchant blocks are fine; the median is robust to those).
+# ROW-PACKING doctrine (GM, 2026-07): city commoner housing is CONTIGUOUS - the
+# machiya/nagaya fabric of party walls and touching eaves, not detached-with-yard.
+# Real urban commoners packed into terraces (street frontage was taxed and precious;
+# a back-lot nagaya was one roof over a row of family units; Chinese county-seat
+# courtyard housing shared party walls in continuous street walls). Measured on the
+# pre-doctrine Tango: median nearest-neighbor gap was 12px (~31 ft) with ZERO
+# touching pairs - a suburb, not a city quarter. Gaps allowed: a hairline seam
+# (<=1.2px, touching), the ~3-6 ft eave gap between back-to-back rows, courts,
+# and street/roji breaks - but the QUARTER-WIDE stats must read as terraces.
+
+
+def _seg_0563_036__b_4(*, M: Any = _UNBOUND, b: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.036 (b, rowk) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         rowk = [b for b in M.get("buildings", []) if b.get("kind") in ("laborer", "servant", "burakumin", "merchant_house")]
+    return _kept(locals(), ('b', 'rowk'))
+
+
+def _seg_0563_037__city_row_housing_touches(
+    *,
+    _egap: Any = _UNBOUND,
+    _gaps: Any = _UNBOUND,
+    _med: Any = _UNBOUND,
+    _touch: Any = _UNBOUND,
+    a: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    dx: Any = _UNBOUND,
+    dy: Any = _UNBOUND,
+    g: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    j: Any = _UNBOUND,
+    rowk: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.037 (city_row_housing_gap, city_row_housing_touches) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if len(rowk) >= 20:
 
             def _egap(a: dict[str, Any], b: dict[str, Any]) -> float:
@@ -21495,18 +21164,50 @@ def _seg_0563__city_has_six_ministries(
                 _med <= 2.0,
                 f"median nearest-neighbor edge gap among row-class dwellings is {_med:.1f}px - the quarter reads as scattered houses, not terraces (want <= 2px: a party wall or a ~3-6 ft eave gap)",
             )
+    return _kept(locals(), ('_egap', '_gaps', '_med', '_touch', 'a', 'b', 'g', 'i', 'j'))
+
+
+def _seg_0563_038__b_5(*, M: Any = _UNBOUND, b: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.038 (b, mlarge) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         mlarge = [b for b in M.get("buildings", []) if b.get("kind") == "merchant_large"]
+    return _kept(locals(), ('b', 'mlarge'))
+
+
+def _seg_0563_039__b_6(*, M: Any = _UNBOUND, b: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.039 (b, msmall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         msmall = [b for b in M.get("buildings", []) if b.get("kind") == "merchant_house"]
+    return _kept(locals(), ('b', 'msmall'))
+
+
+def _seg_0563_040__mest(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.040 (mest) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         mest = M.get("merchant_estates", [])
-        # DRAWN COMPOUND COUNT MATCHES THE ROLL (GM 2026-07-23, mirroring torii_match_roll): a
-        # walled/gated compound is a PRIVILEGE explicitly granted to a merchant family - most very
-        # rich merchants can afford one but lack the legal standing to build it (the Edo pattern of
-        # individually granted merchant rights: a New Year's audience with the daimyo, a hereditary
-        # surname, etc. - see MERCHANT_ESTATE_WEIGHTS in settlement.py and settlements.md). The gen
-        # rolls 1-3 grants per city (30/40/30, seeded on the map seed), records the target in
-        # meta['merchant_estate_roll'], and this gates drawn == target - so the pre-roll state
-        # (both cities hand-coding exactly 1, a copied pattern) can never silently return.
+    return _kept(locals(), ('mest',))
+
+
+# DRAWN COMPOUND COUNT MATCHES THE ROLL (GM 2026-07-23, mirroring torii_match_roll): a
+# walled/gated compound is a PRIVILEGE explicitly granted to a merchant family - most very
+# rich merchants can afford one but lack the legal standing to build it (the Edo pattern of
+# individually granted merchant rights: a New Year's audience with the daimyo, a hereditary
+# surname, etc. - see MERCHANT_ESTATE_WEIGHTS in settlement.py and settlements.md). The gen
+# rolls 1-3 grants per city (30/40/30, seeded on the map seed), records the target in
+# meta['merchant_estate_roll'], and this gates drawn == target - so the pre-roll state
+# (both cities hand-coding exactly 1, a copied pattern) can never silently return.
+
+
+def _seg_0563_041___mroll(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.041 (_mroll) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _mroll = meta.get("merchant_estate_roll")
+    return _kept(locals(), ('_mroll',))
+
+
+def _seg_0563_042__merchant_estates_match_roll(*, _mroll: Any = _UNBOUND, check: Any = _UNBOUND, mest: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.042 (merchant_estates_match_roll) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if _mroll is not None:
             check(
                 "merchant_estates_match_roll",
@@ -21514,6 +21215,31 @@ def _seg_0563__city_has_six_ministries(
                 f"{len(mest)} walled merchant estate(s) drawn but the seeded roll granted {_mroll} - place exactly the rolled count "
                 f"(the merchant_estates() seat list must carry enough vetted seats; pin with count= only with a recorded reason)",
             )
+    return _kept(locals(), ())
+
+
+def _seg_0563_043__city_merchant_housing_varied(
+    *,
+    M: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    homes: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    j: Any = _UNBOUND,
+    labor: Any = _UNBOUND,
+    lh: Any = _UNBOUND,
+    med_nn: Any = _UNBOUND,
+    mest: Any = _UNBOUND,
+    mh: Any = _UNBOUND,
+    mlarge: Any = _UNBOUND,
+    msmall: Any = _UNBOUND,
+    p: Any = _UNBOUND,
+    pts: Any = _UNBOUND,
+    q: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.043 (city_merchant_housing_spread, city_merchant_housing_varied) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if mlarge or msmall:  # a merchant district whose homes are drawn
             check(
                 "city_merchant_housing_varied",
@@ -21536,31 +21262,91 @@ def _seg_0563__city_has_six_ministries(
                     f"merchant homes are not more SPREAD OUT than the laborers (median neighbor gap {mh:.0f}px vs laborer {lh:.0f}px; want >= 1.3x) - "
                     f"give merchant houses more room between them; the laborer warren is the dense, uniform contrast",
                 )
-        # CAPITAL-INVERTED (021): a capital is fed BY THE RIVER, not its outskirts - the whole
-        # wharf/granary doctrine (stipend rice arrives from the six provinces by boat, and the
-        # frame shows that supply chain: wharf, granaries, towpath), and its sheet frames only
-        # the walled city and its suburbs. A provincial city's identity IS its farm country, so
-        # the comb stays mandatory there. (capitals.md; audit 2026-08-10)
+    return _kept(locals(), ('b', 'homes', 'labor', 'lh', 'med_nn', 'mh'))
+
+
+# CAPITAL-INVERTED (021): a capital is fed BY THE RIVER, not its outskirts - the whole
+# wharf/granary doctrine (stipend rice arrives from the six provinces by boat, and the
+# frame shows that supply chain: wharf, granaries, towpath), and its sheet frames only
+# the walled city and its suburbs. A provincial city's identity IS its farm country, so
+# the comb stays mandatory there. (capitals.md; audit 2026-08-10)
+
+
+def _seg_0563_044__city_has_outside_farmland(*, check: Any = _UNBOUND, f: Any = _UNBOUND, fields: Any = _UNBOUND, runs_off_edge: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.044 (city_has_outside_farmland) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if scale == "city":
             check(
                 "city_has_outside_farmland",
                 bool([f for f in fields if runs_off_edge(f["outline"])]),
                 "a city has extensive farmland outside its walls - at least one field must run off the map edge",
             )
-        # civic amenities ported up from the town tier (a city is a bigger version of the same):
+    return _kept(locals(), ('f',))
+
+
+# civic amenities ported up from the town tier (a city is a bigger version of the same):
+
+
+def _seg_0563_045__city_has_merchant_storehouses(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.045 (city_has_merchant_storehouses) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check(
             "city_has_merchant_storehouses",
             len(M.get("storehouses", [])) >= 5,
             f"{len(M.get('storehouses', []))} merchant storehouses - a city's merchant district keeps fireproof kura (s.merchant_storehouses(...))",
         )
+    return _kept(locals(), ())
+
+
+def _seg_0563_046__city_has_flophouse(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.046 (city_has_flophouse) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check("city_has_flophouse", len(M.get("flophouses", [])) >= 1, "a provincial city is a major market center and needs market-day lodging (s.flophouse(...))")
+    return _kept(locals(), ())
+
+
+def _seg_0563_047__city_has_theater_stage(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.047 (city_has_theater_stage) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check("city_has_theater_stage", bool(M.get("theater_stage")), "a provincial city needs a theater stage (s.theater_stage(...))")
+    return _kept(locals(), ())
+
+
+def _seg_0563_048__theater_stage_by_temple(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.048 (theater_stage_by_temple, theater_stage_clear, theater_stage_faces_temple) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check_theater_stage(M, check)
-        # a CITY theater stage is bigger than a town's (towns run a viewing ground ~150 wide) - a provincial
-        # city draws a larger crowd, so its viewing ground is wider (>= 185, the city baseline)
+    return _kept(locals(), ())
+
+
+# a CITY theater stage is bigger than a town's (towns run a viewing ground ~150 wide) - a provincial
+# city draws a larger crowd, so its viewing ground is wider (>= 185, the city baseline)
+
+
+def _seg_0563_049__amph_raw3(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.049 (amph_raw3) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         amph_raw3 = M.get("theater_stage")
+    return _kept(locals(), ('amph_raw3',))
+
+
+def _seg_0563_050__amph_all3(*, amph_raw3: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.050 (amph_all3) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         amph_all3 = amph_raw3 if isinstance(amph_raw3, list) else ([amph_raw3] if amph_raw3 else [])
+    return _kept(locals(), ('amph_all3',))
+
+
+def _seg_0563_051__amph(*, a8: Any = _UNBOUND, amph_all3: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.051 (amph) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         amph = max(amph_all3, key=lambda a8: a8.get("w", 0)) if amph_all3 else None
+    return _kept(locals(), ('amph',))
+
+
+def _seg_0563_052__city_theater_stage_larger_than_town(*, _ftpx: Any = _UNBOUND, amph: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.052 (city_theater_stage_larger_than_town) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if amph:
             # compared in REAL FEET via the declared scale (meta ftpx, default 1): a town's stage
             # is ~150 ft wide, so a provincial city's must be >= 185 ft - the old 185px threshold
@@ -21572,31 +21358,109 @@ def _seg_0563__city_has_six_ministries(
                 amph.get("w", 0) * _ftpx >= 185,
                 f"the city theater stage (viewing ground ~{round(amph.get('w', 0) * _ftpx)} ft wide) is no bigger than a town's - a provincial city's is larger (>= 185 ft)",
             )
-        # FIRE DEFENSE: a city's dense quarters each need a fire-watch tower (hinomi-yagura). WHY:
-        # settlements.md "Fire towers". Opt out per-map with meta(fire_tower=False).
+    return _kept(locals(), ('_ftpx',))
+
+
+# FIRE DEFENSE: a city's dense quarters each need a fire-watch tower (hinomi-yagura). WHY:
+# settlements.md "Fire towers". Opt out per-map with meta(fire_tower=False).
+
+
+def _seg_0563_053__city_has_fire_towers(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, nft: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.053 (city_has_fire_towers) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if meta.get("fire_tower", True):
             nft = len(M.get("fire_towers", []))
             check("city_has_fire_towers", nft >= 2, f"{nft} fire towers - a provincial city's dense quarters each need a fire-watch tower (>= 2; s.fire_tower(...); meta(fire_tower=False) to omit)")
-        check_fire_features(M, check)
+    return _kept(locals(), ('nft',))
 
-        # A NAMED civic building's label must sit on ITS OWN building, never on a DIFFERENT one of the
-        # same kind. labels_clear_of_other_buildings lumps every ministry into one "ministry" GROUP, so
-        # it permits a ministry label to sit on a SIBLING ministry (the "Ministry of Justice" label
-        # drifted onto the "Ministry of Works" office). This catches that finer case: a label that names
-        # a civic building (a ministry by name, the governor's yamen, a named temple) must not overlap
-        # any OTHER named civic building.
+
+def _seg_0563_054__fire_tower_amid_its_district(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.054 (fire_tower_amid_its_district, fire_tower_clear_of_fields, fire_tower_clear_of_graveyards, fire_tower_clear_of_wells, fire_tower_in_commoner_quarter, fire_tower_standoff, fire_towers_dispersed) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        check_fire_features(M, check)
+    return _kept(locals(), ())
+
+
+# A NAMED civic building's label must sit on ITS OWN building, never on a DIFFERENT one of the
+# same kind. labels_clear_of_other_buildings lumps every ministry into one "ministry" GROUP, so
+# it permits a ministry label to sit on a SIBLING ministry (the "Ministry of Justice" label
+# drifted onto the "Ministry of Works" office). This catches that finer case: a label that names
+# a civic building (a ministry by name, the governor's yamen, a named temple) must not overlap
+# any OTHER named civic building.
+
+
+def _seg_0563_055___bbc(*, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.055 (_bbc) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+
         def _bbc(it9: dict[str, Any]) -> tuple[float, float, float, float]:
             # local bbox helper: the _bb at the labels battery is defined in a branch a
             # minimal capital manifest never enters (found when the urban battery widened)
             return (it9["x"] - it9["w"] / 2, it9["y"] - it9["h"] / 2, it9["x"] + it9["w"] / 2, it9["y"] + it9["h"] / 2)
 
+    return _kept(locals(), ('_bbc',))
+
+
+def _seg_0563_056__civic(*, M: Any = _UNBOUND, _bbc: Any = _UNBOUND, mi: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.056 (civic, mi) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         civic = [(mi["name"], _bbc(mi)) for mi in M.get("ministries", []) if mi.get("name")]
+    return _kept(locals(), ('civic', 'mi'))
+
+
+def _seg_0563_057___gv(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.057 (_gv) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         _gv = M.get("governor_mansion")
+    return _kept(locals(), ('_gv',))
+
+
+def _seg_0563_058__civic_1(*, _bbc: Any = _UNBOUND, _gv: Any = _UNBOUND, civic: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.058 (civic) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if _gv and _gv.get("label"):
             civic.append((_gv["label"], _bbc(_gv)))
+    return _kept(locals(), ('civic',))
+
+
+def _seg_0563_059__civic_2(*, M: Any = _UNBOUND, _bbc: Any = _UNBOUND, civic: Any = _UNBOUND, r: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.059 (civic, r) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         civic += [(r["label"], _bbc(r)) for r in M.get("religious", []) if r.get("label") and r.get("kind") == "temple"]
+    return _kept(locals(), ('civic', 'r'))
+
+
+def _seg_0563_060___(*, civic: Any = _UNBOUND, n: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.060 (_, civic_names, n) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         civic_names = {n for n, _ in civic}
-        cross = []
+    return _kept(locals(), ('_', 'civic_names', 'n'))
+
+
+def _seg_0563_061__cross(*, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.061 (cross) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        cross = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('cross',))
+
+
+def _seg_0563_062__L(
+    *,
+    L: Any = _UNBOUND,
+    M: Any = _UNBOUND,
+    _la: Any = _UNBOUND,
+    civic: Any = _UNBOUND,
+    civic_names: Any = _UNBOUND,
+    cross: Any = _UNBOUND,
+    n: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    x0: Any = _UNBOUND,
+    x1: Any = _UNBOUND,
+    y0: Any = _UNBOUND,
+    y1: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.062 (L, _la, cross, n) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         for L in M.get("labels", []):
             if len(L) <= 5 or L[5] not in civic_names:
                 continue
@@ -21604,46 +21468,183 @@ def _seg_0563__city_has_six_ministries(
             for n, (x0, y0, x1, y1) in civic:
                 if n != L[5] and _la[0] < x1 and x0 < _la[2] and _la[1] < y1 and y0 < _la[3]:
                     cross.append(f"{L[5]!r} over {n!r}")
-        check("city_civic_label_on_its_own_building", not cross, f"a civic building's label sits on a DIFFERENT civic building (not the one it names): {sorted(set(cross))}")
+    return _kept(locals(), ('L', '_la', 'cross', 'n', 'x0', 'x1', 'y0', 'y1'))
 
-        # GOVERNMENT OFFICES stand in their own ground - a ministry or the governor's yamen is a large,
-        # important compound and must not ABUT another structure. Ordinary city houses may touch each
-        # other, but a government office keeps a clear gap from every other building/compound around it.
+
+def _seg_0563_063__city_civic_label_on_its_own_building(*, check: Any = _UNBOUND, cross: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.063 (city_civic_label_on_its_own_building) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        check("city_civic_label_on_its_own_building", not cross, f"a civic building's label sits on a DIFFERENT civic building (not the one it names): {sorted(set(cross))}")
+    return _kept(locals(), ())
+
+
+# GOVERNMENT OFFICES stand in their own ground - a ministry or the governor's yamen is a large,
+# important compound and must not ABUT another structure. Ordinary city houses may touch each
+# other, but a government office keeps a clear gap from every other building/compound around it.
+
+
+def _seg_0563_064__OFFICE_GAP(*, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.064 (OFFICE_GAP) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         OFFICE_GAP = 14
+    return _kept(locals(), ('OFFICE_GAP',))
+
+
+def _seg_0563_065__mi(*, M: Any = _UNBOUND, _gv: Any = _UNBOUND, mi: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.065 (mi, offices) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         offices = ([("the governor's yamen", _gv)] if _gv else []) + [(mi.get("name", "a ministry"), mi) for mi in M.get("ministries", [])]
-        # every solid footprint, from the registry - an office must not abut a martial hall or a
-        # brewery any more than it may abut a house (GM 2026-07-25; see solid_structs). The FUNERARY
-        # compounds are the one deliberate exclusion: the ruling clan's walled crypt standing against
-        # the governor's yamen is a real adjacency (the house's dead beside the house's seat), not a
-        # packing error, and Nagahara has drawn it that way since long before this check read the
-        # registry. Burial ground siting has its own battery (funerary_clear_of_fields, the
-        # burial-ground checks); this rule is about a bureau not being crowded by ordinary premises.
+    return _kept(locals(), ('mi', 'offices'))
+
+
+# every solid footprint, from the registry - an office must not abut a martial hall or a
+# brewery any more than it may abut a house (GM 2026-07-25; see solid_structs). The FUNERARY
+# compounds are the one deliberate exclusion: the ruling clan's walled crypt standing against
+# the governor's yamen is a real adjacency (the house's dead beside the house's seat), not a
+# packing error, and Nagahara has drawn it that way since long before this check read the
+# registry. Burial ground siting has its own battery (funerary_clear_of_fields, the
+# burial-ground checks); this rule is about a bureau not being crowded by ordinary premises.
+
+
+def _seg_0563_066__others(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.066 (others) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         others = solid_structs(M, "religious", "merchant_estates", exclude=("cemeteries", "mausoleums", "cremation_grounds", "ossuaries"))
+    return _kept(locals(), ('others',))
+
+
+def _seg_0563_067___edge_gap(
+    *,
+    _bbc: Any = _UNBOUND,
+    a: Any = _UNBOUND,
+    ax0: Any = _UNBOUND,
+    ax1: Any = _UNBOUND,
+    ay0: Any = _UNBOUND,
+    ay1: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    bx0: Any = _UNBOUND,
+    bx1: Any = _UNBOUND,
+    by0: Any = _UNBOUND,
+    by1: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.067 (_edge_gap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
 
         def _edge_gap(a: dict[str, Any], b: dict[str, Any]) -> float:
             ax0, ay0, ax1, ay1 = _bbc(a)
             bx0, by0, bx1, by1 = _bbc(b)
             return math.hypot(max(0.0, ax0 - bx1, bx0 - ax1), max(0.0, ay0 - by1, by0 - ay1))
 
-        abut = []
+    return _kept(locals(), ('_edge_gap',))
+
+
+def _seg_0563_068__abut(*, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.068 (abut) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        abut = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('abut',))
+
+
+def _seg_0563_069__abut_1(
+    *,
+    OFFICE_GAP: Any = _UNBOUND,
+    _edge_gap: Any = _UNBOUND,
+    abut: Any = _UNBOUND,
+    nm: Any = _UNBOUND,
+    o: Any = _UNBOUND,
+    offices: Any = _UNBOUND,
+    others: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    st: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.069 (abut, nm, o, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         for nm, o in offices:
             for st in others:
                 if st is not o and "w" in st and _edge_gap(o, st) < OFFICE_GAP:
                     abut.append(f"{nm!r} abuts {(st.get('name') or st.get('label') or st.get('kind') or 'a building')!r}")
+    return _kept(locals(), ('abut', 'nm', 'o', 'st'))
+
+
+def _seg_0563_070__city_government_offices_dont_abut(*, OFFICE_GAP: Any = _UNBOUND, abut: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.070 (city_government_offices_dont_abut) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check(
             "city_government_offices_dont_abut", not abut, f"government office(s) abutting another structure - a ministry / the yamen must stand clear, not touch ({OFFICE_GAP}px): {sorted(set(abut))}"
         )
+    return _kept(locals(), ())
 
-        # PUBLIC WELLS: ensuring every commoner could draw water was a defining civic concern of a
-        # premodern city. A communal well (the idobata) served a courtyard / cluster of ~10-20
-        # households, so the warren is dotted with them - one within a short walk of any home. The
-        # underground half of the system (aqueducts, cisterns, rain barrels feeding the shafts) is too
-        # small or literally subterranean and stays OFF the map; only the wellheads show.
-        # PRIVATE wells (private=True - e.g. the brewery's own courtyard well, GM 2026-07-24) are
-        # premises fixtures, not neighborhood infrastructure: they serve no commoner households, so
-        # they are excluded from ALL the public-well accounting below (reach, density, block-interior
-        # siting, the samurai-ward ban) - exactly as samurai compounds' implied private wells are.
+
+# PUBLIC WELLS: ensuring every commoner could draw water was a defining civic concern of a
+# premodern city. A communal well (the idobata) served a courtyard / cluster of ~10-20
+# households, so the warren is dotted with them - one within a short walk of any home. The
+# underground half of the system (aqueducts, cisterns, rain barrels feeding the shafts) is too
+# small or literally subterranean and stays OFF the map; only the wellheads show.
+# PRIVATE wells (private=True - e.g. the brewery's own courtyard well, GM 2026-07-24) are
+# premises fixtures, not neighborhood infrastructure: they serve no commoner households, so
+# they are excluded from ALL the public-well accounting below (reach, density, block-interior
+# siting, the samurai-ward ban) - exactly as samurai compounds' implied private wells are.
+
+
+def _seg_0563_071__w_(*, M: Any = _UNBOUND, scale: Any = _UNBOUND, w_: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.071 (w_, wells) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         wells = [w_ for w_ in M.get("wells", []) if not w_.get("private")]
+    return _kept(locals(), ('w_', 'wells'))
+
+
+def _seg_0563_072__city_neighborhoods_have_wells(
+    *,
+    COMMON: Any = _UNBOUND,
+    HOUSEK: Any = _UNBOUND,
+    M: Any = _UNBOUND,
+    MAX_PER_WELL: Any = _UNBOUND,
+    MAX_PER_WELL_OUTCAST: Any = _UNBOUND,
+    REACH: Any = _UNBOUND,
+    SAMK: Any = _UNBOUND,
+    _sy_stbl: Any = _UNBOUND,
+    a: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    b9: Any = _UNBOUND,
+    bad_well: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    d: Any = _UNBOUND,
+    dry: Any = _UNBOUND,
+    dwl: Any = _UNBOUND,
+    h: Any = _UNBOUND,
+    hh: Any = _UNBOUND,
+    hh_out: Any = _UNBOUND,
+    hx: Any = _UNBOUND,
+    hy: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    inw: Any = _UNBOUND,
+    lane_w: Any = _UNBOUND,
+    ln: Any = _UNBOUND,
+    lw: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    near_dw: Any = _UNBOUND,
+    s9: Any = _UNBOUND,
+    sam_wells: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    served: Any = _UNBOUND,
+    served_out: Any = _UNBOUND,
+    st: Any = _UNBOUND,
+    structs: Any = _UNBOUND,
+    swamped: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+    wells: Any = _UNBOUND,
+    wlanes: Any = _UNBOUND,
+    wp: Any = _UNBOUND,
+    wr: Any = _UNBOUND,
+    wx: Any = _UNBOUND,
+    wy: Any = _UNBOUND,
+    x: Any = _UNBOUND,
+    y: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.072 (city_neighborhoods_have_wells, city_samurai_quarter_has_no_public_wells, city_well_density_sufficient, city_wells_in_block_interiors) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if wells:
             wp = M.get("wall") or []
             inw: Any = (lambda x, y: point_in_poly(x, y, wp)) if len(wp) >= 3 else (lambda x, y: True)  # type: ignore[no-redef]  # noqa: E731
@@ -21774,16 +21775,112 @@ def _seg_0563__city_has_six_ministries(
                 f"public well(s) sitting among the samurai dwellings: {sam_wells} - the samurai/government quarter has no "
                 f"communal wells (samurai draw from private wells inside their compounds; the public idobata is a commoner institution)",
             )
+    return _kept(
+        locals(),
+        (
+            'COMMON',
+            'HOUSEK',
+            'MAX_PER_WELL',
+            'MAX_PER_WELL_OUTCAST',
+            'REACH',
+            'SAMK',
+            '_',
+            '_gov',
+            '_sy_stbl',
+            'a',
+            'b',
+            'b9',
+            'bad_well',
+            'c',
+            'd',
+            'dry',
+            'dwl',
+            'h',
+            'hh',
+            'hh_out',
+            'hx',
+            'hy',
+            'i',
+            'inw',
+            'lane_w',
+            'ln',
+            'lw',
+            'near_dw',
+            's9',
+            'sam_wells',
+            'served',
+            'served_out',
+            'st',
+            'structs',
+            'swamped',
+            'w',
+            'wlanes',
+            'wp',
+            'wr',
+            'wx',
+            'wy',
+        ),
+    )
 
-        # a city ON the Imperial road LINES that road with COMMERCE (shops + traveler inns): the
-        # through-road is the city's prime frontage, where caravans and travelers pass, so it must not
-        # run bare. This holds for ANY city with an Imperial road, WALLED OR NOT - a city WITHOUT a road
-        # has no such ribbon (its commerce stays in the market district). The road's portion running
-        # THROUGH the city is judged: bounded by the WALL if there is one, else by the URBAN FOOTPRINT
-        # (the bbox of the city's buildings). Scaled to that length at ~1 commercial frontage per 130px,
-        # a floor that catches a bare spine.
+
+# a city ON the Imperial road LINES that road with COMMERCE (shops + traveler inns): the
+# through-road is the city's prime frontage, where caravans and travelers pass, so it must not
+# run bare. This holds for ANY city with an Imperial road, WALLED OR NOT - a city WITHOUT a road
+# has no such ribbon (its commerce stays in the market district). The road's portion running
+# THROUGH the city is judged: bounded by the WALL if there is one, else by the URBAN FOOTPRINT
+# (the bbox of the city's buildings). Scaled to that length at ~1 commercial frontage per 130px,
+# a floor that catches a bare spine.
+
+
+def _seg_0563_073__road(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.073 (road) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         road = M.get("road") or []
+    return _kept(locals(), ('road',))
+
+
+def _seg_0563_074__p(*, EY0: Any = _UNBOUND, EY1: Any = _UNBOUND, p: Any = _UNBOUND, road: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.074 (p, road_through) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         road_through = bool(road) and any(p[1] < EY0 for p in road) and any(p[1] > EY1 for p in road)
+    return _kept(locals(), ('p', 'road_through'))
+
+
+def _seg_0563_075__city_imperial_road_has_commerce(
+    *,
+    COMMERCE: Any = _UNBOUND,
+    EX0: Any = _UNBOUND,
+    EX1: Any = _UNBOUND,
+    EY0: Any = _UNBOUND,
+    EY1: Any = _UNBOUND,
+    M: Any = _UNBOUND,
+    a: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    bg: Any = _UNBOUND,
+    bx: Any = _UNBOUND,
+    by: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    frac_inside: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    il: Any = _UNBOUND,
+    in_city: Any = _UNBOUND,
+    k: Any = _UNBOUND,
+    need: Any = _UNBOUND,
+    road: Any = _UNBOUND,
+    road_comm: Any = _UNBOUND,
+    road_through: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    t: Any = _UNBOUND,
+    wp: Any = _UNBOUND,
+    x: Any = _UNBOUND,
+    x0: Any = _UNBOUND,
+    x1: Any = _UNBOUND,
+    y: Any = _UNBOUND,
+    y0: Any = _UNBOUND,
+    y1: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.075 (city_imperial_road_has_commerce) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if road_through:
             wp = M.get("wall") or []
             if len(wp) >= 3:
@@ -21811,42 +21908,105 @@ def _seg_0563__city_has_six_ministries(
                 f"only {road_comm} shops/inns front the {round(il)}px of Imperial road running through the city (want >= {need}) - a "
                 f"city on a trade route lines its through-road with commerce to service travelers; don't leave the prime road frontage bare",
             )
+    return _kept(locals(), ('COMMERCE', 'a', 'b', 'bg', 'bx', 'by', 'frac_inside', 'i', 'il', 'in_city', 'k', 'need', 'road_comm', 't', 'wp', 'x0', 'x1', 'y0', 'y1'))
 
-        # two lanes (streets/alleys) heading STRAIGHT at each other and stopping just short, with nothing
-        # between them, should simply CONNECT - a near-miss reads as a mistake, not a deliberate dead-end.
-        # (Unlike city_streets_no_near_miss, which only compares street-vs-street segment proximity, this
-        # catches ALLEYS too and the aligned end-to-end / T case, and ignores gaps a building/fence/wall
-        # genuinely blocks.) Generic to any city with lanes, walled or not.
+
+# two lanes (streets/alleys) heading STRAIGHT at each other and stopping just short, with nothing
+# between them, should simply CONNECT - a near-miss reads as a mistake, not a deliberate dead-end.
+# (Unlike city_streets_no_near_miss, which only compares street-vs-street segment proximity, this
+# catches ALLEYS too and the aligned end-to-end / T case, and ignores gaps a building/fence/wall
+# genuinely blocks.) Generic to any city with lanes, walled or not.
+
+
+def _seg_0563_076__misses(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.076 (misses) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         misses = lane_near_misses(M)
+    return _kept(locals(), ('misses',))
+
+
+def _seg_0563_077__city_lanes_meet_when_aligned(*, check: Any = _UNBOUND, misses: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.077 (city_lanes_meet_when_aligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         check(
             "city_lanes_meet_when_aligned",
             not misses,
             f"lane endpoint(s) stopping a short CLEAR distance from another lane they point straight at - "
             f"two lanes heading toward each other with nothing between should connect, not stop short: {misses}",
         )
+    return _kept(locals(), ())
 
-        # a lane heading at a NEIGHBORHOOD wall (a ward fence) should reach it and end at a KIDO GATE - the
-        # commoners' lanes pull in to the gates they pass through to work in the samurai quarter. Stopping a
-        # sliver short, or meeting the fence with no gate, both read as a mistake. (Stopping short of the
-        # MAIN city wall is fine - that is the city's own edge, not a neighborhood boundary.)
+
+# a lane heading at a NEIGHBORHOOD wall (a ward fence) should reach it and end at a KIDO GATE - the
+# commoners' lanes pull in to the gates they pass through to work in the samurai quarter. Stopping a
+# sliver short, or meeting the fence with no gate, both read as a mistake. (Stopping short of the
+# MAIN city wall is fine - that is the city's own edge, not a neighborhood boundary.)
+
+
+def _seg_0563_078__shortfalls(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.078 (shortfalls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         shortfalls = lane_ward_shortfalls(M)
-        check("city_lanes_reach_ward_gates", not shortfalls, f"lane(s) at a neighborhood (ward) wall that should extend to it and end at a gate: {shortfalls}")
+    return _kept(locals(), ('shortfalls',))
 
-        # THE KIDO SQUARES TO WHAT IT BARS (GM 2026-07-26, refining the 2026-07-24 fence rule).
-        # A kido is a gate across a WAY: it is shut at night to stop traffic, so the roofed bar
-        # stands SQUARE ACROSS THE LANE that runs through it, and the fence meets the gate at
-        # whatever angle the fence happens to run. The two readings agree wherever a lane crosses
-        # its fence squarely - which is most crossings, and why the fence rule held up for two
-        # days - and diverge exactly where a lane meets the fence obliquely: Tango's SW ring-road
-        # gate, drawn on its ~44deg fence jog while the ring road passed at ~172deg, sat 38 degrees
-        # off square to the road it was supposedly barring and read as a glyph dropped on the
-        # roadbed. Only a gate with NO lane through it falls back to the fence tangent (still never
-        # an axis-aligned stamp on a slanted run - Nagahara's SW kido, Tango's S jog, both frozen
-        # in pool/regressions/). lane_through_gate/kido_bar_deg are the SAME functions s.ward
-        # places with, so placer and checker cannot drift. s.kido records the drawn angle as 'rot'
-        # (legacy manifests fall back to the horizontal flag: True -> 90, False -> 0); it must match
-        # within ~7 degrees mod 180.
+
+def _seg_0563_079__city_lanes_reach_ward_gates(*, check: Any = _UNBOUND, scale: Any = _UNBOUND, shortfalls: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.079 (city_lanes_reach_ward_gates) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        check("city_lanes_reach_ward_gates", not shortfalls, f"lane(s) at a neighborhood (ward) wall that should extend to it and end at a gate: {shortfalls}")
+    return _kept(locals(), ())
+
+
+# THE KIDO SQUARES TO WHAT IT BARS (GM 2026-07-26, refining the 2026-07-24 fence rule).
+# A kido is a gate across a WAY: it is shut at night to stop traffic, so the roofed bar
+# stands SQUARE ACROSS THE LANE that runs through it, and the fence meets the gate at
+# whatever angle the fence happens to run. The two readings agree wherever a lane crosses
+# its fence squarely - which is most crossings, and why the fence rule held up for two
+# days - and diverge exactly where a lane meets the fence obliquely: Tango's SW ring-road
+# gate, drawn on its ~44deg fence jog while the ring road passed at ~172deg, sat 38 degrees
+# off square to the road it was supposedly barring and read as a glyph dropped on the
+# roadbed. Only a gate with NO lane through it falls back to the fence tangent (still never
+# an axis-aligned stamp on a slanted run - Nagahara's SW kido, Tango's S jog, both frozen
+# in pool/regressions/). lane_through_gate/kido_bar_deg are the SAME functions s.ward
+# places with, so placer and checker cannot drift. s.kido records the drawn angle as 'rot'
+# (legacy manifests fall back to the horizontal flag: True -> 90, False -> 0); it must match
+# within ~7 degrees mod 180.
+
+
+def _seg_0563_080__wards_k(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.080 (wards_k) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         wards_k = M.get("wards", [])
+    return _kept(locals(), ('wards_k',))
+
+
+def _seg_0563_081__kido_aligned_with_ward_fence(
+    *,
+    M: Any = _UNBOUND,
+    b2: Any = _UNBOUND,
+    best2: Any = _UNBOUND,
+    box_on_lane: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    d8: Any = _UNBOUND,
+    diff8: Any = _UNBOUND,
+    gbox: Any = _UNBOUND,
+    got8: Any = _UNBOUND,
+    gpoly: Any = _UNBOUND,
+    half: Any = _UNBOUND,
+    i8: Any = _UNBOUND,
+    kd2: Any = _UNBOUND,
+    kd3: Any = _UNBOUND,
+    kido_off: Any = _UNBOUND,
+    lane8: Any = _UNBOUND,
+    pts: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    want8: Any = _UNBOUND,
+    wards_k: Any = _UNBOUND,
+    wd2: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.081 (kido_aligned_with_ward_fence, kido_guard_box_clear_of_lanes) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
         if wards_k:
             kido_off = []
             for kd2 in M.get("kido", []):
@@ -21895,54 +22055,212 @@ def _seg_0563__city_has_six_ministries(
                 f"verge beside the way, never an obstruction in it (s.kido slides it clear; a curving ring road is the case "
                 f"straight-line arithmetic misses)",
             )
+    return _kept(locals(), ('b2', 'best2', 'box_on_lane', 'c', 'd8', 'diff8', 'gbox', 'got8', 'gpoly', 'half', 'i8', 'kd2', 'kd3', 'kido_off', 'lane8', 'pts', 'want8', 'wd2'))
 
-        if meta.get("walled"):
+
+def _seg_0563_082__w(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.082 (w) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             w = M.get("wall") or []
+    return _kept(locals(), ('w',))
+
+
+def _seg_0563_083__gates(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.083 (gates) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gates = M.get("gates", [])
+    return _kept(locals(), ('gates',))
+
+
+def _seg_0563_084__inwall(*, meta: Any = _UNBOUND, px: Any = _UNBOUND, py: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.084 (inwall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
 
             def inwall(px: float, py: float) -> bool:
                 return len(w) >= 3 and point_in_poly(px, py, w)
 
+    return _kept(locals(), ('inwall',))
+
+
+def _seg_0563_085__walled_city_has_wall_and_gates(*, check: Any = _UNBOUND, gates: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.085 (walled_city_has_wall_and_gates) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("walled_city_has_wall_and_gates", len(w) >= 3 and len(gates) >= 2, f"a walled city needs a closed wall and >= 2 gates (wall={len(w)} pts, {len(gates)} gates)")
+    return _kept(locals(), ())
+
+
+def _seg_0563_086__ins(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.086 (ins) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             ins = M.get("inspection_stations", [])
+    return _kept(locals(), ('ins',))
+
+
+def _seg_0563_087__g(*, g: Any = _UNBOUND, gates: Any = _UNBOUND, ins: Any = _UNBOUND, meta: Any = _UNBOUND, s: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.087 (g, no_station, s) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             no_station = [g for g in gates if not any(math.hypot(s["x"] - g[0], s["y"] - g[1]) <= 160 for s in ins)]
+    return _kept(locals(), ('g', 'no_station', 's'))
+
+
+def _seg_0563_088__city_inspection_station_at_each_gate(*, check: Any = _UNBOUND, gates: Any = _UNBOUND, meta: Any = _UNBOUND, no_station: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.088 (city_inspection_station_at_each_gate) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_inspection_station_at_each_gate", len(gates) >= 2 and not no_station, f"every city gate needs an inspection station within ~160px ({len(no_station)} gate(s) without one)")
+    return _kept(locals(), ())
+
+
+def _seg_0563_089__gstructs(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.089 (gstructs) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gstructs = M.get("gate_structs", [])
+    return _kept(locals(), ('gstructs',))
+
+
+def _seg_0563_090__g_1(*, g: Any = _UNBOUND, gates: Any = _UNBOUND, gstructs: Any = _UNBOUND, meta: Any = _UNBOUND, s: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.090 (g, no_guard, s) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             no_guard = [g for g in gates if sum(1 for s in gstructs if math.hypot(s["x"] - g[0], s["y"] - g[1]) <= 180) < 2]
+    return _kept(locals(), ('g', 'no_guard', 's'))
+
+
+def _seg_0563_091__city_gate_has_guardhouse(*, check: Any = _UNBOUND, gates: Any = _UNBOUND, meta: Any = _UNBOUND, no_guard: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.091 (city_gate_has_guardhouse) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_gate_has_guardhouse", len(gates) >= 2 and not no_guard, f"every city gate needs a guard house + guard tower (>= 2 gate structures within ~180px): {len(no_guard)} gate(s) short"
             )
-            # ... and the guard house + inspection station sit AT THE GATE THROAT - hard by the opening,
-            # flanking the road as it enters - not walked back along the wall. Historically decisive (see
-            # settlements.md 'Historical grounding'): an inspection/tax barrier only works where traffic
-            # is forced single-file, and the gate passage is that one chokepoint in the whole wall; set
-            # the station back along the wall and arrivals disperse into the streets before ever reaching
-            # it. So each must sit within ~70px of its gate vertex (the built placement lands ~35-45px in).
-            # The looser city_inspection_station_at_each_gate / city_gate_has_guardhouse radii (160/180)
-            # deliberately have SLACK for the barbican, and would wave through the old far placement that
-            # walked the pair 80/144px along the wall - THIS check is what gives that rule teeth.
+    return _kept(locals(), ())
+
+
+# ... and the guard house + inspection station sit AT THE GATE THROAT - hard by the opening,
+# flanking the road as it enters - not walked back along the wall. Historically decisive (see
+# settlements.md 'Historical grounding'): an inspection/tax barrier only works where traffic
+# is forced single-file, and the gate passage is that one chokepoint in the whole wall; set
+# the station back along the wall and arrivals disperse into the streets before ever reaching
+# it. So each must sit within ~70px of its gate vertex (the built placement lands ~35-45px in).
+# The looser city_inspection_station_at_each_gate / city_gate_has_guardhouse radii (160/180)
+# deliberately have SLACK for the barbican, and would wave through the old far placement that
+# walked the pair 80/144px along the wall - THIS check is what gives that rule teeth.
+
+
+def _seg_0563_092__THROAT(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.092 (THROAT) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             THROAT = 70
-            throat_bad = []
+    return _kept(locals(), ('THROAT',))
+
+
+def _seg_0563_093__throat_bad(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.093 (throat_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            throat_bad = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('throat_bad',))
+
+
+def _seg_0563_094__g_2(
+    *,
+    THROAT: Any = _UNBOUND,
+    g: Any = _UNBOUND,
+    gates: Any = _UNBOUND,
+    gstructs: Any = _UNBOUND,
+    has_gh: Any = _UNBOUND,
+    has_in: Any = _UNBOUND,
+    ins: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    s: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    throat_bad: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.094 (g, has_gh, has_in, s) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for g in gates:
                 has_gh = any(s.get("kind") == "guardhouse" and math.hypot(s["x"] - g[0], s["y"] - g[1]) <= THROAT for s in gstructs)
                 has_in = any(math.hypot(s["x"] - g[0], s["y"] - g[1]) <= THROAT for s in ins)
                 if not (has_gh and has_in):
                     throat_bad.append((round(g[0]), round(g[1])))
+    return _kept(locals(), ('g', 'has_gh', 'has_in', 's', 'throat_bad'))
+
+
+def _seg_0563_095__city_gate_furniture_at_throat(
+    *, THROAT: Any = _UNBOUND, check: Any = _UNBOUND, gates: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, throat_bad: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.095 (city_gate_furniture_at_throat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_gate_furniture_at_throat",
                 len(gates) >= 2 and not throat_bad,
                 f"gate(s) whose guard house + inspection station are not at the throat (each within {THROAT}px of the opening, flanking the road): {throat_bad} - "
                 f"the checkpoint sits AT the gate so all traffic passes through it, not walked back along the wall",
             )
-            # the gate's own (smaller) TOWER must sit AT its gate - the CLOSEST tower to the opening, not
-            # marooned out along the curtain with a mural bastion seated nearer (GM 2026-07-22: the S gate's
-            # tower had walked to arc 118 to dodge a ward-gate kido, reading as a random small tower
-            # mid-wall while a mamian sat at the gate). A gate tower is a gate_structs "tower"; every other
-            # wall_tower is a mamian. When one flank of the gate is blocked the tower takes the OTHER flank
-            # at the opening (city_wall does this), so it should never be out-distanced by a mural.
+    return _kept(locals(), ())
+
+
+# the gate's own (smaller) TOWER must sit AT its gate - the CLOSEST tower to the opening, not
+# marooned out along the curtain with a mural bastion seated nearer (GM 2026-07-22: the S gate's
+# tower had walked to arc 118 to dodge a ward-gate kido, reading as a random small tower
+# mid-wall while a mamian sat at the gate). A gate tower is a gate_structs "tower"; every other
+# wall_tower is a mamian. When one flank of the gate is blocked the tower takes the OTHER flank
+# at the opening (city_wall does this), so it should never be out-distanced by a mural.
+
+
+def _seg_0563_096__g_3(*, g: Any = _UNBOUND, gstructs: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.096 (g, gate_towers_xy) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gate_towers_xy = [(g["x"], g["y"]) for g in gstructs if g.get("kind") == "tower"]
+    return _kept(locals(), ('g', 'gate_towers_xy'))
+
+
+def _seg_0563_097__gtx(
+    *, M: Any = _UNBOUND, gate_towers_xy: Any = _UNBOUND, gtx: Any = _UNBOUND, gty: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.097 (gtx, gty, murals_xy, t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             murals_xy = [(t["x"], t["y"]) for t in M.get("wall_towers", []) if not any(abs(t["x"] - gtx) < 2 and abs(t["y"] - gty) < 2 for gtx, gty in gate_towers_xy)]
-            stranded = []
+    return _kept(locals(), ('gtx', 'gty', 'murals_xy', 't'))
+
+
+def _seg_0563_098__stranded(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.098 (stranded) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            stranded = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('stranded',))
+
+
+def _seg_0563_099__d_gate_tower(
+    *,
+    d_gate_tower: Any = _UNBOUND,
+    d_nearest_mural: Any = _UNBOUND,
+    g: Any = _UNBOUND,
+    gate_towers_xy: Any = _UNBOUND,
+    gates: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    murals_xy: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    stranded: Any = _UNBOUND,
+    tx: Any = _UNBOUND,
+    ty: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.099 (d_gate_tower, d_nearest_mural, g, stranded) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for g in gates:
                 if not gate_towers_xy:
                     continue
@@ -21950,30 +22268,111 @@ def _seg_0563__city_has_six_ministries(
                 d_nearest_mural = min((math.hypot(tx - g[0], ty - g[1]) for tx, ty in murals_xy), default=1e9)
                 if d_nearest_mural + 12 < d_gate_tower:  # a mamian sits meaningfully closer to the gate than the gate's own tower
                     stranded.append((round(g[0]), round(g[1])))
+    return _kept(locals(), ('d_gate_tower', 'd_nearest_mural', 'g', 'stranded', 'tx', 'ty'))
+
+
+def _seg_0563_100__city_gate_tower_at_its_gate(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, stranded: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.100 (city_gate_tower_at_its_gate) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_gate_tower_at_its_gate",
                 not stranded,
                 f"gate(s) whose own tower is marooned out along the wall while a mural bastion sits closer to the opening: {stranded} - "
                 f"the gate tower belongs AT the gate (place it on the gate's OTHER flank when one side is blocked, not walked far along the curtain)",
             )
-            # a fortified city is TOWERED for enfilading fire along the wall face: guard towers spaced
-            # at regular intervals around the whole rampart (a bowshot apart), not only at the gates -
-            # so no long bare arc of wall sits uncovered. Spacing is judged by the widest angular gap
-            # between consecutive towers around the wall centroid.
+    return _kept(locals(), ())
+
+
+# a fortified city is TOWERED for enfilading fire along the wall face: guard towers spaced
+# at regular intervals around the whole rampart (a bowshot apart), not only at the gates -
+# so no long bare arc of wall sits uncovered. Spacing is judged by the widest angular gap
+# between consecutive towers around the wall centroid.
+
+
+def _seg_0563_101__towers(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.101 (towers) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             towers = M.get("wall_towers", [])
+    return _kept(locals(), ('towers',))
+
+
+def _seg_0563_102__p_1(*, meta: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.102 (p, wcx, wcy) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             wcx, wcy = sum(p[0] for p in w) / len(w), sum(p[1] for p in w) / len(w)
+    return _kept(locals(), ('p', 'wcx', 'wcy'))
+
+
+def _seg_0563_103__angs(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, towers: Any = _UNBOUND, wcx: Any = _UNBOUND, wcy: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.103 (angs, t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             angs = sorted(math.atan2(t["y"] - wcy, t["x"] - wcx) for t in towers)
+    return _kept(locals(), ('angs', 't'))
+
+
+def _seg_0563_104__i(*, angs: Any = _UNBOUND, i: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.104 (i, maxgap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             maxgap = max([angs[i + 1] - angs[i] for i in range(len(angs) - 1)] + [angs[0] + 2 * math.pi - angs[-1]]) if angs else 2 * math.pi
+    return _kept(locals(), ('i', 'maxgap'))
+
+
+def _seg_0563_105__city_wall_towers_spaced(*, check: Any = _UNBOUND, maxgap: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, towers: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.105 (city_wall_towers_spaced) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_wall_towers_spaced",
                 len(towers) >= 6 and maxgap < math.radians(75),
                 f"a fortified city needs guard towers spaced around the wall, not just at the gates ({len(towers)} towers, widest bare arc {round(math.degrees(maxgap))} deg, want < 75) - place towers at regular intervals (s.city_wall does this automatically)",
             )
-            # guard towers sit SQUARE to the wall (rotated to its tangent) rather than all axis-aligned -
-            # a tower on a slanted stretch slants with it. Each tower's recorded rotation must match the
-            # angle of the nearest wall edge (mod 90, since a square reads the same every 90 degrees).
-            ring2: Any = list(w) + [w[0]]  # type: ignore[no-redef]
-            misaligned = []
+    return _kept(locals(), ())
+
+
+# guard towers sit SQUARE to the wall (rotated to its tangent) rather than all axis-aligned -
+# a tower on a slanted stretch slants with it. Each tower's recorded rotation must match the
+# angle of the nearest wall edge (mod 90, since a square reads the same every 90 degrees).
+
+
+def _seg_0563_106__ring2(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.106 (ring2) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            ring2: Any = list(w) + [w[0]]  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('ring2',))
+
+
+def _seg_0563_107__misaligned(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.107 (misaligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            misaligned = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('misaligned',))
+
+
+def _seg_0563_108__d(
+    *,
+    d: Any = _UNBOUND,
+    edge_ang: Any = _UNBOUND,
+    ek: Any = _UNBOUND,
+    k: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    misaligned: Any = _UNBOUND,
+    order: Any = _UNBOUND,
+    ring2: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    t: Any = _UNBOUND,
+    towers: Any = _UNBOUND,
+    twr_off: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.108 (d, edge_ang, ek, misaligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for t in towers:
                 # THE TWO NEAREST EDGES, not just the nearest (GM 2026-07-25). A tower seated near a
                 # VERTEX of the wall N-gon is legitimately square to EITHER of the runs that meet
@@ -21993,34 +22392,106 @@ def _seg_0563__city_has_six_ministries(
                     twr_off = min(twr_off, d, 90 - d)
                 if twr_off > 15:
                     misaligned.append((round(t["x"]), round(t["y"])))
+    return _kept(locals(), ('d', 'edge_ang', 'ek', 'misaligned', 'order', 't', 'twr_off'))
+
+
+def _seg_0563_109__city_wall_towers_aligned(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, misaligned: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.109 (city_wall_towers_aligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_wall_towers_aligned", not misaligned, f"guard tower(s) not square to the wall - a tower should rotate to the wall's tangent there, not stay axis-aligned: {misaligned}")
-            # the GATE FURNITURE - the guard house + inspection station that sit along the ring road just
-            # inside each gate - is likewise SQUARE TO THE WALL: rotated to the wall's LOCAL tangent at its
-            # own position (NOT the gate vertex's - the wall has already curved away by then), so the ring
-            # road runs lengthwise through it. Each is a rectangle (its long axis runs ALONG the wall), so
-            # its rotation must match the nearest wall edge angle mod 180 (a 180 deg flip is the same, a 90
-            # deg turn would stand it the wrong way across the road). Tolerance is TIGHTER than the towers'
-            # (6 vs 15 deg): the furniture rotation is set from the exact local edge angle, not the towers'
-            # chord-through-neighbors approximation, so a correctly-placed piece matches near-exactly - and
-            # the gates sit on shallow wall stretches (~8 deg), which a 15 deg window would wave through.
+    return _kept(locals(), ())
+
+
+# the GATE FURNITURE - the guard house + inspection station that sit along the ring road just
+# inside each gate - is likewise SQUARE TO THE WALL: rotated to the wall's LOCAL tangent at its
+# own position (NOT the gate vertex's - the wall has already curved away by then), so the ring
+# road runs lengthwise through it. Each is a rectangle (its long axis runs ALONG the wall), so
+# its rotation must match the nearest wall edge angle mod 180 (a 180 deg flip is the same, a 90
+# deg turn would stand it the wrong way across the road). Tolerance is TIGHTER than the towers'
+# (6 vs 15 deg): the furniture rotation is set from the exact local edge angle, not the towers'
+# chord-through-neighbors approximation, so a correctly-placed piece matches near-exactly - and
+# the gates sit on shallow wall stretches (~8 deg), which a 15 deg window would wave through.
+
+
+def _seg_0563_110__furn(*, M: Any = _UNBOUND, g: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.110 (furn, g) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             furn = [g for g in M.get("gate_structs", []) if g.get("kind") in ("guardhouse", "inspection")]
-            fmis = []
+    return _kept(locals(), ('furn', 'g'))
+
+
+def _seg_0563_111__fmis(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.111 (fmis) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            fmis = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('fmis',))
+
+
+def _seg_0563_112__d_1(
+    *,
+    d: Any = _UNBOUND,
+    edge_ang: Any = _UNBOUND,
+    ek: Any = _UNBOUND,
+    fmis: Any = _UNBOUND,
+    furn: Any = _UNBOUND,
+    gstruct: Any = _UNBOUND,
+    k: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    ring2: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.112 (d, edge_ang, ek, fmis) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for gstruct in furn:
                 ek = min(range(len(ring2) - 1), key=lambda k: seg_dist(gstruct["x"], gstruct["y"], ring2[k], ring2[k + 1]))
                 edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
                 d = (gstruct.get("rot", 0) - edge_ang) % 180
                 if min(d, 180 - d) > 6:
                     fmis.append((round(gstruct["x"]), round(gstruct["y"])))
+    return _kept(locals(), ('d', 'edge_ang', 'ek', 'fmis', 'gstruct'))
+
+
+def _seg_0563_113__city_gate_furniture_aligned(*, check: Any = _UNBOUND, fmis: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.113 (city_gate_furniture_aligned) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_gate_furniture_aligned",
                 not fmis,
                 f"gate guard house / inspection station(s) not square to the wall - they should rotate to the wall's LOCAL tangent where they sit (so the ring road runs through them lengthwise), not stay flat: {fmis}",
             )
-            # ... and the guard house + inspection station are SEPARATE buildings: walked along a
-            # tightly-curving wall the two arcs can converge, and an inspection annex drawn through
-            # its guard house reads as a collision (GM, 2026-07)
-            gpairs = []
+    return _kept(locals(), ())
+
+
+# ... and the guard house + inspection station are SEPARATE buildings: walked along a
+# tightly-curving wall the two arcs can converge, and an inspection annex drawn through
+# its guard house reads as a collision (GM, 2026-07)
+
+
+def _seg_0563_114__gpairs(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.114 (gpairs) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            gpairs = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('gpairs',))
+
+
+def _seg_0563_115__g_4(*, M: Any = _UNBOUND, g: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.115 (g, ghs) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             ghs = [g for g in M.get("gate_structs", []) if g.get("kind") == "guardhouse"]
+    return _kept(locals(), ('g', 'ghs'))
+
+
+def _seg_0563_116__gh(*, M: Any = _UNBOUND, gh: Any = _UNBOUND, ghs: Any = _UNBOUND, gpairs: Any = _UNBOUND, ins: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.116 (gh, gpairs, ins) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for ins in M.get("inspection_stations", []):
                 for gh in ghs:
                     if math.hypot(ins["x"] - gh["x"], ins["y"] - gh["y"]) < 160 and sat_overlap(
@@ -22028,17 +22499,51 @@ def _seg_0563__city_has_six_ministries(
                         rect_corners({"x": gh["x"], "y": gh["y"], "w": gh["w"], "h": gh["h"], "rot": gh.get("rot", 0)}),
                     ):
                         gpairs.append((round(ins["x"]), round(ins["y"])))
+    return _kept(locals(), ('gh', 'gpairs', 'ins'))
+
+
+def _seg_0563_117__city_gate_guard_inspection_separate(*, check: Any = _UNBOUND, gpairs: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.117 (city_gate_guard_inspection_separate) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_gate_guard_inspection_separate",
                 not gpairs,
                 f"gate inspection station(s) overlapping their guard house: {gpairs} - the two are separate buildings on the ring road; space them along the wall until they clear",
             )
-            # WALL FURNITURE STAYS OUT OF THE MOAT: a guard tower straddles the wall and may PROJECT a
-            # stride past its outer face (the horse-face bastion), but its footing must stand on the
-            # BERM, never in the water - a tight moat gap leaves a narrow berm, so a tower centered on
-            # the wall line pokes its outer face into the bed. Same for the gate towers and the guard
-            # house / inspection station. (Bridges are exempt - they span the moat by design.)
+    return _kept(locals(), ())
+
+
+# WALL FURNITURE STAYS OUT OF THE MOAT: a guard tower straddles the wall and may PROJECT a
+# stride past its outer face (the horse-face bastion), but its footing must stand on the
+# BERM, never in the water - a tight moat gap leaves a narrow berm, so a tower centered on
+# the wall line pokes its outer face into the bed. Same for the gate towers and the guard
+# house / inspection station. (Bridges are exempt - they span the moat by design.)
+
+
+def _seg_0563_118__mo_f(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.118 (mo_f) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             mo_f = M.get("moat")
+    return _kept(locals(), ('mo_f',))
+
+
+def _seg_0563_119__city_wall_furniture_clear_of_moat(
+    *,
+    M: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    fc: Any = _UNBOUND,
+    furn_wet: Any = _UNBOUND,
+    it: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    mhw_f: Any = _UNBOUND,
+    mo_f: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.119 (city_wall_furniture_clear_of_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if mo_f:
                 mhw_f = M.get("moat_width", 22) / 2
                 furn_wet: list[tuple[int, int]] = []  # type: ignore[no-redef]
@@ -22052,14 +22557,32 @@ def _seg_0563__city_has_six_ministries(
                     f"guard tower(s) / gate furniture standing IN the moat: {sorted(set(furn_wet))[:6]} - wall furniture "
                     f"footings stay on the berm; nudge them inward so only a small outer projection passes the wall face",
                 )
-            # THE WARD GATES STAND CLEAR OF THE WALL TOWERS: a kido hangs on the ward fence where a
-            # lane or the ring road crosses it, and the fence ends abut the rampart - so the LAST
-            # kido can land against a mural tower's footprint (its guard box read as "a small square
-            # building" inside the tower - GM, 2026-07). Both are overlap-EXEMPT classes (each sits
-            # on its own wall), so no generic pass catches the pair. The kido cannot move (it gates
-            # a fixed crossing), so the TOWER yields - city_wall(tower_skip=[...]) relocates it to
-            # the neighboring wall vertex.
-            k_hit = []
+    return _kept(locals(), ('fc', 'furn_wet', 'it', 'mhw_f'))
+
+
+# THE WARD GATES STAND CLEAR OF THE WALL TOWERS: a kido hangs on the ward fence where a
+# lane or the ring road crosses it, and the fence ends abut the rampart - so the LAST
+# kido can land against a mural tower's footprint (its guard box read as "a small square
+# building" inside the tower - GM, 2026-07). Both are overlap-EXEMPT classes (each sits
+# on its own wall), so no generic pass catches the pair. The kido cannot move (it gates
+# a fixed crossing), so the TOWER yields - city_wall(tower_skip=[...]) relocates it to
+# the neighboring wall vertex.
+
+
+def _seg_0563_120__k_hit(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.120 (k_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            k_hit = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('k_hit',))
+
+
+def _seg_0563_121__g_(
+    *, M: Any = _UNBOUND, g_: Any = _UNBOUND, k_hit: Any = _UNBOUND, kc: Any = _UNBOUND, kd: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.121 (g_, k_hit, kc, kd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for kd in M.get("kido", []):
                 for kc in kido_quads(kd):
                     if any(
@@ -22068,6 +22591,13 @@ def _seg_0563__city_has_six_ministries(
                     ):
                         k_hit.append((round(kd["x"]), round(kd["y"])))
                         break
+    return _kept(locals(), ('g_', 'k_hit', 'kc', 'kd', 't'))
+
+
+def _seg_0563_122__kido_clear_of_wall_towers(*, check: Any = _UNBOUND, k_hit: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.122 (kido_clear_of_wall_towers) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "kido_clear_of_wall_towers",
                 not k_hit,
@@ -22075,31 +22605,88 @@ def _seg_0563__city_has_six_ministries(
                 f"rampart the kido keeps its ground (it gates a fixed crossing); slide the tower along the wall "
                 f"(city_wall tower_skip)",
             )
-            # a GATE TOWER (a gate's guard tower, or a mural tower) must not OVERLAP the gate's
-            # INSPECTION STATION or GUARD HOUSE (GM, 2026-07). The gate complex packs tight (guardhouse
-            # + inspection + tower + gateposts at each gate) and inspection stations are overlap-EXEMPT
-            # against the gate furniture, which had let a tower footprint STACK on the inspection post -
-            # each is a distinct building and they must sit CLEAR of one another, abutting not stacked.
+    return _kept(locals(), ())
+
+
+# a GATE TOWER (a gate's guard tower, or a mural tower) must not OVERLAP the gate's
+# INSPECTION STATION or GUARD HOUSE (GM, 2026-07). The gate complex packs tight (guardhouse
+# + inspection + tower + gateposts at each gate) and inspection stations are overlap-EXEMPT
+# against the gate furniture, which had let a tower footprint STACK on the inspection post -
+# each is a distinct building and they must sit CLEAR of one another, abutting not stacked.
+
+
+def _seg_0563_123___gtowers(*, M: Any = _UNBOUND, g: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, x: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.123 (_gtowers, g, x) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _gtowers = [g for g in (M.get("wall_towers", []) + [x for x in M.get("gate_structs", []) if x.get("kind") == "tower"]) if "w" in g]
+    return _kept(locals(), ('_gtowers', 'g', 'x'))
+
+
+def _seg_0563_124___gfurn(*, M: Any = _UNBOUND, g: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, x: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.124 (_gfurn, g, x) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _gfurn = [g for g in ([x for x in M.get("gate_structs", []) if x.get("kind") in ("inspection", "guardhouse")] + M.get("inspection_stations", [])) if "w" in g]
-            gf_hit = []
+    return _kept(locals(), ('_gfurn', 'g', 'x'))
+
+
+def _seg_0563_125__gf_hit(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.125 (gf_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            gf_hit = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('gf_hit',))
+
+
+def _seg_0563_126__gf_hit_1(
+    *, _gfurn: Any = _UNBOUND, _gtowers: Any = _UNBOUND, gf_hit: Any = _UNBOUND, meta: Any = _UNBOUND, o: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, tc: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.126 (gf_hit, o, t, tc) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for t in _gtowers:
                 tc = rect_corners({"x": t["x"], "y": t["y"], "w": t["w"], "h": t.get("h", t["w"]), "rot": t.get("rot", 0)})
                 for o in _gfurn:
                     if sat_overlap(tc, rect_corners({"x": o["x"], "y": o["y"], "w": o["w"], "h": o.get("h", o["w"]), "rot": o.get("rot", 0)})):
                         gf_hit.append((round(t["x"]), round(t["y"])))
                         break
+    return _kept(locals(), ('gf_hit', 'o', 't', 'tc'))
+
+
+def _seg_0563_127__city_gate_towers_clear_of_gate_furniture(*, check: Any = _UNBOUND, gf_hit: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.127 (city_gate_towers_clear_of_gate_furniture) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_gate_towers_clear_of_gate_furniture",
                 not gf_hit,
                 f"guard tower(s) overlapping an inspection station or gate house: {sorted(set(gf_hit))[:4]} - the gate "
                 f"complex packs tight but each footprint sits CLEAR; move the tower (or the furniture) so they abut, not stack",
             )
-            # ... and clear of the HOUSING: the kido + its guard box occupy a fixed crossing that the
-            # packs cannot see (s.ward draws long after the quarters are built), so the gen must
-            # RESERVE each gate's ground (block_polys) before any pack runs - else a row house lands
-            # under the guard box (GM, 2026-07: caught twice, on both fence-end gates)
-            kb_hit = []
+    return _kept(locals(), ())
+
+
+# ... and clear of the HOUSING: the kido + its guard box occupy a fixed crossing that the
+# packs cannot see (s.ward draws long after the quarters are built), so the gen must
+# RESERVE each gate's ground (block_polys) before any pack runs - else a row house lands
+# under the guard box (GM, 2026-07: caught twice, on both fence-end gates)
+
+
+def _seg_0563_128__kb_hit(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.128 (kb_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            kb_hit = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('kb_hit',))
+
+
+def _seg_0563_129__it(
+    *, M: Any = _UNBOUND, it: Any = _UNBOUND, kb_hit: Any = _UNBOUND, kc: Any = _UNBOUND, kd: Any = _UNBOUND, key_: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.129 (it, kb_hit, kc, kd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for kd in M.get("kido", []):
                 for kc in kido_quads(kd):
                     if any(
@@ -22109,38 +22696,127 @@ def _seg_0563__city_has_six_ministries(
                     ):
                         kb_hit.append((round(kd["x"]), round(kd["y"])))
                         break
+    return _kept(locals(), ('it', 'kb_hit', 'kc', 'kd', 'key_'))
+
+
+def _seg_0563_130__kido_clear_of_buildings(*, check: Any = _UNBOUND, kb_hit: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.130 (kido_clear_of_buildings) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "kido_clear_of_buildings",
                 not kb_hit,
                 f"ward gate(s) overlapping a building: {sorted(set(kb_hit))[:4]} - the kido and its guard box hold "
                 f"their crossing; reserve the gate's ground before the packs run (block_polys around each kido spot)",
             )
-            # a walled city has a RING ROAD (順城街) just inside the rampart - the wall-clear patrol zone a
-            # fortified city keeps for moving troops along the wall; the quarters pack INSIDE it (s.ring_road
-            # returns the loop to use as s.bound).
-            ring_rd: Any = M.get("ring_road")  # type: ignore[no-redef]
+    return _kept(locals(), ())
+
+
+# a walled city has a RING ROAD (順城街) just inside the rampart - the wall-clear patrol zone a
+# fortified city keeps for moving troops along the wall; the quarters pack INSIDE it (s.ring_road
+# returns the loop to use as s.bound).
+
+
+def _seg_0563_131__ring_rd(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.131 (ring_rd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            ring_rd: Any = M.get("ring_road")  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('ring_rd',))
+
+
+def _seg_0563_132__city_has_ring_road(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, ring_rd: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.132 (city_has_ring_road) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_has_ring_road",
                 bool(ring_rd) and len(ring_rd) >= 4,
                 "a walled city needs a ring road just inside the wall (the wall-clear patrol zone) - s.ring_road(WALL); set s.bound to the loop it returns",
             )
-            # a street running toward a THROUGH-LANE (the Imperial road or the ring road) must MEET it
-            # cleanly at a T-junction: its bed reaches the lane's bed and ENDS there - neither a sliver
-            # SHORT of it (an undershoot, the street appears to dead-end in open ground) nor a sliver
-            # PAST it (an overshoot, the street pokes through to the far side instead of stopping at the
-            # junction). A genuine crossroads, where the street truly continues well past the lane, is
-            # fine - only a short stub poking through is wrong. (The ring road is gated where it crosses
-            # the ward fence, so even the government quarter's lanes may give onto it without un-sealing.)
-            through = []
+    return _kept(locals(), ())
+
+
+# a street running toward a THROUGH-LANE (the Imperial road or the ring road) must MEET it
+# cleanly at a T-junction: its bed reaches the lane's bed and ENDS there - neither a sliver
+# SHORT of it (an undershoot, the street appears to dead-end in open ground) nor a sliver
+# PAST it (an overshoot, the street pokes through to the far side instead of stopping at the
+# junction). A genuine crossroads, where the street truly continues well past the lane, is
+# fine - only a short stub poking through is wrong. (The ring road is gated where it crosses
+# the ward fence, so even the government quarter's lanes may give onto it without un-sealing.)
+
+
+def _seg_0563_133__through(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.133 (through) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            through = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('through',))
+
+
+def _seg_0563_134__through_1(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, through: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.134 (through) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if M.get("road"):
                 through.append((M["road"], (M.get("road_width", 26) - 8) / 2))
+    return _kept(locals(), ('through',))
+
+
+def _seg_0563_135__through_2(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, ring_rd: Any = _UNBOUND, scale: Any = _UNBOUND, through: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.135 (through) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if ring_rd:
                 through.append((ring_rd, (M.get("ring_road_width", 15) - 6) / 2))
-            bad_meet = []
-            # streets AND alleys: a gravel alley that runs straight at a through-lane and stops a sliver
-            # short of it (the laborer warren's east lane stopping just shy of the east ring road) should
-            # reach it too, just like a paved street
+    return _kept(locals(), ('through',))
+
+
+def _seg_0563_136__bad_meet(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.136 (bad_meet) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            bad_meet = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('bad_meet',))
+
+
+# streets AND alleys: a gravel alley that runs straight at a through-lane and stops a sliver
+# short of it (the laborer warren's east lane stopping just shy of the east ring road) should
+# reach it too, just like a paved street
+
+
+def _seg_0563_137__a(*, M: Any = _UNBOUND, a: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.137 (a, meeting_lanes, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             meeting_lanes = [(st["pts"], st.get("w", 18) / 2) for st in M.get("town_streets", [])] + [(a["pts"], 5.0) for a in M.get("alleys", [])]
+    return _kept(locals(), ('a', 'meeting_lanes', 'st'))
+
+
+def _seg_0563_138__E(
+    *,
+    E: Any = _UNBOUND,
+    L: Any = _UNBOUND,
+    align: Any = _UNBOUND,
+    bad_meet: Any = _UNBOUND,
+    bedhalf: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    cp: Any = _UNBOUND,
+    dl: Any = _UNBOUND,
+    gap: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    ip: Any = _UNBOUND,
+    meeting_lanes: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    nb: Any = _UNBOUND,
+    pts: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    sh: Any = _UNBOUND,
+    through: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.138 (E, L, align, bad_meet) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for pts, sh in meeting_lanes:
                 for E, nb in ((pts[0], pts[1]), (pts[-1], pts[-2])):
                     for L, bedhalf in through:
@@ -22157,22 +22833,50 @@ def _seg_0563__city_has_six_ministries(
                             align = ((E[0] - nb[0]) / dl) * ((cp[0] - E[0]) / max(gap, 1e-6)) + ((E[1] - nb[1]) / dl) * ((cp[1] - E[1]) / max(gap, 1e-6))
                             if align > 0.6 and gap >= sh + bedhalf:
                                 bad_meet.append((round(E[0]), round(E[1])))
+    return _kept(locals(), ('E', 'L', 'align', 'bad_meet', 'bedhalf', 'cp', 'dl', 'gap', 'i', 'ip', 'nb', 'pts', 'sh'))
+
+
+def _seg_0563_139__city_streets_meet_through_lanes(*, bad_meet: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.139 (city_streets_meet_through_lanes) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_streets_meet_through_lanes",
                 not bad_meet,
                 f"street/alley(s) not meeting the Imperial road / ring road cleanly at a junction - stopping a sliver short of it or poking a sliver past it: {sorted(set(bad_meet))}",
             )
-            # the RING ROAD is a CLEAR patrol road: it must run clear of EVERY solid footprint and of
-            # fields. The gate guard houses / inspection stations / towers DO sit along it (wall
-            # furniture - `gate_structs` and `wall_towers` are overlap TARGETS and EXEMPT respectively,
-            # so the registry leaves them out), and a ward fence may cross it - but only at a gated kido
-            # (enforced by city_samurai_ward_sealed, which has the ring road in its netlines). Overlap =
-            # the ring's BED passes through a footprint.
-            #
-            # READS THE REGISTRY, NOT A HAND LIST (GM 2026-07-25). This check used to name its own eight
-            # keys, so every new feature had to be remembered into it - and the martial hall, correctly
-            # classified and correctly cleared of all thirteen no_structure_on_* hazards, sat squarely on
-            # Tango's ring road with the gate green because nobody had. See solid_structs' docstring.
+    return _kept(locals(), ())
+
+
+# the RING ROAD is a CLEAR patrol road: it must run clear of EVERY solid footprint and of
+# fields. The gate guard houses / inspection stations / towers DO sit along it (wall
+# furniture - `gate_structs` and `wall_towers` are overlap TARGETS and EXEMPT respectively,
+# so the registry leaves them out), and a ward fence may cross it - but only at a gated kido
+# (enforced by city_samurai_ward_sealed, which has the ring road in its netlines). Overlap =
+# the ring's BED passes through a footprint.
+#
+# READS THE REGISTRY, NOT A HAND LIST (GM 2026-07-25). This check used to name its own eight
+# keys, so every new feature had to be remembered into it - and the martial hall, correctly
+# classified and correctly cleared of all thirteen no_structure_on_* hazards, sat squarely on
+# Tango's ring road with the gate green because nobody had. See solid_structs' docstring.
+
+
+def _seg_0563_140__ring_road_kept_clear(
+    *,
+    M: Any = _UNBOUND,
+    _foot: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    grave_on_ring: Any = _UNBOUND,
+    it: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    rect_corners_xywh: Any = _UNBOUND,
+    rhalf: Any = _UNBOUND,
+    ring_rd: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.140 (city_graveyard_clear_of_ring_road, ring_road_kept_clear) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if ring_rd:
 
                 def _foot(it: dict[str, Any]) -> list[tuple[float, float]]:
@@ -22206,44 +22910,120 @@ def _seg_0563__city_has_six_ministries(
                     f"burial ground(s) overlapping the drawn ring road: {grave_on_ring[:4]} - graves do not encroach "
                     f"on the patrol road at all (no eaves forgiveness on a fence line); shift the ground clear of the ring's full width",
                 )
+    return _kept(locals(), ('_foot', 'grave_on_ring', 'it', 'rhalf'))
+
+
+def _seg_0563_141__b_7(*, M: Any = _UNBOUND, b: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.141 (b, buraku_in) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             buraku_in = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin" and inwall(b["x"], b["y"])]
-            # WHY (a walled city cannot do without burakumin labor during a siege, so some live inside): settlements.md "Historical grounding"
+    return _kept(locals(), ('b', 'buraku_in'))
+
+
+# WHY (a walled city cannot do without burakumin labor during a siege, so some live inside): settlements.md "Historical grounding"
+
+
+def _seg_0563_142__walled_city_has_burakumin_inside(*, buraku_in: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.142 (walled_city_has_burakumin_inside) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "walled_city_has_burakumin_inside",
                 len(buraku_in) >= 3,
                 f"{len(buraku_in)} burakumin inside the walls - a walled provincial city must keep >= 1 burakumin neighborhood within (they cannot be without burakumin during a siege)",
             )
+    return _kept(locals(), ())
+
+
+def _seg_0563_143__est_out(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.143 (est_out, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]
+    return _kept(locals(), ('est_out', 'mn'))
+
+
+def _seg_0563_144__city_samurai_estates_outside(*, URBAN: Any = _UNBOUND, check: Any = _UNBOUND, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.144 (city_samurai_estates_outside) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if URBAN:  # CAPITAL-INVERTED (021): the capital's walled yashiki stand IN-WALL (020 doctrine) and its country cohort is detached houses, not 1-3 dispersed estates
                 check(
                     "city_samurai_estates_outside",
                     1 <= len(est_out) <= 3,
                     f"{len(est_out)} walled samurai estates shown outside the walls, expected 1-3 - a provincial city's country estates are DISPERSED across the rural district (each an isolated fortified compound by its own land, miles out); a city map shows only the nearest 1-3 at the frame edge, the rest off-map (NOT a cluster of 5+ ringing the moat)",
                 )
-            # ... and the shown estates are DISPERSED, not a tight cluster: each is its own walled compound
-            # on its own landholding with fields between, so no two sit adjacent. A packed clump at one
-            # stretch of wall is the COMMERCIAL SUBURB's density, not the genteel country-estate pattern -
-            # gentry estates scatter by land/scenery, they do not ring the moat (GM 2026-07-22, researched:
-            # China-first absentee-landlord + dispersed-fortified-manor pattern, Japan agreeing). See settlements.md.
+    return _kept(locals(), ())
+
+
+# ... and the shown estates are DISPERSED, not a tight cluster: each is its own walled compound
+# on its own landholding with fields between, so no two sit adjacent. A packed clump at one
+# stretch of wall is the COMMERCIAL SUBURB's density, not the genteel country-estate pattern -
+# gentry estates scatter by land/scenery, they do not ring the moat (GM 2026-07-22, researched:
+# China-first absentee-landlord + dispersed-fortified-manor pattern, Japan agreeing). See settlements.md.
+
+
+def _seg_0563_145__est_pts(*, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.145 (est_pts, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             est_pts = [(mn["x"], mn["y"]) for mn in est_out]
+    return _kept(locals(), ('est_pts', 'mn'))
+
+
+def _seg_0563_146__EST_MIN_SEP(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.146 (EST_MIN_SEP) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             EST_MIN_SEP = 200
+    return _kept(locals(), ('EST_MIN_SEP',))
+
+
+def _seg_0563_147__est_too_close(*, EST_MIN_SEP: Any = _UNBOUND, est_pts: Any = _UNBOUND, i: Any = _UNBOUND, j: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.147 (est_too_close, i, j) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             est_too_close = [
                 (round(est_pts[i][0]), round(est_pts[i][1]))
                 for i in range(len(est_pts))
                 for j in range(i + 1, len(est_pts))
                 if math.hypot(est_pts[i][0] - est_pts[j][0], est_pts[i][1] - est_pts[j][1]) < EST_MIN_SEP
             ]
+    return _kept(locals(), ('est_too_close', 'i', 'j'))
+
+
+def _seg_0563_148__city_samurai_estates_dispersed(*, EST_MIN_SEP: Any = _UNBOUND, check: Any = _UNBOUND, est_too_close: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.148 (city_samurai_estates_dispersed) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_samurai_estates_dispersed",
                 not est_too_close,
                 f"samurai estate(s) packed too close together {sorted(set(est_too_close))} - the country estates are separate compounds each on its own land, spread >= {EST_MIN_SEP}px apart, not a cluster ringing the moat (the dense belt hugging the wall is the commercial suburb, not estates)",
             )
-            # WHY (the extramural samurai residence is the walled, defensible country ESTATE; a lone
-            # UNWALLED samurai house beyond the rampart is defenseless and belongs in the sealed ward
-            # inside): settlements.md "Historical grounding". Hard-zero - the estates rule above is
-            # exactly why the commoner inside-walls check exempts samurai, so this closes that gap
-            # (validated instance: Tango's SE top_up sweep leaked 14 houses into the moat berm, 2026-07-20).
+    return _kept(locals(), ())
+
+
+# WHY (the extramural samurai residence is the walled, defensible country ESTATE; a lone
+# UNWALLED samurai house beyond the rampart is defenseless and belongs in the sealed ward
+# inside): settlements.md "Historical grounding". Hard-zero - the estates rule above is
+# exactly why the commoner inside-walls check exempts samurai, so this closes that gap
+# (validated instance: Tango's SE top_up sweep leaked 14 houses into the moat berm, 2026-07-20).
+
+
+def _seg_0563_149__b_8(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.149 (b, sam_out) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             sam_out = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large") and len(w) >= 3 and not point_in_poly(b["x"], b["y"], w)]
+    return _kept(locals(), ('b', 'sam_out'))
+
+
+def _seg_0563_150__city_samurai_houses_inside_walls(*, URBAN: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, sam_out: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.150 (city_samurai_houses_inside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if URBAN:  # CAPITAL-INVERTED (021): CAPITAL_SAMURAI_INWALL_FRAC deliberately keeps ~15% of the cohort in country seats on the approaches
                 check(
                     "city_samurai_houses_inside_walls",
@@ -22252,43 +23032,165 @@ def _seg_0563__city_has_six_ministries(
                     f"samurai live unwalled INSIDE the sealed ward; the only extramural samurai residences are the walled "
                     f"country estates (s.manor). Re-seat these houses in the samurai quarter.",
                 )
+    return _kept(locals(), ())
+
+
+def _seg_0563_151__areas(*, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.151 (areas, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             areas = sorted((mn["w"] * mn["h"]) for mn in est_out)
+    return _kept(locals(), ('areas', 'mn'))
+
+
+def _seg_0563_152__city_samurai_estates_vary_in_size(*, areas: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.152 (city_samurai_estates_vary_in_size) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_samurai_estates_vary_in_size",
                 len(areas) < 2 or areas[-1] >= 1.5 * areas[0],
                 "the samurai estates should vary in size (some larger than others) - largest area >= 1.5x the smallest",
             )
-            # scattered country estates each front their OWN approach lane (not drawn at this scale), so
-            # their depicted (formal) gates do NOT all open the same way - a uniform direction is the
-            # unconsidered default. The formal gate favours the auspicious south; others face the cityward
-            # approach (the cityward service gate, like the governor's, is omitted at this scale).
+    return _kept(locals(), ())
+
+
+# scattered country estates each front their OWN approach lane (not drawn at this scale), so
+# their depicted (formal) gates do NOT all open the same way - a uniform direction is the
+# unconsidered default. The formal gate favours the auspicious south; others face the cityward
+# approach (the cityward service gate, like the governor's, is omitted at this scale).
+
+
+def _seg_0563_153__egd(*, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.153 (egd, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             egd = [mn.get("gate_dir") for mn in est_out]
+    return _kept(locals(), ('egd', 'mn'))
+
+
+def _seg_0563_154__city_estate_gates_vary(*, check: Any = _UNBOUND, egd: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.154 (city_estate_gates_vary) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_estate_gates_vary",
                 len(egd) < 3 or len(set(egd)) >= 2,
                 f"all {len(egd)} country estate gates open the same way ({egd[0] if egd else None}) - scattered "
                 f"estates each front their own approach, so vary the gate_dir (some south, some cityward)",
             )
-            moat: Any = M.get("moat")  # type: ignore[no-redef]
-            # all city temples INSIDE the walls, and clear of the wall stroke and the moat
+    return _kept(locals(), ())
+
+
+def _seg_0563_155__moat(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.155 (moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            moat: Any = M.get("moat")  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('moat',))
+
+
+# all city temples INSIDE the walls, and clear of the wall stroke and the moat
+
+
+def _seg_0563_156__rel(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.156 (rel) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             rel = M.get("religious", [])
+    return _kept(locals(), ('rel',))
+
+
+def _seg_0563_157__out_rel(*, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, r: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.157 (out_rel, r) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             out_rel = [r.get("label") for r in rel if not inwall(r["x"], r["y"])]
+    return _kept(locals(), ('out_rel', 'r'))
+
+
+def _seg_0563_158__city_temples_inside_walls(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, out_rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.158 (city_temples_inside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_temples_inside_walls", not out_rel, f"temple(s) outside the city walls (all of a city's temples belong inside): {out_rel}")
+    return _kept(locals(), ())
+
+
+def _seg_0563_159__r(
+    *, meta: Any = _UNBOUND, moat: Any = _UNBOUND, r: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.159 (r, rel_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             rel_bad = [r.get("label") for r in rel if footprint_on_line(rect_corners_xywh(r, 0), w, 9) or (moat and footprint_on_line(rect_corners_xywh(r, 0), moat, 13))]
+    return _kept(locals(), ('r', 'rel_bad'))
+
+
+def _seg_0563_160__city_temples_clear_of_wall_moat(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, rel_bad: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.160 (city_temples_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_temples_clear_of_wall_moat", not rel_bad, f"temple(s) overlapping the wall or moat: {rel_bad}")
-            # THE LABELED (major) CITY TEMPLES ARE DEDICATED TO THE CLAN'S TWO PATRON FORTUNES. Hantei
-            # X codified that every city holds a temple to each of its clan's patron fortunes (l7r.md);
-            # the two GREAT temples honor those, and a smattering of small wayside shrines fills the
-            # rest. Declare meta(clan=...); the labeled temples (kind="temple", not "small_shrine")
-            # must be exactly the clan's two fortunes. Override with meta(temple_fortunes=[...]) for a
-            # city that changed hands. GM, 2026-07: Nagahara (Crab) had a large Temple of Suitengu -
-            # a thematic pick, not a Crab patron (Crab = Bishamon + Ebisu). Named after "Temple of X".
+    return _kept(locals(), ())
+
+
+# THE LABELED (major) CITY TEMPLES ARE DEDICATED TO THE CLAN'S TWO PATRON FORTUNES. Hantei
+# X codified that every city holds a temple to each of its clan's patron fortunes (l7r.md);
+# the two GREAT temples honor those, and a smattering of small wayside shrines fills the
+# rest. Declare meta(clan=...); the labeled temples (kind="temple", not "small_shrine")
+# must be exactly the clan's two fortunes. Override with meta(temple_fortunes=[...]) for a
+# city that changed hands. GM, 2026-07: Nagahara (Crab) had a large Temple of Suitengu -
+# a thematic pick, not a Crab patron (Crab = Bishamon + Ebisu). Named after "Temple of X".
+
+
+def _seg_0563_161__declared_t(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.161 (declared_t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             declared_t = meta.get("temple_fortunes")
+    return _kept(locals(), ('declared_t',))
+
+
+def _seg_0563_162__clan_t(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.162 (clan_t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             clan_t = meta.get("clan")
+    return _kept(locals(), ('clan_t',))
+
+
+def _seg_0563_163__city_clan_known(*, cf: Any = _UNBOUND, check: Any = _UNBOUND, clan_t: Any = _UNBOUND, declared_t: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.163 (city_clan_known) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if declared_t is None and clan_t:
                 cf = CLAN_FORTUNES.get(clan_t.lower())
                 check("city_clan_known", cf is not None, f"unknown clan {clan_t!r} - no patron fortunes")
                 declared_t = sorted(cf) if cf else None
+    return _kept(locals(), ('cf', 'declared_t'))
+
+
+def _seg_0563_164__city_temples_dedicated(
+    *,
+    _tfortune: Any = _UNBOUND,
+    allowed: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    clan_t: Any = _UNBOUND,
+    declared_t: Any = _UNBOUND,
+    f: Any = _UNBOUND,
+    lab: Any = _UNBOUND,
+    major: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    missing: Any = _UNBOUND,
+    r: Any = _UNBOUND,
+    rel: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    stray_t: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.164 (city_temples_dedicated) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if declared_t is not None:
 
                 def _tfortune(r: dict[str, Any]) -> str:
@@ -22310,13 +23212,29 @@ def _seg_0563__city_has_six_ministries(
                     f"(clan {clan_t!r} patrons {sorted(declared_t)}); a city has a great temple to each of its two "
                     f"patron fortunes (+ optionally Bishamon in the samurai quarter), the rest small shrines",
                 )
-            # MORE THAN TWO MAJOR TEMPLES IS THE MARKED EXCEPTION, AND IT MUST BE DECLARED (feature
-            # 016). settlements/religion-and-death.md has enumerated the recognized justifications
-            # since it was written, but nothing enforced them - so a city could quietly draw six
-            # temples and ship green, which is the "a check that never RUNS looks exactly like a
-            # check that passes" shape one level up: the RULE existed and the check did not. The
-            # declaration is meta(temple_exception=...), from the fixed TEMPLE_EXCEPTIONS vocabulary.
+    return _kept(locals(), ('_tfortune', 'allowed', 'f', 'major', 'missing', 'r', 'stray_t'))
+
+
+# MORE THAN TWO MAJOR TEMPLES IS THE MARKED EXCEPTION, AND IT MUST BE DECLARED (feature
+# 016). settlements/religion-and-death.md has enumerated the recognized justifications
+# since it was written, but nothing enforced them - so a city could quietly draw six
+# temples and ship green, which is the "a check that never RUNS looks exactly like a
+# check that passes" shape one level up: the RULE existed and the check did not. The
+# declaration is meta(temple_exception=...), from the fixed TEMPLE_EXCEPTIONS vocabulary.
+
+
+def _seg_0563_165__major_t(*, meta: Any = _UNBOUND, r: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.165 (major_t, r) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             major_t = [r for r in rel if r.get("kind") == "temple"]
+    return _kept(locals(), ('major_t', 'r'))
+
+
+def _seg_0563_166__city_multi_temple_exception_declared(*, check: Any = _UNBOUND, exc: Any = _UNBOUND, major_t: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.166 (city_multi_temple_exception_declared) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if len(major_t) > 2:
                 exc = meta.get("temple_exception")
                 check(
@@ -22326,12 +23244,44 @@ def _seg_0563__city_has_six_ministries(
                     f"complexes (one per patron fortune); more is the marked exception and must name its reason, one of "
                     f"{sorted(TEMPLE_EXCEPTIONS)} (see settlements/religion-and-death.md)",
                 )
-            # a TEMPLE NEIGHBORHOOD (>= 2 temples clustered together) should be dotted with a smattering of
-            # small wayside SHRINES (s.small_shrine - non-residential, kind 'small_shrine'). A lone temple
-            # among houses (e.g. the warrior-fortune temple in the samurai quarter) is not a neighborhood.
+    return _kept(locals(), ('exc',))
+
+
+# a TEMPLE NEIGHBORHOOD (>= 2 temples clustered together) should be dotted with a smattering of
+# small wayside SHRINES (s.small_shrine - non-residential, kind 'small_shrine'). A lone temple
+# among houses (e.g. the warrior-fortune temple in the samurai quarter) is not a neighborhood.
+
+
+def _seg_0563_167__r_1(*, meta: Any = _UNBOUND, r: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.167 (r, temples) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             temples = [r for r in rel if r.get("kind") == "temple"]
+    return _kept(locals(), ('r', 'temples'))
+
+
+def _seg_0563_168__r_2(*, meta: Any = _UNBOUND, r: Any = _UNBOUND, rel: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.168 (r, shrines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             shrines = [r for r in rel if r.get("kind") == "small_shrine"]
+    return _kept(locals(), ('r', 'shrines'))
+
+
+def _seg_0563_169__clustered(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, temples: Any = _UNBOUND, u: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.169 (clustered, t, u) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             clustered = [t for t in temples if any(u is not t and math.hypot(t["x"] - u["x"], t["y"] - u["y"]) < 400 for u in temples)]
+    return _kept(locals(), ('clustered', 't', 'u'))
+
+
+def _seg_0563_170__city_temple_neighborhood_has_shrines(
+    *, check: Any = _UNBOUND, clustered: Any = _UNBOUND, meta: Any = _UNBOUND, near_sh: Any = _UNBOUND, scale: Any = _UNBOUND, sh: Any = _UNBOUND, shrines: Any = _UNBOUND, t: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.170 (city_temple_neighborhood_has_shrines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if len(clustered) >= 2:
                 near_sh = sum(1 for sh in shrines if any(math.hypot(sh["x"] - t["x"], sh["y"] - t["y"]) < 350 for t in clustered))
                 check(
@@ -22339,17 +23289,40 @@ def _seg_0563__city_has_six_ministries(
                     near_sh >= 3,
                     f"the temple neighborhood ({len(clustered)} clustered temples) has only {near_sh} small wayside shrine(s) - dot it with a few more (s.small_shrine)",
                 )
-            # ADEPT-MONK HOUSING (GM 2026-07-24). A city temple is a blank-court COMPLEX like the
-            # governor's yamen - the subject of its own Mode A diagram, a big walled rectangle on the
-            # city map - and its celibate resident monks live INSIDE the precinct, implied. But a
-            # share of each complex's 15-30 monks are married ADEPTS (adepts marry and raise
-            # children), and those households keep ordinary homes in the temple's neighborhood. So
-            # every major temple needs >= 2 dwellings of kind "monk_house" within ~170px - drawn
-            # deliberately identical to a laborer house (no label, no glyph of its own; the manifest
-            # kind exists so this check, the budget, and the population math can see households the
-            # caste bands must NOT count - clergy are not a lay caste).
+    return _kept(locals(), ('near_sh', 'sh', 't'))
+
+
+# ADEPT-MONK HOUSING (GM 2026-07-24). A city temple is a blank-court COMPLEX like the
+# governor's yamen - the subject of its own Mode A diagram, a big walled rectangle on the
+# city map - and its celibate resident monks live INSIDE the precinct, implied. But a
+# share of each complex's 15-30 monks are married ADEPTS (adepts marry and raise
+# children), and those households keep ordinary homes in the temple's neighborhood. So
+# every major temple needs >= 2 dwellings of kind "monk_house" within ~170px - drawn
+# deliberately identical to a laborer house (no label, no glyph of its own; the manifest
+# kind exists so this check, the budget, and the population math can see households the
+# caste bands must NOT count - clergy are not a lay caste).
+
+
+def _seg_0563_171__b_9(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.171 (b, monk_h) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             monk_h = [b for b in M.get("buildings", []) if b.get("kind") == "monk_house"]
+    return _kept(locals(), ('b', 'monk_h'))
+
+
+def _seg_0563_172__m_1(*, m: Any = _UNBOUND, meta: Any = _UNBOUND, monk_h: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, temples: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.172 (m, t, t_unserved) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             t_unserved = [t.get("label", (round(t["x"]), round(t["y"]))) for t in temples if sum(1 for m in monk_h if math.hypot(m["x"] - t["x"], m["y"] - t["y"]) <= 170) < 2]
+    return _kept(locals(), ('m', 't', 't_unserved'))
+
+
+def _seg_0563_173__city_temples_have_monk_housing(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, t_unserved: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.173 (city_temples_have_monk_housing) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_temples_have_monk_housing",
                 not t_unserved,
@@ -22357,31 +23330,175 @@ def _seg_0563__city_has_six_ministries(
                 f"ordinary homes (kind 'monk_house', drawn identical to a laborer house) in its neighborhood for the "
                 f"married adepts among its 15-30 monks (the celibate monks live inside the precinct, implied)",
             )
+    return _kept(locals(), ())
+
+
+def _seg_0563_174__m_2(*, m: Any = _UNBOUND, meta: Any = _UNBOUND, monk_h: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND, temples: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.174 (m, stray_mh, t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             stray_mh = [(round(m["x"]), round(m["y"])) for m in monk_h if not temples or min(math.hypot(m["x"] - t["x"], m["y"] - t["y"]) for t in temples) > 170]
+    return _kept(locals(), ('m', 'stray_mh', 't'))
+
+
+def _seg_0563_175__city_monk_houses_by_their_temple(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, stray_mh: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.175 (city_monk_houses_by_their_temple) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_monk_houses_by_their_temple",
                 not stray_mh,
                 f"monk house(s) stranded away from every temple (>170px): {stray_mh} - an adept's household lives in its temple's neighborhood, not scattered across the city",
             )
-            # the outside samurai estates: no overlapping each other, none over the wall or moat
+    return _kept(locals(), ())
+
+
+# the outside samurai estates: no overlapping each other, none over the wall or moat
+
+
+def _seg_0563_176__est_corners(*, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.176 (est_corners, mn) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             est_corners = [rect_corners_xywh(mn, 0) for mn in est_out]
+    return _kept(locals(), ('est_corners', 'mn'))
+
+
+def _seg_0563_177__est_overlap(*, est_corners: Any = _UNBOUND, est_out: Any = _UNBOUND, i: Any = _UNBOUND, j: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.177 (est_overlap, i, j) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             est_overlap = [1 for i in range(len(est_out)) for j in range(i + 1, len(est_out)) if sat_overlap(est_corners[i], est_corners[j])]
+    return _kept(locals(), ('est_overlap', 'i', 'j'))
+
+
+def _seg_0563_178__city_estates_no_overlap(*, check: Any = _UNBOUND, est_overlap: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.178 (city_estates_no_overlap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_estates_no_overlap", not est_overlap, f"{len(est_overlap)} overlapping estate pair(s)")
+    return _kept(locals(), ())
+
+
+def _seg_0563_179__est_bad(
+    *, est_corners: Any = _UNBOUND, est_out: Any = _UNBOUND, i: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.179 (est_bad, i) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             est_bad = [1 for i in range(len(est_out)) if footprint_on_line(est_corners[i], w, 9) or (moat and footprint_on_line(est_corners[i], moat, 13))]
+    return _kept(locals(), ('est_bad', 'i'))
+
+
+def _seg_0563_180__city_estates_clear_of_wall_moat(*, check: Any = _UNBOUND, est_bad: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.180 (city_estates_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_estates_clear_of_wall_moat", not est_bad, f"{len(est_bad)} estate(s) overlapping the wall or moat")
-            # the WALLED MERCHANT ESTATES (their court, not just the house inside) must likewise sit clear
-            # of the rampart, the moat, and any other building. (The estate's OWN inner house, centered in
-            # the court, is fine; everything else - temples, compounds, other homes, other estates - is not.)
+    return _kept(locals(), ())
+
+
+# the WALLED MERCHANT ESTATES (their court, not just the house inside) must likewise sit clear
+# of the rampart, the moat, and any other building. (The estate's OWN inner house, centered in
+# the court, is fine; everything else - temples, compounds, other homes, other estates - is not.)
+
+
+def _seg_0563_181__mest_1(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.181 (mest) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             mest = M.get("merchant_estates", [])
+    return _kept(locals(), ('mest',))
+
+
+def _seg_0563_182__e(*, e: Any = _UNBOUND, mest: Any = _UNBOUND, meta: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.182 (e, mest_corners) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             mest_corners = [rect_corners_xywh(e, 0) for e in mest]
+    return _kept(locals(), ('e', 'mest_corners'))
+
+
+def _seg_0563_183__i_1(
+    *, i: Any = _UNBOUND, mest: Any = _UNBOUND, mest_corners: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.183 (i, mest_wm) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             mest_wm = [(round(mest[i]["x"]), round(mest[i]["y"])) for i in range(len(mest)) if footprint_on_line(mest_corners[i], w, 9) or (moat and footprint_on_line(mest_corners[i], moat, 13))]
+    return _kept(locals(), ('i', 'mest_wm'))
+
+
+def _seg_0563_184__city_merchant_estates_clear_of_wall_moat(*, check: Any = _UNBOUND, mest_wm: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.184 (city_merchant_estates_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_merchant_estates_clear_of_wall_moat", not mest_wm, f"walled merchant estate(s) overlapping the city wall or moat (keep them well inside the rampart): {mest_wm}")
+    return _kept(locals(), ())
+
+
+def _seg_0563_185__civics(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.185 (civics) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             civics = M.get("religious", []) + M.get("ministries", []) + ([M["governor_mansion"]] if M.get("governor_mansion") else [])
-            # registry-driven (GM 2026-07-25): an estate court may not swallow ANY solid footprint
+    return _kept(locals(), ('civics',))
+
+
+# registry-driven (GM 2026-07-25): an estate court may not swallow ANY solid footprint
+
+
+def _seg_0563_186__o(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, o: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.186 (o, others_me) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             others_me = [o for o in solid_structs(M, "religious") if o is not None]
+    return _kept(locals(), ('o', 'others_me'))
+
+
+def _seg_0563_187__o_1(*, meta: Any = _UNBOUND, o: Any = _UNBOUND, others_me: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.187 (o, other_struct) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             other_struct = [rect_corners(o) if "rot" in o else rect_corners_xywh(o, 0) for o in others_me]
+    return _kept(locals(), ('o', 'other_struct'))
+
+
+def _seg_0563_188__o_2(*, meta: Any = _UNBOUND, o: Any = _UNBOUND, others_me: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.188 (o, other_xy) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             other_xy = [(o["x"], o["y"]) for o in others_me]
-            mest_bld = []
+    return _kept(locals(), ('o', 'other_xy'))
+
+
+def _seg_0563_189__mest_bld(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.189 (mest_bld) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            mest_bld = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('mest_bld',))
+
+
+def _seg_0563_190__e_1(
+    *,
+    e: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    j: Any = _UNBOUND,
+    mest: Any = _UNBOUND,
+    mest_bld: Any = _UNBOUND,
+    mest_corners: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    oc: Any = _UNBOUND,
+    other_struct: Any = _UNBOUND,
+    other_xy: Any = _UNBOUND,
+    ox: Any = _UNBOUND,
+    oy: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.190 (e, i, j, mest_bld) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for i in range(len(mest)):
                 e = mest[i]
                 for oc, (ox, oy) in zip(other_struct, other_xy, strict=False):
@@ -22395,13 +23512,72 @@ def _seg_0563__city_has_six_ministries(
                         if j != i and sat_overlap(mest_corners[i], mest_corners[j]):
                             mest_bld.append((round(e["x"]), round(e["y"])))
                             break
+    return _kept(locals(), ('e', 'i', 'j', 'mest_bld', 'oc', 'ox', 'oy'))
+
+
+def _seg_0563_191__city_merchant_estates_clear_of_buildings(*, check: Any = _UNBOUND, mest_bld: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.191 (city_merchant_estates_clear_of_buildings) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_merchant_estates_clear_of_buildings", not mest_bld, f"walled merchant estate(s) overlapping a building (temple, compound, house, or another estate): {sorted(set(mest_bld))}")
-            # a walled estate's GATE may not open INTO a building. The walls may ABUT a neighbor (very
-            # common historically), but the threshold just outside the gate must front OPEN ground, not
-            # a COMPOUND (temple, ministry, the yamen, or another estate court) - point the gate elsewhere.
+    return _kept(locals(), ())
+
+
+# a walled estate's GATE may not open INTO a building. The walls may ABUT a neighbor (very
+# common historically), but the threshold just outside the gate must front OPEN ground, not
+# a COMPOUND (temple, ministry, the yamen, or another estate court) - point the gate elsewhere.
+
+
+def _seg_0563_192__GDIR(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.192 (GDIR) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             GDIR = {"south": (0, 1), "north": (0, -1), "east": (1, 0), "west": (-1, 0)}
+    return _kept(locals(), ('GDIR',))
+
+
+def _seg_0563_193__compounds(
+    *, civics: Any = _UNBOUND, mest_corners: Any = _UNBOUND, meta: Any = _UNBOUND, o: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.193 (compounds, o) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             compounds = [rect_corners_xywh(o, 0) for o in civics] + list(mest_corners)
-            gate_bad = []
+    return _kept(locals(), ('compounds', 'o'))
+
+
+def _seg_0563_194__gate_bad(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.194 (gate_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            gate_bad = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('gate_bad',))
+
+
+def _seg_0563_195__cc(
+    *,
+    GDIR: Any = _UNBOUND,
+    cc: Any = _UNBOUND,
+    civics: Any = _UNBOUND,
+    compounds: Any = _UNBOUND,
+    g: Any = _UNBOUND,
+    gate_bad: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    j: Any = _UNBOUND,
+    mest: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    ox: Any = _UNBOUND,
+    oy: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    tcx: Any = _UNBOUND,
+    tcy: Any = _UNBOUND,
+    th: Any = _UNBOUND,
+    thr: Any = _UNBOUND,
+    tw: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.195 (cc, g, gate_bad, i) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for i in range(len(mest)):
                 g = mest[i].get("gate")
                 if not g:
@@ -22416,25 +23592,87 @@ def _seg_0563__city_has_six_ministries(
                     if sat_overlap(thr, cc):
                         gate_bad.append((round(mest[i]["x"]), round(mest[i]["y"])))
                         break
+    return _kept(locals(), ('cc', 'g', 'gate_bad', 'i', 'j', 'ox', 'oy', 'tcx', 'tcy', 'th', 'thr', 'tw'))
+
+
+def _seg_0563_196__city_merchant_estate_gate_clear(*, check: Any = _UNBOUND, gate_bad: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.196 (city_merchant_estate_gate_clear) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_merchant_estate_gate_clear",
                 not gate_bad,
                 f"walled merchant estate gate(s) opening INTO a building (a temple/compound/another estate) - point the gate at open ground: {gate_bad}",
             )
-            # the government compounds (governor's mansion + ministry offices) sit inside, clear of the
-            # barriers. (The governor's YAMEN is legitimately a large walled compound - a whole city block,
-            # dozens of buildings inside, drawn here as walls-only - so its size is fine; it must just not
-            # cross the rampart.)
+    return _kept(locals(), ())
+
+
+# the government compounds (governor's mansion + ministry offices) sit inside, clear of the
+# barriers. (The governor's YAMEN is legitimately a large walled compound - a whole city block,
+# dozens of buildings inside, drawn here as walls-only - so its size is fine; it must just not
+# cross the rampart.)
+
+
+def _seg_0563_197__gov(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.197 (gov) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gov = M.get("governor_mansion")
+    return _kept(locals(), ('gov',))
+
+
+def _seg_0563_198__gov_items(*, M: Any = _UNBOUND, gov: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.198 (gov_items) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gov_items = ([gov] if gov else []) + M.get("ministries", [])
+    return _kept(locals(), ('gov_items',))
+
+
+def _seg_0563_199__g_5(
+    *, g: Any = _UNBOUND, gov_items: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.199 (g, gov_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gov_bad = [
                 g.get("name") or g.get("label") or "governor's mansion"
                 for g in gov_items
                 if footprint_on_line(rect_corners_xywh(g, 0), w, 9) or (moat and footprint_on_line(rect_corners_xywh(g, 0), moat, 13))
             ]
+    return _kept(locals(), ('g', 'gov_bad'))
+
+
+def _seg_0563_200__city_government_clear_of_wall_moat(*, check: Any = _UNBOUND, gov_bad: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.200 (city_government_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_government_clear_of_wall_moat", not gov_bad, f"government compound(s) overlapping the wall or moat: {gov_bad}")
-            # the governor's mansion is the GRANDEST compound - a city-block yamen, at least as large
-            # as any samurai estate and several times any single ministry office
+    return _kept(locals(), ())
+
+
+# the governor's mansion is the GRANDEST compound - a city-block yamen, at least as large
+# as any samurai estate and several times any single ministry office
+
+
+def _seg_0563_201__city_governor_mansion_large(
+    *,
+    M: Any = _UNBOUND,
+    _floor: Any = _UNBOUND,
+    big_other: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    est_out: Any = _UNBOUND,
+    far_min: Any = _UNBOUND,
+    ga: Any = _UNBOUND,
+    gov: Any = _UNBOUND,
+    m: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    mn: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.201 (city_governor_mansion_large, city_ministries_cluster_at_government) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if gov:
                 ga = gov["w"] * gov["h"]
                 # the absolute floor is REAL area (~1.4 ha): 24000px2 was tuned at the pre-ladder
@@ -22454,46 +23692,149 @@ def _seg_0563__city_has_six_ministries(
                     not far_min,
                     f"ministry office(s) far from the governor's mansion - the ministries belong around the yamen / in the samurai quarter (only Rites sits with the temples): {far_min}",
                 )
-            # a planned city's government offices FRONT its streets - the yamen sits where the main
-            # streets cross and the bureaus line the avenues around it (Chinese official street /
-            # jokamachi grid), so every ministry must sit on a street, not float mid-block
+    return _kept(locals(), ('_floor', 'big_other', 'far_min', 'ga', 'm', 'mn'))
+
+
+# a planned city's government offices FRONT its streets - the yamen sits where the main
+# streets cross and the bureaus line the avenues around it (Chinese official street /
+# jokamachi grid), so every ministry must sit on a street, not float mid-block
+
+
+def _seg_0563_202__r23(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, r23: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.202 (r23, st, st_pts) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             st_pts = (
                 [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r23["pts"] for r23 in M.get("roads", [])]
             )  # the ote-suji IS the avenue (021: capital ministries front the road)
+    return _kept(locals(), ('r23', 'st', 'st_pts'))
+
+
+def _seg_0563_203__i_2(*, M: Any = _UNBOUND, i: Any = _UNBOUND, m: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, sp: Any = _UNBOUND, st_pts: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.203 (i, m, no_front, sp) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             no_front = [m.get("name") for m in M.get("ministries", []) if not any(seg_dist(m["x"], m["y"], sp[i], sp[i + 1]) < 85 for sp in st_pts for i in range(len(sp) - 1))]
+    return _kept(locals(), ('i', 'm', 'no_front', 'sp'))
+
+
+def _seg_0563_204__city_ministries_front_a_street(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, no_front: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.204 (city_ministries_front_a_street) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_ministries_front_a_street",
                 not no_front,
                 f"ministry office(s) not fronting any city street - government offices line the avenues around the yamen, they do not float mid-block: {no_front}",
             )
-            # a walled city SEALS its samurai/government quarter off the commoner streets with kido
-            # (wooden ward gates), not internal ramparts: full walled wards are a great-capital / Tang
-            # feature, over-scaled here, so a provincial city gates the quarter's street entries instead
+    return _kept(locals(), ())
+
+
+# a walled city SEALS its samurai/government quarter off the commoner streets with kido
+# (wooden ward gates), not internal ramparts: full walled wards are a great-capital / Tang
+# feature, over-scaled here, so a provincial city gates the quarter's street entries instead
+
+
+def _seg_0563_205__i_3(*, M: Any = _UNBOUND, i: Any = _UNBOUND, k: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.205 (i, k, on_st_kido, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             on_st_kido = [
                 k
                 for k in M.get("kido", [])
                 if any(seg_dist(k["x"], k["y"], st["pts"][i], st["pts"][i + 1]) < st.get("w", 18) / 2 + 8 for st in M.get("town_streets", []) for i in range(len(st["pts"]) - 1))
             ]
+    return _kept(locals(), ('i', 'k', 'on_st_kido', 'st'))
+
+
+def _seg_0563_206__gated(*, gov: Any = _UNBOUND, k: Any = _UNBOUND, meta: Any = _UNBOUND, on_st_kido: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.206 (gated, k) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gated = [k for k in on_st_kido if gov and math.hypot(k["x"] - gov["x"], k["y"] - gov["y"]) < 480]
-            # CAPITAL-INVERTED (021): the capital adopts the ward MESH (kido at machi mouths;
-            # yashiki walls seal the samurai streets). Either form is the interior-gate doctrine,
-            # which meta(ward_gates=False) turns off for a city that does not use it - there is
-            # then nothing to seal with (GM 2026-08-10).
+    return _kept(locals(), ('gated', 'k'))
+
+
+# CAPITAL-INVERTED (021): the capital adopts the ward MESH (kido at machi mouths;
+# yashiki walls seal the samurai streets). Either form is the interior-gate doctrine,
+# which meta(ward_gates=False) turns off for a city that does not use it - there is
+# then nothing to seal with (GM 2026-08-10).
+
+
+def _seg_0563_207__city_samurai_quarter_gated(*, URBAN: Any = _UNBOUND, check: Any = _UNBOUND, gated: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.207 (city_samurai_quarter_gated) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if URBAN and meta.get("ward_gates", True):
                 check(
                     "city_samurai_quarter_gated",
                     len(gated) >= 2,
                     f"a walled city seals its samurai/government quarter with kido ward gates across the streets entering it (s.kido), not walls - {len(gated)} gate(s) bar the quarter's street entries near the yamen, need >= 2",
                 )
-            # ...and that ward must be SEALED: a continuous fence whose ends abut the city wall, that
-            # a street pierces ONLY at a kido gate. Otherwise the gates can just be walked around, and
-            # the road network connects samurai to commoner with no gate between them.
+    return _kept(locals(), ())
+
+
+# ...and that ward must be SEALED: a continuous fence whose ends abut the city wall, that
+# a street pierces ONLY at a kido gate. Otherwise the gates can just be walked around, and
+# the road network connects samurai to commoner with no gate between them.
+
+
+def _seg_0563_208__wards(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.208 (wards) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             wards = M.get("wards", [])
+    return _kept(locals(), ('wards',))
+
+
+def _seg_0563_209__kido(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.209 (kido) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             kido = M.get("kido", [])
+    return _kept(locals(), ('kido',))
+
+
+def _seg_0563_210__a_1(*, M: Any = _UNBOUND, a: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.210 (a, netlines, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             netlines = (
                 [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [a["pts"] for a in M.get("alleys", [])] + ([M["ring_road"]] if M.get("ring_road") else [])
             )
-            bad_cross, open_end = [], []
+    return _kept(locals(), ('a', 'netlines', 'st'))
+
+
+def _seg_0563_211__bad_cross(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.211 (bad_cross, open_end) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            bad_cross, open_end = [], []  # type: ignore[var-annotated]
+    return _kept(locals(), ('bad_cross', 'open_end'))
+
+
+def _seg_0563_212__bad_cross_1(
+    *,
+    bad_cross: Any = _UNBOUND,
+    bnd: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    g: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    ip: Any = _UNBOUND,
+    ki: Any = _UNBOUND,
+    kido: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    netlines: Any = _UNBOUND,
+    open_end: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    sp: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+    wards: Any = _UNBOUND,
+    wd: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.212 (bad_cross, bnd, e, g) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for wd in wards:
                 bnd = wd["boundary"]
                 for sp in netlines:
@@ -22506,17 +23847,56 @@ def _seg_0563__city_has_six_ministries(
                 for e in (bnd[0], bnd[-1]):
                     if len(w) >= 3 and edge_dist(e[0], e[1], w) > 45:
                         open_end.append((round(e[0]), round(e[1])))
-            # ...same mesh doctrine, same knob
+    return _kept(locals(), ('bad_cross', 'bnd', 'e', 'g', 'i', 'ip', 'ki', 'open_end', 'sp', 'wd'))
+
+
+# ...same mesh doctrine, same knob
+
+
+def _seg_0563_213__city_samurai_ward_sealed(
+    *, URBAN: Any = _UNBOUND, bad_cross: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, open_end: Any = _UNBOUND, scale: Any = _UNBOUND, wards: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.213 (city_samurai_ward_sealed) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if URBAN and meta.get("ward_gates", True):
                 check(
                     "city_samurai_ward_sealed",
                     bool(wards) and not bad_cross and not open_end,
                     f"the samurai/government ward is not SEALED (s.ward): wards={len(wards)}, ungated street crossings={bad_cross}, fence ends not meeting the wall={open_end} - a kido gate can be walked around unless the fence is continuous, ends at the wall, and a street pierces it only at a gate",
                 )
-            # ...and the fence ends must actually TOUCH the wall - a gap (even a small one, which the
-            # coarse 45px seal tolerance lets slide) means commoners can simply walk AROUND the end of
-            # the fence. The end must abut the rampart within ~10px (about the wall's own half-width).
-            fence_gap = []
+    return _kept(locals(), ())
+
+
+# ...and the fence ends must actually TOUCH the wall - a gap (even a small one, which the
+# coarse 45px seal tolerance lets slide) means commoners can simply walk AROUND the end of
+# the fence. The end must abut the rampart within ~10px (about the wall's own half-width).
+
+
+def _seg_0563_214__fence_gap(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.214 (fence_gap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            fence_gap = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('fence_gap',))
+
+
+def _seg_0563_215__bnd(
+    *,
+    bnd: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    fence_gap: Any = _UNBOUND,
+    g: Any = _UNBOUND,
+    gates: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+    wards: Any = _UNBOUND,
+    wd: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.215 (bnd, e, fence_gap, g) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for wd in wards:
                 bnd = wd["boundary"]
                 for e in (bnd[0], bnd[-1]):
@@ -22524,27 +23904,69 @@ def _seg_0563__city_has_six_ministries(
                         fence_gap.append((round(e[0]), round(e[1]), "gap to the wall"))
                     elif any(math.hypot(e[0] - g[0], e[1] - g[1]) < 45 for g in gates):
                         fence_gap.append((round(e[0]), round(e[1]), "lands in a gate OPENING (the wall is cut there, so the fence meets nothing)"))
+    return _kept(locals(), ('bnd', 'e', 'fence_gap', 'g', 'wd'))
+
+
+def _seg_0563_216__city_ward_fence_meets_wall(*, check: Any = _UNBOUND, fence_gap: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.216 (city_ward_fence_meets_wall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_ward_fence_meets_wall",
                 not fence_gap,
                 f"ward-fence end(s) not abutting SOLID city wall (commoners could walk around the fence end): {fence_gap} - extend the fence to solid rampart, clear of any gate opening",
             )
-            # THE FENCE SEALS COMMONERS OUT - so nobody it seals out may LIVE inside it (GM
-            # 2026-08-02, on Minami: 2 laborer houses in the middle of the samurai neighborhood
-            # and a merchant row hugging the inside of the west fence, leaked in by whole-interior
-            # top-up sweeps whose rectangles overlap the ward). Historical grounding: an Edo-era
-            # jokamachi zoned samurai and chonin ground apart as a matter of LAW (bukechi vs
-            # chonin-chi), and a Chinese provincial seat likewise kept commerce off the yamen
-            # quarter - a laborer terrace between two samurai houses inside the palisade is not
-            # variety, it contradicts the fence around it. Only samurai dwellings, their live-in
-            # domestics (servant - the gens interleave them deliberately) and government ground
-            # belong inside. monk_house is deliberately NOT barred: a temple may stand inside the
-            # ward (Tango's Bishamon precinct - the warrior fortune beside the garrison quarter)
-            # and its clergy row belongs with its temple, held there by the temple-neighborhood
-            # checks. Classification family: CENTER-tested on purpose (a building belongs to ONE
-            # ward; see "Centers, footprints, and aggregates" in the skill CLAUDE.md).
+    return _kept(locals(), ())
+
+
+# THE FENCE SEALS COMMONERS OUT - so nobody it seals out may LIVE inside it (GM
+# 2026-08-02, on Minami: 2 laborer houses in the middle of the samurai neighborhood
+# and a merchant row hugging the inside of the west fence, leaked in by whole-interior
+# top-up sweeps whose rectangles overlap the ward). Historical grounding: an Edo-era
+# jokamachi zoned samurai and chonin ground apart as a matter of LAW (bukechi vs
+# chonin-chi), and a Chinese provincial seat likewise kept commerce off the yamen
+# quarter - a laborer terrace between two samurai houses inside the palisade is not
+# variety, it contradicts the fence around it. Only samurai dwellings, their live-in
+# domestics (servant - the gens interleave them deliberately) and government ground
+# belong inside. monk_house is deliberately NOT barred: a temple may stand inside the
+# ward (Tango's Bishamon precinct - the warrior fortune beside the garrison quarter)
+# and its clergy row belongs with its temple, held there by the temple-neighborhood
+# checks. Classification family: CENTER-tested on purpose (a building belongs to ONE
+# ward; see "Centers, footprints, and aggregates" in the skill CLAUDE.md).
+
+
+def _seg_0563_217__barred(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.217 (barred) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             barred = ("laborer", "laborer_large", "merchant", "merchant_house", "merchant_large", "burakumin", "shop", "inn")
-            commoner_in = []
+    return _kept(locals(), ('barred',))
+
+
+def _seg_0563_218__commoner_in(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.218 (commoner_in) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            commoner_in = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('commoner_in',))
+
+
+def _seg_0563_219__b_10(
+    *,
+    M: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    barred: Any = _UNBOUND,
+    commoner_in: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    region: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+    wards: Any = _UNBOUND,
+    wd: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.219 (b, commoner_in, region, wd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for wd in wards:
                 if wd.get("name") != "samurai":
                     continue
@@ -22552,21 +23974,51 @@ def _seg_0563__city_has_six_ministries(
                 for b in M.get("buildings", []):
                     if region and b.get("kind") in barred and point_in_poly(b["x"], b["y"], region):
                         commoner_in.append((b["kind"], round(b["x"]), round(b["y"])))
-            # ...and the residents who ARE admitted must be housed the way the ward houses them.
-            # A samurai household's domestics lived in the perimeter nagaya that forms the plot's
-            # street boundary, in the nagayamon gate rooms, or in nando off the kitchen - never in
-            # a freestanding house in the buke-chi; a Chinese elite compound puts them in the
-            # daozuofang, the south row whose blank back IS the street wall. Ranks of small uniform
-            # dwellings are real, but they are ashigaru kumi-yashiki on the town FRINGE. So every
-            # servant inside the fence must carry `of` (its master's house), ABUT that house, and
-            # be a RANGE rather than a cottage. GM 2026-08-02, after the barred kinds were evicted
-            # and the packs refilled the same ground with servants: "I swear I'm seeing way MORE
-            # commoner houses in the samurai neighborhood now!" - the servant glyph is a laborer
-            # glyph with a 4 ft trim, so detached-and-ranked reads as exactly what the fence
-            # excludes. The COUNT is canon and is not what this polices (budgets.md: 72 of a
-            # provincial city's 120 servant families are attached to its 60 samurai households);
-            # the ARRANGEMENT is. Research: research/cities/government.md.
-            loose_servants = []
+    return _kept(locals(), ('b', 'commoner_in', 'region', 'wd'))
+
+
+# ...and the residents who ARE admitted must be housed the way the ward houses them.
+# A samurai household's domestics lived in the perimeter nagaya that forms the plot's
+# street boundary, in the nagayamon gate rooms, or in nando off the kitchen - never in
+# a freestanding house in the buke-chi; a Chinese elite compound puts them in the
+# daozuofang, the south row whose blank back IS the street wall. Ranks of small uniform
+# dwellings are real, but they are ashigaru kumi-yashiki on the town FRINGE. So every
+# servant inside the fence must carry `of` (its master's house), ABUT that house, and
+# be a RANGE rather than a cottage. GM 2026-08-02, after the barred kinds were evicted
+# and the packs refilled the same ground with servants: "I swear I'm seeing way MORE
+# commoner houses in the samurai neighborhood now!" - the servant glyph is a laborer
+# glyph with a 4 ft trim, so detached-and-ranked reads as exactly what the fence
+# excludes. The COUNT is canon and is not what this polices (budgets.md: 72 of a
+# provincial city's 120 servant families are attached to its 60 samurai households);
+# the ARRANGEMENT is. Research: research/cities/government.md.
+
+
+def _seg_0563_220__loose_servants(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.220 (loose_servants) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            loose_servants = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('loose_servants',))
+
+
+def _seg_0563_221__b_11(
+    *,
+    M: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    host: Any = _UNBOUND,
+    hosts: Any = _UNBOUND,
+    loose_servants: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    of: Any = _UNBOUND,
+    region: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+    wards: Any = _UNBOUND,
+    wd: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.221 (b, host, hosts, loose_servants) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for wd in wards:
                 if wd.get("name") != "samurai":
                     continue
@@ -22585,6 +24037,13 @@ def _seg_0563__city_has_six_ministries(
                         loose_servants.append((round(b["x"]), round(b["y"]), f"detached from its household by {edge_gap(b, host):.0f}px"))
                     elif max(b["w"], b["h"]) < 2.2 * min(b["w"], b["h"]):
                         loose_servants.append((round(b["x"]), round(b["y"]), "drawn as a cottage, not a range"))
+    return _kept(locals(), ('b', 'host', 'hosts', 'loose_servants', 'of', 'region', 'wd'))
+
+
+def _seg_0563_222__city_ward_servants_housed_as_ranges(*, check: Any = _UNBOUND, loose_servants: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.222 (city_ward_servants_housed_as_ranges) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_ward_servants_housed_as_ranges",
                 not loose_servants,
@@ -22593,16 +24052,61 @@ def _seg_0563__city_has_six_ministries(
                 f"commoner fabric the fence excludes); place them with s.servant_ranges() AFTER the ward's samurai houses, and put any genuinely "
                 f"ranked small housing outside the fence, where ashigaru kumi-yashiki belong",
             )
+    return _kept(locals(), ())
+
+
+def _seg_0563_223__city_samurai_ward_residents_only(*, check: Any = _UNBOUND, commoner_in: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.223 (city_samurai_ward_residents_only) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_samurai_ward_residents_only",
                 not commoner_in,
                 f"commoner dwelling(s)/commerce INSIDE the samurai ward fence: {commoner_in[:8]} - the ward exists to seal the samurai/government quarter off the commoners; only samurai houses, their live-in servants and government ground belong inside (s.building refuses these seats once s.ward has run - hoist s.ward ahead of the commoner packs and re-seat the leaked households outside the fence)",
             )
-            # the ward FENCE runs in OPEN ground - it must not pass THROUGH a building, a mausoleum, or
-            # another ward's fence (GM, 2026-07). The packs keep off the fence via s.ward's corridor, but
-            # a hand-placed compound (the mausoleum) or a diagonal fence segment can still cut through one.
-            fence_hit = []
+    return _kept(locals(), ())
+
+
+# the ward FENCE runs in OPEN ground - it must not pass THROUGH a building, a mausoleum, or
+# another ward's fence (GM, 2026-07). The packs keep off the fence via s.ward's corridor, but
+# a hand-placed compound (the mausoleum) or a diagonal fence segment can still cut through one.
+
+
+def _seg_0563_224__fence_hit(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.224 (fence_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            fence_hit = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('fence_hit',))
+
+
+def _seg_0563_225___ftargets(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.225 (_ftargets, b) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _ftargets = [b for b in (M.get("buildings", []) + M.get("houses", []) + M.get("mausoleums", [])) if "w" in b]
+    return _kept(locals(), ('_ftargets', 'b'))
+
+
+def _seg_0563_226__b_12(
+    *,
+    _ftargets: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    b2: Any = _UNBOUND,
+    bc: Any = _UNBOUND,
+    bnd: Any = _UNBOUND,
+    fence_hit: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    j: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    wards: Any = _UNBOUND,
+    wd: Any = _UNBOUND,
+    wd2: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.226 (b, b2, bc, bnd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for wd in wards:
                 bnd = wd["boundary"]
                 for b in _ftargets:
@@ -22615,30 +24119,90 @@ def _seg_0563__city_has_six_ministries(
                     b2 = wd2["boundary"]
                     if any(segments_cross(bnd[i], bnd[i + 1], b2[j], b2[j + 1]) for i in range(len(bnd) - 1) for j in range(len(b2) - 1)):
                         fence_hit.append(("ward-x-ward", round(bnd[0][0])))
+    return _kept(locals(), ('b', 'b2', 'bc', 'bnd', 'fence_hit', 'i', 'j', 'wd', 'wd2'))
+
+
+def _seg_0563_227__city_ward_fence_clear_of_structures(*, check: Any = _UNBOUND, fence_hit: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.227 (city_ward_fence_clear_of_structures) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_ward_fence_clear_of_structures",
                 not fence_hit,
                 f"ward fence passing THROUGH a structure (building / mausoleum / another fence): {sorted(set(fence_hit))[:4]} - "
                 f"the fence runs in open ground; move the structure clear of the fence line or reroute the fence",
             )
-            # a KIDO is a gate THROUGH the fence, so it must sit ON the fence (overlap it), not beside it
-            # (GM, 2026-07: a gate next to rather than part of the wall does not work). Its crossing point
-            # must lie within ~8px of a fence segment so the gate visibly straddles the fence.
-            off_fence = []
+    return _kept(locals(), ())
+
+
+# a KIDO is a gate THROUGH the fence, so it must sit ON the fence (overlap it), not beside it
+# (GM, 2026-07: a gate next to rather than part of the wall does not work). Its crossing point
+# must lie within ~8px of a fence segment so the gate visibly straddles the fence.
+
+
+def _seg_0563_228__off_fence(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.228 (off_fence) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            off_fence = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('off_fence',))
+
+
+def _seg_0563_229__i_4(
+    *, i: Any = _UNBOUND, kd: Any = _UNBOUND, kido: Any = _UNBOUND, meta: Any = _UNBOUND, off_fence: Any = _UNBOUND, scale: Any = _UNBOUND, wards: Any = _UNBOUND, wd: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.229 (i, kd, off_fence, wd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for kd in kido:
                 if wards and min((seg_dist(kd["x"], kd["y"], wd["boundary"][i], wd["boundary"][i + 1]) for wd in wards for i in range(len(wd["boundary"]) - 1)), default=999) > 8:
                     off_fence.append((round(kd["x"]), round(kd["y"])))
+    return _kept(locals(), ('i', 'kd', 'off_fence', 'wd'))
+
+
+def _seg_0563_230__city_kido_on_ward_fence(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, off_fence: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.230 (city_kido_on_ward_fence) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_kido_on_ward_fence",
                 not off_fence,
                 f"ward gate(s) sitting BESIDE the fence, not on it: {off_fence[:4]} - a kido gates a crossing THROUGH the "
                 f"fence, so its point must lie ON the fence line (overlap it), not offset into the ward",
             )
-            # ...and where the fence meets the wall, the city WALL must render ON TOP (the fence runs
-            # UNDER the rampart). The fence is drawn late (high z), so without a wall cap on top of the
-            # junction it paints over the wall stroke. s.ward records the fence z and the wall cap it
-            # lays over each end; the cap's z must be above the fence's.
-            not_under = []
+    return _kept(locals(), ())
+
+
+# ...and where the fence meets the wall, the city WALL must render ON TOP (the fence runs
+# UNDER the rampart). The fence is drawn late (high z), so without a wall cap on top of the
+# junction it paints over the wall stroke. s.ward records the fence z and the wall cap it
+# lays over each end; the cap's z must be above the fence's.
+
+
+def _seg_0563_231__not_under(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.231 (not_under) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            not_under = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('not_under',))
+
+
+def _seg_0563_232__c(
+    *,
+    c: Any = _UNBOUND,
+    caps: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    fz: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    not_under: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+    wards: Any = _UNBOUND,
+    wd: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.232 (c, caps, e, fz) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for wd in wards:
                 fz = wd.get("z")
                 caps = wd.get("wall_caps", [])
@@ -22647,19 +24211,76 @@ def _seg_0563__city_has_six_ministries(
                 for e in (wd["boundary"][0], wd["boundary"][-1]):
                     if len(w) >= 3 and edge_dist(e[0], e[1], w) <= 15 and not any(c.get("z", -1) > fz and math.hypot(c["x"] - e[0], c["y"] - e[1]) < 30 for c in caps):
                         not_under.append((round(e[0]), round(e[1])))
+    return _kept(locals(), ('c', 'caps', 'e', 'fz', 'not_under', 'wd'))
+
+
+def _seg_0563_233__city_ward_fence_under_wall(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, not_under: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.233 (city_ward_fence_under_wall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_ward_fence_under_wall",
                 not not_under,
                 f"ward-fence end(s) NOT rendered under the city wall - no wall cap on top of the junction, so the fence paints over the rampart: {not_under}",
             )
-            # the extramural samurai estates all lie TOWARD OTOSAN UCHI (the Imperial capital) - a
-            # samurai builds his country seat on the capital-facing side, so the direction is
-            # per-city: meta(capital_dir=<cardinal>) (Tango SE, Nagahara NE). Each estate must sit in
-            # the correct half-plane(s) for that direction (a diagonal requires BOTH axes).
+    return _kept(locals(), ())
+
+
+# the extramural samurai estates all lie TOWARD OTOSAN UCHI (the Imperial capital) - a
+# samurai builds his country seat on the capital-facing side, so the direction is
+# per-city: meta(capital_dir=<cardinal>) (Tango SE, Nagahara NE). Each estate must sit in
+# the correct half-plane(s) for that direction (a diagonal requires BOTH axes).
+
+
+def _seg_0563_234__cx(*, meta: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.234 (cx, cy, p) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             cx, cy = sum(p[0] for p in w) / len(w), sum(p[1] for p in w) / len(w)
+    return _kept(locals(), ('cx', 'cy', 'p'))
+
+
+def _seg_0563_235__cap(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.235 (cap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             cap = meta.get("capital_dir", "southeast")
+    return _kept(locals(), ('cap',))
+
+
+def _seg_0563_236__cd(*, cap: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.236 (cd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             cd = unit_dir(cap)
+    return _kept(locals(), ('cd',))
+
+
+def _seg_0563_237__city_capital_dir_valid(*, cap: Any = _UNBOUND, cd: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.237 (city_capital_dir_valid) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_capital_dir_valid", cd is not None, f"meta(capital_dir={cap!r}) is not a cardinal direction")
+    return _kept(locals(), ())
+
+
+def _seg_0563_238__city_estates_toward_capital(
+    *,
+    cap: Any = _UNBOUND,
+    cd: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    cx: Any = _UNBOUND,
+    cy: Any = _UNBOUND,
+    est_out: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    mn: Any = _UNBOUND,
+    not_cap: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    toward: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.238 (city_estates_toward_capital) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if cd:
 
                 def toward(mn: dict[str, Any]) -> bool:
@@ -22673,58 +24294,228 @@ def _seg_0563__city_has_six_ministries(
                     not not_cap,
                     f"{len(not_cap)} samurai estate(s) not toward the capital ({cap}): {not_cap[:3]} - a city's extramural estates cluster on the Otosan-Uchi-facing side (meta(capital_dir=...))",
                 )
-            # ... and clear of the ROADS leaving the city (an estate straddling the highway blocks it -
-            # GM, 2026-07: a Nagahara estate sat on the bridge road). Test each outside estate footprint
-            # against every recorded road.
+    return _kept(locals(), ('mn', 'not_cap', 'toward'))
+
+
+# ... and clear of the ROADS leaving the city (an estate straddling the highway blocks it -
+# GM, 2026-07: a Nagahara estate sat on the bridge road). Test each outside estate footprint
+# against every recorded road.
+
+
+def _seg_0563_239__r_3(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, r: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.239 (r, roads_all) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             roads_all = [r["pts"] for r in M.get("roads", [])] or ([M["road"]] if M.get("road") else [])
+    return _kept(locals(), ('r', 'roads_all'))
+
+
+def _seg_0563_240__est_on_road(
+    *, M: Any = _UNBOUND, est_out: Any = _UNBOUND, meta: Any = _UNBOUND, mn: Any = _UNBOUND, roads_all: Any = _UNBOUND, rp: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.240 (est_on_road, mn, rp) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             est_on_road = [(round(mn["x"]), round(mn["y"])) for mn in est_out if any(footprint_on_line(rect_corners(_struct_rect(mn)), rp, (M.get("road_width", 26) / 2 + 4)) for rp in roads_all)]
+    return _kept(locals(), ('est_on_road', 'mn', 'rp'))
+
+
+def _seg_0563_241__city_estates_clear_of_roads(*, check: Any = _UNBOUND, est_on_road: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.241 (city_estates_clear_of_roads) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_estates_clear_of_roads",
                 not est_on_road,
                 f"samurai estate(s) straddling a road out of the city: {est_on_road[:3]} - an estate fronts its own approach lane but must not sit ON the highway",
             )
-            # the ground circulation (streets + alleys; NOT the Imperial road, which exits at the
-            # gates) must stay INSIDE the wall and clear of the moat - separate checks, since a lane
-            # can poke through the rampart, the moat, or both (the elliptical wall curves in, so a
-            # lane run to the block edge can spill outside even with its vertices nominally interior)
+    return _kept(locals(), ())
+
+
+# the ground circulation (streets + alleys; NOT the Imperial road, which exits at the
+# gates) must stay INSIDE the wall and clear of the moat - separate checks, since a lane
+# can poke through the rampart, the moat, or both (the elliptical wall curves in, so a
+# lane run to the block edge can spill outside even with its vertices nominally interior)
+
+
+def _seg_0563_242__a_2(*, M: Any = _UNBOUND, a: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.242 (a, lanes_pts, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             lanes_pts = [st["pts"] for st in M.get("town_streets", [])] + [a["pts"] for a in M.get("alleys", [])]
+    return _kept(locals(), ('a', 'lanes_pts', 'st'))
+
+
+def _seg_0563_243__crosses_ring(*, i: Any = _UNBOUND, k: Any = _UNBOUND, meta: Any = _UNBOUND, pts: Any = _UNBOUND, ring: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.243 (crosses_ring) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
 
             def crosses_ring(pts: Poly, ring: Poly, closed: bool) -> bool:
                 rng = range(len(ring)) if closed else range(len(ring) - 1)
                 return any(segments_cross(pts[k], pts[k + 1], ring[i], ring[(i + 1) % len(ring)]) for k in range(len(pts) - 1) for i in rng)
 
-            # a way WHOLLY outside the rampart is the SUBURB's own circulation (021: the kashi
-            # belt and guan-xiang wards keep streets and roji like any machi) - only a way that
-            # CROSSES the wall, or an inside way poking out, is the defect
+    return _kept(locals(), ('crosses_ring',))
+
+
+# a way WHOLLY outside the rampart is the SUBURB's own circulation (021: the kashi
+# belt and guan-xiang wards keep streets and roji like any machi) - only a way that
+# CROSSES the wall, or an inside way poking out, is the defect
+
+
+def _seg_0563_244__p_2(
+    *, crosses_ring: Any = _UNBOUND, inwall: Any = _UNBOUND, lanes_pts: Any = _UNBOUND, meta: Any = _UNBOUND, p: Any = _UNBOUND, pts: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.244 (p, pts, wall_hit) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             wall_hit = [pts[0] for pts in lanes_pts if crosses_ring(pts, w, True) or (any(not inwall(p[0], p[1]) for p in pts) and any(inwall(p[0], p[1]) for p in pts))]
+    return _kept(locals(), ('p', 'pts', 'wall_hit'))
+
+
+def _seg_0563_245__city_streets_clear_of_wall(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, wall_hit: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.245 (city_streets_clear_of_wall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_streets_clear_of_wall", not wall_hit, f"{len(wall_hit)} street/alley(s) crossing the city wall (a lane running outside the rampart): {wall_hit}")
+    return _kept(locals(), ())
+
+
+def _seg_0563_246__moat_1(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.246 (moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             moat = M.get("moat")
+    return _kept(locals(), ('moat',))
+
+
+def _seg_0563_247__city_streets_clear_of_moat(
+    *, check: Any = _UNBOUND, crosses_ring: Any = _UNBOUND, lanes_pts: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, moat_hit: Any = _UNBOUND, pts: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.247 (city_streets_clear_of_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if moat:
                 moat_hit = [pts[0] for pts in lanes_pts if crosses_ring(pts, moat, False)]
                 check("city_streets_clear_of_moat", not moat_hit, f"{len(moat_hit)} street/alley(s) crossing the moat: {moat_hit}")
-            # farm fields (in-wall plots OR the surrounding farmland) must not cut across the wall stroke
-            # or the moat - the moat sits between the wall and the close-in fields, so they abut, not overlap
+    return _kept(locals(), ('moat_hit', 'pts'))
+
+
+# farm fields (in-wall plots OR the surrounding farmland) must not cut across the wall stroke
+# or the moat - the moat sits between the wall and the close-in fields, so they abut, not overlap
+
+
+def _seg_0563_248__f(*, f: Any = _UNBOUND, fields: Any = _UNBOUND, meta: Any = _UNBOUND, moat: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.248 (f, fld_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             fld_bad = [f["name"] for f in fields if footprint_on_line(f["outline"], w, 10) or (moat and footprint_on_line(f["outline"], moat, 13))]
+    return _kept(locals(), ('f', 'fld_bad'))
+
+
+def _seg_0563_249__city_fields_clear_of_wall_moat(*, check: Any = _UNBOUND, fld_bad: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.249 (city_fields_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_fields_clear_of_wall_moat", not fld_bad, f"field(s) overlapping the city wall or moat: {fld_bad}")
-            # the in-wall pond is a water source, not a moat - it must not touch the wall or moat
+    return _kept(locals(), ())
+
+
+# the in-wall pond is a water source, not a moat - it must not touch the wall or moat
+
+
+def _seg_0563_250__pnd(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.250 (pnd) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             pnd = M.get("pond")
+    return _kept(locals(), ('pnd',))
+
+
+def _seg_0563_251__city_pond_clear_of_wall_moat(
+    *,
+    check: Any = _UNBOUND,
+    k: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    moat: Any = _UNBOUND,
+    p_out: Any = _UNBOUND,
+    pcx: Any = _UNBOUND,
+    pcy: Any = _UNBOUND,
+    pnd: Any = _UNBOUND,
+    prx: Any = _UNBOUND,
+    pry: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.251 (city_pond_clear_of_wall_moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if pnd:
                 pcx, pcy, prx, pry = pnd
                 p_out = [(pcx + math.cos(math.tau * k / 28) * prx, pcy + math.sin(math.tau * k / 28) * pry) for k in range(28)]
                 check("city_pond_clear_of_wall_moat", not (footprint_on_line(p_out, w, 9) or (moat and footprint_on_line(p_out, moat, 13))), "the in-wall pond overlaps the city wall or moat")
-            # internal streets must not run THROUGH the civic compounds (ministries, governor, temples,
-            # gate furniture) any more than they may through ordinary buildings
+    return _kept(locals(), ('k', 'p_out', 'pcx', 'pcy', 'prx', 'pry'))
+
+
+# internal streets must not run THROUGH the civic compounds (ministries, governor, temples,
+# gate furniture) any more than they may through ordinary buildings
+
+
+def _seg_0563_252__civic_3(*, M: Any = _UNBOUND, gov: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.252 (civic) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             civic = M.get("ministries", []) + M.get("religious", []) + M.get("inspection_stations", []) + ([gov] if gov else [])
+    return _kept(locals(), ('civic',))
+
+
+def _seg_0563_253__c_1(
+    *, M: Any = _UNBOUND, c: Any = _UNBOUND, civic: Any = _UNBOUND, meta: Any = _UNBOUND, rect_corners_xywh: Any = _UNBOUND, scale: Any = _UNBOUND, st: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.253 (c, civic_on_street, st) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             civic_on_street = [
                 c.get("name") or c.get("label") or "compound" for st in M.get("town_streets", []) for c in civic if footprint_on_line(rect_corners_xywh(c, 0), st["pts"], st.get("w", 24) / 2 + 2)
             ]
-            check("city_civic_clear_of_streets", not civic_on_street, f"city street(s) running through a civic compound: {civic_on_street}")
+    return _kept(locals(), ('c', 'civic_on_street', 'st'))
 
-            # ZONE / NEIGHBORHOOD labels must sit WITH the cluster they name: ENTIRELY on the same side
-            # of the city wall as that cluster, AMONG its buildings, and not floating over a foreign field.
-            # A label over the moat, a neighboring compound, or a paddy misleads the reader about what it
-            # names (the "laborer neighborhoods" label drifted outside the wall, "samurai neighborhood"
-            # sat over a ministry, "burakumin neighborhood" sat over a field).
+
+def _seg_0563_254__city_civic_clear_of_streets(*, check: Any = _UNBOUND, civic_on_street: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.254 (city_civic_clear_of_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            check("city_civic_clear_of_streets", not civic_on_street, f"city street(s) running through a civic compound: {civic_on_street}")
+    return _kept(locals(), ())
+
+
+# ZONE / NEIGHBORHOOD labels must sit WITH the cluster they name: ENTIRELY on the same side
+# of the city wall as that cluster, AMONG its buildings, and not floating over a foreign field.
+# A label over the moat, a neighboring compound, or a paddy misleads the reader about what it
+# names (the "laborer neighborhoods" label drifted outside the wall, "samurai neighborhood"
+# sat over a ministry, "burakumin neighborhood" sat over a field).
+
+
+def _seg_0563_255__subject_of(
+    *,
+    M: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    f: Any = _UNBOUND,
+    fields: Any = _UNBOUND,
+    inwall: Any = _UNBOUND,
+    key: Any = _UNBOUND,
+    m: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    r: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    t: Any = _UNBOUND,
+    txt: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.255 (subject_of) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+
             def subject_of(txt: str) -> tuple[list[tuple[float, float]], float, bool]:
                 t = txt.lower()
                 if "estate" in t:
@@ -22743,7 +24534,45 @@ def _seg_0563__city_has_six_ministries(
                         return [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in kinds], 130, False
                 return [], 0, True
 
-            bad_lab = []
+    return _kept(locals(), ('subject_of',))
+
+
+def _seg_0563_256__bad_lab(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.256 (bad_lab) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            bad_lab = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('bad_lab',))
+
+
+def _seg_0563_257___z(
+    *,
+    M: Any = _UNBOUND,
+    area_subj: Any = _UNBOUND,
+    bad_lab: Any = _UNBOUND,
+    cx: Any = _UNBOUND,
+    cy: Any = _UNBOUND,
+    f: Any = _UNBOUND,
+    fields: Any = _UNBOUND,
+    inwall: Any = _UNBOUND,
+    lab: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    pts: Any = _UNBOUND,
+    px: Any = _UNBOUND,
+    py: Any = _UNBOUND,
+    reach: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    subj_in: Any = _UNBOUND,
+    subject_of: Any = _UNBOUND,
+    txt: Any = _UNBOUND,
+    x0: Any = _UNBOUND,
+    x1: Any = _UNBOUND,
+    y0: Any = _UNBOUND,
+    y1: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.257 (_z, area_subj, bad_lab, cx) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for lab in M.get("labels", []):
                 if len(lab) <= 5 or not (lab[5].lower().endswith(("neighborhood", "neighborhoods", "district")) or "estates" in lab[5].lower()):
                     continue
@@ -22759,15 +24588,87 @@ def _seg_0563__city_has_six_ministries(
                     bad_lab.append(f"{txt!r} sits >{reach}px from any of its buildings - place it among them")
                 elif not area_subj and any(point_in_poly(cx, cy, f["outline"]) for f in fields):
                     bad_lab.append(f"{txt!r} floats over a farm field, not its own houses")
+    return _kept(locals(), ('_z', 'area_subj', 'bad_lab', 'cx', 'cy', 'f', 'lab', 'pts', 'px', 'py', 'reach', 'subj_in', 'txt', 'x0', 'x1', 'y0', 'y1'))
+
+
+def _seg_0563_258__city_labels_placed_with_subject(*, bad_lab: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.258 (city_labels_placed_with_subject) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_labels_placed_with_subject", not bad_lab, f"neighborhood/zone label(s) misplaced relative to what they name: {bad_lab}")
-            # the surrounding farmland: every OUTSIDE field (even off-edge) has farmhouses, and the
-            # fields sit close to the city (cities grow up around fertile land)
+    return _kept(locals(), ())
+
+
+# the surrounding farmland: every OUTSIDE field (even off-edge) has farmhouses, and the
+# fields sit close to the city (cities grow up around fertile land)
+
+
+def _seg_0563_259__f_1(*, f: Any = _UNBOUND, fields: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.259 (f, out_fields) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             out_fields = [f for f in fields if not inwall((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2)]
+    return _kept(locals(), ('f', 'out_fields'))
+
+
+def _seg_0563_260__f_2(*, ADJ: Any = _UNBOUND, f: Any = _UNBOUND, h: Any = _UNBOUND, houses: Any = _UNBOUND, meta: Any = _UNBOUND, out_fields: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.260 (f, h, no_farm) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             no_farm = [f["name"] for f in out_fields if sum(1 for h in houses if poly_dist(h["x"], h["y"], f["outline"]) <= ADJ) < 2]
+    return _kept(locals(), ('f', 'h', 'no_farm'))
+
+
+def _seg_0563_261__city_outside_fields_have_farmhouses(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, no_farm: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.261 (city_outside_fields_have_farmhouses) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_outside_fields_have_farmhouses", not no_farm, f"outside field(s) with < 2 farmhouses (even off-edge fields are worked by nearby villagers): {no_farm}")
+    return _kept(locals(), ())
+
+
+def _seg_0563_262__f_3(*, f: Any = _UNBOUND, meta: Any = _UNBOUND, out_fields: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.262 (f, far, p) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             far = [f["name"] for f in out_fields if len(w) >= 3 and min(poly_dist(p[0], p[1], w) for p in f["outline"]) > 520]
+    return _kept(locals(), ('f', 'far', 'p'))
+
+
+def _seg_0563_263__city_fields_close_to_city(*, check: Any = _UNBOUND, far: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.263 (city_fields_close_to_city) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_fields_close_to_city", not far, f"outside field(s) too far from the city (cities grow up around fertile land, fields stay close): {far}")
-            # a MOATED city irrigates several large fields from the moat
+    return _kept(locals(), ())
+
+
+# a MOATED city irrigates several large fields from the moat
+
+
+def _seg_0563_264__city_moat_irrigates_fields(
+    *,
+    M: Any = _UNBOUND,
+    big_out: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    chans: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    ends: Any = _UNBOUND,
+    f: Any = _UNBOUND,
+    fed: Any = _UNBOUND,
+    fo: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    in_field: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    moat: Any = _UNBOUND,
+    moat_fed: Any = _UNBOUND,
+    out_fields: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.264 (city_moat_irrigates_fields) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if moat:
                 chans = M.get("channels", [])
                 big_out = [f for f in out_fields if (f["bbox"][2] - f["bbox"][0]) * (f["bbox"][3] - f["bbox"][1]) > 55000]
@@ -22787,51 +24688,137 @@ def _seg_0563__city_has_six_ministries(
                 # the domain's farmland is off-sheet, so this asks for ground the map never shows
                 if scale == "city":
                     check("city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)")
-            # a gate market (guan-xiang) OUTSIDE EVERY MAIN-ROAD gate (GM decision 2026-07-22,
-            # flophouse-research.md): the extramural gate-suburb formed along the road at each
-            # trafficked gate - Beijing's gates all carried one, varying in scale (大关厢 vs small).
-            # `M["gates"]` holds only the MAIN (road/river-route) gates, so iterating it IS "every
-            # main-road gate": a purely military SALLY gate opens onto empty field with no traffic
-            # and carries no market, so it is NOT recorded in `gates` (it would live in its own
-            # structure if/when the sally-gate knob is added). Mirrors city_flophouse_outside_each_gate.
-            # FLOOR RAISED 3 -> 6 (GM 2026-07-24): the researched guan-xiang ran 10-40 structures
-            # per trafficked gate (Beijing's 大关厢 the high end); our belt is a SLICE like the
-            # samurai estates and the farmland - the drawn shops string along the approach road and
-            # the outermost may be CUT by the frame, the truncation itself saying "more beyond the
-            # map". >= 6 shown per gate keeps the slice reading like a suburb instead of a shed row.
+    return _kept(locals(), ('big_out', 'chans', 'f', 'fed', 'moat_fed'))
+
+
+# a gate market (guan-xiang) OUTSIDE EVERY MAIN-ROAD gate (GM decision 2026-07-22,
+# flophouse-research.md): the extramural gate-suburb formed along the road at each
+# trafficked gate - Beijing's gates all carried one, varying in scale (大关厢 vs small).
+# `M["gates"]` holds only the MAIN (road/river-route) gates, so iterating it IS "every
+# main-road gate": a purely military SALLY gate opens onto empty field with no traffic
+# and carries no market, so it is NOT recorded in `gates` (it would live in its own
+# structure if/when the sally-gate knob is added). Mirrors city_flophouse_outside_each_gate.
+# FLOOR RAISED 3 -> 6 (GM 2026-07-24): the researched guan-xiang ran 10-40 structures
+# per trafficked gate (Beijing's 大关厢 the high end); our belt is a SLICE like the
+# samurai estates and the farmland - the drawn shops string along the approach road and
+# the outermost may be CUT by the frame, the truncation itself saying "more beyond the
+# map". >= 6 shown per gate keeps the slice reading like a suburb instead of a shed row.
+
+
+def _seg_0563_265__b_13(*, M: Any = _UNBOUND, b: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.265 (b, biz_out) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             biz_out = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant") and not inwall(b["x"], b["y"])]
+    return _kept(locals(), ('b', 'biz_out'))
+
+
+def _seg_0563_266__b_14(*, b: Any = _UNBOUND, biz_out: Any = _UNBOUND, g: Any = _UNBOUND, gates: Any = _UNBOUND, i: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.266 (b, g, gates_wo_market, i) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gates_wo_market = [i for i, g in enumerate(gates) if sum(1 for b in biz_out if math.hypot(b["x"] - g[0], b["y"] - g[1]) <= 520) < 6]
+    return _kept(locals(), ('b', 'g', 'gates_wo_market', 'i'))
+
+
+def _seg_0563_267__city_has_gate_market(*, check: Any = _UNBOUND, gates_wo_market: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.267 (city_has_gate_market) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_has_gate_market",
                 not gates_wo_market,
                 f"main-road gate(s) with a too-thin gate market (guan-xiang): {gates_wo_market} - a market suburb forms outside EVERY main-road city gate (research: 10-40 structures per trafficked gate; the map draws a >= 6-shop slice within ~520px, outermost may run off the frame; a sally gate, being traffic-free, is exempt and not in M['gates'])",
             )
-            # TRADE WORKS (GM 2026-07-24; settlements.md "TRADE WORKS" - the trades whose premises
-            # outgrow the generic shop glyph are first-class features; the long tail of trades,
-            # including the ordinary SMITH, stays in the shop rows - Rokugan DOES shoe horses in
-            # iron, but that changes his repertoire, not his footprint, so only a horse
-            # CONCENTRATION earns a drawn farrier). Every provincial city keeps: >= 1 BREWERY
-            # in-wall (the town's
-            # largest commercial building; sake/miso/soy; draws its own well); >= 1 DYE WORKS
-            # whose drying/rinsing yard sits ON WATER (a stream/channel/canal, the pond, or the
-            # moat - dyers need vat-fill and rinsing water, NOT bulk water transport, so a
-            # landlocked city keeps dyers too, per the GM); >= 1 OIL PRESS; >= 1 PAWNSHOP (a
-            # shopfront with a walled kura court); >= 1 BATHHOUSE (China-first: commercial baths
-            # attested from the Song). A KILN stands strictly OUTSIDE the walls (fire law +
-            # smoke); a RIVER-PORT city (meta river_port) also keeps >= 1 LUMBER YARD on the
-            # bank - timber moves by water at scale, so a landlocked city has none.
+    return _kept(locals(), ())
+
+
+# TRADE WORKS (GM 2026-07-24; settlements.md "TRADE WORKS" - the trades whose premises
+# outgrow the generic shop glyph are first-class features; the long tail of trades,
+# including the ordinary SMITH, stays in the shop rows - Rokugan DOES shoe horses in
+# iron, but that changes his repertoire, not his footprint, so only a horse
+# CONCENTRATION earns a drawn farrier). Every provincial city keeps: >= 1 BREWERY
+# in-wall (the town's
+# largest commercial building; sake/miso/soy; draws its own well); >= 1 DYE WORKS
+# whose drying/rinsing yard sits ON WATER (a stream/channel/canal, the pond, or the
+# moat - dyers need vat-fill and rinsing water, NOT bulk water transport, so a
+# landlocked city keeps dyers too, per the GM); >= 1 OIL PRESS; >= 1 PAWNSHOP (a
+# shopfront with a walled kura court); >= 1 BATHHOUSE (China-first: commercial baths
+# attested from the Song). A KILN stands strictly OUTSIDE the walls (fire law +
+# smoke); a RIVER-PORT city (meta river_port) also keeps >= 1 LUMBER YARD on the
+# bank - timber moves by water at scale, so a landlocked city has none.
+
+
+def _seg_0563_268___tw_brews(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.268 (_tw_brews) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _tw_brews = M.get("breweries", [])
+    return _kept(locals(), ('_tw_brews',))
+
+
+def _seg_0563_269__city_has_brewery(*, _tw_brews: Any = _UNBOUND, b_: Any = _UNBOUND, check: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.269 (city_has_brewery) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_has_brewery",
                 any(inwall(b_["x"], b_["y"]) for b_ in _tw_brews),
                 f"{len(_tw_brews)} brewery compound(s) in-wall - every provincial city keeps at least one sake/miso/soy brewery (s.brewery: vat hall + shopfront + rice kura + its own well; the town's largest commercial building)",
             )
-            _tw_water: list[tuple[list[Any], float]] = []  # type: ignore[no-redef]
+    return _kept(locals(), ('b_',))
+
+
+def _seg_0563_270___tw_water(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.270 (_tw_water) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            _tw_water: list[tuple[list[Any], float]] = []  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('_tw_water',))
+
+
+def _seg_0563_271___tw_water_1(*, M: Any = _UNBOUND, _tw_water: Any = _UNBOUND, _tw_wc: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.271 (_tw_water, _tw_wc) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for _tw_wc in M.get("streams", []) + M.get("channels", []) + M.get("canals", []):
                 _tw_water.append((_tw_wc["poly"], _tw_wc.get("w", 6) / 2))
+    return _kept(locals(), ('_tw_water', '_tw_wc'))
+
+
+def _seg_0563_272___tw_water_2(*, M: Any = _UNBOUND, _tw_water: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.272 (_tw_water) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if M.get("moat"):
                 _tw_water.append((M["moat"], M.get("moat_width", 22) / 2))
+    return _kept(locals(), ('_tw_water',))
+
+
+def _seg_0563_273___tw_pond(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.273 (_tw_pond) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _tw_pond = M.get("pond")
+    return _kept(locals(), ('_tw_pond',))
+
+
+def _seg_0563_274___tw_on_water(
+    *,
+    _hw: Any = _UNBOUND,
+    _pl: Any = _UNBOUND,
+    _tw_pond: Any = _UNBOUND,
+    _tw_water: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    o_: Any = _UNBOUND,
+    r_: Any = _UNBOUND,
+    reach: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.274 (_tw_on_water) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
 
             def _tw_on_water(o_: dict[str, Any], reach: float) -> bool:
                 r_ = max(o_["w"], o_["h"]) / 2  # family: ASSOCIATION/REACH, as _ty_on_water above
@@ -22839,25 +24826,101 @@ def _seg_0563__city_has_six_ministries(
                     return True
                 return _tw_pond is not None and math.hypot(o_["x"] - _tw_pond[0], o_["y"] - _tw_pond[1]) < max(_tw_pond[2], _tw_pond[3]) + r_ + reach
 
+    return _kept(locals(), ('_tw_on_water',))
+
+
+def _seg_0563_275___tw_dyes(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.275 (_tw_dyes) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _tw_dyes = M.get("dye_yards", [])
+    return _kept(locals(), ('_tw_dyes',))
+
+
+def _seg_0563_276__city_has_dye_works(
+    *, _tw_dyes: Any = _UNBOUND, _tw_on_water: Any = _UNBOUND, check: Any = _UNBOUND, d_: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.276 (city_has_dye_works) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_has_dye_works",
                 bool(_tw_dyes) and all(_tw_on_water(d_, 40) for d_ in _tw_dyes),
                 f"{len(_tw_dyes)} dye works, on water: {[bool(_tw_dyes) and _tw_on_water(d_, 40) for d_ in _tw_dyes]} - every city keeps a dyer (s.dye_yard), and the drying/rinsing yard must sit ON water (within ~40px of a stream/channel/canal/pond/moat; dyers need rinsing water, not bulk transport, so landlocked cities keep them too)",
             )
+    return _kept(locals(), ('d_',))
+
+
+def _seg_0563_277__city_has_oil_press(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.277 (city_has_oil_press) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_has_oil_press", bool(M.get("oil_presses")), "no oil press - every city keeps a presser's barn (s.oil_press: wedge-and-beam press + ox-driven mill ring, toward the edge)")
+    return _kept(locals(), ())
+
+
+def _seg_0563_278__city_has_pawnshop(*, M: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.278 (city_has_pawnshop) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_has_pawnshop", bool(M.get("pawnshops")), "no pawnshop - every city keeps one (s.pawnshop: shopfront + 2 pledge kura in a walled rear court)")
-            # BATHHOUSE COUNT FOLLOWS THE GM FORMULA (2026-07-24, second refinement): ONE per
-            # full 2,000 population + a remainder-fraction chance of one extra (2,500 -> 1 + 25%,
-            # 3,000 -> 1 + 50%, 4,000 -> exactly 2; floored at 1) - Edo's own peak ratio was ~1
-            # per ~2,100 residents (1808: 523 sento for ~1.1M), which is where the 2,000 divisor
-            # comes from. A recorded roll (meta bathhouse_roll, s.bathhouses) must also match the
-            # drawn count, so a stale hand count cannot ship.
+    return _kept(locals(), ())
+
+
+# BATHHOUSE COUNT FOLLOWS THE GM FORMULA (2026-07-24, second refinement): ONE per
+# full 2,000 population + a remainder-fraction chance of one extra (2,500 -> 1 + 25%,
+# 3,000 -> 1 + 50%, 4,000 -> exactly 2; floored at 1) - Edo's own peak ratio was ~1
+# per ~2,100 residents (1808: 523 sento for ~1.1M), which is where the 2,000 divisor
+# comes from. A recorded roll (meta bathhouse_roll, s.bathhouses) must also match the
+# drawn count, so a stale hand count cannot ship.
+
+
+def _seg_0563_279___bh_n(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.279 (_bh_n) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _bh_n = len(M.get("bathhouses", []))
+    return _kept(locals(), ('_bh_n',))
+
+
+def _seg_0563_280___bh_pop(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.280 (_bh_pop) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _bh_pop = int(meta.get("population") or 3000)
+    return _kept(locals(), ('_bh_pop',))
+
+
+def _seg_0563_281___bh_floor(*, _bh_pop: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.281 (_bh_floor) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _bh_floor = max(1, _bh_pop // 2000)
+    return _kept(locals(), ('_bh_floor',))
+
+
+def _seg_0563_282___bh_allowed(*, _bh_floor: Any = _UNBOUND, _bh_pop: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.282 (_bh_allowed) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _bh_allowed = {_bh_floor} if _bh_pop % 2000 == 0 else {_bh_floor, _bh_floor + 1}
+    return _kept(locals(), ('_bh_allowed',))
+
+
+def _seg_0563_283___bh_roll(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.283 (_bh_roll) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _bh_roll = meta.get("bathhouse_roll")
+    return _kept(locals(), ('_bh_roll',))
+
+
+def _seg_0563_284__city_has_bathhouse(
+    *, _bh_allowed: Any = _UNBOUND, _bh_n: Any = _UNBOUND, _bh_pop: Any = _UNBOUND, _bh_roll: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.284 (city_has_bathhouse) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_has_bathhouse",
                 _bh_n in _bh_allowed and (_bh_roll is None or _bh_n == _bh_roll),
@@ -22866,12 +24929,37 @@ def _seg_0563__city_has_six_ministries(
                 f"extra, so 2,500 -> 1 + 25%, 3,000 -> 1 + 50%, 4,000 -> exactly 2; Edo's peak ratio was ~1 per "
                 f"~2,100 residents), and a recorded roll must match the drawn count",
             )
+    return _kept(locals(), ())
+
+
+def _seg_0563_285___tw_kilns(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.285 (_tw_kilns) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _tw_kilns = M.get("kilns", [])
+    return _kept(locals(), ('_tw_kilns',))
+
+
+def _seg_0563_286__city_kiln_outside_walls(
+    *, _tw_kilns: Any = _UNBOUND, check: Any = _UNBOUND, inwall: Any = _UNBOUND, k_: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.286 (city_kiln_outside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_kiln_outside_walls",
                 bool(_tw_kilns) and all(not inwall(k_["x"], k_["y"]) for k_ in _tw_kilns),
                 f"{len(_tw_kilns)} kiln(s), all outside the walls: {all(not inwall(k_['x'], k_['y']) for k_ in _tw_kilns) if _tw_kilns else False} - a city keeps a kiln works at its periphery, and fire law + smoke put every kiln strictly OUTSIDE the walls (s.kiln). Its WORKERS' cottages go outside with it, which is a fact about where the clay and the days-long firing are, not a banishment - see kiln_works_houses_its_workers",
             )
+    return _kept(locals(), ('k_',))
+
+
+def _seg_0563_287__city_river_port_has_lumber_yard(
+    *, L_: Any = _UNBOUND, M: Any = _UNBOUND, _tw_lys: Any = _UNBOUND, _tw_on_water: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.287 (city_river_port_has_lumber_yard) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if meta.get("river_port"):
                 _tw_lys = M.get("lumber_yards", [])
                 check(
@@ -22879,48 +24967,182 @@ def _seg_0563__city_has_six_ministries(
                     bool(_tw_lys) and all(_tw_on_water(L_, 60) for L_ in _tw_lys),
                     f"{len(_tw_lys)} lumber yard(s) on the bank - a river-port city keeps a riverside zaimokuya (s.lumber_yard within ~60px of a stream/canal); timber moves by water at scale (a landlocked city has none and skips this check)",
                 )
-            # ... AND A LUMBER YARD NEVER OVERLAPS THE WATER (GM 2026-07-24, second pass): the
-            # yard ABUTS the bank - stock arrives by water - but stacked timber stands on DRY
-            # ground (logs in the current float away; the landing is the jetty's job). The
-            # generic no_structure_on_stream check cannot see this defect: it tests a fixed ~6px
-            # half-width tuned for village brooks, and Nagahara's 40px river swallowed a yard
-            # corner without tripping it (the pinned real fixture). Tested here against every
-            # watercourse's REAL half-width (streams/channels/canals + the moat via _tw_water),
-            # sampling the yard rect's corners, edge midpoints, and center (records are axis-
-            # aligned; rot stays 0 in s.lumber_yard).
-            _ly_wet = []
+    return _kept(locals(), ('L_', '_tw_lys'))
+
+
+# ... AND A LUMBER YARD NEVER OVERLAPS THE WATER (GM 2026-07-24, second pass): the
+# yard ABUTS the bank - stock arrives by water - but stacked timber stands on DRY
+# ground (logs in the current float away; the landing is the jetty's job). The
+# generic no_structure_on_stream check cannot see this defect: it tests a fixed ~6px
+# half-width tuned for village brooks, and Nagahara's 40px river swallowed a yard
+# corner without tripping it (the pinned real fixture). Tested here against every
+# watercourse's REAL half-width (streams/channels/canals + the moat via _tw_water),
+# sampling the yard rect's corners, edge midpoints, and center (records are axis-
+# aligned; rot stays 0 in s.lumber_yard).
+
+
+def _seg_0563_288___ly_wet(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.288 (_ly_wet) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            _ly_wet = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('_ly_wet',))
+
+
+def _seg_0563_289__L_(
+    *,
+    L_: Any = _UNBOUND,
+    M: Any = _UNBOUND,
+    _hw: Any = _UNBOUND,
+    _ldx: Any = _UNBOUND,
+    _ldy: Any = _UNBOUND,
+    _lh2: Any = _UNBOUND,
+    _lpts: Any = _UNBOUND,
+    _lw2: Any = _UNBOUND,
+    _ly_wet: Any = _UNBOUND,
+    _pl: Any = _UNBOUND,
+    _qx: Any = _UNBOUND,
+    _qy: Any = _UNBOUND,
+    _tw_water: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.289 (L_, _hw, _ldx, _ldy) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for L_ in M.get("lumber_yards", []):
                 _lw2, _lh2 = L_["w"] / 2, L_["h"] / 2
                 _lpts = [(L_["x"] + _ldx, L_["y"] + _ldy) for _ldx in (-_lw2, 0.0, _lw2) for _ldy in (-_lh2, 0.0, _lh2)]
                 if any(seg_dist(_qx, _qy, _pl[i], _pl[i + 1]) < _hw for _qx, _qy in _lpts for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
                     _ly_wet.append((round(L_["x"]), round(L_["y"])))
+    return _kept(locals(), ('L_', '_hw', '_ldx', '_ldy', '_lh2', '_lpts', '_lw2', '_ly_wet', '_pl', '_qx', '_qy', 'i'))
+
+
+def _seg_0563_290__lumber_yard_clear_of_water(*, _ly_wet: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.290 (lumber_yard_clear_of_water) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "lumber_yard_clear_of_water",
                 not _ly_wet,
                 f"lumber yard(s) overlapping open water at {_ly_wet} - the yard abuts the bank but its stacks stand on dry ground (logs in the current float away); pull the yard back to the waterline, tested at each watercourse's real half-width",
             )
-            # market-day lodging: a flophouse INSIDE the walls, and one OUTSIDE each gate (for
-            # travelers arriving from either direction, who reach the gate after it has shut)
+    return _kept(locals(), ())
+
+
+# market-day lodging: a flophouse INSIDE the walls, and one OUTSIDE each gate (for
+# travelers arriving from either direction, who reach the gate after it has shut)
+
+
+def _seg_0563_291__flops(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.291 (flops) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             flops = M.get("flophouses", [])
+    return _kept(locals(), ('flops',))
+
+
+def _seg_0563_292__city_flophouse_inside_walls(
+    *, check: Any = _UNBOUND, fl: Any = _UNBOUND, flops: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.292 (city_flophouse_inside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_flophouse_inside_walls", any(inwall(fl["x"], fl["y"]) for fl in flops), "a city needs market-day lodging inside the walls (a flophouse)")
+    return _kept(locals(), ('fl',))
+
+
+def _seg_0563_293__fl(
+    *, fl: Any = _UNBOUND, flops: Any = _UNBOUND, g: Any = _UNBOUND, gates: Any = _UNBOUND, i: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.293 (fl, g, gates_wo_flop, i) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gates_wo_flop = [i for i, g in enumerate(gates) if not any((not inwall(fl["x"], fl["y"])) and math.hypot(fl["x"] - g[0], fl["y"] - g[1]) <= 520 for fl in flops)]
+    return _kept(locals(), ('fl', 'g', 'gates_wo_flop', 'i'))
+
+
+def _seg_0563_294__city_flophouse_outside_each_gate(*, check: Any = _UNBOUND, gates_wo_flop: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.294 (city_flophouse_outside_each_gate) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_flophouse_outside_each_gate",
                 not gates_wo_flop,
                 f"every city gate needs a flophouse just outside it (travelers who arrive after the gate shuts sleep there); gate(s) without one: {gates_wo_flop}",
             )
-            # a flophouse is a humble doss-house (a sen a night, on straw): inside the walls it belongs
-            # in a HUMBLE quarter (the laborer section, or Tango's agrarian sector), NEVER cheek-by-jowl
-            # with the nicer neighborhoods (temples, merchants, samurai), and never in or up against the
-            # burakumin quarter. Only the in-wall flophouse is judged (the gate ones sit by the gate market).
+    return _kept(locals(), ())
+
+
+# a flophouse is a humble doss-house (a sen a night, on straw): inside the walls it belongs
+# in a HUMBLE quarter (the laborer section, or Tango's agrarian sector), NEVER cheek-by-jowl
+# with the nicer neighborhoods (temples, merchants, samurai), and never in or up against the
+# burakumin quarter. Only the in-wall flophouse is judged (the gate ones sit by the gate market).
+
+
+def _seg_0563_295__b_15(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.295 (b, nice) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             nice = [b for b in M.get("buildings", []) if b.get("kind") in ("merchant", "samurai", "samurai_large")] + M.get("religious", [])
+    return _kept(locals(), ('b', 'nice'))
+
+
+def _seg_0563_296__b_16(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.296 (b, bura) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             bura = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin"]
+    return _kept(locals(), ('b', 'bura'))
+
+
+def _seg_0563_297__b_17(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.297 (b, inns) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             inns = [b for b in M.get("buildings", []) if b.get("kind") == "inn"]
+    return _kept(locals(), ('b', 'inns'))
+
+
+def _seg_0563_298__b_18(*, M: Any = _UNBOUND, b: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.298 (b, stbl) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             stbl = [b for b in M.get("buildings", []) if b.get("kind") == "stables"]
-            bad_flop = []
-            # a flop within reach of a GATE is the caravan flop - it serves the wagon crews
-            # at the gate quarter wherever that quarter's caste sits (021: the capital's bands
-            # abut its gates); the humble-quarter rule governs the market doss-houses only
+    return _kept(locals(), ('b', 'stbl'))
+
+
+def _seg_0563_299__bad_flop(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.299 (bad_flop) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            bad_flop = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('bad_flop',))
+
+
+# a flop within reach of a GATE is the caravan flop - it serves the wagon crews
+# at the gate quarter wherever that quarter's caste sits (021: the capital's bands
+# abut its gates); the humble-quarter rule governs the market doss-houses only
+
+
+def _seg_0563_300__b_19(
+    *,
+    b: Any = _UNBOUND,
+    bad_flop: Any = _UNBOUND,
+    bura: Any = _UNBOUND,
+    fl: Any = _UNBOUND,
+    flops: Any = _UNBOUND,
+    inns: Any = _UNBOUND,
+    inwall: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    nice: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    stbl: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.300 (b, bad_flop, fl) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for fl in flops:
                 if not inwall(fl["x"], fl["y"]):
                     continue
@@ -22932,22 +25154,80 @@ def _seg_0563__city_has_six_ministries(
                     bad_flop.append((round(fl["x"]), round(fl["y"]), "next to a temple/merchant/samurai"))
                 elif any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 150 for b in bura):
                     bad_flop.append((round(fl["x"]), round(fl["y"]), "in/next to the burakumin quarter"))
-            # a flop within reach of a GATE is the caravan flop even if its inn/stables pair sits
-            # slightly past 170px - it serves the wagon crews at the gate quarter wherever that
-            # quarter's caste sits (021: the capital's bands abut its gates); the humble-quarter
-            # rule governs the market doss-houses only. (Filter AFTER the loop that fills bad_flop;
-            # the first version ran it against the empty list and was dead code, 2026-08-10.)
+    return _kept(locals(), ('b', 'bad_flop', 'fl'))
+
+
+# a flop within reach of a GATE is the caravan flop even if its inn/stables pair sits
+# slightly past 170px - it serves the wagon crews at the gate quarter wherever that
+# quarter's caste sits (021: the capital's bands abut its gates); the humble-quarter
+# rule governs the market doss-houses only. (Filter AFTER the loop that fills bad_flop;
+# the first version ran it against the empty list and was dead code, 2026-08-10.)
+
+
+def _seg_0563_301___g21(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.301 (_g21) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             _g21 = M.get("gates") or []
+    return _kept(locals(), ('_g21',))
+
+
+def _seg_0563_302__bad_flop_1(*, _g21: Any = _UNBOUND, bad_flop: Any = _UNBOUND, bf: Any = _UNBOUND, g21: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.302 (bad_flop, bf, g21) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             bad_flop = [bf for bf in bad_flop if not any(math.hypot(bf[0] - g21[0], bf[1] - g21[1]) <= 250 for g21 in _g21)]
+    return _kept(locals(), ('bad_flop', 'bf', 'g21'))
+
+
+def _seg_0563_303__city_flophouse_in_humble_quarter(*, bad_flop: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.303 (city_flophouse_in_humble_quarter) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_flophouse_in_humble_quarter",
                 not bad_flop,
                 f"in-wall flophouse(s) sited in/beside a nicer or burakumin neighborhood (a doss-house belongs in the laborer/agrarian sector): {bad_flop}",
             )
-            # CARAVAN facilities: just INSIDE each gate a wagon-train needs a prominent INN and a large
-            # STABLES (dozens of draft animals + crew) close to its flophouse, with OPEN GROUND around the
-            # stables for the animals to be tied up / penned. Three buildings near each gate, not just one.
-            caravan_bad = []
+    return _kept(locals(), ())
+
+
+# CARAVAN facilities: just INSIDE each gate a wagon-train needs a prominent INN and a large
+# STABLES (dozens of draft animals + crew) close to its flophouse, with OPEN GROUND around the
+# stables for the animals to be tied up / penned. Three buildings near each gate, not just one.
+
+
+def _seg_0563_304__caravan_bad(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.304 (caravan_bad) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            caravan_bad = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('caravan_bad',))
+
+
+def _seg_0563_305__b_20(
+    *,
+    M: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    caravan_bad: Any = _UNBOUND,
+    crowd: Any = _UNBOUND,
+    flops: Any = _UNBOUND,
+    g: Any = _UNBOUND,
+    gates: Any = _UNBOUND,
+    gf: Any = _UNBOUND,
+    gi: Any = _UNBOUND,
+    gnear: Any = _UNBOUND,
+    gs: Any = _UNBOUND,
+    inns: Any = _UNBOUND,
+    inwall: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    r: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    stbl: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.305 (b, caravan_bad, crowd, g) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for g in gates:
 
                 def gnear(items: Sequence[dict[str, Any]], r: float = 340, g: Any = g) -> list[dict[str, Any]]:  # bind loop var (used within this iteration)
@@ -22960,54 +25240,183 @@ def _seg_0563__city_has_six_ministries(
                 crowd = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and math.hypot(b["x"] - gs[0]["x"], b["y"] - gs[0]["y"]) < 75)
                 if crowd > 4:
                     caravan_bad.append((g, f"stables hemmed in by {crowd} dwellings (needs open ground for animals)"))
+    return _kept(locals(), ('b', 'caravan_bad', 'crowd', 'g', 'gf', 'gi', 'gnear', 'gs'))
+
+
+def _seg_0563_306__city_gate_caravan_facilities(*, caravan_bad: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.306 (city_gate_caravan_facilities) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_gate_caravan_facilities",
                 not caravan_bad,
                 f"city gate(s) lacking inside caravan facilities (a prominent inn + large stables + flophouse + open ground close to the gate): {caravan_bad}",
             )
+    return _kept(locals(), ())
 
-            # PADDY-FIRST estate doctrine (GM 2026-07-23, superseding the old >=2 floor): the rice
-            # paddies claim the near ring FIRST, and the samurai country estates take only what is
-            # left - most estates sit farther out in the rural district, so a city map showing just
-            # ONE estate (even a fraction running off the frame edge) is the more historically
-            # accurate signal; the rest are implied off-map. At least one must still show.
+
+# PADDY-FIRST estate doctrine (GM 2026-07-23, superseding the old >=2 floor): the rice
+# paddies claim the near ring FIRST, and the samurai country estates take only what is
+# left - most estates sit farther out in the rural district, so a city map showing just
+# ONE estate (even a fraction running off the frame edge) is the more historically
+# accurate signal; the rest are implied off-map. At least one must still show.
+
+
+def _seg_0563_307___shown(
+    *, EX0: Any = _UNBOUND, EX1: Any = _UNBOUND, EY0: Any = _UNBOUND, EY1: Any = _UNBOUND, hh: Any = _UNBOUND, hw: Any = _UNBOUND, m: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.307 (_shown) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+
             def _shown(m: dict[str, Any]) -> bool:
                 hw, hh = m["w"] / 2, m["h"] / 2
                 return bool(m["x"] + hw > EX0 and m["x"] - hw < EX1 and m["y"] + hh > EY0 and m["y"] - hh < EY1)
 
+    return _kept(locals(), ('_shown',))
+
+
+def _seg_0563_308__m_3(*, M: Any = _UNBOUND, _shown: Any = _UNBOUND, m: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.308 (m, shown_est) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             shown_est = [m for m in M.get("manors", []) if _shown(m)]
+    return _kept(locals(), ('m', 'shown_est'))
+
+
+def _seg_0563_309__city_estates_multiple_shown(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, shown_est: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.309 (city_estates_multiple_shown) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_estates_multiple_shown",
                 len(shown_est) >= 1,
                 f"{len(shown_est)} samurai estates fall inside the map window - show at least 1 (a fraction cropped at the edge is fine); the rest of the gentry sit farther out, implied off-map",
             )
-            # the Imperial-road label must sit OUTSIDE the walls (inside, the roadway is a city street)
+    return _kept(locals(), ())
+
+
+# the Imperial-road label must sit OUTSIDE the walls (inside, the roadway is a city street)
+
+
+def _seg_0563_310__rlab(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.310 (rlab) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             rlab = M.get("road_label")
+    return _kept(locals(), ('rlab',))
+
+
+def _seg_0563_311__city_road_label_outside_walls(*, check: Any = _UNBOUND, inwall: Any = _UNBOUND, meta: Any = _UNBOUND, rlab: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.311 (city_road_label_outside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if rlab:
                 check(
                     "city_road_label_outside_walls",
                     not inwall(rlab[0], rlab[1]),
                     "the 'Imperial Road' label must sit outside the walls - inside the gates the same roadway is a city street, a city (not Imperial) responsibility",
                 )
+    return _kept(locals(), ())
+
+
+def _seg_0563_312__empty_city_streets(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.312 (empty_city_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             empty_city_streets = empty_street_runs(M, w)
+    return _kept(locals(), ('empty_city_streets',))
+
+
+def _seg_0563_313__city_streets_have_buildings(*, check: Any = _UNBOUND, empty_city_streets: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.313 (city_streets_have_buildings) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_streets_have_buildings",
                 not empty_city_streets,
                 f"city street(s) with a stretch inside the walls with no building fronting it (a street network earns its length from the buildings it serves): {empty_city_streets}",
             )
-            # ROADSIDE LAND on a larger city street is PRIME real estate: a paved through-street in a
-            # commercial/residential quarter must be LINED with buildings (houses, shops, civic halls)
-            # close to it, not left with a long bare margin. This is stricter than city_streets_have_buildings
-            # (which tolerates a building up to ~105px away): here a building must sit WITHIN ~58px of the
-            # street, the way storefronts and house-fronts actually line a road. Only the narrow gravel
-            # ALLEYS that thread the block interiors are exempt (those are the "small streets" that need no
-            # frontage), and so is the GOVERNMENT avenue - its frontage is the spaced ministry compounds,
-            # governed by city_ministries_front_a_street, not shops/houses. (The merchant avenue once read
-            # bare because its storefront frontage was silently blocked by the avenue's own corridor.)
+    return _kept(locals(), ())
+
+
+# ROADSIDE LAND on a larger city street is PRIME real estate: a paved through-street in a
+# commercial/residential quarter must be LINED with buildings (houses, shops, civic halls)
+# close to it, not left with a long bare margin. This is stricter than city_streets_have_buildings
+# (which tolerates a building up to ~105px away): here a building must sit WITHIN ~58px of the
+# street, the way storefronts and house-fronts actually line a road. Only the narrow gravel
+# ALLEYS that thread the block interiors are exempt (those are the "small streets" that need no
+# frontage), and so is the GOVERNMENT avenue - its frontage is the spaced ministry compounds,
+# governed by city_ministries_front_a_street, not shops/houses. (The merchant avenue once read
+# bare because its storefront frontage was silently blocked by the avenue's own corridor.)
+
+
+def _seg_0563_314__line_blds(*, M: Any = _UNBOUND, gov: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.314 (line_blds) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             line_blds = M.get("buildings", []) + M.get("religious", []) + M.get("ministries", []) + M.get("flophouses", []) + ([gov] if gov else [])
+    return _kept(locals(), ('line_blds',))
+
+
+def _seg_0563_315__gov_pts(*, M: Any = _UNBOUND, gov: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.315 (gov_pts) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             gov_pts = M.get("ministries", []) + ([gov] if gov else [])
+    return _kept(locals(), ('gov_pts',))
+
+
+def _seg_0563_316__LINE_D(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.316 (LINE_D, LINE_RUN) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             LINE_D, LINE_RUN = 58, 140
-            bare_streets = []
+    return _kept(locals(), ('LINE_D', 'LINE_RUN'))
+
+
+def _seg_0563_317__bare_streets(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.317 (bare_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            bare_streets = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('bare_streets',))
+
+
+def _seg_0563_318___lg_open(
+    *,
+    LINE_D: Any = _UNBOUND,
+    LINE_RUN: Any = _UNBOUND,
+    M: Any = _UNBOUND,
+    _lg_open: Any = _UNBOUND,
+    a: Any = _UNBOUND,
+    b: Any = _UNBOUND,
+    bare_streets: Any = _UNBOUND,
+    bl: Any = _UNBOUND,
+    cg9: Any = _UNBOUND,
+    gov_pts: Any = _UNBOUND,
+    gp9: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    i9: Any = _UNBOUND,
+    j: Any = _UNBOUND,
+    ki: Any = _UNBOUND,
+    line_blds: Any = _UNBOUND,
+    m: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    pts: Any = _UNBOUND,
+    run: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    st: Any = _UNBOUND,
+    steps: Any = _UNBOUND,
+    t: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+    worst: Any = _UNBOUND,
+    x: Any = _UNBOUND,
+    y: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.318 (_lg_open, a, b, bare_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for st in M.get("town_streets", []):
                 pts = st["pts"]
                 if sum(1 for m in gov_pts if min(seg_dist(m["x"], m["y"], pts[i], pts[i + 1]) for i in range(len(pts) - 1)) < 70) >= 2:
@@ -23030,13 +25439,53 @@ def _seg_0563__city_has_six_ministries(
                             worst = max(worst, run)
                 if worst > LINE_RUN:
                     bare_streets.append(("main" if st.get("main") else f"@{(round(pts[0][0]), round(pts[0][1]))}", worst))
+    return _kept(locals(), ('_lg_open', 'a', 'b', 'bare_streets', 'bl', 'cg9', 'gp9', 'i', 'i9', 'j', 'ki', 'm', 'pts', 'run', 'st', 'steps', 't', 'worst', 'x', 'y'))
+
+
+def _seg_0563_319__city_larger_streets_lined(*, bare_streets: Any = _UNBOUND, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.319 (city_larger_streets_lined) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_larger_streets_lined",
                 not bare_streets,
                 f"larger city street(s) with a long bare stretch of roadside land - a commercial/residential through-street should be "
                 f"LINED with buildings close to it (only narrow alleys may run unlined): {bare_streets}",
             )
+    return _kept(locals(), ())
+
+
+def _seg_0563_320__road_1(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.320 (road) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             road = M.get("road") or []
+    return _kept(locals(), ('road',))
+
+
+def _seg_0563_321__city_imperial_road_through(
+    *,
+    EX0: Any = _UNBOUND,
+    EX1: Any = _UNBOUND,
+    EY0: Any = _UNBOUND,
+    EY1: Any = _UNBOUND,
+    M: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    dead: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    exits: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    offend: Any = _UNBOUND,
+    p: Any = _UNBOUND,
+    r: Any = _UNBOUND,
+    rds: Any = _UNBOUND,
+    road: Any = _UNBOUND,
+    road_through: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.321 (city_imperial_road_through, city_roads_run_offmap) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if meta.get("imperial_road", True):
                 road_through = bool(road) and any(p[1] < EY0 for p in road) and any(p[1] > EY1 for p in road)
                 check("city_imperial_road_through", road_through, "the Imperial road must run N-S through a walled city - off both the top and bottom edges, via the gates")
@@ -23058,12 +25507,32 @@ def _seg_0563__city_has_six_ministries(
                     f"{exits} off-map road end(s), dead end(s) at {dead[:3]} - a provincial city without an "
                     f"Imperial spine still connects to the wider world in >= 2 directions, and no road stops dead",
                 )
+    return _kept(locals(), ('dead', 'e', 'exits', 'offend', 'p', 'r', 'rds', 'road_through'))
+
+
+def _seg_0563_322__city_no_inwall_farms(
+    *, check: Any = _UNBOUND, f: Any = _UNBOUND, fields: Any = _UNBOUND, inwall: Any = _UNBOUND, inwall_fields: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.322 (city_no_inwall_farms) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if not meta.get("agricultural_district"):
                 inwall_fields = [f["name"] for f in fields if inwall((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2)]
                 check("city_no_inwall_farms", not inwall_fields, f"farms inside a city wall are uncharacteristic - set meta(agricultural_district=True) to allow them: {inwall_fields}")
-            # INTRAMURAL groves OFF: a farm inside the wall carries NO windbreak grove - an in-wall plot is not
-            # an isolated farmstead (the urban fabric already breaks the wind) and sits on land too precious for
-            # a tree belt. So the in-wall agricultural district stays grove-free. WHY: settlements.md "Homestead groves".
+    return _kept(locals(), ('f', 'inwall_fields'))
+
+
+# INTRAMURAL groves OFF: a farm inside the wall carries NO windbreak grove - an in-wall plot is not
+# an isolated farmstead (the urban fabric already breaks the wind) and sits on land too precious for
+# a tree belt. So the in-wall agricultural district stays grove-free. WHY: settlements.md "Homestead groves".
+
+
+def _seg_0563_323__no_groves_inside_walls(
+    *, M: Any = _UNBOUND, check: Any = _UNBOUND, gv: Any = _UNBOUND, inwall: Any = _UNBOUND, inwall_groves: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.323 (no_groves_inside_walls) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if not meta.get("inwall_groves"):
                 inwall_groves = sorted({(round(gv["of"][0]), round(gv["of"][1])) for gv in M.get("groves", []) if inwall(gv["of"][0], gv["of"][1])})
                 check(
@@ -23072,7 +25541,63 @@ def _seg_0563__city_has_six_ministries(
                     f"farm(s) inside the city wall carry a windbreak grove {inwall_groves[:3]} - an intramural plot is "
                     f"sheltered by the urban fabric and on land too precious for one (meta(inwall_groves=True) to allow)",
                 )
+    return _kept(locals(), ('gv', 'inwall_groves'))
+
+
+def _seg_0563_324__moat_2(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.324 (moat) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             moat = M.get("moat")
+    return _kept(locals(), ('moat',))
+
+
+def _seg_0563_325__city_moat_feeder_matches_width(
+    *,
+    EX0: Any = _UNBOUND,
+    EX1: Any = _UNBOUND,
+    EY0: Any = _UNBOUND,
+    EY1: Any = _UNBOUND,
+    M: Any = _UNBOUND,
+    bare: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    disp_a: Any = _UNBOUND,
+    disp_b: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    e0: Any = _UNBOUND,
+    e1: Any = _UNBOUND,
+    feeders: Any = _UNBOUND,
+    has_outfall: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    inlet_disp: Any = _UNBOUND,
+    j: Any = _UNBOUND,
+    j_arc: Any = _UNBOUND,
+    loose: Any = _UNBOUND,
+    mcx: Any = _UNBOUND,
+    mcy: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    moat: Any = _UNBOUND,
+    moat_is_fed: Any = _UNBOUND,
+    mw: Any = _UNBOUND,
+    narrow: Any = _UNBOUND,
+    outlet_disp: Any = _UNBOUND,
+    p: Any = _UNBOUND,
+    q: Any = _UNBOUND,
+    rcum: Any = _UNBOUND,
+    rdist: Any = _UNBOUND,
+    ri2: Any = _UNBOUND,
+    rpts: Any = _UNBOUND,
+    rv: Any = _UNBOUND,
+    s: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    taps: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+    wx: Any = _UNBOUND,
+    wy: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.325 (city_moat_fed_offmap, city_moat_feeder_matches_width, city_moat_has_outfall, city_moat_joins_river, city_moat_junction_angles, city_moat_surrounds_wall) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if moat:
                 rv = M.get("river")
                 if rv:
@@ -23188,18 +25713,105 @@ def _seg_0563__city_has_six_ministries(
                         "(conservation of flow: the surplus overflows if it cannot leave), so an outfall stream "
                         "leaves the LOW rim and runs off-map opposite the feeder to flush the ring; add s.stream(moat rim -> off-map edge)",
                     )
+    return _kept(
+        locals(),
+        (
+            'bare',
+            'disp_a',
+            'disp_b',
+            'e',
+            'e0',
+            'e1',
+            'feeders',
+            'has_outfall',
+            'i',
+            'inlet_disp',
+            'j',
+            'j_arc',
+            'loose',
+            'mcx',
+            'mcy',
+            'moat_is_fed',
+            'mw',
+            'narrow',
+            'outlet_disp',
+            'p',
+            'q',
+            'rcum',
+            'rdist',
+            'ri2',
+            'rpts',
+            'rv',
+            's',
+            'taps',
+            'wx',
+            'wy',
+        ),
+    )
 
-            # RIVER-CITY WATERWORKS (a cargo canal + wharf; only where they are drawn):
-            river_c: Any = M.get("river")  # type: ignore[no-redef]
+
+# RIVER-CITY WATERWORKS (a cargo canal + wharf; only where they are drawn):
+
+
+def _seg_0563_326__river_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.326 (river_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            river_c: Any = M.get("river")  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('river_c',))
+
+
+def _seg_0563_327__canals_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.327 (canals_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             canals_c = M.get("canals", [])
+    return _kept(locals(), ('canals_c',))
+
+
+def _seg_0563_328__docks_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.328 (docks_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             docks_c = M.get("docks", [])
-            # (1) THE CANAL CONNECTS THE DOCK TO THE WATER, like a street reaching the road: one end
-            # taps the river OR hands off to the moat (the Suzhou shared-mouth pattern - the city's
-            # canals communicate with the MOAT, and the moat's own downstream river junction is the
-            # navigation entrance), the other feeds the in-city dock basin - a canal that stops short
-            # of the dock is a ditch to nowhere (GM, 2026-07: Nagahara's canal left a visible gap to
-            # the dock). "Reaches" = the end's bed physically meets the target (within the target's
-            # half-extent + the canal half-width + a small tolerance).
+    return _kept(locals(), ('docks_c',))
+
+
+# (1) THE CANAL CONNECTS THE DOCK TO THE WATER, like a street reaching the road: one end
+# taps the river OR hands off to the moat (the Suzhou shared-mouth pattern - the city's
+# canals communicate with the MOAT, and the moat's own downstream river junction is the
+# navigation entrance), the other feeds the in-city dock basin - a canal that stops short
+# of the dock is a ditch to nowhere (GM, 2026-07: Nagahara's canal left a visible gap to
+# the dock). "Reaches" = the end's bed physically meets the target (within the target's
+# half-extent + the canal half-width + a small tolerance).
+
+
+def _seg_0563_329__city_canal_reaches_dock(
+    *,
+    M: Any = _UNBOUND,
+    _end_near_dock: Any = _UNBOUND,
+    _end_near_moat: Any = _UNBOUND,
+    _end_near_river: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    canal_second_mouths: Any = _UNBOUND,
+    canals_c: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    chw: Any = _UNBOUND,
+    d: Any = _UNBOUND,
+    docks_c: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    ends: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    moat_for_canal: Any = _UNBOUND,
+    mw_for_canal: Any = _UNBOUND,
+    river_c: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    unreached: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.329 (city_canal_reaches_dock, city_canal_shares_moat_mouth) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if canals_c:
                 moat_for_canal = M.get("moat") or []
                 mw_for_canal = M.get("moat_width", 22)
@@ -23251,12 +25863,58 @@ def _seg_0563__city_has_six_ministries(
                     f"the canal and the moat share ONE mouth (the Suzhou pattern: end the canal ON the moat and let the "
                     f"moat's downstream junction be the navigation entrance)",
                 )
-            # (2) THE WHARF JETTIES REACH THE BANK: a jetty is a finger running out from the river's
-            # near bank into the water - its landward end must TOUCH the bank, not float mid-stream
-            # (GM, 2026-07: Nagahara's jetties floated in the middle of the river). The near bank is
-            # the river centerline offset by half its width toward the city; a jetty's nearest end
-            # must sit within ~14px of it.
+    return _kept(locals(), ('_end_near_dock', '_end_near_moat', '_end_near_river', 'c', 'canal_second_mouths', 'chw', 'e', 'ends', 'moat_for_canal', 'mw_for_canal', 'unreached'))
+
+
+# (2) THE WHARF JETTIES REACH THE BANK: a jetty is a finger running out from the river's
+# near bank into the water - its landward end must TOUCH the bank, not float mid-stream
+# (GM, 2026-07: Nagahara's jetties floated in the middle of the river). The near bank is
+# the river centerline offset by half its width toward the city; a jetty's nearest end
+# must sit within ~14px of it.
+
+
+def _seg_0563_330__jetties_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.330 (jetties_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             jetties_c = M.get("jetties", [])
+    return _kept(locals(), ('jetties_c',))
+
+
+def _seg_0563_331__city_wharf_jetties_on_bank(
+    *,
+    EX0: Any = _UNBOUND,
+    EY0: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    cityward_dist: Any = _UNBOUND,
+    cx_r: Any = _UNBOUND,
+    cy_r: Any = _UNBOUND,
+    d: Any = _UNBOUND,
+    dc: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    floats: Any = _UNBOUND,
+    fx: Any = _UNBOUND,
+    fy: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    j: Any = _UNBOUND,
+    jends: Any = _UNBOUND,
+    jetties_c: Any = _UNBOUND,
+    k: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    p: Any = _UNBOUND,
+    px: Any = _UNBOUND,
+    py: Any = _UNBOUND,
+    rhw: Any = _UNBOUND,
+    river_c: Any = _UNBOUND,
+    root: Any = _UNBOUND,
+    rp: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    tip: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.331 (city_wharf_jetties_on_bank) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if jetties_c and river_c:
                 rp = river_c["pts"]
                 rhw = river_c["w"] / 2
@@ -23291,20 +25949,79 @@ def _seg_0563__city_has_six_ministries(
                     not floats,
                     f"wharf jetties floating off the bank: {floats[:3]} - a jetty's landward end must touch the river's near bank, running out into the water from there, not float mid-stream",
                 )
+    return _kept(locals(), ('cityward_dist', 'cx_r', 'cy_r', 'e', 'floats', 'j', 'jends', 'p', 'rhw', 'root', 'rp', 'tip'))
 
-            # (3) THE LOG BOOM IS A SHORE-FAST PEN, NOT STICKS IN THE STREAM (GM 2026-08-02, "it
-            # just looks like a bunch of logs in the middle of the river"; the research is in
-            # research/urban-features.md "The log boom"). A boom is a floating fence - anchored to
-            # nothing it holds nothing. Attested booms anchor to the bank and run ALONG a navigated
-            # river, the pen between chain and shore (Susquehanna: seven miles along one side;
-            # St. Croix: log channels beside a navigation channel kept clear by statute); only a
-            # loose-log CATCH boom on an unnavigated reach ever spans the water (the Kiso tsunaba
-            # at the gorge mouth), never a port's holding pen. GAP-VERDICT family: both rules below
-            # measure the pen's DERIVED CORNERS (x/y/rot/len/pen_w, the same local frame the glyph
-            # draws - bank on local +y) against the river's stroked centerline; a center measure
-            # would condemn the good bank-hugging pen and pass the mid-stream chain (see the test
-            # pair). pen_w defaults to the ~14px the pre-2026-08 chain glyph drew.
+
+# (3) THE LOG BOOM IS A SHORE-FAST PEN, NOT STICKS IN THE STREAM (GM 2026-08-02, "it
+# just looks like a bunch of logs in the middle of the river"; the research is in
+# research/urban-features.md "The log boom"). A boom is a floating fence - anchored to
+# nothing it holds nothing. Attested booms anchor to the bank and run ALONG a navigated
+# river, the pen between chain and shore (Susquehanna: seven miles along one side;
+# St. Croix: log channels beside a navigation channel kept clear by statute); only a
+# loose-log CATCH boom on an unnavigated reach ever spans the water (the Kiso tsunaba
+# at the gorge mouth), never a port's holding pen. GAP-VERDICT family: both rules below
+# measure the pen's DERIVED CORNERS (x/y/rot/len/pen_w, the same local frame the glyph
+# draws - bank on local +y) against the river's stroked centerline; a center measure
+# would condemn the good bank-hugging pen and pass the mid-stream chain (see the test
+# pair). pen_w defaults to the ~14px the pre-2026-08 chain glyph drew.
+
+
+def _seg_0563_332__booms_c(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.332 (booms_c) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             booms_c = M.get("log_booms", [])
+    return _kept(locals(), ('booms_c',))
+
+
+def _seg_0563_333__log_boom_moored_to_the_bank(
+    *,
+    M: Any = _UNBOUND,
+    adrift_lb: Any = _UNBOUND,
+    bmx: Any = _UNBOUND,
+    bmy: Any = _UNBOUND,
+    bo: Any = _UNBOUND,
+    bod_: Any = _UNBOUND,
+    boom_off: Any = _UNBOUND,
+    booms_c: Any = _UNBOUND,
+    box_: Any = _UNBOUND,
+    boy_: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    cthb: Any = _UNBOUND,
+    damming_lb: Any = _UNBOUND,
+    fx: Any = _UNBOUND,
+    fy: Any = _UNBOUND,
+    hlb: Any = _UNBOUND,
+    hpb: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    k: Any = _UNBOUND,
+    lx: Any = _UNBOUND,
+    ly: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    moored_lb: Any = _UNBOUND,
+    nxb: Any = _UNBOUND,
+    nyb: Any = _UNBOUND,
+    px_: Any = _UNBOUND,
+    py_: Any = _UNBOUND,
+    qd_lb: Any = _UNBOUND,
+    qdx_lb: Any = _UNBOUND,
+    qdy_lb: Any = _UNBOUND,
+    quadb: Any = _UNBOUND,
+    qx_lb: Any = _UNBOUND,
+    qy_lb: Any = _UNBOUND,
+    rhwb: Any = _UNBOUND,
+    river_c: Any = _UNBOUND,
+    rpb: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    sthb: Any = _UNBOUND,
+    stray_b: Any = _UNBOUND,
+    thb: Any = _UNBOUND,
+    yards_b: Any = _UNBOUND,
+    yd: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.333 (log_boom_leaves_the_fairway, log_boom_moored_to_the_bank, log_boom_serves_the_lumber_yard) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if booms_c and river_c:
                 rpb = river_c["pts"]
                 rhwb = river_c["w"] / 2
@@ -23365,10 +26082,92 @@ def _seg_0563__city_has_six_ministries(
                         not stray_b,
                         f"log boom(s) far from any lumber yard: {stray_b[:3]} - boom and zaimokuya are one works; moor the pen off the yard's own bank frontage",
                     )
+    return _kept(
+        locals(),
+        (
+            'adrift_lb',
+            'bmx',
+            'bmy',
+            'bo',
+            'bod_',
+            'boom_off',
+            'box_',
+            'boy_',
+            'cthb',
+            'damming_lb',
+            'hlb',
+            'hpb',
+            'lx',
+            'ly',
+            'moored_lb',
+            'nxb',
+            'nyb',
+            'qd_lb',
+            'qdx_lb',
+            'qdy_lb',
+            'quadb',
+            'qx_lb',
+            'qy_lb',
+            'rhwb',
+            'rpb',
+            'sthb',
+            'stray_b',
+            'thb',
+            'yards_b',
+            'yd',
+        ),
+    )
 
-            # the street network must be CONNECTED - one coherent grid wired to the Imperial
-            # road, not isolated stubs (ported from the town "no street to nowhere" thinking).
+
+# the street network must be CONNECTED - one coherent grid wired to the Imperial
+# road, not isolated stubs (ported from the town "no street to nowhere" thinking).
+
+
+def _seg_0563_334__streets(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.334 (streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             streets = M.get("town_streets", [])
+    return _kept(locals(), ('streets',))
+
+
+def _seg_0563_335__city_streets_connected(
+    *,
+    M: Any = _UNBOUND,
+    _w21: Any = _UNBOUND,
+    a: Any = _UNBOUND,
+    ai: Any = _UNBOUND,
+    beds_meet: Any = _UNBOUND,
+    bi: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    comps: Any = _UNBOUND,
+    end: Any = _UNBOUND,
+    find2: Any = _UNBOUND,
+    i: Any = _UNBOUND,
+    ia: Any = _UNBOUND,
+    ib: Any = _UNBOUND,
+    k: Any = _UNBOUND,
+    ki: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    nbr: Any = _UNBOUND,
+    near_miss: Any = _UNBOUND,
+    parent: Any = _UNBOUND,
+    q21: Any = _UNBOUND,
+    sa: Any = _UNBOUND,
+    sb: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    seg_seg_dist: Any = _UNBOUND,
+    slines: Any = _UNBOUND,
+    sseg: Any = _UNBOUND,
+    st: Any = _UNBOUND,
+    streets: Any = _UNBOUND,
+    stub: Any = _UNBOUND,
+    tol: Any = _UNBOUND,
+    widths: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.335 (city_streets_connected, city_streets_no_intersection_stub, city_streets_no_near_miss) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if streets:
                 # at the CAPITAL the suburb streets (wholly outside the rampart - the kashi
                 # quay street) are their own lawful networks reached through the gates; the
@@ -23456,57 +26255,203 @@ def _seg_0563__city_has_six_ministries(
                     not stub,
                     f"city street(s) that cross another and then stop just past it, leaving a dangling stub - end them AT the junction or run them on: {sorted(stub)}",
                 )
+    return _kept(
+        locals(),
+        (
+            '_w21',
+            'ai',
+            'beds_meet',
+            'bi',
+            'comps',
+            'end',
+            'find2',
+            'i',
+            'ia',
+            'ib',
+            'ki',
+            'nbr',
+            'near_miss',
+            'parent',
+            'q21',
+            'sa',
+            'sb',
+            'seg_seg_dist',
+            'slines',
+            'sseg',
+            'st',
+            'streets',
+            'stub',
+            'widths',
+        ),
+    )
 
-            # a temple a city street runs UP TO (a street that terminates at its front) marks a
-            # sacred approach - it needs torii arches on that street, just in front of the temple
+
+# a temple a city street runs UP TO (a street that terminates at its front) marks a
+# sacred approach - it needs torii arches on that street, just in front of the temple
+
+
+def _seg_0563_336__torii(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.336 (torii) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             torii = M.get("torii", [])
+    return _kept(locals(), ('torii',))
+
+
+def _seg_0563_337__pt_rect(*, dx: Any = _UNBOUND, dy: Any = _UNBOUND, meta: Any = _UNBOUND, px: Any = _UNBOUND, py: Any = _UNBOUND, scale: Any = _UNBOUND, t: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.337 (pt_rect) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
 
             def pt_rect(px: float, py: float, t: dict[str, Any]) -> float:
                 dx = max(t["x"] - t["w"] / 2 - px, 0, px - t["x"] - t["w"] / 2)
                 dy = max(t["y"] - t["h"] / 2 - py, 0, py - t["y"] - t["h"] / 2)
                 return math.hypot(dx, dy)
 
-            no_torii = []
+    return _kept(locals(), ('pt_rect',))
+
+
+def _seg_0563_338__no_torii(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.338 (no_torii) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            no_torii = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('no_torii',))
+
+
+def _seg_0563_339__e_2(
+    *,
+    M: Any = _UNBOUND,
+    e: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    no_torii: Any = _UNBOUND,
+    pt_rect: Any = _UNBOUND,
+    r: Any = _UNBOUND,
+    runs_up: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    st: Any = _UNBOUND,
+    t: Any = _UNBOUND,
+    to: Any = _UNBOUND,
+    torii: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.339 (e, no_torii, r, runs_up) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for t in [r for r in M.get("religious", []) if r.get("kind") == "temple"]:
                 runs_up = any(min(pt_rect(e[0], e[1], t) for e in (st["pts"][0], st["pts"][-1])) < 28 for st in M.get("town_streets", []))
                 if runs_up and not any(math.hypot(to[0] - t["x"], to[1] - t["y"]) < 95 for to in torii):
                     no_torii.append(t.get("label"))
+    return _kept(locals(), ('e', 'no_torii', 'r', 'runs_up', 'st', 't', 'to'))
+
+
+def _seg_0563_340__city_temple_approach_has_torii(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, no_torii: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.340 (city_temple_approach_has_torii) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_temple_approach_has_torii", not no_torii, f"temple(s) a city street runs straight up to, with no torii arch in front: {no_torii}")
-            # (RETIRED 2026-07-24: city_temple_torii_fill_approach - "an avenue with open room takes
-            # another arch" - is superseded by the per-temple seeded ROLL: shrine_hall now rolls each
-            # hall's count on the tier's TORII_WEIGHTS column and records the target on the religious
-            # rec, so avenue completeness is defined by the roll, not by remaining street room. A
-            # rolled 1 beside an open street is a hall with one patron gate, not an unfinished avenue.
-            # torii_match_roll (with torii_count_canonical) now carries the teeth. Same precedent as
-            # torii_full_avenue_is_seven's retirement when the numerology rule landed.)
-            # a torii arch stands OVER the street it spans - the street passes beneath it - so a
-            # torii sitting on a street must be drawn after (higher z than) that street, not under it
-            to_under = []
+    return _kept(locals(), ())
+
+
+# (RETIRED 2026-07-24: city_temple_torii_fill_approach - "an avenue with open room takes
+# another arch" - is superseded by the per-temple seeded ROLL: shrine_hall now rolls each
+# hall's count on the tier's TORII_WEIGHTS column and records the target on the religious
+# rec, so avenue completeness is defined by the roll, not by remaining street room. A
+# rolled 1 beside an open street is a hall with one patron gate, not an unfinished avenue.
+# torii_match_roll (with torii_count_canonical) now carries the teeth. Same precedent as
+# torii_full_avenue_is_seven's retirement when the numerology rule landed.)
+# a torii arch stands OVER the street it spans - the street passes beneath it - so a
+# torii sitting on a street must be drawn after (higher z than) that street, not under it
+
+
+def _seg_0563_341__to_under(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.341 (to_under) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            to_under = []  # type: ignore[var-annotated]
+    return _kept(locals(), ('to_under',))
+
+
+def _seg_0563_342__i_5(
+    *, M: Any = _UNBOUND, i: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, sp: Any = _UNBOUND, st: Any = _UNBOUND, t: Any = _UNBOUND, to_under: Any = _UNBOUND, torii: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.342 (i, sp, st, t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for t in torii:
                 for st in M.get("town_streets", []):
                     sp = st["pts"]
                     if any(seg_dist(t[0], t[1], sp[i], sp[i + 1]) <= st.get("w", 24) / 2 + 12 for i in range(len(sp) - 1)) and t[2] <= st.get("z", 0):
                         to_under.append((t[0], t[1]))
+    return _kept(locals(), ('i', 'sp', 'st', 't', 'to_under'))
+
+
+def _seg_0563_343__city_torii_over_streets(*, check: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND, to_under: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.343 (city_torii_over_streets) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check("city_torii_over_streets", not to_under, f"torii arch(es) drawn UNDER a street they span (the street must pass beneath the arch): {to_under}")
-            # no LARGE empty swath inside the walls (ported from wall_hugs_the_town; REBUILT
-            # footprint-aware, GM 2026-07-23, after Tango shipped a ~230x95px bare pocket just
-            # inside its north gate that read fully green). The old detector sampled an 80px grid
-            # and called a cell "used" within 120px of any building CENTER - a single house
-            # sanitized a 240px-wide disc, so only vast voids could ever fire. Now every claiming
-            # feature counts with its real FOOTPRINT: building/compound/grove rects, field and
-            # ground polys, well / stable-yard / torii discs, the road / street / alley / ring-road
-            # / water rights-of-way, ward fences, the rampart + its patrol strip, and the pond. A
-            # 32px grid marks cells >= 20px clear of ALL of them as dead ground; any contiguous
-            # dead cluster >= 4,000 px2 of core fails. Calibration (2026-07-23, pool-wide dry-run,
-            # settlements.md): Tango's north-gate pocket measures 6,144 px2 of core; the largest
-            # LEGITIMATE opens anywhere else measure 2,048 (Tango) / 1,024 (Nagahara), so the
-            # threshold sits between with ~2x headroom both ways. A city keeps SOME open ground,
-            # but every deliberate open is CLAIMED by a feature record (a working stable yard /
-            # animal ground, a right-of-way, a field); ground claimed by nothing, at
-            # wall-protected premium, would not have been left bare.
+    return _kept(locals(), ())
+
+
+# no LARGE empty swath inside the walls (ported from wall_hugs_the_town; REBUILT
+# footprint-aware, GM 2026-07-23, after Tango shipped a ~230x95px bare pocket just
+# inside its north gate that read fully green). The old detector sampled an 80px grid
+# and called a cell "used" within 120px of any building CENTER - a single house
+# sanitized a 240px-wide disc, so only vast voids could ever fire. Now every claiming
+# feature counts with its real FOOTPRINT: building/compound/grove rects, field and
+# ground polys, well / stable-yard / torii discs, the road / street / alley / ring-road
+# / water rights-of-way, ward fences, the rampart + its patrol strip, and the pond. A
+# 32px grid marks cells >= 20px clear of ALL of them as dead ground; any contiguous
+# dead cluster >= 4,000 px2 of core fails. Calibration (2026-07-23, pool-wide dry-run,
+# settlements.md): Tango's north-gate pocket measures 6,144 px2 of core; the largest
+# LEGITIMATE opens anywhere else measure 2,048 (Tango) / 1,024 (Nagahara), so the
+# threshold sits between with ~2x headroom both ways. A city keeps SOME open ground,
+# but every deliberate open is CLAIMED by a feature record (a working stable yard /
+# animal ground, a right-of-way, a field); ground claimed by nothing, at
+# wall-protected premium, would not have been left bare.
+
+
+def _seg_0563_344__ES_MARGIN(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.344 (ES_MARGIN, ES_MIN, ES_STEP) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             ES_STEP, ES_MARGIN, ES_MIN = 32, 20.0, 4000
-            es_rects: list[tuple[float, float, float, float]] = []  # type: ignore[no-redef]
+    return _kept(locals(), ('ES_MARGIN', 'ES_MIN', 'ES_STEP'))
+
+
+def _seg_0563_345__es_rects(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.345 (es_rects) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            es_rects: list[tuple[float, float, float, float]] = []  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('es_rects',))
+
+
+def _seg_0563_346__es_s(*, M: Any = _UNBOUND, es_s: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.346 (es_s, es_singles) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_singles = [es_s for es_s in [M.get("governor_mansion"), *(M.get("theater_stage") or [])] if isinstance(es_s, dict)]
+    return _kept(locals(), ('es_s', 'es_singles'))
+
+
+def _seg_0563_347__es_grp(
+    *,
+    M: Any = _UNBOUND,
+    es_grp: Any = _UNBOUND,
+    es_hh: Any = _UNBOUND,
+    es_hw: Any = _UNBOUND,
+    es_k: Any = _UNBOUND,
+    es_o: Any = _UNBOUND,
+    es_rects: Any = _UNBOUND,
+    es_singles: Any = _UNBOUND,
+    houses: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.347 (es_grp, es_hh, es_hw, es_k) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_grp in [
                 M.get(es_k, []) or []
                 for es_k in (
@@ -23545,16 +26490,74 @@ def _seg_0563__city_has_six_ministries(
                     if es_o.get("rot"):
                         es_hw = es_hh = math.hypot(es_hw, es_hh)
                     es_rects.append((es_o["x"], es_o["y"], es_hw, es_hh))
+    return _kept(locals(), ('es_grp', 'es_hh', 'es_hw', 'es_k', 'es_o', 'es_rects'))
+
+
+def _seg_0563_348__es_discs(*, M: Any = _UNBOUND, es_o: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.348 (es_discs, es_o) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_discs = [(es_o["x"], es_o["y"], es_o.get("r", 8.0)) for es_o in M.get("wells", []) + M.get("stable_yards", [])]
+    return _kept(locals(), ('es_discs', 'es_o'))
+
+
+def _seg_0563_349__es_discs_1(*, M: Any = _UNBOUND, es_discs: Any = _UNBOUND, es_t: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.349 (es_discs, es_t) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_discs += [(es_t[0], es_t[1], 14.0) for es_t in M.get("torii", [])]
+    return _kept(locals(), ('es_discs', 'es_t'))
+
+
+def _seg_0563_350__es_polys(*, M: Any = _UNBOUND, f: Any = _UNBOUND, fields: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.350 (es_polys, f) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_polys = [f["outline"] for f in fields] + list((M.get("comb_floors") or {}).values())
+    return _kept(locals(), ('es_polys', 'f'))
+
+
+def _seg_0563_351__es_k(*, M: Any = _UNBOUND, es_k: Any = _UNBOUND, es_o: Any = _UNBOUND, es_polys: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.351 (es_k, es_o, es_polys) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_k in ("dry_plots", "pastures", "commons", "marshes", "forest_patches", "village_groves", "clearings"):
                 es_polys += [es_o["poly"] for es_o in M.get(es_k, []) or []]
-            es_lines: list[tuple[list[Any], float]] = [(w, 20.0)]  # type: ignore[no-redef]  # the rampart + its patrol strip is claimed ground
+    return _kept(locals(), ('es_k', 'es_o', 'es_polys'))
+
+
+def _seg_0563_352__es_lines(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.352 (es_lines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            es_lines: list[tuple[list[Any], float]] = [(w, 20.0)]  # type: ignore[no-redef,unused-ignore]  # the rampart + its patrol strip is claimed ground
+    return _kept(locals(), ('es_lines',))
+
+
+def _seg_0563_353__es_lines_1(*, M: Any = _UNBOUND, es_lines: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.353 (es_lines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if M.get("road"):
                 es_lines.append((M["road"], M.get("road_width", 30) / 2))
+    return _kept(locals(), ('es_lines',))
+
+
+def _seg_0563_354__es_lines_2(*, M: Any = _UNBOUND, es_lines: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.354 (es_lines) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if M.get("ring_road"):
                 es_lines.append((M["ring_road"], M.get("ring_road_width", 24) / 2))
+    return _kept(locals(), ('es_lines',))
+
+
+def _seg_0563_355__es_dw(
+    *, M: Any = _UNBOUND, es_dw: Any = _UNBOUND, es_grp2: Any = _UNBOUND, es_lines: Any = _UNBOUND, es_o: Any = _UNBOUND, es_pk: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.355 (es_dw, es_grp2, es_lines, es_o) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_grp2, es_pk, es_dw in (
                 (M.get("roads", []), "pts", 24),
                 (M.get("town_streets", []), "pts", 24),
@@ -23563,12 +26566,74 @@ def _seg_0563__city_has_six_ministries(
                 (M.get("channels", []), "poly", 8),
             ):
                 es_lines += [(es_o[es_pk], es_o.get("w", es_dw) / 2) for es_o in es_grp2 or []]
+    return _kept(locals(), ('es_dw', 'es_grp2', 'es_lines', 'es_o', 'es_pk'))
+
+
+def _seg_0563_356__es_lines_3(*, M: Any = _UNBOUND, es_lines: Any = _UNBOUND, es_o: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.356 (es_lines, es_o) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_lines += [(es_o["boundary"], 8.0) for es_o in M.get("wards", [])]
+    return _kept(locals(), ('es_lines', 'es_o'))
+
+
+def _seg_0563_357__es_pond(*, M: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.357 (es_pond) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_pond = M.get("pond")
+    return _kept(locals(), ('es_pond',))
+
+
+def _seg_0563_358__es_wx0(*, meta: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.358 (es_wx0, es_wy0, p) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_wx0, es_wy0 = min(p[0] for p in w), min(p[1] for p in w)
+    return _kept(locals(), ('es_wx0', 'es_wy0', 'p'))
+
+
+def _seg_0563_359__es_wx1(*, meta: Any = _UNBOUND, p: Any = _UNBOUND, scale: Any = _UNBOUND, w: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.359 (es_wx1, es_wy1, p) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_wx1, es_wy1 = max(p[0] for p in w), max(p[1] for p in w)
+    return _kept(locals(), ('es_wx1', 'es_wy1', 'p'))
+
+
+def _seg_0563_360__es_ci0(*, ES_STEP: Any = _UNBOUND, es_wx0: Any = _UNBOUND, es_wy0: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.360 (es_ci0, es_cj0) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_ci0, es_cj0 = int(es_wx0 // ES_STEP), int(es_wy0 // ES_STEP)
+    return _kept(locals(), ('es_ci0', 'es_cj0'))
+
+
+def _seg_0563_361__es_ci1(*, ES_STEP: Any = _UNBOUND, es_wx1: Any = _UNBOUND, es_wy1: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.361 (es_ci1, es_cj1) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_ci1, es_cj1 = int(es_wx1 // ES_STEP) + 1, int(es_wy1 // ES_STEP) + 1
+    return _kept(locals(), ('es_ci1', 'es_cj1'))
+
+
+def _seg_0563_362__es_cells(
+    *,
+    ES_STEP: Any = _UNBOUND,
+    bx0: Any = _UNBOUND,
+    bx1: Any = _UNBOUND,
+    by0: Any = _UNBOUND,
+    by1: Any = _UNBOUND,
+    es_ci0: Any = _UNBOUND,
+    es_ci1: Any = _UNBOUND,
+    es_cj0: Any = _UNBOUND,
+    es_cj1: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.362 (es_cells) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
 
             def es_cells(bx0: float, by0: float, bx1: float, by1: float) -> list[tuple[int, int]]:
                 """Grid cells whose sample point falls inside the bbox (clamped to the wall window)."""
@@ -23578,12 +26643,82 @@ def _seg_0563__city_has_six_ministries(
                     for ecj in range(max(es_cj0, math.ceil(by0 / ES_STEP)), min(es_cj1, math.floor(by1 / ES_STEP)) + 1)
                 ]
 
-            es_covered: set[tuple[int, int]] = set()  # type: ignore[no-redef]
+    return _kept(locals(), ('es_cells',))
+
+
+def _seg_0563_363__es_covered(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.363 (es_covered) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            es_covered: set[tuple[int, int]] = set()  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('es_covered',))
+
+
+def _seg_0563_364__es_covered_1(
+    *,
+    ES_MARGIN: Any = _UNBOUND,
+    es_cells: Any = _UNBOUND,
+    es_covered: Any = _UNBOUND,
+    es_rects: Any = _UNBOUND,
+    es_rhh: Any = _UNBOUND,
+    es_rhw: Any = _UNBOUND,
+    es_rx: Any = _UNBOUND,
+    es_ry: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.364 (es_covered, es_rhh, es_rhw, es_rx) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_rx, es_ry, es_rhw, es_rhh in es_rects:
                 es_covered.update(es_cells(es_rx - es_rhw - ES_MARGIN, es_ry - es_rhh - ES_MARGIN, es_rx + es_rhw + ES_MARGIN, es_ry + es_rhh + ES_MARGIN))
+    return _kept(locals(), ('es_covered', 'es_rhh', 'es_rhw', 'es_rx', 'es_ry'))
+
+
+def _seg_0563_365__c_2(
+    *,
+    ES_MARGIN: Any = _UNBOUND,
+    ES_STEP: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    es_cells: Any = _UNBOUND,
+    es_covered: Any = _UNBOUND,
+    es_discs: Any = _UNBOUND,
+    es_dr: Any = _UNBOUND,
+    es_dx: Any = _UNBOUND,
+    es_dy: Any = _UNBOUND,
+    es_rr: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.365 (c, es_covered, es_dr, es_dx) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_dx, es_dy, es_dr in es_discs:
                 es_rr = es_dr + ES_MARGIN
                 es_covered.update([c for c in es_cells(es_dx - es_rr, es_dy - es_rr, es_dx + es_rr, es_dy + es_rr) if (c[0] * ES_STEP - es_dx) ** 2 + (c[1] * ES_STEP - es_dy) ** 2 <= es_rr * es_rr])
+    return _kept(locals(), ('c', 'es_covered', 'es_dr', 'es_dx', 'es_dy', 'es_rr'))
+
+
+def _seg_0563_366__c_3(
+    *,
+    ES_MARGIN: Any = _UNBOUND,
+    ES_STEP: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    es_a: Any = _UNBOUND,
+    es_b: Any = _UNBOUND,
+    es_cells: Any = _UNBOUND,
+    es_covered: Any = _UNBOUND,
+    es_hwid: Any = _UNBOUND,
+    es_i: Any = _UNBOUND,
+    es_lines: Any = _UNBOUND,
+    es_pts: Any = _UNBOUND,
+    es_rr: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.366 (c, es_a, es_b, es_covered) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_pts, es_hwid in es_lines:
                 es_rr = es_hwid + ES_MARGIN
                 for es_i in range(len(es_pts) - 1):
@@ -23595,6 +26730,24 @@ def _seg_0563__city_has_six_ministries(
                             if c not in es_covered and seg_dist(c[0] * ES_STEP, c[1] * ES_STEP, es_a, es_b) <= es_rr
                         ]
                     )
+    return _kept(locals(), ('c', 'es_a', 'es_b', 'es_covered', 'es_hwid', 'es_i', 'es_pts', 'es_rr'))
+
+
+def _seg_0563_367__c_4(
+    *,
+    ES_STEP: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    es_cells: Any = _UNBOUND,
+    es_covered: Any = _UNBOUND,
+    es_p: Any = _UNBOUND,
+    es_polys: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    q: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.367 (c, es_covered, es_p, q) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_p in es_polys:
                 es_covered.update(
                     [
@@ -23603,6 +26756,15 @@ def _seg_0563__city_has_six_ministries(
                         if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, es_p)
                     ]
                 )
+    return _kept(locals(), ('c', 'es_covered', 'es_p', 'q'))
+
+
+def _seg_0563_368__c_5(
+    *, ES_STEP: Any = _UNBOUND, c: Any = _UNBOUND, es_cells: Any = _UNBOUND, es_covered: Any = _UNBOUND, es_pond: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.368 (c, es_covered) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             if es_pond:
                 es_covered.update(
                     [
@@ -23611,13 +26773,81 @@ def _seg_0563__city_has_six_ministries(
                         if c not in es_covered and in_ellipse(c[0] * ES_STEP, c[1] * ES_STEP, es_pond, 1.15)
                     ]
                 )
-            # the CITADEL claims its ground (021): a castle court is deliberately BLANK (the
-            # sync doctrine) - blank is not unclaimed, and its moat band goes with it
+    return _kept(locals(), ('c', 'es_covered'))
+
+
+# the CITADEL claims its ground (021): a castle court is deliberately BLANK (the
+# sync doctrine) - blank is not unclaimed, and its moat band goes with it
+
+
+def _seg_0563_369__es_ca(*, M: Any = _UNBOUND, es_ca: Any = _UNBOUND, es_cells: Any = _UNBOUND, es_covered: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.369 (es_ca, es_covered) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_ca in M.get("castles", []):
                 es_covered.update(es_cells(es_ca["x"] - es_ca["w"] / 2 - 45, es_ca["y"] - es_ca["h"] / 2 - 45, es_ca["x"] + es_ca["w"] / 2 + 45, es_ca["y"] + es_ca["h"] / 2 + 45))
+    return _kept(locals(), ('es_ca', 'es_covered'))
+
+
+def _seg_0563_370__c_6(
+    *,
+    ES_STEP: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    es_cells: Any = _UNBOUND,
+    es_covered: Any = _UNBOUND,
+    es_wx0: Any = _UNBOUND,
+    es_wx1: Any = _UNBOUND,
+    es_wy0: Any = _UNBOUND,
+    es_wy1: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+    w: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.370 (c, es_empty) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_empty = {c for c in es_cells(es_wx0, es_wy0, es_wx1, es_wy1) if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, w)}
-            es_seen: set[tuple[int, int]] = set()  # type: ignore[no-redef]
-            es_flagged: list[tuple[int, tuple[int, int]]] = []  # type: ignore[no-redef]
+    return _kept(locals(), ('c', 'es_empty'))
+
+
+def _seg_0563_371__es_seen(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.371 (es_seen) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            es_seen: set[tuple[int, int]] = set()  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('es_seen',))
+
+
+def _seg_0563_372__es_flagged(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.372 (es_flagged) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
+            es_flagged: list[tuple[int, tuple[int, int]]] = []  # type: ignore[no-redef,unused-ignore]
+    return _kept(locals(), ('es_flagged',))
+
+
+def _seg_0563_373__c_7(
+    *,
+    ES_MIN: Any = _UNBOUND,
+    ES_STEP: Any = _UNBOUND,
+    c: Any = _UNBOUND,
+    es_area: Any = _UNBOUND,
+    es_c: Any = _UNBOUND,
+    es_cell: Any = _UNBOUND,
+    es_comp: Any = _UNBOUND,
+    es_di: Any = _UNBOUND,
+    es_dj: Any = _UNBOUND,
+    es_empty: Any = _UNBOUND,
+    es_flagged: Any = _UNBOUND,
+    es_nb: Any = _UNBOUND,
+    es_seen: Any = _UNBOUND,
+    es_stack: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+    scale: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 563.373 (c, es_area, es_c, es_cell) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             for es_cell in es_empty:
                 if es_cell in es_seen:
                     continue
@@ -23634,8 +26864,31 @@ def _seg_0563__city_has_six_ministries(
                 es_area = len(es_comp) * ES_STEP * ES_STEP
                 if es_area >= ES_MIN:
                     es_flagged.append((es_area, (sum(c[0] for c in es_comp) * ES_STEP // len(es_comp), sum(c[1] for c in es_comp) * ES_STEP // len(es_comp))))
+    return _kept(locals(), ('c', 'es_area', 'es_c', 'es_cell', 'es_comp', 'es_di', 'es_dj', 'es_flagged', 'es_nb', 'es_seen', 'es_stack'))
+
+
+def _seg_0563_374__es_flagged_1(*, es_flagged: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.374 (es_flagged) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_flagged.sort(reverse=True)
+    return _kept(locals(), ('es_flagged',))
+
+
+def _seg_0563_375__es_ftpx(*, meta: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 563.375 (es_ftpx) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             es_ftpx = meta.get("ftpx", 3)
+    return _kept(locals(), ('es_ftpx',))
+
+
+def _seg_0563_376__city_no_large_empty_space(
+    *, check: Any = _UNBOUND, ea: Any = _UNBOUND, ec: Any = _UNBOUND, es_flagged: Any = _UNBOUND, es_ftpx: Any = _UNBOUND, meta: Any = _UNBOUND, scale: Any = _UNBOUND
+) -> dict[str, Any]:
+    """Gate segment 563.376 (city_no_large_empty_space) - body verbatim from the city mega-segment (feature 023; guards preserved, see research.md R2/R3)."""
+    if scale in ('city', 'capital'):
+        if meta.get('walled'):
             check(
                 "city_no_large_empty_space",
                 not es_flagged,
@@ -23643,598 +26896,7 @@ def _seg_0563__city_has_six_ministries(
                 + "; ".join(f"~{ea} px2 of dead core (~{ea * es_ftpx * es_ftpx / 43560:.1f} ac) centered {ec}" for ea, ec in es_flagged[:3])
                 + " - land inside a wall is at a premium; fill it (extend a quarter / drop in a neighborhood) or claim it as deliberate working ground, e.g. s.animal_ground(...) for extra caravan hitching space near a gate (settlements.md)",
             )
-    return _kept(
-        locals(),
-        (
-            'COMMERCE',
-            'COMMON',
-            'E',
-            'EST_MIN_SEP',
-            'ES_MARGIN',
-            'ES_MIN',
-            'ES_STEP',
-            'GDIR',
-            'HOUSEK',
-            'L',
-            'LINE_D',
-            'LINE_RUN',
-            'L_',
-            'MAX_PER_WELL',
-            'MAX_PER_WELL_OUTCAST',
-            'OFFICE_GAP',
-            'REACH',
-            'SAMK',
-            'THROAT',
-            '_',
-            '_bbc',
-            '_bh_allowed',
-            '_bh_floor',
-            '_bh_n',
-            '_bh_pop',
-            '_bh_roll',
-            '_cdojos',
-            '_dj_allowed',
-            '_dj_far',
-            '_dj_floor',
-            '_dj_roll',
-            '_dj_sam',
-            '_edge_gap',
-            '_egap',
-            '_end_near_dock',
-            '_end_near_moat',
-            '_end_near_river',
-            '_floor',
-            '_foot',
-            '_ftargets',
-            '_ftpx',
-            '_g21',
-            '_gaps',
-            '_gfurn',
-            '_gov',
-            '_gtowers',
-            '_gv',
-            '_hw',
-            '_la',
-            '_ldx',
-            '_ldy',
-            '_lg_open',
-            '_lh2',
-            '_lpts',
-            '_lw2',
-            '_ly_wet',
-            '_med',
-            '_mhalls',
-            '_mhout',
-            '_mhshort',
-            '_mhwall',
-            '_mroll',
-            '_pl',
-            '_qx',
-            '_qy',
-            '_shown',
-            '_sy_stbl',
-            '_tfortune',
-            '_touch',
-            '_tw_brews',
-            '_tw_dyes',
-            '_tw_kilns',
-            '_tw_lys',
-            '_tw_on_water',
-            '_tw_pond',
-            '_tw_water',
-            '_tw_wc',
-            '_w21',
-            '_z',
-            'a',
-            'abut',
-            'adrift_lb',
-            'ai',
-            'align',
-            'allowed',
-            'amph',
-            'amph_all3',
-            'amph_raw3',
-            'angs',
-            'area_subj',
-            'areas',
-            'b',
-            'b2',
-            'b9',
-            'b_',
-            'bad_cross',
-            'bad_flop',
-            'bad_lab',
-            'bad_meet',
-            'bad_well',
-            'bare',
-            'bare_streets',
-            'barred',
-            'bc',
-            'bedhalf',
-            'beds_meet',
-            'best2',
-            'bf',
-            'bg',
-            'bi',
-            'big_frac',
-            'big_other',
-            'big_out',
-            'biz_out',
-            'bk',
-            'bl',
-            'bmx',
-            'bmy',
-            'bnd',
-            'bo',
-            'bod_',
-            'boom_off',
-            'booms_c',
-            'box_',
-            'box_on_lane',
-            'boy_',
-            'bura',
-            'buraku_in',
-            'bx',
-            'by',
-            'c',
-            'canal_second_mouths',
-            'canals_c',
-            'cap',
-            'caps',
-            'caravan_bad',
-            'caste',
-            'cc',
-            'cd',
-            'cf',
-            'cg9',
-            'chans',
-            'chw',
-            'cityward_dist',
-            'civic',
-            'civic_names',
-            'civic_on_street',
-            'civics',
-            'ck',
-            'clan_t',
-            'clustered',
-            'commoner_in',
-            'compounds',
-            'comps',
-            'cp',
-            'cpop',
-            'cross',
-            'crosses_ring',
-            'crowd',
-            'cthb',
-            'cx',
-            'cx_r',
-            'cy',
-            'cy_r',
-            'd',
-            'd8',
-            'd_',
-            'd_gate_tower',
-            'd_nearest_mural',
-            'damming_lb',
-            'dead',
-            'declared_t',
-            'diff8',
-            'disp_a',
-            'disp_b',
-            'dl',
-            'docks_c',
-            'dry',
-            'dwl',
-            'e',
-            'e0',
-            'e1',
-            'ea',
-            'ec',
-            'edge_ang',
-            'egd',
-            'ek',
-            'empty_city_streets',
-            'end',
-            'ends',
-            'es_a',
-            'es_area',
-            'es_b',
-            'es_c',
-            'es_ca',
-            'es_cell',
-            'es_cells',
-            'es_ci0',
-            'es_ci1',
-            'es_cj0',
-            'es_cj1',
-            'es_comp',
-            'es_covered',
-            'es_di',
-            'es_discs',
-            'es_dj',
-            'es_dr',
-            'es_dw',
-            'es_dx',
-            'es_dy',
-            'es_empty',
-            'es_flagged',
-            'es_ftpx',
-            'es_grp',
-            'es_grp2',
-            'es_hh',
-            'es_hw',
-            'es_hwid',
-            'es_i',
-            'es_k',
-            'es_lines',
-            'es_nb',
-            'es_o',
-            'es_p',
-            'es_pk',
-            'es_polys',
-            'es_pond',
-            'es_pts',
-            'es_rects',
-            'es_rhh',
-            'es_rhw',
-            'es_rr',
-            'es_rx',
-            'es_ry',
-            'es_s',
-            'es_seen',
-            'es_singles',
-            'es_stack',
-            'es_t',
-            'es_wx0',
-            'es_wx1',
-            'es_wy0',
-            'es_wy1',
-            'est_bad',
-            'est_corners',
-            'est_on_road',
-            'est_out',
-            'est_overlap',
-            'est_pts',
-            'est_too_close',
-            'exc',
-            'exits',
-            'f',
-            'far',
-            'far_min',
-            'fc',
-            'fed',
-            'feeders',
-            'fence_gap',
-            'fence_hit',
-            'find2',
-            'fl',
-            'fld_bad',
-            'floats',
-            'flops',
-            'fmis',
-            'fr',
-            'frac',
-            'frac_inside',
-            'furn',
-            'furn_wet',
-            'fz',
-            'g',
-            'g21',
-            'g_',
-            'ga',
-            'gap',
-            'gate_bad',
-            'gate_towers_xy',
-            'gated',
-            'gates',
-            'gates_wo_flop',
-            'gates_wo_market',
-            'gbox',
-            'gf',
-            'gf_hit',
-            'gh',
-            'ghs',
-            'gi',
-            'gnear',
-            'got8',
-            'gov',
-            'gov_bad',
-            'gov_items',
-            'gov_pts',
-            'gp9',
-            'gpairs',
-            'gpoly',
-            'grave_on_ring',
-            'gs',
-            'gstruct',
-            'gstructs',
-            'gtx',
-            'gty',
-            'gv',
-            'h',
-            'half',
-            'has_gh',
-            'has_in',
-            'has_outfall',
-            'hh',
-            'hh_out',
-            'hi',
-            'hlb',
-            'homes',
-            'host',
-            'hosts',
-            'hpb',
-            'hx',
-            'hy',
-            'i',
-            'i8',
-            'i9',
-            'ia',
-            'ib',
-            'il',
-            'in_city',
-            'in_est',
-            'inlet_disp',
-            'inns',
-            'ins',
-            'inw',
-            'inwall',
-            'inwall_fields',
-            'inwall_groves',
-            'ip',
-            'it',
-            'j',
-            'j_arc',
-            'jends',
-            'jetties_c',
-            'k',
-            'k_',
-            'k_hit',
-            'kb_hit',
-            'kc',
-            'kd',
-            'kd2',
-            'kd3',
-            'key_',
-            'ki',
-            'kido',
-            'kido_off',
-            'lab',
-            'lab_big',
-            'lab_std',
-            'labor',
-            'lane8',
-            'lane_w',
-            'lanes_pts',
-            'lh',
-            'line_blds',
-            'ln',
-            'lo',
-            'loose',
-            'loose_servants',
-            'lw',
-            'lx',
-            'ly',
-            'm',
-            'major',
-            'major_t',
-            'maxgap',
-            'mcx',
-            'mcy',
-            'med_nn',
-            'meeting_lanes',
-            'mest',
-            'mest_bld',
-            'mest_corners',
-            'mest_wm',
-            'mh',
-            'mh_',
-            'mhw_f',
-            'mi',
-            'mins',
-            'misaligned',
-            'misses',
-            'missing',
-            'mlarge',
-            'mn',
-            'mo_f',
-            'moat',
-            'moat_fed',
-            'moat_for_canal',
-            'moat_hit',
-            'moat_is_fed',
-            'monk_h',
-            'moored_lb',
-            'msmall',
-            'murals_xy',
-            'mw',
-            'mw_for_canal',
-            'n',
-            'narrow',
-            'nb',
-            'nbr',
-            'near_ct',
-            'near_dw',
-            'near_miss',
-            'near_sh',
-            'need',
-            'netlines',
-            'nft',
-            'nice',
-            'nm',
-            'no_farm',
-            'no_front',
-            'no_guard',
-            'no_station',
-            'no_torii',
-            'not_cap',
-            'not_under',
-            'nxb',
-            'nyb',
-            'o',
-            'o_',
-            'oc',
-            'of',
-            'off',
-            'off_fence',
-            'offend',
-            'offices',
-            'on_st_kido',
-            'open_end',
-            'order',
-            'other_struct',
-            'other_xy',
-            'others',
-            'others_me',
-            'out_fields',
-            'out_rel',
-            'outlet_disp',
-            'ox',
-            'oy',
-            'p',
-            'p_out',
-            'parent',
-            'pcx',
-            'pcy',
-            'pnd',
-            'pop',
-            'prx',
-            'pry',
-            'pt_rect',
-            'pts',
-            'px',
-            'py',
-            'q',
-            'q21',
-            'qd_lb',
-            'qdx_lb',
-            'qdy_lb',
-            'quadb',
-            'qx_lb',
-            'qy_lb',
-            'r',
-            'r23',
-            'ratio',
-            'rcum',
-            'rdist',
-            'rds',
-            'reach',
-            'region',
-            'rel',
-            'rel_bad',
-            'rhalf',
-            'rhw',
-            'rhwb',
-            'ri2',
-            'ring2',
-            'ring_rd',
-            'rites',
-            'river_c',
-            'rlab',
-            'road',
-            'road_comm',
-            'road_through',
-            'roads_all',
-            'root',
-            'rowk',
-            'rp',
-            'rpb',
-            'rpts',
-            'run',
-            'runs_up',
-            'rv',
-            's',
-            's9',
-            'sa',
-            'sam_n',
-            'sam_out',
-            'sam_wells',
-            'samurai_h',
-            'sb',
-            'seg_seg_dist',
-            'served',
-            'served_out',
-            'sh',
-            'shifts',
-            'shortfalls',
-            'shown_est',
-            'shrines',
-            'slarge',
-            'slines',
-            'sp',
-            'sseg',
-            'ssmall',
-            'st',
-            'st_pts',
-            'stale',
-            'stbl',
-            'steps',
-            'sthb',
-            'stranded',
-            'stray_b',
-            'stray_mh',
-            'stray_t',
-            'streets',
-            'structs',
-            'stub',
-            'subj_in',
-            'subject_of',
-            'swamped',
-            't',
-            't_unserved',
-            'taps',
-            'tc',
-            'tcx',
-            'tcy',
-            'temples',
-            'tgt',
-            'th',
-            'thb',
-            'thr',
-            'throat_bad',
-            'through',
-            'tip',
-            'to',
-            'to_under',
-            'torii',
-            'toward',
-            'towers',
-            'tw',
-            'twr_off',
-            'tx',
-            'txt',
-            'ty',
-            'u',
-            'unreached',
-            'v',
-            'w',
-            'w_',
-            'wall_hit',
-            'want8',
-            'wards',
-            'wards_k',
-            'wcx',
-            'wcy',
-            'wd',
-            'wd2',
-            'wells',
-            'widths',
-            'wlanes',
-            'worst',
-            'wp',
-            'wr',
-            'wx',
-            'wy',
-            'x',
-            'x0',
-            'x1',
-            'y',
-            'y0',
-            'y1',
-            'yards_b',
-            'yd',
-        ),
-    )
+    return _kept(locals(), ('ea', 'ec'))
 
 
 # Tax-free (temple/monk glebe) plots are OPTIONAL - marking them on the map is a choice, not a
@@ -30934,1346 +33596,147 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
+    _GateSeg(_seg_0563_000__bk, ('scale',), ('bk',), (), ('scale',), False, False),
+    _GateSeg(_seg_0563_001__b, ('M', 'b', 'bk', 'scale'), ('b', 'bk'), (), ('M', 'bk', 'scale'), False, False),
+    _GateSeg(_seg_0563_002__city_has_governor_mansion, ('M', 'check', 'scale'), (), ('city_has_governor_mansion',), ('M', 'check', 'scale'), False, False),
+    _GateSeg(_seg_0563_003__mins, ('M', 'scale'), ('mins',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_004__city_has_six_ministries, ('check', 'mins', 'scale'), (), ('city_has_six_ministries',), ('check', 'mins', 'scale'), False, False),
+    _GateSeg(_seg_0563_005__m, ('m', 'mins', 'scale'), ('m', 'rites'), (), ('mins', 'scale'), False, False),
+    _GateSeg(_seg_0563_006__city_has_ministry_of_rites, ('check', 'rites', 'scale'), (), ('city_has_ministry_of_rites',), ('check', 'rites', 'scale'), False, False),
+    _GateSeg(_seg_0563_007__sam_n, ('bk', 'scale'), ('sam_n',), (), ('bk', 'scale'), False, False),
+    _GateSeg(_seg_0563_008__city_has_samurai_neighborhood, ('check', 'sam_n', 'scale'), (), ('city_has_samurai_neighborhood',), ('check', 'sam_n', 'scale'), False, False),
+    _GateSeg(_seg_0563_009__b_1, ('M', 'b', 'scale'), ('b', 'samurai_h'), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_010__pop, ('meta', 'scale'), ('pop',), (), ('meta', 'scale'), False, False),
     _GateSeg(
-        _seg_0563__city_has_six_ministries,
+        _seg_0563_011__city_samurai_housing_sufficient,
+        ('URBAN', 'check', 'need', 'pop', 'samurai_h', 'scale'),
+        ('need',),
+        ('city_samurai_housing_sufficient',),
+        ('URBAN', 'check', 'pop', 'samurai_h', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_012__city_samurai_partly_front_streets,
+        ('M', 'b', 'check', 'i', 'near_ct', 'samurai_h', 'scale', 'slines', 'sp', 'st'),
+        ('b', 'i', 'near_ct', 'slines', 'sp', 'st'),
+        ('city_samurai_partly_front_streets',),
+        ('M', 'check', 'samurai_h', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_013__b_2, ('M', 'b', 'scale'), ('b', 'slarge'), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_014__b_3, ('M', 'b', 'scale'), ('b', 'ssmall'), (), ('M', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_015__city_samurai_housing_varied,
+        ('M', 'check', 'in_est', 'm', 'scale', 'slarge', 'ssmall', 'w'),
+        ('in_est', 'm', 'w'),
+        ('city_samurai_housing_varied',),
+        ('M', 'check', 'scale', 'slarge', 'ssmall'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_016___mhalls, ('M', 'scale'), ('_mhalls',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_017___mhwall, ('M', 'scale'), ('_mhwall',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_018___mhout, ('_mhalls', '_mhwall', 'mh_', 'scale'), ('_mhout', 'mh_'), (), ('_mhalls', '_mhwall', 'scale'), False, False),
+    _GateSeg(_seg_0563_019__city_has_martial_hall, ('_mhalls', '_mhout', 'check', 'scale'), (), ('city_has_martial_hall',), ('_mhalls', '_mhout', 'check', 'scale'), False, False),
+    _GateSeg(_seg_0563_020___mhshort, ('_mhalls', 'mh_', 'scale'), ('_mhshort', 'mh_'), (), ('_mhalls', 'scale'), False, False),
+    _GateSeg(_seg_0563_021__city_martial_hall_has_archery_range, ('_mhshort', 'check', 'scale'), (), ('city_martial_hall_has_archery_range',), ('_mhshort', 'check', 'scale'), False, False),
+    _GateSeg(_seg_0563_022___cdojos, ('M', 'scale'), ('_cdojos',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_023___dj_sam, ('meta', 'scale'), ('_dj_sam',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_024___dj_floor, ('_dj_sam', 'scale'), ('_dj_floor',), (), ('_dj_sam', 'scale'), False, False),
+    _GateSeg(_seg_0563_025___dj_allowed, ('_dj_floor', '_dj_sam', 'scale'), ('_dj_allowed',), (), ('_dj_floor', '_dj_sam', 'scale'), False, False),
+    _GateSeg(_seg_0563_026___dj_roll, ('meta', 'scale'), ('_dj_roll',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_027__city_dojo_count_follows_samurai,
+        ('_cdojos', '_dj_allowed', '_dj_roll', '_dj_sam', 'check', 'scale'),
+        (),
+        ('city_dojo_count_follows_samurai',),
+        ('_cdojos', '_dj_allowed', '_dj_roll', '_dj_sam', 'check', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_028___dj_far, ('_cdojos', '_mhalls', 'b_', 'o_', 'samurai_h', 'scale'), ('_dj_far', 'b_', 'o_'), (), ('_cdojos', '_mhalls', 'samurai_h', 'scale'), False, False),
+    _GateSeg(_seg_0563_029__city_dojos_among_samurai, ('_dj_far', 'check', 'scale'), (), ('city_dojos_among_samurai',), ('_dj_far', 'check', 'scale'), False, False),
+    _GateSeg(_seg_0563_030__city_has_merchant_district, ('bk', 'check', 'scale'), (), ('city_has_merchant_district',), ('bk', 'check', 'scale'), False, False),
+    _GateSeg(_seg_0563_031__city_has_laborer_neighborhoods, ('bk', 'check', 'scale'), (), ('city_has_laborer_neighborhoods',), ('bk', 'check', 'scale'), False, False),
+    _GateSeg(_seg_0563_032__lab_big, ('bk', 'scale'), ('lab_big', 'lab_std'), (), ('bk', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_033__city_laborer_housing_varied,
+        ('big_frac', 'check', 'lab_big', 'lab_std', 'scale'),
+        ('big_frac',),
+        ('city_laborer_housing_varied',),
+        ('check', 'lab_big', 'lab_std', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_034__cpop, ('meta', 'scale'), ('cpop',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_035__city_caste_counts_in_band,
+        ('M', 'bk', 'caste', 'check', 'ck', 'cpop', 'fr', 'frac', 'hh', 'hi', 'k', 'lo', 'meta', 'off', 'ratio', 'scale', 'shifts', 'stale', 'tgt', 'v'),
+        ('caste', 'ck', 'fr', 'frac', 'hh', 'hi', 'k', 'lo', 'off', 'ratio', 'shifts', 'stale', 'tgt', 'v'),
+        ('city_caste_counts_in_band', 'city_caste_shifts_are_documented', 'city_caste_shifts_are_live'),
+        ('M', 'bk', 'check', 'cpop', 'meta', 'off', 'scale', 'stale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_036__b_4, ('M', 'b', 'scale'), ('b', 'rowk'), (), ('M', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_037__city_row_housing_touches,
+        ('_egap', '_gaps', '_med', '_touch', 'a', 'b', 'check', 'dx', 'dy', 'g', 'i', 'j', 'rowk', 'scale'),
+        ('_egap', '_gaps', '_med', '_touch', 'a', 'b', 'g', 'i', 'j'),
+        ('city_row_housing_gap', 'city_row_housing_touches'),
+        ('check', 'rowk', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_038__b_5, ('M', 'b', 'scale'), ('b', 'mlarge'), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_039__b_6, ('M', 'b', 'scale'), ('b', 'msmall'), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_040__mest, ('M', 'scale'), ('mest',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_041___mroll, ('meta', 'scale'), ('_mroll',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_042__merchant_estates_match_roll, ('_mroll', 'check', 'mest', 'scale'), (), ('merchant_estates_match_roll',), ('_mroll', 'check', 'mest', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_043__city_merchant_housing_varied,
+        ('M', 'b', 'check', 'homes', 'i', 'j', 'labor', 'lh', 'med_nn', 'mest', 'mh', 'mlarge', 'msmall', 'p', 'pts', 'q', 'scale'),
+        ('b', 'homes', 'labor', 'lh', 'med_nn', 'mh'),
+        ('city_merchant_housing_spread', 'city_merchant_housing_varied'),
+        ('M', 'check', 'mest', 'mlarge', 'msmall', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_044__city_has_outside_farmland,
+        ('check', 'f', 'fields', 'runs_off_edge', 'scale'),
+        ('f',),
+        ('city_has_outside_farmland',),
+        ('check', 'fields', 'runs_off_edge', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_045__city_has_merchant_storehouses, ('M', 'check', 'scale'), (), ('city_has_merchant_storehouses',), ('M', 'check', 'scale'), False, False),
+    _GateSeg(_seg_0563_046__city_has_flophouse, ('M', 'check', 'scale'), (), ('city_has_flophouse',), ('M', 'check', 'scale'), False, False),
+    _GateSeg(_seg_0563_047__city_has_theater_stage, ('M', 'check', 'scale'), (), ('city_has_theater_stage',), ('M', 'check', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_048__theater_stage_by_temple, ('M', 'check', 'scale'), (), ('theater_stage_by_temple', 'theater_stage_clear', 'theater_stage_faces_temple'), ('M', 'check', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_049__amph_raw3, ('M', 'scale'), ('amph_raw3',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_050__amph_all3, ('amph_raw3', 'scale'), ('amph_all3',), (), ('amph_raw3', 'scale'), False, False),
+    _GateSeg(_seg_0563_051__amph, ('a8', 'amph_all3', 'scale'), ('amph',), (), ('amph_all3', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_052__city_theater_stage_larger_than_town,
+        ('_ftpx', 'amph', 'check', 'meta', 'scale'),
+        ('_ftpx',),
+        ('city_theater_stage_larger_than_town',),
+        ('amph', 'check', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_053__city_has_fire_towers, ('M', 'check', 'meta', 'nft', 'scale'), ('nft',), ('city_has_fire_towers',), ('M', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_054__fire_tower_amid_its_district,
+        ('M', 'check', 'scale'),
+        (),
         (
-            'ADJ',
-            'COMMERCE',
-            'COMMON',
-            'E',
-            'EST_MIN_SEP',
-            'ES_MARGIN',
-            'ES_MIN',
-            'ES_STEP',
-            'EX0',
-            'EX1',
-            'EY0',
-            'EY1',
-            'GDIR',
-            'HOUSEK',
-            'L',
-            'LINE_D',
-            'LINE_RUN',
-            'L_',
-            'M',
-            'MAX_PER_WELL',
-            'MAX_PER_WELL_OUTCAST',
-            'OFFICE_GAP',
-            'REACH',
-            'SAMK',
-            'THROAT',
-            'URBAN',
-            '_bbc',
-            '_bh_allowed',
-            '_bh_floor',
-            '_bh_n',
-            '_bh_pop',
-            '_bh_roll',
-            '_cdojos',
-            '_dj_allowed',
-            '_dj_far',
-            '_dj_floor',
-            '_dj_roll',
-            '_dj_sam',
-            '_edge_gap',
-            '_egap',
-            '_end_near_dock',
-            '_end_near_moat',
-            '_end_near_river',
-            '_floor',
-            '_foot',
-            '_ftargets',
-            '_ftpx',
-            '_g21',
-            '_gaps',
-            '_gfurn',
-            '_gtowers',
-            '_gv',
-            '_hw',
-            '_la',
-            '_ldx',
-            '_ldy',
-            '_lg_open',
-            '_lh2',
-            '_lpts',
-            '_lw2',
-            '_ly_wet',
-            '_med',
-            '_mhalls',
-            '_mhout',
-            '_mhshort',
-            '_mhwall',
-            '_mroll',
-            '_pl',
-            '_qx',
-            '_qy',
-            '_shown',
-            '_sy_stbl',
-            '_tfortune',
-            '_touch',
-            '_tw_brews',
-            '_tw_dyes',
-            '_tw_kilns',
-            '_tw_lys',
-            '_tw_on_water',
-            '_tw_pond',
-            '_tw_water',
-            '_tw_wc',
-            '_w21',
-            'a',
-            'a8',
-            'abut',
-            'adrift_lb',
-            'ai',
-            'align',
-            'allowed',
-            'amph',
-            'amph_all3',
-            'amph_raw3',
-            'angs',
-            'area_subj',
-            'areas',
-            'ax0',
-            'ax1',
-            'ay0',
-            'ay1',
-            'b',
-            'b2',
-            'b9',
-            'b_',
-            'bad_cross',
-            'bad_flop',
-            'bad_lab',
-            'bad_meet',
-            'bad_well',
-            'bare',
-            'bare_streets',
-            'barred',
-            'bc',
-            'bedhalf',
-            'beds_meet',
-            'best2',
-            'bf',
-            'bg',
-            'bi',
-            'big_frac',
-            'big_other',
-            'big_out',
-            'biz_out',
-            'bk',
-            'bl',
-            'bmx',
-            'bmy',
-            'bnd',
-            'bo',
-            'bod_',
-            'boom_off',
-            'booms_c',
-            'box_',
-            'box_on_lane',
-            'boy_',
-            'bura',
-            'buraku_in',
-            'bx',
-            'bx0',
-            'bx1',
-            'by',
-            'by0',
-            'by1',
-            'c',
-            'canal_second_mouths',
-            'canals_c',
-            'cap',
-            'caps',
-            'caravan_bad',
-            'caste',
-            'cc',
-            'cd',
-            'cf',
-            'cg9',
-            'chans',
-            'check',
-            'chw',
-            'cityward_dist',
-            'civic',
-            'civic_names',
-            'civic_on_street',
-            'civics',
-            'ck',
-            'clan_t',
-            'clustered',
-            'commoner_in',
-            'compounds',
-            'comps',
-            'cp',
-            'cpop',
-            'cross',
-            'crosses_ring',
-            'crowd',
-            'cthb',
-            'cx',
-            'cx_r',
-            'cy',
-            'cy_r',
-            'd',
-            'd8',
-            'd_',
-            'd_gate_tower',
-            'd_nearest_mural',
-            'damming_lb',
-            'dc',
-            'dead',
-            'declared_t',
-            'diff8',
-            'disp_a',
-            'disp_b',
-            'dl',
-            'docks_c',
-            'dry',
-            'dwl',
-            'dx',
-            'dy',
-            'e',
-            'e0',
-            'e1',
-            'ea',
-            'ec',
-            'edge_ang',
-            'egd',
-            'ek',
-            'empty_city_streets',
-            'end',
-            'ends',
-            'es_a',
-            'es_area',
-            'es_b',
-            'es_c',
-            'es_ca',
-            'es_cell',
-            'es_cells',
-            'es_ci0',
-            'es_ci1',
-            'es_cj0',
-            'es_cj1',
-            'es_comp',
-            'es_covered',
-            'es_di',
-            'es_discs',
-            'es_dj',
-            'es_dr',
-            'es_dw',
-            'es_dx',
-            'es_dy',
-            'es_empty',
-            'es_flagged',
-            'es_ftpx',
-            'es_grp',
-            'es_grp2',
-            'es_hh',
-            'es_hw',
-            'es_hwid',
-            'es_i',
-            'es_k',
-            'es_lines',
-            'es_nb',
-            'es_o',
-            'es_p',
-            'es_pk',
-            'es_polys',
-            'es_pond',
-            'es_pts',
-            'es_rects',
-            'es_rhh',
-            'es_rhw',
-            'es_rr',
-            'es_rx',
-            'es_ry',
-            'es_s',
-            'es_seen',
-            'es_singles',
-            'es_stack',
-            'es_t',
-            'es_wx0',
-            'es_wx1',
-            'es_wy0',
-            'es_wy1',
-            'est_bad',
-            'est_corners',
-            'est_on_road',
-            'est_out',
-            'est_overlap',
-            'est_pts',
-            'est_too_close',
-            'exc',
-            'exits',
-            'f',
-            'far',
-            'far_min',
-            'fc',
-            'fed',
-            'feeders',
-            'fence_gap',
-            'fence_hit',
-            'fields',
-            'find2',
-            'fl',
-            'fld_bad',
-            'floats',
-            'flops',
-            'fmis',
-            'fo',
-            'fr',
-            'frac',
-            'frac_inside',
-            'furn',
-            'furn_wet',
-            'fx',
-            'fy',
-            'fz',
-            'g',
-            'g21',
-            'g_',
-            'ga',
-            'gap',
-            'gate_bad',
-            'gate_towers_xy',
-            'gated',
-            'gates',
-            'gates_wo_flop',
-            'gates_wo_market',
-            'gbox',
-            'gf',
-            'gf_hit',
-            'gh',
-            'ghs',
-            'gi',
-            'gnear',
-            'got8',
-            'gov',
-            'gov_bad',
-            'gov_items',
-            'gov_pts',
-            'gp9',
-            'gpairs',
-            'gpoly',
-            'grave_on_ring',
-            'gs',
-            'gstruct',
-            'gstructs',
-            'gtx',
-            'gty',
-            'gv',
-            'h',
-            'half',
-            'has_gh',
-            'has_in',
-            'has_outfall',
-            'hh',
-            'hh_out',
-            'hi',
-            'hlb',
-            'homes',
-            'host',
-            'hosts',
-            'houses',
-            'hpb',
-            'hw',
-            'hx',
-            'hy',
-            'i',
-            'i8',
-            'i9',
-            'ia',
-            'ib',
-            'il',
-            'in_city',
-            'in_est',
-            'in_field',
-            'inlet_disp',
-            'inns',
-            'ins',
-            'inw',
-            'inwall',
-            'inwall_fields',
-            'inwall_groves',
-            'ip',
-            'it',
-            'j',
-            'j_arc',
-            'jends',
-            'jetties_c',
-            'k',
-            'k_',
-            'k_hit',
-            'kb_hit',
-            'kc',
-            'kd',
-            'kd2',
-            'kd3',
-            'key',
-            'key_',
-            'ki',
-            'kido',
-            'kido_off',
-            'lab',
-            'lab_big',
-            'lab_std',
-            'labor',
-            'lane8',
-            'lane_w',
-            'lanes_pts',
-            'lh',
-            'line_blds',
-            'ln',
-            'lo',
-            'loose',
-            'loose_servants',
-            'lw',
-            'lx',
-            'ly',
-            'm',
-            'major',
-            'major_t',
-            'maxgap',
-            'mcx',
-            'mcy',
-            'med_nn',
-            'meeting_lanes',
-            'mest',
-            'mest_bld',
-            'mest_corners',
-            'mest_wm',
-            'meta',
-            'mh',
-            'mh_',
-            'mhw_f',
-            'mi',
-            'mins',
-            'misaligned',
-            'misses',
-            'missing',
-            'mlarge',
-            'mn',
-            'mo_f',
-            'moat',
-            'moat_fed',
-            'moat_for_canal',
-            'moat_hit',
-            'moat_is_fed',
-            'monk_h',
-            'moored_lb',
-            'msmall',
-            'murals_xy',
-            'mw',
-            'mw_for_canal',
-            'n',
-            'narrow',
-            'nb',
-            'nbr',
-            'near_ct',
-            'near_dw',
-            'near_miss',
-            'near_sh',
-            'need',
-            'netlines',
-            'nft',
-            'nice',
-            'nm',
-            'no_farm',
-            'no_front',
-            'no_guard',
-            'no_station',
-            'no_torii',
-            'not_cap',
-            'not_under',
-            'nxb',
-            'nyb',
-            'o',
-            'o_',
-            'oc',
-            'of',
-            'off',
-            'off_fence',
-            'offend',
-            'offices',
-            'on_st_kido',
-            'open_end',
-            'order',
-            'other_struct',
-            'other_xy',
-            'others',
-            'others_me',
-            'out_fields',
-            'out_rel',
-            'outlet_disp',
-            'ox',
-            'oy',
-            'p',
-            'p_out',
-            'parent',
-            'pcx',
-            'pcy',
-            'pnd',
-            'pop',
-            'prx',
-            'pry',
-            'pt_rect',
-            'pts',
-            'px',
-            'px_',
-            'py',
-            'py_',
-            'q',
-            'q21',
-            'qd_lb',
-            'qdx_lb',
-            'qdy_lb',
-            'quadb',
-            'qx_lb',
-            'qy_lb',
-            'r',
-            'r23',
-            'r_',
-            'ratio',
-            'rcum',
-            'rdist',
-            'rds',
-            'reach',
-            'rect_corners_xywh',
-            'region',
-            'rel',
-            'rel_bad',
-            'rhalf',
-            'rhw',
-            'rhwb',
-            'ri2',
-            'ring',
-            'ring2',
-            'ring_rd',
-            'rites',
-            'river_c',
-            'rlab',
-            'road',
-            'road_comm',
-            'road_through',
-            'roads_all',
-            'root',
-            'rowk',
-            'rp',
-            'rpb',
-            'rpts',
-            'run',
-            'runs_off_edge',
-            'runs_up',
-            'rv',
-            's',
-            's9',
-            'sa',
-            'sam_n',
-            'sam_out',
-            'sam_wells',
-            'samurai_h',
-            'sb',
-            'scale',
-            'seg_seg_dist',
-            'served',
-            'served_out',
-            'sh',
-            'shifts',
-            'shortfalls',
-            'shown_est',
-            'shrines',
-            'slarge',
-            'slines',
-            'sp',
-            'sseg',
-            'ssmall',
-            'st',
-            'st_pts',
-            'stale',
-            'stbl',
-            'steps',
-            'sthb',
-            'stranded',
-            'stray_b',
-            'stray_mh',
-            'stray_t',
-            'streets',
-            'structs',
-            'stub',
-            'subj_in',
-            'subject_of',
-            'swamped',
-            't',
-            't_unserved',
-            'taps',
-            'tc',
-            'tcx',
-            'tcy',
-            'temples',
-            'tgt',
-            'th',
-            'thb',
-            'thr',
-            'throat_bad',
-            'through',
-            'tip',
-            'to',
-            'to_under',
-            'tol',
-            'torii',
-            'toward',
-            'towers',
-            'tw',
-            'twr_off',
-            'tx',
-            'txt',
-            'ty',
-            'u',
-            'unreached',
-            'v',
-            'w',
-            'w_',
-            'wall_hit',
-            'want8',
-            'wards',
-            'wards_k',
-            'wcx',
-            'wcy',
-            'wd',
-            'wd2',
-            'wells',
-            'widths',
-            'wlanes',
-            'worst',
-            'wp',
-            'wr',
-            'wx',
-            'wy',
-            'x',
-            'x0',
-            'x1',
-            'y',
-            'y0',
-            'y1',
-            'yards_b',
-            'yd',
-        ),
-        (
-            'COMMERCE',
-            'COMMON',
-            'E',
-            'EST_MIN_SEP',
-            'ES_MARGIN',
-            'ES_MIN',
-            'ES_STEP',
-            'GDIR',
-            'HOUSEK',
-            'L',
-            'LINE_D',
-            'LINE_RUN',
-            'L_',
-            'MAX_PER_WELL',
-            'MAX_PER_WELL_OUTCAST',
-            'OFFICE_GAP',
-            'REACH',
-            'SAMK',
-            'THROAT',
-            '_',
-            '_bbc',
-            '_bh_allowed',
-            '_bh_floor',
-            '_bh_n',
-            '_bh_pop',
-            '_bh_roll',
-            '_cdojos',
-            '_dj_allowed',
-            '_dj_far',
-            '_dj_floor',
-            '_dj_roll',
-            '_dj_sam',
-            '_edge_gap',
-            '_egap',
-            '_end_near_dock',
-            '_end_near_moat',
-            '_end_near_river',
-            '_floor',
-            '_foot',
-            '_ftargets',
-            '_ftpx',
-            '_g21',
-            '_gaps',
-            '_gfurn',
-            '_gov',
-            '_gtowers',
-            '_gv',
-            '_hw',
-            '_la',
-            '_ldx',
-            '_ldy',
-            '_lg_open',
-            '_lh2',
-            '_lpts',
-            '_lw2',
-            '_ly_wet',
-            '_med',
-            '_mhalls',
-            '_mhout',
-            '_mhshort',
-            '_mhwall',
-            '_mroll',
-            '_pl',
-            '_qx',
-            '_qy',
-            '_shown',
-            '_sy_stbl',
-            '_tfortune',
-            '_touch',
-            '_tw_brews',
-            '_tw_dyes',
-            '_tw_kilns',
-            '_tw_lys',
-            '_tw_on_water',
-            '_tw_pond',
-            '_tw_water',
-            '_tw_wc',
-            '_w21',
-            '_z',
-            'a',
-            'abut',
-            'adrift_lb',
-            'ai',
-            'align',
-            'allowed',
-            'amph',
-            'amph_all3',
-            'amph_raw3',
-            'angs',
-            'area_subj',
-            'areas',
-            'b',
-            'b2',
-            'b9',
-            'b_',
-            'bad_cross',
-            'bad_flop',
-            'bad_lab',
-            'bad_meet',
-            'bad_well',
-            'bare',
-            'bare_streets',
-            'barred',
-            'bc',
-            'bedhalf',
-            'beds_meet',
-            'best2',
-            'bf',
-            'bg',
-            'bi',
-            'big_frac',
-            'big_other',
-            'big_out',
-            'biz_out',
-            'bk',
-            'bl',
-            'bmx',
-            'bmy',
-            'bnd',
-            'bo',
-            'bod_',
-            'boom_off',
-            'booms_c',
-            'box_',
-            'box_on_lane',
-            'boy_',
-            'bura',
-            'buraku_in',
-            'bx',
-            'by',
-            'c',
-            'canal_second_mouths',
-            'canals_c',
-            'cap',
-            'caps',
-            'caravan_bad',
-            'caste',
-            'cc',
-            'cd',
-            'cf',
-            'cg9',
-            'chans',
-            'chw',
-            'cityward_dist',
-            'civic',
-            'civic_names',
-            'civic_on_street',
-            'civics',
-            'ck',
-            'clan_t',
-            'clustered',
-            'commoner_in',
-            'compounds',
-            'comps',
-            'cp',
-            'cpop',
-            'cross',
-            'crosses_ring',
-            'crowd',
-            'cthb',
-            'cx',
-            'cx_r',
-            'cy',
-            'cy_r',
-            'd',
-            'd8',
-            'd_',
-            'd_gate_tower',
-            'd_nearest_mural',
-            'damming_lb',
-            'dead',
-            'declared_t',
-            'diff8',
-            'disp_a',
-            'disp_b',
-            'dl',
-            'docks_c',
-            'dry',
-            'dwl',
-            'e',
-            'e0',
-            'e1',
-            'ea',
-            'ec',
-            'edge_ang',
-            'egd',
-            'ek',
-            'empty_city_streets',
-            'end',
-            'ends',
-            'es_a',
-            'es_area',
-            'es_b',
-            'es_c',
-            'es_ca',
-            'es_cell',
-            'es_cells',
-            'es_ci0',
-            'es_ci1',
-            'es_cj0',
-            'es_cj1',
-            'es_comp',
-            'es_covered',
-            'es_di',
-            'es_discs',
-            'es_dj',
-            'es_dr',
-            'es_dw',
-            'es_dx',
-            'es_dy',
-            'es_empty',
-            'es_flagged',
-            'es_ftpx',
-            'es_grp',
-            'es_grp2',
-            'es_hh',
-            'es_hw',
-            'es_hwid',
-            'es_i',
-            'es_k',
-            'es_lines',
-            'es_nb',
-            'es_o',
-            'es_p',
-            'es_pk',
-            'es_polys',
-            'es_pond',
-            'es_pts',
-            'es_rects',
-            'es_rhh',
-            'es_rhw',
-            'es_rr',
-            'es_rx',
-            'es_ry',
-            'es_s',
-            'es_seen',
-            'es_singles',
-            'es_stack',
-            'es_t',
-            'es_wx0',
-            'es_wx1',
-            'es_wy0',
-            'es_wy1',
-            'est_bad',
-            'est_corners',
-            'est_on_road',
-            'est_out',
-            'est_overlap',
-            'est_pts',
-            'est_too_close',
-            'exc',
-            'exits',
-            'f',
-            'far',
-            'far_min',
-            'fc',
-            'fed',
-            'feeders',
-            'fence_gap',
-            'fence_hit',
-            'find2',
-            'fl',
-            'fld_bad',
-            'floats',
-            'flops',
-            'fmis',
-            'fr',
-            'frac',
-            'frac_inside',
-            'furn',
-            'furn_wet',
-            'fz',
-            'g',
-            'g21',
-            'g_',
-            'ga',
-            'gap',
-            'gate_bad',
-            'gate_towers_xy',
-            'gated',
-            'gates',
-            'gates_wo_flop',
-            'gates_wo_market',
-            'gbox',
-            'gf',
-            'gf_hit',
-            'gh',
-            'ghs',
-            'gi',
-            'gnear',
-            'got8',
-            'gov',
-            'gov_bad',
-            'gov_items',
-            'gov_pts',
-            'gp9',
-            'gpairs',
-            'gpoly',
-            'grave_on_ring',
-            'gs',
-            'gstruct',
-            'gstructs',
-            'gtx',
-            'gty',
-            'gv',
-            'h',
-            'half',
-            'has_gh',
-            'has_in',
-            'has_outfall',
-            'hh',
-            'hh_out',
-            'hi',
-            'hlb',
-            'homes',
-            'host',
-            'hosts',
-            'hpb',
-            'hx',
-            'hy',
-            'i',
-            'i8',
-            'i9',
-            'ia',
-            'ib',
-            'il',
-            'in_city',
-            'in_est',
-            'inlet_disp',
-            'inns',
-            'ins',
-            'inw',
-            'inwall',
-            'inwall_fields',
-            'inwall_groves',
-            'ip',
-            'it',
-            'j',
-            'j_arc',
-            'jends',
-            'jetties_c',
-            'k',
-            'k_',
-            'k_hit',
-            'kb_hit',
-            'kc',
-            'kd',
-            'kd2',
-            'kd3',
-            'key_',
-            'ki',
-            'kido',
-            'kido_off',
-            'lab',
-            'lab_big',
-            'lab_std',
-            'labor',
-            'lane8',
-            'lane_w',
-            'lanes_pts',
-            'lh',
-            'line_blds',
-            'ln',
-            'lo',
-            'loose',
-            'loose_servants',
-            'lw',
-            'lx',
-            'ly',
-            'm',
-            'major',
-            'major_t',
-            'maxgap',
-            'mcx',
-            'mcy',
-            'med_nn',
-            'meeting_lanes',
-            'mest',
-            'mest_bld',
-            'mest_corners',
-            'mest_wm',
-            'mh',
-            'mh_',
-            'mhw_f',
-            'mi',
-            'mins',
-            'misaligned',
-            'misses',
-            'missing',
-            'mlarge',
-            'mn',
-            'mo_f',
-            'moat',
-            'moat_fed',
-            'moat_for_canal',
-            'moat_hit',
-            'moat_is_fed',
-            'monk_h',
-            'moored_lb',
-            'msmall',
-            'murals_xy',
-            'mw',
-            'mw_for_canal',
-            'n',
-            'narrow',
-            'nb',
-            'nbr',
-            'near_ct',
-            'near_dw',
-            'near_miss',
-            'near_sh',
-            'need',
-            'netlines',
-            'nft',
-            'nice',
-            'nm',
-            'no_farm',
-            'no_front',
-            'no_guard',
-            'no_station',
-            'no_torii',
-            'not_cap',
-            'not_under',
-            'nxb',
-            'nyb',
-            'o',
-            'o_',
-            'oc',
-            'of',
-            'off',
-            'off_fence',
-            'offend',
-            'offices',
-            'on_st_kido',
-            'open_end',
-            'order',
-            'other_struct',
-            'other_xy',
-            'others',
-            'others_me',
-            'out_fields',
-            'out_rel',
-            'outlet_disp',
-            'ox',
-            'oy',
-            'p',
-            'p_out',
-            'parent',
-            'pcx',
-            'pcy',
-            'pnd',
-            'pop',
-            'prx',
-            'pry',
-            'pt_rect',
-            'pts',
-            'px',
-            'py',
-            'q',
-            'q21',
-            'qd_lb',
-            'qdx_lb',
-            'qdy_lb',
-            'quadb',
-            'qx_lb',
-            'qy_lb',
-            'r',
-            'r23',
-            'ratio',
-            'rcum',
-            'rdist',
-            'rds',
-            'reach',
-            'region',
-            'rel',
-            'rel_bad',
-            'rhalf',
-            'rhw',
-            'rhwb',
-            'ri2',
-            'ring2',
-            'ring_rd',
-            'rites',
-            'river_c',
-            'rlab',
-            'road',
-            'road_comm',
-            'road_through',
-            'roads_all',
-            'root',
-            'rowk',
-            'rp',
-            'rpb',
-            'rpts',
-            'run',
-            'runs_up',
-            'rv',
-            's',
-            's9',
-            'sa',
-            'sam_n',
-            'sam_out',
-            'sam_wells',
-            'samurai_h',
-            'sb',
-            'seg_seg_dist',
-            'served',
-            'served_out',
-            'sh',
-            'shifts',
-            'shortfalls',
-            'shown_est',
-            'shrines',
-            'slarge',
-            'slines',
-            'sp',
-            'sseg',
-            'ssmall',
-            'st',
-            'st_pts',
-            'stale',
-            'stbl',
-            'steps',
-            'sthb',
-            'stranded',
-            'stray_b',
-            'stray_mh',
-            'stray_t',
-            'streets',
-            'structs',
-            'stub',
-            'subj_in',
-            'subject_of',
-            'swamped',
-            't',
-            't_unserved',
-            'taps',
-            'tc',
-            'tcx',
-            'tcy',
-            'temples',
-            'tgt',
-            'th',
-            'thb',
-            'thr',
-            'throat_bad',
-            'through',
-            'tip',
-            'to',
-            'to_under',
-            'torii',
-            'toward',
-            'towers',
-            'tw',
-            'twr_off',
-            'tx',
-            'txt',
-            'ty',
-            'u',
-            'unreached',
-            'v',
-            'w',
-            'w_',
-            'wall_hit',
-            'want8',
-            'wards',
-            'wards_k',
-            'wcx',
-            'wcy',
-            'wd',
-            'wd2',
-            'wells',
-            'widths',
-            'wlanes',
-            'worst',
-            'wp',
-            'wr',
-            'wx',
-            'wy',
-            'x',
-            'x0',
-            'x1',
-            'y',
-            'y0',
-            'y1',
-            'yards_b',
-            'yd',
-        ),
-        (
-            'city_canal_reaches_dock',
-            'city_canal_shares_moat_mouth',
-            'city_capital_dir_valid',
-            'city_caste_counts_in_band',
-            'city_caste_shifts_are_documented',
-            'city_caste_shifts_are_live',
-            'city_civic_clear_of_streets',
-            'city_civic_label_on_its_own_building',
-            'city_clan_known',
-            'city_dojo_count_follows_samurai',
-            'city_dojos_among_samurai',
-            'city_estate_gates_vary',
-            'city_estates_clear_of_roads',
-            'city_estates_clear_of_wall_moat',
-            'city_estates_multiple_shown',
-            'city_estates_no_overlap',
-            'city_estates_toward_capital',
-            'city_fields_clear_of_wall_moat',
-            'city_fields_close_to_city',
-            'city_flophouse_in_humble_quarter',
-            'city_flophouse_inside_walls',
-            'city_flophouse_outside_each_gate',
-            'city_gate_caravan_facilities',
-            'city_gate_furniture_aligned',
-            'city_gate_furniture_at_throat',
-            'city_gate_guard_inspection_separate',
-            'city_gate_has_guardhouse',
-            'city_gate_tower_at_its_gate',
-            'city_gate_towers_clear_of_gate_furniture',
-            'city_government_clear_of_wall_moat',
-            'city_government_offices_dont_abut',
-            'city_governor_mansion_large',
-            'city_graveyard_clear_of_ring_road',
-            'city_has_bathhouse',
-            'city_has_brewery',
-            'city_has_dye_works',
-            'city_has_fire_towers',
-            'city_has_flophouse',
-            'city_has_gate_market',
-            'city_has_governor_mansion',
-            'city_has_laborer_neighborhoods',
-            'city_has_martial_hall',
-            'city_has_merchant_district',
-            'city_has_merchant_storehouses',
-            'city_has_ministry_of_rites',
-            'city_has_oil_press',
-            'city_has_outside_farmland',
-            'city_has_pawnshop',
-            'city_has_ring_road',
-            'city_has_samurai_neighborhood',
-            'city_has_six_ministries',
-            'city_has_theater_stage',
-            'city_imperial_road_has_commerce',
-            'city_imperial_road_through',
-            'city_inspection_station_at_each_gate',
-            'city_kido_on_ward_fence',
-            'city_kiln_outside_walls',
-            'city_labels_placed_with_subject',
-            'city_laborer_housing_varied',
-            'city_lanes_meet_when_aligned',
-            'city_lanes_reach_ward_gates',
-            'city_larger_streets_lined',
-            'city_martial_hall_has_archery_range',
-            'city_merchant_estate_gate_clear',
-            'city_merchant_estates_clear_of_buildings',
-            'city_merchant_estates_clear_of_wall_moat',
-            'city_merchant_housing_spread',
-            'city_merchant_housing_varied',
-            'city_ministries_cluster_at_government',
-            'city_ministries_front_a_street',
-            'city_moat_fed_offmap',
-            'city_moat_feeder_matches_width',
-            'city_moat_has_outfall',
-            'city_moat_irrigates_fields',
-            'city_moat_joins_river',
-            'city_moat_junction_angles',
-            'city_moat_surrounds_wall',
-            'city_monk_houses_by_their_temple',
-            'city_multi_temple_exception_declared',
-            'city_neighborhoods_have_wells',
-            'city_no_inwall_farms',
-            'city_no_large_empty_space',
-            'city_outside_fields_have_farmhouses',
-            'city_pond_clear_of_wall_moat',
-            'city_river_port_has_lumber_yard',
-            'city_road_label_outside_walls',
-            'city_roads_run_offmap',
-            'city_row_housing_gap',
-            'city_row_housing_touches',
-            'city_samurai_estates_dispersed',
-            'city_samurai_estates_outside',
-            'city_samurai_estates_vary_in_size',
-            'city_samurai_houses_inside_walls',
-            'city_samurai_housing_sufficient',
-            'city_samurai_housing_varied',
-            'city_samurai_partly_front_streets',
-            'city_samurai_quarter_gated',
-            'city_samurai_quarter_has_no_public_wells',
-            'city_samurai_ward_residents_only',
-            'city_samurai_ward_sealed',
-            'city_streets_clear_of_moat',
-            'city_streets_clear_of_wall',
-            'city_streets_connected',
-            'city_streets_have_buildings',
-            'city_streets_meet_through_lanes',
-            'city_streets_no_intersection_stub',
-            'city_streets_no_near_miss',
-            'city_temple_approach_has_torii',
-            'city_temple_neighborhood_has_shrines',
-            'city_temples_clear_of_wall_moat',
-            'city_temples_dedicated',
-            'city_temples_have_monk_housing',
-            'city_temples_inside_walls',
-            'city_theater_stage_larger_than_town',
-            'city_torii_over_streets',
-            'city_wall_furniture_clear_of_moat',
-            'city_wall_towers_aligned',
-            'city_wall_towers_spaced',
-            'city_ward_fence_clear_of_structures',
-            'city_ward_fence_meets_wall',
-            'city_ward_fence_under_wall',
-            'city_ward_servants_housed_as_ranges',
-            'city_well_density_sufficient',
-            'city_wells_in_block_interiors',
-            'city_wharf_jetties_on_bank',
             'fire_tower_amid_its_district',
             'fire_tower_clear_of_fields',
             'fire_tower_clear_of_graveyards',
@@ -32281,102 +33744,1340 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
             'fire_tower_in_commoner_quarter',
             'fire_tower_standoff',
             'fire_towers_dispersed',
-            'kido_aligned_with_ward_fence',
-            'kido_clear_of_buildings',
-            'kido_clear_of_wall_towers',
-            'kido_guard_box_clear_of_lanes',
-            'log_boom_leaves_the_fairway',
-            'log_boom_moored_to_the_bank',
-            'log_boom_serves_the_lumber_yard',
-            'lumber_yard_clear_of_water',
-            'merchant_estates_match_roll',
-            'no_groves_inside_walls',
-            'ring_road_kept_clear',
-            'theater_stage_by_temple',
-            'theater_stage_clear',
-            'theater_stage_faces_temple',
-            'walled_city_has_burakumin_inside',
-            'walled_city_has_wall_and_gates',
+        ),
+        ('M', 'check', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_055___bbc, ('scale',), ('_bbc',), (), ('scale',), False, False),
+    _GateSeg(_seg_0563_056__civic, ('M', '_bbc', 'mi', 'scale'), ('civic', 'mi'), (), ('M', '_bbc', 'scale'), False, False),
+    _GateSeg(_seg_0563_057___gv, ('M', 'scale'), ('_gv',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_058__civic_1, ('_bbc', '_gv', 'civic', 'scale'), ('civic',), (), ('_bbc', '_gv', 'civic', 'scale'), False, False),
+    _GateSeg(_seg_0563_059__civic_2, ('M', '_bbc', 'civic', 'r', 'scale'), ('civic', 'r'), (), ('M', '_bbc', 'civic', 'scale'), False, False),
+    _GateSeg(_seg_0563_060___, ('civic', 'n', 'scale'), ('_', 'civic_names', 'n'), (), ('civic', 'scale'), False, False),
+    _GateSeg(_seg_0563_061__cross, ('scale',), ('cross',), (), ('scale',), False, False),
+    _GateSeg(
+        _seg_0563_062__L,
+        ('L', 'M', '_la', 'civic', 'civic_names', 'cross', 'n', 'scale', 'x0', 'x1', 'y0', 'y1'),
+        ('L', '_la', 'cross', 'n', 'x0', 'x1', 'y0', 'y1'),
+        (),
+        ('M', 'civic', 'civic_names', 'cross', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_063__city_civic_label_on_its_own_building, ('check', 'cross', 'scale'), (), ('city_civic_label_on_its_own_building',), ('check', 'cross', 'scale'), False, False),
+    _GateSeg(_seg_0563_064__OFFICE_GAP, ('scale',), ('OFFICE_GAP',), (), ('scale',), False, False),
+    _GateSeg(_seg_0563_065__mi, ('M', '_gv', 'mi', 'scale'), ('mi', 'offices'), (), ('M', '_gv', 'scale'), False, False),
+    _GateSeg(_seg_0563_066__others, ('M', 'scale'), ('others',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_067___edge_gap, ('_bbc', 'a', 'ax0', 'ax1', 'ay0', 'ay1', 'b', 'bx0', 'bx1', 'by0', 'by1', 'scale'), ('_edge_gap',), (), ('_bbc', 'scale'), False, False),
+    _GateSeg(_seg_0563_068__abut, ('scale',), ('abut',), (), ('scale',), False, False),
+    _GateSeg(
+        _seg_0563_069__abut_1,
+        ('OFFICE_GAP', '_edge_gap', 'abut', 'nm', 'o', 'offices', 'others', 'scale', 'st'),
+        ('abut', 'nm', 'o', 'st'),
+        (),
+        ('OFFICE_GAP', '_edge_gap', 'abut', 'offices', 'others', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_070__city_government_offices_dont_abut, ('OFFICE_GAP', 'abut', 'check', 'scale'), (), ('city_government_offices_dont_abut',), ('OFFICE_GAP', 'abut', 'check', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_071__w_, ('M', 'scale', 'w_'), ('w_', 'wells'), (), ('M', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_072__city_neighborhoods_have_wells,
+        (
+            'COMMON',
+            'HOUSEK',
+            'M',
+            'MAX_PER_WELL',
+            'MAX_PER_WELL_OUTCAST',
+            'REACH',
+            'SAMK',
+            '_sy_stbl',
+            'a',
+            'b',
+            'b9',
+            'bad_well',
+            'c',
+            'check',
+            'd',
+            'dry',
+            'dwl',
+            'h',
+            'hh',
+            'hh_out',
+            'hx',
+            'hy',
+            'i',
+            'inw',
+            'lane_w',
+            'ln',
+            'lw',
+            'meta',
+            'near_dw',
+            's9',
+            'sam_wells',
+            'scale',
+            'served',
+            'served_out',
+            'st',
+            'structs',
+            'swamped',
+            'w',
+            'wells',
+            'wlanes',
+            'wp',
+            'wr',
+            'wx',
+            'wy',
+            'x',
+            'y',
         ),
         (
-            'ADJ',
+            'COMMON',
+            'HOUSEK',
+            'MAX_PER_WELL',
+            'MAX_PER_WELL_OUTCAST',
+            'REACH',
+            'SAMK',
+            '_',
+            '_gov',
+            '_sy_stbl',
+            'a',
+            'b',
+            'b9',
+            'bad_well',
+            'c',
+            'd',
+            'dry',
+            'dwl',
+            'h',
+            'hh',
+            'hh_out',
+            'hx',
+            'hy',
+            'i',
+            'inw',
+            'lane_w',
+            'ln',
+            'lw',
+            'near_dw',
+            's9',
+            'sam_wells',
+            'served',
+            'served_out',
+            'st',
+            'structs',
+            'swamped',
+            'w',
+            'wlanes',
+            'wp',
+            'wr',
+            'wx',
+            'wy',
+        ),
+        ('city_neighborhoods_have_wells', 'city_samurai_quarter_has_no_public_wells', 'city_well_density_sufficient', 'city_wells_in_block_interiors'),
+        ('M', 'bad_well', 'check', 'dwl', 'meta', 'sam_wells', 'scale', 'served', 'served_out', 'wells'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_073__road, ('M', 'scale'), ('road',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_074__p, ('EY0', 'EY1', 'p', 'road', 'scale'), ('p', 'road_through'), (), ('EY0', 'EY1', 'road', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_075__city_imperial_road_has_commerce,
+        (
+            'COMMERCE',
             'EX0',
             'EX1',
             'EY0',
             'EY1',
             'M',
-            'URBAN',
-            '_ly_wet',
-            '_tw_water',
-            'abut',
-            'adrift_lb',
-            'bad_cross',
-            'bad_flop',
-            'bad_lab',
-            'bad_meet',
-            'bad_well',
-            'bare_streets',
-            'bk',
-            'box_on_lane',
-            'canal_second_mouths',
-            'caravan_bad',
+            'a',
+            'b',
+            'bg',
+            'bx',
+            'by',
             'check',
-            'civic',
-            'commoner_in',
-            'cross',
-            'damming_lb',
-            'dwl',
-            'es_comp',
-            'es_covered',
-            'es_discs',
-            'es_flagged',
-            'es_lines',
-            'es_polys',
-            'es_rects',
-            'es_seen',
-            'es_stack',
-            'fence_gap',
-            'fence_hit',
-            'fields',
-            'floats',
-            'fmis',
-            'furn_wet',
-            'gate_bad',
-            'gf_hit',
-            'gpairs',
-            'houses',
+            'frac_inside',
+            'i',
             'il',
-            'k_hit',
-            'kb_hit',
-            'kido_off',
-            'loose_servants',
-            'mest_bld',
-            'meta',
-            'misaligned',
-            'near_miss',
-            'no_torii',
-            'not_under',
-            'off',
-            'off_fence',
-            'open_end',
-            'parent',
-            'rcum',
-            'rect_corners_xywh',
-            'run',
-            'runs_off_edge',
-            'sam_wells',
+            'in_city',
+            'k',
+            'need',
+            'road',
+            'road_comm',
+            'road_through',
             'scale',
-            'served',
-            'served_out',
-            'stale',
-            'stranded',
-            'stub',
+            't',
+            'wp',
+            'x',
+            'x0',
+            'x1',
+            'y',
+            'y0',
+            'y1',
+        ),
+        ('COMMERCE', 'a', 'b', 'bg', 'bx', 'by', 'frac_inside', 'i', 'il', 'in_city', 'k', 'need', 'road_comm', 't', 'wp', 'x0', 'x1', 'y0', 'y1'),
+        ('city_imperial_road_has_commerce',),
+        ('EX0', 'EX1', 'EY0', 'EY1', 'M', 'check', 'il', 'road', 'road_through', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_076__misses, ('M', 'scale'), ('misses',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_077__city_lanes_meet_when_aligned, ('check', 'misses', 'scale'), (), ('city_lanes_meet_when_aligned',), ('check', 'misses', 'scale'), False, False),
+    _GateSeg(_seg_0563_078__shortfalls, ('M', 'scale'), ('shortfalls',), (), ('M', 'scale'), False, False),
+    _GateSeg(_seg_0563_079__city_lanes_reach_ward_gates, ('check', 'scale', 'shortfalls'), (), ('city_lanes_reach_ward_gates',), ('check', 'scale', 'shortfalls'), False, False),
+    _GateSeg(_seg_0563_080__wards_k, ('M', 'scale'), ('wards_k',), (), ('M', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_081__kido_aligned_with_ward_fence,
+        ('M', 'b2', 'best2', 'box_on_lane', 'c', 'check', 'd8', 'diff8', 'gbox', 'got8', 'gpoly', 'half', 'i8', 'kd2', 'kd3', 'kido_off', 'lane8', 'pts', 'scale', 'want8', 'wards_k', 'wd2'),
+        ('b2', 'best2', 'box_on_lane', 'c', 'd8', 'diff8', 'gbox', 'got8', 'gpoly', 'half', 'i8', 'kd2', 'kd3', 'kido_off', 'lane8', 'pts', 'want8', 'wd2'),
+        ('kido_aligned_with_ward_fence', 'kido_guard_box_clear_of_lanes'),
+        ('M', 'box_on_lane', 'check', 'kido_off', 'scale', 'wards_k'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_082__w, ('M', 'meta', 'scale'), ('w',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_083__gates, ('M', 'meta', 'scale'), ('gates',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_084__inwall, ('meta', 'px', 'py', 'scale', 'w'), ('inwall',), (), ('meta', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_085__walled_city_has_wall_and_gates, ('check', 'gates', 'meta', 'scale', 'w'), (), ('walled_city_has_wall_and_gates',), ('check', 'gates', 'meta', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_086__ins, ('M', 'meta', 'scale'), ('ins',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_087__g, ('g', 'gates', 'ins', 'meta', 's', 'scale'), ('g', 'no_station', 's'), (), ('gates', 'ins', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_088__city_inspection_station_at_each_gate,
+        ('check', 'gates', 'meta', 'no_station', 'scale'),
+        (),
+        ('city_inspection_station_at_each_gate',),
+        ('check', 'gates', 'meta', 'no_station', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_089__gstructs, ('M', 'meta', 'scale'), ('gstructs',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_090__g_1, ('g', 'gates', 'gstructs', 'meta', 's', 'scale'), ('g', 'no_guard', 's'), (), ('gates', 'gstructs', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_091__city_gate_has_guardhouse, ('check', 'gates', 'meta', 'no_guard', 'scale'), (), ('city_gate_has_guardhouse',), ('check', 'gates', 'meta', 'no_guard', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_092__THROAT, ('meta', 'scale'), ('THROAT',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_093__throat_bad, ('meta', 'scale'), ('throat_bad',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_094__g_2,
+        ('THROAT', 'g', 'gates', 'gstructs', 'has_gh', 'has_in', 'ins', 'meta', 's', 'scale', 'throat_bad'),
+        ('g', 'has_gh', 'has_in', 's', 'throat_bad'),
+        (),
+        ('THROAT', 'gates', 'gstructs', 'ins', 'meta', 'scale', 'throat_bad'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_095__city_gate_furniture_at_throat,
+        ('THROAT', 'check', 'gates', 'meta', 'scale', 'throat_bad'),
+        (),
+        ('city_gate_furniture_at_throat',),
+        ('THROAT', 'check', 'gates', 'meta', 'scale', 'throat_bad'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_096__g_3, ('g', 'gstructs', 'meta', 'scale'), ('g', 'gate_towers_xy'), (), ('gstructs', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_097__gtx, ('M', 'gate_towers_xy', 'gtx', 'gty', 'meta', 'scale', 't'), ('gtx', 'gty', 'murals_xy', 't'), (), ('M', 'gate_towers_xy', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_098__stranded, ('meta', 'scale'), ('stranded',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_099__d_gate_tower,
+        ('d_gate_tower', 'd_nearest_mural', 'g', 'gate_towers_xy', 'gates', 'meta', 'murals_xy', 'scale', 'stranded', 'tx', 'ty'),
+        ('d_gate_tower', 'd_nearest_mural', 'g', 'stranded', 'tx', 'ty'),
+        (),
+        ('gate_towers_xy', 'gates', 'meta', 'murals_xy', 'scale', 'stranded'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_100__city_gate_tower_at_its_gate, ('check', 'meta', 'scale', 'stranded'), (), ('city_gate_tower_at_its_gate',), ('check', 'meta', 'scale', 'stranded'), False, False),
+    _GateSeg(_seg_0563_101__towers, ('M', 'meta', 'scale'), ('towers',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_102__p_1, ('meta', 'p', 'scale', 'w'), ('p', 'wcx', 'wcy'), (), ('meta', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_103__angs, ('meta', 'scale', 't', 'towers', 'wcx', 'wcy'), ('angs', 't'), (), ('meta', 'scale', 'towers', 'wcx', 'wcy'), False, False),
+    _GateSeg(_seg_0563_104__i, ('angs', 'i', 'meta', 'scale'), ('i', 'maxgap'), (), ('angs', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_105__city_wall_towers_spaced, ('check', 'maxgap', 'meta', 'scale', 'towers'), (), ('city_wall_towers_spaced',), ('check', 'maxgap', 'meta', 'scale', 'towers'), False, False),
+    _GateSeg(_seg_0563_106__ring2, ('meta', 'scale', 'w'), ('ring2',), (), ('meta', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_107__misaligned, ('meta', 'scale'), ('misaligned',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_108__d,
+        ('d', 'edge_ang', 'ek', 'k', 'meta', 'misaligned', 'order', 'ring2', 'scale', 't', 'towers', 'twr_off'),
+        ('d', 'edge_ang', 'ek', 'misaligned', 'order', 't', 'twr_off'),
+        (),
+        ('meta', 'misaligned', 'ring2', 'scale', 'towers'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_109__city_wall_towers_aligned, ('check', 'meta', 'misaligned', 'scale'), (), ('city_wall_towers_aligned',), ('check', 'meta', 'misaligned', 'scale'), False, False),
+    _GateSeg(_seg_0563_110__furn, ('M', 'g', 'meta', 'scale'), ('furn', 'g'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_111__fmis, ('meta', 'scale'), ('fmis',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_112__d_1,
+        ('d', 'edge_ang', 'ek', 'fmis', 'furn', 'gstruct', 'k', 'meta', 'ring2', 'scale'),
+        ('d', 'edge_ang', 'ek', 'fmis', 'gstruct'),
+        (),
+        ('fmis', 'furn', 'meta', 'ring2', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_113__city_gate_furniture_aligned, ('check', 'fmis', 'meta', 'scale'), (), ('city_gate_furniture_aligned',), ('check', 'fmis', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_114__gpairs, ('meta', 'scale'), ('gpairs',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_115__g_4, ('M', 'g', 'meta', 'scale'), ('g', 'ghs'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_116__gh, ('M', 'gh', 'ghs', 'gpairs', 'ins', 'meta', 'scale'), ('gh', 'gpairs', 'ins'), (), ('M', 'ghs', 'gpairs', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_117__city_gate_guard_inspection_separate, ('check', 'gpairs', 'meta', 'scale'), (), ('city_gate_guard_inspection_separate',), ('check', 'gpairs', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_118__mo_f, ('M', 'meta', 'scale'), ('mo_f',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_119__city_wall_furniture_clear_of_moat,
+        ('M', 'check', 'fc', 'furn_wet', 'it', 'meta', 'mhw_f', 'mo_f', 'scale'),
+        ('fc', 'furn_wet', 'it', 'mhw_f'),
+        ('city_wall_furniture_clear_of_moat',),
+        ('M', 'check', 'furn_wet', 'meta', 'mo_f', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_120__k_hit, ('meta', 'scale'), ('k_hit',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_121__g_, ('M', 'g_', 'k_hit', 'kc', 'kd', 'meta', 'scale', 't'), ('g_', 'k_hit', 'kc', 'kd', 't'), (), ('M', 'k_hit', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_122__kido_clear_of_wall_towers, ('check', 'k_hit', 'meta', 'scale'), (), ('kido_clear_of_wall_towers',), ('check', 'k_hit', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_123___gtowers, ('M', 'g', 'meta', 'scale', 'x'), ('_gtowers', 'g', 'x'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_124___gfurn, ('M', 'g', 'meta', 'scale', 'x'), ('_gfurn', 'g', 'x'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_125__gf_hit, ('meta', 'scale'), ('gf_hit',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_126__gf_hit_1, ('_gfurn', '_gtowers', 'gf_hit', 'meta', 'o', 'scale', 't', 'tc'), ('gf_hit', 'o', 't', 'tc'), (), ('_gfurn', '_gtowers', 'gf_hit', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(
+        _seg_0563_127__city_gate_towers_clear_of_gate_furniture,
+        ('check', 'gf_hit', 'meta', 'scale'),
+        (),
+        ('city_gate_towers_clear_of_gate_furniture',),
+        ('check', 'gf_hit', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_128__kb_hit, ('meta', 'scale'), ('kb_hit',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_129__it, ('M', 'it', 'kb_hit', 'kc', 'kd', 'key_', 'meta', 'scale'), ('it', 'kb_hit', 'kc', 'kd', 'key_'), (), ('M', 'kb_hit', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_130__kido_clear_of_buildings, ('check', 'kb_hit', 'meta', 'scale'), (), ('kido_clear_of_buildings',), ('check', 'kb_hit', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_131__ring_rd, ('M', 'meta', 'scale'), ('ring_rd',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_132__city_has_ring_road, ('check', 'meta', 'ring_rd', 'scale'), (), ('city_has_ring_road',), ('check', 'meta', 'ring_rd', 'scale'), False, False),
+    _GateSeg(_seg_0563_133__through, ('meta', 'scale'), ('through',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_134__through_1, ('M', 'meta', 'scale', 'through'), ('through',), (), ('M', 'meta', 'scale', 'through'), False, False),
+    _GateSeg(_seg_0563_135__through_2, ('M', 'meta', 'ring_rd', 'scale', 'through'), ('through',), (), ('M', 'meta', 'ring_rd', 'scale', 'through'), False, False),
+    _GateSeg(_seg_0563_136__bad_meet, ('meta', 'scale'), ('bad_meet',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_137__a, ('M', 'a', 'meta', 'scale', 'st'), ('a', 'meeting_lanes', 'st'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_138__E,
+        ('E', 'L', 'align', 'bad_meet', 'bedhalf', 'c', 'cp', 'dl', 'gap', 'i', 'ip', 'meeting_lanes', 'meta', 'nb', 'pts', 'scale', 'sh', 'through'),
+        ('E', 'L', 'align', 'bad_meet', 'bedhalf', 'cp', 'dl', 'gap', 'i', 'ip', 'nb', 'pts', 'sh'),
+        (),
+        ('bad_meet', 'meeting_lanes', 'meta', 'scale', 'through'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_139__city_streets_meet_through_lanes, ('bad_meet', 'check', 'meta', 'scale'), (), ('city_streets_meet_through_lanes',), ('bad_meet', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_140__ring_road_kept_clear,
+        ('M', '_foot', 'check', 'grave_on_ring', 'it', 'meta', 'rect_corners_xywh', 'rhalf', 'ring_rd', 'scale'),
+        ('_foot', 'grave_on_ring', 'it', 'rhalf'),
+        ('city_graveyard_clear_of_ring_road', 'ring_road_kept_clear'),
+        ('M', 'check', 'meta', 'rect_corners_xywh', 'ring_rd', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_141__b_7, ('M', 'b', 'inwall', 'meta', 'scale'), ('b', 'buraku_in'), (), ('M', 'inwall', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_142__walled_city_has_burakumin_inside, ('buraku_in', 'check', 'meta', 'scale'), (), ('walled_city_has_burakumin_inside',), ('buraku_in', 'check', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_143__est_out, ('M', 'meta', 'mn', 'scale', 'w'), ('est_out', 'mn'), (), ('M', 'meta', 'scale', 'w'), False, False),
+    _GateSeg(
+        _seg_0563_144__city_samurai_estates_outside, ('URBAN', 'check', 'est_out', 'meta', 'scale'), (), ('city_samurai_estates_outside',), ('URBAN', 'check', 'est_out', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_145__est_pts, ('est_out', 'meta', 'mn', 'scale'), ('est_pts', 'mn'), (), ('est_out', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_146__EST_MIN_SEP, ('meta', 'scale'), ('EST_MIN_SEP',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_147__est_too_close, ('EST_MIN_SEP', 'est_pts', 'i', 'j', 'meta', 'scale'), ('est_too_close', 'i', 'j'), (), ('EST_MIN_SEP', 'est_pts', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_148__city_samurai_estates_dispersed,
+        ('EST_MIN_SEP', 'check', 'est_too_close', 'meta', 'scale'),
+        (),
+        ('city_samurai_estates_dispersed',),
+        ('EST_MIN_SEP', 'check', 'est_too_close', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_149__b_8, ('M', 'b', 'meta', 'scale', 'w'), ('b', 'sam_out'), (), ('M', 'meta', 'scale', 'w'), False, False),
+    _GateSeg(
+        _seg_0563_150__city_samurai_houses_inside_walls,
+        ('URBAN', 'check', 'meta', 'sam_out', 'scale'),
+        (),
+        ('city_samurai_houses_inside_walls',),
+        ('URBAN', 'check', 'meta', 'sam_out', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_151__areas, ('est_out', 'meta', 'mn', 'scale'), ('areas', 'mn'), (), ('est_out', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_152__city_samurai_estates_vary_in_size, ('areas', 'check', 'meta', 'scale'), (), ('city_samurai_estates_vary_in_size',), ('areas', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_153__egd, ('est_out', 'meta', 'mn', 'scale'), ('egd', 'mn'), (), ('est_out', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_154__city_estate_gates_vary, ('check', 'egd', 'meta', 'scale'), (), ('city_estate_gates_vary',), ('check', 'egd', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_155__moat, ('M', 'meta', 'scale'), ('moat',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_156__rel, ('M', 'meta', 'scale'), ('rel',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_157__out_rel, ('inwall', 'meta', 'r', 'rel', 'scale'), ('out_rel', 'r'), (), ('inwall', 'meta', 'rel', 'scale'), False, False),
+    _GateSeg(_seg_0563_158__city_temples_inside_walls, ('check', 'meta', 'out_rel', 'scale'), (), ('city_temples_inside_walls',), ('check', 'meta', 'out_rel', 'scale'), False, False),
+    _GateSeg(_seg_0563_159__r, ('meta', 'moat', 'r', 'rect_corners_xywh', 'rel', 'scale', 'w'), ('r', 'rel_bad'), (), ('meta', 'moat', 'rect_corners_xywh', 'rel', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_160__city_temples_clear_of_wall_moat, ('check', 'meta', 'rel_bad', 'scale'), (), ('city_temples_clear_of_wall_moat',), ('check', 'meta', 'rel_bad', 'scale'), False, False),
+    _GateSeg(_seg_0563_161__declared_t, ('meta', 'scale'), ('declared_t',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_162__clan_t, ('meta', 'scale'), ('clan_t',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_163__city_clan_known,
+        ('cf', 'check', 'clan_t', 'declared_t', 'meta', 'scale'),
+        ('cf', 'declared_t'),
+        ('city_clan_known',),
+        ('check', 'clan_t', 'declared_t', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_164__city_temples_dedicated,
+        ('_tfortune', 'allowed', 'check', 'clan_t', 'declared_t', 'f', 'lab', 'major', 'meta', 'missing', 'r', 'rel', 'scale', 'stray_t'),
+        ('_tfortune', 'allowed', 'f', 'major', 'missing', 'r', 'stray_t'),
+        ('city_temples_dedicated',),
+        ('check', 'clan_t', 'declared_t', 'meta', 'rel', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_165__major_t, ('meta', 'r', 'rel', 'scale'), ('major_t', 'r'), (), ('meta', 'rel', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_166__city_multi_temple_exception_declared,
+        ('check', 'exc', 'major_t', 'meta', 'scale'),
+        ('exc',),
+        ('city_multi_temple_exception_declared',),
+        ('check', 'major_t', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_167__r_1, ('meta', 'r', 'rel', 'scale'), ('r', 'temples'), (), ('meta', 'rel', 'scale'), False, False),
+    _GateSeg(_seg_0563_168__r_2, ('meta', 'r', 'rel', 'scale'), ('r', 'shrines'), (), ('meta', 'rel', 'scale'), False, False),
+    _GateSeg(_seg_0563_169__clustered, ('meta', 'scale', 't', 'temples', 'u'), ('clustered', 't', 'u'), (), ('meta', 'scale', 'temples'), False, False),
+    _GateSeg(
+        _seg_0563_170__city_temple_neighborhood_has_shrines,
+        ('check', 'clustered', 'meta', 'near_sh', 'scale', 'sh', 'shrines', 't'),
+        ('near_sh', 'sh', 't'),
+        ('city_temple_neighborhood_has_shrines',),
+        ('check', 'clustered', 'meta', 'scale', 'shrines'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_171__b_9, ('M', 'b', 'meta', 'scale'), ('b', 'monk_h'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_172__m_1, ('m', 'meta', 'monk_h', 'scale', 't', 'temples'), ('m', 't', 't_unserved'), (), ('meta', 'monk_h', 'scale', 'temples'), False, False),
+    _GateSeg(_seg_0563_173__city_temples_have_monk_housing, ('check', 'meta', 'scale', 't_unserved'), (), ('city_temples_have_monk_housing',), ('check', 'meta', 'scale', 't_unserved'), False, False),
+    _GateSeg(_seg_0563_174__m_2, ('m', 'meta', 'monk_h', 'scale', 't', 'temples'), ('m', 'stray_mh', 't'), (), ('meta', 'monk_h', 'scale', 'temples'), False, False),
+    _GateSeg(_seg_0563_175__city_monk_houses_by_their_temple, ('check', 'meta', 'scale', 'stray_mh'), (), ('city_monk_houses_by_their_temple',), ('check', 'meta', 'scale', 'stray_mh'), False, False),
+    _GateSeg(_seg_0563_176__est_corners, ('est_out', 'meta', 'mn', 'rect_corners_xywh', 'scale'), ('est_corners', 'mn'), (), ('est_out', 'meta', 'rect_corners_xywh', 'scale'), False, False),
+    _GateSeg(_seg_0563_177__est_overlap, ('est_corners', 'est_out', 'i', 'j', 'meta', 'scale'), ('est_overlap', 'i', 'j'), (), ('est_corners', 'est_out', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_178__city_estates_no_overlap, ('check', 'est_overlap', 'meta', 'scale'), (), ('city_estates_no_overlap',), ('check', 'est_overlap', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_179__est_bad, ('est_corners', 'est_out', 'i', 'meta', 'moat', 'scale', 'w'), ('est_bad', 'i'), (), ('est_corners', 'est_out', 'meta', 'moat', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_180__city_estates_clear_of_wall_moat, ('check', 'est_bad', 'meta', 'scale'), (), ('city_estates_clear_of_wall_moat',), ('check', 'est_bad', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_181__mest_1, ('M', 'meta', 'scale'), ('mest',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_182__e, ('e', 'mest', 'meta', 'rect_corners_xywh', 'scale'), ('e', 'mest_corners'), (), ('mest', 'meta', 'rect_corners_xywh', 'scale'), False, False),
+    _GateSeg(_seg_0563_183__i_1, ('i', 'mest', 'mest_corners', 'meta', 'moat', 'scale', 'w'), ('i', 'mest_wm'), (), ('mest', 'mest_corners', 'meta', 'moat', 'scale', 'w'), False, False),
+    _GateSeg(
+        _seg_0563_184__city_merchant_estates_clear_of_wall_moat,
+        ('check', 'mest_wm', 'meta', 'scale'),
+        (),
+        ('city_merchant_estates_clear_of_wall_moat',),
+        ('check', 'mest_wm', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_185__civics, ('M', 'meta', 'scale'), ('civics',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_186__o, ('M', 'meta', 'o', 'scale'), ('o', 'others_me'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_187__o_1, ('meta', 'o', 'others_me', 'rect_corners_xywh', 'scale'), ('o', 'other_struct'), (), ('meta', 'others_me', 'rect_corners_xywh', 'scale'), False, False),
+    _GateSeg(_seg_0563_188__o_2, ('meta', 'o', 'others_me', 'scale'), ('o', 'other_xy'), (), ('meta', 'others_me', 'scale'), False, False),
+    _GateSeg(_seg_0563_189__mest_bld, ('meta', 'scale'), ('mest_bld',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_190__e_1,
+        ('e', 'i', 'j', 'mest', 'mest_bld', 'mest_corners', 'meta', 'oc', 'other_struct', 'other_xy', 'ox', 'oy', 'scale'),
+        ('e', 'i', 'j', 'mest_bld', 'oc', 'ox', 'oy'),
+        (),
+        ('mest', 'mest_bld', 'mest_corners', 'meta', 'other_struct', 'other_xy', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_191__city_merchant_estates_clear_of_buildings,
+        ('check', 'mest_bld', 'meta', 'scale'),
+        (),
+        ('city_merchant_estates_clear_of_buildings',),
+        ('check', 'mest_bld', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_192__GDIR, ('meta', 'scale'), ('GDIR',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_193__compounds,
+        ('civics', 'mest_corners', 'meta', 'o', 'rect_corners_xywh', 'scale'),
+        ('compounds', 'o'),
+        (),
+        ('civics', 'mest_corners', 'meta', 'rect_corners_xywh', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_194__gate_bad, ('meta', 'scale'), ('gate_bad',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_195__cc,
+        ('GDIR', 'cc', 'civics', 'compounds', 'g', 'gate_bad', 'i', 'j', 'mest', 'meta', 'ox', 'oy', 'scale', 'tcx', 'tcy', 'th', 'thr', 'tw'),
+        ('cc', 'g', 'gate_bad', 'i', 'j', 'ox', 'oy', 'tcx', 'tcy', 'th', 'thr', 'tw'),
+        (),
+        ('GDIR', 'civics', 'compounds', 'gate_bad', 'mest', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_196__city_merchant_estate_gate_clear, ('check', 'gate_bad', 'meta', 'scale'), (), ('city_merchant_estate_gate_clear',), ('check', 'gate_bad', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_197__gov, ('M', 'meta', 'scale'), ('gov',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_198__gov_items, ('M', 'gov', 'meta', 'scale'), ('gov_items',), (), ('M', 'gov', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_199__g_5, ('g', 'gov_items', 'meta', 'moat', 'rect_corners_xywh', 'scale', 'w'), ('g', 'gov_bad'), (), ('gov_items', 'meta', 'moat', 'rect_corners_xywh', 'scale', 'w'), False, False
+    ),
+    _GateSeg(
+        _seg_0563_200__city_government_clear_of_wall_moat, ('check', 'gov_bad', 'meta', 'scale'), (), ('city_government_clear_of_wall_moat',), ('check', 'gov_bad', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(
+        _seg_0563_201__city_governor_mansion_large,
+        ('M', '_floor', 'big_other', 'check', 'est_out', 'far_min', 'ga', 'gov', 'm', 'meta', 'mn', 'scale'),
+        ('_floor', 'big_other', 'far_min', 'ga', 'm', 'mn'),
+        ('city_governor_mansion_large', 'city_ministries_cluster_at_government'),
+        ('M', 'check', 'est_out', 'gov', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_202__r23, ('M', 'meta', 'r23', 'scale', 'st'), ('r23', 'st', 'st_pts'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_203__i_2, ('M', 'i', 'm', 'meta', 'scale', 'sp', 'st_pts'), ('i', 'm', 'no_front', 'sp'), (), ('M', 'meta', 'scale', 'st_pts'), False, False),
+    _GateSeg(_seg_0563_204__city_ministries_front_a_street, ('check', 'meta', 'no_front', 'scale'), (), ('city_ministries_front_a_street',), ('check', 'meta', 'no_front', 'scale'), False, False),
+    _GateSeg(_seg_0563_205__i_3, ('M', 'i', 'k', 'meta', 'scale', 'st'), ('i', 'k', 'on_st_kido', 'st'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_206__gated, ('gov', 'k', 'meta', 'on_st_kido', 'scale'), ('gated', 'k'), (), ('gov', 'meta', 'on_st_kido', 'scale'), False, False),
+    _GateSeg(_seg_0563_207__city_samurai_quarter_gated, ('URBAN', 'check', 'gated', 'meta', 'scale'), (), ('city_samurai_quarter_gated',), ('URBAN', 'check', 'gated', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_208__wards, ('M', 'meta', 'scale'), ('wards',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_209__kido, ('M', 'meta', 'scale'), ('kido',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_210__a_1, ('M', 'a', 'meta', 'scale', 'st'), ('a', 'netlines', 'st'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_211__bad_cross, ('meta', 'scale'), ('bad_cross', 'open_end'), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_212__bad_cross_1,
+        ('bad_cross', 'bnd', 'e', 'g', 'i', 'ip', 'ki', 'kido', 'meta', 'netlines', 'open_end', 'scale', 'sp', 'w', 'wards', 'wd'),
+        ('bad_cross', 'bnd', 'e', 'g', 'i', 'ip', 'ki', 'open_end', 'sp', 'wd'),
+        (),
+        ('bad_cross', 'kido', 'meta', 'netlines', 'open_end', 'scale', 'w', 'wards'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_213__city_samurai_ward_sealed,
+        ('URBAN', 'bad_cross', 'check', 'meta', 'open_end', 'scale', 'wards'),
+        (),
+        ('city_samurai_ward_sealed',),
+        ('URBAN', 'bad_cross', 'check', 'meta', 'open_end', 'scale', 'wards'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_214__fence_gap, ('meta', 'scale'), ('fence_gap',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_215__bnd,
+        ('bnd', 'e', 'fence_gap', 'g', 'gates', 'meta', 'scale', 'w', 'wards', 'wd'),
+        ('bnd', 'e', 'fence_gap', 'g', 'wd'),
+        (),
+        ('fence_gap', 'gates', 'meta', 'scale', 'w', 'wards'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_216__city_ward_fence_meets_wall, ('check', 'fence_gap', 'meta', 'scale'), (), ('city_ward_fence_meets_wall',), ('check', 'fence_gap', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_217__barred, ('meta', 'scale'), ('barred',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_218__commoner_in, ('meta', 'scale'), ('commoner_in',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_219__b_10,
+        ('M', 'b', 'barred', 'commoner_in', 'meta', 'region', 'scale', 'w', 'wards', 'wd'),
+        ('b', 'commoner_in', 'region', 'wd'),
+        (),
+        ('M', 'barred', 'commoner_in', 'meta', 'scale', 'w', 'wards'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_220__loose_servants, ('meta', 'scale'), ('loose_servants',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_221__b_11,
+        ('M', 'b', 'host', 'hosts', 'loose_servants', 'meta', 'of', 'region', 'scale', 'w', 'wards', 'wd'),
+        ('b', 'host', 'hosts', 'loose_servants', 'of', 'region', 'wd'),
+        (),
+        ('M', 'loose_servants', 'meta', 'scale', 'w', 'wards'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_222__city_ward_servants_housed_as_ranges,
+        ('check', 'loose_servants', 'meta', 'scale'),
+        (),
+        ('city_ward_servants_housed_as_ranges',),
+        ('check', 'loose_servants', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_223__city_samurai_ward_residents_only, ('check', 'commoner_in', 'meta', 'scale'), (), ('city_samurai_ward_residents_only',), ('check', 'commoner_in', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_224__fence_hit, ('meta', 'scale'), ('fence_hit',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_225___ftargets, ('M', 'b', 'meta', 'scale'), ('_ftargets', 'b'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_226__b_12,
+        ('_ftargets', 'b', 'b2', 'bc', 'bnd', 'fence_hit', 'i', 'j', 'meta', 'scale', 'wards', 'wd', 'wd2'),
+        ('b', 'b2', 'bc', 'bnd', 'fence_hit', 'i', 'j', 'wd', 'wd2'),
+        (),
+        ('_ftargets', 'fence_hit', 'meta', 'scale', 'wards'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_227__city_ward_fence_clear_of_structures, ('check', 'fence_hit', 'meta', 'scale'), (), ('city_ward_fence_clear_of_structures',), ('check', 'fence_hit', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_228__off_fence, ('meta', 'scale'), ('off_fence',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_229__i_4, ('i', 'kd', 'kido', 'meta', 'off_fence', 'scale', 'wards', 'wd'), ('i', 'kd', 'off_fence', 'wd'), (), ('kido', 'meta', 'off_fence', 'scale', 'wards'), False, False),
+    _GateSeg(_seg_0563_230__city_kido_on_ward_fence, ('check', 'meta', 'off_fence', 'scale'), (), ('city_kido_on_ward_fence',), ('check', 'meta', 'off_fence', 'scale'), False, False),
+    _GateSeg(_seg_0563_231__not_under, ('meta', 'scale'), ('not_under',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_232__c,
+        ('c', 'caps', 'e', 'fz', 'meta', 'not_under', 'scale', 'w', 'wards', 'wd'),
+        ('c', 'caps', 'e', 'fz', 'not_under', 'wd'),
+        (),
+        ('meta', 'not_under', 'scale', 'w', 'wards'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_233__city_ward_fence_under_wall, ('check', 'meta', 'not_under', 'scale'), (), ('city_ward_fence_under_wall',), ('check', 'meta', 'not_under', 'scale'), False, False),
+    _GateSeg(_seg_0563_234__cx, ('meta', 'p', 'scale', 'w'), ('cx', 'cy', 'p'), (), ('meta', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_235__cap, ('meta', 'scale'), ('cap',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_236__cd, ('cap', 'meta', 'scale'), ('cd',), (), ('cap', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_237__city_capital_dir_valid, ('cap', 'cd', 'check', 'meta', 'scale'), (), ('city_capital_dir_valid',), ('cap', 'cd', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_238__city_estates_toward_capital,
+        ('cap', 'cd', 'check', 'cx', 'cy', 'est_out', 'meta', 'mn', 'not_cap', 'scale', 'toward'),
+        ('mn', 'not_cap', 'toward'),
+        ('city_estates_toward_capital',),
+        ('cap', 'cd', 'check', 'cx', 'cy', 'est_out', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_239__r_3, ('M', 'meta', 'r', 'scale'), ('r', 'roads_all'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_240__est_on_road, ('M', 'est_out', 'meta', 'mn', 'roads_all', 'rp', 'scale'), ('est_on_road', 'mn', 'rp'), (), ('M', 'est_out', 'meta', 'roads_all', 'scale'), False, False),
+    _GateSeg(_seg_0563_241__city_estates_clear_of_roads, ('check', 'est_on_road', 'meta', 'scale'), (), ('city_estates_clear_of_roads',), ('check', 'est_on_road', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_242__a_2, ('M', 'a', 'meta', 'scale', 'st'), ('a', 'lanes_pts', 'st'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_243__crosses_ring, ('i', 'k', 'meta', 'pts', 'ring', 'scale'), ('crosses_ring',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_244__p_2,
+        ('crosses_ring', 'inwall', 'lanes_pts', 'meta', 'p', 'pts', 'scale', 'w'),
+        ('p', 'pts', 'wall_hit'),
+        (),
+        ('crosses_ring', 'inwall', 'lanes_pts', 'meta', 'scale', 'w'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_245__city_streets_clear_of_wall, ('check', 'meta', 'scale', 'wall_hit'), (), ('city_streets_clear_of_wall',), ('check', 'meta', 'scale', 'wall_hit'), False, False),
+    _GateSeg(_seg_0563_246__moat_1, ('M', 'meta', 'scale'), ('moat',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_247__city_streets_clear_of_moat,
+        ('check', 'crosses_ring', 'lanes_pts', 'meta', 'moat', 'moat_hit', 'pts', 'scale'),
+        ('moat_hit', 'pts'),
+        ('city_streets_clear_of_moat',),
+        ('check', 'crosses_ring', 'lanes_pts', 'meta', 'moat', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_248__f, ('f', 'fields', 'meta', 'moat', 'scale', 'w'), ('f', 'fld_bad'), (), ('fields', 'meta', 'moat', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_249__city_fields_clear_of_wall_moat, ('check', 'fld_bad', 'meta', 'scale'), (), ('city_fields_clear_of_wall_moat',), ('check', 'fld_bad', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_250__pnd, ('M', 'meta', 'scale'), ('pnd',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_251__city_pond_clear_of_wall_moat,
+        ('check', 'k', 'meta', 'moat', 'p_out', 'pcx', 'pcy', 'pnd', 'prx', 'pry', 'scale', 'w'),
+        ('k', 'p_out', 'pcx', 'pcy', 'prx', 'pry'),
+        ('city_pond_clear_of_wall_moat',),
+        ('check', 'meta', 'moat', 'pnd', 'scale', 'w'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_252__civic_3, ('M', 'gov', 'meta', 'scale'), ('civic',), (), ('M', 'gov', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_253__c_1, ('M', 'c', 'civic', 'meta', 'rect_corners_xywh', 'scale', 'st'), ('c', 'civic_on_street', 'st'), (), ('M', 'civic', 'meta', 'rect_corners_xywh', 'scale'), False, False
+    ),
+    _GateSeg(
+        _seg_0563_254__city_civic_clear_of_streets, ('check', 'civic_on_street', 'meta', 'scale'), (), ('city_civic_clear_of_streets',), ('check', 'civic_on_street', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(
+        _seg_0563_255__subject_of, ('M', 'b', 'c', 'f', 'fields', 'inwall', 'key', 'm', 'meta', 'r', 'scale', 't', 'txt'), ('subject_of',), (), ('M', 'fields', 'inwall', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_256__bad_lab, ('meta', 'scale'), ('bad_lab',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_257___z,
+        ('M', 'area_subj', 'bad_lab', 'cx', 'cy', 'f', 'fields', 'inwall', 'lab', 'meta', 'pts', 'px', 'py', 'reach', 'scale', 'subj_in', 'subject_of', 'txt', 'x0', 'x1', 'y0', 'y1'),
+        ('_z', 'area_subj', 'bad_lab', 'cx', 'cy', 'f', 'lab', 'pts', 'px', 'py', 'reach', 'subj_in', 'txt', 'x0', 'x1', 'y0', 'y1'),
+        (),
+        ('M', 'bad_lab', 'fields', 'inwall', 'meta', 'scale', 'subject_of'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_258__city_labels_placed_with_subject, ('bad_lab', 'check', 'meta', 'scale'), (), ('city_labels_placed_with_subject',), ('bad_lab', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_259__f_1, ('f', 'fields', 'inwall', 'meta', 'scale'), ('f', 'out_fields'), (), ('fields', 'inwall', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_260__f_2, ('ADJ', 'f', 'h', 'houses', 'meta', 'out_fields', 'scale'), ('f', 'h', 'no_farm'), (), ('ADJ', 'houses', 'meta', 'out_fields', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_261__city_outside_fields_have_farmhouses, ('check', 'meta', 'no_farm', 'scale'), (), ('city_outside_fields_have_farmhouses',), ('check', 'meta', 'no_farm', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_262__f_3, ('f', 'meta', 'out_fields', 'p', 'scale', 'w'), ('f', 'far', 'p'), (), ('meta', 'out_fields', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_263__city_fields_close_to_city, ('check', 'far', 'meta', 'scale'), (), ('city_fields_close_to_city',), ('check', 'far', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_264__city_moat_irrigates_fields,
+        ('M', 'big_out', 'c', 'chans', 'check', 'e', 'ends', 'f', 'fed', 'fo', 'i', 'in_field', 'meta', 'moat', 'moat_fed', 'out_fields', 'scale'),
+        ('big_out', 'chans', 'f', 'fed', 'moat_fed'),
+        ('city_moat_irrigates_fields',),
+        ('M', 'check', 'meta', 'moat', 'out_fields', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_265__b_13, ('M', 'b', 'inwall', 'meta', 'scale'), ('b', 'biz_out'), (), ('M', 'inwall', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_266__b_14, ('b', 'biz_out', 'g', 'gates', 'i', 'meta', 'scale'), ('b', 'g', 'gates_wo_market', 'i'), (), ('biz_out', 'gates', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_267__city_has_gate_market, ('check', 'gates_wo_market', 'meta', 'scale'), (), ('city_has_gate_market',), ('check', 'gates_wo_market', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_268___tw_brews, ('M', 'meta', 'scale'), ('_tw_brews',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_269__city_has_brewery, ('_tw_brews', 'b_', 'check', 'inwall', 'meta', 'scale'), ('b_',), ('city_has_brewery',), ('_tw_brews', 'check', 'inwall', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_270___tw_water, ('meta', 'scale'), ('_tw_water',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_271___tw_water_1, ('M', '_tw_water', '_tw_wc', 'meta', 'scale'), ('_tw_water', '_tw_wc'), (), ('M', '_tw_water', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_272___tw_water_2, ('M', '_tw_water', 'meta', 'scale'), ('_tw_water',), (), ('M', '_tw_water', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_273___tw_pond, ('M', 'meta', 'scale'), ('_tw_pond',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_274___tw_on_water, ('_hw', '_pl', '_tw_pond', '_tw_water', 'i', 'meta', 'o_', 'r_', 'reach', 'scale'), ('_tw_on_water',), (), ('_tw_pond', '_tw_water', 'meta', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_275___tw_dyes, ('M', 'meta', 'scale'), ('_tw_dyes',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_276__city_has_dye_works,
+        ('_tw_dyes', '_tw_on_water', 'check', 'd_', 'meta', 'scale'),
+        ('d_',),
+        ('city_has_dye_works',),
+        ('_tw_dyes', '_tw_on_water', 'check', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_277__city_has_oil_press, ('M', 'check', 'meta', 'scale'), (), ('city_has_oil_press',), ('M', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_278__city_has_pawnshop, ('M', 'check', 'meta', 'scale'), (), ('city_has_pawnshop',), ('M', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_279___bh_n, ('M', 'meta', 'scale'), ('_bh_n',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_280___bh_pop, ('meta', 'scale'), ('_bh_pop',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_281___bh_floor, ('_bh_pop', 'meta', 'scale'), ('_bh_floor',), (), ('_bh_pop', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_282___bh_allowed, ('_bh_floor', '_bh_pop', 'meta', 'scale'), ('_bh_allowed',), (), ('_bh_floor', '_bh_pop', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_283___bh_roll, ('meta', 'scale'), ('_bh_roll',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_284__city_has_bathhouse,
+        ('_bh_allowed', '_bh_n', '_bh_pop', '_bh_roll', 'check', 'meta', 'scale'),
+        (),
+        ('city_has_bathhouse',),
+        ('_bh_allowed', '_bh_n', '_bh_pop', '_bh_roll', 'check', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_285___tw_kilns, ('M', 'meta', 'scale'), ('_tw_kilns',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_286__city_kiln_outside_walls,
+        ('_tw_kilns', 'check', 'inwall', 'k_', 'meta', 'scale'),
+        ('k_',),
+        ('city_kiln_outside_walls',),
+        ('_tw_kilns', 'check', 'inwall', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_287__city_river_port_has_lumber_yard,
+        ('L_', 'M', '_tw_lys', '_tw_on_water', 'check', 'meta', 'scale'),
+        ('L_', '_tw_lys'),
+        ('city_river_port_has_lumber_yard',),
+        ('M', '_tw_on_water', 'check', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_288___ly_wet, ('meta', 'scale'), ('_ly_wet',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_289__L_,
+        ('L_', 'M', '_hw', '_ldx', '_ldy', '_lh2', '_lpts', '_lw2', '_ly_wet', '_pl', '_qx', '_qy', '_tw_water', 'i', 'meta', 'scale'),
+        ('L_', '_hw', '_ldx', '_ldy', '_lh2', '_lpts', '_lw2', '_ly_wet', '_pl', '_qx', '_qy', 'i'),
+        (),
+        ('M', '_ly_wet', '_tw_water', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_290__lumber_yard_clear_of_water, ('_ly_wet', 'check', 'meta', 'scale'), (), ('lumber_yard_clear_of_water',), ('_ly_wet', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_291__flops, ('M', 'meta', 'scale'), ('flops',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_292__city_flophouse_inside_walls,
+        ('check', 'fl', 'flops', 'inwall', 'meta', 'scale'),
+        ('fl',),
+        ('city_flophouse_inside_walls',),
+        ('check', 'flops', 'inwall', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_293__fl, ('fl', 'flops', 'g', 'gates', 'i', 'inwall', 'meta', 'scale'), ('fl', 'g', 'gates_wo_flop', 'i'), (), ('flops', 'gates', 'inwall', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_294__city_flophouse_outside_each_gate,
+        ('check', 'gates_wo_flop', 'meta', 'scale'),
+        (),
+        ('city_flophouse_outside_each_gate',),
+        ('check', 'gates_wo_flop', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_295__b_15, ('M', 'b', 'meta', 'scale'), ('b', 'nice'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_296__b_16, ('M', 'b', 'meta', 'scale'), ('b', 'bura'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_297__b_17, ('M', 'b', 'meta', 'scale'), ('b', 'inns'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_298__b_18, ('M', 'b', 'meta', 'scale'), ('b', 'stbl'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_299__bad_flop, ('meta', 'scale'), ('bad_flop',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_300__b_19,
+        ('b', 'bad_flop', 'bura', 'fl', 'flops', 'inns', 'inwall', 'meta', 'nice', 'scale', 'stbl'),
+        ('b', 'bad_flop', 'fl'),
+        (),
+        ('bad_flop', 'bura', 'flops', 'inns', 'inwall', 'meta', 'nice', 'scale', 'stbl'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_301___g21, ('M', 'meta', 'scale'), ('_g21',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_302__bad_flop_1, ('_g21', 'bad_flop', 'bf', 'g21', 'meta', 'scale'), ('bad_flop', 'bf', 'g21'), (), ('_g21', 'bad_flop', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_303__city_flophouse_in_humble_quarter, ('bad_flop', 'check', 'meta', 'scale'), (), ('city_flophouse_in_humble_quarter',), ('bad_flop', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_304__caravan_bad, ('meta', 'scale'), ('caravan_bad',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_305__b_20,
+        ('M', 'b', 'caravan_bad', 'crowd', 'flops', 'g', 'gates', 'gf', 'gi', 'gnear', 'gs', 'inns', 'inwall', 'meta', 'r', 'scale', 'stbl'),
+        ('b', 'caravan_bad', 'crowd', 'g', 'gf', 'gi', 'gnear', 'gs'),
+        (),
+        ('M', 'caravan_bad', 'flops', 'gates', 'inns', 'inwall', 'meta', 'scale', 'stbl'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_306__city_gate_caravan_facilities, ('caravan_bad', 'check', 'meta', 'scale'), (), ('city_gate_caravan_facilities',), ('caravan_bad', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_307___shown, ('EX0', 'EX1', 'EY0', 'EY1', 'hh', 'hw', 'm', 'meta', 'scale'), ('_shown',), (), ('EX0', 'EX1', 'EY0', 'EY1', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_308__m_3, ('M', '_shown', 'm', 'meta', 'scale'), ('m', 'shown_est'), (), ('M', '_shown', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_309__city_estates_multiple_shown, ('check', 'meta', 'scale', 'shown_est'), (), ('city_estates_multiple_shown',), ('check', 'meta', 'scale', 'shown_est'), False, False),
+    _GateSeg(_seg_0563_310__rlab, ('M', 'meta', 'scale'), ('rlab',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_311__city_road_label_outside_walls, ('check', 'inwall', 'meta', 'rlab', 'scale'), (), ('city_road_label_outside_walls',), ('check', 'inwall', 'meta', 'rlab', 'scale'), False, False
+    ),
+    _GateSeg(_seg_0563_312__empty_city_streets, ('M', 'meta', 'scale', 'w'), ('empty_city_streets',), (), ('M', 'meta', 'scale', 'w'), False, False),
+    _GateSeg(
+        _seg_0563_313__city_streets_have_buildings,
+        ('check', 'empty_city_streets', 'meta', 'scale'),
+        (),
+        ('city_streets_have_buildings',),
+        ('check', 'empty_city_streets', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_314__line_blds, ('M', 'gov', 'meta', 'scale'), ('line_blds',), (), ('M', 'gov', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_315__gov_pts, ('M', 'gov', 'meta', 'scale'), ('gov_pts',), (), ('M', 'gov', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_316__LINE_D, ('meta', 'scale'), ('LINE_D', 'LINE_RUN'), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_317__bare_streets, ('meta', 'scale'), ('bare_streets',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_318___lg_open,
+        (
+            'LINE_D',
+            'LINE_RUN',
+            'M',
+            '_lg_open',
+            'a',
+            'b',
+            'bare_streets',
+            'bl',
+            'cg9',
+            'gov_pts',
+            'gp9',
+            'i',
+            'i9',
+            'j',
+            'ki',
+            'line_blds',
+            'm',
+            'meta',
+            'pts',
+            'run',
+            'scale',
+            'st',
+            'steps',
+            't',
+            'w',
+            'worst',
+            'x',
+            'y',
+        ),
+        ('_lg_open', 'a', 'b', 'bare_streets', 'bl', 'cg9', 'gp9', 'i', 'i9', 'j', 'ki', 'm', 'pts', 'run', 'st', 'steps', 't', 'worst', 'x', 'y'),
+        (),
+        ('LINE_D', 'LINE_RUN', 'M', 'bare_streets', 'gov_pts', 'line_blds', 'meta', 'run', 'scale', 'w'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_319__city_larger_streets_lined, ('bare_streets', 'check', 'meta', 'scale'), (), ('city_larger_streets_lined',), ('bare_streets', 'check', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_320__road_1, ('M', 'meta', 'scale'), ('road',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_321__city_imperial_road_through,
+        ('EX0', 'EX1', 'EY0', 'EY1', 'M', 'check', 'dead', 'e', 'exits', 'meta', 'offend', 'p', 'r', 'rds', 'road', 'road_through', 'scale'),
+        ('dead', 'e', 'exits', 'offend', 'p', 'r', 'rds', 'road_through'),
+        ('city_imperial_road_through', 'city_roads_run_offmap'),
+        ('EX0', 'EX1', 'EY0', 'EY1', 'M', 'check', 'meta', 'road', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_322__city_no_inwall_farms,
+        ('check', 'f', 'fields', 'inwall', 'inwall_fields', 'meta', 'scale'),
+        ('f', 'inwall_fields'),
+        ('city_no_inwall_farms',),
+        ('check', 'fields', 'inwall', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_323__no_groves_inside_walls,
+        ('M', 'check', 'gv', 'inwall', 'inwall_groves', 'meta', 'scale'),
+        ('gv', 'inwall_groves'),
+        ('no_groves_inside_walls',),
+        ('M', 'check', 'inwall', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_324__moat_2, ('M', 'meta', 'scale'), ('moat',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_325__city_moat_feeder_matches_width,
+        (
+            'EX0',
+            'EX1',
+            'EY0',
+            'EY1',
+            'M',
+            'bare',
+            'check',
+            'disp_a',
+            'disp_b',
+            'e',
+            'e0',
+            'e1',
+            'feeders',
+            'has_outfall',
+            'i',
+            'inlet_disp',
+            'j',
+            'j_arc',
+            'loose',
+            'mcx',
+            'mcy',
+            'meta',
+            'moat',
+            'moat_is_fed',
+            'mw',
+            'narrow',
+            'outlet_disp',
+            'p',
+            'q',
+            'rcum',
+            'rdist',
+            'ri2',
+            'rpts',
+            'rv',
+            's',
+            'scale',
             'taps',
-            'throat_bad',
-            'through',
-            'to_under',
+            'w',
+            'wx',
+            'wy',
+        ),
+        (
+            'bare',
+            'disp_a',
+            'disp_b',
+            'e',
+            'e0',
+            'e1',
+            'feeders',
+            'has_outfall',
+            'i',
+            'inlet_disp',
+            'j',
+            'j_arc',
+            'loose',
+            'mcx',
+            'mcy',
+            'moat_is_fed',
+            'mw',
+            'narrow',
+            'outlet_disp',
+            'p',
+            'q',
+            'rcum',
+            'rdist',
+            'ri2',
+            'rpts',
+            'rv',
+            's',
+            'taps',
+            'wx',
+            'wy',
+        ),
+        ('city_moat_fed_offmap', 'city_moat_feeder_matches_width', 'city_moat_has_outfall', 'city_moat_joins_river', 'city_moat_junction_angles', 'city_moat_surrounds_wall'),
+        ('EX0', 'EX1', 'EY0', 'EY1', 'M', 'check', 'meta', 'moat', 'rcum', 'scale', 'taps', 'w'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_326__river_c, ('M', 'meta', 'scale'), ('river_c',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_327__canals_c, ('M', 'meta', 'scale'), ('canals_c',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_328__docks_c, ('M', 'meta', 'scale'), ('docks_c',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_329__city_canal_reaches_dock,
+        (
+            'M',
+            '_end_near_dock',
+            '_end_near_moat',
+            '_end_near_river',
+            'c',
+            'canal_second_mouths',
+            'canals_c',
+            'check',
+            'chw',
+            'd',
+            'docks_c',
+            'e',
+            'ends',
+            'i',
+            'meta',
+            'moat_for_canal',
+            'mw_for_canal',
+            'river_c',
+            'scale',
             'unreached',
         ),
+        ('_end_near_dock', '_end_near_moat', '_end_near_river', 'c', 'canal_second_mouths', 'chw', 'e', 'ends', 'moat_for_canal', 'mw_for_canal', 'unreached'),
+        ('city_canal_reaches_dock', 'city_canal_shares_moat_mouth'),
+        ('M', 'canal_second_mouths', 'canals_c', 'check', 'docks_c', 'meta', 'river_c', 'scale', 'unreached'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_330__jetties_c, ('M', 'meta', 'scale'), ('jetties_c',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_331__city_wharf_jetties_on_bank,
+        (
+            'EX0',
+            'EY0',
+            'check',
+            'cityward_dist',
+            'cx_r',
+            'cy_r',
+            'd',
+            'dc',
+            'e',
+            'floats',
+            'fx',
+            'fy',
+            'i',
+            'j',
+            'jends',
+            'jetties_c',
+            'k',
+            'meta',
+            'p',
+            'px',
+            'py',
+            'rhw',
+            'river_c',
+            'root',
+            'rp',
+            'scale',
+            'tip',
+            'w',
+        ),
+        ('cityward_dist', 'cx_r', 'cy_r', 'e', 'floats', 'j', 'jends', 'p', 'rhw', 'root', 'rp', 'tip'),
+        ('city_wharf_jetties_on_bank',),
+        ('EX0', 'EY0', 'check', 'floats', 'jetties_c', 'meta', 'river_c', 'scale', 'w'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_332__booms_c, ('M', 'meta', 'scale'), ('booms_c',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_333__log_boom_moored_to_the_bank,
+        (
+            'M',
+            'adrift_lb',
+            'bmx',
+            'bmy',
+            'bo',
+            'bod_',
+            'boom_off',
+            'booms_c',
+            'box_',
+            'boy_',
+            'check',
+            'cthb',
+            'damming_lb',
+            'fx',
+            'fy',
+            'hlb',
+            'hpb',
+            'i',
+            'k',
+            'lx',
+            'ly',
+            'meta',
+            'moored_lb',
+            'nxb',
+            'nyb',
+            'px_',
+            'py_',
+            'qd_lb',
+            'qdx_lb',
+            'qdy_lb',
+            'quadb',
+            'qx_lb',
+            'qy_lb',
+            'rhwb',
+            'river_c',
+            'rpb',
+            'scale',
+            'sthb',
+            'stray_b',
+            'thb',
+            'yards_b',
+            'yd',
+        ),
+        (
+            'adrift_lb',
+            'bmx',
+            'bmy',
+            'bo',
+            'bod_',
+            'boom_off',
+            'box_',
+            'boy_',
+            'cthb',
+            'damming_lb',
+            'hlb',
+            'hpb',
+            'lx',
+            'ly',
+            'moored_lb',
+            'nxb',
+            'nyb',
+            'qd_lb',
+            'qdx_lb',
+            'qdy_lb',
+            'quadb',
+            'qx_lb',
+            'qy_lb',
+            'rhwb',
+            'rpb',
+            'sthb',
+            'stray_b',
+            'thb',
+            'yards_b',
+            'yd',
+        ),
+        ('log_boom_leaves_the_fairway', 'log_boom_moored_to_the_bank', 'log_boom_serves_the_lumber_yard'),
+        ('M', 'adrift_lb', 'booms_c', 'check', 'damming_lb', 'meta', 'river_c', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_334__streets, ('M', 'meta', 'scale'), ('streets',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_335__city_streets_connected,
+        (
+            'M',
+            '_w21',
+            'a',
+            'ai',
+            'beds_meet',
+            'bi',
+            'check',
+            'comps',
+            'end',
+            'find2',
+            'i',
+            'ia',
+            'ib',
+            'k',
+            'ki',
+            'meta',
+            'nbr',
+            'near_miss',
+            'parent',
+            'q21',
+            'sa',
+            'sb',
+            'scale',
+            'seg_seg_dist',
+            'slines',
+            'sseg',
+            'st',
+            'streets',
+            'stub',
+            'tol',
+            'widths',
+        ),
+        (
+            '_w21',
+            'ai',
+            'beds_meet',
+            'bi',
+            'comps',
+            'end',
+            'find2',
+            'i',
+            'ia',
+            'ib',
+            'ki',
+            'nbr',
+            'near_miss',
+            'parent',
+            'q21',
+            'sa',
+            'sb',
+            'seg_seg_dist',
+            'slines',
+            'sseg',
+            'st',
+            'streets',
+            'stub',
+            'widths',
+        ),
+        ('city_streets_connected', 'city_streets_no_intersection_stub', 'city_streets_no_near_miss'),
+        ('M', 'check', 'meta', 'near_miss', 'parent', 'scale', 'streets', 'stub'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_336__torii, ('M', 'meta', 'scale'), ('torii',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_337__pt_rect, ('dx', 'dy', 'meta', 'px', 'py', 'scale', 't'), ('pt_rect',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_338__no_torii, ('meta', 'scale'), ('no_torii',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_339__e_2,
+        ('M', 'e', 'meta', 'no_torii', 'pt_rect', 'r', 'runs_up', 'scale', 'st', 't', 'to', 'torii'),
+        ('e', 'no_torii', 'r', 'runs_up', 'st', 't', 'to'),
+        (),
+        ('M', 'meta', 'no_torii', 'pt_rect', 'scale', 'torii'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_340__city_temple_approach_has_torii, ('check', 'meta', 'no_torii', 'scale'), (), ('city_temple_approach_has_torii',), ('check', 'meta', 'no_torii', 'scale'), False, False),
+    _GateSeg(_seg_0563_341__to_under, ('meta', 'scale'), ('to_under',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_342__i_5, ('M', 'i', 'meta', 'scale', 'sp', 'st', 't', 'to_under', 'torii'), ('i', 'sp', 'st', 't', 'to_under'), (), ('M', 'meta', 'scale', 'to_under', 'torii'), False, False),
+    _GateSeg(_seg_0563_343__city_torii_over_streets, ('check', 'meta', 'scale', 'to_under'), (), ('city_torii_over_streets',), ('check', 'meta', 'scale', 'to_under'), False, False),
+    _GateSeg(_seg_0563_344__ES_MARGIN, ('meta', 'scale'), ('ES_MARGIN', 'ES_MIN', 'ES_STEP'), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_345__es_rects, ('meta', 'scale'), ('es_rects',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_346__es_s, ('M', 'es_s', 'meta', 'scale'), ('es_s', 'es_singles'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_347__es_grp,
+        ('M', 'es_grp', 'es_hh', 'es_hw', 'es_k', 'es_o', 'es_rects', 'es_singles', 'houses', 'meta', 'scale'),
+        ('es_grp', 'es_hh', 'es_hw', 'es_k', 'es_o', 'es_rects'),
+        (),
+        ('M', 'es_rects', 'es_singles', 'houses', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_348__es_discs, ('M', 'es_o', 'meta', 'scale'), ('es_discs', 'es_o'), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_349__es_discs_1, ('M', 'es_discs', 'es_t', 'meta', 'scale'), ('es_discs', 'es_t'), (), ('M', 'es_discs', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_350__es_polys, ('M', 'f', 'fields', 'meta', 'scale'), ('es_polys', 'f'), (), ('M', 'fields', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_351__es_k, ('M', 'es_k', 'es_o', 'es_polys', 'meta', 'scale'), ('es_k', 'es_o', 'es_polys'), (), ('M', 'es_polys', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_352__es_lines, ('meta', 'scale', 'w'), ('es_lines',), (), ('meta', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_353__es_lines_1, ('M', 'es_lines', 'meta', 'scale'), ('es_lines',), (), ('M', 'es_lines', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_354__es_lines_2, ('M', 'es_lines', 'meta', 'scale'), ('es_lines',), (), ('M', 'es_lines', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_355__es_dw,
+        ('M', 'es_dw', 'es_grp2', 'es_lines', 'es_o', 'es_pk', 'meta', 'scale'),
+        ('es_dw', 'es_grp2', 'es_lines', 'es_o', 'es_pk'),
+        (),
+        ('M', 'es_lines', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_356__es_lines_3, ('M', 'es_lines', 'es_o', 'meta', 'scale'), ('es_lines', 'es_o'), (), ('M', 'es_lines', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_357__es_pond, ('M', 'meta', 'scale'), ('es_pond',), (), ('M', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_358__es_wx0, ('meta', 'p', 'scale', 'w'), ('es_wx0', 'es_wy0', 'p'), (), ('meta', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_359__es_wx1, ('meta', 'p', 'scale', 'w'), ('es_wx1', 'es_wy1', 'p'), (), ('meta', 'scale', 'w'), False, False),
+    _GateSeg(_seg_0563_360__es_ci0, ('ES_STEP', 'es_wx0', 'es_wy0', 'meta', 'scale'), ('es_ci0', 'es_cj0'), (), ('ES_STEP', 'es_wx0', 'es_wy0', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_361__es_ci1, ('ES_STEP', 'es_wx1', 'es_wy1', 'meta', 'scale'), ('es_ci1', 'es_cj1'), (), ('ES_STEP', 'es_wx1', 'es_wy1', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_362__es_cells,
+        ('ES_STEP', 'bx0', 'bx1', 'by0', 'by1', 'es_ci0', 'es_ci1', 'es_cj0', 'es_cj1', 'meta', 'scale'),
+        ('es_cells',),
+        (),
+        ('ES_STEP', 'es_ci0', 'es_ci1', 'es_cj0', 'es_cj1', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_363__es_covered, ('meta', 'scale'), ('es_covered',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_364__es_covered_1,
+        ('ES_MARGIN', 'es_cells', 'es_covered', 'es_rects', 'es_rhh', 'es_rhw', 'es_rx', 'es_ry', 'meta', 'scale'),
+        ('es_covered', 'es_rhh', 'es_rhw', 'es_rx', 'es_ry'),
+        (),
+        ('ES_MARGIN', 'es_cells', 'es_covered', 'es_rects', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_365__c_2,
+        ('ES_MARGIN', 'ES_STEP', 'c', 'es_cells', 'es_covered', 'es_discs', 'es_dr', 'es_dx', 'es_dy', 'es_rr', 'meta', 'scale'),
+        ('c', 'es_covered', 'es_dr', 'es_dx', 'es_dy', 'es_rr'),
+        (),
+        ('ES_MARGIN', 'ES_STEP', 'es_cells', 'es_covered', 'es_discs', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_366__c_3,
+        ('ES_MARGIN', 'ES_STEP', 'c', 'es_a', 'es_b', 'es_cells', 'es_covered', 'es_hwid', 'es_i', 'es_lines', 'es_pts', 'es_rr', 'meta', 'scale'),
+        ('c', 'es_a', 'es_b', 'es_covered', 'es_hwid', 'es_i', 'es_pts', 'es_rr'),
+        (),
+        ('ES_MARGIN', 'ES_STEP', 'es_cells', 'es_covered', 'es_lines', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_367__c_4,
+        ('ES_STEP', 'c', 'es_cells', 'es_covered', 'es_p', 'es_polys', 'meta', 'q', 'scale'),
+        ('c', 'es_covered', 'es_p', 'q'),
+        (),
+        ('ES_STEP', 'es_cells', 'es_covered', 'es_polys', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(
+        _seg_0563_368__c_5,
+        ('ES_STEP', 'c', 'es_cells', 'es_covered', 'es_pond', 'meta', 'scale'),
+        ('c', 'es_covered'),
+        (),
+        ('ES_STEP', 'es_cells', 'es_covered', 'es_pond', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_369__es_ca, ('M', 'es_ca', 'es_cells', 'es_covered', 'meta', 'scale'), ('es_ca', 'es_covered'), (), ('M', 'es_cells', 'es_covered', 'meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_370__c_6,
+        ('ES_STEP', 'c', 'es_cells', 'es_covered', 'es_wx0', 'es_wx1', 'es_wy0', 'es_wy1', 'meta', 'scale', 'w'),
+        ('c', 'es_empty'),
+        (),
+        ('ES_STEP', 'es_cells', 'es_covered', 'es_wx0', 'es_wx1', 'es_wy0', 'es_wy1', 'meta', 'scale', 'w'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_371__es_seen, ('meta', 'scale'), ('es_seen',), (), ('meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_372__es_flagged, ('meta', 'scale'), ('es_flagged',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_373__c_7,
+        ('ES_MIN', 'ES_STEP', 'c', 'es_area', 'es_c', 'es_cell', 'es_comp', 'es_di', 'es_dj', 'es_empty', 'es_flagged', 'es_nb', 'es_seen', 'es_stack', 'meta', 'scale'),
+        ('c', 'es_area', 'es_c', 'es_cell', 'es_comp', 'es_di', 'es_dj', 'es_flagged', 'es_nb', 'es_seen', 'es_stack'),
+        (),
+        ('ES_MIN', 'ES_STEP', 'es_comp', 'es_empty', 'es_flagged', 'es_seen', 'es_stack', 'meta', 'scale'),
+        False,
+        False,
+    ),
+    _GateSeg(_seg_0563_374__es_flagged_1, ('es_flagged', 'meta', 'scale'), ('es_flagged',), (), ('es_flagged', 'meta', 'scale'), False, False),
+    _GateSeg(_seg_0563_375__es_ftpx, ('meta', 'scale'), ('es_ftpx',), (), ('meta', 'scale'), False, False),
+    _GateSeg(
+        _seg_0563_376__city_no_large_empty_space,
+        ('check', 'ea', 'ec', 'es_flagged', 'es_ftpx', 'meta', 'scale'),
+        ('ea', 'ec'),
+        ('city_no_large_empty_space',),
+        ('check', 'es_flagged', 'es_ftpx', 'meta', 'scale'),
         False,
         False,
     ),

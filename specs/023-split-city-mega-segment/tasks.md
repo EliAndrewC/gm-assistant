@@ -21,16 +21,16 @@ parallelism by nature (one file, sequential verification), and the iteration-loo
 
 **Purpose**: freeze the red bar. A baseline captured after any edit is worthless.
 
-- [ ] T001 Capture the full-mode oracle baseline at the current tip: `python3 022/oracle_sweep.py capture <scratch>/oracle-baseline-023.json` from `diagram/` (all regression fixtures + pool manifests; verify the count printed matches the manifest census)
-- [ ] T002 [P] Record timing baselines in 023/timings.md: `import check_village` wall time, and `pytest test_regressions.py -n auto -q` wall time in `diagram/`
-- [ ] T003 [P] Record the pre-split size census in 023/timings.md: AST statement count of `_seg_0563__city_has_six_ministries` and the sha256 of `diagram/test_fixtures/gate_check_names.json` (must be unchanged at the end)
+- [X] T001 Capture the full-mode oracle baseline at the current tip: `python3 022/oracle_sweep.py capture <scratch>/oracle-baseline-023.json` from `diagram/` (all regression fixtures + pool manifests; verify the count printed matches the manifest census)
+- [X] T002 [P] Record timing baselines in 023/timings.md: `import check_village` wall time, and `pytest test_regressions.py -n auto -q` wall time in `diagram/`
+- [X] T003 [P] Record the pre-split size census in 023/timings.md: AST statement count of `_seg_0563__city_has_six_ministries` and the sha256 of `diagram/test_fixtures/gate_check_names.json` (must be unchanged at the end)
 
 ## Phase 2: Foundational (the transformer)
 
 **Purpose**: the one-shot tool that performs the split. Blocking for everything after.
 
-- [ ] T004 Write 023/split_megaseg.py `census` mode: parse `diagram/check_village.py`, locate the mega-segment, extract the outer-guard (82) and walled-guard (295) statement sequences, and run the hard-fail census per research.md R3/R4 (early return, global/nonlocal, del-of-local, `scale`/`meta` rebinding or mutation, stale helper cells among the 27 nested defs, lambda-freeze WARNs); reuse 022/transform_gate.py's analysis functions by import (sys.path insert - do NOT copy the code); print per-SubSeg stats (free/writes/checks/needs counts, statement sizes, check-name union) and assert the union == the registry row's 148 names
-- [ ] T005 Write 023/split_megaseg.py `generate` mode per data-model.md: emit ~378 `_seg_0563_NNN__<slug>` defs at the mega-function's file position (bodies VERBATIM from source lines, wrapped in their guard, gap comment banks preserved above their segment), regenerate per-segment `return _kept(...)`, replace registry row 563 with the new `_GateSeg` rows in order, delete the clause-12 annotation, then run the type-ignore/ruff fixpoint (reuse 022's `_inject_type_ignores` scoped approach) - idempotence guard: refuse to run if `_seg_0563_000__` already exists
+- [X] T004 Write 023/split_megaseg.py `census` mode: parse `diagram/check_village.py`, locate the mega-segment, extract the outer-guard (82) and walled-guard (295) statement sequences, and run the hard-fail census per research.md R3/R4 (early return, global/nonlocal, del-of-local, `scale`/`meta` rebinding or mutation, stale helper cells among the 27 nested defs, lambda-freeze WARNs); reuse 022/transform_gate.py's analysis functions by import (sys.path insert - do NOT copy the code); print per-SubSeg stats (free/writes/checks/needs counts, statement sizes, check-name union) and assert the union == the registry row's 148 names
+- [X] T005 Write 023/split_megaseg.py `generate` mode per data-model.md: emit ~378 `_seg_0563_NNN__<slug>` defs at the mega-function's file position (bodies VERBATIM from source lines, wrapped in their guard, gap comment banks preserved above their segment), regenerate per-segment `return _kept(...)`, replace registry row 563 with the new `_GateSeg` rows in order, delete the clause-12 annotation, then run the type-ignore/ruff fixpoint (reuse 022's `_inject_type_ignores` scoped approach) - idempotence guard: refuse to run if `_seg_0563_000__` already exists
 
 ## Phase 3: User Story 1 - the split lands at human scale (P1) [US1]
 
@@ -39,8 +39,8 @@ parallelism by nature (one file, sequential verification), and the iteration-loo
 **Independent test**: spec.md US1 acceptance - grep any of the 148 names, land in a small
 segment; AST census shows no function past the lines.
 
-- [ ] T006 [US1] Run `python3 023/split_megaseg.py census` then `generate` from `diagram/`; eyeball the diff head/tail (`git diff --stat`, spot-check one outer-guard and one walled-guard segment for verbatim body + preserved comments)
-- [ ] T007 [US1] Verify sizes and names (spec FR-001/FR-002/SC-001): AST census over `diagram/check_village.py` - largest function well under 1,000 statements, every new `_seg_0563_*` under 400, no clause-12 annotation remains, union of new rows' checks == the frozen 148, `gate_check_names.json` byte-identical (sha256 vs T003); record results in 023/timings.md
+- [X] T006 [US1] Run `python3 023/split_megaseg.py census` then `generate` from `diagram/`; eyeball the diff head/tail (`git diff --stat`, spot-check one outer-guard and one walled-guard segment for verbatim body + preserved comments)
+- [X] T007 [US1] Verify sizes and names (spec FR-001/FR-002/SC-001): AST census over `diagram/check_village.py` - largest function well under 1,000 statements, every new `_seg_0563_*` under 400, no clause-12 annotation remains, union of new rows' checks == the frozen 148, `gate_check_names.json` byte-identical (sha256 vs T003); record results in 023/timings.md
 
 ## Phase 4: User Story 2 - verdict identity + targeted narrowing (P2) [US2]
 
@@ -64,7 +64,7 @@ segment; AST census shows no function past the lines.
 
 ## Phase 6: Polish and record-the-why
 
-- [ ] T014 [P] Update the "The gate is a REGISTRY" section of diagram/CLAUDE.md (spec FR-009): the city battery is now per-statement segments under in-body scale guards (`_seg_0563_NNN__*`), the clause-12 debt is retired, adding-a-check guidance now points at the sub-segment convention for city/capital checks; one short paragraph, not a rewrite
+- [X] T014 [P] Update the "The gate is a REGISTRY" section of diagram/CLAUDE.md (spec FR-009): the city battery is now per-statement segments under in-body scale guards (`_seg_0563_NNN__*`), the clause-12 debt is retired, adding-a-check guidance now points at the sub-segment convention for city/capital checks; one short paragraph, not a rewrite
 - [ ] T015 [P] Close out 023 artifacts: research.md gains a short "what implementation taught" addendum ONLY if the sweeps caught a new dataflow hole (mirror 022 R9; skip if none), timings.md gets the final measured table (baseline vs post: import, replay, closure sizes, largest-function census); mark tasks.md checkboxes as each task verified
 - [ ] T016 Stop-work ritual: commit in the clone, run `scripts/sync-with-main.sh done` from the clone root
 
