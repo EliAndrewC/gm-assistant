@@ -32,7 +32,7 @@ quote-style = "preserve"
 [tool.mypy]
 python_version = "3.14"
 strict = true
-files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "hamletgen.py"]
+files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "hamletgen.py", "timings.py"]
 
 # RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
 # settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is
