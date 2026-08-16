@@ -201,7 +201,7 @@ brought it back to 77s. Re-measure and update this number when it drifts again -
 is what makes a session mis-plan its loop.) So run the red/green loop against the ONE map
 (or fixture) that shows the defect, where cycles are near-free, and reserve the full sweep for AFTER
 that map is green. The sweep is MANDATORY, though, whenever shared engine code changed
-(the `settlement/` package, the `check_village/` package, `waterfields.py`, a scripted engine): every LIVE
+(the `settlement/` package, the `check_village/` package, the `waterfields/` package, a scripted engine): every LIVE
 pool map is a downstream artifact of the engine, so the sweep is what proves "no other map
 regressed" instead of hoping it. LIVE means the scripted maps only - the hand-authored pool is
 FROZEN (see "The legacy pool is FROZEN" below) and is deliberately allowed to go stale.
