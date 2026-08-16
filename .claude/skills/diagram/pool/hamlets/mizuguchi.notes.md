@@ -68,3 +68,19 @@ head-race) - a pipeline note, logged in `future-work.md`.
   aligned objective - one per well-dependent lobe, none on the stream-served west lobe; the
   three woodland stands kept their seats with recorded canopies (89/90/30 crowns; the 89/90
   twin-ness of the two big stands is a logged cosmetic nitpick).
+
+- 2026-08-16 (fan-toe pond fix, same session as Inashiro's; this map re-rolled): the same bbox-fit
+  defect - this map's pond (31.3 x 32.0 at (1570, 875)) was crossed by bund lines. Under the
+  polygon-fit `_plot_pond` the original plot refused and the pond moved to (1392.4, 1188.3),
+  12.8 x 10.7, sunk into one 65 x 54 ft low plot at the field's eastern foot; the old site healed
+  completely (bunds and beans re-tiled). DISCLOSED FALLOUT: a grave island appeared at
+  (1066, 1065) - `rng.sample` consumes a different number of draws than `rng.choice`, so the
+  downstream 30% grave roll inside the feature-012 scope flipped. Accepted and documented at the
+  point of change (the blast radius is one field's own flourishes; the grave is legitimate and
+  gate-eligible). OPEN DECISION, with sketch: if in-field flourish coupling ever bites again,
+  give each sub-feature its own stream in `_paddy_features` (random.Random(seed ^ 0x9AD1 ^
+  per-feature salt) for pond, rock and grave each) - lands in settlement/fields.py, held by
+  test_paddy_features_cover_every_archetype_branch, costs one more pool-wide flourish re-roll.
+  Review log: DELTA pass; the reviewer caught the grave island (undisclosed in the brief) and
+  verified pond containment, old-site healing and 0 scatter violations; the rim kisses its bund
+  at 0.65 px (nitpick, physically fine - dug up to the bund).
