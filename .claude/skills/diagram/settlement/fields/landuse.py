@@ -77,20 +77,7 @@ class LandUseMixin:
         plots = list(net["plots"])
         n = 0
         if overlay == "tea_fringe":  # tea BUSH rows along the field's dry HIGH margin (not plot-based)
-            for dp in net["dry_plots"]:
-                pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in dp["poly"])
-                cid = self._cid("tea")
-                self.add(f'<clipPath id="{cid}"><polygon points="{pts}"/></clipPath>')
-                xs = [p[0] for p in dp["poly"]]
-                ys = [p[1] for p in dp["poly"]]
-                rows = "".join(
-                    f'<line x1="{min(xs):.1f}" y1="{y:.1f}" x2="{max(xs):.1f}" y2="{y:.1f}" stroke="#5C7A3E" stroke-width="2.4" opacity="0.75"/>'
-                    for y in [min(ys) + 6 + i * 8 for i in range(int((max(ys) - min(ys)) / 8))]
-                )
-                self.add(f'<g clip-path="url(#{cid})">{rows}</g>')
-                n += 1
-            self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n})
-            return n
+            return self._landuse_tea_fringe(net, overlay)
         colors = {"mulberry_fishpond": "#93B7AC", "lotus": "#8FA9A0"}
         # TOPOGRAPHIC FILTER (feature 010). Eligibility is the LOW/WET ground, never the whole field.
         # `fraction` is the ECONOMIC term and applies to the eligible set, not to all plots.
@@ -116,6 +103,73 @@ class LandUseMixin:
         # neighbors' raised banks bound a rice parcel, so its own drawn bund is noise. Painted BEFORE the
         # ponds so an expanded pond bank overlaps the repaint, never the reverse. Scoped to the archetype
         # case only: a partial overlay's unconverted plots are ordinary textured comb paddies already.
+        leftover_plots = self._landuse_repaint_leftovers(elig, chosen, overlay, eligible, rng)
+        dikeponds: list[dict[str, Any]] = []
+        # channel centerline segments, for the bush-vs-canal clearance filter in _mulberry_rows (the crowns
+        # are coppiced BUSHES on the dike, not canopy - they cannot arch over the open water at the toe)
+        crown_q: list[tuple[Poly, str, float, float]] = []  # deferred _mulberry_rows args - crowns draw LAST, above the channel strokes
+        chansegs: list[tuple[Pt, Pt]] = []
+        for ch in net.get("channels", []):
+            cpp = ch["pts"]
+            chansegs += [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for a, b in zip(cpp, cpp[1:], strict=False)]
+        for p in chosen:
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
+            cx = sum(v[0] for v in p["poly"]) / len(p["poly"])
+            cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
+            self._landuse_draw_plot(p, pts, cx, cy, overlay, colors, chansegs, rng, dikeponds, crown_q)
+            n += 1
+        if dikeponds:
+            self.M["dikeponds"] = dikeponds
+            self._landuse_dikepond_sluices(net, dikeponds)
+        # the recolored plots (ponds / lotus) are FIELD GROUND, so the ditch net must draw OVER them: re-anchor
+        # the LATE water block past this overlay. Without it a MEANDERING mosaic lateral, whose midpoint drifts
+        # onto a pond parcel painted here (after the channels were queued), vanishes under it (test_villages
+        # z-order audit). No-op when no late block exists or nothing was overlaid.
+        if n and self._late_water_idx is not None:
+            self._late_water_idx: int | None = len(self.out)
+            self.out.append("")  # PLACEHOLDER - the flush splice REPLACES the element at the anchor index
+            # (self.out[idx:idx+1] = block), so a re-anchor without a placeholder makes the splice EAT
+            # whatever element lands there next. This one was missing from the start; it went unnoticed
+            # while the next element was inert, until the deferred crown pass below put a pond's entire
+            # crown group in the slot and a bald pond shipped (GM 2026-07-24). Abandoned placeholders
+            # are empty strings, inert in the final SVG - same convention as the late=True anchor.
+        # ...but the channels draw UNDER the mulberry canopies (GM 2026-07-24): the canal runs BETWEEN the
+        # bushes at ground level, so a crown's leaves may overhang and partly cover the channel stroke -
+        # never the channel slicing across a crown. The crown groups are drawn AFTER the late-water anchor
+        # above, so the channel block inserted there at flush time lands beneath them; the bank/water/rice
+        # FILLS stay before the anchor (ground the channels must cover).
+        for cq_poly, cq_bd, cq_cx, cq_cy in crown_q:
+            self._mulberry_rows(cq_poly, cq_bd, cq_cx, cq_cy, rng, chansegs)
+        self.M.setdefault("land_use", []).append(
+            {"overlay": overlay, "count": n, "eligible": eligible, "plots": [_centroid(p["poly"]) for p in chosen], "leftover_plots": [_centroid(p["poly"]) for p in leftover_plots]}
+        )
+        return n
+
+    def _landuse_tea_fringe(self: Settlement, net: dict[str, Any], overlay: str) -> int:  # type: ignore[misc]
+        """Tea bush rows along the field's dry HIGH margin - the one overlay that is not plot-based.
+
+        The boundary rule is literally 'the line is the highest irrigation ditch', which is what
+        net['dry_plots'] already is."""
+        n = 0
+        for dp in net["dry_plots"]:
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in dp["poly"])
+            cid = self._cid("tea")
+            self.add(f'<clipPath id="{cid}"><polygon points="{pts}"/></clipPath>')
+            xs = [p[0] for p in dp["poly"]]
+            ys = [p[1] for p in dp["poly"]]
+            rows = "".join(
+                f'<line x1="{min(xs):.1f}" y1="{y:.1f}" x2="{max(xs):.1f}" y2="{y:.1f}" stroke="#5C7A3E" stroke-width="2.4" opacity="0.75"/>'
+                for y in [min(ys) + 6 + i * 8 for i in range(int((max(ys) - min(ys)) / 8))]
+            )
+            self.add(f'<g clip-path="url(#{cid})">{rows}</g>')
+            n += 1
+        self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n})
+        return n
+
+    def _landuse_repaint_leftovers(self: Settlement, elig: list[Any], chosen: list[Any], overlay: str, eligible: str, rng: random.Random) -> list[Any]:  # type: ignore[misc]
+        """Repaint the unconverted plots of a WHOLESALE conversion as standing rice rather than bare outlines.
+
+        Returns the leftover plots, which the land_use record reports."""
         leftover_plots: list[Any] = []
         if overlay == "mulberry_fishpond" and eligible == "all":
             chosen_ids = {id(c) for c in chosen}
@@ -142,151 +196,135 @@ class LandUseMixin:
                     self.add(f'<polygon points="{pts}" fill="{lfill}" stroke="{lfill}" stroke-width="3" stroke-linejoin="round"/>')
                     self._paddy_surface(p["poly"], pts, flooded=False, pitch=4.5)  # jittered-grid mottle, ~3-6 px between shoots (GM 2026-07-23)
             random.setstate(_lst)
-        dikeponds: list[dict[str, Any]] = []
-        # channel centerline segments, for the bush-vs-canal clearance filter in _mulberry_rows (the crowns
-        # are coppiced BUSHES on the dike, not canopy - they cannot arch over the open water at the toe)
-        crown_q: list[tuple[Poly, str, float, float]] = []  # deferred _mulberry_rows args - crowns draw LAST, above the channel strokes
-        chansegs: list[tuple[Pt, Pt]] = []
-        for ch in net.get("channels", []):
+        return leftover_plots
+
+    def _landuse_draw_plot(  # type: ignore[misc]
+        self: Settlement,
+        p: dict[str, Any],
+        pts: str,
+        cx: float,
+        cy: float,
+        overlay: str,
+        colors: dict[str, str],
+        chansegs: list[tuple[Pt, Pt]],
+        rng: random.Random,
+        dikeponds: list[dict[str, Any]],
+        crown_q: list[tuple[Poly, str, float, float]],
+    ) -> None:
+        """Draw ONE converted plot: a dike-pond unit (bank, water, deferred crowns, record) or a lotus field.
+
+        `dikeponds` and `crown_q` are appended to in place - the caller needs both after the loop."""
+        if overlay == "mulberry_fishpond":
+            # 桑基魚塘: a raised MULBERRY DIKE (基, planted) surrounds an inset fish POND (塘, water) whose
+            # dug corners are ROUNDED - an earthen pond erodes to a rounded outline, never the poured-
+            # concrete right angle a premodern village had no way to make (GM 2026-07-22, issues 3 + 5).
+            # Fourth pass (GM 2026-07-23, settlements.md 'Polder fourth pass'): the dike draws as PLANTED
+            # GROUND, not a flat green band - the perimeter dike's own treatment (mottled earthen bank)
+            # carrying two planted ROWS of coppiced mulberry crowns (_mulberry_rows). Its corners ease
+            # with small erosion fillets but the dike KEEPS its rectangular character - straight dikes
+            # are attested (see settlements.md 'Polder mosaic'). The bank sits at the TRUE parcel line
+            # (inset 0), because the canal at its toe bounds it: an early +5 px expansion put banks over
+            # the wavering laterals in 72 places on Kuwabata (mulberry_banks_clear_of_channels caught
+            # it). The base parcel's tan bund stroke is erased by a floor-color UNDERLAY instead - the
+            # floor, the base parcels, and the cover all share _RICE_GREEN, so it vanishes into both;
+            # the corner fillets expose that same cover, reading as floor.
+            _dm = min(
+                math.hypot((p["poly"][i][0] + p["poly"][(i + 1) % len(p["poly"])][0]) / 2 - cx, (p["poly"][i][1] + p["poly"][(i + 1) % len(p["poly"])][1]) / 2 - cy) for i in range(len(p["poly"]))
+            )
+            _sc = 1.0 + 2.5 / max(1.0, _dm)
+            cover = " ".join(f"{cx + (x - cx) * _sc:.1f},{cy + (y - cy) * _sc:.1f}" for x, y in p["poly"])
+            self.add(f'<polygon points="{cover}" fill="#A6C398"/>')
+            # THE CANAL AT THE TOE BOUNDS THE BANK (settlements.md 'Mulberry bushes keep clear of the
+            # canals'): where a mosaic-bent lateral rides INSIDE the parcel line (Kuwabata: two west-edge
+            # ponds, up to 3.6 px), the whole pond unit is DUG BACK - shrunk about its centroid until the
+            # bank clears the canal by >= 1 px - rather than drawing bank earth over open water. The
+            # cover above still spans the ORIGINAL parcel, so the base bund stroke stays erased and the
+            # dug-back margin reads as floor. The shrunk outline is what `dikeponds` records, so
+            # mulberry_banks_clear_of_channels and dikepond_water_within_banks read the drawn truth.
+            qpoly: Poly = [(float(qx), float(qy)) for qx, qy in p["poly"]]
+            pen = 0.0
+            qx0, qx1 = min(q[0] for q in qpoly) - 2, max(q[0] for q in qpoly) + 2
+            qy0, qy1 = min(q[1] for q in qpoly) - 2, max(q[1] for q in qpoly) + 2
+            for ca, cb in chansegs:
+                if max(ca[0], cb[0]) < qx0 or min(ca[0], cb[0]) > qx1 or max(ca[1], cb[1]) < qy0 or min(ca[1], cb[1]) > qy1:
+                    continue
+                csteps = max(1, int(math.hypot(cb[0] - ca[0], cb[1] - ca[1]) / 4))
+                for ck in range(csteps + 1):
+                    qpx = ca[0] + (cb[0] - ca[0]) * ck / csteps
+                    qpy = ca[1] + (cb[1] - ca[1]) * ck / csteps
+                    if point_in_poly(qpx, qpy, qpoly):
+                        pen = max(pen, min(seg_dist(qpx, qpy, qpoly[j], qpoly[(j + 1) % len(qpoly)]) for j in range(len(qpoly))))
+            if pen > 0.0:
+                _s2 = max(0.7, 1.0 - (pen + 1.0) / max(1.0, _dm))
+                qpoly = [(cx + (qx - cx) * _s2, cy + (qy - cy) * _s2) for qx, qy in qpoly]
+            bd, bpoly = self._rounded_pond(qpoly, inset=0.0, reach=8.0, rng=rng)
+            self.add(f'<path d="{bd}" fill="#C2A772" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
+            wd, wpoly = self._rounded_pond(qpoly, inset=11.0, reach=16.0, rng=rng)
+            self.add(f'<path d="{wd}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.4"/>')
+            crown_q.append((qpoly, bd, cx, cy))  # crowns drawn after the late-water anchor (see below)
+            # `bank` = the planted band's outer edge, recorded so mulberry_banks_clear_of_channels has
+            # manifest teeth: the crowns fill the bank, so "no canal runs inside a bank" bounds the bushes
+            dikeponds.append(
+                {
+                    "parcel": [[round(x, 1), round(y, 1)] for x, y in qpoly],
+                    "water": [[round(x, 1), round(y, 1)] for x, y in wpoly],
+                    "bank": [[round(x, 1), round(y, 1)] for x, y in bpoly],
+                }
+            )
+        else:  # lotus - a DEEP-WATER lotus field (teal plot body + a few lily pads / blooms)
+            self.add(f'<polygon points="{pts}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.6" stroke-linejoin="round"/>')
+            self.add("".join(f'<circle cx="{cx + rng.uniform(-14, 14):.1f}" cy="{cy + rng.uniform(-10, 10):.1f}" r="{rng.uniform(2.5, 4):.1f}" fill="#C98BA6" opacity="0.85"/>' for _ in range(3)))
+
+    def _landuse_dikepond_sluices(self: Settlement, net: dict[str, Any], dikeponds: list[dict[str, Any]]) -> None:  # type: ignore[misc]
+        """Plumb each pond inlet-HIGH and outlet-LOW: a feeder from uphill, a drain to downhill, so the
+        whole dike-pond net runs in series down the slope from the high intake to the low outfall."""
+        # FEED + DRAIN SLUICES (GM 2026-07-22): a pond on a slope is plumbed inlet-HIGH, outlet-LOW so water
+        # flows DOWNHILL through it - so each pond gets TWO gates: a FEEDER from an uphill point on the creek
+        # network (water runs down INTO the pond at its uphill corner) and a separate DRAIN to a downhill
+        # point (water runs down OUT of it at its downhill corner). Each connects to the nearest channel OR
+        # neighbor pond that lies in the right fall direction, so the whole dike-pond net runs in series
+        # down the slope from the high intake to the low outfall. Drawn as `<line>` culverts (the channel
+        # z-order audit ignores them). Validated by dikeponds_fed_and_drained; see settlements.md.
+        dd = float(self.M["meta"].get("down_deg", 90))
+        _dx, _dy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+
+        def _fall(q: Pt) -> float:
+            return q[0] * _dx + q[1] * _dy
+
+        _cpts: Poly = []  # densified channel points - the creek-network connection candidates
+        for ch in net["channels"]:
             cpp = ch["pts"]
-            chansegs += [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for a, b in zip(cpp, cpp[1:], strict=False)]
-        for p in chosen:
-            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
-            cx = sum(v[0] for v in p["poly"]) / len(p["poly"])
-            cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
-            if overlay == "mulberry_fishpond":
-                # 桑基魚塘: a raised MULBERRY DIKE (基, planted) surrounds an inset fish POND (塘, water) whose
-                # dug corners are ROUNDED - an earthen pond erodes to a rounded outline, never the poured-
-                # concrete right angle a premodern village had no way to make (GM 2026-07-22, issues 3 + 5).
-                # Fourth pass (GM 2026-07-23, settlements.md 'Polder fourth pass'): the dike draws as PLANTED
-                # GROUND, not a flat green band - the perimeter dike's own treatment (mottled earthen bank)
-                # carrying two planted ROWS of coppiced mulberry crowns (_mulberry_rows). Its corners ease
-                # with small erosion fillets but the dike KEEPS its rectangular character - straight dikes
-                # are attested (see settlements.md 'Polder mosaic'). The bank sits at the TRUE parcel line
-                # (inset 0), because the canal at its toe bounds it: an early +5 px expansion put banks over
-                # the wavering laterals in 72 places on Kuwabata (mulberry_banks_clear_of_channels caught
-                # it). The base parcel's tan bund stroke is erased by a floor-color UNDERLAY instead - the
-                # floor, the base parcels, and the cover all share _RICE_GREEN, so it vanishes into both;
-                # the corner fillets expose that same cover, reading as floor.
-                _dm = min(
-                    math.hypot((p["poly"][i][0] + p["poly"][(i + 1) % len(p["poly"])][0]) / 2 - cx, (p["poly"][i][1] + p["poly"][(i + 1) % len(p["poly"])][1]) / 2 - cy) for i in range(len(p["poly"]))
-                )
-                _sc = 1.0 + 2.5 / max(1.0, _dm)
-                cover = " ".join(f"{cx + (x - cx) * _sc:.1f},{cy + (y - cy) * _sc:.1f}" for x, y in p["poly"])
-                self.add(f'<polygon points="{cover}" fill="#A6C398"/>')
-                # THE CANAL AT THE TOE BOUNDS THE BANK (settlements.md 'Mulberry bushes keep clear of the
-                # canals'): where a mosaic-bent lateral rides INSIDE the parcel line (Kuwabata: two west-edge
-                # ponds, up to 3.6 px), the whole pond unit is DUG BACK - shrunk about its centroid until the
-                # bank clears the canal by >= 1 px - rather than drawing bank earth over open water. The
-                # cover above still spans the ORIGINAL parcel, so the base bund stroke stays erased and the
-                # dug-back margin reads as floor. The shrunk outline is what `dikeponds` records, so
-                # mulberry_banks_clear_of_channels and dikepond_water_within_banks read the drawn truth.
-                qpoly: Poly = [(float(qx), float(qy)) for qx, qy in p["poly"]]
-                pen = 0.0
-                qx0, qx1 = min(q[0] for q in qpoly) - 2, max(q[0] for q in qpoly) + 2
-                qy0, qy1 = min(q[1] for q in qpoly) - 2, max(q[1] for q in qpoly) + 2
-                for ca, cb in chansegs:
-                    if max(ca[0], cb[0]) < qx0 or min(ca[0], cb[0]) > qx1 or max(ca[1], cb[1]) < qy0 or min(ca[1], cb[1]) > qy1:
-                        continue
-                    csteps = max(1, int(math.hypot(cb[0] - ca[0], cb[1] - ca[1]) / 4))
-                    for ck in range(csteps + 1):
-                        qpx = ca[0] + (cb[0] - ca[0]) * ck / csteps
-                        qpy = ca[1] + (cb[1] - ca[1]) * ck / csteps
-                        if point_in_poly(qpx, qpy, qpoly):
-                            pen = max(pen, min(seg_dist(qpx, qpy, qpoly[j], qpoly[(j + 1) % len(qpoly)]) for j in range(len(qpoly))))
-                if pen > 0.0:
-                    _s2 = max(0.7, 1.0 - (pen + 1.0) / max(1.0, _dm))
-                    qpoly = [(cx + (qx - cx) * _s2, cy + (qy - cy) * _s2) for qx, qy in qpoly]
-                bd, bpoly = self._rounded_pond(qpoly, inset=0.0, reach=8.0, rng=rng)
-                self.add(f'<path d="{bd}" fill="#C2A772" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
-                wd, wpoly = self._rounded_pond(qpoly, inset=11.0, reach=16.0, rng=rng)
-                self.add(f'<path d="{wd}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.4"/>')
-                crown_q.append((qpoly, bd, cx, cy))  # crowns drawn after the late-water anchor (see below)
-                # `bank` = the planted band's outer edge, recorded so mulberry_banks_clear_of_channels has
-                # manifest teeth: the crowns fill the bank, so "no canal runs inside a bank" bounds the bushes
-                dikeponds.append(
-                    {
-                        "parcel": [[round(x, 1), round(y, 1)] for x, y in qpoly],
-                        "water": [[round(x, 1), round(y, 1)] for x, y in wpoly],
-                        "bank": [[round(x, 1), round(y, 1)] for x, y in bpoly],
-                    }
-                )
-            else:  # lotus - a DEEP-WATER lotus field (teal plot body + a few lily pads / blooms)
-                self.add(f'<polygon points="{pts}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.6" stroke-linejoin="round"/>')
-                self.add("".join(f'<circle cx="{cx + rng.uniform(-14, 14):.1f}" cy="{cy + rng.uniform(-10, 10):.1f}" r="{rng.uniform(2.5, 4):.1f}" fill="#C98BA6" opacity="0.85"/>' for _ in range(3)))
-            n += 1
-        if dikeponds:
-            self.M["dikeponds"] = dikeponds
-            # FEED + DRAIN SLUICES (GM 2026-07-22): a pond on a slope is plumbed inlet-HIGH, outlet-LOW so water
-            # flows DOWNHILL through it - so each pond gets TWO gates: a FEEDER from an uphill point on the creek
-            # network (water runs down INTO the pond at its uphill corner) and a separate DRAIN to a downhill
-            # point (water runs down OUT of it at its downhill corner). Each connects to the nearest channel OR
-            # neighbor pond that lies in the right fall direction, so the whole dike-pond net runs in series
-            # down the slope from the high intake to the low outfall. Drawn as `<line>` culverts (the channel
-            # z-order audit ignores them). Validated by dikeponds_fed_and_drained; see settlements.md.
-            dd = float(self.M["meta"].get("down_deg", 90))
-            _dx, _dy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+            for a, b in zip(cpp, cpp[1:], strict=False):
+                steps = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 8))
+                for k in range(steps + 1):
+                    _cpts.append((a[0] + (b[0] - a[0]) * k / steps, a[1] + (b[1] - a[1]) * k / steps))
+        waters = [dp["water"] for dp in dikeponds]
+        _reach, _margin = 62.0, 8.0
 
-            def _fall(q: Pt) -> float:
-                return q[0] * _dx + q[1] * _dy
+        def _target(anchor: Pt, i: int, uphill: bool) -> Pt | None:
+            # nearest connection point (a channel point OR another pond's edge) strictly up/down-hill of it
+            af = _fall(anchor)
+            best: Pt | None = None
+            bd = _reach * _reach
+            cands = _cpts + [q for j, w2 in enumerate(waters) if j != i for q in w2]
+            for q in cands:
+                qf = _fall(q)
+                if (qf < af - _margin) if uphill else (qf > af + _margin):
+                    d = (anchor[0] - q[0]) ** 2 + (anchor[1] - q[1]) ** 2
+                    if d < bd:
+                        bd, best = d, (q[0], q[1])
+            return best
 
-            _cpts: Poly = []  # densified channel points - the creek-network connection candidates
-            for ch in net["channels"]:
-                cpp = ch["pts"]
-                for a, b in zip(cpp, cpp[1:], strict=False):
-                    steps = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 8))
-                    for k in range(steps + 1):
-                        _cpts.append((a[0] + (b[0] - a[0]) * k / steps, a[1] + (b[1] - a[1]) * k / steps))
-            waters = [dp["water"] for dp in dikeponds]
-            _reach, _margin = 62.0, 8.0
-
-            def _target(anchor: Pt, i: int, uphill: bool) -> Pt | None:
-                # nearest connection point (a channel point OR another pond's edge) strictly up/down-hill of it
-                af = _fall(anchor)
-                best: Pt | None = None
-                bd = _reach * _reach
-                cands = _cpts + [q for j, w2 in enumerate(waters) if j != i for q in w2]
-                for q in cands:
-                    qf = _fall(q)
-                    if (qf < af - _margin) if uphill else (qf > af + _margin):
-                        d = (anchor[0] - q[0]) ** 2 + (anchor[1] - q[1]) ** 2
-                        if d < bd:
-                            bd, best = d, (q[0], q[1])
-                return best
-
-            sluices: list[dict[str, Any]] = []
-            for i, w in enumerate(waters):
-                top = min(w, key=_fall)  # the pond's uphill corner - fed here (water runs down in)
-                bot = max(w, key=_fall)  # the pond's downhill corner - drained here (water runs down out)
-                for anchor, uphill, kind in ((top, True, "feed"), (bot, False, "drain")):
-                    tp = _target((anchor[0], anchor[1]), i, uphill)
-                    if tp is not None:
-                        self.add(f'<line x1="{anchor[0]:.1f}" y1="{anchor[1]:.1f}" x2="{tp[0]:.1f}" y2="{tp[1]:.1f}" stroke="#6C9CBE" stroke-width="2.4" stroke-linecap="round" opacity="0.95"/>')
-                        sluices.append({"a": [round(anchor[0], 1), round(anchor[1], 1)], "b": [round(tp[0], 1), round(tp[1], 1)], "kind": kind})
-            self.M["dikepond_sluices"] = sluices
-        # the recolored plots (ponds / lotus) are FIELD GROUND, so the ditch net must draw OVER them: re-anchor
-        # the LATE water block past this overlay. Without it a MEANDERING mosaic lateral, whose midpoint drifts
-        # onto a pond parcel painted here (after the channels were queued), vanishes under it (test_villages
-        # z-order audit). No-op when no late block exists or nothing was overlaid.
-        if n and self._late_water_idx is not None:
-            self._late_water_idx: int | None = len(self.out)
-            self.out.append("")  # PLACEHOLDER - the flush splice REPLACES the element at the anchor index
-            # (self.out[idx:idx+1] = block), so a re-anchor without a placeholder makes the splice EAT
-            # whatever element lands there next. This one was missing from the start; it went unnoticed
-            # while the next element was inert, until the deferred crown pass below put a pond's entire
-            # crown group in the slot and a bald pond shipped (GM 2026-07-24). Abandoned placeholders
-            # are empty strings, inert in the final SVG - same convention as the late=True anchor.
-        # ...but the channels draw UNDER the mulberry canopies (GM 2026-07-24): the canal runs BETWEEN the
-        # bushes at ground level, so a crown's leaves may overhang and partly cover the channel stroke -
-        # never the channel slicing across a crown. The crown groups are drawn AFTER the late-water anchor
-        # above, so the channel block inserted there at flush time lands beneath them; the bank/water/rice
-        # FILLS stay before the anchor (ground the channels must cover).
-        for cq_poly, cq_bd, cq_cx, cq_cy in crown_q:
-            self._mulberry_rows(cq_poly, cq_bd, cq_cx, cq_cy, rng, chansegs)
-        self.M.setdefault("land_use", []).append(
-            {"overlay": overlay, "count": n, "eligible": eligible, "plots": [_centroid(p["poly"]) for p in chosen], "leftover_plots": [_centroid(p["poly"]) for p in leftover_plots]}
-        )
-        return n
+        sluices: list[dict[str, Any]] = []
+        for i, w in enumerate(waters):
+            top = min(w, key=_fall)  # the pond's uphill corner - fed here (water runs down in)
+            bot = max(w, key=_fall)  # the pond's downhill corner - drained here (water runs down out)
+            for anchor, uphill, kind in ((top, True, "feed"), (bot, False, "drain")):
+                tp = _target((anchor[0], anchor[1]), i, uphill)
+                if tp is not None:
+                    self.add(f'<line x1="{anchor[0]:.1f}" y1="{anchor[1]:.1f}" x2="{tp[0]:.1f}" y2="{tp[1]:.1f}" stroke="#6C9CBE" stroke-width="2.4" stroke-linecap="round" opacity="0.95"/>')
+                    sluices.append({"a": [round(anchor[0], 1), round(anchor[1], 1)], "b": [round(tp[0], 1), round(tp[1], 1)], "kind": kind})
+        self.M["dikepond_sluices"] = sluices
 
     def _mulberry_rows(self: Settlement, poly: Sequence[Pt], bank_d: str, cx: float, cy: float, rng: random.Random, channels: Sequence[tuple[Pt, Pt]] | None = None) -> None:  # type: ignore[misc]
         """The 桑基 (mulberry-dike) half of a dike-pond unit rendered as what it is: PLANTED ground. Sparse
