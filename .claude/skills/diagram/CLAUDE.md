@@ -263,6 +263,13 @@ earlier.** Two compounding mistakes, both cheap to avoid:
   test.** Re-running any of them "to be sure" buys nothing - the gate is the proof. Re-run only what
   actually changed since the gate went green, and if that is markdown, re-run nothing (root
   CLAUDE.md, "docs-only diffs skip the gate").
+- **And do not run a pytest BESIDE the running gate** - not merely wasteful, but a source of false
+  RED. Both runs regenerate the same live maps in the same tree, and
+  `test_the_real_pool_round_trips_through_the_cache` snapshots a manifest and reads it back: with a
+  second writer mid-write it read `b''` and failed a gate that was otherwise clean (2026-08-16,
+  feature 116 - cost one full 2-minute gate cycle). Determinism makes concurrent writers safe for
+  the BYTES; it does not make them safe for a test that reads a file someone else is rewriting. Same
+  rule the byte-identity sweep already carries in the other direction (specs/116 quickstart step 2).
 
 ## NEVER poll a backgrounded command - and it is now ENFORCED
 
