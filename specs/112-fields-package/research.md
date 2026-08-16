@@ -291,3 +291,21 @@ Three transferable points:
   point of running the oracle after each decomposition rather than after all three: this failure is
   attributable to one extraction in one file, instead of arriving as "something in Stage 2 moved
   four hundred artifacts".
+
+## R13. Two shell hazards this feature hit, both worth avoiding by habit
+
+Neither cost much, but both are silent and both recur.
+
+**Backticks in a `git commit -m "..."` message are COMMAND SUBSTITUTION.** The water_field commit
+message referred to `` `uline` `` and the shell ran it, so the commit landed reading "the remainder
+is coupled through , a closure ..." with the word gone. The only visible sign was a stray
+`uline: command not found` several lines above the commit confirmation, in a place nobody reads.
+Amended with `git commit --amend -F -` and a QUOTED heredoc (`<<'MSG'`), which is the habit to
+keep: any commit message carrying identifiers in backticks goes through `-F -`, never `-m`.
+
+**A grep guard over a log is not a verdict.** The Stage 1 gate was declared "NOT CLEAN" by a
+`grep -qiE "COVERAGE:|FAILED|ERROR|error:"` guard that matched pytest's own banner line
+`_____ coverage: platform linux _____`. The gate was green. Guard on the POSITIVE signal the tool
+emits on success - here `grep -q "gate green"` - rather than on a disjunction of words that might
+mean failure: the positive signal has one meaning, the negative list has as many meanings as the
+tool has vocabulary.
