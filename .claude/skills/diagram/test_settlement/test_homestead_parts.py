@@ -121,6 +121,48 @@ def test_commons_keeps_scrub_off_drawn_channels():
     _clear_of(pts, taper, 5.0 / 2)  # conservative: every piece of the taper is at least w1 wide
 
 
+def test_commons_keeps_scrub_a_cut_bank_off_the_channels_but_not_the_streams():
+    # GM 2026-08-16 (Inashiro, second pass): after the drawn-width fix above, tufts still seeded in
+    # the 10-16 ft berm strip between the dry hem plots and the supply channels - legal under the
+    # drawn-width skip (2 px pad) + the 6 ft crop margin, which between them left a bare sliver
+    # mid-strip. Decision: IRRIGATION channels (M['channels'] + M['drawn_channels']) hold a
+    # maintained CUT-BANK margin of _BANK_MARGIN_FT beyond the drawn water edge - the bank is
+    # walked for sluice work and scythed for fodder, the same economics as the crop margin
+    # (research/vegetation.md "The cut bank"). STREAMS deliberately get NO margin: a natural bank
+    # is vegetated to the water's edge, and a sterile halo on the brook is the defect the
+    # settlement-review pass warned against. Base points asserted, as in the tests above.
+    def _min_dist(gx, gy, poly):
+        best = 1e18
+        for (ax, ay), (bx, by) in zip(poly, poly[1:], strict=False):
+            dx, dy = bx - ax, by - ay
+            t = 0.0 if dx == dy == 0 else max(0.0, min(1.0, ((gx - ax) * dx + (gy - ay) * dy) / (dx * dx + dy * dy)))
+            best = min(best, ((gx - ax - t * dx) ** 2 + (gy - ay - t * dy) ** 2) ** 0.5)
+        return best
+
+    s = _nuc_village()
+    s.field_channel([(300, 100), (310, 700)], "#6C9CBE", 14.0, 14.0)  # a wide UNIFORM supply lateral
+    s.field_channel([(120, 120), (200, 680)], "#6C9CBE", 14.0, 5.0)  # a TAPERED head-race
+    uniform, taper = (ch["pts"] for ch in s.M["drawn_channels"])
+    m = s.px(s._BANK_MARGIN_FT)
+    before = len(s.out)
+    s.commons([(60, 60), (560, 60), (560, 760), (60, 760)], role="pasture")  # laid over both laterals
+    pts = _scatter_base_points(s.out[before:])
+    assert pts
+    for gx, gy in pts:  # every base clears drawn half-width + the cut-bank margin (w1 conservative on the taper)
+        assert _min_dist(gx, gy, uniform) >= 14.0 / 2 + m - 0.15, (gx, gy)
+        assert _min_dist(gx, gy, taper) >= 5.0 / 2 + m - 0.15, (gx, gy)
+
+    s2 = _nuc_village()  # ... and the SAME scatter over a natural stream keeps grass to the bank
+    stream = [[300, 100], [310, 700]]
+    s2.M["streams"] = [{"poly": stream, "w": 8}]
+    before = len(s2.out)
+    s2.commons([(60, 60), (560, 60), (560, 760), (60, 760)], role="pasture")
+    pts2 = _scatter_base_points(s2.out[before:])
+    assert pts2
+    assert all(_min_dist(gx, gy, [tuple(p) for p in stream]) >= 8 / 2 + 2 - 0.15 for gx, gy in pts2)  # still off the water itself
+    assert any(_min_dist(gx, gy, [tuple(p) for p in stream]) < 8 / 2 + 2 + m for gx, gy in pts2), "no tuft near the stream bank - the no-margin-on-streams half of the rule has lost its witness"
+
+
 def test_attach_garden_draws_and_records_two_beds():
     s = _nuc_village()
     s._attach_garden(500, 500, [(486, 500, 10, 12), (520, 500, 10, 12)])
