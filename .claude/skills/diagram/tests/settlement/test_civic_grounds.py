@@ -1,6 +1,7 @@
 """Split from test_settlement.py by feature 025 - see tests/settlement/CLAUDE.md for the index."""
 
 import math
+import random
 
 import pytest
 
@@ -487,3 +488,110 @@ def test_precinct_interior_draws_both_rear_orientations_and_the_graveyard_claim(
         assert p["rear"] == rear
         kinds = [h["kind"] for h in s.M.get("precinct_halls", []) if h.get("precinct") == [500, 500]]
         assert kinds.count("dormitory") >= 2 and "residence" in kinds and "library" in kinds
+
+
+# ---------------------------------------------------------------------------
+# Feature 115 composed-surface guard. See specs/115-civic-grounds-package/contracts/mixin-surface.md.
+# ---------------------------------------------------------------------------
+
+_CIVIC_GROUNDS_SURFACE = frozenset(
+    {
+        # funerary.py
+        "cemetery",
+        "_ward_fence_cap",
+        "mausoleum",
+        "cremation_ground",
+        "ossuary",
+        # justice.py
+        "punishment_spot",
+        "execution_ground",
+        "boundary_marker",
+        # civic.py
+        "precinct_interior",
+        "district",
+        "terrace",
+        "granary",
+        "merchant_storehouses",
+        "merchant_residences",
+        # lodging.py
+        "_way_bearing_near",
+        # _way_seat_near is LIVE despite having no consumer outside civic_grounds.py: it is called by
+        # _way_bearing_near, one line, inside the defining file. The pre-spec census excluded the
+        # defining file (to avoid counting the def as a use) and so reported it deletable. A
+        # dead-member census MUST count intra-file callers - research R6.
+        "_way_seat_near",
+        "flophouse",
+        "inn",
+        "stables",
+        "animal_ground",
+        "flush_stable_yards",
+        # stable_yard.py
+        "_stable_yard",
+    }
+)
+
+
+def _civic_grounds_submixins():
+    # Derived from the MRO rather than by importing the submodules, so this guard runs UNCHANGED
+    # before and after the split: pre-split the list is empty (CivicGroundsMixin is the single class
+    # and the collision assertion is vacuous), post-split it is the five sub-mixins. Feature 114's
+    # tasks T007 records why the by-name-import shape cannot be red-proven in task order.
+    from settlement.civic_grounds import CivicGroundsMixin
+
+    return [c for c in CivicGroundsMixin.__mro__ if c is not CivicGroundsMixin and c is not object]
+
+
+def _cg_own_members(cls):
+    # Any non-dunder name the class body itself defines: methods AND data attributes. CivicGroundsMixin
+    # has no class-level attributes today (all 22 members are functions, unlike 114's StructuresMixin),
+    # so the data half is currently vacuous - kept because a constant is as easy to lose in a split as
+    # a method and much easier to overlook if it is added later.
+    return {k for k in vars(cls) if not k.startswith("__")}
+
+
+def test_no_pre_split_civic_grounds_member_was_lost_in_the_move():
+    # SUBSET, not equality: feature 115's stage 2 legitimately ADDS named private stages to
+    # stable_yard.py, and equality would turn that into a contract edit - training a reader to update
+    # the frozenset without thinking, which is the reflex that lets a real subtraction through. What
+    # must never happen is a pre-split member going MISSING: an addition is visible in review, a
+    # subtraction is silent until whichever generator calls it happens to run - and for
+    # precinct_interior that is one wip/ map nobody runs by default.
+    from settlement.civic_grounds import CivicGroundsMixin
+
+    composed = set().union(*(_cg_own_members(c) for c in CivicGroundsMixin.__mro__))
+    assert composed >= _CIVIC_GROUNDS_SURFACE, f"missing={sorted(_CIVIC_GROUNDS_SURFACE - composed)}"
+
+
+def test_no_two_civic_grounds_submixins_define_the_same_name():
+    # A member defined by two sub-mixins produces a working import, a clean `mypy --strict`, and one
+    # silently dead implementation, because MRO just picks the first base. Nothing else in the gate
+    # can see this.
+    subs = _civic_grounds_submixins()
+    for i, a in enumerate(subs):
+        for b in subs[i + 1 :]:
+            overlap = _cg_own_members(a) & _cg_own_members(b)
+            assert not overlap, f"{a.__name__} and {b.__name__} both define {sorted(overlap)} - MRO would orphan one"
+
+
+def test_every_civic_grounds_member_resolves_on_settlement_itself():
+    # what consumers actually rely on: the name reaching Settlement, not merely CivicGroundsMixin.
+    # structures/compounds.py calls self._ward_fence_cap and trades.py calls self._way_bearing_near.
+    unreachable = sorted(n for n in _CIVIC_GROUNDS_SURFACE if not hasattr(Settlement, n))
+    assert not unreachable, f"not resolvable on Settlement: {unreachable}"
+
+
+def test_yard_ctx_construction_draws_no_rng():
+    """`_YardCtx.__init__` must consume ZERO random draws.
+
+    The whole feature-115 stage-2 decomposition rests on this: the context is built BEFORE the
+    litter scatter, so if construction drew even once it would shift every later draw and change
+    every stable yard on every map. The byte-identity sweep catches that after the fact; this
+    catches it in 2ms, and it is the invariant a future edit to `_YardCtx.__init__` is most likely
+    to break (adding a jittered field would look harmless).
+    """
+    from settlement.civic_grounds._yardctx import _YardCtx
+
+    s = _city()
+    before = random.getstate()
+    _YardCtx(s, 500.0, 500.0, 72.0)
+    assert random.getstate() == before

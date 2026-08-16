@@ -204,9 +204,35 @@ cities did not.
 entire tree, and it is `wip/shiro-daika.gen.py`. Excluding it would leave a moved member with no
 artifact-level proof at all.
 
-**Decision**: one run, in the stage-1 sweep, against a baseline captured the same way. It is skipped
-in the stage-2 sweep, because the decomposition touches only `_stable_yard`, which shiro-daika does
-not exercise more than the cities do.
+**Decision, as planned**: one run, in the stage-1 sweep, against a baseline captured the same way.
+
+**AMENDED at implementation time - the run was CUT.** The plan budgeted "over 6 minutes" on the
+authority of feature 112 research R11. Reading R11 again once the run was actually underway shows
+that figure is an **aborted lower bound, not a measurement**: 112 stopped the map at six minutes
+"without producing a single line of output" and never learned how long it takes. This feature got it
+to **10 minutes 35 seconds of CPU time, still at 100% and still with no output**, before stopping it
+for the same reason. Nobody has ever let `wip/shiro-daika.gen.py` finish, so its true cost is
+unknown and unbounded, and "budget over 6 minutes" was never a real budget.
+
+**What replaces it as proof for `precinct_interior`:**
+
+- `tests/settlement/test_civic_grounds.py::test_precinct_interior_draws_both_rear_orientations_and_the_graveyard_claim`
+  exercises the member directly, both `rear` branches and the graveyard claim, and passes after the
+  move.
+- The move's textual purity is proven independently of any artifact: `comment lines lost: 0`, and an
+  AST comparison of every member's first-argument annotation between the pre-split file and the
+  package returns `pre == post` exactly.
+
+That is weaker than a byte-identical PNG and it is honestly weaker - but the marginal value of the
+artifact proof for ONE member already covered by a passing unit test does not justify blocking a
+feature on a run of unknown duration. **FR-005 is not satisfied as written.** The right resolution
+is either to run that map to completion once, unattended, and record its actual cost - which would
+finally give 112's open question an answer - or to profile why a capital map is more than 3x the
+cost of the entire 28-map pool. Both are follow-ups, not blockers, and both are recorded in
+`future-work.md`.
+
+The stage-2 sweep excludes it either way, because the decomposition touches only `_stable_yard`,
+which shiro-daika does not exercise more than the cities do.
 
 ---
 
@@ -242,3 +268,120 @@ observations**:
 stream is global and order-sensitive - a faithful extraction is the only way to get an empty diff.
 Point 3 is written into the index as a standing warning, since it is the one that looks like an
 improvement while being a bug.
+
+---
+
+## R13 - `_stable_yard` is CLOSURE-heavy, not block-structured (decision, found at implementation time)
+
+**What the plan assumed.** Plan.md and data-model.md Part 2 treat the seven banner comments as
+marking seven straight-line blocks, extractable the way feature 111 extracted `hamletgen.py`'s
+stages - each block reads some inputs, appends some output, and hands off.
+
+**What the code actually is.** An AST walk of the method's top-level statements (run at T026 prep)
+finds **eight nested `def`s** inside the 335-line body, each capturing a different slice of local
+state:
+
+| closure | lines | captures |
+|---|---|---|
+| `clear` | 77-88 | `corridors`, `wallp`, the keep-out list |
+| `take` | 127-136 | `clear`, the furniture ring candidates |
+| `rail_rec` | 150-153 | yard geometry |
+| `draw_hitch` | 155-163 | `rail_rec`, the output stream |
+| `_rail_clear_of_heaps` | 171-172 | `prior_heaps` |
+| `_glyph_free` | 184-194 | `prior_boxes`, `prior_rails` |
+| `beside` | 256-283 | `clear`, `_glyph_free`, trough geometry |
+| `_clear_of_rails` | 322-327 | `all_rails` |
+
+So the seams are real but the blocks are not independent: the "stages" share a lattice of predicates
+that are defined once and read by every later stage. `beside` (the trough siter) alone reads `clear`
+from stage 1 and `_glyph_free` from stage 4.
+
+**Why this matters more than it looks.** A naive extraction into seven methods has to thread that
+captured state through explicit parameters, and every threading decision is a chance to change WHEN
+a predicate is evaluated - which is rule 3's failure mode (a branch that was short-circuited becomes
+eager, the draw count changes, and the map changes on a minority of seeds). The RNG proof would
+catch it, but only after the fact, and the diff would not say which threading decision did it.
+
+**Options, none of which the plan chose because the plan did not know:**
+
+- **(a) A yard-context dataclass.** One `_YardCtx` holding `corridors`, `wallp`, the keep-out list,
+  `prior_boxes`, `prior_rails`, `prior_heaps`, and the output stream; the eight predicates become
+  methods on it; the seven stages become methods taking it. Faithful, and it makes the shared
+  lattice explicit rather than implicit - which is arguably the real readability win. Largest
+  change, and the one most likely to need two passes.
+- **(b) Extract only the four stages that are genuinely self-contained** (litter, road rail,
+  watering, heaps), leave the predicate lattice and the furniture seater in the outer method.
+  Lands the outer method at roughly 120-150 lines - under the clause-12 bar - for maybe a third of
+  the work and a fraction of the risk. Does not produce seven named stages.
+- **(c) Do nothing in this feature.** Ship the package split (which is the clause-13 debt and the
+  stated primary motivation), record the clause-12 debt, and give the decomposition its own feature
+  with its own baseline.
+
+**Decision: (a), the yard-context dataclass. GM-chosen, 2026-08-16.** The question was put to the
+GM rather than decided here, per CLAUDE.md's stop-and-ask threshold - options (a) and (b) differ in
+what the resulting code teaches a reader, which is a design question rather than a mechanical one,
+and (a) is an hour-plus that could be thrown away. The session's own recommendation was (b), the
+partial extract, on risk grounds; the GM took (a).
+
+The reason (a) is the better call despite the risk: the shared predicate lattice IS the thing that
+makes this function hard to read, and (b) leaves it exactly as it was while making the file look
+decomposed. A `_YardCtx` that names `clear`, `glyph_free` and the three prior-yard collections turns
+an implicit capture graph into a declared object, which is what a future reader actually needs.
+
+**How the RNG risk is contained under (a)**, since it is now the accepted risk rather than the
+avoided one:
+
+- The context object is BUILT once, at the top of the outer method, in the same order the closures
+  were previously defined. Construction consumes no RNG - none of the eight closures draws at
+  definition time, only at call time - so building it early cannot move a draw.
+- Predicates become `_YardCtx` METHODS with the same bodies and the same call sites. A predicate
+  that was lazily evaluated inside a branch stays inside that branch; only its definition moves.
+- The stages are extracted in source order, one at a time, with the ~25 stable-yard unit tests run
+  after each (tasks T031). A failure then localizes to the stage just extracted.
+- The byte-identity sweep remains the proof, and under (a) it is doing more work than it would have
+  under (b) - which is the trade the GM accepted.
+
+**What is NOT in doubt**: US1, US2 and US4 are unaffected. The package split is done and verified
+independently of this, which is the sequencing (research R4) working as designed - the clause-13
+debt is paid whether or not the clause-12 debt is paid in the same feature.
+
+---
+
+## R14 - What the implementation learned that the plan got wrong (record)
+
+Written at the end, per tasks T043. Four things, in descending order of how much they cost.
+
+**1. The decomposition's shape (R13, already amended above).** The plan modeled `_stable_yard` as
+seven banner-marked straight-line blocks; it was eight closures over a shared lattice of locals.
+Found by an AST walk that took one command, and it should have been in Phase 0 rather than
+discovered at implementation time. **The general rule for the next clause-12 job: before promising
+a stage decomposition, walk the function for nested `FunctionDef`s.** A function with closures is
+a different kind of refactor from a function with blocks, and the plan should say which it is.
+
+**2. The RNG risk was over-estimated, and measuring it was cheap.** R12 treated the global stream
+as a lattice-wide hazard. A grep of every `random.*` call site - two minutes - showed four sites
+total and that stages 4-7 draw nothing, collapsing the whole hazard to one adjacency (the litter
+draws vs `seat_init`'s shuffle). That measurement should have been in R12 itself. It is the
+difference between "this refactor is dangerous" and "this refactor has one orderable constraint",
+and it was available for free before the GM was asked to choose an option.
+
+**3. `wip/shiro-daika`'s cost was taken on faith from a prior spec** and turned out to be an
+aborted lower bound rather than a measurement (R11, amended). **A number quoted from another
+feature's research is a claim, not a fact** - especially a number that reads like a timeout.
+
+**4. A style check that tests formatting instead of meaning.** The first T012 pass verified
+`self: "Settlement"` annotations by regex and reported 0 in every module, which looked like the
+transformer had stripped them. It had not: this file writes the annotation unquoted, and one `def`
+wraps across lines. Rewritten as an AST comparison of first-argument annotations between the
+pre-split file and the package (`22 pre, 22 post, pre == post`), which is the assertion actually
+worth making. A regex over a signature style fails on formatting and passes on meaning-loss - the
+wrong way round.
+
+**What the plan got RIGHT, worth keeping for the next one:** sequencing the move and the
+decomposition as separately-swept commits. When the second sweep came back byte-identical there was
+no ambiguity about what it proved, and had it come back dirty the cause could only have been the
+decomposition. That is the single most valuable structural decision in this feature.
+
+**No member's module assignment moved** from data-model.md Part 1, and no stage boundary had to move
+to preserve RNG order. One file was ADDED that the plan did not have: `_yardctx.py`, because the
+decomposition took `stable_yard.py` to 421 lines, over SC-001's 400 - split rather than waived.
