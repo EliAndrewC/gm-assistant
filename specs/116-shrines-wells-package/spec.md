@@ -5,7 +5,14 @@ is declared with `export SPECIFY_FEATURE=116-shrines-wells-package`.
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented 2026-08-16. Final per-file line counts: `wells.py` 294, `shrines.py` 251,
+`torii.py` 201, `wellground.py` 194, `woods.py` 185, `seats.py` 86, `byres.py` 72, `__init__.py` 41
+(1,179 -> largest 294). Oracle: every `pool/` artifact regenerated in a scratch copy and hashed
+against a pre-split baseline - exit 0, 28/28 generators, 896/896 byte-identical, frozen legacy maps
+included (`--frozen-ok`, since they are most of what exercises `farm_wells`, `small_shrine`,
+`torii_even` and `forest`). `core.py` byte-unchanged; ZERO consumer files changed; `comment lines
+lost: 0`. Both guard assertions proven red before being trusted, and the decorator hazard unique to
+this file is pinned by a test of its own.
 
 **Input**: User description: "Please refactor shrines_wells.py in accordance with our file size and
 token count restrictions." Split `settlement/shrines_wells.py` (1,179 lines) into a
@@ -211,7 +218,10 @@ file to open from the index alone, without grepping.
   arithmetically unchanged.
 - **FR-011**: Every comment line in the pre-split class body MUST survive somewhere in the package
   (checked mechanically, not by eye) - the researched grounding in this file is the bulk of its
-  value.
+  value. The two SECTION-DIVIDER banners (`# ---- hill + shrine + torii`,
+  `# ---- landscape / estate features`) are the sole exception and MUST be dropped: each names a
+  position in a file that will no longer exist, and the torii half of the first one moves to another
+  module. Their removal is itself checked, so "dropped" cannot quietly mean "still there".
 - **FR-012**: `tests/settlement/test_shrines_wells.py` MUST keep its name and its test count - the
   mirror rule in `tests/settlement/CLAUDE.md` maps a test file to a `settlement/` module, and at 474
   lines the file is well under the clause-13 bar (see Assumptions).
@@ -256,7 +266,8 @@ file to open from the index alone, without grepping.
 - **SC-005**: `settlement/core.py` is byte-unchanged and no pool generator, `wip/` script or engine
   module outside the package changes at all.
 - **SC-006**: Both halves of the composed-surface guard are demonstrated red before being trusted.
-- **SC-007**: Zero comment lines from the pre-split class body are lost.
+- **SC-007**: Zero comment lines from the pre-split class body are lost, other than the two named
+  section-divider banners, whose removal is separately confirmed.
 
 ## Assumptions
 
