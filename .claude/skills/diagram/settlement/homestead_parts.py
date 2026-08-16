@@ -517,7 +517,7 @@ class HomesteadPartsMixin:
             corr.append(([tuple(p) for p in self.M["road"]], self.M.get("road_width", 26) / 2 + extra))
         return corr
 
-    def _watercourse_segs(self: Settlement, pad: float = 2.0) -> list[tuple[Any, float]]:  # type: ignore[misc]
+    def _watercourse_segs(self: Settlement, pad: float = 2.0, channel_margin: float = 0.0) -> list[tuple[Any, float]]:  # type: ignore[misc]
         """Every drawn watercourse as (polyline, half-width + pad) pairs in boxed_segs shape: streams,
         channels, and the comb laterals' drawn truth (M['drawn_channels'] - added 2026-08-16, GM,
         Inashiro: grass tufts stood ON the head-race, because the scatter knew only the hairline
@@ -525,20 +525,24 @@ class HomesteadPartsMixin:
         filleted post-clip polyline - the "same manifest source" trap, settlements.md 'PLANK
         BRIDGES'). A tapered lateral is split into the SAME 7 piece slices field_channel strokes,
         each at its own drawn width. Factored so the per-point test (_on_watercourse) and the
-        ground-cover scatters' pre-boxed grids provably test the same geometry."""
-        out: list[tuple[Any, float]] = [(wc["poly"], wc.get("w", 6) / 2 + pad) for wc in self.M.get("streams", []) + self.M.get("channels", [])]
+        ground-cover scatters' pre-boxed grids provably test the same geometry. `channel_margin`
+        widens the IRRIGATION courses only (channels + drawn laterals, never streams) - the commons
+        scatter passes the cut-bank margin here (_BANK_MARGIN_FT says why banks are bare and why a
+        natural stream bank is not)."""
+        out: list[tuple[Any, float]] = [(wc["poly"], wc.get("w", 6) / 2 + pad) for wc in self.M.get("streams", [])]
+        out += [(wc["poly"], wc.get("w", 6) / 2 + pad + channel_margin) for wc in self.M.get("channels", [])]
         for ch in self.M.get("drawn_channels", []):
             p, w0, w1 = ch["pts"], ch["w0"], ch["w1"]
             if len(p) < 2:
                 continue
             if abs(w1 - w0) < 0.2:  # drawn as ONE stroke at w0 (field_channel's uniform branch)
-                out.append((p, w0 / 2 + pad))
+                out.append((p, w0 / 2 + pad + channel_margin))
             else:  # drawn as 7 tapering pieces - the same slice/width ladder field_channel strokes
                 n, L = 7, len(p)
                 for k in range(n):
                     piece = p[k * (L - 1) // n : (k + 1) * (L - 1) // n + 1]
                     if len(piece) >= 2:
-                        out.append((piece, (w0 + (w1 - w0) * (k + 0.5) / n) / 2 + pad))
+                        out.append((piece, (w0 + (w1 - w0) * (k + 0.5) / n) / 2 + pad + channel_margin))
         return out
 
     def _on_watercourse(self: Settlement, px: float, py: float, pad: float = 2.0, near: Any = None) -> bool:  # type: ignore[misc]
@@ -584,6 +588,19 @@ class HomesteadPartsMixin:
     # coarser tiers a tip can lean up to a few real feet over the margin line - accepted, because
     # grass leaning over a bund is real; bases and tall-glyph reach are what the rule enforces.
     # Full grounding: settlements/vegetation.md "Scrub stands off the crops".
+    _BANK_MARGIN_FT = 6.0
+    # CUT-BANK MARGIN (GM 2026-08-16, Inashiro second pass: tufts seeded in the 10-16 ft berm
+    # strip between the dry hem plots and the supply channels - legal under the drawn-width water
+    # skip + the crop margin, which between them left a bare sliver mid-strip). The commons scatter
+    # stands its bases this many real feet off the drawn water EDGE of every IRRIGATION channel
+    # (M['channels'] + M['drawn_channels']). WHY 6 ft, and why channels only: a supply channel's
+    # bank is MAINTAINED ground - walked for sluice work and bund upkeep, and its grass scythed for
+    # fodder on the same rotation as the field margins - so established scrub tufts/brush there are
+    # as wrong as on a bund; one scythe swath (~1.8 m) is the same figure the crop margin rests on
+    # (_CROP_MARGIN_FT above). STREAMS and the reed marsh deliberately take NO margin: a natural
+    # bank is vegetated to the water's edge, and the 2026-08-16 settlement-review pass explicitly
+    # praised the absence of a sterile halo on the brooks. Full grounding:
+    # research/vegetation.md "The cut bank".
     _HALO_STRUCT_FT = 30.0
     _HALO_WELL_FT = 20.0
     _HALO_PLOT_FT = 8.0
