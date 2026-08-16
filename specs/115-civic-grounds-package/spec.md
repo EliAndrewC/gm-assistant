@@ -5,7 +5,13 @@ is declared with `export SPECIFY_FEATURE=115-civic-grounds-package`.
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented 2026-08-16. Final per-file line counts: `civic.py` 267, `stable_yard.py` 264,
+`funerary.py` 228, `justice.py` 193, `lodging.py` 187, `_yardctx.py` 173, `__init__.py` 36
+(1,162 -> largest 267). Longest function in the package **85** lines, down from 335 - so the engine's
+largest function is now `rolling.py::roll_village` at 256. Every `pool/` artifact byte-identical
+across all 28 generators, after the move AND again after the decomposition; `core.py` byte-unchanged;
+zero consumer files changed. One deviation: FR-005's `wip/shiro-daika` run was cut as unbounded (see
+research R11) and is NOT satisfied.
 
 **Input**: User description: "Refactor `.claude/skills/diagram/settlement/civic_grounds.py` (1,162
 lines) into a `settlement/civic_grounds/` package of focused submodules with its own `CLAUDE.md`
