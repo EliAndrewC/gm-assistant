@@ -288,13 +288,21 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   the fix meant to cure it), and the 2-point west-fork stub was inked end to end at its TAIL width,
   3.6 px against a declared 7.2. It also caught that `taper_w`'s docstring quoted the FORMULA's
   numbers as measurements of this map; they are now measured in the ink (7.7 / 7.1 / 6.1 / 4.8 / 3.7
-  px at tenths 0.10 / 0.25 / 0.50 / 0.75 / 0.90 of a delivery ditch, tracking the law within ~0.1 px).
+  px at tenths 0.10 / 0.25 / 0.50 / 0.75 / 0.90 of a delivery ditch - the MEDIAN across the five,
+  which tracks the law within ~0.1 px at the first four tenths but spans 3.46-4.13 against the law's
+  3.81 at 0.90, where the tail segments are coarse. A second pass caught the first correction still
+  quoting the FORMULA at the 0.25 tenth, 7.1 against an ink median of 7.0 - the same defect class
+  twice, which is why `taper_w` now says in so many words to re-measure in the SVG.)
   And it caught that the committed `.png` was STALE while `tools/crop_map.py` crops the PNG - so the
   author's own visual checks had been of the pre-change image. Re-rendered.
 
-  Confirmed clean by the same pass: no bund drawn inside the blue and no bare stripe anywhere (the
-  tightest along-run clearance is +0.20 px, against a `BANK_MARGIN` of 0.75 - about half the designed
-  abutment eaten, none of it crossed); the collector reads as GATHERING under the mirrored law; and
+  Confirmed clean by the same pass: no bund drawn inside the blue ALONG A RUN, and no bare stripe
+  anywhere (the tightest along-run clearance is +0.20 px, against a `BANK_MARGIN` of 0.75 - about half
+  the designed abutment eaten, none of it crossed). The along-run qualifier is load-bearing and the
+  re-review supplied it: 12 ring points do sit inside a drawn stroke, every one where a ring crosses a
+  ditch's terminal ROUND CAP (worst -1.16 px at (2252.2,1606.0)), and the same measurement on the
+  pre-taper manifest gives 30 such points - so this change more than halved a pre-existing condition
+  rather than introducing one. The collector reads as GATHERING under the mirrored law; and
   `tools.scatter_audit` came back 0 violations over 272,672 bases with a flat near-margin density
   profile (1157 / 1111 / 1120 at 0-15 / 15-30 / 30-45 px), so widening every watercourse produced no
   sterile halo.
@@ -305,5 +313,26 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   now absent is geometric slack rather than anything about the place; and the title placard moved
   576 px west onto clean hinterland. One PRE-EXISTING item wants a GM ruling, recorded in
   `research/water.md`: a delivery ditch's flat `4.0 * grain` head is drawn WIDER than the tapering
-  supply canal feeding it low in the tree (7.75 px against a parent at 5.70 at (2524.8,1540)), so the
-  rank read inverts there - which is the one thing width-as-rank exists to convey.
+  supply canal feeding it low in the tree, so the rank read inverts there - which is the one thing
+  width-as-rank exists to convey.
+
+  SECOND review pass (verifying the arc fix): **pass**. It matched all 156 tapering pieces in the SVG
+  against `taper_pieces` by exact path data - every piece present, every width right - and confirmed
+  the three fixes in the ink: no flat-minimum tail on any of the five delivery ditches (ch4 now 36
+  distinct widths 7.92 -> 3.24, ch7 22 widths 7.85 -> 3.42), the 2-point stub drawing 5.6 against a
+  predicted 5.57, and no beading or doubled opacity from the many extra round caps (154 water strokes,
+  exactly one per piece, no two sharing geometry). It also confirmed the blast radius: `houses`,
+  `lanes`, `wells`, `bridges`, `threshing_yards`, `gardens`, `byres`, `farm_sheds` and `kosatsuba` are
+  untouched - the re-pack stayed inside the field and ground-cover fabric.
+
+  It CAUGHT four things, all now fixed or recorded: a stale "SAME 7 piece slices" docstring left in
+  `_watercourse_segs` contradicting its own body; `taper_w`'s corrected numbers still quoting the
+  FORMULA at the 0.25 tenth (7.1 against an ink median of 7.0) and the "within ~0.1 px" claim failing
+  at 0.90 by up to 0.35 - the same defect class the FIRST pass caught, which is why that docstring now
+  says outright to re-measure in the SVG; the piecewise-vs-continuous half-width bound now recorded in
+  `taper_pieces` (up to 1.19 px on the 2-point stub, which eats its abutment to +0.25 against a
+  designed 0.75 - nothing crosses, and the closing fix plus its cost is written down there); and the
+  collector's residual 1.64 px step notch at (1521.7,1540.7), which per-segment splitting did not
+  remove because that stroke carries only 10 vertices over 1240 px (the lever is densifying the
+  polyline, not the piece count). Delivery ditches, whose vertices are 3-30 px apart, are clean at a
+  worst 0.78 px step.

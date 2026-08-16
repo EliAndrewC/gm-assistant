@@ -38,7 +38,24 @@ def taper_pieces(pts: Poly, w0: float, w1: float) -> list[tuple[Poly, float]]:
 
     ONE definition, shared by the renderer (`field_channel`) and the keep-out corridor
     (`_watercourse_segs`), which used to build this ladder separately and identically - two copies
-    of one ladder is how the drawn stroke and the corridor that protects it drift apart."""
+    of one ladder is how the drawn stroke and the corridor that protects it drift apart.
+
+    KNOWN BOUND, measured rather than assumed (settlement-review 2026-08-17). The ink is piecewise
+    constant per segment, while the two bank clearances below and `close_seams`' buffer evaluate the
+    CONTINUOUS law at the query point - so the drawn edge and the geometry the bunds are laid
+    against differ by up to half the step between neighboring pieces. On Inashiro that is 0.11-0.14
+    px on most strokes, 0.21-0.23 on the two coarse-tailed deliveries, 0.52 on the collector, and
+    **1.19 px on the 2-point stub**, where one piece has to stand for a run whose law goes 7.2 ->
+    3.2; the stub's nearest plot ring ends up +0.25 px clear of the drawn edge against a designed
+    `BANK_MARGIN` of 0.75. Nothing crosses on any shipped map, so this is a shrunken abutment, not a
+    bund in the water. IF IT IS EVER WORTH CLOSING: have `drain_bank_clearance` /
+    `supply_bank_clearance` / the `half` closure in `seams.py` take `t` at the arc midpoint of the
+    segment they already identify as nearest, instead of at the query point's own arc fraction -
+    they each compute that segment's index and `arc` already, so it is a few lines each. It re-rolls
+    every scripted map, so it wants its own pass with a `settlement-review` per map. The alternative
+    fix - densifying the polylines before stroking - would also close the collector's residual 1.64
+    px step notch at (1521.7, 1540.7), which the per-segment split did not remove because that
+    stroke has only 10 vertices over 1240 px."""
     if len(pts) < 2:
         return []
     cum = polyline_cum(pts)
