@@ -12,9 +12,9 @@
 
 **Purpose**: baseline proof + shared oracle tooling; no production changes
 
-- [ ] T001 Establish the pre-feature baseline: run `make done` in `.claude/skills/diagram/` (background, tail the log - no wrapped exit codes) and confirm green before anything moves
-- [ ] T002 [P] Write the generation-identity oracle `specs/025-human-scale-splits/oracle_gen.py` (capture/compare sha256 of `.json` and of `.svg` **with the `<!-- render-cache: ... -->` stamp line stripped** - the stamp hashes the engine fingerprint and legitimately changes when settlement.py becomes a package; the drawn bytes must not - over every regen-runnable pool gen + a fixed-seed hamletgen cohort; adapt the 022/024 sweep pattern, seeds passed in)
-- [ ] T003 [P] Write the gate-identity oracle `specs/025-human-scale-splits/oracle_gate.py` (capture/compare ordered `check_village.gate()` verdict streams over every `pool/**/*.json` manifest + `pool/regressions/` fixture; 022 oracle-sweep method)
+- [x] T001 Establish the pre-feature baseline: run `make done` in `.claude/skills/diagram/` (background, tail the log - no wrapped exit codes) and confirm green before anything moves
+- [x] T002 [P] Write the generation-identity oracle `specs/025-human-scale-splits/oracle_gen.py` (capture/compare sha256 of `.json` and of `.svg` **with the `<!-- render-cache: ... -->` stamp line stripped** - the stamp hashes the engine fingerprint and legitimately changes when settlement.py becomes a package; the drawn bytes must not - over every regen-runnable pool gen + a fixed-seed hamletgen cohort; adapt the 022/024 sweep pattern, seeds passed in)
+- [x] T003 [P] Write the gate-identity oracle `specs/025-human-scale-splits/oracle_gate.py` (capture/compare ordered `check_village.gate()` verdict streams over every `pool/**/*.json` manifest + `pool/regressions/` fixture; 022 oracle-sweep method)
 
 **Checkpoint**: baseline green; oracle tooling exists and its capture mode runs
 
@@ -32,9 +32,9 @@ None - the four stories share no unbuilt infrastructure beyond Phase 1's tooling
 
 **Independent Test**: grep the three sites per quickstart.md; docs-only diff, so no `make done` (docs-only rule)
 
-- [ ] T101 [US1] Amend clause 13 in `.specify/memory/constitution.md`: add the tests-are-covered sentence + why, bump version 1.6.0 -> 1.6.1 (PATCH per research R10), update the sync-impact header
-- [ ] T102 [P] [US1] Mirror the amendment: root `CLAUDE.md` "Files stay at human scale" bullet gains the tests-included statement; `.specify/templates/plan-template.md` Principle X clause-13 sentence gains "(test files included)"
-- [ ] T103 [US1] Verify all three sites by grep (quickstart.md commands), then commit the story: `docs(constitution): clause 13 covers test files (v1.6.1) + mirrors - feature 025 US1`
+- [x] T101 [US1] Amend clause 13 in `.specify/memory/constitution.md`: add the tests-are-covered sentence + why, bump version 1.6.0 -> 1.6.1 (PATCH per research R10), update the sync-impact header
+- [x] T102 [P] [US1] Mirror the amendment: root `CLAUDE.md` "Files stay at human scale" bullet gains the tests-included statement; `.specify/templates/plan-template.md` Principle X clause-13 sentence gains "(test files included)"
+- [x] T103 [US1] Verify all three sites by grep (quickstart.md commands), then commit the story: `docs(constitution): clause 13 covers test files (v1.6.1) + mirrors - feature 025 US1`
 
 **Checkpoint**: US1 landed; the rule the rest of the feature enforces is written down
 

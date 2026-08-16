@@ -1,28 +1,28 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.5.0 → 1.6.0
-MINOR: Principle X (Python Discipline) materially expanded again - clause 13
-(Files Stay at Human Scale) added (GM-directed, 2026-08-15), the file-size
-sibling of clause 12. A source file past roughly 1,000 raw lines prompts the
-question of whether it should become a directory-module (package of subfiles)
-whose CLAUDE.md indexes the parts and says when to load each one. Measured in
-RAW LINES, unlike clause 12's logic units, because the motivating cost is
-token economy: a context window pays for the whole file to use any part of
-it, and that cost scales with text, not logic. Ask-the-question threshold,
-not a mandate - ordered-data files (e.g. a registry whose row order is the
-execution contract) may stay large with an inline justification. Motivating
-case: check_village.py at 35,603 lines, split into the check_village/
-package by feature 024 the same day.
+Version change: 1.6.0 → 1.6.1
+PATCH: Principle X clause 13 (Files Stay at Human Scale) clarified
+(GM-directed, 2026-08-16): unit TEST files are covered exactly as source
+files. The managed cost is context-window tokens, and a test file is loaded
+under the same conditions as source - a session loads test_settlement.py to
+modify one test the same way it loads settlement.py to use one function - so
+nothing about being a test changes the economics, and tests get no
+exemption. The ordered-data justification (a registry whose row order is the
+execution contract) remains the only carve-out. Clarification of existing
+reach, no new rule: PATCH per the versioning policy. Motivating case:
+test_checks.py (11,475 lines) and test_settlement.py (7,123 lines), split by
+feature 025 alongside settlement.py itself.
 
 Sections updated:
-  - Core Principles: Principle X clause 13 added.
+  - Core Principles: Principle X clause 13 wording extended (tests
+    included).
 
 Templates requiring review/update:
-  ✅ .specify/templates/plan-template.md - Principle X gate entry now names
-                              the file-scale clause.
-  ✅ CLAUDE.md - one-line operational mirror in Development Workflow;
-                              constitution version reference bumped.
+  ✅ .specify/templates/plan-template.md - Principle X gate entry says
+                              "source or test file".
+  ✅ CLAUDE.md - "Files stay at human scale" operational mirror says tests
+                              are covered.
 
 Deferred TODOs:
   - Automated file-length check (flags source files past the threshold
@@ -441,7 +441,12 @@ any single rule is reason enough to refuse "done" status.
     clause 12's logic units - because the motivating cost is token
     economy: a session that needs one function from a file pays
     context-window tokens for the whole file, and that cost scales with
-    text, not logic. The target shape is a directory-module whose
+    text, not logic. Unit TEST files are covered exactly as source files
+    (clarified v1.6.1, GM-directed 2026-08-16): a test file is loaded
+    under the same conditions as source - you load test_settlement.py to
+    modify one test the same way you load settlement.py to use one
+    function - so nothing about being a test changes the economics, and
+    tests get no exemption. The target shape is a directory-module whose
     CLAUDE.md indexes the subfiles with a "look here when" line each,
     per the project's slim-index / load-on-demand doc pattern, so a
     future session loads only the part it needs. Like clause 12 this is
@@ -735,4 +740,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.6.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-15
+**Version**: 1.6.1 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-16
