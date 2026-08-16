@@ -308,3 +308,58 @@ changed something".
 The two straight moves are cheap and safe on their own: every consumer reaches these members through
 `self.` on the composed `Settlement`, so no call site changes - the move is the member's text, its
 row in the two indexes, and the name migrating between the two mixins' surface frozensets.
+
+## Feature 115's leftovers (civic_grounds/)
+
+Same shape as feature 114's above: pending PARENT-level relocations that were deliberately not
+folded into the split, because moving a member between parent-level mixins would have made the
+byte-identity oracle answer two questions at once.
+
+- **`_ward_fence_cap` -> `water_ways.py`.** It is a ward-fence predicate and `water_ways.py` is
+  already the wards/fences module. It sits in `civic_grounds/funerary.py` today because `mausoleum`
+  is its caller inside the package being cut (the placement-follows-the-caller rule). Its other
+  consumer, `structures/compounds.py`, reaches it through the composed `Settlement` and is unaffected
+  either way.
+- **`precinct_interior` -> `shrines_wells/`.** It draws a sovereign temple precinct's INTERIOR
+  program (abbot's residence, order administration, library, two dormitories, kitchen/refectory), so
+  it is religious ground; `civic_grounds/civic.py` holds it as the institutional-works member.
+  Feature 116 has since made `shrines_wells` a package, so the destination is now a specific file -
+  `shrines_wells/shrines.py` is the closest fit. Note it calls `self.cemetery`, which stays in
+  `civic_grounds/funerary.py`; that cross-package `self.` call is already normal and needs no import.
+
+Both are cheap: every consumer reaches these through `self.`, so the move is the member's text, its
+row in the two indexes, and the name migrating between the two mixins' surface frozensets.
+
+## The next clause-12 candidate: `rolling.py::roll_village` (256 lines)
+
+With `_stable_yard` decomposed (feature 115, 335 -> longest stage 85), **`roll_village` is now the
+largest function in the engine at 256 lines** - the only one left over the ~150-line bar features
+112/115 converged on. It is the homestead-bundle solver's entry point in `settlement/rolling.py`.
+
+Two things a decomposing session should know before starting, both learned the expensive way in 115:
+
+- **Measure the RNG surface FIRST.** Grep every `random.*` call in the function and note which
+  stages draw and which do not. In `_stable_yard` that measurement collapsed the perceived risk from
+  "a lattice-wide hazard" to one adjacency, and it took two minutes. `roll_village` is a *seeding*
+  routine, so its draw density is likely much higher and the answer may well go the other way - but
+  knowing which is the whole difference between a safe refactor and a guess.
+- **Check for closures before promising straight-line stages.** `_stable_yard` looked like seven
+  banner-marked blocks and was actually eight closures over a shared lattice, which is why 115's
+  plan had to be amended mid-flight (research R13). An AST walk for nested `FunctionDef`s answers it
+  in one command.
+
+## `wip/shiro-daika.gen.py`'s cost is UNKNOWN and unbounded
+
+Feature 112 recorded it as "over 6 minutes"; feature 115 discovered that figure is an **aborted
+lower bound** - 112 stopped the map at six minutes without output and never learned the real number.
+115 got it to **10m35s of CPU at 100%, still with no output**, and stopped it for the same reason.
+Nobody has ever let this map finish.
+
+That matters beyond curiosity: `precinct_interior`'s only consumer in the entire tree is this map,
+so any future refactor touching it has no artifact-level oracle available at a known price. Two
+follow-ups, either of which closes it:
+
+- Run it to completion once, unattended, and record the actual cost here.
+- Profile it. A capital map costing more than 3x the entire 28-map pool is itself a finding - the
+  "one performance bug this engine keeps growing" section of `CLAUDE.md` describes the shape it is
+  most likely to be.

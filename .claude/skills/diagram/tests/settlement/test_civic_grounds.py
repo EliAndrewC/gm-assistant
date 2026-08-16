@@ -1,6 +1,7 @@
 """Split from test_settlement.py by feature 025 - see tests/settlement/CLAUDE.md for the index."""
 
 import math
+import random
 
 import pytest
 
@@ -577,3 +578,20 @@ def test_every_civic_grounds_member_resolves_on_settlement_itself():
     # structures/compounds.py calls self._ward_fence_cap and trades.py calls self._way_bearing_near.
     unreachable = sorted(n for n in _CIVIC_GROUNDS_SURFACE if not hasattr(Settlement, n))
     assert not unreachable, f"not resolvable on Settlement: {unreachable}"
+
+
+def test_yard_ctx_construction_draws_no_rng():
+    """`_YardCtx.__init__` must consume ZERO random draws.
+
+    The whole feature-115 stage-2 decomposition rests on this: the context is built BEFORE the
+    litter scatter, so if construction drew even once it would shift every later draw and change
+    every stable yard on every map. The byte-identity sweep catches that after the fact; this
+    catches it in 2ms, and it is the invariant a future edit to `_YardCtx.__init__` is most likely
+    to break (adding a jittered field would look harmless).
+    """
+    from settlement.civic_grounds._yardctx import _YardCtx
+
+    s = _city()
+    before = random.getstate()
+    _YardCtx(s, 500.0, 500.0, 72.0)
+    assert random.getstate() == before

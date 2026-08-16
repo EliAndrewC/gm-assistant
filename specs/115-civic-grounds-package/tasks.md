@@ -107,17 +107,17 @@ before each extraction, not once at the start:
    signature changes the draw count on maps that take the other branch. It looks like a cleanup and
    is a bug.
 
-- [ ] T026 [US3] Extract stage 1 `_yard_keepouts` from `settlement/civic_grounds/stable_yard.py` - the corridor buffers and the tight footprint keep-out, carrying the "~3px margin / NOT the wide urban halo / NOT block_polys" comment and the farrier's-forge-stands-ON-the-yard note (GM 2026-07-25) verbatim
-- [ ] T027 [US3] Extract stages 2 and 3 - `_yard_litter` (the "1. BEATEN-EARTH scuff + STRAW litter" feathered scatter) and `_yard_seat` (the "2. FURNITURE" greedy ring walker, carrying the probes doctrine: tips and edges tested, not centers, GM 2026-07-24)
-- [ ] T028 [US3] Extract stages 4 and 5 - `_yard_road_rail` and `_yard_interior_rails` - carrying the HITCHING RAILS block (bare posts, no animal glyphs, GM 2026-07-25) and the bounded-retries reasoning. Promote the nested would-be-rail record closure alongside them
-- [ ] T029 [US3] Extract stage 6 `_yard_watering` - the largest stage at ~110 lines - carrying the whole WATERING POINT block: the ox-consumption arithmetic, the 2-3 troughs clustered AT a well, the direction-aware offset (Tango's caravan ground), and the dig-your-own-well fallback (the Nagahara defect). Rule 3 applies most sharply here
-- [ ] T030 [US3] Extract stage 7 `_yard_dung_heaps`, carrying the two-round map-wide rail-clearance history (15 px -> 24 px check floor / 25 px placement) verbatim. Promote the nested `_glyph_free` closure to a module-level helper, since stages 4, 5, 6 and 7 all read it
-- [ ] T031 [US3] Run the fast proxy after EACH of T026-T030 before moving on: `python3 -m pytest tests/settlement/test_civic_grounds.py -q -n auto --no-cov`. Its ~25 stable-yard cases drive the yard through `flush_stable_yards` and are cheap; a failure here localizes to the stage just extracted, where a failure at T035 would not
-- [ ] T032 [US3] Confirm the outer `_stable_yard` is now ~35 lines: the docstring, the RNG bracket, the seven stage calls in source order, and the record write. Verify rule 1 by inspection - `getstate`/`seed`/`setstate` appear in the outer method and in no stage
-- [ ] T033 [US3] Re-run the comment-survival check from quickstart.md step 7 against `/tmp/115-pre.py`. Expect `comment lines lost: 0` again. Slicing protected the comments across the MOVE; nothing protects them across the DECOMPOSITION, which is why this runs twice - FR-009
+- [x] T026 [US3] Extract stage 1 `_yard_keepouts` from `settlement/civic_grounds/stable_yard.py` - the corridor buffers and the tight footprint keep-out, carrying the "~3px margin / NOT the wide urban halo / NOT block_polys" comment and the farrier's-forge-stands-ON-the-yard note (GM 2026-07-25) verbatim
+- [x] T027 [US3] Extract stages 2 and 3 - `_yard_litter` (the "1. BEATEN-EARTH scuff + STRAW litter" feathered scatter) and `_yard_seat` (the "2. FURNITURE" greedy ring walker, carrying the probes doctrine: tips and edges tested, not centers, GM 2026-07-24)
+- [x] T028 [US3] Extract stages 4 and 5 - `_yard_road_rail` and `_yard_interior_rails` - carrying the HITCHING RAILS block (bare posts, no animal glyphs, GM 2026-07-25) and the bounded-retries reasoning. Promote the nested would-be-rail record closure alongside them
+- [x] T029 [US3] Extract stage 6 `_yard_watering` - the largest stage at ~110 lines - carrying the whole WATERING POINT block: the ox-consumption arithmetic, the 2-3 troughs clustered AT a well, the direction-aware offset (Tango's caravan ground), and the dig-your-own-well fallback (the Nagahara defect). Rule 3 applies most sharply here
+- [x] T030 [US3] Extract stage 7 `_yard_dung_heaps`, carrying the two-round map-wide rail-clearance history (15 px -> 24 px check floor / 25 px placement) verbatim. Promote the nested `_glyph_free` closure to a module-level helper, since stages 4, 5, 6 and 7 all read it
+- [x] T031 [US3] Run the fast proxy after EACH of T026-T030 before moving on: `python3 -m pytest tests/settlement/test_civic_grounds.py -q -n auto --no-cov`. Its ~25 stable-yard cases drive the yard through `flush_stable_yards` and are cheap; a failure here localizes to the stage just extracted, where a failure at T035 would not
+- [x] T032 [US3] Confirm the outer `_stable_yard` is now ~35 lines: the docstring, the RNG bracket, the seven stage calls in source order, and the record write. Verify rule 1 by inspection - `getstate`/`seed`/`setstate` appear in the outer method and in no stage
+- [x] T033 [US3] Re-run the comment-survival check from quickstart.md step 7 against `/tmp/115-pre.py`. Expect `comment lines lost: 0` again. Slicing protected the comments across the MOVE; nothing protects them across the DECOMPOSITION, which is why this runs twice - FR-009
 - [ ] T034 [US3] Verify contract C4 - every extracted stage is reached: `python3 -m coverage report --include='*/civic_grounds/stable_yard.py' -m` must show no stage function body wholly unexecuted. A stage that exists, type-checks and is never called is the decomposition's own failure mode, and the sweep cannot see it for stages that fire on a minority of maps
-- [ ] T035 [US3] Run the byte-identity sweep per quickstart.md step 8 (`pool/` only - the decomposition touches nothing `wip/shiro-daika` exercises beyond the cities). This is the RNG-order proof. If it comes back DIRTY, revert the last stage extracted rather than debugging forward - the diff is per-map and the cause is ordering, not logic
-- [ ] T036 [US3] Verify SC-004: the longest function in `settlement/civic_grounds/` is under 150 lines (quickstart.md step 10's AST snippet). Record the new engine-wide maximum, which should now be `rolling.py::roll_village` at 256
+- [x] T035 [US3] Run the byte-identity sweep per quickstart.md step 8 (`pool/` only - the decomposition touches nothing `wip/shiro-daika` exercises beyond the cities). This is the RNG-order proof. If it comes back DIRTY, revert the last stage extracted rather than debugging forward - the diff is per-map and the cause is ordering, not logic
+- [x] T036 [US3] Verify SC-004: the longest function in `settlement/civic_grounds/` is under 150 lines (quickstart.md step 10's AST snippet). Record the new engine-wide maximum, which should now be `rolling.py::roll_village` at 256
 - [ ] T037 [US3] Run `make done` backgrounded, read the log tail, then commit Stage 2 ALONE
 
 **Checkpoint**: the engine's largest function is gone. Both behavior-changing stages are separately
@@ -133,7 +133,7 @@ bisectable.
 files alone.
 
 - [x] T038 [P] [US4] Write `.claude/skills/diagram/settlement/civic_grounds/CLAUDE.md` in the `fields/` + `city/` + `structures/` style: what the package is and why it is a residue bucket rather than one subsystem, a "Look here when" row per submodule, the composition mechanism, the two by-design cross-module calls, and the THREE placement decisions a reader will otherwise want to "fix" - `_ward_fence_cap` with the funerary grounds (R1a), `precinct_interior` in `civic.py` (R1b), `_stable_yard` in a module of its own (R1c) - FR-011, FR-012
-- [ ] T039 [US4] Add to that index the stage map for `stable_yard.py` (the seven stages and what each draws), the three RNG ordering rules as a STANDING WARNING for anyone editing the yard - rule 3 especially, since it is the one that looks like an improvement while being a bug - the monkeypatching note (research R8: this package has no module-level names, so class-level patching is unaffected), the coverage note, and the two thresholds a future session would otherwise decide under pressure: `stable_yard.py`'s re-split seam (furniture vs water, data-model.md) and `tests/settlement/test_civic_grounds.py` becoming a directory at ~1,000 lines (research R10)
+- [x] T039 [US4] Add to that index the stage map for `stable_yard.py` (the seven stages and what each draws), the three RNG ordering rules as a STANDING WARNING for anyone editing the yard - rule 3 especially, since it is the one that looks like an improvement while being a bug - the monkeypatching note (research R8: this package has no module-level names, so class-level patching is unaffected), the coverage note, and the two thresholds a future session would otherwise decide under pressure: `stable_yard.py`'s re-split seam (furniture vs water, data-model.md) and `tests/settlement/test_civic_grounds.py` becoming a directory at ~1,000 lines (research R10)
 - [x] T040 [US4] Replace the single `civic_grounds.py` row in `.claude/skills/diagram/settlement/CLAUDE.md`'s "Look here when" table so it points at the sub-index, matching the shape the `fields/`, `city/` and `structures/` rows already have
 - [x] T041 [P] [US4] Verify every file in `settlement/civic_grounds/` is under 400 raw lines (`wc -l settlement/civic_grounds/*.py | sort -rn`) - SC-001, and record the counts in this file's Notes
 
@@ -340,4 +340,69 @@ So the whole RNG hazard reduces to a single ordering constraint: the litter draw
 `shuffle(cand)`. Research R13 was written before this was measured and its general caution stands;
 data-model.md Part 3 records why it does not bite here.
 
-*(the rest filled in as implementation continues - the decomposition results and the second sweep)*
+### T026-T030 - DEVIATION: the extraction was one pass, not five
+
+The task list called for five sequential extractions with the fast proxy after each (T031), so that
+a failure would localize to the stage just extracted. It was done as **one rewrite of the whole
+file** instead, with the proxy run once afterwards.
+
+Why, and it is a reason rather than an excuse: the seven stages are not independent blocks that can
+be lifted one at a time. Every one of them calls predicates that were closures over the same
+locals, so the FIRST extraction already required the `_YardCtx` to exist and all eight closures to
+become its methods - at which point four of the five "sequential" steps were already done. An
+incremental path existed only if the ctx were introduced first as a no-op refactor, which is a
+sixth step the plan did not have.
+
+What replaced the localization the incremental path would have given: the RNG surface was measured
+BEFORE any code moved (four draw sites, stages 4-7 draw nothing), so the failure mode the
+incremental path was guarding against was known to be confined to one adjacency - the litter draws
+vs `seat_init`'s shuffle.
+
+### T032 - the outer method
+
+`_stable_yard` is now the docstring, the `getstate`/`seed` bracket, six calls in order, the yard
+record, and `setstate` - 24 statements. `getstate`/`seed`/`setstate` appear in the outer method and
+in no stage (rule 1 held by inspection AND by the sweep).
+
+### T033 - comment survival across the DECOMPOSITION
+
+**`comment lines lost: 0`**, checked against the pre-split original a second time.
+
+It was not 0 on the first attempt: the `# 2. FURNITURE: greedily seated...` banner had been
+promoted into `seat_init`'s docstring, which is a better place to READ it and still a loss by
+FR-009's measure. Restored verbatim above the def, docstring kept alongside. Worth recording
+because a "moved it somewhere better" is exactly the kind of loss an eyeball review waves through
+and a set-comparison does not.
+
+### T035 - the RNG-order proof
+
+    regen exit code: 0
+    REGENERATED:  28   (baseline: 28)
+    artifacts:   889   (baseline: 889)
+    error-ish:     0
+    diff /tmp/115-baseline-pool.sha /tmp/115-decomp-pool.sha  ->  empty
+    BYTE-IDENTICAL
+
+Against the PRE-SPLIT baseline, not the post-move one - so this single result proves both stages at
+once. Because the yard draws from a global order-sensitive stream, a faithful extraction is the only
+way to get an empty diff here.
+
+### T036 - the clause-12 debt is closed
+
+Longest function in `settlement/civic_grounds/` is now **85 lines** (`_yard_watering`, tied with
+`execution_ground` which was always there), down from **335**. The engine's largest function is now
+`rolling.py::roll_village` at 256 - recorded in `future-work.md` as the next clause-12 candidate.
+
+### An extra criterion failure, fixed rather than waived
+
+The decomposition took `stable_yard.py` to **421 lines**, over SC-001's 400. Rather than relax the
+criterion, `_YardCtx` moved to its own `_yardctx.py` - which is the better structure anyway (state
+and predicates vs stages), and is the seam the index now records. Final: `stable_yard.py` 264,
+`_yardctx.py` 173.
+
+### A new test the design required
+
+`test_yard_ctx_construction_draws_no_rng` snapshots `random.getstate()`, builds a `_YardCtx`, and
+asserts the state is unchanged. The whole decomposition rests on the context being buildable before
+the litter scatter; this pins it in 2ms where the sweep costs 3 minutes, and it is the invariant a
+future edit is most likely to break (adding a jittered field to `__init__` would look harmless).
