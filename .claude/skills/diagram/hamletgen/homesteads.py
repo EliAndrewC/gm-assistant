@@ -10,7 +10,7 @@ import random
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from settlement import Settlement
+from settlement import Settlement, surface_water_dist
 
 from .consts import LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
 from .geom import centroid, unit
@@ -238,6 +238,17 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
     ccx, ccy = sum(xs) / len(xs), sum(ys) / len(ys)
     want = well_target(plan.spec.households)
     placed: list[Pt] = []
+    # THE MINIMAX SERVES THE HOUSES THAT NEED A WELL (known-open ledger 2026-08-16): the
+    # worst-served objective used to count every house, including those
+    # `settlement_dwellings_watered` already treats as watered by a nearby stream / channel /
+    # pond (Kashikawa's SW pocket, 77-182 ft from the stream head - the GM-settled "no redundant
+    # well beside a living stream" case), so the objective and the check read two definitions of
+    # "needs a well". `surface_water_dist` is the check's own predicate; a house within its
+    # reach of surface water drops out of the objective and out of the rescue pass below. If
+    # EVERY house is surface-watered the objective falls back to all of them - wells are still
+    # dug (well_target), they just stop chasing houses the water already serves.
+    _sw_reach = 760.0 / max(plan.ftpx, 0.01)
+    needy = [h for h in houses if surface_water_dist(s.M, h["x"], h["y"]) > _sw_reach] or list(houses)
     # A RELAXATION LADDER, not a single rule. The tight neighborhood test is right for a compact
     # cluster and impossible for a stretched one: an `elongated` cluster strung along a margin has
     # no point with three homesteads inside 190 px, so the strict pass found nothing at all and the
@@ -307,7 +318,7 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                             min(math.hypot(h["x"] - wx, h["y"] - wy) for wx, wy in placed),
                             math.hypot(h["x"] - c[1], h["y"] - c[2]),
                         )
-                        for h in houses
+                        for h in needy
                     )
 
                 pool.sort(key=lambda c: (_worst_after(c) // 66.0, c[0]))
@@ -324,6 +335,8 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
     for h in houses:
         if any(math.hypot(h["x"] - px, h["y"] - py) <= reach for px, py in placed):
             continue
+        if surface_water_dist(s.M, h["x"], h["y"]) <= reach:
+            continue  # watered by a stream/channel/pond - the check's own verdict; no rescue well
         # A RING PROBE, spiraling out from the house, asking `well_at` directly.
         #
         # AND EVERY CANDIDATE MUST STILL STAND AMONG THE DWELLINGS - near SOME house, not necessarily

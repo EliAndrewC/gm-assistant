@@ -130,44 +130,63 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
     # woodlot (200 ft, then 160 ft) is historically ordinary - coppice lots were whatever odd
     # corner the village spared - while an absent one on a name-story map is not. Unfilled slots
     # re-scan at the smaller sizes; a slot no size can seat is honestly dropped.
-    for size_try in (size, size * 0.8, size * 0.64, size * 0.5):
+    # ...AND THE SET-BACK RELAXES BEFORE THE MAP GOES WOODLESS (Kashikawa round 3, 2026-08-16:
+    # after the wells realigned, the generous 80/180 px crop set-backs plus the marsh closed the
+    # whole kept window at every rung - zero parcels on the map NAMED for its oaks). The scan's
+    # defaults are deliberately far above the gate's own floors (`woodland_clear_of_crops`:
+    # CLEAR 14 px overhang, SHADE 69 px sunny-side at 1 ft/px), so a second pass at 40/100 px
+    # still clears them - and the satoyama mosaic genuinely puts the woodlot on the margin
+    # beside the field. ONE trap, found by the 48-seed sweep (Audit-24): `_clear_gap` measures
+    # center-to-crop minus HALF, which overstates the true polygon gap by up to 0.414*half when
+    # the crop lies diagonal to the square - the generous profile absorbed that slack, the
+    # relaxed one shipped a parcel the check called shading. So the relaxed thresholds carry
+    # the diagonal slack EXPLICITLY, per parcel size (the measured-gap floor then implies a
+    # true-gap floor of 40/100, both above the check's 14/69). The generous profile always runs
+    # first, so a roomy composition is byte-identical; only one that would otherwise draw NO
+    # woodland tightens.
+    for _sb_normal, _sb_sunny in ((80.0, 180.0), (40.0, 100.0)):
         if len(chosen) >= count:
             break
-        half = size_try / 2.0
-        sx0, sy0 = max(cbx0, _fx0 + half + 16.0), max(cby0, _fy0 + half + 16.0)
-        sx1, sy1 = min(cbx1, _fx1 - half - 16.0), min(cby1, _fy1 - half - 16.0)
-        scored: list[tuple[float, float, float]] = []
-        y = max(half + 40.0, sy0)
-        while y <= min(plan.H - half - 40.0, sy1):
-            x = max(half + 40.0, sx0)
-            while x <= min(plan.W - half - 40.0, sx1):
-                gap = _clear_gap((x, y), half, crops, dy)
-                if (
-                    gap is not None
-                    and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
-                    and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
-                    and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
-                    and not _wet(x, y, half)
-                ):
-                    # PREFER THE NEAREST QUALIFYING GROUND, leaning upslope. The first version of this
-                    # maximized distance from the crop instead, which sounds right and is wrong twice
-                    # over: it drove every patch to the canvas's far upslope margin, where the dedupe
-                    # radius strung them out along one line at identical height, and then the crop -
-                    # which frames to the HARD features and lets commons bleed off-frame - cut three of
-                    # the four off the sheet entirely. A settlement's coppice is walked to daily for
-                    # fuel and fodder; it stands on the back slope behind the houses, as close as the
-                    # crop set-back allows. The keep-outs above are what make it far ENOUGH.
-                    upslope = -((x - ccx) * dx + (y - ccy) * dy)
-                    scored.append((-math.hypot(x - ccx, y - ccy) + 0.35 * upslope, x, y))
-                x += step
-            y += step
-        for _, x, y in sorted(scored, reverse=True):
+        for size_try in (size, size * 0.8, size * 0.64, size * 0.5):
             if len(chosen) >= count:
                 break
-            if any(math.hypot(x - cx0, y - cy0) < size * 1.5 for cx0, cy0 in centers):
-                continue
-            chosen.append([(x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half)])
-            centers.append((x, y))
+            half = size_try / 2.0
+            _sb_pad = 0.415 * half if _sb_normal < 80.0 else 0.0  # the diagonal slack (see above); the generous profile keeps its historical thresholds exactly
+            _sb_n, _sb_s = _sb_normal + _sb_pad, _sb_sunny + _sb_pad
+            sx0, sy0 = max(cbx0, _fx0 + half + 16.0), max(cby0, _fy0 + half + 16.0)
+            sx1, sy1 = min(cbx1, _fx1 - half - 16.0), min(cby1, _fy1 - half - 16.0)
+            scored: list[tuple[float, float, float]] = []
+            y = max(half + 40.0, sy0)
+            while y <= min(plan.H - half - 40.0, sy1):
+                x = max(half + 40.0, sx0)
+                while x <= min(plan.W - half - 40.0, sx1):
+                    gap = _clear_gap((x, y), half, crops, dy, _sb_n, _sb_s)
+                    if (
+                        gap is not None
+                        and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
+                        and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
+                        and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
+                        and not _wet(x, y, half)
+                    ):
+                        # PREFER THE NEAREST QUALIFYING GROUND, leaning upslope. The first version of this
+                        # maximized distance from the crop instead, which sounds right and is wrong twice
+                        # over: it drove every patch to the canvas's far upslope margin, where the dedupe
+                        # radius strung them out along one line at identical height, and then the crop -
+                        # which frames to the HARD features and lets commons bleed off-frame - cut three of
+                        # the four off the sheet entirely. A settlement's coppice is walked to daily for
+                        # fuel and fodder; it stands on the back slope behind the houses, as close as the
+                        # crop set-back allows. The keep-outs above are what make it far ENOUGH.
+                        upslope = -((x - ccx) * dx + (y - ccy) * dy)
+                        scored.append((-math.hypot(x - ccx, y - ccy) + 0.35 * upslope, x, y))
+                    x += step
+                y += step
+            for _, x, y in sorted(scored, reverse=True):
+                if len(chosen) >= count:
+                    break
+                if any(math.hypot(x - cx0, y - cy0) < size * 1.5 for cx0, cy0 in centers):
+                    continue
+                chosen.append([(x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half)])
+                centers.append((x, y))
     return chosen
 
 
@@ -219,7 +238,7 @@ def title_pocket(s: Settlement, plan: SitePlan, w: float = 300.0, h: float = 190
     return (spot[0], spot[1], spot[0] + w, spot[1] + h)
 
 
-def _clear_gap(center: Pt, half: float, crops: Sequence[Poly], fall_y: float) -> float | None:
+def _clear_gap(center: Pt, half: float, crops: Sequence[Poly], fall_y: float, normal: float = 80.0, sunny: float = 180.0) -> float | None:
     """Distance from a candidate square to the nearest crop, or None if it is too close.
 
     The set-back is 80 px normally and 180 px when the square sits on the crop's SUNNY side (south,
@@ -233,7 +252,7 @@ def _clear_gap(center: Pt, half: float, crops: Sequence[Poly], fall_y: float) ->
         if point_in_poly(cx, cy, list(crop)):
             return None
         south_of = cy - half > max(p[1] for p in crop) - 40 and min(p[0] for p in crop) - half < cx < max(p[0] for p in crop) + half
-        if d < (180.0 if south_of else 80.0):
+        if d < (sunny if south_of else normal):
             return None
         best = min(best, d)
     return None if best >= 1e9 else best

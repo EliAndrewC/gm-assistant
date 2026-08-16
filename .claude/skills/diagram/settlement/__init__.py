@@ -101,3 +101,4 @@ from ._knobs import scope_seed as scope_seed
 from ._knobs import skeleton_layout as skeleton_layout
 from ._knobs import wall_tower_spacing_px as wall_tower_spacing_px
 from .core import Settlement as Settlement
+from .land import surface_water_dist as surface_water_dist

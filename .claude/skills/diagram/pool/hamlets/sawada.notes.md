@@ -54,3 +54,19 @@ the low side where the gate requires it.
   genuinely tight, and its name story is the marsh, not oaks). Review log: full DELTA verified the
   trim and the frame fix, and caught the 97%-marsh parcel that drove the marsh keep-out;
   follow-up pass on the re-seat.
+
+- 2026-08-16 (second known-opens round - flooded-sliver demotion, well/check alignment,
+  recorded woodland canopy, trim dedup; this map re-rolled): pointed plots (interior angle
+  < 25 deg) no longer take the FLOODED tint and the painted tint is recorded as
+  `flooded_plots` (gate `flooded_plots_read_as_basins` at 15 deg); the well minimax and
+  rescue read `settlement.surface_water_dist` - the watered check's own predicate - so wells
+  stop chasing stream-watered houses; woodland stands record their crowns (`tree_crowns` +
+  per-parcel count, gate `woodland_commons_visibly_stocked`) and register as placer
+  keep-outs; the trim corner's duplicate vertices are merged (`dedup_ring`).
+  Map-specific: THE no-pond map - of 7 painted blue plots, the pointed fan-seam needles (reading
+  as tiny triangular ponds at the collector junctions) are demoted to green; 4 basin-shaped
+  flooded strips survive (SVG fill census: 4 painted, 4 recorded, 1:1) and read as wet paddy
+  rows. The exactly-25.0-deg survivor pair at the west seam is the ACCEPTED boundary case - it
+  composes as one flooded plot, not a pond. A second 125 ft coppice seated in the SW corner
+  (18 crowns, the review's "form done right") beside the original dry-shoulder parcel (12
+  crowns - straggly per the review, logged as cosmetic).
