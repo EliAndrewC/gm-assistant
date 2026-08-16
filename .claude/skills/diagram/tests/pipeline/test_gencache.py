@@ -451,6 +451,38 @@ def test_gate_miss_stores_coverage_the_next_hit_replays(tmp_path, monkeypatch, c
     assert Path(new.pop()).read_bytes() == stored
 
 
+def test_a_hit_is_refused_when_its_stored_coverage_names_a_file_that_is_gone(tmp_path, monkeypatch, clean_gatehit):
+    """A stored coverage file that measures a DELETED module makes the entry unusable, so it is a
+    miss - the cache's own "any doubt at all regenerates" rule, applied to the coverage half.
+
+    THE INCIDENT (2026-08-17). A peer session's package split deleted `settlement/civic_grounds.py`;
+    every cache entry built before that sync went on replaying coverage that measured it, the
+    Makefile's `coverage combine --append` swept the replay in, and `coverage report` died with
+    `No source for code` - which the Makefile reports as the settlement RATCHET FLOOR being breached.
+    So a routine refactor in someone else's module surfaced, in a clone that had merely synced, as a
+    coverage regression in code this session never touched. The key cannot see it: generation is
+    perfectly valid, and the map it produces is correct. Only the replayed coverage is stale.
+
+    Held here rather than in a doc because the recovery (`GATE_NO_CACHE=1 make done`) is exactly the
+    kind of tip nobody recalls at the moment the gate goes red at a file they have never opened."""
+    eng, gen, out = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    monkeypatch.delenv(gencache.GATE_BYPASS, raising=False)
+    assert gencache.gate_obtain(str(gen))[1] == "REGENERATED"
+    assert gencache.gate_obtain(str(gen))[1] == "HIT", "baseline: this entry hits before we spoil it"
+
+    from coverage import CoverageData  # noqa: PLC0415 - only this test needs the writer
+
+    stored = Path(gencache.CACHE_DIR, "toy", gencache.COVERAGE_NAME)
+    data = CoverageData(basename=str(stored))
+    data.read()
+    data.add_lines({str(tmp_path / "vanished_by_a_peer_session.py"): [1]})
+    data.write()
+
+    _, how, _ = gencache.gate_obtain(str(gen))
+    assert how == "REGENERATED", "an entry whose coverage measures a vanished file must regenerate, not replay"
+
+
 def test_gate_bypass_forces_regeneration(tmp_path, monkeypatch, clean_gatehit):
     """026 guarantee 3 - and the test OWNS the environment (the DIAGRAM_ALLOW_SLOW_GENS lesson,
     2026-08-03): delenv first, so an inherited bypass cannot silence the half that proves hits
