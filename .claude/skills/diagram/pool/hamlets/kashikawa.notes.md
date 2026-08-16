@@ -39,3 +39,10 @@ on-sheet woodland. Logged in `future-work.md`.
   tails via interpolated piece boundaries, minimax worst-served well placement, the notice
   board's grove-clump keep-out, accidental-lane-crossing guards). Review log: round-2 DELTA
   flagged the blunt canal-B cap (fixed: the arm now tapers 7.2 -> 3.2 past its offtake); round-3 follow-up in the session of 2026-08-16.
+- 2026-08-16 (round-3 review QUESTIONABLE, settled): the SW five-house pocket has no well of its
+  own DELIBERATELY - its houses stand 77-182 ft from the drawn stream head and intake channel
+  (measured from the manifest), and `settlement_dwellings_watered` counts surface water within
+  ~760 ft as watering, so a well there would be redundant infrastructure beside a living stream.
+  The minimax well objective still counts those houses (a known, harmless inefficiency - logged
+  in future-work.md); their real water is the stream, the period-correct arrangement.
+

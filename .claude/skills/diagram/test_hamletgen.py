@@ -617,3 +617,34 @@ def test_stage_notice_reseats_a_board_the_frame_would_lose():
     assert 440.0 <= bx <= 600.0 and 440.0 <= by <= 600.0, f"re-seated outside the cloud: {(bx, by)}"
     assert not any(len(lb) > 5 and lb[5] == "notice board" for lb in s.M["labels"]), "orphan caption left behind"
     assert len(s.M["kosatsuba"]) == 1, "old board not popped"
+
+
+def test_arm_crossing_accidental_drops_an_open_ground_X_and_keeps_a_designed_one():
+    # kept arm: a horizontal run. Candidate: crosses it mid-run at (50, 0).
+    kept_arm = [(0.0, 0.0), (100.0, 0.0)]
+    crossing = [(50.0, -40.0), (50.0, 40.0)]
+    # raw pair never crossed (a Y's arms share only their hub) -> the clipped X is ACCIDENTAL
+    raw_no_cross = [(200.0, -40.0), (200.0, 40.0)]
+    assert hg._arm_crossing_accidental(crossing, raw_no_cross, [(kept_arm, kept_arm)])
+    # raw pair crossed at the same spot (the 'cross' skeleton's bar over its spine) -> DESIGNED
+    assert not hg._arm_crossing_accidental(crossing, crossing, [(kept_arm, kept_arm)])
+    # raw pair crossed but 200 px away -> still accidental (location-aware, not existence)
+    far_raw = [(250.0, -40.0), (250.0, 40.0)]
+    far_kept_raw = [(200.0, 0.0), (300.0, 0.0)]
+    assert hg._arm_crossing_accidental(crossing, far_raw, [(kept_arm, far_kept_raw)])
+    # no crossing at all -> kept
+    assert not hg._arm_crossing_accidental([(0.0, 10.0), (100.0, 10.0)], raw_no_cross, [(kept_arm, kept_arm)])
+
+
+def test_fork_spur_truncates_at_the_lane_and_survives_degenerate_input():
+    arm = [(0.0, 0.0), (100.0, 0.0)]
+    # a spur starting on the far side of the arm gets truncated to fork AT the crossing
+    spur = [(50.0, -30.0), (50.0, 60.0)]
+    out = hg._fork_spur(spur, [(arm, arm)])
+    assert abs(out[0][0] - 50.0) < 0.1 and abs(out[0][1]) < 0.1, out
+    assert out[-1] == (50.0, 60.0)
+    # a spur already forking from the arm is untouched
+    clean = [(50.0, 0.0), (50.0, 60.0)]
+    assert hg._fork_spur(clean, [(arm, arm)]) == clean
+    # degenerate input passes through the bounded loop's guard unharmed
+    assert hg._fork_spur([(1.0, 2.0)], [(arm, arm)]) == [(1.0, 2.0)]
