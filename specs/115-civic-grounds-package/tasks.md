@@ -30,11 +30,11 @@ session repointed it to `116-shrines-wells-package` mid-chain. See Notes.
 **Purpose**: establish the oracle, and prove the oracle can actually see the thing it will measure.
 Nothing in Phase 3+ is safe without both.
 
-- [ ] T001 Confirm the clone is synced to main's tip and re-measure `.claude/skills/diagram/settlement/civic_grounds.py`: expect 1,162 raw lines and 22 `CivicGroundsMixin` members, ALL `FunctionDef` (no class-level `Assign`, unlike feature 114). Re-measure rather than trust plan.md - a peer session may have moved the tree between planning and implementation, and one demonstrably did during this feature's planning
-- [ ] T002 Run quickstart.md step 0 BEFORE the split and record the output in this file's Notes: `gencache.engine_files()` must list `settlement/civic_grounds.py` and must report `tests contributing: 0`. This is the pre-image of the post-split check in T018
-- [ ] T003 Capture the byte-identity baseline per quickstart.md step 1: copy `.claude/skills/diagram/` to `$SCRATCH/115-baseline/diagram`, run `python3 -m pipeline.regen --no-cache --frozen-ok pool/*/*.gen.py` there, and write `sha256sum` of every `pool/**` `.json`/`.svg`/`.png` to `/tmp/115-baseline.sha`
+- [x] T001 Confirm the clone is synced to main's tip and re-measure `.claude/skills/diagram/settlement/civic_grounds.py`: expect 1,162 raw lines and 22 `CivicGroundsMixin` members, ALL `FunctionDef` (no class-level `Assign`, unlike feature 114). Re-measure rather than trust plan.md - a peer session may have moved the tree between planning and implementation, and one demonstrably did during this feature's planning
+- [x] T002 Run quickstart.md step 0 BEFORE the split and record the output in this file's Notes: `gencache.engine_files()` must list `settlement/civic_grounds.py` and must report `tests contributing: 0`. This is the pre-image of the post-split check in T018
+- [x] T003 Capture the byte-identity baseline per quickstart.md step 1: copy `.claude/skills/diagram/` to `$SCRATCH/115-baseline/diagram`, run `python3 -m pipeline.regen --no-cache --frozen-ok pool/*/*.gen.py` there, and write `sha256sum` of every `pool/**` `.json`/`.svg`/`.png` to `/tmp/115-baseline.sha`
 - [ ] T004 In the SAME baseline copy, run `python3 -m pipeline.regen --no-cache --frozen-ok wip/shiro-daika.gen.py` and append its artifact hashes to `/tmp/115-baseline.sha`. Budget over 6 minutes. This map is the ONLY consumer of `precinct_interior` in the tree, so features 112/114's blanket exclusion of it would leave a moved member with no artifact-level proof (research R11)
-- [ ] T005 Record the baseline sweep's own verdict in this file's Notes (generator count, `REGENERATED` count, artifact count, any gen that failed in the PRE-split tree), so a Stage 1 failure can be told apart from a pre-existing one
+- [x] T005 Record the baseline sweep's own verdict in this file's Notes (generator count, `REGENERATED` count, artifact count, any gen that failed in the PRE-split tree), so a Stage 1 failure can be told apart from a pre-existing one
 
 **Checkpoint**: an oracle exists, it can fail, and it is known to be looking at the right file.
 
@@ -47,10 +47,10 @@ its remaining red proof cannot run until sub-mixins exist and so appears in Phas
 
 **CRITICAL**: T007 must be observed failing before T010 lands.
 
-- [ ] T006 Write the composed-surface guard test in `.claude/skills/diagram/tests/settlement/test_civic_grounds.py` per contracts/mixin-surface.md: assert the composed `CivicGroundsMixin` exposes AT LEAST the 22-name frozenset (subset, not equality - C1), assert no two sub-mixins define the same name (C2), assert all 22 resolve on `Settlement` itself (C3). Derive the sub-mixin list from `CivicGroundsMixin.__mro__` rather than importing `settlement.civic_grounds.funerary` and its siblings by name - that is what lets the guard be written and run BEFORE the split exists
-- [ ] T007 Prove C1 RED before the split and record the failure text in this file's Notes: delete one method from `CivicGroundsMixin`, observe C1 name it, revert
-- [ ] T008 Note in this file's Notes that C2's red proof is deferred to T017 and why: a duplicate-name collision needs two sub-mixins to live in, so it cannot be staged before the package exists. Unlike feature 114 there is NO third breakage to stage - `CivicGroundsMixin` has no class-level attributes (T001), so the attribute half of the census is vacuous here
-- [ ] T009 [P] Verify `specs/115-civic-grounds-package/split_civic_grounds.py` runs its refusal paths: temporarily drop a name from a `MODULES` tuple and confirm it exits non-zero printing `missing=`, then assign one name to two modules and confirm the duplicate-assignment refusal fires, then restore. Confirm NEITHER refusing run created `settlement/civic_grounds/` - a half-written package beside a live module is worse than no package
+- [x] T006 Write the composed-surface guard test in `.claude/skills/diagram/tests/settlement/test_civic_grounds.py` per contracts/mixin-surface.md: assert the composed `CivicGroundsMixin` exposes AT LEAST the 22-name frozenset (subset, not equality - C1), assert no two sub-mixins define the same name (C2), assert all 22 resolve on `Settlement` itself (C3). Derive the sub-mixin list from `CivicGroundsMixin.__mro__` rather than importing `settlement.civic_grounds.funerary` and its siblings by name - that is what lets the guard be written and run BEFORE the split exists
+- [x] T007 Prove C1 RED before the split and record the failure text in this file's Notes: delete one method from `CivicGroundsMixin`, observe C1 name it, revert
+- [x] T008 Note in this file's Notes that C2's red proof is deferred to T017 and why: a duplicate-name collision needs two sub-mixins to live in, so it cannot be staged before the package exists. Unlike feature 114 there is NO third breakage to stage - `CivicGroundsMixin` has no class-level attributes (T001), so the attribute half of the census is vacuous here
+- [x] T009 [P] Verify `specs/115-civic-grounds-package/split_civic_grounds.py` runs its refusal paths: temporarily drop a name from a `MODULES` tuple and confirm it exits non-zero printing `missing=`, then assign one name to two modules and confirm the duplicate-assignment refusal fires, then restore. Confirm NEITHER refusing run created `settlement/civic_grounds/` - a half-written package beside a live module is worse than no package
 
 **Checkpoint**: guard proven to fire on the assertion that can fire yet; transformer proven to refuse
 both ways.
@@ -66,18 +66,18 @@ that a hash mismatch here can only mean the move broke something.
 **Independent test**: the quickstart sweep diff is empty, `git status` under `pool/` is clean, and
 `make done` is green with `core.py` byte-unchanged.
 
-- [ ] T010 [US1] Run the transformer from `.claude/skills/diagram/` to create `settlement/civic_grounds/` with `funerary.py`, `justice.py`, `civic.py`, `lodging.py`, `stable_yard.py`, assigning members exactly per data-model.md Part 1 (5 / 3 / 6 / 7 / 1 members)
-- [ ] T011 [US1] Confirm the transformer wrote `settlement/civic_grounds/__init__.py` composing `class CivicGroundsMixin(FuneraryGroundsMixin, JusticeGroundsMixin, CivicWorksMixin, LodgingMixin, StableYardMixin)`, with the docstring explaining it exists to preserve `core.py`'s single import and naming the two by-design cross-module calls (`precinct_interior` -> `cemetery`, `flush_stable_yards` -> `_stable_yard`)
-- [ ] T012 [US1] Confirm each of the five modules carries `if TYPE_CHECKING: from ..core import Settlement` (two-dot path) and that every method kept its `self: "Settlement"` annotation - FR-006
-- [ ] T013 [US1] Delete `.claude/skills/diagram/settlement/civic_grounds.py` (invariant: a stale module beside a package of the same name is a shadowing hazard) - FR-007
-- [ ] T014 [US1] Verify `.claude/skills/diagram/settlement/core.py` is byte-unchanged (`git diff --stat -- settlement/core.py` empty) - FR-002, contract C6
-- [ ] T015 [US1] Verify the move was PURE, per quickstart.md step 6: every comment line in the pre-split class body survives somewhere in the package (`comment lines lost: 0`). This file holds the densest researched grounding in the engine - the Qingming Shanghe Tu gate convention, the ox-consumption arithmetic behind the trough count, the two-round dung-heap clearance history - and a move that drops one is not pure (research R5)
-- [ ] T016 [US1] Prune the copied import headers and format: `python3 -m ruff check --select F401 --fix settlement/civic_grounds/ && python3 -m ruff format settlement/civic_grounds/`, then the full cheap prefix `python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy`
-- [ ] T017 [US2] Now that sub-mixins exist, prove guard C2 RED and record the failure text in Notes: copy one method into a second sub-mixin, observe C2 name the collision and both classes, revert. FR-003 is not satisfied until this is done
-- [ ] T018 [US1] Re-run quickstart.md step 0 POST-split: every `settlement/civic_grounds/*.py` must appear in `gencache.engine_files()` and `tests` must still contribute 0. A nested package falling out of the engine fingerprint would make every later sweep a false green
-- [ ] T019 [US1] Run the WHOLE affected test file, not a `-k` subset: `python3 -m pytest tests/settlement/ -q -n auto --no-cov`. Unlike feature 114 there is no `tests/tools/` filename assertion to carry (research R6)
-- [ ] T020 [US1] Run the byte-identity sweep per quickstart.md step 5 (pool AND the one `wip/shiro-daika` run) and require ALL THREE of: regen exit code 0, a `REGENERATED` count equal to the baseline's, and an EMPTY diff against `/tmp/115-baseline.sha`. Run it with nothing else heavy in flight - an OOM-killed render leaves the committed artifacts in place and the diff comes back empty having tested nothing
-- [ ] T021 [US1] Confirm `git status --porcelain -- .claude/skills/diagram/pool` prints nothing
+- [x] T010 [US1] Run the transformer from `.claude/skills/diagram/` to create `settlement/civic_grounds/` with `funerary.py`, `justice.py`, `civic.py`, `lodging.py`, `stable_yard.py`, assigning members exactly per data-model.md Part 1 (5 / 3 / 6 / 7 / 1 members)
+- [x] T011 [US1] Confirm the transformer wrote `settlement/civic_grounds/__init__.py` composing `class CivicGroundsMixin(FuneraryGroundsMixin, JusticeGroundsMixin, CivicWorksMixin, LodgingMixin, StableYardMixin)`, with the docstring explaining it exists to preserve `core.py`'s single import and naming the two by-design cross-module calls (`precinct_interior` -> `cemetery`, `flush_stable_yards` -> `_stable_yard`)
+- [x] T012 [US1] Confirm each of the five modules carries `if TYPE_CHECKING: from ..core import Settlement` (two-dot path) and that every method kept its `self: "Settlement"` annotation - FR-006
+- [x] T013 [US1] Delete `.claude/skills/diagram/settlement/civic_grounds.py` (invariant: a stale module beside a package of the same name is a shadowing hazard) - FR-007
+- [x] T014 [US1] Verify `.claude/skills/diagram/settlement/core.py` is byte-unchanged (`git diff --stat -- settlement/core.py` empty) - FR-002, contract C6
+- [x] T015 [US1] Verify the move was PURE, per quickstart.md step 6: every comment line in the pre-split class body survives somewhere in the package (`comment lines lost: 0`). This file holds the densest researched grounding in the engine - the Qingming Shanghe Tu gate convention, the ox-consumption arithmetic behind the trough count, the two-round dung-heap clearance history - and a move that drops one is not pure (research R5)
+- [x] T016 [US1] Prune the copied import headers and format: `python3 -m ruff check --select F401 --fix settlement/civic_grounds/ && python3 -m ruff format settlement/civic_grounds/`, then the full cheap prefix `python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy`
+- [x] T017 [US2] Now that sub-mixins exist, prove guard C2 RED and record the failure text in Notes: copy one method into a second sub-mixin, observe C2 name the collision and both classes, revert. FR-003 is not satisfied until this is done
+- [x] T018 [US1] Re-run quickstart.md step 0 POST-split: every `settlement/civic_grounds/*.py` must appear in `gencache.engine_files()` and `tests` must still contribute 0. A nested package falling out of the engine fingerprint would make every later sweep a false green
+- [x] T019 [US1] Run the WHOLE affected test file, not a `-k` subset: `python3 -m pytest tests/settlement/ -q -n auto --no-cov`. Unlike feature 114 there is no `tests/tools/` filename assertion to carry (research R6)
+- [x] T020 [US1] Run the byte-identity sweep per quickstart.md step 5 (POOL ONLY - the `wip/shiro-daika` leg was cut, see the T004 note and research R11) and require ALL THREE of: regen exit code 0, a `REGENERATED` count equal to the baseline's, and an EMPTY diff against `/tmp/115-baseline.sha`. Run it with nothing else heavy in flight - an OOM-killed render leaves the committed artifacts in place and the diff comes back empty having tested nothing
+- [x] T021 [US1] Confirm `git status --porcelain -- .claude/skills/diagram/pool` prints nothing
 - [ ] T022 [US1] Check combined `settlement/` coverage (`python3 -m coverage report --include='*/settlement/*'`) is at or above `SETTLEMENT_COV_FLOOR` (94, in `.claude/skills/diagram/Makefile:62` - the SKILL's Makefile, not the webapp's) and, critically, that it did not MOVE. A pure move relocates executable lines without adding or removing one, so any movement is a signal to investigate (research R7)
 - [ ] T023 [US1] Confirm `GEN_TIME_BUDGETS` in `tests/test_villages.py` still passes unmodified
 - [ ] T024 [US1] Run `make done` backgrounded, once; read the log tail before believing green (no `; echo EXIT=$?` wrapper, which makes a failed gate report exit 0)
@@ -132,16 +132,16 @@ bisectable.
 **Independent test**: a reader given any named civic-grounds concern resolves it from the two index
 files alone.
 
-- [ ] T038 [P] [US4] Write `.claude/skills/diagram/settlement/civic_grounds/CLAUDE.md` in the `fields/` + `city/` + `structures/` style: what the package is and why it is a residue bucket rather than one subsystem, a "Look here when" row per submodule, the composition mechanism, the two by-design cross-module calls, and the THREE placement decisions a reader will otherwise want to "fix" - `_ward_fence_cap` with the funerary grounds (R1a), `precinct_interior` in `civic.py` (R1b), `_stable_yard` in a module of its own (R1c) - FR-011, FR-012
+- [x] T038 [P] [US4] Write `.claude/skills/diagram/settlement/civic_grounds/CLAUDE.md` in the `fields/` + `city/` + `structures/` style: what the package is and why it is a residue bucket rather than one subsystem, a "Look here when" row per submodule, the composition mechanism, the two by-design cross-module calls, and the THREE placement decisions a reader will otherwise want to "fix" - `_ward_fence_cap` with the funerary grounds (R1a), `precinct_interior` in `civic.py` (R1b), `_stable_yard` in a module of its own (R1c) - FR-011, FR-012
 - [ ] T039 [US4] Add to that index the stage map for `stable_yard.py` (the seven stages and what each draws), the three RNG ordering rules as a STANDING WARNING for anyone editing the yard - rule 3 especially, since it is the one that looks like an improvement while being a bug - the monkeypatching note (research R8: this package has no module-level names, so class-level patching is unaffected), the coverage note, and the two thresholds a future session would otherwise decide under pressure: `stable_yard.py`'s re-split seam (furniture vs water, data-model.md) and `tests/settlement/test_civic_grounds.py` becoming a directory at ~1,000 lines (research R10)
-- [ ] T040 [US4] Replace the single `civic_grounds.py` row in `.claude/skills/diagram/settlement/CLAUDE.md`'s "Look here when" table so it points at the sub-index, matching the shape the `fields/`, `city/` and `structures/` rows already have
-- [ ] T041 [P] [US4] Verify every file in `settlement/civic_grounds/` is under 400 raw lines (`wc -l settlement/civic_grounds/*.py | sort -rn`) - SC-001, and record the counts in this file's Notes
+- [x] T040 [US4] Replace the single `civic_grounds.py` row in `.claude/skills/diagram/settlement/CLAUDE.md`'s "Look here when" table so it points at the sub-index, matching the shape the `fields/`, `city/` and `structures/` rows already have
+- [x] T041 [P] [US4] Verify every file in `settlement/civic_grounds/` is under 400 raw lines (`wc -l settlement/civic_grounds/*.py | sort -rn`) - SC-001, and record the counts in this file's Notes
 
 ---
 
 ## Phase 6: Polish and Cross-Cutting
 
-- [ ] T042 [P] Grep the skill for prose naming the FILE `settlement/civic_grounds.py` and update to the package; leave importable-path references (`from .civic_grounds import CivicGroundsMixin`) and prior `specs/NNN` artifacts verbatim as historical record
+- [x] T042 [P] Grep the skill for prose naming the FILE `settlement/civic_grounds.py` and update to the package; leave importable-path references (`from .civic_grounds import CivicGroundsMixin`) and prior `specs/NNN` artifacts verbatim as historical record
 - [ ] T043 Record in `specs/115-civic-grounds-package/research.md` anything the implementation learned that the plan got wrong - especially any member whose assignment moved from data-model.md's tables, or any stage boundary that had to move to preserve RNG order, with the reason
 - [ ] T044 Add to `.claude/skills/diagram/future-work.md`: the two intended follow-up relocations (`_ward_fence_cap` -> `water_ways.py`, `precinct_interior` -> `shrines_wells.py`) and the next clause-12 candidate now that this one is closed - `rolling.py::roll_village` at 256 lines - so they do not live only in this spec. Check first whether feature 116 (`shrines-wells-package`, claimed by a peer session mid-chain) has already moved `shrines_wells.py` into a package, and name the right destination file if so
 - [ ] T045 Set this spec's Status to Implemented with the date, and note the final per-file line counts and the new longest-function figure
@@ -190,5 +190,154 @@ main and took 116, with no negotiation. It is only the `feature.json` pointer th
 serialize, and it was deliberately NOT reverted to 115: stomping it back would just restart the
 fight. Worth raising with the GM as a protocol gap rather than fixing unilaterally.
 
-*(the rest filled in during implementation - each red proof's failure text, the baseline verdict,
-the final line counts, and anything the plan got wrong)*
+### T001 - the census, re-measured rather than trusted
+
+`settlement/civic_grounds.py`: **1,162 raw lines, 22 `CivicGroundsMixin` members**,
+`Counter({'FunctionDef': 22})` - no class-level `Assign`, exactly as plan.md predicted. No peer
+session had moved the file, though one did move the tree (see the concurrent-session note above).
+
+### T002 / T018 - the oracle can see what it measures
+
+Pre-split: **92** engine files, `civic_grounds` seen as the single
+`settlement/civic_grounds.py`, `tests contributing: 0`.
+
+Post-split: **97** engine files, all six package files listed -
+`__init__.py`, `civic.py`, `funerary.py`, `justice.py`, `lodging.py`, `stable_yard.py` - and tests
+still contributing 0. The nested package is walked exactly as `settlement/fields/`,
+`settlement/city/` and `settlement/structures/` are, so no sweep is a false green from a stale cache.
+
+### T007 - guard C1 proven RED for a METHOD (pre-split)
+
+Deleted `ossuary` from `CivicGroundsMixin` (1,162 -> 1,138 lines):
+
+    >       assert composed >= _CIVIC_GROUNDS_SURFACE, f"missing={sorted(_CIVIC_GROUNDS_SURFACE - composed)}"
+    E       AssertionError: missing=['ossuary']
+    1 failed, 41 deselected
+
+Reverted; file back to 1,162 lines, 42 tests green.
+
+### T008 - why C2's red proof was deferred to T017
+
+A duplicate-name collision needs two sub-mixins to live in, so it cannot be staged before the package
+exists. The guard was written to work at BOTH stages - `_civic_grounds_submixins()` derives the list
+from `CivicGroundsMixin.__mro__` rather than importing `settlement.civic_grounds.funerary` and
+friends - so pre-split the list is empty and C2 is vacuous rather than broken.
+
+There was NO third breakage to stage. Feature 114 needed one for class-level attributes; T001
+confirmed `CivicGroundsMixin` has none, so that half of the census is vacuous here.
+
+### T009 - the transformer proven to REFUSE, both ways
+
+Dropped `ossuary` from the `funerary` tuple in `MODULES`:
+
+    REFUSING: partition does not cover the class. missing=['ossuary'] extra=[]
+    exit=1
+
+Then assigned `ossuary` to `justice` as well as `funerary`:
+
+    REFUSING: a member is assigned to more than one module: ['ossuary']
+    exit=1
+
+Neither refusing run created `settlement/civic_grounds/` - the refusal happens before `PKG.mkdir()`,
+which matters, because a half-written package beside a live module is worse than no package.
+
+### T017 - the COLLISION assertion proven RED (post-split)
+
+Copied `ossuary` into `JusticeGroundsMixin` as well:
+
+    E   AssertionError: FuneraryGroundsMixin and JusticeGroundsMixin both define ['ossuary'] - MRO would orphan one
+
+Reverted.
+
+### T010-T016 - what the move actually produced
+
+| file | lines | members |
+|---|---|---|
+| `stable_yard.py` | 362 | 1 |
+| `civic.py` | 267 | 6 |
+| `funerary.py` | 228 | 5 |
+| `justice.py` | 193 | 3 |
+| `lodging.py` | 187 | 7 |
+| `__init__.py` | 36 | 0 (composition only) |
+
+1,162 -> largest file **362** (SC-001's bar was 400). The ruff prune removed **83** unused imports
+from the five copied headers. No member's assignment moved from data-model.md's tables.
+
+`settlement/core.py`: `git diff --stat` empty (FR-002, contract C6).
+
+### T012 - a correction worth recording
+
+The first verification pass counted `self: "Settlement"` (quoted, feature 114's shape) and reported
+**0 annotations in every module**, which looked like the transformer had stripped them. It had not:
+this file writes the annotation UNQUOTED (`def cemetery(self: Settlement, ...)`), which works because
+Python 3.14 does not eagerly evaluate annotations. The corrected count found 21 of 22 by regex - the
+last one missing only because one `def` wraps across lines.
+
+The check was then rewritten to compare first-arg annotations by AST between `/tmp/115-pre.py` and
+the package: **22 pre, 22 post, zero unannotated, `pre == post` exactly**. That is the assertion
+worth keeping - a regex over a signature style is a check that fails on formatting, not on meaning.
+
+### T015 - the move was PURE, checked rather than assumed
+
+**`comment lines lost: 0`** - every comment line in the pre-split class body survives somewhere in
+the package. This is the check that matters most for this file: it holds the densest researched
+grounding in the engine (the Qingming Shanghe Tu gate convention, the ox-consumption arithmetic
+behind the trough count, the two-round dung-heap clearance history), and a "pure move" that drops a
+why-comment is not pure.
+
+### T016 / T019 - the cheap prefix and the whole test dir
+
+`ruff format`: 171 files left unchanged. `ruff check`: all checks passed. `mypy --strict`: no issues
+in 89 source files. `pytest tests/settlement/ -q -n auto --no-cov`: **555 passed** in 17.8s, no `-k`
+filter.
+
+### T003/T005 - the baseline sweep's own verdict
+
+**28 generators, 889 artifacts** (`.json` + `.svg` + `.png`) under `pool/`, hashed into
+`/tmp/115-baseline-pool.sha`. `regen exit=0`, zero occurrences of `traceback` / `error` / `failed`
+in the log, `FROZEN: 0` (so `--frozen-ok` did exercise the legacy maps). Identical counts to feature
+114's baseline, which is a useful cross-check that the corpus has not drifted.
+
+### T004 - NOT DONE, deliberately: the `wip/shiro-daika` leg was cut
+
+The plan budgeted "over 6 minutes" for it on the authority of feature 112 research R11. That figure
+turns out to be an **aborted lower bound, not a measurement** - 112 stopped the map at six minutes
+"without producing a single line of output" and never learned its real cost. This run got it to
+**10m35s of CPU time, still at 100%, still with no output**, and was stopped for the same reason.
+
+`precinct_interior` (the member the run existed to cover, per research R11) is instead covered by
+`test_precinct_interior_draws_both_rear_orientations_and_the_graveyard_claim`, which exercises both
+`rear` branches and the graveyard claim and passes; plus the move's textual-purity proofs
+(`comment lines lost: 0`, and AST first-arg-annotation equality `pre == post`).
+
+**FR-005 is therefore NOT satisfied as written**, and this is recorded as an open item rather than
+quietly dropped. The follow-up is either to run that map to completion once, unattended, and finally
+answer 112's open question, or to profile why one capital map costs more than 3x the entire 28-map
+pool. Both are in `future-work.md`.
+
+### T020/T021 - the Stage 1 byte-identity sweep, all pass conditions
+
+    regen exit code: 0
+    REGENERATED:  28   (baseline: 28)
+    FROZEN skips:  0   (baseline: 0)
+    artifacts:   889   (baseline: 889)
+    error-ish:     0
+    diff /tmp/115-baseline-pool.sha /tmp/115-move-pool.sha  ->  empty
+    BYTE-IDENTICAL
+
+Run uncontended, per the feature-113 false-green lesson. `git status --porcelain -- pool` prints
+nothing, and `git diff --stat -- settlement/core.py` is empty.
+
+### The RNG surface, measured before Stage 2 was written
+
+Worth recording as a task note because it changed how much risk Stage 2 actually carries. A grep of
+every `random.*` call in `_stable_yard` returns four sites: the `getstate`/`seed` bracket, five draws
+in the litter scatter, one `shuffle(cand)`, and the closing `setstate`. **Stages 4-7 (road rail,
+interior rails, watering, dung heaps) draw nothing at all** - they consume candidates and map state,
+not random numbers.
+
+So the whole RNG hazard reduces to a single ordering constraint: the litter draws must still precede
+`shuffle(cand)`. Research R13 was written before this was measured and its general caution stands;
+data-model.md Part 3 records why it does not bite here.
+
+*(the rest filled in as implementation continues - the decomposition results and the second sweep)*

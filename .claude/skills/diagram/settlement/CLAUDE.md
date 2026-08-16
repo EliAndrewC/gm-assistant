@@ -31,7 +31,7 @@ Two invariants the split does NOT touch:
 | `trades.py` | trade works: brewery, dye yard, lumber, oil press, pawnshop, bathhouses, farrier, kiln, charcoal yard, refining forge, tanning yard, border lines |
 | `homestead_parts.py` | threshing yards, gardens, farm sheds, homestead groves, the village grove, canopy/corridor keepouts |
 | `land.py` | perimeter dikes + dike-top housing, commons, marsh, toe bands, hinterland, near-ring cropland/paddy, farmstead nudge plumbing |
-| `civic_grounds.py` | funerary grounds (cemetery/mausoleum/cremation/ossuary), punishment/execution grounds, boundary markers, districts, terraces, granaries, merchant storehouses/residences, flophouse/inn/stables + stable yards |
+| `civic_grounds/` | the civic-grounds subsystem - a PACKAGE with its own [`CLAUDE.md`](civic_grounds/CLAUDE.md) index since feature 115. Read that first, then load one of: `funerary.py` (cemetery, mausoleum, cremation ground, ossuary), `justice.py` (punishment spots, execution grounds, boundary markers), `civic.py` (granary, merchant storehouses/residences, districts, terraces, the temple-precinct interior), `lodging.py` (flophouse, inn, stables, animal ground, the deferred yard flush), `stable_yard.py` (the stable yard itself - read its RNG rules before editing) |
 | `city/` | the provincial-city subsystem - a PACKAGE with its own [`CLAUDE.md`](city/CLAUDE.md) index since feature 113. Read that first, then load one of: `walls.py` (ring road, city wall, towers, wall walk), `moat.py` (moat, water gates, sluices, the inwall drain), `canals.py` (canal, towpath, farmland ring), `waterfront.py` (quay, aqueduct, docks, jetty, log boom), `bridges.py` (bridges, channel footbridges), `civic.py` (the governor's mansion) |
 | `castle_civic.py` | castle, ministries, dojos + martial halls + hanko, the caption/label-spot engine, forest patches, freestanding walls, flower fields |
 | `houses.py` | house drawing + placement machinery (corridors, keepouts, treads, `_fits`, frontage), `try_place`, cluster seeds, plot texture, water-source anchors |
@@ -58,5 +58,5 @@ test in the suite patches a settlement module-level name (census in
 
 The package holds the 94% RATCHET floor from the 2026-08-16 legacy freeze (see
 `SETTLEMENT_COV_FLOOR` in the Makefile): the uncovered town/city/capital wings live mostly in
-`city/`, `castle_civic.py`, and parts of `structures/`/`civic_grounds.py`, and re-cover as
+`city/`, `castle_civic.py`, and parts of `structures/`/`civic_grounds/`, and re-cover as
 those tiers convert to scripted generation. Raise the floor with each conversion; never lower it.
