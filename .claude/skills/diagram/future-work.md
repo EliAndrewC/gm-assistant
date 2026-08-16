@@ -144,3 +144,9 @@ wells, the board's clump keep-out, the lane-crossing guards). What remains, reco
   conscious ruling either way.
 - **Collector-junction wedge plots render in the water-gray fill** and at fit zoom read as tiny
   triangular ponds - conspicuous on Sawada, whose brief is "no pond".
+- **The well minimax counts stream-watered houses**: `place_wells`' worst-served objective
+  includes houses that `settlement_dwellings_watered` already treats as watered by a nearby
+  stream/channel (Kashikawa's SW pocket, 77-182 ft from the stream head). Harmless today - the
+  chosen seats passed review - but the objective and the check read different definitions of
+  "needs a well"; align them when wells are next touched.
+
