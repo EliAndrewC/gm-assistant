@@ -20,7 +20,7 @@
 
 ## R3. Keep-out derivation without re-stating rules
 
-- **Decision**: A minimal shim object carries the manifest (`M`), `ftpx`-derived `px()`, and `bscale`, and the audit calls the ENGINE'S OWN unbound methods on it: `Settlement._watercourse_segs(shim, channel_margin=shim.px(Settlement._BANK_MARGIN_FT))` for the water + cut-bank family, and the crop keep-out is built from the manifest's `fields[].poly` + `dry_plots[].poly` padded by `Settlement._CROP_MARGIN_FT` via the engine's `boxed_polys`/`boxed_grid`/`boxed_hit` helpers - the same helpers the scatter uses.
+- **Decision**: A minimal shim object carries the manifest (`M`), `ftpx`-derived `px()`, and `bscale`, and the audit calls the ENGINE'S OWN unbound methods on it: `Settlement._watercourse_segs(shim, channel_margin=shim.px(Settlement._BANK_MARGIN_FT))` for the water + cut-bank family, and the crop keep-out is built from the manifest's `fields[].outline` + `dry_plots[].poly` (the field record's ring is named `outline`, not `poly` - verified against inashiro.json; the same key trap the KEEP-CLEAR contract's `flower_fields` incident records) padded by `Settlement._CROP_MARGIN_FT` via the engine's `boxed_polys`/`boxed_grid`/`boxed_hit` helpers - the same helpers the scatter uses.
 - **Rationale**: observe-don't-restate ("a diagnostic that restates what it observes will lie to you, or die", diagram CLAUDE.md). The executed geometry code is the engine's; a future margin change moves the audit's verdicts with no script change. Geometry comes from the MANIFEST (the "same manifest source" discipline) - the engine's in-memory registries (`field_polys`, `dry_polys`) do not exist post-hoc.
 - **Alternatives considered**: re-running the generator to rebuild a live `Settlement` (rejected: "read derived data from the recorded artifact, not by re-running the generator" - and it would take ~20s per map instead of seconds); re-implementing `_watercourse_segs` arithmetic in the script (rejected: the exact drift class the doctrine forbids).
 - **Known scope note**: the audit adjudicates the two families FR-003 requires (water+cut-bank, crop margins). Urban halos, corridors, pond, clearings are NOT adjudicated in v1 - the report's `families checked` line names what ran, so the omission is visible, and violations of unchecked families simply do not appear (no false PASS claim is made about them).
@@ -42,3 +42,14 @@
 ## R7. Agent-doc edit classification
 
 - Editing `.claude/agents/settlement-review.md` here adds a TOOL to the reviewer's kit, not a detection rule. The Subagent-check TDD procedure (docs/spec-kit-and-reviews.md: general rule first, red against the unfixed artifact) governs detection rules and does not apply; there is no motivating defect artifact to hold red. The independence constraint DOES apply: the doc must direct the reviewer to run the script themselves and interpret its output - the author's own audit run is a claim to re-verify, not evidence.
+
+## R8. Implementation log: the audit caught a real defect on its first live run
+
+Run against the pre-merge Inashiro render (generated 05:00, before this clone auto-synced main),
+the audit flagged 3 tufts (9 blade bases) standing 4.0-5.6 px inside dry-plot crop margins - in
+the hem-seam gap/lap wedges - which the same day's water-only DELTA hand parse provably could not
+see. Commit a57b191 ("dry-hem seams are shared miter lines - gap/lap wedges at canal bends gone",
+another session, landed concurrently) changed exactly that geometry; the current tip audits CLEAN
+(exit 0, 3.0s wall on the 16.7 MB SVG, and the blade/dot/pine totals reconcile with the review's
+231,392 adjudicated bases). Chasing the discrepancy also spot-proved harness independence: direct
+runs and regen.py runs of the same gen produce byte-identical SVGs (three runs, one md5).
