@@ -114,7 +114,7 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
     is the open ground behind the frontage, precisely where a display installation must not be.
     Both now use the engine's verge probes.
   - **The boundary stone was standing inside a merchant's house.** Re-seated with
-    [`tools/site_justice.py`](../../site_justice.py), which adjudicates candidate seats against the real
+    [`tools/site_justice.py`](../../tools/site_justice.py), which adjudicates candidate seats against the real
     gate instead of a re-statement of it.
 - **2026-07-26 render read (Principle I).** Two defects visible only on the raster:
   - **The windbreak drew as a round wood dumped in the middle of town**, hard against the flophouse.

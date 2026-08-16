@@ -217,7 +217,7 @@ def test_report_judges_a_stone_against_the_chosen_ground():
 # ---- CLI ---------------------------------------------------------------------------------------
 def test_main_prints_usage_without_enough_arguments(capsys):
     assert sj.main([]) == 2
-    assert "site_justice.py" in capsys.readouterr().out
+    assert "tools.site_justice" in capsys.readouterr().out
 
 
 def test_main_rejects_an_unknown_kind(tmp_path, capsys):

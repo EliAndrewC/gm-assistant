@@ -11,6 +11,39 @@ cut the ritual/guardrail steps). Read that first; this file carries the concrete
 and the DIAGRAM-SPECIFIC lessons that section does not cover - each earned by costing real
 round-trips.
 
+## Where things live (read this first; load only the index you need)
+
+The skill's Python is grouped by what a module is FOR. Each group carries its own `CLAUDE.md`
+index, so a session can open the one directory its task is in instead of paging this file.
+
+| directory | what is in it | load its index when |
+|---|---|---|
+| [`settlement/`](settlement/CLAUDE.md) | the Mode B drawing engine (the `Settlement` class and its mixins) | you are changing what a settlement map DRAWS or where it places something |
+| [`check_village/`](check_village/CLAUDE.md) | the gate: the whole check battery, as a registry of segments | you are adding, changing or running a check |
+| [`waterfields/`](waterfields/CLAUDE.md) | the water-first field engine (v2 comb fields) | you are changing paddies, bunds, canals or the field frame |
+| [`hamletgen/`](hamletgen/CLAUDE.md) | the scripted hamlet generator - a whole hamlet from a 9-line spec | you are working on scripted generation |
+| [`pipeline/`](pipeline/CLAUDE.md) | how a map gets regenerated, cached, rendered and indexed | the cache is behaving oddly, or you are changing how generation is DRIVEN |
+| [`tools/`](tools/CLAUDE.md) | read-only diagnostics and audits you run by hand | a map came out wrong and you need to ask WHY, or a number needs measuring |
+| [`tests/`](tests/CLAUDE.md) | every test, mirroring the source layout, plus the frozen fixtures | you need to find or add a test |
+| `pool/` | the shipped maps: `<name>.gen.py`, its manifest, its render, its `.notes.md` design journal | - |
+| `wip/` | maps staged outside the pool (not gated, not swept) | - |
+
+Two engine modules are still single top-level files, and stay that way on purpose:
+**`compound.py`** (the Mode A compound program and perimeter-first placer) and **`citybudget.py`**
+(the space-budget city/capital planner). Both are peers of the engine packages above - pool
+generators import them directly - and folding them into a package would rewrite six frozen
+generator scripts for no navigational gain.
+
+The prose reference (as opposed to the code) splits the same way: [`SKILL.md`](SKILL.md) is the
+usage-facing index, and it indexes [`settlements/`](settlements/) and [`buildings/`](buildings/)
+(the per-topic design doctrine) and [`research/`](research/) (the historical grounding). Read a
+skill index, then load only the topics the subject calls for.
+
+**Run the packaged modules as modules**, from this directory - `python3 -m pipeline.regen ...`,
+`python3 -m tools.why_placed ...`. Running a package module as a loose script path puts its own
+directory on `sys.path` instead of the skill root, which is how one file ends up imported twice
+under two names.
+
 ## Gate and sweep timings (the motivating-artifact loop, concretely)
 
 The root "iterate on the motivating artifact, sweep once at the end" rule has these diagram
