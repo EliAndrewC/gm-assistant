@@ -77,7 +77,7 @@ def test_watching_names_the_gen_line_and_the_engine_method(tmp_path):
     b = next(h for h in hits if h.key == "buildings")
     files = [f[0] for f in b.frames]
     assert "synthetic.gen.py" in files  # the call site to go and look at
-    assert "structures.py" in files  # ...and the engine method that chose the spot (settlement/structures.py holds building placement since the 025 package split)
+    assert "urban.py" in files  # ...and the engine method that chose the spot (settlement/structures/urban.py holds building() since the 114 package split; it was structures.py from 025 until then)
 
 
 def test_watching_sees_a_key_created_later_by_setdefault(tmp_path):
