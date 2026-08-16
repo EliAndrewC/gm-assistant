@@ -244,3 +244,98 @@ No behavior change of any kind. `future-work.md` carries three open items touchi
 the well minimax objective counting stream-watered houses, the envelope-trim near-duplicate vertex
 dedup, and unrecorded woodland stand crowns. All three stay open. Fixing any of them would change
 output and destroy the byte-identity oracle that makes this refactor verifiable.
+
+---
+
+## R11. Monkeypatch targets - the one place "zero consumer changes" did not hold
+
+**Discovered during implementation (T012), not at planning time.**
+
+`test_hamletgen.py` patches five module attributes through the package root:
+
+```python
+monkeypatch.setattr(hg, "pond_setback", ...)   # consumed inside sink.py
+monkeypatch.setattr(hg, "cohort", ...)         # consumed inside driver.main
+monkeypatch.setattr(hg, "generate", ...)       # consumed inside driver.main
+```
+
+In a monolith, patching `hg.X` patches the single namespace the consumer reads. In a package, the
+consumer reads its OWN module global, so a patch on the package root is invisible to it. Three
+tests failed and a fourth (`..._returns_zero_when_every_member_passes`) was passing by accident -
+the real `cohort` would also have returned 0.
+
+**Decision**: retarget the five patches to the defining submodule (`hg.sink`, `hg.driver`). This is
+a change to a consumer file, so it is a deviation from SC-002 as literally written - recorded here
+rather than quietly absorbed.
+
+**Why it is the right call, and why the scope is small**:
+
+- Monkeypatching a module attribute is coupling to a module's INTERNAL layout, not use of the
+  import surface. The contract (contracts/package-surface.md) covers what resolves and what it is
+  identical to; it deliberately does not promise that a name has exactly one binding site, because
+  that is not a property a package can offer.
+- The blast radius is one file, and it is a test file that US4 rewrites anyway. **No production
+  consumer is affected**: the four pool `.gen.py` scripts and `cohort_audit.py` are untouched, and
+  the byte-identity oracle - which is what actually proves behavior is preserved - is unaffected
+  because it never patches anything.
+- The alternative (making submodules re-read names through the package root so patches propagate)
+  would add indirection to every call in the engine to serve five test lines. Rejected.
+
+**Consequence for SC-002**: the criterion is amended to "zero PRODUCTION consumer changes", with
+this one test-mechanics change named. The pool gens and `cohort_audit.py` remain the hard line.
+
+---
+
+## R12. US2 re-measured against the constitution's ACTUAL function metric - the targets are not oversized
+
+**Discovered during implementation (before T014), and it invalidates US2 as specified.**
+
+The spec set the US2 bar at "no function exceeds ~150 **lines**". That is the clause-13 FILE
+metric. Clause 12, the FUNCTION clause, says something different and says it explicitly:
+
+> Size is measured in LOGIC UNITS (statements/expressions), never raw lines: a call or string
+> literal wrapped across lines counts once, so formatting never forces a split. [...] a function
+> that has grown past a few hundred logical statements is suspect [...] past roughly 1,000 it is a
+> defect. The 10-line-function dogma is explicitly REJECTED - over-fragmentation damages design
+> more than length does, and a deep-but-cohesive engine function is legitimate at a scale a
+> utility function never is.
+
+Measured across the package (AST statement count, and raw lines minus comments/blanks/docstring):
+
+| function | raw | statements | comment lines | code-only lines |
+|---|---|---|---|---|
+| `ways.stage_ways` | 177 | 67 | 82 | 73 |
+| `sink.stage_sink` | 168 | 64 | 87 | 69 |
+| `homesteads.place_wells` | 164 | 57 | 77 | 70 |
+| `hinterland.open_ground_patches` | 137 | 61 | 49 | 64 |
+| `cluster.seat_cluster` | 127 | 42 | 68 | 39 |
+| `water.stage_polder` | 126 | 43 | 71 | 44 |
+| `homesteads.stage_homesteads` | 111 | 37 | 58 | 35 |
+| `ways.connector_track` | 89 | 30 | 41 | 33 |
+| `hinterland.belt_polygon` | 85 | 42 | 22 | 40 |
+
+**The largest function in the package is 67 statements.** The clause-12 bar is "a few hundred".
+Nothing here is within a factor of four of being suspect, let alone a defect. The raw line counts
+are inflated 2-3x by comments - 22 to 87 lines apiece - which are not incidental: they are the
+project's mandatory record-the-why content, and each block explains the statement immediately
+below it, usually with the incident that fixed the number.
+
+That is the second problem with decomposing here. Extracting sub-stages would either orphan those
+comments from the code they explain or force them to be split and rewritten, which FR-011
+explicitly forbids ("existing comments and docstrings MUST move with their code intact").
+
+For scale, the three functions feature 110 decomposed were 495, 458 and 437 raw lines - genuinely
+different animals.
+
+**Decision**: US2 as specified is NOT executed. The bar it was written against was the wrong one,
+and applying it would trade cohesion and comment locality for a metric the constitution rejects.
+US1, US3 and US4 deliver both of the feature's stated motivations in full (the token motivation
+entirely, and the engineering motivation to the extent clause 12 actually asks for it - which, on
+measurement, is zero).
+
+**Left to the GM** (this is a judgment call above the constitution's floor, not a compliance
+question): `stage_ways` and `stage_sink` each do several distinct jobs in one body - arms, the
+polder early return, the spur, the connector; and the off-map brook search vs the pond solve - and
+could read better as a few named steps even at 67 statements. That is a taste call about
+readability, not a rule violation, and it carries real risk (the extraction must preserve RNG draw
+order exactly). Raised rather than taken unilaterally.

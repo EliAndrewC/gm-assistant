@@ -12,7 +12,7 @@ is the point: this map exists to be ordinary.
 
 ## Why it exists
 
-It is the deliverable of the experiment in [`../../hamletgen.py`](../../hamletgen.py): can a SCRIPT
+It is the deliverable of the experiment in [`../../hamletgen/`](../../hamletgen/): can a SCRIPT
 do what a session currently does by hand? Inashiro was given deliberately the same brief as the
 hand-authored [`../hamlets/ikegami.gen.py`](../hamlets/ikegami.gen.py) - ~15 households, land
 falling due south, a brook off the northern high ground feeding one comb field, the field draining

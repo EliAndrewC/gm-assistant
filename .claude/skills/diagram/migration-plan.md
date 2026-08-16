@@ -26,7 +26,7 @@ A `/diagram` Mode B map has three layers, and only ONE of them is changing.
 | The **composition** - `pool/*/<name>.gen.py` | Which features exist on THIS map, where each one sits, how they relate | ~200-900 lines **per map**, hand-written | **Yes. This is the whole migration.** |
 
 The composition layer is what costs hours per map, is where every placement bug lives, and is what
-a generator can do from a nine-line spec. `hamletgen.py` (2.7k lines) replaced the per-map
+a generator can do from a nine-line spec. `hamletgen/` (2.7k lines) replaced the per-map
 composition for hamlets: it turns
 
 ```python
@@ -104,7 +104,7 @@ a new generator (or a large conditional wing of one) plus the institutions that 
 **Legend:** SHIPPED = in the roll, cohort-green. FITTED = generates and passes, not promoted.
 STARTED = partial. NOT STARTED = hand-authored only.
 
-### Hamlet tier - generator `hamletgen.py`
+### Hamlet tier - generator `hamletgen/`
 
 | Archetype | Status | Evidence | Hand-authored exemplars |
 |---|---|---|---|
@@ -233,7 +233,7 @@ Ordered by value per unit of effort, not by tier.
    every hamlet in the pool has a scripted equivalent.
 5. **Village tier** - the first new generator. Biggest single step in the project: it must learn the
    institutions (headman, shrine, tax-free plots) and multi-field composition. Expect this to
-   surface the architectural question of whether `hamletgen.py` generalizes or whether tiers share a
+   surface the architectural question of whether `hamletgen/` generalizes or whether tiers share a
    stage library.
 6. **Town, then provincial city.**
 7. **Capital** - last, and blocked on the tier being finished by hand first (Shiro Daika's housing

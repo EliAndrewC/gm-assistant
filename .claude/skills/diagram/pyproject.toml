@@ -30,6 +30,10 @@ ignore = ["E501"]   # long descriptive lines are house style; the formatter caps
 "settlement/__init__.py" = ["F401"]
 # same star-import re-export mechanism for the waterfields package split (feature 110)
 "waterfields/__init__.py" = ["F401", "F403"]
+# same again for the hamletgen package split (feature 111), plus E402: this __init__ runs a
+# sys.path bootstrap BEFORE its imports, because every submodule imports `settlement` and
+# `waterfields` by absolute name and the package must work when run from anywhere
+"hamletgen/__init__.py" = ["E402", "F401", "F403"]
 
 [tool.ruff.format]
 # Preserve the existing quote style: the SVG f-strings use single-outer/double-inner
@@ -42,7 +46,7 @@ quote-style = "preserve"
 [tool.mypy]
 python_version = "3.14"
 strict = true
-files = ["settlement", "check_village", "waterfields", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "scatter_audit.py", "hamletgen.py", "timings.py", "pool_index.py", "poolmaps.py"]
+files = ["settlement", "check_village", "waterfields", "hamletgen", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "scatter_audit.py", "timings.py", "pool_index.py", "poolmaps.py"]
 
 # RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
 # settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is
