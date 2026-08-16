@@ -6,6 +6,7 @@ Split from hamletgen.py by feature 111; bodies verbatim. See hamletgen/CLAUDE.md
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import os
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -110,18 +111,46 @@ def generate(spec: HamletSpec, out_base: str | None = None, render: bool = True)
     return Report(plan=plan, failures=sorted(gate(s.M)), path=out_base)
 
 
-def cohort(count: int, first_seed: int = 1, households: int | None = None) -> list[Report]:
+def default_jobs(count: int) -> int:
+    """Leave two cpus for the harness and whatever else is on the box (the same courtesy `regen.py`
+    and `cohort_audit.py` extend); never spawn more workers than there are maps to roll."""
+    return max(1, min(count, (os.cpu_count() or 2) - 2))
+
+
+def cohort(count: int, first_seed: int = 1, households: int | None = None, jobs: int | None = None) -> list[Report]:
     """Roll `count` hamlets from consecutive seeds and gate every one.
 
     This is the experiment's actual evidence. A generator that produces ONE good map has shown that
     a person can drive it to a good map; a generator that produces a cohort of correct maps from
-    seeds nobody looked at has shown that the SCRIPT is doing the work."""
-    out = []
-    for i in range(count):
-        seed = first_seed + i
-        hh = households if households is not None else 10 + (seed * 7) % 11
-        out.append(generate(HamletSpec(name=f"Cohort-{seed:02d}", seed=seed, households=hh), out_base=None))
-    return out
+    seeds nobody looked at has shown that the SCRIPT is doing the work.
+
+    THE ROLLS FAN OUT ACROSS PROCESSES (2026-08-16), because a cohort is the verification step of
+    every placement-rule change and it was the single biggest sink in the one measured: the fan-toe
+    pond fix spent 17.3 min of its 45.7 on two SERIAL 24-seed rolls, ~11 min of that as critical-path
+    idle - 20% of the whole task, for work that is embarrassingly parallel. `regen.py` and
+    `cohort_audit.py` were given the same fan-out in the 2026-08-15 timings round and this CLI was
+    simply missed. Safe by the same argument they use: a map is a pure function of its spec (the
+    seed fixes every draw - see "RANDOMNESS IS POSITIONAL OR SCOPED" in the skill's CLAUDE.md), so
+    parallelism can only change the wall clock, never a verdict. `generate` IS the worker - it takes
+    one spec, defaults `out_base` to None, and is picklable - so there is no wrapper to keep honest.
+    Results come back in seed order, so a fanned-out run reads exactly like a serial one.
+
+    `jobs=1` forces the serial path, which is what the in-gate callers want: a pytest worker that
+    spawns its own pool is competing with the other 21 (the "CPU inflates 2-4x inside the gate"
+    entry in the skill CLAUDE.md)."""
+    specs = [
+        HamletSpec(
+            name=f"Cohort-{first_seed + i:02d}",
+            seed=first_seed + i,
+            households=households if households is not None else 10 + ((first_seed + i) * 7) % 11,
+        )
+        for i in range(count)
+    ]
+    jobs = default_jobs(count) if jobs is None else max(1, jobs)
+    if jobs == 1:
+        return [generate(spec, out_base=None) for spec in specs]
+    with concurrent.futures.ProcessPoolExecutor(max_workers=jobs) as ex:
+        return list(ex.map(generate, specs))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -135,10 +164,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--out", default=None, help="write <out>.svg/.png/.json")
     ap.add_argument("--no-render", action="store_true")
     ap.add_argument("--batch", type=int, default=0, help="roll N hamlets from consecutive seeds and gate them all")
+    ap.add_argument("--jobs", type=int, default=None, help="worker processes for --batch (default: cpus - 2, capped at the cohort size; 1 for serial)")
     args = ap.parse_args(list(argv) if argv is not None else None)
 
     if args.batch:
-        reports = cohort(args.batch, first_seed=args.seed)
+        reports = cohort(args.batch, first_seed=args.seed, jobs=args.jobs)
         for r in reports:
             print(r.line())
         good = sum(1 for r in reports if r.ok)

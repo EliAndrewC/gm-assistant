@@ -68,3 +68,39 @@ shrank. The findings that set the next round of rules:
 - **Projected floor for tasks of this shape: ~12 minutes** - roughly 8 minutes of genuinely serial
   reasoning and implementation with the review tail fully overlapped. The next profile taken after
   these rules land compares against that number.
+
+## The 2026-08-16 profile #2: the fan-toe pond fix (45.7 min), and the cohort fan-out it bought
+
+Second post-refactor profile, on a GM-reported map defect (a field pond spilling across its plot).
+**45.7 minutes** prompt-to-synced, attributed with every second in exactly one bucket: **44% LLM
+generation (1206s over 148 responses), 40% idle waiting on background work (1087s), 9% unit tests
+(235s), 6% hamlet generation (178s), 1% git/sync/lint/crops**. The review agents cost nothing -
+launched early, they finished inside the cohort's shadow, which is the launch-early rule paying off.
+
+Why a "simple" fix ran long, and what each finding bought:
+
+- **The two 24-seed cohort rolls were 17.3 min of the 45.7, ~11 min of it critical-path idle.** The
+  cohort is the verification step of every placement-rule change, and `python3 -m hamletgen --batch`
+  was still SERIAL - `regen.py` and `cohort_audit.py` had been fanned out in the 2026-08-15 round
+  and this CLI was simply missed. Fixed the same day: **526s -> 71s (7.4x)**. Two lessons past the
+  fix itself. First, when a perf round parallelizes a class of work, census every entry point into
+  that class - the one nobody profiles is the one that stays serial. Second, **the verdict-identity
+  check has to control for what else moved**: the parallel run differed from the serial baseline on
+  3 of 24 maps, which looks damning until you notice the baseline predated a mid-task merge of
+  another session's engine round (whose own notes predicted exactly that `field_ringed` marginal
+  flip). Re-rolling only the three differing seeds serially on the CURRENT code proved the match in
+  ~45s. Diff against the same code, not against an older log.
+- **A second iteration (~8 min) because the first fix used the check's PREDICATE but not its full
+  INPUT SET.** Placement fitted the pond against its host plot; the check scans every plot ring plus
+  the drain hem, and a comb fan's rings overlap at the fan/grid seams. The existing "placement and
+  its check must read the SAME manifest source" rule covers the data source; this sharpens it to the
+  EXTENT of that source. The cohort caught it, which is the argument for cohorts over single maps.
+- **~4-5 min (~10%) lost to three failed heredoc patch scripts**, all quoting slips in
+  Python-that-rewrites-Python, none of them wrong anchors. Hence the "edit with `Edit`" rule in
+  CLAUDE.md - it batches into one turn just as well and cannot fail this way.
+- **The mid-task merge conflict was cheap** (~4.5 min including a second gate and regenerating four
+  maps, ~1 min of it the actual resolution). Concurrent sessions colliding is inherent; nothing here
+  suggests a process change.
+- **Projected shape after the fan-out: ~28-30 min for this task, ~20 of it model latency.** Past
+  that point the remaining cost is reasoning and the verification rituals, which is where it should
+  be.

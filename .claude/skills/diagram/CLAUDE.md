@@ -29,9 +29,14 @@ something that map depends on actually changed, and prints `CACHED` or `REGENERA
     python3 regen.py pool/*/*.gen.py                         # every LIVE map, fanned out (frozen legacy maps print FROZEN, skipped)
     python3 regen.py --no-cache pool/hamlets/inashiro.gen.py # force the work
 
-Multi-map runs fan out across worker processes (cpus minus 2; `--jobs 1` for serial), as does
-`cohort_audit.py` - since 2026-08-15, when the timings ledger showed the serial cohort was the
-biggest available win. Wall clock for a fanned-out sweep is bounded by its single slowest map, so
+Multi-map runs fan out across worker processes (cpus minus 2; `--jobs 1` for serial), as do
+`cohort_audit.py` and `python3 -m hamletgen --batch`. The audit since 2026-08-15, when the timings
+ledger showed the serial cohort was the biggest available win; the batch CLI since 2026-08-16, when
+a profile found that round had MISSED it - the fan-toe pond fix spent **17.3 of its 45.7 minutes**
+on two serial 24-seed rolls, ~11 min of it as critical-path idle (**526s -> 71s, 7.4x**, with all 24
+verdicts identical, re-proven per differing seed against a serial roll on the same code).
+`default_jobs` in `hamletgen/driver.py` is the one definition of the cpus-minus-2 courtesy; the
+audit imports it. Wall clock for a fanned-out sweep is bounded by its single slowest map, so
 per-map cost is what remains worth optimizing. Parallelism cannot change a verdict (each map is a
 pure function of its spec; `gencache.store` publishes atomically), and the per-map output is
 captured in the worker and printed in order, so a parallel run reads like a serial one.
