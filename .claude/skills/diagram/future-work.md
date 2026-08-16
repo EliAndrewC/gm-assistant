@@ -164,6 +164,12 @@ wells, the board's clump keep-out, the lane-crossing guards).
   stream/channel (Kashikawa's SW pocket, 77-182 ft from the stream head). Harmless today - the
   chosen seats passed review - but the objective and the check read different definitions of
   "needs a well"; align them when wells are next touched.
+- **The envelope trim deposits near-duplicate vertices at the trim corner** (merged-roll review,
+  2026-08-16, Kashikawa: ~12 points within a ~5 px span with back-and-forth reversals in the
+  recorded `comb_floors` ring where the collector cut meets the old boundary). Invisible at
+  1 ft/px; a future consumer of the ring (area, edge normals, self-intersection) could trip.
+  Add a consecutive-vertex dedup after the trim in `build_comb` when that code is next touched -
+  not worth a pool re-roll on its own.
 - **Woodland stand crowns are ink-only** (both 2026-08-16 review rounds, independently): the
   coppice parcels' crowns are SVG circles only - `tree_crowns` holds just the windbreak belt and
   copse - so no manifest check can count a stand's canopy, which is exactly how a zero-crown
