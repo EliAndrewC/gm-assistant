@@ -2,7 +2,7 @@
 
 import math
 import random
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from .banks import _TOE_MIN_THICKNESS, floor_overhang, hem_to_bank, round_channel_joints
@@ -82,8 +82,135 @@ def build_comb(
     R = random.Random(seed)
     F = _Frame(down_deg)
     DOWN = F.down
-    channels = []
+    channels: list[dict[str, Any]] = []
 
+    fork, a_pts = _comb_skeleton(R, F, DOWN, sluice, canal_a_len, canal_b_len, W, H, grain, channels)
+    threads, bc, spawns = _comb_threads(R, F, DOWN, fork, a_pts, canal_b_len, offtakes_a, offtakes_b, plot_across)
+    # ---- the lockstep march (no thread may cross another or pinch under GAP)
+    _comb_march(R, F, DOWN, threads, spawns, W, H, field_fall)
+    dpts = _comb_drain(R, F, threads, W, H, grain, channels)
+    brook = _comb_brook(R, F, dpts, W, H)
+
+    drain_bank = _drain_bank(F, dpts, grain)  # the ditch's own edge, the one line the field may not cross
+    _comb_clip_and_cap(R, F, threads, dpts, drain_bank)
+    _comb_canal_pieces(F, threads, bc, a_pts, offtakes_a, fork, grain, channels)
+
+    # `supply_banks` hands the carve the very strokes assembled above, so the bunds hem onto the
+    # banks that will actually be painted - placer and paint reading the same source. OPT-IN
+    # (default False) so every legacy comb gen re-runs byte-identical; the scripted tier passes
+    # True and the gate holds it there (paddy_bunds_clear_the_supply_channels, gated on
+    # meta.generated_by per the migration doctrine - legacy maps inherit the rule at conversion).
+    plots = _carve(
+        R,
+        F,
+        threads,
+        a_pts,
+        dpts,
+        W,
+        H,
+        plot_across,
+        row_step,
+        grain,
+        seed,
+        drain_bank,
+        supply=[c for c in channels if c.get("role") != "drain"] if supply_banks else None,
+    )
+
+    envelope = _comb_floor_and_winding(plots, threads, a_pts, dpts, F)
+
+    # WEDGE FILLER (coarse grains only): even with the thresholds grain-scaled, the carve
+    # leaves awkward slivers where ditch threads diverge or the closing geometry misses - and
+    # a real cascade fan wasted nothing: fork wedges were terraced into small IRREGULAR
+    # paddies. Sample the fan interior on the same grid paddy_fan_gapless uses, cluster the
+    # bare cells, and plant a fan-aligned (u,f-frame) filler plot over each cluster. Gated to
+    # grain != 1.0 ONLY for byte-stability: every village map was visually vetted gapless at
+    # the 2 ft/px tuning grain, and an unconditional pass would re-roll their RNG streams.
+    if grain != 1.0:
+        _fill_wedges(R, F, plots, envelope, grain, channels, plot_across, row_step, a_pts, dpts)
+    _comb_toe_and_hem(plots, dpts, down_deg, plot_across, grain)
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
+
+    dry_plots, dry_acres, bund_beans = _comb_dry_and_beans(R, F, a_pts, bc, plots, channels, W, H, dry_keepout, dry_band, bean_frac, grain, furrow_spread, grain_drift)
+    # furrows_vary tells the checker whether to REQUIRE neighboring dry plots to differ in row direction: a
+    # gentle-valley village spreads them (the patchwork quilt, default); a STEEP/terraced village narrows the
+    # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
+    # is required. Threshold at ~0.3 rad (~17 deg): above it the plots visibly fan, below it they read aligned.
+    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
+    return {
+        "down_deg": down_deg,  # the LOCAL fall this fan was carved to - recorded so the drainage-slope
+        # checks can judge each drain against ITS OWN field rather than one map-level constant (a city
+        # ringed by farmland genuinely drains several ways at once; GM 2026-07-25)
+        "fork": fork,  # the bunsuiguchi division point - recorded so comb_supply_commands_both_flanks
+        # can measure each flank's planted extent and drawn-supply reach FROM the point the model
+        # itself divides at (placement and check reading the same source; GM 2026-08-16)
+        "channels": channels,
+        "plots": plots,
+        "threads": threads,
+        "drain": dpts,
+        "brook": brook,
+        "envelope": envelope,
+        "acres": acres,
+        "dry_plots": dry_plots,
+        "dry_acres": dry_acres,
+        "bund_beans": bund_beans,
+        "furrows_vary": furrow_spread >= 0.3,
+    }
+
+
+def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, plot_across: float, grain: float) -> None:
+    """The fan's toe discipline: drop unbundable slivers, then hold every bund off the drain."""
+    # THE FAN'S TOE IS A HEADLAND, NOT A ROW OF FAKE BASINS (settlement-review 2026-07-26; GM
+    # 2026-07-27). Where the fan narrows to its collector vertex, the carve and the wedge filler
+    # both emit cells that taper to a point - Ubame's west comb ended in ~8 acute triangles
+    # radiating from the vertex, and Hoshizora shows the same. A paddy is a LEVEL BASIN: it is
+    # bunded and holds standing water to a uniform depth, so a sliver that acute cannot be leveled
+    # or bunded at any sane cost, and real fan and terrace systems end in a headland or simply
+    # leave the odd corner unpaddied rather than pretend. Dropping them is also visually free: the
+    # fan carries a base floor under the plots (`comb_base_fill`, enforced by paddy_fan_has_floor),
+    # so the ground reads as the fan's own toe rather than as a hole.
+    #
+    # The test is the inradius proxy 2*Area/Perimeter - a THICKNESS, not an area, because an acute
+    # sliver can carry a respectable area while being too narrow anywhere to hold water. Scaled to
+    # `plot_across` so it means the same thing at every grain.
+    _thin = [q for q in plots if _poly_perim(q["poly"]) <= 0 or 2 * _poly_area(q["poly"]) / _poly_perim(q["poly"]) < _TOE_MIN_THICKNESS * plot_across]
+    if _thin:
+        _drop = {id(q) for q in _thin}
+        plots[:] = [q for q in plots if id(q) not in _drop]
+    # THE INVARIANT, held uniformly across all four field engines: no basin's wall stands in the
+    # ditch. The comb hems onto the bank BY CONSTRUCTION (see `_drain_bank`), so this pass is a
+    # no-op on all but one vertex in the whole pool - and that one is worth naming, because it says
+    # what the pass is really for. At Ubame's west corner the boundary thread is clipped at the
+    # collector's HEAD, so `bnd` hands back the same clamped point for every fall below it and the
+    # sector's closing quads come out inverted; an INTERIOR sub-bund of that degenerate sector then
+    # interpolates to within 0.3px of the ditch. The real answer there is for the carve to stop
+    # opening a sector whose boundary has already collapsed onto the drain, which is a change to the
+    # carve's sector geometry and not to this rule - so until that is done, the corner is held to
+    # the invariant here rather than left standing in the water.
+    for pl in plots:
+        pl["poly"] = hem_to_bank(pl["poly"], dpts, down_deg, DRAIN_W_HEAD * grain, DRAIN_W_TAIL * grain)
+
+
+def _mk_thread(
+    F: _Frame,
+    DOWN: float,
+    px: float,
+    py: float,
+    heading: float,
+    ditch_len: float,
+    decay: float = 110.0,
+    fallback: Poly | _Thread | None = None,
+) -> _Thread:
+    tu, tf = F.to_uf(px, py)
+    h = max(-1.2, min(1.2, heading - DOWN))
+    # du/df = -tan(h): a heading LEFT of the fall line (h<0) moves u POSITIVE
+    return _Thread(tu, tf, -math.tan(h), tf + ditch_len * max(0.2, math.cos(h)), decay, fallback)
+
+
+def _comb_skeleton(
+    R: random.Random, F: _Frame, DOWN: float, sluice: Pt, canal_a_len: tuple[float, float], canal_b_len: tuple[float, float], W: float, H: float, grain: float, channels: list[dict[str, Any]]
+) -> tuple[Pt, Poly]:
+    """The water skeleton's head: head-race to the division point, then canal A's dug polyline
+    (canal B's is drawn and discarded - its RNG draw is part of the frozen stream)."""
     # head-race: sluice -> the division point (bunsuiguchi), straight down the fall
     # (channel widths x grain throughout: the same REAL-feet channel sizes at every map scale)
     hr = [sluice, (sluice[0] + 45 * F.d[0], sluice[1] + 45 * F.d[1]), (sluice[0] + 90 * F.d[0], sluice[1] + 90 * F.d[1])]
@@ -96,22 +223,23 @@ def build_comb(
     # discarded - canal B is redrawn below as the `bc` boundary thread - but the call stays (its RNG draw is
     # part of the frozen stream that keeps every map byte-identical); `_`-prefixed so it reads as intentional.
     _b_pts = _dug_polyline(R, F, fork[0], fork[1], DOWN + math.radians(58), R.uniform(*canal_b_len), 0.05, (90, 120), W, H)
+    return fork, a_pts
 
-    def mk(
-        px: float,
-        py: float,
-        heading: float,
-        ditch_len: float,
-        decay: float = 110.0,
-        fallback: Poly | _Thread | None = None,
-    ) -> _Thread:
-        tu, tf = F.to_uf(px, py)
-        h = max(-1.2, min(1.2, heading - DOWN))
-        # du/df = -tan(h): a heading LEFT of the fall line (h<0) moves u POSITIVE
-        return _Thread(tu, tf, -math.tan(h), tf + ditch_len * max(0.2, math.cos(h)), decay, fallback)
 
+def _comb_threads(
+    R: random.Random,
+    F: _Frame,
+    DOWN: float,
+    fork: Pt,
+    a_pts: Poly,
+    canal_b_len: tuple[float, float],
+    offtakes_a: Sequence[float],
+    offtakes_b: Sequence[float],
+    plot_across: float,
+) -> tuple[list[_Thread], _Thread, list[list[Any]]]:
+    """Boundary + delivery threads off the two canals, and the spawn events for mid-march offtakes."""
     # canal B is itself the far-side boundary thread (its dug prefix IS the canal)
-    bc = mk(fork[0], fork[1], DOWN + math.radians(58), R.uniform(*canal_b_len), decay=170.0)
+    bc = _mk_thread(F, DOWN, fork[0], fork[1], DOWN + math.radians(58), R.uniform(*canal_b_len), decay=170.0)
     threads = [bc]
     # delivery ditches are MIN-SPACED: two ditches closer than ~2 plot-columns would water the same
     # ground twice (a redundant near-pair that reads as an artifact, not design), so drop the closer.
@@ -124,12 +252,12 @@ def build_comb(
         if any(abs(tu - pu) < min_gap for pu in placed_u):
             continue  # redundant near-pair - skip it (keeps the net sparse)
         placed_u.append(tu)
-        th = mk(bx, by, DOWN + R.uniform(-0.15, 0.1), R.uniform(420, 620), fallback=a_pts)
+        th = _mk_thread(F, DOWN, bx, by, DOWN + R.uniform(-0.15, 0.1), R.uniform(420, 620), fallback=a_pts)
         a_ths.append(th)
         threads.append(th)
     for th in a_ths[1:-1]:  # only the INTERIOR (widest) blocks split once
         th.spawn_sub = True
-    rb = mk(a_pts[-1][0], a_pts[-1][1], DOWN, 0, fallback=a_pts)  # far boundary (bund only)
+    rb = _mk_thread(F, DOWN, a_pts[-1][0], a_pts[-1][1], DOWN, 0, fallback=a_pts)  # far boundary (bund only)
     threads.append(rb)
     threads.sort(key=lambda t: t.u0)
 
@@ -148,8 +276,11 @@ def build_comb(
         side = R.choice((-1, 1))
         spawns.append([f_at, th, DOWN + side * R.uniform(0.5, 0.66), R.uniform(300, 430), side])
     bc.ditch_f = max([e[0] for e in spawns if e[1] is bc], default=bc.f0 + 40) + 22
+    return threads, bc, spawns
 
-    # ---- the lockstep march (no thread may cross another or pinch under GAP)
+
+def _comb_march(R: random.Random, F: _Frame, DOWN: float, threads: list[_Thread], spawns: list[list[Any]], W: float, H: float, field_fall: float | None) -> None:
+    """The lockstep march (no thread may cross another or pinch under GAP), spawning children mid-march."""
     for t in threads:
         t.pts = [F.to_xy(t.u0, t.f0)]
     f = min(t.f0 for t in threads)
@@ -166,7 +297,7 @@ def build_comb(
             spawns.remove(ev)
             _, par, head, dlen, side = ev
             px, py = par.pts[-1]
-            child = mk(px, py, head, dlen, fallback=par)
+            child = _mk_thread(F, DOWN, px, py, head, dlen, fallback=par)
             child.u0 = child.u = par.u + GAP * 0.55 * side
             child.pts = [(px, py)]
             threads.insert(threads.index(par) + (1 if side > 0 else 0), child)
@@ -183,10 +314,12 @@ def build_comb(
         if all(not (-60 < F.to_xy(t.u, f)[0] < W + 60 and -60 < F.to_xy(t.u, f)[1] < H + 60) for t in threads):
             break
 
-    # ---- DRAIN (akusui): the collector is DUG along the fields' low boundary, so its route
-    # is the ENVELOPE of the delivery ditches' dug ends (each column drains just below where
-    # its ditch stops) - a u-sorted polyline through (u_bot, f_bot + margin), smoothed, and
-    # extended past both ends so the whole system empties off the map
+
+def _comb_drain(R: random.Random, F: _Frame, threads: list[_Thread], W: float, H: float, grain: float, channels: list[dict[str, Any]]) -> Poly:
+    """DRAIN (akusui): the collector is DUG along the fields' low boundary, so its route
+    is the ENVELOPE of the delivery ditches' dug ends (each column drains just below where
+    its ditch stops) - a u-sorted polyline through (u_bot, f_bot + margin), smoothed, and
+    extended past both ends so the whole system empties off the map."""
     bots = []
     for t in threads:
         if t.ditch_f <= t.f0 + 10:
@@ -239,13 +372,16 @@ def build_comb(
     # seasonal furrow a farmer re-cuts at each drawdown. So the hydraulic floor and the maintenance floor
     # meet exactly at the finest ditch the supply side already draws, and the drain starts there.
     channels.append({"pts": dpts, "w": DRAIN_W_HEAD * grain, "w_tail": DRAIN_W_TAIL * grain, "role": "drain"})
+    return dpts
 
-    # the akusui does NOT just stop: it empties at its outfall into a natural valley BROOK that
-    # carries the water off the map downhill (reused by the next village downstream / rejoining the
-    # river). Water IN (the pond feeder) and water OUT (this brook). BUT a brook is only added when
-    # the outfall sits INSIDE the frame - if the field itself already runs to the map edge, the drain
-    # discharges off-map directly (a brook grown from there would just run back through the field, as
-    # the streams_avoid_fields check correctly flags). A field bounded within the frame gets the brook.
+
+def _comb_brook(R: random.Random, F: _Frame, dpts: Poly, W: float, H: float) -> Poly:
+    """The akusui does NOT just stop: it empties at its outfall into a natural valley BROOK that
+    carries the water off the map downhill (reused by the next village downstream / rejoining the
+    river). Water IN (the pond feeder) and water OUT (this brook). BUT a brook is only added when
+    the outfall sits INSIDE the frame - if the field itself already runs to the map edge, the drain
+    discharges off-map directly (a brook grown from there would just run back through the field, as
+    the streams_avoid_fields check correctly flags). A field bounded within the frame gets the brook."""
     outfall = dpts[-1]  # the drain's downhill (highest-u) end
     brook = []
     if 14 < outfall[0] < W - 14 and 14 < outfall[1] < H - 14:
@@ -267,8 +403,11 @@ def build_comb(
             brook.append(p)
             if not (12 < p[0] < W - 12 and 12 < p[1] < H - 12):
                 break  # ran off the map edge = the runoff sink
+    return brook
 
-    drain_bank = _drain_bank(F, dpts, grain)  # the ditch's own edge, the one line the field may not cross
+
+def _comb_clip_and_cap(R: random.Random, F: _Frame, threads: list[_Thread], dpts: Poly, drain_bank: Callable[[float], float]) -> None:
+    """Clip every thread to the drain's BANK, then cap each column's cascade tail."""
     for t in threads:  # clip every thread to the drain
         clipped = [t.pts[0]]
         for i in range(len(t.pts) - 1):
@@ -303,13 +442,15 @@ def build_comb(
         if fd_ is not None:
             t.ditch_f = min(max(t.ditch_f, fd_ - R.uniform(250, 330)), fd_ - 55)
 
-    # ---- drawable canals: A tapers past each offtake ("main canals gradually decrease in
-    # size as they are tapped by branch canals" - Tabayashi 1986), and it tapers ALL THE WAY DOWN
-    # to a ditch-tail thread (1.6) at its far end (GM 2026-07-23): the supply canal sheds its whole
-    # flow into the offtakes and plots along its run, so past the last offtake it carries almost
-    # nothing and "slowly disappears" exactly like the delivery ditches - the old stepped 6.2 -> 4.0
-    # taper left the top channel reading near-constant beside the dwindling ditches. Each piece now
-    # carries w -> w_tail so the narrowing is continuous within pieces, not a stair of blunt steps.
+
+def _comb_canal_pieces(F: _Frame, threads: list[_Thread], bc: _Thread, a_pts: Poly, offtakes_a: Sequence[float], fork: Pt, grain: float, channels: list[dict[str, Any]]) -> None:
+    """Drawable canals: A tapers past each offtake ("main canals gradually decrease in
+    size as they are tapped by branch canals" - Tabayashi 1986), and it tapers ALL THE WAY DOWN
+    to a ditch-tail thread (1.6) at its far end (GM 2026-07-23): the supply canal sheds its whole
+    flow into the offtakes and plots along its run, so past the last offtake it carries almost
+    nothing and "slowly disappears" exactly like the delivery ditches - the old stepped 6.2 -> 4.0
+    taper left the top channel reading near-constant beside the dwindling ditches. Each piece now
+    carries w -> w_tail so the narrowing is continuous within pieces, not a stair of blunt steps."""
     cuts = [0.0] + list(offtakes_a) + [1.0]
     n_a = len(cuts) - 1
     for i in range(len(cuts) - 1):
@@ -371,27 +512,9 @@ def build_comb(
             # narrow end so the gen draws it dwindling, not a blunt constant-width stub that stops dead.
             channels.append({"pts": pre, "w": (5.6 if t is bc else 4.0) * grain, "w_tail": 1.5 * grain, "role": "branch"})
 
-    # `supply_banks` hands the carve the very strokes assembled above, so the bunds hem onto the
-    # banks that will actually be painted - placer and paint reading the same source. OPT-IN
-    # (default False) so every legacy comb gen re-runs byte-identical; the scripted tier passes
-    # True and the gate holds it there (paddy_bunds_clear_the_supply_channels, gated on
-    # meta.generated_by per the migration doctrine - legacy maps inherit the rule at conversion).
-    plots = _carve(
-        R,
-        F,
-        threads,
-        a_pts,
-        dpts,
-        W,
-        H,
-        plot_across,
-        row_step,
-        grain,
-        seed,
-        drain_bank,
-        supply=[c for c in channels if c.get("role") != "drain"] if supply_banks else None,
-    )
 
+def _comb_floor_and_winding(plots: list[dict[str, Any]], threads: list[_Thread], a_pts: Poly, dpts: Poly, F: _Frame) -> Poly:
+    """The fan's envelope, its floor trimmed to the command area, and the bowtie drop."""
     envelope = [p for p in a_pts] + [p for p in threads[-1].pts] + list(reversed(dpts)) + list(reversed(threads[0].pts))
 
     # TRIM THE FLOOR TO THE COMMAND AREA (known-open ledger 2026-08-16, Mizuguchi's SE needle -
@@ -428,49 +551,27 @@ def build_comb(
         if len(_merged) >= 3:
             pl["poly"] = _merged
     plots[:] = [pl for pl in plots if _signed_area(pl["poly"]) > 0]
+    return envelope
 
-    # WEDGE FILLER (coarse grains only): even with the thresholds grain-scaled, the carve
-    # leaves awkward slivers where ditch threads diverge or the closing geometry misses - and
-    # a real cascade fan wasted nothing: fork wedges were terraced into small IRREGULAR
-    # paddies. Sample the fan interior on the same grid paddy_fan_gapless uses, cluster the
-    # bare cells, and plant a fan-aligned (u,f-frame) filler plot over each cluster. Gated to
-    # grain != 1.0 ONLY for byte-stability: every village map was visually vetted gapless at
-    # the 2 ft/px tuning grain, and an unconditional pass would re-roll their RNG streams.
-    if grain != 1.0:
-        _fill_wedges(R, F, plots, envelope, grain, channels, plot_across, row_step, a_pts, dpts)
-    # THE FAN'S TOE IS A HEADLAND, NOT A ROW OF FAKE BASINS (settlement-review 2026-07-26; GM
-    # 2026-07-27). Where the fan narrows to its collector vertex, the carve and the wedge filler
-    # both emit cells that taper to a point - Ubame's west comb ended in ~8 acute triangles
-    # radiating from the vertex, and Hoshizora shows the same. A paddy is a LEVEL BASIN: it is
-    # bunded and holds standing water to a uniform depth, so a sliver that acute cannot be leveled
-    # or bunded at any sane cost, and real fan and terrace systems end in a headland or simply
-    # leave the odd corner unpaddied rather than pretend. Dropping them is also visually free: the
-    # fan carries a base floor under the plots (`comb_base_fill`, enforced by paddy_fan_has_floor),
-    # so the ground reads as the fan's own toe rather than as a hole.
-    #
-    # The test is the inradius proxy 2*Area/Perimeter - a THICKNESS, not an area, because an acute
-    # sliver can carry a respectable area while being too narrow anywhere to hold water. Scaled to
-    # `plot_across` so it means the same thing at every grain.
-    _thin = [q for q in plots if _poly_perim(q["poly"]) <= 0 or 2 * _poly_area(q["poly"]) / _poly_perim(q["poly"]) < _TOE_MIN_THICKNESS * plot_across]
-    if _thin:
-        _drop = {id(q) for q in _thin}
-        plots[:] = [q for q in plots if id(q) not in _drop]
-    # THE INVARIANT, held uniformly across all four field engines: no basin's wall stands in the
-    # ditch. The comb hems onto the bank BY CONSTRUCTION (see `_drain_bank`), so this pass is a
-    # no-op on all but one vertex in the whole pool - and that one is worth naming, because it says
-    # what the pass is really for. At Ubame's west corner the boundary thread is clipped at the
-    # collector's HEAD, so `bnd` hands back the same clamped point for every fall below it and the
-    # sector's closing quads come out inverted; an INTERIOR sub-bund of that degenerate sector then
-    # interpolates to within 0.3px of the ditch. The real answer there is for the carve to stop
-    # opening a sector whose boundary has already collapsed onto the drain, which is a change to the
-    # carve's sector geometry and not to this rule - so until that is done, the corner is held to
-    # the invariant here rather than left standing in the water.
-    for pl in plots:
-        pl["poly"] = hem_to_bank(pl["poly"], dpts, down_deg, DRAIN_W_HEAD * grain, DRAIN_W_TAIL * grain)
-    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
 
-    # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
-    # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md.
+def _comb_dry_and_beans(
+    R: random.Random,
+    F: _Frame,
+    a_pts: Poly,
+    bc: _Thread,
+    plots: list[dict[str, Any]],
+    channels: list[dict[str, Any]],
+    W: float,
+    H: float,
+    dry_keepout: Sequence[tuple[float, float, float]],
+    dry_band: tuple[float, float],
+    bean_frac: float,
+    grain: float,
+    furrow_spread: float,
+    grain_drift: float,
+) -> tuple[list[dict[str, Any]], float, Poly]:
+    """DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
+    BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md."""
     dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift)
     if grain != 1.0:
         # the INTER-ARM FORK TRIANGLE (coarse grains only): the ground between the two supply
@@ -493,30 +594,7 @@ def build_comb(
             )  # thinner than the a-side hem: it only needs to cover the fork triangle, and a full-depth band crowds the farmhouse ring off the fan's visible edge
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac, channels=channels)
-    # furrows_vary tells the checker whether to REQUIRE neighboring dry plots to differ in row direction: a
-    # gentle-valley village spreads them (the patchwork quilt, default); a STEEP/terraced village narrows the
-    # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
-    # is required. Threshold at ~0.3 rad (~17 deg): above it the plots visibly fan, below it they read aligned.
-    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
-    return {
-        "down_deg": down_deg,  # the LOCAL fall this fan was carved to - recorded so the drainage-slope
-        # checks can judge each drain against ITS OWN field rather than one map-level constant (a city
-        # ringed by farmland genuinely drains several ways at once; GM 2026-07-25)
-        "fork": fork,  # the bunsuiguchi division point - recorded so comb_supply_commands_both_flanks
-        # can measure each flank's planted extent and drawn-supply reach FROM the point the model
-        # itself divides at (placement and check reading the same source; GM 2026-08-16)
-        "channels": channels,
-        "plots": plots,
-        "threads": threads,
-        "drain": dpts,
-        "brook": brook,
-        "envelope": envelope,
-        "acres": acres,
-        "dry_plots": dry_plots,
-        "dry_acres": dry_acres,
-        "bund_beans": bund_beans,
-        "furrows_vary": furrow_spread >= 0.3,
-    }
+    return dry_plots, dry_acres, bund_beans
 
 
 def _fill_wedges(
