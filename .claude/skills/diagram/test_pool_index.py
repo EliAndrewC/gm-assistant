@@ -95,6 +95,8 @@ def test_index_contents(tmp_path):
     assert "capital_dir=1, 2" in page
     assert "water_source_position" not in page  # identical to water_source -> deduplicated
     assert 'src="hamlets/aoi.png"' in page
+    # Map thumbnails open in a new tab; in-page nav anchors (pinned above) do not.
+    assert '<a href="hamlets/aoi.png" target="_blank" rel="noopener">' in page
     assert 'href="hamlets/aoi.notes.md"' in page
 
     # A settlement-tier map with no manifest is reported as WRONG, never guessed at.
