@@ -472,3 +472,120 @@ def test_open_seat_disc_uses_the_true_radius_of_a_round_candidate():
     loose, exact = seat(False), seat(True)
     assert exact is not None, "the exact disc reach must find the gap the half-diagonal refuses"
     assert loose is None or math.hypot(exact[0] - 300, exact[1] - 300) <= math.hypot(loose[0] - 300, loose[1] - 300)
+
+
+# ---- feature 116: the composed ShrinesWellsMixin surface -----------------------------------------
+# The guard for the settlement/shrines_wells.py -> settlement/shrines_wells/ package split. See
+# specs/116-shrines-wells-package/contracts/mixin-surface.md for the contract and its red proofs.
+
+_SHRINES_WELLS_SURFACE = frozenset(
+    {
+        # public entry points, called from pool gens, wip/, other engine modules and tests
+        "draft_byres",
+        "farm_wells",
+        "flush_tree_stands",
+        "forest",
+        "frozen_terrain",
+        "hill",
+        "open_seat",
+        "place_wells",
+        "shrine",
+        "shrine_hall",
+        "shrine_well",
+        "small_shrine",
+        "torii_even",
+        "torii_path",
+        "well",
+        "well_at",
+        # private helpers, reached through self. - six of them from OUTSIDE this package
+        # (_assert_walls_clear_of_torii from water_ways/civic_grounds/structures.compounds, _well_vr
+        # and _well_ground_clear from civic_grounds, _tree_stand from castle_civic/core). The other
+        # thirteen have no consumer outside the class at all - they stay in the surface precisely
+        # because a name nothing else calls is the kind a careless partition drops without any other
+        # test noticing.
+        "_assert_walls_clear_of_torii",
+        "_avenue_at_threshold",
+        "_avenue_pitch",
+        "_avenue_short_of_walls",
+        "_build_well_index",
+        "_crowns",
+        "_draw_byre",
+        "_draw_stand",
+        "_farm_wells",
+        "_footprint_clear",
+        "_fringe_blocked",
+        "_hall_caption_y",
+        "_in_scrub_cover",
+        "_place_wells",
+        "_stand_fringe",
+        "_terrain_fingerprint",
+        "_torii",
+        "_tree_stand",
+        "_well_ground_clear",
+        "_well_index",
+        "_well_vr",
+        "_wet_toe_keepout",
+    }
+)
+
+
+def _shrines_wells_submixins():
+    # Derived from the MRO rather than by importing the submodules, so this guard runs UNCHANGED
+    # before and after the split: pre-split the list is empty (ShrinesWellsMixin is the single class
+    # and the collision assertion is vacuous), post-split it is the seven sub-mixins. Importing
+    # settlement.shrines_wells.wells et al. directly - the shape feature 112 used - cannot be written
+    # before the package it imports from exists, which is what made 112's own red proof for the
+    # collision assertion impossible to run in the order its task list implied (113 tasks T007).
+    from settlement.shrines_wells import ShrinesWellsMixin
+
+    return [c for c in ShrinesWellsMixin.__mro__ if c is not ShrinesWellsMixin and c is not object]
+
+
+def _own_members(cls):
+    # Any non-dunder name the class body itself defines: methods AND data attributes. Deliberately
+    # NOT `callable(v)` - this class has no class-level constant today, but feature 112 needed a
+    # whole extra test because its guard counted callables only, and this form covers the constant
+    # somebody adds later for free.
+    return {k for k in vars(cls) if not k.startswith("__")}
+
+
+def test_no_pre_split_shrines_wells_member_was_lost_in_the_move():
+    # SUBSET, not equality, for the reason features 112, 113 and 114 all recorded: a later
+    # decomposition legitimately adds named private helpers, and equality would turn every such
+    # change into a contract edit - training a reader to update the frozenset without thinking,
+    # which is exactly the reflex that lets a real subtraction through. What must never happen is a
+    # pre-split member going MISSING: an addition is visible in review, a subtraction is silent
+    # until whichever generator calls it happens to run.
+    from settlement.shrines_wells import ShrinesWellsMixin
+
+    composed = set().union(*(_own_members(c) for c in ShrinesWellsMixin.__mro__))
+    assert composed >= _SHRINES_WELLS_SURFACE, f"missing={sorted(_SHRINES_WELLS_SURFACE - composed)}"
+
+
+def test_no_two_shrines_wells_submixins_define_the_same_name():
+    # The half that is easy to under-rate: a member defined by two sub-mixins produces a working
+    # import, a clean `mypy --strict`, and one silently dead implementation, because MRO just picks
+    # the first base.
+    subs = _shrines_wells_submixins()
+    for i, a in enumerate(subs):
+        for b in subs[i + 1 :]:
+            overlap = _own_members(a) & _own_members(b)
+            assert not overlap, f"{a.__name__} and {b.__name__} both define {sorted(overlap)} - MRO would orphan one"
+
+
+def test_every_shrines_wells_member_resolves_on_settlement_itself():
+    # what consumers actually rely on: the name reaching Settlement, not merely ShrinesWellsMixin
+    unreachable = sorted(n for n in _SHRINES_WELLS_SURFACE if not hasattr(Settlement, n))
+    assert not unreachable, f"not reachable on Settlement: {unreachable}"
+
+
+def test_frozen_terrain_is_still_a_context_manager():
+    # The hazard unique to THIS split (specs/116 research R5): frozen_terrain is the first decorated
+    # member in the lineage, and `ast` reports FunctionDef.lineno at the `def`, one line BELOW
+    # @contextlib.contextmanager. A slice that drops the decorator keeps the NAME - so the surface
+    # guard above passes, mypy --strict passes, the package imports - and turns a context manager
+    # into a plain generator that fails at every `with self.frozen_terrain():` call site.
+    s = Settlement(400, 400, seed=1)
+    with s.frozen_terrain():
+        assert s._frozen_wells is not None, "the freeze must actually build the index inside the scope"
+    assert s._frozen_wells is None, "and release it on the way out"
