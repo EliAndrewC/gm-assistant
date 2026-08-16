@@ -3312,6 +3312,10 @@ class Settlement:
         }
         if net.get("down_deg") is not None:
             _fld["down_deg"] = net["down_deg"]  # this fan's LOCAL fall (see build_comb)
+        if net.get("fork") is not None:
+            # the bunsuiguchi division point (build_comb only - a polder net records none), read by
+            # comb_supply_commands_both_flanks; legacy manifests lack it, so the check skips them
+            _fld["fork"] = [round(net["fork"][0], 1), round(net["fork"][1], 1)]
         self.M["fields"].append(_fld)
         for c in net["channels"]:
             rec = {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}

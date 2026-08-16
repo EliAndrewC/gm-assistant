@@ -20,6 +20,18 @@ Kagawa prefecture *tameike* structure pages
 
 *Used for:* inclined intake (shahi) + bottom conduit (sokohi); spillway as flood-safety; parent/child pond linkage
 
+### `mbalib-canal-layout`
+
+MBA智库百科, 灌溉渠道系统 (https://wiki.mbalib.com/wiki/灌溉渠道系统)
+
+*Used for:* the command-area placement law - mains on the district's high ground for gravity command of the largest area; every canal tier on the high ground of its own control area; mains/branches along contours and ridges, field channels across them
+
+### `saitama-minuma-tsusenbori`
+
+Saitama City, 見沼通船堀のしくみ (https://www.city.saitama.lg.jp/004/005/006/008/p077111.html)
+
+*Used for:* Minuma-dai dividing its head into east-edge/west-edge canals (東縁/西縁) along the plateau rims, with the Shiba River draining the central lowland
+
 ### `jsidre-minumadai`
 
 JSIDRE, on Minuma-dai (1728)

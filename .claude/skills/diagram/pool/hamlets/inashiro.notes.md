@@ -80,6 +80,18 @@ pipeline's, and it is the same order a person follows:
   has the margin-drain stroke and some hinterland tufts painting over its fill. Logged in
   future-work.md ("Pocket ponds carry ink-on-water of their own"); not part of the bead delta.
 
+- 2026-08-16 (the fork draws both arms): the GM noticed the head-race turns southeast along the
+  northeast margin but never SPLITS toward the west side the way other maps' channels do, and asked
+  for research. Settled in research/water.md "The head-race forks - supply commands both flanks":
+  a gravity canal commands only ground below it, Minuma-dai (1728) deliberately divides its head
+  into two margin canals, and `build_comb` was already carving canal B as a supply thread the
+  hamlet tier never inked - measured here, ~255 ft of planted paddy west of the fork against 0 ft
+  of drawn water. Every `OFFTAKE_LADDER` row now draws canal B (one offtake at ~0.55; the arm runs
+  partway down the west margin and tapers), gated by `comb_supply_commands_both_flanks` (the
+  pre-fix manifest is frozen in `pool/regressions/`). The map re-rolled downstream of the carve;
+  `place_wells`' greedy coverage also gained a ~66 px bucket with center tie-break after the
+  Sawada re-roll parked a well past the frame (`crop_not_held_open_by_one_feature`).
+
 - 2026-08-15 (supply-bank hem): the GM caught the bunds bordering the irrigated channels drawn
   down the MIDDLE of the water rather than along its edge - `_carve`'s `bnd` returned thread/canal
   centerlines and the supply strokes are drawn centered on those same lines, so the pre-fix sheet

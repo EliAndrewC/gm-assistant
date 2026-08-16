@@ -1095,7 +1095,13 @@ def build_comb(
         # prime dry-crop ground beside the head-race, so quilt it: a second hem band along
         # canal B's SUPPLY stretch, whose upslope normal points INTO the triangle. Village
         # maps skip this (byte-stability; their scrub already covers the same ground).
-        _bc_supply = [p for p in bc.pts if F.to_uf(*p)[1] <= bc.ditch_f]
+        # ...and the band spans only the stretch that BORDERS the triangle: up to bc's first
+        # offtake, where the paddy bc itself commands begins. When canal B carries offtakes
+        # (every scripted row since 2026-08-16), running the band to ditch_f strings hem plots
+        # along ground that is now carved RICE - Cohort-41 dropped a soy plot square on the
+        # paddy and its delivery ditch that way. With no offtakes the two bounds coincide.
+        _bc_tri_f = min(list(getattr(bc, "offtake_fs", []) or []) + [bc.ditch_f])
+        _bc_supply = [p for p in bc.pts if F.to_uf(*p)[1] <= _bc_tri_f]
         if len(_bc_supply) >= 2:
             dry_plots += _dry_fields(
                 R, F, _bc_supply, W, H, dry_keepout, band=(dry_band[0] * 0.6, dry_band[1] * 0.6), g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift
@@ -1111,6 +1117,9 @@ def build_comb(
         "down_deg": down_deg,  # the LOCAL fall this fan was carved to - recorded so the drainage-slope
         # checks can judge each drain against ITS OWN field rather than one map-level constant (a city
         # ringed by farmland genuinely drains several ways at once; GM 2026-07-25)
+        "fork": fork,  # the bunsuiguchi division point - recorded so comb_supply_commands_both_flanks
+        # can measure each flank's planted extent and drawn-supply reach FROM the point the model
+        # itself divides at (placement and check reading the same source; GM 2026-08-16)
         "channels": channels,
         "plots": plots,
         "threads": threads,
