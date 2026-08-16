@@ -1536,6 +1536,72 @@ def _seg_0317__dry_plot_furrows_vary(
     return _kept(locals(), ('_a', '_dv_rad', '_dv_sides', 'ai', 'bi', 'd', 'dcen', 'i', 'p', 'pp', 'same', 'v'))
 
 
+# DRY-PLOT SEAMS ARE SHARED LINES: the hem tiles its plots column by column along the supply canal,
+# so the boundary between two neighboring plots is ONE line both quads lie on. A generator that
+# offsets each column along its own chord's normal instead opens a wedge at every canal bend - bare
+# ground on a convex bend, a lap on a concave one - growing with upslope depth (GM caught it on
+# Inashiro, 2026-08-16: "A few of them seem to overlap slightly, and a few of them seem to have
+# little bits of space between them because the borders of those crop fields are not exactly at the
+# same angle"; the worst Inashiro pair lapped 245 sq ft). Two clauses, both manifest-only:
+# (a) LAP - no two dry plots overlap once each is shrunk a hair about its centroid (the shrink
+#     absorbs the 0.1 px manifest rounding; a real lap wedge is px-wide and survives it);
+# (b) GAP - where two plots MEET at a shared corner with same-heading edges, those edges must be
+#     collinear: the shorter edge's far end may not diverge laterally off the longer edge's line.
+# Ragged OUTER edges (per-column depth) are untouched - raggedness lives at the ENDS of seams as
+# steps along the shared line, never as daylight or lap between plots. Family: gap VERDICT - both
+# clauses measure real plot corners/edges, no centers, no aggregates.
+
+
+def _seg_0596__dry_plot_seams_shared(*, check: Any = _UNBOUND, dry_plots: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 596 (dry_plot_seams_shared) - hand-added 2026-08-16 (numbered past the legacy
+    range like _seg_0595; registered between 0317 and 0318, beside the dry-plot checks whose
+    `dry_plots` binding it shares). New-style: temps stay function-local, writes=()."""
+    _ds_corner2 = 1.5**2  # corners this close (px^2) are the SAME seam endpoint, drawn twice
+    _ds_lat_tol = 1.2  # px of lateral divergence at the far end - manifest rounding is ~0.15
+    bad: list[tuple[str, int, int]] = []
+    if len(dry_plots) >= 2:
+        polys: list[list[tuple[float, float]]] = [[(float(v[0]), float(v[1])) for v in p["poly"]] for p in dry_plots]
+        shrunk: list[list[tuple[float, float]]] = []
+        for pp in polys:
+            cx = sum(q[0] for q in pp) / len(pp)
+            cy = sum(q[1] for q in pp) / len(pp)
+            shrunk.append([(cx + (q[0] - cx) * 0.985, cy + (q[1] - cy) * 0.985) for q in pp])
+        boxes = [(min(q[0] for q in pp), min(q[1] for q in pp), max(q[0] for q in pp), max(q[1] for q in pp)) for pp in polys]
+        for ai in range(len(polys)):
+            for bi in range(ai + 1, len(polys)):
+                if boxes[ai][2] < boxes[bi][0] - 2 or boxes[bi][2] < boxes[ai][0] - 2 or boxes[ai][3] < boxes[bi][1] - 2 or boxes[bi][3] < boxes[ai][1] - 2:
+                    continue
+                if sat_overlap(shrunk[ai], shrunk[bi]):
+                    bad.append(("lap", round((boxes[ai][0] + boxes[bi][2]) / 2), round((boxes[ai][1] + boxes[bi][3]) / 2)))
+                    continue
+                pa, pb = polys[ai], polys[bi]
+                for ci in range(len(pa)):
+                    for cj in range(len(pb)):
+                        a, b = pa[ci], pb[cj]
+                        if (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 > _ds_corner2:
+                            continue
+                        # the two edges emanating from each plot's copy of the shared corner
+                        for ea in (pa[(ci + 1) % len(pa)], pa[ci - 1]):
+                            ax, ay = ea[0] - a[0], ea[1] - a[1]
+                            al = math.hypot(ax, ay) or 1.0
+                            for eb in (pb[(cj + 1) % len(pb)], pb[cj - 1]):
+                                bx, by = eb[0] - b[0], eb[1] - b[1]
+                                bl = math.hypot(bx, by) or 1.0
+                                if (ax * bx + ay * by) / (al * bl) < 0.9:
+                                    continue  # not the same heading - a corner where unrelated edges meet
+                                ln = min(al, bl)
+                                # lateral offset of b's edge at arc-length ln off a's edge line
+                                px, py = b[0] + bx / bl * ln - a[0], b[1] + by / bl * ln - a[1]
+                                if abs(px * ay / al - py * ax / al) > _ds_lat_tol:
+                                    bad.append(("gap", round(a[0]), round(a[1])))
+    check(
+        "dry_plot_seams_shared",
+        not bad,
+        f"dry-plot seam defect(s) {sorted(set(bad))[:5]} - hem plots tiled along one canal must share their seams as single straight lines: a 'lap' is two plots overlapping, a 'gap' is a bare wedge opening between same-heading edges from a shared corner; both mean the columns were offset along different normals (waterfields._miter_normals is the shared-seam mechanism)",
+    )
+    return _kept(locals(), ())
+
+
 # BUILDINGS AND WORK YARDS STAY OFF THE DRY PLOTS: a hem of barley/soy strips (or an urban
 # vegetable tract) is CROPLAND, not building ground - a farmstead may ABUT a plot, never stand
 # on it. The dry plots were classified in the overlap registry but no check actually TESTED

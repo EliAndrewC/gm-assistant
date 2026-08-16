@@ -1780,6 +1780,44 @@ def _carve(
     return plots
 
 
+def _miter_normals(bpts: Poly, F: _Frame) -> list[Pt]:
+    """Per-BOUNDARY upslope offset normals for hem columns tiled along the boundary points `bpts`:
+    each interior boundary gets the mitred average of its two chords' upslope normals, scaled by
+    1/cos(half-bend) - the stroked-polyline miter join, so the offset band keeps its true upslope
+    depth at the seam (capped at 2x for a degenerate hairpin; a 180-degree fold, where no shared
+    offset direction exists, falls back to the outgoing chord's normal). The two end boundaries
+    take their single chord's normal unscaled.
+
+    WHY (GM 2026-08-16, Inashiro): _dry_fields used to offset each column along its OWN chord's
+    normal, so both quads at a shared boundary point pushed that point in slightly different
+    directions wherever the canal bent - a wedge of bare ground on a convex bend, a lap on a
+    concave one, ~bend-angle x depth px wide at the ragged edge (the worst Inashiro pair lapped
+    245 sq ft; 7 pairs overlapped outright, and every scripted hamlet had some). Offsetting each
+    boundary point along ONE shared vector makes every seam a single straight line both quads lie
+    on - gated by dry_plot_seams_shared."""
+    cn: list[Pt] = []
+    for i in range(len(bpts) - 1):
+        tx, ty = bpts[i + 1][0] - bpts[i][0], bpts[i + 1][1] - bpts[i][1]
+        tl = math.hypot(tx, ty) or 1.0
+        nx, ny = -ty / tl, tx / tl  # unit normal to this chord
+        mx, my = (bpts[i][0] + bpts[i + 1][0]) / 2, (bpts[i][1] + bpts[i + 1][1]) / 2
+        if F.to_uf(mx + nx, my + ny)[1] > F.to_uf(mx, my)[1]:  # point it UPSLOPE (decreasing fall)
+            nx, ny = -nx, -ny
+        cn.append((nx, ny))
+    out: list[Pt] = [cn[0]]
+    for k in range(1, len(cn)):
+        sx, sy = cn[k - 1][0] + cn[k][0], cn[k - 1][1] + cn[k][1]
+        sl = math.hypot(sx, sy)
+        if sl < 1e-9:  # 180-degree fold: opposite chord normals cancel
+            out.append(cn[k])
+            continue
+        ux, uy = sx / sl, sy / sl
+        scale = 1.0 / max(0.5, ux * cn[k][0] + uy * cn[k][1])  # 1/cos(half-bend), miter-limited at 2x
+        out.append((ux * scale, uy * scale))
+    out.append(cn[-1])
+    return out
+
+
 def _dry_fields(
     R: random.Random,
     F: _Frame,
@@ -1801,10 +1839,12 @@ def _dry_fields(
 
     The plots are RECTANGLES laid out AGAINST THE CANAL THEY BORDER - one edge runs ALONG the supply canal,
     the other PERPENDICULAR to it, extending upslope. They are NOT oriented to the paddy's fall grid (that gave
-    a pronounced ~43deg shear, since the canal runs diagonally to the fall). Because the base edge rides the
-    canal itself, adjacent plots ABUT continuously along it (no shear, no steps); only the UPSLOPE (outer) edge
-    is ragged - a per-column depth. The base dips slightly BELOW the canal so it tucks under the paddy (drawn
-    after). `band` = (min, max) upslope depth in px: a THIN fringe (default) for a water-rich valley floor.
+    a pronounced ~43deg shear, since the canal runs diagonally to the fall). The base edge rides the canal
+    itself, and each shared boundary point is offset along ONE mitred normal (`_miter_normals`), so adjacent
+    columns share every seam as a single straight line - no gap wedge or lap where the canal bends. Only the
+    UPSLOPE (outer) edge is ragged - a per-column depth, stepping along the shared seam lines. The base dips
+    slightly BELOW the canal so it tucks under the paddy (drawn after). `band` = (min, max) upslope depth in
+    px: a THIN fringe (default) for a water-rich valley floor.
 
     FURROWS run along the CONTOUR (perpendicular to the fall), the traditional ridge-along-contour that dams
     rain and checks runoff - so the furrow direction is the contour heading, varied per plot; `theta` per plot."""
@@ -1853,14 +1893,11 @@ def _dry_fields(
     )  # the furrow-variety neighborhood stays UNSCALED: dry_plot_furrows_vary judges adjacency at this px radius on every map, and a generator that varies over a WIDER circle than the check demands is safely conservative
     prev_crop = R.choice(list(DRY_CROPS))
     berm = 8 * g  # a thin bund holds the dry plots just ABOVE (upslope of) the canal (grain-scaled: 8px was 16 real ft at the village grain; unscaled it left a 24 ft bare stripe on the city maps)
+    bpts = [at(b) for b in bounds]
+    bnorm = _miter_normals(bpts, F)  # ONE shared upslope normal per boundary point - see its WHY
     for i in range(len(bounds) - 1):
-        pL, pR = at(bounds[i]), at(bounds[i + 1])
-        tx, ty = pR[0] - pL[0], pR[1] - pL[1]
-        tl = math.hypot(tx, ty) or 1.0
-        nx, ny = -ty / tl, tx / tl  # unit normal to the canal
-        mx, my = (pL[0] + pR[0]) / 2, (pL[1] + pR[1]) / 2
-        if F.to_uf(mx + nx, my + ny)[1] > F.to_uf(mx, my)[1]:  # point it UPSLOPE (decreasing fall)
-            nx, ny = -nx, -ny
+        pL, pR = bpts[i], bpts[i + 1]
+        (nLx, nLy), (nRx, nRy) = bnorm[i], bnorm[i + 1]
         depth = R.uniform(*band)  # ragged outer edge (per-column depth)
         nrow = max(1, round(depth / (36 * g)))
         for k in range(nrow):
@@ -1873,7 +1910,7 @@ def _dry_fields(
             # The whole plot stays on the DRY side - it never dips across the canal onto the wet paddy.
             o_near = berm + depth * k / nrow
             o_far = berm + depth * (k + 1) / nrow
-            quad = [(pL[0] + nx * o_far, pL[1] + ny * o_far), (pR[0] + nx * o_far, pR[1] + ny * o_far), (pR[0] + nx * o_near, pR[1] + ny * o_near), (pL[0] + nx * o_near, pL[1] + ny * o_near)]
+            quad = [(pL[0] + nLx * o_far, pL[1] + nLy * o_far), (pR[0] + nRx * o_far, pR[1] + nRy * o_far), (pR[0] + nRx * o_near, pR[1] + nRy * o_near), (pL[0] + nLx * o_near, pL[1] + nLy * o_near)]
             cx = sum(p[0] for p in quad) / 4
             cy = sum(p[1] for p in quad) / 4
             if any(p[0] < 12 or p[0] > W - 12 or p[1] < 12 or p[1] > H - 12 for p in quad):
