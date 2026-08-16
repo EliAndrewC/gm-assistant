@@ -277,19 +277,45 @@ def test_the_gate_never_reads_the_cache():
 
 def test_the_real_pool_round_trips_through_the_cache():
     """The end-to-end proof on a REAL map: regenerate, cache, wipe, restore, and demand the bytes
-    match. Uses the cheapest hamlet so the suite stays fast; the mechanism is map-independent."""
-    gen = os.path.join(HERE, "pool", "hamlets", "moritono.gen.py")
-    manifest = gen[: -len(".gen.py")] + ".json"
+    match. Uses the cheapest SCRIPTED hamlet - the hand-authored pool is FROZEN (poolmaps.py) and
+    its gens are never run - and restores the committed artifacts BYTE-FOR-BYTE afterwards rather
+    than by re-running the gen: the engine is free to drift from what a live map was generated
+    with, so a final re-run could leave the pool dirty."""
+    gen = os.path.join(HERE, "pool", "hamlets", "inashiro.gen.py")
+    base = gen[: -len(".gen.py")]
+    manifest = base + ".json"
+    committed = {p: Path(p).read_bytes() for p in (manifest, base + ".svg")}
     env = {**os.environ, "DIAGRAM_SKIP_RENDER": "1"}
-    subprocess.run([sys.executable, gen], check=True, capture_output=True, env=env, cwd=HERE)
-    fresh = Path(manifest).read_bytes()
-    deps = json.loads(json.dumps(gencache.run_and_record(gen)))  # round-trips through JSON like a stored entry
-    assert any(f.endswith("settlement.py") for f, _ in deps["functions"]), "a real gen must record engine deps"
-    gencache.store(gen, deps)
-    os.remove(manifest)
     try:
+        subprocess.run([sys.executable, gen], check=True, capture_output=True, env=env, cwd=HERE)
+        fresh = Path(manifest).read_bytes()
+        deps = json.loads(json.dumps(gencache.run_and_record(gen)))  # round-trips through JSON like a stored entry
+        assert any(f.endswith("settlement.py") for f, _ in deps["functions"]), "a real gen must record engine deps"
+        gencache.store(gen, deps)
+        os.remove(manifest)
         assert gencache.load(gen) is True, "an unchanged pool map must hit"
         assert Path(manifest).read_bytes() == fresh
     finally:
-        shutil.rmtree(os.path.join(gencache.CACHE_DIR, "moritono"), ignore_errors=True)
-        subprocess.run([sys.executable, gen], check=True, capture_output=True, env=env, cwd=HERE)
+        shutil.rmtree(os.path.join(gencache.CACHE_DIR, "inashiro"), ignore_errors=True)
+        for p, data in committed.items():
+            Path(p).write_bytes(data)
+
+
+def test_regen_skips_frozen_legacy_maps():
+    """The 2026-08-16 legacy freeze, enforced at the ITERATION path: `regen.py pool/*/*.gen.py`
+    must not rewrite a frozen exhibit - the engine drifts freely now, so a re-run would replace
+    committed artifacts with output nobody reviewed. The skip happens BEFORE any cache or
+    generation work, and the message carries the policy and the `--frozen-ok` override (tips live
+    in the blocking output, not in docs the moment forgets)."""
+    import contextlib
+    import io
+
+    import regen
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = regen.main([os.path.join(HERE, "pool", "towns", "hoshizora.gen.py")])
+    out = buf.getvalue()
+    assert rc == 0
+    assert "FROZEN" in out and "--frozen-ok" in out and "migration-plan.md" in out
+    assert "REGENERATED" not in out and "CACHED" not in out, out

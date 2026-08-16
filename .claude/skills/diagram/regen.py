@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Regenerate a map, skipping the work when nothing that map depends on has changed.
 
-    python3 regen.py pool/provincial-cities/minami.gen.py      # cached when possible
-    python3 regen.py pool/*/*.gen.py                           # the whole pool, fanned out
-    python3 regen.py --no-cache pool/towns/ubame.gen.py        # force the work
+    python3 regen.py pool/hamlets/sawada.gen.py                # cached when possible
+    python3 regen.py pool/*/*.gen.py                           # every LIVE map, fanned out
+    python3 regen.py --no-cache pool/hamlets/inashiro.gen.py   # force the work
     python3 regen.py --jobs 1 pool/*/*.gen.py                  # serial
+
+FROZEN legacy maps are skipped (printed as `FROZEN`), not regenerated: the hand-authored pool
+froze on 2026-08-16 (migration-plan.md "The accepted trade") and the engine has been free to
+drift since, so re-running a legacy gen would rewrite committed exhibit artifacts with output
+nobody has reviewed. `--frozen-ok` overrides for a deliberate, GM-sanctioned re-render.
 
 This is the ITERATION path. The gate (`test_villages.py`) deliberately does not come through here -
 it always regenerates - so the cache can never put a wrong map past `make done`. See gencache.py
@@ -31,6 +36,7 @@ import sys
 import time
 
 import gencache
+import poolmaps
 
 
 def regen(gen: str, use_cache: bool = True) -> tuple[str, float]:
@@ -63,6 +69,13 @@ def main(argv: list[str]) -> int:
     gens = [g for g in args if g.endswith(".gen.py")]
     for skipped in (g for g in args if not g.endswith(".gen.py")):
         print(f"skipping {skipped}: not a .gen.py")
+    if "--frozen-ok" not in argv:
+        frozen = {g for g in gens if poolmaps.classify(g) == "legacy"}
+        for g in sorted(frozen):
+            print(f"{'FROZEN':12s} {os.path.basename(g)[: -len('.gen.py')]:16s} legacy hand-authored map (frozen 2026-08-16, migration-plan.md) - not regenerated; pass --frozen-ok to force")
+        gens = [g for g in gens if g not in frozen]
+    if not gens:
+        return 0
     if jobs is None:  # leave two cpus for the harness and whatever else shares the box
         jobs = max(1, min(len(gens), (os.cpu_count() or 2) - 2))
     if jobs == 1 or len(gens) == 1:
