@@ -131,7 +131,7 @@ A building TYPE with a documented program has it recorded in [`buildings/program
 
 ## Checklist for a new diagram
 
-This checklist is for **Mode A** (compound/building plans). **Mode B settlement maps** follow their own loop instead - the "Workflow (spec → validator → persona)" steps in [`settlements.md`](settlements.md): `check_village.py` must report ALL CHECKS PASSED, then a persona read of the PNG. (Note the Mode B difference: title is the place name only - no subtitle/summary line. Neither mode carries a key/legend box.)
+This checklist is for **Mode A** (compound/building plans). **Mode B settlement maps** follow their own loop instead - the "Workflow (spec → validator → persona)" steps in [`settlements.md`](settlements.md): `check_village/` must report ALL CHECKS PASSED, then a persona read of the PNG. (Note the Mode B difference: title is the place name only - no subtitle/summary line. Neither mode carries a key/legend box.)
 
 Before declaring done (Mode A):
 

@@ -106,7 +106,11 @@ approval before /speckit-tasks may run.
   (clause 12): a plan whose implementation would grow any function past a
   few hundred logical statements MUST say so and justify it, and past
   ~1,000 the function carries an inline justification annotation or gets
-  split - measured in statements/expressions, never raw lines.
+  split - measured in statements/expressions, never raw lines. Files
+  stay at human scale too (clause 13): a plan whose implementation
+  would grow any source file past ~1,000 raw lines MUST say so and
+  either plan the package-of-subfiles split (directory-module +
+  CLAUDE.md index) or justify the file remaining whole.
 
 - **XII. Historical Grounding Bookends (NON-NEGOTIABLE)**: Does the feature
   change what a generator ASSERTS ABOUT THE WORLD (any `/diagram` settlement

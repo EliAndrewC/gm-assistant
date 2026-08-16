@@ -6,7 +6,7 @@ ALL HIGH + MEDIUM items below are IMPLEMENTED (GM directive), plus the windbreak
 composition check via the form-aware adjacency metric** - see the check names in brackets and
 settlements.md for the calibration whys. The remaining unautomated composition rule is label
 restraint (review-by-eye). Inventory basis: 347 distinct checks in
-`check_village.py` - ~242 ungated, ~40 city-only, ~50 town-inclusive, ~15 village/hamlet-only.
+`check_village/` - ~242 ungated, ~40 city-only, ~50 town-inclusive, ~15 village/hamlet-only.
 
 ## Context: closed this session (towns now covered)
 

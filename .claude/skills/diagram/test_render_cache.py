@@ -153,10 +153,11 @@ def test_regen_pool_runs_stale_skips_fresh_and_exempts_mode_a(repo):
         fh.write(b"OLD")
     rc.stamp_svg(fsvg, rc.input_hash(fresh, fp))
 
-    skipped, ran = rc.regen_pool(pool, repo_dir, skill_dir=skill, jobs=2)
+    skipped, ran, frozen = rc.regen_pool(pool, repo_dir, skill_dir=skill, jobs=2)
 
     assert skipped == [fresh]
     assert ran == sorted([stale, mode_a])
+    assert frozen == []
     # fresh was not re-run: its sentinel svg body survived and its png is untouched
     assert "<SENTINEL/>" in Path(fsvg).read_text()
     assert Path(fsvg[:-4] + ".png").read_bytes() == b"OLD"
@@ -170,8 +171,8 @@ def test_regen_pool_runs_stale_skips_fresh_and_exempts_mode_a(repo):
 def test_regen_pool_no_allow_main(repo):
     repo_dir, skill, pool = repo
     gen = _make_gen(pool, "villages", "m")
-    skipped, ran = rc.regen_pool(pool, repo_dir, skill_dir=skill, jobs=None, allow_main=False)
-    assert skipped == [] and ran == [gen]
+    skipped, ran, frozen = rc.regen_pool(pool, repo_dir, skill_dir=skill, jobs=None, allow_main=False)
+    assert skipped == [] and ran == [gen] and frozen == []
     assert Path(rc._predicted_svg(gen)[:-4] + ".ran").read_text() == "unset"
 
 
@@ -183,6 +184,23 @@ def test_main_reports_and_returns_zero(repo, capsys):
     out = capsys.readouterr().out
     assert "1 regenerated, 0 cached" in out
     assert "regen  villages/m.gen.py" in out
+
+
+def test_regen_pool_never_reruns_a_frozen_legacy_map(repo, capsys):
+    """The 2026-08-16 legacy freeze at the render-sync layer: a gen whose basename is on
+    poolmaps.LEGACY_FROZEN_GENS is never re-run - even with no stamp and no renders at all - so
+    main's exhibit renders can never be replaced by a drifted engine (a rerun would also rewrite
+    the exhibit's tracked .json). A frozen map with a MISSING render is reported loudly by main()
+    instead of healed, because healing it with today's engine IS the drift."""
+    repo_dir, skill, pool = repo
+    frozen_gen = _make_gen(pool, "villages", "minami")  # the basename is what puts it on the frozen list
+    live = _make_gen(pool, "villages", "live")
+    skipped, ran, frozen = rc.regen_pool(pool, repo_dir, skill_dir=skill, jobs=2)
+    assert frozen == [frozen_gen] and ran == [live] and skipped == []
+    assert not os.path.exists(rc._predicted_svg(frozen_gen)), "the frozen gen must not even have been run"
+    assert rc.main(["--pool", pool, "--main-repo", repo_dir, "--skill-dir", skill]) == 0
+    out = capsys.readouterr().out
+    assert "1 frozen" in out and "WARNING: frozen map" in out and "minami.gen.py" in out and "NOT healed" in out
 
 
 def test_main_no_allow_main_flag(repo):
