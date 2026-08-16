@@ -98,8 +98,8 @@ regenerates on a warm cache; grep finds no stale doctrine.
       comparable); FIX `bench_hamlet` (`python3 -m check_village`, broken since 024); retarget
       `bench_cache` from frozen minami to sawada (heaviest LIVE map). Cover new/changed pure logic
       to 100%.
-- [ ] T015 Run `python3 cache_audit.py` (mandatory - this feature changes how generation is
-      driven; ~10 min, background it). Record PASS/FAIL here: ______
+- [x] T015 Run `python3 cache_audit.py` (mandatory - this feature changes how generation is
+      driven; ~10 min, background it). Record PASS/FAIL here: **PASS** (2026-08-16: 3 mutations of settlement/_geom.py, 0 skipped, 0 failed, pool clean after restore)
 - [ ] T016 Run `python3 timings.py --note "026 cache-backed gate"` (background); verify SC-001
       (warm_gate >= 5% faster than full_gate) and SC-004 (green cold + warm); ledger block
       appended. Record the two numbers here: cold ______ warm ______
