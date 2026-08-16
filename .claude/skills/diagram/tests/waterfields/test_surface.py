@@ -79,6 +79,8 @@ CONSUMED_PUBLIC = [
     "polyline_cum",
     "round_channel_joints",
     "supply_bank_clearance",
+    "taper_pieces",
+    "taper_w",
 ]
 
 # The underscore names with external consumers, and the submodule that owns each
