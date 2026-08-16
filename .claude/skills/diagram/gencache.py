@@ -62,7 +62,15 @@ OUTPUT_SUFFIXES = (".json", ".svg", ".png")
 
 
 def engine_files() -> list[str]:
-    return sorted(os.path.join(HERE, f) for f in os.listdir(HERE) if f.endswith(".py") and not f.startswith("test_") and f not in _NOT_ENGINE)
+    """Every engine .py AT ANY DEPTH (feature 025 made settlement/ a package - a root-only listing
+    would silently stop keying the cache on the main engine, serving stale maps after engine
+    edits). Same walk rule as render_cache.engine_fingerprint: prune pool/, wip/, caches, hidden
+    dirs and test packages; skip test files and the non-engine modules."""
+    out: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(HERE):
+        dirnames[:] = sorted(d for d in dirnames if d not in ("pool", "wip", "__pycache__", ".gencache") and not d.startswith(("test_", ".")))
+        out.extend(os.path.join(dirpath, f) for f in filenames if f.endswith(".py") and not f.startswith("test_") and f not in _NOT_ENGINE)
+    return sorted(out)
 
 
 def _sha(data: bytes) -> str:

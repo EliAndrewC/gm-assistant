@@ -290,7 +290,7 @@ def test_the_real_pool_round_trips_through_the_cache():
         subprocess.run([sys.executable, gen], check=True, capture_output=True, env=env, cwd=HERE)
         fresh = Path(manifest).read_bytes()
         deps = json.loads(json.dumps(gencache.run_and_record(gen)))  # round-trips through JSON like a stored entry
-        assert any(f.endswith("settlement.py") for f, _ in deps["functions"]), "a real gen must record engine deps"
+        assert any("/settlement/" in f for f, _ in deps["functions"]), "a real gen must record engine deps"
         gencache.store(gen, deps)
         os.remove(manifest)
         assert gencache.load(gen) is True, "an unchanged pool map must hit"

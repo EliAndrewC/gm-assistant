@@ -4,7 +4,7 @@
 WHY THIS EXISTS (GM 2026-08-08). "Which call put this building here?" is not answerable from the
 manifest: a record carries its geometry and nothing about its provenance, and the engine has ~200
 methods that can append one. A profiled session spent roughly ten sequential greps through
-`settlement.py` and the gen chasing a single servant house - reading `top_up`, then `servant_ranges`,
+the `settlement/` package and the gen chasing a single servant house - reading `top_up`, then `servant_ranges`,
 then the apron block polys, then `_fits` - and none of them answered it. What DID answer it, first
 try and in one run, was eight lines of throwaway monkeypatch that wrapped `M["buildings"]` and
 printed a stack trace on append. This is that, made permanent and given the second half of the
@@ -19,7 +19,7 @@ Two modes, and they are the two halves of every placement puzzle:
     python3 why_placed.py pool/provincial-cities/nagahara.gen.py --refused 1102.6,1429.5
 
 `--at` reports every manifest record appended within the radius, with the gen line and the
-`settlement.py` call chain that produced it. `--refused` reports the `_fits` calls made near the
+`settlement/` call chain that produced it. `--refused` reports the `_fits` calls made near the
 point, how many were refused, and WHICH SUB-TEST said no - observed by watching the real predicates
 return, never by restating their logic here. That distinction is the same one `site_justice.py`'s
 docstring draws and it matters for the same reason: a tool that re-implements a rule drifts from it,
@@ -71,7 +71,7 @@ def near(rec: dict[str, Any], x: float, y: float, radius: float) -> bool:
 
 def useful_frames(stack: Sequence[Any], limit: int = 6) -> list[tuple[str, int, str]]:
     """The call chain worth printing: drop this file and the stdlib runner, keep the rest INNERMOST
-    LAST, capped. The gen line tells you which call site to go and look at; the settlement.py frames
+    LAST, capped. The gen line tells you which call site to go and look at; the settlement/ engine frames
     under it tell you which engine method chose the spot."""
     out: list[tuple[str, int, str]] = []
     for fr in stack:
