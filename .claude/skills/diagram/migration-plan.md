@@ -21,7 +21,7 @@ A `/diagram` Mode B map has three layers, and only ONE of them is changing.
 
 | Layer | What it is | Size | Converting? |
 |---|---|---|---|
-| The **engine** - `settlement.py` | 371 methods that DRAW things: farmhouses, paddy combs, torii, city walls, castles, markets, wards | 16.0k lines | **No.** Already spans hamlet to capital. |
+| The **engine** - the `settlement/` package (split from settlement.py by feature 025) | 338 methods that DRAW things: farmhouses, paddy combs, torii, city walls, castles, markets, wards | 16.0k lines across 16 subfiles | **No.** Already spans hamlet to capital. |
 | The **validator** - `check_village/` | The gate. 189 checks run on a single hamlet; more at larger tiers | 15.7k lines | **No.** It is the reason this migration is safe. |
 | The **composition** - `pool/*/<name>.gen.py` | Which features exist on THIS map, where each one sits, how they relate | ~200-900 lines **per map**, hand-written | **Yes. This is the whole migration.** |
 
@@ -70,8 +70,8 @@ classification all three tools share. What this buys: iteration on placement rul
 nothing on maps whose authoring process is deprecated, and - the bigger half - **engine changes no
 longer need to hold the legacy pool byte-identical**, so new rules ship un-flagged and the
 byte-identity criterion below is retired. The known cost, accepted out loud: the above-hamlet wings
-of `settlement.py` (towns, cities, the capital) are exercised by nothing until their tiers convert,
-so the coverage gate holds 100% on every module except `settlement.py`, which carries a RATCHET
+of the `settlement/` package (towns, cities, the capital) are exercised by nothing until their tiers convert,
+so the coverage gate holds 100% on every module except the `settlement/` package, which carries a RATCHET
 floor in the Makefile (`SETTLEMENT_COV_FLOOR`) - raise it as each tier converts, never lower it.
 A frozen map's defects against post-freeze rules are expected, not bugs; the fix is conversion.
 The frozen maps' renders (svg + png, ~195 MB) are **committed as write-once exhibits** (GM
