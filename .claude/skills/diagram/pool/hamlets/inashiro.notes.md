@@ -97,3 +97,15 @@ pipeline's, and it is the same order a person follows:
   nesting 12 fillers wholly inside carved paddies (pre-existing, verified against the frozen
   manifest) - fixed the same day: a filler must now cover at least one probe of genuinely bare
   ground.
+
+## 2026-08-16 - scatter water-skip fix (engine-wide, found here)
+
+GM spotted scrub between the dry hem plots and the supply channels; the investigation found 27
+tufts standing ON the head-race's drawn water. Root cause: `_on_watercourse` read only the
+hairline topology `channels` record (w 2.5) while the drawn laterals live in `drawn_channels` up
+to 14 ft wide (the "same manifest source" trap). Fixed in `settlement._watercourse_segs` +
+`_on_watercourse` (drawn piece-tapered widths, pre-boxed grid at the scatter sites); ink-only,
+manifest byte-identical. The remaining sparse tufts on the bare strips beside the channels are
+DELIBERATE - no bank-margin rule exists; that open decision is recorded in
+`research/vegetation.md` "Scrub stays off open water". settlement-review DELTA: PASS
+(banks read as honestly vegetated, no sterile halo; marsh tufts correctly untouched).

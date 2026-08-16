@@ -319,6 +319,7 @@ class LandMixin:
             fld_b = boxed_grid(boxed_polys(list(self.field_polys) + list(self.dry_polys), pad=crop_pad + 14 * bs))
             blk_b = boxed_grid(boxed_polys(self.block_polys))
             clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
+            wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
 
             def _sparse(
                 px: float, py: float, drop: float, lean: float = 0.0
@@ -327,7 +328,7 @@ class LandMixin:
                     not point_in_poly(px, py, poly)
                     or boxed_hit(px, py, fld_b.near(px, py), edge_pad=crop_pad + lean)
                     or boxed_seg_hit(px, py, cor_b.near(px, py))  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
-                    or self._on_watercourse(px, py)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
+                    or self._on_watercourse(px, py, near=wat_b.near)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
                     or (pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
                     or any(
                         x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects
@@ -443,6 +444,7 @@ class LandMixin:
         # pad as the edge test below, so the prefilter can never reject a point that test wanted
         fld_b, blk_b = boxed_grid(boxed_polys(self.field_polys, 10.0)), boxed_grid(boxed_polys(self.block_polys))
         clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
+        wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
 
         def _sparse(
             px: float, py: float, drop: float
@@ -451,7 +453,7 @@ class LandMixin:
                 not point_in_poly(px, py, poly)
                 or boxed_hit(px, py, fld_b.near(px, py), 10.0)
                 or boxed_seg_hit(px, py, cor_b.near(px, py))  # a causeway/path/road through the marsh stays bare, not reeded over
-                or self._on_watercourse(px, py)  # ... and OFF a stream/channel bed (reeds fringe water, they do not float on it)
+                or self._on_watercourse(px, py, near=wat_b.near)  # ... and OFF a stream/channel bed (reeds fringe water, they do not float on it)
                 or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)  # ... and OUT of the urban-clearance halo (the swept/trodden ground around every structure)
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
                 or boxed_hit(px, py, blk_b.near(px, py))  # ... and OFF any building/shrine/torii footprint
@@ -762,6 +764,7 @@ class LandMixin:
 
         halo_rects, halo_circles = self._urban_keepouts((bx0, by0, bx1, by1))
         corridors = self._corridor_buffers(3 * self.bscale)
+        wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
         pond = self.M.get("pond")
         hill = self.M.get("hill")
         wall = self.M.get("wall")
@@ -801,7 +804,7 @@ class LandMixin:
                 or any(point_in_poly(px, py, c) for c in self.clearings)  # off swept sacred/funerary verges
                 or any(point_in_poly(px, py, a) for a in avoid)
                 or any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors)  # off roads/streets/lanes
-                or self._on_watercourse(px, py)  # off streams/channels/moat
+                or self._on_watercourse(px, py, near=wat_b.near)  # off streams/channels/moat
                 or (pond is not None and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)  # off the pond
                 or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)  # off the urban-clearance halo
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # off wellhead aprons
@@ -888,6 +891,7 @@ class LandMixin:
 
         halo_rects, halo_circles = self._urban_keepouts((bx0, by0, bx1, by1))
         corridors = self._corridor_buffers(3 * self.bscale)
+        wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
         pond = self.M.get("pond")
         hill = self.M.get("hill")
         wall = self.M.get("wall")
@@ -965,7 +969,7 @@ class LandMixin:
                 or any(point_in_poly(px, py, c) for c in self.clearings)
                 or any(point_in_poly(px, py, a) for a in avoid)
                 or any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors)
-                or self._on_watercourse(px, py)
+                or self._on_watercourse(px, py, near=wat_b.near)
                 or (pond is not None and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
                 or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)
