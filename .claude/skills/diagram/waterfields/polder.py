@@ -2,11 +2,14 @@
 
 import math
 import random
+from collections.abc import Callable
 from typing import Any
 
 from .banks import hem_to_bank, round_channel_joints
 from .frame import Poly, Pt, _poly_area
 from .palette import FLOODED, PADDY_CELL_ACRES, RICE_GREENS, organic_parcel
+
+_RING = 18.0  # the inner-toe ring-canal corridor width in (s, t) px (see _polder_lattice's RING note)
 
 
 def build_terraces(
@@ -200,8 +203,57 @@ def build_polder(
     R = random.Random(seed)
     dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill (row) unit
     ux, uy = dy, -dx  # cross (column) unit - the grid extends to the +x/+cross side of the origin
-    ox, oy = origin
     span_s, span_t = rows * cell, cols * cell
+
+    grid, nodes, tt, ss = _polder_lattice(R, seed, origin, (dx, dy), (ux, uy), rows, cols, cell, span_s, span_t, edge_wander, mosaic, line_wander)
+    plots = _polder_parcels(R, seed, grid, nodes, rows, cols, cell, gap, split_gap, parcel_mix, organic)
+    envelope = _polder_envelope(grid, span_s, span_t)
+    sides_st, fi, di, sluice = _polder_ring(R, grid, span_s, span_t)
+    channels, brook, dike_sluices, floor, out_t = _polder_channels(grid, sides_st, nodes, rows, cols, tt, span_s, span_t, fi, di)
+    _drn = _polder_close(plots, channels, sides_st, grid, down_deg)
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
+    return {
+        "channels": channels,
+        "plots": plots,
+        "threads": [],
+        "drain": _drn,
+        "brook": brook,
+        "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
+        "acres": acres,
+        "dry_plots": [],
+        "dry_acres": 0.0,
+        "bund_beans": [],
+        "furrows_vary": False,
+        "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
+        "dike_sluices": [(round(x, 1), round(y, 1)) for x, y in dike_sluices],
+        "floor": [(round(x, 1), round(y, 1)) for x, y in floor],
+    }
+
+
+_GridFn = Callable[[float, float], Pt]
+
+
+def _polder_lattice(
+    R: random.Random,
+    seed: int,
+    origin: Pt,
+    d_unit: tuple[float, float],
+    u_unit: tuple[float, float],
+    rows: int,
+    cols: int,
+    cell: float,
+    span_s: float,
+    span_t: float,
+    edge_wander: float,
+    mosaic: float,
+    line_wander: float,
+) -> tuple[_GridFn, list[list[tuple[float, float]]], Callable[[int], float], Callable[[int], float]]:
+    """The (s, t) -> xy warp and the jittered bund-node lattice - the coordinate system every
+    other polder stage places through."""
+    dx, dy = d_unit
+    ux, uy = u_unit
+    ox, oy = origin
 
     # EDGE WANDER (GM 2026-07-22): a hand-dug polder is NOT a machine-perfect axis-aligned rectangle - its
     # dikes follow the old water edge, so they run at a slight ANGLE and gently CHANGE direction with the
@@ -243,15 +295,14 @@ def build_polder(
     # [ring, span-ring] on BOTH axes and the ring canal runs in the margins just inside the dike; the
     # envelope keeps the full span (the dike's inner face sits on it).
     J = 6.0
-    RING = 18.0
-    t_step = (span_t - 2 * RING) / cols
-    s_step = (span_s - 2 * RING) / rows
+    t_step = (span_t - 2 * _RING) / cols
+    s_step = (span_s - 2 * _RING) / rows
 
     def tt(c: int) -> float:
-        return RING + c * t_step
+        return _RING + c * t_step
 
     def ss(r: int) -> float:
-        return RING + r * s_step
+        return _RING + r * s_step
 
     # MOSAIC knob (GM 2026-07-22, researched): the 圩田 lower-Yangtze polder was a SURVEYED rectilinear grid,
     # but the Pearl-delta 桑基魚塘 dike-pond accreted household-by-household (挖塘培基) into a MOSAIC of varied
@@ -316,6 +367,24 @@ def build_polder(
         return (ss(r) + js + md[0] + lw[0], tt(c) + jt + md[1] + lw[1])
 
     nodes: list[list[tuple[float, float]]] = [[_node(r, c) for c in range(cols + 1)] for r in range(rows + 1)]
+    return grid, nodes, tt, ss
+
+
+def _polder_parcels(
+    R: random.Random,
+    seed: int,
+    grid: _GridFn,
+    nodes: list[list[tuple[float, float]]],
+    rows: int,
+    cols: int,
+    cell: float,
+    gap: tuple[float, float],
+    split_gap: float | None,
+    parcel_mix: tuple[float, float, float],
+    organic: tuple[float, float],
+) -> list[dict[str, Any]]:
+    """The parcel fabric: walk the module bays, split/merge per the mix, inset each quad by its
+    bund/corridor gaps, soften with the organic pass, and emit the plot records."""
 
     def lerp(a: tuple[float, float], b: tuple[float, float], f: float) -> tuple[float, float]:
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
@@ -383,8 +452,12 @@ def build_polder(
                     for k, (f0, f1) in enumerate(zip(fs, fs[1:], strict=False)):
                         emit([lerp(tl, tr, f0), lerp(tl, tr, f1), lerp(bl, br, f1), lerp(bl, br, f0)], r, g_t if k == 0 else g_x, g_t if f1 == 1.0 else g_x)
             r = r1
-    # densify the envelope so the edge-wander CURVATURE is carried into the drawn field, the perimeter dike
-    # that follows it, and the recorded outline - 4 bare corners would read as straight edges between them
+    return plots
+
+
+def _polder_envelope(grid: _GridFn, span_s: float, span_t: float) -> Poly:
+    """Densify the envelope so the edge-wander CURVATURE is carried into the drawn field, the perimeter dike
+    that follows it, and the recorded outline - 4 bare corners would read as straight edges between them."""
     _ecorn = [(0.0, 0.0), (0.0, span_t), (span_s, span_t), (span_s, 0.0)]
     envelope = []
     for _i in range(4):
@@ -392,18 +465,22 @@ def build_polder(
         for _k in range(12):
             envelope.append(grid(_ea[0] + (_eb[0] - _ea[0]) * _k / 12, _ea[1] + (_eb[1] - _ea[1]) * _k / 12))
     envelope.append(envelope[0])
-    # THE WATER NETWORK IS A CONNECTED INNER RING CANAL (researched 2026-07-22; GM-flagged the old feeder,
-    # which ran at s=-12 / s=span+12 - OUTSIDE the envelope, so once the dike became a wide earthwork band
-    # the trunk canal sat buried IN the dike). The correct polder hydrology: the trunk canal rings the block
-    # on the INSIDE toe of the dike (圩内河, "one river surrounds the field") - feeder along the high inner
-    # toe, drain along the low inner toe, a toe ditch down each side inner toe - and water crosses the dike
-    # ONLY at gated sluices (the pond inlet at the high corner + the brook outfall at the low corner). The
-    # ring runs in the ~14 px inner-toe margin (s or t = RING*0.5) just inside the envelope, so it never
-    # overlaps the dike. The trunk line is organized-but-organic: long runs that read straight-ish, GENTLY
-    # WAVY (a surveyed dug canal wavers with terrain and repair; crescent/bow trunk forms are attested) with
-    # rounded corners, NOT a hard 90-degree CAD grid - the finer laterals (following the jittered bund lines)
-    # are visibly crookeder. Feeder -> laterals -> drain stays one connected system; every parcel fronts one.
-    fi, di = RING * 0.5, span_s - RING * 0.5  # feeder / drain inner-toe s-lines
+    return envelope
+
+
+def _polder_ring(R: random.Random, grid: _GridFn, span_s: float, span_t: float) -> tuple[list[list[tuple[float, float]]], float, float, Pt]:
+    """THE WATER NETWORK IS A CONNECTED INNER RING CANAL (researched 2026-07-22; GM-flagged the old feeder,
+    which ran at s=-12 / s=span+12 - OUTSIDE the envelope, so once the dike became a wide earthwork band
+    the trunk canal sat buried IN the dike). The correct polder hydrology: the trunk canal rings the block
+    on the INSIDE toe of the dike (圩内河, "one river surrounds the field") - feeder along the high inner
+    toe, drain along the low inner toe, a toe ditch down each side inner toe - and water crosses the dike
+    ONLY at gated sluices (the pond inlet at the high corner + the brook outfall at the low corner). The
+    ring runs in the ~14 px inner-toe margin (s or t = RING*0.5) just inside the envelope, so it never
+    overlaps the dike. The trunk line is organized-but-organic: long runs that read straight-ish, GENTLY
+    WAVY (a surveyed dug canal wavers with terrain and repair; crescent/bow trunk forms are attested) with
+    rounded corners, NOT a hard 90-degree CAD grid - the finer laterals (following the jittered bund lines)
+    are visibly crookeder. Feeder -> laterals -> drain stays one connected system; every parcel fronts one."""
+    fi, di = _RING * 0.5, span_s - _RING * 0.5  # feeder / drain inner-toe s-lines
     phf = R.uniform(0, math.tau)
 
     def waver(pts_st: list[tuple[float, float]], along: str, amp: float, ph: float) -> list[tuple[float, float]]:
@@ -424,7 +501,7 @@ def build_polder(
     # corner scours the outer bank and silts the inner, so FAO sets a minimum bend radius of tens of times
     # the width; a polder corner can't honor the full ideal but it gets a generous FILLET, never a right
     # angle. So the ring is a rounded rectangle: each corner is a quadratic-bezier fillet of reach `cr`.
-    cr = RING * 0.9
+    cr = _RING * 0.9
     corners = [(fi, fi), (fi, span_t - fi), (di, span_t - fi), (di, fi)]  # NW, NE, SE, SW (clockwise)
 
     def _u(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, float]:
@@ -446,15 +523,32 @@ def build_polder(
         b1 = (c1[0] + d1[0] * cr, c1[1] + d1[1] * cr)  # the fillet arc a1 -> corner[i+1] -> next side's start
         sides_st.append(run + [_bz(a1, c1, b1, k / 6) for k in range(1, 7)])
 
+    sluice = grid(fi, fi)  # the nominal NW inlet corner
+    return sides_st, fi, di, sluice
+
+
+def _polder_channels(
+    grid: _GridFn,
+    sides_st: list[list[tuple[float, float]]],
+    nodes: list[list[tuple[float, float]]],
+    rows: int,
+    cols: int,
+    tt: Callable[[int], float],
+    span_s: float,
+    span_t: float,
+    fi: float,
+    di: float,
+) -> tuple[list[dict[str, Any]], list[Pt], list[Pt], list[Pt], float]:
+    """The ring is a CLOSED loop (feeder top + two toe sides + drain bottom), all 4 corners FILLETED. The
+    INLET is the source->field hairline itself: draw_comb_field draws it from the pond to channels[0]'s far
+    end, so the feeder is recorded NW-END-LAST (reversed) - the hairline then crosses the dike from the pond
+    straight onto the feeder's NW corner (the north inlet sluice), no dangling stub. The OUTFALL is the brook,
+    which taps the MIDDLE of the drain (far from either drain endpoint, so it reads as a mid-run offtake, not
+    a hard corner) and runs off-map south through the dike (the south sluice)."""
+
     def _mk(pts_st: list[tuple[float, float]], role: str, w: float, wt: float) -> dict[str, Any]:
         return {"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in pts_st]], "role": role, "w": w, "w_tail": wt}
 
-    # The ring is a CLOSED loop (feeder top + two toe sides + drain bottom), all 4 corners FILLETED. The
-    # INLET is the source->field hairline itself: draw_comb_field draws it from the pond to channels[0]'s far
-    # end, so the feeder is recorded NW-END-LAST (reversed) - the hairline then crosses the dike from the pond
-    # straight onto the feeder's NW corner (the north inlet sluice), no dangling stub. The OUTFALL is the brook,
-    # which taps the MIDDLE of the drain (far from either drain endpoint, so it reads as a mid-run offtake, not
-    # a hard corner) and runs off-map south through the dike (the south sluice).
     # the feeder is recorded NW-end-last, then extended with a short INLET STUB up through the dike to the
     # pond rim - a visible sluice channel so the pond plainly charges the ring (the source->field hairline
     # anchors at the stub's far end for the topology)
@@ -462,7 +556,6 @@ def build_polder(
     # edge_wander a constant-t stub met the feeder at a ~90 deg bend that the warp tipped past 90 into an
     # acute turn (water_channels_obtuse_turns); heading toward the corner keeps the feeder->stub bend obtuse.
     feeder_rev = [*reversed(sides_st[0]), (-52.0, fi)]
-    sluice = grid(fi, fi)  # the nominal NW inlet corner
 
     # `seg` tags each ring side so footbridge placement is side-aware (research 2026-07-22: crossings cluster
     # on the SETTLEMENT side, not all four): e_toe is the settlement (east) side, the rest are unsettled.
@@ -528,12 +621,19 @@ def build_polder(
     # WHERE THE WATER CROSSES THE DIKE: the inlet sluice (top edge, at the feeder's NW corner) and the outfall
     # sluice (bottom edge, at the drain's mid-south tap). The gen hands these to perimeter_dike so the dike is
     # NOTCHED (a dug gap) there instead of the channel running OVER the top of the earthwork bank (GM 2026-07-22).
+    cr = _RING * 0.9
     dike_sluices = [grid(0.0, fi + cr), grid(span_s, out_t)]
     # THE FIELD FLOOR (the green greenery) is the INTERIOR of the ring canal - the outermost irrigated
     # channels - NOT the dike-boundary envelope (GM 2026-07-22). Under edge_wander the ring wavers, and a
     # separate envelope rectangle drifted in and out of it; concatenating the 4 ring sides gives the closed
     # inner-toe loop, so the green is bounded exactly by the ring and the canal draws on top of it.
     floor = [grid(s, t) for s, t in (sides_st[0] + sides_st[1] + sides_st[2] + sides_st[3])]
+    return channels, brook, dike_sluices, floor, out_t
+
+
+def _polder_close(plots: list[dict[str, Any]], channels: list[dict[str, Any]], sides_st: list[list[tuple[float, float]]], grid: _GridFn, down_deg: float) -> Poly:
+    """Close-out: trim trailing acute stubs off every channel, then lift the parcels onto the
+    collector's bank."""
     # THE PARCELS STOP AT THE COLLECTOR'S BANK. `hem_to_bank`'s own docstring names this engine as
     # one of the three that need the pass - "the collector IS the polder's bottom side, so the
     # parcels front it directly and float error alone put a vertex a half-pixel past" - and the call
@@ -575,24 +675,7 @@ def build_polder(
     _dwt = next((float(_c.get("w_tail", _dw)) for _c in channels if _c.get("role") == "drain"), _dw)
     for _p in plots:
         _p["poly"] = hem_to_bank(_p["poly"], _drn, down_deg, _dw, _dwt)
-    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
-    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
-    return {
-        "channels": channels,
-        "plots": plots,
-        "threads": [],
-        "drain": _drn,
-        "brook": brook,
-        "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
-        "acres": acres,
-        "dry_plots": [],
-        "dry_acres": 0.0,
-        "bund_beans": [],
-        "furrows_vary": False,
-        "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
-        "dike_sluices": [(round(x, 1), round(y, 1)) for x, y in dike_sluices],
-        "floor": [(round(x, 1), round(y, 1)) for x, y in floor],
-    }
+    return _drn
 
 
 def build_ribbon(

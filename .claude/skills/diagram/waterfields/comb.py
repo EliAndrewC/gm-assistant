@@ -608,6 +608,9 @@ def _fill_wedges(
     ft): anything wider than a bund must be planted or be WATER - the recorded channels count
     as covered ground (they draw over the fan), which is what lets the tolerance stay tight
     without flagging the delivery-ditch strips between plot columns."""
+    # Clause-12 note (feature 110): this stage runs ~151 code lines in one body, a hair over the
+    # feature's ~150 target, and stays whole deliberately - sample -> cluster -> tile -> seat is one
+    # atomic sweep over one grid, and the union-find/cluster locals are meaningless outside it.
     inset, tol, step = (
         8 * g,
         3 * g,
