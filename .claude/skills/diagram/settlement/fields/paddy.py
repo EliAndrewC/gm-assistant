@@ -27,6 +27,30 @@ if TYPE_CHECKING:
     from ..core import Settlement
 
 
+# THE WATER FRAME of a water-first field: f = downhill (NW->SE, the fall line), u = contour.
+# Orthonormal, so xy <-> uf is exact and lossless in both directions.
+#
+# These were nested closures inside `water_field` until feature 112. They capture nothing from its
+# frame but the rotation constant, so they are pure functions of their arguments - which is exactly
+# the kind of thing that should not be re-created per call inside a 194-line body.
+_UF_RT = 0.70710678
+
+
+def _uf_u(px: float, py: float) -> float:
+    """The CONTOUR coordinate of a point - constant along the slope."""
+    return _UF_RT * (px - py)
+
+
+def _uf_f(px: float, py: float) -> float:
+    """The FALL coordinate of a point - increasing downhill."""
+    return _UF_RT * (px + py)
+
+
+def _uf_xy(u: float, f: float) -> Pt:
+    """Back to canvas coordinates from a (contour, fall) pair."""
+    return (_UF_RT * (u + f), _UF_RT * (f - u))
+
+
 class PaddyMixin:
     def paddy_field(  # type: ignore[misc]
         self: Settlement, shape: Any, label: Any, name: str, amp: float = 52, taxfree: int = 0, fallow_patch: Any = None, label_xy: Any = None, plot: float = 46, kind: str = "paddy"
@@ -309,21 +333,9 @@ class PaddyMixin:
 
         bund = aze_w(self.ftpx)
 
-        # WATER FRAME: f = downhill (NW->SE, the fall line), u = contour. Orthonormal, so xy<->uf is exact.
-        rt = 0.70710678
-
-        def U(px: float, py: float) -> float:
-            return rt * (px - py)
-
-        def Ff(px: float, py: float) -> float:
-            return rt * (px + py)
-
-        def XY(u: float, f: float) -> Pt:
-            return (rt * (u + f), rt * (f - u))
-
         ex0, ey0, ex1, ey1 = x0 - amp, y0 - amp, x1 + amp, y1 + amp
-        ous = [U(px, py) for px, py in smoothed]
-        ofs = [Ff(px, py) for px, py in smoothed]
+        ous = [_uf_u(px, py) for px, py in smoothed]
+        ofs = [_uf_f(px, py) for px, py in smoothed]
         umin, umax = min(ous) - plot, max(ous) + plot
         fmin, fmax = min(ofs) - plot, max(ofs) + plot
         fhi, flo = min(ofs), max(ofs)  # the field's real high (source) / low (drain) edges
@@ -366,7 +378,7 @@ class PaddyMixin:
             for j in range(len(rows) - 1):
                 fa, fb = rows[j], rows[j + 1]
                 fm = (fa + fb) / 2
-                quad = [XY(uline(k, fa), fa), XY(uline(k + 1, fa), fa), XY(uline(k + 1, fb), fb), XY(uline(k, fb), fb)]
+                quad = [_uf_xy(uline(k, fa), fa), _uf_xy(uline(k + 1, fa), fa), _uf_xy(uline(k + 1, fb), fb), _uf_xy(uline(k, fb), fb)]
                 pts = ' '.join(f'{q[0]:.0f},{q[1]:.0f}' for q in quad)
                 cx = sum(q[0] for q in quad) / 4
                 cy = sum(q[1] for q in quad) / 4
@@ -398,59 +410,27 @@ class PaddyMixin:
 
         # THE WATER NETWORK, drawn ON TOP and clipped to the field: laterals down the fall line, a head ditch
         # along the high edge, a drain ditch along the low edge - the plots were carved to these, so they align.
-        def polyline(pairs: Any, w: float) -> None:
-            pts = ' '.join(f'{px:.0f},{py:.0f}' for px, py in pairs)
-            self.add(f'<polyline points="{pts}" fill="none" stroke="#9CB4C8" stroke-width="{w}" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
-
-        def bnd(u: float, lo: float, step: float) -> float | None:  # first f INSIDE the field scanning from lo; None if absent
-            f = lo
-            while f <= fmax if step > 0 else f >= fmin:
-                if point_in_poly(XY(u, f)[0], XY(u, f)[1], smoothed):
-                    return f
-                f += step
-            return None
-
-        def ditch(pairs: Any, w: float, role: str) -> None:  # draw AND record, so the checks can validate it
-            polyline(pairs, w)
-            self.M["field_ditches"].append({"poly": [[round(px, 1), round(py, 1)] for px, py in pairs], "role": role, "field": name})
-
         # CONTINUOUS main + drain along the field's true HIGH / LOW boundaries - sampled only where the field
         # actually exists (bnd returns None otherwise), so no junk endpoints jutting outside. Then LATERALS
         # whose ends SNAP onto the nearest main / drain node - so every lateral provably meets both, and the
         # main/drain read as continuous canals (not a sparse dotted line). Paddies between laterals cascade.
-        us = [min(ous) + i * 11 for i in range(int((max(ous) - min(ous)) / 11) + 1)] + [max(ous)]
-        main_pts: list[Pt] = []
-        drain_pts: list[Pt] = []
-        for u in us:
-            t, bt = bnd(u, fmin, 6), bnd(u, fmax, -6)
-            if t is not None and bt is not None and bt - t > plot * 1.4:
-                main_pts.append(XY(u, t + plot * 0.7))
-                drain_pts.append(XY(u, bt - plot * 0.7))
-
-        def smooth(pts: Poly) -> Poly:  # kill acute turns where the boundary bends sharply
-            if len(pts) < 3:
-                return pts  # pragma: no cover - defensive: a real field spans many u-columns, so main/drain always have >=3 sampled points
-            for _ in range(3):
-                pts = [pts[0]] + [((pts[i - 1][0] + pts[i][0] + pts[i + 1][0]) / 3, (pts[i - 1][1] + pts[i][1] + pts[i + 1][1]) / 3) for i in range(1, len(pts) - 1)] + [pts[-1]]
-            return pts
-
-        main_pts, drain_pts = smooth(main_pts), smooth(drain_pts)
+        main_pts, drain_pts = self._wf_main_drain(ous, fmin, fmax, plot, smoothed)
         self.add(f'<g clip-path="url(#{cid})">')
         if len(main_pts) >= 2:
-            ditch(main_pts, 3.3, "main")  # continuous MAIN canal along the high edge
-            ditch(drain_pts, 3.0, "drain")  # continuous DRAIN along the low edge
+            self._wf_ditch(name, main_pts, 3.3, "main")  # continuous MAIN canal along the high edge
+            self._wf_ditch(name, drain_pts, 3.0, "drain")  # continuous DRAIN along the low edge
             for li in laterals:
                 if not (0 < li < len(ub) - 1):
                     continue  # pragma: no cover - defensive: laterals are built strictly inside (0, len(ub)-1)
                 ut = ub[li]
-                t, bt = bnd(ut, fmin, 6), bnd(ut, fmax, -6)
+                t, bt = self._wf_bnd(smoothed, fmin, fmax, ut, fmin, 6), self._wf_bnd(smoothed, fmin, fmax, ut, fmax, -6)
                 if t is None or bt is None:
                     continue
                 tf, bf = t + plot * 0.7, bt - plot * 0.7
                 if bf - tf <= plot * 0.7:
                     continue
-                mid = [XY(uline(li, f), f) for f in [tf + i * 14 for i in range(1, int((bf - tf) / 14) + 1)] if f < bf]
-                ditch([XY(ut, tf)] + mid + [XY(ut, bf)], 2.0, "lateral")  # ends on the continuous main/drain line
+                mid = [_uf_xy(uline(li, f), f) for f in [tf + i * 14 for i in range(1, int((bf - tf) / 14) + 1)] if f < bf]
+                self._wf_ditch(name, [_uf_xy(ut, tf)] + mid + [_uf_xy(ut, bf)], 2.0, "lateral")  # ends on the continuous main/drain line
         self.add('</g>')
         random.setstate(stt)
 
@@ -472,6 +452,45 @@ class PaddyMixin:
                 f'paint-order="stroke" stroke="{LAND}" stroke-width="3.5">{label}</text>'
             )
             self._record_label(lx, ly, label, 15, "middle", z)
+
+    def _wf_ditch(self: Settlement, name: str, pairs: Any, w: float, role: str) -> None:  # type: ignore[misc]
+        """Draw a water-first field's ditch AND record it, so the checks can validate what was drawn."""
+        pts = " ".join(f"{px:.0f},{py:.0f}" for px, py in pairs)
+        self.add(f'<polyline points="{pts}" fill="none" stroke="#9CB4C8" stroke-width="{w}" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
+        self.M["field_ditches"].append({"poly": [[round(px, 1), round(py, 1)] for px, py in pairs], "role": role, "field": name})
+
+    def _wf_bnd(self: Settlement, smoothed: Poly, fmin: float, fmax: float, u: float, lo: float, step: float) -> float | None:  # type: ignore[misc]
+        """The first fall-coordinate INSIDE the field scanning from `lo`; None where the field is absent."""
+        f = lo
+        while f <= fmax if step > 0 else f >= fmin:
+            if point_in_poly(_uf_xy(u, f)[0], _uf_xy(u, f)[1], smoothed):
+                return f
+            f += step
+        return None
+
+    def _wf_main_drain(self: Settlement, ous: list[float], fmin: float, fmax: float, plot: float, smoothed: Poly) -> tuple[Poly, Poly]:  # type: ignore[misc]
+        """Sample the CONTINUOUS main and drain lines along the field's true high / low boundaries.
+
+        Sampled only where the field actually exists (`_wf_bnd` returns None otherwise), so no junk
+        endpoints jut outside, then smoothed to kill the acute turns a sharply bending boundary
+        would otherwise put in them."""
+        us = [min(ous) + i * 11 for i in range(int((max(ous) - min(ous)) / 11) + 1)] + [max(ous)]
+        main_pts: list[Pt] = []
+        drain_pts: list[Pt] = []
+        for u in us:
+            t, bt = self._wf_bnd(smoothed, fmin, fmax, u, fmin, 6), self._wf_bnd(smoothed, fmin, fmax, u, fmax, -6)
+            if t is not None and bt is not None and bt - t > plot * 1.4:
+                main_pts.append(_uf_xy(u, t + plot * 0.7))
+                drain_pts.append(_uf_xy(u, bt - plot * 0.7))
+
+        def smooth(pts: Poly) -> Poly:  # kill acute turns where the boundary bends sharply
+            if len(pts) < 3:
+                return pts  # pragma: no cover - defensive: a real field spans many u-columns, so main/drain always have >=3 sampled points
+            for _ in range(3):
+                pts = [pts[0]] + [((pts[i - 1][0] + pts[i][0] + pts[i + 1][0]) / 3, (pts[i - 1][1] + pts[i][1] + pts[i + 1][1]) / 3) for i in range(1, len(pts) - 1)] + [pts[-1]]
+            return pts
+
+        return smooth(main_pts), smooth(drain_pts)
 
     def fallow_field(self: Settlement, bbox: Any, name: str, amp: float = 34) -> None:  # type: ignore[misc]
         outline = organic_bbox(bbox, amp)

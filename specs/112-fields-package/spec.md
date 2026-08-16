@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented (2026-08-16) - US1, US2 and US3 complete
 
 **Input**: User description: "Split /gm-assistant/.claude/skills/diagram/settlement/fields.py (1,511 lines, a single FieldsMixin class of 24 methods) into a settlement/fields/ package with its own CLAUDE.md index, per constitution Principle X clause 13 (files stay at human scale; the cost being managed is context-window tokens). Two-stage scope, both stages verified by byte-identical pool artifacts. STAGE 1 - PURE MOVE: divide FieldsMixin into subsystem sub-mixins in separate modules. fields/__init__.py composes them into a single FieldsMixin so settlement/core.py's `from .fields import FieldsMixin` and its `class Settlement(...)` bases are UNCHANGED. Reuse the feature 025 transformer at specs/025-human-scale-splits/split_settlement.py as the exemplar; keep the TYPE_CHECKING `self: Settlement` annotation pattern. STAGE 2 - FUNCTION DECOMPOSITION: decompose draw_comb_field (321 lines), apply_land_use (266), water_field (194), which together are 52% of the file. VERIFICATION: make done green; every committed pool artifact byte-identical; check_village gate output identical. Update settlement/CLAUDE.md's index table and add fields/CLAUDE.md. OUT OF SCOPE: splitting test_settlement/test_fields.py (475 lines); any change to DRAW ORDER, knob doctrine, or field geometry; the other oversized settlement modules."
 
