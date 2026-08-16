@@ -102,7 +102,7 @@ These were split out of this file so they are not in every session's context. Ea
 | Doc | Load it when |
 |---|---|
 | [`docs/l7r-style.md`](docs/l7r-style.md) | Editing `/host-l7r-repo/setting/l7r.md`, or writing prose into an Obsidian Portal wiki page or character record. Numbers, voice, Family/Clan capitalization, heading hierarchy and the curated TOC. |
-| [`docs/session-clones.md`](docs/session-clones.md) | Setting up a clone, hitting a clone/sync hook block, resolving a push conflict, or anything about render-sync. |
+| [`docs/session-clones.md`](docs/session-clones.md) | Setting up a clone, hitting a clone/sync hook block, resolving a push conflict, anything about render-sync, or starting a spec-kit feature while other sessions are running (spec-number claim protocol). |
 | [`docs/iteration-loop.md`](docs/iteration-loop.md) | You want the measured evidence behind a loop rule, or you are about to argue with one. |
 | [`docs/container.md`](docs/container.md) | Launching or rebuilding the container, diagnosing a "command not found" / "No module named" failure, adding a permanent dependency, or bumping Python. |
 | [`docs/spec-kit-and-reviews.md`](docs/spec-kit-and-reviews.md) | Adding a rule to a review subagent (`building-review`, `backstory-review`, `frontend-review`), or wiring spec-kit hooks. |
@@ -179,6 +179,16 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   usage-facing index. A rule that applies to only one domain belongs in that domain's CLAUDE.md,
   not in a forked constitution.
 - **NO FEATURE BRANCHES - spec-kit work included** (GM 2026-07-27). Isolation already comes from the session clone; a branch on top of it is a second axis that buys nothing and broke the stop-work ritual for a whole session. Branch creation is off (`.specify/extensions.yml`, `before_specify`, `enabled: false`) and [`scripts/no-branch-hooks.sh`](scripts/no-branch-hooks.sh) blocks a hand-rolled `git checkout -b` (escape hatch: `NO_BRANCH_OK` in the command, with a reason). Spec-kit still needs to know which feature is active: **`export SPECIFY_FEATURE=NNN-slug`**, which `common.sh`'s `get_current_branch()` returns ahead of asking git, so `check_feature_branch()` in `setup-plan.sh` / `setup-tasks.sh` is satisfied with no branch at all.
+- **Concurrent sessions: spec numbers are CLAIMED IN MAIN, not negotiated** (GM 2026-08-16). The
+  GM runs several sessions at once, and each allocates its own `specs/NNN` - so allocate from
+  main's state and publish the claim immediately: after `sync-in`, next number = highest `NNN`
+  under `specs/` + 1; the moment `/speckit-specify` writes `spec.md`, commit the new
+  `specs/NNN-slug/` in the clone and run `scripts/sync-with-main.sh push` (a mid-feature
+  milestone push). The locked pull+push makes the claim atomic - if the pull surfaces another
+  session's same-numbered spec, renumber yours before pushing. Do NOT coordinate numbering by
+  messaging peer sessions: a busy session replies late or never, while main serializes with zero
+  cooperation. Full protocol (and what peer messaging IS for) in
+  [`docs/session-clones.md`](docs/session-clones.md).
 
 **Verification before reporting "done"** (per Principle VI of the constitution):
 
