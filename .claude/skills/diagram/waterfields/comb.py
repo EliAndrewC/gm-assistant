@@ -1,4 +1,4 @@
-"""build_comb - the water-first comb field builder (pond sluice, head-race, supply canals, delivery-ditch threads, carved paddies) plus its wedge filler."""
+"""build_comb - the water-first comb field builder (pond sluice, head-race, supply canals, delivery-ditch threads, carved paddies)."""
 
 import math
 import random
@@ -7,8 +7,8 @@ from typing import Any
 
 from .banks import _TOE_MIN_THICKNESS, dedup_ring, floor_overhang, hem_to_bank, round_channel_joints
 from .carve import _bund_beans, _carve, _dry_fields
-from .frame import DF, DRAIN_W_HEAD, DRAIN_W_TAIL, GAP, Poly, Pt, _drain_bank, _dug_polyline, _f_at_u, _Frame, _pip, _point_along, _poly_area, _poly_perim, _seg_x, _signed_area, _Thread
-from .palette import RICE_GREENS
+from .frame import DF, DRAIN_W_HEAD, DRAIN_W_TAIL, GAP, Poly, Pt, _drain_bank, _dug_polyline, _f_at_u, _Frame, _point_along, _poly_area, _poly_perim, _seg_x, _signed_area, _Thread
+from .seams import close_seams
 
 
 def build_comb(
@@ -118,16 +118,27 @@ def build_comb(
 
     envelope = _comb_floor_and_winding(plots, threads, a_pts, dpts, F)
 
-    # WEDGE FILLER (coarse grains only): even with the thresholds grain-scaled, the carve
-    # leaves awkward slivers where ditch threads diverge or the closing geometry misses - and
-    # a real cascade fan wasted nothing: fork wedges were terraced into small IRREGULAR
-    # paddies. Sample the fan interior on the same grid paddy_fan_gapless uses, cluster the
-    # bare cells, and plant a fan-aligned (u,f-frame) filler plot over each cluster. Gated to
-    # grain != 1.0 ONLY for byte-stability: every village map was visually vetted gapless at
-    # the 2 ft/px tuning grain, and an unconditional pass would re-roll their RNG streams.
-    if grain != 1.0:
-        _fill_wedges(R, F, plots, envelope, grain, channels, plot_across, row_step, a_pts, dpts)
     _comb_toe_and_hem(plots, dpts, down_deg, plot_across, grain)
+    # Sweep the channel bends BEFORE the seam pass, not after: rounding a joint moves the drawn
+    # water sideways by a few px, and `close_seams` holds its new basins off the water it is shown.
+    # Called last (as it was) the pass reconciled the fan against a course the map does not draw,
+    # and 9 basins came out with a bund inside a swept branch bend - placement and its check must
+    # read the same source, and the source is what will actually be painted.
+    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
+    # SEAM CLOSING, LAST. The carve leaves awkward ground wherever ditch threads diverge, the
+    # closing geometry misses, or a guard drops a quad - and a real cascade fan wasted nothing:
+    # fork wedges were terraced into small IRREGULAR paddies, and the odd unplantable scrap was
+    # simply taken into the basin beside it rather than walled off on its own. `close_seams` does
+    # exactly that, so every square foot inside the command area ends up planted, water, or
+    # outside the fan, and every bund is SHARED with whatever lies across it (its module docstring
+    # carries the research and the defect it replaced; the gate is `paddy_plot_seams_shared`).
+    #
+    # It runs AFTER `_comb_toe_and_hem` on purpose: the toe pass drops slivers too acute to bund
+    # and re-hems every bund onto the drain bank, both of which open fresh bare ground - anything
+    # reconciling the fan before it would have its work undone. Ungated: the hand-authored pool is
+    # FROZEN since 2026-08-16, so a new rule no longer needs a byte-stability escape (the retired
+    # `grain != 1.0` gate on the old wedge filler was exactly that).
+    close_seams(R, F, plots, envelope, grain, channels, plot_across, row_step, a_pts, dpts, drain_bank)
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
 
     dry_plots, dry_acres, bund_beans = _comb_dry_and_beans(R, F, a_pts, bc, plots, channels, W, H, dry_keepout, dry_band, bean_frac, grain, furrow_spread, grain_drift)
@@ -135,7 +146,6 @@ def build_comb(
     # gentle-valley village spreads them (the patchwork quilt, default); a STEEP/terraced village narrows the
     # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
     # is required. Threshold at ~0.3 rad (~17 deg): above it the plots visibly fan, below it they read aligned.
-    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     return {
         "down_deg": down_deg,  # the LOCAL fall this fan was carved to - recorded so the drainage-slope
         # checks can judge each drain against ITS OWN field rather than one map-level constant (a city
@@ -599,190 +609,3 @@ def _comb_dry_and_beans(
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac, channels=channels)
     return dry_plots, dry_acres, bund_beans
-
-
-def _fill_wedges(
-    R: random.Random, F: _Frame, plots: list[dict[str, Any]], envelope: Poly, g: float, channels: list[dict[str, Any]], plot_across: float, row_step: tuple[float, float], a_pts: Poly, dpts: Poly
-) -> None:
-    """Plant the bare wedges _carve left inside the fan (see the call site). Grid-samples the
-    envelope interior (rim inset excluded - berms and drain set-backs legitimately live there),
-    clusters bare cells, and appends one fan-aligned quad per cluster, shrunk until it stands
-    clear of every existing plot. Mirrors paddy_fan_gapless's geometry: inset 28*g / tol 8*g /
-    step 12*g px = 56 / 6 / 24 real ft at any grain. The plot tolerance is BUND-scale (6 real
-    ft): anything wider than a bund must be planted or be WATER - the recorded channels count
-    as covered ground (they draw over the fan), which is what lets the tolerance stay tight
-    without flagging the delivery-ditch strips between plot columns."""
-    # Clause-12 note (feature 110): this stage runs ~151 code lines in one body, a hair over the
-    # feature's ~150 target, and stays whole deliberately - sample -> cluster -> tile -> seat is one
-    # atomic sweep over one grid, and the union-find/cluster locals are meaningless outside it.
-    inset, tol, step = (
-        8 * g,
-        3 * g,
-        6 * g,
-    )  # rim inset is BERM-scale (16 real ft): paddies HUG their canals (the closer doctrine), so a wide "legit rim" tolerance just preserved the bare canal-head bands; step at HALF the check's grid so thin slivers cannot alias through
-
-    dus = [F.to_uf(*q)[0] for q in dpts]
-    du_lo, du_hi = min(dus), max(dus)
-
-    def drain_f_clamped(u: float) -> float:
-        """The collector's fall under u, with FLAT extensions past both ends: the command area's
-        low boundary conceptually continues level beyond the drawn collector, so a low-u fork
-        wedge (before the first ditch) still fills while ground below the extended line - the
-        floating-diamond wart past the outfall - stays bare."""
-        fd = _f_at_u(F, dpts, u)
-        if fd is not None:
-            return fd
-        end = dpts[0] if abs(u - du_lo) < abs(u - du_hi) else dpts[-1]
-        return F.to_uf(*end)[1]
-
-    def sd(px: float, py: float, a: Pt, b: Pt) -> float:
-        vx, vy = b[0] - a[0], b[1] - a[1]
-        ll = vx * vx + vy * vy or 1.0
-        t = max(0.0, min(1.0, ((px - a[0]) * vx + (py - a[1]) * vy) / ll))
-        return math.hypot(px - a[0] - t * vx, py - a[1] - t * vy)
-
-    boxes = [(min(q[0] for q in p["poly"]) - tol, min(q[1] for q in p["poly"]) - tol, max(q[0] for q in p["poly"]) + tol, max(q[1] for q in p["poly"]) + tol) for p in plots]
-
-    def dist_to_plot(x: float, y: float) -> float:
-        best = 1e9
-        for p, (bx0, by0, bx1, by1) in zip(plots, boxes, strict=True):
-            if not (bx0 - 16 * g <= x <= bx1 + 16 * g and by0 - 16 * g <= y <= by1 + 16 * g):
-                continue
-            poly = p["poly"]
-            if _pip(x, y, poly):
-                return 0.0
-            best = min(best, min(sd(x, y, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly))))
-        return best
-
-    def near_plot(x: float, y: float) -> bool:
-        for p, (bx0, by0, bx1, by1) in zip(plots, boxes, strict=True):
-            if not (bx0 <= x <= bx1 and by0 <= y <= by1):
-                continue
-            poly = p["poly"]
-            if _pip(x, y, poly) or any(sd(x, y, poly[i], poly[(i + 1) % len(poly)]) < tol for i in range(len(poly))):
-                return True
-        for c in channels:
-            hw = c["w"] / 2 + 3 * g
-            cp = c["pts"]
-            if any(sd(x, y, cp[i], cp[i + 1]) < hw for i in range(len(cp) - 1)):
-                return True
-        return False
-
-    ex0, ey0 = min(q[0] for q in envelope), min(q[1] for q in envelope)
-    ex1, ey1 = max(q[0] for q in envelope), max(q[1] for q in envelope)
-    bare = []
-    y = ey0
-    while y <= ey1:
-        x = ex0
-        while x <= ex1:
-            if (
-                _pip(x, y, envelope)
-                and all(sd(x, y, envelope[i], envelope[(i + 1) % len(envelope)]) > inset for i in range(len(envelope)))
-                and not near_plot(x, y)
-                and F.to_uf(x, y)[1] < drain_f_clamped(F.to_uf(x, y)[0]) - 3 * g
-            ):
-                # bounded by the COMMAND AREA, not by proximity to existing plots: bare ground
-                # between the canals and the (extended) collector line is wasted commanded land
-                # wherever it lies - the canal-head bands the closers miss, fork wedges, tail
-                # slivers - while ground below that line is outside the fan and stays bare
-                bare.append((x, y))
-            x += step
-        y += step
-
-    # cluster by grid adjacency (union-find over neighbors within 1.6 steps)
-    parent = list(range(len(bare)))
-
-    def find(i: int) -> int:
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    for i in range(len(bare)):
-        for j in range(i + 1, len(bare)):
-            if math.dist(bare[i], bare[j]) <= 1.6 * step:
-                parent[find(i)] = find(j)
-    clusters: dict[int, list[Pt]] = {}
-    for i, c in enumerate(bare):
-        clusters.setdefault(find(i), []).append(c)
-
-    def depth_in_plots(px: float, py: float) -> float:
-        """How deep (px) the point sits inside any existing plot - 0 when outside all."""
-        best = 0.0
-        for p in plots:
-            poly = p["poly"]
-            if _pip(px, py, poly):
-                best = max(best, min(sd(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly))))
-        return best
-
-    tiles: list[tuple[float, float, float, float]] = []
-    for cells in clusters.values():
-        ufs = [F.to_uf(*c) for c in cells]
-        ulo, uhi = min(u for u, _ in ufs) - 0.8 * step, max(u for u, _ in ufs) + 0.8 * step
-        flo, fhi = min(f for _, f in ufs) - 0.8 * step, max(f for _, f in ufs) + 0.8 * step
-        # tile the cluster's (u,f) box at the FAN'S OWN GRAIN: one giant filler slab would
-        # dwarf the ~0.08-acre plots around it (the relative-size doctrine), so the box is
-        # split into ~plot_across x row_step cells and each tile is seated on its own
-        nu = max(1, round((uhi - ulo) / plot_across))
-        nf = max(1, round((fhi - flo) / ((row_step[0] + row_step[1]) / 2)))
-        for iu in range(nu):
-            for jf in range(nf):
-                tiles.append((ulo + (uhi - ulo) * iu / nu, ulo + (uhi - ulo) * (iu + 1) / nu, flo + (fhi - flo) * jf / nf, flo + (fhi - flo) * (jf + 1) / nf))
-    for tulo, tuhi, tflo, tfhi in tiles:
-        # a filler obeys the carve's own water bounds: its centroid never pokes past the drain
-        # collector nor upslope of the supply canal (the floating-diamond wart: a tile seated in
-        # the bare margin between the fan's drain edge and the smoothed outline reads as a paddy
-        # with no water, hanging off the fan - exactly what spills_drain exists to forbid)
-        tcu, tcf = (tulo + tuhi) / 2, (tflo + tfhi) / 2
-        tcx, tcy = F.to_xy(tcu, tcf)
-        if not _pip(tcx, tcy, envelope):
-            continue  # the tile drifted out of the fan (cluster-box expansion can cross the rim - the floating-diamond wart)
-        if tcf > drain_f_clamped(tcu) - 3 * g:
-            continue  # below the (extended) collector line - outside the command area
-        fd_t = _f_at_u(F, dpts, tcu)
-        if fd_t is not None and tcf > fd_t - 3 * g:
-            continue  # past the collector (None = no drain below this u: a low-u fork wedge, bounded by its thread instead)
-        fc_t = _f_at_u(F, a_pts, tcu)
-        if fc_t is not None and tcf < fc_t + 4 * g:
-            continue
-        quad = [F.to_xy(tulo, tflo), F.to_xy(tuhi, tflo), F.to_xy(tuhi, tfhi), F.to_xy(tulo, tfhi)]
-        # shrink toward the centroid until the quad only OVERLAPS its neighbors shallowly.
-        # A thin sliver is bordered by plots on BOTH sides, so demanding full clearance would
-        # drop exactly the wedges this pass exists to plant - instead the filler may lap up
-        # to ~12 real ft onto a neighbor: fillers append LAST, so they paint over the lapped
-        # edge cleanly and the seam just reads as the bund between two plots.
-        cx = sum(q[0] for q in quad) / 4
-        cy = sum(q[1] for q in quad) / 4
-
-        def touches_channel(qd: Poly) -> bool:
-            """EDGE-walked at a 3 px step, not 8-point-probed (settlement-review, Sawada
-            2026-08-15): two filler tiles near branch TAILS kept every corner and midpoint clear
-            of the water while an edge interior dipped within a pixel of the stroke - the same
-            probe-sparsity class as the carve's own vertex-only miss, fixed the same way."""
-            for qi in range(4):
-                qa, qb = qd[qi], qd[(qi + 1) % 4]
-                for qk in range(max(1, int(math.dist(qa, qb) / 3.0)) + 1):
-                    qt = qk / max(1, int(math.dist(qa, qb) / 3.0))
-                    qx, qy = qa[0] + qt * (qb[0] - qa[0]), qa[1] + qt * (qb[1] - qa[1])
-                    if any(any(sd(qx, qy, c["pts"][ci], c["pts"][ci + 1]) < c["w"] / 2 + 2 * g for ci in range(len(c["pts"]) - 1)) for c in channels):
-                        return True
-            return False
-
-        for _ in range(12):
-            probes = list(quad) + [((quad[i][0] + quad[(i + 1) % 4][0]) / 2, (quad[i][1] + quad[(i + 1) % 4][1]) / 2) for i in range(4)]
-            # ... and at least one probe must stand on genuinely BARE ground (settlement-review,
-            # Inashiro 2026-08-15): the shallow-lap allowance alone is satisfiable by FULL
-            # containment inside a slightly-larger quad, so the shrink nested 12 fillers wholly
-            # within carved paddies - a bund ring drawn inside a paddy. A filler that fills no
-            # bare ground is not a filler; shrinking cannot cure containment, so it falls through
-            # to the bail-out below and the sliver is left to the bunds.
-            if any(depth_in_plots(px, py) == 0.0 for px, py in probes) and all(depth_in_plots(px, py) <= 6 * g for px, py in probes) and not touches_channel(quad):
-                break
-            quad = [(cx + (q[0] - cx) * 0.88, cy + (q[1] - cy) * 0.88) for q in quad]
-        else:
-            continue  # hopelessly buried - leave the sliver to the bunds
-        if math.dist(quad[0], quad[1]) < 6 * g or math.dist(quad[1], quad[2]) < 6 * g:
-            continue
-        plots.append(
-            {"poly": [(round(q[0], 1), round(q[1], 1)) for q in quad], "fill": R.choice(RICE_GREENS), "filler": True}
-        )  # tagged so water-topology anchors (plot_centroid) skip synthetic rim tiles (channel_field_anchored)

@@ -211,3 +211,61 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   bund_beans only. Review log: DELTA pass, nothing new caught; sub-pixel rim/bund tangency
   (0.44 px) logged as a nitpick - if `_plot_pond` ever gains a margin knob, ~2 px buys visible
   daylight.
+
+- 2026-08-17 (SHARED BUNDS - GM report; this map re-rolled, and every scripted hamlet with it):
+  the GM found "tiny little standalone rectangles" of earthen bunds sitting in the middle of the
+  paddy field, and named the rule they broke: "it should basically always be the case that two
+  adjacent rice paddies share a single earthen wall rather than two different earthen walls."
+  Their suspicion was that it clustered where the irrigation channels narrow and wind, which was
+  the right correlation off the wrong cause - the channels are simply where the carve leaves
+  awkward ground, and the awkward ground is what the wedge filler was seating rectangles in.
+
+  Root cause: `_fill_wedges` sampled the fan's bare ground on a 12 px grid, boxed each cluster of
+  SAMPLES, and shrank the box toward its own centroid until it lapped its neighbours only
+  shallowly. Sizing from the samples rather than from the pocket's walls left a ribbon of bare
+  floor on all four sides of every filler - the standalone rectangle - and the shallow-lap
+  acceptance (every probe up to 12 real ft inside a neighbour, only one probe required on bare
+  ground) let a filler ring land a plot-width INSIDE a basin, drawing a wall in the middle of
+  someone's paddy. Attribution on the pre-fix map: all ten fully-isolated rings were fillers.
+
+  Fix: `waterfields/seams.py::close_seams` replaces it and asks a different question. It computes
+  the bare ground exactly - envelope minus everything planted, minus the drawn channels and their
+  banks, minus ground outside the command area - then PLANTS every pocket wide enough to hold a
+  basin (subdivided at the fan's own grain, so its outline IS the surrounding bunds) and ABSORBS
+  every pocket too thin to plant into the basin it shares the most bund with. It runs LAST, after
+  `_comb_toe_and_hem`, because that pass drops acute slivers and re-hems bunds onto the drain and
+  so opens fresh bare ground of its own; the channel bends are swept BEFORE it, so it holds its
+  basins off the water the map will actually paint. Research + rule: `research/fields.md` "Bunds
+  are shared, and the fabric is continuous". Gate: `paddy_plot_seams_shared` (written RED against
+  this map first; pre-fix manifests frozen as
+  `pool/regressions/paddy_plot_seams_shared_fires_on_the_pre_fix_{inashiro,kashikawa,mizuguchi,sawada}.json`).
+
+  This map: 597 -> 629 basins, planted share of the comb floor 91.3% -> 96.1% (+1.00 acre), doubled
+  bunds 52 -> 0, and every remaining bare component over 50 sq ft sits inside a drawn channel's
+  bank margin. Five shapely artifacts had to be beaten out along the way and each is commented at
+  its site: hairline spikes where a difference grazes a boundary (the opening is intersected back
+  with its input so it can only REMOVE ground), round joins exploding 4-vertex basins into 130
+  near-duplicate vertices (mitre), flat segment caps leaving an uncovered wedge on the outside of
+  every channel bend (a disc at each interior vertex), a merely-touching union returning a
+  MultiPolygon (dilate the scrap 0.02 px), and Douglas-Peucker folding a thin weld through itself.
+
+  Review log: DELTA pass. CAUGHT one new defect - basin #570 recorded as a self-intersecting ring:
+  the union was valid and `_ring`'s 0.1 px rounding crossed it afterwards, so the weld now
+  round-trips the ring it will actually record and declines in favour of the runner-up basin if it
+  does not survive. Ink-invisible under a 1.5 px stroke, which is exactly why it needed catching in
+  geometry rather than by eye. Two items put on record as PRE-EXISTING with measurements, both
+  belonging to the carve's toe geometry rather than to this pass:
+  * `plot_rings` are a paint-order STACK, not a partition - 39 pairs lap, double-counting 0.10
+    acre of the recorded fabric. Invisible in ink (one `<polygon>` per plot carrying fill and
+    stroke in index order, so the later basin paints out the covered bund) and this change HALVED
+    it (8,583 -> 4,445 sq ft), but a future rule measuring basin-to-basin geometry from the
+    manifest is measuring a fabric that intersects itself.
+  * the two fan-toe SUNBURSTS (~1893,1650 and ~2430,1845): 8-10 bunds 130-254 ft long converging
+    on a ~10 ft stretch of collector bank at 7.5-14 deg apexes. Pre-existing (7 such plots before,
+    8 now) and the one place the fabric still reads machine-drawn. `_comb_toe_and_hem`'s own
+    comment already names the cause - the carve opens a sector whose boundary has collapsed onto
+    the drain - and calls the real fix a change to the carve's SECTOR geometry. Needs a GM ruling
+    on whether a fan toe may converge like this before anyone re-cuts it.
+  Also noted: the re-pack cost the northernmost homestead its farm shed (4 -> 3 of 15 households,
+  against the project's ~30% storehouse figure) - inside the noise at this size, but it went the
+  wrong way.

@@ -411,6 +411,7 @@
  "paddy_fan_gapless",
  "paddy_fan_has_floor",
  "paddy_features_match_archetype",
+ "paddy_plot_seams_shared",
  "placement_runs_meet_their_ask",
  "polder_channels_clear_of_dike",
  "polder_dike_gapped_at_sluices",

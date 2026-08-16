@@ -32,6 +32,45 @@ Pre-modern paddies were fitted to the land and water by piecemeal reclamation an
 
 What the research found: what separated real paddies was the *aze* (China: *tiangeng*) - a puddled-mud ridge roughly 1-2 ft wide and ~1 ft high, re-plastered each spring (*azenuri*) so each basin holds its 4-6 inches of water; the walking bunds (*azemichi*) ran ~2-5 ft.
 
+### Bunds are SHARED, and the fabric is continuous
+
+**Grounds:** `paddy_plot_seams_shared`; `waterfields/seams.py::close_seams`
+
+**Evidence:** follows from the *aze*'s construction and maintenance, above
+
+*What the research found.* The *aze* is the wall BETWEEN two basins, and it is built once. Three
+things make a second, parallel ridge with a strip of ground between it and the first impossible in
+practice. It doubles the *azenuri* - the spring re-plastering, the single largest maintenance job
+the bund network carries - for no gain. It holds no water: neither basin's rim is improved by a
+wall standing off in the middle of a strip. And the strip itself is idle land inside an irrigated
+command area, which is the most valuable ground on the map - the same land hunger that keeps field
+margins down to one scythe swath (`research/vegetation.md`) does not tolerate a few feet of bare
+mud between two paddies. What real paddy fabric looks like is therefore ONE connected bund network
+whose lines meet at **T-junctions**; a free-standing four-sided ring inside it is not a paddy at
+all. The odd, piecemeal parcels that fabric produces are the honest look - and note that the
+detached, individually-walled rectangle is exactly the *kochi seiri* read this section already
+flags as anachronistic, arrived at from the other direction.
+
+*The decision it drove (GM 2026-08-17, on Inashiro:* "a tiny little standalone rectangle of earthen
+walls is just smack dab in the middle of where the field should be ... it should basically always
+be the case that two adjacent rice paddies share a single earthen wall rather than two different
+earthen walls"*).* Two halves. **Generation**: `waterfields/seams.py::close_seams` replaced the
+wedge filler. It takes the bare ground exactly as the carve left it - the command area, minus
+everything planted, minus the drawn channels and their banks - then PLANTS every pocket wide enough
+to hold a basin (so the new basin's outline IS the surrounding bunds) and ABSORBS every pocket too
+thin to plant into the neighbour it shares the most bund with (so the two walls become one). Its
+postcondition is that no square foot inside the command area is bare. **Checking**:
+`paddy_plot_seams_shared` fails a plot that runs a bund alongside a neighbour's across dry floor,
+or that draws a whole ring inside a neighbouring basin.
+
+*Disclosed departures.* (1) A **shallow lap** is left alone, in both halves: a plot drawn over part
+of its neighbour paints out the bund it covers, so the pair still reads as one shared wall. Only
+near-containment is a fault. (2) The rule's upper bound is 24 real ft of gap - wider than that the
+ground between two basins is bare FLOOR, which is `paddy_fan_gapless`'s rule, and stating it twice
+at two tolerances is how checks start disagreeing. (3) A pocket **too thin to bund** is absorbed
+rather than planted, matching the fan toe's existing thickness rule (`_TOE_MIN_THICKNESS`) - a
+needle basin cannot be leveled or bunded at any sane cost.
+
 ## Nitrogen - a flooded paddy makes its own
 
 **Grounds:** the ~6% soy share; azemame as a food crop
