@@ -263,6 +263,13 @@ earlier.** Two compounding mistakes, both cheap to avoid:
   test.** Re-running any of them "to be sure" buys nothing - the gate is the proof. Re-run only what
   actually changed since the gate went green, and if that is markdown, re-run nothing (root
   CLAUDE.md, "docs-only diffs skip the gate").
+- **And do not run a pytest BESIDE the running gate** - not merely wasteful, but a source of false
+  RED. Both runs regenerate the same live maps in the same tree, and
+  `test_the_real_pool_round_trips_through_the_cache` snapshots a manifest and reads it back: with a
+  second writer mid-write it read `b''` and failed a gate that was otherwise clean (2026-08-16,
+  feature 116 - cost one full 2-minute gate cycle). Determinism makes concurrent writers safe for
+  the BYTES; it does not make them safe for a test that reads a file someone else is rewriting. Same
+  rule the byte-identity sweep already carries in the other direction (specs/116 quickstart step 2).
 
 ## NEVER poll a backgrounded command - and it is now ENFORCED
 
@@ -1315,6 +1322,17 @@ re-rolls every map, so the residue ROTATES rather than shrinking in place: that 
 ring) -> 22/24, at which point its residue was two failures on two maps where the baseline's had
 been five on two. Same pass rate, different maps, strictly less broken - which only the side-by-side
 shows.
+
+**BUT "ROTATED" IS NOT A DEFENSE, AND SINCE 2026-08-17 IT IS A MERGE BLOCKER** (constitution
+Principle XIII, NON-NEGOTIABLE). The paragraph above describes how to READ a cohort delta; it does
+not license shipping one. A seed that passed before your change and fails after it is a REGRESSION,
+however much else improved and however thoroughly you ledgered it - and **nothing merges to main
+carrying one**. Where the re-roll genuinely destroys per-seed comparison, the bar is that the pass
+RATE must not drop AND every newly-failing check is individually diagnosed. Three exits: fix,
+revert, or an explicit GM waiver. Otherwise the work stays in the clone, unpushed, and you say so.
+(Motivating case: the fan-toe needle fix, which cleared the GM-ruled sunburst on all four shipped
+hamlets and 22 of 24 seeds while regressing seeds 9 and 11 - net-positive, fully diagnosed, and
+still not mergeable.)
 
 **Take the baseline in a DETACHED WORKTREE, never by stashing the working tree.** `git worktree add
 --detach /tmp/base HEAD` costs seconds and touches nothing. Stashing looks equivalent and is not: a
