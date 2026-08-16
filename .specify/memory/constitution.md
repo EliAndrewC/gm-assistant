@@ -1,7 +1,41 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.6.1 → 1.7.0
+Version change: 1.7.0 → 1.8.0
+MINOR: Principle XIII (No Known Regressions) ADDED (GM-directed,
+2026-08-17): "never count our work as being done when there are known
+regressions. Nothing should EVER be merged back into main if even one
+single new regression was added." Two independently-binding halves - work
+is not done while a known regression exists, AND nothing merges to main
+carrying one. A regression is defined against a MEASURED baseline (taken on
+unmodified code, in a detached worktree, never a stash); pre-existing
+failures are explicitly NOT regressions and stay ledgered. The principle
+enumerates what does NOT excuse one - smallness, "it is only a cohort
+seed", having documented it, being net-positive, and the residue having
+"rotated" under a re-roll - and names the only three exits: fix, revert, or
+an explicit GM waiver for that specific regression. New principle: MINOR
+per the versioning policy. Motivating case: the /diagram fan-toe needle fix
+(2026-08-17), which resolved the GM-ruled sunburst on all four shipped
+hamlets and 22 of 24 cohort seeds while regressing seeds 9 and 11 on
+paddy_plot_seams_shared - net-positive, fully diagnosed, ledgered with an
+implementation sketch, and under this principle still NOT mergeable.
+
+Sections updated:
+  - Core Principles: Principle XIII added.
+  - Governance/Compliance: the stop-work ritual may commit in-clone but
+    MUST NOT push a regressed state.
+
+Templates requiring review/update:
+  ✅ .specify/templates/plan-template.md - Constitution Check gains a
+                              Principle XIII entry (baseline measured,
+                              zero new regressions at merge).
+  ✅ CLAUDE.md - "Verification before reporting done" gains the
+                              no-regressions merge gate; the session-clone
+                              stop-work ritual now states the push bar.
+  ✅ .claude/skills/diagram/CLAUDE.md - the cohort-baseline rule now says
+                              a rotated residue is not a defense.
+
+PRIOR (1.6.1 → 1.7.0):
 MINOR: Principle X clause 14 (Rosters That Restate Code Are Derived, Not
 Maintained) added (GM-directed, 2026-08-16). Clause 13 says a large file
 prompts the split question; clause 14 says a roster-shaped file - one whose
@@ -658,6 +692,66 @@ This principle is NON-NEGOTIABLE because the failure it guards against is
 SILENT: historically impossible output looks perfectly fine, passes the gate,
 and is only caught if a human happens to ask about it.
 
+### XIII. No Known Regressions (NON-NEGOTIABLE)
+
+GM, 2026-08-17: *"never count our work as being done when there are known
+regressions. Nothing should EVER be merged back into main if even one single
+new regression was added."*
+
+**The rule, in two halves.** Work is NOT done while a known regression exists,
+and **nothing merges into main carrying even one new regression.** Both halves
+bind independently: a change may be finished in the sense that its feature
+works and still be un-mergeable, and that is the normal case this principle
+exists to make visible.
+
+**What counts as a regression.** Anything that worked before the change and
+does not work after it - a test or check that passed and now fails, a pool
+artifact that was green and now is not, a cohort seed that passed and now
+fails, a measured rate that went down. It is defined against a **measured**
+baseline, never a remembered one: take the baseline on unmodified code (a
+detached worktree, not a stash) before judging your own numbers.
+
+**Pre-existing failures are NOT regressions** and are allowed to persist -
+they are ledgered, not fixed under someone else's feature. The distinction is
+exactly "did this pass before my change", which is why the baseline is
+mandatory rather than advisory.
+
+**What does NOT excuse a regression:**
+
+- It is small, or it is one seed out of twenty-four.
+- It is on a cohort seed, a fixture, or a map nobody ships. Every one of
+  those is a test bed precisely because it stands in for the maps that are
+  not written yet.
+- It is *documented*. Writing a regression down is how it gets tracked; it
+  is not how it gets permitted. A ledger entry is not a waiver.
+- The change fixes more than it breaks. Net-positive is an argument for
+  doing the work, never for merging it broken.
+- **The residue "rotated".** In a seeded cohort a change that alters draw
+  counts re-rolls every map, so failures move rather than persist in place.
+  That is a real effect and it is NOT a defense: where seed-level comparison
+  survives, any check that passed on a seed and now fails is a regression;
+  where the re-roll makes per-seed comparison meaningless, the pass RATE must
+  not drop AND every newly-failing check must be individually diagnosed.
+
+**The only three exits** are: FIX it, REVERT the change, or obtain an
+explicit GM waiver for that specific regression. There is no fourth. A
+session that cannot fix a regression stops and says so rather than merging
+and ledgering it - and "stops and says so" means the work stays in the
+clone, unpushed.
+
+**Enforcement.** `/speckit-plan` records this in its Constitution Check. The
+stop-work ritual does not run to completion on a red or regressed state: a
+session may commit inside its own clone (mid-task work is sacred) but MUST
+NOT push to main. Where a domain has a cohort or sweep, its measured
+before/after numbers are the evidence, and they belong in the commit message
+or the feature's notes.
+
+This principle is NON-NEGOTIABLE because main is the shared integration
+point: a regression merged there is silently inherited by every other
+session and by every artifact generated afterwards, and the person who pays
+for it is never the person who introduced it. The trade "I gained a feature
+and lost a check" is legible for about a day and invisible forever after.
+
 ## Technical Standards
 
 **Languages and runtimes**
@@ -799,4 +893,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.7.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-16
+**Version**: 1.8.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-17

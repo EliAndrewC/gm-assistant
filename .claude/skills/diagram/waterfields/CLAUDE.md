@@ -17,7 +17,7 @@ before and after (the feature's oracle).
 | file | look here when |
 |---|---|
 | `__init__.py` | you need the engine doctrine docstring or the re-export mechanism; never logic |
-| `frame.py` | the contour(u)/fall(f) frame (`_Frame`), warp-thread state (`_Thread`), the march constants (`DF`, `GAP`, `DRAIN_W_*`, `BANK_MARGIN`), or pure geometry (`_at_f`, `_f_at_u`, `_seg_x`, `_seg_d`, `_pip`, `_poly_perim`, `_signed_area`, `_poly_area`, `_dug_polyline`, `_point_along`, `_drain_bank`, `_miter_normals`) |
+| `frame.py` | the contour(u)/fall(f) frame (`_Frame`), warp-thread state (`_Thread`), the march constants (`DF`, `GAP`, `DRAIN_W_*`, `BANK_MARGIN`), the channel TAPER LAW (`taper_w` - width goes as sqrt(discharge), so w SQUARED interpolates; shared by every consumer of a local width, and the one place to change it), or pure geometry (`_at_f`, `_f_at_u`, `_seg_x`, `_seg_d`, `_pip`, `_poly_perim`, `_signed_area`, `_poly_area`, `_dug_polyline`, `_point_along`, `_drain_bank`, `_miter_normals`) |
 | `palette.py` | colors (`_RICE_GREEN`, `RICE_GREENS`, `FLOODED`, `RIPE_GOLD`, `BUND`, `AZE`, `BEAN_GREEN`), the real-feet paddy-cell calibration (`PADDY_CELL_ACRES`, `paddy_grain`), `aze_w`, `organic_parcel`, `DRY_CROPS` |
 | `banks.py` | how plots hem to canals and ditches: `polyline_cum`, `drain_bank_clearance`, `supply_bank_clearance`, `floor_overhang`, `hem_to_bank`, `hem_on_paddy`, `_TOE_MIN_THICKNESS`, `round_channel_joints` |
 | `comb.py` | `build_comb` - the water-first comb builder (pond sluice, head-race, supply canals, thread march, offtakes) - and `_fill_wedges` |

@@ -431,12 +431,12 @@ class WaterWaysMixin:
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
             self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', rec, late=late)
             return
-        n, L = 7, len(pts)
-        for k in range(n):
-            piece = pts[k * (L - 1) // n : (k + 1) * (L - 1) // n + 1]
-            if len(piece) < 2:
-                continue
-            wk = w0 + (w1 - w0) * (k + 0.5) / n
+        from waterfields import taper_pieces  # local: the engine packages are peers, imported lazily
+
+        # One piece per SEGMENT, each at its arc-correct width - `taper_pieces` owns both halves of
+        # that (the sqrt law, and arc-length rather than vertex-index parameterization) and is shared
+        # with `_watercourse_segs`, so the drawn stroke and the corridor protecting it cannot drift.
+        for piece, wk in taper_pieces(pts, w0, w1):
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in piece)
             self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', rec, late=late)
 

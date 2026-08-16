@@ -20,6 +20,59 @@ DRAIN_W_HEAD = 1.5
 DRAIN_W_TAIL = 6.0
 
 
+def taper_w(w0: float, w1: float, t: float) -> float:
+    """The drawn width of a tapering channel a fraction `t` along its run (0 = head, 1 = tail).
+
+    THE WIDTH SQUARED IS WHAT RUNS LINEARLY, not the width - because a channel's width goes as the
+    SQUARE ROOT of the discharge it carries, and the discharge is what changes linearly along one of
+    these runs. (why: `../research/water.md#a-channel-taper-is-a-square-root-not-a-straight-line`)
+
+    Both halves of that are load-bearing, so neither is a free choice:
+
+      - *Width goes as sqrt(Q).* This is the regime relation the water-width ladder in
+        `../settlements/water.md` has always asserted ("channel width scales with the square-root of
+        the command-area flow it carries"), and it is Lacey's canal result, P = 4.75 * sqrt(Q) - the
+        standard design equation for exactly this kind of unlined earthen channel.
+      - *Q runs linearly.* A delivery ditch sheds its water through a `mizuguchi` per plot into a row
+        of near-equal paddies, so it loses roughly the same flow per unit length; a collector gathers
+        its tail-water the same way. Uniform shedding over the run IS Q linear in `t`.
+
+    Interpolating the WIDTH linearly - which is what every one of these call sites used to do -
+    quietly asserts Q proportional to w, a different and wrong law, and it looks wrong in the way the
+    GM caught (2026-08-17): the stroke thins almost imperceptibly for its whole length and then stops
+    dead at a still-substantial width. Under the true law a delivery ditch holds most of its working
+    width while it still has most of its water to deliver, then dwindles hard over the last stretch -
+    which is what "the water is leaving it" is supposed to look like. MEASURED IN THE INK on
+    Inashiro's five 8.0 -> 3.0 ft delivery ditches - the MEDIAN drawn width of the piece covering
+    each of the tenths 0.10 / 0.25 / 0.50 / 0.75 / 0.90 of the run: **7.7 / 7.0 / 6.1 / 4.8 / 3.7
+    px**, against the straight line's 7.5 / 6.8 / 5.5 / 4.3 / 3.5. So it holds ~6 ft at mid-run
+    where the old law had already given up half of its 5 ft of narrowing.
+
+    A piece carries the law at its OWN midpoint, so the ink brackets the continuous law rather than
+    sitting on it, and the SPREAD widens where the segments are coarse: the five ditches agree
+    within ~0.1 px at the first four tenths but span 3.46 to 4.13 px at 0.90 against the law's 3.81.
+    Quote the median and that spread, never a single tight figure.
+
+    Those are drawn widths, not formula values, and the distinction has now bitten this docstring
+    TWICE. It first carried the formula's numbers while `field_channel` still sampled the law by
+    vertex index, so the ink was 4.6 px at mid-run and the claim here was false on its own example
+    map; the correction then quoted the formula's 7.1 at the 0.25 tenth where the ink's median is
+    7.0 (both caught by settlement-review, 2026-08-17). **Re-measure in the SVG. Do not compute
+    these from the rule this docstring is describing.** `taper_pieces` in `banks.py` carries the
+    arc-parameterization half of the story, and the bound between its piecewise ink and the
+    continuous law the bank clearances evaluate.
+
+    NOT a taper to nothing: `w1` is a real tier, not zero. See the same research anchor for why the
+    finest channel we DRAW stops at the terminal-lateral width instead of vanishing to a point.
+
+    ONE helper, called by every site that needs a local width - the drawn stroke, the two bank
+    clearances the gate shares, the seam buffer, the carve's burial filter, and the channel keep-out
+    corridor. A taper law re-derived per call site is the "one measurement, not several" trap in the
+    diagram CLAUDE.md: the bunds are laid against the bank this returns and the checks read the same
+    number, so two formulas here means a bund drawn inside the water."""
+    return math.sqrt(max(0.0, w0 * w0 + (w1 * w1 - w0 * w0) * t))
+
+
 class _Frame:
     """Contour/fall frame for an arbitrary downhill screen angle."""
 
@@ -145,7 +198,7 @@ def _drain_bank(F: _Frame, dpts: Poly, g: float) -> Callable[[float], float]:
 
     def bank(u: float) -> float:
         t = max(0.0, min(1.0, (u - u_lo) / span))
-        half = (DRAIN_W_HEAD + (DRAIN_W_TAIL - DRAIN_W_HEAD) * t) * g / 2
+        half = taper_w(DRAIN_W_HEAD * g, DRAIN_W_TAIL * g, t) / 2
         slope = next((s for lo, hi, s in segs if lo <= u <= hi), segs[0][2] if u <= u_lo else segs[-1][2])
         return (half + BANK_MARGIN * g) * slope
 
