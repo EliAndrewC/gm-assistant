@@ -201,3 +201,73 @@ skips the gate per the docs-only rule but greps its three mirror sites as verifi
 
 **Rationale**: spec's Assumptions, GM-approved; matches 024's stage discipline (stage commits
 with a green gate each).
+
+## R13 - What implementation taught the plan (added during implement, 2026-08-16)
+
+**Census, before -> after** (T501): 34,614 lines in 3 files -> 35,471 lines in 54 files (+857
+lines of import/annotation/docstring glue), largest single file 1,582 (`settlement/city.py`).
+`settlement/`: 17 files, largest 1,582. `test_checks/`: 19 files, largest 1,537 (`_builders.py`).
+`test_settlement/`: 18 files, largest 770. Every file is under the FR-009 bar; the E1 boundary
+map held with zero range deviations.
+
+**Mover lessons** (settlement.py):
+- Top-level `Expr` calls must route POSITIONALLY: the knob catalog's `register_knob(...)` calls
+  and the import-time guard are executable statements that belong right after their definitions,
+  not in `__init__.py`.
+- Interleaved class-body attribute assignments ride inside the contiguous METHOD slices; emitting
+  them separately in core.py duplicated 35 definitions (caught via `_CROP_MARGIN_FT` appearing
+  twice). An attribute now lives (once) on whichever mixin owns the method that follows it -
+  reachable via the MRO exactly as before.
+- Five attrs whose FIRST textual definition moved ahead of `__init__` (monolith had class attrs
+  AFTER `__init__`, so mypy used the `__init__` annotation; mixin bases now declare first) needed
+  the `__init__` annotation mirrored at the mixin site; two tuple-assignments were split into
+  sequential statements to make room for the annotation.
+- **mypy --strict x mixins**: the `self: "Settlement"` pattern itself trips "erased type of self
+  is not a supertype of its class" ([misc]) while still fully checking every body against
+  Settlement - silenced per def line with `# type: ignore[misc]`, nothing broader. Strict
+  `no_implicit_reexport` requires the `X as X` re-export form in `__init__.py`. PEP 649 lazy
+  annotations mean annotation-only names are invisible to symtable - the import synthesizer must
+  walk annotations explicitly - and `type X = ...` aliases need their own AST case.
+- **Runtime `Settlement.<CLASS_ATTR>` reads** (5 sites: crop_boxes in _knobs, ward in
+  water_ways, city wall internals in city.py) get a function-local `from .core import Settlement`
+  - the TYPE_CHECKING import satisfies mypy but NOT runtime, and the generation oracle only
+  catches the sites the scripted tiers exercise; the frozen city wings surfaced theirs via unit
+  tests only. Grep for `Settlement\.` is part of any future re-run of the mover.
+
+**A second cache landmine beyond R6**: `gencache.engine_files()` had the same root-only
+`os.listdir` shape as `render_cache.engine_fingerprint()` - after the split it recorded ZERO
+settlement deps, caught by `test_gencache`'s "a real gen must record engine deps". Same fix
+(walk, prune pool/wip/caches/test dirs), and its key change invalidates every gencache entry
+once - a non-event, same reasoning as R6.
+
+**Consumers that reached THROUGH the monolith**: tests used `settlement.math.radians` (stdlib
+via engine module - an accident; tests now import math), `test_why_placed` and `test_gencache`
+asserted the literal frame/dep filename `settlement.py` (now a package-path assertion), and
+`why_placed`'s docstrings named the file (re-worded).
+
+**US2/US4 splitter lessons** (split_tests.py):
+- The flat test_checks.py defined `_CITY_WALL` TWICE with different values; tests were written
+  against whichever definition was in scope at their line. The split renamed the second to
+  `_CITY_WALL_SMALL` and repointed exactly the tests after the second definition (by original
+  lineno). A dup-with-different-value scan is now a standard step; US4 had none.
+- Import synthesis must be SCOPE-AWARE (symtable free reads, not raw Name occurrences): tests
+  that locally assign `well`/`house`/`WALLSQ` inside their bodies otherwise pull spurious
+  builder imports (F401/F811). Bare-name engine calls (`Settlement(...)`) additionally need
+  from-import resolution against the engine namespaces.
+- Both flat files carried a pre-pytest `if __name__ == "__main__"` runner iterating globals();
+  dropped (runner convenience, superseded by pytest - collection identity is proven on the
+  ::-suffix node lists, 2,899 nodes for each split, zero drift).
+- `Path(__file__).parent` sites are rewritten `.parent.parent` (asserted count: 2 in US2, 0 in
+  US4).
+
+**Oracle mechanics**: hamletgen's cohort must respect the 10-20 household band and passes
+`--no-render` (svg identity implies png per render_cache doctrine); svg hashes are compared with
+the `render-cache:` stamp line stripped, since the stamp hashes the engine fingerprint and
+changes BY DESIGN across the split while drawn bytes must not. Final sweeps: 9 generation
+artifacts and 818 gate manifests, 0 drifted, twice (before and after the post-gate fixes).
+
+**Process reminders re-learned the hard way**: a `pytest --collect-only` run in the skill dir
+DURING a background gate clobbers `.coverage` mid-read (the baseline gate's "ratchet failure"
+was exactly this, not a real shortfall), and piping `make done` through `tail` masks the exit
+code - the memory note "background gate exit codes lie if wrapped" applies to pipes too, and one
+US3 commit briefly landed on a red gate because of it (amended after fixing forward).

@@ -80,10 +80,10 @@ None - the four stories share no unbuilt infrastructure beyond Phase 1's tooling
 
 **Independent Test**: same as US2 (collect-list `::`-suffix compare + full `make done`)
 
-- [ ] T401 [US4] Capture `collect_settlement_pre.txt`; map every test function to the `settlement/` module defining its primary exercised attribute (data-model E3)
-- [ ] T402 [US4] Create `.claude/skills/diagram/test_settlement/` package: `__init__.py`, `_builders.py` (shared helpers verbatim), one `test_<module>.py` per settlement module that has tests - bodies verbatim, new import lines only; delete `test_settlement.py`
-- [ ] T403 [P] [US4] Write `.claude/skills/diagram/test_settlement/CLAUDE.md` index (module <-> settlement/ file map)
-- [ ] T404 [US4] Capture `collect_settlement_post.txt`, compare on `::`-suffix, run full `make done` (background, tail log), commit the story: `refactor(diagram): 025 US4 - test_settlement.py mirrors the settlement/ package (collection-identical)`
+- [x] T401 [US4] Capture `collect_settlement_pre.txt`; map every test function to the `settlement/` module defining its primary exercised attribute (data-model E3)
+- [x] T402 [US4] Create `.claude/skills/diagram/test_settlement/` package: `__init__.py`, `_builders.py` (shared helpers verbatim), one `test_<module>.py` per settlement module that has tests - bodies verbatim, new import lines only; delete `test_settlement.py`
+- [x] T403 [P] [US4] Write `.claude/skills/diagram/test_settlement/CLAUDE.md` index (module <-> settlement/ file map)
+- [x] T404 [US4] Capture `collect_settlement_post.txt`, compare on `::`-suffix, run full `make done` (background, tail log), commit the story: `refactor(diagram): 025 US4 - test_settlement.py mirrors the settlement/ package (collection-identical)`
 
 **Checkpoint**: all four stories landed
 
@@ -91,7 +91,7 @@ None - the four stories share no unbuilt infrastructure beyond Phase 1's tooling
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T501 Re-run the file-size census over `.claude/skills/diagram/` and record the before/after table (34,614 lines in 3 files -> N files, max size) in `specs/025-human-scale-splits/research.md` as R13 "What implementation taught the plan", including any boundary-map deviations made at T304 and why
+- [x] T501 Re-run the file-size census over `.claude/skills/diagram/` and record the before/after table (34,614 lines in 3 files -> N files, max size) in `specs/025-human-scale-splits/research.md` as R13 "What implementation taught the plan", including any boundary-map deviations made at T304 and why
 - [ ] T502 Stop-work ritual: final commit, then `scripts/sync-with-main.sh done` from the clone (locked pull+push + render-sync). NOTE: the 19 frozen legacy maps' renders are now write-once git exhibits (main commit 0719da0) whose gens never run - they keep their old stamps; only scripted-tier maps re-stamp under the new engine fingerprint, and their drawn bytes are proven unchanged by the oracle
 
 ---
