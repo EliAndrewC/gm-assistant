@@ -4,7 +4,7 @@
 current method has changed.*
 
 **Load this file when:** you are deciding whether to extend, adopt, or abandon the scripted
-generation path, or you are about to work on [`hamletgen.py`](hamletgen.py). To DRAW a map today,
+generation path, or you are about to work on [`hamletgen/`](hamletgen/). To DRAW a map today,
 ignore this file - [`SKILL.md`](SKILL.md) and [`settlements.md`](settlements.md) are unchanged and
 still describe the live method.
 
@@ -22,11 +22,11 @@ would still be generated normally and then modified by hand.
 
 ## What exists now
 
-- **[`hamletgen.py`](hamletgen.py)** - the generator. An eleven-stage pipeline (`STAGES`), each stage
+- **[`hamletgen/`](hamletgen/)** - the generator. An eleven-stage pipeline (`STAGES`), each stage
   a function of `(settlement, plan)`, run in the order the engine's DRAW ORDER map requires: the
   water frame, the field, the sink, the ways, the homesteads, their appurtenances, the notice board,
   the hinterland, the woodland, the windbreak, the crossings, the frame.
-- **[`test_hamletgen.py`](test_hamletgen.py)** - unit tests for the derivations and the failure modes.
+- **[`test_hamletgen/`](test_hamletgen/)** - unit tests for the derivations and the failure modes.
 - **[`pool/hamlets/`](pool/hamlets/)** - four generated maps living beside the hand-authored hamlets
   (`meta.generated_by` marks a scripted map), each a nine-line `.gen.py`:
   **Inashiro** (the head-to-head with Ikegami), **Sawada**, **Mizuguchi**, **Kashikawa**. They are
@@ -65,7 +65,7 @@ map like Ikegami contains:
 full `check_village/` gate.** That is the test that matters: one good map proves a person can
 drive the script to a good map; a correct cohort proves the script is doing the work.
 
-    python3 hamletgen.py --batch 20
+    python3 -m hamletgen --batch 20
 
 Household counts land exactly on the declared figure on essentially every map, and the paddy
 acreage lands on the target the household count implies - the four demo maps come out at 19.4
@@ -88,7 +88,7 @@ dozen earned its keep: three of its failures were general bugs the tuning set ne
 clamped pond put back on the crop it had just cleared, a cluster band seated off the canvas edge
 which built 7 farmhouses of 18, and a carried-way deck under-sized where the water bends). Run
 `cohort_audit.py --count 12 --seed <anything>` for a fresh set whenever the rate needs
-re-measuring; that number is worth more than this paragraph. `test_hamletgen.py` pins 4 of 4 as a
+re-measuring; that number is worth more than this paragraph. `test_hamletgen/` pins 4 of 4 as a
 ratchet.
 
 Every map seats its declared households exactly, lands its acreage on the figure the household count

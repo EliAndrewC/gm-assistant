@@ -1,7 +1,7 @@
 # Design notes: Kashikawa (樫川, "oak river") - scripted hamlet, the top of the band
 
 *One of four demo maps from the scripted-generation experiment (2026-08-11). See
-[`../../hamletgen.py`](../../hamletgen.py) for the pipeline and
+[`../../hamletgen/`](../../hamletgen/) for the pipeline and
 [`inashiro.notes.md`](inashiro.notes.md) for the head-to-head with the authored Ikegami.*
 
 **Kanji triangle**: 樫 *kashi* "evergreen oak" + 川 *kawa* "river". Kashikawa, "oak river" - named

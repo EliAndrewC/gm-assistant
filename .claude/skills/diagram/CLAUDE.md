@@ -1196,15 +1196,17 @@ The consequences, so nobody rediscovers them one gate failure at a time:
   bytes exactly as it found them - byte-restore, not re-run, because the engine may have drifted
   since the artifact was committed.
 
-## Scripted generation - read before touching `hamletgen.py`
+## Scripted generation - read before touching `hamletgen/`
 
 **The experiment is over and the project has committed to it** (GM, 2026-08-15). The standing plan -
 what is converted, what order the rest goes in, the bar a conversion has to clear, and the measured
 iteration budget - is [`migration-plan.md`](migration-plan.md). **Update its status table as part of
 finishing any conversion.**
 
-[`hamletgen.md`](hamletgen.md) is the writeup; [`hamletgen.py`](hamletgen.py) is the generator and
-[`pool/hamlets/`](pool/hamlets/) holds its demo maps beside the hand-authored hamlets (the pool is
+[`hamletgen.md`](hamletgen.md) is the writeup; [`hamletgen/`](hamletgen/) is the generator - a PACKAGE
+since feature 111 (clause 13), whose [`CLAUDE.md`](hamletgen/CLAUDE.md) says which submodule holds
+which stage, so **load the one stage you need rather than the whole engine**; the CLI is now
+`python3 -m hamletgen`. [`pool/hamlets/`](pool/hamlets/) holds its demo maps beside the hand-authored hamlets (the pool is
 foldered by tier, not by method; `meta.generated_by` marks a scripted map). The hand-authored pool
 froze on 2026-08-16 (see "The legacy pool is FROZEN" above) - it is no longer held byte-identical,
 its gens are simply never re-run - and a session drawing anything but a `valley_paddy` hamlet
