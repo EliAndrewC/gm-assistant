@@ -74,6 +74,11 @@ of `settlement.py` (towns, cities, the capital) are exercised by nothing until t
 so the coverage gate holds 100% on every module except `settlement.py`, which carries a RATCHET
 floor in the Makefile (`SETTLEMENT_COV_FLOOR`) - raise it as each tier converts, never lower it.
 A frozen map's defects against post-freeze rules are expected, not bugs; the fix is conversion.
+The frozen maps' renders (svg + png, ~195 MB) are **committed as write-once exhibits** (GM
+2026-08-16, un-ignored by name in `.gitignore`), because nothing can faithfully re-derive them
+once the engine drifts; **when a map is converted to the scripted approach, its physical renders
+come out of git again** (`git rm` the svg/png, delete its `!` lines in `.gitignore`) - a
+converted map's renders are derived by a live generator and return to being ignored.
 
 ## 3. The two axes
 
@@ -146,7 +151,9 @@ document is deliberately NOT a spec-kit feature: it outlives all of them.
    conversion may regenerate or overwrite a frozen map's committed artifacts (`git status` under
    `pool/` stays clean apart from the maps you meant to change). When the conversion of a TIER
    lands, its legacy exemplars stay frozen as exhibits; raise the Makefile's
-   `SETTLEMENT_COV_FLOOR` to cover the tier's newly re-exercised engine wing.
+   `SETTLEMENT_COV_FLOOR` to cover the tier's newly re-exercised engine wing. And when a legacy
+   MAP is itself converted (superseded by a scripted version), remove its committed renders from
+   git (`git rm` the svg/png, delete its `!` lines in `.gitignore`) - see section 2.
 5. **`make done` is green** - ruff, format, mypy --strict, pytest, 100% coverage.
 6. **A `settlement-review` pass on at least one generated map.** The gate cannot see glyph
    legibility, feature FORM, or whether the map reads as a distinct place. The author is not a

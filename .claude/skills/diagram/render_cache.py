@@ -216,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"  WARNING: frozen map {os.path.relpath(gen, args.pool)} is MISSING {', '.join(os.path.basename(p) for p in missing)} - "
                 f"a frozen exhibit's render cannot be faithfully regenerated once the engine has drifted, so it is NOT healed here; "
-                f"restore the file from a previous tree or from the freeze-era commit rather than re-running the gen"
+                f"the frozen renders are committed (GM 2026-08-16), so restore the file with git checkout rather than re-running the gen"
             )
     # The pool index is derived from the same tree the renders live in, so refresh it whenever the
     # renders are refreshed - this is what keeps main's index.html current (GM 2026-08-15).

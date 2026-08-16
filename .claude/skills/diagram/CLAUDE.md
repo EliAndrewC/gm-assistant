@@ -1147,6 +1147,12 @@ The consequences, so nobody rediscovers them one gate failure at a time:
   citybudget prices the tango/nagahara programs) - frozen bytes never change, so those tests stay
   green forever. But never write a test that RUNS a legacy gen or expects a frozen manifest to
   PASS the evolving gate: either one re-shackles iteration to the deprecated pool.
+- **The renders are COMMITTED, write-once** (GM 2026-08-16): a frozen exhibit's svg/png cannot be
+  faithfully re-derived once the engine drifts, so the 19 maps' renders are tracked in git - the
+  one exception to "pool renders are ignored" (`.gitignore` carries the per-file `!` lines and the
+  same instruction). When a map is CONVERTED to the scripted approach, remove its physical renders
+  from git again (`git rm` the svg/png + delete its `!` lines): the converted map's renders are
+  derived by a live generator and belong ignored like every other live map's.
 - **The pool's committed artifacts must stay clean.** Any test or tool that runs a live gen for
   its own purposes (the randomness ratchet, the gencache round-trip) must leave the committed
   bytes exactly as it found them - byte-restore, not re-run, because the engine may have drifted
