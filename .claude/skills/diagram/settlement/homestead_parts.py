@@ -537,12 +537,11 @@ class HomesteadPartsMixin:
                 continue
             if abs(w1 - w0) < 0.2:  # drawn as ONE stroke at w0 (field_channel's uniform branch)
                 out.append((p, w0 / 2 + pad + channel_margin))
-            else:  # drawn as 7 tapering pieces - the same slice/width ladder field_channel strokes
-                n, L = 7, len(p)
-                for k in range(n):
-                    piece = p[k * (L - 1) // n : (k + 1) * (L - 1) // n + 1]
-                    if len(piece) >= 2:
-                        out.append((piece, (w0 + (w1 - w0) * (k + 0.5) / n) / 2 + pad + channel_margin))
+            else:  # drawn per SEGMENT at its arc-correct width - the SAME ladder field_channel inks
+                from waterfields import taper_pieces  # local: the engine packages are peers, imported lazily
+
+                for piece, wk in taper_pieces(p, w0, w1):
+                    out.append((piece, wk / 2 + pad + channel_margin))
         return out
 
     def _on_watercourse(self: Settlement, px: float, py: float, pad: float = 2.0, near: Any = None) -> bool:  # type: ignore[misc]

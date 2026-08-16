@@ -140,6 +140,48 @@ AAS, "Rice, Technology, and History"
 
 *Used for:* rice domesticated in naturally marshy areas; paddy as reclaimed marsh
 
+### `lacey-regime`
+
+Lacey's regime theory for unlined alluvial canals - the wetted-perimeter equation `P = 4.75 * sqrt(Q)`, and the regime power-law exponents (width 0.5, depth 0.33, velocity 0.17 against discharge). Consulted via canal-design references and the *Journal of Hydrology* review "The width of a bankfull channel; Lacey's formula explained" (2003)
+
+*Used for:* the taper LAW - a channel's width goes as the square root of the discharge it carries, so `taper_w` interpolates the width SQUARED; and the absolute-width sanity check that found the drawn comb net ~5-6x its true hydraulic size
+
+### `fao-paddy-duty`
+
+FAO irrigation training manuals - "Scheme Irrigation Water Need and Supply" (u5835e) and "Determination of the Irrigation Schedule for Paddy Rice" (t7202e)
+
+*Used for:* the paddy irrigation duty used to size a real channel against a real command area - a net need near 1 L/s/ha (~8.6 mm/day) continuous, plus ~200 mm for puddling, which is the peak that sets a supply canal's section
+
+### `nougyoudoboku-suikou`
+
+のうぎょうとぼく (Japanese agricultural-engineering design notes), 水田内の「水口・水じり（落水口）」に関する設計について
+
+*Used for:* the *mizuguchi* as the plot's intake from the terminal channel - one per plot (two if the spacing exceeds 50 m), **width within 50 cm**, sill 0-10 cm above the field surface, ~0.4 m/s allowable velocity; and the outlet (*shirimito* / 落水口) as an overflow set 5-10 cm below the field surface
+
+### `nougyoudoboku-matsutan`
+
+のうぎょうとぼく, 水田圃場内の「末端用水路・小用水路」 and 「末端排水路・小排水路」
+
+*Used for:* the three-tier supply hierarchy 幹線 -> 支線 -> 末端用水路 and its drainage mirror 末端 -> 支線 -> 幹線排水路; branch spacing 300-600 m; the terminal channel's bed set -5 to +10 cm against the paddy surface; a terminal drain 50-60 cm below the field surface, its section sized from the accumulating 集水面積
+
+### `gb50288`
+
+GB50288-2018 灌溉与排水工程设计标准, sections 6.4 and 17.7; plus the Chinese five-tier canal vocabulary 干渠 / 支渠 / 斗渠 / 农渠 / 毛渠
+
+*Used for:* the FIVE fixed canal tiers with the *maoqu* (毛渠) as the finest, the tier below anything we draw; 斗渠 1,000-3,000 m at 400-800 m spacing and 农渠 400-800 m at 100-200 m spacing; paddy plot (格田) 25-30 m x ~100 m on the plain; 斗/农 bank tops not under 1 m
+
+### `toro-site`
+
+Toro site (登呂遺跡), Shizuoka - Shizuoka City Toro Museum and the Japanese Wikipedia entry
+
+*Used for:* the attested pre-modern paddy net - ~40 plots of 1,000-2,000 m2 over ~8 ha, a single central canal with the paddies ranked either side, 大畦畔 dividing large compartments with small ones inside, and canal + bund revetted with *yaita* sheet boards 2 m x 30-40 cm x 5 cm
+
+### `aze-standard`
+
+Japanese land-improvement standard designs for 畦畔 (paddy bunds) - Aomori prefecture ほ場整備 standard drawing set and 大和川流域水田貯留技術基準
+
+*Used for:* the standard outer bund as a trapezoid of **30 cm top width, 30 cm high, 1:1 side slopes** (so ~90 cm at the base), enlarged to ~50 cm x 40 cm in cold regions for deep-water irrigation and frost heave
+
 ## Attested instances (anchors, not works)
 
 Named real-world cases the rules are calibrated against. They are evidence, but they are measurements rather than publications, so they are listed separately and cited inline by name.

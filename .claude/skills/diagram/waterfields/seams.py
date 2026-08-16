@@ -60,7 +60,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from .banks import dedup_ring, pointed_ring, polyline_cum
-from .frame import BANK_MARGIN, Poly, _f_at_u, _Frame
+from .frame import BANK_MARGIN, Poly, _f_at_u, _Frame, taper_w
 from .palette import FLOODED, RICE_GREENS
 
 # The carve's own "too narrow to plant" side (`_sector_body_rows` / `_sector_canal_closers` both
@@ -157,7 +157,7 @@ def _water(channels: list[dict[str, Any]], g: float) -> BaseGeometry:
         tot = cum[-1] or 1.0
 
         def half(k: int, w0: float = w0, w1: float = w1, cum: list[float] = cum, tot: float = tot) -> float:
-            return (w0 + (w1 - w0) * cum[k] / tot) / 2 + BANK_MARGIN * g
+            return taper_w(w0, w1, cum[k] / tot) / 2 + BANK_MARGIN * g
 
         for i in range(len(pts) - 1):
             strokes.append(LineString([pts[i], pts[i + 1]]).buffer(half(i), cap_style="flat"))
