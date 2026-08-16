@@ -1767,6 +1767,7 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
     # start point inside a crop makes EVERY bearing fail - which is how the fallback below came to
     # fire at all. Step it clear first.
     start = pull_clear(start, (plan.seat["cx"], plan.seat["cy"]), avoid or [plan.envelope], 12.0)
+
     # A WET POLY IS SCORED WITH THE LANE'S WIDTH ON, not as a bare region (Cohort-41 2026-08-16).
     # `roads_clear_of_marsh` measures every marsh VERTEX against the way's CENTERLINE with the
     # way's half-width + 2 px of pad - so a track whose centerline clears the toe band's corner by
