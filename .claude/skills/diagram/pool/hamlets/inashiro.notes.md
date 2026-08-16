@@ -269,3 +269,41 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   Also noted: the re-pack cost the northernmost homestead its farm shed (4 -> 3 of 15 households,
   against the project's ~30% storehouse figure) - inside the noise at this size, but it went the
   wrong way.
+
+- **2026-08-17, the channel TAPER LAW** (GM asked whether a supply ditch should keep thinning rather
+  than reach a minimum and stop, and whether the widths were researched at all). Two changes, both
+  engine-wide, this map the motivating artifact. (1) Width goes as sqrt(discharge) and discharge runs
+  linearly along one of these strokes, so the width SQUARED now interpolates - `waterfields.taper_w`,
+  shared by the drawn stroke, both bank clearances the gate reads, the seam buffer, the carve's burial
+  filter and the keep-out corridor. (2) The ladder is parameterized by ARC LENGTH rather than vertex
+  index - `waterfields.taper_pieces`. The research, the sources and the disclosed departures are in
+  [`../../research/water.md`](../../research/water.md); the finest DRAWN channel deliberately still
+  STOPS at the ~1 m lateral tier, because below it lie the ~0.3 m field ditch (one pixel here) and,
+  in a pre-modern system, plot-to-plot *tagoshi* cascade rather than any channel at all.
+
+  Review log: DELTA pass, and it earned its keep - it CAUGHT that change (2) was missing entirely.
+  With only the law in, the renderer was still slicing by vertex index, whose slices covered
+  7.0-33.0% of a run apiece, so the ink missed the law by up to 1.94 px, the last third of two of the
+  five delivery ditches was still drawn at a FLAT minimum (i.e. the GM's original complaint survived
+  the fix meant to cure it), and the 2-point west-fork stub was inked end to end at its TAIL width,
+  3.6 px against a declared 7.2. It also caught that `taper_w`'s docstring quoted the FORMULA's
+  numbers as measurements of this map; they are now measured in the ink (7.7 / 7.1 / 6.1 / 4.8 / 3.7
+  px at tenths 0.10 / 0.25 / 0.50 / 0.75 / 0.90 of a delivery ditch, tracking the law within ~0.1 px).
+  And it caught that the committed `.png` was STALE while `tools/crop_map.py` crops the PNG - so the
+  author's own visual checks had been of the pre-change image. Re-rendered.
+
+  Confirmed clean by the same pass: no bund drawn inside the blue and no bare stripe anywhere (the
+  tightest along-run clearance is +0.20 px, against a `BANK_MARGIN` of 0.75 - about half the designed
+  abutment eaten, none of it crossed); the collector reads as GATHERING under the mirrored law; and
+  `tools.scatter_audit` came back 0 violations over 272,672 bases with a flat near-margin density
+  profile (1157 / 1111 / 1120 at 0-15 / 15-30 / 30-45 px), so widening every watercourse produced no
+  sterile halo.
+
+  Two items on record as this change's RIPPLE, neither a defect: the re-pack consumed the 18-crown
+  woodland stand at (1559,1651)-(1684,1776) - the collector's keep-out grew over the dry shelf, and
+  the three surviving stands (90/86/91 crowns) still stock the commons, but the reason that parcel is
+  now absent is geometric slack rather than anything about the place; and the title placard moved
+  576 px west onto clean hinterland. One PRE-EXISTING item wants a GM ruling, recorded in
+  `research/water.md`: a delivery ditch's flat `4.0 * grain` head is drawn WIDER than the tapering
+  supply canal feeding it low in the tree (7.75 px against a parent at 5.70 at (2524.8,1540)), so the
+  rank read inverts there - which is the one thing width-as-rank exists to convey.

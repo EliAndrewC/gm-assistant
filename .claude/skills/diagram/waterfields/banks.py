@@ -3,7 +3,7 @@
 import math
 from typing import Any
 
-from .frame import BANK_MARGIN, Poly, Pt, _f_at_u, _Frame, _pip, _seg_x
+from .frame import BANK_MARGIN, Poly, Pt, _f_at_u, _Frame, _pip, _seg_x, taper_w
 
 _PAST_EPS = 0.25  # arc slack at a supply stroke's ends: covers the 0.1-px manifest rounding of vertex + stroke point together (see supply_bank_clearance)
 
@@ -15,6 +15,35 @@ def polyline_cum(pts: Poly) -> list[float]:
     for i in range(len(pts) - 1):
         cum.append(cum[-1] + math.dist(pts[i], pts[i + 1]))
     return cum
+
+
+def taper_pieces(pts: Poly, w0: float, w1: float) -> list[tuple[Poly, float]]:
+    """A tapering stroke split into drawable pieces, each carrying its ARC-CORRECT local width.
+
+    PARAMETERIZED BY ARC LENGTH, NEVER BY VERTEX INDEX - which is the bug this replaced
+    (settlement-review 2026-08-17). `field_channel` used to cut the polyline into 7 equal slices of
+    the INDEX range and give slice k the width at `(k + 0.5) / 7`, which is only the width at that
+    point of the run if the vertices are evenly spaced along it. The carve's are not: measured on
+    Inashiro, one delivery ditch's seven slices covered 7.0 / 9.2 / 3.2 / 4.2 / 15.9 / 27.5 / 33.0%
+    of its length, so the drawn width missed the law by up to 1.94 px (24-44% of the local width),
+    the last third of the ditch was drawn at a FLAT minimum - the very "reaches the minimum and just
+    stops" reading the taper work set out to fix - and a 2-point stub had six empty slices and was
+    drawn end to end at its TAIL width, 3.6 px where its own record declared a 7.2 px head.
+
+    Per SEGMENT rather than in buckets, for two reasons beyond correctness: a bucket boundary is a
+    visible step (1.84 px in one place on the collector), and `banks.py`, `seams.py` and `carve.py`
+    already take their local width at the arc fraction - so drawing per segment makes the INK agree
+    with the bank geometry the bunds are laid against and the gate re-measures, rather than merely
+    coming close to it.
+
+    ONE definition, shared by the renderer (`field_channel`) and the keep-out corridor
+    (`_watercourse_segs`), which used to build this ladder separately and identically - two copies
+    of one ladder is how the drawn stroke and the corridor that protects it drift apart."""
+    if len(pts) < 2:
+        return []
+    cum = polyline_cum(pts)
+    tot = cum[-1] or 1.0
+    return [([pts[i], pts[i + 1]], taper_w(w0, w1, (cum[i] + cum[i + 1]) / 2 / tot)) for i in range(len(pts) - 1)]
 
 
 def drain_bank_clearance(q: Pt, dpts: Poly, dv: Pt, w0: float, w1: float, cum: list[float]) -> tuple[float, float, float, bool]:
@@ -50,7 +79,7 @@ def drain_bank_clearance(q: Pt, dpts: Poly, dv: Pt, w0: float, w1: float, cum: l
             nx, ny = -vy / nl, vx / nl
             nrm = (nx, ny) if nx * dv[0] + ny * dv[1] < 0 else (-nx, -ny)  # points UP-fall, off the ditch
     gap = (q[0] - cx) * nrm[0] + (q[1] - cy) * nrm[1]
-    need = (w0 + (w1 - w0) * arc / (cum[-1] or 1.0)) / 2 + BANK_MARGIN
+    need = taper_w(w0, w1, arc / (cum[-1] or 1.0)) / 2 + BANK_MARGIN
     return gap, need, -(dv[0] * nrm[0] + dv[1] * nrm[1]), past
 
 
@@ -88,7 +117,7 @@ def supply_bank_clearance(q: Pt, pts: Poly, w0: float, w1: float, cum: list[floa
             past = (i == 0 and t < 0.0) or (i == len(pts) - 2 and t > 1.0)
             nl = math.hypot(vx, vy) or 1.0
             nrm = (-vy / nl, vx / nl)
-    halfw = (w0 + (w1 - w0) * arc / (cum[-1] or 1.0)) / 2
+    halfw = taper_w(w0, w1, arc / (cum[-1] or 1.0)) / 2
     # `past` IS ROBUST AT THE MANIFEST ROUNDING SCALE (the seed-25 hairline, 2026-08-16): the
     # placer works in unrounded floats and exempted a carved corner projecting epsilon PAST the
     # branch tail; the manifest rounds both the corner and the stroke poly to 0.1 px, which
