@@ -774,6 +774,7 @@ from .segments_05_fields_and_funerary import (
     _seg_0331__al,
     _seg_0332__fields_clear_of_road,
     _seg_0333__pond_clear_of_paddies,
+    _seg_0596__dry_plot_seams_shared,
 )
 from .segments_06_ways_and_bridges import (
     _seg_0334__bridges,
@@ -2329,6 +2330,7 @@ __all__ = [
     "_seg_0315__water_channels_obtuse_turns",
     "_seg_0316__dry_plots",
     "_seg_0317__dry_plot_furrows_vary",
+    "_seg_0596__dry_plot_seams_shared",
     "_seg_0318__dp",
     "_seg_0319__structures_clear_of_dry_plots",
     "_seg_0320__f_1",

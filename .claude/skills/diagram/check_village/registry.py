@@ -583,6 +583,7 @@ from .segments_05_fields_and_funerary import (
     _seg_0331__al,
     _seg_0332__fields_clear_of_road,
     _seg_0333__pond_clear_of_paddies,
+    _seg_0596__dry_plot_seams_shared,
 )
 from .segments_06_ways_and_bridges import (
     _seg_0334__bridges,
@@ -4066,6 +4067,7 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
         False,
         False,
     ),
+    _GateSeg(_seg_0596__dry_plot_seams_shared, ('check', 'dry_plots'), (), ('dry_plot_seams_shared',), ('check', 'dry_plots'), False, False),
     _GateSeg(_seg_0318__dp, ('M', 'dp'), ('dp', 'dry_polys_c'), (), ('M',), False, False),
     _GateSeg(
         _seg_0319__structures_clear_of_dry_plots,
