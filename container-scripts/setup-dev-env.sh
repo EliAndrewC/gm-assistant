@@ -52,6 +52,9 @@ check_all() {
     _t "python: cherrypy jinja2 configobj yaml"  "python3 -c 'import cherrypy, jinja2, configobj, yaml'"
     _t "python: requests + oauthlib + bs4"       "python3 -c 'import requests, requests_oauthlib, bs4'"
     _t "python: pillow numpy cv2 google.genai"   "python3 -c 'import PIL, numpy, cv2, google.genai'"
+    # shapely backs the /diagram seam-closing pass (waterfields/seams.py) - the one place the
+    # field engine needs real polygon booleans, so a missing wheel breaks map generation, not a test
+    _t "python: shapely (diagram field engine)"  "python3 -c 'import shapely'"
     # dev deps - the quality gate itself
     _t "python: pytest + cov + xdist"            "python3 -c 'import pytest, pytest_cov, xdist'"
     _t "python: ruff mypy"                       "python3 -m ruff --version; python3 -m mypy --version"

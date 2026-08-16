@@ -28,7 +28,7 @@ Three invariants the split does NOT touch:
 
 | file | look here when |
 |---|---|
-| `__init__.py` | you need the package docstring, the `sys.path` bootstrap, or the re-export mechanism - star imports carry every submodule's public names, an aliased block carries the four consumed underscore names (guard: `test_hamletgen_surface.py`); never add logic here |
+| `__init__.py` | you need the package docstring, the `sys.path` bootstrap, or the re-export mechanism - star imports carry every submodule's public names, an aliased block carries the four consumed underscore names (guard: `tests/hamletgen/test_surface.py`); never add logic here |
 | `__main__.py` | the `python3 -m hamletgen` entry point needs changing (it is a shim; `main` itself lives in `driver.py` because consumers reach `hamletgen.main`) |
 | `consts.py` | a researched number needs reading or changing: `GROSS_ACRES_PER_HOUSEHOLD`, `LANE_CLEARANCE`, `SPUR_SETBACK`, `SUN_CORRIDOR_FT`, `POLDER_CELL_FT`, `POND_SETBACK_LIMIT`, `CROP_MARGIN`, the archetype/ladder/bearing/wind tables (`FIELD_ARCHETYPES`, `ROLLED_ARCHETYPES`, `OFFTAKE_LADDER`, `FALL_BEARINGS`, `WIND_VECTORS`, `CLUSTER_SHAPES`, `LANE_SKELETONS`, `PLOT_SIZES`), and the `Pt`/`Poly` aliases. **Every constant carries the reasoning that fixed it** - keep it that way (the project's record-the-why rule) |
 | `plan.py` | the caller-facing spec or the derived plan: `HamletSpec` (what a pool `.gen.py` writes), `SitePlan` (everything derived from it), `plan_site`, `canvas_for`, `offtakes_for`, `windward_for` |

@@ -18,3 +18,6 @@ pytest
 pytest-cov
 pytest-xdist
 ruff
+# stubs for shapely (requirements.in) - without them `mypy --strict` reports the whole
+# waterfields.seams import surface as untyped
+types-shapely

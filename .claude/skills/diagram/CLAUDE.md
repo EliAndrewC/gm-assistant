@@ -11,6 +11,39 @@ cut the ritual/guardrail steps). Read that first; this file carries the concrete
 and the DIAGRAM-SPECIFIC lessons that section does not cover - each earned by costing real
 round-trips.
 
+## Where things live (read this first; load only the index you need)
+
+The skill's Python is grouped by what a module is FOR. Each group carries its own `CLAUDE.md`
+index, so a session can open the one directory its task is in instead of paging this file.
+
+| directory | what is in it | load its index when |
+|---|---|---|
+| [`settlement/`](settlement/CLAUDE.md) | the Mode B drawing engine (the `Settlement` class and its mixins) | you are changing what a settlement map DRAWS or where it places something |
+| [`check_village/`](check_village/CLAUDE.md) | the gate: the whole check battery, as a registry of segments | you are adding, changing or running a check |
+| [`waterfields/`](waterfields/CLAUDE.md) | the water-first field engine (v2 comb fields) | you are changing paddies, bunds, canals or the field frame |
+| [`hamletgen/`](hamletgen/CLAUDE.md) | the scripted hamlet generator - a whole hamlet from a 9-line spec | you are working on scripted generation |
+| [`pipeline/`](pipeline/CLAUDE.md) | how a map gets regenerated, cached, rendered and indexed | the cache is behaving oddly, or you are changing how generation is DRIVEN |
+| [`tools/`](tools/CLAUDE.md) | read-only diagnostics and audits you run by hand | a map came out wrong and you need to ask WHY, or a number needs measuring |
+| [`tests/`](tests/CLAUDE.md) | every test, mirroring the source layout, plus the frozen fixtures | you need to find or add a test |
+| `pool/` | the shipped maps: `<name>.gen.py`, its manifest, its render, its `.notes.md` design journal | - |
+| `wip/` | maps staged outside the pool (not gated, not swept) | - |
+
+Two engine modules are still single top-level files, and stay that way on purpose:
+**`compound.py`** (the Mode A compound program and perimeter-first placer) and **`citybudget.py`**
+(the space-budget city/capital planner). Both are peers of the engine packages above - pool
+generators import them directly - and folding them into a package would rewrite six frozen
+generator scripts for no navigational gain.
+
+The prose reference (as opposed to the code) splits the same way: [`SKILL.md`](SKILL.md) is the
+usage-facing index, and it indexes [`settlements/`](settlements/) and [`buildings/`](buildings/)
+(the per-topic design doctrine) and [`research/`](research/) (the historical grounding). Read a
+skill index, then load only the topics the subject calls for.
+
+**Run the packaged modules as modules**, from this directory - `python3 -m pipeline.regen ...`,
+`python3 -m tools.why_placed ...`. Running a package module as a loose script path puts its own
+directory on `sys.path` instead of the skill root, which is how one file ends up imported twice
+under two names.
+
 ## Gate and sweep timings (the motivating-artifact loop, concretely)
 
 The root "iterate on the motivating artifact, sweep once at the end" rule has these diagram
@@ -22,21 +55,22 @@ FROZEN" below:
 
     DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 -m check_village pool/<type>/<map>.json
 
-**...or let the CACHE skip the work entirely** (2026-08-08). `regen.py` regenerates a map only if
+**...or let the CACHE skip the work entirely** (2026-08-08). `pipeline/regen.py` regenerates a map only if
 something that map depends on actually changed, and prints `CACHED` or `REGENERATED` every time:
 
-    python3 regen.py pool/hamlets/sawada.gen.py              # ~20s cold, ~1s cached
-    python3 regen.py pool/*/*.gen.py                         # every LIVE map, fanned out (frozen legacy maps print FROZEN, skipped)
-    python3 regen.py --no-cache pool/hamlets/inashiro.gen.py # force the work
+    python3 -m pipeline.regen pool/hamlets/sawada.gen.py              # ~20s cold, ~1s cached
+    python3 -m pipeline.regen pool/*/*.gen.py                         # every LIVE map, fanned out (frozen legacy maps print FROZEN, skipped)
+    python3 -m pipeline.regen --no-cache pool/hamlets/inashiro.gen.py # force the work
 
 Multi-map runs fan out across worker processes (cpus minus 2; `--jobs 1` for serial), as do
-`cohort_audit.py` and `python3 -m hamletgen --batch`. The audit since 2026-08-15, when the timings
-ledger showed the serial cohort was the biggest available win; the batch CLI since 2026-08-16, when
-a profile found that round had MISSED it - the fan-toe pond fix spent **17.3 of its 45.7 minutes**
-on two serial 24-seed rolls, ~11 min of it as critical-path idle (**526s -> 71s, 7.4x**, with all 24
-verdicts identical, re-proven per differing seed against a serial roll on the same code).
-`default_jobs` in `hamletgen/driver.py` is the one definition of the cpus-minus-2 courtesy; the
-audit imports it. Wall clock for a fanned-out sweep is bounded by its single slowest map, so
+`tools/cohort_audit.py` and `python3 -m hamletgen --batch`. The audit since 2026-08-15, when the
+timings ledger showed the serial cohort was the biggest available win; the batch CLI since
+2026-08-16, when a profile found that round had MISSED it - the fan-toe pond fix spent **17.3 of its
+45.7 minutes** on two serial 24-seed rolls, ~11 min of it as critical-path idle (**526s -> 71s,
+7.4x**, with all 24 verdicts identical, re-proven per differing seed against a serial roll on the
+same code). `default_jobs` in `hamletgen/driver.py` is the one definition of the cpus-minus-2
+courtesy; the audit imports it. Wall clock for a fanned-out sweep is bounded by its single slowest
+map, so
 per-map cost is what remains worth optimizing. Parallelism cannot change a verdict (each map is a
 pure function of its spec; `gencache.store` publishes atomically), and the per-map output is
 captured in the worker and printed in order, so a parallel run reads like a serial one.
@@ -48,12 +82,12 @@ The key covers the gen's bytes, the MODULE-LEVEL source of every engine module, 
 every function that map actually EXECUTED, every non-source file the run opened, and the
 interpreter/renderer versions - so an edit to any of the ~200 `settlement/` engine functions Minami
 never runs leaves Minami cached, while an edit to one it does run, or to any module-level constant,
-does not. `gencache.py`'s docstring carries the soundness argument; `test_gencache.py` is the
+does not. `pipeline/gencache.py`'s docstring carries the soundness argument; `tests/pipeline/test_gencache.py` is the
 demonstration, and every test there that asserts a HIT also regenerates and compares bytes, because
 "the key did not move" proves nothing on its own.
 
 **The gate RIDES the cache since 2026-08-16 (feature 026, GM decision reversing the 2026-08-08
-"gate never reads the cache" rule).** `test_villages.py` obtains each live map via
+"gate never reads the cache" rule).** `tests/test_villages.py` obtains each live map via
 `gencache.gate_obtain`: a verified HIT - key match plus stored generation coverage - restores the
 artifacts, replays the entry's coverage data into the run (so the coverage floors stay honest),
 and skips GENERATION only. The full current check battery still runs against whatever manifest was
@@ -62,13 +96,13 @@ coverage (an iteration-made entry), or `GATE_NO_CACHE=1` - regenerates in a cove
 subprocess exactly as a cold run would. Why this is safe to trust, one line each: generation is
 deterministic, so a sound key implies byte-identical output; the key covers the dependency surface
 BELOW the Python-source horizon (`_deps_state`: installed distributions + renderer font bytes -
-the PIL layout-engine incident class); and `cache_audit.py` remains the standing empirical auditor
+the PIL layout-engine incident class); and `tools/cache_audit.py` remains the standing empirical auditor
 of the whole property. **After a dependency-level change** (a pip install/upgrade, a container
 rebuild outside the lockfiles), run one bypassed sweep - `GATE_NO_CACHE=1 make done` - as
 belt-and-suspenders for any channel the key cannot see. The contract's pinning tests are in
-`test_gencache.py`; the decision's full reasoning in `specs/026-cache-backed-gate/`.
+`tests/pipeline/test_gencache.py`; the decision's full reasoning in `specs/026-cache-backed-gate/`.
 
-**AUDIT IT when you change the cache, or how generation is driven:** `python3 cache_audit.py`
+**AUDIT IT when you change the cache, or how generation is driven:** `python3 -m tools.cache_audit`
 (~10 min, or `--all` for the whole pool). It perturbs a random numeric literal inside a
 `settlement/` function, sweeps the pool WITH the cache and again with `--no-cache`, and demands
 byte-identical artifacts - so it tests the only property anyone cares about without ever looking at
@@ -93,7 +127,7 @@ against code that no longer exists. Testing "does an edit to X invalidate?" ther
 baseline re-established (run until you see `CACHED`) before each trial, or the previous trial's
 cleanup produces the miss and you conclude the cache is broken when it is working perfectly.
 
-**TIMINGS ARE TRACKED IN [`timings.md`](timings.md), MEASURED BY `python3 timings.py`** - one dated
+**TIMINGS ARE TRACKED IN [`timings.md`](timings.md), MEASURED BY `python3 -m tools.timings`** - one dated
 block per run, each benchmark carrying its BREAKDOWN as well as its total, so a slow loop can be
 attributed instead of merely noticed. Do not write fresh timings into prose here: this paragraph
 used to say the full sweep was "~2 to 2.5 minutes" and was still saying it on 2026-08-15, when the
@@ -164,14 +198,14 @@ make sure the key is cheaper than the scan it guards - one fingerprint here cost
 it replaced.
 
 Since 2026-08-03 the sweep ENFORCES a per-gen CPU budget (`GEN_TIME_BUDGETS` in
-`test_villages.py`) so the next silent 45-minute-class regression fails loudly by name instead of
+`tests/test_villages.py`) so the next silent 45-minute-class regression fails loudly by name instead of
 being waited out; `DIAGRAM_ALLOW_SLOW_GENS=1` overrides once you are certain perf is fine, and a
 legitimately-outgrown map gets a bigger budget entry WITH its reason. **Budgets are calibrated
 against the GATE, not a solo run** - under `pytest -n auto` a gen's own CPU time inflates 2-4x
 through cache contention, which is why each entry is ~4x its recorded solo measurement.
 
 **A GEN'S CPU TIME INFLATES 2-4x INSIDE THE GATE, so budgets are calibrated against the GATE, never
-a solo run** (`test_villages.py` says this at the table; both halves of it were found the same day,
+a solo run** (`tests/test_villages.py` says this at the table; both halves of it were found the same day,
 independently, by two sessions whose gates were slowing each other down). `process_time` is immune
 to WAITING for a core but not to needing more cycles for the same work, and `-n auto` runs 22
 workers here. Measured pairs, solo vs under-gate: hoshizora **12.4s / 35.7s**, kuwabata **16.8s /
@@ -219,13 +253,13 @@ from.
 
 The single biggest time sink ever measured on this skill (2026-07-25, a 69-minute feature profiled
 from the session transcript): **13.2 minutes - 19% of the whole feature's wall clock - went to one
-`python3 -m pytest test_regressions.py` that `make done` had already run, in parallel, minutes
+`python3 -m pytest tests/test_regressions.py` that `make done` had already run, in parallel, minutes
 earlier.** Two compounding mistakes, both cheap to avoid:
 
 - **`make done` runs `pytest -n auto`** (see the Makefile), which is ~7x faster than serial on this
   box: the 695-manifest regression replay is ~2 min under the gate and **13.4 min serial**. If you
   ever invoke pytest directly, pass `-n auto`. There is no reason to run it serially.
-- **A green `make done` already covers `test_regressions.py`, `test_villages.py`, and every unit
+- **A green `make done` already covers `tests/test_regressions.py`, `tests/test_villages.py`, and every unit
   test.** Re-running any of them "to be sure" buys nothing - the gate is the proof. Re-run only what
   actually changed since the gate went green, and if that is markdown, re-run nothing (root
   CLAUDE.md, "docs-only diffs skip the gate").
@@ -269,7 +303,7 @@ have caught: the change altered geometry an existing test depended on, and the p
 ~45s and reach every test the change can. So: cheap linters, then whole files, then the gate ONCE.
 
     python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy
-    python3 -m pytest test_settlement.py test_checks/ -q -n auto --no-cov    # the files you touched, WHOLE
+    python3 -m pytest tests/settlement/ tests/check_village/ -q -n auto --no-cov    # the files you touched, WHOLE
     make done                                                                  # once, backgrounded, not watched
 
 ### Probe vs survey: when `-x` pays (GM 2026-08-15)
@@ -356,10 +390,10 @@ work you will throw away, because the next conversion produces a different fallo
 
 ## Ask the GEN who placed it - do not grep for the caller
 
-The other half of the same lesson. `open_seat` answers "where does this fit?"; **[`why_placed.py`](why_placed.py)** answers *"who put this here?"* and *"what refused to put anything here?"* - the two questions you actually have when a map comes out wrong.
+The other half of the same lesson. `open_seat` answers "where does this fit?"; **[`tools/why_placed.py`](tools/why_placed.py)** answers *"who put this here?"* and *"what refused to put anything here?"* - the two questions you actually have when a map comes out wrong.
 
-    python3 why_placed.py pool/provincial-cities/nagahara.gen.py --at 1102.6,1429.5
-    python3 why_placed.py pool/provincial-cities/nagahara.gen.py --refused 1102.6,1429.5 --radius 12
+    python3 -m tools.why_placed pool/provincial-cities/nagahara.gen.py --at 1102.6,1429.5
+    python3 -m tools.why_placed pool/provincial-cities/nagahara.gen.py --refused 1102.6,1429.5 --radius 12
 
 `--at` prints every manifest record appended within the radius **with its call chain** - the gen
 line to go and look at, and the engine method under it that chose the spot. `--refused` prints how
@@ -375,7 +409,7 @@ then the apron block polys, then `_fits` - and none of them answered it. A throw
 **It OBSERVES, it never restates.** The refusal cause is read off the real `_in_blocked` /
 `_near_corridor` / `_hard_clear` as they return; when `_fits` refuses and none of those did, it says
 so in exactly those words rather than guessing which of the remaining clauses it was. Same discipline
-as `site_justice.py` asking the gate instead of re-implementing it - a diagnostic that re-derives a
+as `tools/site_justice.py` asking the gate instead of re-implementing it - a diagnostic that re-derives a
 rule drifts from it and then tells you the wrong thing with total confidence.
 
 Two notes worth having: `--refused` reporting **"no candidate was ever tested here"** is a different
@@ -388,10 +422,10 @@ the keep-outs. And a `--at` miss usually just wants a bigger `--radius`: a re-pa
 governed by many INTERACTING rules, that is not enough: the justice works (feature 015) must be
 outside the wall, on the way out, past the boundary stone, clear of the community's dead, off the
 farmland, on the outcast side, clear of every structure, and inside the map's current view. Use
-[`site_justice.py`](site_justice.py):
+[`tools/site_justice.py`](tools/site_justice.py):
 
-    python3 site_justice.py pool/provincial-cities/nagahara.json execution_ground --limit=25
-    python3 site_justice.py pool/towns/hirameki.json boundary_marker --ground=1620,1900
+    python3 -m tools.site_justice pool/provincial-cities/nagahara.json execution_ground --limit=25
+    python3 -m tools.site_justice pool/towns/hirameki.json boundary_marker --ground=1620,1900
 
 It proposes seats **cheapest-on-the-frame first** (`frame_cost=0` means the crop is unchanged by
 that seat) and adjudicates each one by building a trial manifest and running `check_village.gate()`
@@ -648,7 +682,7 @@ at a rendered map. Four such checks now read `solid_structs(M)`: `ring_road_kept
 `city_government_offices_dont_abut`, `city_wells_in_block_interiors`, and the merchant-estate
 court test.
 
-**The ratchet.** `test_checks.py::test_every_solid_struct_is_gated_off_every_hazard` plants one
+**The ratchet.** `test_every_solid_struct_is_gated_off_every_hazard` (in `tests/check_village/`) plants one
 instance of EVERY registered key squarely on EVERY hazard and demands the hazard's check fire. If a
 keep-clear check ever falls back to a hand list, that test names both the key and the hazard.
 Verified to have teeth: reverting `ring_road_kept_clear` to its old list fails it with 21 keys
@@ -863,7 +897,7 @@ Two rules, and the second is the one that is easy to half-do:
    the insert leaves the query iterating exactly the same billions of cells - which is precisely the
    half-fix that shipped first here and looked plausible for a whole turn.
 
-`test_matrix_survives_geometry_far_off_the_canvas` in `test_checks.py` is the guard, timed rather
+`test_matrix_survives_geometry_far_off_the_canvas` in `tests/check_village/` is the guard, timed rather
 than structural on purpose: the failure mode is unbounded work, and the correct-vs-broken margin is
 a fraction of a second against effectively forever.
 
@@ -875,12 +909,12 @@ wall time is model-turn latency (root CLAUDE.md, 2026-07-20 profile), so each ex
 pure cost. Instead: in ONE Bash call, crop EVERY region you want to look at (all four viewports of
 a defect, before/after of several maps, the toe + the top + a control), then Read them together in
 the next turn. A footbridge review that touched 3 maps should be ~2 turns of imagery, not ~10.
-**Use [`crop_map.py`](crop_map.py) rather than re-writing the arithmetic** - it reads the viewBox
+**Use [`tools/crop_map.py`](tools/crop_map.py) rather than re-writing the arithmetic** - it reads the viewBox
 itself and takes as many regions as you like in one invocation, which is the batching win made easy:
 
-    python3 crop_map.py pool/towns/hoshizora 1600,900,220 1200,400,150   # x,y,radius (world coords)
-    python3 crop_map.py pool/hamlets/moritono --box 2100,150,2418,760 --zoom 1.5
-    python3 crop_map.py pool/villages/ueda --whole --zoom 0.4            # whole map, downscaled
+    python3 -m tools.crop_map pool/towns/hoshizora 1600,900,220 1200,400,150   # x,y,radius (world coords)
+    python3 -m tools.crop_map pool/hamlets/moritono --box 2100,150,2418,760 --zoom 1.5
+    python3 -m tools.crop_map pool/villages/ueda --whole --zoom 0.4            # whole map, downscaled
 
 It prints one path per line - feed them straight to Read, together. (The conversion is
 `(coord - viewBox_origin) * (png_w / viewBox_w)`; it was hand-written five times in one session,
@@ -935,7 +969,7 @@ buys and how to work with it:
   emit those names plus their dependency closure (median 7 segments), with verdicts guaranteed
   identical to the full run. Unknown names and META checks (`META_CHECKS` - whole-run state like
   `waivers_are_live`) raise ValueError rather than silently running nothing.
-- **The regression replay runs targeted** (`test_regressions.py`): each fixture verifies only its
+- **The regression replay runs targeted** (`tests/test_regressions.py`): each fixture verifies only its
   `_regression.fires` (meta names fall back to the full gate). This is what took the 210
   frozen-city fixtures from ~480 s to ~58 s serial. The fixture format is unchanged.
 - **Adding a check**: write a new `_seg_<key>__<name>`-style function next to its neighbors, in
@@ -946,7 +980,7 @@ buys and how to work with it:
   (signature -> `free`, return literal -> `writes`, AST -> the rest), and the numeric key in the
   name IS the execution position (`_seg_0533_500__x` runs between 0533 and 0534; to run beside a
   PLACED segment, add a `_PLACEMENTS` entry in `check_village/registry.py` instead). Then extend
-  `test_fixtures/gate_check_names.json` (the registry-pin test compares the two). The
+  `tests/fixtures/gate_check_names.json` (the registry-pin test compares the two). The
   `every_feature_classified_*` and KEEP-CLEAR contracts above are unchanged.
 - **The migration tooling** (one-shot, retired): `specs/022-gate-check-registry/` holds the
   transformer, the oracle sweeps (`oracle_sweep.py capture/compare/targeted`), and research.md
@@ -971,8 +1005,8 @@ buys and how to work with it:
 ## Update the predictably-affected tests in the SAME edit
 
 Touching a `settlement/` method breaks its unit tests deterministically - you know which ones
-before you run anything. `channel_footbridges` has `test_settlement.py::test_channel_footbridges_*`
-and the `test_checks.py::_footbridge_map` fixture; changing placement semantics (e.g. "a plank now
+before you run anything. `channel_footbridges` has `test_channel_footbridges_*` (in `tests/settlement/`)
+and the `_footbridge_map` (in `tests/check_village/`) fixture; changing placement semantics (e.g. "a plank now
 needs cultivation on both banks") means those setups need cultivated ground added. Update them in
 the same turn as the engine change, don't discover the breakage via a failed pool sweep. Grep for
 the method name in `test_*.py` before editing.
@@ -1017,9 +1051,35 @@ otherwise the rule is optional in practice no matter how firmly it is written.
 on every paddy, and says in its own message that a map declaring nothing SKIPS every drainage rule
 while still showing green. Prefer this to widening the gate quietly.
 
+**The ENVIRONMENT-GATED variant, and it is nastier (2026-08-16).** The three cases above are gated on
+map DATA. A check can just as easily be gated on where it is RUNNING, and then it disables itself in
+exactly one place: the place you always run it. `tests/hamletgen/test_surface.py`'s census skipped any
+file with `.clones` among its path parts - which reads as "do not walk other sessions' clones", but
+tests the ABSOLUTE path. Every session works inside `/gm-assistant/.clones/<name>/`, so the condition
+was true for EVERY file, the census returned the empty set, and `test_census_matches_pin` compared
+nothing against its pin list. Inside a clone it saw **0 names; with the guard gone it sees 50** - and
+it had been hiding two genuinely unpinned consumers (`hg.driver`, `hg.sink`) introduced by the very
+feature that added the guard.
+
+Two things to carry from it:
+
+- **Any test predicate that inspects an ABSOLUTE path is suspect**, because a session clone, main and
+  a scratch checkout differ only in their prefix, and the failure direction is silence. Match on a
+  path RELATIVE to the root being walked, or do not match on paths at all. (The main-tree guards -
+  `settlement._assert_not_main_tree`, `webapp/mainguard.py`, the Makefile's `guard` - are the
+  legitimate exception: inspecting the absolute path IS their job, and each is tested with synthetic
+  paths rather than with the one it happens to be running under.)
+- **A "re-census the tree" guard must assert it FOUND something.** A census that silently returns
+  nothing is indistinguishable from a clean bill of health, which is this whole section in one line.
+  Cheap version: plant a consumer of a fake name and confirm the guard fires, the way
+  `test_guard_fires_on_synthetic_clash` already does for the clash detector.
+
+Found only by running `make done` from a checkout OUTSIDE `.clones/` - worth doing once after any
+change to how the suite discovers files.
+
 ## Build check-test manifests with the fixture builders
 
-`test_checks.py` hands `gate()` hand-built manifests carrying only the keys the check under test
+`tests/check_village/` hands `gate()` hand-built manifests carrying only the keys the check under test
 reads. That focus is right, but it has a tax: a record often must carry a key some OTHER check
 indexes unconditionally (a threshing yard's `of`, a grove's `face`), and omitting it does not fail
 your test - it raises a `KeyError` from an unrelated check, costing a fix-and-rerun cycle to
@@ -1083,9 +1143,9 @@ Three ways to clear it, and the failure message names all three:
 
 Three probes in one session, two of them wrong in ways that cost a full round trip each:
 
-- `why_placed.py`'s `_fits` wrapper had **re-declared `_fits`'s parameter list**, so the day
+- `tools/why_placed.py`'s `_fits` wrapper had **re-declared `_fits`'s parameter list**, so the day
   `_fits` gained a keyword the tool died with a `TypeError` in the middle of the gen it was
-  supposed to be observing. It takes `*a, **kw` now. Same rule as `site_justice.py` asking the
+  supposed to be observing. It takes `*a, **kw` now. Same rule as `tools/site_justice.py` asking the
   gate instead of re-deriving it: a tool that OBSERVES must not re-declare the thing it observes.
 - A hand-rolled probe listed, for each refused seat, every corridor **covering** it - which is not
   the same set as the corridors that **refused** it, because it ignored `skip`. It named the very
@@ -1166,9 +1226,9 @@ conversion, and that is the accepted trade, recorded in migration-plan.md sectio
 
 Every hand-authored Mode B map - 9 hamlets, 4 villages, 3 towns, 3 provincial cities - is a
 permanent EXHIBIT: never regenerated, never re-gated. They stay in `pool/index.html` and their
-committed .json/.svg/.png stay exactly as shipped. `poolmaps.py` is the classification
-(scripted / legacy / compound), shared by the `test_villages.py` sweep, by `regen.py` (which
-prints `FROZEN` and skips; `--frozen-ok` overrides) and by `cache_audit.py`; the sweep's ratchet
+committed .json/.svg/.png stay exactly as shipped. `pipeline/poolmaps.py` is the classification
+(scripted / legacy / compound), shared by the `tests/test_villages.py` sweep, by `pipeline/regen.py` (which
+prints `FROZEN` and skips; `--frozen-ok` overrides) and by `tools/cache_audit.py`; the sweep's ratchet
 keeps every pool gen accounted for.
 
 WHY: hand-authoring is deprecated (the freeze decision is recorded in full in migration-plan.md
@@ -1245,3 +1305,20 @@ seated inside a CONCAVE field margin (the outward normal was taken from the cent
 right for a convex polygon), a supply canal's tail dying in bare ground, a brook turning through an
 acute hairpin, and the two engine bugs above. Authoring one map meets perhaps two of them. If you
 add a placement rule, run it against a cohort, not against the map that motivated it.
+
+**MEASURE THE COHORT'S BASELINE FIRST - the number you are aiming at is not 24/24** (2026-08-17,
+the shared-bund pass). A cohort carries pre-existing failures, so a bare "16 of 24 passed" read
+against nothing cannot tell a regression from the weather. Roll the SAME seed range on unmodified
+code before judging your own - and note that any change altering how many draws a gen takes
+re-rolls every map, so the residue ROTATES rather than shrinking in place: that pass went 22/24 ->
+16/24 (a real regression, chased to a band sampled too coarsely and a tint rule testing the wrong
+ring) -> 22/24, at which point its residue was two failures on two maps where the baseline's had
+been five on two. Same pass rate, different maps, strictly less broken - which only the side-by-side
+shows.
+
+**Take the baseline in a DETACHED WORKTREE, never by stashing the working tree.** `git worktree add
+--detach /tmp/base HEAD` costs seconds and touches nothing. Stashing looks equivalent and is not: a
+`settlement-review` agent was reading `pool/hamlets/inashiro.json` at the time, and the stash
+reverted it to the pre-fix version underneath that agent for the length of the sweep. Anything handed
+to a review agent is LIVE for as long as the agent is - and a backgrounded baseline sweep is exactly
+the kind of job you start while one is running.

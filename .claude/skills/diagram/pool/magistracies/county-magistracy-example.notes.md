@@ -27,4 +27,4 @@ boundary, so half of it lies inside - every rank-1 building here had been standi
 inside the masonry, with its own outline swallowed by the wall stroke. The placer now leaves
 the ink plus a hair (2 ft off a compound wall, 1.5 ft off the divider), and the inner-court
 garden zone moved 36 -> 38 ft so the shifted N-wall row still clears it. Checked by
-`pack_audit.py` `structures_on_walls`; see buildings.md "Walls and gates".
+`tools/pack_audit.py` `structures_on_walls`; see buildings.md "Walls and gates".

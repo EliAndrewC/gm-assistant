@@ -29,7 +29,7 @@ and cost every reader the whole roster to learn it. The six underscore names wit
 external consumers are re-exported via the `as`-alias idiom below; every other
 underscore name is package-private - if something outside the package genuinely
 needs one, add it to the aliased block (or import it from its submodule directly).
-test_check_village_surface.py guards the two properties this design relies on:
+tests/check_village/test_surface.py guards the two properties this design relies on:
 no silent star-import shadowing across submodules (no public name bound to two
 different objects), and the consumed surface (census:
 specs/027-init-star-imports/census.md) keeps resolving.
