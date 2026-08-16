@@ -1228,6 +1228,28 @@ def test_commons_keeps_scrub_off_a_shrine_and_torii():
     assert len(s.M["commons"]) == 1
 
 
+def test_commons_keeps_scrub_off_dry_plots_and_the_crop_margin():
+    # GM 2026-08-15: scrub scattered over dry hatake plots and right up against crop edges. The
+    # scatter must skip DRY PLOTS (read from dry_polys, which every dry-crop path registers) as
+    # well as paddies, and keep _CROP_MARGIN_FT of clearance off EVERY crop edge - the bund/balk
+    # plus one cut swath (settlements/vegetation.md "Scrub stands off the crops"). Tall glyphs
+    # (scraggly pines, woodland crowns) stand their own drawn reach further back, so no tip leans
+    # over the crop; base points alone are asserted here (the lean is engine-side headroom).
+    s = _nuc_village()  # paddy at [(640,150),(1120,150),(1120,780),(640,780)]
+    quad = [(200, 300), (400, 300), (400, 500), (200, 500)]
+    s.dry_polys.append(quad)
+    s.block_polys.append(quad)  # both registries, as every dry-crop path does
+    clr = s.px(s._CROP_MARGIN_FT) - 0.06  # 0.1-rounding slack, as in the halo tests
+    for role in ("grazing", "woodland"):
+        before = len(s.out)
+        s.commons([(100, 150), (700, 150), (700, 650), (100, 650)], role=role)  # over the dry plot AND the paddy's W edge
+        pts = _scatter_base_points(s.out[before:])
+        assert pts
+        for gx, gy in pts:
+            assert not (200 - clr <= gx <= 400 + clr and 300 - clr <= gy <= 500 + clr), (role, gx, gy)  # dry plot + margin
+            assert gx < 640 - clr, (role, gx, gy)  # paddy edge + margin
+
+
 def test_marsh_keeps_reeds_off_a_building():
     s = _crop_settlement()
     s.shrine_hall(300, 300, "", w=60, h=48, kind="shrine", graveyard=False)  # a block_poly inside the marsh

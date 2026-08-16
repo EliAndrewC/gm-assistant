@@ -58,6 +58,7 @@ s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.comb_base_fill(net, "akagahara-paddies")   # field floor: no bare parchment at the canal junctions (paddy_fan_has_floor)
 for _dp in net["dry_plots"]:
     s.block_polys.append(_dp["poly"])
+    s.dry_polys.append(_dp["poly"])  # BOTH registries, like every other comb gen (settlement.py hem-plot note, 2026-08-11): dry_polys is what the grove/lane/yard readers AND the scrub crop-margin keep-out read - block_polys alone left the hem with scrub crowding its edges (GM 2026-08-15)
 s._nucleated = False   # DISPERSED: each strewn farmstead draws its OWN yashikirin windbreak grove (no communal wood)
 
 # RED-CLAY GROUND (赤): a warm iron-red wash UNDER the whole map, so the bare hill margins + dry-field soil

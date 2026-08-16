@@ -8693,6 +8693,21 @@ class Settlement:
     # packed districts, whose ~40-48 ft house spacing leaves no strip wider than two halos), 20 ft around a
     # wellhead (the most-trodden, spill-puddled ground in any settlement), 8 ft around tended ground plots
     # (a garden's or threshing yard's maintained edge). Constants are REAL FEET, converted at the map grain.
+    _CROP_MARGIN_FT = 6.0
+    # CROP MARGIN (GM 2026-08-15: scrub was overlapping dry crop plots and crowding crop edges).
+    # Scrub stands OFF the crops: the scatter skips every paddy AND dry plot, plus this margin of
+    # real feet around every crop edge. WHY 6 ft - the bund plus one cut swath: a paddy levee
+    # (keihan/aze; Chinese tian'geng) is a ~1-2 ft earthen ridge (~3 ft where it carries a footpath,
+    # azemichi), and the levee grass and the strip beside the crop were CUT several times a season
+    # for fodder/green manure, so woody scrub never establishes within about a scythe's swath
+    # (~1-2 m) of the field edge - the same ~1 m clean strip that separates crop from boundary
+    # vegetation in traditional field-margin practice. Land hunger keeps East Asian margins NARROW,
+    # so 6 ft (~1.8 m) total, not a wide verge. Tall glyphs (scraggly pines, woodland crowns) add
+    # their own drawn reach on top so no tip leans over the crop. Grass-tuft blade TIPS are the
+    # deliberate exception (settlement-review, 2026-08-16): a blade is 2.4-4.2*bs px, so at the
+    # coarser tiers a tip can lean up to a few real feet over the margin line - accepted, because
+    # grass leaning over a bund is real; bases and tall-glyph reach are what the rule enforces.
+    # Full grounding: settlements/vegetation.md "Scrub stands off the crops".
     _HALO_STRUCT_FT = 30.0
     _HALO_WELL_FT = 20.0
     _HALO_PLOT_FT = 8.0
@@ -9143,15 +9158,23 @@ class Settlement:
             # one per scatter point - 948k boxed_hit calls iterating 25M items on Kikuta, whose gen was
             # still 81% ground cover. The grids narrow each point to its own cell; the exact tests below
             # are the same ones, run on what `near` returns.
-            fld_b, blk_b = boxed_grid(boxed_polys(self.field_polys)), boxed_grid(boxed_polys(self.block_polys))
+            # CROP MARGIN (see _CROP_MARGIN_FT): the crop keep-out is every PADDY (field_polys) plus
+            # every DRY PLOT (dry_polys - block_polys also carries them, but reading the crop registry
+            # directly is what the grove/lane skips do, and it survives a gen that registers only one),
+            # padded by the margin. Boxes carry the WORST-CASE pad - margin plus the tallest glyph's
+            # drawn reach, a pine tip at 14*bs - because the bbox prefilter must never reject a point
+            # the exact edge test wants (boxed_hit's contract); the exact test gets the per-glyph lean.
+            crop_pad = self.px(self._CROP_MARGIN_FT)
+            fld_b = boxed_grid(boxed_polys(list(self.field_polys) + list(self.dry_polys), pad=crop_pad + 14 * bs))
+            blk_b = boxed_grid(boxed_polys(self.block_polys))
             clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
 
             def _sparse(
-                px: float, py: float, drop: float
-            ) -> bool:  # skip a scatter point outside the poly, on a field/corridor/water, in the urban halo, in a keep-out, or (probabilistically) near the edge
+                px: float, py: float, drop: float, lean: float = 0.0
+            ) -> bool:  # skip a scatter point outside the poly, on/near a crop, on a corridor/water, in the urban halo, in a keep-out, or (probabilistically) near the edge; `lean` = the glyph's drawn reach, so a tall glyph stands its own height back from the crop margin
                 if (
                     not point_in_poly(px, py, poly)
-                    or boxed_hit(px, py, fld_b.near(px, py))
+                    or boxed_hit(px, py, fld_b.near(px, py), edge_pad=crop_pad + lean)
                     or boxed_seg_hit(px, py, cor_b.near(px, py))  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
                     or self._on_watercourse(px, py)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
                     or (pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
@@ -9187,7 +9210,7 @@ class Settlement:
             if role == "woodland":
                 for _ in range(int(area / (540 * bs * bs))):  # spaced crowns: an OPEN coppice canopy, gaps showing
                     cx, cy = random.uniform(x0, x1), random.uniform(y0, y1)
-                    if _sparse(cx, cy, 0.6):
+                    if _sparse(cx, cy, 0.6, 11.5 * bs):  # lean = the largest crown radius, so no canopy overhangs a crop
                         continue
                     r = random.uniform(6.5, 11.5) * bs
                     col = random.choice(("#6E8B4A", "#7C9856", "#87A45C"))
@@ -9208,7 +9231,7 @@ class Settlement:
                 if role != "pasture":  # the SCRAGGLY pines belong to cut-over scrub, NOT to open pasture
                     for _ in range(max(2, int(area / (6000 * bs * bs)))):  # a few SCRAGGLY hill pines (sparse, individual, open)
                         px, py = random.uniform(x0 + 6, x1 - 6), random.uniform(y0 + 6, y1 - 6)
-                        if _sparse(px, py, 0.5):
+                        if _sparse(px, py, 0.5, 14 * bs):  # lean = the tallest pine's tip reach, so no pine leans over a crop
                             continue
                         th = random.uniform(9, 14) * bs
                         g.append(f'<line x1="{px:.1f}" y1="{py:.1f}" x2="{px:.1f}" y2="{py - th:.1f}" stroke="#7A6A48" stroke-width="{1.1 * bs:.1f}"/>')  # thin trunk
