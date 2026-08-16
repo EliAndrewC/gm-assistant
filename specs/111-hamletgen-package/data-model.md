@@ -52,15 +52,18 @@ package on `sys.path`.
         \    /
    ┌──────┴───────────────────────────────┐
    │                                      │
- water  sink  cluster  homesteads  hinterland  frame
-                 │
-               ways
+ water  sink  cluster  homesteads  hinterland
+                 │              │
+               ways           frame
                  │
    └──────────────┬───────────────────────┘
                driver          (imports every stage module via STAGES)
                  │
             __init__ / __main__
 ```
+
+Measured at split time (T004): `frame` also imports `hinterland` (it uses the title-pocket
+helpers), and `ways` imports `cluster` as planned. No cycles.
 
 Star-import order in `__init__.py` is leaf-first: `consts`, `geom`, `plan`, `water`, `sink`,
 `cluster`, `ways`, `homesteads`, `hinterland`, `frame`, `driver`.
