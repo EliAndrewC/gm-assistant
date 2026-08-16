@@ -603,7 +603,7 @@ _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
 # Manifest lists carrying coordinates that are NOT drawn ground. `gates` is a list of GAP POSITIONS
 # in the wall (the furniture in the gap is `gate_structs`); `wall_tower_keepclears` is a reservation,
 # not ink; `forest_edge` is an envelope whose ink is `tree_crowns` and is classified RECORD above.
-_MX_NOT_GEOMETRY = frozenset({"labels", "tree_crowns", "wet_plots", "bund_junctions", "footbridges", "knobs", "clearings", "gates", "wall_tower_keepclears"})
+_MX_NOT_GEOMETRY = frozenset({"labels", "tree_crowns", "wet_plots", "flooded_plots", "bund_junctions", "footbridges", "knobs", "clearings", "gates", "wall_tower_keepclears"})
 
 _MATRIX_PARENT_FIELD = {
     "gardens": "of",

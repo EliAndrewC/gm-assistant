@@ -7,9 +7,9 @@ import tempfile
 
 import pytest
 
-from settlement import Settlement, roll_merchant_estate_count, roll_torii_count, village_population
+from settlement import Settlement, roll_merchant_estate_count, roll_torii_count, surface_water_dist, village_population
 from test_settlement._builders import _cap020, _castle_map, _city, _crop_settlement, _max_turn_deg, _memo_city, _shoelace, _torii_city, _town
-from waterfields import floor_overhang, polyline_cum, supply_bank_clearance
+from waterfields import dedup_ring, floor_overhang, pointed_ring, polyline_cum, supply_bank_clearance
 
 
 def test_png_width_env_overrides_render_resolution(monkeypatch):
@@ -798,3 +798,46 @@ def test_floor_overhang_measures_past_the_flat_extended_collector():
     assert ovs[1] == pytest.approx(20.0)  # 20 px down-fall of it: the needle class
     assert ovs[2] == pytest.approx(30.0)  # beyond the head: LEVEL extension at f=50, 30 px past
     assert ovs[3] == 0.0  # beyond the tail but up-fall of its level line (60): clear
+
+
+def test_pointed_ring_separates_needles_from_basins():
+    # the flooded-wedge discriminator (2026-08-16): fan-seam slivers taper to 7-23 deg apexes
+    # while legitimate flooded hem strips are near-rectangles - the apex angle is the split
+    needle = [(0.0, 0.0), (200.0, 8.0), (200.0, 0.0)]  # ~2.3 deg apex
+    strip = [(0.0, 0.0), (200.0, 0.0), (200.0, 18.0), (0.0, 18.0)]  # 90 deg corners
+    assert pointed_ring(needle, 25.0) and pointed_ring(needle, 15.0)
+    assert not pointed_ring(strip, 25.0)
+    # the two calibrated thresholds really are two lines: a ~20 deg wedge is demoted by the
+    # carve (25) but must not fire the gate (15) - the borderline band that keeps the placer
+    # stricter than the check
+    mid = [(0.0, 0.0), (200.0, 72.0), (200.0, 0.0)]  # ~19.8 deg apex
+    assert pointed_ring(mid, 25.0) and not pointed_ring(mid, 15.0)
+
+
+def test_dedup_ring_collapses_the_trim_corner_reversals():
+    # the Kashikawa merged-roll capture: ~12 near-duplicate points with back-and-forth
+    # reversals in a ~5 px span where the collector cut meets the old boundary
+    jitter = [(100.0 + dx, 50.0 + dy) for dx, dy in ((0.0, 0.0), (0.3, 0.3), (-0.2, 0.1), (0.4, 0.5), (0.1, -0.2))]
+    ring = [(0.0, 0.0), (100.0, 0.0), *jitter, (100.0, 100.0), (0.0, 100.0)]
+    out = dedup_ring(ring, 1.0)
+    assert out == [(0.0, 0.0), (100.0, 0.0), (100.0, 50.0), (100.0, 100.0), (0.0, 100.0)]
+    # ...a clean ring passes through untouched, and the CLOSING pair is deduped too
+    clean = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
+    assert dedup_ring(clean, 1.0) == clean
+    assert dedup_ring([*clean, (0.4, 0.2)], 1.0) == clean
+
+
+def test_surface_water_dist_reads_the_checks_own_sources():
+    # channels + streams + moat polylines and the pond RIM, exactly as
+    # settlement_dwellings_watered measures them; wells deliberately not included
+    M = {
+        "channels": [{"poly": [[0, 0], [100, 0]]}],
+        "streams": [{"poly": [[0, 200], [100, 200]]}],
+        "pond": [500.0, 500.0, 30.0, 20.0],
+    }
+    assert surface_water_dist(M, 50, 40) == pytest.approx(40.0)  # nearest is the channel
+    assert surface_water_dist(M, 50, 180) == pytest.approx(20.0)  # nearest is the stream
+    assert surface_water_dist(M, 560, 500) == pytest.approx(30.0)  # pond RIM (60 from center - rx 30)
+    assert surface_water_dist({"channels": [], "streams": []}, 0, 0) == 1e9  # no surface water at all
+    M["moat"] = [[0, 300], [100, 300]]
+    assert surface_water_dist(M, 50, 310) == pytest.approx(10.0)  # the moat counts too

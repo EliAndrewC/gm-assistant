@@ -1003,3 +1003,42 @@ def test_woodland_dry_ignores_a_parcel_with_no_poly():
 
 def test_woodland_dry_skips_legacy_maps():
     assert "woodland_commons_on_dry_ground" not in _wood_dry_f(_wood_dry_M([[[100, 600], [350, 600], [350, 850], [100, 850]]], marsh=_TOE_MARSH, gen=None))
+
+
+# ---- woodland_commons_visibly_stocked: a claimed woodland must record its canopy ---------------
+def _stock_M(crowns_vals, gen="hamletgen", role="woodland"):
+    M = {"meta": {"scale": "hamlet", "W": 1200, "H": 1200}, "commons": []}
+    for i, cv in enumerate(crowns_vals):
+        rec = {"role": role, "x": 100 + 300 * i, "y": 100, "w": 250, "h": 250, "rot": 0, "seq": i + 1, "poly": [[0, 0], [250, 0], [250, 250], [0, 250]]}
+        if cv is not None:
+            rec["crowns"] = cv
+        M["commons"].append(rec)
+    if gen:
+        M["meta"]["generated_by"] = gen
+    return M
+
+
+def _stock_f(M):
+    return check_village.gate(M, verbose=False, only={"woodland_commons_visibly_stocked"})
+
+
+def test_woodland_stocked_fires_on_an_unrecorded_canopy():
+    # the pre-recording state: crowns were SVG ink only, so a parcel could ship with none
+    assert "woodland_commons_visibly_stocked" in _stock_f(_stock_M([None]))
+
+
+def test_woodland_stocked_fires_on_a_bare_parcel():
+    # Inashiro's 100%-marsh capture drew ZERO crowns behind a green gate - never again
+    assert "woodland_commons_visibly_stocked" in _stock_f(_stock_M([2]))
+
+
+def test_woodland_stocked_passes_a_stocked_parcel():
+    assert "woodland_commons_visibly_stocked" not in _stock_f(_stock_M([12, 35]))
+
+
+def test_woodland_stocked_ignores_the_grazing_bleed():
+    assert "woodland_commons_visibly_stocked" not in _stock_f(_stock_M([None], role="grazing"))
+
+
+def test_woodland_stocked_skips_legacy_maps():
+    assert "woodland_commons_visibly_stocked" not in _stock_f(_stock_M([None], gen=None))

@@ -3,7 +3,7 @@
 import math
 from typing import Any
 
-from waterfields import BANK_MARGIN, drain_bank_clearance, floor_overhang, polyline_cum, supply_bank_clearance
+from waterfields import BANK_MARGIN, drain_bank_clearance, floor_overhang, pointed_ring, polyline_cum, supply_bank_clearance
 
 from .common_01_geometry import CLAN_FORTUNES, Poly, Pt, point_in_poly, pt_to_rect, seg_closest, seg_dist, within_edge_gap
 from .common_02_overlap_policy import GridIndex, check_fire_features, check_theater_stage, in_ellipse
@@ -2306,5 +2306,41 @@ def _seg_0600__comb_floor_ends_at_the_collector(*, M: Any = _UNBOUND, check: Any
             "comb_floor_ends_at_the_collector",
             not _fe_bad,
             f"{len(_fe_bad)} field-outline vertex/vertices reach past the (flat-extended) drain collector line, worst {max([_b[2] for _b in _fe_bad], default=0)} px, at {[list(_b[:2]) for _b in _fe_bad[:4]]} - floor past the collector is ground the fan cannot drain or plant, wearing the field's color (Mizuguchi's SE needle); build_comb trims the envelope to the collector line, so regenerate the map",
+        )
+    return _kept(locals(), ())
+
+
+def _seg_0601__flooded_plots_read_as_basins(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 601 (flooded_plots_read_as_basins) - hand-added 2026-08-16 past the legacy
+    range (see _seg_0595 for the numbering convention). New-style: temps stay local, writes=()."""
+    # A FLOODED PLOT IS A LEVELED BASIN, AND A BASIN IS NOT A NEEDLE (known-open ledger
+    # 2026-08-16: at every fan seam the closing rank's converging sub-columns taper to sharp
+    # apexes, and the ones carrying the FLOODED tint read as tiny triangular PONDS at fit zoom -
+    # conspicuous on Sawada, whose brief is "no pond"). The predicate is `pointed_ring`,
+    # imported from the engine and NOT restated - the same call the carve's demotion makes; the
+    # carve demotes at 25 deg, this fires at 15 (only the unmistakable needles), so a borderline
+    # plot the carve allows cannot false-fire. `flooded_plots` is the PICTURE record (which
+    # plots are painted blue - `wet_plots` is the topography); manifests that record none
+    # (pre-2026-08-16, or a fill path that never floods) skip, the plot_rings line the bead
+    # checks hold.
+    if M["meta"].get("generated_by") and M.get("flooded_plots"):
+        _fb_rings = [_fb_r for _fb_fld in fields for _fb_r in (_fb_fld.get("plot_rings") or [])]
+        _fb_cents = [(sum(_p[0] for _p in _fb_r) / len(_fb_r), sum(_p[1] for _p in _fb_r) / len(_fb_r)) for _fb_r in _fb_rings]
+        _fb_bad: list[tuple[int, int]] = []
+        for _fb_w in M["flooded_plots"]:
+            _fb_wx, _fb_wy = float(_fb_w[0]), float(_fb_w[1])
+            _fb_best, _fb_d = None, 3.0  # vertex-mean vs recorded centroid: a couple px of slack
+            for _fb_i, (_fb_cx, _fb_cy) in enumerate(_fb_cents):
+                _fb_dd = math.hypot(_fb_cx - _fb_wx, _fb_cy - _fb_wy)
+                if _fb_dd < _fb_d:
+                    _fb_best, _fb_d = _fb_i, _fb_dd
+            if _fb_best is None:
+                continue  # no ring near this centroid (a fill path with no recorded ring) - not judgeable
+            if pointed_ring([(float(_p[0]), float(_p[1])) for _p in _fb_rings[_fb_best]], 15.0):
+                _fb_bad.append((round(_fb_wx), round(_fb_wy)))
+        check(
+            "flooded_plots_read_as_basins",
+            not _fb_bad,
+            f"{len(_fb_bad)} FLOODED plot(s) taper to a needle apex (interior angle < 15 deg) at {_fb_bad[:4]} - a leveled flooded basin is bunded and near-rectangular, so a pointed blue sliver reads as a tiny pond hanging at the fan seam; the carve demotes pointed slivers to rice green (pointed_ring, 25 deg), so regenerate the map",
         )
     return _kept(locals(), ())
