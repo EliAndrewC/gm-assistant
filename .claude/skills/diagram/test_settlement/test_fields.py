@@ -539,7 +539,7 @@ def test_no_pre_split_fields_member_was_lost_in_the_move():
     # assertion therefore guards the direction that hides. The red proof still holds - deleting a
     # member names it in `missing` (specs/112-fields-package/tasks.md T005).
     composed = set().union(*(_own_callables(c) for c in _fields_submixins()))
-    assert _FIELDS_SURFACE <= composed, f"missing={sorted(_FIELDS_SURFACE - composed)}"
+    assert composed >= _FIELDS_SURFACE, f"missing={sorted(_FIELDS_SURFACE - composed)}"
 
 
 def test_no_two_fields_submixins_define_the_same_name():
