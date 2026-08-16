@@ -26,11 +26,11 @@ Two invariants the split does NOT touch:
 | `segments_01_city_frame_and_yards.py` | segs 0000-0096: city ring/farmland frame, quarters, commoner dwellings, farrier/stable/charcoal work yards |
 | `segments_02_capital_and_walls.py` | segs 0097-0133_030: capital battery (budget, ministries, aqueduct, lineages, avenue), wall/gate/burial sizing |
 | `segments_03_structures_and_wards.py` | segs 0133_031-0267: structure overlaps, buildings-face-street, alleys, headman rules, ward interiors, labels/titles |
-| `segments_04_homesteads.py` | segs 0268-0285_091: wells vs shrine/torii, gardens (area/quads/sun/clearances), groves, farm sheds, farmhouse variation, commons |
-| `segments_05_fields_and_funerary.py` | segs 0285_092-0333: field margins/ditches, channels (anchoring, winding), cemetery/cremation/mausoleum/ossuary placement |
+| `segments_04_homesteads.py` | segs 0268-0285_091: wells vs shrine/torii, gardens (area/quads/sun/clearances), groves, farm sheds, farmhouse variation, commons; hand-added 0598 (cluster-seeding trace) |
+| `segments_05_fields_and_funerary.py` | segs 0285_092-0333: field margins/ditches, channels (anchoring, winding), cemetery/cremation/mausoleum/ossuary placement; hand-added 0597 (woodland commons within the frame) |
 | `segments_06_ways_and_bridges.py` | segs 0334-0409: bridges vs ways/water, roads, capital districts/housing bands, castle moat clearances |
 | `segments_07_water.py` | segs 0410-0512: watercourses, channel gates, aqueduct taps, ponds, bank/edge rules, lane runs vs water |
-| `segments_08_town_and_fire.py` | segs 0513-0554: town battery (farmers plurality, storefronts, inns, theater), kosatsuba, fire towers, burakumin seam, defense marsh |
+| `segments_08_town_and_fire.py` | segs 0513-0554: town battery (farmers plurality, storefronts, inns, theater), kosatsuba, fire towers, burakumin seam, defense marsh; hand-added 0595 (supply-bank bunds), 0600 (comb floor ends at the collector) |
 | `segments_09_justice_and_tanning.py` | segs 0555_000-0562_042: punishment spots, execution grounds (road/boundary/outcast-side rules), tanning yards (water discharge, outcast side) |
 | `segments_10_city_battery_a.py` | segs 0563_000-0563_125: city caste counts/shifts, dojos, wells per neighborhood, civic labels (feature 023's per-statement city battery, first third) |
 | `segments_10_city_battery_b.py` | segs 0563_126-0563_251: city estates (gates, roads, moat clearances), clan/capital-direction meta, lanes |

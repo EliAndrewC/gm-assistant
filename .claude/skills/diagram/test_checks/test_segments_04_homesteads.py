@@ -917,3 +917,41 @@ def test_feature_022_targeted_verdict_matches_the_full_gate():
     full = name in set(check_village.gate(_feature_022_manifest(), verbose=False))
     targ = name in set(check_village.gate(_feature_022_manifest(), verbose=False, only={name}))
     assert full == targ
+
+
+# ---- settlement_records_cluster_seeding: a rolled knob must leave a trace ---------------------
+def _seedrec_M(gen="hamletgen", nucleated=True, **meta):
+    M = {"meta": {"scale": "hamlet", "W": 1200, "H": 1200}}
+    if gen:
+        M["meta"]["generated_by"] = gen
+    if nucleated:
+        M["meta"]["nucleated"] = True
+    M["meta"].update(meta)
+    return M
+
+
+def _seedrec_f(M):
+    return check_village.gate(M, verbose=False, only={"settlement_records_cluster_seeding"})
+
+
+def test_cluster_seeding_fires_when_neither_trace_is_recorded():
+    # the Kashikawa shape (2026-08-16): rows + frontage seated every house, the cloud never ran,
+    # and the rolled cluster_shape knob vanished without a trace
+    assert "settlement_records_cluster_seeding" in _seedrec_f(_seedrec_M())
+
+
+def test_cluster_seeding_passes_when_the_cloud_recorded_the_knob():
+    assert "settlement_records_cluster_seeding" not in _seedrec_f(_seedrec_M(cluster_shape="round"))
+
+
+def test_cluster_seeding_passes_when_the_seeding_mode_is_recorded():
+    assert "settlement_records_cluster_seeding" not in _seedrec_f(_seedrec_M(cluster_seeding="frontage"))
+
+
+def test_cluster_seeding_skips_a_dispersed_settlement():
+    # no nucleated cluster = no cluster knobs to trace
+    assert "settlement_records_cluster_seeding" not in _seedrec_f(_seedrec_M(nucleated=False))
+
+
+def test_cluster_seeding_skips_legacy_maps():
+    assert "settlement_records_cluster_seeding" not in _seedrec_f(_seedrec_M(gen=None))

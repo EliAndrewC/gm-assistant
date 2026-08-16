@@ -215,6 +215,7 @@
  "city_wells_in_block_interiors",
  "city_wharf_jetties_on_bank",
  "cluster_abuts_fields",
+ "comb_floor_ends_at_the_collector",
  "comb_supply_commands_both_flanks",
  "common_fields_vary_orientation",
  "commons_beyond_the_windbreak",
@@ -459,6 +460,7 @@
  "settlement_has_refining_forge",
  "settlement_has_tanning_yard",
  "settlement_has_wells",
+ "settlement_records_cluster_seeding",
  "shrine_avenue_fronts_the_hall",
  "shrine_clear_of_grove_trees",
  "shrine_halls_clear_of_lanes",
@@ -593,6 +595,8 @@
  "wells_troughs_rails_clear_of_each_other",
  "woodland_clear_of_crops",
  "woodland_clear_of_grove",
+ "woodland_commons_on_dry_ground",
+ "woodland_commons_within_the_frame",
  "yards_unshaded_by_groves",
  "yards_unshaded_by_neighbors"
 ]

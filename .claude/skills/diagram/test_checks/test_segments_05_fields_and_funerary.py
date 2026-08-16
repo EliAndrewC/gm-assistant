@@ -899,3 +899,107 @@ def test_comb_supply_commands_both_flanks_reads_the_map_fall_when_the_field_has_
     M["meta"]["down_deg"] = 90
     fails = check_village.gate(M, verbose=False, only={"comb_supply_commands_both_flanks"})
     assert "comb_supply_commands_both_flanks" in fails
+
+
+# ---- woodland_commons_within_the_frame: a coppice the crop cuts off is drawn but not shown ----
+def _wood_M(polys, view=(100, 100, 800, 800), gen="hamletgen", role="woodland"):
+    M = {"meta": {"scale": "hamlet", "W": 1200, "H": 1200}, "commons": [{"role": role, "poly": p} for p in polys]}
+    if view is not None:
+        M["meta"]["view"] = list(view)
+    if gen:
+        M["meta"]["generated_by"] = gen
+    return M
+
+
+def _wood_f(M):
+    return check_village.gate(M, verbose=False, only={"woodland_commons_within_the_frame"})
+
+
+def test_woodland_commons_fires_on_a_parcel_wholly_outside_the_view():
+    # the Sawada shape: seated above the kept window, drawn onto ground the crop discards
+    assert "woodland_commons_within_the_frame" in _wood_f(_wood_M([[[0, 0], [50, 0], [50, 50], [0, 50]]]))
+
+
+def test_woodland_commons_fires_on_a_parcel_mostly_outside_the_view():
+    # half in, half out (50% < the 70% line): Sawada's third parcel, cropped under the title
+    assert "woodland_commons_within_the_frame" in _wood_f(_wood_M([[[50, 200], [150, 200], [150, 300], [50, 300]]]))
+
+
+def test_woodland_commons_passes_inside_the_view():
+    assert "woodland_commons_within_the_frame" not in _wood_f(_wood_M([[[200, 200], [400, 200], [400, 400], [200, 400]]]))
+
+
+def test_woodland_commons_tolerates_a_parcel_clipping_at_the_edge():
+    # 75% inside: a wood CLIPPING at the frame reads as "more wood that way", which is fine
+    assert "woodland_commons_within_the_frame" not in _wood_f(_wood_M([[[75, 200], [175, 200], [175, 300], [75, 300]]]))
+
+
+def test_woodland_commons_ignores_the_grazing_bleed():
+    # the grazing scrub deliberately bleeds off every edge - only woodland parcels are held
+    assert "woodland_commons_within_the_frame" not in _wood_f(_wood_M([[[0, 0], [50, 0], [50, 50], [0, 50]]], role="grazing"))
+
+
+def test_woodland_commons_ignores_a_parcel_with_no_poly():
+    assert "woodland_commons_within_the_frame" not in _wood_f(_wood_M([[]]))
+
+
+def test_woodland_commons_skips_an_uncropped_map():
+    assert "woodland_commons_within_the_frame" not in _wood_f(_wood_M([[[0, 0], [50, 0], [50, 50], [0, 50]]], view=None))
+
+
+def test_woodland_commons_skips_legacy_maps():
+    assert "woodland_commons_within_the_frame" not in _wood_f(_wood_M([[[0, 0], [50, 0], [50, 50], [0, 50]]], gen=None))
+
+
+# ---- woodland_commons_on_dry_ground: a coppice does not stand in the marsh --------------------
+def _wood_dry_M(polys, marsh=None, gen="hamletgen", role="woodland"):
+    M = _wood_M(polys, view=(0, 0, 1200, 1200), gen=gen, role=role)
+    if marsh is not None:
+        M["marshes"] = [{"poly": marsh}]
+    return M
+
+
+_TOE_MARSH = [[0, 500], [600, 500], [600, 1100], [0, 1100]]
+
+
+def _wood_dry_f(M):
+    return check_village.gate(M, verbose=False, only={"woodland_commons_on_dry_ground"})
+
+
+def test_woodland_dry_fires_on_a_parcel_wholly_in_the_marsh():
+    # the Inashiro capture: 100% wet, zero crowns of ink - an empty rectangle claiming a woodland
+    assert "woodland_commons_on_dry_ground" in _wood_dry_f(_wood_dry_M([[[100, 600], [350, 600], [350, 850], [100, 850]]], marsh=_TOE_MARSH))
+
+
+def test_woodland_dry_fires_on_a_parcel_mostly_in_the_marsh():
+    # straddling the marsh edge, ~60% wet (the Mizuguchi capture's degree)
+    assert "woodland_commons_on_dry_ground" in _wood_dry_f(_wood_dry_M([[[100, 350], [350, 350], [350, 750], [100, 750]]], marsh=_TOE_MARSH))
+
+
+def test_woodland_dry_tolerates_a_marsh_fringe():
+    # ~20% wet: a stand may lap the haze a little without losing its read
+    assert "woodland_commons_on_dry_ground" not in _wood_dry_f(_wood_dry_M([[[100, 300], [350, 300], [350, 550], [100, 550]]], marsh=_TOE_MARSH))
+
+
+def test_woodland_dry_passes_on_dry_ground():
+    assert "woodland_commons_on_dry_ground" not in _wood_dry_f(_wood_dry_M([[[100, 100], [350, 100], [350, 350], [100, 350]]], marsh=_TOE_MARSH))
+
+
+def test_woodland_dry_skips_a_map_with_no_marsh():
+    assert "woodland_commons_on_dry_ground" not in _wood_dry_f(_wood_dry_M([[[100, 600], [350, 600], [350, 850], [100, 850]]]))
+
+
+def test_woodland_dry_ignores_a_degenerate_marsh_poly():
+    assert "woodland_commons_on_dry_ground" not in _wood_dry_f(_wood_dry_M([[[100, 600], [350, 600], [350, 850], [100, 850]]], marsh=[[0, 500], [600, 500]]))
+
+
+def test_woodland_dry_ignores_the_grazing_bleed():
+    assert "woodland_commons_on_dry_ground" not in _wood_dry_f(_wood_dry_M([[[100, 600], [350, 600], [350, 850], [100, 850]]], marsh=_TOE_MARSH, role="grazing"))
+
+
+def test_woodland_dry_ignores_a_parcel_with_no_poly():
+    assert "woodland_commons_on_dry_ground" not in _wood_dry_f(_wood_dry_M([[]], marsh=_TOE_MARSH))
+
+
+def test_woodland_dry_skips_legacy_maps():
+    assert "woodland_commons_on_dry_ground" not in _wood_dry_f(_wood_dry_M([[[100, 600], [350, 600], [350, 850], [100, 850]]], marsh=_TOE_MARSH, gen=None))
