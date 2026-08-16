@@ -130,3 +130,106 @@ stages 4 and 5.
 grows past the bar, the seam is **furniture (stages 3-5, 7) vs water (stage 6)** - stage 6 is the
 only one that reaches outside the yard for a recorded well, and it is already the largest stage by a
 factor of two.
+
+---
+
+## Part 3 - the `_YardCtx` design (GM-chosen option (a), research R13)
+
+Settled in writing BEFORE any code moves, per the root CLAUDE.md rule: "Before changing ORDERING or
+architecture, read every path involved in ONE batched pass and settle the sequence first. The failure
+mode is discovering the ordering one gate failure at a time."
+
+### The captured state, censused from the eight closure bodies
+
+| name | built from | read by | mutated? |
+|---|---|---|---|
+| `sx, sy, r` | the method's own args | `clear`, everything | no |
+| `corridors` | `self._corridor_buffers(2.0)` | `clear`, the road-rail search | no |
+| `keep` | 14 `self.M[...]` kinds, inflated 3 px, culled to the disc + 50 | `clear` | no |
+| `wallp` | `self.M["wall"]` | `clear` | no |
+| `cand` | 4 rings x 12, then `random.shuffle` | `take` | **RNG - see below** |
+| `used` | empty | `take` | yes |
+| `rails` | empty | `draw_hitch`, `_glyph_free` | yes |
+| `heaps` | empty | the heap stage | yes |
+| `prior_heaps` | earlier yards' `dung_heaps` | `_rail_clear_of_heaps` | no |
+| `prior_boxes` | earlier yards' `troughs_box` | `_glyph_free` | no |
+| `prior_rails` | earlier yards' `rails` | `_glyph_free` | no |
+
+Predicates that become `_YardCtx` methods: `clear`, `take`, `rail_rec`, `draw_hitch`,
+`rail_clear_of_heaps`, `glyph_free`. (`beside` and `clear_of_rails` stay with their stages -
+each has exactly one caller and is more stage-logic than shared predicate.)
+
+### THE RNG LANDMINE, found before writing any code
+
+`cand` is built and **`random.shuffle(cand)` runs at what is currently line 124** - which is AFTER
+the litter scatter's draws (`random.uniform` / `random.random`, lines 94-115) and after the
+`random.seed` at line 42.
+
+So the obvious shape - build the whole context eagerly at the top of the method, `cand` included -
+**moves the shuffle ahead of the litter draws and changes every stable yard on every map**. It would
+type-check, lint clean, and pass the unit tests that only assert structural properties; the
+byte-identity sweep would catch it, but only after the fact and without saying which decision did it.
+
+This is rule 3 of the ordering rules, made concrete, and it is exactly the failure R13 accepted as
+the cost of option (a).
+
+**The rule this imposes on the implementation:**
+
+- `_YardCtx.__init__` builds ONLY the RNG-free state: `sx/sy/r`, `corridors`, `keep`, `wallp`,
+  `prior_heaps`, `prior_boxes`, `prior_rails`, and the empty `used`/`rails`/`heaps`. Construction
+  must consume **zero** RNG draws. That is checkable and must be checked, not assumed.
+- `cand` is NOT a constructor field. The furniture stage calls `ctx.seat_init()` at the exact point
+  the old code built and shuffled `cand` - between the litter stage and the first `take`. That one
+  call is the only place a draw moves at all, and it moves nowhere.
+- Every other predicate is pure relative to the RNG: none of `clear`, `rail_rec`, `draw_hitch`,
+  `rail_clear_of_heaps` or `glyph_free` draws. Verified by reading all eight bodies - the only
+  `random.*` calls in the whole method are the seed, the litter scatter, the `cand` shuffle, and the
+  draws inside the rail/trough/heap stage bodies themselves.
+
+### The RNG surface is FOUR call sites, and only one ordering constraint (measured, not assumed)
+
+A grep of every `random.*` call in the 335-line method returns exactly four kinds:
+
+| line | call | stage |
+|---|---|---|
+| 41-42 | `random.getstate()` / `random.seed(...)` | the outer bracket |
+| 94-115 | `random.uniform` / `random.random` (x5, in the scatter loop) | 2, litter |
+| 124 | `random.shuffle(cand)` | 3, furniture setup |
+| 362 | `random.setstate(st)` | the outer bracket |
+
+**Stages 4, 5, 6 and 7 draw NOTHING.** The road rail, the interior rails, the watering point and the
+dung heaps are fully deterministic given the already-shuffled `cand`, the `used` list, and the map
+state. Ordering rule 3's warning about "branches whose draw count depends on the map" turns out NOT
+to apply to them - the bounded-retry loop and the dig-your-own-well fallback consume candidates, not
+random numbers.
+
+So the entire RNG risk of this refactor collapses to **one constraint**: the litter scatter's draws
+must still happen before `random.shuffle(cand)`. That is a single orderable fact between two adjacent
+stages, not a lattice-wide hazard.
+
+This materially de-risks GM-chosen option (a) relative to what research R13 assumed when the choice
+was put. R13's caution stands as written for the general case; this measurement is why it does not
+bite here. It also means the `seat_init()` split (below) is not a workaround - it is the one thing
+the design actually has to get right.
+
+### Verification specific to this design
+
+Add to the existing task checks (quickstart step 8 remains the real proof):
+
+1. **Assert construction draws nothing.** Snapshot `random.getstate()`, build a `_YardCtx`, assert
+   the state is unchanged. A cheap unit test that pins the invariant the whole design rests on, and
+   it fires instantly rather than after a 3-minute sweep.
+2. **Assert `seat_init` is called exactly once per yard**, between the litter and the first `take`.
+3. The stage-by-stage fast proxy (tasks T031) after each extraction, unchanged.
+
+### Stage-to-context mapping
+
+| stage | takes | uses from ctx |
+|---|---|---|
+| 1 keep-outs | - | IS the constructor |
+| 2 litter | `ctx` | `clear` |
+| 3 furniture | `ctx` | `seat_init`, `take` |
+| 4 road rail | `ctx` | `corridors`, `take`, `rail_rec`, `draw_hitch`, `rail_clear_of_heaps`, `glyph_free` |
+| 5 interior rails | `ctx` | same as 4 |
+| 6 watering | `ctx` | `clear(rim=False)`, `glyph_free`, `rails` |
+| 7 dung heaps | `ctx` | `clear`, `rails` + `prior_rails`, `heaps` |
