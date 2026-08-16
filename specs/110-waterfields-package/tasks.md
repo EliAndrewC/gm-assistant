@@ -45,8 +45,8 @@ functions, <= ~150 lines each, state passed explicitly, byte-identity after EACH
 
 - [x] T011 [US2] Decompose `_carve` in `waterfields/carve.py` into named stage functions (research.md R5 method: mechanical extraction, code order + RNG draw order + float-op order preserved exactly, parameters in / values out, no shared mutable module state); re-run the T008 byte-identity sweep - MUST be empty; commit
 - [x] T012 [US2] Decompose `build_comb` in `waterfields/comb.py` the same way (its pipeline stages become the extracted names); byte-identity sweep empty; commit
-- [ ] T013 [US2] Decompose `build_polder` in `waterfields/polder.py` the same way; byte-identity sweep empty; commit
-- [ ] T014 [US2] Function-scale verification: run the quickstart section-4 AST check over `waterfields/*.py`; any function still > ~150 lines is either further split or carries an inline one-line justification (genuinely atomic stage); re-run `make done` (shared code changed -> full sweep is mandatory)
+- [x] T013 [US2] Decompose `build_polder` in `waterfields/polder.py` the same way; byte-identity sweep empty; commit
+- [x] T014 [US2] Function-scale verification: run the quickstart section-4 AST check over `waterfields/*.py`; any function still > ~150 lines is either further split or carries an inline one-line justification (genuinely atomic stage); re-run `make done` (shared code changed -> full sweep is mandatory)
 
 ## Phase 5: User Story 3 - the package index (P3)
 
@@ -58,8 +58,8 @@ at the package.
 
 ## Phase 6: Polish & close-out
 
-- [ ] T017 Final full verification: `make done` backgrounded from the clone (docs-only diffs since the last green gate may skip it per the docs-only rule - re-run only if T015/T016 landed after any code change); confirm every SC: manifests identical (SC-001), consumer diff scope (SC-002), file/function sizes (SC-003), index maps concerns to files (SC-004), suite + gate + corpus green (SC-005)
-- [ ] T018 Mark tasks complete, update this file's checkboxes, commit; stop-work ritual: `scripts/sync-with-main.sh done` from the clone (locked pull+push + render-sync); report the outcome to the GM with concrete verify steps
+- [x] T017 Final full verification: `make done` backgrounded from the clone (docs-only diffs since the last green gate may skip it per the docs-only rule - re-run only if T015/T016 landed after any code change); confirm every SC: manifests identical (SC-001), consumer diff scope (SC-002), file/function sizes (SC-003), index maps concerns to files (SC-004), suite + gate + corpus green (SC-005)
+- [x] T018 Mark tasks complete, update this file's checkboxes, commit; stop-work ritual: `scripts/sync-with-main.sh done` from the clone (locked pull+push + render-sync); report the outcome to the GM with concrete verify steps
 
 ## Dependencies
 
