@@ -5,7 +5,7 @@ is declared with `export SPECIFY_FEATURE=113-city-package`.
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented 2026-08-16
 
 **Input**: User description: "Split `.claude/skills/diagram/settlement/city.py` (1,582 lines, the
 largest non-test source file in the /diagram skill) into a `settlement/city/` sub-package,
@@ -83,8 +83,10 @@ at its `def`.
 
 1. **Given** `city_wall` has been decomposed, **When** the sweep runs, **Then** the artifact diff
    is empty - no draw was reordered.
-2. **Given** all five oversized methods are decomposed, **When** function sizes are measured across
+2. **Given** every method over the bar is decomposed, **When** function sizes are measured across
    the package, **Then** nothing exceeds ~150 lines without a one-line justification comment.
+   (Measured after the fact: two methods were over the bar, not the five the spec guessed - see
+   research R10, which records why the other three were measured and left whole.)
 3. **Given** a decomposition changed nothing observable, **When** `GEN_TIME_BUDGETS` in
    `test_villages.py` runs unmodified, **Then** it passes - extraction did not move a per-gen CPU
    budget.

@@ -84,11 +84,11 @@ Nothing in Phase 3+ is safe without both.
 - [x] T023 [US2] SKIPPED WITH REASON, not silently: `log_boom` (97 raw / 41 stmts), `moat` (111 / 57) and `farmland_ring` (121 / 48) are already under the bar, and 31-35 of their raw lines are mandatory researched docstring that splitting would duplicate or orphan. Full reasoning and the reversal cost in research R10
 - [x] T024 [US2] Decompose `channel_footbridges` (195 raw / 91 stmts) in `.claude/skills/diagram/settlement/city/bridges.py` into named helpers, preserving code order, RNG draw order and float-operation order exactly. 14 external consumers - the most-used method in the package
 - [x] T025 [US2] Sweep after T024: exit 0, 28 generators, empty diff, `pool/` clean
-- [ ] T030 [US2] Decompose `city_wall` (339 raw / 160 stmts, the largest function in the skill) in `.claude/skills/diagram/settlement/city/walls.py`, same constraints. It already has six private callees, so the extraction has an established vocabulary to extend rather than invent
-- [ ] T031 [US2] Sweep after T030: exit 0, 28 generators, empty diff, `pool/` clean. Confirm the provincial-city maps (`tango`, `minami`, `nagahara`) and the walled towns are in the swept set - they are the only artifacts exercising the wall wing
-- [ ] T032 [US2] Measure function sizes across the package with the quickstart step 6 script; anything still over ~150 lines gets an inline one-line justification at its `def`, or gets split further
+- [x] T030 [US2] Decompose `city_wall` (339 raw / 160 stmts, the largest function in the skill) in `.claude/skills/diagram/settlement/city/walls.py`, same constraints. It already has six private callees, so the extraction has an established vocabulary to extend rather than invent
+- [x] T031 [US2] Sweep after T030: exit 0, 28 generators, empty diff, `pool/` clean. Confirm the provincial-city maps (`tango`, `minami`, `nagahara`) and the walled towns are in the swept set - they are the only artifacts exercising the wall wing
+- [x] T032 [US2] Measure function sizes across the package with the quickstart step 6 script; anything still over ~150 lines gets an inline one-line justification at its `def`, or gets split further
 - [ ] T033 [US2] Check combined `settlement/` coverage (`python3 -m coverage report --include='*/settlement/*'`); if the achievable figure rose BECAUSE OF THIS SPLIT, raise `SETTLEMENT_COV_FLOOR` in `.claude/skills/diagram/Makefile` to match and record the new measurement in the comment above it. Never lower it. A movement after Stage 1 alone is a signal to investigate, not a number to bank (research R7)
-- [ ] T034 [US2] Confirm `GEN_TIME_BUDGETS` in `tests/test_villages.py` still passes unmodified - extraction must not have moved a per-gen CPU budget
+- [x] T034 [US2] Confirm `GEN_TIME_BUDGETS` in `tests/test_villages.py` still passes unmodified - extraction must not have moved a per-gen CPU budget
 
 **Checkpoint**: both halves of the GM's ask are delivered.
 
@@ -109,9 +109,9 @@ Nothing in Phase 3+ is safe without both.
 ## Phase 6: Polish and Cross-Cutting
 
 - [x] T038 [P] Grep the skill for prose naming the FILE `settlement/city.py` and update to the package; leave importable-path references and prior `specs/NNN` artifacts verbatim as historical record (FR-013)
-- [ ] T039 Record in `specs/113-city-package/research.md` anything the implementation learned that the plan got wrong - especially any method whose assignment moved from data-model.md's table, with the reason
+- [x] T039 Record in `specs/113-city-package/research.md` anything the implementation learned that the plan got wrong - especially any method whose assignment moved from data-model.md's table, with the reason
 - [x] T040 Add the `civic.py` -> `castle_civic.py` relocation to `.claude/skills/diagram/future-work.md` as a named follow-up with its reasoning, so it does not live only in this spec
-- [ ] T041 Set this spec's Status to Implemented with the date, and note the final per-file line counts
+- [x] T041 Set this spec's Status to Implemented with the date, and note the final per-file line counts
 - [ ] T042 Final `make done` green, then the stop-work ritual: commit in the clone and run `scripts/sync-with-main.sh done`
 
 ---
@@ -250,3 +250,48 @@ historical record per FR-013. Nothing to change.
 ### T015 - the affected suites
 
 `pytest tests/settlement/ tests/check_village/ -q -n auto --no-cov`: **1,887 passed**.
+
+### Stage 2 result (T024-T032)
+
+| method | before | after |
+|---|---|---|
+| `city_wall` | 339 raw / 160 stmts | **69 / 23** |
+| `channel_footbridges` | 195 / 91 | **120 / 44** |
+
+Extracted, each carrying its own researched why: `_draw_gate` (17 raw) over `_gate_piers` (15),
+`_gate_flanking_buildings` (51), `_gate_tower` (29), `_gate_caption` (69); `_seat_mural_towers`
+(107); `_berm_nudge` (12); `_widen_for_confluence` (29), `_deck_clears_its_water` (30); and the
+module-level `_at_arc` / `_deck_quad` / `_quads_overlap`.
+
+**No function in the package exceeds 150 raw lines** (T032), and no file exceeds 550 (T037):
+walls 549, bridges 382, waterfront 274, moat 258, canals 227, civic 37, `__init__` 25.
+
+Both sweeps passed on the first attempt - rc=0, 28 generators, 885 artifacts, empty diff. Neither
+method contains any RNG, so the only hazard was float-operation order, which a textual move
+preserves. `GEN_TIME_BUDGETS` passes unmodified (T034).
+
+### Final per-file line counts (T041)
+
+1,582 lines in one file -> 1,752 across seven, largest 549. The +170 is six module headers and the
+docstrings the extracted methods now carry; the number that matters is the 1,582 -> 549 a session
+loads to work on the wall.
+
+### Found but NOT fixed here (reported instead)
+
+**17 test files carry a stale index pointer.** Every file under `tests/settlement/` still has the
+docstring `"""Split from test_settlement.py by feature 025 - see test_settlement/CLAUDE.md for the
+index."""`, but the peer session's reorg moved that directory to `tests/settlement/`, so the path
+no longer resolves. Docs-only and harmless to behavior, but it points a future session at a
+directory that does not exist.
+
+Deliberately left alone by feature 113 for two reasons: it is the reorg's fallout rather than this
+feature's, and the session that made the move may be fixing it right now - a 17-file collision is
+worse than a stale docstring. Reported to that session directly.
+
+**The `.coverage.*` gitignore was inert, and IS fixed here** (it was blocking this feature's own
+commits). Both `.gitignore` and `.claude/skills/diagram/.gitignore` had the pattern written with a
+trailing comment - `.coverage.*   # pytest-xdist writes one per worker...` - and `#` only opens a
+comment at the START of a gitignore line, so the whole string was one literal pattern matching
+nothing. The bare `.coverage` above it worked, which is what made it look half-applied. Comment
+moved to its own line; verified with `git check-ignore -v` against a real xdist file rather than by
+re-reading the pattern.

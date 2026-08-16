@@ -332,3 +332,40 @@ This is recorded rather than silently applied because the GM's ask was "split la
 smaller ones", and three functions on the original list are not being split. If the GM wants the
 sub-150 methods decomposed anyway, the harness is built and each one is a single extract-plus-sweep
 cycle.
+
+## R11. What the two decompositions actually cost, and the one scoping landmine
+
+Both extractions were textual moves with no arithmetic touched, and both came back byte-identical
+on the first sweep. Neither method contains any RNG (`city_wall` was checked explicitly - zero
+references to `random`, `rng`, `knob_rng` or `scope_seed`), which removes the hazard R4 is mostly
+guarding against and leaves only float-operation order, which a move preserves by construction.
+
+**`channel_footbridges`, 195 raw / 91 statements -> 120 / 44.** Three nested closures (`_at`,
+`_corners`, `_sat`) became module-level `_at_arc` / `_deck_quad` / `_quads_overlap` - they close
+over nothing and are ordinary geometry. Two self-contained predicates became named methods that now
+own their researched why: `_widen_for_confluence` and `_deck_clears_its_water`.
+
+One annotation was required rather than optional: `under: list[float]`. Once the `max([span] +
+under)` expression crossed a declared `-> float` return, mypy saw `max` over an untyped list as
+`Any`. The appended expression was already a float, so the annotation states what was true.
+
+**`city_wall`, 339 raw / 160 statements -> 69 / 23.** The 164-line gate-loop body became
+`_draw_gate` over four phase methods, and the 97-line mural block became `_seat_mural_towers`. The
+`_berm_nudge` closure became a real method taking `cx, cy` explicitly, since both halves use it.
+
+**The landmine, which is worth stating as a general rule.** Before extracting, the gate loop was
+read for values that leak ACROSS the phases - Python's function-scoped loop variables make that easy
+to do by accident and invisible afterward. Exactly one does: `g_east` is computed in the flanking-
+buildings preamble and consumed by the gate-tower phase. Extracting the phases without noticing
+would have left the tower phase reading a name that no longer existed - caught by mypy here, but in
+a dynamically-reached branch it would have been an `AttributeError` at draw time on some future map.
+It is hoisted into `_draw_gate` and passed to both.
+
+A near-miss in the same body is worth recording because it argues for reading rather than grepping:
+`_tower_blocked` uses `fw` and `fh`, which are ALSO the loop variables of the flanking-buildings
+loop - but they are rebound as the comprehension's own targets inside `_tower_blocked`, so there is
+no leak. A grep for shared names flags it; only reading the expression settles it.
+
+**The rule**: before splitting a long loop body into phases, list the names each phase BINDS and
+each phase READS, and check the intersection. A phase boundary is only where those two sets do not
+cross - anywhere else, the crossing value becomes a parameter.
