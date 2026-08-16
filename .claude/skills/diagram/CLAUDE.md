@@ -1045,6 +1045,32 @@ otherwise the rule is optional in practice no matter how firmly it is written.
 on every paddy, and says in its own message that a map declaring nothing SKIPS every drainage rule
 while still showing green. Prefer this to widening the gate quietly.
 
+**The ENVIRONMENT-GATED variant, and it is nastier (2026-08-16).** The three cases above are gated on
+map DATA. A check can just as easily be gated on where it is RUNNING, and then it disables itself in
+exactly one place: the place you always run it. `tests/hamletgen/test_surface.py`'s census skipped any
+file with `.clones` among its path parts - which reads as "do not walk other sessions' clones", but
+tests the ABSOLUTE path. Every session works inside `/gm-assistant/.clones/<name>/`, so the condition
+was true for EVERY file, the census returned the empty set, and `test_census_matches_pin` compared
+nothing against its pin list. Inside a clone it saw **0 names; with the guard gone it sees 50** - and
+it had been hiding two genuinely unpinned consumers (`hg.driver`, `hg.sink`) introduced by the very
+feature that added the guard.
+
+Two things to carry from it:
+
+- **Any test predicate that inspects an ABSOLUTE path is suspect**, because a session clone, main and
+  a scratch checkout differ only in their prefix, and the failure direction is silence. Match on a
+  path RELATIVE to the root being walked, or do not match on paths at all. (The main-tree guards -
+  `settlement._assert_not_main_tree`, `webapp/mainguard.py`, the Makefile's `guard` - are the
+  legitimate exception: inspecting the absolute path IS their job, and each is tested with synthetic
+  paths rather than with the one it happens to be running under.)
+- **A "re-census the tree" guard must assert it FOUND something.** A census that silently returns
+  nothing is indistinguishable from a clean bill of health, which is this whole section in one line.
+  Cheap version: plant a consumer of a fake name and confirm the guard fires, the way
+  `test_guard_fires_on_synthetic_clash` already does for the clash detector.
+
+Found only by running `make done` from a checkout OUTSIDE `.clones/` - worth doing once after any
+change to how the suite discovers files.
+
 ## Build check-test manifests with the fixture builders
 
 `tests/check_village/` hands `gate()` hand-built manifests carrying only the keys the check under test
