@@ -35,6 +35,9 @@ biggest available win. Wall clock for a fanned-out sweep is bounded by its singl
 per-map cost is what remains worth optimizing. Parallelism cannot change a verdict (each map is a
 pure function of its spec; `gencache.store` publishes atomically), and the per-map output is
 captured in the worker and printed in order, so a parallel run reads like a serial one.
+(A whole-pool regen is an ITERATION convenience, never a pre-gate step: the gate verifies the pool
+itself and render-sync regenerates main's renders from main's own tip - the 2026-08-16 rule, with
+the evidence, is in [`docs/iteration-loop.md`](../../../docs/iteration-loop.md).)
 
 The key covers the gen's bytes, the MODULE-LEVEL source of every engine module, the source of
 every function that map actually EXECUTED, every non-source file the run opened, and the
@@ -753,6 +756,19 @@ anyone decided it. Two of the four connector re-routes it caused were pure waste
 original routes the same day, once the width was right - and they were re-routes of the GM's own
 maps, each with a review pass spent on it.
 
+## An OPEN DECISION carries an implementation sketch, not just the question
+
+When a session deliberately leaves a rule undecided ("no bank-margin rule exists; if the GM wants
+one, that is its own rule with its own research entry"), the entry recording the open decision
+MUST also record the 2-3 line implementation sketch the deciding session would execute: WHERE the
+change lands (the call site), WHAT holds it (the check or test to extend), and the deliberate
+exclusions. The open decision's author has all three in their head at zero marginal cost; the
+follow-up session re-derives them at full cost. Measured 2026-08-16: the cut-bank follow-up spent
+its single largest LLM turn (75s) plus part of its diagnosis re-deriving exactly what the
+open-decision author knew - the commons scatter's `wat_b` grid was the landing site, the
+drawn-channels margin test was the one to extend, streams/marsh were the exclusions.
+`research/vegetation.md` "Scrub stays off open water" carries the retro-fitted worked example.
+
 ## Declared overrides: a map may break a rule, but only IN WRITING
 
 Every placement rule in this engine is a GENERALIZATION, and a specific place is allowed to have a
@@ -881,8 +897,13 @@ Three rules, all of them free:
   resize is a DELTA.
 - **One map per agent, launched in parallel.** The sweeps share no work across maps, so handing two
   maps to one agent just serializes two audits behind one notification.
-- **Launch it the moment the maps are final** - before the visual pass, the docs and the commit, not
-  after them. Everything you do while it runs is free; everything you do after it is added on.
+- **Launch it the moment the motivating map's regen + gate is green - BEFORE your own visual
+  pass**, the docs and the commit. Everything you do while it runs is free; everything after it is
+  added on. Measured 2026-08-16 (the cut-bank fix): the review agent was the whole task's
+  critical-path TAIL - its last 84s ran past an already-green `make done` - and it was launched
+  only after a 52s reasoning turn plus the session's own crop reads. The reviewer independently
+  re-verifies that ground anyway, so every second of your own pass spent before the launch is a
+  second added to the task's total.
 
 Same three rules apply to `building-review` and `backstory-review`.
 

@@ -9,7 +9,7 @@ import pytest
 
 from settlement import Settlement, roll_merchant_estate_count, roll_torii_count, village_population
 from test_settlement._builders import _cap020, _castle_map, _city, _crop_settlement, _max_turn_deg, _memo_city, _shoelace, _torii_city, _town
-from waterfields import polyline_cum, supply_bank_clearance
+from waterfields import floor_overhang, polyline_cum, supply_bank_clearance
 
 
 def test_png_width_env_overrides_render_resolution(monkeypatch):
@@ -768,3 +768,33 @@ def test_bund_beans_drop_beads_under_the_ditch_net():
     assert [b for b in alone if b[0] == 400.0]  # the east edge was beaded
     assert not [b for b in both if b[0] == 400.0]  # ...and dropped under the stroke
     assert [b for b in both if b[0] != 400.0] == [b for b in alone if b[0] != 400.0]  # others untouched
+
+
+def test_supply_bank_clearance_is_past_at_the_strokes_exact_ends():
+    # THE SEED-25 HAIRLINE (2026-08-16): the placer works in unrounded floats and exempted a
+    # carved corner projecting epsilon PAST a branch tail; the manifest rounds both the corner
+    # and the stroke poly to 0.1 px, collapsing them onto the same coordinates - the gate then
+    # computed t = 1.0 exactly, `past` came back False, and the check fired at gap 0 on a corner
+    # the placer had legally exempted. `past` is now arc-based with _PAST_EPS slack, so the
+    # predicate gives ONE verdict on both sides of the round-trip.
+    pts = [(0.0, 0.0), (60.0, 0.0), (100.0, 0.0)]
+    cum = polyline_cum(pts)
+    for q, want in (
+        ((100.0, 0.0), True),  # exactly AT the tail: the rounding-collapse case
+        ((0.0, 0.0), True),  # exactly at the head, symmetric
+        ((100.4, 0.0), True),  # genuinely past the tail (the pre-fix rule already exempted this)
+        ((99.0, 0.0), False),  # 1 px inside the tail: governed, as before
+        ((50.0, 2.0), False),  # mid-span: governed, as before
+    ):
+        assert supply_bank_clearance(q, pts, 8.0, 3.0, cum)[2] is want, q
+
+
+def test_floor_overhang_measures_past_the_flat_extended_collector():
+    # fall straight down-screen (90 deg): u = x, f = y. Collector from (100, 50) to (200, 60);
+    # beyond either drawn end the command boundary continues LEVEL (the wedge filler's own rule).
+    dpts = [(100.0, 50.0), (200.0, 60.0)]
+    ovs = floor_overhang([(150.0, 40.0), (150.0, 75.0), (50.0, 80.0), (250.0, 40.0)], dpts, 90.0)
+    assert ovs[0] == 0.0  # up-fall of the interpolated line (55 at u=150): clear
+    assert ovs[1] == pytest.approx(20.0)  # 20 px down-fall of it: the needle class
+    assert ovs[2] == pytest.approx(30.0)  # beyond the head: LEVEL extension at f=50, 30 px past
+    assert ovs[3] == 0.0  # beyond the tail but up-fall of its level line (60): clear
