@@ -1,6 +1,6 @@
 # /diagram engine - dev loop
 
-Guidance for *working on the diagram engine* (`settlement.py`, the `check_village/` package, the pool
+Guidance for *working on the diagram engine* (the `settlement/` package, the `check_village/` package, the pool
 generators), as opposed to *invoking* `/diagram` to draw a map (that is `SKILL.md`). This file
 auto-loads whenever a session edits files in this directory - which is exactly when it applies.
 
@@ -38,7 +38,7 @@ captured in the worker and printed in order, so a parallel run reads like a seri
 
 The key covers the gen's bytes, the MODULE-LEVEL source of every engine module, the source of
 every function that map actually EXECUTED, every non-source file the run opened, and the
-interpreter/renderer versions - so an edit to any of the ~200 `settlement.py` functions Minami
+interpreter/renderer versions - so an edit to any of the ~200 `settlement/` engine functions Minami
 never runs leaves Minami cached, while an edit to one it does run, or to any module-level constant,
 does not. `gencache.py`'s docstring carries the soundness argument; `test_gencache.py` is the
 demonstration, and every test there that asserts a HIT also regenerates and compares bytes, because
@@ -51,7 +51,7 @@ through `regen.py` to make the sweep faster.
 
 **AUDIT IT when you change the cache, or how generation is driven:** `python3 cache_audit.py`
 (~10 min, or `--all` for the whole pool). It perturbs a random numeric literal inside a
-`settlement.py` function, sweeps the pool WITH the cache and again with `--no-cache`, and demands
+`settlement/` function, sweeps the pool WITH the cache and again with `--no-cache`, and demands
 byte-identical artifacts - so it tests the only property anyone cares about without ever looking at
 the key, and cannot share the key's blind spots. Verified to have teeth: sabotaging `compute_key`
 to return a constant makes it report STALE artifacts on the first mutation. This is deliberately
@@ -185,7 +185,7 @@ brought it back to 77s. Re-measure and update this number when it drifts again -
 is what makes a session mis-plan its loop.) So run the red/green loop against the ONE map
 (or fixture) that shows the defect, where cycles are near-free, and reserve the full sweep for AFTER
 that map is green. The sweep is MANDATORY, though, whenever shared engine code changed
-(`settlement.py`, the `check_village/` package, `waterfields.py`, a scripted engine): every LIVE
+(the `settlement/` package, the `check_village/` package, `waterfields.py`, a scripted engine): every LIVE
 pool map is a downstream artifact of the engine, so the sweep is what proves "no other map
 regressed" instead of hoping it. LIVE means the scripted maps only - the hand-authored pool is
 FROZEN (see "The legacy pool is FROZEN" below) and is deliberately allowed to go stale.
@@ -248,7 +248,7 @@ have caught: the change altered geometry an existing test depended on, and the p
 ~45s and reach every test the change can. So: cheap linters, then whole files, then the gate ONCE.
 
     python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy
-    python3 -m pytest test_settlement.py test_checks.py -q -n auto --no-cov    # the files you touched, WHOLE
+    python3 -m pytest test_settlement.py test_checks/ -q -n auto --no-cov    # the files you touched, WHOLE
     make done                                                                  # once, backgrounded, not watched
 
 ### Probe vs survey: when `-x` pays (GM 2026-08-15)
@@ -347,7 +347,7 @@ counted by cause.
 
 WHY IT EXISTS (2026-08-08): a manifest record carries geometry and nothing about its provenance, and
 ~200 engine methods can append one. Chasing a single servant house that was abutting a ministry cost
-about ten sequential greps through `settlement.py` and the gen - `top_up`, then `servant_ranges`,
+about ten sequential greps through the `settlement/` package and the gen - `top_up`, then `servant_ranges`,
 then the apron block polys, then `_fits` - and none of them answered it. A throwaway monkeypatch over
 `M["buildings"]` answered it first try, in one run. This is that, made permanent.
 
@@ -927,7 +927,7 @@ buys and how to work with it:
 
 ## Update the predictably-affected tests in the SAME edit
 
-Touching a `settlement.py` method breaks its unit tests deterministically - you know which ones
+Touching a `settlement/` method breaks its unit tests deterministically - you know which ones
 before you run anything. `channel_footbridges` has `test_settlement.py::test_channel_footbridges_*`
 and the `test_checks.py::_footbridge_map` fixture; changing placement semantics (e.g. "a plank now
 needs cultivation on both banks") means those setups need cultivated ground added. Update them in
@@ -989,7 +989,7 @@ ambushing the next person to write a test.
 ## Placement and its check must read the SAME manifest source
 
 A recurring engine trap (footbridges 2026-07-22; recorded in [`settlements.md`](settlements.md)
-under "PLANK BRIDGES"): the generator in `settlement.py` and the validator in `check_village/`
+under "PLANK BRIDGES"): the generator in `settlement/` and the validator in `check_village/`
 must classify terrain from the SAME data, or they disagree and a feature the generator dropped is
 demanded by the check (or vice versa). Read the MANIFEST fields (`M["fields"]` outlines +
 `M["dry_plots"]`), NOT engine-internal blocking lists like `self.field_polys` that some gens leave
@@ -1139,9 +1139,9 @@ The consequences, so nobody rediscovers them one gate failure at a time:
 - **Engine changes no longer need byte-identity flags.** Change behavior freely; the scripted
   cohort and the gate hold the line. `meta.generated_by` gates already in checks stay (the
   regression corpus replays frozen fixtures through them), but NEW rules ship un-gated.
-- **Coverage is per-module now.** The above-hamlet wings of `settlement.py` (towns, cities, the
+- **Coverage is per-module now.** The above-hamlet wings of the `settlement/` package (towns, cities, the
   capital) are exercised by nothing until their tiers convert, so the Makefile enforces 100% on
-  every module except `settlement.py`, which holds a RATCHET floor (`SETTLEMENT_COV_FLOOR`) -
+  every module except the `settlement/` package (combined), which holds a RATCHET floor (`SETTLEMENT_COV_FLOOR`) -
   raise it as tiers convert, never lower it (same discipline as the retired mypy ratchet).
 - **Frozen manifests remain legal READ-ONLY fixtures** (test_checks reads hikari-no-sato.json;
   citybudget prices the tango/nagahara programs) - frozen bytes never change, so those tests stay

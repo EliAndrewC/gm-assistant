@@ -64,5 +64,5 @@ SETTLEMENT_COV_FLOOR = 94
 test:
 	@if python3 -c "import xdist" >/dev/null 2>&1; then python3 -m pytest -n auto; else python3 -m pytest; fi; ec=$$?; \
 	if [ $$ec -ne 0 ]; then python3 ../../../scripts/uncovered-in-diff.py || true; exit $$ec; fi; \
-	python3 -m coverage report -m --omit='*/settlement.py' --fail-under=100 || { echo "COVERAGE: a module other than settlement.py is under 100% - the table above names it and its missing lines"; exit 1; }; \
-	python3 -m coverage report --include='*/settlement.py' --fail-under=$(SETTLEMENT_COV_FLOOR) || { echo "COVERAGE: settlement.py fell below its $(SETTLEMENT_COV_FLOOR)% ratchet floor (see the comment above SETTLEMENT_COV_FLOOR in this Makefile; 'python3 -m coverage report -m --include=*/settlement.py' shows the missing lines)"; exit 1; }
+	python3 -m coverage report -m --omit='*/settlement/*' --fail-under=100 || { echo "COVERAGE: a module other than settlement.py is under 100% - the table above names it and its missing lines"; exit 1; }; \
+	python3 -m coverage report --include='*/settlement/*' --fail-under=$(SETTLEMENT_COV_FLOOR) || { echo "COVERAGE: settlement/ (package combined) fell below its $(SETTLEMENT_COV_FLOOR)% ratchet floor (see the comment above SETTLEMENT_COV_FLOOR in this Makefile; 'python3 -m coverage report -m --include=*/settlement/*' shows the missing lines)"; exit 1; }
