@@ -289,6 +289,7 @@
  "fire_tower_in_commoner_quarter",
  "fire_tower_standoff",
  "fire_towers_dispersed",
+ "flooded_plots_read_as_basins",
  "footbridges_reach_useful_ground",
  "frontage_shops_face_their_way",
  "funerary_clear_of_fields",
@@ -596,6 +597,7 @@
  "woodland_clear_of_crops",
  "woodland_clear_of_grove",
  "woodland_commons_on_dry_ground",
+ "woodland_commons_visibly_stocked",
  "woodland_commons_within_the_frame",
  "yards_unshaded_by_groves",
  "yards_unshaded_by_neighbors"

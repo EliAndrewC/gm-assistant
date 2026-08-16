@@ -5,7 +5,7 @@ import random
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from .banks import _TOE_MIN_THICKNESS, floor_overhang, hem_to_bank, round_channel_joints
+from .banks import _TOE_MIN_THICKNESS, dedup_ring, floor_overhang, hem_to_bank, round_channel_joints
 from .carve import _bund_beans, _carve, _dry_fields
 from .frame import DF, DRAIN_W_HEAD, DRAIN_W_TAIL, GAP, Poly, Pt, _drain_bank, _dug_polyline, _f_at_u, _Frame, _pip, _point_along, _poly_area, _poly_perim, _seg_x, _signed_area, _Thread
 from .palette import RICE_GREENS
@@ -529,6 +529,10 @@ def _comb_floor_and_winding(plots: list[dict[str, Any]], threads: list[_Thread],
     # a float round-trip must not dirty it.
     _fo = floor_overhang(envelope, dpts, math.degrees(F.down))
     envelope = [(p[0] - o * F.d[0], p[1] - o * F.d[1]) if o > 0.5 else p for p, o in zip(envelope, _fo, strict=True)]
+    # ...then merge the near-duplicate vertices the clamp deposits where the cut meets the old
+    # boundary (merged-roll review 2026-08-16, Kashikawa: ~12 points with reversals in a ~5 px
+    # span at the trim corner) - data hygiene for every later consumer of the ring.
+    envelope = dedup_ring(envelope, 1.0)
 
     # A BASIN IS SIMPLE AND POSITIVELY WOUND (settlement-review, 2026-08-08). At the fan's corner
     # the outer thread has been clipped at the collector, so `bnd` hands the same clamped point back
