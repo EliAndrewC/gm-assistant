@@ -261,3 +261,33 @@ after every step, its cost is multiplied by the number of steps.
 **Final oracle**: 28 generators, 884 artifacts (`.json` + `.svg` + `.png`) under `pool/`, hashed
 with `sha256sum` and compared as a sorted list. `specs/112-fields-package/quickstart.md` step 1-2
 commands stand with `wip/*.gen.py` removed.
+
+## R12. The extraction's real failure mode is a DROPPED RETURN, and a type checker will not see it
+
+Found on the first Stage 2 extraction, and worth writing down because it is the exact bug this
+kind of refactor produces.
+
+`_comb_draw_source` was cut from the span that computes `pond_rec` (the tameike center, or None for
+a stream-fed fan). The span ends with the `elif` branch that draws a feeder stream - it does not
+end with the assignment - so the extracted helper fell off the end and returned `None` on every
+path, while the parent dutifully wrote `pond_rec = self._comb_draw_source(...)`. Every comb field
+in the pool would have taken the stream branch of the hairline topology channel.
+
+**`mypy --strict` passed.** The helper was annotated `-> Any`, and an implicit `None` return
+satisfies `Any` - so the strictest type checking available said nothing. What caught it was
+**ruff's F841** (`pond_rec` assigned but never used) firing inside the helper, which is a
+lint about a local variable rather than about the contract that was actually broken.
+
+Three transferable points:
+
+- **Extracting a span that PRODUCES a value is the dangerous case**; extracting one that only draws
+  is safe by construction. When the span's last statement is not the assignment you are returning,
+  the return has to be added by hand, and nothing in the mechanical transformation reminds you.
+- **Annotate an extracted helper with its real type, not `Any`.** `-> Any` disabled the one check
+  that would have named this directly. The signature came from the variable's own
+  `pond_rec: Any = None` declaration, so the imprecision was inherited rather than chosen - which
+  is how it slipped past review.
+- **The byte-identity sweep would also have caught it**, loudly, on every comb map. That is the
+  point of running the oracle after each decomposition rather than after all three: this failure is
+  attributable to one extraction in one file, instead of arriving as "something in Stage 2 moved
+  four hundred artifacts".
