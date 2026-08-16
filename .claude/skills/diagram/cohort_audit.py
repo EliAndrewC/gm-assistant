@@ -35,12 +35,6 @@ if HERE not in sys.path:  # pragma: no cover - a script, run from anywhere
 import hamletgen as hg  # noqa: E402
 
 
-def default_jobs(count: int) -> int:
-    """Leave two cpus for the harness and whatever else is on the box (same courtesy the workflow
-    tooling extends); never spawn more workers than there are maps to roll."""
-    return max(1, min(count, (os.cpu_count() or 2) - 2))
-
-
 def roll_one(spec: tuple[int, int]) -> tuple[str, list[str], list[str]]:
     """Roll and gate ONE audit hamlet: (header line, sorted failures, the gate's own FAIL lines).
 
@@ -70,7 +64,7 @@ def audit(count: int, first_seed: int, only: str | None = None, jobs: int | None
     The rolls fan out across processes (the 2026-08-15 timings block flagged the serial cohort as
     the biggest available win: 24 maps x ~12 s on an idle 22-cpu box). Results are collected and
     printed in seed order, so the report reads identically to the serial one."""
-    jobs = default_jobs(count) if jobs is None else max(1, jobs)
+    jobs = hg.default_jobs(count) if jobs is None else max(1, jobs)  # ONE courtesy rule, defined in the driver
     specs = [(first_seed + i, 10 + ((first_seed + i) * 7) % 11) for i in range(count)]
     if jobs == 1:
         results = [roll_one(s) for s in specs]
