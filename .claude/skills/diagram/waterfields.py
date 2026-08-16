@@ -978,9 +978,34 @@ def build_comb(
             # feeds - and, like A, dwindles to a ditch-tail thread at its far end (GM 2026-07-23; see
             # the canal-A taper note above).
             m_b = len(bc_cuts) - 1
+
+            def _bc_at(ft: float, pre: Poly = pre) -> Pt | None:  # noqa: B008 - bind the loop's `pre` at definition
+                """The point ON `pre` where the fall coordinate crosses `ft`, by interpolation.
+                A vertex filter alone drops a whole piece when its cut window is shorter than the
+                polyline's ~90-120 px vertex spacing - which is exactly the thread-tail window
+                (last offtake -> ditch_f, ~22 px), so Kashikawa's arm ended in a blunt 7.2 ft cap
+                where the research promises a taper to a thread (settlement-review 2026-08-16).
+                Interpolating the window's endpoints makes every piece drawable regardless of
+                where the dug vertices happen to fall, and the pieces meet exactly at the cuts."""
+                _fs = [F.to_uf(*p)[1] for p in pre]
+                for j in range(len(pre) - 1):
+                    fa, fb = _fs[j], _fs[j + 1]
+                    if (fa <= ft <= fb) or (fb <= ft <= fa):
+                        t = 0.0 if fb == fa else (ft - fa) / (fb - fa)
+                        return (pre[j][0] + (pre[j + 1][0] - pre[j][0]) * t, pre[j][1] + (pre[j + 1][1] - pre[j][1]) * t)
+                # past the polyline's span: CLAMP to the nearer end rather than dropping the piece.
+                # Sawada's dug arm ends a few px short of ditch_f, and returning None there cost the
+                # map its thread tail while the other three drew theirs (2026-08-16).
+                return pre[-1] if abs(ft - _fs[-1]) < abs(ft - _fs[0]) else pre[0]
+
             for i in range(len(bc_cuts) - 1):
-                piece = [p for p in pre if bc_cuts[i] - 14 <= F.to_uf(*p)[1] <= bc_cuts[i + 1] + 14]
-                if len(piece) >= 2:
+                piece = [p for p in pre if bc_cuts[i] < F.to_uf(*p)[1] < bc_cuts[i + 1]]
+                _pa, _pb = _bc_at(bc_cuts[i]), _bc_at(bc_cuts[i + 1])
+                if _pa is not None:
+                    piece = [_pa, *piece]
+                if _pb is not None:
+                    piece = [*piece, _pb]
+                if len(piece) >= 2 and math.dist(piece[0], piece[-1]) > 2.0:
                     channels.append({"pts": piece, "w": (5.6 - 4.0 * i / m_b) * grain, "w_tail": (5.6 - 4.0 * (i + 1) / m_b) * grain, "role": "main"})
         elif math.hypot(pre[0][0] - fork[0], pre[0][1] - fork[1]) < 40.0:
             # a delivery must take off WELL DOWNSTREAM of the head fork. A delivery sprouting AT the

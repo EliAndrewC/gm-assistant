@@ -428,6 +428,11 @@ class HomesteadPartsMixin:
         # (~0.9*clump, as for a shrine), NOT the tight 0.35*clump a homestead eave gets. (o["r"] is the recorded
         # clearance radius; the DRAWN wellhead is vr, which is what a crown must not overhang.)
         occ += [(o["x"], o["y"], o.get("vr", o["r"]) + clump * 0.90) for o in self.M.get("wells", [])]
+        # ...and the NOTICE BOARD with its caption band (settlement-review, Sawada 2026-08-16: a
+        # copse clump seated 10 px from the kosatsuba swallowed the board outright and pierced its
+        # caption mid-word - the board is a 12x5 point fixture nothing in this list covered). 30 ft
+        # reaches past the glyph and the ~54 ft tilted caption box's half-length from the center.
+        occ += [(o["x"], o["y"], 30.0 + clump * 0.90) for o in self.M.get("kosatsuba", [])]
         # A SHRINE and its TORII sit in a CLEAN clearing: no tree CANOPY may reach them (a hall/arch lost in the
         # wood reads wrong - shrine_clear_of_grove_trees / torii_clear_of_grove_trees gate it). The DRAWN canopy
         # overhangs the nominal clump radius (crowns spill past clump/2), reaching ~0.85*clump from the clump
