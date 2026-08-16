@@ -473,3 +473,86 @@ def test_draw_comb_field_drops_beads_in_pond_water():
     s.M["field_ponds"] = [{"x": 300.0, "y": 300.0, "rx": 20.0, "ry": 15.0}]
     s.draw_comb_field(net, "f1", {"kind": "pond", "pond": (700, 1000, 60, 40)})
     assert s.M["fields"][-1]["bund_beans"] == [[500.0, 180.0]]
+
+
+# --- feature 112: the composed FieldsMixin surface -----------------------------------------------
+# settlement/fields.py became a package of four sub-mixins composed in fields/__init__.py. The
+# guard below is the whole safety property of that split: core.py imports ONE name and the class
+# must keep contributing exactly what it contributed before. Two failure modes it exists for -
+# a member dropped in the move (the composed class silently loses a method, and only a generator
+# that happens to call it notices), and a member defined by TWO sub-mixins (MRO picks one and
+# orphans the other, with no import error, no type error, and no test failure anywhere else).
+# Proven to fire against both before it was trusted - see specs/112-fields-package/tasks.md T005.
+
+_FIELDS_SURFACE = frozenset(
+    {
+        # public entry points, called from pool gens, hamletgen, other engine modules and checks
+        "apply_land_use",
+        "bund_junctions",
+        "comb_base_fill",
+        "crescent_pond",
+        "draw_comb_field",
+        "fallow_field",
+        "paddy_field",
+        "pond",
+        "water_field",
+        # private helpers, reached through self. (several also called on an instance from tests
+        # and from settlement/land.py, which is why they are part of the surface)
+        "_draw_furrows",
+        "_fallow_patch",
+        "_mulberry_rows",
+        "_paddy_features",
+        "_paddy_plots",
+        "_paddy_surface",
+        "_pick_overlay_plots",
+        "_plot_center_span",
+        "_plot_grave_island",
+        "_plot_pond",
+        "_plot_rock",
+        "_rounded_pond",
+        "_rows",
+        "_split_convex",
+        "_taxfree_plots",
+    }
+)
+
+
+def _fields_submixins():
+    from settlement.fields.comb import CombMixin
+    from settlement.fields.features import FieldFeaturesMixin
+    from settlement.fields.landuse import LandUseMixin
+    from settlement.fields.paddy import PaddyMixin
+
+    return [PaddyMixin, CombMixin, LandUseMixin, FieldFeaturesMixin]
+
+
+def _own_callables(cls):
+    return {k for k, v in vars(cls).items() if callable(v) or isinstance(v, staticmethod)}
+
+
+def test_composed_fields_mixin_exposes_exactly_the_pre_split_surface():
+    composed = set().union(*(_own_callables(c) for c in _fields_submixins()))
+    assert composed == set(_FIELDS_SURFACE), f"missing={sorted(_FIELDS_SURFACE - composed)} unexpected={sorted(composed - _FIELDS_SURFACE)}"
+
+
+def test_no_two_fields_submixins_define_the_same_name():
+    subs = _fields_submixins()
+    for i, a in enumerate(subs):
+        for b in subs[i + 1 :]:
+            overlap = _own_callables(a) & _own_callables(b)
+            assert not overlap, f"{a.__name__} and {b.__name__} both define {sorted(overlap)} - MRO would orphan one"
+
+
+def test_every_fields_member_resolves_on_settlement_itself():
+    # what consumers actually rely on: the name reaching Settlement, not merely FieldsMixin
+    unreachable = sorted(n for n in _FIELDS_SURFACE if not hasattr(Settlement, n))
+    assert not unreachable, f"not resolvable on Settlement: {unreachable}"
+
+
+def test_feature_012_archetype_constants_survived_the_split():
+    # the three class-level tuples gating the in-field pond / rock / grave island. They are class
+    # ATTRIBUTES, not methods, so the surface test above cannot see them - and a transformer that
+    # slices a class body by its function definitions is exactly what would drop them.
+    for name in ("_PADDY_POND_KINDS", "_PADDY_ROCK_KINDS", "_PADDY_GRAVE_KINDS"):
+        assert isinstance(getattr(Settlement, name), tuple), name
+    assert "valley_paddy" in Settlement._PADDY_POND_KINDS
