@@ -2271,8 +2271,8 @@ def _seg_0554__punishment_spot_only_at_a_seat_of_justice(*, check: Any = _UNBOUN
     return _kept(locals(), ())
 
 
-def _seg_0596__comb_floor_ends_at_the_collector(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 596 (comb_floor_ends_at_the_collector) - hand-added 2026-08-16 past the
+def _seg_0600__comb_floor_ends_at_the_collector(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 600 (comb_floor_ends_at_the_collector) - hand-added 2026-08-16 past the
     legacy range (see _seg_0595 for the numbering convention); registered beside it, whose
     `fields` binding it shares. New-style: temps stay function-local, writes=()."""
     # A COMB'S FLOOR ENDS WHERE ITS COMMAND AREA DOES (known-open ledger 2026-08-16,

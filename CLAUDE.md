@@ -102,7 +102,7 @@ These were split out of this file so they are not in every session's context. Ea
 | Doc | Load it when |
 |---|---|
 | [`docs/l7r-style.md`](docs/l7r-style.md) | Editing `/host-l7r-repo/setting/l7r.md`, or writing prose into an Obsidian Portal wiki page or character record. Numbers, voice, Family/Clan capitalization, heading hierarchy and the curated TOC. |
-| [`docs/session-clones.md`](docs/session-clones.md) | Setting up a clone, hitting a clone/sync hook block, resolving a push conflict, or anything about render-sync. |
+| [`docs/session-clones.md`](docs/session-clones.md) | Setting up a clone, hitting a clone/sync hook block, resolving a push conflict, anything about render-sync, or starting a spec-kit feature while other sessions are running (spec-number claim protocol). |
 | [`docs/iteration-loop.md`](docs/iteration-loop.md) | You want the measured evidence behind a loop rule, or you are about to argue with one. |
 | [`docs/container.md`](docs/container.md) | Launching or rebuilding the container, diagnosing a "command not found" / "No module named" failure, adding a permanent dependency, or bumping Python. |
 | [`docs/spec-kit-and-reviews.md`](docs/spec-kit-and-reviews.md) | Adding a rule to a review subagent (`building-review`, `backstory-review`, `frontend-review`), or wiring spec-kit hooks. |
@@ -179,6 +179,16 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   usage-facing index. A rule that applies to only one domain belongs in that domain's CLAUDE.md,
   not in a forked constitution.
 - **NO FEATURE BRANCHES - spec-kit work included** (GM 2026-07-27). Isolation already comes from the session clone; a branch on top of it is a second axis that buys nothing and broke the stop-work ritual for a whole session. Branch creation is off (`.specify/extensions.yml`, `before_specify`, `enabled: false`) and [`scripts/no-branch-hooks.sh`](scripts/no-branch-hooks.sh) blocks a hand-rolled `git checkout -b` (escape hatch: `NO_BRANCH_OK` in the command, with a reason). Spec-kit still needs to know which feature is active: **`export SPECIFY_FEATURE=NNN-slug`**, which `common.sh`'s `get_current_branch()` returns ahead of asking git, so `check_feature_branch()` in `setup-plan.sh` / `setup-tasks.sh` is satisfied with no branch at all.
+- **Concurrent sessions: spec numbers are CLAIMED IN MAIN, not negotiated** (GM 2026-08-16). The
+  GM runs several sessions at once, and each allocates its own `specs/NNN` - so allocate from
+  main's state and publish the claim immediately: after `sync-in`, next number = highest `NNN`
+  under `specs/` + 1; the moment `/speckit-specify` writes `spec.md`, commit the new
+  `specs/NNN-slug/` in the clone and run `scripts/sync-with-main.sh push` (a mid-feature
+  milestone push). The locked pull+push makes the claim atomic - if the pull surfaces another
+  session's same-numbered spec, renumber yours before pushing. Do NOT coordinate numbering by
+  messaging peer sessions: a busy session replies late or never, while main serializes with zero
+  cooperation. Full protocol (and what peer messaging IS for) in
+  [`docs/session-clones.md`](docs/session-clones.md).
 
 **Verification before reporting "done"** (per Principle VI of the constitution):
 
@@ -187,7 +197,7 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   - Run `webapp/tests/dom_audit.py`. It must report **zero issues** across all pages × viewports. The audit now covers BOTH clipping (overflow, ellipsis, line-clamp) AND layout balance (sibling-height ratio inside flex/grid containers must not exceed 2.5×).
   - **Persona-driven review pass**: before declaring done, examine at least one contact sheet at GM-200 with the user's task in mind (not the implementer's: "Eli is opening this page; what is he trying to do here?"). If the same agent both implemented and reviewed, **invoke the `frontend-review` subagent** (`.claude/agents/frontend-review.md`) to get an independent pass. Author ≠ reliable reviewer.
 - **Python changes**: `ruff check` + `ruff format --check` + `mypy --strict` + `pytest` + `--cov-fail-under=100` on pure-logic packages (Principle X).
-- **Files stay at human scale** (constitution Principle X clause 13, GM 2026-08-15; tests included per v1.6.1, GM 2026-08-16): a source OR TEST file past ~1,000 raw lines prompts the question "should this become a package of subfiles with its own CLAUDE.md index?" The cost being managed is context-window tokens - loading a huge file to use one part of it - and a test file is loaded under the same conditions as source (you load a test file to modify one test the way you load a source file to use one function), so tests get no exemption. Exemplar: `.claude/skills/diagram/check_village/`. Ordered-data files (registries) may stay large with an inline justification - the only carve-out.
+- **Files stay at human scale** (constitution Principle X clause 13, GM 2026-08-15; tests included per v1.6.1, GM 2026-08-16): a source OR TEST file past ~1,000 raw lines prompts the question "should this become a package of subfiles with its own CLAUDE.md index?" The cost being managed is context-window tokens - loading a huge file to use one part of it - and a test file is loaded under the same conditions as source (you load a test file to modify one test the way you load a source file to use one function), so tests get no exemption. Exemplar: `.claude/skills/diagram/check_village/`. Ordered-data files (registries) may stay large with an inline justification - the only carve-out, and it protects only rows stating real DECISIONS (execution order, curation, hand-written metadata that exists nowhere else). **A roster that merely restates what code elsewhere already declares is DERIVED, not maintained or split** (clause 14, v1.7.0, GM 2026-08-16): census who actually consumes each name (most of a grown roster has zero consumers), move the roster's safety property into a guard test proven to fire, then derive the surface - star imports for re-export `__init__`s, introspection for derivable registry rows. Exemplar: feature 027 collapsed `check_village/__init__.py` from 3,148 lines to 63 with zero consumer changes; full method in `specs/027-init-star-imports/`.
 - **Delegated work**: spot-check actual artifacts before relaying success to the user. "The subagent said it was done" is not sufficient.
 
 **Iteration-loop efficiency.** A transcript profile (2026-07-20, re-confirmed 2026-07-25) found **78% of wall time is model turn latency, not tool execution** - the number of sequential turns is the cost, not tool speed. The rules, shortest form; the incident evidence behind each is in [`docs/iteration-loop.md`](docs/iteration-loop.md):

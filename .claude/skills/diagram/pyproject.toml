@@ -22,9 +22,10 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = ["E501"]   # long descriptive lines are house style; the formatter caps wrapping via line-length
 
 [tool.ruff.lint.per-file-ignores]
-# the package __init__ exists to re-export the full legacy `import check_village` surface
-# (feature 024); every import there is intentionally "unused"
-"check_village/__init__.py" = ["F401"]
+# the package __init__ re-exports the consumed legacy `import check_village` surface via star
+# imports (feature 027, superseding 024's verbatim roster): F403 because the stars ARE the
+# re-export mechanism there, F401 for the aliased explicit block
+"check_village/__init__.py" = ["F401", "F403"]
 # same rationale for the settlement package split (feature 025)
 "settlement/__init__.py" = ["F401"]
 

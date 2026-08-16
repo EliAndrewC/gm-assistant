@@ -121,6 +121,48 @@ manifest byte-identical. The remaining sparse tufts on the bare strips beside th
 DELIBERATE - no bank-margin rule exists; that open decision is recorded in
 `research/vegetation.md` "Scrub stays off open water". settlement-review DELTA: PASS
 (banks read as honestly vegetated, no sterile halo; marsh tufts correctly untouched).
+(Superseded the same day: the open decision was resolved - see the cut-bank entry below.)
+
+## 2026-08-16 - cut-bank margin (engine-wide, decided here)
+
+The GM saw the remaining tufts on the berm strips between the dry hem plots and the supply
+channels and resolved the open decision left by the scatter water-skip fix above: an irrigation
+channel's bank is maintained ground (walked for sluice work, scythed for fodder), so the commons
+scatter now stands its bases `_BANK_MARGIN_FT` (6 ft - one scythe swath, the crop margin's own
+figure) off every drawn channel edge (`channels` + `drawn_channels` at drawn piece-tapered
+widths). Streams and the reed marsh are deliberately unchanged - natural banks keep their
+vegetation to the water's edge. Ink-only; the manifest is byte-identical. Automated check:
+`test_commons_keeps_scrub_a_cut_bank_off_the_channels_but_not_the_streams` (written red-first
+against the pre-fix scatter; also pins the no-margin-on-streams half). Why in
+`research/vegetation.md` "The cut bank". settlement-review DELTA: PASS (parsed all 231k scrub
+bases against the exact keep-out geometry - zero inside; density flat beyond the margin, so no
+sterile halo; brook/marsh/pond fringes confirmed untouched). One intent put on record at the
+reviewer's ask: the field-toe COLLECTOR drain takes the margin too, deliberately - its bank is
+walked for the outfall sluice, the same maintained-ground economics as the supply banks; only
+the natural brook and the reeds keep a wild edge.
+
+## 2026-08-16 - dry-hem seams are shared lines (engine-wide, found here)
+
+GM: "The dry crop fields... do not seem to perfectly align with one another. A few of them seem to
+overlap slightly, and a few of them seem to have little bits of space between them because the
+borders of those crop fields are not exactly at the same angle." Root cause in
+`waterfields._dry_fields`: each hem column offset its quad along its OWN chord's normal, so both
+quads at a shared boundary point pushed that point in slightly different directions wherever the
+supply canal bent - a bare wedge on a convex bend, a lap on a concave one, ~bend-angle x depth px
+wide at the ragged edge. Measured here pre-fix: 7 plot pairs overlapped outright, worst 245 sq ft.
+All four scripted hamlets (Inashiro, Kashikawa, Mizuguchi, Sawada) had the defect.
+
+Fix: `waterfields._miter_normals` - ONE mitred upslope normal per boundary point (1/cos(half-bend)
+scaled like a stroked polyline's miter join, capped 2x, with a 180-degree-fold fallback), so every
+seam is a single straight line both quads lie on; the ragged outer edge now steps ALONG the shared
+seam lines instead of opening wedges. Gate: `dry_plot_seams_shared` (segment 0596; two clauses -
+shrunk-`sat_overlap` for laps, collinearity-from-a-shared-corner for gap wedges), written RED
+against this map first; the pre-fix manifest is frozen as
+`pool/regressions/dry_plot_seams_shared_fires_on_the_pre_fix_inashiro.json`. RNG stream untouched
+(same draw sequence), so the ripple was `dry_plots` only here; Kashikawa/Sawada also re-derived
+`commons`, and Mizuguchi's cluster re-seated (hem corners feed `seat_cluster` scoring).
+`settlement-review` (DELTA, one agent per map): all four PASS - seams collinear to ~0.1 px,
+raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosatsuba re-checked).
 
 - 2026-08-16 (known-opens round - floor trim, woodland re-seat, seeding trace; this map
   re-rolled): the ledger's four fork-re-roll defects were closed in one session. The comb floor is
