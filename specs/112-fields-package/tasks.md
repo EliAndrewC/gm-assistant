@@ -21,8 +21,8 @@ byte-identity harness is the feature's oracle.
 
 **Purpose**: establish the oracle before anything moves. Nothing in Phase 3+ is safe without it.
 
-- [ ] T001 Export `SPECIFY_FEATURE=112-fields-package` and confirm the clone is synced with main (`git log --oneline -1`); re-measure `.claude/skills/diagram/settlement/fields.py` and confirm 1,511 lines / 24 methods, since a peer session last edited it
-- [ ] T002 Capture the byte-identity baseline per quickstart.md step 1: copy `.claude/skills/diagram/` to a scratch tree, run `python3 regen.py --no-cache --frozen-ok pool/*/*.gen.py wip/*.gen.py` there, and write `sha256sum` of every `pool/**` and `wip/**` `.json`/`.svg`/`.png` to `/tmp/112-baseline.sha`
+- [x] T001 Export `SPECIFY_FEATURE=112-fields-package` and confirm the clone is synced with main (`git log --oneline -1`); re-measure `.claude/skills/diagram/settlement/fields.py` and confirm 1,511 lines / 24 methods, since a peer session last edited it
+- [x] T002 Capture the byte-identity baseline per quickstart.md step 1: copy `.claude/skills/diagram/` to a scratch tree, run `python3 regen.py --no-cache --frozen-ok pool/*/*.gen.py wip/*.gen.py` there, and write `sha256sum` of every `pool/**` and `wip/**` `.json`/`.svg`/`.png` to `/tmp/112-baseline.sha`
 - [ ] T003 Record the baseline sweep's own verdict (map count, any gen that failed in the pre-split tree) in this file under Notes, so a Stage 1 failure can be distinguished from a pre-existing one
 
 **Checkpoint**: an oracle exists that can fail.
@@ -35,9 +35,9 @@ byte-identity harness is the feature's oracle.
 
 **CRITICAL**: T005 must be observed failing before T006 lands.
 
-- [ ] T004 Write the composed-surface guard test in `.claude/skills/diagram/test_settlement/test_fields.py` per contracts/mixin-surface.md: assert the composed `FieldsMixin` exposes exactly the 24-name frozenset, assert no two sub-mixins define the same name, assert all 24 resolve on `Settlement` itself
-- [ ] T005 Prove the guard RED both ways and record the failure text in this file's Notes: (a) delete one method from a sub-mixin, observe assertion 1 name it, revert; (b) copy one method into a second sub-mixin, observe assertion 2 name the collision, revert
-- [ ] T006 [P] Adapt `specs/025-human-scale-splits/split_settlement.py` into `specs/112-fields-package/split_fields.py` for a class-to-subpackage split: slice between METHOD boundaries in the class body rather than between top-level statements, emit one sub-mixin class per module, and generate each module's import header from the names its own methods actually use (research R7)
+- [x] T004 Write the composed-surface guard test in `.claude/skills/diagram/test_settlement/test_fields.py` per contracts/mixin-surface.md: assert the composed `FieldsMixin` exposes exactly the 24-name frozenset, assert no two sub-mixins define the same name, assert all 24 resolve on `Settlement` itself
+- [x] T005 Prove the guard RED both ways and record the failure text in this file's Notes: (a) delete one method from a sub-mixin, observe assertion 1 name it, revert; (b) copy one method into a second sub-mixin, observe assertion 2 name the collision, revert
+- [x] T006 [P] Adapt `specs/025-human-scale-splits/split_settlement.py` into `specs/112-fields-package/split_fields.py` for a class-to-subpackage split: slice between METHOD boundaries in the class body rather than between top-level statements, emit one sub-mixin class per module, and generate each module's import header from the names its own methods actually use (research R7)
 
 **Checkpoint**: guard proven to fire; transformer ready.
 
@@ -49,13 +49,13 @@ byte-identity harness is the feature's oracle.
 
 **Independent test**: the quickstart sweep diff is empty, `git status` under `pool/` is clean, and `make done` is green with no consumer file modified.
 
-- [ ] T007 [US1] Run the transformer to create `.claude/skills/diagram/settlement/fields/` with `paddy.py`, `comb.py`, `landuse.py`, `features.py`, assigning methods exactly per data-model.md's four tables (9 / 4 / 3 / 8 methods)
-- [ ] T008 [US1] Write `.claude/skills/diagram/settlement/fields/__init__.py`: four sub-mixin imports plus `class FieldsMixin(PaddyMixin, CombMixin, LandUseMixin, FieldFeaturesMixin)`, with a docstring saying it exists to preserve `core.py`'s single import (research R6)
-- [ ] T009 [US1] In each of the four modules, add the `TYPE_CHECKING` block with `from ..core import Settlement` (two-dot path) and keep every method's `self: "Settlement"` annotation - data-model.md invariant 4
-- [ ] T010 [US1] Delete `.claude/skills/diagram/settlement/fields.py` (invariant: a stale module beside a package of the same name is a shadowing hazard)
-- [ ] T011 [US1] Verify `.claude/skills/diagram/settlement/core.py` is byte-unchanged (`git diff --stat -- settlement/core.py` empty) - FR-002, SC-002
-- [ ] T012 [US1] Run the cheap linter prefix: `python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy`; fix unused-import fallout in the generated headers only
-- [ ] T013 [US1] Run the WHOLE affected test files, not a `-k` subset: `python3 -m pytest test_settlement/ test_checks/ -q -n auto --no-cov`
+- [x] T007 [US1] Run the transformer to create `.claude/skills/diagram/settlement/fields/` with `paddy.py`, `comb.py`, `landuse.py`, `features.py`, assigning methods exactly per data-model.md's four tables (9 / 4 / 3 / 8 methods)
+- [x] T008 [US1] Write `.claude/skills/diagram/settlement/fields/__init__.py`: four sub-mixin imports plus `class FieldsMixin(PaddyMixin, CombMixin, LandUseMixin, FieldFeaturesMixin)`, with a docstring saying it exists to preserve `core.py`'s single import (research R6)
+- [x] T009 [US1] In each of the four modules, add the `TYPE_CHECKING` block with `from ..core import Settlement` (two-dot path) and keep every method's `self: "Settlement"` annotation - data-model.md invariant 4
+- [x] T010 [US1] Delete `.claude/skills/diagram/settlement/fields.py` (invariant: a stale module beside a package of the same name is a shadowing hazard)
+- [x] T011 [US1] Verify `.claude/skills/diagram/settlement/core.py` is byte-unchanged (`git diff --stat -- settlement/core.py` empty) - FR-002, SC-002
+- [x] T012 [US1] Run the cheap linter prefix: `python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy`; fix unused-import fallout in the generated headers only
+- [x] T013 [US1] Run the WHOLE affected test files, not a `-k` subset: `python3 -m pytest test_settlement/ test_checks/ -q -n auto --no-cov`
 - [ ] T014 [US1] Run the byte-identity sweep per quickstart.md step 2 and require an EMPTY diff against `/tmp/112-baseline.sha`
 - [ ] T015 [US1] Confirm `git status --porcelain -- .claude/skills/diagram/pool` prints nothing (FR-005)
 - [ ] T016 [US1] Run `make done` backgrounded, once; read the log tail before believing green (no `; echo EXIT=$?` wrapper)
@@ -135,4 +135,27 @@ what the harness exists to catch. Diagnose from the first differing map.
 
 ## Notes
 
-*(T003 and T005 record their observations here during implementation.)*
+**T003 - baseline sweep verdict (pre-split tree)**: pool sweep REGENERATED every map with
+`--no-cache --frozen-ok`, live and frozen alike, no gen failing in the pre-split tree. So any
+failure in a later sweep is caused by this feature, not inherited.
+
+**T005 - guard proven RED, both failure modes, exact text**:
+
+    (a) deleted _rows from PaddyMixin:
+        E  AssertionError: missing=['_rows'] unexpected=[]
+    (b) copied _rows into CombMixin as well:
+        E  AssertionError: PaddyMixin and CombMixin both define ['_rows'] - MRO would orphan one
+
+Both reverted immediately; the whole file re-ran green (33 passed) afterwards. Ordering note: the
+proof necessarily runs AFTER the transformer, not before it - see research.md R10.
+
+**T007 result - actual module sizes** (projected -> actual): `paddy.py` ~475 -> **482**,
+`comb.py` ~490 -> **486**, `landuse.py` ~395 -> **390**, `features.py` ~205 -> **215**,
+`__init__.py` ~25 -> **19**. Every file well under the ~1,000 bar; 1,592 total against the
+monolith's 1,511, the difference being four import headers and four module docstrings.
+
+**T013 result**: `test_settlement/ test_checks/` -> 1,805 passed in 29.3s.
+
+**Plan corrections found during implementation** (both written up in research.md R9/R10): the class
+body carries three class-level constants the method-only table missed, and two of the three
+`# ----` section banners had to be dropped rather than moved.

@@ -24,7 +24,7 @@ Two invariants the split does NOT touch:
 | `_geom.py` | pure geometry/spatial helpers: point/seg/poly math, overlap + gap predicates, `Indexed`/`SeatMemo`/`PointGrid` spatial indexes, label tilt/quad/AABB helpers, smoothing, `village_population` |
 | `_knobs.py` | the knob engine (`Knob`, `register_knob`, `resolve_knob`, `scope_seed`, `knob_rng`, layout validators, `skeleton_layout`) and roll/size helpers (`roll_torii_count`, `execution_ground_ft`, wall/bridge/moat/crop helpers) |
 | `core.py` | `class Settlement(...)` itself: `__init__`, the record streams (`add`/`add_top`/`add_wall`/`add_label`), meta/header, knob resolve + rng scoping, viewport/crop |
-| `fields.py` | paddy/comb/dry fields, land-use overlays, plot features, ponds, furrows |
+| `fields/` | the field subsystem - a PACKAGE with its own [`CLAUDE.md`](fields/CLAUDE.md) index since feature 112. Read that first, then load one of: `paddy.py` (paddy/water/fallow field bodies + plot geometry), `comb.py` (the comb-field builder, base fill, bund junctions, furrows), `landuse.py` (mulberry/lotus/tea overlays), `features.py` (feature-012 in-field pond/rock/grave island + every pond glyph) |
 | `water_ways.py` | focal features (mill/market/halls), streams/rivers/channels + water clipping, lanes/streets/kido/wards/quarters/alleys |
 | `shrines_wells.py` | hills, shrines + shrine halls, torii + avenues, wells (+ well indexes/placement), tree stands, forest |
 | `structures.py` | manor, merchant estates, roads, generic `building`, servant ranges, rowpack/pack placement engines, pasture, theater, fire tower, kosatsuba + label-blocker plumbing, punishment-spot placement, drum tower |

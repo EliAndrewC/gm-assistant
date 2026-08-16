@@ -184,3 +184,80 @@ package's public surface, so if it re-exported anything from `.fields` the new p
 would have to reproduce it. It does not - its re-export block draws only from `._geom` and
 `._knobs`, and `fields.py` has no module-level name other than the class itself. Nothing to
 preserve; the package `__init__` owes the parent nothing beyond the name `FieldsMixin`.
+
+## R9. Two things the plan's method-only model missed, found by the transformer
+
+Recorded during implementation, per the "record every resolved decision in the artifact where it
+arose" rule.
+
+**The class body is not only methods.** `FieldsMixin` carries three class-level ASSIGNMENTS -
+`_PADDY_POND_KINDS`, `_PADDY_ROCK_KINDS`, `_PADDY_GRAVE_KINDS`, the feature-012 archetype matrix
+gating which field kinds get an in-field pond, rock outcrop or grave island. data-model.md's four
+tables listed 24 methods and no attributes, so a transformer that sliced the class body by its
+function definitions would have dropped all three silently: the split would import, type-check and
+pass every existing test, and the next comb-field regen would raise `AttributeError` deep inside
+`_paddy_features`. They belong with the plot features they gate, so they are in `features.py`.
+
+Two guards now hold this, because the surface test cannot see attributes: the transformer REFUSES
+to run if the partition does not cover every class-body member by name (not just every method), and
+`test_feature_012_archetype_constants_survived_the_split` asserts the three tuples resolve on
+`Settlement`.
+
+**Section-divider comments had to be triaged, not moved verbatim.** The file carried three `# ----`
+banners. `# ---- fields` and `# ---- water` describe the OLD file's layout and would be actively
+false once the sections live in different files (the "water" section's members split across
+`features.py` and `comb.py`), so they are dropped and each module's docstring says the same thing
+for its own contents. The `# ---- feature 012: ...` banner is different in kind - six lines of real
+grounding documentation naming the archetype matrix, its research spec, and a disclosed calibrated
+liberty the GM approved - so it travels into `features.py` with the code it documents. Invariant 5
+("method text moves verbatim") is about CODE and its researched why-comments; a layout divider that
+has become false is not covered by it.
+
+**Import headers: copied wholesale, then pruned by ruff.** R7 said each module should import only
+what its own methods use, and warned against copying the parent header. The mechanical route to
+R7's end state is to copy the header into each module and then run
+`ruff check --select F401 --fix`, which removed 63 imports across the four files. That reaches
+exactly the state R7 specifies without the transformer having to model Python name resolution, and
+ruff is a more reliable judge of "is this name used" than a hand-written AST walk.
+
+## R10. The guard test cannot be proven red before the package exists
+
+tasks.md sequenced the red proof (T005) ahead of the transformer (T007). That is not executable:
+the guard's subject is the COMPOSED class and its four sub-mixins, so against a tree where
+`fields.py` is still a single file the test fails with `ModuleNotFoundError` - which proves nothing
+about the assertions. Corrected order, which keeps the substance of red-green intact: run the
+transformer, write the guard, then prove it fires by two deliberate breakages before trusting it.
+Both were observed and their failure text is recorded in tasks.md's Notes.
+
+The general form, worth carrying to the next split: a guard on a REFACTOR's output is proven red by
+BREAKING the refactor, not by predating it. Red-green on new behavior means "the test fails before
+the code exists"; red-green on a structural invariant means "the test fails when the invariant is
+violated", and the violation has to be constructible.
+
+## R11. The oracle is the 19-map POOL, not pool + the capital WIP - a wall-clock decision
+
+R4 specified sweeping "every pool generator ... plus `wip/shiro-daika.gen.py`". The WIP capital was
+dropped from the oracle during implementation, deliberately, and this records why so a later reader
+does not read it as an oversight.
+
+**What happened**: the pool half of the baseline swept 28 maps in about 3 minutes. `shiro-daika`
+then ran for more than 6 minutes without producing a single line of output before it was stopped -
+it is a capital-scale gen whose housing pass is still open (`wip/shiro-daika.notes.md`), and its
+artifacts are gitignored, so it was generating from nothing.
+
+**Why dropping it is safe**: the cost is not one sweep, it is FIVE - the baseline plus one after
+Stage 1 and one after each of Stage 2's three decompositions. Against that, the marginal oracle
+value is near zero: `shiro-daika` reaches `comb_base_fill`, `bund_junctions` and `draw_comb_field`,
+and every one of those is already exercised by many pool maps at four tiers. Confirmed present in
+the swept set: `kuwabata` (the only land-use overlay map), `tango`, `minami`, `nagahara` (provincial
+cities), `hoshizora`, `hirameki`, `ubame` (towns), `tanada`, `enokida`, `yatsuda` (comb hamlets).
+Nothing `shiro-daika` touches in the field subsystem is unique to it.
+
+**The general rule this is an instance of**: an oracle earns its place by the failures it can
+catch, not by the ground it covers. A slow artifact that exercises only code other artifacts
+already exercise adds wall clock and no diagnostic power - and in a design where the oracle runs
+after every step, its cost is multiplied by the number of steps.
+
+**Final oracle**: 28 generators, 884 artifacts (`.json` + `.svg` + `.png`) under `pool/`, hashed
+with `sha256sum` and compared as a sorted list. `specs/112-fields-package/quickstart.md` step 1-2
+commands stand with `wip/*.gen.py` removed.

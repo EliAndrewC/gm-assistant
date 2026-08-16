@@ -14,14 +14,15 @@ the pre-split tree:
 Then sweep every generator in the copy, live and frozen alike, writing manifests where they land:
 
     cd "$BASE/diagram"
-    python3 regen.py --no-cache --frozen-ok pool/*/*.gen.py wip/*.gen.py
+    python3 regen.py --no-cache --frozen-ok pool/*/*.gen.py
 
 `--frozen-ok` is required: `regen.py` prints `FROZEN` and skips the legacy maps otherwise, and those
-maps are the only exercisers of the land-use overlay wing.
+maps are the only exercisers of the land-use overlay wing. `wip/` is deliberately NOT swept - see
+research.md R11.
 
 Record the hashes:
 
-    find pool wip -name '*.json' -o -name '*.svg' -o -name '*.png' | sort | xargs sha256sum > /tmp/112-baseline.sha
+    find pool -type f \( -name '*.json' -o -name '*.svg' -o -name '*.png' \) | sort | xargs sha256sum > /tmp/112-baseline.sha
 
 ## 2. Sweep and compare (after Stage 1, and after EACH Stage 2 decomposition)
 
@@ -29,8 +30,8 @@ Sweep a scratch copy of the CURRENT tree the same way, then diff the hash lists:
 
     WORK=/tmp/.../112-work && rm -rf "$WORK" && mkdir -p "$WORK"
     cp -a .claude/skills/diagram "$WORK/diagram"
-    cd "$WORK/diagram" && python3 regen.py --no-cache --frozen-ok pool/*/*.gen.py wip/*.gen.py
-    find pool wip -name '*.json' -o -name '*.svg' -o -name '*.png' | sort | xargs sha256sum > /tmp/112-work.sha
+    cd "$WORK/diagram" && python3 regen.py --no-cache --frozen-ok pool/*/*.gen.py
+    find pool -type f \( -name '*.json' -o -name '*.svg' -o -name '*.png' \) | sort | xargs sha256sum > /tmp/112-work.sha
     diff /tmp/112-baseline.sha /tmp/112-work.sha && echo "BYTE-IDENTICAL"
 
 An empty diff is the pass condition. **Sweep in the scratch copy, never in the clone** - that is what
