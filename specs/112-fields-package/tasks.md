@@ -159,3 +159,39 @@ monolith's 1,511, the difference being four import headers and four module docst
 **Plan corrections found during implementation** (both written up in research.md R9/R10): the class
 body carries three class-level constants the method-only table missed, and two of the three
 `# ----` section banners had to be dropped rather than moved.
+
+## Stage 2 decomposition plan (drafted from the read-through, before editing)
+
+Settled by reading each method's body once, so the extraction is executed rather than discovered.
+Every helper below is a pure MOVE of a contiguous span: the call order, the `self.add()` order and
+the RNG draw order are unchanged, which is what makes byte-identity the oracle rather than a hope.
+
+### `draw_comb_field` (321 -> ~40 lines of named steps)
+
+| helper | span today | what it is | outputs |
+|---|---|---|---|
+| `_comb_draw_hem` | 167-212 | the dry upslope hem: prior-paddy filter, the standing-water predicate, and the plot loop that draws, furrows and registers each hem plot in BOTH `block_polys` and `dry_polys` | none |
+| `_comb_draw_paddies` | 213-229 | the flooded plot loop plus the two records it writes - `wet_plots` (topography) and `flooded_plots` (paint) | none |
+| `_comb_draw_beads` | 240-248 | the water-honest azemame pass: build the pond exclusion set, filter `net["bund_beans"]` in place, draw the beads | mutates `net["bund_beans"]` |
+| `_comb_draw_source` | 249-263 | the tameike + its fringe + no-build block, or the feeder stream | `pond_rec` |
+| `_comb_draw_ditches` | 264-292 | the late-block channel draw (ring-trunk-last sort) and the downhill outfall brook | none |
+| `_comb_record_field` | 293-357 | envelope, per-plot dims, the drain-hem rings, and the `M["fields"]` record | none |
+| `_comb_record_ditches` | 358-364 | one `field_ditches` record per channel | none |
+| `_comb_source_channel` | 365-464 | the hairline source-to-field topology channel: the mouth pulled inside the envelope, the intake snapped to a stream, the bow, and the `join_head` vertex | none |
+
+Notes that constrain the edit:
+
+- The `from waterfields import ...` at the top of the method is FUNCTION-level, not module-level.
+  Each helper takes the imports its own body needs, at function level, for the same reason.
+- `_comb_draw_beads` must keep running AFTER `self._paddy_features(net)` - the comment at 231-238
+  says the flavor pass was deliberately moved up so its pocket ponds exist before the bead line
+  commits. The helper boundary must not quietly reorder that.
+- `sluice` is computed at 249 and read again at 410, so it stays a local of `draw_comb_field` and
+  is passed to both `_comb_draw_source` and `_comb_source_channel`.
+- `_comb_source_channel` lands near 100 lines, under the ~150 bar, and is not split further: its
+  body is one construction with four documented corrections layered on it, and cutting it again
+  would separate each correction from the value it corrects.
+
+### `apply_land_use` (266) and `water_field` (194)
+
+Read and planned when their turn comes - one method at a time with a sweep between (research R5).

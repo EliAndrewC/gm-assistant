@@ -530,9 +530,16 @@ def _own_callables(cls):
     return {k for k, v in vars(cls).items() if callable(v) or isinstance(v, staticmethod)}
 
 
-def test_composed_fields_mixin_exposes_exactly_the_pre_split_surface():
+def test_no_pre_split_fields_member_was_lost_in_the_move():
+    # SUBSET, not equality, and the reason is worth stating. Stage 2 of feature 112 decomposed the
+    # three oversized methods into named private helpers, so the composed class legitimately holds
+    # MORE than the pre-split 24, and will hold more again the next time a method is split. What
+    # must never happen is a pre-split member going MISSING: an addition is visible in review,
+    # while a subtraction is silent until whichever generator calls it happens to run. The
+    # assertion therefore guards the direction that hides. The red proof still holds - deleting a
+    # member names it in `missing` (specs/112-fields-package/tasks.md T005).
     composed = set().union(*(_own_callables(c) for c in _fields_submixins()))
-    assert composed == set(_FIELDS_SURFACE), f"missing={sorted(_FIELDS_SURFACE - composed)} unexpected={sorted(composed - _FIELDS_SURFACE)}"
+    assert _FIELDS_SURFACE <= composed, f"missing={sorted(_FIELDS_SURFACE - composed)}"
 
 
 def test_no_two_fields_submixins_define_the_same_name():

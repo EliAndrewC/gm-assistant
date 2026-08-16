@@ -153,7 +153,6 @@ class CombMixin:
         source_and_sink) see a source. Returns the field envelope polygon. `inwall_drain_moat_bias` marks an
         IN-WALL city fan: the drain is trimmed through inwall_drain_outfall (cut off short of the ring road,
         sluice-gated, underground conduit to the moat) before anything is drawn or recorded."""
-        from waterfields import AZE, BEAN_GREEN, aze_w, hem_on_paddy
 
         if inwall_drain_moat_bias is not None:
             _idr = next(c for c in net["channels"] if c["role"] == "drain")
@@ -163,6 +162,37 @@ class CombMixin:
         # BASE FILL (feature 012, now via the shared helper): a paddy-green wash under the plots so the
         # imperfect tessellation never shows the parchment background as bare "white" gaps (research.md D5).
         self.comb_base_fill(net, name)
+
+        self._comb_draw_hem(net)
+        self._comb_draw_paddies(net)
+        self.bund_junctions(net["plots"], name)
+        # WATER-HONEST BEADS, the draw-site half (GM 2026-08-15: "fix the water-buried beads so
+        # the record stays honest"; settlement-review found 40 of Inashiro's 727 recorded beads
+        # invisible under water paint). `_bund_beans` already drops plot-buried beads and beads
+        # under the ditch net's late strokes; the POND paint is only known here. The flavor pass
+        # runs first (moved up from the tail of this method - its pocket ponds paint over a plot's
+        # interior, so their geometry must exist before the bead line commits; it draws from its
+        # own seeded rng, so the move ripples no stream), then every bead inside the source pond
+        # or a pocket pond is dropped BEFORE drawing and recording, so dots and manifest agree.
+        self._paddy_features(net)
+        self._comb_draw_beads(net, source)
+        sluice = net["channels"][0]["pts"][0]
+        pond_rec = self._comb_draw_source(net, source, sluice)
+        self._comb_draw_ditches(net)
+        self._comb_record_field(net, name)
+        self._comb_record_ditches(net, name)
+        # a hairline SOURCE -> field feed carrying the topology (winds a little into the paddy interior). It
+        # STARTS at the source (the pond center, or the sluice for a stream) so channel_source_anchored /
+        # pond_connected_to_field see it, and carries a gentle perpendicular KINK so channel_winds_gently passes.
+        # source kind "cascade" = the field is fed plot-to-plot from an UPSTREAM field (the caller
+        # records its own connector channel with to={"kind":"field",...}), so no hairline is added -
+        # its frm={"kind":"stream"} anchor would dangle with no stream at the sluice.
+        self._comb_source_channel(net, name, source, sluice, pond_rec, join_head)
+        return cast("list[Pt]", net["envelope"])
+
+    def _comb_draw_hem(self: Settlement, net: dict[str, Any]) -> None:  # type: ignore[misc]
+        """Draw the dry upslope hem, skipping any plot that falls on an earlier fan's rice or on standing water."""
+        from waterfields import hem_on_paddy
 
         # a fan's hem is generated blind to the OTHER fans on a multi-fan map, so drop any hem plot
         # that lands on a previously recorded fan's rice (this fan's own field record is appended
@@ -210,7 +240,13 @@ class CombMixin:
             # its check must read the SAME source, and the source is what was actually drawn.
             self.block_polys.append(p["poly"])
             self.dry_polys.append(p["poly"])
-        from waterfields import FLOODED as _WF_FLOODED  # the tint constant, for the picture record below
+
+    def _comb_draw_paddies(self: Settlement, net: dict[str, Any]) -> None:  # type: ignore[misc]
+        """Draw the flooded paddy plots, and write the topography record and the paint record the overlay
+        and flooded-wedge checks read."""
+        from waterfields import AZE  # noqa: I001 - FLOODED is aliased for the picture record below
+        from waterfields import FLOODED as _WF_FLOODED
+        from waterfields import aze_w
 
         for p in net["plots"]:  # the flooded paddies
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
@@ -227,16 +263,11 @@ class CombMixin:
                 # flooded-wedge check judges what the paint reads as, and a check that cannot
                 # see the paint cannot judge it (the azemame water-honesty precedent).
                 self.M.setdefault("flooded_plots", []).append(_centroid(p["poly"]))
-        self.bund_junctions(net["plots"], name)
-        # WATER-HONEST BEADS, the draw-site half (GM 2026-08-15: "fix the water-buried beads so
-        # the record stays honest"; settlement-review found 40 of Inashiro's 727 recorded beads
-        # invisible under water paint). `_bund_beans` already drops plot-buried beads and beads
-        # under the ditch net's late strokes; the POND paint is only known here. The flavor pass
-        # runs first (moved up from the tail of this method - its pocket ponds paint over a plot's
-        # interior, so their geometry must exist before the bead line commits; it draws from its
-        # own seeded rng, so the move ripples no stream), then every bead inside the source pond
-        # or a pocket pond is dropped BEFORE drawing and recording, so dots and manifest agree.
-        self._paddy_features(net)
+
+    def _comb_draw_beads(self: Settlement, net: dict[str, Any], source: dict[str, Any]) -> None:  # type: ignore[misc]
+        """Drop every azemame bead that pond paint would bury, then draw the rest - so dots and manifest agree."""
+        from waterfields import BEAN_GREEN
+
         _bw: list[tuple[float, float, float, float]] = []
         if source.get("kind") == "pond":
             _bwx, _bwy, _bwrx, _bwry = source["pond"]
@@ -246,7 +277,12 @@ class CombMixin:
             net["bund_beans"] = [q for q in net["bund_beans"] if all(((q[0] - _wx) / _wrx) ** 2 + ((q[1] - _wy) / _wry) ** 2 > 1.0 for _wx, _wy, _wrx, _wry in _bw)]
         beads = "".join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
         self.add(f'<g opacity="0.85">{beads}</g>')
-        sluice = net["channels"][0]["pts"][0]
+
+    def _comb_draw_source(self: Settlement, net: dict[str, Any], source: dict[str, Any], sluice: Any) -> Any:  # type: ignore[misc]
+        """Draw the water SOURCE - a tameike with its fringe and no-build block, or a feeder stream.
+
+        Returns the pond center when a pond was drawn, else None: the hairline topology channel
+        anchors on whichever of the two it was."""
         pond_rec: Any = None
         if source.get("kind") == "pond":
             pcx, pcy, prx, pry = source["pond"]
@@ -261,6 +297,10 @@ class CombMixin:
             # pattern: the comb taps the map's stream via a weir); nothing extra is drawn, the
             # hairline topology channel below still anchors to that stream
             self.stream(source["stream"], frm={"kind": "offmap"}, width=7)
+        return pond_rec
+
+    def _comb_draw_ditches(self: Settlement, net: dict[str, Any]) -> None:  # type: ignore[misc]
+        """Draw the ditch net into the LATE water block, then the drain-outfall brook."""
         # The ditch net ALWAYS goes to the LATE water block (GM 2026-07-21: Hoshizora's canals
         # "rendering below the rice paddies"). In the shared block - anchored at the FIRST water
         # call - the net composites UNDER any plots painted after that anchor: a town/city stream
@@ -290,6 +330,10 @@ class CombMixin:
             # (first segment = drain direction -> smooth junction; then straight downhill AWAY from the field ->
             # clears a fan envelope's concave lobe without an acute turn, since the drain already runs downhill)
             self.stream([b0, mid, (mid[0] + bdx * 520, mid[1] + bdy * 520)], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)
+
+    def _comb_record_field(self: Settlement, net: dict[str, Any], name: str) -> None:  # type: ignore[misc]
+        """Assemble and append this fan's M['fields'] record: envelope, per-plot dims, drain-hem rings,
+        plot rings in draw order and the bead points."""
         env = [[round(x, 1), round(y, 1)] for x, y in net["envelope"]]
         exs, eys = [p[0] for p in env], [p[1] for p in env]
         pvx = [v[0] for p in net["plots"] for v in p["poly"]]
@@ -355,6 +399,9 @@ class CombMixin:
             # comb_supply_commands_both_flanks; legacy manifests lack it, so the check skips them
             _fld["fork"] = [round(net["fork"][0], 1), round(net["fork"][1], 1)]
         self.M["fields"].append(_fld)
+
+    def _comb_record_ditches(self: Settlement, net: dict[str, Any], name: str) -> None:  # type: ignore[misc]
+        """Record one field_ditch per channel, carrying the trimmed and polder-side tags."""
         for c in net["channels"]:
             rec = {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
             if c.get("trimmed"):  # a TRIMMED in-wall drain is a conduit stub, not a contour collector
@@ -362,12 +409,12 @@ class CombMixin:
             if c.get("seg"):  # a polder ring-side tag (feeder/e_toe/w_toe/drain/lateral), so footbridge placement can be side-aware
                 rec["seg"] = c["seg"]
             self.M["field_ditches"].append(rec)
-        # a hairline SOURCE -> field feed carrying the topology (winds a little into the paddy interior). It
-        # STARTS at the source (the pond center, or the sluice for a stream) so channel_source_anchored /
-        # pond_connected_to_field see it, and carries a gentle perpendicular KINK so channel_winds_gently passes.
-        # source kind "cascade" = the field is fed plot-to-plot from an UPSTREAM field (the caller
-        # records its own connector channel with to={"kind":"field",...}), so no hairline is added -
-        # its frm={"kind":"stream"} anchor would dangle with no stream at the sluice.
+
+    def _comb_source_channel(self: Settlement, net: dict[str, Any], name: str, source: dict[str, Any], sluice: Any, pond_rec: Any, join_head: bool) -> None:  # type: ignore[misc]
+        """Record the hairline SOURCE -> field feed channel that carries the water topology.
+
+        Keeps its own `kind != 'cascade'` guard: a cascade field is fed plot-to-plot from an
+        upstream field and its caller records that connector itself."""
         if source.get("kind") != "cascade":
             hr = net["channels"][0]["pts"]
             fork = hr[-1]
@@ -462,7 +509,6 @@ class CombMixin:
                     "w": 2.5,
                 }
             )
-        return cast("list[Pt]", net["envelope"])
 
     def _draw_furrows(self: Settlement, poly: Any, color: str, theta: float) -> None:  # type: ignore[misc]
         """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
