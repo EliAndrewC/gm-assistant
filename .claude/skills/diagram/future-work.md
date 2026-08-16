@@ -34,7 +34,7 @@ a mid-feature pivot. Candidate: the next city-tier map.
   `grep -E '\* -|court_every=[0-9]{3}'` before regen.
 - Regen+gate cycle is ~10s for the whole capital; the cost is the NUMBER of author cycles,
   never the generator. Batch many fixes per cycle; measure with the check's own data
-  (locators, why_placed.py) instead of guessing coordinates - every hand-guessed seat this
+  (locators, tools/why_placed.py) instead of guessing coordinates - every hand-guessed seat this
   feature landed on something.
 
 ## 4. WALL SIZE SETTLES FIRST, against a slack threshold (GM process rule, 2026-08-10)
