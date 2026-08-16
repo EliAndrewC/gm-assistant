@@ -309,3 +309,35 @@ keep: any commit message carrying identifiers in backticks goes through `-F -`, 
 emits on success - here `grep -q "gate green"` - rather than on a disjunction of words that might
 mean failure: the positive signal has one meaning, the negative list has as many meanings as the
 tool has vocabulary.
+
+## R14. Splitting a file that another session is patching: the delete/modify collision
+
+This happened, was cheap to resolve, and will happen again to the next split - the diagram engine
+has several sessions in it at once. Recording the shape and the resolution.
+
+**What git reports.** A package split DELETES the original file. A peer session patching that same
+file produces a `DU` (deleted by us, modified by them) conflict, which git cannot auto-resolve and
+which - unlike a content conflict - leaves no markers to edit. Their change simply has nowhere to
+land, and the danger is resolving it by taking the deletion and silently dropping their fix.
+
+**Why it was cheap here, and what makes it cheap in general.** The peer's fix touched
+`_paddy_features` and `_plot_pond`, both of which live in `features.py` and neither of which Stage 2
+had decomposed - so the port was a straight method-for-method replacement of the post-merge bodies
+plus the three imports they newly needed. **A split is easiest to merge into where it moved text and
+hardest where it rewrote it.** That is a reason to keep the pure-move stage separate from the
+decomposition stage beyond the diagnostic argument in R5: a peer's patch merges into a MOVE almost
+mechanically, and into a rewrite by hand.
+
+**The verification that actually proves a port** is not "the tests pass" - the peer shipped their
+own test and it would pass against a subtly wrong port of the code it exercises. It is that
+regenerating every live map reproduces THEIR just-committed manifests with zero unstaged bytes.
+Their commit had regenerated the scripted hamlets, which made the pre-split baseline obsolete and
+handed us a better oracle in its place: main's own artifacts, produced by main's own version of the
+code, are the fixed point the ported code has to hit.
+
+**The process note.** A heads-up was sent to the peer session before the split landed and it expired
+unapproved - cross-session messages need the recipient's user to approve them, so they are a
+courtesy, never a protocol. Main is the coordination point, exactly as CLAUDE.md says for spec
+numbers: the merge is where collisions are actually resolved, and it worked. A second heads-up, to
+the session reorganizing the skill's directory layout, DID land and was worth sending - but the
+split would have merged correctly either way.
