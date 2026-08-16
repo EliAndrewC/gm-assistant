@@ -21,6 +21,11 @@ extend-exclude = ["pool"]   # generated per-map gens are scripts, formatted by t
 select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = ["E501"]   # long descriptive lines are house style; the formatter caps wrapping via line-length
 
+[tool.ruff.lint.per-file-ignores]
+# the package __init__ exists to re-export the full legacy `import check_village` surface
+# (feature 024); every import there is intentionally "unused"
+"check_village/__init__.py" = ["F401"]
+
 [tool.ruff.format]
 # Preserve the existing quote style: the SVG f-strings use single-outer/double-inner
 # (f'<rect fill="{c}"/>'), so leaving quotes as-authored avoids needless churn/risk.
@@ -32,7 +37,7 @@ quote-style = "preserve"
 [tool.mypy]
 python_version = "3.14"
 strict = true
-files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "hamletgen.py", "timings.py", "pool_index.py"]
+files = ["settlement.py", "check_village", "waterfields.py", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "hamletgen.py", "timings.py", "pool_index.py", "poolmaps.py"]
 
 # RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
 # settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is
@@ -43,15 +48,23 @@ files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py",
 
 # ---- pytest + coverage -------------------------------------------------------------------
 [tool.pytest.ini_options]
-addopts = "--cov --cov-report=term-missing"
+addopts = "--cov --cov-report=term"
 
 [tool.coverage.run]
-source = ["check_village", "settlement", "pack_audit", "compound", "citybudget", "render_cache", "site_justice", "hamletgen", "pool_index"]
+source = ["check_village", "settlement", "pack_audit", "compound", "citybudget", "render_cache", "site_justice", "hamletgen", "pool_index", "poolmaps"]
 omit = ["test_*.py", "pool/*/*.gen.py"]
 
+# COVERAGE ENFORCEMENT LIVES IN THE MAKEFILE since the 2026-08-16 legacy freeze, not here. The
+# hand-authored pool maps are frozen and their gens never run, so the above-hamlet wings of
+# settlement.py (towns, cities, the capital) are exercised by nothing until those tiers convert to
+# scripted generation. A single global `fail_under = 100` therefore cannot hold; the Makefile's
+# `test` target enforces 100% on every module EXCEPT settlement.py and a RATCHET floor on
+# settlement.py (raise it as tiers convert - see the comment there). `show_missing` stays off so
+# settlement.py's known hole does not print a screen of line ranges on every run; for the module
+# you are editing, `python3 -m coverage report -m --include='*/<file>'` after a suite run, and a
+# failed gate still prints exactly the changed-but-uncovered lines via uncovered-in-diff.py.
 [tool.coverage.report]
-fail_under = 100
-show_missing = true
+show_missing = false
 exclude_also = [
     "if __name__ == .__main__.:",   # script entry guards are exercised via the CLI, not unit tests
 ]

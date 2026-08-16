@@ -1,7 +1,35 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.4.2 → 1.5.0
+Version change: 1.5.0 → 1.6.0
+MINOR: Principle X (Python Discipline) materially expanded again - clause 13
+(Files Stay at Human Scale) added (GM-directed, 2026-08-15), the file-size
+sibling of clause 12. A source file past roughly 1,000 raw lines prompts the
+question of whether it should become a directory-module (package of subfiles)
+whose CLAUDE.md indexes the parts and says when to load each one. Measured in
+RAW LINES, unlike clause 12's logic units, because the motivating cost is
+token economy: a context window pays for the whole file to use any part of
+it, and that cost scales with text, not logic. Ask-the-question threshold,
+not a mandate - ordered-data files (e.g. a registry whose row order is the
+execution contract) may stay large with an inline justification. Motivating
+case: check_village.py at 35,603 lines, split into the check_village/
+package by feature 024 the same day.
+
+Sections updated:
+  - Core Principles: Principle X clause 13 added.
+
+Templates requiring review/update:
+  ✅ .specify/templates/plan-template.md - Principle X gate entry now names
+                              the file-scale clause.
+  ✅ CLAUDE.md - one-line operational mirror in Development Workflow;
+                              constitution version reference bumped.
+
+Deferred TODOs:
+  - Automated file-length check (flags source files past the threshold
+    lacking a justification header) - recorded alongside clause 12's
+    deferred expression-counting gate check.
+
+PRIOR (1.4.2 → 1.5.0):
 MINOR: Principle X (Python Discipline) materially expanded - clause 12
 (Functions Stay at Human Scale) added (GM-directed, 2026-08-15). A function
 past a few hundred logical statements is suspect; past ~1,000 it is a defect
@@ -406,6 +434,28 @@ any single rule is reason enough to refuse "done" status.
     architecture problem - nothing inside it could be invoked
     separately - long before anyone would have chosen that shape.
 
+13. **Files stay at human scale** (added v1.6.0, GM-directed 2026-08-15):
+    a source file that has grown past roughly 1,000 lines prompts a
+    question that MUST actually be asked: should this become a package
+    of subfiles? The unit here is RAW LINES - deliberately unlike
+    clause 12's logic units - because the motivating cost is token
+    economy: a session that needs one function from a file pays
+    context-window tokens for the whole file, and that cost scales with
+    text, not logic. The target shape is a directory-module whose
+    CLAUDE.md indexes the subfiles with a "look here when" line each,
+    per the project's slim-index / load-on-demand doc pattern, so a
+    future session loads only the part it needs. Like clause 12 this is
+    an ask-the-question line, not a mandate: over-fragmentation damages
+    design more than length does, and a file that is one cohesive
+    ordered dataset (a registry whose row order IS the execution
+    contract) may stay large - with an inline justification at the top
+    saying why. The failure mode is the same GROWTH pattern as clause
+    12: no single edit crosses the line, so the line must be checked
+    rather than felt. Motivating case: `check_village.py` reached
+    35,603 lines one check at a time and cost a full context window to
+    consult; feature 024 split it into the `check_village/` package,
+    the exemplar of the practice.
+
 ### XI. Japanese Authenticity (NON-NEGOTIABLE)
 
 Any content this project generates or surfaces in Japanese script - relic
@@ -685,4 +735,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.5.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-15
+**Version**: 1.6.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-15

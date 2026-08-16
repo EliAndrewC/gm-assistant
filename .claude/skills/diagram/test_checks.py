@@ -22,6 +22,7 @@ caught next time.
 import json
 import math
 import pathlib
+import sys
 
 import pytest
 
@@ -1638,6 +1639,22 @@ def test_groves_where_possible_passes_when_windward_is_blocked():
     houses = [_farmhouse(300 + 60 * i, 400) for i in range(12)]
     fields = [_field(f"f{i}", 280 + 60 * i, 330, 340 + 60 * i, 395) for i in range(12)]  # field just N of each house
     M = {"meta": {"scale": "village", "windward": "N"}, "houses": houses, "fields": fields, "groves": []}
+    assert "groves_where_possible" not in f(M)
+
+
+def test_groves_where_possible_tolerates_a_yard_strip_shaded_windward_side():
+    """A farm whose windward clump seat lands on a threshing yard's DRYING STRIP (the 11px band
+    below the yard - which the avoid center-box test deliberately cannot see) is legitimately
+    grove-less. Deterministic cover for the yard-strip rejection in clump_clear: before feature
+    024's per-check split this branch was reached only incidentally via the mega-segment's full
+    replay (same shape as the feature-022 manor-walls precedent)."""
+    houses = [_farmhouse(300 + 60 * i, 400) for i in range(12)]
+    dm = 13 * 46 / 44.0  # minimal-clump depth for the 46px farmhouse (mirrors min_clump)
+    cy = 400 - (28 / 2 + dm / 2 + 1.5)  # the windward-"N" clump seat's center
+    # yard 30px above the seat: outside the avoid box (30 >= (dm+26)/2+7) but its strip center
+    # (yd.y + h/2 + 11) sits 6px from the seat, well inside the strip test
+    yards = [yard(300 + 60 * i, cy - 30, of=(300 + 60 * i, 400)) for i in range(12)]
+    M = {"meta": {"scale": "village", "windward": "N"}, "houses": houses, "threshing_yards": yards, "groves": []}
     assert "groves_where_possible" not in f(M)
 
 
@@ -9540,7 +9557,11 @@ def test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key(
     this replaced fell behind twice."""
     M = _label_map("Temple of Benten", "martial_halls")
     assert "every_solid_feature_classified_for_labels" not in f(M)
-    monkeypatch.setattr(check_village, "_OVERLAP_STRUCTS", check_village._OVERLAP_STRUCTS + ("hawk_mews",))
+    # since feature 024 the gate is a package: each submodule that imported _OVERLAP_STRUCTS holds
+    # its own binding, so patch every holder, not just the package namespace
+    _new = check_village._OVERLAP_STRUCTS + ("hawk_mews",)
+    for _m in [m for m in list(sys.modules.values()) if getattr(m, "__name__", "").startswith("check_village") and hasattr(m, "_OVERLAP_STRUCTS")]:
+        monkeypatch.setattr(_m, "_OVERLAP_STRUCTS", _new)
     assert "every_solid_feature_classified_for_labels" in f(M)
 
 

@@ -9,8 +9,9 @@ conversion has to obey. **Update the status table in section 4 as part of finish
 up this project cold, or you are deciding whether a `/diagram` request should be hand-authored or
 generated.
 
-**Status: hamlet tier converted (one archetype of five). Everything above hamlet is hand-authored.**
-Last updated 2026-08-15.
+**Status: hamlet tier converted (one archetype of five). Everything above hamlet is hand-authored -
+and the whole hand-authored pool is FROZEN as of 2026-08-16 (section 2): exhibits, not maintained
+artifacts.** Last updated 2026-08-16.
 
 ---
 
@@ -21,7 +22,7 @@ A `/diagram` Mode B map has three layers, and only ONE of them is changing.
 | Layer | What it is | Size | Converting? |
 |---|---|---|---|
 | The **engine** - `settlement.py` | 371 methods that DRAW things: farmhouses, paddy combs, torii, city walls, castles, markets, wards | 16.0k lines | **No.** Already spans hamlet to capital. |
-| The **validator** - `check_village.py` | The gate. 189 checks run on a single hamlet; more at larger tiers | 15.7k lines | **No.** It is the reason this migration is safe. |
+| The **validator** - `check_village/` | The gate. 189 checks run on a single hamlet; more at larger tiers | 15.7k lines | **No.** It is the reason this migration is safe. |
 | The **composition** - `pool/*/<name>.gen.py` | Which features exist on THIS map, where each one sits, how they relate | ~200-900 lines **per map**, hand-written | **Yes. This is the whole migration.** |
 
 The composition layer is what costs hours per map, is where every placement bug lives, and is what
@@ -60,6 +61,19 @@ hand-authored maps, and a rule discovered today reaches none of them.
 hand-authored maps, we do NOT go back and fix those maps. We fix it in the generator and the map
 gets fixed when its type is converted. Retrofitting by hand is the cost this project exists to stop
 paying. Record the decision in the map's `.notes.md` so nobody re-discovers it as a bug.
+
+**Extended to a full FREEZE** (GM, 2026-08-16): the hand-authored pool is no longer regenerated OR
+re-gated at all. The 19 legacy Mode B maps keep their committed .json/.svg/.png as permanent
+exhibits (still in `pool/index.html`), the `test_villages.py` sweep covers scripted maps only, and
+`regen.py` refuses a legacy gen (`FROZEN`; `--frozen-ok` overrides). `poolmaps.py` is the
+classification all three tools share. What this buys: iteration on placement rules and checks costs
+nothing on maps whose authoring process is deprecated, and - the bigger half - **engine changes no
+longer need to hold the legacy pool byte-identical**, so new rules ship un-flagged and the
+byte-identity criterion below is retired. The known cost, accepted out loud: the above-hamlet wings
+of `settlement.py` (towns, cities, the capital) are exercised by nothing until their tiers convert,
+so the coverage gate holds 100% on every module except `settlement.py`, which carries a RATCHET
+floor in the Makefile (`SETTLEMENT_COV_FLOOR`) - raise it as each tier converts, never lower it.
+A frozen map's defects against post-freeze rules are expected, not bugs; the fix is conversion.
 
 ## 3. The two axes
 
@@ -126,9 +140,13 @@ document is deliberately NOT a spec-kit feature: it outlives all of them.
 3. **A held-out cohort is green.** Fit against one seed range, then measure on a range you never
    developed against. Fitted = seeds you tuned on; held-out = seeds that only ever get measured.
    Without the second number you have memorized the first.
-4. **The hand-authored pool is byte-identical.** Every engine change is verified against all 23
-   existing maps. New rules that would move them are opt-in (a flag, or gated on
-   `meta.generated_by`) so the legacy maps re-render unchanged.
+4. **The frozen legacy pool is untouched on disk.** RETIRED as a byte-identity requirement by the
+   2026-08-16 freeze (section 2): legacy gens are never re-run, so engine changes need no flags and
+   nothing verifies 19 deprecated compositions. What remains is the trivial half: nothing in the
+   conversion may regenerate or overwrite a frozen map's committed artifacts (`git status` under
+   `pool/` stays clean apart from the maps you meant to change). When the conversion of a TIER
+   lands, its legacy exemplars stay frozen as exhibits; raise the Makefile's
+   `SETTLEMENT_COV_FLOOR` to cover the tier's newly re-exercised engine wing.
 5. **`make done` is green** - ruff, format, mypy --strict, pytest, 100% coverage.
 6. **A `settlement-review` pass on at least one generated map.** The gate cannot see glyph
    legibility, feature FORM, or whether the map reads as a distinct place. The author is not a
@@ -225,5 +243,9 @@ Ordered by value per unit of effort, not by tier.
 - **The roll** - the set of archetypes the generator will choose from when the spec does not name
   one. An archetype that generates but is not in the roll is opt-in only.
 - **`meta.generated_by`** - the manifest tag marking a map as scripted. Checks gated on it apply new
-  rules to generated maps without moving hand-authored ones.
-- **The gate** - `check_village.py`. **`make done`** - the full lint/type/test/coverage run.
+  rules to generated maps without moving hand-authored ones. (Largely historical since the freeze:
+  new rules no longer need gating, because legacy maps are never re-gated; existing gates stay for
+  the regression corpus's frozen fixtures.)
+- **Frozen** - a legacy map's permanent state since 2026-08-16: committed artifacts kept as
+  exhibits, gen never re-run, gate never re-applied. `poolmaps.py` holds the classification.
+- **The gate** - `check_village/`. **`make done`** - the full lint/type/test/coverage run.
