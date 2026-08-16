@@ -190,6 +190,13 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   cooperation. Full protocol (and what peer messaging IS for) in
   [`docs/session-clones.md`](docs/session-clones.md).
 
+**NO KNOWN REGRESSIONS - and nothing merges to main carrying one** (constitution Principle XIII, NON-NEGOTIABLE, GM 2026-08-17: *"never count our work as being done when there are known regressions. Nothing should EVER be merged back into main if even one single new regression was added."*). Two separate bars, and work routinely clears the first and fails the second:
+
+- **A regression is measured, not remembered.** It is anything that passed before your change and fails after it - a test, a gate check, a pool artifact, a cohort seed, a rate. Take the baseline on unmodified code in a **detached worktree** (`git worktree add --detach /tmp/base HEAD`), never by stashing - a stash mutates the tree under any review agent currently reading it.
+- **Pre-existing failures are NOT regressions.** They stay ledgered and are not fixed under someone else's feature. That distinction is exactly why the baseline is mandatory.
+- **None of these excuses one**: it is small; it is "only" a cohort seed or a fixture; you documented it (a ledger entry tracks a regression, it does not permit one); the change fixes more than it breaks; or the residue "ROTATED" because a re-roll moved which seeds fail. On rotation specifically - where per-seed comparison survives, a check that passed on a seed and now fails is a regression; where the re-roll makes per-seed comparison meaningless, the pass RATE must not drop **and** every newly-failing check must be individually diagnosed.
+- **Three exits only: fix it, revert it, or get an explicit GM waiver** for that specific regression. If you cannot fix it, STOP and say so - the work stays in the clone, **unpushed**. `sync-with-main.sh done` is not run on a regressed state; committing inside your own clone is still fine and correct (mid-task work is sacred).
+
 **Verification before reporting "done"** (per Principle VI of the constitution):
 
 - **UI changes** (per Principle I, expanded in v1.3.0):
