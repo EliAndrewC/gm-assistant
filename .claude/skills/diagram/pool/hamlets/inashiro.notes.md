@@ -173,7 +173,7 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   `meta.cluster_seeding` records the seeding mode always ("frontage" on this roll).
   Map-specific: the west-edge floor strip (12 vertices, worst ~357 px past the flat-extended drain
   line - the same class as Mizuguchi's needle, unnoticed until the check swept) is trimmed to the
-  pixel; four dry woodland parcels (250/250/160/125 ft); the pocket pond re-seated to (2092, 1671)
+  pixel; three dry woodland parcels (250/250/160 ft) on the merged roll (a 125 ft fourth existed on the pre-merge roll and did not survive the concurrent-session merge re-roll - the dry window holds three); the pocket pond re-seated to (2092, 1671)
   with no ink-on-water residue (the 2026-08-15 logged item cleared with the re-roll). Review log:
   full DELTA caught the two marsh-seated parcels (one 100% wet with zero crowns) that drove the
   marsh keep-out; follow-up pass on the re-seat. Reviewer note logged in future-work.md: stand
