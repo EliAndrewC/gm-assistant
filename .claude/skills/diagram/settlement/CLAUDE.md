@@ -32,7 +32,7 @@ Two invariants the split does NOT touch:
 | `homestead_parts.py` | threshing yards, gardens, farm sheds, homestead groves, the village grove, canopy/corridor keepouts |
 | `land.py` | perimeter dikes + dike-top housing, commons, marsh, toe bands, hinterland, near-ring cropland/paddy, farmstead nudge plumbing |
 | `civic_grounds.py` | funerary grounds (cemetery/mausoleum/cremation/ossuary), punishment/execution grounds, boundary markers, districts, terraces, granaries, merchant storehouses/residences, flophouse/inn/stables + stable yards |
-| `city.py` | ring roads, city walls + towers + wall walks, moats + gates + sluices, canals + towpaths, farmland ring, quay/aqueduct/docks/log boom, bridges + channel footbridges |
+| `city/` | the provincial-city subsystem - a PACKAGE with its own [`CLAUDE.md`](city/CLAUDE.md) index since feature 113. Read that first, then load one of: `walls.py` (ring road, city wall, towers, wall walk), `moat.py` (moat, water gates, sluices, the inwall drain), `canals.py` (canal, towpath, farmland ring), `waterfront.py` (quay, aqueduct, docks, jetty, log boom), `bridges.py` (bridges, channel footbridges), `civic.py` (the governor's mansion) |
 | `castle_civic.py` | castle, ministries, dojos + martial halls + hanko, the caption/label-spot engine, forest patches, freestanding walls, flower fields |
 | `houses.py` | house drawing + placement machinery (corridors, keepouts, treads, `_fits`, frontage), `try_place`, cluster seeds, plot texture, water-source anchors |
 | `rolling.py` | `roll_village` and the whole homestead-bundle solver (seeds, headman, bundle geometry/placement, farmsteads, perimeter ring) |
@@ -58,5 +58,5 @@ test in the suite patches a settlement module-level name (census in
 
 The package holds the 94% RATCHET floor from the 2026-08-16 legacy freeze (see
 `SETTLEMENT_COV_FLOOR` in the Makefile): the uncovered town/city/capital wings live mostly in
-`city.py`, `castle_civic.py`, and parts of `structures.py`/`civic_grounds.py`, and re-cover as
+`city/`, `castle_civic.py`, and parts of `structures.py`/`civic_grounds.py`, and re-cover as
 those tiers convert to scripted generation. Raise the floor with each conversion; never lower it.

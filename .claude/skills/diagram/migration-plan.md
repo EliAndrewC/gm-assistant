@@ -64,8 +64,8 @@ paying. Record the decision in the map's `.notes.md` so nobody re-discovers it a
 
 **Extended to a full FREEZE** (GM, 2026-08-16): the hand-authored pool is no longer regenerated OR
 re-gated at all. The 19 legacy Mode B maps keep their committed .json/.svg/.png as permanent
-exhibits (still in `pool/index.html`), the `test_villages.py` sweep covers scripted maps only, and
-`regen.py` refuses a legacy gen (`FROZEN`; `--frozen-ok` overrides). `poolmaps.py` is the
+exhibits (still in `pool/index.html`), the `tests/test_villages.py` sweep covers scripted maps only, and
+`pipeline/regen.py` refuses a legacy gen (`FROZEN`; `--frozen-ok` overrides). `pipeline/poolmaps.py` is the
 classification all three tools share. What this buys: iteration on placement rules and checks costs
 nothing on maps whose authoring process is deprecated, and - the bigger half - **engine changes no
 longer need to hold the legacy pool byte-identical**, so new rules ship un-flagged and the
@@ -194,7 +194,7 @@ The GM's standing constraint: *the difference between 5 minutes and 50 minutes t
 is huge, and inefficient loops have been the single biggest stumbling block.*
 
 **The numbers live in [`timings.md`](timings.md), not here** - one dated block per measurement,
-appended by `python3 timings.py`. They are deliberately NOT duplicated into this plan, because a
+appended by `python3 -m tools.timings`. They are deliberately NOT duplicated into this plan, because a
 number written in two places eventually disagrees with itself, which is exactly how the skill's
 CLAUDE.md came to claim a "~2 to 2.5 minute" sweep long after it had passed four minutes.
 
@@ -254,5 +254,5 @@ Ordered by value per unit of effort, not by tier.
   new rules no longer need gating, because legacy maps are never re-gated; existing gates stay for
   the regression corpus's frozen fixtures.)
 - **Frozen** - a legacy map's permanent state since 2026-08-16: committed artifacts kept as
-  exhibits, gen never re-run, gate never re-applied. `poolmaps.py` holds the classification.
+  exhibits, gen never re-run, gate never re-applied. `pipeline/poolmaps.py` holds the classification.
 - **The gate** - `check_village/`. **`make done`** - the full lint/type/test/coverage run.
