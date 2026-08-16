@@ -259,6 +259,29 @@ def test_the_cluster_is_never_seated_below_the_drain() -> None:
     assert seat["cy"] < 1000.0
 
 
+def test_a_margin_below_the_drain_is_excluded_outright() -> None:
+    """HARD 1's own `continue`: a drain drawn INSIDE the low half puts the square's south margin
+    genuinely on the wet side (mid 100 px past the line, within the 150 px toe band), so the seat
+    scan must skip that margin - not merely score it down. (The sibling drain-along-the-edge test
+    asserts the RESULT; the 2026-08-16 re-rolls left this branch reached by no pool map, and a
+    branch no test reaches is the coverage form of the check that never runs.)"""
+    plan = a_plan()
+    drain = [(300.0, 900.0), (1100.0, 900.0)]
+    seat = hg.seat_cluster(plan, drain=drain)
+    assert seat["cy"] < 900.0
+
+
+def test_pond_setback_walks_past_blocked_probes() -> None:
+    """An outfall INSIDE the field envelope blocks the first probes (every near rim point lands in
+    the crop), so the walk must step outward (`d += step`) until the ellipse clears, and the
+    returned distance carries the 12 px cushion past that first clear seat."""
+    plan = a_plan()
+    d = hg.pond_setback(plan, (700.0, 700.0), 60.0, 40.0)
+    assert d > 40.0 + 46.0 + 14.0  # further than the first probe: the walk really stepped
+    cx, cy = 700.0 + plan.fall[0] * d, 700.0 + plan.fall[1] * d
+    assert hg.pond_clear_of_crop(plan, (cx, cy), 60.0, 40.0)
+
+
 def test_the_cluster_avoids_a_margin_whose_back_is_under_the_hem() -> None:
     """A margin hemmed by dry crop is not a worse seat, it is not a seat: the cluster's own band and
     the windbreak behind it would stand in the barley."""

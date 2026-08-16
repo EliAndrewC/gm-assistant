@@ -21,10 +21,12 @@ history rather than the map's current state; the reporting machinery is unchange
 re-roll that misses will say so again.
 
 **Known open**: Inashiro's two - the bare comb floor on the fan's shoulders (inherited from
-`build_comb`), and a windward quarter derived from the slope. Also: the managed COPPICE patches
-the name story leans on land OFF-FRAME on this roll (all three woodland commons sit past the
-crop), so the oaks are implied beyond the frame rather than drawn - the fengshui belt is the only
-on-sheet woodland. Logged in `future-work.md`.
+`build_comb`), and a windward quarter derived from the slope. The woodland commons went
+3 parcels (250 ft, off-frame) -> ONE on-frame 160 ft parcel in the 2026-08-16 fix round - the
+shrink ladder doing its job, not a shortfall: the dry, open, in-frame ground holds exactly that.
+The surviving coppice stands on the dry footslope strip by the bog toe, downhill of the cluster -
+the margin not worth tilling, which is where a commons woodlot really goes - while the name's
+high-ground oaks stay implied beyond the SW frame.
 
 - 2026-08-15 (supply-bank hem re-roll): bunds hem onto the supply channels' banks
   (`build_comb(supply_banks=True)`, gate `paddy_bunds_clear_the_supply_channels`); the whole map
@@ -46,3 +48,16 @@ on-sheet woodland. Logged in `future-work.md`.
   The minimax well objective still counts those houses (a known, harmless inefficiency - logged
   in future-work.md); their real water is the stream, the period-correct arrangement.
 
+
+- 2026-08-16 (known-opens round - floor trim, woodland re-seat, seeding trace; this map
+  re-rolled): the ledger's four fork-re-roll defects were closed in one session. The comb floor is
+  now TRIMMED to the collector's command area (`floor_overhang`, gate
+  `comb_floor_ends_at_the_collector`); woodland commons seat inside the predicted kept window AND
+  off the marsh (`open_ground_patches` frame + marsh keep-outs, shrink ladder 250 -> 200 -> 160 ->
+  125 ft; gates `woodland_commons_within_the_frame` / `woodland_commons_on_dry_ground`); and
+  `meta.cluster_seeding` records the seeding mode always ("frontage" on this roll).
+  Map-specific: the envelope trim was provably surgical (NE extent 2726 -> 2484, all 750 plots and
+  the wet plots byte-identical, one footbridge on the removed ground gone with it); the phantom
+  bog parcel (250 ft recorded, 2 crowns drawn vs its sibling's 53) is gone and the map honestly
+  seats ONE dry 160 ft oak stand. Review log: full DELTA caught the phantom parcel and this
+  file's stale off-frame paragraph (both fixed same day); follow-up pass on the re-seat.

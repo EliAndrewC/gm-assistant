@@ -41,3 +41,16 @@ the low side where the gate requires it.
   tails via interpolated piece boundaries, minimax worst-served well placement, the notice
   board's grove-clump keep-out, accidental-lane-crossing guards). Review log: round-2 DELTA
   flagged a copse clump swallowing the notice board and two lane arms crossing mid-run (both fixed at the engine); round-3 follow-up in the session of 2026-08-16.
+
+- 2026-08-16 (known-opens round - floor trim, woodland re-seat, seeding trace; this map
+  re-rolled): the ledger's four fork-re-roll defects were closed in one session. The comb floor is
+  now TRIMMED to the collector's command area (`floor_overhang`, gate
+  `comb_floor_ends_at_the_collector`); woodland commons seat inside the predicted kept window AND
+  off the marsh (`open_ground_patches` frame + marsh keep-outs, shrink ladder 250 -> 200 -> 160 ->
+  125 ft; gates `woodland_commons_within_the_frame` / `woodland_commons_on_dry_ground`); and
+  `meta.cluster_seeding` records the seeding mode always ("frontage" on this roll).
+  Map-specific: the corrected derivation's honest woodland count is ONE 125 ft parcel on the dry
+  shoulder between marsh and placard (the ask was 3; this composition's dry in-frame ground is
+  genuinely tight, and its name story is the marsh, not oaks). Review log: full DELTA verified the
+  trim and the frame fix, and caught the 97%-marsh parcel that drove the marsh keep-out;
+  follow-up pass on the re-seat.

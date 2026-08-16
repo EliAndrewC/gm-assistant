@@ -163,3 +163,18 @@ against this map first; the pre-fix manifest is frozen as
 `commons`, and Mizuguchi's cluster re-seated (hem corners feed `seat_cluster` scoring).
 `settlement-review` (DELTA, one agent per map): all four PASS - seams collinear to ~0.1 px,
 raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosatsuba re-checked).
+
+- 2026-08-16 (known-opens round - floor trim, woodland re-seat, seeding trace; this map
+  re-rolled): the ledger's four fork-re-roll defects were closed in one session. The comb floor is
+  now TRIMMED to the collector's command area (`floor_overhang`, gate
+  `comb_floor_ends_at_the_collector`); woodland commons seat inside the predicted kept window AND
+  off the marsh (`open_ground_patches` frame + marsh keep-outs, shrink ladder 250 -> 200 -> 160 ->
+  125 ft; gates `woodland_commons_within_the_frame` / `woodland_commons_on_dry_ground`); and
+  `meta.cluster_seeding` records the seeding mode always ("frontage" on this roll).
+  Map-specific: the west-edge floor strip (12 vertices, worst ~357 px past the flat-extended drain
+  line - the same class as Mizuguchi's needle, unnoticed until the check swept) is trimmed to the
+  pixel; three dry woodland parcels (250/250/160 ft) on the merged roll (a 125 ft fourth existed on the pre-merge roll and did not survive the concurrent-session merge re-roll - the dry window holds three); the pocket pond re-seated to (2092, 1671)
+  with no ink-on-water residue (the 2026-08-15 logged item cleared with the re-roll). Review log:
+  full DELTA caught the two marsh-seated parcels (one 100% wet with zero crowns) that drove the
+  marsh keep-out; follow-up pass on the re-seat. Reviewer note logged in future-work.md: stand
+  crowns are ink-only, so no manifest check can count a coppice canopy.
