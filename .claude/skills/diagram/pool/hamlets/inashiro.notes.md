@@ -437,9 +437,12 @@ drain.
 **The discriminator is the END, not the corner.** Threshold back to 25; the ring is deduped at
 `_TINT_END_FT` (5 ft - two aze at 1.5 ft leave ~2 ft of standing water between them, so a narrower
 end is not an end but a point) before the apex is taken, which collapses the truncation and lets the
-wedge show its real apex. Verified on the re-roll: **5 flooded plots, none with a sub-5 ft end**
-(end-collapsed apex equals the raw apex for every one of them), and the 32.7 deg honest strip keeps
-its tint. This also removes the threshold race for good - the demotion now measures a DIFFERENT ring
+wedge show its real apex. Verified on the re-roll: **5 flooded plots, none of them a truncated
+needle** - the end-collapsed apex equals the gate-ring apex for every one, so nothing is hiding a
+point under a chamfer - and the 32.7 deg honest strip keeps its tint. (An earlier draft of this
+entry said "none with a sub-5 ft end", which is stronger than the evidence and wrong: #454 closes
+with a 1.1 ft edge and #522 carries 0.1-2.1 ft steps. Those are blunt chamfers on a staircase, not
+ends. Corrected after the round-3 review measured them.) This also removes the threshold race for good - the demotion now measures a DIFFERENT ring
 from the placer's guard rather than sitting one number away from it.
 
 Review catch-rate: round-2 DELTA - CAUGHT the truncated-needle blind spot (with a live blue instance
@@ -451,3 +454,39 @@ collector node 3 plots against the ledgered 8-10), and `scatter_audit` 0 violati
 
 Still open, unchanged by this round: the self-intersecting carve ring at (2397,1790) (`drain_hem[20]`,
 `Polygon.is_valid == False`, identical at HEAD) - ledgered with the carve work, not this delta.
+
+### 2026-08-17 - round 3: the tint rule's implementation was fabricating apexes
+
+Verdict **pass, no errors** - but the review found the end-width rule's IMPLEMENTATION unsound, and
+it was a landmine rather than a shipped defect, which is the kind worth spending a round on.
+
+`dedup_ring(r, end)` was standing in for "collapse the truncation", but it is a GLOBAL operation: it
+merges short edges anywhere on a ring, so a staircase of chamfers mid-wall fuses into a spike that
+was never drawn. Four measured instances on one roll - ring #550, whose sharpest REAL corner is 86.7
+deg, reported 2.3 after merging 4.0 / 2.4 / 4.2 ft edges, and ring #622 (83.7 -> 20.1) sat at the
+east toe inside the flooded candidate zone, one roll from demoting an honest basin. Same
+overcorrection class this rule had already been caught on twice.
+
+Replaced with `tapers_to_a_point` (banks.py), which asks the question locally and per-edge: a short
+edge is an END only if both the sides it caps are real basin walls (>= 4x the end width) and the
+ring is genuinely wider back there (far width >= 3x the end edge). Then the angle between the two
+arms is the apex the wedge would have had if the toe had not cut it off - truncation-invariant, and
+it cannot invent a corner the drawing does not contain.
+
+**A bug in the fix, found by measuring rather than reasoning**: the first version tested only the
+arm-length condition, and the angle between two BACKWARD arms is the apex angle only when they
+DIVERGE - for parallel sides it is 0.0, which scores as maximally pointed while describing a strip of
+constant width. Ring #633 is exactly that (parallel sides, 2.3 ft chamfer, converge 0.0 measured).
+The far-width ratio is what distinguishes "narrow here, wide there" from "narrow everywhere".
+
+Result: #550 and #633 are no longer flagged; the five that remain are genuine truncated tapers (end
+2.1-4.7 ft, far width 15.5-32.2 ft, converge 11.5-22.1 deg) and only #456 among them wears the tint,
+so **no shipped plot changed** - the fix removes a latent misfire, not a visible defect.
+
+**Deliberate decision - end width, NOT taper.** The review noted that #458 keeps its tint with a 10.4
+ft end while converging at 18.5 deg, marginally MORE sharply than the demoted #456 (19.2 deg, 3.4 ft
+end); the only thing separating them is how deep the toe cut. That is the intended reading:
+`research/fields.md` says a basin never tapers to a point and the fan toe TRUNCATES, and 10.4 ft less
+two aze still leaves ~7.4 ft of standing water - a workable basin, which is what it reads as at fit
+zoom. Revisit only if a roll produces a 5-8 ft end that reads as a point; see future-work.md for the
+sketch, since the convergence measure now exists and switching is a one-line change.

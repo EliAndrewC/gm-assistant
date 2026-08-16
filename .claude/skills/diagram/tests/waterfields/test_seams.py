@@ -11,7 +11,7 @@ import random
 import pytest
 from shapely.geometry import Polygon
 
-from waterfields.banks import _WELD_MIN_APEX, dedup_ring
+from waterfields.banks import _WELD_MIN_APEX, dedup_ring, tapers_to_a_point
 from waterfields.frame import _Frame
 from waterfields.seams import MIN_PLOT_SIDE, _absorb, _despike, _min_apex, _open_to, _parts, _plant, _ring, _water, close_seams
 
@@ -153,6 +153,51 @@ def _wedge(h: float, ln: float) -> Polygon:
 
 def _apex_of(poly: Polygon) -> float:
     return _min_apex(dedup_ring(_ring(poly), 1.0))
+
+
+# A 20 deg wedge truncated to a 3.4 ft end - the shape that reads as a pond when it wears the water
+# tint, and the live instance the Inashiro review found (30.0 -> 3.4 ft over 75 ft).
+_TRUNCATED_WEDGE = [(200.0, 35.3), (9.6, 1.7), (9.6, -1.7), (200.0, -35.3)]
+
+
+def test_a_truncated_wedge_is_seen_as_tapering_to_a_point():
+    assert tapers_to_a_point(_TRUNCATED_WEDGE, 5.0, 25.0, 20.0)
+
+
+def test_a_chamfer_between_two_SHORT_edges_is_not_a_taper():
+    """The guard that stops the predicate FABRICATING an apex (settlement-review, 2026-08-17).
+
+    Its predecessor deduped the whole ring at the end width, which merges short edges ANYWHERE - so
+    a staircase of chamfers mid-wall fused into a spike that was never in the drawing. Four measured
+    fabrications on one roll, the worst turning a ring whose sharpest real corner is 86.7 deg into
+    2.3, and one of them sat in the flooded candidate zone one roll from demoting an honest basin.
+
+    Same 3.4 ft end edge and the same 20 deg convergence as the wedge above; only the ARMS are
+    short. That is the whole difference between the end of a taper and a step in a wall."""
+    chamfer = [(20.0, 5.0), (9.6, 1.7), (9.6, -1.7), (20.0, -5.0)]
+    assert not tapers_to_a_point(chamfer, 5.0, 25.0, 20.0)
+
+
+def test_a_parallel_sided_strip_is_not_a_taper_however_short_its_end():
+    """The second fabrication guard, and the one the arm-length test alone does NOT catch.
+
+    The angle between the two backward arms is the apex angle only when they DIVERGE; for parallel
+    sides it is 0.0, which scores as maximally pointed while describing a strip of constant width.
+    Measured live on Inashiro (ring #633: a parallel-sided strip with a 2.3 ft chamfer, converge
+    exactly 0.0). A taper is narrow HERE and wide THERE, so the far ends of the arms must stand well
+    apart before the angle is allowed to mean anything."""
+    strip = [(200.0, 5.0), (0.0, 5.0), (0.0, 2.0), (200.0, 2.0)]
+    assert not tapers_to_a_point(strip, 5.0, 25.0, 20.0)
+
+
+def test_a_wedge_with_a_workable_end_is_not_a_taper():
+    # 10.4 ft of end: two aze leave ~7.4 ft of standing water, which is a basin, not a point
+    wide = [(200.0, 35.3), (9.6, 5.2), (9.6, -5.2), (200.0, -35.3)]
+    assert not tapers_to_a_point(wide, 5.0, 25.0, 20.0)
+
+
+def test_tapers_to_a_point_declines_a_ring_too_short_to_have_an_end():
+    assert not tapers_to_a_point([(0.0, 0.0), (10.0, 0.0), (5.0, 8.0)], 5.0, 25.0, 20.0)
 
 
 def test_min_apex_reads_the_sharpest_corner_and_survives_a_degenerate_ring():
