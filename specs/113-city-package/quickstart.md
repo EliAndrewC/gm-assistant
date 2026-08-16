@@ -57,7 +57,23 @@ Record the hashes:
       | xargs sha256sum > /tmp/113-work.sha
     diff /tmp/113-baseline.sha /tmp/113-work.sha && echo "BYTE-IDENTICAL"
 
-An empty diff is the pass condition. **Sweep in the scratch copy, never in the clone** - that is
+**An empty diff is NOT sufficient on its own.** Check all three, in this order:
+
+    grep -c '^REGENERATED' /tmp/113-work.log     # must equal the baseline's count (28)
+    # regen's own exit code must be 0
+    diff /tmp/113-baseline.sha /tmp/113-work.sha  # must be empty
+
+The reason is a false green this feature actually hit (research R9). `cp -a` copies the COMMITTED
+pool artifacts into the scratch tree. If the sweep dies early - `regen` fans out across processes
+and a `resvg` render can be OOM-killed when something heavy runs beside it - the artifacts sitting
+in the scratch tree are the committed ones, untouched. They then hash equal to a baseline that
+faithfully reproduced those same committed bytes, and `diff` prints nothing. The oracle reports
+success having tested nothing at all.
+
+So: **do not run the sweep beside an `-n auto` pytest or a `make done`** (that contention is what
+killed the first attempt), and treat the regen exit code and the REGENERATED count as part of the
+pass condition rather than as diagnostics. If memory is tight, `--jobs 1` trades wall clock for
+headroom. **Sweep in the scratch copy, never in the clone** - that is
 what keeps the clone's committed frozen artifacts untouched. Both sweeps use the same relative
 paths, so the `sha256sum` diff is a pure content comparison.
 

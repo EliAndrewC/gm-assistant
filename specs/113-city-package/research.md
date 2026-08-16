@@ -223,3 +223,112 @@ The peer session deliberately left the floor at 94 rather than banking its own m
 reasoning that raising a ratchet inside an unrelated refactor makes a future failure hard to
 attribute. That reasoning is adopted here: this feature raises the floor only if ITS split is what
 re-covered the wings, and the new measurement is recorded in the comment beside it.
+
+## R8. The inherited transformer rewrote only the HEADER's relative imports
+
+Found during implementation, fixed in both the produced file and `split_city.py`.
+
+Feature 112's `split_fields.py` rewrites `._geom` -> `.._geom`, `._knobs` -> `.._knobs` and
+`.core` -> `..core` in the module HEADER it copies into each submodule. That was sufficient for
+`fields.py`, whose methods contain no imports. `city.py` has one: `_wall_point_at_arc` performs a
+LAZY `from .core import Settlement` inside its body - a runtime class-attribute read that would
+cycle if hoisted to module level.
+
+Moved verbatim into `settlement/city/walls.py`, that line kept its one-dot path and resolved
+against the new package, pointing at a nonexistent `settlement.city.core`.
+
+**What caught it, and what would not have.** `mypy --strict` named it immediately
+(`walls.py:141: error: Cannot find implementation or library stub for module named
+"settlement.city.core"`). Worth noting what the other instruments would have done: the guard test
+would have passed (the method is still on the class, the import is lazy and never executed at
+import time), and the byte-identity sweep would have reported a FAILED GENERATOR rather than a
+changed artifact - true but misleading, because a red sweep after a pure move is supposed to mean
+"the composition is wrong," and this would have sent the reader looking at `__init__.py`.
+
+The fix applies the same three rewrites to every member BODY as well as the header. Any future
+split of a file with in-body relative imports inherits it.
+
+## R9. The oracle's EXIT CODE is part of the oracle - a false green, caught
+
+The first post-move sweep printed `BYTE-IDENTICAL` over 885 artifacts and was wrong.
+
+**What happened**: `regen` fans out across worker processes; one `resvg` render (`sawada.png`, 2600
+px wide) was killed with `SIGKILL` - the OOM killer, because a 1,887-test `pytest -n auto` run was
+executing in the same container at the same time. The pool executor propagated the exception and
+`regen` exited 1 having printed `REGENERATED` zero times. Not one generator ran.
+
+**Why the diff was still empty**: the sweep works on a `cp -a` copy of the tree, which carries the
+COMMITTED pool artifacts. With no generator having run, those committed bytes were what got hashed
+- and the baseline, which DID run all 28 generators, had faithfully reproduced those same committed
+bytes. Two hash lists agreed, and the thing they agreed about was not the refactor.
+
+**The shape of the failure is worth naming** because it is the dangerous kind: an oracle that
+reports success having tested nothing. It cannot be caught by looking harder at the diff, because
+the diff is genuinely empty. It is caught only by asking whether the oracle RAN - which is why the
+pass condition is now three checks (exit code 0, REGENERATED count equal to the baseline's, empty
+diff) rather than one, and why `quickstart.md` step 2 now says not to run the sweep beside anything
+heavy.
+
+**The generalization**: a differential oracle built on "copy the tree, regenerate, compare" has a
+silent-success mode whenever the copied tree already contains valid-looking outputs. Any harness of
+that shape needs a liveness check independent of the comparison. Ours is the regen exit code plus
+the generator count.
+
+**A wrong fix, tried and recorded so nobody tries it again.** The obvious extra insurance is to
+DELETE the artifacts in the scratch copy before sweeping, so a dead run yields an obviously empty
+hash list rather than a plausible one. That is wrong in this repo, and the retry proved it: it
+fails with `resvg ... returned non-zero exit status 1` on
+`pool/magistracies/hayakawa-magistracy.svg`. **`/diagram` has two modes, and in Mode A the `.svg`
+is HAND-AUTHORED SOURCE**, not derived output - a compound plan's `.gen.py` only renders SVG to
+PNG. Deleting `*.svg` across `pool/` therefore destroys the source of every Mode A map in the
+scratch tree. (It is only a scratch copy, so nothing was lost - but a session that reached for the
+same idea in the clone would have deleted real work.)
+
+If a future harness wants deletion-based liveness, it must delete only genuinely derived artifacts
+- `*.json` and `*.png` everywhere, and `*.svg` ONLY under the Mode B settlement directories. The
+exit-code-plus-count check costs nothing and needs no such knowledge, which is why it is the one
+that ships.
+
+## R10. Only TWO of the five Stage 2 targets actually exceed the bar - measured, not assumed
+
+The spec named five decomposition targets, chosen by a ">90 raw lines" rule of thumb written into
+the spec before anything was measured. Measuring properly, after the move, changes the answer.
+
+Constitution Principle X clause 12 is explicit that function size is measured "in
+statements/expressions, never raw lines", and FR-009's own house bar is ~150 lines. Both readings
+agree:
+
+| method | raw | docstring | statements | over FR-009's ~150? |
+|---|---|---|---|---|
+| `city_wall` | 339 | 16 | 160 | **yes** |
+| `channel_footbridges` | 195 | 14 | 91 | **yes** |
+| `farmland_ring` | 121 | 31 | 48 | no |
+| `moat` | 111 | 17 | 57 | no |
+| `log_boom` | 97 | 35 | 41 | no |
+
+**Decision**: decompose `city_wall` and `channel_footbridges`. Leave `farmland_ring`, `moat` and
+`log_boom` alone.
+
+**Why leaving them alone is the right call and not a quiet narrowing of scope.** Three reasons, in
+order of weight:
+
+1. **They already satisfy the acceptance criterion.** SC-005 asks that no function exceed ~150
+   lines without a written justification. All three are under it by 30-50 lines, and under any
+   statement-based reading by a wide margin. Decomposing them would satisfy no stated requirement.
+2. **A third of their bulk is researched grounding, and splitting harms it.** `log_boom` is 97 raw
+   lines of which 35 are a docstring recording WHY a log boom is a shore-fast pen rather than a
+   line across the stream, with the GM's 2026-08-02 review and the `research/urban-features.md`
+   citation. `farmland_ring` carries 31. Project policy (CLAUDE.md, "Record the why of every
+   research-driven rule") makes that content mandatory, so it is not fat to be trimmed - and
+   splitting the function underneath it forces the why either to be duplicated across helpers or
+   to drift away from the code it explains. The metric that counts raw lines punishes exactly the
+   documentation the project requires; the metric the constitution actually specifies does not.
+3. **Each skipped decomposition also skips a sweep.** The oracle runs after every extraction and
+   costs several minutes; three unnecessary extractions would have cost three unnecessary sweeps
+   plus three chances to move an RNG draw in code nobody asked to change. A refactor's risk budget
+   should be spent where the size problem actually is.
+
+This is recorded rather than silently applied because the GM's ask was "split large functions into
+smaller ones", and three functions on the original list are not being split. If the GM wants the
+sub-150 methods decomposed anyway, the harness is built and each one is a single extract-plus-sweep
+cycle.
