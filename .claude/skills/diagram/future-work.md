@@ -290,6 +290,27 @@ was never needed.
 survivors came from (the carve, then the hem - both wrong) before a provenance probe classified
 every remaining needle in one run as `carved_grown`, i.e. made by a weld. Instrument first.
 
+### OPEN (low priority): the flooded tint discriminates on TRUNCATION DEPTH, not on taper
+
+Recorded as a deliberate choice with its trigger, not as a defect. `tapers_to_a_point` demotes a
+tinted plot whose END is under 5 ft; a plot converging just as sharply but cut off higher keeps the
+tint. Measured on Inashiro: the demoted #456 converges at 19.2 deg with a 3.4 ft end, while #458
+keeps its tint at 18.5 deg with a 10.4 ft end - **the sharper taper is the one that stays blue**, and
+only truncation depth separates them.
+
+That is intended (`research/fields.md`: a basin never tapers to a point, and the fan toe TRUNCATES;
+10.4 ft less two aze leaves ~7.4 ft of standing water, a workable basin, and it reads as a wedge with
+a flat end at fit zoom). **The trigger to revisit** is a roll that produces a 5-8 ft end which still
+reads as a point on the sheet - the band is empty on today's maps, so the rule is untested there.
+
+**Implementation sketch** (per the open-decision rule): `tapers_to_a_point` already COMPUTES the
+convergence angle, so switching from truncation to taper is dropping its `end` precondition and
+firing on the angle alone - measured separation on Inashiro is clean (18.5 / 19.2 deg for the two
+wedges against 0.8-10.2 for the honest quads #526/#527). What holds it: the `_TINT_*` tests in
+`tests/waterfields/test_seams.py`, which would need a case for an untruncated sharp wedge. The
+deliberate exclusion is the far-width ratio - keep it either way, or parallel-sided strips score as
+maximally pointed (ring #633 did, at converge 0.0 exactly).
+
 ### DONE 2026-08-17: cohort seeds 9 and 11 - and the "genuine conflict" was two bugs
 
 **The conclusion recorded below was WRONG, and how it was wrong is worth more than the fix.** The

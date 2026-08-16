@@ -346,6 +346,52 @@ def round_channel_joints(channels: list[dict[str, Any]], min_turn_deg: float = 8
         B["pts"] = [arc[-1]] + B["pts"][1:]  # ... and the downstream one picks up where it ends
 
 
+def tapers_to_a_point(poly: Poly, end: float, min_deg: float, arm: float) -> bool:
+    """Does this ring run out to a TRUNCATED point - a short end edge capping two converging sides?
+
+    The honest form of the question `dedup_ring(r, end)` was standing in for (settlement-review,
+    Inashiro 2026-08-17). Deduping at an end width does collapse a truncation, but it is a GLOBAL
+    operation: it merges short edges anywhere on the ring, so a staircase of chamfers in the middle
+    of a perfectly good basin fuses into a spike that was never there. Four measured fabrications on
+    one roll - ring #550 whose SHARPEST real corner is 86.7 deg reported 2.3 after collapsing 4.0 /
+    2.4 / 4.2 ft edges, and ring #622 (83.7 -> 20.1) sat at the east toe inside the flooded candidate
+    zone, one roll away from demoting an honest basin.
+
+    So the test is per-EDGE and local. A short edge is an END only if the sides it caps are real
+    basin walls: both neighbours at least `arm` long. Collapse that one edge (never a chain) and the
+    angle between the two arms is the apex the wedge would have had if the toe had not cut it off -
+    which is what "reads as a point" means, and is invariant to how deep the truncation went.
+
+    `arm` is 4x the end width: a staircase's neighbours are themselves short, so requiring the arms
+    to be several times the end separates a capped taper from a chamfered corner without tuning."""
+    n = len(poly)
+    if n < 4:
+        return False
+    for i in range(n):
+        b, c = poly[i], poly[(i + 1) % n]
+        if math.dist(b, c) >= end:
+            continue
+        a, d = poly[i - 1], poly[(i + 2) % n]
+        if math.dist(a, b) < arm or math.dist(c, d) < arm:
+            continue  # a chamfer between two short steps, not the end of a taper
+        # AND THE RING MUST ACTUALLY BE WIDER BACK THERE. The angle between the two backward arms is
+        # the apex angle only when they DIVERGE; for parallel sides it is 0, which reads as
+        # "maximally pointed" while describing a strip of constant width. Measured on Inashiro, that
+        # is not hypothetical - ring #633 is a parallel-sided strip with a 2.3 ft chamfer and scored
+        # converge = 0.0 exactly. A taper is narrow HERE and wide THERE, so require the far ends of
+        # the two arms to stand at least 3x the end edge apart before the angle means anything.
+        if math.dist(a, d) < 3.0 * math.dist(b, c):
+            continue
+        v1 = (a[0] - b[0], a[1] - b[1])
+        v2 = (d[0] - c[0], d[1] - c[1])
+        d1 = math.hypot(*v1) or 1.0
+        d2 = math.hypot(*v2) or 1.0
+        cs = max(-1.0, min(1.0, (v1[0] * v2[0] + v1[1] * v2[1]) / (d1 * d2)))
+        if math.degrees(math.acos(cs)) < min_deg:
+            return True
+    return False
+
+
 def pointed_ring(poly: Poly, min_deg: float = 25.0) -> bool:
     """Does this ring taper to a POINT - an interior angle sharper than `min_deg`?
 

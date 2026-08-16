@@ -99,7 +99,19 @@ BELOW the Python-source horizon (`_deps_state`: installed distributions + render
 the PIL layout-engine incident class); and `tools/cache_audit.py` remains the standing empirical auditor
 of the whole property. **After a dependency-level change** (a pip install/upgrade, a container
 rebuild outside the lockfiles), run one bypassed sweep - `GATE_NO_CACHE=1 make done` - as
-belt-and-suspenders for any channel the key cannot see. The contract's pinning tests are in
+belt-and-suspenders for any channel the key cannot see.
+
+**AND AFTER SYNCING IN A REFACTOR THAT DELETED OR MOVED A MODULE, for a reason worth knowing because
+it points at innocent code** (2026-08-17). The cache stores each entry's COVERAGE DATA and replays it
+into the gate (that is how 026 skips generation while keeping the floors honest), and coverage data
+is keyed by FILE PATH. So when a peer session's package split deletes `settlement/civic_grounds.py`
+and you sync it in, every cache entry built before that sync replays coverage for a file that no
+longer exists - and it surfaces as `CoverageWarning: No source for code` plus **the `settlement/`
+ratchet reporting a floor breach**. That reads exactly like a real coverage regression in a module
+you never touched, which is the expensive part: the number is not wrong about anything, the path is
+just unparseable. `.gencache` is per-CLONE, so main and every other clone are fine and only yours is
+stale. Deleting `.coverage` does NOT fix it (the data comes from the cache, not the last run); the
+fix is one `GATE_NO_CACHE=1 make done`, which rebuilds the entries against the source that exists. The contract's pinning tests are in
 `tests/pipeline/test_gencache.py`; the decision's full reasoning in `specs/026-cache-backed-gate/`.
 
 **AUDIT IT when you change the cache, or how generation is driven:** `python3 -m tools.cache_audit`

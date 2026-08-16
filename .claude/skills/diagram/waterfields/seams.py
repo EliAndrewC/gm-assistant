@@ -60,7 +60,7 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from .banks import _GATE_MIN_APEX, _TINT_END_FT, _TINT_MIN_APEX, _TOE_MIN_APEX, _WELD_MIN_APEX, dedup_ring, pointed_ring, polyline_cum
+from .banks import _GATE_MIN_APEX, _TINT_END_FT, _TINT_MIN_APEX, _TOE_MIN_APEX, _WELD_MIN_APEX, dedup_ring, pointed_ring, polyline_cum, tapers_to_a_point
 from .frame import BANK_MARGIN, Poly, _f_at_u, _Frame, taper_w
 from .palette import FLOODED, RICE_GREENS
 
@@ -529,5 +529,6 @@ def close_seams(
         # which is exactly what cohort seed 8 did when this briefly tested the end-collapsed ring
         # alone. The second clause catches the defect the gate CANNOT see: a needle truncated a few
         # feet short of its point, which no interior angle on the 1.0 ring will ever report.
-        if p.get("fill") == FLOODED and (pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX) or pointed_ring(dedup_ring(p["poly"], _TINT_END_FT * g / 2), _TINT_MIN_APEX)):
+        _t_end = _TINT_END_FT * g / 2
+        if p.get("fill") == FLOODED and (pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX) or tapers_to_a_point(p["poly"], _t_end, _TINT_MIN_APEX, 4 * _t_end)):
             p["fill"] = RICE_GREENS[(int(abs(p["poly"][0][0]) * 7) + int(abs(p["poly"][0][1]) * 3)) % len(RICE_GREENS)]
