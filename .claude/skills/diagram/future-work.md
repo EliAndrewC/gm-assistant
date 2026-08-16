@@ -85,7 +85,7 @@ ponds exist before beads commit), and `bund_beans_on_bunds` reads the painted tr
 `drawn_channels` (post-clip strokes, late flag) / `pond` / `field_ponds`. Regression fixture:
 `pool/regressions/bund_beans_on_bunds_fires_on_water_buried_beads_inashiro.json`.
 
-## Pocket ponds carry ink-on-water of their own (settlement-review, 2026-08-15)
+## DONE 2026-08-16: pocket ponds carry ink-on-water of their own (settlement-review, 2026-08-15)
 
 Found while confirming the azemame water-honesty fix: Inashiro's pocket pond at (2144, 1724) has
 the field-foot margin drain stroke painting across its lower-left quadrant, and hinterland
@@ -95,6 +95,11 @@ fix established - no ink over water, no water under ink - one class over: the po
 keep-out the hinterland scatter and the late water honor (or `_plot_pond` should refuse a plot
 whose ellipse leaves the field envelope). Barely visible at fit zoom; logged rather than fixed
 because it is baseline-adjacent, not part of the bead delta.
+
+**Resolved by the 2026-08-16 re-rolls without dedicated code**: the pond re-seated to (2092,
+1671) and two independent review passes confirmed no drain stroke and no scatter tuft crosses
+its fill on the shipped roll (the scatter water-skip fix and the re-seat between them cover the
+class). If a future roll regresses it, the fix direction in the paragraph above still applies.
 
 ## Review residue from the supply-bank hem re-roll (settlement-review, 2026-08-15)
 
