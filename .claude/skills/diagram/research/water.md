@@ -175,6 +175,26 @@ Canal practice: an offtake leaves its parent at an ACUTE angle pointing downstre
 
 A *tameike* reservoir has a SINGLE outlet sluice (*hi*) - occasionally two - so all its irrigation leaves by one main channel (*yosui*) that then FORKS downstream to the fields, dividing at junctions; it is NOT several independent pipes drilled into the pond.
 
+## Drawn width is RANK, not discharge - junctions do not conserve it (GM ruling 2026-08-16)
+
+*The question.* All four reviewers of the fork re-roll independently flagged the head junction:
+the brook arrives at 7 px, becomes a 14 px head-race below the sluice, and forks into arms
+starting 12.4 + 11.2 px - drawn capacity appears to GROW downstream at every junction, and the
+fork feature made that junction the focal water feature of every comb map.
+
+*The ruling (GM 2026-08-16, options weighed: keep / intake stilling pool / conserve-at-fork).*
+**Keep the convention.** A stroke's drawn width depicts its rank and local importance in the
+irrigation hierarchy (the 2026-07-21 taper rule: widest at its head, dwindling as it sheds water
+to its offtakes), sized per stroke with no cross-junction coordination - because width-as-rank is
+what keeps the hierarchy legible at fit zoom, and conservation would chain every drawn width down
+from the brook's 7 px and thin the far arms to hairlines. The intake jump also has a real
+reading: a sluice-fed head-race genuinely IS wider and slower than the stream that feeds it
+(engineered cross-section, ponding above the weir), so width-not-discharge is not merely a
+stylization there. The arms each drawn narrower than their trunk is honest; only their SUM
+exceeding it is convention. **Reviewers: do not flag in/out width totals at junctions** - judge
+each stroke's own taper (head wider than tail) and the hierarchy read (trunk > branch >
+delivery), never the conservation arithmetic.
+
 ## The head-race forks - supply commands both flanks
 
 **Grounds:** `comb_supply_commands_both_flanks`; `hamletgen.OFFTAKE_LADDER` (every row now inks canal B); `build_comb`'s two-canal fork and the `fork` point it records on the field
