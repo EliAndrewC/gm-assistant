@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented (2026-08-16)
 
 **Input**: User description: "Collapse check_village/__init__.py from a 3,148-line explicit re-export monolith to a small star-import surface... [GM 2026-08-16, full text in conversation]. The pattern is counterproductive to our goals: the file is 95% a re-export service and causes the very token problem the clause-13 splits exist to solve."
 
