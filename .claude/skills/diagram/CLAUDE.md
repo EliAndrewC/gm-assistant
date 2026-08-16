@@ -14,18 +14,20 @@ round-trips.
 ## Gate and sweep timings (the motivating-artifact loop, concretely)
 
 The root "iterate on the motivating artifact, sweep once at the end" rule has these diagram
-numbers. A single map's regen + gate is ~1-7s; the heavy maps, after three optimization passes
-(2026-08-03, 2026-08-04 and the 2026-08-08 seat memo), are Minami ~14.5s and Nagahara / Tango /
-Kikuta / Hoshizora ~10s solo CPU - down from 54s / 37s / 24s / 35s / 15s before them:
+numbers. A single map's regen + gate is ~1-7s; the heaviest LIVE maps are the scripted hamlets
+(Sawada ~20s, Kashikawa ~16s solo CPU - `GEN_TIME_BUDGETS` says why that is inherent, not a bug).
+The old heavy maps (Minami ~14.5s, Nagahara / Tango / Kikuta / Hoshizora ~10s after three
+optimization passes) are FROZEN since 2026-08-16 and never regenerate - see "The legacy pool is
+FROZEN" below:
 
     DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 -m check_village pool/<type>/<map>.json
 
 **...or let the CACHE skip the work entirely** (2026-08-08). `regen.py` regenerates a map only if
 something that map depends on actually changed, and prints `CACHED` or `REGENERATED` every time:
 
-    python3 regen.py pool/provincial-cities/minami.gen.py    # ~15s cold, 1.1s cached
-    python3 regen.py pool/*/*.gen.py                         # the whole pool, fanned out
-    python3 regen.py --no-cache pool/towns/ubame.gen.py      # force the work
+    python3 regen.py pool/hamlets/sawada.gen.py              # ~20s cold, ~1s cached
+    python3 regen.py pool/*/*.gen.py                         # every LIVE map, fanned out (frozen legacy maps print FROZEN, skipped)
+    python3 regen.py --no-cache pool/hamlets/inashiro.gen.py # force the work
 
 Multi-map runs fan out across worker processes (cpus minus 2; `--jobs 1` for serial), as does
 `cohort_audit.py` - since 2026-08-15, when the timings ledger showed the serial cohort was the
@@ -183,8 +185,10 @@ brought it back to 77s. Re-measure and update this number when it drifts again -
 is what makes a session mis-plan its loop.) So run the red/green loop against the ONE map
 (or fixture) that shows the defect, where cycles are near-free, and reserve the full sweep for AFTER
 that map is green. The sweep is MANDATORY, though, whenever shared engine code changed
-(`settlement.py`, the `check_village/` package, `waterfields.py`): every pool map is a downstream artifact of
-the engine, so the sweep is what proves "no other map regressed" instead of hoping it.
+(`settlement.py`, the `check_village/` package, `waterfields.py`, a scripted engine): every LIVE
+pool map is a downstream artifact of the engine, so the sweep is what proves "no other map
+regressed" instead of hoping it. LIVE means the scripted maps only - the hand-authored pool is
+FROZEN (see "The legacy pool is FROZEN" below) and is deliberately allowed to go stale.
 Anti-patterns on record: the scale-bar feature used the full suite as its FIRST check of an engine
 change - a failure that would have surfaced in ~6s on one map surfaced 17 minutes in; the
 swept-collar check (11m07s wall) is the feature the project-wide 78%-turn-latency profile was taken
@@ -1109,6 +1113,45 @@ every affected map and by how much - so a reader can see the size of the debt ra
 it. Reach for this pattern when a rule is right but re-packing the pool is the wrong trade; do NOT
 reach for it to avoid fixing a map that is simply inconvenient, which is what waivers are for.
 
+**Superseded by the freeze (2026-08-16) for the gating half:** legacy gens never re-run, so a new
+rule needs no `meta.generated_by` gate and no opt-in placement flag to protect them - the
+mechanism survives only where the regression corpus replays frozen fixtures through existing
+gates. The "say the debt out loud" half stands: the pool is now PERMANENTLY inconsistent until
+conversion, and that is the accepted trade, recorded in migration-plan.md section 2.
+
+## The legacy pool is FROZEN (GM 2026-08-16)
+
+Every hand-authored Mode B map - 9 hamlets, 4 villages, 3 towns, 3 provincial cities - is a
+permanent EXHIBIT: never regenerated, never re-gated. They stay in `pool/index.html` and their
+committed .json/.svg/.png stay exactly as shipped. `poolmaps.py` is the classification
+(scripted / legacy / compound), shared by the `test_villages.py` sweep, by `regen.py` (which
+prints `FROZEN` and skips; `--frozen-ok` overrides) and by `cache_audit.py`; the sweep's ratchet
+keeps every pool gen accounted for.
+
+WHY: hand-authoring is deprecated (the freeze decision is recorded in full in migration-plan.md
+section 2), so every hour spent re-fitting a legacy map to a new placement rule, and every engine
+change flag-gated to hold 19 deprecated compositions byte-identical, was payment on a process
+being replaced. The fix for a frozen map that violates a post-freeze rule is CONVERSION, not
+retrofit - do not "fix" a frozen map, and do not treat its rule violations as bugs.
+
+The consequences, so nobody rediscovers them one gate failure at a time:
+
+- **Engine changes no longer need byte-identity flags.** Change behavior freely; the scripted
+  cohort and the gate hold the line. `meta.generated_by` gates already in checks stay (the
+  regression corpus replays frozen fixtures through them), but NEW rules ship un-gated.
+- **Coverage is per-module now.** The above-hamlet wings of `settlement.py` (towns, cities, the
+  capital) are exercised by nothing until their tiers convert, so the Makefile enforces 100% on
+  every module except `settlement.py`, which holds a RATCHET floor (`SETTLEMENT_COV_FLOOR`) -
+  raise it as tiers convert, never lower it (same discipline as the retired mypy ratchet).
+- **Frozen manifests remain legal READ-ONLY fixtures** (test_checks reads hikari-no-sato.json;
+  citybudget prices the tango/nagahara programs) - frozen bytes never change, so those tests stay
+  green forever. But never write a test that RUNS a legacy gen or expects a frozen manifest to
+  PASS the evolving gate: either one re-shackles iteration to the deprecated pool.
+- **The pool's committed artifacts must stay clean.** Any test or tool that runs a live gen for
+  its own purposes (the randomness ratchet, the gencache round-trip) must leave the committed
+  bytes exactly as it found them - byte-restore, not re-run, because the engine may have drifted
+  since the artifact was committed.
+
 ## Scripted generation - read before touching `hamletgen.py`
 
 **The experiment is over and the project has committed to it** (GM, 2026-08-15). The standing plan -
@@ -1118,9 +1161,10 @@ finishing any conversion.**
 
 [`hamletgen.md`](hamletgen.md) is the writeup; [`hamletgen.py`](hamletgen.py) is the generator and
 [`pool/hamlets/`](pool/hamlets/) holds its demo maps beside the hand-authored hamlets (the pool is
-foldered by tier, not by method; `meta.generated_by` marks a scripted map). It remains ADDITIVE - the hand-authored pool
-is held byte-identical through every engine change, and a session drawing anything but a
-`valley_paddy` hamlet still follows `settlements.md`.
+foldered by tier, not by method; `meta.generated_by` marks a scripted map). The hand-authored pool
+froze on 2026-08-16 (see "The legacy pool is FROZEN" above) - it is no longer held byte-identical,
+its gens are simply never re-run - and a session drawing anything but a `valley_paddy` hamlet
+still follows `settlements.md`.
 
 It found SIX things in shipped engine code. Five are fixed with the full pool sweep (the hem
 registry, the sweep's blind spot, the cluster-band pitch, the windbreak/well-grid derivations, the

@@ -39,17 +39,22 @@ import subprocess
 import sys
 import time
 
+import poolmaps
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-SUBSET = ("minami", "nagahara", "tango", "hoshizora", "kikuta", "moritono")
+# The LIVE pool is the scripted maps - the hand-authored maps froze on 2026-08-16 and are never
+# regenerated (poolmaps.py) - so the audit sweeps those: sawada is the biggest, inashiro the
+# cheapest. They all execute settlement.py through hamletgen, so a settlement.py mutation still
+# moves what they draw.
+SUBSET = ("sawada", "inashiro")
 TARGET = "settlement.py"
 
 
 def gens(all_maps: bool) -> list[str]:
     out = []
     for gen in sorted(glob.glob(os.path.join(HERE, "pool", "*", "*.gen.py"))):
-        src = pathlib.Path(gen).read_text()
-        if "settlement import" not in src and "import settlement" not in src:
-            continue
+        if poolmaps.classify(gen) != "scripted":
+            continue  # frozen legacy maps are never regenerated; compound gens have no manifest
         if all_maps or os.path.basename(gen)[: -len(".gen.py")] in SUBSET:
             out.append(gen)
     return out

@@ -103,3 +103,29 @@ def test_full_gate_coverage_sentinel(name):
     failed = set(check_village.gate(M, verbose=False))
     missing = [c for c in fires if c not in failed]
     assert not missing, f"{name} no longer trips under the FULL gate: {missing}"
+
+
+# The 2026-08-16 legacy freeze (migration-plan.md "The accepted trade") removed the hand-authored
+# maps from the test_villages sweep, which uncovered the handful of check_village branches only
+# those maps' full-gate runs reached (a town's fire/justice variants, minami's no-Imperial-road
+# walled-city branch, the odd water fork). These FROZEN pool manifests - committed, permanent,
+# never regenerated - are replayed through the FULL gate purely as coverage carriers, selected by
+# the same greedy line-coverage search as the sentinels above (if coverage drops here again,
+# re-run the search rather than guessing). NOTHING is asserted about their verdicts: a frozen map
+# is allowed to fail rules added after the freeze, so the only claim held is that the gate still
+# RUNS on old manifests - the claim the whole corpus already makes.
+_FROZEN_POOL_COVERAGE_CARRIERS = [
+    "towns/hirameki.json",
+    "towns/hoshizora.json",
+    "provincial-cities/minami.json",
+    "hamlets/akagahara.json",
+    "hamlets/enokida.json",
+]
+
+
+@pytest.mark.parametrize("rel", _FROZEN_POOL_COVERAGE_CARRIERS)
+def test_frozen_pool_full_gate_coverage_carrier(rel):
+    with open(os.path.join(HERE, "pool", rel)) as fh:
+        M = json.load(fh)
+    failed = check_village.gate(M, verbose=False)
+    assert failed is not None  # verdicts deliberately unchecked - see the carrier comment above
