@@ -59,6 +59,7 @@ from ._geom import rot_rect as rot_rect
 from ._geom import sat_overlap as sat_overlap
 from ._geom import seg_closest as seg_closest
 from ._geom import seg_dist as seg_dist
+from ._geom import seg_in_ellipse_core as seg_in_ellipse_core
 from ._geom import seg_intersect as seg_intersect
 from ._geom import segments_cross as segments_cross
 from ._geom import stroke_quads as stroke_quads

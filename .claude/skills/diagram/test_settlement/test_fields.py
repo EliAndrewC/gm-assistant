@@ -1,5 +1,6 @@
 """Split from test_settlement.py by feature 025 - see test_settlement/CLAUDE.md for the index."""
 
+import math
 import os
 import random
 import re
@@ -223,8 +224,9 @@ def test_pick_overlay_plots_grows_a_patch_from_its_seeds():
 def test_paddy_features_cover_every_archetype_branch():
     """Feature 012: exercise _paddy_features across archetypes + many seeds so every placement branch fires
     (pond / rock / grave-island each both ways), plus the dike-pond early return. Also confirms each glyph
-    draws and records its manifest key. Synthetic net: 6 plots, the first 3 flagged low."""
-    net = {"plots": [{"poly": [(float(i * 30), 0.0), (float(i * 30 + 20), 0.0), (float(i * 30 + 20), 20.0), (float(i * 30), 20.0)], "low": i < 3, "fill": "#A6C398"} for i in range(6)]}
+    draws and records its manifest key. Synthetic net: 6 plots, the first 3 flagged low
+    (44 x 34 px - roomy enough that the fit-to-polygon shrink in _plot_pond accepts them)."""
+    net = {"plots": [{"poly": [(float(i * 50), 0.0), (float(i * 50 + 44), 0.0), (float(i * 50 + 44), 34.0), (float(i * 50), 34.0)], "low": i < 3, "fill": "#A6C398"} for i in range(6)]}
     seen = {"field_ponds": 0, "field_rocks": 0, "field_graves": 0}
     for arch in ("valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley", "mulberry_dike_fishpond"):
         for seed in range(40):
@@ -473,3 +475,25 @@ def test_draw_comb_field_drops_beads_in_pond_water():
     s.M["field_ponds"] = [{"x": 300.0, "y": 300.0, "rx": 20.0, "ry": 15.0}]
     s.draw_comb_field(net, "f1", {"kind": "pond", "pond": (700, 1000, 60, 40)})
     assert s.M["fields"][-1]["bund_beans"] == [[500.0, 180.0]]
+
+
+def test_plot_pond_fits_the_polygon_not_the_bbox():
+    """Inashiro 2026-08-16: a fan-toe WEDGE has a bounding box several times the wedge itself, and the
+    bbox-sized pond spilled across neighboring plots with spoke bunds drawn through open water. A thin
+    wedge must REFUSE the pond (False, nothing drawn or recorded); a roomy rectangle must take one
+    whose rim stays inside the plot polygon."""
+    s = Settlement(600, 600, seed=1)
+    s.meta(name="W", scale="village", ftpx=1, down_deg=90)
+    wedge = {"poly": [(0.0, 0.0), (90.0, 55.0), (96.0, 65.0), (0.0, 8.0)]}  # ~8 px wide sliver, 96 x 65 bbox
+    assert s._plot_pond(wedge, [wedge["poly"]]) is False
+    assert not s.M.get("field_ponds")
+    rect = {"poly": [(100.0, 100.0), (190.0, 100.0), (190.0, 170.0), (100.0, 170.0)]}
+    # a foreign ring bisecting the plot (rings OVERLAP at fan/grid seams) must refuse the pond too
+    bisector = [(145.0, 90.0), (145.0, 180.0), (150.0, 180.0), (150.0, 90.0)]
+    assert s._plot_pond(rect, [rect["poly"], bisector]) is False
+    assert not s.M.get("field_ponds")
+    assert s._plot_pond(rect, [rect["poly"]]) is True
+    (fp,) = s.M["field_ponds"]
+    for a in [i * math.pi / 12 for i in range(24)]:
+        px, py = fp["x"] + fp["rx"] * math.cos(a), fp["y"] + fp["ry"] * math.sin(a)
+        assert 100 <= px <= 190 and 100 <= py <= 170  # every rim point inside the plot

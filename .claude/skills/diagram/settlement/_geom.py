@@ -225,6 +225,24 @@ def seg_dist(px: float, py: float, a: Pt, b: Pt) -> float:
     return math.hypot(px - cx, py - cy)
 
 
+def seg_in_ellipse_core(a: Pt, b: Pt, cx: float, cy: float, rx: float, ry: float, inset: float = 4.0) -> bool:
+    """Does segment a-b pass through the CORE of this ellipse - the water inside its rim?
+
+    The shared predicate of the feature-012 field pond's containment rule: `_plot_pond` (placement)
+    and `field_ponds_sunk_into_one_plot` (the verdict) both call this one function, so the siter and
+    the check cannot disagree - the same discipline as `paddy_wet_rings` below. The core is the
+    ellipse shrunk by `inset` px (rim stroke + reed fringe): a bund may TOUCH the shore - the host
+    plot's own ring does - but a bund running through open water means the pond spans plots.
+    Computed in the scaled space where the core is the unit circle, so one segment-to-center
+    distance answers it for any ellipse."""
+    crx, cry = max(1.0, rx - inset), max(1.0, ry - inset)
+    ax, ay = (float(a[0]) - cx) / crx, (float(a[1]) - cy) / cry
+    bx, by = (float(b[0]) - cx) / crx, (float(b[1]) - cy) / cry
+    dx, dy = bx - ax, by - ay
+    t = max(0.0, min(1.0, -(ax * dx + ay * dy) / max(1e-12, dx * dx + dy * dy)))
+    return math.hypot(ax + t * dx, ay + t * dy) < 1.0
+
+
 def ring_touches(cx: float, cy: float, r: float, ring: Poly) -> bool:
     """Does a disc of radius r at (cx, cy) lap this ring - inside it, or within r of an edge?"""
     return point_in_poly(cx, cy, ring) or any(seg_dist(cx, cy, ring[i], ring[(i + 1) % len(ring)]) < r for i in range(len(ring)))

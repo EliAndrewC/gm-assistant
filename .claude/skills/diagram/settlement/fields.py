@@ -22,6 +22,7 @@ from ._geom import (
     quad_hits_seg,
     seg_closest,
     seg_dist,
+    seg_in_ellipse_core,
     smooth_closed,
     smooth_points,
 )
@@ -969,9 +970,25 @@ class FieldsMixin:
         if not plots:  # pragma: no cover - a drawn field always has plots
             return
         low = [p for p in plots if p.get("low")]
-        # POND: a low pocket held as open water (research D4). ~55% of eligible fields carry one.
+        # POND: a low pocket held as open water (research D4). ~55% of eligible fields carry one -
+        # tried across the low plots in random order until one takes a legible pond, because a plot
+        # can REFUSE (a comb fan toe is all thin wedges; Inashiro 2026-08-16). A field whose low
+        # pockets are all wedges honestly carries none.
+        # NOTE a disclosed coupling (settlement-review, Mizuguchi 2026-08-16): rng.sample consumes
+        # a different number of draws than the old rng.choice, so the rock/grave rolls below sit
+        # on a shifted stream and re-rolled once. Accepted - the blast radius is this one field's
+        # own flourishes, nothing map-level. If it ever bites again, the refinement is one
+        # sub-stream per sub-feature: random.Random(seed ^ 0x9AD1 ^ <per-feature salt>) for pond,
+        # rock and grave each, at the cost of one more pool-wide flourish re-roll.
         if arch in self._PADDY_POND_KINDS and low and rng.random() < 0.55:
-            self._plot_pond(rng.choice(low))
+            # the ring list the gate's check will scan: plot_rings is recorded from net["plots"]
+            # and drain_hem is a SUBSET of those same polys, so this list is exactly the check's
+            # coverage. Rings can OVERLAP each other at the fan/grid seams, so fitting against the
+            # host plot alone is not enough (cohort seeds 5/19/21, 2026-08-16).
+            rings: list[Poly] = [p["poly"] for p in net["plots"]]
+            for cand in rng.sample(low, len(low)):
+                if self._plot_pond(cand, rings):
+                    break
         # ROCK: bedrock outcrops the risers/bunds wrap around (research D3) - terraces always, ribbon ~half.
         if arch == "contour_terraces" or (arch == "ribbon_valley" and rng.random() < 0.5):
             for _ in range(rng.randint(1, 3)):
@@ -986,13 +1003,44 @@ class FieldsMixin:
         ys = [p[1] for p in poly]
         return (sum(xs) / len(xs), sum(ys) / len(ys), (max(xs) - min(xs)) / 2, (max(ys) - min(ys)) / 2)
 
-    def _plot_pond(self: Settlement, plot: dict[str, Any]) -> None:  # type: ignore[misc]
+    def _plot_pond(self: Settlement, plot: dict[str, Any], rings: list[Poly]) -> bool:  # type: ignore[misc]
         """A small OPEN-WATER pond sunk into one low plot - a low pocket / header tameike the paddy rings.
         Distinct from the reed/lotus BOG (blue-green, choked) and from the main village reservoir at the
-        source. Drawn OVER the plot (so it carries no bund grid) with a reed fringe; recorded in M['field_ponds']."""
-        cx, cy, hx, hy = self._plot_center_span(plot["poly"])
+        source. Drawn OVER the plot (so it carries no bund grid) with a reed fringe; recorded in
+        M['field_ponds']. Returns False - drawing and recording nothing - when no legible pond fits."""
+        poly = [(float(x), float(y)) for x, y in plot["poly"]]
+        _, _, hx, hy = self._plot_center_span(poly)
+        cx, cy = _centroid(poly)
         # capped so a wide TERRACE band gives a POND, not a field-spanning lake (a low pocket, not a reservoir)
         rx, ry = min(max(10.0, hx * 0.82), 46.0), min(max(7.0, hy * 0.82), 32.0)
+        # FIT TO THE PLOT POLYGON, NOT ITS BBOX (Inashiro 2026-08-16). A comb fan's toe plots are
+        # WEDGES whose bounding box is several times the wedge itself, so a bbox-sized ellipse
+        # spilled across three neighboring plots and the drain hem, spoke bunds drawn straight
+        # through open water. Center on the CENTROID (a wedge's bbox center can sit outside it) and
+        # shrink until every rim point sits inside the plot and NO ring in `rings` cuts the pond's
+        # core - `seg_in_ellipse_core` is the same predicate the gate's
+        # `field_ponds_sunk_into_one_plot` runs, and `rings` is every ring that check will scan
+        # (rings can OVERLAP at the fan/grid seams, so testing the host plot alone is not enough -
+        # cohort seeds 5/19/21). Placement tests a LARGER core (inset 3 vs the check's 4) so the
+        # manifest's 0.1 px rounding can never flip a verdict the siting cleared. Below the legible
+        # floor (10 x 7 px) the plot takes no pond and the caller tries another low plot.
+        rim = [(math.cos(a), math.sin(a)) for a in [i * math.pi / 12 for i in range(24)]]
+        boxed = [(min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r), r) for r in rings]
+        while rx >= 10.0 and ry >= 7.0:
+            ok = all(point_in_poly(cx + rx * ux, cy + ry * uy, poly) for ux, uy in rim)
+            if ok:
+                for bx0, by0, bx1, by1, ring in boxed:
+                    if bx1 < cx - rx or bx0 > cx + rx or by1 < cy - ry or by0 > cy + ry:
+                        continue  # bbox prefilter only - the exact test below decides
+                    rn = len(ring)
+                    if any(seg_in_ellipse_core(ring[i], ring[(i + 1) % rn], cx, cy, rx, ry, inset=3.0) for i in range(rn)):
+                        ok = False
+                        break
+            if ok:
+                break
+            rx, ry = rx * 0.9, ry * 0.9
+        else:
+            return False
         self.add(f'<ellipse cx="{cx:.1f}" cy="{cy:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="#9CB4C8" stroke="#5C7488" stroke-width="1.8"/>')
         self.add(f'<ellipse cx="{cx:.1f}" cy="{cy:.1f}" rx="{rx - 5:.1f}" ry="{ry - 4:.1f}" fill="none" stroke="#B6CAD8" stroke-width="0.9"/>')
         reeds = "".join(
@@ -1001,6 +1049,7 @@ class FieldsMixin:
         )
         self.add(f'<g opacity="0.8">{reeds}</g>')
         self.M.setdefault("field_ponds", []).append({"x": round(cx, 1), "y": round(cy, 1), "rx": round(rx, 1), "ry": round(ry, 1)})
+        return True
 
     def _plot_rock(self: Settlement, plot: dict[str, Any], rng: random.Random) -> None:  # type: ignore[misc]
         """A bedrock OUTCROP the terrace risers wrap around - a cluster of gray boulders. Recorded in
