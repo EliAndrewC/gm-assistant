@@ -1,4 +1,4 @@
-"""Split from test_checks.py by feature 025 - see test_checks/CLAUDE.md for the index."""
+"""Split from test_checks.py by feature 025 - see tests/check_village/CLAUDE.md for the index."""
 
 from tests.check_village._builders import (
     _CITY_WALL,

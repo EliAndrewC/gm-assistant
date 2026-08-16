@@ -28,8 +28,8 @@ LOCAL random.Random(seed) so field generation never ripples other features' plac
 # DERIVED SURFACE (feature 110, constitution clause 14): the star imports ARE the re-export
 # mechanism - every submodule's public names resolve from the package root exactly as they did
 # from the monolith. The aliased block carries the underscore names with external consumers
-# (settlement/fields.py, test_hamletgen.py, test_settlement/test_core.py); guard:
-# test_waterfields_surface.py. Never add logic here.
+# (settlement/fields/, tests/hamletgen/, tests/settlement/test_core.py); guard:
+# tests/waterfields/test_surface.py. Never add logic here.
 from .banks import *
 from .carve import *
 from .carve import _bund_beans as _bund_beans

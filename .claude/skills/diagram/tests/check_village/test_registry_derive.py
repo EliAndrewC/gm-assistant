@@ -8,7 +8,7 @@ explicit roster used to provide (clause 14: move the safety property into tests 
 2. Order: the fixture's order is a subsequence of the derived order - the execution contract.
 3. Structural invariants: literal-return shape, unique keys, needs within free, META_CHECKS.
 4. Fire-proofs: every guard demonstrably fails on a synthetic violation (a checker never seen
-   failing is not a check - same doctrine as test_check_village_surface).
+   failing is not a check - same doctrine as tests/check_village/test_surface.py).
 5. The cache is faithful (round-trip identical) and failure-soft (corruption -> re-derive).
 """
 

@@ -82,8 +82,8 @@ CONSUMED_PUBLIC = [
 ]
 
 # The underscore names with external consumers, and the submodule that owns each
-# (settlement/fields.py: _RICE_GREEN; test_hamletgen.py: _Frame, _miter_normals;
-# test_settlement/test_core.py: _bund_beans, _seg_d).
+# (settlement/fields/: _RICE_GREEN; tests/hamletgen/: _Frame, _miter_normals;
+# tests/settlement/test_core.py: _bund_beans, _seg_d).
 ALIASED_UNDERSCORE = {
     "_Frame": "waterfields.frame",
     "_RICE_GREEN": "waterfields.palette",

@@ -1,6 +1,6 @@
 # tests/check_village/ - the gate's negative-fixture unit tests as a package
 
-Split from the 11,475-line `tests/check_village/` by feature 025 (constitution Principle X clause 13,
+Split from the 11,475-line `test_checks.py` by feature 025 (constitution Principle X clause 13,
 which covers test files as of v1.6.1 - the cost being managed is context-window tokens). **Load
 only the module the task calls for**; this index is the map. Collection is unchanged: same test
 names, same count, `python3 -m pytest tests/check_village/` from the skill dir.
@@ -24,6 +24,6 @@ module.
 ## Adding a test
 
 Write it in the module matching the check's segment file (find the segment file via
-`check_village/CLAUDE.md`'s registry ranges); import builders from `test_checks._builders`. If a
+`check_village/CLAUDE.md`'s registry ranges); import builders from `tests.check_village._builders`. If a
 new fixture builder is generally useful, add it to `_builders.py`; a one-test helper can live
 next to its test. Extend `tests/fixtures/gate_check_names.json` when adding a check, as before.

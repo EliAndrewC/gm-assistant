@@ -4,10 +4,10 @@
 The tool's whole claim is that it does not restate the gate's rules, so these tests check the
 plumbing (footprints taken from settlement.py, trial records shaped like the engine's, frame cost
 measured off crop_boxes, the ranking that keeps gate runs few) and that adjudication really is
-`gate(trial) - gate(without)`. The rules themselves are tested in test_checks.py, which is the
-point: there is only one place they live.
+`gate(trial) - gate(without)`. The rules themselves are tested in tests/check_village/, which is
+the point: there is only one place they live.
 
-    python3 -m pytest test_site_justice.py -q
+    python3 -m pytest tests/tools/test_site_justice.py -q
 """
 
 import json

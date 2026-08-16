@@ -72,7 +72,7 @@ if SKILL not in sys.path:  # so the package works when run from anywhere
 # working with zero consumer changes. The aliased block below carries the four underscore names
 # with external consumers, which a bare star import silently DROPS. The bootstrap above must run
 # BEFORE any of it (submodules import `settlement` and `waterfields` by absolute name), which is
-# why the imports are not at the top of the file. Guard: test_hamletgen_surface.py. No logic here.
+# why the imports are not at the top of the file. Guard: tests/hamletgen/test_surface.py. No logic here.
 from .cluster import *
 from .cluster import _arm_crossing_accidental as _arm_crossing_accidental
 from .cluster import _fork_spur as _fork_spur
