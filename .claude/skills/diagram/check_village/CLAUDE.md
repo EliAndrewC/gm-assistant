@@ -3,7 +3,7 @@
 Split from the 37k-line `check_village.py` monolith by feature 024 (constitution Principle X
 clause 13: files stay at human scale - the cost being managed is context-window tokens). **Load
 only the file the task calls for**; this index is the map. `import check_village` still exposes
-the full legacy surface via `__init__.py`, and the CLI is now `python3 -m check_village
+the consumed legacy surface via `__init__.py` (star-import re-exports since feature 027), and the CLI is now `python3 -m check_village
 <manifest.json> [--capacity [--capacity-map]]`.
 
 Two invariants the split does NOT touch:
@@ -18,7 +18,7 @@ Two invariants the split does NOT touch:
 
 | file | look here when |
 |---|---|
-| `__init__.py` | you need the re-export list or the package docstring; never add logic here |
+| `__init__.py` | you need the package docstring or the re-export mechanism - star imports carry every submodule's public names, an aliased block carries the six consumed underscore names (feature 027; guard: `test_check_village_surface.py`); never add logic here |
 | `__main__.py` | the CLI behavior (`python3 -m check_village`, `--capacity`) needs changing |
 | `common_01_geometry.py` | core types (`Manifest`, `Pt`, `Poly`, `Check`), `load`, `rect_corners`, hulls/gaps, the overlap + label TAXONOMY tables (`_OVERLAP_*`, `_LABEL_*`, `OVERLAP_CLASS`, `_MATRIX_*` policy), size constants (`GATE_FT_*`, `WALL_FT_*`, ...) |
 | `common_02_overlap_policy.py` | the overlap-matrix ENGINE (`matrix_violations`, `matrix_extents`), `GridIndex` (the spatial index), ring-road/theater/fire-feature helpers, torii/footbridge/dojo constants |
