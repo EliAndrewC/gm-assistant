@@ -2361,3 +2361,25 @@ def _seg_0285_091__commons(*, M: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[
     if scale in ('town', 'village', 'hamlet') and scale in ('town', 'village', 'hamlet', 'city'):
         commons = M.get("commons", [])
     return _kept(locals(), ('commons',))
+
+
+def _seg_0598__nucleated_records_cluster_seeding(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 598 (settlement_records_cluster_seeding) - hand-added 2026-08-16 past the
+    legacy range (see _seg_0595 in segments_08 for the numbering convention). New-style:
+    writes=()."""
+    # A KNOB THAT CAN SILENTLY NOT-RECORD IS THE "CHECK THAT NEVER RUNS" SHAPE (known-open
+    # ledger 2026-08-16, Kashikawa: the front rows + lane frontage seated all 20 houses, the
+    # cluster-seeds cloud never ran, and the rolled cluster_shape knob went unhonored with
+    # no trace on the manifest - the twin-detector axis silently fell back to the bbox
+    # aspect). The declaration-exists ratchet (settlement_declares_a_land_fall is the
+    # model): a nucleated scripted map must record either the honored knob
+    # (meta.cluster_shape, written by cluster_seeds when the cloud runs) or the seeding
+    # mode that replaced it (meta.cluster_seeding, written by stage_homesteads).
+    if M["meta"].get("generated_by") and M["meta"].get("nucleated"):
+        _cs_ok = ("cluster_shape" in M["meta"]) or ("cluster_seeding" in M["meta"])
+        check(
+            "settlement_records_cluster_seeding",
+            _cs_ok,
+            "a nucleated scripted map records neither meta.cluster_shape (the cluster-seeds cloud ran and honored the knob) nor meta.cluster_seeding (the rows/frontage passes seated every house and the rolled shape went unhonored) - a rolled knob must leave a trace either way, or it can silently not-record with nothing warning; stage_homesteads records the seeding mode",
+        )
+    return _kept(locals(), ())

@@ -3,7 +3,7 @@
 import math
 from typing import Any
 
-from waterfields import BANK_MARGIN, drain_bank_clearance, polyline_cum, supply_bank_clearance
+from waterfields import BANK_MARGIN, drain_bank_clearance, floor_overhang, polyline_cum, supply_bank_clearance
 
 from .common_01_geometry import CLAN_FORTUNES, Poly, Pt, point_in_poly, pt_to_rect, seg_closest, seg_dist, within_edge_gap
 from .common_02_overlap_policy import GridIndex, check_fire_features, check_theater_stage, in_ellipse
@@ -2268,4 +2268,43 @@ def _seg_0554__punishment_spot_only_at_a_seat_of_justice(*, check: Any = _UNBOUN
         # the county. A settlement with no magistrate's court has neither institution.
         check("punishment_spot_only_at_a_seat_of_justice", not psp_j, f"a {scale} has no magistrate and no court - the punishment ground belongs to a county seat and above")
         check("execution_ground_only_at_a_seat_of_justice", not exg_j, f"a {scale} has no magistrate and no court - the execution ground belongs to a county seat and above")
+    return _kept(locals(), ())
+
+
+def _seg_0596__comb_floor_ends_at_the_collector(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 596 (comb_floor_ends_at_the_collector) - hand-added 2026-08-16 past the
+    legacy range (see _seg_0595 for the numbering convention); registered beside it, whose
+    `fields` binding it shares. New-style: temps stay function-local, writes=()."""
+    # A COMB'S FLOOR ENDS WHERE ITS COMMAND AREA DOES (known-open ledger 2026-08-16,
+    # Mizuguchi's SE wedge: the raw envelope closed from the collector's thin head across
+    # ~350 ft of bare ground to the outer thread's tail, and the base floor read as a green
+    # needle jutting past the drain). Ground down-fall of the collector - extended LEVEL
+    # beyond its drawn ends, exactly as the wedge filler extends it - cannot drain and is
+    # never planted, so floor there is dead ground wearing the field's color. The predicate
+    # is `floor_overhang`, imported from the engine and NOT restated - the same call
+    # `build_comb`'s envelope trim makes. Tolerance 16 px: the outline legitimately runs ON
+    # the collector centerline (its low edge IS the drain polyline), so only a protrusion
+    # well past the drawn water (max halfw 6 px) can fire. Comb fans only (`fork` marks
+    # one): a polder's floor legitimately runs past its inner ring drain to the dike.
+    if M["meta"].get("generated_by"):
+        _fe_bad: list[tuple[int, int, int]] = []
+        for _fe_fld in fields:
+            if not _fe_fld.get("fork") or not _fe_fld.get("outline"):
+                continue
+            _fe_dd = float(_fe_fld.get("down_deg", M["meta"].get("down_deg", 90.0)))
+            _fe_ol = [(float(v[0]), float(v[1])) for v in _fe_fld["outline"]]
+            for _fe_fd in M.get("field_ditches", []):
+                if _fe_fd.get("role") != "drain" or _fe_fd.get("field") != _fe_fld.get("name"):
+                    continue
+                _fe_pts = [(float(q[0]), float(q[1])) for q in _fe_fd.get("poly") or []]
+                if len(_fe_pts) < 2:
+                    continue
+                for _fe_p, _fe_ov in zip(_fe_ol, floor_overhang(_fe_ol, _fe_pts, _fe_dd), strict=True):
+                    if _fe_ov > 16.0:
+                        _fe_bad.append((round(_fe_p[0]), round(_fe_p[1]), round(_fe_ov)))
+        check(
+            "comb_floor_ends_at_the_collector",
+            not _fe_bad,
+            f"{len(_fe_bad)} field-outline vertex/vertices reach past the (flat-extended) drain collector line, worst {max([_b[2] for _b in _fe_bad], default=0)} px, at {[list(_b[:2]) for _b in _fe_bad[:4]]} - floor past the collector is ground the fan cannot drain or plant, wearing the field's color (Mizuguchi's SE needle); build_comb trims the envelope to the collector line, so regenerate the map",
+        )
     return _kept(locals(), ())

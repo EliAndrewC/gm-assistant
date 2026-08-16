@@ -2445,3 +2445,85 @@ def _seg_0333__pond_clear_of_paddies(
             f"the pond overlaps rice paddy field(s) {sorted(set(wet_paddy))} - a pond sits BESIDE the crop (a reservoir above it or a tameike below it), joined by a channel, never over the planted paddy",
         )
     return _kept(locals(), ('a', 'f', 'i', 'ol', 'pcx_', 'pcy_', 'prx_', 'pry_', 'px', 'py', 'rim_pts', 'vx', 'vy', 'wet_paddy'))
+
+
+def _seg_0597__woodland_commons_within_the_frame(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 597 (woodland_commons_within_the_frame) - hand-added 2026-08-16 past the
+    legacy range (see _seg_0595 for the numbering convention). New-style: writes=()."""
+    # A WOODLAND PARCEL THE CROP CUTS OFF IS DRAWN BUT NOT SHOWN (known-open ledger
+    # 2026-08-16, Sawada: two of three parcels wholly above the frame, the third
+    # half-cropped under the title placard; Kashikawa and Mizuguchi the same shape). The
+    # commons deliberately do NOT set the frame (crop_to_content: scrub and woods bleed at
+    # the edge), so a parcel seated past the kept window vanishes without any check
+    # noticing - the invisible-feature class, same family as the blind extractor keys. The
+    # scan now confines woodland to the predicted kept window (open_ground_patches); this
+    # holds it there. 70% of the parcel's bbox must be inside the view: a parcel CLIPPING
+    # at the edge reads as "more wood that way" and is fine; one mostly outside is not on
+    # the map in any honest sense. Bbox area is exact for the scan's axis-aligned squares
+    # and a fair proxy for any other parcel shape.
+    if M["meta"].get("generated_by") and M["meta"].get("view"):
+        _wf_x0, _wf_y0, _wf_vw, _wf_vh = (float(_v) for _v in M["meta"]["view"])
+        _wf_x1, _wf_y1 = _wf_x0 + _wf_vw, _wf_y0 + _wf_vh
+        _wf_bad: list[tuple[int, int, int]] = []
+        for _wf_c in M.get("commons", []):
+            if _wf_c.get("role") != "woodland" or not _wf_c.get("poly"):
+                continue
+            _wf_bx0 = min(float(p[0]) for p in _wf_c["poly"])
+            _wf_bx1 = max(float(p[0]) for p in _wf_c["poly"])
+            _wf_by0 = min(float(p[1]) for p in _wf_c["poly"])
+            _wf_by1 = max(float(p[1]) for p in _wf_c["poly"])
+            _wf_area = max(1e-9, (_wf_bx1 - _wf_bx0) * (_wf_by1 - _wf_by0))
+            _wf_inter = max(0.0, min(_wf_bx1, _wf_x1) - max(_wf_bx0, _wf_x0)) * max(0.0, min(_wf_by1, _wf_y1) - max(_wf_by0, _wf_y0))
+            _wf_frac = _wf_inter / _wf_area
+            if _wf_frac < 0.7:
+                _wf_bad.append((round((_wf_bx0 + _wf_bx1) / 2), round((_wf_by0 + _wf_by1) / 2), round(100 * _wf_frac)))
+        check(
+            "woodland_commons_within_the_frame",
+            not _wf_bad,
+            f"{len(_wf_bad)} woodland commons parcel(s) mostly or wholly outside the kept view (center, %-inside): {_wf_bad[:4]} - a coppice the crop cuts off is drawn but not shown, and the commons never set the frame, so nothing else notices; seat woodland inside the predicted kept window (open_ground_patches confines the scan)",
+        )
+    return _kept(locals(), ())
+
+
+def _seg_0599__woodland_commons_on_dry_ground(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 599 (woodland_commons_on_dry_ground) - hand-added 2026-08-16 past the
+    legacy range (see _seg_0595 in segments_08 for the numbering convention). New-style:
+    writes=()."""
+    # A COPPICE DOES NOT STAND IN THE MARSH (settlement-review x3, 2026-08-16: confining the
+    # woodland scan to the kept frame pushed parcels onto the wet toe - Inashiro seated one
+    # 100% inside the marsh polygon with ZERO crowns of ink, Sawada one at 97%, Mizuguchi one
+    # at ~60%). The engine's own crown filter refuses wet ground, so a wet-seated parcel
+    # renders as a few stray crowns or nothing at all: a record claiming a woodland the
+    # drawing does not deliver - and the crowns are ink-only, so no crown count can catch it;
+    # the SEAT vs the recorded marsh poly is the manifest-visible truth. (A real wet-margin
+    # willow/alder coppice exists historically, but this engine draws no wet-tolerant stand -
+    # honesty of record-vs-ink is the rule being held.) 30% wet is the line: a marsh-fringe
+    # parcel may lap the haze a little; one mostly wet cannot read as itself. Grid-sampled
+    # 5x5 over the parcel bbox against every recorded marsh poly.
+    if M["meta"].get("generated_by"):
+        _wd_marshes = [[(float(v[0]), float(v[1])) for v in _wd_m.get("poly") or []] for _wd_m in M.get("marshes", [])]
+        _wd_marshes = [_wd_m for _wd_m in _wd_marshes if len(_wd_m) >= 3]
+        _wd_bad: list[tuple[int, int, int]] = []
+        if _wd_marshes:
+            for _wd_c in M.get("commons", []):
+                if _wd_c.get("role") != "woodland" or not _wd_c.get("poly"):
+                    continue
+                _wd_bx0 = min(float(p[0]) for p in _wd_c["poly"])
+                _wd_bx1 = max(float(p[0]) for p in _wd_c["poly"])
+                _wd_by0 = min(float(p[1]) for p in _wd_c["poly"])
+                _wd_by1 = max(float(p[1]) for p in _wd_c["poly"])
+                _wd_wet = 0
+                for _wd_i in range(5):
+                    for _wd_j in range(5):
+                        _wd_x = _wd_bx0 + (_wd_bx1 - _wd_bx0) * (_wd_i + 0.5) / 5
+                        _wd_y = _wd_by0 + (_wd_by1 - _wd_by0) * (_wd_j + 0.5) / 5
+                        if any(point_in_poly(_wd_x, _wd_y, _wd_m) for _wd_m in _wd_marshes):
+                            _wd_wet += 1
+                if _wd_wet > 0.3 * 25:
+                    _wd_bad.append((round((_wd_bx0 + _wd_bx1) / 2), round((_wd_by0 + _wd_by1) / 2), round(100 * _wd_wet / 25)))
+        check(
+            "woodland_commons_on_dry_ground",
+            not _wd_bad,
+            f"{len(_wd_bad)} woodland commons parcel(s) mostly on the marsh (center, %-wet): {_wd_bad[:4]} - the crown filter refuses wet ground, so a wet-seated parcel renders as a few stray crowns claiming a whole woodland; seat the coppice on dry ground (open_ground_patches treats marsh polys as keep-outs)",
+        )
+    return _kept(locals(), ())
