@@ -41,6 +41,7 @@ import subprocess
 import sys
 
 import pool_index
+import poolmaps
 
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -139,19 +140,29 @@ def regen_pool(
     skill_dir: str = SKILL_DIR,
     jobs: int | None = None,
     allow_main: bool = True,
-) -> tuple[list[str], list[str]]:
-    """Regenerate the pool's derived renders in place, skipping any Mode B map whose stamp is fresh.
+) -> tuple[list[str], list[str], list[str]]:
+    """Regenerate the pool's derived renders in place, skipping any Mode B map whose stamp is fresh
+    and never touching a FROZEN legacy map.
 
-    Returns (skipped, regenerated) as sorted lists of generator paths. Each generator runs from its
-    OWN directory - Mode B gens are cwd-independent, Mode A gens write cwd-relative outputs, so the
-    only safe cwd for both is the gen's own. GM_ASSISTANT_ALLOW_MAIN is set for the subprocesses
-    (not this process): the generators import the engine, whose main-tree guard must stand down for
-    this one sanctioned regen-in-main."""
+    Returns (skipped, regenerated, frozen) as sorted lists of generator paths. Each generator runs
+    from its OWN directory - Mode B gens are cwd-independent, Mode A gens write cwd-relative
+    outputs, so the only safe cwd for both is the gen's own. GM_ASSISTANT_ALLOW_MAIN is set for the
+    subprocesses (not this process): the generators import the engine, whose main-tree guard must
+    stand down for this one sanctioned regen-in-main."""
     fingerprint = engine_fingerprint(skill_dir)
     gens = sorted(glob.glob(os.path.join(pool_dir, "*", "*.gen.py")))
     to_run: list[tuple[str, bool]] = []
     skipped: list[str] = []
+    frozen: list[str] = []
     for gen in gens:
+        if poolmaps.classify(gen) == "legacy":
+            # The hand-authored pool is FROZEN (GM 2026-08-16; migration-plan.md "The accepted
+            # trade"): a legacy gen must never re-run here, however stale its stamp - the engine
+            # drifts freely now, so a rerun would silently replace an exhibit's renders (and
+            # rewrite its tracked .json) with output nobody reviewed. Whatever renders exist on
+            # disk ARE the exhibit; main() warns loudly if one is missing instead of healing it.
+            frozen.append(gen)
+            continue
         cacheable = is_cacheable(gen, main_repo)
         if cacheable and _is_fresh(gen, fingerprint):
             skipped.append(gen)
@@ -177,7 +188,7 @@ def regen_pool(
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs or (os.cpu_count() or 4)) as ex:
         ran = sorted(ex.map(_run, to_run))
-    return skipped, ran
+    return skipped, ran, frozen
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -188,16 +199,25 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--jobs", type=int, default=None, help="parallelism (default: cpu count)")
     ap.add_argument("--no-allow-main", action="store_true", help="do not set GM_ASSISTANT_ALLOW_MAIN for the generators")
     args = ap.parse_args(argv)
-    skipped, ran = regen_pool(
+    skipped, ran, frozen = regen_pool(
         args.pool,
         args.main_repo,
         skill_dir=args.skill_dir,
         jobs=args.jobs,
         allow_main=not args.no_allow_main,
     )
-    print(f"render-cache: {len(ran)} regenerated, {len(skipped)} cached (fresh)")
+    print(f"render-cache: {len(ran)} regenerated, {len(skipped)} cached (fresh), {len(frozen)} frozen (legacy, never re-run)")
     for gen in ran:
         print(f"  regen  {os.path.relpath(gen, args.pool)}")
+    for gen in frozen:
+        svg = _predicted_svg(gen)
+        missing = [p for p in (svg, svg[: -len(".svg")] + ".png") if not os.path.exists(p)]
+        if missing:
+            print(
+                f"  WARNING: frozen map {os.path.relpath(gen, args.pool)} is MISSING {', '.join(os.path.basename(p) for p in missing)} - "
+                f"a frozen exhibit's render cannot be faithfully regenerated once the engine has drifted, so it is NOT healed here; "
+                f"restore the file from a previous tree or from the freeze-era commit rather than re-running the gen"
+            )
     # The pool index is derived from the same tree the renders live in, so refresh it whenever the
     # renders are refreshed - this is what keeps main's index.html current (GM 2026-08-15).
     index_path = pool_index.write_index(args.pool)
