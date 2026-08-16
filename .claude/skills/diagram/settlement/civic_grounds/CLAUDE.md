@@ -26,7 +26,8 @@ largest function anywhere in the engine.
 | `justice.py` | ground given over to PUNISHMENT: `punishment_spot` (the in-settlement post/stocks), `execution_ground` (the outside-the-settlement siting rules - road, boundary, outcast side), and `boundary_marker` |
 | `civic.py` | institutional and COMMERCIAL works - what a domain builds because it administers and trades, as opposed to what its inhabitants build to live: `granary`, `merchant_storehouses`, `merchant_residences`, `district`, `terrace`, and `precinct_interior` (the sovereign temple precinct's interior program) |
 | `lodging.py` | where travelers and their ANIMALS stop: `flophouse`, `inn`, `stables`, `animal_ground`, `flush_stable_yards` (the deferred draw that puts the yards on the map last, at crop time, when the map is complete), plus the way-bearing helpers `_way_bearing_near` and `_way_seat_near` |
-| `stable_yard.py` | anything about the working YARD around a gate stables: the beaten-earth scatter, the hitching rails, the trough cluster and its well, the dung heaps. One private method and its stages - see "The stable yard" below, and read the RNG rules there BEFORE editing it |
+| `stable_yard.py` | the working YARD around a gate stables, as STAGES: the beaten-earth scatter, the road-parallel rail, the interior rails, the trough cluster and its well, the dung heaps. See "The stable yard" below, and read the RNG rules there BEFORE editing it |
+| `_yardctx.py` | `_YardCtx` - one yard's shared state (keep-outs, the wall, prior yards' rails/troughs/heaps, the candidate ring) and the six predicates every stage tests against (`clear`, `take`, `rail_rec`, `draw_hitch`, `rail_clear_of_heaps`, `glyph_free`). Not a mixin; it is constructed per yard |
 
 ## Composition, and why it is in `__init__.py`
 
@@ -94,6 +95,26 @@ littered ground - the Qingming Shanghe Tu gate convention. It is the single dens
 researched, dated GM decisions in the engine, which is why feature 115 checked comment survival
 across both the move and the decomposition rather than trusting either.
 
+### The stages, and where each one's research lives
+
+`_stable_yard` was a single 335-line method - the largest function in the engine - until feature
+115 stage 2. It is now an outer method holding the RNG bracket, the stage calls in order, and the
+record; each stage carries its own dated GM-decision comments verbatim.
+
+| # | stage | what it draws, and the decision behind it |
+|---|---|---|
+| 1 | `_YardCtx(...)` | no drawing - builds the tight footprint keep-out (~3 px margin, real drawn buildings only, NOT the urban halo and NOT `block_polys`), including `farriers`, because the shoeing forge stands ON this yard by design (GM 2026-07-25) |
+| 2 | `_yard_litter` | the beaten-earth scuff and straw scatter, feathered to nothing at the rim so the ground reads TRODDEN rather than blank |
+| 3 | `ctx.seat_init` | no drawing - builds and SHUFFLES the four candidate rings. The yard's last RNG draw |
+| 4 | `_yard_road_rail` | the road-parallel hitching rail, set back off the roadbed. Probed at its FULL extent, tips included (GM 2026-07-24) - a rail whose tip lies on the tread is exactly what it exists to prevent |
+| 5 | `_yard_interior_rails` | one or two more rails, with BOUNDED RETRIES rather than two attempts: a candidate refused by the heap/glyph rules must not cost the yard a rail, since the tie-up room is the whole "in active use" signal |
+| 6 | `_yard_watering` | 2-3 troughs clustered AT a well (a working ox drinks ~10 gal/day; a train needs 300-600 gal in relays), offset direction-aware by a bucket-pour. A yard with no reachable well DIGS ITS OWN rather than carrying water - the Nagahara defect, GM 2026-07-23 |
+| 7 | `_yard_dung_heaps` | 1-2 heaps, held 25 px off every rail line ON THE MAP (two rounds of GM review: 15 px still read as "next to the hitching posts", and the first version measured only this yard's own rails) |
+
+Rails draw as BARE posts and the yard shows no animals at all - the drawn oxen kept reading as muck
+piles however they were styled, and the standing doctrine is that these maps render no humans, so
+they render no animals either (GM 2026-07-25).
+
 ### The RNG rules - READ THESE BEFORE EDITING
 
 `_stable_yard` does not take an injected RNG. It brackets its whole body in
@@ -115,10 +136,14 @@ independently deterministic; but WITHIN a yard the output depends on the exact s
 
 ## Two thresholds, so the next session does not decide them under pressure
 
-- **`stable_yard.py` is the largest module.** Re-split it when it crosses ~450 lines. The seam is
-  **furniture** (the litter, the seater, both rail passes, the heaps) versus **water** (the trough
-  cluster and its dug well) - the water stage is the only one that reaches outside the yard for a
-  recorded well, and it is the largest stage by a factor of two.
+- **No module here is near the bar.** After feature 115 stage 2 the package is `civic.py` 267,
+  `stable_yard.py` 264, `funerary.py` 228, `justice.py` 193, `lodging.py` 187, `_yardctx.py` 173,
+  `__init__.py` 36. The ctx/stages split was itself the first re-cut: the decomposition took
+  `stable_yard.py` to 421 in one file, over this feature's own 400-line criterion, and pulling
+  `_YardCtx` out was the honest fix rather than relaxing the number. If `stable_yard.py` grows
+  again the next seam is **furniture** (the litter, both rail passes, the heaps) versus **water**
+  (the trough cluster and its dug well) - the water stage is the only one that reaches outside the
+  yard for a recorded well, and it is the largest stage by a factor of two.
 - **`tests/settlement/test_civic_grounds.py` stays ONE file** at its current size. When it crosses
   ~1,000 lines it becomes `tests/settlement/test_civic_grounds/`, mirroring this package. Clause 13
   gives tests no exemption; this file is simply not over the bar yet.

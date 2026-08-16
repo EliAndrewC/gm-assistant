@@ -344,3 +344,44 @@ avoided one:
 **What is NOT in doubt**: US1, US2 and US4 are unaffected. The package split is done and verified
 independently of this, which is the sequencing (research R4) working as designed - the clause-13
 debt is paid whether or not the clause-12 debt is paid in the same feature.
+
+---
+
+## R14 - What the implementation learned that the plan got wrong (record)
+
+Written at the end, per tasks T043. Four things, in descending order of how much they cost.
+
+**1. The decomposition's shape (R13, already amended above).** The plan modeled `_stable_yard` as
+seven banner-marked straight-line blocks; it was eight closures over a shared lattice of locals.
+Found by an AST walk that took one command, and it should have been in Phase 0 rather than
+discovered at implementation time. **The general rule for the next clause-12 job: before promising
+a stage decomposition, walk the function for nested `FunctionDef`s.** A function with closures is
+a different kind of refactor from a function with blocks, and the plan should say which it is.
+
+**2. The RNG risk was over-estimated, and measuring it was cheap.** R12 treated the global stream
+as a lattice-wide hazard. A grep of every `random.*` call site - two minutes - showed four sites
+total and that stages 4-7 draw nothing, collapsing the whole hazard to one adjacency (the litter
+draws vs `seat_init`'s shuffle). That measurement should have been in R12 itself. It is the
+difference between "this refactor is dangerous" and "this refactor has one orderable constraint",
+and it was available for free before the GM was asked to choose an option.
+
+**3. `wip/shiro-daika`'s cost was taken on faith from a prior spec** and turned out to be an
+aborted lower bound rather than a measurement (R11, amended). **A number quoted from another
+feature's research is a claim, not a fact** - especially a number that reads like a timeout.
+
+**4. A style check that tests formatting instead of meaning.** The first T012 pass verified
+`self: "Settlement"` annotations by regex and reported 0 in every module, which looked like the
+transformer had stripped them. It had not: this file writes the annotation unquoted, and one `def`
+wraps across lines. Rewritten as an AST comparison of first-argument annotations between the
+pre-split file and the package (`22 pre, 22 post, pre == post`), which is the assertion actually
+worth making. A regex over a signature style fails on formatting and passes on meaning-loss - the
+wrong way round.
+
+**What the plan got RIGHT, worth keeping for the next one:** sequencing the move and the
+decomposition as separately-swept commits. When the second sweep came back byte-identical there was
+no ambiguity about what it proved, and had it come back dirty the cause could only have been the
+decomposition. That is the single most valuable structural decision in this feature.
+
+**No member's module assignment moved** from data-model.md Part 1, and no stage boundary had to move
+to preserve RNG order. One file was ADDED that the plan did not have: `_yardctx.py`, because the
+decomposition took `stable_yard.py` to 421 lines, over SC-001's 400 - split rather than waived.
