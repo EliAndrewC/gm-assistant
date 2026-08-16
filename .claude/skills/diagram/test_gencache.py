@@ -300,6 +300,38 @@ def test_a_dependency_change_invalidates_every_entry(tmp_path, monkeypatch):
     assert gencache.load(str(gen)) is True, "restoring the dependency state must restore the hit"
 
 
+def test_engine_files_ignores_dotfiles(tmp_path, monkeypatch):
+    """A hidden .py is never an engine module - it is a transient (an editor swap, a scratch
+    driver). Pinned because the gate's own miss drivers used to land in the skill dir as
+    `.gatecov-*-driver.py` and every concurrent key computation counted them as engine modules,
+    so a parallel sweep poisoned every other map's key and NOTHING ever hit - found because
+    feature 026's first warm-gate measurement came out slower than the cold one."""
+    (tmp_path / "real.py").write_text("A = 1\n")
+    (tmp_path / ".transient-driver.py").write_text("B = 2\n")
+    monkeypatch.setattr(gencache, "HERE", str(tmp_path))
+    assert [os.path.basename(f) for f in gencache.engine_files()] == ["real.py"]
+
+
+def test_gate_miss_scratch_files_stay_out_of_the_engine_tree(tmp_path, monkeypatch, clean_gatehit):
+    """The other layer of the same defense: the miss subprocess's driver/record/raw-coverage files
+    must live OUTSIDE the skill dir, where no key computation can ever see them."""
+    eng, gen, _ = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    monkeypatch.delenv(gencache.GATE_BYPASS, raising=False)
+    seen: list[str] = []
+    real_run = subprocess.run
+
+    def spy_run(cmd, *a, **k):
+        if isinstance(cmd, list) and cmd[-1].endswith("driver.py"):
+            seen.append(cmd[-1])
+        return real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(gencache.subprocess, "run", spy_run)
+    _, how, _ = gencache.gate_obtain(str(gen))
+    assert how == "REGENERATED" and seen, "the miss path must have spawned a driver"
+    assert not seen[0].startswith(gencache.HERE + os.sep), f"scratch driver inside the engine tree: {seen[0]}"
+
+
 def test_the_deps_state_is_stable_within_a_process():
     first = gencache._deps_state()
     assert first == gencache._deps_state(), "the deps input must not wobble between key computations"

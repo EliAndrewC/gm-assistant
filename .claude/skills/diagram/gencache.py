@@ -61,6 +61,7 @@ import runpy
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -85,7 +86,12 @@ def engine_files() -> list[str]:
     out: list[str] = []
     for dirpath, dirnames, filenames in os.walk(HERE):
         dirnames[:] = sorted(d for d in dirnames if d not in ("pool", "wip", "__pycache__", ".gencache") and not d.startswith(("test_", ".")))
-        out.extend(os.path.join(dirpath, f) for f in filenames if f.endswith(".py") and not f.startswith("test_") and f not in _NOT_ENGINE)
+        # dotFILES are excluded like dot-dirs: a hidden .py is never an engine module, it is a
+        # transient (an editor swap, a tool's scratch driver). The gate's own miss drivers used to
+        # land here as `.gatecov-*-driver.py` and every concurrent key computation counted them as
+        # engine modules - so a parallel sweep poisoned every other map's key and nothing ever hit
+        # (feature 026's first warm-gate measurement, 2026-08-16, came out SLOWER than cold).
+        out.extend(os.path.join(dirpath, f) for f in filenames if f.endswith(".py") and not f.startswith(("test_", ".")) and f not in _NOT_ENGINE)
     return sorted(out)
 
 
@@ -344,9 +350,13 @@ def gate_obtain(gen: str) -> tuple[str, str, float | None]:
     if os.environ.get(GATE_BYPASS) != "1" and os.path.isfile(cov_src) and os.path.getsize(cov_src) > 0 and load(gen):
         shutil.copyfile(cov_src, os.path.join(HERE, f".coverage.gatehit-{stem}-{os.getpid()}"))
         return manifest, "HIT", None
-    covbase = os.path.join(HERE, f".gatecov-{stem}-{os.getpid()}")
-    recfile = covbase + "-rec.json"
-    driver = covbase + "-driver.py"
+    # The child's scratch files (driver, record, raw coverage data) live OUTSIDE the engine tree:
+    # anything transient dropped into HERE risks contaminating concurrent key computations - the
+    # dotfile filter in engine_files() is the second layer of the same defense.
+    workdir = tempfile.mkdtemp(prefix=f"gatecov-{stem}-")
+    covbase = os.path.join(workdir, "cov")
+    recfile = os.path.join(workdir, "rec.json")
+    driver = os.path.join(workdir, "driver.py")
     Path(driver).write_text(
         "import json, sys, time\n"
         f"sys.path.insert(0, {HERE!r})\n"
@@ -362,17 +372,20 @@ def gate_obtain(gen: str) -> tuple[str, str, float | None]:
     env["COVERAGE_FILE"] = covbase
     try:
         proc = subprocess.run([sys.executable, "-m", "coverage", "run", "--parallel-mode", driver], cwd=HERE, env=env, capture_output=True, text=True)
+        if proc.returncode:
+            raise RuntimeError(f"gate regeneration failed for {os.path.basename(gen)} (exit {proc.returncode}):\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}")
+        with open(recfile) as fh:
+            rec = json.load(fh)
+        covfiles = sorted(glob.glob(covbase + ".*"))
+        store(gen, rec["deps"], gen_cpu_s=rec["cpu"], coverage_data=covfiles[0] if covfiles else None)
+        for i, covfile in enumerate(covfiles):
+            # the child's recording also feeds THIS run's coverage: published onto the session
+            # data-file glob (`.coverage.*`) that the Makefile's `coverage combine --append`
+            # sweeps. Copy-then-replace, because the scratch dir is on another filesystem (a bare
+            # os.replace raises EXDEV) and the final landing must still be atomic.
+            dest = os.path.join(HERE, f".coverage.gatehit-{stem}-{os.getpid()}-{i}")
+            shutil.copyfile(covfile, dest + ".tmp")
+            os.replace(dest + ".tmp", dest)
     finally:
-        os.remove(driver)
-    if proc.returncode:
-        raise RuntimeError(f"gate regeneration failed for {os.path.basename(gen)} (exit {proc.returncode}):\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}")
-    with open(recfile) as fh:
-        rec = json.load(fh)
-    os.remove(recfile)
-    covfiles = sorted(glob.glob(covbase + ".*"))
-    store(gen, rec["deps"], gen_cpu_s=rec["cpu"], coverage_data=covfiles[0] if covfiles else None)
-    for i, covfile in enumerate(covfiles):
-        # the child's recording also feeds THIS run's coverage: renamed onto the session
-        # data-file glob (`.coverage.*`) that the Makefile's `coverage combine --append` sweeps
-        os.replace(covfile, os.path.join(HERE, f".coverage.gatehit-{stem}-{os.getpid()}-{i}"))
+        shutil.rmtree(workdir, ignore_errors=True)
     return manifest, "REGENERATED", float(rec["cpu"])
