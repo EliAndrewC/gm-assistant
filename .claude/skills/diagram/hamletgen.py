@@ -1513,7 +1513,25 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     # `stage_polder`, before the ways, and a lane arm ran straight through it.
     wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
     layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, seat["lat"], seat["dep"])
-    for lane_pts in layout["lanes"]:
+    _raw_arms = [[to_screen((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
+
+    def _arm_hit(a: Poly, b: Poly) -> Pt | None:
+        """The first PROPER mid-run crossing point of two polylines - a touch at a segment
+        endpoint is a JUNCTION, not a crossing, and returns nothing. Returning the POINT rather
+        than a bool matters: raw skeletons may cross by design (a stem poked through its bar, the
+        'cross' layout's crossbar over its spine), so "the raw pair crosses somewhere" cannot
+        license a clipped crossing ANYWHERE - Kashikawa's two clipped arms X-ed 87 px out in open
+        ground while their raw junction sat at the hub, and the existence test waved it through
+        (2026-08-16). A clipped crossing is designed only where the raw one is."""
+        for i in range(len(a) - 1):
+            for j in range(len(b) - 1):
+                _h = seg_intersect(a[i], a[i + 1], b[j], b[j + 1])
+                if _h is not None and all(math.dist(_h, q) > 2.0 for q in (a[i], a[i + 1], b[j], b[j + 1])):
+                    return _h
+        return None
+
+    _kept_arms: list[tuple[Poly, Poly]] = []
+    for _ai, lane_pts in enumerate(layout["lanes"]):
         # ...pulled back out of any hem plot the arm would otherwise reach into. The skeleton is
         # sized from the household count, so on a cluster seated tight against the hem a `cross`
         # crossbar can overrun into the barley - and a lane may touch a plot's edge but never cross
@@ -1539,6 +1557,25 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
         arm = s.trim_off_marsh(arm)  # ...and off the pond's reed fringe, which is already drawn by now
         if len(arm) >= 2:
+            # AN ARM MAY NOT CROSS A SIBLING THE LAYOUT NEVER CROSSED (settlement-review, Sawada
+            # 2026-08-16). The clip pipeline bends each arm independently, and two of a Y's arms
+            # came back CROSSING mid-run and running near-superimposed for ~250 ft to endpoints
+            # 28 px apart - a drafting slip to any reader, and ground the second arm serves that
+            # the first does not is nil. A crossing the RAW layout itself draws (the 'cross'
+            # skeleton's crossbar over its spine) is a designed junction and stays - the raw pair
+            # is the reference for which crossings are meant.
+            _accidental = False
+            for _ka, _kr in _kept_arms:
+                _h = _arm_hit(arm, _ka)
+                if _h is None:
+                    continue
+                _hr = _arm_hit(_raw_arms[_ai], _kr)
+                if _hr is None or math.dist(_h, _hr) > 40.0:
+                    _accidental = True
+                    break
+            if _accidental:
+                continue
+            _kept_arms.append((arm, _raw_arms[_ai]))
             s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)
     s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
 
@@ -1595,7 +1632,39 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         (spur_path(q) for q in sorted(plan.envelope, key=lambda v: math.hypot(v[0] - cx, v[1] - cy))),
         key=lambda p: (path_violations(p, crops, plan.sink_pond, brook_segs, plan.watercourses), polyline_len(p)),
     )
-    s.lane(s.trim_off_marsh(clip_to_clear(spur, [*crops, *([toe_now] if toe_now else [])], 12.0)), width=5, clearance=LANE_CLEARANCE, worn=True)
+    _spur_pts = s.trim_off_marsh(clip_to_clear(spur, [*crops, *([toe_now] if toe_now else [])], 12.0))
+    # A FIELD SPUR BRANCHES OFF THE NETWORK - it does not cross it (settlement-review, Sawada
+    # 2026-08-16: the spur left the cluster's middle on the far side of a Y arm and ran an X over
+    # it, where a real farm path FORKS from the lane it serves). If the run crosses a drawn arm,
+    # the spur starts AT the crossing: the shared point becomes the fork. Repeats until clear, so
+    # a spur crossing two arms starts at the one nearest its field end.
+    # BOUNDED pass count: with float hits a crossing can re-surface epsilon-shifted forever
+    # (the unbounded while hung a regen at 600s); a spur meets at most a handful of arms, so
+    # eight passes is generous and termination is structural, not numeric.
+    for _pass in range(8):
+        _cut = False
+        if len(_spur_pts) < 2:
+            break
+        for _ka, _kr in _kept_arms:
+            for _si in range(len(_spur_pts) - 1):
+                for _sj in range(len(_ka) - 1):
+                    _hit = seg_intersect(_spur_pts[_si], _spur_pts[_si + 1], _ka[_sj], _ka[_sj + 1])
+                    # ...and the cut must make PROGRESS: after a truncation the new start lies ON
+                    # the arm, so the same intersection comes straight back on the next pass and
+                    # the loop never ends (it did - a regen hung at 600s). A hit at the current
+                    # start is the fork already made, not a crossing left to cure.
+                    if _hit is not None and math.dist(_hit, _spur_pts[-1]) > 14.0 and math.dist(_hit, _spur_pts[_si]) > 1.0:
+                        _spur_pts = [_hit, *_spur_pts[_si + 1 :]]
+                        _cut = True
+                        break
+                if _cut:
+                    break
+            if _cut:
+                break
+        if not _cut:
+            break
+    if len(_spur_pts) >= 2 and sum(math.dist(_spur_pts[k], _spur_pts[k + 1]) for k in range(len(_spur_pts) - 1)) > 20.0:
+        s.lane(_spur_pts, width=5, clearance=LANE_CLEARANCE, worn=True)
 
     # the CONNECTOR, out to the frame
     # ...and the gate the connector starts FROM must itself be out of the crop. The skeleton's
@@ -2146,14 +2215,30 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
         pool = sorted(seats)
         while pool and len(placed) < want:
             if placed:
-                # ...in coverage BUCKETS of ~3 grid steps, centrality breaking ties inside a bucket
-                # (Sawada 2026-08-16, after the canal-B re-roll): a strict farthest-first sort let a
-                # seat 91 px OUTSIDE the cluster beat an interior seat covering essentially the same
-                # households, and the exterior well held the whole map frame open by its own width
-                # (crop_not_held_open_by_one_feature). A well 60-odd px nearer the unserved end is
-                # the same well to the household walking to it; a well past every drawn feature is a
-                # different map.
-                pool.sort(key=lambda c: (-(min(math.hypot(c[1] - px, c[2] - py) for px, py in placed) // 66.0), c[0]))
+                # ...by MINIMAX NEED, in ~3-grid-step buckets, centrality breaking ties inside a
+                # bucket. Two failed rankings led here, and both are worth remembering. Strict
+                # farthest-first (the 2026-08-15 greedy-coverage fix) let a seat 91 px OUTSIDE the
+                # cluster beat an interior seat covering the same households - the exterior well
+                # held Sawada's whole frame open (crop_not_held_open_by_one_feature). Bucketing
+                # that same farthest-first score fixed the frame and re-broke coverage the other
+                # way: on Mizuguchi the spread rung walked EAST past the last house into scrub
+                # while the one under-served household stood at the WEST end (settlement-review
+                # 2026-08-16). Both fail because "far from the standing wells" is a proxy for the
+                # real quantity, which is the walk of the household WORST served after the well is
+                # dug - so score that directly: pick the seat minimizing the farthest any house
+                # would remain from its nearest well. A seat past the row's end cannot beat an
+                # in-row seat (it serves nobody the row seat does not), and a seat in an unserved
+                # lobe wins outright, which is what the greedy fix was for in the first place.
+                def _worst_after(c: tuple[float, float, float]) -> float:
+                    return max(
+                        min(
+                            min(math.hypot(h["x"] - wx, h["y"] - wy) for wx, wy in placed),
+                            math.hypot(h["x"] - c[1], h["y"] - c[2]),
+                        )
+                        for h in houses
+                    )
+
+                pool.sort(key=lambda c: (_worst_after(c) // 66.0, c[0]))
             _, x, y = pool.pop(0)
             if any(math.hypot(x - px, y - py) < 170.0 for px, py in placed):
                 continue  # `wells_not_clustered`: shared wells serve separate courtyards
