@@ -1,0 +1,62 @@
+# settlement/ - the Mode B drawing engine as a package
+
+Split from the 16,016-line `settlement.py` by feature 025 (constitution Principle X clause 13 -
+the cost being managed is context-window tokens). **Load only the file the task calls for**; this
+index is the map. `import settlement` still exposes the full legacy surface via `__init__.py`,
+and `settlement.Settlement` is the same single class - its 338 methods are grouped into subsystem
+MIXIN classes composed in `core.py`, so class-level monkeypatching and subclassing behave exactly
+as before.
+
+Two invariants the split does NOT touch:
+
+- **DRAW ORDER is a runtime contract.** Features are layered by the record streams (`add` /
+  `add_top` / `add_wall`, in `core.py`) and assembled by `finish()` (in `finish.py`); the DRAW
+  ORDER map documentation lives in the skill's `CLAUDE.md`. The mixin grouping changes where a
+  method's TEXT lives, never when it runs.
+- **Knob doctrine** (feature 005): knobs are rolled via `scope_seed`/`knob_rng` in `_knobs.py`;
+  a knob's value depends only on (map seed, knob name), never on draw order.
+
+## Look here when
+
+| file | look here when |
+|---|---|
+| `__init__.py` | you need the re-export list or the import-time main-tree guard; never add logic here |
+| `_geom.py` | pure geometry/spatial helpers: point/seg/poly math, overlap + gap predicates, `Indexed`/`SeatMemo`/`PointGrid` spatial indexes, label tilt/quad/AABB helpers, smoothing, `village_population` |
+| `_knobs.py` | the knob engine (`Knob`, `register_knob`, `resolve_knob`, `scope_seed`, `knob_rng`, layout validators, `skeleton_layout`) and roll/size helpers (`roll_torii_count`, `execution_ground_ft`, wall/bridge/moat/crop helpers) |
+| `core.py` | `class Settlement(...)` itself: `__init__`, the record streams (`add`/`add_top`/`add_wall`/`add_label`), meta/header, knob resolve + rng scoping, viewport/crop |
+| `fields.py` | paddy/comb/dry fields, land-use overlays, plot features, ponds, furrows |
+| `water_ways.py` | focal features (mill/market/halls), streams/rivers/channels + water clipping, lanes/streets/kido/wards/quarters/alleys |
+| `shrines_wells.py` | hills, shrines + shrine halls, torii + avenues, wells (+ well indexes/placement), tree stands, forest |
+| `structures.py` | manor, merchant estates, roads, generic `building`, servant ranges, rowpack/pack placement engines, pasture, theater, fire tower, kosatsuba + label-blocker plumbing, punishment-spot placement, drum tower |
+| `trades.py` | trade works: brewery, dye yard, lumber, oil press, pawnshop, bathhouses, farrier, kiln, charcoal yard, refining forge, tanning yard, border lines |
+| `homestead_parts.py` | threshing yards, gardens, farm sheds, homestead groves, the village grove, canopy/corridor keepouts |
+| `land.py` | perimeter dikes + dike-top housing, commons, marsh, toe bands, hinterland, near-ring cropland/paddy, farmstead nudge plumbing |
+| `civic_grounds.py` | funerary grounds (cemetery/mausoleum/cremation/ossuary), punishment/execution grounds, boundary markers, districts, terraces, granaries, merchant storehouses/residences, flophouse/inn/stables + stable yards |
+| `city.py` | ring roads, city walls + towers + wall walks, moats + gates + sluices, canals + towpaths, farmland ring, quay/aqueduct/docks/log boom, bridges + channel footbridges |
+| `castle_civic.py` | castle, ministries, dojos + martial halls + hanko, the caption/label-spot engine, forest patches, freestanding walls, flower fields |
+| `houses.py` | house drawing + placement machinery (corridors, keepouts, treads, `_fits`, frontage), `try_place`, cluster seeds, plot texture, water-source anchors |
+| `rolling.py` | `roll_village` and the whole homestead-bundle solver (seeds, headman, bundle geometry/placement, farmsteads, perimeter ring) |
+| `finish.py` | labels + titles, blank-spot search, `finish()` (layer assembly + svg write), `render_png` |
+
+## Mixins and mypy
+
+Every mixin method is annotated `self: "Settlement"` with `from .core import Settlement` under
+`TYPE_CHECKING` - that is what lets `mypy --strict` resolve cross-subsystem attribute access with
+zero runtime import cycle. When adding a method to a mixin, keep that pattern; when adding a new
+subsystem file, add its mixin to the `class Settlement(...)` bases in `core.py` and a row here.
+
+## Monkeypatching a module-level name
+
+Submodules bind helper names at import (`from ._geom import poly_gap`), so patching
+`settlement.poly_gap` does not reach a mixin that already imported it - patch the DEFINING
+submodule (`settlement._geom.poly_gap`) or, for anything reached via `self.`, patch
+`settlement.Settlement` (class-level patching is unaffected by the split). As of the split, no
+test in the suite patches a settlement module-level name (census in
+`specs/025-human-scale-splits/consumer-census.json`).
+
+## Coverage
+
+The package holds the 94% RATCHET floor from the 2026-08-16 legacy freeze (see
+`SETTLEMENT_COV_FLOOR` in the Makefile): the uncovered town/city/capital wings live mostly in
+`city.py`, `castle_civic.py`, and parts of `structures.py`/`civic_grounds.py`, and re-cover as
+those tiers convert to scripted generation. Raise the floor with each conversion; never lower it.
