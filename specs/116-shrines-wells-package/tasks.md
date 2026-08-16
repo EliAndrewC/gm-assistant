@@ -76,7 +76,7 @@ artifact byte-identical.
 - [x] T023 [US1] Check combined `settlement/` coverage (`python3 -m coverage report --include='*/settlement/*'`) is at or above `SETTLEMENT_COV_FLOOR` (94) and, critically, that it did not MOVE. A pure move relocates executable lines without adding or removing one, so any movement is a signal to investigate - a member lost, a module not composed - not a number to re-baseline (research R7)
 - [x] T024 [US1] Confirm `GEN_TIME_BUDGETS` in `tests/test_villages.py` still passes unmodified. This matters more here than in any predecessor: `_well_ground_clear` and `_in_scrub_cover` are the engine's two hottest predicates (~133k candidate seats on Minami), and the whole `frozen_terrain` design exists because a few microseconds per candidate once turned a 5s gen into a 45-minute grind
 - [x] T025 [US1] Run `make done` backgrounded, once; read the log tail before believing green (no `; echo EXIT=$?` wrapper, which makes a failed gate report exit 0)
-- [ ] T026 [US1] Commit the move + guard as ONE commit (no decomposition stage exists to separate for a bisect - research R4), then run `scripts/sync-with-main.sh done` from inside the clone
+- [x] T026 [US1] Commit the move + guard as ONE commit (no decomposition stage exists to separate for a bisect - research R4), then run `scripts/sync-with-main.sh done` from inside the clone
 
 **Checkpoint**: US1 and US2 are complete and shippable on their own. If the feature stopped here, the
 clause-13 debt is paid.
@@ -93,7 +93,7 @@ index alone.
 - [x] T027 [US3] Write `.claude/skills/diagram/settlement/shrines_wells/CLAUDE.md`: the split's provenance, a "look here when" row per module, the hub statement (`wellground.py`), and the cross-submodule call map from research R10
 - [x] T028 [US3] Record in that index the four placements a reader would otherwise re-litigate (FR-008): `seats.py` and `byres.py` holding members that belong at parent level, with each one's intended destination; `shrine_well` filed by its code rather than its name; `_hall_caption_y` filed with its caller. Also carry the monkeypatching note one level deeper (research R8) and the "if a module grows" seams from data-model.md
 - [x] T029 [US3] Update the `shrines_wells` row of `.claude/skills/diagram/settlement/CLAUDE.md` to point at the sub-index rather than list contents inline - the same shape the `fields/`, `city/` and `structures/` rows already have. Re-read the row first: feature 115 is editing the same table in a peer session
-- [ ] T030 [US3] Docs-only, so skip the gate (root CLAUDE.md, "Docs-only diffs skip the gate"). Commit and run `scripts/sync-with-main.sh done`
+- [x] T030 [US3] Docs-only, so skip the gate (root CLAUDE.md, "Docs-only diffs skip the gate"). Commit and run `scripts/sync-with-main.sh done`
 
 ---
 
@@ -232,6 +232,27 @@ guard test this feature added. So, unlike feature 114, no consumer file changed 
 
 1,179 -> largest 294. A session on one subsystem now loads 25% of what it used to at worst, and 6% at
 best.
+
+### T025 / T026 / T030 - the gate, and one commit rather than two
+
+First `make done` run failed on `tests/pipeline/test_gencache.py::test_the_real_pool_round_trips_
+through_the_cache` with `assert Path(manifest).read_bytes() == fresh` where `fresh` was `b''` - an
+EMPTY read. Cause was mine, not the split: I ran a `pytest tests/settlement/ tests/test_regressions.py`
+beside the running gate, and both regenerate `inashiro`, so the round-trip test read a manifest
+another process was mid-write on. The file alone passes (26 passed) and the pool stayed clean. Re-ran
+the gate with nothing else in flight: **3225 passed in 110.9s**, non-settlement coverage 100%,
+`settlement/` combined **95%** against the 94 floor, 450 missed lines - the same 450 the failed run
+measured, i.e. unmoved, as a pure move requires (T023).
+
+The lesson generalizes past this feature and is worth carrying: quickstart step 2 already says "do
+not run the sweep beside an `-n auto` pytest", and the same applies in the other direction - **do not
+run a pytest beside the GATE**. Two writers in one tree are safe for determinism (identical bytes)
+but not for a test that snapshots a file and reads it back.
+
+The move, the guard and both `CLAUDE.md` files landed as ONE commit rather than the planned two: the
+docs are index rows describing the shape the same commit creates, and splitting them would have
+produced a docs-only commit that a bisect has no use for (there is no second behavior change to
+separate - research R4).
 
 ### T033 - clause-13 debt still standing in settlement/ (for the next session)
 
