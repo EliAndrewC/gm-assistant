@@ -71,6 +71,63 @@ at two tolerances is how checks start disagreeing. (3) A pocket **too thin to bu
 rather than planted, matching the fan toe's existing thickness rule (`_TOE_MIN_THICKNESS`) - a
 needle basin cannot be leveled or bunded at any sane cost.
 
+### A basin never tapers to a point - the fan toe truncates
+
+*GM ruling 2026-08-17, closing the fan-toe SUNBURST that `future-work.md` had carried as an open
+question. The question was posed honestly - "a real cascade fan does narrow to its outfall, and the
+honest question is whether this narrows too tidily" - and the GM's standard was simply realism.*
+
+**The shape is authentic; the angles were not.** Two things had to be separated before anything
+could be fixed, because a rule that got them backwards would have destroyed something real:
+
+- **Radial convergence at the outfall is real** and is not a defect. An alluvial cascade fan
+  genuinely narrows toward its collector, and the bunds of the basins on it converge with it. Any
+  rule that flattened that would be making the map *less* faithful.
+- **Narrowness is real too.** The strips at Shiroyone Senmaida and in the Philippine Cordilleras
+  are genuinely a few feet wide and worked by hand. So the rule is deliberately **NOT** a minimum
+  plot width - that would have been the obvious rule and it would have been wrong.
+- **What no real basin does is taper to ZERO.** A paddy is a *level, bunded, puddled* unit holding
+  standing water at an even depth. The arithmetic is the whole argument: at a 7.5 degree apex a
+  plot is **5 ft wide 40 ft back from its point and 2.6 ft at 20 ft**, while an aze is ~1.5 ft of
+  puddled mud (`AZE_FT`) on **each** side. The last yards are therefore two bunds with no floor
+  between them - it cannot be leveled, cannot hold a depth, and cannot be transplanted. At 25
+  degrees the same wedge is 17 ft wide 40 ft back, which is a workable bunded strip.
+
+**What a real fan toe does instead** is what this file's shared-bund section already says a real
+fan did with any awkward ground: the point is truncated into a headland along the collector, or the
+odd corner is simply left unpaddied - *"the odd unplantable scrap was simply taken into the basin
+beside it rather than walled off on its own."* The fix is therefore not new doctrine; it is the
+existing doctrine applied to a case that was slipping through.
+
+**Why it slipped through, which is the transferable part.** The toe pass already dropped
+unbundable slivers, but its test was an **inradius proxy** (`2*Area/Perimeter`) - a THICKNESS. A
+needle that is LONG passes a thickness test on the strength of its middle while its point is still
+unworkable, and Inashiro's were 130-254 ft long. *A thickness test cannot see a taper.* The apex
+angle is the measure that can, and `pointed_ring` was already in the codebase carrying a
+pool-measured calibration (seam wedges 7-23 degrees, honest hem strips 45+), so the rule reuses
+both ends of it rather than inventing a third number: **the placer refuses at 25 degrees, the gate
+`paddy_plots_are_workable_basins` fires at 15** - placer stricter than gate, as everywhere else.
+
+**Three places had to refuse a needle, and finding that took provenance data rather than
+guessing.** Fixing only the carve took Inashiro 17 -> 8; also fixing `_plant` took it to 6; and
+the survivors turned out (by instrumenting `close_seams` and classifying every needle by origin)
+to be **entirely `carved_grown`** - good basins that *welding a scrap into them* had drawn out to a
+point. The lesson is the cheap one: two wrong guesses cost a regeneration cycle each, and one
+provenance probe answered it outright.
+
+- `waterfields/comb.py::_comb_toe_and_hem` - drops needle apexes as well as thin slivers, and runs
+  **after** `hem_to_bank` so it judges the ring that is actually recorded rather than one a later
+  pass rewrites.
+- `waterfields/seams.py::close_seams` - re-judges what `_plant` hands back and routes needles to
+  the scrap path.
+- `waterfields/seams.py::_absorb` - declines a weld that would needle the absorbing basin, in the
+  same rejection ladder that already declines MultiPolygon, holed and bow-tie unions.
+
+**The deliberate residue:** a strip that needles every basin it touches stays bare, and that is the
+honest answer rather than a failure - the fan's base floor (`comb_base_fill`) draws under it, so it
+reads as the toe's own ground. This is the same treatment the slivers dropped for thinness have
+always had.
+
 ## Nitrogen - a flooded paddy makes its own
 
 **Grounds:** the ~6% soy share; azemame as a food crop

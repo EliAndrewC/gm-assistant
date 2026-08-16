@@ -5,7 +5,7 @@ import random
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from .banks import _TOE_MIN_THICKNESS, dedup_ring, floor_overhang, hem_to_bank, round_channel_joints
+from .banks import _TOE_MIN_APEX, _TOE_MIN_THICKNESS, dedup_ring, floor_overhang, hem_to_bank, pointed_ring, round_channel_joints
 from .carve import _bund_beans, _carve, _dry_fields
 from .frame import DF, DRAIN_W_HEAD, DRAIN_W_TAIL, GAP, Poly, Pt, _drain_bank, _dug_polyline, _f_at_u, _Frame, _point_along, _poly_area, _poly_perim, _seg_x, _signed_area, _Thread
 from .seams import close_seams
@@ -179,13 +179,35 @@ def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, 
     # fan carries a base floor under the plots (`comb_base_fill`, enforced by paddy_fan_has_floor),
     # so the ground reads as the fan's own toe rather than as a hole.
     #
-    # The test is the inradius proxy 2*Area/Perimeter - a THICKNESS, not an area, because an acute
-    # sliver can carry a respectable area while being too narrow anywhere to hold water. Scaled to
+    # TWO INDEPENDENT WAYS TO BE UNBUNDABLE, and a plot only has to fail one.
+    #
+    # THICKNESS - the inradius proxy 2*Area/Perimeter, not an area, because an acute sliver can
+    # carry a respectable area while being too narrow anywhere to hold water. Scaled to
     # `plot_across` so it means the same thing at every grain.
-    _thin = [q for q in plots if _poly_perim(q["poly"]) <= 0 or 2 * _poly_area(q["poly"]) / _poly_perim(q["poly"]) < _TOE_MIN_THICKNESS * plot_across]
-    if _thin:
-        _drop = {id(q) for q in _thin}
-        plots[:] = [q for q in plots if id(q) not in _drop]
+    #
+    # APEX - added 2026-08-17 on the GM's realism ruling, because thickness alone let the fan-toe
+    # SUNBURST through. A needle that is LONG passes the inradius test while still tapering to a
+    # point: Inashiro carried eight to ten bunds 130-254 ft long converging on a ~10 ft stretch of
+    # collector bank at 7.5-14.3 deg, and the last yards of a wedge that acute are an aze on each
+    # side with no floor between them. The radial convergence itself is authentic and is NOT what
+    # this drops - a cascade fan genuinely narrows to its outfall, and narrow strips are real
+    # (Shiroyone Senmaida, the Cordilleras); what no real basin does is taper to zero. `_TOE_MIN_APEX`
+    # carries the calibration and the arithmetic.
+    #
+    # DROPPING IS THE WHOLE FIX, because `close_seams` runs after this and absorbs the ground into
+    # the basin beside it - which is exactly what its own research says a real fan did with an
+    # unplantable scrap ("taken into the basin beside it rather than walled off on its own"). So
+    # the toe pass does not need to truncate a corner or leave bare floor: it says which rings are
+    # not basins, and the seam pass re-plants what that frees. Do NOT move this after `close_seams`
+    # - that would open bare ground nothing reconciles, and fight `paddy_plot_seams_shared`.
+    # HEM FIRST, THEN JUDGE - the order matters and it was wrong until 2026-08-17. The drop used to
+    # run before the hem, so it judged a ring that the very next loop rewrote: `hem_to_bank` pulls
+    # vertices onto the drain bank, and pulling one vertex of an already-tapering plot onto the bank
+    # SHARPENS its apex. Six of Inashiro's needles were made by the hem, in a row along the
+    # collector at y~1521, and no amount of dropping beforehand could reach them. Judge the geometry
+    # that actually gets recorded. (Same rule as "placement and its check must read the SAME
+    # source", one level down: here both were the same code, reading two different moments.)
+    #
     # THE INVARIANT, held uniformly across all four field engines: no basin's wall stands in the
     # ditch. The comb hems onto the bank BY CONSTRUCTION (see `_drain_bank`), so this pass is a
     # no-op on all but one vertex in the whole pool - and that one is worth naming, because it says
@@ -198,6 +220,16 @@ def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, 
     # the invariant here rather than left standing in the water.
     for pl in plots:
         pl["poly"] = hem_to_bank(pl["poly"], dpts, down_deg, DRAIN_W_HEAD * grain, DRAIN_W_TAIL * grain)
+    _thin = [
+        q
+        for q in plots
+        if _poly_perim(q["poly"]) <= 0
+        or 2 * _poly_area(q["poly"]) / _poly_perim(q["poly"]) < _TOE_MIN_THICKNESS * plot_across
+        or pointed_ring(dedup_ring([(float(_p[0]), float(_p[1])) for _p in q["poly"]], 1.0), _TOE_MIN_APEX)
+    ]
+    if _thin:
+        _drop = {id(q) for q in _thin}
+        plots[:] = [q for q in plots if id(q) not in _drop]
 
 
 def _mk_thread(

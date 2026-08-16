@@ -12,7 +12,7 @@ import random
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from .banks import dedup_ring, pointed_ring, polyline_cum, supply_bank_clearance
+from .banks import _TINT_MIN_APEX, dedup_ring, pointed_ring, polyline_cum, supply_bank_clearance
 from .frame import BANK_MARGIN, Poly, Pt, _at_f, _f_at_u, _Frame, _miter_normals, _pip, _seg_d, _Thread
 from .palette import DRY_CROPS, FLOODED, RICE_GREENS
 
@@ -318,7 +318,7 @@ def _sector_closing_rank(
             # lowest ground); an upper split level cascades into it and stays green - so a
             # blue plot always abuts the drain
             fill = FLOODED if (abuts and R.random() < 0.45) else R.choice(RICE_GREENS)
-            if fill == FLOODED and pointed_ring(dedup_ring(quad, 1.0)):
+            if fill == FLOODED and pointed_ring(dedup_ring(quad, 1.0), _TINT_MIN_APEX):
                 # A POINTED SLIVER MUST NOT WEAR THE WATER TINT (known-open ledger 2026-08-16):
                 # at a fan seam the converging closing-rank sub-columns taper to needle apexes,
                 # and a blue one reads as a tiny triangular pond. Demote to a rice green picked

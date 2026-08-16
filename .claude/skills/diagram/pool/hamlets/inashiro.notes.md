@@ -269,3 +269,65 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   Also noted: the re-pack cost the northernmost homestead its farm shed (4 -> 3 of 15 households,
   against the project's ~30% storehouse figure) - inside the noise at this size, but it went the
   wrong way.
+
+## 2026-08-17 - the fan-toe SUNBURST, ruled and fixed
+
+The GM ruled on the open question the previous entry left: *"I would like for us to be rendering
+things that are realistic. So if this is a thing that needs to be fixed, then I would like it to be
+fixed."* Their framing was also the right diagnosis - the shape is realistic, the angles are not.
+
+The research (recorded in full in `research/fields.md`, "A basin never tapers to a point - the fan
+toe truncates") split the question in two, and the split is what kept the fix from destroying
+something real. Radial convergence at the outfall is authentic - a cascade fan does narrow to its
+collector - and so is narrowness itself: the strips at Shiroyone Senmaida and in the Cordilleras
+really are a few feet wide. So the rule is deliberately **not** a minimum plot width, which is the
+obvious rule and would have been wrong. What no real basin does is taper to ZERO: at a 7.5 deg apex
+the plot is 5 ft wide 40 ft back from its point and 2.6 ft at 20 ft, and an aze is ~1.5 ft of
+puddled mud on EACH side, so the last yards are two bunds with no floor between them - unlevelable,
+unfloodable, untransplantable.
+
+Inashiro carried **17** rings under the 15 deg gate line (the map-wide count; the two named
+sunbursts are where they cluster). It now carries none - the review measured the sharpest apex going
+**0.9 -> 27.9 deg** on the gate's own metric, clearing even the placer's stricter 25 deg line
+everywhere - and the household count, the acreage (20.1 against a 19.5 target) and every check are
+green.
+
+**But this was a RE-ROLL, not a local edit**, and the notes are the record a future session diffs
+against: the RNG stream shifted, so the view moved, 5 houses moved up to 68 ft, both wells, all 3
+byres, both village groves, 6 threshing yards and 12 gardens re-seated, the notice board moved 52 ft,
+and **farm sheds fell 5 -> 3 of 15 households** (33% -> 20%, against the project's ~30% storehouse
+figure). The shed count went the wrong way in the previous re-roll too and nothing gates it - two
+rolls in a row is worth a look even if small-n noise is a fair defense.
+
+**The carve's sector geometry was NOT re-cut.** The previous entry expected that to be the fix, on
+the strength of `_comb_toe_and_hem`'s own comment. It was wrong - or at least unnecessary. The
+needles came from three much smaller places, and finding the third one is the part worth carrying:
+
+1. The toe pass dropped unbundable slivers by an INRADIUS proxy, which is a *thickness*. A needle
+   that is LONG (130-254 ft here) passes a thickness test on the strength of its middle. A
+   thickness test cannot see a taper. Fixed 17 -> 8.
+2. It also ran BEFORE `hem_to_bank`, so it judged a ring the very next loop rewrote. Reordered.
+3. `_plant` and `_absorb`. Fixing `_plant` took 8 -> 6, and the survivors were then classified by
+   instrumenting `close_seams` and tagging every needle by origin: **all of them `carved_grown`** -
+   perfectly good basins that *welding a toe scrap into them* had drawn out to a point. `_absorb`
+   now declines such a weld in the same ladder that already declines MultiPolygon, holed and
+   bow-tie unions, and the runner-up basin takes the scrap.
+
+**Two guesses cost a regeneration cycle each** (the carve, then the hem) before one provenance
+probe answered it outright. Instrument before the second guess, not after the third.
+
+Deliberate residue *in the engine*: a strip that needles every basin it touches stays bare, with the
+fan's base floor showing through - the "odd corner left unpaddied" the research describes, and the
+same treatment the thin slivers have always had. **It did not materialize on this map** - the review
+measured bare ground outside the channel margins going *down*, 811 -> 531 sq ft, with nothing wider
+than 3.2 ft and no fragment within 120 ft of either sunburst. The Sawada review then confirmed why it
+is invisible where it does occur: the fan's floor fill is the *same* RGB as a plot interior, measured
+at the pixel.
+
+Review log: DELTA pass, verdict **pass**. It independently re-derived every headline number and
+CAUGHT two things this session had not: (a) a **pre-existing self-intersecting carve ring** at
+(2397,1790)-(2437,1852) - the bow-tie class the previous pass fixed on the *weld* path, which the
+carve/hem path still emits and `dedup_ring`'s 1.0 ft eps does not collapse at 4.5 ft; (b) the farm
+shed drift above. It also noted the paint-order lap halved again (4,441 -> 2,660 sq ft) as a side
+effect. The bow-tie is logged, not fixed - it predates this change and belongs with the carve work
+that cohort seeds 9 and 11 also point at (`future-work.md`).

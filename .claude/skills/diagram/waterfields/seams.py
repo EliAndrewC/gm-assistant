@@ -50,6 +50,7 @@ have its work reopened as fresh bare ground. Running afterwards means this pass 
 the whole pipeline actually left, whichever stage left it.
 """
 
+import math
 import random
 from collections.abc import Callable
 from typing import Any
@@ -59,7 +60,7 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from .banks import dedup_ring, pointed_ring, polyline_cum
+from .banks import _GATE_MIN_APEX, _TINT_MIN_APEX, _TOE_MIN_APEX, _WELD_MIN_APEX, dedup_ring, pointed_ring, polyline_cum
 from .frame import BANK_MARGIN, Poly, _f_at_u, _Frame
 from .palette import FLOODED, RICE_GREENS
 
@@ -220,7 +221,56 @@ def _outside_command(F: _Frame, a_pts: Poly, dpts: Poly, field: Polygon, g: floa
     return unary_union([below, above])
 
 
-def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int]) -> None:
+def _open_to(pocket: Polygon, w: float) -> Polygon | None:
+    """`pocket` with everything narrower than `w` removed, or None if nothing survives.
+
+    THE TAPERING-SCRAP ESCAPE. A scrap that needles every basin it could join is almost always a
+    TAPERING strip: wide enough to be real at one end, running out to nothing at the other. Welding
+    all of it draws the host out to a point; welding none of it leaves a doubled bund. Neither is
+    what a farmer does - they take the strip as far as it is worth walling and let the last sliver
+    go, which is this function.
+
+    The width to stop at is not a guess: `paddy_plot_seams_shared` ignores a gap under 3 ft on its
+    own stated reasoning ("two bunds that close draw as one line"), so a tail left below that is
+    invisible to the doubled-bund rule by the rule's OWN definition rather than by a tolerance
+    tuned until the pool passed. So the weld gets the workable part and the sub-3-ft tail stays
+    bare, which is also the "odd corner left unpaddied" the research describes.
+
+    Mechanically this is `_despike`'s opening at a larger radius, with the same two safeguards and
+    for the same reasons: MITRE joins (a rounded opening arcs every convex corner and explodes the
+    vertex count) and INTERSECTING the result back with the input (a mitred offset can push an
+    acute corner outward, and this pass must only ever REMOVE ground)."""
+    try:
+        opened = pocket.buffer(-w / 2, join_style="mitre", mitre_limit=2.0).buffer(w / 2, join_style="mitre", mitre_limit=2.0)
+    except GEOSException:
+        return None
+    parts = _parts(pocket.intersection(opened.buffer(0)))
+    if not parts:
+        return None
+    return max(parts, key=lambda p: p.area)
+
+
+def _min_apex(ring: Poly) -> float:
+    """The sharpest interior angle in `ring`, in degrees (180.0 for a ring too short to have one).
+
+    `pointed_ring` answers the yes/no; this answers "how sharp", which is what lets `_absorb` RANK
+    imperfect welds instead of only accepting or refusing them."""
+    n = len(ring)
+    if n < 3:
+        return 180.0
+    out = 180.0
+    for i in range(n):
+        a, v, c = ring[i - 1], ring[i], ring[(i + 1) % n]
+        v1 = (a[0] - v[0], a[1] - v[1])
+        v2 = (c[0] - v[0], c[1] - v[1])
+        d1 = math.hypot(*v1) or 1.0
+        d2 = math.hypot(*v2) or 1.0
+        cs = max(-1.0, min(1.0, (v1[0] * v2[0] + v1[1] * v2[1]) / (d1 * d2)))
+        out = min(out, math.degrees(math.acos(cs)))
+    return out
+
+
+def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) -> None:
     """Fold a too-thin pocket into the basin it shares the most bund with - the weld that turns two
     walls with a strip between them into the one wall a real aze is. The neighbour is chosen by
     SHARED BOUNDARY LENGTH rather than by distance or area: the basin whose wall actually forms
@@ -239,6 +289,7 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int]) -> None:
     # strip meets that basin only at a point) or with a hole (it wraps the basin) often enough to
     # matter - 64 of 255 welds on Inashiro - and each failure leaves the doubled bund it was there
     # to close. The runner-up basin borders the same strip and usually takes it cleanly.
+    _fallback: tuple[float, int, Polygon] | None = None
     for _neg, j in sorted(ranked):
         # dilate the scrap by a hair before the union. A scrap and the basin beside it only TOUCH
         # (they were cut from each other), and a union of two merely-touching polygons comes back
@@ -266,9 +317,64 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int]) -> None:
         # - the runner-up basin takes the scrap instead.
         if not Polygon(_ring(candidate)).is_valid:
             continue
+        # AND A WELD MUST NOT MAKE A NEEDLE OUT OF THE BASIN THAT TAKES THE SCRAP. Measured by
+        # provenance on Inashiro (2026-08-17): with the carve and `_plant` both refusing needles,
+        # EVERY surviving one was `carved_grown` - a perfectly good basin that welding a toe strip
+        # into it drew out to a point. Absorbing is meant to turn two walls into one, not to trade
+        # a doubled bund for an unworkable apex, so this is judged in the same ladder as the
+        # MultiPolygon, hole and bow-tie rejections above and for the same reason: the runner-up
+        # basin borders the same strip and usually takes it cleanly.
+        #
+        # AND IF NO NEIGHBOUR CAN TAKE IT, THE SCRAP STAYS BARE, WHICH IS THE HONEST ANSWER. A
+        # strip that needles every basin it touches is the "odd corner left unpaddied" that the
+        # research describes at a real fan toe - the fan's base floor (`comb_base_fill`) draws
+        # under it, so it reads as the toe's own ground rather than as a hole, exactly as it does
+        # for the slivers `_comb_toe_and_hem` drops.
+        _cand = _ring(candidate)
+        _apex = min(_min_apex(_cand), _min_apex(dedup_ring(_cand, 1.0)))
+        if _apex < _WELD_MIN_APEX:
+            # NOT GOOD ENOUGH, BUT REMEMBER IT - refusing outright is its own defect. Measured on
+            # the 24-seed cohort: declining every needling weld traded two needles for two doubled
+            # bunds (seeds 9 and 11) and took the cohort 22 -> 20, because a scrap that needles the
+            # basin it would join is often a TAPERING strip whose only alternative is to lie bare
+            # between two walls. Neither outcome is realistic, so the choice is not decline-or-
+            # accept: it is WHICH NEIGHBOUR takes it. The ranking above is by shared bund length,
+            # which is the right first preference (the farmer whose wall already forms most of the
+            # strip); when none of those is clean, the honest fallback is the neighbour that takes
+            # the strip BEST rather than the one that shares the most of it.
+            # BEFORE GIVING UP ON THIS NEIGHBOUR, TRY THE WORKABLE PART OF THE SCRAP. `_open_to`
+            # drops the tapering tail that is narrower than the doubled-bund rule's own 3 ft floor,
+            # so the host takes the part worth walling and what is left is a sliver that rule
+            # already treats as one line rather than two. This is what resolves cohort seeds 9 and
+            # 11, where welding the whole scrap needled the host and welding none of it doubled a
+            # bund - the choice was never between those two.
+            _part = _open_to(pocket, thin)
+            if _part is not None:
+                _m2 = into[j].union(_part.buffer(0.02)).buffer(0)
+                if isinstance(_m2, Polygon) and not _m2.interiors:
+                    _s2 = _m2.simplify(0.05)
+                    _c2 = _s2 if isinstance(_s2, Polygon) and _s2.is_valid and not _s2.interiors else _m2
+                    _r2 = _ring(_c2)
+                    if Polygon(_r2).is_valid and min(_min_apex(_r2), _min_apex(dedup_ring(_r2, 1.0))) >= _WELD_MIN_APEX:
+                        into[j] = _c2
+                        grown.add(j)
+                        return
+            if _fallback is None or _apex > _fallback[0]:
+                _fallback = (_apex, j, candidate)
+            continue
         into[j] = candidate
         grown.add(j)
         return
+    # THE LEAST-BAD WELD, and only if it still clears the GATE. `_WELD_MIN_APEX` is the placer's
+    # margin, not the rule; a union between the gate line and that margin is a basin the gate
+    # ACCEPTS, so welding it is strictly better than leaving a doubled bund. Below the gate line it
+    # is a real needle and the scrap stays bare instead - the "odd corner left unpaddied" the
+    # research describes, which the Sawada review confirmed is invisible in ink (the fan's base
+    # floor is drawn in the same fill as a plot interior, measured at the pixel).
+    if _fallback is not None and _fallback[0] >= _GATE_MIN_APEX + 1.0:
+        _, j, candidate = _fallback
+        into[j] = candidate
+        grown.add(j)
 
 
 def _plant(F: _Frame, pocket: Polygon, plot_across: float, row_step: tuple[float, float], half: float) -> tuple[list[Polygon], list[Polygon]]:
@@ -344,14 +450,34 @@ def close_seams(
                     scraps.append(piece)
                 else:
                     got, offcuts = _plant(F, piece, plot_across, row_step, half)
-                    basins += got
+                    # A NEEDLE IS A SCRAP, NOT A BASIN - it just does not look like one to the
+                    # thinness test above. `buffer(-half).is_empty` asks "is this too thin
+                    # ANYWHERE to be a plot", which a LONG wedge passes on the strength of its
+                    # middle while its point is still unworkable; that is how the fan-toe sunburst
+                    # survived both this pass and `_comb_toe_and_hem`'s inradius drop (GM realism
+                    # ruling 2026-08-17 - see `_TOE_MIN_APEX`). So re-judge what `_plant` hands
+                    # back by APEX as well, and send the needles down the scrap path, where
+                    # `_absorb` welds each into the basin it shares the most bund with. That is
+                    # this module's own research answer for an unplantable scrap ("taken into the
+                    # basin beside it rather than walled off on its own"), so the ground stays
+                    # planted, the bund stays shared, and no bare floor is opened. BOTH rings, at
+                    # the carve's generous 25 deg, for the reason the tint rule below gives: the
+                    # merge retires some apexes and creates others, and the placer must stay
+                    # strictly stricter than the gate's 15.
+                    for _q in got:
+                        _qr = _ring(_q)
+                        if len(_qr) >= 3 and (pointed_ring(_qr, _TOE_MIN_APEX) or pointed_ring(dedup_ring(_qr, 1.0), _TOE_MIN_APEX)):
+                            scraps.append(_q)
+                        else:
+                            basins.append(_q)
                     scraps += offcuts
         # PLANT FIRST, WELD SECOND, and weld against the whole field including what was just
         # planted: a scrap's best neighbour is often the new basin beside it, and a scrap offered
         # only its own siblings has nowhere to go when they refuse the union.
         keep += sorted(basins, key=lambda q: (round(q.bounds[0], 1), round(q.bounds[1], 1)))
         for scrap in sorted(scraps, key=lambda q: (round(q.bounds[0], 1), round(q.bounds[1], 1))):
-            _absorb(scrap, keep, grown)
+            # 3.0 * g = the 3 ft `paddy_plot_seams_shared` itself ignores, in px at this map's scale
+            _absorb(scrap, keep, grown, 3.0 * g)
     for j in sorted(j for j in grown if j < carved):
         plots[j]["poly"] = _ring(keep[j])
     for basin in keep[carved:]:
@@ -380,5 +506,5 @@ def close_seams(
     # has, and `flooded_plots_read_as_basins` reads the ring as recorded (cohort seed 8). Testing
     # both at the carve's generous 25 deg keeps the placer strictly stricter than the gate's 15.
     for p in plots:
-        if p.get("fill") == FLOODED and (pointed_ring(p["poly"]) or pointed_ring(dedup_ring(p["poly"], 1.0))):
+        if p.get("fill") == FLOODED and (pointed_ring(p["poly"], _TINT_MIN_APEX) or pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX)):
             p["fill"] = RICE_GREENS[(int(abs(p["poly"][0][0]) * 7) + int(abs(p["poly"][0][1]) * 3)) % len(RICE_GREENS)]

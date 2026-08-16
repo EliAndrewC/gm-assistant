@@ -268,6 +268,64 @@ paint-order stack, so the next session measuring area or adjacency from it knows
 already known; hold it with a check that the rings' area sum equals their union's area; the
 deliberate exclusion is the drain hem, which is recorded separately and does not participate.
 
+### DONE 2026-08-17: the fan-toe SUNBURST - RULED and fixed
+
+The GM ruled on the realism question directly: *"It sounds like you are telling me that this is
+based on a shape which is realistic, but that the degree to which it is true, like the angles in
+particular are themselves not realistic ... I would like for us to be rendering things that are
+realistic. So if this is a thing that needs to be fixed, then I would like it to be fixed."*
+
+The research agreed with that reading and is recorded in full in `research/fields.md` ("A basin
+never tapers to a point - the fan toe truncates"): the fan's radial convergence is authentic and
+narrow strips are authentic, so the rule is deliberately NOT a minimum width; what no real basin
+does is taper to zero, because the last yards of a 7.5 deg wedge are an aze on each side with no
+floor between them. Three placers now refuse a needle apex at 25 deg (`pointed_ring`'s existing
+pool-measured calibration - no third magic number), the gate `paddy_plots_are_workable_basins`
+fires at 15, and the four pre-fix manifests are frozen in `pool/regressions/`. The carve's own
+sector geometry was NOT re-cut: the needles turned out to come from the toe drop's thickness proxy,
+from `_plant`, and above all from `_absorb`'s welds, so the sector change this entry anticipated
+was never needed.
+
+**The one methodological note worth keeping:** two rounds of fixing were spent guessing where the
+survivors came from (the carve, then the hem - both wrong) before a provenance probe classified
+every remaining needle in one run as `carved_grown`, i.e. made by a weld. Instrument first.
+
+### OPEN, and it is the carve after all: cohort seeds 9 and 11 (2026-08-17)
+
+The needle fix left **two cohort seeds failing `paddy_plot_seams_shared`** that passed before it
+(24-seed cohort 22/24 -> 20/24; the pre-existing failures on seeds 22 and 24 are unchanged, and all
+four shipped hamlets are green). This is a REAL regression of an existing rule on two seeds, ledgered
+rather than hidden, and the diagnosis is complete even though the fix is not.
+
+**It is a genuine two-sided conflict, proved by A/B rather than argued.** On both seeds the carve
+leaves a TAPERING scrap between two basins, and every resolution of it breaks one rule or the other:
+
+| `_absorb` behavior | seed 9 / 11 outcome |
+|---|---|
+| decline a weld that needles the host | `paddy_plot_seams_shared` - the strip lies bare between two walls |
+| accept any weld (guard off) | `paddy_plots_are_workable_basins` - the host is drawn out to a needle |
+| accept the LEAST-BAD weld, unfloored | worse still: breaks 3 of the 4 SHIPPED maps on the needle rule |
+| accept the least-bad weld only above the gate line **(shipped)** | seeds 9/11 still seam-fail: no candidate clears 15 deg |
+
+So there is no threshold and no choice of neighbor that resolves it - measured, not assumed. **The
+scrap should never have existed**, which means the fix is upstream in the carve's sector geometry:
+exactly what this entry's original text predicted ("the carve opens a sector whose boundary has
+already collapsed onto the drain"). For 22 of 24 seeds that change turned out to be unnecessary;
+for these two it is the only thing left.
+
+**Implementation sketch** (per the open-decision rule - carry the sketch, not just the question):
+the landing site is `waterfields/carve.py`'s sector opening, and the reproduction is
+`python3 -m hamletgen --batch 1 --seed 9`. Instrument `close_seams`'s bare-ground pass to dump the
+offending pocket (seed 9 has it near the `paddy_plot_seams_shared` report at 1161,1866) and check
+whether its taper comes from a sector whose boundary thread has been clipped onto the collector -
+the same degenerate-sector signature `_comb_toe_and_hem`'s comment names at Ubame's west corner.
+What holds it: the two seeds must pass BOTH `paddy_plot_seams_shared` and
+`paddy_plots_are_workable_basins`, and the four shipped hamlets must stay green. Deliberate
+exclusion: do NOT reach for another apex threshold - all four configurations above were measured
+and none works.
+
+*Original entry, kept for the measurements:*
+
 ### The fan-toe SUNBURST - needs a GM ruling before anyone re-cuts it
 
 At two places on Inashiro (~1893,1650 and ~2430,1845) eight to ten bunds 130-254 ft long converge
