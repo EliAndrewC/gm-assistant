@@ -1,5 +1,6 @@
 """Split from test_checks.py by feature 025 - see test_checks/CLAUDE.md for the index."""
 
+import check_village
 from test_checks._builders import (
     _BB_FILLER,
     _BB_HOST,
@@ -882,3 +883,82 @@ def test_bund_beans_on_bunds_fires_on_a_bead_in_pond_water():
     assert "bund_beans_on_bunds" in f({**_bb_M([[200, 300]], [_BB_HOST]), "pond": [200, 300, 30, 20]})
     assert "bund_beans_on_bunds" in f({**_bb_M([[200, 300]], [_BB_HOST]), "field_ponds": [{"x": 200, "y": 300, "rx": 30, "ry": 20}]})
     assert "bund_beans_on_bunds" not in f({**_bb_M([[200, 300]], [_BB_HOST]), "pond": [200, 300, 1.5, 1.5]})
+
+
+# ---- comb_floor_ends_at_the_collector: floor past the (flat-extended) drain line -------------
+def _floor_M(outline, dd=90.0, fork=(400.0, 200.0), drain=None, gen="hamletgen"):
+    """Fall straight down-screen (dd=90): u = x, f = y; the collector crosses the low side at
+    y=800 (thin head at x=300, outfall at x=700), plus a main channel so the role filter is
+    exercised on every run."""
+    M = {
+        "meta": {"scale": "hamlet", "down_deg": 90, "W": 1200, "H": 1200},
+        "fields": [{**_field("f", 200, 200, 900, 900), "outline": outline, "down_deg": dd, "plot_rings": []}],
+        "field_ditches": [
+            {"poly": [[200, 250], [900, 250]], "role": "main", "field": "f", "w": 8.0, "w_tail": 3.0},
+            drain or {"poly": [[300, 800], [700, 800]], "role": "drain", "field": "f", "w": 3.0, "w_tail": 12.0},
+        ],
+    }
+    if fork:
+        M["fields"][0]["fork"] = list(fork)
+    if gen:
+        M["meta"]["generated_by"] = gen
+    return M
+
+
+def _floor_f(M):
+    return check_village.gate(M, verbose=False, only={"comb_floor_ends_at_the_collector"})
+
+
+def test_comb_floor_fires_on_an_outline_vertex_below_the_collector_line():
+    # inside the drain's u-span, 30 px down-fall of the interpolated line
+    assert "comb_floor_ends_at_the_collector" in _floor_f(_floor_M([[300, 300], [700, 300], [500, 830]]))
+
+
+def test_comb_floor_fires_on_the_needle_beyond_the_drains_thin_head():
+    # the Mizuguchi shape: past the head end the boundary continues LEVEL, and the outline
+    # dips 100 px below it - a bare needle no plot can ever occupy
+    assert "comb_floor_ends_at_the_collector" in _floor_f(_floor_M([[250, 900], [700, 300], [300, 300]]))
+
+
+def test_comb_floor_passes_when_the_outline_hugs_the_collector():
+    assert "comb_floor_ends_at_the_collector" not in _floor_f(_floor_M([[300, 300], [700, 300], [700, 800], [300, 800]]))
+
+
+def test_comb_floor_tolerates_the_drawn_water_width():
+    # 12 px past the centerline is inside the 16 px tolerance (max drain halfw 6 + slack): the
+    # outline's low edge IS the drain polyline, so near-line vertices must never fire
+    assert "comb_floor_ends_at_the_collector" not in _floor_f(_floor_M([[300, 300], [700, 300], [500, 812]]))
+
+
+def test_comb_floor_only_governs_comb_fans():
+    # no `fork` = not a build_comb fan: a polder's floor legitimately runs past its inner ring
+    # drain to the dike, so the rule cannot bind there
+    assert "comb_floor_ends_at_the_collector" not in _floor_f(_floor_M([[300, 300], [700, 300], [500, 900]], fork=None))
+
+
+def test_comb_floor_skips_a_field_with_no_outline():
+    M = _floor_M([[300, 300], [700, 300], [500, 900]])
+    del M["fields"][0]["outline"]
+    assert "comb_floor_ends_at_the_collector" not in _floor_f(M)
+
+
+def test_comb_floor_skips_legacy_maps():
+    # no meta.generated_by = a legacy comb; it inherits the rule when converted (migration doctrine)
+    assert "comb_floor_ends_at_the_collector" not in _floor_f(_floor_M([[300, 300], [700, 300], [500, 900]], gen=None))
+
+
+def test_comb_floor_skips_a_degenerate_drain_poly():
+    M = _floor_M([[300, 300], [700, 300], [500, 900]], drain={"poly": [[300, 800]], "role": "drain", "field": "f", "w": 3.0, "w_tail": 12.0})
+    assert "comb_floor_ends_at_the_collector" not in _floor_f(M)
+
+
+def test_comb_floor_ignores_another_fields_drain():
+    M = _floor_M([[300, 300], [700, 300], [500, 900]])
+    M["field_ditches"][1]["field"] = "other"
+    assert "comb_floor_ends_at_the_collector" not in _floor_f(M)
+
+
+def test_comb_floor_reads_the_map_fall_when_the_field_has_none():
+    M = _floor_M([[300, 300], [700, 300], [500, 830]])
+    del M["fields"][0]["down_deg"]
+    assert "comb_floor_ends_at_the_collector" in _floor_f(M)

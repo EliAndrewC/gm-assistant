@@ -370,6 +370,7 @@ def _drain_bank(F: _Frame, dpts: Poly, g: float) -> Callable[[float], float]:
 
 
 BANK_MARGIN = 0.75  # half a drawn bund stroke (aze_w is ~1.5 real ft), so bund and ditch ABUT rather than overlap
+_PAST_EPS = 0.25  # arc slack at a supply stroke's ends: covers the 0.1-px manifest rounding of vertex + stroke point together (see supply_bank_clearance)
 
 
 def polyline_cum(pts: Poly) -> list[float]:
@@ -453,7 +454,41 @@ def supply_bank_clearance(q: Pt, pts: Poly, w0: float, w1: float, cum: list[floa
             nl = math.hypot(vx, vy) or 1.0
             nrm = (-vy / nl, vx / nl)
     halfw = (w0 + (w1 - w0) * arc / (cum[-1] or 1.0)) / 2
+    # `past` IS ROBUST AT THE MANIFEST ROUNDING SCALE (the seed-25 hairline, 2026-08-16): the
+    # placer works in unrounded floats and exempted a carved corner projecting epsilon PAST the
+    # branch tail; the manifest rounds both the corner and the stroke poly to 0.1 px, which
+    # collapsed them onto the same coordinates - the gate then computed t = 1.0 exactly, `past`
+    # came back False, and the check fired at gap 0 on a corner the placer had legally exempted.
+    # One predicate, two verdicts, split by the round-trip. So ground within _PAST_EPS of either
+    # end of the stroke's arc counts as past on BOTH sides of the rounding (same class as the
+    # gate's 0.15 gap slack).
+    past = past or arc <= _PAST_EPS or arc >= (cum[-1] or 1.0) - _PAST_EPS
     return off, halfw, past, foot, nrm
+
+
+def floor_overhang(pts: Poly, dpts: Poly, down_deg: float) -> list[float]:
+    """Per-vertex DOWN-FALL overhang past the flat-extended collector line, in px (0 = clear).
+
+    The fan's command area ends at its collector: ground down-fall of the drain line - extended
+    LEVEL beyond both drawn ends, exactly as `_fill_wedges`' `drain_f_clamped` extends it - cannot
+    drain into it and is never planted, so field floor there is dead ground wearing the field's
+    color (Mizuguchi's SE needle, 2026-08-16: the raw envelope closed from the collector's thin
+    head across ~350 ft of bare floor to the outer thread's tail). ONE predicate, shared by
+    `build_comb`'s envelope trim and by the gate (`comb_floor_ends_at_the_collector`), for the
+    same reason `supply_bank_clearance` is: a trimmer and a checker that classify the same ground
+    from two formulas drift into disagreeing about where the command area ends."""
+    F = _Frame(down_deg)
+    u0 = F.to_uf(*dpts[0])[0]
+    u1 = F.to_uf(*dpts[-1])[0]
+    out: list[float] = []
+    for p in pts:
+        u, f = F.to_uf(*p)
+        fd = _f_at_u(F, dpts, u)
+        if fd is None:  # off either end past the interp slack: the boundary continues LEVEL
+            end = dpts[0] if abs(u - u0) <= abs(u - u1) else dpts[-1]
+            fd = F.to_uf(*end)[1]
+        out.append(max(0.0, f - fd))
+    return out
 
 
 def hem_to_bank(ring: Poly, dpts: Poly, down_deg: float, w0: float, w1: float) -> Poly:
@@ -1046,6 +1081,19 @@ def build_comb(
     )
 
     envelope = [p for p in a_pts] + [p for p in threads[-1].pts] + list(reversed(dpts)) + list(reversed(threads[0].pts))
+
+    # TRIM THE FLOOR TO THE COMMAND AREA (known-open ledger 2026-08-16, Mizuguchi's SE needle -
+    # and the same class on all four live hamlets: 0.7-1.8% of floor area, measured with no plot
+    # vertex more than 0.8 px past the line). Where the collector stops short of the outer
+    # threads, the raw ring closes across ground down-fall of the (flat-extended) drain line -
+    # ground that cannot drain and is never planted (the wedge filler refuses it by the same
+    # extension rule), so it renders as bare field color: a dead needle hanging off the fan.
+    # Pull every vertex past the line back up-fall onto it. `floor_overhang` is the shared
+    # predicate the gate reads too (comb_floor_ends_at_the_collector); the 0.5 px floor keeps
+    # already-clear vertices byte-identical - the envelope's low edge IS the drain polyline, and
+    # a float round-trip must not dirty it.
+    _fo = floor_overhang(envelope, dpts, math.degrees(F.down))
+    envelope = [(p[0] - o * F.d[0], p[1] - o * F.d[1]) if o > 0.5 else p for p, o in zip(envelope, _fo, strict=True)]
 
     # A BASIN IS SIMPLE AND POSITIVELY WOUND (settlement-review, 2026-08-08). At the fan's corner
     # the outer thread has been clipped at the collector, so `bnd` hands the same clamped point back

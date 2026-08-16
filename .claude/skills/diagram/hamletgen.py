@@ -2119,6 +2119,14 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
             ly = -wdep + (ly + wdep) * 0.75
             if s.try_place(seat["cx"] + ax * lx + ox * ly, seat["cy"] + ay * lx + oy * ly, "plain"):
                 placed += 1
+    # THE ROLLED SHAPE MUST LEAVE A TRACE EVEN WHEN THE CLOUD NEVER RUNS (known-open ledger
+    # 2026-08-16, Kashikawa: the front rows + lane frontage seated all 20 households, the
+    # cluster-seeds cloud never ran, and the rolled cluster_shape knob went unhonored with no
+    # trace on the manifest - a knob that can silently not-record is the "check that never runs"
+    # shape). Record the seeding mode always: "cloud" when cluster_seeds ran (it records
+    # meta.cluster_shape itself), "frontage" when the rows/frontage passes seated every house and
+    # the rolled shape went unhonored. `settlement_records_cluster_seeding` holds the invariant.
+    s.M["meta"]["cluster_seeding"] = "cloud" if "cluster_shape" in s.M["meta"] else "frontage"
     plan.placed = s.farmsteads()
 
 
@@ -2328,6 +2336,10 @@ def stage_hinterland(s: Settlement, plan: SitePlan) -> None:
     s.hinterland()
 
 
+CROP_MARGIN = 48.0  # the one crop margin, shared by stage_frame's crop_to_content call and the
+# predicted-kept-window math in open_ground_patches - two hardcoded 48s would drift
+
+
 def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float = 250.0) -> list[Poly]:
     """Find `count` patches of ground still open enough for a managed woodland - by SCANNING.
 
@@ -2373,6 +2385,18 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
     if hxs:  # the copse's ground, which is the house cloud
         keep_rects.append((min(hxs) - 110.0, min(hys) - 110.0, max(hxs) + 110.0, max(hys) + 110.0))
     streams: list[tuple[Poly, float]] = [(st["poly"], 60.0) for st in s.M.get("streams", [])]
+    # ...AND THE MARSH IS NOT OPEN GROUND (settlement-review x3, 2026-08-16: the kept-window
+    # confinement pushed parcels onto the wet toe - Inashiro seated one 100% inside the marsh
+    # with zero crowns, Sawada 97%, Mizuguchi ~60%; the crown filter refuses wet ground, so a
+    # wet seat renders as a claimed woodland with almost no trees). "Still open" is not "dry":
+    # a candidate square must keep every sample point out of every recorded marsh poly.
+    # `woodland_commons_on_dry_ground` gates the result.
+    marshes: list[Poly] = [[(float(v[0]), float(v[1])) for v in mp.get("poly") or []] for mp in s.M.get("marshes", [])]
+    marshes = [mp for mp in marshes if len(mp) >= 3]
+
+    def _wet(x: float, y: float, half_: float) -> bool:
+        return any(point_in_poly(x + ddx * half_, y + ddy * half_, mp) for mp in marshes for ddx in (-1.0, 0.0, 1.0) for ddy in (-1.0, 0.0, 1.0))
+
     crops: list[Poly] = [list(plan.envelope)] + [[(float(v[0]), float(v[1])) for v in d["poly"]] for d in s.M.get("dry_plots", [])]
     _hx = [h["x"] for h in s.M.get("houses", [])] or [plan.W / 2]
     _hy = [h["y"] for h in s.M.get("houses", [])] or [plan.H / 2]
@@ -2386,40 +2410,72 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
     # `stream_runs_off_edge` and `stream_end_anchored`. So the scan is confined to the ground the
     # map already occupies, expanded by a margin - a coppice stands on the settlement's own high
     # ground, not a quarter mile out in nowhere.
-    x0, y0, x1, y1 = content_box(s, plan, pad=210.0)
-    half = size / 2.0
+    cbx0, cby0, cbx1, cby1 = content_box(s, plan, pad=210.0)
     step = 90.0
+
+    # ...AND CONFINED TO THE PREDICTED KEPT WINDOW (known-open ledger 2026-08-16, Sawada: two of
+    # three parcels wholly above the frame, the third half-cropped under the title; Kashikawa and
+    # Mizuguchi the same shape). The commons never set the frame (crop_to_content: woods bleed at
+    # the edge), so a parcel the keep-outs push past the future crop simply vanishes from the
+    # sheet. The decision, over "let the crop admit them": the frame stays tight to the working
+    # settlement - the documented reason commons do not set the frame at all - and a coppice is
+    # walked-to-daily ground that belongs ON the sheet, so it is the coppice that moves. The
+    # window is computed from the SAME source the crop will read (`_crop_boxes` -> hull + the
+    # shared CROP_MARGIN), and at this stage it is final except for features that only GROW it -
+    # so a parcel held inside it now is inside the kept view later.
+    # `woodland_commons_within_the_frame` gates the result.
+    _cb = s._crop_boxes(city=False)
+    _cx = [v for b in _cb for v in (b[0], b[1])] or [0.0, plan.W]
+    _cy = [v for b in _cb for v in (b[2], b[3])] or [0.0, plan.H]
+    _fx0, _fy0 = max(0.0, min(_cx) - CROP_MARGIN), max(0.0, min(_cy) - CROP_MARGIN)
+    _fx1, _fy1 = min(plan.W, max(_cx) + CROP_MARGIN), min(plan.H, max(_cy) + CROP_MARGIN)
+
     chosen: list[Poly] = []
-    scored: list[tuple[float, float, float]] = []
-    y = max(half + 40.0, y0)
-    while y <= min(plan.H - half - 40.0, y1):
-        x = max(half + 40.0, x0)
-        while x <= min(plan.W - half - 40.0, x1):
-            gap = _clear_gap((x, y), half, crops, dy)
-            if (
-                gap is not None
-                and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
-                and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
-                and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
-            ):
-                # PREFER THE NEAREST QUALIFYING GROUND, leaning upslope. The first version of this
-                # maximized distance from the crop instead, which sounds right and is wrong twice
-                # over: it drove every patch to the canvas's far upslope margin, where the dedupe
-                # radius strung them out along one line at identical height, and then the crop -
-                # which frames to the HARD features and lets commons bleed off-frame - cut three of
-                # the four off the sheet entirely. A settlement's coppice is walked to daily for
-                # fuel and fodder; it stands on the back slope behind the houses, as close as the
-                # crop set-back allows. The keep-outs above are what make it far ENOUGH.
-                upslope = -((x - ccx) * dx + (y - ccy) * dy)
-                scored.append((-math.hypot(x - ccx, y - ccy) + 0.35 * upslope, x, y))
-            x += step
-        y += step
-    for _, x, y in sorted(scored, reverse=True):
+    centers: list[Pt] = []
+    # SHRINK BEFORE GIVING UP (settlement-review round 2, 2026-08-16): with the kept window and
+    # the marsh both closed to it, a tight composition can offer no full-size seat at all - the
+    # first dry pass seated ZERO parcels on Kashikawa, the map NAMED for its oaks. A smaller
+    # woodlot (200 ft, then 160 ft) is historically ordinary - coppice lots were whatever odd
+    # corner the village spared - while an absent one on a name-story map is not. Unfilled slots
+    # re-scan at the smaller sizes; a slot no size can seat is honestly dropped.
+    for size_try in (size, size * 0.8, size * 0.64, size * 0.5):
         if len(chosen) >= count:
             break
-        if any(math.hypot(x - c[0][0] - half, y - c[0][1] - half) < size * 1.5 for c in chosen):
-            continue
-        chosen.append([(x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half)])
+        half = size_try / 2.0
+        sx0, sy0 = max(cbx0, _fx0 + half + 16.0), max(cby0, _fy0 + half + 16.0)
+        sx1, sy1 = min(cbx1, _fx1 - half - 16.0), min(cby1, _fy1 - half - 16.0)
+        scored: list[tuple[float, float, float]] = []
+        y = max(half + 40.0, sy0)
+        while y <= min(plan.H - half - 40.0, sy1):
+            x = max(half + 40.0, sx0)
+            while x <= min(plan.W - half - 40.0, sx1):
+                gap = _clear_gap((x, y), half, crops, dy)
+                if (
+                    gap is not None
+                    and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
+                    and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
+                    and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
+                    and not _wet(x, y, half)
+                ):
+                    # PREFER THE NEAREST QUALIFYING GROUND, leaning upslope. The first version of this
+                    # maximized distance from the crop instead, which sounds right and is wrong twice
+                    # over: it drove every patch to the canvas's far upslope margin, where the dedupe
+                    # radius strung them out along one line at identical height, and then the crop -
+                    # which frames to the HARD features and lets commons bleed off-frame - cut three of
+                    # the four off the sheet entirely. A settlement's coppice is walked to daily for
+                    # fuel and fodder; it stands on the back slope behind the houses, as close as the
+                    # crop set-back allows. The keep-outs above are what make it far ENOUGH.
+                    upslope = -((x - ccx) * dx + (y - ccy) * dy)
+                    scored.append((-math.hypot(x - ccx, y - ccy) + 0.35 * upslope, x, y))
+                x += step
+            y += step
+        for _, x, y in sorted(scored, reverse=True):
+            if len(chosen) >= count:
+                break
+            if any(math.hypot(x - cx0, y - cy0) < size * 1.5 for cx0, cy0 in centers):
+                continue
+            chosen.append([(x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half)])
+            centers.append((x, y))
     return chosen
 
 
@@ -2727,7 +2783,7 @@ def stage_frame(s: Settlement, plan: SitePlan) -> None:
     # content` allows at most 56 px of view past the frame-setting content, because a band whose
     # only extra is open ground is wasted image. 64 was tried and fails all twelve. 48 is the most
     # air the frame will give the title.
-    s.crop_to_content(margin=48)
+    s.crop_to_content(margin=CROP_MARGIN)
     s.title(plan.spec.name)
 
 

@@ -494,6 +494,7 @@ from .segments_04_homesteads import (
     _seg_0285_089__cx_3,
     _seg_0285_090__grove_clumps_clear_of_structures,
     _seg_0285_091__commons,
+    _seg_0598__nucleated_records_cluster_seeding,
 )
 from .segments_05_fields_and_funerary import (
     _seg_0285_092__barren,
@@ -583,6 +584,8 @@ from .segments_05_fields_and_funerary import (
     _seg_0331__al,
     _seg_0332__fields_clear_of_road,
     _seg_0333__pond_clear_of_paddies,
+    _seg_0597__woodland_commons_within_the_frame,
+    _seg_0599__woodland_commons_on_dry_ground,
 )
 from .segments_06_ways_and_bridges import (
     _seg_0334__bridges,
@@ -924,6 +927,7 @@ from .segments_08_town_and_fire import (
     _seg_0553___inwall_j,
     _seg_0554__punishment_spot_only_at_a_seat_of_justice,
     _seg_0595__paddy_bunds_clear_the_supply_channels,
+    _seg_0596__comb_floor_ends_at_the_collector,
 )
 from .segments_09_justice_and_tanning import (
     _seg_0555_000__ln,
@@ -5646,6 +5650,10 @@ GATE_SEGMENTS: tuple[_GateSeg, ...] = (
     ),
     _GateSeg(_seg_0532__bund_beans_on_bunds, ('_bb_stray', 'check'), (), ('bund_beans_on_bunds',), ('_bb_stray', 'check'), False, False),
     _GateSeg(_seg_0595__paddy_bunds_clear_the_supply_channels, ('M', 'check', 'fields'), (), ('paddy_bunds_clear_the_supply_channels',), ('M', 'check', 'fields'), False, False),
+    _GateSeg(_seg_0596__comb_floor_ends_at_the_collector, ('M', 'check', 'fields'), (), ('comb_floor_ends_at_the_collector',), ('M', 'check', 'fields'), False, False),
+    _GateSeg(_seg_0597__woodland_commons_within_the_frame, ('M', 'check'), (), ('woodland_commons_within_the_frame',), ('M', 'check'), False, False),
+    _GateSeg(_seg_0599__woodland_commons_on_dry_ground, ('M', 'check'), (), ('woodland_commons_on_dry_ground',), ('M', 'check'), False, False),
+    _GateSeg(_seg_0598__nucleated_records_cluster_seeding, ('M', 'check'), (), ('settlement_records_cluster_seeding',), ('M', 'check'), False, False),
     _GateSeg(_seg_0533___flow_dir, ('end', 'poly', 'q', 'span'), ('_flow_dir',), (), (), False, False),
     _GateSeg(_seg_0534___drains, ('M', 'fd'), ('_drains', 'fd'), (), ('M',), False, False),
     _GateSeg(_seg_0535__sharp, (), ('sharp',), (), (), False, False),
