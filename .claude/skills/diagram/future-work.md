@@ -199,3 +199,22 @@ wells, the board's clump keep-out, the lane-crossing guards).
   shrink rung and the oak map went woodless - so the scan gained a last-resort SET-BACK
   profile (40/100 px, still 2.9x/1.4x above the gate's own 14/69 floors) that runs only when
   the generous 80/180 profile seats nothing.
+
+## Cohort seed 2: pre-existing drainage-routing failures (found 2026-08-16, fan-toe pond session)
+
+`python3 -m hamletgen --batch 1 --seed 2` fails FOUR checks - `drainage_discharges_downhill`,
+`drainage_junction_smooth`, `features_do_not_overlap`, `watercourses_flow_downstream` - and fails
+them IDENTICALLY on unmodified HEAD with the pond fix stashed, so it is a pre-existing engine
+issue, not fallout. Spec: 13 households, fall=135 (SE), wind=NW, `water_sink="offmap"`, round
+cluster, T lanes. No pool map hits it; it only surfaces in the cohort, which is exactly what the
+cohort is for.
+
+Sketch for the picking-up session (the open-decision rule - carry the sketch, not just the
+question): the failure cluster smells like ONE routing defect, not four - the offmap sink brook
+for this fan geometry likely lands on ground that makes its junction acute and its run uphill,
+with the overlap a symptom of the same bad route. Landing site: `hamletgen/sink.py::stage_sink`
+offmap branch (the swing-major bearing/junction search and its `bad` scoring); reproduce with the
+seed-2 roll above, read which route was chosen and which candidate SHOULD have won, and check
+whether the least-bad fallback (`best`) was taken - the `# pragma: no cover` on that path says no
+cohort fan exercised it when it was written, and seed 2 may be the first. Hold it with a frozen
+cohort-2 manifest in `pool/regressions/` once diagnosed (fires: the four names above).
