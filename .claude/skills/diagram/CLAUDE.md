@@ -923,7 +923,7 @@ with feature 022 - gate() is a registry of segment functions now, each with its 
 ## The gate is a REGISTRY - adding a check, and running one check by itself (feature 022)
 
 `gate()` is no longer a 12,944-line function: it is a small driver over `GATE_SEGMENTS`, an
-ordered registry of ~1,375 segment functions (per-check granularity since features 023/024) whose order IS the legacy execution order. What this
+ordered registry of ~1,371 segment functions (per-check granularity since features 023/024; DERIVED from the segment files since feature 109) whose order IS the legacy execution order. What this
 buys and how to work with it:
 
 - **Run a subset**: `gate(M, only={"check_base_name", ...})` executes just the segments that can
@@ -933,12 +933,16 @@ buys and how to work with it:
 - **The regression replay runs targeted** (`test_regressions.py`): each fixture verifies only its
   `_regression.fires` (meta names fall back to the full gate). This is what took the 210
   frozen-city fixtures from ~480 s to ~58 s serial. The fixture format is unchanged.
-- **Adding a check**: write a new `_seg_NNNN__<name>` -style function next to its neighbors, in whichever `check_village/segments_*` file covers its theme (`check_village/CLAUDE.md` is the index) (body
-  reads its inputs as keyword params defaulting to `_UNBOUND`, returns `_kept(locals(), <names it
-  binds>)`) and add its `_GateSeg` row at the right position in `GATE_SEGMENTS` - the row's
-  `checks` names what it emits, `needs` what it reads from earlier segments, `writes` what it
-  provides. Then extend `test_fixtures/gate_check_names.json` (the registry-pin test compares the
-  two). The `every_feature_classified_*` and KEEP-CLEAR contracts above are unchanged.
+- **Adding a check**: write a new `_seg_<key>__<name>`-style function next to its neighbors, in
+  whichever `check_village/segments_*` file covers its theme (`check_village/CLAUDE.md` is the
+  index): body reads its inputs as keyword params defaulting to `_UNBOUND` and returns
+  `_kept(locals(), <literal tuple of the names it binds>)`. Since feature 109 there is NO
+  registry row to write - the registry DERIVES every row from the segment function itself
+  (signature -> `free`, return literal -> `writes`, AST -> the rest), and the numeric key in the
+  name IS the execution position (`_seg_0533_500__x` runs between 0533 and 0534; to run beside a
+  PLACED segment, add a `_PLACEMENTS` entry in `check_village/registry.py` instead). Then extend
+  `test_fixtures/gate_check_names.json` (the registry-pin test compares the two). The
+  `every_feature_classified_*` and KEEP-CLEAR contracts above are unchanged.
 - **The migration tooling** (one-shot, retired): `specs/022-gate-check-registry/` holds the
   transformer, the oracle sweeps (`oracle_sweep.py capture/compare/targeted`), and research.md
   with the dataflow model and the three holes the sweeps caught (helper-closure mutation,

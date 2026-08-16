@@ -8,9 +8,13 @@ the consumed legacy surface via `__init__.py` (star-import re-exports since feat
 
 Two invariants the split does NOT touch:
 
-- **Registry order IS execution order** (feature 022). `registry.py` holds the one ordered
-  `GATE_SEGMENTS` tuple; segment functions live in the `segments_*` files but their ROWS - and
-  therefore their execution - are ordered by the registry alone.
+- **Registry order IS execution order** (feature 022) - and since feature 109 the registry is
+  DERIVED, not maintained (constitution clause 14). `registry.py` still exports the one ordered
+  `GATE_SEGMENTS` tuple, but every row is computed from the `segments_*` files at import: `free`
+  from the keyword-only signature, `writes` from the literal `_kept` return tuple, the rest by
+  AST analysis (`registry_analysis.py`), and order from the numeric key in each segment's name
+  plus the small `_PLACEMENTS` decision table. The pre-collapse rows are frozen in
+  `test_fixtures/registry_legacy_rows.json` and `test_registry_derive.py` holds the guards.
 - **Run one check by itself** with `gate(M, only={"check_name"})` (driver.py); don't go hunting
   for the segment function by hand.
 
@@ -36,17 +40,24 @@ Two invariants the split does NOT touch:
 | `segments_10_city_battery_b.py` | segs 0563_126-0563_251: city estates (gates, roads, moat clearances), clan/capital-direction meta, lanes |
 | `segments_10_city_battery_c.py` | segs 0563_252-0563_376: city canal/dock, civic vs streets, flophouses, fields near city, moat feeders |
 | `segments_11_polders_and_edges.py` | segs 0564-0594: polder dikes, dike-pond blocks, contour terraces, torii counts, common-field orientation, map-edge rules |
-| `registry.py` | a row's `free`/`writes`/`checks`/`needs` needs editing, or a new row needs splicing at its execution position. EXCEEDS the clause-13 file threshold deliberately: ordered DATA whose row order is the execution contract (justification header in the file) |
+| `registry.py` | the derived-registry surface (feature 109): the `_PLACEMENTS` execution-position decisions, the `_NEEDS_OVERRIDES` exceptions, the source-hash row cache, and the assembly that binds derived rows to segment functions |
+| `registry_analysis.py` | the AST analysis that derives `checks`/`needs`/`meta`/`always` from segment bodies (typed port of feature 022's transform; the helper-mutation fixpoint and upward-exposed-reads model live here) |
 | `driver.py` | `gate()` itself (verbose output, `only=` closure semantics), the twin-detector (`twin_axes`, `twin_report`), `main()` |
 
 ## Adding a check (unchanged mechanics, new geography)
 
-Write the `_seg_NNNN__<name>`-style function in whichever `segments_*` file covers its theme
-(body reads inputs as keyword params defaulting to `_UNBOUND`, returns `_kept(locals(), <names it
-binds>)`), add its `_GateSeg` row at the right position in `registry.py`, extend
-`test_fixtures/gate_check_names.json`, and import nothing by hand - each segment file already
-imports the shared helpers it uses; add an import only if your new body introduces a new helper
-dependency. Full doctrine: `.claude/skills/diagram/CLAUDE.md` "The gate is a REGISTRY".
+Write the `_seg_<key>__<name>`-style function in whichever `segments_*` file covers its theme
+(body reads inputs as keyword params defaulting to `_UNBOUND`, returns `_kept(locals(), <literal
+tuple of the names it binds>)` - the literal is REQUIRED, derivation fails loudly on a computed
+tuple), extend `test_fixtures/gate_check_names.json`, and import nothing by hand - each segment
+file already imports the shared helpers it uses. There is NO registry row to write (feature
+109): the row derives from the function itself, and its EXECUTION POSITION comes from the
+numeric key in the name - `_seg_0533_500__x` runs between 0533 and 0534. Two caveats: the
+sub-number places you after the plain-numbered segment only if that segment sorts in the base
+key order - to run beside a PLACED segment (one with a `_PLACEMENTS` entry, e.g. 0595-0600),
+add your own `_PLACEMENTS` entry anchored on it rather than sub-numbering its label; and a
+hand-decided `needs` tighter than the derived one goes in `_NEEDS_OVERRIDES` with its why.
+Full doctrine: `.claude/skills/diagram/CLAUDE.md` "The gate is a REGISTRY".
 
 ## Monkeypatching a policy table
 
