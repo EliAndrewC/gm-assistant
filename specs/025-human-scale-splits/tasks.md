@@ -92,7 +92,7 @@ None - the four stories share no unbuilt infrastructure beyond Phase 1's tooling
 ## Phase 7: Polish & Cross-Cutting Concerns
 
 - [x] T501 Re-run the file-size census over `.claude/skills/diagram/` and record the before/after table (34,614 lines in 3 files -> N files, max size) in `specs/025-human-scale-splits/research.md` as R13 "What implementation taught the plan", including any boundary-map deviations made at T304 and why
-- [ ] T502 Stop-work ritual: final commit, then `scripts/sync-with-main.sh done` from the clone (locked pull+push + render-sync). NOTE: the 19 frozen legacy maps' renders are now write-once git exhibits (main commit 0719da0) whose gens never run - they keep their old stamps; only scripted-tier maps re-stamp under the new engine fingerprint, and their drawn bytes are proven unchanged by the oracle
+- [x] T502 Stop-work ritual: final commit, then `scripts/sync-with-main.sh done` from the clone (locked pull+push + render-sync). NOTE: the 19 frozen legacy maps' renders are now write-once git exhibits (main commit 0719da0) whose gens never run - they keep their old stamps; only scripted-tier maps re-stamp under the new engine fingerprint, and their drawn bytes are proven unchanged by the oracle
 
 ---
 
