@@ -201,6 +201,7 @@ def test_regen_pool_never_reruns_a_frozen_legacy_map(repo, capsys):
     assert rc.main(["--pool", pool, "--main-repo", repo_dir, "--skill-dir", skill]) == 0
     out = capsys.readouterr().out
     assert "1 frozen" in out and "WARNING: frozen map" in out and "minami.gen.py" in out and "NOT healed" in out
+    assert "git checkout" in out  # the renders are committed exhibits, so checkout IS the restore path
 
 
 def test_main_no_allow_main_flag(repo):

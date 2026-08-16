@@ -18,7 +18,8 @@ __pycache__
 # never cross-contaminate. Lives on the host mount, so it survives a container rebuild.
 .clones/
 
-# /diagram pool is foldered BY SUBJECT so tracking is per-folder (no per-file exemptions):
+# /diagram pool is foldered BY SUBJECT so tracking is per-folder (one deliberate per-file
+# exemption class: the FROZEN legacy exhibits, un-ignored by name below):
 #  - GENERATED settlement maps (Mode B: villages/hamlets/towns/provincial-cities) derive their
 #    .svg + .png from a .gen.py + .json - a to-scale village .svg is tens of MB (one primitive per
 #    crop row), so both derived artifacts are ignored and regenerated on demand
@@ -36,6 +37,52 @@ __pycache__
 .claude/skills/diagram/pool/provincial-cities/*.svg
 .claude/skills/diagram/pool/provincial-cities/*.png
 .claude/skills/diagram/pool/magistracies/*.png
+# EXCEPTION - the FROZEN legacy exhibits (GM 2026-08-16). The 19 hand-authored Mode B maps froze
+# when scripted generation became the method (migration-plan.md "The accepted trade"): their gens
+# are never re-run, so their renders stopped being derived-and-reproducible - once the engine
+# drifts, they are historical artifacts nothing can faithfully rebuild. They are therefore
+# COMMITTED, write-once (~195 MB, one time; they can never change again). WHEN A MAP IS CONVERTED
+# to the scripted approach, remove its physical renders from git again (git rm the .svg/.png and
+# delete its two ! lines here) - a converted map's renders are derived by a live generator and
+# belong ignored like every other live map's.
+!.claude/skills/diagram/pool/hamlets/akagahara.svg
+!.claude/skills/diagram/pool/hamlets/akagahara.png
+!.claude/skills/diagram/pool/hamlets/enokida.svg
+!.claude/skills/diagram/pool/hamlets/enokida.png
+!.claude/skills/diagram/pool/hamlets/honda.svg
+!.claude/skills/diagram/pool/hamlets/honda.png
+!.claude/skills/diagram/pool/hamlets/ikegami.svg
+!.claude/skills/diagram/pool/hamlets/ikegami.png
+!.claude/skills/diagram/pool/hamlets/kuwabata.svg
+!.claude/skills/diagram/pool/hamlets/kuwabata.png
+!.claude/skills/diagram/pool/hamlets/moritono.svg
+!.claude/skills/diagram/pool/hamlets/moritono.png
+!.claude/skills/diagram/pool/hamlets/shimizu.svg
+!.claude/skills/diagram/pool/hamlets/shimizu.png
+!.claude/skills/diagram/pool/hamlets/tanada.svg
+!.claude/skills/diagram/pool/hamlets/tanada.png
+!.claude/skills/diagram/pool/hamlets/yatsuda.svg
+!.claude/skills/diagram/pool/hamlets/yatsuda.png
+!.claude/skills/diagram/pool/villages/hikari-no-sato.svg
+!.claude/skills/diagram/pool/villages/hikari-no-sato.png
+!.claude/skills/diagram/pool/villages/hoshigaoka.svg
+!.claude/skills/diagram/pool/villages/hoshigaoka.png
+!.claude/skills/diagram/pool/villages/kikuta.svg
+!.claude/skills/diagram/pool/villages/kikuta.png
+!.claude/skills/diagram/pool/villages/ueda.svg
+!.claude/skills/diagram/pool/villages/ueda.png
+!.claude/skills/diagram/pool/towns/hirameki.svg
+!.claude/skills/diagram/pool/towns/hirameki.png
+!.claude/skills/diagram/pool/towns/hoshizora.svg
+!.claude/skills/diagram/pool/towns/hoshizora.png
+!.claude/skills/diagram/pool/towns/ubame.svg
+!.claude/skills/diagram/pool/towns/ubame.png
+!.claude/skills/diagram/pool/provincial-cities/minami.svg
+!.claude/skills/diagram/pool/provincial-cities/minami.png
+!.claude/skills/diagram/pool/provincial-cities/nagahara.svg
+!.claude/skills/diagram/pool/provincial-cities/nagahara.png
+!.claude/skills/diagram/pool/provincial-cities/tango.svg
+!.claude/skills/diagram/pool/provincial-cities/tango.png
 # The pool's browsable index - derived from the manifests/notes by pool_index.py and rewritten by
 # render-sync (render_cache.py) so it stays current in main beside the renders it embeds.
 .claude/skills/diagram/pool/index.html
