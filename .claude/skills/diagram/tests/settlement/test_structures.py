@@ -589,3 +589,104 @@ def test_a_dense_row_lines_a_way_that_bends_inside_the_fronted_stretch():
         return s.frontage([(300, 150), (308, 950)], ["merchant"] * 24, width=6, spacing=26, setback=2, both=False, dense=dense)
 
     assert run(True) > run(False), "a dense row must not be refused by the band of the way it lines"
+
+
+# ---- feature 114: the composed StructuresMixin surface ------------------------------------------
+# The guard for the settlement/structures.py -> settlement/structures/ package split. See
+# specs/114-structures-package/contracts/mixin-surface.md for the contract and its red proofs.
+
+_STRUCTURES_SURFACE = frozenset(
+    {
+        # public entry points, called from pool gens, wip/, other engine modules and tests
+        "building",
+        "clear_label_seat",
+        "drum_tower",
+        "fire_tower",
+        "kosatsuba",
+        "label_blockers",
+        "label_caption_hw",
+        "label_seat_clear",
+        "manor",
+        "merchant_estate",
+        "merchant_estates",
+        "open_face_rot",
+        "pack",
+        "pasture",
+        "place_kosatsuba",
+        "place_punishment_spot",
+        "road",
+        "rowpack",
+        "servant_ranges",
+        "theater_stage",
+        "try_building",
+        # private helpers, reached through self. Several have no consumer outside the class at
+        # all - they stay in the surface precisely because a name nothing else calls is the kind a
+        # careless partition drops without any other test noticing.
+        "_blocks_any_door",
+        "_dims",
+        "_door_is_clear",
+        "_estate_wall_clear",
+        "_face_street_rot",
+        "_office_records",
+        "_shortfall",
+        "_solid_records",
+        "_under_a_caption",
+        # class-level ATTRIBUTES - the half a methods-only census cannot see. Feature 112 needed a
+        # separate test (test_feature_012_archetype_constants_survived_the_split) because its guard
+        # counted callables only; this one admits any non-dunder class-body name, so one assertion
+        # covers all 33 members. A class attribute is as easy to lose in a split as a method and
+        # much easier to overlook.
+        "URBAN",
+        "SERVANT_RANGE_DEPTH_FT",
+        "_OFFICE_STANDOFF",
+    }
+)
+
+
+def _structures_submixins():
+    # Derived from the MRO rather than by importing the submodules, so this guard runs UNCHANGED
+    # before and after the split: pre-split the list is empty (StructuresMixin is the single class
+    # and the collision assertion is vacuous), post-split it is the seven sub-mixins. Importing
+    # settlement.structures.urban et al. directly - the shape feature 112 used - cannot be written
+    # before the package it imports from exists, which is what made 112's own red proof for the
+    # collision assertion impossible to run in the order its task list implied (113 tasks T007).
+    from settlement.structures import StructuresMixin
+
+    return [c for c in StructuresMixin.__mro__ if c is not StructuresMixin and c is not object]
+
+
+def _own_members(cls):
+    # Any non-dunder name the class body itself defines: methods AND data attributes. Deliberately
+    # NOT `callable(v)` - that is what makes URBAN, SERVANT_RANGE_DEPTH_FT and _OFFICE_STANDOFF
+    # visible here rather than needing a second test of their own.
+    return {k for k in vars(cls) if not k.startswith("__")}
+
+
+def test_no_pre_split_structures_member_was_lost_in_the_move():
+    # SUBSET, not equality, for the reason features 112 and 113 both recorded in their own guards:
+    # a later decomposition legitimately adds named private helpers, and equality would turn every
+    # such change into a contract edit - training a reader to update the frozenset without
+    # thinking, which is exactly the reflex that lets a real subtraction through. What must never
+    # happen is a pre-split member going MISSING: an addition is visible in review, a subtraction
+    # is silent until whichever generator calls it happens to run.
+    from settlement.structures import StructuresMixin
+
+    composed = set().union(*(_own_members(c) for c in StructuresMixin.__mro__))
+    assert composed >= _STRUCTURES_SURFACE, f"missing={sorted(_STRUCTURES_SURFACE - composed)}"
+
+
+def test_no_two_structures_submixins_define_the_same_name():
+    # The half that is easy to under-rate: a member defined by two sub-mixins produces a working
+    # import, a clean `mypy --strict`, and one silently dead implementation, because MRO just picks
+    # the first base.
+    subs = _structures_submixins()
+    for i, a in enumerate(subs):
+        for b in subs[i + 1 :]:
+            overlap = _own_members(a) & _own_members(b)
+            assert not overlap, f"{a.__name__} and {b.__name__} both define {sorted(overlap)} - MRO would orphan one"
+
+
+def test_every_structures_member_resolves_on_settlement_itself():
+    # what consumers actually rely on: the name reaching Settlement, not merely StructuresMixin
+    unreachable = sorted(n for n in _STRUCTURES_SURFACE if not hasattr(Settlement, n))
+    assert not unreachable, f"not resolvable on Settlement: {unreachable}"

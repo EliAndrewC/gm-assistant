@@ -72,8 +72,22 @@ class FieldFeaturesMixin:
         if not plots:  # pragma: no cover - a drawn field always has plots
             return
         low = [p for p in plots if p.get("low")]
-        # POND: a low pocket held as open water (research D4). ~55% of eligible fields carry one -
-        # tried across the low plots in random order until one takes a legible pond, because a plot
+        # POND: a low pocket held as open water - and it is the ONE in-field feature the feature-012
+        # research puts in the flat wet MIDDLE rather than at the margin. Its organizing finding:
+        # "these features live at the paddy-to-slope MARGIN ... not free-floating in the flat wet
+        # center. The one thing that genuinely belongs in the flat wet middle is an open-water POND
+        # (a low pocket too deep for rice)." That is why a rock outcrop or grave island mid-paddy is
+        # a defect on flat valley ground while this is not (research D4 + the matrix).
+        #
+        # THE ~55% IS NOT RESEARCHED, and saying so is the point (GM 2026-08-16, asking whether the
+        # pond belongs at all): D4's only hard quantitative anchor is tameike density in Japan, and
+        # its own honesty flags call every per-map count interpolated. So the prevalence is a
+        # disclosed calibrated liberty (constitution XII) - chosen so a pocket pond reads as an
+        # occasional feature of a valley floor rather than a fixture of every field. The SITING is
+        # the researched half and it is enforced: `field_ponds_on_low_ground` demands the host plot
+        # be one the field pass independently recorded as low/wet.
+        #
+        # Tried across the low plots in random order until one takes a legible pond, because a plot
         # can REFUSE (a comb fan toe is all thin wedges; Inashiro 2026-08-16). A field whose low
         # pockets are all wedges honestly carries none.
         # NOTE a disclosed coupling (settlement-review, Mizuguchi 2026-08-16): rng.sample consumes
