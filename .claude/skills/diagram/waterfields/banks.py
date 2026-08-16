@@ -1,0 +1,251 @@
+"""Layer-1 bank clearance: how plots hem to supply canals and delivery ditches (clearance, toe, overhang), plus channel-joint rounding."""
+
+import math
+from typing import Any
+
+from .frame import BANK_MARGIN, Poly, Pt, _f_at_u, _Frame, _pip, _seg_x
+
+_PAST_EPS = 0.25  # arc slack at a supply stroke's ends: covers the 0.1-px manifest rounding of vertex + stroke point together (see supply_bank_clearance)
+
+
+def polyline_cum(pts: Poly) -> list[float]:
+    """Cumulative arc length at each vertex - hoisted so a caller testing many points against one
+    collector pays for it once."""
+    cum = [0.0]
+    for i in range(len(pts) - 1):
+        cum.append(cum[-1] + math.dist(pts[i], pts[i + 1]))
+    return cum
+
+
+def drain_bank_clearance(q: Pt, dpts: Poly, dv: Pt, w0: float, w1: float, cum: list[float]) -> tuple[float, float, float, bool]:
+    """How one point stands against a drainage collector: `(gap, need, lean, past)`.
+
+    - `gap` - SIGNED perpendicular offset from the nearest segment, positive on the FIELD's side of
+      the ditch (the side the fall comes from), negative once the point is across the centerline.
+    - `need` - the bank: half the collector's DRAWN width at that point (it tapers `w0` -> `w1`
+      along its length) plus `BANK_MARGIN`, so a bund's own stroke abuts the ditch's rather than
+      overlapping it.
+    - `lean` - how much clearance one unit of UP-FALL travel buys. It is ~0 for a collector running
+      with the fall, where "lift it up-fall" is not a move that helps.
+    - `past` - the point projects beyond the collector's head or tail. That ground drains somewhere
+      else (the next fan, the map edge), so this collector does not govern it.
+
+    ONE predicate, shared by the generator (`hem_to_bank`) and by the gate
+    (`paddy_bunds_clear_the_collector`), because a placer and a checker that classify the same
+    ground from two separate formulas drift apart - the trap the diagram CLAUDE.md records under
+    'Placement and its check must read the SAME manifest source'."""
+    off, cx, cy, arc, past, nrm = 1e9, 0.0, 0.0, 0.0, False, (0.0, 0.0)
+    for i in range(len(dpts) - 1):
+        ax, ay = dpts[i]
+        vx, vy = dpts[i + 1][0] - ax, dpts[i + 1][1] - ay
+        t = ((q[0] - ax) * vx + (q[1] - ay) * vy) / ((vx * vx + vy * vy) or 1.0)
+        tc = max(0.0, min(1.0, t))
+        sx, sy = ax + tc * vx, ay + tc * vy
+        d = math.hypot(q[0] - sx, q[1] - sy)
+        if d < off:
+            off, cx, cy = d, sx, sy
+            arc = cum[i] + tc * math.hypot(vx, vy)
+            past = (i == 0 and t < 0.0) or (i == len(dpts) - 2 and t > 1.0)
+            nl = math.hypot(vx, vy) or 1.0
+            nx, ny = -vy / nl, vx / nl
+            nrm = (nx, ny) if nx * dv[0] + ny * dv[1] < 0 else (-nx, -ny)  # points UP-fall, off the ditch
+    gap = (q[0] - cx) * nrm[0] + (q[1] - cy) * nrm[1]
+    need = (w0 + (w1 - w0) * arc / (cum[-1] or 1.0)) / 2 + BANK_MARGIN
+    return gap, need, -(dv[0] * nrm[0] + dv[1] * nrm[1]), past
+
+
+def supply_bank_clearance(q: Pt, pts: Poly, w0: float, w1: float, cum: list[float]) -> tuple[float, float, bool, Pt, Pt]:
+    """How one point stands against a SUPPLY channel's drawn stroke: `(gap, halfw, past, foot, nrm)`.
+
+    The supply half of `drain_bank_clearance`, and simpler for a reason: a drain-side bund is held
+    off IN FALL (the hem climbs up its own column, so that verdict needs the fall geometry), while
+    a supply-side bund runs ALONGSIDE its channel and is held off PERPENDICULAR - the bund is the
+    channel's bank wherever the channel goes, which is also what makes the bordering bund run
+    parallel to the water (GM 2026-08-15).
+
+    - `gap` - unsigned perpendicular distance from `q` to the nearest stroke segment.
+    - `halfw` - half the stroke's DRAWN width at that point (`w0` -> `w1` taper along its arc).
+    - `past` - `q` projects beyond the stroke's head or tail; ground beyond the span is not
+      governed by this stroke (a delivery ditch's takeoff sits on its parent canal, which governs).
+    - `foot` - the nearest point on the centerline.
+    - `nrm` - the nearest segment's unit normal, side arbitrary; the caller orients it.
+
+    ONE predicate, shared by the placer (`_carve`'s `clear_supply`) and by the gate
+    (`paddy_bunds_clear_the_supply_channels`), for the same reason `drain_bank_clearance` is: a
+    placer and a checker that classify the same ground from two formulas drift into disagreeing
+    about which side of a ditch a point is on."""
+    off, foot, arc, past, nrm = 1e9, (0.0, 0.0), 0.0, False, (0.0, 1.0)
+    for i in range(len(pts) - 1):
+        ax, ay = pts[i]
+        vx, vy = pts[i + 1][0] - ax, pts[i + 1][1] - ay
+        t = ((q[0] - ax) * vx + (q[1] - ay) * vy) / ((vx * vx + vy * vy) or 1.0)
+        tc = max(0.0, min(1.0, t))
+        sx, sy = ax + tc * vx, ay + tc * vy
+        d = math.hypot(q[0] - sx, q[1] - sy)
+        if d < off:
+            off, foot = d, (sx, sy)
+            arc = cum[i] + tc * math.hypot(vx, vy)
+            past = (i == 0 and t < 0.0) or (i == len(pts) - 2 and t > 1.0)
+            nl = math.hypot(vx, vy) or 1.0
+            nrm = (-vy / nl, vx / nl)
+    halfw = (w0 + (w1 - w0) * arc / (cum[-1] or 1.0)) / 2
+    # `past` IS ROBUST AT THE MANIFEST ROUNDING SCALE (the seed-25 hairline, 2026-08-16): the
+    # placer works in unrounded floats and exempted a carved corner projecting epsilon PAST the
+    # branch tail; the manifest rounds both the corner and the stroke poly to 0.1 px, which
+    # collapsed them onto the same coordinates - the gate then computed t = 1.0 exactly, `past`
+    # came back False, and the check fired at gap 0 on a corner the placer had legally exempted.
+    # One predicate, two verdicts, split by the round-trip. So ground within _PAST_EPS of either
+    # end of the stroke's arc counts as past on BOTH sides of the rounding (same class as the
+    # gate's 0.15 gap slack).
+    past = past or arc <= _PAST_EPS or arc >= (cum[-1] or 1.0) - _PAST_EPS
+    return off, halfw, past, foot, nrm
+
+
+def floor_overhang(pts: Poly, dpts: Poly, down_deg: float) -> list[float]:
+    """Per-vertex DOWN-FALL overhang past the flat-extended collector line, in px (0 = clear).
+
+    The fan's command area ends at its collector: ground down-fall of the drain line - extended
+    LEVEL beyond both drawn ends, exactly as `_fill_wedges`' `drain_f_clamped` extends it - cannot
+    drain into it and is never planted, so field floor there is dead ground wearing the field's
+    color (Mizuguchi's SE needle, 2026-08-16: the raw envelope closed from the collector's thin
+    head across ~350 ft of bare floor to the outer thread's tail). ONE predicate, shared by
+    `build_comb`'s envelope trim and by the gate (`comb_floor_ends_at_the_collector`), for the
+    same reason `supply_bank_clearance` is: a trimmer and a checker that classify the same ground
+    from two formulas drift into disagreeing about where the command area ends."""
+    F = _Frame(down_deg)
+    u0 = F.to_uf(*dpts[0])[0]
+    u1 = F.to_uf(*dpts[-1])[0]
+    out: list[float] = []
+    for p in pts:
+        u, f = F.to_uf(*p)
+        fd = _f_at_u(F, dpts, u)
+        if fd is None:  # off either end past the interp slack: the boundary continues LEVEL
+            end = dpts[0] if abs(u - u0) <= abs(u - u1) else dpts[-1]
+            fd = F.to_uf(*end)[1]
+        out.append(max(0.0, f - fd))
+    return out
+
+
+def hem_to_bank(ring: Poly, dpts: Poly, down_deg: float, w0: float, w1: float) -> Poly:
+    """Lift any vertex of `ring` that lies inside the collector's drawn stroke - or past its
+    centerline - up-fall onto the ditch's BANK. Returns a new ring; vertices already clear are
+    returned untouched.
+
+    `build_comb` needs none of this: it hems onto the bank BY CONSTRUCTION (see `_drain_bank`). The
+    other three field engines lay their parcels against a drain they build afterwards, so they have
+    no such handle, and the check that caught the comb's defect caught the same class in all three
+    (2026-08-08). Each was a different flavor of the one error:
+
+      - TERRACES: the last terrace's toe is a WIGGLY contour (amp + phase) while the collector along
+        the foot is a STRAIGHT descending line, so the two cross. Tanada's toe bund - the thick
+        retaining lip, drawn separately from the plots - ran ~8 px below the ditch, which is the
+        defect at its most visible: a retaining wall standing in the drain.
+      - RIBBON: the bands end exactly AT the foot, i.e. on the drain's centerline (measured offset
+        0.00 px on every flagged vertex), so the field's bottom bund is drawn under the ditch.
+      - POLDER: the collector IS the polder's bottom side, so the parcels front it directly and
+        float error alone put a vertex a half-pixel past.
+
+    This is a terminal pass rather than a construction change in three engines, and that is a
+    deliberate trade: it enforces one physical invariant (a basin's wall cannot stand in the ditch)
+    on geometry those engines have finished with, in the same spirit as the comb's own terminal
+    thin-plot drop. The move is along the FALL, so a lifted vertex slides up its own column and the
+    parcel keeps its shape."""
+    dv = (math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg)))
+    cum = polyline_cum(dpts)
+    out: Poly = []
+    for q in ring:
+        gap, need, lean, past = drain_bank_clearance(q, dpts, dv, w0, w1, cum)
+        if past or gap >= need or lean < 0.2:  # clear, off the collector's span, or a drain running WITH the fall
+            out.append(q)
+            continue
+        shift = (need - gap) / lean
+        out.append((round(q[0] - dv[0] * shift, 1), round(q[1] - dv[1] * shift, 1)))
+    return out
+
+
+# A paddy plot's minimum THICKNESS (inradius proxy 2A/P) as a fraction of `plot_across`.
+# MEASURED across the pool 2026-07-27 (do not adjust this from intuition - these are the numbers):
+# a healthy plot's median thickness runs 0.25-0.39 of plot_across, and every fan has a tail running
+# down to 0.000. The value is pinned to the defect it was derived from: Ubame's west comb has
+# exactly EIGHT plots under 0.16, which is precisely the "~8 thin triangular slivers radiating from
+# the collector vertex" a reviewer counted by eye on the render - an independent corroboration, from
+# pixels, of a threshold picked from geometry.
+#
+# NOTE the cost, because it is not uniform: sparse town fans shed 7-8 cells, but a dense city fan can
+# shed 15 of 62 (~24%) where its p25 already sits near 0.16. Every map still passes the gate,
+# paddy_fan_gapless included, so the fans still read as covered - but a city fan is the place to LOOK
+# if this is ever retuned, and the gate is not the eye.
+_TOE_MIN_THICKNESS = 0.16
+
+
+def hem_on_paddy(quad: Poly, paddy_outline: Poly) -> bool:
+    """Whether a dry hem plot REALLY overlaps a paddy fan's envelope. This is the SHARED predicate
+    behind both the generators' hem filter (draw_comb_field and the city gens' comb_field drop any
+    hem plot that hits a previously recorded fan) and check_village's dry_plots_clear_of_paddies
+    gate, so placement and check provably classify the same geometry the same way (the same-source
+    doctrine, diagram CLAUDE.md). Wet paddy and dry hatake are mutually exclusive ground - the hem
+    exists BECAUSE its ground sits upslope of what the canal commands - so a dry plot on the rice
+    is always a defect, never a variant. On a MULTI-FAN map each fan's hem is placed blind to the
+    other fans (only hand-tuned dry_keepout circles held them apart before), which is exactly how
+    Tango's fe2 hem punched into fe1's envelope (2026-07-23, 13% and 42% of two plots' area in the
+    neighbor's rice) - the incident this predicate closes.
+
+    Tolerance is built in by testing the quad SHRUNK 15% toward its centroid (~2-4px at real hem
+    plot sizes - the same spirit as no_structure_on_paddy's 3px penetration rule): a hem plot
+    legitimately KISSES its own fan's envelope across the berm, and two fans' margins may abut, so
+    only real interpenetration counts."""
+    cx = sum(p[0] for p in quad) / len(quad)
+    cy = sum(p[1] for p in quad) / len(quad)
+    sq = [(cx + (px - cx) * 0.85, cy + (py - cy) * 0.85) for px, py in quad]
+    if _pip(cx, cy, paddy_outline) or any(_pip(px, py, paddy_outline) for px, py in sq):
+        return True
+    n = len(paddy_outline)
+    return any(_seg_x(sq[i], sq[(i + 1) % len(sq)], paddy_outline[j], paddy_outline[(j + 1) % n]) is not None for i in range(len(sq)) for j in range(n))
+
+
+def round_channel_joints(channels: list[dict[str, Any]], min_turn_deg: float = 8.0, steps: int = 6) -> None:
+    """Round the bend where one drawn channel CONTINUES into the next, in place.
+
+    A dug run is emitted as SEVERAL records so its width can taper (head-race -> main -> main ...),
+    which means the run's own changes of direction fall at the SEAM between two records, where
+    `settlement.fillet_polyline` - which only rounds a polyline's interior vertices - cannot reach
+    them. That seam was the sharpest water on the maps: Moritono's head-race left the tameike due
+    west and met the field-edge main at a mitred elbow (GM 2026-07-25). The doctrine and the
+    ~2.5-channel-widths radius are documented at `settlement.fillet_polyline`; here the arc is dug
+    out of BOTH records - the upstream one gives up its last stretch and carries the whole bend, the
+    downstream one starts where the bend ends - because trimming only one side would leave the
+    other's square tip poking out of the curve.
+
+    Only a TRUE continuation is rounded: exactly two channels meeting, one ending and one starting.
+    A node where a branch ALSO leaves is a junction, not a bend - an offtake is a notch cut in the
+    bank, and the main running past it is not turning there anyway."""
+    ends: dict[tuple[float, float], list[tuple[int, int]]] = {}
+    for i, c in enumerate(channels):
+        if len(c["pts"]) >= 2:
+            for which, p in ((0, c["pts"][0]), (1, c["pts"][-1])):
+                ends.setdefault((round(p[0], 1), round(p[1], 1)), []).append((i, which))
+    for touch in ends.values():
+        if len(touch) != 2 or {w for _, w in touch} != {0, 1}:
+            continue  # a lone end, or a junction where a branch leaves: not a bend
+        a_i = next(i for i, w in touch if w == 1)
+        b_i = next(i for i, w in touch if w == 0)
+        A, B = channels[a_i], channels[b_i]
+        pv, P, nx = A["pts"][-2], A["pts"][-1], B["pts"][1]
+        v0, v1 = (pv[0] - P[0], pv[1] - P[1]), (nx[0] - P[0], nx[1] - P[1])
+        l0, l1 = math.hypot(*v0), math.hypot(*v1)
+        if l0 < 1e-6 or l1 < 1e-6:
+            continue
+        cosang = max(-1.0, min(1.0, (v0[0] * v1[0] + v0[1] * v1[1]) / (l0 * l1)))
+        if 180.0 - math.degrees(math.acos(cosang)) < min_turn_deg:
+            continue  # no visible elbow to round
+        w = max(A.get("w_tail", A["w"]), B["w"])
+        d = min(2.5 * w, 0.35 * l0, 0.35 * l1)
+        a = (P[0] + v0[0] / l0 * d, P[1] + v0[1] / l0 * d)
+        b = (P[0] + v1[0] / l1 * d, P[1] + v1[1] / l1 * d)
+        arc = []
+        for s in range(steps + 1):
+            t = s / steps
+            mt = 1 - t
+            arc.append((round(mt * mt * a[0] + 2 * mt * t * P[0] + t * t * b[0], 1), round(mt * mt * a[1] + 2 * mt * t * P[1] + t * t * b[1], 1)))
+        A["pts"] = A["pts"][:-1] + arc  # the upstream record carries the whole bend ...
+        B["pts"] = [arc[-1]] + B["pts"][1:]  # ... and the downstream one picks up where it ends
