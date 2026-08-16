@@ -51,7 +51,7 @@ DENSITY_BANDS = ((0.0, 15.0), (15.0, 30.0), (30.0, 45.0))
 # Coordinate-quantization slack: the engine adjudicates scatter at full float precision and then
 # WRITES the SVG at %.1f, so a base the engine legally seated a hair outside a keep-out can parse
 # back a few hundredths INSIDE it. 0.15 px is the same slack the engine's own margin unit tests
-# use (test_settlement/test_homestead_parts.py); a real defect stands whole pixels deep.
+# use (tests/settlement/test_homestead_parts.py); a real defect stands whole pixels deep.
 _QUANT_EPS = 0.15
 
 

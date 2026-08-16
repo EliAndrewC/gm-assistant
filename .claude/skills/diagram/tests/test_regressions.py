@@ -3,9 +3,9 @@
 
 The third leg of the Mode B testing discipline (see settlements.md "Three testing disciplines"):
 
-  - test_villages.py  - the GOOD maps still PASS the whole gate (integration).
-  - test_checks.py    - each check still FIRES on a minimal synthetic break (unit).
-  - test_regressions.py (this) - the actual BAD manifests we hit while iterating a map stay
+  - tests/test_villages.py    - the GOOD maps still PASS the whole gate (integration).
+  - tests/check_village/      - each check still FIRES on a minimal synthetic break (unit).
+  - tests/test_regressions.py (this) - the actual BAD manifests we hit while iterating a map stay
                         caught: every fixture lists the checks it MUST trip, and we assert they
                         still do. A permanent, growing guard - drop the manifest of any map that
                         slips past a check (or that a newly-tightened check should have caught)
@@ -20,7 +20,7 @@ TARGETED since feature 022 (specs/022-gate-check-registry/): the replay runs
 they depend on - a 210-strong cohort of frozen whole-city fixtures used to pay a full 189-check
 gate apiece (~61% of suite CPU) to verify one check each. Verdict identity between targeted and
 full runs is held by the 022 oracle sweeps and by
-test_checks.py::test_feature_022_targeted_verdict_matches_the_full_gate; a fixture naming a
+`test_feature_022_targeted_verdict_matches_the_full_gate` (in tests/check_village/); a fixture naming a
 META check (whole-run state, e.g. waivers_are_live) falls back to the full gate.
 
 Regenerate the backfilled corpus from the in-test fixtures with `python3 -m tools.make_regressions`;
