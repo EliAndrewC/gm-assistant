@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented (2026-08-16)
 
 **Input**: User description: "Refactor .claude/skills/diagram/waterfields.py (2,689 lines) into a waterfields/ package of focused submodules with its own CLAUDE.md index, following the check_village/ exemplar and constitution Principle X clause 13 (files at human scale, ~1,000-line bar). Two documented motivations: (1) engineering - split the three mega-functions (build_comb ~495 lines, build_polder ~458, _carve ~437, together over half the file) into smaller focused functions; (2) tokens - a package with a CLAUDE.md index lets a session load only the comb, polder, or bank-clearance module it needs instead of the whole file. The refactor must be behavior-preserving: verified via the manifest-based check_village gate and the pool/regressions/ negative-fixture corpus, with zero consumer changes."
 
