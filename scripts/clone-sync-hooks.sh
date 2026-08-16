@@ -199,6 +199,24 @@ case $MODE in
     fi
     clone=$(cat "$MAPDIR/$sid")
     [ -d "$clone/.git" ] || exit 0
+
+    # RE-TRACK GUARD (2026-08-16): .specify/feature.json is spec-kit's ACTIVE-FEATURE pointer and
+    # must stay gitignored. It is per-workspace state, and tracking it is not a cosmetic mistake -
+    # common.sh resolves FEATURE_DIR from it at PRIORITY 2, above the SPECIFY_FEATURE env var at
+    # priority 3. So a tracked copy merges between concurrent sessions and silently redirects
+    # setup-plan.sh / setup-tasks.sh / implement into a PEER's specs/NNN-*/, while CURRENT_BRANCH
+    # still reads correctly - measured on features 115/116, where a peer's specify commit repointed
+    # it mid-chain and `SPECIFY_FEATURE=115` still resolved FEATURE_DIR to 116.
+    # A spec-kit upgrade, a `git add -f`, or a clone made before the ignore can all re-track it,
+    # and the failure is SILENT, so it is worth a per-session word. Warn once; the fix is one line.
+    if git -C "$clone" ls-files --error-unmatch .specify/feature.json >/dev/null 2>&1; then
+      fjnotice="$MAPDIR/$sid.feature-json-notice"
+      if [ ! -f "$fjnotice" ]; then
+        : > "$fjnotice"
+        echo "clone-sync: .specify/feature.json is TRACKED again in $clone - it must stay gitignored. It OUTRANKS SPECIFY_FEATURE when spec-kit resolves FEATURE_DIR, so a peer session's copy silently redirects your spec-kit writes into THEIR specs/NNN-*/. Fix: cd $clone && git rm --cached .specify/feature.json && git commit -m 'chore: untrack spec-kit active-feature pointer'   (CLAUDE.md 'Concurrent sessions')"
+      fi
+    fi
+
     if [ -n "$(git -C "$clone" status --porcelain 2>/dev/null)" ]; then
       echo "clone-sync: $clone has uncommitted work (mid-task) - auto sync-in skipped; finish and run sync-with-main.sh done"
       exit 0

@@ -117,6 +117,47 @@ OUT=$(cd "$FMAIN/.clones/gm-assistant" && CLONE_MAIN="$FMAIN" "$RITUAL" sync-in 
 check "ritual refuses to run from .clones/gm-assistant" 1 "$RC"
 case $OUT in *"FORBIDDEN"*) : ;; *) echo "FAIL  ritual refusal message missing 'FORBIDDEN': $OUT"; FAILED=1 ;; esac
 
+# ---- prompt-mode: the .specify/feature.json re-track guard -------------------------------------
+# The pointer must stay gitignored. common.sh resolves FEATURE_DIR from it at priority 2, ABOVE the
+# SPECIFY_FEATURE env var at priority 3, so a TRACKED copy merges between concurrent sessions and
+# silently redirects setup-plan/setup-tasks/implement into a PEER's specs/NNN-*/ while
+# CURRENT_BRANCH still reads correctly (measured on features 115/116, 2026-08-16).
+FMAIN4=$TMP/main4
+git init -q "$FMAIN4"
+git -C "$FMAIN4" config user.email t@t; git -C "$FMAIN4" config user.name t
+echo m0 > "$FMAIN4/f"; git -C "$FMAIN4" add f; git -C "$FMAIN4" commit -qm m0
+mkdir -p "$FMAIN4/.clones/.session-clones"
+git clone -q "$FMAIN4" "$FMAIN4/.clones/fjclone"
+FJC=$FMAIN4/.clones/fjclone
+git -C "$FJC" config user.email t@t; git -C "$FJC" config user.name t
+mkdir -p "$FJC/.specify"
+echo '{"feature_directory":"specs/999-peer"}' > "$FJC/.specify/feature.json"
+git -C "$FJC" add -f .specify/feature.json; git -C "$FJC" commit -qm "track the pointer"
+echo scratch > "$FJC/scratch"   # dirty: the hook stops before its sync-in path, which needs no fixture
+printf '%s' "$FJC" > "$FMAIN4/.clones/.session-clones/sid-fj"
+
+OUT=$(printf '{"session_id":"sid-fj"}' \
+      | CLONE_MAIN="$FMAIN4" CLONE_SESSIONS_DIR="$SESS" "$HOOK" prompt 2>&1); RC=$?
+check "tracked feature.json -> prompt still exits 0 (warn, never block)" 0 "$RC"
+case $OUT in *"feature.json is TRACKED"*) printf 'ok    tracked feature.json is named in the warning\n' ;;
+             *) printf 'FAIL  tracked feature.json produced no warning\n      out: %s\n' "$OUT"; FAILED=1 ;; esac
+case $OUT in *"git rm --cached"*) printf 'ok    warning carries the fix command\n' ;;
+             *) printf 'FAIL  warning omits the fix command\n      out: %s\n' "$OUT"; FAILED=1 ;; esac
+
+# once per session - a warning that repeats every prompt is noise the GM learns to skip
+OUT=$(printf '{"session_id":"sid-fj"}' \
+      | CLONE_MAIN="$FMAIN4" CLONE_SESSIONS_DIR="$SESS" "$HOOK" prompt 2>&1)
+case $OUT in *"feature.json is TRACKED"*) printf 'FAIL  warning repeated (should be once per session)\n'; FAILED=1 ;;
+             *) printf 'ok    warning is once per session\n' ;; esac
+
+# and it must stay SILENT once the pointer is properly untracked, or it is a permanent false alarm
+git -C "$FJC" rm -q --cached .specify/feature.json; git -C "$FJC" commit -qm untrack
+rm -f "$FMAIN4/.clones/.session-clones/sid-fj.feature-json-notice"
+OUT=$(printf '{"session_id":"sid-fj"}' \
+      | CLONE_MAIN="$FMAIN4" CLONE_SESSIONS_DIR="$SESS" "$HOOK" prompt 2>&1)
+case $OUT in *"feature.json is TRACKED"*) printf 'FAIL  warning fires on an UNTRACKED pointer\n      out: %s\n' "$OUT"; FAILED=1 ;;
+             *) printf 'ok    silent when the pointer is untracked\n' ;; esac
+
 [ -n "${LIVE_PID:-}" ] && kill "$LIVE_PID" 2>/dev/null; true
 rm -rf "$TMP"
 echo "-----"
