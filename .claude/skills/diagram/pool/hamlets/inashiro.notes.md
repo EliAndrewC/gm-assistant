@@ -270,6 +270,73 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   against the project's ~30% storehouse figure) - inside the noise at this size, but it went the
   wrong way.
 
+- **2026-08-17, the channel TAPER LAW** (GM asked whether a supply ditch should keep thinning rather
+  than reach a minimum and stop, and whether the widths were researched at all). Two changes, both
+  engine-wide, this map the motivating artifact. (1) Width goes as sqrt(discharge) and discharge runs
+  linearly along one of these strokes, so the width SQUARED now interpolates - `waterfields.taper_w`,
+  shared by the drawn stroke, both bank clearances the gate reads, the seam buffer, the carve's burial
+  filter and the keep-out corridor. (2) The ladder is parameterized by ARC LENGTH rather than vertex
+  index - `waterfields.taper_pieces`. The research, the sources and the disclosed departures are in
+  [`../../research/water.md`](../../research/water.md); the finest DRAWN channel deliberately still
+  STOPS at the ~1 m lateral tier, because below it lie the ~0.3 m field ditch (one pixel here) and,
+  in a pre-modern system, plot-to-plot *tagoshi* cascade rather than any channel at all.
+
+  Review log: DELTA pass, and it earned its keep - it CAUGHT that change (2) was missing entirely.
+  With only the law in, the renderer was still slicing by vertex index, whose slices covered
+  7.0-33.0% of a run apiece, so the ink missed the law by up to 1.94 px, the last third of two of the
+  five delivery ditches was still drawn at a FLAT minimum (i.e. the GM's original complaint survived
+  the fix meant to cure it), and the 2-point west-fork stub was inked end to end at its TAIL width,
+  3.6 px against a declared 7.2. It also caught that `taper_w`'s docstring quoted the FORMULA's
+  numbers as measurements of this map; they are now measured in the ink (7.7 / 7.1 / 6.1 / 4.8 / 3.7
+  px at tenths 0.10 / 0.25 / 0.50 / 0.75 / 0.90 of a delivery ditch - the MEDIAN across the five,
+  which tracks the law within ~0.1 px at the first four tenths but spans 3.46-4.13 against the law's
+  3.81 at 0.90, where the tail segments are coarse. A second pass caught the first correction still
+  quoting the FORMULA at the 0.25 tenth, 7.1 against an ink median of 7.0 - the same defect class
+  twice, which is why `taper_w` now says in so many words to re-measure in the SVG.)
+  And it caught that the committed `.png` was STALE while `tools/crop_map.py` crops the PNG - so the
+  author's own visual checks had been of the pre-change image. Re-rendered.
+
+  Confirmed clean by the same pass: no bund drawn inside the blue ALONG A RUN, and no bare stripe
+  anywhere (the tightest along-run clearance is +0.20 px, against a `BANK_MARGIN` of 0.75 - about half
+  the designed abutment eaten, none of it crossed). The along-run qualifier is load-bearing and the
+  re-review supplied it: 12 ring points do sit inside a drawn stroke, every one where a ring crosses a
+  ditch's terminal ROUND CAP (worst -1.16 px at (2252.2,1606.0)), and the same measurement on the
+  pre-taper manifest gives 30 such points - so this change more than halved a pre-existing condition
+  rather than introducing one. The collector reads as GATHERING under the mirrored law; and
+  `tools.scatter_audit` came back 0 violations over 272,672 bases with a flat near-margin density
+  profile (1157 / 1111 / 1120 at 0-15 / 15-30 / 30-45 px), so widening every watercourse produced no
+  sterile halo.
+
+  Two items on record as this change's RIPPLE, neither a defect: the re-pack consumed the 18-crown
+  woodland stand at (1559,1651)-(1684,1776) - the collector's keep-out grew over the dry shelf, and
+  the three surviving stands (90/86/91 crowns) still stock the commons, but the reason that parcel is
+  now absent is geometric slack rather than anything about the place; and the title placard moved
+  576 px west onto clean hinterland. One PRE-EXISTING item wants a GM ruling, recorded in
+  `research/water.md`: a delivery ditch's flat `4.0 * grain` head is drawn WIDER than the tapering
+  supply canal feeding it low in the tree, so the rank read inverts there - which is the one thing
+  width-as-rank exists to convey.
+
+  SECOND review pass (verifying the arc fix): **pass**. It matched all 156 tapering pieces in the SVG
+  against `taper_pieces` by exact path data - every piece present, every width right - and confirmed
+  the three fixes in the ink: no flat-minimum tail on any of the five delivery ditches (ch4 now 36
+  distinct widths 7.92 -> 3.24, ch7 22 widths 7.85 -> 3.42), the 2-point stub drawing 5.6 against a
+  predicted 5.57, and no beading or doubled opacity from the many extra round caps (154 water strokes,
+  exactly one per piece, no two sharing geometry). It also confirmed the blast radius: `houses`,
+  `lanes`, `wells`, `bridges`, `threshing_yards`, `gardens`, `byres`, `farm_sheds` and `kosatsuba` are
+  untouched - the re-pack stayed inside the field and ground-cover fabric.
+
+  It CAUGHT four things, all now fixed or recorded: a stale "SAME 7 piece slices" docstring left in
+  `_watercourse_segs` contradicting its own body; `taper_w`'s corrected numbers still quoting the
+  FORMULA at the 0.25 tenth (7.1 against an ink median of 7.0) and the "within ~0.1 px" claim failing
+  at 0.90 by up to 0.35 - the same defect class the FIRST pass caught, which is why that docstring now
+  says outright to re-measure in the SVG; the piecewise-vs-continuous half-width bound now recorded in
+  `taper_pieces` (up to 1.19 px on the 2-point stub, which eats its abutment to +0.25 against a
+  designed 0.75 - nothing crosses, and the closing fix plus its cost is written down there); and the
+  collector's residual 1.64 px step notch at (1521.7,1540.7), which per-segment splitting did not
+  remove because that stroke carries only 10 vertices over 1240 px (the lever is densifying the
+  polyline, not the piece count). Delivery ditches, whose vertices are 3-30 px apart, are clean at a
+  worst 0.78 px step.
+
 ## 2026-08-17 - the fan-toe SUNBURST, ruled and fixed
 
 The GM ruled on the open question the previous entry left: *"I would like for us to be rendering

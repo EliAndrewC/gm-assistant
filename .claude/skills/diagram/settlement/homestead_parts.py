@@ -523,8 +523,9 @@ class HomesteadPartsMixin:
         Inashiro: grass tufts stood ON the head-race, because the scatter knew only the hairline
         topology record in M['channels'], w 2.5, while the drawn lateral ran ~14 wide on its own
         filleted post-clip polyline - the "same manifest source" trap, settlements.md 'PLANK
-        BRIDGES'). A tapered lateral is split into the SAME 7 piece slices field_channel strokes,
-        each at its own drawn width. Factored so the per-point test (_on_watercourse) and the
+        BRIDGES'). A tapered lateral is split by `waterfields.taper_pieces` - ONE piece per SEGMENT
+        at its arc-correct width, the very same call `field_channel` inks it with, so the corridor
+        and the stroke it protects cannot disagree. Factored so the per-point test (_on_watercourse) and the
         ground-cover scatters' pre-boxed grids provably test the same geometry. `channel_margin`
         widens the IRRIGATION courses only (channels + drawn laterals, never streams) - the commons
         scatter passes the cut-bank margin here (_BANK_MARGIN_FT says why banks are bare and why a
@@ -537,12 +538,11 @@ class HomesteadPartsMixin:
                 continue
             if abs(w1 - w0) < 0.2:  # drawn as ONE stroke at w0 (field_channel's uniform branch)
                 out.append((p, w0 / 2 + pad + channel_margin))
-            else:  # drawn as 7 tapering pieces - the same slice/width ladder field_channel strokes
-                n, L = 7, len(p)
-                for k in range(n):
-                    piece = p[k * (L - 1) // n : (k + 1) * (L - 1) // n + 1]
-                    if len(piece) >= 2:
-                        out.append((piece, (w0 + (w1 - w0) * (k + 0.5) / n) / 2 + pad + channel_margin))
+            else:  # drawn per SEGMENT at its arc-correct width - the SAME ladder field_channel inks
+                from waterfields import taper_pieces  # local: the engine packages are peers, imported lazily
+
+                for piece, wk in taper_pieces(p, w0, w1):
+                    out.append((piece, wk / 2 + pad + channel_margin))
         return out
 
     def _on_watercourse(self: Settlement, px: float, py: float, pad: float = 2.0, near: Any = None) -> bool:  # type: ignore[misc]

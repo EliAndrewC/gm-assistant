@@ -340,3 +340,29 @@ stop opening a sector whose boundary has already collapsed onto the drain, which
 carve's sector geometry". Before spending that, ask the GM whether a fan toe is ALLOWED to converge
 like this - a real cascade fan does narrow to its outfall, and the honest question is whether this
 narrows too tidily. The answer settles all four scripted hamlets at once.
+
+### Three members that are in `settlement/structures/` only because of where feature 025 cut
+
+Feature 114 split `settlement/structures.py` into a package and, in doing so, isolated the members
+that do not belong to the structures subsystem at all - so each of these is now a one-file change
+plus one row of `settlement/structures/CLAUDE.md`. None was moved by 114 itself, deliberately: a
+cross-mixin relocation would have made that feature's byte-identity oracle answer two questions at
+once, so a dirty diff could not have distinguished "the composition is wrong" from "moving `road`
+changed something".
+
+- **`road` -> `water_ways.py`.** It is a way, and `water_ways.py` is already the ways module (lanes,
+  streets, alleys, kido). It sits in `structures/ground.py` today.
+- **`pasture` -> `land.py`.** It is a land surface, and `land.py` already holds the commons, marsh,
+  toe bands and hinterland. Same module today.
+- **`structures/captions.py` -> `castle_civic.py`, but this one is an OPEN QUESTION, not a pending
+  move.** `castle_civic.py` holds `place_caption` (the draw-time seat ladder) while `captions.py`
+  holds the probes underneath it - so folding them gives one caption subsystem, but three of the
+  five probes are consumed by siters that live in `structures/fixtures.py`. The implementation
+  sketch, the thing that holds it (the composed-surface guard, which fails naming the five names if
+  they move out without the frozenset being updated in the same commit) and the one deliberate
+  exclusion (`_under_a_caption`) are all in `settlement/structures/CLAUDE.md` under "Three
+  placements you will want to fix".
+
+The two straight moves are cheap and safe on their own: every consumer reaches these members through
+`self.` on the composed `Settlement`, so no call site changes - the move is the member's text, its
+row in the two indexes, and the name migrating between the two mixins' surface frozensets.
