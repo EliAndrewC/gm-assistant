@@ -7,7 +7,7 @@ derivable (specs/109-registry-derive/research.md): `free` is the keyword-only si
 `writes` is the literal `_kept` return tuple, `checks`/`needs`/`meta`/`always` re-run feature
 022's AST analysis (ported in `registry_analysis.py`), and execution order is the numeric name
 key plus the placement decisions below. The pre-collapse rows are frozen in
-`test_fixtures/registry_legacy_rows.json`; `test_registry_derive.py` proves the derived rows
+`tests/fixtures/registry_legacy_rows.json`; `tests/check_village/test_registry_derive.py` proves the derived rows
 equal them and holds the structural guards.
 
 Two invariants carried over unchanged:

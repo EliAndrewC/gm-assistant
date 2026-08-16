@@ -1,4 +1,4 @@
-"""Split from test_settlement.py by feature 025 - see test_settlement/CLAUDE.md for the index."""
+"""Split from test_settlement.py by feature 025 - see tests/settlement/CLAUDE.md for the index."""
 
 import os
 import tempfile
