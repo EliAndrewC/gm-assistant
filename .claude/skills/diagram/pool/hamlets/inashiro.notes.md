@@ -398,3 +398,56 @@ carve/hem path still emits and `dedup_ring`'s 1.0 ft eps does not collapse at 4.
 shed drift above. It also noted the paint-order lap halved again (4,441 -> 2,660 sq ft) as a side
 effect. The bow-tie is logged, not fixed - it predates this change and belongs with the carve work
 that cohort seeds 9 and 11 also point at (`future-work.md`).
+
+### 2026-08-17 addendum - the cohort regression closed, and it was not a conflict
+
+The fan-toe fix above shipped with two cohort seeds (9, 11) regressing on `paddy_plot_seams_shared`,
+and the first diagnosis called it a genuine two-sided conflict between the needle rule and the
+shared-bund rule - four configurations measured, all failing, fix pointed at the carve's sector
+geometry. **That was wrong.** Two ordinary bugs were producing it:
+
+- `_absorb`'s tail trim was passed `3.0 * g` for "3 ft", but `grain` is `2 / ftpx`, so 3 ft is
+  `1.5 * g`. The doubled value fed a 6.0 px opening to a strip whose whole mean width was 5.6 px,
+  so the escape hatch annihilated every scrap and silently did nothing.
+- The weld guard measured `min(raw, deduped)` while the gate reads the deduped ring only - stricter,
+  but on a different measurement, which is not a margin.
+
+Corrected, the same weld comes out at a **77.1 deg apex** at every trim width tried. The cohort is
+back to **22/24 with the identical two pre-existing failures (seeds 22, 24) as the measured
+baseline** - not a rotation, the same seeds failing the same checks - so there are zero new
+regressions and the work is mergeable under constitution Principle XIII.
+
+Also in this round: `_TINT_MIN_APEX` moved 25 -> 40 deg (the Sawada review's error), and the map was
+re-rolled onto another session's per-segment `taper_pieces` change.
+
+### 2026-08-17 - the tint rule, corrected by review (round 2)
+
+The `_TINT_MIN_APEX` 25 -> 40 move recorded above did not survive its own review, and the reasoning
+is worth keeping because the *first* fix was aimed at the wrong property.
+
+The Sawada review had found the demotion structurally dead (its threshold had become equal to the
+placer's new apex floor, so it could never fire). Raising it to 40 restored firing but **measured
+wrong in both directions** on this map: it demoted plot 522, a 35.5 x 118.3 ft strip along the
+collector keeping 82% workable floor after the aze allowance - an honest basin - while still passing
+plot 456, which tapers **30.0 -> 3.4 ft over 75 ft** and scores 49.6 deg only because its needle is
+TRUNCATED 8 ft short of the point. An interior corner angle cannot see a taper whose tip is cut off.
+The claim that 25-40 was an empty band was also false: 15 plots sit in it here, 4 of them on the
+drain.
+
+**The discriminator is the END, not the corner.** Threshold back to 25; the ring is deduped at
+`_TINT_END_FT` (5 ft - two aze at 1.5 ft leave ~2 ft of standing water between them, so a narrower
+end is not an end but a point) before the apex is taken, which collapses the truncation and lets the
+wedge show its real apex. Verified on the re-roll: **5 flooded plots, none with a sub-5 ft end**
+(end-collapsed apex equals the raw apex for every one of them), and the 32.7 deg honest strip keeps
+its tint. This also removes the threshold race for good - the demotion now measures a DIFFERENT ring
+from the placer's guard rather than sitting one number away from it.
+
+Review catch-rate: round-2 DELTA - CAUGHT the truncated-needle blind spot (with a live blue instance
+on the shipped sheet) and measured the overcorrection exactly, by re-running the generator with the
+threshold patched back and verifying the rings came out identical. Confirmed clean: no hole and no
+doubled bund at the weld (bare ground 1742.1 -> 1742.4 sq ft, widest fragment 3.2 ft map-wide, 0.64
+ft at the weld), both fan toes reading as real cascade toes (min apex map-wide 27.5 deg, busiest
+collector node 3 plots against the ledgered 8-10), and `scatter_audit` 0 violations.
+
+Still open, unchanged by this round: the self-intersecting carve ring at (2397,1790) (`drain_hem[20]`,
+`Polygon.is_valid == False`, identical at HEAD) - ledgered with the carve work, not this delta.

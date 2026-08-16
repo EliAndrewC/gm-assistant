@@ -1106,6 +1106,32 @@ demanded by the check (or vice versa). Read the MANIFEST fields (`M["fields"]` o
 empty. When a new check pairs with new placement logic, factor the shared predicate so both sides
 provably use it.
 
+## "Placer stricter than gate" means a stricter THRESHOLD on the SAME measurement
+
+The engine is full of paired rules where a placer refuses at a generous number so a borderline case
+can never false-fire the gate that judges it (supply-bank margins, the paddy apex ladder: gate 15 <
+weld 18 < toe 25). The pairing is right and it broke TWICE IN ONE SESSION (2026-08-17), in opposite
+directions, because "stricter" was read as being about the NUMBER when it is about the number *and*
+the measurement together:
+
+- **Stricter on a DIFFERENT measurement is not a margin, it is a second rule.** `_absorb`'s weld
+  guard tested `min(raw_ring, dedup_ring(r, 1.0))` while its gate reads the deduped ring alone.
+  Strictly more refusals, yes - but some of them for apexes the rule cannot see, so welds were
+  declined to prevent a defect that could not exist. Cost: a doubled bund on two cohort seeds, and a
+  session-long detour that concluded a nonexistent "genuine geometric conflict".
+- **Replacing the gate's measurement with a better one silently DROPS the margin.** The tint
+  demotion was then re-aimed at an end-width-collapsed ring, which is a genuinely better question -
+  and testing it *instead of* the gate's own ring meant a plot pointed on the gate's ring but blunt
+  on the new one kept its tint and tripped the gate. Cost: cohort seed 8.
+
+**So the shape that is actually correct**: keep the gate's own measurement with a stricter threshold,
+and ADD any extra measurement as a second clause rather than a substitution -
+`pointed(gate_ring, 25) or pointed(better_ring, 25)` against a gate that fires at 15 on `gate_ring`.
+The first clause is the margin; the second is coverage the gate cannot reach. If you find yourself
+writing `min(a, b)` across two rings, or swapping which ring is tested, stop: one of those is a
+margin and the other is a different rule, and they need separate clauses so a reader can see which
+is which.
+
 ## A dirty tracked manifest with no code change behind it: suspect the MEASUREMENT, not the generator
 
 `title()` sizes its placard by measuring the name's glyphs with PIL (`_text_width`), and that
@@ -1165,6 +1191,25 @@ Three probes in one session, two of them wrong in ways that cost a full round tr
 The good version of this is cheap: wrap `_shortfall` and walk `inspect.stack()` for the frame in
 the GEN file, and every run is attributed to the exact gen line that wrote it - which is how 10
 call sites across three shipped cities got classified in one run.
+
+**A FOURTH AND FIFTH, both from one session (2026-08-17), and both the same tell: a probe printing a
+VALUE and a LOCATION that came from different computations.** Chasing the seeds 9/11 seam regression:
+
+- The first probe counted every `_absorb` decline as "declined by the new guard", when most were the
+  pre-existing MultiPolygon / hole / bow-tie rejections that have always been there. It had
+  re-implemented the candidate ranking beside the real one instead of observing which clause said no.
+- The second printed the apex VALUE as `min(raw, dedup_ring(...))` and, next to it, the worst vertex
+  of the RAW ring - two different rings. The value came from one and the coordinates from the other,
+  which produced a confident and completely wrong finding ("these apexes are 90-100 px from the
+  scrap, so they are pre-existing artifacts"). It was written into a code comment before it was
+  checked, and the correct probe showed the apex 33 px away and genuinely made by the weld.
+
+The rule that catches both: **print the value and its provenance from ONE expression, or do not print
+the provenance at all.** A probe that derives its number and its explanation separately will
+eventually pair a true number with a false explanation, and that is worse than no probe - it is a
+wrong answer wearing the costume of a measurement. (Cost here: two wrong conclusions, one of which
+became a documented "genuine geometric conflict" that did not exist. The actual causes were a unit
+error and a measure-a-different-ring mismatch - see `future-work.md`, "cohort seeds 9 and 11".)
 
 ## The collision circle is now blocking FEATURES, not just wasting ground
 

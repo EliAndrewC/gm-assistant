@@ -242,18 +242,30 @@ _TOE_MIN_APEX = 25.0
 # generous margin was buying nothing and costing a real defect. This sits just above the gate's 15
 # with enough room that rounding cannot slip a needle through.
 _WELD_MIN_APEX = 18.0
-# AND THE TINT DEMOTION HAD TO MOVE OUT OF THE PLACER'S WAY (settlement-review on Sawada,
-# 2026-08-17). `pointed_ring`'s default 25 deg was the FLOODED-tint demotion threshold, chosen when
-# nothing else constrained plot apexes. Setting the placer's own floor to the same 25 made the
-# demotion structurally dead: after the needle fix no ring below 25 deg exists at all, so the
-# predicate can never fire on placer output - and the sharpest survivors now pile up exactly on its
-# boundary. Sawada shipped a 91 x 18 ft blue triangle that missed demotion by 0.05 deg, reading as a
-# small pond on the one map whose brief is "no pond". The demotion must therefore sit ABOVE the
-# placer floor, and `pointed_ring`'s own pool measurement says where the gap is: seam wedges run
-# 7-23 deg, honest flooded hem strips 45+. 40 deg is inside that gap, so it demotes the toe wedges
-# that read as ponds and leaves genuine wet strips blue. The gate stays at 15 - placer still
-# strictly stricter than gate, which is the invariant the whole calibration rests on.
-_TINT_MIN_APEX = 40.0
+# THE TINT DEMOTION ASKS A DIFFERENT QUESTION, so it measures a different ring - not a different
+# threshold. Two settlement-reviews shaped this, and the second corrected the first.
+#
+# Sawada (2026-08-17) found the demotion had gone structurally DEAD: it tested apexes below 25 deg,
+# the needle fix set the placer's own floor to the same 25, so after the fix no ring below 25 exists
+# and the predicate could never fire - while the sharpest survivors piled up on its boundary and one
+# 91 x 18 ft blue wedge missed demotion by 0.05 deg on the map briefed "no pond". The first fix was
+# to raise the threshold to 40. THAT WAS WRONG, in both directions, and Inashiro's review measured
+# it: raising it demoted a 35.5 x 118.3 ft strip keeping 82% workable floor (an honest basin), while
+# still passing plot 456, which tapers 30.0 -> 3.4 ft over 75 ft and scores 49.6 deg only because its
+# needle is TRUNCATED 8 ft short of the point. The claim that 25-40 is an empty band was also simply
+# false - 15 plots sit in it on that map alone.
+#
+# THE REAL DISCRIMINATOR IS THE END, NOT THE CORNER. What makes a blue plot read as a pond is coming
+# to a POINT; an interior angle cannot see a taper whose tip has been cut off, and a long honest
+# strip can carry one sharpish corner. So the threshold goes back to 25 and the ring is DEDUPED AT AN
+# END WIDTH first: an end narrower than `_TINT_END_FT` collapses to a single vertex, and the wedge
+# then shows the apex it really has. That also un-deadens the predicate without a threshold race -
+# it is now a different MEASUREMENT from the placer's guard rather than a number sitting next to it.
+#
+# 5 ft is the narrowest end that can hold water at all: two aze at AZE_FT 1.5 each is 3 ft of wall,
+# leaving ~2 ft of standing water between them. Below that a basin has no end, it has a point.
+_TINT_MIN_APEX = 25.0
+_TINT_END_FT = 5.0
 # The GATE's own line, kept here so the placer margins above are all expressed against ONE number
 # rather than each carrying a copy of it. `paddy_plots_are_workable_basins` fires below this; every
 # constant above it is a margin over it, and the invariant the calibration rests on is that all of

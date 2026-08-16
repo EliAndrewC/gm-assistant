@@ -60,7 +60,7 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from .banks import _GATE_MIN_APEX, _TINT_MIN_APEX, _TOE_MIN_APEX, _WELD_MIN_APEX, dedup_ring, pointed_ring, polyline_cum
+from .banks import _GATE_MIN_APEX, _TINT_END_FT, _TINT_MIN_APEX, _TOE_MIN_APEX, _WELD_MIN_APEX, dedup_ring, pointed_ring, polyline_cum
 from .frame import BANK_MARGIN, Poly, _f_at_u, _Frame, taper_w
 from .palette import FLOODED, RICE_GREENS
 
@@ -330,8 +330,14 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
         # research describes at a real fan toe - the fan's base floor (`comb_base_fill`) draws
         # under it, so it reads as the toe's own ground rather than as a hole, exactly as it does
         # for the slivers `_comb_toe_and_hem` drops.
-        _cand = _ring(candidate)
-        _apex = min(_min_apex(_cand), _min_apex(dedup_ring(_cand, 1.0)))
+        # MEASURE THE RING THE GATE MEASURES - the DEDUPED one, and nothing else. This guard used to
+        # take min(raw, deduped): stricter, but stricter on a DIFFERENT measurement than the rule it
+        # is protecting, which is not a margin at all. `paddy_plots_are_workable_basins` reads the
+        # deduped ring, so an apex only the raw ring carries is invisible to the rule and must not be
+        # able to veto a weld here. Placer-stricter-than-gate means a stricter THRESHOLD on the SAME
+        # measurement (18 vs 15), never a second measurement bolted alongside it.
+        _cand = dedup_ring(_ring(candidate), 1.0)
+        _apex = _min_apex(_cand)
         if _apex < _WELD_MIN_APEX:
             # NOT GOOD ENOUGH, BUT REMEMBER IT - refusing outright is its own defect. Measured on
             # the 24-seed cohort: declining every needling weld traded two needles for two doubled
@@ -355,7 +361,7 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
                     _s2 = _m2.simplify(0.05)
                     _c2 = _s2 if isinstance(_s2, Polygon) and _s2.is_valid and not _s2.interiors else _m2
                     _r2 = _ring(_c2)
-                    if Polygon(_r2).is_valid and min(_min_apex(_r2), _min_apex(dedup_ring(_r2, 1.0))) >= _WELD_MIN_APEX:
+                    if Polygon(_r2).is_valid and _min_apex(dedup_ring(_r2, 1.0)) >= _WELD_MIN_APEX:
                         into[j] = _c2
                         grown.add(j)
                         return
@@ -476,8 +482,14 @@ def close_seams(
         # only its own siblings has nowhere to go when they refuse the union.
         keep += sorted(basins, key=lambda q: (round(q.bounds[0], 1), round(q.bounds[1], 1)))
         for scrap in sorted(scraps, key=lambda q: (round(q.bounds[0], 1), round(q.bounds[1], 1))):
-            # 3.0 * g = the 3 ft `paddy_plot_seams_shared` itself ignores, in px at this map's scale
-            _absorb(scrap, keep, grown, 3.0 * g)
+            # The 3 ft `paddy_plot_seams_shared` itself ignores, in px at this map's scale. MIND THE
+            # UNIT: `grain` is `2 / ftpx` (the scripted tier's principled value), so px-per-foot is
+            # `g / 2` and 3 ft is `1.5 * g` - NOT `3.0 * g`, which is what this said first and is
+            # double. At a hamlet's ftpx 1.0 that fed 6.0 px to an opening meant to shed a tail from
+            # a strip whose whole mean width was 5.6 px, so it annihilated every scrap it was handed
+            # and the escape hatch silently did nothing (cohort seeds 9 and 11). Measured at the
+            # corrected width the same weld comes out at a 77.1 deg apex.
+            _absorb(scrap, keep, grown, 1.5 * g)
     for j in sorted(j for j in grown if j < carved):
         plots[j]["poly"] = _ring(keep[j])
     for basin in keep[carved:]:
@@ -496,7 +508,10 @@ def close_seams(
     # triangular pond at fit zoom, not as a leveled basin. The carve's own demotion judges the quad
     # it cuts, and TWO later stages reshape it - `_comb_toe_and_hem`'s re-hem onto the drain bank,
     # and this pass's welds - so the tint is re-judged here, at the end, against every plot's final
-    # ring rather than only the ones this pass touched. The replacement green is picked by POSITION
+    # ring rather than only the ones this pass touched. The replacement green is indexed by POSITION
+    # rather than drawn from R - the point is the ABSENT DRAW (the stream stays put, so demoting one
+    # plot cannot re-roll the rest), not variety: `RICE_GREENS` holds one colour three times today.
+    # Wording kept honest after a settlement-review read the old comment as promising shades.
     # so it takes no draw from R and no other plot's colour moves; `low` is untouched, because it is
     # the topography and the tint is only the picture (feature 010).
     # BOTH the raw ring and the deduped one, because the two carry different apexes and the gate
@@ -506,5 +521,13 @@ def close_seams(
     # has, and `flooded_plots_read_as_basins` reads the ring as recorded (cohort seed 8). Testing
     # both at the carve's generous 25 deg keeps the placer strictly stricter than the gate's 15.
     for p in plots:
-        if p.get("fill") == FLOODED and (pointed_ring(p["poly"], _TINT_MIN_APEX) or pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX)):
+        # TWO RINGS, AND BOTH CLAUSES EARN THEIR KEEP - this is the one place a second measurement is
+        # right, and the reason is that they answer to different masters. `flooded_plots_read_as_basins`
+        # is the GATE for a tinted plot and it reads `dedup_ring(r, 1.0)` at 15 deg, so the first
+        # clause is the placer being strictly stricter on the GATE'S OWN measurement (25 vs 15) - drop
+        # it and a plot pointed at 1.0 but blunt at the end width keeps its tint and trips the gate,
+        # which is exactly what cohort seed 8 did when this briefly tested the end-collapsed ring
+        # alone. The second clause catches the defect the gate CANNOT see: a needle truncated a few
+        # feet short of its point, which no interior angle on the 1.0 ring will ever report.
+        if p.get("fill") == FLOODED and (pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX) or pointed_ring(dedup_ring(p["poly"], _TINT_END_FT * g / 2), _TINT_MIN_APEX)):
             p["fill"] = RICE_GREENS[(int(abs(p["poly"][0][0]) * 7) + int(abs(p["poly"][0][1]) * 3)) % len(RICE_GREENS)]
