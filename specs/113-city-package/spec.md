@@ -37,21 +37,23 @@ number.
 
 A session that needs to change how city walls are drawn opens one file of about 490 lines instead
 of a 1,582-line file covering walls, moats, canals, waterfront and bridges. Nothing about what the
-engine draws changes: every map already in `pool/` and `wip/` regenerates to byte-identical
+engine draws changes: every map already in `pool/` regenerates to byte-identical
 output, and no consumer of `settlement` changes a line.
 
 **Why this priority**: this is the whole clause-13 debt. It is independently shippable - if the
 feature stopped here, the token cost that motivated it is already paid, and the decomposition in
 US2 becomes optional cleanup rather than a blocker.
 
-**Independent Test**: regenerate every scripted map in a clean tree and diff the artifact hashes
-against the pre-split baseline captured from main's own committed manifests. An empty diff, a
-clean `git status` under `pool/`, and a green `make done` with `settlement/core.py` byte-unchanged
-prove it end to end.
+**Independent Test**: regenerate every scripted map in a scratch copy of the tree and diff the
+artifact hashes against a baseline captured the same way from the PRE-split tree. The committed
+manifests are deliberately not the baseline - feature 110 research R3 proved them unreliable for
+this, because the engine may have drifted since they were committed, and a mismatch would then be
+indistinguishable from a refactor bug. An empty diff, a clean `git status` under `pool/`, and a
+green `make done` with `settlement/core.py` byte-unchanged prove it end to end.
 
 **Acceptance Scenarios**:
 
-1. **Given** the pre-split baseline hashes of every `pool/**` and `wip/**` artifact, **When** the
+1. **Given** the pre-split baseline hashes of every `pool/**` artifact, **When** the
    split lands and every scripted map regenerates, **Then** the hash diff is empty.
 2. **Given** the split has landed, **When** `git diff --stat -- settlement/core.py` runs,
    **Then** it prints nothing - the composed `CityMixin` kept the bases line identical.
@@ -104,7 +106,7 @@ log booms, footbridges - resolves it to one file from `settlement/CLAUDE.md` and
 
 **Acceptance Scenarios**:
 
-1. **Given** the two index files, **When** a reader looks up any of the 26 moved methods' subjects,
+1. **Given** the two index files, **When** a reader looks up any of the 27 moved methods' subjects,
    **Then** exactly one submodule row claims it.
 2. **Given** the split has landed, **When** `settlement/CLAUDE.md`'s "Look here when" table is
    read, **Then** the single `city.py` row has been replaced by rows resolving to the new
@@ -125,9 +127,13 @@ log booms, footbridges - resolves it to one file from `settlement/CLAUDE.md` and
 - **An extraction moves an RNG draw.** Positional/scoped randomness means the artifacts change
   everywhere downstream while every test still passes. Only the byte-identity sweep catches it,
   which is why US2 sweeps after each method rather than at the end.
-- **`governor_mansion` (21 lines) is a topical orphan** at the tail of the file - it is not city
-  infrastructure. Moving it to another mixin is out of scope here; it goes to whichever new
-  submodule fits worst-least, and relocating it stays a separate question.
+- **`governor_mansion` (21 lines) is a topical orphan** at the tail of the file. The design pass
+  found the deciding fact: its body calls `self.manor(...)` and re-keys the record out of
+  `M["manors"]`, so it is a STRUCTURE reusing the manor glyph, not city infrastructure. It gets its
+  own one-method `civic.py` rather than being buried in a module whose index row would then be a
+  lie - a one-method module is a smell, but a mislabeled module is a defect. Relocating it into
+  `settlement/castle_civic.py` where it topically belongs is recorded as a follow-up and stays out
+  of scope here (research R1).
 - **Coverage floor moves.** Splitting redistributes the uncovered city/capital wings across five
   files. The combined `settlement/` ratchet must not fall; if the achievable figure rises, the
   floor rises with it and never falls.
@@ -139,7 +145,7 @@ log booms, footbridges - resolves it to one file from `settlement/CLAUDE.md` and
 
 ### Functional Requirements
 
-- **FR-001**: The 26 members of `CityMixin` MUST be redistributed into five submodules under
+- **FR-001**: The 27 members of `CityMixin` MUST be redistributed into six submodules under
   `settlement/city/`, grouped by subsystem, with each submodule under ~1,000 raw lines.
 - **FR-002**: `settlement/core.py` MUST be byte-unchanged - a composed `CityMixin` in
   `settlement/city/__init__.py` preserves the single import and the `class Settlement(...)` bases
@@ -148,7 +154,7 @@ log booms, footbridges - resolves it to one file from `settlement/CLAUDE.md` and
   set, that no two sub-mixins define the same name, and that every name resolves on `Settlement`
   itself. The guard MUST be proven to fail before it is trusted - once by deleting a method, once
   by duplicating one into a second sub-mixin.
-- **FR-004**: Every regenerated artifact under `pool/**` and `wip/**` MUST be byte-identical to the
+- **FR-004**: Every regenerated artifact under `pool/**` MUST be byte-identical to the
   pre-split baseline, after the move and after each decomposition.
 - **FR-005**: `git status --porcelain` under `pool/` MUST print nothing after each sweep.
 - **FR-006**: `settlement/city.py` MUST be deleted, not left beside the package.
@@ -173,12 +179,16 @@ log booms, footbridges - resolves it to one file from `settlement/CLAUDE.md` and
 
 ### Key Entities
 
-- **`CityMixin`**: the single class being carved. 26 members today; after the split, a composed
-  class in `__init__.py` whose bases are the five sub-mixins.
+- **`CityMixin`**: the single class being carved. 27 methods today, no class-level constants; after the split, a composed
+  class in `__init__.py` whose bases are the six sub-mixins.
 - **Submodule**: one subsystem's file - a sub-mixin class, its `TYPE_CHECKING` block, and the
   imports its own methods actually use.
-- **Baseline**: the hash set of every `pool/**` and `wip/**` artifact regenerated from main's tip
-  before anything moves. The feature's only real oracle.
+- **Baseline**: the hash set of every `pool/**` artifact regenerated in a scratch copy of the
+  pre-split tree. The feature's only real oracle. `wip/shiro-daika.gen.py` is deliberately
+  EXCLUDED per feature 112 research R11 - it ran over 6 minutes without output against roughly 3
+  minutes for the whole pool, and every city method it reaches is already exercised by the four
+  provincial-city maps. An oracle earns its place by the failures it can catch, and this one runs
+  seven times over the feature.
 - **Sweep**: a regenerate-and-diff run against the baseline. Runs after the move and after each
   decomposition.
 
@@ -188,7 +198,7 @@ log booms, footbridges - resolves it to one file from `settlement/CLAUDE.md` and
 
 - **SC-001**: No file in `settlement/city/` exceeds 1,000 raw lines; the largest is under 600.
 - **SC-002**: A session needing one city subsystem loads at most ~40% of the lines it loads today.
-- **SC-003**: Every scripted map in `pool/` and `wip/` regenerates byte-identically - a zero-line
+- **SC-003**: Every scripted map in `pool/` regenerates byte-identically - a zero-line
   hash diff - after the move and after every decomposition.
 - **SC-004**: Zero consumer files change: `settlement/core.py` and every caller outside
   `settlement/city/` are byte-unchanged apart from the two index documents.
