@@ -70,3 +70,42 @@ the low side where the gate requires it.
   composes as one flooded plot, not a pond. A second 125 ft coppice seated in the SW corner
   (18 crowns, the review's "form done right") beside the original dry-shoulder parcel (12
   crowns - straggly per the review, logged as cosmetic).
+
+## 2026-08-17 - the fan-toe needle fix, and the tint threshold it collided with
+
+The fan-toe SUNBURST ruling (full research in `research/fields.md`, "A basin never tapers to a
+point"; engine changes in `_comb_toe_and_hem`, `close_seams` and `_absorb`). Sawada carried 7 rings
+under the 15 deg gate line and now carries none, at a cost of **-0.27% cultivated area** - the
+sunburst was bought out almost for free, because the needles were removed by re-subdividing and
+absorbing rather than by deleting paddy.
+
+**The review CAUGHT a real error this session would have shipped**, and it is the kind only a second
+pair of eyes finds: the new placer floor `_TOE_MIN_APEX` was set to **25 deg**, which is exactly the
+value `pointed_ring` used as the FLOODED-tint demotion threshold. After the fix no ring below 25 deg
+exists anywhere, so the demotion became **structurally dead** - it could never fire on placer output
+- while the sharpest survivors piled up on its boundary at 25.05 and 25.23 deg. One of them, a NEW
+91 x 18 ft blue triangle at (350,2483), missed demotion by **0.05 deg** and shipped as the most
+pond-like object on the one map whose brief is "no pond".
+
+Fixed by lifting the demotion clear of the placer floor: `_TINT_MIN_APEX = 40.0`, which sits inside
+the gap `pointed_ring`'s own pool measurement reports (seam wedges 7-23 deg, honest flooded hem
+strips 45+), so it demotes toe wedges that read as ponds and leaves genuine wet strips blue. The
+gate stays at 15, preserving the placer-stricter-than-gate invariant the whole calibration rests on.
+The four constants now read as one ladder - gate 15 < weld 18 < toe 25 < tint 40 - and
+`_GATE_MIN_APEX` exists so they are all expressed against one number instead of each carrying a copy.
+
+Two further items the review raised, logged rather than fixed:
+
+- **The west seam HUB.** ~7 bunds still meet at one point one step inland from the fixed toe, with
+  90-ft wedges running into it. Every apex is now legal, but the composition is the same read the GM
+  objected to at the collector. Needs a ruling: does it govern only the toe, or every convergence
+  node?
+- **`wet_plots` fell 36 -> 21 (-42%)** while plot count rose 867 -> 881, because the dropped and
+  absorbed needles were low-edge plots. No consequence here (no overlay, no pond), but
+  `overlays_on_wet_ground_only` and the pond-siting checks draw eligibility from that set, so a
+  converted map WITH overlays could see its eligible set halve as a silent side effect.
+
+Catch-rate: round-N DELTA - CAUGHT the tint-threshold collision (above); raised the seam hub and the
+`wet_plots` side effect; verified clean by its own measurements that the toe reads as a real cascade
+toe, that no declined weld opened floor reading as a hole (floor fill = plot fill at the pixel), that
+no new doubled bund appeared, and `scatter_audit` 0 violations.

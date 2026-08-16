@@ -3,7 +3,7 @@
 import math
 from typing import Any
 
-from waterfields import BANK_MARGIN, drain_bank_clearance, floor_overhang, pointed_ring, polyline_cum, supply_bank_clearance
+from waterfields import BANK_MARGIN, dedup_ring, drain_bank_clearance, floor_overhang, pointed_ring, polyline_cum, supply_bank_clearance
 
 from .common_01_geometry import CLAN_FORTUNES, Poly, Pt, point_in_poly, pt_to_rect, seg_closest, seg_dist, within_edge_gap
 from .common_02_overlap_policy import GridIndex, check_fire_features, check_theater_stage, in_ellipse
@@ -2493,6 +2493,57 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
             "paddy_plot_seams_shared",
             not _ps_seams and not _ps_laps,
             f"{len(_ps_seams)} paddy plot(s) run a bund alongside a neighbour's across dry floor {[list(_ps_s) for _ps_s in _ps_seams[:4]]} (x, y, run px) and {len(_ps_laps)} draw their whole bund ring inside a neighbouring basin {[list(_ps_l) for _ps_l in _ps_laps[:4]]} (x, y, % of the ring inside it) - two adjacent basins share ONE aze, so a plot's boundary either coincides with its neighbour's, abuts water, or is the edge of the planted block; the wedge filler must fit each bare pocket to the bunds that already bound it instead of seating a shrunken rectangle inside it",
+        )
+    return _kept(locals(), ())
+
+
+def _seg_0604__paddy_plots_are_workable_basins(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 604 (paddy_plots_are_workable_basins) - hand-added 2026-08-17 past the legacy
+    range (see _seg_0595 for the numbering convention). No `_PLACEMENTS` entry: it reads only `M`,
+    `check` and `fields`, so the tail of the derived order is as good a seat as any."""
+    # A PADDY BASIN CANNOT TAPER TO A POINT (GM ruling 2026-08-17, on the fan-toe SUNBURST that
+    # future-work.md had been carrying as an open question: "I would like for us to be rendering
+    # things that are realistic ... if this is a thing that needs to be fixed, then I would like it
+    # to be fixed"). At two places on Inashiro eight to ten bunds 130-254 ft long converge on a
+    # ~10 ft stretch of the collector bank at apex angles of 7.5 / 9.5 / 9.8 / 10.6 / 13.5 / 14.3
+    # deg, and it is the one place the paddy fabric still reads machine-drawn.
+    #
+    # THE SHAPE IS REAL; THE ANGLES ARE NOT - and the distinction is the whole rule. A cascade fan
+    # genuinely does narrow to its outfall, so radial convergence is authentic and is NOT what this
+    # fires on. Narrowness is authentic too: the strips at Shiroyone Senmaida and in the Philippine
+    # Cordilleras really are a few feet wide, so this is deliberately NOT a minimum-width rule.
+    # What no real basin does is taper to ZERO. A paddy is a LEVEL, BUNDED, PUDDLED unit holding
+    # standing water at an even depth; a 7.5 deg wedge is 5 ft wide 40 ft back from its point and
+    # 2.6 ft at 20 ft, while an aze is ~1.5 ft of puddled mud (AZE_FT) on EACH side - so the last
+    # yards of it are two bunds with no floor between them. That cannot be leveled, cannot hold a
+    # depth, and cannot be transplanted. Real fan and terrace systems truncate the point instead:
+    # the toe ends in a headland strip along the collector, or the odd corner is left unpaddied.
+    # At 25 deg the same wedge is 17 ft wide 40 ft back, which is a workable bunded strip - that is
+    # where the line sits and why.
+    #
+    # ONE PREDICATE, THE POOL'S OWN CALIBRATION, NO THIRD MAGIC NUMBER. `pointed_ring` already
+    # answers "does this ring taper to a point", and both its thresholds were MEASURED across the
+    # pool for the flooded-tint question (seam wedges 7-23 deg, honest hem strips 45+). This rule
+    # reuses both ends rather than inventing its own: the carve TRUNCATES at 25 deg, this gate
+    # fires at 15, so a borderline ring the carve leaves standing cannot false-fire the check -
+    # the same placer-stricter-than-gate discipline as the supply-bank margins.
+    #
+    # `dedup_ring` FIRST, and it is not cosmetic. The envelope trim deposits near-duplicate
+    # vertices (feature: `dedup_ring`'s own docstring), and the resulting micro-zigzag both hides
+    # real apexes and invents fake ones - measured pool-wide, deduping moves Inashiro from 8
+    # rings under 15 deg to 17. The raw ring is simply the wrong thing to measure, and this is the
+    # same call the carve's own demotion makes.
+    if M["meta"].get("generated_by"):
+        _wb_bad: list[tuple[int, int]] = []
+        for _wb_fld in fields:
+            for _wb_r in _wb_fld.get("plot_rings") or []:
+                _wb_ring = dedup_ring([(float(_wb_p[0]), float(_wb_p[1])) for _wb_p in _wb_r], 1.0)
+                if len(_wb_ring) >= 3 and pointed_ring(_wb_ring, 15.0):
+                    _wb_bad.append((round(sum(_wb_q[0] for _wb_q in _wb_ring) / len(_wb_ring)), round(sum(_wb_q[1] for _wb_q in _wb_ring) / len(_wb_ring))))
+        check(
+            "paddy_plots_are_workable_basins",
+            not _wb_bad,
+            f"{len(_wb_bad)} paddy plot(s) taper to a needle apex (interior angle < 15 deg) at {_wb_bad[:4]} - a paddy is a level bunded basin, and the last yards of a wedge that acute carry an aze on each side with no floor between them, so it can be neither leveled nor transplanted; a real fan toe ends in a headland or leaves the odd corner unpaddied rather than drawing the needle, so the plot must be DROPPED by the toe pass or ABSORBED into the basin beside it (pointed_ring at _TOE_MIN_APEX / _WELD_MIN_APEX) - no code truncates a corner, so do not go looking for it",
         )
     return _kept(locals(), ())
 

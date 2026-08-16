@@ -176,6 +176,43 @@ def hem_to_bank(ring: Poly, dpts: Poly, down_deg: float, w0: float, w1: float) -
 # paddy_fan_gapless included, so the fans still read as covered - but a city fan is the place to LOOK
 # if this is ever retuned, and the gate is not the eye.
 _TOE_MIN_THICKNESS = 0.16
+# ...and a SECOND, independent way to be unbundable, because thickness alone misses it. A wedge
+# that tapers to a point can carry a respectable inradius while its last yards are unworkable: at
+# 7.5 deg a plot is 5 ft wide 40 ft back from its apex and 2.6 ft at 20 ft, and an aze is ~1.5 ft
+# of puddled mud (AZE_FT) on EACH side, so the tip is two bunds with no floor between them. The
+# thickness proxy passed those because they are LONG - 130-254 ft on Inashiro - which is how the
+# fan-toe sunburst survived the toe pass (GM ruling 2026-08-17: the fan's narrowing shape is real,
+# these angles are not). 25 deg is not a new number: it is `pointed_ring`'s own measured carve
+# threshold (pool-wide, seam wedges run 7-23 deg and honest hem strips 45+), and the gate
+# `paddy_plots_are_workable_basins` fires at 15 - placer stricter than gate, as everywhere else.
+_TOE_MIN_APEX = 25.0
+# THE WELD GETS ITS OWN, TIGHTER MARGIN, because refusing is not free there. The carve and `_plant`
+# can refuse a needle at a generous 25 deg and lose nothing: the ground simply returns to the bare
+# pocket for `close_seams` to place another way. `_absorb` is the LAST resort - refuse there and the
+# scrap stays bare between two basins that each still draw their own wall, which is precisely the
+# doubled bund `paddy_plot_seams_shared` exists to prevent. Measured on the 24-seed cohort: a 25 deg
+# weld guard traded two needles for two doubled bunds (seeds 9 and 11) and took the cohort 22 -> 20.
+# Every weld it declined in the 15-25 band would have produced a basin the gate ACCEPTS, so the
+# generous margin was buying nothing and costing a real defect. This sits just above the gate's 15
+# with enough room that rounding cannot slip a needle through.
+_WELD_MIN_APEX = 18.0
+# AND THE TINT DEMOTION HAD TO MOVE OUT OF THE PLACER'S WAY (settlement-review on Sawada,
+# 2026-08-17). `pointed_ring`'s default 25 deg was the FLOODED-tint demotion threshold, chosen when
+# nothing else constrained plot apexes. Setting the placer's own floor to the same 25 made the
+# demotion structurally dead: after the needle fix no ring below 25 deg exists at all, so the
+# predicate can never fire on placer output - and the sharpest survivors now pile up exactly on its
+# boundary. Sawada shipped a 91 x 18 ft blue triangle that missed demotion by 0.05 deg, reading as a
+# small pond on the one map whose brief is "no pond". The demotion must therefore sit ABOVE the
+# placer floor, and `pointed_ring`'s own pool measurement says where the gap is: seam wedges run
+# 7-23 deg, honest flooded hem strips 45+. 40 deg is inside that gap, so it demotes the toe wedges
+# that read as ponds and leaves genuine wet strips blue. The gate stays at 15 - placer still
+# strictly stricter than gate, which is the invariant the whole calibration rests on.
+_TINT_MIN_APEX = 40.0
+# The GATE's own line, kept here so the placer margins above are all expressed against ONE number
+# rather than each carrying a copy of it. `paddy_plots_are_workable_basins` fires below this; every
+# constant above it is a margin over it, and the invariant the calibration rests on is that all of
+# them are strictly greater.
+_GATE_MIN_APEX = 15.0
 
 
 def hem_on_paddy(quad: Poly, paddy_outline: Poly) -> bool:
