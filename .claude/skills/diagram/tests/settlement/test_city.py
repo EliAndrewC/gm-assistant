@@ -668,3 +668,87 @@ def test_ring_upslope_refuses_a_seat_below_the_drain():
     ys = [h["y"] for h in s.M["houses"]]
     assert n == len(ys)
     assert all(y < 640 for y in ys), f"a household landed below the drain: {sorted(ys)[-3:]}"
+
+
+# ---- feature 113: the composed CityMixin surface ------------------------------------------------
+# The guard for the settlement/city.py -> settlement/city/ package split. See
+# specs/113-city-package/contracts/mixin-surface.md for the contract and its red proof.
+
+_CITY_SURFACE = frozenset(
+    {
+        # public entry points, called from pool gens, wip/, hamletgen, other engine modules and checks
+        "aqueduct",
+        "bridge",
+        "bridges",
+        "canal",
+        "channel_footbridges",
+        "city_wall",
+        "dock",
+        "farmland_ring",
+        "governor_mansion",
+        "inwall_drain_outfall",
+        "jetty",
+        "log_boom",
+        "moat",
+        "moat_flow",
+        "quay",
+        "ring_road",
+        "sluice_gate",
+        "towpath",
+        "water_gate",
+        # private helpers, reached through self. Two of these (_tower,
+        # _plank_reaches_useful_ground) have no external consumer at all - they stay in the
+        # surface precisely because a name nothing calls is the kind a careless partition drops
+        # without any other test noticing.
+        "_gapped_ring",
+        "_plank_reaches_useful_ground",
+        "_ring_upslope",
+        "_tower",
+        "_wall_arc_of",
+        "_wall_perimeter",
+        "_wall_point_at_arc",
+        "_wall_walk",
+    }
+)
+
+
+def _city_submixins():
+    # Derived from the MRO rather than by importing the submodules, so this guard runs UNCHANGED
+    # before and after the split: pre-split the list is empty (CityMixin is the single class and
+    # assertion 2 is vacuous), post-split it is the six sub-mixins. Importing
+    # settlement.city.walls et al. directly - the shape feature 112 used - cannot be written
+    # before the package it imports from exists, which is what made 112's own red proof for
+    # assertion 2 impossible to run in the order its task list implied.
+    from settlement.city import CityMixin
+
+    return [c for c in CityMixin.__mro__ if c is not CityMixin and c is not object]
+
+
+def _own_callables(cls):
+    return {k for k, v in vars(cls).items() if callable(v) or isinstance(v, staticmethod)}
+
+
+def test_no_pre_split_city_member_was_lost_in_the_move():
+    # SUBSET, not equality, for the reason feature 112 recorded in its own guard: Stage 2
+    # decomposes the oversized methods into named private helpers, so the composed class
+    # legitimately holds MORE than the pre-split 27, and will hold more again the next time a
+    # method is split. What must never happen is a pre-split member going MISSING - an addition is
+    # visible in review, a subtraction is silent until whichever generator calls it happens to run.
+    from settlement.city import CityMixin
+
+    composed = set().union(*(_own_callables(c) for c in CityMixin.__mro__))
+    assert composed >= _CITY_SURFACE, f"missing={sorted(_CITY_SURFACE - composed)}"
+
+
+def test_no_two_city_submixins_define_the_same_name():
+    subs = _city_submixins()
+    for i, a in enumerate(subs):
+        for b in subs[i + 1 :]:
+            overlap = _own_callables(a) & _own_callables(b)
+            assert not overlap, f"{a.__name__} and {b.__name__} both define {sorted(overlap)} - MRO would orphan one"
+
+
+def test_every_city_member_resolves_on_settlement_itself():
+    # what consumers actually rely on: the name reaching Settlement, not merely CityMixin
+    unreachable = sorted(n for n in _CITY_SURFACE if not hasattr(Settlement, n))
+    assert not unreachable, f"not resolvable on Settlement: {unreachable}"

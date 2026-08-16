@@ -35,12 +35,26 @@ loses without any test noticing.
 
 `tests/settlement/test_city.py` gains a test that pins this contract:
 
-1. The composed `CityMixin` exposes exactly the 27 names above - asserted against a literal
-   frozenset in the test, so an accidental drop and an unannounced addition both fail.
+1. The composed `CityMixin` exposes **at least** the 27 names above - a SUBSET assertion
+   (`composed >= _CITY_SURFACE`), not equality. Equality was the original wording here and is
+   wrong: Stage 2 decomposes the oversized methods into named private helpers, so the composed
+   class legitimately holds MORE than 27, and will hold more again the next time a method is
+   split. Equality would turn every future decomposition into a contract edit, which trains a
+   reader to update the frozenset without thinking - exactly the reflex that lets a real
+   subtraction through. The assertion guards the direction that HIDES: an addition is visible in
+   review, a subtraction is silent until whichever generator calls it happens to run. Feature 112
+   reached the same conclusion during its own implementation.
 2. No two sub-mixins define the same name. Computed by intersecting each sub-mixin's own
    `vars(cls)` keys pairwise; a non-empty intersection fails and names the collision.
 3. Every one of the 27 resolves on `Settlement` itself, not merely on `CityMixin` - which is what
    consumers actually rely on.
+
+**The sub-mixin list is derived from `CityMixin.__mro__`**, not from importing
+`settlement.city.walls` and its siblings by name. That is what lets this guard be written and run
+BEFORE the split exists: pre-split the derived list is empty and assertion 2 is vacuous; post-split
+it is the six sub-mixins, with no edit to the test in between. Feature 112 imported the submodules
+directly, which is why its assertion-2 red proof could not actually run in the order its task list
+implied (feature 113 tasks.md T007).
 
 **Red-green requirement (FR-003, Principle X)**: before the guard is trusted, it MUST be observed
 FAILING. Two deliberate breakages, each reverted immediately after the observation:

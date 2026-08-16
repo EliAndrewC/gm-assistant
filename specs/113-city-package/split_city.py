@@ -121,6 +121,16 @@ def main() -> int:
     for node in cls.body:
         name = member_name(node)
         text = "".join(lines[cursor : node.end_lineno])
+        # The same one-dot -> two-dot rewrite the header gets, applied to the BODY as well.
+        # Feature 112 only rewrote the header, because none of its methods had an in-body import.
+        # city.py has one: _wall_point_at_arc does a LAZY `from .core import Settlement` inside its
+        # body (a runtime class-attribute read that would cycle at module level). Left alone it
+        # keeps the one-dot path and silently resolves to `settlement.city.core`, which does not
+        # exist - caught here by mypy, but it would have been an ImportError at draw time in a
+        # module mypy did not check. Any future split inherits this line, so keep it.
+        text = text.replace("from .core import", "from ..core import")
+        text = text.replace("from ._geom import", "from .._geom import")
+        text = text.replace("from ._knobs import", "from .._knobs import")
         if name is None:
             print(f"REFUSING: unnamed class-body member at line {node.lineno} ({type(node).__name__})", file=sys.stderr)
             return 1
