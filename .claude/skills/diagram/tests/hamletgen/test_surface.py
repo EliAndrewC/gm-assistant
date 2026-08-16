@@ -160,11 +160,32 @@ def test_pass_through_name_is_the_settlement_object() -> None:
     assert hamletgen.point_in_poly is settlement.point_in_poly
 
 
+def _submodule_names() -> set[str]:
+    """`hg.driver`, `hg.sink` and their siblings are SUBMODULE handles, not re-exported names.
+
+    contracts/package-surface.md puts them outside the contract in as many words ("Submodule
+    paths... submodule layout is free to change in a later feature"), but the census regex cannot
+    tell `hg.driver` from `hg.plan_site` - both are `hg.<word>`. So the submodules are subtracted
+    here rather than pinned, which keeps the pin list a list of API names and leaves the layout
+    free to change exactly as the contract promises.
+    """
+    return {m.__name__.rpartition(".")[2] for m in _submodules()}
+
+
 def _censused_names() -> set[str]:
-    """Re-grep the skill tree for every name any consumer reaches through hamletgen."""
+    """Re-grep the skill tree for every name any consumer reaches through hamletgen.
+
+    This used to skip any path with `.clones` among its parts. That reads like "do not walk other
+    sessions' clones", but it tests the ABSOLUTE path, and every session works inside
+    `/gm-assistant/.clones/<name>/` - so the condition was true for EVERY file, the census returned
+    the empty set, and `test_census_matches_pin` passed vacuously in the only place it is ever run.
+    It was hiding two real unpinned consumers that the 111 split introduced. Found 2026-08-16 by
+    running the gate from a clone OUTSIDE `.clones/`; the guard was never needed in the first place,
+    because `HERE` is the skill directory and no `.clones` tree lives underneath it.
+    """
     found: set[str] = set()
     for path in sorted(HERE.rglob("*.py")):
-        if path.name == Path(__file__).name or ".clones" in path.parts:
+        if path.name == Path(__file__).name:
             continue
         text = path.read_text()
         if "hamletgen" not in text:
@@ -182,6 +203,6 @@ def test_census_matches_pin() -> None:
     would notice the contract widening. This is the line that makes the pin a contract rather
     than a snapshot.
     """
-    pinned = set(CONSUMED_PUBLIC) | set(ALIASED_UNDERSCORE)
+    pinned = set(CONSUMED_PUBLIC) | set(ALIASED_UNDERSCORE) | _submodule_names()
     unpinned = _censused_names() - pinned
     assert not unpinned, f"consumers reach hamletgen names that are not pinned in this file (update contracts/package-surface.md too): {sorted(unpinned)}"

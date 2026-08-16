@@ -469,14 +469,26 @@ def test_gate_bypass_forces_regeneration(tmp_path, monkeypatch, clean_gatehit):
 
 def test_the_real_pool_round_trips_through_the_cache():
     """The end-to-end proof on a REAL map: regenerate, cache, wipe, restore, and demand the bytes
-    match. Uses the cheapest SCRIPTED hamlet - the hand-authored pool is FROZEN (poolmaps.py) and
-    its gens are never run - and restores the committed artifacts BYTE-FOR-BYTE afterwards rather
-    than by re-running the gen: the engine is free to drift from what a live map was generated
-    with, so a final re-run could leave the pool dirty."""
+    match. Uses the cheapest SCRIPTED hamlet - the hand-authored pool is FROZEN
+    (`pipeline/poolmaps.py`) and its gens are never run - and restores the artifacts BYTE-FOR-BYTE
+    afterwards rather than by re-running the gen: the engine is free to drift from what a live map
+    was generated with, so a final re-run could leave the pool dirty.
+
+    SNAPSHOT ONLY WHAT IS ON DISK. The `.json` manifest is tracked, but the `.svg` and `.png`
+    renders are GITIGNORED derived files - render-sync rebuilds main's from main's own tip - so a
+    freshly created clone has no render at all. Reading the `.svg` unconditionally made this test
+    die with FileNotFoundError in any clone where nothing had regenerated a map yet, which is
+    every new clone's first `make done`: a red gate whose cause has nothing to do with the change
+    under test. The cache itself never had this problem - `store` and `load` both skip an output
+    that is absent - so the dependency was this test's own bookkeeping, not the behavior it
+    exercises. (Confirmed 2026-08-16 by running it in a fresh clone at the pre-reorganization
+    commit: same failure, so it long predates the tests/ move.)"""
     gen = os.path.join(HERE, "pool", "hamlets", "inashiro.gen.py")
     base = gen[: -len(".gen.py")]
     manifest = base + ".json"
-    committed = {p: Path(p).read_bytes() for p in (manifest, base + ".svg")}
+    # nothing here creates a render (the gen runs under DIAGRAM_SKIP_RENDER), so restoring exactly
+    # what was standing beforehand leaves the pool as it was found, render present or not
+    committed = {p: Path(p).read_bytes() for p in (manifest, base + ".svg", base + ".png") if os.path.isfile(p)}
     env = {**os.environ, "DIAGRAM_SKIP_RENDER": "1"}
     try:
         subprocess.run([sys.executable, gen], check=True, capture_output=True, env=env, cwd=HERE)
