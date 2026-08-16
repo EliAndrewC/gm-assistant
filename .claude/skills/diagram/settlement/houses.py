@@ -554,8 +554,8 @@ class HousesMixin:
         unit, dimensions in FEET drawn at the map's `ftpx`) vs the legacy house-first path + urban glyphs.
         Every VILLAGE does; a HAMLET opts in with `meta(toscale=True)` (village 2 ft/px, hamlet 1). Every POOL
         map is now to-scale (Moritono was the last legacy hamlet, redone water-first); the legacy house-first
-        path is kept as a fallback, covered by `test_settlement.py::test_legacy_dispersed_farmstead_path_still_
-        covered`. Kept as one predicate so every to-scale gate stays in sync."""
+        path is kept as a fallback, covered by `test_legacy_dispersed_farmstead_path_still_covered`
+        in `tests/settlement/`. Kept as one predicate so every to-scale gate stays in sync."""
         m = self.M["meta"]
         return cast(bool, m.get("toscale", m.get("scale") == "village"))
 

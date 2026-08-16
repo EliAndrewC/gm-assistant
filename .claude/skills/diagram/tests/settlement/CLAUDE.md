@@ -1,6 +1,6 @@
 # tests/settlement/ - the engine's unit tests as a package
 
-Split from the 7,123-line `tests/settlement/` by feature 025 (constitution Principle X clause
+Split from the 7,123-line `test_settlement.py` by feature 025 (constitution Principle X clause
 13, tests included per v1.6.1). **Load only the module the task calls for.** Collection is
 unchanged: same test names, same count, `python3 -m pytest tests/settlement/` from the skill dir.
 
