@@ -24,4 +24,4 @@ At snapshot time this manifest **passes the full validator** (`ALL CHECKS PASSED
 - `city_quarters_declared`: fire (no `M["quarters"]`).
 - `city_capacity`: verdict `densify` or `shrink`, never `sized_and_packed`.
 
-This fixture is wired into `test_regressions.py`; it must keep failing the new checks for the life of the feature.
+This fixture is wired into `tests/test_regressions.py`; it must keep failing the new checks for the life of the feature.

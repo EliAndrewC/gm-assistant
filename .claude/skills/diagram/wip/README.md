@@ -1,6 +1,6 @@
 # `wip/` - draft maps parked OUT of `pool/`
 
-`test_villages.py` sweeps `pool/*/*.gen.py` and gates every manifest it finds, so a draft that
+`tests/test_villages.py` sweeps `pool/*/*.gen.py` and gates every manifest it finds, so a draft that
 does not yet pass the gate cannot live in `pool/` - it would turn `make done` red for every
 session in the repo, not just the one working on it. A draft therefore waits here until it is
 green, then moves into its tier's pool directory. (Same precedent as Minami's map draft, which

@@ -26,11 +26,11 @@ would still be generated normally and then modified by hand.
   a function of `(settlement, plan)`, run in the order the engine's DRAW ORDER map requires: the
   water frame, the field, the sink, the ways, the homesteads, their appurtenances, the notice board,
   the hinterland, the woodland, the windbreak, the crossings, the frame.
-- **[`test_hamletgen/`](test_hamletgen/)** - unit tests for the derivations and the failure modes.
+- **[`tests/hamletgen/`](tests/hamletgen/)** - unit tests for the derivations and the failure modes.
 - **[`pool/hamlets/`](pool/hamlets/)** - four generated maps living beside the hand-authored hamlets
   (`meta.generated_by` marks a scripted map), each a nine-line `.gen.py`:
   **Inashiro** (the head-to-head with Ikegami), **Sawada**, **Mizuguchi**, **Kashikawa**. They are
-  regenerated and gated by `test_villages.py` like every other pool map.
+  regenerated and gated by `tests/test_villages.py` like every other pool map.
 
 A whole hamlet is this much source:
 
@@ -87,8 +87,8 @@ were made against, and a rate measured on the seeds you debugged is a fitted num
 dozen earned its keep: three of its failures were general bugs the tuning set never showed (a
 clamped pond put back on the crop it had just cleared, a cluster band seated off the canvas edge
 which built 7 farmhouses of 18, and a carried-way deck under-sized where the water bends). Run
-`cohort_audit.py --count 12 --seed <anything>` for a fresh set whenever the rate needs
-re-measuring; that number is worth more than this paragraph. `test_hamletgen/` pins 4 of 4 as a
+`tools/cohort_audit.py --count 12 --seed <anything>` for a fresh set whenever the rate needs
+re-measuring; that number is worth more than this paragraph. `tests/hamletgen/` pins 4 of 4 as a
 ratchet.
 
 Every map seats its declared households exactly, lands its acreage on the figure the household count
@@ -152,7 +152,7 @@ vague debt.
    comb gen in the pool compensates with its own `s.dry_polys.append(...)` line; the two seed-rolled
    maps (Honda, Shimizu) do not, and pass only because their clusters happen to sit away from the
    hem. This is exactly the shape the skill's dev notes call out - placement and its check reading
-   different sources. The engine registers it in both now, with a ratchet in `test_settlement.py`.
+   different sources. The engine registers it in both now, with a ratchet in `tests/settlement/`.
 2. **HALF FIXED, and the other half is now measured. A way's no-build corridor was sized against
    the house the placer TESTS, not the one it DRAWS.** `_near_corridor` measures a candidate's
    CENTRE against the corridor, and the placer passed the 46x28 ft base rect while wealth variation
@@ -163,7 +163,7 @@ vague debt.
      `houses_clear_of_lanes` allows and the same `skip` semantics `_near_corridor` uses (a frontage
      row is excused from the way it fronts - matched by geometry, not identity, which is the
      footgun that once cost the pool two thirds of its commercial frontage). Ratcheted in
-     `test_settlement.py`, and **no pool manifest moved a byte**.
+     `tests/settlement/`, and **no pool manifest moved a byte**.
    - **The registry is deliberately lanes-only.** Street, alley, road, ring road and towpath were
      wired up and reverted the same day: each already inflates its corridor by a half-diagonal's
      worth of margin to cover this by hand, so the tread changes no verdict they were getting

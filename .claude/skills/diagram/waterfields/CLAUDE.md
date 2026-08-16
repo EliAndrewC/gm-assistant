@@ -5,7 +5,7 @@ clause 13: files stay at human scale - the cost being managed is context-window 
 only the file the task calls for**; this index is the map. `import waterfields` still exposes
 the whole consumed surface via `__init__.py` (star-import re-exports per clause 14 / the 027
 mechanism, plus an aliased block for the externally-consumed underscore names; guard:
-`test_waterfields_surface.py`) - never add logic to the `__init__`.
+`tests/waterfields/test_surface.py`) - never add logic to the `__init__`.
 
 The engine's doctrine (THE INVERSION - fields grow around the water network; the warp-thread
 march; slope as a knob) lives in the `__init__.py` docstring and `settlements.md`

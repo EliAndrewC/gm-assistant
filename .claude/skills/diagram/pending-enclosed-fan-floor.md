@@ -20,7 +20,7 @@ sluice OFF-canvas (the tango fn1 pattern); and at 1 ft/px town falls/canals, a s
 `_fanft = float(meta.get("ftpx") or 1)` line (it shares EX0..EY1/meta/check from the enclosing
 scope); re-freeze the pre-fix hoshizora manifest as
 `pool/regressions/enclosed_fan_at_least_hamlet_grade_fires_on_the_capped_hoshizora_west_comb.json`
-(git history of 2026-08-03 has it); and restore the three unit tests removed from test_checks.py
+(git history of 2026-08-03 has it); and restore the three unit tests removed from tests/check_village/
 the same day (`test_enclosed_fan_at_least_hamlet_grade_fires_on_a_small_enclosed_fan`,
 `test_enclosed_fan_floor_exempts_an_off_view_slice_and_passes_hamlet_grade`,
 `test_enclosed_fan_floor_exempts_the_in_wall_district`).

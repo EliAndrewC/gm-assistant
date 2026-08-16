@@ -114,7 +114,7 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
     is the open ground behind the frontage, precisely where a display installation must not be.
     Both now use the engine's verge probes.
   - **The boundary stone was standing inside a merchant's house.** Re-seated with
-    [`site_justice.py`](../../site_justice.py), which adjudicates candidate seats against the real
+    [`tools/site_justice.py`](../../site_justice.py), which adjudicates candidate seats against the real
     gate instead of a re-statement of it.
 - **2026-07-26 render read (Principle I).** Two defects visible only on the raster:
   - **The windbreak drew as a round wood dumped in the middle of town**, hard against the flophouse.
@@ -175,7 +175,7 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
     dwelling-distance fallback for exactly this since it was written; the stone never got one. It
     now shares that 120 ft figure on an unwalled map, while a rampart still settles it outright
     where there is one (see `settlements/urban-features.md`, "The boundary stone").
-  - **The siting tool.** `site_justice.py` had proposed that seat and still did after the check was
+  - **The siting tool.** `tools/site_justice.py` had proposed that seat and still did after the check was
     fixed, because it scores a candidate as `gate(with it) - gate(without it)` and the governing
     check FAILS while there is no stone at all - so a useless seat added nothing new. `propose` now
     also requires a seat to cure what the absence breaks.

@@ -46,7 +46,7 @@ quote-style = "preserve"
 [tool.mypy]
 python_version = "3.14"
 strict = true
-files = ["settlement", "check_village", "waterfields", "hamletgen", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "scatter_audit.py", "timings.py", "pool_index.py", "poolmaps.py"]
+files = ["settlement", "check_village", "waterfields", "hamletgen", "compound.py", "citybudget.py", "tools/pack_audit.py", "tools/why_placed.py", "tools/scatter_audit.py", "tools/timings.py", "pipeline/pool_index.py", "pipeline/poolmaps.py"]
 
 # RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
 # settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is
@@ -57,11 +57,18 @@ files = ["settlement", "check_village", "waterfields", "hamletgen", "pack_audit.
 
 # ---- pytest + coverage -------------------------------------------------------------------
 [tool.pytest.ini_options]
+# testpaths pins collection to tests/ - without it pytest walks the whole skill dir (and, from
+# the repo root, every .clones/ checkout: pytest does not read .gitignore).
+testpaths = ["tests"]
 addopts = "--cov --cov-report=term"
 
 [tool.coverage.run]
-source = ["check_village", "settlement", "pack_audit", "compound", "citybudget", "render_cache", "site_justice", "scatter_audit", "hamletgen", "pool_index", "poolmaps"]
-omit = ["test_*.py", "pool/*/*.gen.py"]
+# MODULE names, not directories, deliberately: `tools` and `pipeline` also hold modules that are
+# not under the 100% rule (the by-hand audits and drivers - cache_audit, cohort_audit, crop_map,
+# timings, make_regressions, gencache, regen). Naming the measured modules one by one keeps that
+# boundary explicit instead of making a new tool silently owe 100% coverage the day it lands.
+source = ["check_village", "settlement", "hamletgen", "compound", "citybudget", "tools.pack_audit", "tools.site_justice", "tools.scatter_audit", "pipeline.render_cache", "pipeline.pool_index", "pipeline.poolmaps"]
+omit = ["*/tests/*", "pool/*/*.gen.py"]
 
 # COVERAGE ENFORCEMENT LIVES IN THE MAKEFILE since the 2026-08-16 legacy freeze, not here. The
 # hand-authored pool maps are frozen and their gens never run, so the above-hamlet wings of

@@ -14,7 +14,7 @@ Two invariants the split does NOT touch:
   from the keyword-only signature, `writes` from the literal `_kept` return tuple, the rest by
   AST analysis (`registry_analysis.py`), and order from the numeric key in each segment's name
   plus the small `_PLACEMENTS` decision table. The pre-collapse rows are frozen in
-  `test_fixtures/registry_legacy_rows.json` and `test_registry_derive.py` holds the guards.
+  `tests/fixtures/registry_legacy_rows.json` and `tests/check_village/test_registry_derive.py` holds the guards.
 - **Run one check by itself** with `gate(M, only={"check_name"})` (driver.py); don't go hunting
   for the segment function by hand.
 
@@ -22,7 +22,7 @@ Two invariants the split does NOT touch:
 
 | file | look here when |
 |---|---|
-| `__init__.py` | you need the package docstring or the re-export mechanism - star imports carry every submodule's public names, an aliased block carries the six consumed underscore names (feature 027; guard: `test_check_village_surface.py`); never add logic here |
+| `__init__.py` | you need the package docstring or the re-export mechanism - star imports carry every submodule's public names, an aliased block carries the six consumed underscore names (feature 027; guard: `tests/check_village/test_surface.py`); never add logic here |
 | `__main__.py` | the CLI behavior (`python3 -m check_village`, `--capacity`) needs changing |
 | `common_01_geometry.py` | core types (`Manifest`, `Pt`, `Poly`, `Check`), `load`, `rect_corners`, hulls/gaps, the overlap + label TAXONOMY tables (`_OVERLAP_*`, `_LABEL_*`, `OVERLAP_CLASS`, `_MATRIX_*` policy), size constants (`GATE_FT_*`, `WALL_FT_*`, ...) |
 | `common_02_overlap_policy.py` | the overlap-matrix ENGINE (`matrix_violations`, `matrix_extents`), `GridIndex` (the spatial index), ring-road/theater/fire-feature helpers, torii/footbridge/dojo constants |
@@ -49,7 +49,7 @@ Two invariants the split does NOT touch:
 Write the `_seg_<key>__<name>`-style function in whichever `segments_*` file covers its theme
 (body reads inputs as keyword params defaulting to `_UNBOUND`, returns `_kept(locals(), <literal
 tuple of the names it binds>)` - the literal is REQUIRED, derivation fails loudly on a computed
-tuple), extend `test_fixtures/gate_check_names.json`, and import nothing by hand - each segment
+tuple), extend `tests/fixtures/gate_check_names.json`, and import nothing by hand - each segment
 file already imports the shared helpers it uses. There is NO registry row to write (feature
 109): the row derives from the function itself, and its EXECUTION POSITION comes from the
 numeric key in the name - `_seg_0533_500__x` runs between 0533 and 0534. Two caveats: the
@@ -67,7 +67,7 @@ no longer reaches the code that reads them. Patch every holder instead:
     for m in [m for m in sys.modules.values() if getattr(m, "__name__", "").startswith("check_village") and hasattr(m, "_OVERLAP_STRUCTS")]:
         monkeypatch.setattr(m, "_OVERLAP_STRUCTS", new_value)
 
-(`test_checks.py::test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key` is the exemplar.)
+(`test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key` (in `tests/check_village/`) is the exemplar.)
 
 ## Why the segment files are numbered ranges
 
