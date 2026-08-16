@@ -319,7 +319,10 @@ class LandMixin:
             fld_b = boxed_grid(boxed_polys(list(self.field_polys) + list(self.dry_polys), pad=crop_pad + 14 * bs))
             blk_b = boxed_grid(boxed_polys(self.block_polys))
             clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
-            wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
+            # drawn water pre-boxed once (see _watercourse_segs); irrigation channels additionally
+            # carry the CUT-BANK margin (_BANK_MARGIN_FT - a maintained bank is scythed like a field
+            # margin), streams stay at drawn width so the brook's natural bank keeps its grass
+            wat_b = boxed_grid(boxed_segs(self._watercourse_segs(channel_margin=self.px(self._BANK_MARGIN_FT))))
 
             def _sparse(
                 px: float, py: float, drop: float, lean: float = 0.0
