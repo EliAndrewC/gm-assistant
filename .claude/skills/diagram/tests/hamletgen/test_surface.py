@@ -85,6 +85,7 @@ CONSUMED_PUBLIC = [
     "crosses_disc",
     "crosses_poly",
     "crossing_lands_on_crop",
+    "default_jobs",
     "edge_run",
     "generate",
     "head_sluice",
