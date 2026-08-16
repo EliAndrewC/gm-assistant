@@ -11,8 +11,9 @@ import random
 import pytest
 from shapely.geometry import Polygon
 
+from waterfields.banks import _WELD_MIN_APEX, dedup_ring
 from waterfields.frame import _Frame
-from waterfields.seams import MIN_PLOT_SIDE, _absorb, _despike, _parts, _plant, _ring, _water, close_seams
+from waterfields.seams import MIN_PLOT_SIDE, _absorb, _despike, _min_apex, _open_to, _parts, _plant, _ring, _water, close_seams
 
 GRAIN = 2.0
 HALF = MIN_PLOT_SIDE * GRAIN / 2  # 6 px: a pocket narrower than 12 px cannot hold a basin
@@ -130,7 +131,7 @@ def test_absorb_takes_the_neighbour_it_shares_the_most_bund_with():
     strip = Polygon(_rect(100, 0, 104, 100))
     into = [Polygon(_rect(0, 0, 100, 100)), Polygon(_rect(104, 40, 200, 60))]  # 100 px of shared wall vs 20
     grown: set[int] = set()
-    _absorb(strip, into, grown)
+    _absorb(strip, into, grown, 3.0)
     assert grown == {0}
 
 
@@ -139,8 +140,64 @@ def test_absorb_falls_through_to_the_runner_up_when_the_best_neighbour_refuses()
     strip = Polygon(_rect(100, 100, 140, 140))
     into = [Polygon(_rect(0, 0, 100, 100)), Polygon(_rect(140, 100, 200, 140))]
     grown: set[int] = set()
-    _absorb(strip, into, grown)
+    _absorb(strip, into, grown, 3.0)
     assert grown == {1}, "the weld gave up instead of trying the basin that could take it"
+
+
+def _wedge(h: float, ln: float) -> Polygon:
+    """A wedge welded onto the x=100 wall of a 100x100 basin, tapering to a point `ln` away.
+
+    Its apex angle is atan(h / ln), so the caller picks the sharpness it wants to test."""
+    return Polygon([(100.0, 0.0), (100.0, h), (100.0 + ln, 0.0)])
+
+
+def _apex_of(poly: Polygon) -> float:
+    return _min_apex(dedup_ring(_ring(poly), 1.0))
+
+
+def test_min_apex_reads_the_sharpest_corner_and_survives_a_degenerate_ring():
+    assert _min_apex([(0.0, 0.0), (100.0, 0.0), (0.0, 100.0)]) == pytest.approx(45.0, abs=0.1)
+    assert _min_apex([(0.0, 0.0), (1.0, 1.0)]) == 180.0  # too short to have a corner
+
+
+def test_open_to_sheds_the_tapering_tail_and_keeps_the_workable_core():
+    kept = _open_to(_wedge(60.0, 200.0), 20.0)
+    assert kept is not None
+    # the tip (everything narrower than 20) is gone, but most of the wedge survives
+    assert 0.3 < kept.area / _wedge(60.0, 200.0).area < 0.95
+    assert kept.within(_wedge(60.0, 200.0).buffer(0.01)), "the opening must only ever REMOVE ground"
+
+
+def test_open_to_returns_none_when_the_whole_scrap_is_thinner_than_the_trim():
+    assert _open_to(Polygon(_rect(0, 0, 100, 2)), 20.0) is None
+
+
+def test_absorb_trims_a_tapering_tail_rather_than_refusing_the_weld():
+    # 60/200 -> a 16.7 deg apex: the whole-scrap weld needles, so the strip would have been left
+    # bare (the doubled bund that cost cohort seeds 9 and 11). Trimming rescues the weld.
+    into = [Polygon(_rect(0, 0, 100, 100))]
+    grown: set[int] = set()
+    _absorb(_wedge(60.0, 200.0), into, grown, 20.0)
+    assert grown == {0}, "the weld was refused where trimming the tail would have carried it"
+    assert _apex_of(into[0]) >= _WELD_MIN_APEX, "the trimmed weld still left a needle"
+
+
+def test_absorb_takes_a_least_bad_weld_that_still_clears_the_gate():
+    # same 16.7 deg apex, but with trimming disabled (thin ~ 0). Above the gate line, so welding it
+    # beats leaving a doubled bund - a basin the gate ACCEPTS is not a defect.
+    into = [Polygon(_rect(0, 0, 100, 100))]
+    grown: set[int] = set()
+    _absorb(_wedge(60.0, 200.0), into, grown, 0.001)
+    assert grown == {0}
+
+
+def test_absorb_leaves_the_scrap_bare_when_every_weld_would_make_a_real_needle():
+    # 60/300 -> 11.3 deg, below the gate line, and trimming is disabled: welding this would ship a
+    # needle, so the honest answer is the odd corner left unpaddied.
+    into = [Polygon(_rect(0, 0, 100, 100))]
+    grown: set[int] = set()
+    _absorb(_wedge(60.0, 300.0), into, grown, 0.001)
+    assert grown == set()
 
 
 def test_plant_hands_back_offcuts_rather_than_welding_them_among_siblings():

@@ -290,6 +290,45 @@ was never needed.
 survivors came from (the carve, then the hem - both wrong) before a provenance probe classified
 every remaining needle in one run as `carved_grown`, i.e. made by a weld. Instrument first.
 
+### DONE 2026-08-17: cohort seeds 9 and 11 - and the "genuine conflict" was two bugs
+
+**The conclusion recorded below was WRONG, and how it was wrong is worth more than the fix.** The
+entry called the seeds 9/11 regression a genuine two-sided conflict between the needle rule and the
+shared-bund rule, on the strength of FOUR measured configurations that all failed, and pointed the
+fix at the carve's sector geometry. The table was accurate and the inference from it was not. Two
+ordinary bugs were producing it:
+
+1. **A unit error made the escape hatch a silent no-op.** `_absorb`'s tail trim was handed
+   `3.0 * g` as "the 3 ft the seam rule ignores". But `grain` is `2 / ftpx`, so px-per-foot is
+   `g / 2` and 3 ft is `1.5 * g` - the value passed was DOUBLE. At a hamlet's ftpx 1.0 that fed
+   6.0 px to an opening meant to shed the tail of a strip whose entire mean width was 5.6 px, so it
+   annihilated every scrap it touched and returned nothing, every time. The retry looked like it was
+   running and was doing nothing. Same shape as "a check that never RUNS looks exactly like a check
+   that passes", one layer down in the placer.
+2. **The guard measured a different ring than the rule it protects.** It took
+   `min(raw, dedup_ring(...))` while `paddy_plots_are_workable_basins` reads the deduped ring only.
+   Stricter, yes - but stricter on a DIFFERENT MEASUREMENT, which is not a margin. Placer-stricter-
+   than-gate means a stricter threshold on the same measurement (18 vs 15), never a second
+   measurement bolted alongside it.
+
+With the width corrected the same weld the "conflict" was built on comes out at a **77.1 deg apex**
+- not marginal, not a trade. Measured across trim widths 1.5/2.0/3.0/4.0 px it is 77.1 at every one,
+keeping 96/92/81/42% of the strip. Seeds 9 and 11 pass both rules; the carve's sector geometry was
+never implicated.
+
+**The methodological cost, recorded because it repeated inside one session.** Two separate wrong
+conclusions came from probes that MIS-ATTRIBUTED their own output. The first counted every
+`_absorb` decline as "declined by the new guard" when most were the pre-existing MultiPolygon/
+bow-tie rejections. The second printed `min(raw, dedup)` as the apex VALUE next to the raw ring's
+worst VERTEX - two different rings - which produced a confident, wrong finding ("the apexes are
+90-100 px away, so they are pre-existing artifacts") that was written into a code comment before
+being checked. Both are the diagram CLAUDE.md's own rule - *a diagnostic that restates what it
+observes will lie to you* - and the tell in both cases was the same: the probe reported a number
+and a location that came from different computations. **Print the value and its provenance from one
+expression, or do not print the location.**
+
+*Superseded entry, kept for the measurements and as the record of the wrong turn:*
+
 ### OPEN, and it is the carve after all: cohort seeds 9 and 11 (2026-08-17)
 
 The needle fix left **two cohort seeds failing `paddy_plot_seams_shared`** that passed before it

@@ -12,7 +12,7 @@ import random
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from .banks import _TINT_MIN_APEX, dedup_ring, pointed_ring, polyline_cum, supply_bank_clearance
+from .banks import _TINT_END_FT, _TINT_MIN_APEX, dedup_ring, pointed_ring, polyline_cum, supply_bank_clearance
 from .frame import BANK_MARGIN, Poly, Pt, _at_f, _f_at_u, _Frame, _miter_normals, _pip, _seg_d, _Thread, taper_w
 from .palette import DRY_CROPS, FLOODED, RICE_GREENS
 
@@ -318,11 +318,19 @@ def _sector_closing_rank(
             # lowest ground); an upper split level cascades into it and stays green - so a
             # blue plot always abuts the drain
             fill = FLOODED if (abuts and R.random() < 0.45) else R.choice(RICE_GREENS)
-            if fill == FLOODED and pointed_ring(dedup_ring(quad, 1.0), _TINT_MIN_APEX):
+            # TWO RINGS: the gate's own (`dedup_ring(r, 1.0)`, which `flooded_plots_read_as_basins`
+            # reads at 15 deg - so 25 here keeps the placer strictly stricter on the SAME
+            # measurement), plus the END-WIDTH collapse, which catches the needle truncated a few
+            # feet short of its point that no interior angle on the 1.0 ring can see (_TINT_END_FT).
+            if fill == FLOODED and (pointed_ring(dedup_ring(quad, 1.0), _TINT_MIN_APEX) or pointed_ring(dedup_ring(quad, _TINT_END_FT * g / 2), _TINT_MIN_APEX)):
                 # A POINTED SLIVER MUST NOT WEAR THE WATER TINT (known-open ledger 2026-08-16):
                 # at a fan seam the converging closing-rank sub-columns taper to needle apexes,
                 # and a blue one reads as a tiny triangular pond. Demote to a rice green picked
-                # by POSITION (no extra R draw, so the stream is unmoved for every other plot);
+                # by POSITION. The load-bearing half is the ABSENT DRAW - indexing rather than
+                # calling R leaves the RNG stream unmoved, so demoting one plot cannot re-roll every
+                # plot after it. (The index buys no variety today: `RICE_GREENS` currently holds the
+                # same colour three times. Keep the indexing anyway - it is what makes the demotion
+                # free, and it is already correct if the palette ever gains real shades.);
                 # `low` is untouched - the tint is only the picture (feature 010). The quad is
                 # DEDUPED first: the recorder merges sub-1 px collapsed edges before the ring is
                 # written, and a quad with a collapsed edge carries near-90 deg corner angles

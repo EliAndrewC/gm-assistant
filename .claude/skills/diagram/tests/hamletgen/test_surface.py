@@ -76,6 +76,7 @@ CONSUMED_PUBLIC = [
     "WIND_VECTORS",
     "back_fouled",
     "below_drain",
+    "belt_polygon",
     "build",
     "canvas_for",
     "centroid",

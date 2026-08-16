@@ -87,12 +87,16 @@ exists anywhere, so the demotion became **structurally dead** - it could never f
 91 x 18 ft blue triangle at (350,2483), missed demotion by **0.05 deg** and shipped as the most
 pond-like object on the one map whose brief is "no pond".
 
-Fixed by lifting the demotion clear of the placer floor: `_TINT_MIN_APEX = 40.0`, which sits inside
-the gap `pointed_ring`'s own pool measurement reports (seam wedges 7-23 deg, honest flooded hem
-strips 45+), so it demotes toe wedges that read as ponds and leaves genuine wet strips blue. The
-gate stays at 15, preserving the placer-stricter-than-gate invariant the whole calibration rests on.
-The four constants now read as one ladder - gate 15 < weld 18 < toe 25 < tint 40 - and
-`_GATE_MIN_APEX` exists so they are all expressed against one number instead of each carrying a copy.
+The first fix was to lift the demotion clear of the placer floor: `_TINT_MIN_APEX = 40.0`.
+**Superseded the same day** - Inashiro's review measured that raising the threshold was wrong in
+both directions (it demoted a 35.5 x 118.3 ft honest strip while still passing a plot that tapers
+30.0 -> 3.4 ft, because a corner angle cannot see a taper whose tip is TRUNCATED), and that the
+"empty 25-40 band" this reasoning rested on does not exist - 15 plots sit in it on Inashiro alone.
+The rule now asks the right question instead: the threshold is back at **25**, and the ring is
+DEDUPED AT AN END WIDTH (`_TINT_END_FT` = 5 ft, the narrowest end that can hold water: two aze at
+1.5 ft leave ~2 ft of standing water between them) so a truncated needle shows the apex it really
+has. That also un-deadens the predicate without a threshold race, because it is now a different
+MEASUREMENT from the placer's guard rather than a number sitting beside it.
 
 Two further items the review raised, logged rather than fixed:
 
