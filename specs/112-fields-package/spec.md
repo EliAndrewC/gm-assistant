@@ -4,16 +4,16 @@
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented (2026-08-16) - US1, US2 and US3 complete
 
-**Input**: User description: "Split /gm-assistant/.claude/skills/diagram/settlement/fields.py (1,503 lines, a single 1,470-line FieldsMixin class of 24 methods) into a settlement/fields/ package with its own CLAUDE.md index, per constitution Principle X clause 13 (files stay at human scale; the cost being managed is context-window tokens). Two-stage scope, both stages verified by byte-identical pool artifacts. STAGE 1 - PURE MOVE: divide FieldsMixin into subsystem sub-mixins in separate modules. fields/__init__.py composes them into a single FieldsMixin so settlement/core.py's `from .fields import FieldsMixin` and its `class Settlement(...)` bases are UNCHANGED. Reuse the feature 025 transformer at specs/025-human-scale-splits/split_settlement.py as the exemplar; keep the TYPE_CHECKING `self: Settlement` annotation pattern. STAGE 2 - FUNCTION DECOMPOSITION: decompose draw_comb_field (313 lines), apply_land_use (266), water_field (194), which together are 51% of the file. VERIFICATION: make done green; every committed pool artifact byte-identical; check_village gate output identical. Update settlement/CLAUDE.md's index table and add fields/CLAUDE.md. OUT OF SCOPE: splitting test_settlement/test_fields.py (475 lines); any change to DRAW ORDER, knob doctrine, or field geometry; the other oversized settlement modules."
+**Input**: User description: "Split /gm-assistant/.claude/skills/diagram/settlement/fields.py (1,511 lines, a single FieldsMixin class of 24 methods) into a settlement/fields/ package with its own CLAUDE.md index, per constitution Principle X clause 13 (files stay at human scale; the cost being managed is context-window tokens). Two-stage scope, both stages verified by byte-identical pool artifacts. STAGE 1 - PURE MOVE: divide FieldsMixin into subsystem sub-mixins in separate modules. fields/__init__.py composes them into a single FieldsMixin so settlement/core.py's `from .fields import FieldsMixin` and its `class Settlement(...)` bases are UNCHANGED. Reuse the feature 025 transformer at specs/025-human-scale-splits/split_settlement.py as the exemplar; keep the TYPE_CHECKING `self: Settlement` annotation pattern. STAGE 2 - FUNCTION DECOMPOSITION: decompose draw_comb_field (321 lines), apply_land_use (266), water_field (194), which together are 52% of the file. VERIFICATION: make done green; every committed pool artifact byte-identical; check_village gate output identical. Update settlement/CLAUDE.md's index table and add fields/CLAUDE.md. OUT OF SCOPE: splitting test_settlement/test_fields.py (475 lines); any change to DRAW ORDER, knob doctrine, or field geometry; the other oversized settlement modules."
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Behavior-preserving package split (Priority: P1)
 
 A session touching one part of the field engine - the comb-field builder, say, or the land-use
-overlays - currently loads all 1,503 lines of `settlement/fields.py` to reach it. After this
+overlays - currently loads all 1,511 lines of `settlement/fields.py` to reach it. After this
 feature, `settlement.fields` is a package of focused submodules, each well under the ~1,000-line
 clause-13 bar, and every existing consumer keeps working with **zero changes**: `settlement/core.py`
 still does `from .fields import FieldsMixin` and still lists `FieldsMixin` first in its
@@ -45,9 +45,9 @@ diagram test suite and the `check_village` gate with no consumer-file edits.
 
 ### User Story 2 - Oversized methods decomposed (Priority: P2)
 
-A maintainer opening `draw_comb_field` (313 lines), `apply_land_use` (266) or `water_field` (194)
+A maintainer opening `draw_comb_field` (321 lines), `apply_land_use` (266) or `water_field` (194)
 today reads one long body and has to hold the whole subsystem in their head - together these three
-are 51% of the file. After this feature each is decomposed into named helpers whose names describe
+are 52% of the file. After this feature each is decomposed into named helpers whose names describe
 the step, so the method reads top-down as a short sequence of named steps and a future change can
 target one of them.
 
