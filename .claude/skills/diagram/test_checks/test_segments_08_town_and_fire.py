@@ -962,3 +962,58 @@ def test_comb_floor_reads_the_map_fall_when_the_field_has_none():
     M = _floor_M([[300, 300], [700, 300], [500, 830]])
     del M["fields"][0]["down_deg"]
     assert "comb_floor_ends_at_the_collector" in _floor_f(M)
+
+
+# ---- flooded_plots_read_as_basins: a pointed blue sliver reads as a pond -----------------------
+def _basin_M(rings, flooded, gen="hamletgen"):
+    M = {
+        "meta": {"scale": "hamlet", "down_deg": 90, "W": 1200, "H": 1200},
+        "fields": [{**_field("f", 200, 200, 900, 900), "plot_rings": rings}],
+        "flooded_plots": flooded,
+    }
+    if gen:
+        M["meta"]["generated_by"] = gen
+    return M
+
+
+def _basin_f(M):
+    return check_village.gate(M, verbose=False, only={"flooded_plots_read_as_basins"})
+
+
+_NEEDLE = [[300, 300], [500, 308], [500, 300]]  # ~2.3 deg apex
+_STRIP = [[300, 400], [500, 400], [500, 418], [300, 418]]  # a bunded rectangle
+
+
+def _cent(r):
+    return [sum(p[0] for p in r) / len(r), sum(p[1] for p in r) / len(r)]
+
+
+def test_flooded_basins_fires_on_a_pointed_blue_sliver():
+    # the Sawada fan-seam capture: a needle apex carrying the water tint reads as a tiny pond
+    assert "flooded_plots_read_as_basins" in _basin_f(_basin_M([_NEEDLE, _STRIP], [_cent(_NEEDLE)]))
+
+
+def test_flooded_basins_passes_a_rectangular_flooded_strip():
+    assert "flooded_plots_read_as_basins" not in _basin_f(_basin_M([_NEEDLE, _STRIP], [_cent(_STRIP)]))
+
+
+def test_flooded_basins_gives_the_carve_its_borderline_band():
+    # ~19.8 deg apex: demoted by the carve at 25 deg, but the gate holds its fire at 15 - a
+    # borderline plot the carve let through must not false-fire
+    mid = [[300, 500], [500, 572], [500, 500]]
+    assert "flooded_plots_read_as_basins" not in _basin_f(_basin_M([mid], [_cent(mid)]))
+
+
+def test_flooded_basins_skips_an_unmatched_centroid():
+    # a tint record with no ring near it (a fill path with no recorded ring) is not judgeable
+    assert "flooded_plots_read_as_basins" not in _basin_f(_basin_M([_STRIP], [[50.0, 50.0]]))
+
+
+def test_flooded_basins_skips_a_manifest_with_no_tint_record():
+    M = _basin_M([_NEEDLE], [_cent(_NEEDLE)])
+    del M["flooded_plots"]
+    assert "flooded_plots_read_as_basins" not in _basin_f(M)
+
+
+def test_flooded_basins_skips_legacy_maps():
+    assert "flooded_plots_read_as_basins" not in _basin_f(_basin_M([_NEEDLE], [_cent(_NEEDLE)], gen=None))

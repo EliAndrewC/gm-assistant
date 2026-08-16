@@ -55,6 +55,20 @@ head-race) - a pipeline note, logged in `future-work.md`.
   fixed: the collector's blue stroke fades out along the hem staircase at the trimmed corner
   (topology green, ink only).
 
+- 2026-08-16 (second known-opens round - flooded-sliver demotion, well/check alignment,
+  recorded woodland canopy, trim dedup; this map re-rolled): pointed plots (interior angle
+  < 25 deg) no longer take the FLOODED tint and the painted tint is recorded as
+  `flooded_plots` (gate `flooded_plots_read_as_basins` at 15 deg); the well minimax and
+  rescue read `settlement.surface_water_dist` - the watered check's own predicate - so wells
+  stop chasing stream-watered houses; woodland stands record their crowns (`tree_crowns` +
+  per-parcel count, gate `woodland_commons_visibly_stocked`) and register as placer
+  keep-outs; the trim corner's duplicate vertices are merged (`dedup_ring`).
+  Map-specific: the seam needles by the head junction are green now (3 basin-shaped flooded
+  strips survive, review-verified tint-vs-record agreement); the two wells re-seated under the
+  aligned objective - one per well-dependent lobe, none on the stream-served west lobe; the
+  three woodland stands kept their seats with recorded canopies (89/90/30 crowns; the 89/90
+  twin-ness of the two big stands is a logged cosmetic nitpick).
+
 - 2026-08-16 (fan-toe pond fix, same session as Inashiro's; this map re-rolled): the same bbox-fit
   defect - this map's pond (31.3 x 32.0 at (1570, 875)) was crossed by bund lines. Under the
   polygon-fit `_plot_pond` the original plot refused and the pond moved to (1392.4, 1188.3),

@@ -698,6 +698,8 @@ class FieldsMixin:
             # its check must read the SAME source, and the source is what was actually drawn.
             self.block_polys.append(p["poly"])
             self.dry_polys.append(p["poly"])
+        from waterfields import FLOODED as _WF_FLOODED  # the tint constant, for the picture record below
+
         for p in net["plots"]:  # the flooded paddies
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" stroke-width="{aze_w(self.ftpx):.2f}" stroke-linejoin="round"/>')
@@ -707,6 +709,12 @@ class FieldsMixin:
             # reading back the overlay's own self-report - a check that reads one source has no teeth.
             if p.get("low"):
                 self.M.setdefault("wet_plots", []).append(_centroid(p["poly"]))
+            if p["fill"] == _WF_FLOODED:
+                # ...and the PAINTED tint (2026-08-16): `wet_plots` is the topography record
+                # (which plots are LOW), this is the picture record (which are BLUE) - the
+                # flooded-wedge check judges what the paint reads as, and a check that cannot
+                # see the paint cannot judge it (the azemame water-honesty precedent).
+                self.M.setdefault("flooded_plots", []).append(_centroid(p["poly"]))
         self.bund_junctions(net["plots"], name)
         # WATER-HONEST BEADS, the draw-site half (GM 2026-08-15: "fix the water-buried beads so
         # the record stays honest"; settlement-review found 40 of Inashiro's 727 recorded beads

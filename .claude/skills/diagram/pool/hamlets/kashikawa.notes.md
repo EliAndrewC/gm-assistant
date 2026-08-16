@@ -21,12 +21,14 @@ history rather than the map's current state; the reporting machinery is unchange
 re-roll that misses will say so again.
 
 **Known open**: Inashiro's two - the bare comb floor on the fan's shoulders (inherited from
-`build_comb`), and a windward quarter derived from the slope. The woodland commons went
-3 parcels (250 ft, off-frame) -> ONE on-frame 160 ft parcel in the 2026-08-16 fix round - the
-shrink ladder doing its job, not a shortfall: the dry, open, in-frame ground holds exactly that.
-The surviving coppice stands on the dry footslope strip by the bog toe, downhill of the cluster -
-the margin not worth tilling, which is where a commons woodlot really goes - while the name's
-high-ground oaks stay implied beyond the SW frame.
+`build_comb`), and a windward quarter derived from the slope. The woodland commons are
+DERIVED, not authored - their count and sizes move with the roll (this file went stale on the
+concrete number three rounds running, so it records the mechanism now): the shrink ladder
+(250 -> 200 -> 160 -> 125 ft) and, when the generous crop set-backs would leave the oak map
+woodless, a last-resort set-back profile (40/100 px against the gate's 14/69 floors) give the
+dry, open, in-frame ground exactly the stands it can carry. The stands favor the unplowable
+margins; whatever fraction of the name's high-ground oaks the window cannot hold stays implied
+beyond the frame.
 
 - 2026-08-15 (supply-bank hem re-roll): bunds hem onto the supply channels' banks
   (`build_comb(supply_banks=True)`, gate `paddy_bunds_clear_the_supply_channels`); the whole map
@@ -58,6 +60,23 @@ high-ground oaks stay implied beyond the SW frame.
   `meta.cluster_seeding` records the seeding mode always ("frontage" on this roll).
   Map-specific: the envelope trim was provably surgical (NE extent 2726 -> 2484, all 750 plots and
   the wet plots byte-identical, one footbridge on the removed ground gone with it); the phantom
-  bog parcel (250 ft recorded, 2 crowns drawn vs its sibling's 53) is gone and the map honestly
-  seats ONE dry 160 ft oak stand. Review log: full DELTA caught the phantom parcel and this
+  bog parcel (250 ft recorded, 2 crowns drawn vs its sibling's 53) is gone and the roll then
+  seated one dry 160 ft oak stand (the derivation has moved since - see the later entries). Review log: full DELTA caught the phantom parcel and this
   file's stale off-frame paragraph (both fixed same day); follow-up pass on the re-seat.
+
+- 2026-08-16 (second known-opens round - flooded-sliver demotion, well/check alignment,
+  recorded woodland canopy, trim dedup; this map re-rolled): pointed plots (interior angle
+  < 25 deg) no longer take the FLOODED tint and the painted tint is recorded as
+  `flooded_plots` (gate `flooded_plots_read_as_basins` at 15 deg); the well minimax and
+  rescue read `settlement.surface_water_dist` - the watered check's own predicate - so wells
+  stop chasing stream-watered houses; woodland stands record their crowns (`tree_crowns` +
+  per-parcel count, gate `woodland_commons_visibly_stocked`) and register as placer
+  keep-outs; the trim corner's duplicate vertices are merged (`dedup_ring`).
+  Map-specific: the wells realigned (the SW stream-watered pocket now shapes the objective the
+  settled ruling described: three wells in the NE cluster at 69-298 ft, none by the stream
+  frontage) and the tighter window went WOODLESS at every shrink rung - the motivating case for
+  the last-resort set-back profile. The stands re-derived twice more inside the round as the
+  profile calibrated (a mid-round 35-crown 160 ft footslope stand was review-verified for
+  recorded-vs-drawn crown agreement, 35=35 / 15=15); the shipped roll seats TWO 125 ft stands
+  (15 and 17 crowns), dry and on-frame - the exact stands are roll-derived, the invariants
+  (dry, on-frame, recorded canopy, check-legal set-backs) are what hold.

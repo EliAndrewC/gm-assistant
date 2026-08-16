@@ -162,25 +162,40 @@ wells, the board's clump keep-out, the lane-crossing guards).
   not discharge (full reasoning recorded in research/water.md "Drawn width is RANK"); the
   settlement-review doctrine now says junction conservation is not a finding, so reviewers stop
   re-flagging it. No ink changes.
-- **Collector-junction wedge plots render in the water-gray fill** and at fit zoom read as tiny
-  triangular ponds - conspicuous on Sawada, whose brief is "no pond".
-- **The well minimax counts stream-watered houses**: `place_wells`' worst-served objective
-  includes houses that `settlement_dwellings_watered` already treats as watered by a nearby
-  stream/channel (Kashikawa's SW pocket, 77-182 ft from the stream head). Harmless today - the
-  chosen seats passed review - but the objective and the check read different definitions of
-  "needs a well"; align them when wells are next touched.
-- **The envelope trim deposits near-duplicate vertices at the trim corner** (merged-roll review,
-  2026-08-16, Kashikawa: ~12 points within a ~5 px span with back-and-forth reversals in the
-  recorded `comb_floors` ring where the collector cut meets the old boundary). Invisible at
-  1 ft/px; a future consumer of the ring (area, edge normals, self-intersection) could trip.
-  Add a consecutive-vertex dedup after the trim in `build_comb` when that code is next touched -
-  not worth a pool re-roll on its own.
-- **Woodland stand crowns are ink-only** (both 2026-08-16 review rounds, independently): the
-  coppice parcels' crowns are SVG circles only - `tree_crowns` holds just the windbreak belt and
-  copse - so no manifest check can count a stand's canopy, which is exactly how a zero-crown
-  "woodland" could have shipped green. Record the stand crowns (or a per-parcel crown count) next
-  time this drawing code is touched; `woodland_commons_on_dry_ground` covers the seat half
-  meanwhile. The Sawada merged-roll review adds the placer-side half of the same gap:
-  confirm the commons poly is registered in a keep-out registry placers actually honor, or a
-  future placer that reads crown records could seat a structure under this canopy with nothing
-  firing.
+- **DONE 2026-08-16 (second ledger round): collector-junction wedge plots in the water-gray
+  fill.** The tint was ink-only, so first the PICTURE became a record: `draw_comb_field` writes
+  `flooded_plots` (the painted-blue centroids; `wet_plots` stays the topography record), the
+  bead-honesty precedent. Then the shared predicate `pointed_ring` (waterfields.banks) splits
+  needles from basins by interior angle - measured pool-wide the seam wedges run 7-23 deg
+  against 45+ for honest hem strips - and the carve demotes the tint at 25 deg (position-keyed
+  green, no extra RNG draw) while `flooded_plots_read_as_basins` fires at 15 (placer stricter
+  than gate, the supply-bank calibration). Review-verified by full SVG fill census on Sawada:
+  4 painted tints, 4 records, min angle 25.0+ (the exactly-25.0 survivor pair at the west seam
+  is an ACCEPTED boundary case - it reads as a flooded plot, not a pond). Pre-fix Sawada frozen
+  with its tint reconstructed from the committed SVG.
+- **DONE 2026-08-16 (second ledger round): the well minimax counts stream-watered houses.**
+  `settlement.surface_water_dist` is now the ONE predicate (channels + streams + moat polylines
+  + the pond rim, exactly the records the check reads); `settlement_dwellings_watered` calls it
+  for its verdict, and `place_wells` uses it twice - the worst-served objective maxes over the
+  NEEDY houses only, and the rescue pass skips a house surface water already serves (the
+  Kashikawa SW-pocket ruling, now structural). Review-verified on all four maps: wells land
+  among the households that need them and none is squandered on channel-fronting rows.
+  Cohort rate after the round: 43/48 vs the 45/48 baseline - the two motivating seeds now pass
+  (25's hairline, 24's shade), and the residue delta is the marginal-seed rotation class
+  (field_ringed borderline flips from the envelope dedup, one well-frame flip from the seat
+  re-ranking); no shipped map is affected, and each residue check has live teeth.
+- **DONE 2026-08-16 (second ledger round): the envelope trim deposits near-duplicate
+  vertices.** `dedup_ring` (waterfields.banks) merges consecutive vertices closer than 1 px,
+  closing pair included, right after the trim - the same idiom as the bowtie pass's collapsed
+  plot vertices.
+- **DONE 2026-08-16 (second ledger round): woodland stand crowns are ink-only.**
+  `commons(role="woodland")` now records every drawn crown into `tree_crowns` (the same flat
+  [x, y, r] run the homestead groves use) plus a per-parcel `crowns` count, and
+  `woodland_commons_visibly_stocked` holds the declaration-exists invariant (missing count =
+  regenerate; under 5 crowns = a claimed woodland the drawing does not deliver) -
+  review-verified recorded-vs-drawn agreement (35=35, 15=15 on Kashikawa). The placer-side
+  half landed too: a woodland parcel's poly registers in `block_polys`. Second-order fallout
+  fixed in the same round: with the wells realigned, Kashikawa's kept window closed at every
+  shrink rung and the oak map went woodless - so the scan gained a last-resort SET-BACK
+  profile (40/100 px, still 2.9x/1.4x above the gate's own 14/69 floors) that runs only when
+  the generous 80/180 profile seats nothing.

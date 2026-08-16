@@ -249,3 +249,44 @@ def round_channel_joints(channels: list[dict[str, Any]], min_turn_deg: float = 8
             arc.append((round(mt * mt * a[0] + 2 * mt * t * P[0] + t * t * b[0], 1), round(mt * mt * a[1] + 2 * mt * t * P[1] + t * t * b[1], 1)))
         A["pts"] = A["pts"][:-1] + arc  # the upstream record carries the whole bend ...
         B["pts"] = [arc[-1]] + B["pts"][1:]  # ... and the downstream one picks up where it ends
+
+
+def pointed_ring(poly: Poly, min_deg: float = 25.0) -> bool:
+    """Does this ring taper to a POINT - an interior angle sharper than `min_deg`?
+
+    The flooded-wedge discriminator (known-open ledger 2026-08-16): at a fan seam the closing
+    rank's converging sub-columns produce slivers that taper to needle apexes, and one carrying
+    the FLOODED tint reads as a tiny triangular POND at fit zoom (conspicuous on Sawada, whose
+    brief is "no pond"). A legitimate flooded hem strip is a bunded rectangle - interior angles
+    near 90 deg - so the apex angle separates the two cleanly (measured across the pool: the
+    seam wedges run 7-23 deg, the hem strips 45+). ONE predicate, two calibrated thresholds:
+    the carve demotes the tint at 25 deg (generous - a green sliver among green slivers costs
+    nothing), the gate (`flooded_plots_read_as_basins`) fires at 15 deg (only the unmistakable
+    needles), so a borderline plot the carve demotes cannot false-fire the check - the same
+    placer-stricter-than-gate calibration as the supply-bank margins."""
+    n = len(poly)
+    for i in range(n):
+        a, v, c = poly[i - 1], poly[i], poly[(i + 1) % n]
+        v1 = (a[0] - v[0], a[1] - v[1])
+        v2 = (c[0] - v[0], c[1] - v[1])
+        d1 = math.hypot(*v1) or 1.0
+        d2 = math.hypot(*v2) or 1.0
+        cosv = max(-1.0, min(1.0, (v1[0] * v2[0] + v1[1] * v2[1]) / (d1 * d2)))
+        if math.degrees(math.acos(cosv)) < min_deg:
+            return True
+    return False
+
+
+def dedup_ring(pts: Poly, eps: float = 1.0) -> Poly:
+    """Collapse consecutive vertices closer than `eps` (the closing pair included).
+
+    The envelope trim clamps runs of vertices onto the collector line, and where the cut meets
+    the old boundary it deposits near-duplicate points with back-and-forth reversals (~12 points
+    in a ~5 px span on Kashikawa, merged-roll review 2026-08-16). Invisible at 1 ft/px, but a
+    consumer of the ring - an area, an edge normal, a self-intersection test - can trip on the
+    micro-zigzag, so the duplicates are merged the same way the bowtie pass merges collapsed
+    plot vertices."""
+    out = [p for i, p in enumerate(pts) if i == 0 or math.dist(p, pts[i - 1]) > eps]
+    while len(out) > 1 and math.dist(out[0], out[-1]) <= eps:
+        out.pop()
+    return out
