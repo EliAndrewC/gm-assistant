@@ -85,7 +85,7 @@ ponds exist before beads commit), and `bund_beans_on_bunds` reads the painted tr
 `drawn_channels` (post-clip strokes, late flag) / `pond` / `field_ponds`. Regression fixture:
 `pool/regressions/bund_beans_on_bunds_fires_on_water_buried_beads_inashiro.json`.
 
-## Pocket ponds carry ink-on-water of their own (settlement-review, 2026-08-15)
+## DONE 2026-08-16: pocket ponds carry ink-on-water of their own (settlement-review, 2026-08-15)
 
 Found while confirming the azemame water-honesty fix: Inashiro's pocket pond at (2144, 1724) has
 the field-foot margin drain stroke painting across its lower-left quadrant, and hinterland
@@ -95,6 +95,11 @@ fix established - no ink over water, no water under ink - one class over: the po
 keep-out the hinterland scatter and the late water honor (or `_plot_pond` should refuse a plot
 whose ellipse leaves the field envelope). Barely visible at fit zoom; logged rather than fixed
 because it is baseline-adjacent, not part of the bead delta.
+
+**Resolved by the 2026-08-16 re-rolls without dedicated code**: the pond re-seated to (2092,
+1671) and two independent review passes confirmed no drain stroke and no scatter tuft crosses
+its fill on the shipped roll (the scatter water-skip fix and the re-seat between them cover the
+class). If a future roll regresses it, the fix direction in the paragraph above still applies.
 
 ## Review residue from the supply-bank hem re-roll (settlement-review, 2026-08-15)
 
@@ -106,10 +111,10 @@ its area):
   none - the brook simply necks into the head-race. The engine has sluice-gate furniture at other
   water handoffs; the comb intake could carry one at every tier, and on Mizuguchi it is the point
   of the map.
-- **Kashikawa's woodland commons all land off-frame.** The crop is content-derived and the three
-  coppice patches sit past it, so the "oaks on the high ground" of the name story are implied
-  rather than drawn. Worth deciding whether commons should count toward the content bbox, or be
-  seated with a preference for on-frame ground.
+- **DONE 2026-08-16: Kashikawa's woodland commons all land off-frame.** Resolved with the
+  known-opens round below: the decision went to seating (the frame stays tight to the working
+  settlement; the coppice moves), `open_ground_patches` confines the scan to the predicted kept
+  window, and `woodland_commons_within_the_frame` gates it.
 - **The kept/dropped read along hemmed ditch banks.** Inashiro's first lateral carries an
   alternating chain of kept bank plots and dropped slivers that reads as a dashed line of boxes; a
   coarser keep-or-drop over a whole bank strip would read cleaner. Same area as the hem work but a
@@ -119,29 +124,44 @@ its area):
 
 The fork feature (research/water.md "The head-race forks - supply commands both flanks") re-rolled
 the four live hamlets three times; the review rounds' errors are fixed (thread tails, minimax
-wells, the board's clump keep-out, the lane-crossing guards). What remains, recorded as debt:
+wells, the board's clump keep-out, the lane-crossing guards).
 
-- **A hairline bund-in-supply-stroke on ~2 of 48 rolled seeds** (25, 34; also seed 41 at
-  hh=15). One plot vertex sits ~0.06 px inside a canal-B stroke's drawn width - manifest
-  rounding scale, but `paddy_bunds_clear_the_supply_channels` rightly fires. The offending
-  rings are SMALL plots near the fork (likely `_fill_wedges` fillers or a piece-joint
-  governance gap in `clear_supply`'s per-piece `past` exemption - diagnosis half-done, see the
-  session log). The pool and the cohort ratchet (seeds 41-44) are clean; fix before shipping
-  any map rolled from a fresh seed, or when converting the village tier.
-- **`meta.cluster_shape` records only when the cluster-seeds cloud actually runs** (Kashikawa:
-  front rows + frontage seated all 20 houses, so a rolled knob went unhonored with no trace).
-  A knob that can silently not-record is the "check that never runs" shape - record either the
-  knob or the seeding mode, always.
-- **Mizuguchi's SE floor wedge** - the field outline juts ~350 ft beyond its own drain as a bare
-  green needle (grew ~33% in the re-roll). Wants the marsh treatment or trimming to the drain.
-- **Sawada's woodland commons mostly crop out of the view** (two of three parcels wholly above
-  the frame; the third half-cropped, hosting the title placard). Either the crop admits them or
-  they seat inside the ground the crop keeps.
+### DONE 2026-08-16 (the known-opens session, same day): four ledger items closed
+
+- **The hairline bund-in-supply-stroke on rolled seeds (25, 34; 41@hh15)** - diagnosed to the end:
+  the placer exempts a carved corner projecting epsilon PAST a branch tail (`past`), and the
+  manifest's 0.1 px rounding collapses corner and stroke tail onto the same coordinates, so the
+  gate saw t = 1.0 exactly and fired at gap 0 on a corner the placer legally allowed. One
+  predicate, two verdicts, split by the round-trip. Fixed IN the shared predicate:
+  `supply_bank_clearance`'s `past` is arc-based with `_PAST_EPS` (0.25 px) slack at both ends.
+  48-seed cohort re-swept: pass rate unchanged (45/48), the named seeds clean, ratchet seeds 41-44
+  clean. (The marginal cohort seeds rotated, as engine changes always rotate them.)
+- **`meta.cluster_shape` silent non-recording** - `stage_homesteads` now records
+  `meta.cluster_seeding` always ("cloud" when the cluster-seeds cloud ran and honored the knob,
+  "frontage" when the rows/frontage passes seated everything); gate
+  `settlement_records_cluster_seeding` holds the declaration-exists invariant.
+- **Mizuguchi's SE floor wedge** - generalized and fixed: ALL FOUR live hamlets carried floor past
+  the flat-extended collector line (0.7-1.8% of floor area, worst 350-548 px; only Mizuguchi's was
+  needle-shaped enough to catch a reviewer's eye). `build_comb` now trims the envelope to the
+  collector's command area via `floor_overhang` (shared predicate), gated by
+  `comb_floor_ends_at_the_collector`. Pre-fix Mizuguchi frozen in `pool/regressions/`.
+- **Sawada's cropped-out woodland commons** (and Kashikawa's, and Mizuguchi's) -
+  `open_ground_patches` now confines the scan to the predicted kept window (computed from the same
+  `_crop_boxes` source the crop reads, + the shared `CROP_MARGIN`), gated by
+  `woodland_commons_within_the_frame`. The review of the fix then caught the second-order defect
+  the same day: the confinement pushed parcels onto the WET TOE (Inashiro seated one 100% in the
+  marsh with zero crowns of ink). So the scan also treats every recorded marsh poly as a keep-out,
+  a shrink ladder (250 -> 200 -> 160 -> 125 ft) re-scans slots the full size cannot seat, and
+  `woodland_commons_on_dry_ground` (max 30% wet) gates it - a map whose dry window holds fewer
+  parcels than asked honestly seats fewer (Kashikawa 1, Sawada 1). Pre-fix manifests frozen.
+
+### Still open
+
 - **The in/out width ladder at junctions**: the 14 px head-race is fed by a 7 px brook and
   splits into arms summing 23.6 - drawn capacity grows downstream at every junction. All four
   round-2/3 reviewers flagged the same thing; it is the sanctioned linework convention (GM
   2026-07-21) but the fork makes the head junction the map's focal water feature, so it wants a
-  conscious ruling either way.
+  conscious ruling either way. **Put to the GM 2026-08-16; awaiting the ruling.**
 - **Collector-junction wedge plots render in the water-gray fill** and at fit zoom read as tiny
   triangular ponds - conspicuous on Sawada, whose brief is "no pond".
 - **The well minimax counts stream-watered houses**: `place_wells`' worst-served objective
@@ -149,4 +169,18 @@ wells, the board's clump keep-out, the lane-crossing guards). What remains, reco
   stream/channel (Kashikawa's SW pocket, 77-182 ft from the stream head). Harmless today - the
   chosen seats passed review - but the objective and the check read different definitions of
   "needs a well"; align them when wells are next touched.
-
+- **The envelope trim deposits near-duplicate vertices at the trim corner** (merged-roll review,
+  2026-08-16, Kashikawa: ~12 points within a ~5 px span with back-and-forth reversals in the
+  recorded `comb_floors` ring where the collector cut meets the old boundary). Invisible at
+  1 ft/px; a future consumer of the ring (area, edge normals, self-intersection) could trip.
+  Add a consecutive-vertex dedup after the trim in `build_comb` when that code is next touched -
+  not worth a pool re-roll on its own.
+- **Woodland stand crowns are ink-only** (both 2026-08-16 review rounds, independently): the
+  coppice parcels' crowns are SVG circles only - `tree_crowns` holds just the windbreak belt and
+  copse - so no manifest check can count a stand's canopy, which is exactly how a zero-crown
+  "woodland" could have shipped green. Record the stand crowns (or a per-parcel crown count) next
+  time this drawing code is touched; `woodland_commons_on_dry_ground` covers the seat half
+  meanwhile. The Sawada merged-roll review adds the placer-side half of the same gap:
+  confirm the commons poly is registered in a keep-out registry placers actually honor, or a
+  future placer that reads crown records could seat a structure under this canopy with nothing
+  firing.
