@@ -87,7 +87,7 @@ Nothing in Phase 3+ is safe without both.
 - [x] T030 [US2] Decompose `city_wall` (339 raw / 160 stmts, the largest function in the skill) in `.claude/skills/diagram/settlement/city/walls.py`, same constraints. It already has six private callees, so the extraction has an established vocabulary to extend rather than invent
 - [x] T031 [US2] Sweep after T030: exit 0, 28 generators, empty diff, `pool/` clean. Confirm the provincial-city maps (`tango`, `minami`, `nagahara`) and the walled towns are in the swept set - they are the only artifacts exercising the wall wing
 - [x] T032 [US2] Measure function sizes across the package with the quickstart step 6 script; anything still over ~150 lines gets an inline one-line justification at its `def`, or gets split further
-- [ ] T033 [US2] Check combined `settlement/` coverage (`python3 -m coverage report --include='*/settlement/*'`); if the achievable figure rose BECAUSE OF THIS SPLIT, raise `SETTLEMENT_COV_FLOOR` in `.claude/skills/diagram/Makefile` to match and record the new measurement in the comment above it. Never lower it. A movement after Stage 1 alone is a signal to investigate, not a number to bank (research R7)
+- [x] T033 [US2] Check combined `settlement/` coverage (`python3 -m coverage report --include='*/settlement/*'`); if the achievable figure rose BECAUSE OF THIS SPLIT, raise `SETTLEMENT_COV_FLOOR` in `.claude/skills/diagram/Makefile` to match and record the new measurement in the comment above it. Never lower it. A movement after Stage 1 alone is a signal to investigate, not a number to bank (research R7)
 - [x] T034 [US2] Confirm `GEN_TIME_BUDGETS` in `tests/test_villages.py` still passes unmodified - extraction must not have moved a per-gen CPU budget
 
 **Checkpoint**: both halves of the GM's ask are delivered.
@@ -112,7 +112,7 @@ Nothing in Phase 3+ is safe without both.
 - [x] T039 Record in `specs/113-city-package/research.md` anything the implementation learned that the plan got wrong - especially any method whose assignment moved from data-model.md's table, with the reason
 - [x] T040 Add the `civic.py` -> `castle_civic.py` relocation to `.claude/skills/diagram/future-work.md` as a named follow-up with its reasoning, so it does not live only in this spec
 - [x] T041 Set this spec's Status to Implemented with the date, and note the final per-file line counts
-- [ ] T042 Final `make done` green, then the stop-work ritual: commit in the clone and run `scripts/sync-with-main.sh done`
+- [x] T042 Final `make done` green, then the stop-work ritual: commit in the clone and run `scripts/sync-with-main.sh done`
 
 ---
 
@@ -295,3 +295,24 @@ comment at the START of a gitignore line, so the whole string was one literal pa
 nothing. The bare `.coverage` above it worked, which is what made it look half-applied. Comment
 moved to its own line; verified with `git check-ignore -v` against a real xdist file rather than by
 re-reading the pattern.
+
+### T033 - the coverage decision, measured
+
+`settlement/` combined: **95% (8,418 statements, 449 missed)** on the final tip, against 8,400/448
+before the decomposition. Unchanged - which is what a behavior-preserving refactor should do, and a
+small independent confirmation that it was one.
+
+**`SETTLEMENT_COV_FLOOR` stays at 94.** The 95 predates this feature and the concurrent reorg both;
+neither a pure move nor a decomposition can create coverage. Banking it here would credit this
+feature with someone else's point and make a future failure hard to attribute - the same reasoning
+the peer session used when it declined to raise the floor inside its own refactor. A tier
+conversion that actually lights up the city wing should be what raises it.
+
+What the split DID buy here: the 95 is no longer one opaque number. Per file it reads walls 94%,
+bridges 97%, canals 99%, moat / waterfront / civic 100% - so the uncovered city wing is localized
+to two files instead of hiding inside a 1,582-line one.
+
+### T042 - final gate and the stop-work ritual
+
+`make done` green: 3,179 passed, ruff and mypy clean, `settlement/` 95% against its 94 floor.
+Committed and pushed to main (`67040c3`), render-sync run.
