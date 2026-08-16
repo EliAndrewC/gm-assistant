@@ -1,5 +1,6 @@
 """Split from test_settlement.py by feature 025 - see test_settlement/CLAUDE.md for the index."""
 
+import math
 import os
 import random
 import re
@@ -223,8 +224,9 @@ def test_pick_overlay_plots_grows_a_patch_from_its_seeds():
 def test_paddy_features_cover_every_archetype_branch():
     """Feature 012: exercise _paddy_features across archetypes + many seeds so every placement branch fires
     (pond / rock / grave-island each both ways), plus the dike-pond early return. Also confirms each glyph
-    draws and records its manifest key. Synthetic net: 6 plots, the first 3 flagged low."""
-    net = {"plots": [{"poly": [(float(i * 30), 0.0), (float(i * 30 + 20), 0.0), (float(i * 30 + 20), 20.0), (float(i * 30), 20.0)], "low": i < 3, "fill": "#A6C398"} for i in range(6)]}
+    draws and records its manifest key. Synthetic net: 6 plots, the first 3 flagged low
+    (44 x 34 px - roomy enough that the fit-to-polygon shrink in _plot_pond accepts them)."""
+    net = {"plots": [{"poly": [(float(i * 50), 0.0), (float(i * 50 + 44), 0.0), (float(i * 50 + 44), 34.0), (float(i * 50), 34.0)], "low": i < 3, "fill": "#A6C398"} for i in range(6)]}
     seen = {"field_ponds": 0, "field_rocks": 0, "field_graves": 0}
     for arch in ("valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley", "mulberry_dike_fishpond"):
         for seed in range(40):
@@ -473,3 +475,115 @@ def test_draw_comb_field_drops_beads_in_pond_water():
     s.M["field_ponds"] = [{"x": 300.0, "y": 300.0, "rx": 20.0, "ry": 15.0}]
     s.draw_comb_field(net, "f1", {"kind": "pond", "pond": (700, 1000, 60, 40)})
     assert s.M["fields"][-1]["bund_beans"] == [[500.0, 180.0]]
+
+
+# --- feature 112: the composed FieldsMixin surface -----------------------------------------------
+# settlement/fields.py became a package of four sub-mixins composed in fields/__init__.py. The
+# guard below is the whole safety property of that split: core.py imports ONE name and the class
+# must keep contributing exactly what it contributed before. Two failure modes it exists for -
+# a member dropped in the move (the composed class silently loses a method, and only a generator
+# that happens to call it notices), and a member defined by TWO sub-mixins (MRO picks one and
+# orphans the other, with no import error, no type error, and no test failure anywhere else).
+# Proven to fire against both before it was trusted - see specs/112-fields-package/tasks.md T005.
+
+_FIELDS_SURFACE = frozenset(
+    {
+        # public entry points, called from pool gens, hamletgen, other engine modules and checks
+        "apply_land_use",
+        "bund_junctions",
+        "comb_base_fill",
+        "crescent_pond",
+        "draw_comb_field",
+        "fallow_field",
+        "paddy_field",
+        "pond",
+        "water_field",
+        # private helpers, reached through self. (several also called on an instance from tests
+        # and from settlement/land.py, which is why they are part of the surface)
+        "_draw_furrows",
+        "_fallow_patch",
+        "_mulberry_rows",
+        "_paddy_features",
+        "_paddy_plots",
+        "_paddy_surface",
+        "_pick_overlay_plots",
+        "_plot_center_span",
+        "_plot_grave_island",
+        "_plot_pond",
+        "_plot_rock",
+        "_rounded_pond",
+        "_rows",
+        "_split_convex",
+        "_taxfree_plots",
+    }
+)
+
+
+def _fields_submixins():
+    from settlement.fields.comb import CombMixin
+    from settlement.fields.features import FieldFeaturesMixin
+    from settlement.fields.landuse import LandUseMixin
+    from settlement.fields.paddy import PaddyMixin
+
+    return [PaddyMixin, CombMixin, LandUseMixin, FieldFeaturesMixin]
+
+
+def _own_callables(cls):
+    return {k for k, v in vars(cls).items() if callable(v) or isinstance(v, staticmethod)}
+
+
+def test_no_pre_split_fields_member_was_lost_in_the_move():
+    # SUBSET, not equality, and the reason is worth stating. Stage 2 of feature 112 decomposed the
+    # three oversized methods into named private helpers, so the composed class legitimately holds
+    # MORE than the pre-split 24, and will hold more again the next time a method is split. What
+    # must never happen is a pre-split member going MISSING: an addition is visible in review,
+    # while a subtraction is silent until whichever generator calls it happens to run. The
+    # assertion therefore guards the direction that hides. The red proof still holds - deleting a
+    # member names it in `missing` (specs/112-fields-package/tasks.md T005).
+    composed = set().union(*(_own_callables(c) for c in _fields_submixins()))
+    assert composed >= _FIELDS_SURFACE, f"missing={sorted(_FIELDS_SURFACE - composed)}"
+
+
+def test_no_two_fields_submixins_define_the_same_name():
+    subs = _fields_submixins()
+    for i, a in enumerate(subs):
+        for b in subs[i + 1 :]:
+            overlap = _own_callables(a) & _own_callables(b)
+            assert not overlap, f"{a.__name__} and {b.__name__} both define {sorted(overlap)} - MRO would orphan one"
+
+
+def test_every_fields_member_resolves_on_settlement_itself():
+    # what consumers actually rely on: the name reaching Settlement, not merely FieldsMixin
+    unreachable = sorted(n for n in _FIELDS_SURFACE if not hasattr(Settlement, n))
+    assert not unreachable, f"not resolvable on Settlement: {unreachable}"
+
+
+def test_feature_012_archetype_constants_survived_the_split():
+    # the three class-level tuples gating the in-field pond / rock / grave island. They are class
+    # ATTRIBUTES, not methods, so the surface test above cannot see them - and a transformer that
+    # slices a class body by its function definitions is exactly what would drop them.
+    for name in ("_PADDY_POND_KINDS", "_PADDY_ROCK_KINDS", "_PADDY_GRAVE_KINDS"):
+        assert isinstance(getattr(Settlement, name), tuple), name
+    assert "valley_paddy" in Settlement._PADDY_POND_KINDS
+
+
+def test_plot_pond_fits_the_polygon_not_the_bbox():
+    """Inashiro 2026-08-16: a fan-toe WEDGE has a bounding box several times the wedge itself, and the
+    bbox-sized pond spilled across neighboring plots with spoke bunds drawn through open water. A thin
+    wedge must REFUSE the pond (False, nothing drawn or recorded); a roomy rectangle must take one
+    whose rim stays inside the plot polygon."""
+    s = Settlement(600, 600, seed=1)
+    s.meta(name="W", scale="village", ftpx=1, down_deg=90)
+    wedge = {"poly": [(0.0, 0.0), (90.0, 55.0), (96.0, 65.0), (0.0, 8.0)]}  # ~8 px wide sliver, 96 x 65 bbox
+    assert s._plot_pond(wedge, [wedge["poly"]]) is False
+    assert not s.M.get("field_ponds")
+    rect = {"poly": [(100.0, 100.0), (190.0, 100.0), (190.0, 170.0), (100.0, 170.0)]}
+    # a foreign ring bisecting the plot (rings OVERLAP at fan/grid seams) must refuse the pond too
+    bisector = [(145.0, 90.0), (145.0, 180.0), (150.0, 180.0), (150.0, 90.0)]
+    assert s._plot_pond(rect, [rect["poly"], bisector]) is False
+    assert not s.M.get("field_ponds")
+    assert s._plot_pond(rect, [rect["poly"]]) is True
+    (fp,) = s.M["field_ponds"]
+    for a in [i * math.pi / 12 for i in range(24)]:
+        px, py = fp["x"] + fp["rx"] * math.cos(a), fp["y"] + fp["ry"] * math.sin(a)
+        assert 100 <= px <= 190 and 100 <= py <= 170  # every rim point inside the plot

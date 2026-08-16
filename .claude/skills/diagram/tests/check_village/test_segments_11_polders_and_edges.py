@@ -519,3 +519,17 @@ def test_feature_022_gate_refuses_a_meta_check_in_targeted_mode():
     assert "waivers_are_live" in set(check_village.META_CHECKS)
     with pytest.raises(ValueError, match="waivers_are_live"):
         check_village.gate(_feature_022_manifest(), verbose=False, only={"waivers_are_live"})
+
+
+def test_field_ponds_sunk_into_one_plot_fires_when_bunds_cross_the_water():
+    """Inashiro 2026-08-16: a bbox-fitted pond in a fan-toe wedge - bund lines through open water,
+    while field_ponds_on_low_ground stayed green (it reads the host plot flag, not the extent).
+    The ring the pond is sunk into TOUCHES the shore and must not fire; a line through the core must."""
+    base = {"meta": {"scale": "village", "field_archetype": "valley_paddy"}, "wet_plots": [[100, 100]]}
+    pond = {"x": 100, "y": 100, "rx": 30, "ry": 20}
+    host = [[70, 80], [130, 80], [130, 120], [70, 120]]  # the host plot ring: touching the shore is fine
+    good = {**base, "field_ponds": [pond], "fields": [{**_field("p", 0, 0, 500, 500), "plot_rings": [host]}]}
+    assert "field_ponds_sunk_into_one_plot" not in f(good)
+    hem = [[100, 60], [100, 140], [110, 140], [110, 60]]  # runs straight through the water
+    bad = {**base, "field_ponds": [pond], "fields": [{**_field("p", 0, 0, 500, 500), "plot_rings": [host], "drain_hem": [hem]}]}
+    assert "field_ponds_sunk_into_one_plot" in f(bad)
