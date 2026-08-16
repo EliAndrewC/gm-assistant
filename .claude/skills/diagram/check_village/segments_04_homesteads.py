@@ -3,7 +3,7 @@
 import math
 from typing import Any
 
-from settlement import label_aabb, label_quad, paddy_wet_rings, ring_touches, sat_overlap
+from settlement import label_aabb, label_quad, paddy_wet_rings, ring_touches, sat_overlap, surface_water_dist
 
 from .common_01_geometry import (
     _LABEL_BY_KIND,
@@ -826,11 +826,13 @@ def _seg_0285_006__settlement_has_wells(
         REACH = round(760 / float(meta.get("ftpx") or meta.get("ft_per_px") or 2.0))  # ~760 ft, in px at this map's scale (380 at 2 ft/px)
         dry = []
         for h in dwell:
+            # the surface-water half is the SHARED predicate `settlement.surface_water_dist` -
+            # the same call hamletgen.place_wells makes when deciding which houses need a well
+            # (known-open ledger 2026-08-16: two definitions of "needs a well" had drifted).
+            # `lines`/`pond` above stay bound for downstream-segment parity; the verdict reads
+            # the helper.
             d = min((math.hypot(h["x"] - wl["x"], h["y"] - wl["y"]) for wl in wells), default=1e9)
-            for ln in lines:
-                d = min([d] + [seg_dist(h["x"], h["y"], ln[i], ln[i + 1]) for i in range(len(ln) - 1)])
-            if pond:
-                d = min(d, abs(math.hypot(h["x"] - pond[0], h["y"] - pond[1]) - max(pond[2], pond[3])))
+            d = min(d, surface_water_dist(M, h["x"], h["y"]))
             if d > REACH:
                 dry.append((round(h["x"]), round(h["y"])))
         check(
