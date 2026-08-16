@@ -3,7 +3,7 @@
 Split from the 37k-line `check_village.py` monolith by feature 024 (constitution Principle X
 clause 13: files stay at human scale - the cost being managed is context-window tokens). **Load
 only the file the task calls for**; this index is the map. `import check_village` still exposes
-the full legacy surface via `__init__.py`, and the CLI is now `python3 -m check_village
+the consumed legacy surface via `__init__.py` (star-import re-exports since feature 027), and the CLI is now `python3 -m check_village
 <manifest.json> [--capacity [--capacity-map]]`.
 
 Two invariants the split does NOT touch:
@@ -18,7 +18,7 @@ Two invariants the split does NOT touch:
 
 | file | look here when |
 |---|---|
-| `__init__.py` | you need the re-export list or the package docstring; never add logic here |
+| `__init__.py` | you need the package docstring or the re-export mechanism - star imports carry every submodule's public names, an aliased block carries the six consumed underscore names (feature 027; guard: `test_check_village_surface.py`); never add logic here |
 | `__main__.py` | the CLI behavior (`python3 -m check_village`, `--capacity`) needs changing |
 | `common_01_geometry.py` | core types (`Manifest`, `Pt`, `Poly`, `Check`), `load`, `rect_corners`, hulls/gaps, the overlap + label TAXONOMY tables (`_OVERLAP_*`, `_LABEL_*`, `OVERLAP_CLASS`, `_MATRIX_*` policy), size constants (`GATE_FT_*`, `WALL_FT_*`, ...) |
 | `common_02_overlap_policy.py` | the overlap-matrix ENGINE (`matrix_violations`, `matrix_extents`), `GridIndex` (the spatial index), ring-road/theater/fire-feature helpers, torii/footbridge/dojo constants |
@@ -30,7 +30,7 @@ Two invariants the split does NOT touch:
 | `segments_05_fields_and_funerary.py` | segs 0285_092-0333: field margins/ditches, channels (anchoring, winding), cemetery/cremation/mausoleum/ossuary placement; hand-added 0597 (woodland commons within the frame) |
 | `segments_06_ways_and_bridges.py` | segs 0334-0409: bridges vs ways/water, roads, capital districts/housing bands, castle moat clearances |
 | `segments_07_water.py` | segs 0410-0512: watercourses, channel gates, aqueduct taps, ponds, bank/edge rules, lane runs vs water |
-| `segments_08_town_and_fire.py` | segs 0513-0554: town battery (farmers plurality, storefronts, inns, theater), kosatsuba, fire towers, burakumin seam, defense marsh; hand-added 0595 (supply-bank bunds), 0596 (comb floor ends at the collector) |
+| `segments_08_town_and_fire.py` | segs 0513-0554: town battery (farmers plurality, storefronts, inns, theater), kosatsuba, fire towers, burakumin seam, defense marsh; hand-added 0595 (supply-bank bunds), 0600 (comb floor ends at the collector) |
 | `segments_09_justice_and_tanning.py` | segs 0555_000-0562_042: punishment spots, execution grounds (road/boundary/outcast-side rules), tanning yards (water discharge, outcast side) |
 | `segments_10_city_battery_a.py` | segs 0563_000-0563_125: city caste counts/shifts, dojos, wells per neighborhood, civic labels (feature 023's per-statement city battery, first third) |
 | `segments_10_city_battery_b.py` | segs 0563_126-0563_251: city estates (gates, roads, moat clearances), clan/capital-direction meta, lanes |

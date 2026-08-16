@@ -243,6 +243,7 @@
  "drainage_discharges_downhill",
  "drainage_junction_smooth",
  "dry_plot_furrows_vary",
+ "dry_plot_seams_shared",
  "dry_plots_clear_of_paddies",
  "dry_plots_off_hill",
  "dry_plots_to_scale",

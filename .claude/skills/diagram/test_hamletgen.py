@@ -24,6 +24,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import hamletgen as hg  # noqa: E402
+import waterfields as wf  # noqa: E402
 from settlement import point_in_poly, seg_dist  # noqa: E402
 
 
@@ -671,3 +672,43 @@ def test_fork_spur_truncates_at_the_lane_and_survives_degenerate_input():
     assert hg._fork_spur(clean, [(arm, arm)]) == clean
     # degenerate input passes through the bounded loop's guard unharmed
     assert hg._fork_spur([(1.0, 2.0)], [(arm, arm)]) == [(1.0, 2.0)]
+
+
+def test_miter_normals_on_a_straight_canal_are_the_chord_normal() -> None:
+    # fall points +y (down_deg=90), so upslope is -y; every chord normal flips to point that way
+    bn = wf._miter_normals([(0.0, 0.0), (100.0, 0.0), (200.0, 0.0)], wf._Frame(90.0))
+    assert len(bn) == 3
+    for nx, ny in bn:
+        assert nx == pytest.approx(0.0) and ny == pytest.approx(-1.0)
+
+
+def test_miter_normals_share_and_scale_the_seam_at_a_bend() -> None:
+    # a ~17-degree bend: the interior boundary gets ONE mitred normal - the bisector of the two
+    # chord normals, scaled 1/cos(half-bend) so the hem band keeps its true depth at the seam
+    F = wf._Frame(90.0)
+    pts = [(0.0, 0.0), (100.0, 0.0), (200.0, -30.0)]
+    bn = wf._miter_normals(pts, F)
+    n0, n1 = bn[0], bn[2]  # the end boundaries carry their single chord's (unit) upslope normal
+    assert math.hypot(*n0) == pytest.approx(1.0) and math.hypot(*n1) == pytest.approx(1.0)
+    cos_full = n0[0] * n1[0] + n0[1] * n1[1]
+    cos_half = math.sqrt((1.0 + cos_full) / 2.0)
+    assert math.hypot(*bn[1]) == pytest.approx(1.0 / cos_half)
+    # and it bisects: equal angle to both chord normals
+    ml = math.hypot(*bn[1])
+    assert (bn[1][0] * n0[0] + bn[1][1] * n0[1]) / ml == pytest.approx((bn[1][0] * n1[0] + bn[1][1] * n1[1]) / ml)
+
+
+def test_miter_normals_fold_falls_back_to_the_outgoing_chord() -> None:
+    # out and straight back: the two upslope normals cancel exactly, so no shared offset
+    # direction exists - the boundary takes its outgoing chord's normal instead of dividing by ~0
+    bn = wf._miter_normals([(0.0, 0.0), (0.0, 100.0), (0.0, 0.0)], wf._Frame(90.0))
+    assert bn[0] == pytest.approx((-1.0, 0.0))
+    assert bn[1] == pytest.approx((1.0, 0.0))
+    assert bn[2] == pytest.approx((1.0, 0.0))
+
+
+def test_miter_normals_caps_the_scale_on_a_hairpin() -> None:
+    # a ~160-degree divergence between the flipped chord normals: the true miter scale would be
+    # 1/cos(80 deg) = 5.8x, spiking the seam far upslope - capped at 2x (max(0.5, dot))
+    bn = wf._miter_normals([(0.0, 0.0), (-8.7, 49.2), (-17.4, 0.2)], wf._Frame(90.0))
+    assert math.hypot(*bn[1]) == pytest.approx(2.0)
