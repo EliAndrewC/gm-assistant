@@ -173,8 +173,24 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   `meta.cluster_seeding` records the seeding mode always ("frontage" on this roll).
   Map-specific: the west-edge floor strip (12 vertices, worst ~357 px past the flat-extended drain
   line - the same class as Mizuguchi's needle, unnoticed until the check swept) is trimmed to the
-  pixel; three dry woodland parcels (250/250/160 ft) on the merged roll (a 125 ft fourth existed on the pre-merge roll and did not survive the concurrent-session merge re-roll - the dry window holds three); the pocket pond re-seated to (2092, 1671)
+  pixel; three dry woodland parcels (250/250/160 ft) on the merged roll (the count is roll-derived and has moved since - see the later entries); the pocket pond re-seated to (2092, 1671)
   with no ink-on-water residue (the 2026-08-15 logged item cleared with the re-roll). Review log:
   full DELTA caught the two marsh-seated parcels (one 100% wet with zero crowns) that drove the
   marsh keep-out; follow-up pass on the re-seat. Reviewer note logged in future-work.md: stand
   crowns are ink-only, so no manifest check can count a coppice canopy.
+
+- 2026-08-16 (second known-opens round - flooded-sliver demotion, well/check alignment,
+  recorded woodland canopy, trim dedup; this map re-rolled): pointed plots (interior angle
+  < 25 deg) no longer take the FLOODED tint and the painted tint is recorded as
+  `flooded_plots` (gate `flooded_plots_read_as_basins` at 15 deg); the well minimax and
+  rescue read `settlement.surface_water_dist` - the watered check's own predicate - so wells
+  stop chasing stream-watered houses; woodland stands record their crowns (`tree_crowns` +
+  per-parcel count, gate `woodland_commons_visibly_stocked`) and register as placer
+  keep-outs; the trim corner's duplicate vertices are merged (`dedup_ring`).
+  Map-specific: 6 basin-shaped flooded strips survive the demotion, all at the drainage toe;
+  the wells re-seated to the taper-shadow south group (73-180 ft worst-walk) while the
+  channel-fronting north row is correctly excluded; the woodland derivation settled at
+  THREE stands (250/90, 250/88, 160/33 crowns) - a fourth 160 ft stand appeared mid-round on
+  the dry shelf between collector and marsh (review-verified 27 ft clear of the reeds) and
+  did not survive the final set-back calibration; the count is roll-derived, the invariants
+  (dry, on-frame, recorded canopy) are what hold.

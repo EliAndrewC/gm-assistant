@@ -362,6 +362,7 @@ class LandMixin:
             # the fields/buildings are pixel-identical). The sparse dots/pines keep their inline styles.
             g: list[str] = []
             blades: list[str] = []
+            _wd_crowns = 0
             if role == "woodland":
                 for _ in range(int(area / (540 * bs * bs))):  # spaced crowns: an OPEN coppice canopy, gaps showing
                     cx, cy = random.uniform(x0, x1), random.uniform(y0, y1)
@@ -369,6 +370,12 @@ class LandMixin:
                         continue
                     r = random.uniform(6.5, 11.5) * bs
                     col = random.choice(("#6E8B4A", "#7C9856", "#87A45C"))
+                    # RECORD the crown (known-open ledger 2026-08-16, both review rounds
+                    # independently): these used to be SVG ink only, so no manifest check could
+                    # count a stand's canopy - which is how a zero-crown "woodland" parcel could
+                    # ship green. Same flat [x, y, r] run the homestead groves use.
+                    self.M["tree_crowns"] += [round(cx, 1), round(cy, 1), round(r, 1)]
+                    _wd_crowns += 1
                     g.append(f'<ellipse cx="{cx:.1f}" cy="{cy + 2 * bs:.1f}" rx="{r:.1f}" ry="{r * 0.72:.1f}" fill="#59703E" fill-opacity="0.30"/>')  # soft ground shadow
                     g.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{col}" stroke="#4C6234" stroke-width="0.7"/>')  # the crown
                     g.append(f'<circle cx="{cx - r * 0.32:.1f}" cy="{cy - r * 0.32:.1f}" r="{r * 0.42:.1f}" fill="#A6BA79" fill-opacity="0.55"/>')  # sun highlight
@@ -398,6 +405,13 @@ class LandMixin:
             self.add(''.join(g))
             random.setstate(st)
             self._cover_n += 1
+            if role == "woodland":
+                # ...and the parcel is a KEEP-OUT placers actually honor (the Sawada merged-roll
+                # review's placer-side ask): nothing packs after the woodland today, but a future
+                # placer reading crown records rather than the commons poly would otherwise seat
+                # a structure under this canopy with nothing firing. Center-tested by _fits like
+                # every block poly.
+                self.block_polys.append([(float(px0), float(py0)) for px0, py0 in poly])
             self.M["commons"].append(
                 {
                     "x": round((x0 + x1) / 2, 1),
@@ -407,6 +421,7 @@ class LandMixin:
                     "rot": 0,
                     "role": role,
                     "seq": self._cover_n,
+                    **({"crowns": _wd_crowns} if role == "woodland" else {}),
                     "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
                 }
             )
@@ -1151,3 +1166,22 @@ class LandMixin:
         the overlap is harmless. Pass roughly the footprint you will draw (a slightly generous `extra` is
         fine - over-clearing by a few px reads the same)."""
         self._clear_ground(x, y, w, h, extra)
+
+
+def surface_water_dist(M: Any, x: float, y: float) -> float:
+    """Distance from (x, y) to the nearest SURFACE water - irrigation channel, stream, or moat
+    polyline, or the pond's rim - reading exactly the manifest records
+    `settlement_dwellings_watered` reads. ONE predicate, shared by that gate check and by
+    `hamletgen.place_wells` (known-open ledger 2026-08-16: the well minimax objective counted
+    stream-watered houses as needing a well while the check already treated them as watered -
+    the objective and the check read two definitions of "needs a well"). Wells are deliberately
+    NOT included: the caller asking "does this house need a well" must not have the answer
+    pre-empted by the wells it is deciding to dig."""
+    d = 1e9
+    for ln in [c["poly"] for c in M.get("channels", [])] + [st["poly"] for st in M.get("streams", [])] + ([M["moat"]] if M.get("moat") else []):
+        for i in range(len(ln) - 1):
+            d = min(d, seg_dist(x, y, ln[i], ln[i + 1]))
+    pond = M.get("pond")
+    if pond:
+        d = min(d, abs(math.hypot(x - pond[0], y - pond[1]) - max(pond[2], pond[3])))
+    return d

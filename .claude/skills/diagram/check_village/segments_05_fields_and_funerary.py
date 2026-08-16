@@ -2593,3 +2593,32 @@ def _seg_0599__woodland_commons_on_dry_ground(*, M: Any = _UNBOUND, check: Any =
             f"{len(_wd_bad)} woodland commons parcel(s) mostly on the marsh (center, %-wet): {_wd_bad[:4]} - the crown filter refuses wet ground, so a wet-seated parcel renders as a few stray crowns claiming a whole woodland; seat the coppice on dry ground (open_ground_patches treats marsh polys as keep-outs)",
         )
     return _kept(locals(), ())
+
+
+def _seg_0602__woodland_commons_visibly_stocked(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 602 (woodland_commons_visibly_stocked) - hand-added 2026-08-16 past the
+    legacy range (see _seg_0595 in segments_08 for the numbering convention). New-style:
+    writes=()."""
+    # A CLAIMED WOODLAND MUST CARRY A CANOPY THE MANIFEST CAN COUNT (known-open ledger
+    # 2026-08-16, both review rounds independently): the stand crowns used to be SVG ink only,
+    # so a parcel whose crowns were all culled by keep-outs shipped as a claimed woodland with
+    # nothing drawn and no check able to see it (Inashiro's 100%-marsh parcel drew ZERO crowns
+    # behind a green gate). `commons(role="woodland")` now records each drawn crown into
+    # `tree_crowns` and the count onto the parcel; this holds the declaration-exists invariant:
+    # a parcel with no `crowns` key predates the recording (regenerate), and one under 5 crowns
+    # is a claimed woodland the drawing does not deliver (re-seat it - the marsh/frame keep-outs
+    # and the shrink ladder are the levers).
+    if M["meta"].get("generated_by"):
+        _ws_bad: list[tuple[int, int, Any]] = []
+        for _ws_c in M.get("commons", []):
+            if _ws_c.get("role") != "woodland":
+                continue
+            _ws_n = _ws_c.get("crowns")
+            if _ws_n is None or int(_ws_n) < 5:
+                _ws_bad.append((round(float(_ws_c.get("x", 0))), round(float(_ws_c.get("y", 0))), _ws_n))
+        check(
+            "woodland_commons_visibly_stocked",
+            not _ws_bad,
+            f"{len(_ws_bad)} woodland commons parcel(s) with no recorded canopy (center, crowns; None = unrecorded): {_ws_bad[:4]} - a parcel claiming a woodland must draw one and record its crowns (commons role=woodland now writes tree_crowns + a per-parcel count); under 5 crowns the stand does not read as a wood, so re-seat the parcel on more open dry ground",
+        )
+    return _kept(locals(), ())
