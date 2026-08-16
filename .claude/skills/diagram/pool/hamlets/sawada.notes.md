@@ -33,3 +33,11 @@ the low side where the gate requires it.
   and the collapsed micro-plot jumble in the branch-6/canal wedge (gone with the edge-walk drops;
   the drain-hem pass was the fourth quad producer needing the same guard). The dry SE arm the
   review flagged got its well via the coverage-greedy well sort.
+
+- 2026-08-16 (the fork draws both arms - engine change, this map re-rolled): the GM's Inashiro
+  question settled in research/water.md "The head-race forks - supply commands both flanks";
+  every `OFFTAKE_LADDER` row now draws canal B, gated by `comb_supply_commands_both_flanks`.
+  This map re-rolled three times as review fallout was fixed at the engine (canal-B thread
+  tails via interpolated piece boundaries, minimax worst-served well placement, the notice
+  board's grove-clump keep-out, accidental-lane-crossing guards). Review log: round-2 DELTA
+  flagged a copse clump swallowing the notice board and two lane arms crossing mid-run (both fixed at the engine); round-3 follow-up in the session of 2026-08-16.
