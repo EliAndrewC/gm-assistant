@@ -1,7 +1,34 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.6.0 → 1.6.1
+Version change: 1.6.1 → 1.7.0
+MINOR: Principle X clause 14 (Rosters That Restate Code Are Derived, Not
+Maintained) added (GM-directed, 2026-08-16). Clause 13 says a large file
+prompts the split question; clause 14 says a roster-shaped file - one whose
+bulk restates declarations the code already carries - takes a different
+fix entirely: census the consumed surface, move the roster's safety
+property into a guard test proven to fire, then DERIVE the surface (star
+imports for re-export __init__s, introspection/generation for derivable
+registry rows) instead of maintaining or splitting the roster. Drawn from
+feature 027 (check_village/__init__.py, 3,148 -> 63 lines, zero consumer
+changes), the named exemplar. New rule: MINOR per the versioning policy.
+
+Sections updated:
+  - Core Principles: Principle X clause 14 added.
+
+Templates requiring review/update:
+  ✅ .specify/templates/plan-template.md - Principle X gate entry extended
+                              with the clause-14 derive-don't-maintain
+                              commitment.
+  ✅ CLAUDE.md - "Files stay at human scale" operational mirror extended
+                              with the clause-14 short form + the 027
+                              exemplar pointer.
+
+Deferred TODOs:
+  - (carried) automated file-length check; clause 12's deferred
+    expression-counting gate check.
+
+PRIOR (1.6.0 → 1.6.1):
 PATCH: Principle X clause 13 (Files Stay at Human Scale) clarified
 (GM-directed, 2026-08-16): unit TEST files are covered exactly as source
 files. The managed cost is context-window tokens, and a test file is loaded
@@ -461,6 +488,38 @@ any single rule is reason enough to refuse "done" status.
     consult; feature 024 split it into the `check_village/` package,
     the exemplar of the practice.
 
+14. **Rosters that restate code are derived, not maintained** (added
+    v1.7.0, GM-directed 2026-08-16): when a file's bulk is a
+    hand-maintained roster whose rows restate what the code already
+    declares elsewhere - a package `__init__` explicitly importing
+    thousands of names its submodules define, an `__all__` list
+    duplicating the import block above it, registry rows a machine
+    could regenerate by introspecting the functions they point at -
+    splitting it per clause 13 is the WRONG fix: duplicated
+    information does not shrink by being divided. The right fix
+    DERIVES the surface from the single source of truth (star imports
+    for a re-export surface; introspection or generation for
+    derivable rows) and moves any safety property the explicit roster
+    was providing into a test that fails loudly (e.g. a guard against
+    silent star-import shadowing), proven to fire on a synthetic case
+    before it is trusted. Method, in order: CENSUS the consumed
+    surface first - grep who actually reads each name, because most
+    of a grown roster has zero consumers and simply drops; write the
+    guard/surface test against the CURRENT file so the rewrite must
+    preserve what is actually used; then derive; then run the full
+    gate. The line against clause 13's ordered-data carve-out is
+    INFORMATION: a roster stating real decisions (execution order,
+    curation, hand-written per-row metadata that exists nowhere else)
+    is data and may stay; rows reproducible from the code they
+    reference are duplication and must go - and when one file mixes
+    both, derive the derivable facts and keep the decided ones. The
+    question is per-fact, not per-file. Motivating case:
+    `check_village/__init__.py`, 3,148 lines of import rosters plus a
+    duplicate `__all__` restating what 18 submodules already
+    declared, reduced to 63 derived lines by feature 027 with zero
+    consumer changes - the exemplar; full method in
+    `specs/027-init-star-imports/`.
+
 ### XI. Japanese Authenticity (NON-NEGOTIABLE)
 
 Any content this project generates or surfaces in Japanese script - relic
@@ -740,4 +799,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.6.1 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-16
+**Version**: 1.7.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-16

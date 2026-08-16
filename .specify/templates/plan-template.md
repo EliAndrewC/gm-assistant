@@ -111,7 +111,13 @@ approval before /speckit-tasks may run.
   whose implementation
   would grow any source or test file past ~1,000 raw lines MUST say so and
   either plan the package-of-subfiles split (directory-module +
-  CLAUDE.md index) or justify the file remaining whole.
+  CLAUDE.md index) or justify the file remaining whole. And when the
+  oversized file is ROSTER-shaped - re-export lists, `__all__`
+  duplicates, registry rows a machine could regenerate from the code
+  they point at - the plan MUST apply clause 14 (derive, don't maintain
+  or split): census the consumed surface, move the roster's safety
+  property into a guard test proven to fire, then derive the surface;
+  `specs/027-init-star-imports/` is the exemplar.
 
 - **XII. Historical Grounding Bookends (NON-NEGOTIABLE)**: Does the feature
   change what a generator ASSERTS ABOUT THE WORLD (any `/diagram` settlement
