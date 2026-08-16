@@ -30,7 +30,14 @@ def test_a_rolled_cohort_passes_the_whole_gate() -> None:
 
     (The four demo maps in `pool/hamlets/` carry the full-size version of the gate check, in
     `tests/test_villages.py`; four members here keep the suite's runtime honest.)"""
-    reports = hg.cohort(4, first_seed=41)
+    # SERIAL ON PURPOSE (2026-08-16), for two reasons that point the same way. An in-gate caller
+    # wants `jobs=1` - a pytest worker that spawns its own pool competes with the other 21 - and
+    # these four rolls are also this suite's only in-process walk of the seed-dependent generator
+    # branches, because a fanned-out roll executes in a worker where this run's coverage cannot see
+    # it. Leaving it on the default parallel path silently uncovered `hinterland.py`'s
+    # no-house-column fringe fallback. The fan-out is a CLI win, not a gate win; the parallel branch
+    # is held by `test_the_fan_out_agrees_with_the_serial_path` below.
+    reports = hg.cohort(4, first_seed=41, jobs=1)
     assert len(reports) == 4
     for report in reports:
         assert report.plan.placed >= round(0.85 * report.plan.spec.households), f"{report.plan.spec.name} seated {report.plan.placed}/{report.plan.spec.households}"
@@ -102,11 +109,19 @@ def test_cohort_derives_each_spec_and_can_be_forced_serial(monkeypatch) -> None:
     assert [s.households for s in seen] == [14, 14]
 
 
-def test_the_serial_path_rolls_a_real_cohort_member() -> None:
-    """`jobs=1` runs `generate` in THIS process, which is what an in-gate caller wants - and it is
-    therefore also what exercises the throwaway-scratch finish a cohort member takes (`out_base`
-    None). A fanned-out roll does its finishing in a worker, where this suite's coverage cannot
-    see it, so the serial path is the one that has to be walked for real here."""
-    (report,) = hg.cohort(1, first_seed=41, jobs=1)
-    assert report.plan.spec.name == "Cohort-41"
-    assert report.path is None  # a cohort member is gated, then thrown away
+def test_the_fan_out_agrees_with_the_serial_path() -> None:
+    """The fan-out's entire safety claim, pinned: a map is a pure function of its spec, so rolling
+    it in a worker must produce exactly the report rolling it here does. This is also the only test
+    that walks the `ProcessPoolExecutor` branch (`jobs > 1` takes the pool path even for one map),
+    which is why it rolls for real rather than stubbing `generate`.
+
+    The method matters as much as the assertion. When the fan-out landed (2026-08-16) the parallel
+    24-seed run differed from the session's serial baseline on 3 of 24 maps - which looked damning
+    until the baseline turned out to predate a mid-task merge of another session's engine round.
+    Re-rolling exactly those seeds serially on the SAME code reproduced the parallel verdicts.
+    Diff against the same code, never against an older log."""
+    (parallel,) = hg.cohort(1, first_seed=41, jobs=2)
+    (serial,) = hg.cohort(1, first_seed=41, jobs=1)
+    assert parallel.line() == serial.line()
+    assert parallel.failures == serial.failures
+    assert parallel.path is None  # a cohort member is gated, then thrown away
