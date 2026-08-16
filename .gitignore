@@ -106,8 +106,11 @@ top_up-improvement.md
 .claude/skills/diagram/wip/*.png
 .claude/skills/diagram/wip/*.json
 
-# Spec-kit ACTIVE-FEATURE POINTER - per-session state, never shared.
-# It OUTRANKS the SPECIFY_FEATURE env var when spec-kit resolves FEATURE_DIR, so a peer session
-# committing theirs silently redirects the next session -s spec-kit writes into their specs/NNN-*/.
-# Committed by features 114, 115 and 116 before anyone noticed the ignore rule was missing entirely.
+# Spec-kit's ACTIVE-FEATURE pointer - per-workspace state, never shared. It was tracked until
+# 2026-08-16, when a peer session's /speckit-specify commit repointed it mid-chain and the merge
+# handed this session the OTHER feature's directory. That is not cosmetic: spec-kit resolves
+# FEATURE_DIR from this file at priority 2, ABOVE the SPECIFY_FEATURE env var (priority 3), so a
+# stale pointer silently redirects setup-plan.sh / setup-tasks.sh / implement into a peer's
+# specs/NNN-*/ while CURRENT_BRANCH still reads correctly. Each clone writes its own; nothing
+# shares it. See CLAUDE.md 'Concurrent sessions' and scripts/clone-sync-hooks.sh's re-track guard.
 .specify/feature.json
