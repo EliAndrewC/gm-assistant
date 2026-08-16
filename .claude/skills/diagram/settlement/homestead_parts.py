@@ -523,8 +523,9 @@ class HomesteadPartsMixin:
         Inashiro: grass tufts stood ON the head-race, because the scatter knew only the hairline
         topology record in M['channels'], w 2.5, while the drawn lateral ran ~14 wide on its own
         filleted post-clip polyline - the "same manifest source" trap, settlements.md 'PLANK
-        BRIDGES'). A tapered lateral is split into the SAME 7 piece slices field_channel strokes,
-        each at its own drawn width. Factored so the per-point test (_on_watercourse) and the
+        BRIDGES'). A tapered lateral is split by `waterfields.taper_pieces` - ONE piece per SEGMENT
+        at its arc-correct width, the very same call `field_channel` inks it with, so the corridor
+        and the stroke it protects cannot disagree. Factored so the per-point test (_on_watercourse) and the
         ground-cover scatters' pre-boxed grids provably test the same geometry. `channel_margin`
         widens the IRRIGATION courses only (channels + drawn laterals, never streams) - the commons
         scatter passes the cut-bank margin here (_BANK_MARGIN_FT says why banks are bare and why a

@@ -107,11 +107,13 @@ absolute widths - and the absolute widths are inflated. See the disclosed-depart
 
 *Still OPEN, and it wants a GM ruling (raised by the same review).* A delivery ditch's head is a flat
 `4.0 * grain` while its parent supply canal tapers below that, so low in the tree the LATERAL is drawn
-wider than the canal feeding it - on Inashiro at (2524.8, 1540) the lateral leaves at 7.75 px against
-a parent drawn 5.70 and continuing at 5.10. This is not the junction-conservation question already
-ruled on (drawn width is RANK, not discharge - see that entry); it is the rank READ inverting, which
-is the one thing width-as-rank exists to convey. It predates this work and this work moved it by
-+0.07 px. The fix, if wanted, is to cap a delivery's head at some fraction of its parent's LOCAL
+wider than the canal feeding it - on Inashiro at (2524.8, 1540) the lateral leaves at **7.96 px**
+against a parent drawn **5.73** and continuing at **5.35**. This is not the junction-conservation
+question already ruled on (drawn width is RANK, not discharge - see that entry); it is the rank READ
+inverting, which is the one thing width-as-rank exists to convey. It predates this work, and the arc
+fix nudged it the WRONG way (it was 7.75 against 5.70; ratio 1.36 -> 1.39), because that lateral's
+first segment is only 6 px long, so its arc midpoint sits at t ~ 0.01 and the head piece is inked at
+nearly the full flat head. The fix, if wanted, is to cap a delivery's head at some fraction of its parent's LOCAL
 width - which would make every delivery's width depend on where it takes off, and re-roll the pool.
 
 ## Where the drawn net STOPS - the tier below the last ditch we can draw

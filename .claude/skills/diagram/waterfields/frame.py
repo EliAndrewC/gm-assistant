@@ -43,17 +43,24 @@ def taper_w(w0: float, w1: float, t: float) -> float:
     dead at a still-substantial width. Under the true law a delivery ditch holds most of its working
     width while it still has most of its water to deliver, then dwindles hard over the last stretch -
     which is what "the water is leaving it" is supposed to look like. MEASURED IN THE INK on
-    Inashiro's five 8.0 -> 3.0 ft delivery ditches, at tenths 0.10 / 0.25 / 0.50 / 0.75 / 0.90 of the
-    run: **7.7 / 7.1 / 6.1 / 4.8 / 3.7 px**, against the straight line's 7.5 / 6.8 / 5.5 / 4.3 / 3.5.
-    So it holds ~6 ft at mid-run where the old law had already given up 2.5 of its 5 ft, and takes
-    the steeper half of its narrowing in the back half of the run.
+    Inashiro's five 8.0 -> 3.0 ft delivery ditches - the MEDIAN drawn width of the piece covering
+    each of the tenths 0.10 / 0.25 / 0.50 / 0.75 / 0.90 of the run: **7.7 / 7.0 / 6.1 / 4.8 / 3.7
+    px**, against the straight line's 7.5 / 6.8 / 5.5 / 4.3 / 3.5. So it holds ~6 ft at mid-run
+    where the old law had already given up half of its 5 ft of narrowing.
 
-    Those are drawn widths, not formula values, and the distinction is not pedantic: this docstring
-    first carried the FORMULA's numbers while `field_channel` was still sampling the law by vertex
-    index, so the ink was 4.6 px at mid-run and the claim here was false on its own example map
-    (settlement-review 2026-08-17). `taper_pieces` in `banks.py` is what makes the two agree - it
-    parameterizes by ARC LENGTH, and its docstring carries that half of the story. Re-measure rather
-    than re-deriving if you change either.
+    A piece carries the law at its OWN midpoint, so the ink brackets the continuous law rather than
+    sitting on it, and the SPREAD widens where the segments are coarse: the five ditches agree
+    within ~0.1 px at the first four tenths but span 3.46 to 4.13 px at 0.90 against the law's 3.81.
+    Quote the median and that spread, never a single tight figure.
+
+    Those are drawn widths, not formula values, and the distinction has now bitten this docstring
+    TWICE. It first carried the formula's numbers while `field_channel` still sampled the law by
+    vertex index, so the ink was 4.6 px at mid-run and the claim here was false on its own example
+    map; the correction then quoted the formula's 7.1 at the 0.25 tenth where the ink's median is
+    7.0 (both caught by settlement-review, 2026-08-17). **Re-measure in the SVG. Do not compute
+    these from the rule this docstring is describing.** `taper_pieces` in `banks.py` carries the
+    arc-parameterization half of the story, and the bound between its piecewise ink and the
+    continuous law the bank clearances evaluate.
 
     NOT a taper to nothing: `w1` is a real tier, not zero. See the same research anchor for why the
     finest channel we DRAW stops at the terminal-lateral width instead of vanishing to a point.
