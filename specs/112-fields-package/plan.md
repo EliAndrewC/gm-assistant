@@ -6,8 +6,8 @@
 
 ## Summary
 
-`settlement/fields.py` is 1,503 lines holding one `FieldsMixin` class of 24 methods, of which three
-(`draw_comb_field` 313, `apply_land_use` 266, `water_field` 194) are 51% of the file. Split the
+`settlement/fields.py` is 1,511 lines holding one `FieldsMixin` class of 24 methods, of which three
+(`draw_comb_field` 321, `apply_land_use` 266, `water_field` 194) are 52% of the file. Split the
 class into four sub-mixins in four submodules under `settlement/fields/`, composed back into a
 single `FieldsMixin` by the package `__init__` so `core.py` is untouched, then decompose the three
 oversized methods into named helpers. Both stages are proven by byte-identical pool artifacts
@@ -41,7 +41,7 @@ must not move. Method-call overhead from extraction is immaterial next to the ge
 import cycle (`mypy --strict` must pass); every file under ~1,000 raw lines and every function under
 ~150 lines without justification
 
-**Scale/Scope**: 1,503 lines, one class, 24 methods, 4 new submodules plus `__init__.py` and
+**Scale/Scope**: 1,511 lines, one class, 24 methods, 4 new submodules plus `__init__.py` and
 `CLAUDE.md`; 21 files call `draw_comb_field`, 13 call `bund_junctions`, 13 call `pond` - none of
 which change
 
@@ -74,7 +74,7 @@ Complexity Tracking entries.*
     100% rule applies to every module outside `*/settlement/*` and the package rides the
     `SETTLEMENT_COV_FLOOR = 94` ratchet (verified: `settlement/fields/*.py` matches the same glob,
     so the Makefile needs no change).
-  - **Clause 12 (functions at human scale)**: Stage 2 is exactly this - `draw_comb_field` (313),
+  - **Clause 12 (functions at human scale)**: Stage 2 is exactly this - `draw_comb_field` (321),
     `apply_land_use` (266) and `water_field` (194) are decomposed to under ~150 lines each or
     carry an inline justification.
   - **Clause 13 (files at human scale)**: the motivation. Every resulting file is projected under

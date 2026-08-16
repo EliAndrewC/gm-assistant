@@ -8,13 +8,13 @@ pre-split file and exclude the per-module import header (~30 lines each).
 | module | sub-mixin class | methods | body lines | projected file |
 |---|---|---|---|---|
 | `paddy.py` | `PaddyMixin` | 9 | 443 | ~475 |
-| `comb.py` | `CombMixin` | 4 | 448 | ~480 |
+| `comb.py` | `CombMixin` | 4 | 456 | ~490 |
 | `landuse.py` | `LandUseMixin` | 3 | 364 | ~395 |
 | `features.py` | `FieldFeaturesMixin` | 8 | 175 | ~205 |
 | `__init__.py` | `FieldsMixin` (composition only) | 0 | - | ~25 |
 | `CLAUDE.md` | - | - | - | ~45 |
 
-Largest projected file ~480 lines, comfortably under the ~1,000 clause-13 bar, with room for Stage
+Largest projected file ~490 lines, comfortably under the ~1,000 clause-13 bar, with room for Stage
 2's extracted helper signatures.
 
 ## Method assignment
@@ -43,7 +43,7 @@ The comb-field builder and the pieces only it uses.
 |---|---|---|---|
 | `comb_base_fill` | 37 | public entry (12 external sites) | |
 | `bund_junctions` | 78 | public entry (13 external sites) | |
-| `draw_comb_field` | 313 | public entry (21 external sites) | **Stage 2 decomposition target** |
+| `draw_comb_field` | 321 | public entry (21 external sites) | **Stage 2 decomposition target** |
 | `_draw_furrows` | 20 | private; **cross-group** - also called by `settlement/land.py` via `self.` | resolves through the composed class; no import |
 
 ### `landuse.py` - `LandUseMixin`
