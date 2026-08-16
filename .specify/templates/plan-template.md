@@ -137,6 +137,21 @@ approval before /speckit-tasks may run.
     A map can pass every check and still depict something that never existed
     (see the `rape` overlay failure in the constitution's Principle XII).
 
+- **XIII. No Known Regressions (NON-NEGOTIABLE)**: Does the feature touch
+  shared code with an existing test bed (a cohort, a pool sweep, a regression
+  corpus)? If yes, the plan MUST commit to:
+  - **A MEASURED baseline, taken before any judging** - on unmodified code, in
+    a detached worktree (`git worktree add --detach`), never a stash. Name the
+    command and the number in the plan.
+  - **Zero NEW failures at merge.** Pre-existing failures stay ledgered and are
+    not this feature's to fix; anything that passed before and fails after is a
+    regression and BLOCKS the merge. Smallness, "only a cohort seed", having
+    documented it, net-positive arithmetic, and a "rotated" residue are
+    explicitly not excuses. Exits: fix, revert, or an explicit GM waiver.
+  - Where a re-roll destroys per-seed comparison, the pass RATE must not drop
+    AND each newly-failing check must be individually diagnosed in the plan's
+    closing notes.
+
 Document each gate's status in a short bulleted Constitution Check section
 in the plan output before proceeding to Phase 0.
 

@@ -1316,6 +1316,17 @@ ring) -> 22/24, at which point its residue was two failures on two maps where th
 been five on two. Same pass rate, different maps, strictly less broken - which only the side-by-side
 shows.
 
+**BUT "ROTATED" IS NOT A DEFENSE, AND SINCE 2026-08-17 IT IS A MERGE BLOCKER** (constitution
+Principle XIII, NON-NEGOTIABLE). The paragraph above describes how to READ a cohort delta; it does
+not license shipping one. A seed that passed before your change and fails after it is a REGRESSION,
+however much else improved and however thoroughly you ledgered it - and **nothing merges to main
+carrying one**. Where the re-roll genuinely destroys per-seed comparison, the bar is that the pass
+RATE must not drop AND every newly-failing check is individually diagnosed. Three exits: fix,
+revert, or an explicit GM waiver. Otherwise the work stays in the clone, unpushed, and you say so.
+(Motivating case: the fan-toe needle fix, which cleared the GM-ruled sunburst on all four shipped
+hamlets and 22 of 24 seeds while regressing seeds 9 and 11 - net-positive, fully diagnosed, and
+still not mergeable.)
+
 **Take the baseline in a DETACHED WORKTREE, never by stashing the working tree.** `git worktree add
 --detach /tmp/base HEAD` costs seconds and touches nothing. Stashing looks equivalent and is not: a
 `settlement-review` agent was reading `pool/hamlets/inashiro.json` at the time, and the stash
