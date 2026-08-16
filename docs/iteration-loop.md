@@ -39,3 +39,32 @@ unless that function effectively IS the process (the `main` of a scripted run), 
 is the process and the rule applies. When weighing a perf change to a loop, compute the
 percentage, not just the seconds, and never argue "it's only N seconds" against a >=5%
 whole-process win.
+## The 2026-08-16 profile: the cut-bank fix, and where the time goes now
+
+First full transcript profile taken AFTER the 2026-08 performance refactors (pool-regen fan-out,
+cache-backed gate, batched crop inspection, batching hooks), on a representative small engine fix
+(the cut-bank scrub margin): **14m33s prompt-to-verified-in-main**, breaking down as **60% LLM
+turn latency (520s), 28% idle waiting on background work (249s), 12% foreground tool execution
+(102s)**. Compare 2026-07-20's 78%/22% split on much larger absolute tool time: both halves
+shrank. The findings that set the next round of rules:
+
+- **The gate was NEVER on the critical path.** It ran 177s and finished 92s BEFORE the
+  settlement-review DELTA agent (350s) - the critical path was diagnosis -> design ->
+  implementation -> the REVIEW tail (84s past the green gate) -> wrap-up (57s). Speeding the gate
+  further buys nothing on this task shape; launching the review earlier and making it cheaper buys
+  the tail. Hence the sharpened review-launch rule (diagram CLAUDE.md, "Invoking a review agent")
+  and `scatter_audit.py` (feature 108), which converts the review's ~21-tool-use hand parse into
+  one seconds-fast script.
+- **Seven long reasoning turns were 273s of the 520s LLM time**, and the largest (75s) partly
+  re-derived a recorded open decision. Hence the open-decision-sketch convention (diagram
+  CLAUDE.md, "An OPEN DECISION carries an implementation sketch").
+- **A 38s foreground pool-regen sweep bought nothing** - the rule, with its render claim VERIFIED
+  against the render model rather than assumed: foreground-regenerate only the MOTIVATING map (a
+  session needs its render for its own crop inspection); run the whole affected test file; do NOT
+  run a pre-gate `regen.py pool/*/*.gen.py` sweep. The gate verifies the pool itself
+  (`DIAGRAM_SKIP_RENDER` + gencache), and `sync-with-main.sh` render-sync REGENERATES main's
+  renders from main's own committed tip (RENDER MODEL, GM 2026-07-22) - so clone-side renders of
+  non-motivating maps feed nothing at all.
+- **Projected floor for tasks of this shape: ~12 minutes** - roughly 8 minutes of genuinely serial
+  reasoning and implementation with the review tail fully overlapped. The next profile taken after
+  these rules land compares against that number.

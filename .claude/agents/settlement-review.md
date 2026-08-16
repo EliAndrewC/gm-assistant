@@ -43,6 +43,32 @@ The main agent passes you a subject name and its pool folder. Paths are under
 
 If the notes file is missing, say so prominently and review anyway, flagging that intent is unknown.
 
+## Tooling: scatter_audit.py - run it YOURSELF on any scatter/ground-cover delta
+
+When the change under review touches ground-cover scatter (commons scrub, the cut-bank channel
+margin, crop margins), do not hand-build the SVG parse - the 2026-08-16 cut-bank DELTA spent ~21
+tool uses and most of its 350s rebuilding exactly this:
+
+    python3 scatter_audit.py pool/<type>/<subject>        # seconds; exit 0 clean / 1 violations / 2 audit-broken
+
+It extracts every scatter BASE point (grass blades, brush dots, pine trunks, woodland crowns;
+marsh reeds counted but report-only) and adjudicates them against the ENGINE'S OWN keep-out
+geometry (drawn watercourses + the irrigation cut-bank margin, paddy/dry-plot crop margins),
+reporting each violation with position and owning keep-out plus near-margin density bands - your
+sterile-halo evidence. The independence rules are unchanged: run it yourself and read its output
+yourself; the author's own audit run is a claim to re-verify, not evidence. Its `checked:` line
+names exactly which keep-out families ran - everything else (urban halos, corridors, glyph form,
+legibility, whether the place reads as a place) is still your judgment, not the script's. Exit 2
+means the AUDIT is broken (zero bases parsed - suspect emission-styling drift), never that the map
+is clean. Validation: on its first live run (2026-08-16) it caught 3 real crop-margin tufts in
+dry-hem seam wedges that the same day's water-only hand parse provably could not see.
+
+**Record the catch-rate.** Your review's line in the subject's notes entry must state what the
+pass CAUGHT - including "nothing new" - so the GM's standing question ("are these reviews pulling
+their weight?") stays answerable with data. The record so far says they are: the `_fill_wedges`
+nested fillers (2026-08-16, Inashiro), the bund-EDGE second pass (2026-08-15, via Sawada), the
+collector-drain intent put on record (2026-08-16).
+
 ## Scope: FULL or DELTA - decide this FIRST, in one line, before reading anything
 
 A map that has never been reviewed needs every sweep below. A map that was reviewed last week and
