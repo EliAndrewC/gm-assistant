@@ -26,6 +26,43 @@ if TYPE_CHECKING:
     from ..core import Settlement
 
 
+# ---- footbridge geometry ------------------------------------------------------------------
+# Three pure helpers, hoisted out of `channel_footbridges` by feature 113. They close over
+# nothing and are shared by that method's slide loop and the two predicates it now delegates to;
+# nesting them was a third of what made that method 195 lines, and hid the fact that they are
+# ordinary geometry rather than anything footbridge-specific.
+
+
+def _at_arc(pts: Any, seg: Any, s: float) -> Any:  # point + heading (deg) at arc-length s along the polyline
+    acc = 0.0
+    for i, sl in enumerate(seg):
+        if acc + sl >= s or i == len(seg) - 1:
+            fr = (s - acc) / sl if sl else 0.0
+            ax, ay = pts[i]
+            bx, by = pts[i + 1]
+            return (ax + (bx - ax) * fr, ay + (by - ay) * fr, math.degrees(math.atan2(by - ay, bx - ax)))
+        acc += sl
+
+
+def _deck_quad(cx: float, cy: float, w: float, h: float, deg: float) -> list[Pt]:
+    a = math.radians(deg)
+    ca, sa = math.cos(a), math.sin(a)
+    return [(cx + dx * ca - dy * sa, cy + dx * sa + dy * ca) for dx, dy in ((-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2))]
+
+
+def _quads_overlap(p: Any, q: Any) -> bool:  # separating-axis rect overlap (matches bridges_clear_of_houses)
+    for poly in (p, q):
+        for i in range(4):
+            x1, y1 = poly[i]
+            x2, y2 = poly[(i + 1) % 4]
+            nx, ny = -(y2 - y1), (x2 - x1)
+            pa = [nx * x + ny * y for x, y in p]
+            qa = [nx * x + ny * y for x, y in q]
+            if max(pa) < min(qa) or max(qa) < min(pa):
+                return False
+    return True
+
+
 class BridgesMixin:
     def bridge(self: Settlement, x: float, y: float, rot: float, span: float, deck_w: float) -> int:  # type: ignore[misc]
         """A timber BRIDGE carrying a road (or town street) over a watercourse - a stream, an
@@ -147,34 +184,7 @@ class BridgesMixin:
         the village, or a dike (via _plank_reaches_useful_ground). A drain/toe stretch whose far bank opens onto
         marsh/scrub/off-map carries NO plank (GM 2026-07-22, Hikari no Sato: crossings into the reed marsh)."""
 
-        def _at(pts: Any, seg: Any, s: float) -> Any:  # point + heading (deg) at arc-length s along the polyline
-            acc = 0.0
-            for i, sl in enumerate(seg):
-                if acc + sl >= s or i == len(seg) - 1:
-                    fr = (s - acc) / sl if sl else 0.0
-                    ax, ay = pts[i]
-                    bx, by = pts[i + 1]
-                    return (ax + (bx - ax) * fr, ay + (by - ay) * fr, math.degrees(math.atan2(by - ay, bx - ax)))
-                acc += sl
-
-        def _corners(cx: float, cy: float, w: float, h: float, deg: float) -> list[Pt]:
-            a = math.radians(deg)
-            ca, sa = math.cos(a), math.sin(a)
-            return [(cx + dx * ca - dy * sa, cy + dx * sa + dy * ca) for dx, dy in ((-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2))]
-
-        def _sat(p: Any, q: Any) -> bool:  # separating-axis rect overlap (matches bridges_clear_of_houses)
-            for poly in (p, q):
-                for i in range(4):
-                    x1, y1 = poly[i]
-                    x2, y2 = poly[(i + 1) % 4]
-                    nx, ny = -(y2 - y1), (x2 - x1)
-                    pa = [nx * x + ny * y for x, y in p]
-                    qa = [nx * x + ny * y for x, y in q]
-                    if max(pa) < min(qa) or max(qa) < min(pa):
-                        return False
-            return True
-
-        houses = [_corners(h["x"], h["y"], h["w"], h["h"], h.get("rot", 0)) for h in self.M.get("houses", [])]
+        houses = [_deck_quad(h["x"], h["y"], h["w"], h["h"], h.get("rot", 0)) for h in self.M.get("houses", [])]
         n0 = len(self.M.get("bridges", []))
         # THREE MORE THINGS A PLANK SLIDES AWAY FROM (2026-08-11, found by rolling cohorts of
         # scripted hamlets - the shipped maps' ditches happen to run clear of all three):
@@ -240,47 +250,25 @@ class BridgesMixin:
                 # same resolution, or one of them is answering a different question.
                 _step = max(8.0, total / 40)
                 for frac in sorted((k * _step / total for k in range(-int(total / 2 / _step), int(total / 2 / _step) + 1)), key=abs):
-                    px, py, ang = _at(pts, seg, max(0.0, min(total, base + frac * total)))
+                    px, py, ang = _at_arc(pts, seg, max(0.0, min(total, base + frac * total)))
                     deck = ang + 90  # deck runs ACROSS the ditch (perpendicular)
-                    quad = _corners(px, py, span, plank_w, deck)
+                    quad = _deck_quad(px, py, span, plank_w, deck)
                     # WIDEN the deck to the widest water actually under it, then re-cut the quad:
                     # a plank at a junction spans the junction. Tested as "another course runs UNDER
                     # this deck", not "another course passes within a deck's length" - the looser
                     # form catches a ditch merely running parallel to a neighbor.
-                    _da = math.radians(deck)
-                    _dux, _duy = math.cos(_da), math.sin(_da)
-                    under = []
-                    for wl, ow in other_water:
-                        if wl is pts:
-                            continue
-                        for i2 in range(len(wl) - 1):
-                            if not quad_hits_seg(quad, tuple(wl[i2]), tuple(wl[i2 + 1]), 3.0):
-                                continue
-                            _wx, _wy = wl[i2 + 1][0] - wl[i2][0], wl[i2 + 1][1] - wl[i2][1]
-                            _wl = math.hypot(_wx, _wy) or 1.0
-                            _sin = abs(_dux * _wy / _wl - _duy * _wx / _wl)  # deck-vs-course crossing angle
-                            _cos = abs(_dux * _wx / _wl + _duy * _wy / _wl)
-                            # THE CHECK'S OWN GEOMETRY, not the shorthand in its message. It requires
-                            # every deck CORNER to stand at least `cw/2 + floor` from the crossed
-                            # course's centerline (floor = 2 real ft for a footplank), so at a
-                            # crossing angle t the deck's half-length must exceed that over sin(t) -
-                            # i.e. the whole span is (cw + 2*floor + deck_w*|cos|) / sin. Deriving it
-                            # from the message's "(width + deck_w*|cos|)/sin plus a landing" leaves
-                            # the landing UNDIVIDED by sin and comes up short on a shallow crossing,
-                            # which is precisely the case this exists for.
-                            under.append((ow + 2.0 * (2.0 / self.ftpx) + plank_w * _cos) / max(_sin, 0.02) + 1.0)
-                    span_here = max([span] + under)
+                    span_here = self._widen_for_confluence(quad, deck, pts, other_water, span, plank_w)
                     if span_here > 3.0 * span:
                         continue  # too oblique to plank: widen where a longer deck is reasonable, but a
                         # crossing that needs three times the nominal span is a course running nearly
                         # ALONGSIDE this one, and the answer there is to cross somewhere else. (The fine
                         # arc-length slide above is what makes "somewhere else" reliably available.)
-                    quad = _corners(px, py, span_here, plank_w, deck)
-                    if any(_sat(quad, hc) for hc in houses):
+                    quad = _deck_quad(px, py, span_here, plank_w, deck)
+                    if any(_quads_overlap(quad, hc) for hc in houses):
                         continue
                     if any(quad_hits_poly(quad, dp) for dp in dry_quads):
                         continue  # no plank laid across the hem crop
-                    if any(_sat(quad, _corners(b["x"], b["y"], b.get("span", 8.0), b.get("w", 4.0), b.get("rot", 0.0))) for b in self.M.get("bridges", [])):
+                    if any(_quads_overlap(quad, _deck_quad(b["x"], b["y"], b.get("span", 8.0), b.get("w", 4.0), b.get("rot", 0.0))) for b in self.M.get("bridges", [])):
                         continue  # ...nor on top of another deck
                     # ...tested on the EXACT numbers that will be recorded. `footbridges_reach_useful_ground`
                     # re-derives the bank points from the span and rot in the manifest, which `bridge()`
@@ -296,38 +284,73 @@ class BridgesMixin:
                     # the 0.05 px came from `bridge()` rounding the deck's recorded POSITION, not its span.
                     if not self._plank_reaches_useful_ground(round(px, 1), round(py, 1), round(deck, 1), round(span_here, 1)):
                         continue
-                    # AND EVERY CORNER LANDS PAST THE BANK - the exact test
-                    # `bridges_span_their_water` will make, on the same geometry, before the deck is
-                    # committed rather than after. A deck perpendicular to a STRAIGHT ditch clears by
-                    # construction, which is why this was not needed for years; a deck at a BEND does
-                    # not, because the polyline curves back toward one of its corners. (`w`/2 + 2 real
-                    # ft is the check's own floor for a footplank.)
-                    # Measured against `bridge_crossed_waters`, which is where the CHECK reads its
-                    # geometry - the DRAWN, filleted polyline, not the recorded one `field_channel`
-                    # was handed. Testing the recorded line looked right and rejected nothing,
-                    # because the fillet is exactly what curves back toward the corner.
-                    _seat = None
-                    _cw = 0.0
-                    for _wp, _ww in bridge_crossed_waters(self.M):
-                        if min(seg_dist(px, py, _wp[i3], _wp[i3 + 1]) for i3 in range(len(_wp) - 1)) <= _ww / 2 + 2 and _ww > _cw:
-                            _seat, _cw = _wp, _ww
-                    if _seat is not None:
-                        _need = _cw / 2 + 2.0 / self.ftpx
-                        _dr = math.radians(deck)
-                        _cux, _cuy = math.cos(_dr), math.sin(_dr)
-                        if any(
-                            min(
-                                seg_dist(px + su * _cux * span_here / 2 - sv * _cuy * plank_w / 2, py + su * _cuy * span_here / 2 + sv * _cux * plank_w / 2, _seat[i3], _seat[i3 + 1])
-                                for i3 in range(len(_seat) - 1)
-                            )
-                            < _need
-                            for su, sv in ((-1, -1), (-1, 1), (1, -1), (1, 1))
-                        ):
-                            continue  # pragma: no cover - the corner rejection. It fires on real geometry (a scripted-cohort hamlet's branch ditch, whose gentle curve brought a deck corner back within the water at the ditch's head) but no pool map and no synthetic bed reproduces it: every fixture tried either finds a clear offset first or fails the useful-ground test before reaching here. The guard stays - the case it prevents shipped.
+                    if not self._deck_clears_its_water(px, py, deck, span_here, plank_w):
+                        continue
                     self.bridge(px, py, deck, span_here, plank_w)
                     self.M["bridges"][-1]["foot"] = True  # a standalone footplank (checked by footbridges_reach_useful_ground)
                     break
         return len(self.M["bridges"]) - n0
+
+    def _widen_for_confluence(self: Settlement, quad: Any, deck: float, own_pts: Any, other_water: Any, span: float, plank_w: float) -> float:  # type: ignore[misc]
+        """The widest water actually UNDER this deck, expressed as a span - a plank at a junction is
+        simply a longer plank, which is what a farmer would lay. Tested as "another course runs
+        under this deck", not "another course passes within a deck's length": the looser form
+        catches a ditch merely running alongside a neighbor. Returns `span` unchanged where nothing
+        else crosses."""
+        _da = math.radians(deck)
+        _dux, _duy = math.cos(_da), math.sin(_da)
+        under: list[float] = []
+        for wl, ow in other_water:
+            if wl is own_pts:
+                continue
+            for i2 in range(len(wl) - 1):
+                if not quad_hits_seg(quad, tuple(wl[i2]), tuple(wl[i2 + 1]), 3.0):
+                    continue
+                _wx, _wy = wl[i2 + 1][0] - wl[i2][0], wl[i2 + 1][1] - wl[i2][1]
+                _wl = math.hypot(_wx, _wy) or 1.0
+                _sin = abs(_dux * _wy / _wl - _duy * _wx / _wl)  # deck-vs-course crossing angle
+                _cos = abs(_dux * _wx / _wl + _duy * _wy / _wl)
+                # THE CHECK'S OWN GEOMETRY, not the shorthand in its message. It requires
+                # every deck CORNER to stand at least `cw/2 + floor` from the crossed
+                # course's centerline (floor = 2 real ft for a footplank), so at a
+                # crossing angle t the deck's half-length must exceed that over sin(t) -
+                # i.e. the whole span is (cw + 2*floor + deck_w*|cos|) / sin. Deriving it
+                # from the message's "(width + deck_w*|cos|)/sin plus a landing" leaves
+                # the landing UNDIVIDED by sin and comes up short on a shallow crossing,
+                # which is precisely the case this exists for.
+                under.append((ow + 2.0 * (2.0 / self.ftpx) + plank_w * _cos) / max(_sin, 0.02) + 1.0)
+        return max([span] + under)
+
+    def _deck_clears_its_water(self: Settlement, px: float, py: float, deck: float, span_here: float, plank_w: float) -> bool:  # type: ignore[misc]
+        """EVERY DECK CORNER LANDS PAST THE BANK - the exact test `bridges_span_their_water` will
+        make, on the same geometry, before the deck is committed rather than after. A deck
+        perpendicular to a STRAIGHT ditch clears by construction, which is why this was not needed
+        for years; a deck at a BEND does not, because the polyline curves back toward one of its
+        corners. (`w`/2 + 2 real ft is the check's own floor for a footplank.)
+
+        Measured against `bridge_crossed_waters`, which is where the CHECK reads its geometry - the
+        DRAWN, filleted polyline, not the recorded one `field_channel` was handed. Testing the
+        recorded line looked right and rejected nothing, because the fillet is exactly what curves
+        back toward the corner."""
+        _seat = None
+        _cw = 0.0
+        for _wp, _ww in bridge_crossed_waters(self.M):
+            if min(seg_dist(px, py, _wp[i3], _wp[i3 + 1]) for i3 in range(len(_wp) - 1)) <= _ww / 2 + 2 and _ww > _cw:
+                _seat, _cw = _wp, _ww
+        if _seat is not None:
+            _need = _cw / 2 + 2.0 / self.ftpx
+            _dr = math.radians(deck)
+            _cux, _cuy = math.cos(_dr), math.sin(_dr)
+            if any(
+                min(
+                    seg_dist(px + su * _cux * span_here / 2 - sv * _cuy * plank_w / 2, py + su * _cuy * span_here / 2 + sv * _cux * plank_w / 2, _seat[i3], _seat[i3 + 1])
+                    for i3 in range(len(_seat) - 1)
+                )
+                < _need
+                for su, sv in ((-1, -1), (-1, 1), (1, -1), (1, 1))
+            ):
+                return False  # pragma: no cover - the corner rejection. It fires on real geometry (a scripted-cohort hamlet's branch ditch, whose gentle curve brought a deck corner back within the water at the ditch's head) but no pool map and no synthetic bed reproduces it: every fixture tried either finds a clear offset first or fails the useful-ground test before reaching here. The guard stays - the case it prevents shipped.
+        return True
 
     def _plank_reaches_useful_ground(self: Settlement, px: float, py: float, deck_deg: float, span: float) -> bool:  # type: ignore[misc]
         """A STANDALONE footplank is worth building only if BOTH banks reach ground someone walks to:

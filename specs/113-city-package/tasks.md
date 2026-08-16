@@ -82,8 +82,8 @@ Nothing in Phase 3+ is safe without both.
 
 - [x] T022 [US2] MEASURE first: function sizes across the package, in statements as well as raw lines (constitution clause 12 measures statements, "never raw lines"). Result in research R10 - only `city_wall` (339 raw / 160 stmts) and `channel_footbridges` (195 raw / 91 stmts) exceed FR-009's ~150 bar
 - [x] T023 [US2] SKIPPED WITH REASON, not silently: `log_boom` (97 raw / 41 stmts), `moat` (111 / 57) and `farmland_ring` (121 / 48) are already under the bar, and 31-35 of their raw lines are mandatory researched docstring that splitting would duplicate or orphan. Full reasoning and the reversal cost in research R10
-- [ ] T024 [US2] Decompose `channel_footbridges` (195 raw / 91 stmts) in `.claude/skills/diagram/settlement/city/bridges.py` into named helpers, preserving code order, RNG draw order and float-operation order exactly. 14 external consumers - the most-used method in the package
-- [ ] T025 [US2] Sweep after T024: exit 0, 28 generators, empty diff, `pool/` clean
+- [x] T024 [US2] Decompose `channel_footbridges` (195 raw / 91 stmts) in `.claude/skills/diagram/settlement/city/bridges.py` into named helpers, preserving code order, RNG draw order and float-operation order exactly. 14 external consumers - the most-used method in the package
+- [x] T025 [US2] Sweep after T024: exit 0, 28 generators, empty diff, `pool/` clean
 - [ ] T030 [US2] Decompose `city_wall` (339 raw / 160 stmts, the largest function in the skill) in `.claude/skills/diagram/settlement/city/walls.py`, same constraints. It already has six private callees, so the extraction has an established vocabulary to extend rather than invent
 - [ ] T031 [US2] Sweep after T030: exit 0, 28 generators, empty diff, `pool/` clean. Confirm the provincial-city maps (`tango`, `minami`, `nagahara`) and the walled towns are in the swept set - they are the only artifacts exercising the wall wing
 - [ ] T032 [US2] Measure function sizes across the package with the quickstart step 6 script; anything still over ~150 lines gets an inline one-line justification at its `def`, or gets split further
