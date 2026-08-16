@@ -192,7 +192,7 @@ def _row(dirname: str, dirpath: str, stem: str) -> dict[str, str]:
         knobs = html.escape(_knobs(meta))
     png = f"{dirname}/{stem}.png"
     if os.path.exists(os.path.join(dirpath, stem + ".png")):
-        thumb = f'<a href="{html.escape(png)}"><img src="{html.escape(png)}" alt="{html.escape(name)}" loading="lazy"></a>'
+        thumb = f'<a href="{html.escape(png)}" target="_blank" rel="noopener"><img src="{html.escape(png)}" alt="{html.escape(name)}" loading="lazy"></a>'
     else:
         thumb = "<span>render not synced</span>"
     notes = f"{dirname}/{stem}.notes.md"
