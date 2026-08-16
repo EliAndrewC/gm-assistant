@@ -171,6 +171,313 @@ class WallsMixin:
             acc += seg
         return best[1]
 
+    def _berm_nudge(self: Settlement, x: float, y: float, tw_: float, cx: float, cy: float) -> Pt:  # type: ignore[misc]
+        """Towers straddle the wall but their FOOTING stays on the BERM: centered on the wall line, a
+        38-40px tower pokes its outer face into a close-set moat's bed, so every tower is nudged
+        INWARD (toward the ring's centroid) until only ~8px of its outer face projects past the wall
+        centerline - the horse-face bastion's stride, standing dry whatever gap the moat is later
+        drawn at (city_wall runs before s.moat, so it cannot measure the bed; 8px clears the
+        tightest gap in the pool, Tango's 24 - moat half 11 = 13px berm, with ~4px to spare).
+        Gated by city_wall_furniture_clear_of_moat."""
+        ux, uy = cx - x, cy - y
+        ul = math.hypot(ux, uy) or 1.0
+        d = tw_ / 2 - 6  # 6px projection: on a slanted stretch the square's rotation swings a corner ~2px closer than the face
+        return x + ux / ul * d, y + uy / ul * d
+
+    def _draw_gate(self: Settlement, gx: float, gy: float, pts: Any, tang: Any, cx: float, cy: float, wc: str, pier_off: float, ring_inset: float, guard_east: Any, tower_skip: Any) -> None:  # type: ignore[misc]
+        """One gate's whole program, in the order it is drawn: the piers framing the opening, the
+        guard house and inspection station flanking the road, the gate tower on the wall beside it,
+        and the shared caption with the ground it reserves. Split out of `city_wall` by feature 113;
+        each phase carries its own researched why."""
+        g_idx = next(i for i, p in enumerate(pts) if p[0] == gx and p[1] == gy)  # the gate's wall vertex
+        # gateposts frame the opening, standing ON the wall line to either side, ORIENTED TO
+        # THE WALL'S LOCAL TANGENT - so an E/W gate's posts stand N and S of the opening (not
+        # the old hard-coded N/S layout, which floated the posts parallel to an E/W wall). Each
+        # post is offset +-35px along the tangent and straddles the wall: ~5px onto the berm
+        # (never the moat) and ~26px inward. Recorded as gate_structs so
+        # city_wall_furniture_clear_of_moat covers them (GM, 2026-07).
+        g_east = any(abs(gx - ex) < 2 and abs(gy - ey) < 2 for (ex, ey) in guard_east)
+        self._gate_piers(gx, gy, g_idx, pts, tang, cx, cy, wc, pier_off)
+        self._gate_flanking_buildings(g_idx, pts, cx, cy, ring_inset, g_east)
+        self._gate_tower(g_idx, pts, cx, cy, wc, tower_skip, g_east)
+        self._gate_caption(gx, gy, cx, cy, pts, ring_inset)
+
+    def _gate_piers(self: Settlement, gx: float, gy: float, g_idx: int, pts: Any, tang: Any, cx: float, cy: float, wc: str, pier_off: float) -> None:  # type: ignore[misc]
+        """The masonry piers framing the opening."""
+        _tg = math.radians(tang[g_idx])
+        _tx, _ty = math.cos(_tg), math.sin(_tg)  # unit tangent along the wall
+        _rox, _roy = gx - cx, gy - cy
+        _rl = math.hypot(_rox, _roy) or 1.0
+        _rox, _roy = _rox / _rl, _roy / _rl  # unit radial OUTWARD
+        for _side in (-1, 1):
+            _pcx = gx + _tx * pier_off * _side - _rox * self.px(31.5)  # offset along the wall, shifted inward so
+            _pcy = gy + _ty * pier_off * _side - _roy * self.px(31.5)  # the post projects ~5 ft out / ~78 ft in
+            _pw, _ph = self.px(15), self.px(24)  # TRUE SCALE (was 14x31 px = ~42x93 ft): a gate masonry pier ~15 ft across x ~24 ft along the opening
+            self.add_wall(
+                f'<g transform="translate({_pcx:.1f},{_pcy:.1f}) rotate({tang[g_idx]:.1f})"><rect x="{-_pw / 2:.1f}" y="{-_ph / 2:.1f}" width="{_pw:.1f}" height="{_ph:.1f}" fill="{wc}"/></g>'
+            )
+            self.M["gate_structs"].append({"x": round(_pcx, 1), "y": round(_pcy, 1), "w": round(_pw, 1), "h": round(_ph, 1), "rot": round(tang[g_idx], 1), "kind": "gatepost"})
+
+    def _gate_flanking_buildings(self: Settlement, g_idx: int, pts: Any, cx: float, cy: float, ring_inset: float, g_east: bool) -> None:  # type: ignore[misc]
+        """The guard house and inspection station, facing each other across the entering roadway."""
+        # the GUARD HOUSE and INSPECTION STATION FLANK THE ROAD at the gate throat - one on each
+        # side, facing each other across the entering roadway (the Hakone-sekisho pattern: the
+        # inspection office and the guard barracks stand OPPOSITE each other just inside the gate,
+        # so all arriving traffic passes BETWEEN them). Historically decisive (GM 2026-07-22, was
+        # both stacked on ONE flank and walked 80/144 px = 240/432 ft along the wall, reading as
+        # furniture pushed far from the gate): an inspection/tax barrier only works where traffic
+        # is forced single-file, and the gate passage is that one chokepoint in the whole wall -
+        # set the station back along the wall and arrivals disperse into the streets before ever
+        # reaching it, defeating its purpose. So each sits ~20-100 ft inside the opening, right at
+        # the roadway, NOT a few hundred feet along the wall. See settlements.md 'Historical
+        # grounding'. Each is WALKED a SHORT arc to its own flank (so it picks up the wall's LOCAL
+        # tangent and sits SQUARE to the wall, the ring road running lengthwise through it) then
+        # pulled in radially to the ring road centerline - the two end up just off either verge of
+        # the road at the gate, the road passing between them.
+        gh_west = not g_east  # guard house on the WEST flank by default; guard_east flips it east (inspection takes the other verge)
+        # px(26): city_wall runs before s.road, so this falls back to the Imperial-road default -
+        # which is a width in FEET and must be converted, or a city sets its guard buildings back
+        # from a roadway three times wider than the one that will actually be drawn (GM 2026-07-27).
+        road_half = self.M.get("road_width", self.px(26)) / 2
+        # TRUE SCALE (GM 2026-07-22, was fixed-pixel 66x44 / 60x44 = ~198x132 / 180x132 ft at 3 ft/px -
+        # a guardhouse drawn bigger than a temple): footprints in REAL FEET via px(). A gate guard duty
+        # room is a small 1-3 bay building (~34x20 ft, upper end of the 15-35 ft attested range); a gate
+        # inspection hall (sekisho/lijin bansho) ~44x22 ft. Strokes keep their legibility floor (the
+        # stroke convention, SKILL.md 'to scale'); the footprint takes no license. See settlements.md
+        # 'Historical grounding' for the anchors.
+        for kind, west_side, fw_ft, fh_ft, fill in (("guardhouse", gh_west, 34, 20, "#C9A57A"), ("inspection", not gh_west, 44, 22, "#D8C49A")):
+            fw, fh = self.px(fw_ft), self.px(fh_ft)
+            # a SHORT arc to this building's flank: just past the road verge (road half-width) plus
+            # the building's own half-length plus a small gap, so it stands hard by the roadway at
+            # the gate rather than walked out along the wall
+            arc = road_half + fw / 2 + 6
+            wx, wy, ang = self._wall_walk(pts, g_idx, arc, west=west_side)
+            d = math.hypot(wx - cx, wy - cy) or 1.0
+            f = (d - ring_inset) / d  # radial inset to the ring road centerline
+            fx, fy = cx + (wx - cx) * f, cy + (wy - cy) * f
+            a = (ang + 90) % 180 - 90  # local wall tangent, folded to (-90, 90]
+            trim = (
+                f'<line x1="{-fw / 2:.0f}" y1="0" x2="{fw / 2:.0f}" y2="0" stroke="#5A4326" stroke-width="0.8"/>'
+                if kind == "guardhouse"
+                else f'<rect x="{-fw / 2:.0f}" y="{-fh / 2:.0f}" width="{fw:.1f}" height="{max(fh * 0.18, 2.2):.1f}" fill="#8A6E3E"/>'
+            )
+            z = self.add_top(
+                f'<g transform="translate({fx:.0f},{fy:.0f}) rotate({a:.1f})">'
+                f'<rect x="{-fw / 2:.0f}" y="{-fh / 2:.0f}" width="{fw:.1f}" height="{fh:.1f}" rx="1.5" fill="{fill}" stroke="#5A4326" stroke-width="1.2"/>'
+                f'{trim}</g>'
+            )
+            self.M["gate_structs"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "kind": kind, "z": z})
+            if kind == "inspection":
+                self.M["inspection_stations"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "label": "inspection station"})
+
+    def _gate_tower(self: Settlement, g_idx: int, pts: Any, cx: float, cy: float, wc: str, tower_skip: Any, g_east: bool) -> None:  # type: ignore[misc]
+        """The gate guard tower on the wall beside the opening, and its search for a clear flank."""
+        # the gate guard TOWER straddles the WALL beside the gate, tilted to the wall there and NUDGED
+        # INWARD so its footing stands on the berm (below). It belongs AT the gate: try the near-gate
+        # spot on the PRIMARY flank first, then the OTHER flank at the SAME short arc, and only THEN
+        # step outward - so a kido or the gate furniture blocking one flank sends the tower to the
+        # gate's OTHER side (still at the opening), not marooned far out among the mural bastions (GM
+        # 2026-07-22: the S gate's tower had walked to arc 118 to dodge a ward-gate kido, stranding a
+        # small gate tower mid-curtain while a mamian seated at the gate). Gated by
+        # city_gate_tower_at_its_gate. The tower must clear BOTH any kido spot AND this gate's guard
+        # house / inspection footprints (they sit on opposite flanks but converge near the opening on a
+        # tight ring - city_gate_towers_clear_of_gate_furniture, GM 2026-07).
+        _gfurn = [(f["x"], f["y"], f["w"], f["h"]) for f in self.M["gate_structs"] if f.get("kind") in ("guardhouse", "inspection")][-2:]
+
+        def _tower_blocked(tx: float, ty: float, _gfurn: Any = _gfurn) -> bool:  # bind loop var (used within this iteration)
+            if any(math.hypot(tx - kx_, ty - ky_) < KIDO_TOWER_KEEPCLEAR for kx_, ky_ in tower_skip):
+                return True
+            return any(abs(tx - fx) < (self.px(62) + fw) / 2 + 3 and abs(ty - fy) < (self.px(62) + fh) / 2 + 3 for fx, fy, fw, fh in _gfurn)
+
+        _cands = [(a, wf) for a in range(78, 241, 20) for wf in (g_east, not g_east)]  # near-gate first, BOTH flanks per arc; step out only as a last resort
+        twx = twy = tang_e = 0.0
+        for _ci, (_a, _wf) in enumerate(_cands):
+            twx, twy, tang_e = self._wall_walk(pts, g_idx, _a, west=_wf)
+            if not _tower_blocked(twx, twy) or _ci == len(_cands) - 1:
+                break
+        ta = (tang_e + 90) % 180 - 90
+        twx, twy = self._berm_nudge(twx, twy, self.px(30), cx, cy)
+        tz = self._tower(twx, twy, ta, wc, along_ft=52, deep_ft=30)
+        self.M["gate_structs"].append({"x": twx, "y": twy, "w": round(self.px(52), 1), "h": round(self.px(30), 1), "rot": round(ta, 1), "kind": "tower", "z": tz})
+
+    def _gate_caption(self: Settlement, gx: float, gy: float, cx: float, cy: float, pts: Any, ring_inset: float) -> None:  # type: ignore[misc]
+        """The pair's shared caption, pushed inward until its own box clears the defenses, plus the
+        ground it and the three gate structures reserve against later packs."""
+        # ONE label for the pair, centered on the road just inside the gate and pushed far enough
+        # INWARD (along the gate's radial) to clear BOTH flanking buildings - the wide italic text
+        # runs across the roadway between them, so it covers neither footprint (GM 2026-07-22: the
+        # old label was centered on the inspection station and painted over the guard house)
+        _rix, _riy = cx - gx, cy - gy
+        _rl = math.hypot(_rix, _riy) or 1.0
+        _ltext = "guard / inspection stations"
+        # The push must clear the label's OWN extent along the radial, not just the ring
+        # inset: this caption is ~134px wide, so a gate whose radial runs along x had the
+        # box straddling the rampart however far the CENTER was pushed (GM 2026-08-10, the
+        # capital's east and southwest gates - captions_clear_of_the_defenses).
+        _lhw0 = len(_ltext) * 9 * 0.55 / 2
+        _lhh0 = 9 * 0.8
+        # ADAPTIVE: step the caption inward only as far as its own box needs to clear the
+        # wall and moat bands. A fixed extra push moved every gate caption on every map -
+        # including the ones already correct, which cost Nagahara's notice board its seat -
+        # while a fixed SMALL push left wide captions straddling the rampart on an east or
+        # west gate, because the box's reach along the radial was never counted (GM
+        # 2026-08-10, captions_clear_of_the_defenses).
+        # NB: read the wall from the ARGUMENT, not the manifest - city_wall records
+        # M["wall"] after this loop, so self.M["wall"] is still empty here and the clash
+        # test silently passed at step 0 (2026-08-10)
+        _wpts = [(float(q[0]), float(q[1])) for q in pts]
+        _wl = [(_wpts + [_wpts[0]], 9.0)] if len(_wpts) >= 3 else []
+        if self.M.get("moat"):
+            _wl.append((list(self.M["moat"]) + [self.M["moat"][0]], float(self.M.get("moat_width", 22)) / 2))
+        _reach = ring_inset + self.px(50)
+        for _lstep in range(24):
+            _lx = gx + _rix / _rl * (_reach + _lstep * 6)
+            _ly = gy + _riy / _rl * (_reach + _lstep * 6)
+            _q = [(_lx - _lhw0, _ly - _lhh0), (_lx + _lhw0, _ly - _lhh0), (_lx + _lhw0, _ly + _lhh0), (_lx - _lhw0, _ly + _lhh0)]
+            _clash = False
+            for _wp, _hw in _wl:
+                if any(min(seg_dist(_qx, _qy, _wp[_i], _wp[_i + 1]) for _i in range(len(_wp) - 1)) < _hw for _qx, _qy in _q) or any(
+                    segments_cross(_q[_e], _q[(_e + 1) % 4], _wp[_i], _wp[_i + 1]) for _e in range(4) for _i in range(len(_wp) - 1)
+                ):
+                    _clash = True
+                    break
+            if not _clash:
+                break
+        self.label(_lx, _ly, _ltext, 9, italic=True, color="#5A4326")
+        # RESERVE the label's ground so no later pack lands a building under the text. city_wall runs
+        # BEFORE the quarters pack, so the label cannot be auto-placed AROUND the buildings the way a
+        # post-pack label is - it must claim its box up front (like the gate furniture above). Without
+        # this a quarter that crowds right up to the gate drops a house under the caption
+        # (nagahara's N-gate laborer terraces - labels_clear_of_other_buildings). The +14 margin is a
+        # building half-width, so no footprint edge pokes into the text either.
+        _lhw = len(_ltext) * 9 * 0.55 / 2 + 14
+        _lhh = 9 * 0.8 + 14
+        self.block_polys.append([(_lx - _lhw, _ly - _lhh), (_lx + _lhw, _ly - _lhh), (_lx + _lhw, _ly + _lhh), (_lx - _lhw, _ly + _lhh)])
+        for gs in self.M["gate_structs"][-3:]:
+            # the tower keeps a wide keep-clear apron; the guard house / inspection are now TRUE
+            # SCALE (~14x7 px) and sit hard by the road at the gate, where the road corridor
+            # already fends packs off one flank - so their oversized 30px apron (calibrated for the
+            # old 66x44 furniture) reserved far more ground than the footprint and squeezed a
+            # gate-side quarter's packing (nagahara's E-gate merchant blocks). A modest apron keeps
+            # packs from abutting the actual footprint without over-reserving (GM 2026-07-22).
+            bm = 30 if gs.get("kind") == "tower" else 12
+            self.block_polys.append(
+                [
+                    (gs["x"] - gs["w"] / 2 - bm, gs["y"] - gs["h"] / 2 - bm),
+                    (gs["x"] + gs["w"] / 2 + bm, gs["y"] - gs["h"] / 2 - bm),
+                    (gs["x"] + gs["w"] / 2 + bm, gs["y"] + gs["h"] / 2 + bm),
+                    (gs["x"] - gs["w"] / 2 - bm, gs["y"] + gs["h"] / 2 + bm),
+                ]
+            )
+
+    def _seat_mural_towers(self: Settlement, pts: Any, gates: Any, water_gates: Any, tower_skip: Any, wc: str, cx: float, cy: float) -> None:  # type: ignore[misc]
+        """Every mural tower on the curtain: the even fill between gate-tower anchors, then the
+        coverage-remediation passes that turn "spacing <= range" into "coverage >= min everywhere"
+        after slides. Split out of `city_wall` by feature 113."""
+        # GUARD TOWERS (mamian) around the rampart, in addition to the gate towers, for enfilading
+        # flanking fire along the wall face. SPACING is set by the city's DEFENSE POSTURE (GM 2026-07-22,
+        # meta wall_defense=): a border/besieged city (`siege`) packs them to the aimed-lethal bowshot so
+        # every stretch of wall is under crossfire from >=2 towers; a long-peaceful city (`peaceful`) runs
+        # the sparser Xi'an spacing. The gate towers are fixed ANCHORS; mural towers fill each gap between
+        # anchors so no gap exceeds the tier's max spacing. Gated by city_wall_tower_coverage.
+        self.M.setdefault("wall_towers", [])  # the gate towers were already added above (via _tower)
+        gate_towers = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") == "tower"]
+        # a mural tower must also clear each gate's INSPECTION / GUARD HOUSE (they sit INWARD from the
+        # gate, so the 130px gate-vertex filter alone misses them - city_gate_towers_clear_of_gate_furniture)
+        gate_furn = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") in ("guardhouse", "inspection")]
+        tier = self.M["meta"].get("wall_defense", "garrison")
+        max_spacing = wall_tower_spacing_px(1.0 / self.ftpx, tier) * 0.85  # margin so a slide off a kido does not push a neighbor gap past the range
+        perim = self._wall_perimeter(pts)
+        placed_tw = list(gate_towers)  # every tower placed so far (min-separation + coverage anchors)
+
+        def _seat_mural(arc: float) -> None:
+            vx, vy, ta_i = self._wall_point_at_arc(pts, arc)
+            if any(math.hypot(vx - gx, vy - gy) < 45 for gx, gy in gates) or any(math.hypot(vx - wx2, vy - wy2) < 40 for wx2, wy2 in water_gates):
+                return  # sits IN the gate / water-gate opening itself - the gate tower owns that spot
+
+            # SLIDE off a kido spot (a ward gate on the wall - avoid OVERLAP only, ~32px), the gate furniture,
+            # or too-close to an existing tower. At siege density a mural sits happily beside a kido.
+            def _blocked(px: float, py: float) -> bool:
+                # tower-to-tower separation floors at 0.75x the tier's spacing cap (was a flat 28px,
+                # which let a coverage-remediation seat land 32px from a 55px-rhythm neighbor - the
+                # Tango doubled-tower artifact, GM 2026-07-23). 0.75x cap stays strictly tighter than
+                # the wall_towers_evenly_spaced gate (0.7x median; the median never exceeds the cap),
+                # and never blocks a genuine hole-fill: a coverage-thin run only exists in a span
+                # wider than 2x the arrow radius, whose midpoint clears the floor at every tier. The
+                # 28px floor survives for extreme-dense postures. Rejected seats fall to the slide
+                # fan, which walks them toward the local span midpoint - restoring the rhythm.
+                return (
+                    # 32, NOT the even-fill's KIDO_TOWER_KEEPCLEAR (62): a remediation seat exists
+                    # because that run is coverage-thin, and widening this band to 62 was tried
+                    # (2026-07-26) - it dropped a legitimate tower 45px from Nagahara's SW ward
+                    # junction, which cleared the kido glyph by ~9px, and left a curtain point just
+                    # OUTSIDE the exempt band uncovered. The kido's own glyph is what a tower must
+                    # not sit on, and s.kido enforces that from its side by seating the guard box on
+                    # whichever flank of the opening is clear of the towers already standing.
+                    any(math.hypot(px - kx_, py - ky_) < 32 for kx_, ky_ in tower_skip)
+                    or any(math.hypot(px - fx_, py - fy_) < 40 for fx_, fy_ in gate_furn)
+                    or any(math.hypot(px - tx_, py - ty_) < max(28.0, 0.75 * max_spacing) for tx_, ty_ in placed_tw)
+                )
+
+            if _blocked(vx, vy):
+                for da in (22, -22, 34, -34, 46, -46):
+                    sx_, sy_, se_ = self._wall_point_at_arc(pts, arc + da)
+                    if not _blocked(sx_, sy_) and all(math.hypot(sx_ - gx, sy_ - gy) >= 45 for gx, gy in gates):
+                        vx, vy, ta_i = sx_, sy_, se_
+                        break
+                else:
+                    return  # boxed in - drop this one (the coverage check tolerates a rare short gap; posture is a floor, not a mandate to force a bad tower)
+            nvx, nvy = self._berm_nudge(vx, vy, self.px(40), cx, cy)
+            self._tower(nvx, nvy, ta_i, wc)
+            placed_tw.append((vx, vy))
+
+        if gate_towers:
+            anchors = sorted(self._wall_arc_of(pts, gt) for gt in gate_towers)
+        else:
+            anchors = [0.0]  # no gate towers (unusual) - start the even ring at vertex 0
+            _seat_mural(0.0)
+        for gi in range(len(anchors)):
+            a0 = anchors[gi]
+            a1 = anchors[(gi + 1) % len(anchors)] + (perim if gi == len(anchors) - 1 else 0.0)
+            gap = a1 - a0
+            k = max(0, math.ceil(gap / max_spacing) - 1)  # mural towers to insert so each sub-gap <= max_spacing
+            for j in range(1, k + 1):
+                _seat_mural(a0 + gap * j / (k + 1))
+        # COVERAGE REMEDIATION: a slide off a kido can leave a NEIGHBOURING gap just over range; sweep the
+        # curtain and drop an extra mural into the middle of any run of points still short of the tier's
+        # coverage. This is what turns "spacing <= range" into "coverage >= min everywhere" even after slides.
+        _rng_ft, _mincov = WALL_DEFENSE.get(tier, WALL_DEFENSE["garrison"])
+        _Rpx = _rng_ft / self.ftpx + 12.0  # +12 px: a mamian's half-footprint - an archer shoots from the tower's span, not its center point (matches the coverage check)
+        for _pass in range(5):
+            _nst = max(8, int(perim / 10))  # finer than the check's 18px sampling, so remediation catches every point the check would flag
+            _step = perim / _nst
+            _thin = []
+            for _si in range(_nst):
+                _ra = perim * _si / _nst
+                _px, _py, _junk = self._wall_point_at_arc(pts, _ra)
+                if any(math.hypot(_px - gx, _py - gy) < 130 for gx, gy in gates) or any(math.hypot(_px - fx_, _py - fy_) < 55 for fx_, fy_ in gate_furn):
+                    continue  # inside the gate BARBICAN (gate + guard house + inspection) - a defended complex, exempt from the open-curtain rule
+                if sum(1 for tx_, ty_ in placed_tw if math.hypot(_px - tx_, _py - ty_) <= _Rpx + 1) < _mincov:
+                    _thin.append(_ra)
+            if not _thin:
+                break
+            _runs: list[list[float]] = []
+            for _ra in _thin:
+                if _runs and _ra - _runs[-1][-1] <= 2.5 * _step:
+                    _runs[-1].append(_ra)
+                else:
+                    _runs.append([_ra])
+            _before = len(placed_tw)
+            for _run in _runs:
+                # try the midpoint, then quarters, then near the ends - the first that seats widens coverage
+                for _frac in (0.5, 0.34, 0.66, 0.2, 0.8):
+                    _n0 = len(placed_tw)
+                    _seat_mural(_run[0] + (_run[-1] - _run[0]) * _frac)
+                    if len(placed_tw) > _n0:
+                        break
+            if len(placed_tw) == _before:
+                break  # nothing placeable this pass - a genuinely blocked stretch (the check will report it)
+
     def city_wall(self: Settlement, pts: Any, gates: Any = (), ring_inset: float = 34, guard_east: Any = (), tower_skip: Any = (), water_gates: Any = ()) -> None:  # type: ignore[misc]
         """A CLOSED city rampart (a full ring, unlike the town's open hill-anchored arc), with a
         gap at each gate in `gates` (each (x,y) on the ring, where the wall runs ~horizontal -
@@ -228,280 +535,10 @@ class WallsMixin:
         # later drawn at (city_wall runs before s.moat, so it cannot measure the bed; 8px clears
         # the tightest gap in the pool, Tango's 24 - moat half 11 = 13px berm, with ~4px to spare).
         # Gated by city_wall_furniture_clear_of_moat.
-        def _berm_nudge(x: float, y: float, tw_: float) -> Pt:
-            ux, uy = cx - x, cy - y
-            ul = math.hypot(ux, uy) or 1.0
-            d = tw_ / 2 - 6  # 6px projection: on a slanted stretch the square's rotation swings a corner ~2px closer than the face
-            return x + ux / ul * d, y + uy / ul * d
-
         self.M["gate_structs"] = []
         for gx, gy in gates:
-            g_idx = next(i for i, p in enumerate(pts) if p[0] == gx and p[1] == gy)  # the gate's wall vertex
-            # gateposts frame the opening, standing ON the wall line to either side, ORIENTED TO
-            # THE WALL'S LOCAL TANGENT - so an E/W gate's posts stand N and S of the opening (not
-            # the old hard-coded N/S layout, which floated the posts parallel to an E/W wall). Each
-            # post is offset +-35px along the tangent and straddles the wall: ~5px onto the berm
-            # (never the moat) and ~26px inward. Recorded as gate_structs so
-            # city_wall_furniture_clear_of_moat covers them (GM, 2026-07).
-            _tg = math.radians(tang[g_idx])
-            _tx, _ty = math.cos(_tg), math.sin(_tg)  # unit tangent along the wall
-            _rox, _roy = gx - cx, gy - cy
-            _rl = math.hypot(_rox, _roy) or 1.0
-            _rox, _roy = _rox / _rl, _roy / _rl  # unit radial OUTWARD
-            for _side in (-1, 1):
-                _pcx = gx + _tx * pier_off * _side - _rox * self.px(31.5)  # offset along the wall, shifted inward so
-                _pcy = gy + _ty * pier_off * _side - _roy * self.px(31.5)  # the post projects ~5 ft out / ~78 ft in
-                _pw, _ph = self.px(15), self.px(24)  # TRUE SCALE (was 14x31 px = ~42x93 ft): a gate masonry pier ~15 ft across x ~24 ft along the opening
-                self.add_wall(
-                    f'<g transform="translate({_pcx:.1f},{_pcy:.1f}) rotate({tang[g_idx]:.1f})"><rect x="{-_pw / 2:.1f}" y="{-_ph / 2:.1f}" width="{_pw:.1f}" height="{_ph:.1f}" fill="{wc}"/></g>'
-                )
-                self.M["gate_structs"].append({"x": round(_pcx, 1), "y": round(_pcy, 1), "w": round(_pw, 1), "h": round(_ph, 1), "rot": round(tang[g_idx], 1), "kind": "gatepost"})
-            # the GUARD HOUSE and INSPECTION STATION FLANK THE ROAD at the gate throat - one on each
-            # side, facing each other across the entering roadway (the Hakone-sekisho pattern: the
-            # inspection office and the guard barracks stand OPPOSITE each other just inside the gate,
-            # so all arriving traffic passes BETWEEN them). Historically decisive (GM 2026-07-22, was
-            # both stacked on ONE flank and walked 80/144 px = 240/432 ft along the wall, reading as
-            # furniture pushed far from the gate): an inspection/tax barrier only works where traffic
-            # is forced single-file, and the gate passage is that one chokepoint in the whole wall -
-            # set the station back along the wall and arrivals disperse into the streets before ever
-            # reaching it, defeating its purpose. So each sits ~20-100 ft inside the opening, right at
-            # the roadway, NOT a few hundred feet along the wall. See settlements.md 'Historical
-            # grounding'. Each is WALKED a SHORT arc to its own flank (so it picks up the wall's LOCAL
-            # tangent and sits SQUARE to the wall, the ring road running lengthwise through it) then
-            # pulled in radially to the ring road centerline - the two end up just off either verge of
-            # the road at the gate, the road passing between them.
-            g_east = any(abs(gx - ex) < 2 and abs(gy - ey) < 2 for (ex, ey) in guard_east)
-            gh_west = not g_east  # guard house on the WEST flank by default; guard_east flips it east (inspection takes the other verge)
-            # px(26): city_wall runs before s.road, so this falls back to the Imperial-road default -
-            # which is a width in FEET and must be converted, or a city sets its guard buildings back
-            # from a roadway three times wider than the one that will actually be drawn (GM 2026-07-27).
-            road_half = self.M.get("road_width", self.px(26)) / 2
-            # TRUE SCALE (GM 2026-07-22, was fixed-pixel 66x44 / 60x44 = ~198x132 / 180x132 ft at 3 ft/px -
-            # a guardhouse drawn bigger than a temple): footprints in REAL FEET via px(). A gate guard duty
-            # room is a small 1-3 bay building (~34x20 ft, upper end of the 15-35 ft attested range); a gate
-            # inspection hall (sekisho/lijin bansho) ~44x22 ft. Strokes keep their legibility floor (the
-            # stroke convention, SKILL.md 'to scale'); the footprint takes no license. See settlements.md
-            # 'Historical grounding' for the anchors.
-            for kind, west_side, fw_ft, fh_ft, fill in (("guardhouse", gh_west, 34, 20, "#C9A57A"), ("inspection", not gh_west, 44, 22, "#D8C49A")):
-                fw, fh = self.px(fw_ft), self.px(fh_ft)
-                # a SHORT arc to this building's flank: just past the road verge (road half-width) plus
-                # the building's own half-length plus a small gap, so it stands hard by the roadway at
-                # the gate rather than walked out along the wall
-                arc = road_half + fw / 2 + 6
-                wx, wy, ang = self._wall_walk(pts, g_idx, arc, west=west_side)
-                d = math.hypot(wx - cx, wy - cy) or 1.0
-                f = (d - ring_inset) / d  # radial inset to the ring road centerline
-                fx, fy = cx + (wx - cx) * f, cy + (wy - cy) * f
-                a = (ang + 90) % 180 - 90  # local wall tangent, folded to (-90, 90]
-                trim = (
-                    f'<line x1="{-fw / 2:.0f}" y1="0" x2="{fw / 2:.0f}" y2="0" stroke="#5A4326" stroke-width="0.8"/>'
-                    if kind == "guardhouse"
-                    else f'<rect x="{-fw / 2:.0f}" y="{-fh / 2:.0f}" width="{fw:.1f}" height="{max(fh * 0.18, 2.2):.1f}" fill="#8A6E3E"/>'
-                )
-                z = self.add_top(
-                    f'<g transform="translate({fx:.0f},{fy:.0f}) rotate({a:.1f})">'
-                    f'<rect x="{-fw / 2:.0f}" y="{-fh / 2:.0f}" width="{fw:.1f}" height="{fh:.1f}" rx="1.5" fill="{fill}" stroke="#5A4326" stroke-width="1.2"/>'
-                    f'{trim}</g>'
-                )
-                self.M["gate_structs"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "kind": kind, "z": z})
-                if kind == "inspection":
-                    self.M["inspection_stations"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "label": "inspection station"})
-            # the gate guard TOWER straddles the WALL beside the gate, tilted to the wall there and NUDGED
-            # INWARD so its footing stands on the berm (below). It belongs AT the gate: try the near-gate
-            # spot on the PRIMARY flank first, then the OTHER flank at the SAME short arc, and only THEN
-            # step outward - so a kido or the gate furniture blocking one flank sends the tower to the
-            # gate's OTHER side (still at the opening), not marooned far out among the mural bastions (GM
-            # 2026-07-22: the S gate's tower had walked to arc 118 to dodge a ward-gate kido, stranding a
-            # small gate tower mid-curtain while a mamian seated at the gate). Gated by
-            # city_gate_tower_at_its_gate. The tower must clear BOTH any kido spot AND this gate's guard
-            # house / inspection footprints (they sit on opposite flanks but converge near the opening on a
-            # tight ring - city_gate_towers_clear_of_gate_furniture, GM 2026-07).
-            _gfurn = [(f["x"], f["y"], f["w"], f["h"]) for f in self.M["gate_structs"] if f.get("kind") in ("guardhouse", "inspection")][-2:]
-
-            def _tower_blocked(tx: float, ty: float, _gfurn: Any = _gfurn) -> bool:  # bind loop var (used within this iteration)
-                if any(math.hypot(tx - kx_, ty - ky_) < KIDO_TOWER_KEEPCLEAR for kx_, ky_ in tower_skip):
-                    return True
-                return any(abs(tx - fx) < (self.px(62) + fw) / 2 + 3 and abs(ty - fy) < (self.px(62) + fh) / 2 + 3 for fx, fy, fw, fh in _gfurn)
-
-            _cands = [(a, wf) for a in range(78, 241, 20) for wf in (g_east, not g_east)]  # near-gate first, BOTH flanks per arc; step out only as a last resort
-            twx = twy = tang_e = 0.0
-            for _ci, (_a, _wf) in enumerate(_cands):
-                twx, twy, tang_e = self._wall_walk(pts, g_idx, _a, west=_wf)
-                if not _tower_blocked(twx, twy) or _ci == len(_cands) - 1:
-                    break
-            ta = (tang_e + 90) % 180 - 90
-            twx, twy = _berm_nudge(twx, twy, self.px(30))
-            tz = self._tower(twx, twy, ta, wc, along_ft=52, deep_ft=30)
-            self.M["gate_structs"].append({"x": twx, "y": twy, "w": round(self.px(52), 1), "h": round(self.px(30), 1), "rot": round(ta, 1), "kind": "tower", "z": tz})
-            # ONE label for the pair, centered on the road just inside the gate and pushed far enough
-            # INWARD (along the gate's radial) to clear BOTH flanking buildings - the wide italic text
-            # runs across the roadway between them, so it covers neither footprint (GM 2026-07-22: the
-            # old label was centered on the inspection station and painted over the guard house)
-            _rix, _riy = cx - gx, cy - gy
-            _rl = math.hypot(_rix, _riy) or 1.0
-            _ltext = "guard / inspection stations"
-            # The push must clear the label's OWN extent along the radial, not just the ring
-            # inset: this caption is ~134px wide, so a gate whose radial runs along x had the
-            # box straddling the rampart however far the CENTER was pushed (GM 2026-08-10, the
-            # capital's east and southwest gates - captions_clear_of_the_defenses).
-            _lhw0 = len(_ltext) * 9 * 0.55 / 2
-            _lhh0 = 9 * 0.8
-            # ADAPTIVE: step the caption inward only as far as its own box needs to clear the
-            # wall and moat bands. A fixed extra push moved every gate caption on every map -
-            # including the ones already correct, which cost Nagahara's notice board its seat -
-            # while a fixed SMALL push left wide captions straddling the rampart on an east or
-            # west gate, because the box's reach along the radial was never counted (GM
-            # 2026-08-10, captions_clear_of_the_defenses).
-            # NB: read the wall from the ARGUMENT, not the manifest - city_wall records
-            # M["wall"] after this loop, so self.M["wall"] is still empty here and the clash
-            # test silently passed at step 0 (2026-08-10)
-            _wpts = [(float(q[0]), float(q[1])) for q in pts]
-            _wl = [(_wpts + [_wpts[0]], 9.0)] if len(_wpts) >= 3 else []
-            if self.M.get("moat"):
-                _wl.append((list(self.M["moat"]) + [self.M["moat"][0]], float(self.M.get("moat_width", 22)) / 2))
-            _reach = ring_inset + self.px(50)
-            for _lstep in range(24):
-                _lx = gx + _rix / _rl * (_reach + _lstep * 6)
-                _ly = gy + _riy / _rl * (_reach + _lstep * 6)
-                _q = [(_lx - _lhw0, _ly - _lhh0), (_lx + _lhw0, _ly - _lhh0), (_lx + _lhw0, _ly + _lhh0), (_lx - _lhw0, _ly + _lhh0)]
-                _clash = False
-                for _wp, _hw in _wl:
-                    if any(min(seg_dist(_qx, _qy, _wp[_i], _wp[_i + 1]) for _i in range(len(_wp) - 1)) < _hw for _qx, _qy in _q) or any(
-                        segments_cross(_q[_e], _q[(_e + 1) % 4], _wp[_i], _wp[_i + 1]) for _e in range(4) for _i in range(len(_wp) - 1)
-                    ):
-                        _clash = True
-                        break
-                if not _clash:
-                    break
-            self.label(_lx, _ly, _ltext, 9, italic=True, color="#5A4326")
-            # RESERVE the label's ground so no later pack lands a building under the text. city_wall runs
-            # BEFORE the quarters pack, so the label cannot be auto-placed AROUND the buildings the way a
-            # post-pack label is - it must claim its box up front (like the gate furniture above). Without
-            # this a quarter that crowds right up to the gate drops a house under the caption
-            # (nagahara's N-gate laborer terraces - labels_clear_of_other_buildings). The +14 margin is a
-            # building half-width, so no footprint edge pokes into the text either.
-            _lhw = len(_ltext) * 9 * 0.55 / 2 + 14
-            _lhh = 9 * 0.8 + 14
-            self.block_polys.append([(_lx - _lhw, _ly - _lhh), (_lx + _lhw, _ly - _lhh), (_lx + _lhw, _ly + _lhh), (_lx - _lhw, _ly + _lhh)])
-            for gs in self.M["gate_structs"][-3:]:
-                # the tower keeps a wide keep-clear apron; the guard house / inspection are now TRUE
-                # SCALE (~14x7 px) and sit hard by the road at the gate, where the road corridor
-                # already fends packs off one flank - so their oversized 30px apron (calibrated for the
-                # old 66x44 furniture) reserved far more ground than the footprint and squeezed a
-                # gate-side quarter's packing (nagahara's E-gate merchant blocks). A modest apron keeps
-                # packs from abutting the actual footprint without over-reserving (GM 2026-07-22).
-                bm = 30 if gs.get("kind") == "tower" else 12
-                self.block_polys.append(
-                    [
-                        (gs["x"] - gs["w"] / 2 - bm, gs["y"] - gs["h"] / 2 - bm),
-                        (gs["x"] + gs["w"] / 2 + bm, gs["y"] - gs["h"] / 2 - bm),
-                        (gs["x"] + gs["w"] / 2 + bm, gs["y"] + gs["h"] / 2 + bm),
-                        (gs["x"] - gs["w"] / 2 - bm, gs["y"] + gs["h"] / 2 + bm),
-                    ]
-                )
-        # GUARD TOWERS (mamian) around the rampart, in addition to the gate towers, for enfilading
-        # flanking fire along the wall face. SPACING is set by the city's DEFENSE POSTURE (GM 2026-07-22,
-        # meta wall_defense=): a border/besieged city (`siege`) packs them to the aimed-lethal bowshot so
-        # every stretch of wall is under crossfire from >=2 towers; a long-peaceful city (`peaceful`) runs
-        # the sparser Xi'an spacing. The gate towers are fixed ANCHORS; mural towers fill each gap between
-        # anchors so no gap exceeds the tier's max spacing. Gated by city_wall_tower_coverage.
-        self.M.setdefault("wall_towers", [])  # the gate towers were already added above (via _tower)
-        gate_towers = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") == "tower"]
-        # a mural tower must also clear each gate's INSPECTION / GUARD HOUSE (they sit INWARD from the
-        # gate, so the 130px gate-vertex filter alone misses them - city_gate_towers_clear_of_gate_furniture)
-        gate_furn = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") in ("guardhouse", "inspection")]
-        tier = self.M["meta"].get("wall_defense", "garrison")
-        max_spacing = wall_tower_spacing_px(1.0 / self.ftpx, tier) * 0.85  # margin so a slide off a kido does not push a neighbor gap past the range
-        perim = self._wall_perimeter(pts)
-        placed_tw = list(gate_towers)  # every tower placed so far (min-separation + coverage anchors)
-
-        def _seat_mural(arc: float) -> None:
-            vx, vy, ta_i = self._wall_point_at_arc(pts, arc)
-            if any(math.hypot(vx - gx, vy - gy) < 45 for gx, gy in gates) or any(math.hypot(vx - wx2, vy - wy2) < 40 for wx2, wy2 in water_gates):
-                return  # sits IN the gate / water-gate opening itself - the gate tower owns that spot
-
-            # SLIDE off a kido spot (a ward gate on the wall - avoid OVERLAP only, ~32px), the gate furniture,
-            # or too-close to an existing tower. At siege density a mural sits happily beside a kido.
-            def _blocked(px: float, py: float) -> bool:
-                # tower-to-tower separation floors at 0.75x the tier's spacing cap (was a flat 28px,
-                # which let a coverage-remediation seat land 32px from a 55px-rhythm neighbor - the
-                # Tango doubled-tower artifact, GM 2026-07-23). 0.75x cap stays strictly tighter than
-                # the wall_towers_evenly_spaced gate (0.7x median; the median never exceeds the cap),
-                # and never blocks a genuine hole-fill: a coverage-thin run only exists in a span
-                # wider than 2x the arrow radius, whose midpoint clears the floor at every tier. The
-                # 28px floor survives for extreme-dense postures. Rejected seats fall to the slide
-                # fan, which walks them toward the local span midpoint - restoring the rhythm.
-                return (
-                    # 32, NOT the even-fill's KIDO_TOWER_KEEPCLEAR (62): a remediation seat exists
-                    # because that run is coverage-thin, and widening this band to 62 was tried
-                    # (2026-07-26) - it dropped a legitimate tower 45px from Nagahara's SW ward
-                    # junction, which cleared the kido glyph by ~9px, and left a curtain point just
-                    # OUTSIDE the exempt band uncovered. The kido's own glyph is what a tower must
-                    # not sit on, and s.kido enforces that from its side by seating the guard box on
-                    # whichever flank of the opening is clear of the towers already standing.
-                    any(math.hypot(px - kx_, py - ky_) < 32 for kx_, ky_ in tower_skip)
-                    or any(math.hypot(px - fx_, py - fy_) < 40 for fx_, fy_ in gate_furn)
-                    or any(math.hypot(px - tx_, py - ty_) < max(28.0, 0.75 * max_spacing) for tx_, ty_ in placed_tw)
-                )
-
-            if _blocked(vx, vy):
-                for da in (22, -22, 34, -34, 46, -46):
-                    sx_, sy_, se_ = self._wall_point_at_arc(pts, arc + da)
-                    if not _blocked(sx_, sy_) and all(math.hypot(sx_ - gx, sy_ - gy) >= 45 for gx, gy in gates):
-                        vx, vy, ta_i = sx_, sy_, se_
-                        break
-                else:
-                    return  # boxed in - drop this one (the coverage check tolerates a rare short gap; posture is a floor, not a mandate to force a bad tower)
-            nvx, nvy = _berm_nudge(vx, vy, self.px(40))
-            self._tower(nvx, nvy, ta_i, wc)
-            placed_tw.append((vx, vy))
-
-        if gate_towers:
-            anchors = sorted(self._wall_arc_of(pts, gt) for gt in gate_towers)
-        else:
-            anchors = [0.0]  # no gate towers (unusual) - start the even ring at vertex 0
-            _seat_mural(0.0)
-        for gi in range(len(anchors)):
-            a0 = anchors[gi]
-            a1 = anchors[(gi + 1) % len(anchors)] + (perim if gi == len(anchors) - 1 else 0.0)
-            gap = a1 - a0
-            k = max(0, math.ceil(gap / max_spacing) - 1)  # mural towers to insert so each sub-gap <= max_spacing
-            for j in range(1, k + 1):
-                _seat_mural(a0 + gap * j / (k + 1))
-        # COVERAGE REMEDIATION: a slide off a kido can leave a NEIGHBOURING gap just over range; sweep the
-        # curtain and drop an extra mural into the middle of any run of points still short of the tier's
-        # coverage. This is what turns "spacing <= range" into "coverage >= min everywhere" even after slides.
-        _rng_ft, _mincov = WALL_DEFENSE.get(tier, WALL_DEFENSE["garrison"])
-        _Rpx = _rng_ft / self.ftpx + 12.0  # +12 px: a mamian's half-footprint - an archer shoots from the tower's span, not its center point (matches the coverage check)
-        for _pass in range(5):
-            _nst = max(8, int(perim / 10))  # finer than the check's 18px sampling, so remediation catches every point the check would flag
-            _step = perim / _nst
-            _thin = []
-            for _si in range(_nst):
-                _ra = perim * _si / _nst
-                _px, _py, _junk = self._wall_point_at_arc(pts, _ra)
-                if any(math.hypot(_px - gx, _py - gy) < 130 for gx, gy in gates) or any(math.hypot(_px - fx_, _py - fy_) < 55 for fx_, fy_ in gate_furn):
-                    continue  # inside the gate BARBICAN (gate + guard house + inspection) - a defended complex, exempt from the open-curtain rule
-                if sum(1 for tx_, ty_ in placed_tw if math.hypot(_px - tx_, _py - ty_) <= _Rpx + 1) < _mincov:
-                    _thin.append(_ra)
-            if not _thin:
-                break
-            _runs: list[list[float]] = []
-            for _ra in _thin:
-                if _runs and _ra - _runs[-1][-1] <= 2.5 * _step:
-                    _runs[-1].append(_ra)
-                else:
-                    _runs.append([_ra])
-            _before = len(placed_tw)
-            for _run in _runs:
-                # try the midpoint, then quarters, then near the ends - the first that seats widens coverage
-                for _frac in (0.5, 0.34, 0.66, 0.2, 0.8):
-                    _n0 = len(placed_tw)
-                    _seat_mural(_run[0] + (_run[-1] - _run[0]) * _frac)
-                    if len(placed_tw) > _n0:
-                        break
-            if len(placed_tw) == _before:
-                break  # nothing placeable this pass - a genuinely blocked stretch (the check will report it)
+            self._draw_gate(gx, gy, pts, tang, cx, cy, wc, pier_off, ring_inset, guard_east, tower_skip)
+        self._seat_mural_towers(pts, gates, water_gates, tower_skip, wc, cx, cy)
         self.M["wall"] = [[x, y] for x, y in pts]
         # record the ward-junction keep-clears so the coverage check can exempt the same band
         # placement refuses to tower (see KIDO_TOWER_KEEPCLEAR's why-comment)

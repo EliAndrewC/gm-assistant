@@ -11,11 +11,11 @@ resolves to this package's `__init__.py`, which composes the six sub-mixins back
 | file | look here when |
 |---|---|
 | `__init__.py` | you need the composition or the re-export mechanism; never add logic here |
-| `walls.py` | the defensive shell: `ring_road` (順城街, the follow-the-wall patrol street), `city_wall` and its private vocabulary - `_gapped_ring`, `_tower`, `_wall_walk`, `_wall_perimeter`, `_wall_point_at_arc`, `_wall_arc_of` |
+| `walls.py` | the defensive shell: `ring_road` (順城街, the follow-the-wall patrol street), `city_wall`, and the two halves it delegates to - the per-gate program (`_draw_gate` -> `_gate_piers` / `_gate_flanking_buildings` / `_gate_tower` / `_gate_caption`) and the curtain's mural towers (`_seat_mural_towers`). Shared vocabulary: `_gapped_ring`, `_tower`, `_wall_walk`, `_wall_perimeter`, `_wall_point_at_arc`, `_wall_arc_of`, `_berm_nudge` |
 | `moat.py` | the wet defense and every opening through it: `moat`, `water_gate`, `sluice_gate`, `inwall_drain_outfall`, `moat_flow` |
 | `canals.py` | water carried for transport and irrigation rather than defense, and the farmland ring it feeds: `canal`, `towpath`, `farmland_ring`, `_ring_upslope` |
 | `waterfront.py` | where the city meets navigable water: `quay`, `aqueduct`, `dock`, `jetty`, `log_boom` |
-| `bridges.py` | crossings, from a single span to the footbridge net over a channel system: `bridge`, `bridges`, `channel_footbridges`, `_plank_reaches_useful_ground` |
+| `bridges.py` | crossings, from a single span to the footbridge net over a channel system: `bridge`, `bridges`, `channel_footbridges` and the predicates it delegates to (`_widen_for_confluence`, `_deck_clears_its_water`, `_plank_reaches_useful_ground`), plus the module-level plank geometry `_at_arc` / `_deck_quad` / `_quads_overlap` |
 | `civic.py` | the governor's mansion - and see below before you "fix" it |
 
 ## The composition mechanism
@@ -67,3 +67,18 @@ Byte-identity of the regenerated pool, not the test suite. The city wing is exer
 provincial-city maps (`tango`, `minami`, `nagahara`) and the walled towns - a sweep of the live
 scripted hamlets alone leaves `city_wall`, `moat`, `farmland_ring` and the whole waterfront module
 unverified. `specs/113-city-package/quickstart.md` has the runnable harness.
+
+## What Stage 2 decomposed, and what it deliberately left alone
+
+`city_wall` (339 raw lines / 160 statements) and `channel_footbridges` (195 / 91) were the only two
+methods in the package over the ~150-line bar, and both are now short sequences of named steps -
+`city_wall` reads as setup, a gate loop, the mural pass, and its records (69 raw / 23 statements).
+
+Three methods that LOOK long were measured and left whole: `log_boom` (97 raw), `moat` (111) and
+`farmland_ring` (121). Constitution clause 12 measures statements, "never raw lines", and by that
+reading they are 41, 57 and 48 - and a third of their raw length is the researched docstring the
+project's record-the-why rule requires (`log_boom` spends 35 lines on why a boom is a shore-fast
+pen rather than a line across the stream). Splitting the code underneath that prose would force the
+why to be duplicated across helpers or to drift from what it explains. **Do not "finish the job" by
+decomposing them** - the reasoning is in `specs/113-city-package/research.md` R10, and if the bar
+ever moves, move it there rather than here.
