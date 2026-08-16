@@ -11,9 +11,11 @@ froze on 2026-08-16 (migration-plan.md "The accepted trade") and the engine has 
 drift since, so re-running a legacy gen would rewrite committed exhibit artifacts with output
 nobody has reviewed. `--frozen-ok` overrides for a deliberate, GM-sanctioned re-render.
 
-This is the ITERATION path. The gate (`test_villages.py`) deliberately does not come through here -
-it always regenerates - so the cache can never put a wrong map past `make done`. See gencache.py
-for why the key is safe and what it covers.
+This is the ITERATION path: it never records coverage, so it stays as fast as a regen can be. The
+gate (`test_villages.py`) rides the SAME cache since feature 026, via `gencache.gate_obtain` - a
+verified hit skips generation only (the check battery always runs), a miss regenerates in a
+coverage-recording subprocess, and `GATE_NO_CACHE=1` bypasses. See gencache.py for why the key is
+safe and what it covers.
 
 Multiple maps regenerate in parallel worker processes (2026-08-15; the timings ledger flagged the
 serial sweep as the biggest available win). This is safe because each map is a pure function of its

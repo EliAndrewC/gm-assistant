@@ -24,3 +24,18 @@
 - **A review agent is the most expensive thing you wait on - SCOPE it, SPLIT it, launch it EARLY** (GM 2026-08-08). Profiled on the caption-resize session: one `settlement-review` agent, handed two maps with no scope, ran a full audit - **12.3 minutes, 22% of the task's whole wall clock**, with the session idle for 11.4 of them, and two of its five findings were pre-existing defects unrelated to the change. The agents now take **`DELTA: <what changed>`** and review the change, whatever the re-pack moved, and whatever the change made incoherent with its neighbors, naming the sweeps they skipped; `FULL` stays the default for a new or heavily-rewritten artifact. Run **one artifact per agent, in parallel** - the sweeps share no work across artifacts, so bundling them just serializes two audits behind one notification. And launch the moment the artifact is final, before the visual pass and the commit: everything you do while it runs is free, everything after it is added on. This does NOT weaken Principle I - the review still happens, it is just asked the question you actually have.
 - **Resolve the session's clone NAME in turn 1, not after the recon** (GM 2026-08-08). The clone-name check is now announced by [`scripts/clone-sync-hooks.sh`](../scripts/clone-sync-hooks.sh) on the FIRST prompt of any session with no claimed clone, because the pretool backstop only speaks at the first EDIT and that is far too late: a session spent 4.7 minutes on recon and planning, discovered only then that its name did not resolve, and the GM's `/rename` became **4.6 minutes of dead wall-clock** instead of something that could have overlapped the analysis. A blocking question you can see coming should be asked while you still have other work to do.
 - **Do NOT cut the ritual steps** (regression-fixture freeze, overlap-registry classification, record-the-why docs, the stop-work ritual). GM-confirmed 2026-07-20: they cost ~2 minutes per feature and are why the regression rate stays near zero. The savings come from turn structure, never from skipping guardrails.
+
+## The 5% threshold: a whole-process speedup is never "only N seconds" (GM 2026-08-16)
+
+Stated while deciding feature 026 (the cache-backed gate): **a >=5% wall-clock speedup to a whole
+process - a gate run, a sweep, a full generation pass - is always above the threshold of caring,
+even when the absolute saving is a handful of seconds.** 10 s off a 180 s gate is more than 5% and
+matters; 30 s off is a sixth of the whole run and is extremely significant. The reasoning is the
+same one at the top of this file: iteration cost compounds, because the gate runs many times a day.
+
+The distinction that keeps this from licensing micro-optimization: it applies to END-TO-END
+processes, not individual functions. A 5% win inside one function is usually below the threshold -
+unless that function effectively IS the process (the `main` of a scripted run), in which case it
+is the process and the rule applies. When weighing a perf change to a loop, compute the
+percentage, not just the seconds, and never argue "it's only N seconds" against a >=5%
+whole-process win.

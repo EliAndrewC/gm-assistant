@@ -6,10 +6,15 @@ Every test below is about one question: can a change reach a map's output WITHOU
 The failure direction that matters is only ever "served a stale map"; regenerating unnecessarily is
 free correctness. So each test that asserts a HIT also proves the hit was RIGHT, by regenerating
 and comparing bytes - an assertion that the key did not move is worth nothing on its own.
+
+Since feature 026 the gate RIDES the cache (`gate_obtain`), so the second half of this file pins
+that contract: a verified hit skips generation only, checking is never cached, the bypass and any
+incomplete entry force regeneration, and a miss stores the coverage data the next hit replays.
 """
 
 from __future__ import annotations
 
+import glob
 import json
 import os
 import shutil
@@ -265,14 +270,154 @@ def test_an_entry_is_written_atomically_and_declared_valid_last(tmp_path, monkey
     assert "toy.json" in order
 
 
-def test_the_gate_never_reads_the_cache():
-    """The property that makes the whole thing safe to adopt: `make done` regenerates from scratch,
-    so a stale entry can mislead an interactive look but can never put a wrong map past the gate.
-    If someone ever routes test_villages through regen.py, this fails and they have to argue with
-    this docstring first."""
-    gate = Path(os.path.join(HERE, "test_villages.py")).read_text()
-    imports = [ln.strip() for ln in gate.splitlines() if ln.startswith(("import ", "from "))]
-    assert not [ln for ln in imports if "gencache" in ln or ln.split()[1].split(".")[0] == "regen"], imports
+@pytest.fixture
+def clean_gatehit():
+    """Remove THIS test's toy replay/recording files from the skill dir afterwards - they are
+    near-empty (the toy engine is outside the coverage source list) but there is no reason to
+    leave them for the session's combine. PID-scoped, because under xdist several of these tests
+    run at once and all share the `toy` stem: an unscoped glob deletes a CONCURRENT test's
+    in-flight driver file (found on this suite's first parallel run)."""
+    pid = os.getpid()
+    yield
+    for f in glob.glob(os.path.join(HERE, f".coverage.gatehit-toy-{pid}*")) + glob.glob(os.path.join(HERE, f".gatecov-toy-{pid}*")):
+        os.remove(f)
+
+
+def test_a_dependency_change_invalidates_every_entry(tmp_path, monkeypatch):
+    """Feature 026 R1: the key covers the dependency surface BELOW the Python-source horizon -
+    installed distributions plus renderer font bytes - so a pip-level change (the PIL
+    layout-engine incident class) invalidates automatically instead of relying on someone
+    remembering to run a bypassed sweep."""
+    eng, gen, _ = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    deps = gencache.run_and_record(str(gen))
+    gencache.store(str(gen), deps)
+    assert gencache.load(str(gen)) is True
+    monkeypatch.setattr(gencache, "_deps_state", lambda: "a different installed world")
+    assert gencache.load(str(gen)) is False, "a dependency-state change must miss every entry"
+    monkeypatch.undo()
+    _with_engine(monkeypatch, tmp_path, eng)
+    assert gencache.load(str(gen)) is True, "restoring the dependency state must restore the hit"
+
+
+def test_the_deps_state_is_stable_within_a_process():
+    first = gencache._deps_state()
+    assert first == gencache._deps_state(), "the deps input must not wobble between key computations"
+    assert first and not first.startswith("unresolvable-")
+
+
+def test_a_foreign_parallel_coverage_file_reaches_the_report(tmp_path):
+    """R3 spike - THE load-bearing mechanism of the cache-backed gate (026): a parallel-mode
+    coverage data file present beside the session's data file is merged by
+    `coverage combine --append` (the Makefile line) and its lines count in the report. If this
+    breaks, gate hits starve the coverage floors - so it is pinned in miniature: a pytest-cov run
+    covers one function, a 'foreign' recorder covers the other, and the combined report must show
+    the module at 100%."""
+    (tmp_path / "spikemod.py").write_text("def by_pytest():\n    return 1\n\n\ndef by_replay():\n    return 2\n")
+    (tmp_path / "test_spike.py").write_text("import spikemod\n\n\ndef test_covers():\n    assert spikemod.by_pytest() == 1\n")
+    (tmp_path / "drive.py").write_text("import spikemod\n\nspikemod.by_replay()\n")
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("COV_CORE_", "COVERAGE_", "PYTEST_"))}
+
+    def run(*cmd: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(list(cmd), cwd=tmp_path, env=env, capture_output=True, text=True)
+
+    a = run(sys.executable, "-m", "pytest", "test_spike.py", "-q", "-p", "no:cacheprovider", "--cov=spikemod", "--cov-report=")
+    assert a.returncode == 0, a.stdout + a.stderr
+    b = run(sys.executable, "-m", "coverage", "run", "--parallel-mode", "drive.py")
+    assert b.returncode == 0, b.stdout + b.stderr
+    c = run(sys.executable, "-m", "coverage", "combine", "--append")
+    assert c.returncode == 0, c.stdout + c.stderr
+    d = run(sys.executable, "-m", "coverage", "report", "--include=spikemod.py", "--fail-under=100")
+    assert d.returncode == 0, f"the foreign data file's lines must reach the combined report:\n{d.stdout}{d.stderr}"
+
+
+def test_the_gate_reuses_a_verified_hit(tmp_path, monkeypatch, clean_gatehit):
+    """026 guarantee 1: on a verified hit NO generation executes in any process - and a hit is
+    only verified when the entry carries the coverage data a previous gate miss stored."""
+    eng, gen, out = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    monkeypatch.delenv(gencache.GATE_BYPASS, raising=False)
+    manifest, how, cpu = gencache.gate_obtain(str(gen))
+    assert (manifest, how) == (str(out), "REGENERATED") and cpu is not None
+    entry = Path(gencache.CACHE_DIR, "toy")
+    assert (entry / gencache.COVERAGE_NAME).is_file()
+    assert json.loads((entry / "meta.json").read_text())["gen_cpu_s"] >= 0
+
+    def boom(*a: object, **k: object) -> object:
+        raise AssertionError("a verified hit must not spawn a generation subprocess")
+
+    monkeypatch.setattr(gencache.subprocess, "run", boom)
+    assert gencache.gate_obtain(str(gen)) == (str(out), "HIT", None)
+
+
+def test_a_hit_still_runs_current_checks(tmp_path, monkeypatch, clean_gatehit):
+    """026 guarantee 5: checking is never cached - the gate's caller judges whatever manifest the
+    cache serves with the CURRENT battery, so a bad cached manifest cannot ride a hit through. The
+    key hashes INPUTS, not outputs, so a tampered entry artifact is exactly the case where only
+    the live check run stands between the cache and a green gate."""
+    eng, gen, _ = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    monkeypatch.delenv(gencache.GATE_BYPASS, raising=False)
+    gencache.gate_obtain(str(gen))
+    Path(gencache.CACHE_DIR, "toy", "toy.json").write_text('{"meta": {}}')
+    manifest, how, _ = gencache.gate_obtain(str(gen))
+    assert how == "HIT" and Path(manifest).read_text() == '{"meta": {}}'
+    import check_village
+
+    try:
+        rc = check_village.main(manifest)
+    except Exception:
+        rc = 1
+    assert rc != 0, "the current check battery must judge a served manifest - a hit is not a verdict"
+
+
+def test_an_entry_without_coverage_data_is_a_gate_miss(tmp_path, monkeypatch, clean_gatehit):
+    """026 guarantee 4: an iteration-path entry (regen.py stores no coverage) cannot satisfy the
+    gate - the coverage floors would starve. The gate refreshes it instead, adding the coverage
+    data, so the SECOND gate run hits."""
+    eng, gen, _ = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    monkeypatch.delenv(gencache.GATE_BYPASS, raising=False)
+    deps = gencache.run_and_record(str(gen))
+    gencache.store(str(gen), deps)
+    assert gencache.load(str(gen)) is True, "the ITERATION path would hit this entry..."
+    _, how, _ = gencache.gate_obtain(str(gen))
+    assert how == "REGENERATED", "...but the GATE must not - it has no coverage to replay"
+    assert Path(gencache.CACHE_DIR, "toy", gencache.COVERAGE_NAME).is_file()
+    _, how2, _ = gencache.gate_obtain(str(gen))
+    assert how2 == "HIT"
+
+
+def test_gate_miss_stores_coverage_the_next_hit_replays(tmp_path, monkeypatch, clean_gatehit):
+    """026 guarantees 1+2 composed: the coverage a miss stores is byte-for-byte the file a later
+    hit drops into the run's combine."""
+    eng, gen, _ = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    monkeypatch.delenv(gencache.GATE_BYPASS, raising=False)
+    gencache.gate_obtain(str(gen))
+    stored = Path(gencache.CACHE_DIR, "toy", gencache.COVERAGE_NAME).read_bytes()
+    mine = os.path.join(HERE, f".coverage.gatehit-toy-{os.getpid()}*")  # pid-scoped: xdist runs siblings concurrently
+    before = set(glob.glob(mine))
+    _, how, _ = gencache.gate_obtain(str(gen))
+    new = set(glob.glob(mine)) - before
+    assert how == "HIT" and len(new) == 1
+    assert Path(new.pop()).read_bytes() == stored
+
+
+def test_gate_bypass_forces_regeneration(tmp_path, monkeypatch, clean_gatehit):
+    """026 guarantee 3 - and the test OWNS the environment (the DIAGRAM_ALLOW_SLOW_GENS lesson,
+    2026-08-03): delenv first, so an inherited bypass cannot silence the half that proves hits
+    happen at all."""
+    eng, gen, _ = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    monkeypatch.delenv(gencache.GATE_BYPASS, raising=False)
+    _, how, _ = gencache.gate_obtain(str(gen))
+    assert how == "REGENERATED"
+    _, how, _ = gencache.gate_obtain(str(gen))
+    assert how == "HIT", "baseline: with the bypass unset, hits must happen"
+    monkeypatch.setenv(gencache.GATE_BYPASS, "1")
+    _, how, cpu = gencache.gate_obtain(str(gen))
+    assert (how, cpu is not None) == ("REGENERATED", True), "the bypass must force regeneration"
 
 
 def test_the_real_pool_round_trips_through_the_cache():
