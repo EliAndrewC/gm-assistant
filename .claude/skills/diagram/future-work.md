@@ -180,4 +180,7 @@ wells, the board's clump keep-out, the lane-crossing guards).
   copse - so no manifest check can count a stand's canopy, which is exactly how a zero-crown
   "woodland" could have shipped green. Record the stand crowns (or a per-parcel crown count) next
   time this drawing code is touched; `woodland_commons_on_dry_ground` covers the seat half
-  meanwhile.
+  meanwhile. The Sawada merged-roll review adds the placer-side half of the same gap:
+  confirm the commons poly is registered in a keep-out registry placers actually honor, or a
+  future placer that reads crown records could seat a structure under this canopy with nothing
+  firing.
