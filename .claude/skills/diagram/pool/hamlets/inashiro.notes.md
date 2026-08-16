@@ -194,3 +194,20 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   the dry shelf between collector and marsh (review-verified 27 ft clear of the reeds) and
   did not survive the final set-back calibration; the count is roll-derived, the invariants
   (dry, on-frame, recorded canopy) are what hold.
+
+- 2026-08-16 (fan-toe pond fix - GM report; this map re-rolled): the GM flagged the circular pond
+  mid-paddy on the southern edge as straightforwardly a mistake. `_plot_pond` sized its ellipse
+  from the host plot's BOUNDING BOX, and the low plot it drew was a fan-toe WEDGE whose bbox is
+  several times the wedge itself, so the pond (33.7 x 24.7) spilled across three neighboring wedge
+  plots and two drain-hem plots with spoke bunds drawn through open water -
+  `field_ponds_on_low_ground` green throughout (it reads the host plot's wet flag, not the
+  ellipse's extent). Fix: `_plot_pond` centers on the plot CENTROID and shrinks to fit the plot
+  POLYGON (refusing below the 10 x 7 px legibility floor), `_paddy_features` tries the low plots
+  in random order until one accepts, and the new gate check `field_ponds_sunk_into_one_plot`
+  (segment 0577.5) holds it - written RED against this map first, pre-fix manifest frozen as
+  pool/regressions/field_ponds_sunk_into_one_plot_fires_on_the_fan_toe_inashiro.json. Placement
+  and check read the same `seg_in_ellipse_core` predicate, so siting and verdict cannot disagree.
+  This map: pond re-seated in the SAME toe plot at 16.1 x 11.8; manifest delta = field_ponds +
+  bund_beans only. Review log: DELTA pass, nothing new caught; sub-pixel rim/bund tangency
+  (0.44 px) logged as a nitpick - if `_plot_pond` ever gains a margin knob, ~2 px buys visible
+  daylight.
