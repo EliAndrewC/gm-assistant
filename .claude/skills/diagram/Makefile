@@ -61,8 +61,13 @@ typecheck:
 # the scripted hamlets + unit tests already reach everything but the town/city/capital wings.
 SETTLEMENT_COV_FLOOR = 94
 
+# The `coverage combine --append` below sweeps in the gate-cache parallel data files (hit replays
+# and miss-subprocess recordings, feature 026) that pytest-cov's own end-of-session combine may or
+# may not have consumed already - the explicit combine is deterministic either way, and a no-op
+# when there is nothing left to merge.
 test:
 	@if python3 -c "import xdist" >/dev/null 2>&1; then python3 -m pytest -n auto; else python3 -m pytest; fi; ec=$$?; \
 	if [ $$ec -ne 0 ]; then python3 ../../../scripts/uncovered-in-diff.py || true; exit $$ec; fi; \
+	python3 -m coverage combine --append >/dev/null 2>&1 || true; \
 	python3 -m coverage report -m --omit='*/settlement/*' --fail-under=100 || { echo "COVERAGE: a module other than settlement.py is under 100% - the table above names it and its missing lines"; exit 1; }; \
 	python3 -m coverage report --include='*/settlement/*' --fail-under=$(SETTLEMENT_COV_FLOOR) || { echo "COVERAGE: settlement/ (package combined) fell below its $(SETTLEMENT_COV_FLOOR)% ratchet floor (see the comment above SETTLEMENT_COV_FLOOR in this Makefile; 'python3 -m coverage report -m --include=*/settlement/*' shows the missing lines)"; exit 1; }

@@ -44,10 +44,12 @@ import poolmaps
 HERE = os.path.dirname(os.path.abspath(__file__))
 # The LIVE pool is the scripted maps - the hand-authored maps froze on 2026-08-16 and are never
 # regenerated (poolmaps.py) - so the audit sweeps those: sawada is the biggest, inashiro the
-# cheapest. They all execute settlement.py through hamletgen, so a settlement.py mutation still
-# moves what they draw.
+# cheapest. The mutation target moved when feature 025 made settlement.py the settlement/ package
+# (the file-shaped target crashed the audit, found by feature 026's mandatory run): _geom.py is
+# the package module the live hamlets execute MOST (49 of sawada's recorded dep functions), and
+# geometry literals genuinely move what gets drawn.
 SUBSET = ("sawada", "inashiro")
-TARGET = "settlement.py"
+TARGET = os.path.join("settlement", "_geom.py")
 
 
 def gens(all_maps: bool) -> list[str]:

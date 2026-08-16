@@ -44,10 +44,21 @@ does not. `gencache.py`'s docstring carries the soundness argument; `test_gencac
 demonstration, and every test there that asserts a HIT also regenerates and compares bytes, because
 "the key did not move" proves nothing on its own.
 
-**The cache is NEVER the source of truth.** `test_villages.py` - the gate - calls the gens directly
-and always regenerates, so a stale entry could mislead an interactive look but can never put a wrong
-map past `make done`. `test_the_gate_never_reads_the_cache` holds that line; do not route the gate
-through `regen.py` to make the sweep faster.
+**The gate RIDES the cache since 2026-08-16 (feature 026, GM decision reversing the 2026-08-08
+"gate never reads the cache" rule).** `test_villages.py` obtains each live map via
+`gencache.gate_obtain`: a verified HIT - key match plus stored generation coverage - restores the
+artifacts, replays the entry's coverage data into the run (so the coverage floors stay honest),
+and skips GENERATION only. The full current check battery still runs against whatever manifest was
+served - checking is never cached. Any doubt at all - key moved, entry incomplete, no stored
+coverage (an iteration-made entry), or `GATE_NO_CACHE=1` - regenerates in a coverage-recording
+subprocess exactly as a cold run would. Why this is safe to trust, one line each: generation is
+deterministic, so a sound key implies byte-identical output; the key covers the dependency surface
+BELOW the Python-source horizon (`_deps_state`: installed distributions + renderer font bytes -
+the PIL layout-engine incident class); and `cache_audit.py` remains the standing empirical auditor
+of the whole property. **After a dependency-level change** (a pip install/upgrade, a container
+rebuild outside the lockfiles), run one bypassed sweep - `GATE_NO_CACHE=1 make done` - as
+belt-and-suspenders for any channel the key cannot see. The contract's pinning tests are in
+`test_gencache.py`; the decision's full reasoning in `specs/026-cache-backed-gate/`.
 
 **AUDIT IT when you change the cache, or how generation is driven:** `python3 cache_audit.py`
 (~10 min, or `--all` for the whole pool). It perturbs a random numeric literal inside a
@@ -55,7 +66,9 @@ through `regen.py` to make the sweep faster.
 byte-identical artifacts - so it tests the only property anyone cares about without ever looking at
 the key, and cannot share the key's blind spots. Verified to have teeth: sabotaging `compute_key`
 to return a constant makes it report STALE artifacts on the first mutation. This is deliberately
-NOT in `make done` (minutes, and the gate already regenerates from scratch).
+NOT in `make done` (minutes) - and since the gate trusts the cache (026), this audit is the
+empirical backstop for the key itself, which makes running it after cache/driver changes MORE
+important, not less.
 
 **Concurrency and container rebuilds are covered, and asserted rather than assumed.** A
 `.gencache` lives beside the engine, so it is per-CLONE: concurrent writers are two runs in one
