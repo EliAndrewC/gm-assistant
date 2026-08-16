@@ -333,6 +333,37 @@ def store(gen: str, deps: dict[str, Any], *, gen_cpu_s: float | None = None, cov
     place(json.dumps(meta).encode(), os.path.join(entry, "meta.json"))
 
 
+def _coverage_is_current(cov_src: str) -> bool:
+    """Does this stored coverage still measure files that EXIST?
+
+    THE HOLE THIS CLOSES, and it is one the KEY structurally cannot (2026-08-17). A cache hit
+    replays the entry's coverage into the gate's combine, and coverage data is keyed by FILE PATH.
+    So when a peer session's package split DELETES a module - `settlement/civic_grounds.py`, one of
+    six such splits in a fortnight - every entry built before that sync goes on replaying coverage
+    that measures it, `coverage report` dies with `No source for code`, and the Makefile reports it
+    as the settlement RATCHET FLOOR being breached. A routine refactor in someone else's module
+    then surfaces, in a clone that merely synced, as a coverage regression in code this session
+    never opened.
+
+    The key is right not to move: generation is unaffected and the map is correct. It is only the
+    COVERAGE half of the entry that has gone stale, so that is what this tests. Any doubt at all
+    regenerates - the same rule the rest of `gate_obtain` runs on - which costs one small sqlite
+    read per map and turns a mystifying red gate into a silent `REGENERATED`.
+
+    (Before this, the recovery was `GATE_NO_CACHE=1 make done`, which worked only if you knew the
+    failure had nothing to do with the file it named. That is precisely the kind of tip that must
+    live in the code rather than in a doc nobody re-reads - CLAUDE.md's "tips live in error
+    output", one step better: no error to read.)"""
+    try:
+        from coverage import CoverageData  # noqa: PLC0415 - keep `coverage` off the import path of every generator run
+
+        data = CoverageData(basename=cov_src)
+        data.read()
+        return all(os.path.isfile(f) for f in data.measured_files())
+    except Exception:  # noqa: BLE001 - unreadable stored coverage IS doubt, and doubt regenerates
+        return False
+
+
 def gate_obtain(gen: str) -> tuple[str, str, float | None]:
     """Obtain a map for the GATE (feature 026): returns `(manifest_path, how, gen_cpu_s)`.
 
@@ -347,7 +378,7 @@ def gate_obtain(gen: str) -> tuple[str, str, float | None]:
     manifest = gen[: -len(".gen.py")] + ".json"
     stem = os.path.basename(gen)[: -len(".gen.py")]
     cov_src = os.path.join(_entry_dir(gen), COVERAGE_NAME)
-    if os.environ.get(GATE_BYPASS) != "1" and os.path.isfile(cov_src) and os.path.getsize(cov_src) > 0 and load(gen):
+    if os.environ.get(GATE_BYPASS) != "1" and os.path.isfile(cov_src) and os.path.getsize(cov_src) > 0 and _coverage_is_current(cov_src) and load(gen):
         shutil.copyfile(cov_src, os.path.join(HERE, f".coverage.gatehit-{stem}-{os.getpid()}"))
         return manifest, "HIT", None
     # The child's scratch files (driver, record, raw coverage data) live OUTSIDE the engine tree:
