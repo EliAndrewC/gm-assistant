@@ -157,11 +157,11 @@ wells, the board's clump keep-out, the lane-crossing guards).
 
 ### Still open
 
-- **The in/out width ladder at junctions**: the 14 px head-race is fed by a 7 px brook and
-  splits into arms summing 23.6 - drawn capacity grows downstream at every junction. All four
-  round-2/3 reviewers flagged the same thing; it is the sanctioned linework convention (GM
-  2026-07-21) but the fork makes the head junction the map's focal water feature, so it wants a
-  conscious ruling either way. **Put to the GM 2026-08-16; awaiting the ruling.**
+- **DONE 2026-08-16: the in/out width ladder at junctions - RULED, keep the convention.** The GM
+  weighed keep / intake-stilling-pool / conserve-at-fork and ruled that drawn width depicts rank,
+  not discharge (full reasoning recorded in research/water.md "Drawn width is RANK"); the
+  settlement-review doctrine now says junction conservation is not a finding, so reviewers stop
+  re-flagging it. No ink changes.
 - **Collector-junction wedge plots render in the water-gray fill** and at fit zoom read as tiny
   triangular ponds - conspicuous on Sawada, whose brief is "no pond".
 - **The well minimax counts stream-watered houses**: `place_wells`' worst-served objective

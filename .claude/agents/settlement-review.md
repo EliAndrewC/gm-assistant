@@ -147,6 +147,12 @@ containment or count - never form. For each such feature, state the intended for
   decoration, not a wind wall, and scores identically on any adjacency metric.
 - A quarter, warren or district should read as **fabric with a grain** (rows, lanes, frontage), not a
   scatter of identical boxes.
+- **Channel widths depict RANK, not discharge - never audit conservation at a junction** (GM
+  ruling 2026-08-16, research/water.md "Drawn width is RANK"): a 7 px brook feeding a 14 px
+  head-race that forks into arms summing wider than itself is the sanctioned convention (and the
+  intake jump is real engineering - a sluice-fed head-race is wider and slower than its feeder).
+  Judge each stroke's own head-to-tail taper and the trunk > branch > delivery hierarchy read;
+  in/out width totals at a junction are not a finding.
 - A street network should read as **blocks fronting streets**; a field system as a **water-ordered
   grain**, not a random quilt.
 - A precinct (temple, funerary, market) should read as **one composed group**, not adjacent items.
