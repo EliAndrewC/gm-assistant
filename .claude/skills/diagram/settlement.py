@@ -8671,15 +8671,45 @@ class Settlement:
             corr.append(([tuple(p) for p in self.M["road"]], self.M.get("road_width", 26) / 2 + extra))
         return corr
 
-    def _on_watercourse(self, px: float, py: float, pad: float = 2.0) -> bool:
-        """True if (px, py) lies ON a drawn watercourse - a stream or an irrigation channel (within its half-
-        width + `pad`). Decorative ground-cover (scrub, reeds) skips it: vegetation never draws OVER open water,
-        the same reason it skips the lane tread and the pond. Uses M['streams'] + M['channels'] recorded so far."""
-        for wc in self.M.get("streams", []) + self.M.get("channels", []):
-            p = wc["poly"]
-            half = wc.get("w", 6) / 2 + pad
-            if any(seg_dist(px, py, p[i], p[i + 1]) < half for i in range(len(p) - 1)):
+    def _watercourse_segs(self, pad: float = 2.0) -> list[tuple[Any, float]]:
+        """Every drawn watercourse as (polyline, half-width + pad) pairs in boxed_segs shape: streams,
+        channels, and the comb laterals' drawn truth (M['drawn_channels'] - added 2026-08-16, GM,
+        Inashiro: grass tufts stood ON the head-race, because the scatter knew only the hairline
+        topology record in M['channels'], w 2.5, while the drawn lateral ran ~14 wide on its own
+        filleted post-clip polyline - the "same manifest source" trap, settlements.md 'PLANK
+        BRIDGES'). A tapered lateral is split into the SAME 7 piece slices field_channel strokes,
+        each at its own drawn width. Factored so the per-point test (_on_watercourse) and the
+        ground-cover scatters' pre-boxed grids provably test the same geometry."""
+        out: list[tuple[Any, float]] = [(wc["poly"], wc.get("w", 6) / 2 + pad) for wc in self.M.get("streams", []) + self.M.get("channels", [])]
+        for ch in self.M.get("drawn_channels", []):
+            p, w0, w1 = ch["pts"], ch["w0"], ch["w1"]
+            if len(p) < 2:
+                continue
+            if abs(w1 - w0) < 0.2:  # drawn as ONE stroke at w0 (field_channel's uniform branch)
+                out.append((p, w0 / 2 + pad))
+            else:  # drawn as 7 tapering pieces - the same slice/width ladder field_channel strokes
+                n, L = 7, len(p)
+                for k in range(n):
+                    piece = p[k * (L - 1) // n : (k + 1) * (L - 1) // n + 1]
+                    if len(piece) >= 2:
+                        out.append((piece, (w0 + (w1 - w0) * (k + 0.5) / n) / 2 + pad))
+        return out
+
+    def _on_watercourse(self, px: float, py: float, pad: float = 2.0, near: Any = None) -> bool:
+        """True if (px, py) lies ON a drawn watercourse - a stream, an irrigation channel, or a comb
+        lateral (within its drawn half-width + `pad`; _watercourse_segs says which registries and
+        why). Decorative ground-cover (scrub, reeds) skips it: vegetation never draws OVER open
+        water, the same reason it skips the lane tread and the pond. `near` is an optional
+        pre-boxed accessor (boxed_grid(boxed_segs(self._watercourse_segs())).near) for callers that
+        test per scatter POINT - the same hoist-the-invariant discipline as their other keep-outs
+        (fld_b / cor_b); verdicts are identical either way (the grid prunes, it never decides)."""
+        if near is not None:
+            if boxed_seg_hit(px, py, near(px, py)):
                 return True
+        else:
+            for p, half in self._watercourse_segs(pad):
+                if any(seg_dist(px, py, p[i], p[i + 1]) < half for i in range(len(p) - 1)):
+                    return True
         # ... and the fengshui crescent pond's open water (found 2026-07-21: scrub tufts drew ON the
         # half-moon pond - the skip knew M['pond'] and the linear courses but not this water body)
         return any(math.hypot(px - cp["cx"], py - cp["cy"]) < cp["r"] + pad for cp in self.M.get("crescent_ponds", []))
@@ -9168,6 +9198,7 @@ class Settlement:
             fld_b = boxed_grid(boxed_polys(list(self.field_polys) + list(self.dry_polys), pad=crop_pad + 14 * bs))
             blk_b = boxed_grid(boxed_polys(self.block_polys))
             clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
+            wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
 
             def _sparse(
                 px: float, py: float, drop: float, lean: float = 0.0
@@ -9176,7 +9207,7 @@ class Settlement:
                     not point_in_poly(px, py, poly)
                     or boxed_hit(px, py, fld_b.near(px, py), edge_pad=crop_pad + lean)
                     or boxed_seg_hit(px, py, cor_b.near(px, py))  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
-                    or self._on_watercourse(px, py)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
+                    or self._on_watercourse(px, py, near=wat_b.near)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
                     or (pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
                     or any(
                         x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects
@@ -9292,6 +9323,7 @@ class Settlement:
         # pad as the edge test below, so the prefilter can never reject a point that test wanted
         fld_b, blk_b = boxed_grid(boxed_polys(self.field_polys, 10.0)), boxed_grid(boxed_polys(self.block_polys))
         clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
+        wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
 
         def _sparse(
             px: float, py: float, drop: float
@@ -9300,7 +9332,7 @@ class Settlement:
                 not point_in_poly(px, py, poly)
                 or boxed_hit(px, py, fld_b.near(px, py), 10.0)
                 or boxed_seg_hit(px, py, cor_b.near(px, py))  # a causeway/path/road through the marsh stays bare, not reeded over
-                or self._on_watercourse(px, py)  # ... and OFF a stream/channel bed (reeds fringe water, they do not float on it)
+                or self._on_watercourse(px, py, near=wat_b.near)  # ... and OFF a stream/channel bed (reeds fringe water, they do not float on it)
                 or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)  # ... and OUT of the urban-clearance halo (the swept/trodden ground around every structure)
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
                 or boxed_hit(px, py, blk_b.near(px, py))  # ... and OFF any building/shrine/torii footprint
@@ -9600,6 +9632,7 @@ class Settlement:
 
         halo_rects, halo_circles = self._urban_keepouts((bx0, by0, bx1, by1))
         corridors = self._corridor_buffers(3 * self.bscale)
+        wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
         pond = self.M.get("pond")
         hill = self.M.get("hill")
         wall = self.M.get("wall")
@@ -9639,7 +9672,7 @@ class Settlement:
                 or any(point_in_poly(px, py, c) for c in self.clearings)  # off swept sacred/funerary verges
                 or any(point_in_poly(px, py, a) for a in avoid)
                 or any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors)  # off roads/streets/lanes
-                or self._on_watercourse(px, py)  # off streams/channels/moat
+                or self._on_watercourse(px, py, near=wat_b.near)  # off streams/channels/moat
                 or (pond is not None and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)  # off the pond
                 or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)  # off the urban-clearance halo
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # off wellhead aprons
@@ -9726,6 +9759,7 @@ class Settlement:
 
         halo_rects, halo_circles = self._urban_keepouts((bx0, by0, bx1, by1))
         corridors = self._corridor_buffers(3 * self.bscale)
+        wat_b = boxed_grid(boxed_segs(self._watercourse_segs()))  # drawn water (streams/channels/comb laterals), pre-boxed once - see _watercourse_segs
         pond = self.M.get("pond")
         hill = self.M.get("hill")
         wall = self.M.get("wall")
@@ -9803,7 +9837,7 @@ class Settlement:
                 or any(point_in_poly(px, py, c) for c in self.clearings)
                 or any(point_in_poly(px, py, a) for a in avoid)
                 or any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors)
-                or self._on_watercourse(px, py)
+                or self._on_watercourse(px, py, near=wat_b.near)
                 or (pond is not None and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
                 or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)

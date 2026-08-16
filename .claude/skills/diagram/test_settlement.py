@@ -1250,6 +1250,35 @@ def test_commons_keeps_scrub_off_dry_plots_and_the_crop_margin():
             assert gx < 640 - clr, (role, gx, gy)  # paddy edge + margin
 
 
+def test_commons_keeps_scrub_off_drawn_channels():
+    # GM 2026-08-16 (Inashiro): grass tufts stood ON the open water of the comb's head-race.
+    # _on_watercourse read M['channels'] - the hairline TOPOLOGY connectors (w 2.5) - while the
+    # comb's real drawn laterals live in M['drawn_channels'], up to 14 wide on their own filleted
+    # post-clip polylines. The "same manifest source" trap: the scatter must skip the DRAWN water
+    # band - uniform strokes at w0, tapered runs at each piece's own width (field_channel's 7-piece
+    # w0 -> w1 ladder). Base points asserted, as in the crop-margin test above.
+    def _clear_of(pts, poly, half):  # min point-to-polyline distance stays outside half + pad
+        for gx, gy in pts:
+            for (ax, ay), (bx, by) in zip(poly, poly[1:], strict=False):
+                dx, dy = bx - ax, by - ay
+                t = 0.0 if dx == dy == 0 else max(0.0, min(1.0, ((gx - ax) * dx + (gy - ay) * dy) / (dx * dx + dy * dy)))
+                assert ((gx - ax - t * dx) ** 2 + (gy - ay - t * dy) ** 2) ** 0.5 >= half + 2 - 0.15, (gx, gy)
+
+    s = _nuc_village()
+    s.field_channel([(300, 100), (310, 700)], "#6C9CBE", 14.0, 14.0)  # a wide UNIFORM supply lateral
+    s.field_channel([(120, 120), (200, 680)], "#6C9CBE", 14.0, 5.0)  # a TAPERED head-race
+    uniform, taper = (ch["pts"] for ch in s.M["drawn_channels"])
+    before = len(s.out)
+    # role="pasture" keeps the scatter to tufts + dots (no pines/crowns, whose highlight/shadow ink
+    # is offset from the base point _sparse tests) so every element is base-tested - the same idiom
+    # as the urban-halo tests above.
+    s.commons([(60, 60), (560, 60), (560, 760), (60, 760)], role="pasture")  # laid over both laterals
+    pts = _scatter_base_points(s.out[before:])
+    assert pts
+    _clear_of(pts, uniform, 14.0 / 2)
+    _clear_of(pts, taper, 5.0 / 2)  # conservative: every piece of the taper is at least w1 wide
+
+
 def test_marsh_keeps_reeds_off_a_building():
     s = _crop_settlement()
     s.shrine_hall(300, 300, "", w=60, h=48, kind="shrine", graveyard=False)  # a block_poly inside the marsh
