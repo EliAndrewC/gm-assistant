@@ -34,10 +34,10 @@ green, `make done` green, no consumer file modified.
 - [x] T007 [US1] Write `hamletgen/__main__.py` as a shim (`from .driver import main` + `raise SystemExit(main())`) so `python3 -m hamletgen` works; `main` STAYS in `driver.py` because consumers reach `hg.main`
 - [x] T008 [US1] DELETE `hamletgen.py` in the same change so a stale monolith can never shadow the package on `sys.path`
 - [x] T009 [US1] Update `pyproject.toml`: mypy `files` entry `"hamletgen.py"` -> `"hamletgen"`; add `"hamletgen/__init__.py" = ["F401", "F403"]` to `[tool.ruff.lint.per-file-ignores]` with the same why-comment style as the three existing entries. Coverage `source` needs no edit (research R4) - verify that claim by reading the coverage report for `hamletgen/*` in T012
-- [ ] T010 [US1] Guard-test TDD proof (SC-006): temporarily comment out one star import in `hamletgen/__init__.py`, run `python3 -m pytest test_hamletgen_surface.py`, confirm it FAILS naming the missing surface; restore, confirm green; record the red run in this file's notes
-- [ ] T011 [US1] Post-move byte-identity: quickstart.md section 2 - fresh scratch copy of the working tree, re-run the four hamlet gens + `baseline_cohort.py` + the `--batch 24` table, `diff -r` all three against the T002 baseline; MUST be empty before proceeding
-- [ ] T012 [US1] Run the full gate from the clone (`make done`, backgrounded to a log, tailed - never wrapped with a trailing `echo EXIT=$?`): ruff + duplicate-def check + format + mypy --strict + full pytest + the per-module 100% coverage gate; confirm the coverage table lists `hamletgen/*.py` modules at 100%; fix everything it lists together, re-run once
-- [ ] T013 [US1] Verify SC-002 (zero consumer changes) with `git diff --stat`: changes ONLY in `hamletgen/` (new), `hamletgen.py` (deleted), `test_hamletgen_surface.py` (new), `pyproject.toml`, and `specs/`; nothing under `pool/hamlets/*.gen.py` or in `cohort_audit.py`; commit the move as its own bisectable commit
+- [x] T010 [US1] Guard-test TDD proof (SC-006): temporarily comment out one star import in `hamletgen/__init__.py`, run `python3 -m pytest test_hamletgen_surface.py`, confirm it FAILS naming the missing surface; restore, confirm green; record the red run in this file's notes
+- [x] T011 [US1] Post-move byte-identity: quickstart.md section 2 - fresh scratch copy of the working tree, re-run the four hamlet gens + `baseline_cohort.py` + the `--batch 24` table, `diff -r` all three against the T002 baseline; MUST be empty before proceeding
+- [x] T012 [US1] Run the full gate from the clone (`make done`, backgrounded to a log, tailed - never wrapped with a trailing `echo EXIT=$?`): ruff + duplicate-def check + format + mypy --strict + full pytest + the per-module 100% coverage gate; confirm the coverage table lists `hamletgen/*.py` modules at 100%; fix everything it lists together, re-run once
+- [x] T013 [US1] Verify SC-002 (zero consumer changes) with `git diff --stat`: changes ONLY in `hamletgen/` (new), `hamletgen.py` (deleted), `test_hamletgen_surface.py` (new), `pyproject.toml`, and `specs/`; nothing under `pool/hamlets/*.gen.py` or in `cohort_audit.py`; commit the move as its own bisectable commit
 
 ## Phase 4: User Story 2 - oversized stage functions decomposed (P2) - NOT EXECUTED, see research R12
 
@@ -84,12 +84,12 @@ docs point at the package.
 
 - [x] T025 [US4] Split `test_hamletgen.py` into `test_hamletgen/` with `__init__.py` and one module per source submodule that has tests (`test_plan.py`, `test_geom.py`, `test_water.py`, `test_sink.py`, `test_cluster.py`, `test_ways.py`, `test_homesteads.py`, `test_hinterland.py`, `test_frame.py`, `test_driver.py`); shared fixtures/builders go in `test_hamletgen/_builders.py` if any exist; DELETE `test_hamletgen.py`
 - [x] T026 [US4] Prove no test was lost: compare `python3 -m pytest test_hamletgen --collect-only -q` count against the pre-split count recorded in T002's notes; the same number of tests must collect and pass, with only module paths changed
-- [ ] T027 [US4] Re-run `make done` and confirm coverage on `hamletgen/` is unchanged at 100% (a test accidentally dropped in the move shows up as a coverage hole, not as a failure); commit
+- [x] T027 [US4] Re-run `make done` and confirm coverage on `hamletgen/` is unchanged at 100% (a test accidentally dropped in the move shows up as a coverage hole, not as a failure); commit
 
 ## Phase 7: Polish & close-out
 
-- [ ] T028 Final full verification: `make done` backgrounded from the clone (skip only if everything since the last green gate is docs-only), then confirm every success criterion - manifests byte-identical (SC-001), consumer diff scope (SC-002), file and function sizes (SC-003), the index maps every concern to one file (SC-004), suite + gate + regression corpus green with the same test count (SC-005), guard proven to fire (SC-006)
-- [ ] T029 Update `spec.md` status Draft -> Implemented, check off this file's boxes with notes on anything that deviated, commit; stop-work ritual: `scripts/sync-with-main.sh done` from the clone (locked pull+push + render-sync); report to the GM with concrete verify steps
+- [x] T028 Final full verification: `make done` backgrounded from the clone (skip only if everything since the last green gate is docs-only), then confirm every success criterion - manifests byte-identical (SC-001), consumer diff scope (SC-002), file and function sizes (SC-003), the index maps every concern to one file (SC-004), suite + gate + regression corpus green with the same test count (SC-005), guard proven to fire (SC-006)
+- [x] T029 Update `spec.md` status Draft -> Implemented, check off this file's boxes with notes on anything that deviated, commit; stop-work ritual: `scripts/sync-with-main.sh done` from the clone (locked pull+push + render-sync); report to the GM with concrete verify steps
 
 ## Dependencies
 
@@ -128,8 +128,18 @@ must stop early, stop at a US-phase boundary, never mid-phase.
   155 lines. **81 tests collected, exactly matching the pre-split count.** Curated the
   test-to-module mapping by hand where the automatic attribute-count heuristic mis-assigned the
   polder/pond tests (they call `plan_site` as setup but exercise `water`/`sink`).
-- **Byte-identity (T011, live-hamlet half)**: all four live hamlet manifests AND SVGs
-  byte-identical to the pre-split baseline - empty `diff -r` across all 8 files.
+- **T010 (guard proven to fire)**: commenting out `from .cluster import *` made
+  `test_hamletgen_surface.py` FAIL on `test_consumed_surface_resolves[below_drain]` and
+  `[back_fouled]`, naming the missing names. Restored, green.
+- **T011 BYTE-IDENTITY: COMPLETE AND EMPTY (SC-001)**. 57 artifacts compared against the pre-split
+  scratch baseline: 4 live hamlet manifests + 4 SVGs, 24 cohort manifests + 24 cohort SVGs, and the
+  `--batch 24` gate-verdict table. `diff -r` empty on all three sets. The cohort verdict is
+  identical too - **23/24 passed before, 23/24 after**, and the same seed fails.
+- **T012 (gate)**: first run failed on ONE thing - `hamletgen/__main__.py` at 0% (2 statements).
+  Fixed by moving the shim body inside the `if __name__` guard, the shape `check_village/__main__.py`
+  already uses and which `[tool.coverage.report] exclude_also` excludes. Re-ran once: **gate green,
+  3,149 tests, every `hamletgen/` module at 100%**.
+- **T013 (SC-002)**: diff scope confirmed - no `pool/hamlets/*.gen.py`, no `cohort_audit.py`.
 - **Deviation (research R11)**: five `monkeypatch.setattr(hg, ...)` calls in `test_hamletgen.py`
   had to be retargeted to `hg.sink` / `hg.driver`. Three tests failed and one was passing by
   accident. No production consumer affected; SC-002 amended to "zero production consumer changes".

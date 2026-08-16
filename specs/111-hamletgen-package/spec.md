@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented (2026-08-16) - US1/US3/US4 complete; US2 held, see research.md R12
 
 **Input**: User description: "Refactor .claude/skills/diagram/hamletgen.py (2,913 lines) into a hamletgen/ package of focused submodules with its own CLAUDE.md index, following the waterfields/ (feature 110) and check_village/ (feature 024) exemplars and constitution Principle X clause 13 (files at human scale, ~1,000-line bar) plus clause 14 (derived re-export surface). Two documented motivations: (1) tokens - a package with a CLAUDE.md index lets a session load only the stage it needs (water, field, sink, ways, homesteads, wells, hinterland, frame) instead of all 2,913 lines on every hamlet re-roll; (2) engineering - decompose the oversized stage functions (stage_ways 177 lines, seat_cluster 127, stage_sink 168, place_wells 164, open_ground_patches 137, stage_polder 126, stage_homesteads 111, connector_track 89, belt_polygon 85) into named sub-stage functions. The file's own STAGE banner comments already mark the seams. The refactor must be behavior-preserving: byte-identical manifests for the four live hamlets (inashiro, mizuguchi, kashikawa, sawada) plus a seeded cohort sweep, with zero consumer changes - pool gens import HamletSpec/generate, and test_hamletgen.py + cohort_audit.py reach 47 distinct hg.* names including four underscore names (_arm_crossing_accidental, _clear_gap, _fork_spur, _near_line). The STAGES tuple is the pipeline contract and must stay in one place with an ordering comment. test_hamletgen.py (714 lines) becomes test_hamletgen/ mirroring the modules, per constitution v1.6.1 (tests count)."
 
