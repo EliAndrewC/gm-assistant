@@ -121,3 +121,22 @@ manifest byte-identical. The remaining sparse tufts on the bare strips beside th
 DELIBERATE - no bank-margin rule exists; that open decision is recorded in
 `research/vegetation.md` "Scrub stays off open water". settlement-review DELTA: PASS
 (banks read as honestly vegetated, no sterile halo; marsh tufts correctly untouched).
+(Superseded the same day: the open decision was resolved - see the cut-bank entry below.)
+
+## 2026-08-16 - cut-bank margin (engine-wide, decided here)
+
+The GM saw the remaining tufts on the berm strips between the dry hem plots and the supply
+channels and resolved the open decision left by the scatter water-skip fix above: an irrigation
+channel's bank is maintained ground (walked for sluice work, scythed for fodder), so the commons
+scatter now stands its bases `_BANK_MARGIN_FT` (6 ft - one scythe swath, the crop margin's own
+figure) off every drawn channel edge (`channels` + `drawn_channels` at drawn piece-tapered
+widths). Streams and the reed marsh are deliberately unchanged - natural banks keep their
+vegetation to the water's edge. Ink-only; the manifest is byte-identical. Automated check:
+`test_commons_keeps_scrub_a_cut_bank_off_the_channels_but_not_the_streams` (written red-first
+against the pre-fix scatter; also pins the no-margin-on-streams half). Why in
+`research/vegetation.md` "The cut bank". settlement-review DELTA: PASS (parsed all 231k scrub
+bases against the exact keep-out geometry - zero inside; density flat beyond the margin, so no
+sterile halo; brook/marsh/pond fringes confirmed untouched). One intent put on record at the
+reviewer's ask: the field-toe COLLECTOR drain takes the margin too, deliberately - its bank is
+walked for the outfall sluice, the same maintained-ground economics as the supply banks; only
+the natural brook and the reeds keep a wild edge.
