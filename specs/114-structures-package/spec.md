@@ -5,7 +5,10 @@ is declared with `export SPECIFY_FEATURE=114-structures-package`.
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented 2026-08-16. Final per-file line counts: `fixtures.py` 407, `packing.py` 292,
+`compounds.py` 277, `servants.py` 218, `urban.py` 177, `captions.py` 101, `ground.py` 92,
+`__init__.py` 40 (1,459 -> largest 407). Every `pool/` artifact byte-identical; `core.py`
+byte-unchanged; one consumer file changed, by one filename string.
 
 **Input**: User description: "Split `.claude/skills/diagram/settlement/structures.py` (1,459 lines,
 now the largest non-test source file in the /diagram skill) into a `settlement/structures/`
@@ -49,8 +52,8 @@ partly in `structures.py`. Per-subsystem files make that floor legible - the tow
 A session that needs to change how urban buildings are packed opens one file of about 300 lines
 instead of a 1,459-line file covering compounds, roads, pastures, the urban palette, servant
 ranges, packing, caption probes and public fixtures. Nothing about what the engine draws changes:
-every map already in `pool/` and `wip/` regenerates to byte-identical output, and no consumer of
-`settlement` changes a line of behavior.
+every map already in `pool/` regenerates to byte-identical output, and no consumer of `settlement`
+changes a line of behavior.
 
 **Why this priority**: this is the whole clause-13 debt. It is independently shippable - if the
 feature stopped here, the token cost that motivated it is already paid, and the index in US2
@@ -65,8 +68,8 @@ green `make done` with `settlement/core.py` byte-unchanged prove it end to end.
 
 **Acceptance Scenarios**:
 
-1. **Given** the pre-split baseline hashes of every `pool/**` and `wip/**` artifact, **When** the
-   split lands and every scripted map regenerates, **Then** the hash diff is empty.
+1. **Given** the pre-split baseline hashes of every `pool/**` artifact, **When** the split lands and
+   every map regenerates, **Then** the hash diff is empty.
 2. **Given** the split has landed, **When** `git diff --stat -- settlement/core.py` runs, **Then**
    it prints nothing - the composed `StructuresMixin` kept the bases line identical.
 3. **Given** an existing test that patches `settlement.Settlement.building`, **When** the suite
@@ -79,43 +82,21 @@ green `make done` with `settlement/core.py` byte-unchanged prove it end to end.
 
 ---
 
-### User Story 2 - The package is navigable without reading it (Priority: P2)
-
-A session arriving at `settlement/structures/` reads a `CLAUDE.md` index that says which submodule
-holds what, and loads exactly one. The index also records the decisions a reader would otherwise
-re-litigate: why `road` and `pasture` sit in a module of their own, why the four door/solid probes
-live with `servant_ranges` rather than with `building`, and how the caption probes here relate to
-`place_caption` in `castle_civic.py`.
-
-**Why this priority**: the split only pays off if the reader can pick the right file without
-opening several. Features 112 and 113 both shipped this and both indexes are load-bearing today.
-
-**Independent Test**: a reader given a task ("change how the notice board picks its verge") can
-name the file to open from the index alone, without grepping.
-
-**Acceptance Scenarios**:
-
-1. **Given** `settlement/structures/CLAUDE.md`, **When** a reader looks for any of the 33 members,
-   **Then** exactly one row of the "look here when" table covers it.
-2. **Given** `settlement/CLAUDE.md`, **When** a reader reaches the `structures` row, **Then** it
-   points at the sub-index rather than listing the seven modules' contents inline - the same shape
-   the `fields/` and `city/` rows already have.
-
----
-
-### User Story 3 - The move is proven complete, not asserted (Priority: P3)
+### User Story 2 - The move is proven complete, not asserted (Priority: P2)
 
 A guard test holds that the composed surface still exposes every pre-split member and that no two
-sub-mixins define the same name. Both halves are proven to FAIL before they are trusted.
+sub-mixins define the same name. Every assertion is proven to FAIL before it is trusted.
 
-**Why this priority**: feature 112's `fields/` guard caught the shape of bug this exists for. A
-member silently dropped by the transformer produces a package that imports cleanly, type-checks
-cleanly, and draws nothing - and surfaces only when whichever generator calls it happens to run. A
-name defined twice produces a working import, a clean `mypy --strict`, and one silently dead
-implementation, because MRO just picks the first base.
+**Why this priority**: feature 112's `fields/` guard caught the shape of bug this exists for, and
+this story must land WITH the move rather than after it - a member silently dropped by the
+transformer produces a package that imports cleanly, type-checks cleanly, and draws nothing,
+surfacing only when whichever generator calls it happens to run. A name defined twice produces a
+working import, a clean `mypy --strict`, and one silently dead implementation, because MRO just
+picks the first base.
 
-**Independent Test**: delete a method from one sub-mixin and observe the guard name it; define one
-name in two sub-mixins and observe the collision half fire.
+**Independent Test**: delete a method from one sub-mixin and observe the guard name it; delete a
+class-level attribute and observe the same; define one name in two sub-mixins and observe the
+collision half fire.
 
 **Acceptance Scenarios**:
 
@@ -127,6 +108,31 @@ name in two sub-mixins and observe the collision half fire.
    `_OFFICE_STANDOFF`), **When** the guard runs, **Then** they are covered too - the surface census
    must not be methods-only, because feature 112's `features.py` proved class-body constants move
    as deliberately as methods and a method-only guard cannot see them.
+
+---
+
+### User Story 3 - The package is navigable without reading it (Priority: P3)
+
+A session arriving at `settlement/structures/` reads a `CLAUDE.md` index that says which submodule
+holds what, and loads exactly one. The index also records the decisions a reader would otherwise
+re-litigate: why `road` and `pasture` sit in a module of their own, why the four door/solid probes
+live with `servant_ranges` rather than with `building`, and how the caption probes here relate to
+`place_caption` in `castle_civic.py`.
+
+**Why this priority**: the split only pays off if the reader can pick the right file without
+opening several. Features 112 and 113 both shipped this and both indexes are load-bearing today. It
+is last because it is docs-only and depends on the final shape.
+
+**Independent Test**: a reader given a task ("change how the notice board picks its verge") can
+name the file to open from the index alone, without grepping.
+
+**Acceptance Scenarios**:
+
+1. **Given** `settlement/structures/CLAUDE.md`, **When** a reader looks for any of the 33 members,
+   **Then** exactly one row of the "look here when" table covers it.
+2. **Given** `settlement/CLAUDE.md`, **When** a reader reaches the `structures` row, **Then** it
+   points at the sub-index rather than listing the seven modules' contents inline - the same shape
+   the `fields/` and `city/` rows already have.
 
 ---
 
@@ -166,8 +172,9 @@ name in two sub-mixins and observe the collision half fire.
   33 pre-split names (as a SUBSET assertion, so adding a member later needs no bookkeeping), that
   no two sub-mixins define the same name, and that all 33 resolve on `Settlement` itself. Each
   assertion MUST be observed failing before it is trusted.
-- **FR-004**: Every regenerated `pool/**` and `wip/**` artifact (`.json`, `.svg`, `.png`) MUST be
-  byte-identical to a baseline captured from the pre-split tree by the same command.
+- **FR-004**: Every regenerated `pool/**` artifact (`.json`, `.svg`, `.png`) MUST be byte-identical
+  to a baseline captured from the pre-split tree by the same command, with the frozen legacy maps
+  INCLUDED (`--frozen-ok`) - they are most of what exercises the town/city members being moved.
 - **FR-005**: Each submodule MUST carry `if TYPE_CHECKING: from ..core import Settlement` and every
   method MUST keep its `self: "Settlement"` annotation, so `mypy --strict` resolves cross-subsystem
   attribute access with no runtime import cycle.
@@ -207,9 +214,10 @@ name in two sub-mixins and observe the collision half fire.
   | `captions.py` | `CaptionProbesMixin` | `label_blockers`, `label_caption_hw`, `label_seat_clear`, `clear_label_seat`, `_under_a_caption` | 84 |
   | `fixtures.py` | `PublicFixturesMixin` | `theater_stage`, `fire_tower`, `kosatsuba`, `place_kosatsuba`, `place_punishment_spot`, `drum_tower` | 385 |
 
-- **The byte-identity oracle**: `sha256sum` over every `pool/**` and `wip/**` artifact, captured
-  from a scratch copy of the pre-split tree and again after, both via
-  `pipeline/regen.py --no-cache --frozen-ok`.
+- **The byte-identity oracle**: `sha256sum` over every `pool/**` artifact, captured from a scratch
+  copy of the pre-split tree and again after, both via `pipeline/regen.py --no-cache --frozen-ok`.
+  `wip/shiro-daika.gen.py` is excluded - feature 112 research R11 measured it at over 6 minutes
+  against ~3 for the whole pool, and it exercises no member the three provincial cities do not.
 
 ## Success Criteria *(mandatory)*
 
