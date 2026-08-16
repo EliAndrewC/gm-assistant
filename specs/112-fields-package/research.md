@@ -102,7 +102,7 @@ only a pre-change run of the same tree is.
 - **Live scripted hamlets only.** Rejected: leaves `apply_land_use` unverified, which is 266 of the
   773 lines Stage 2 touches.
 - **Unit tests as the sole Stage 2 oracle.** Rejected as insufficient alone: `test_fields.py` is
-  475 lines against a 1,503-line subsystem inside a package sitting at a 94% coverage floor, so
+  475 lines against a 1,511-line subsystem inside a package sitting at a 94% coverage floor, so
   line coverage does not imply the drawn geometry is unchanged. Used as a supplement, not a
   substitute.
 
@@ -179,7 +179,8 @@ waiting).
   `settlement/land.py`, `settlement/rolling.py`, two `check_village` segments and the tests. All are
   attribute access on a `Settlement` instance; none is an import.
 
-**The one thing this census does NOT cover** and the implementation must therefore preserve:
-`settlement/__init__.py` re-exports the package's public surface. If it star-imports from
-`.fields`, the new package `__init__` must re-export the same names for that to keep working. Check
-at implementation time rather than assuming either way.
+**The one loose end, checked and CLOSED**: `settlement/__init__.py` re-exports the parent
+package's public surface, so if it re-exported anything from `.fields` the new package `__init__`
+would have to reproduce it. It does not - its re-export block draws only from `._geom` and
+`._knobs`, and `fields.py` has no module-level name other than the class itself. Nothing to
+preserve; the package `__init__` owes the parent nothing beyond the name `FieldsMixin`.
