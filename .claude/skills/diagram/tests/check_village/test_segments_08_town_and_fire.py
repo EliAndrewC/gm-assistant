@@ -1017,3 +1017,86 @@ def test_flooded_basins_skips_a_manifest_with_no_tint_record():
 
 def test_flooded_basins_skips_legacy_maps():
     assert "flooded_plots_read_as_basins" not in _basin_f(_basin_M([_NEEDLE], [_cent(_NEEDLE)], gen=None))
+
+
+# --- paddy_plot_seams_shared -------------------------------------------------------------
+# TWO ADJACENT BASINS SHARE ONE BUND (GM 2026-08-17). The two faults, and every way the rule is
+# allowed NOT to fire - each of the exemptions below was a false positive the check shipped with
+# before it was calibrated against the real fan.
+
+
+def _seam_M(rings, ditches=(), ponds=(), gen="hamletgen"):
+    M = manifest(
+        meta={"scale": "hamlet", "W": 600, "H": 400, "ftpx": 1.0, "down_deg": 90, **({"generated_by": gen} if gen else {})},
+        fields=[{"name": "sf", "kind": "paddy", "outline": [[0, 0], [600, 0], [600, 400], [0, 400]], "bbox": [0, 0, 600, 400], "plot_rings": [list(r) for r in rings]}],
+        field_ditches=[dict(d, field="sf") for d in ditches],
+        field_ponds=list(ponds),
+    )
+    return M
+
+
+def _seam_f(M):
+    return check_village.gate(M, only={"paddy_plot_seams_shared"}, verbose=False)
+
+
+def _box(x0, y0, x1, y1):
+    return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+
+
+def test_paddy_seams_fires_on_a_bare_strip_between_two_basins():
+    # the GM's report: two walls with unplanted floor between them where one wall belongs
+    assert "paddy_plot_seams_shared" in _seam_f(_seam_M([_box(10, 10, 110, 110), _box(122, 10, 222, 110)]))
+
+
+def test_paddy_seams_fires_on_a_bund_ring_drawn_inside_a_basin():
+    # the standalone rectangle: a whole ring sitting in the middle of somebody else's paddy
+    assert "paddy_plot_seams_shared" in _seam_f(_seam_M([_box(10, 10, 210, 210), _box(60, 60, 160, 160)]))
+
+
+def test_paddy_seams_passes_basins_that_share_their_bund_exactly():
+    assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 110, 110), _box(110, 10, 210, 110)]))
+
+
+def test_paddy_seams_passes_a_strip_a_delivery_ditch_runs_down():
+    # the carve holds each bank's bund off the water on purpose - two basins parted by a ditch are
+    # correct, and this is the one honest reason for a gap
+    ditch = {"poly": [[116, 0], [116, 400]], "role": "branch", "w": 10.0, "w_tail": 10.0}
+    assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 110, 110), _box(122, 10, 222, 110)], ditches=[ditch]))
+
+
+def test_paddy_seams_passes_a_strip_a_field_pond_sits_in():
+    pond = {"x": 116.0, "y": 60.0, "rx": 8.0, "ry": 52.0}
+    assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 110, 110), _box(122, 10, 222, 110)], ponds=[pond]))
+
+
+def test_paddy_seams_passes_the_edge_of_the_planted_block():
+    # a lone basin's outer wall faces the fan's rim, not another basin - nothing to share with
+    assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 110, 110)]))
+
+
+def test_paddy_seams_passes_ground_too_wide_to_be_a_doubled_bund():
+    # 40 px of bare ground is bare GROUND, which is paddy_fan_gapless's rule, not this one
+    assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 110, 110), _box(150, 10, 250, 110)]))
+
+
+def test_paddy_seams_passes_a_bund_running_away_from_a_corner_neighbour():
+    # at a T-junction the far end of a wall recedes from the basin it corners on, with nothing
+    # wrong: the crossing to that neighbour runs ALONG this wall, not across it
+    assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 110, 110), _box(110, 10, 210, 110), _box(10, 110, 210, 210)]))
+
+
+def test_paddy_seams_passes_a_gap_measured_across_the_basins_own_ground():
+    # the fan toe laps its closing-rank plots, so a wall can have another basin's wall 20 px off
+    # ACROSS ITS OWN GROUND. There is no second wall to remove there and nothing bare between them
+    # - the later plot simply paints over the stretch it covers - so the rule must hold its fire.
+    assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 200, 110), _box(150, 30, 320, 160)]))
+
+
+def test_paddy_seams_skips_legacy_maps():
+    assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 110, 110), _box(122, 10, 222, 110)], gen=None))
+
+
+def test_paddy_seams_skips_a_field_that_records_no_plot_rings():
+    M = _seam_M([_box(10, 10, 110, 110), _box(122, 10, 222, 110)])
+    del M["fields"][0]["plot_rings"]
+    assert "paddy_plot_seams_shared" not in _seam_f(M)

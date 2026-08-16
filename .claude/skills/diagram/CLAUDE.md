@@ -1299,3 +1299,20 @@ seated inside a CONCAVE field margin (the outward normal was taken from the cent
 right for a convex polygon), a supply canal's tail dying in bare ground, a brook turning through an
 acute hairpin, and the two engine bugs above. Authoring one map meets perhaps two of them. If you
 add a placement rule, run it against a cohort, not against the map that motivated it.
+
+**MEASURE THE COHORT'S BASELINE FIRST - the number you are aiming at is not 24/24** (2026-08-17,
+the shared-bund pass). A cohort carries pre-existing failures, so a bare "16 of 24 passed" read
+against nothing cannot tell a regression from the weather. Roll the SAME seed range on unmodified
+code before judging your own - and note that any change altering how many draws a gen takes
+re-rolls every map, so the residue ROTATES rather than shrinking in place: that pass went 22/24 ->
+16/24 (a real regression, chased to a band sampled too coarsely and a tint rule testing the wrong
+ring) -> 22/24, at which point its residue was two failures on two maps where the baseline's had
+been five on two. Same pass rate, different maps, strictly less broken - which only the side-by-side
+shows.
+
+**Take the baseline in a DETACHED WORKTREE, never by stashing the working tree.** `git worktree add
+--detach /tmp/base HEAD` costs seconds and touches nothing. Stashing looks equivalent and is not: a
+`settlement-review` agent was reading `pool/hamlets/inashiro.json` at the time, and the stash
+reverted it to the pre-fix version underneath that agent for the length of the sweep. Anything handed
+to a review agent is LIVE for as long as the agent is - and a backgrounded baseline sweep is exactly
+the kind of job you start while one is running.

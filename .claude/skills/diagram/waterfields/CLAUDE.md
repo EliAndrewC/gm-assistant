@@ -22,6 +22,7 @@ before and after (the feature's oracle).
 | `banks.py` | how plots hem to canals and ditches: `polyline_cum`, `drain_bank_clearance`, `supply_bank_clearance`, `floor_overhang`, `hem_to_bank`, `hem_on_paddy`, `_TOE_MIN_THICKNESS`, `round_channel_joints` |
 | `comb.py` | `build_comb` - the water-first comb builder (pond sluice, head-race, supply canals, thread march, offtakes) - and `_fill_wedges` |
 | `carve.py` | `_carve` (cutting paddy plots between marched threads), `_dry_fields` (the dry-crop hem tiling), `_bund_beans` (azemame bead accents) |
+| `seams.py` | `close_seams` - the last pass over a comb fan: it plants or absorbs every scrap of bare ground left inside the command area so that **two adjacent basins share ONE bund**. Read it before changing how the fan's leftovers are handled; it replaced `_fill_wedges` (feature 2026-08-17) and its docstring carries the research, the defect, and why it runs after the toe/hem pass. The only shapely consumer in the engine |
 | `polder.py` | `build_polder` (dike-and-drain reclamation), `build_terraces` (contour terraces), `build_ribbon` (valley ribbon paddies) |
 
 Import DAG (leaf-first: frame, palette, banks, carve, comb, polder; no cycles). The three

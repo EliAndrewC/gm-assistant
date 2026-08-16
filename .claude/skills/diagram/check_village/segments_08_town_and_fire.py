@@ -2310,6 +2310,193 @@ def _seg_0600__comb_floor_ends_at_the_collector(*, M: Any = _UNBOUND, check: Any
     return _kept(locals(), ())
 
 
+def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 602 (paddy_plot_seams_shared) - hand-added 2026-08-17 past the legacy range
+    (see _seg_0595 for the numbering convention). No `_PLACEMENTS` entry: it reads only `M`,
+    `check` and `fields`, so the tail of the derived order is as good a seat as any and one
+    fewer decision to maintain. New-style: temps stay function-local, writes=()."""
+    # TWO ADJACENT BASINS SHARE ONE BUND (GM 2026-08-17, on Inashiro: "a tiny little standalone
+    # rectangle of earthen walls is just smack dab in the middle of where the field should be ...
+    # it should basically always be the case that two adjacent rice paddies share a single earthen
+    # wall rather than two different earthen walls"). This is the paddy counterpart of
+    # `dry_plot_seams_shared` and the same physical rule one crop over. An aze is a puddled-mud
+    # ridge ~1-2 ft wide, re-plastered every spring (azenuri - research/fields.md): it IS the wall
+    # between two basins. Nobody builds two of them with a strip of bare mud in between - the strip
+    # would be the most valuable land on the map lying idle, it drains neither basin, and the
+    # second ridge doubles the azenuri for nothing. Real paddy fabric is a single connected bund
+    # network meeting at T-junctions; a free-standing four-sided ring inside it is a modern
+    # land-consolidation read at best and a drawing error at worst.
+    #
+    # TWO FAULTS, one rule, both measured on the pre-fix pool (2026-08-17):
+    #   SEAM   - a run of bund with another plot's bund a short way off across DRY floor: two walls
+    #            where one belongs. Inashiro 52 plots, kashikawa 57, mizuguchi 64, sawada 81.
+    #   NESTED - a whole bund ring drawn INSIDE a neighbouring basin, so it reads as a free-standing
+    #            rectangle of wall in the middle of somebody's paddy while that basin's own wall
+    #            still runs all the way round it. This was the GM's original report - six of them on
+    #            Inashiro, 70-73% of each ring inside one carved basin and 0% of it shared with
+    #            anybody. `_fill_wedges` allowed it deliberately ("the filler may lap up to ~12 real
+    #            ft onto a neighbor ... the seam just reads as the bund between two plots") - true
+    #            only for a hairline lap along a shared edge, false for every filler whose ring
+    #            landed a plot-width in. NOTE that the four frozen pre-fix fixtures score 0 here:
+    #            an unrelated engine change had already re-rolled those six rings away by the time
+    #            the fixtures were cut, which is exactly why the rule is written down rather than
+    #            trusted to stay gone. The clause's teeth are held by
+    #            `test_paddy_seams_fires_on_a_bund_ring_drawn_inside_a_basin`.
+    #
+    # A SHALLOW LAP IS NOT A FAULT and this rule does not report one. A plot drawn over part of its
+    # neighbour paints out the stretch of bund it covers, so the pair still reads as one shared
+    # wall; on the fixed Inashiro the deepest such lap covers 41% of a ring and the map reads
+    # clean. Only near-containment inverts that, which is why the second clause counts the share of
+    # ONE ring lying inside ONE neighbour rather than measuring a depth.
+    #
+    # THE TOLERANCE IS NOT GUESSED. Sampling every plot boundary on the pre-fix Inashiro and
+    # measuring the gap to the nearest OTHER plot gives 23,897 samples at exactly 0.0 px and a
+    # thin smear above it - the carve's own quads share `edge()` outputs vertex for vertex, so a
+    # correctly shared bund reads 0. Anything above the width of the drawn stroke is therefore a
+    # real strip, not measurement noise. 3 ft = two AZE_FT strokes: two bunds that close draw as
+    # one line. Above 24 ft the ground between them is not a doubled bund at all, it is bare
+    # FLOOR, which is `paddy_fan_gapless`'s business - so this check deliberately stops there
+    # rather than restating that rule at a different tolerance. 20 ft of run keeps a rounded
+    # corner's few-pixel nub from firing.
+    #
+    # WATER IS THE ONE HONEST REASON FOR A GAP: the carve holds each bank's bund off the drawn
+    # stroke on purpose (`paddy_bunds_clear_the_supply_channels` is the rule that puts it there),
+    # so two basins parted by a delivery ditch are correct. The strip is judged at its MIDPOINT -
+    # the sample itself sits on the bank by construction, so testing it would exempt every
+    # canal-side bund on the map.
+    if M["meta"].get("generated_by"):
+        _ps_ftpx = float(M["meta"].get("ftpx", 1.0) or 1.0)
+        _ps_share = 3.0 / _ps_ftpx  # two AZE_FT strokes: this close, the two bunds ARE one line
+        _ps_max = 24.0 / _ps_ftpx  # wider than this is bare floor, not a doubled bund
+        _ps_run = 20.0 / _ps_ftpx  # a shorter run is a rounded corner's nub
+        _ps_seams: list[tuple[int, int, int]] = []
+        _ps_laps: list[tuple[int, int, int]] = []
+        for _ps_fld in fields:
+            _ps_rings = [[(float(q[0]), float(q[1])) for q in _ps_r] for _ps_r in (_ps_fld.get("plot_rings") or []) if len(_ps_r) >= 3]
+            if not _ps_rings:
+                continue
+            _ps_wat: list[tuple[Poly, float]] = []
+            for _ps_fd in M.get("field_ditches", []):
+                if _ps_fd.get("field") == _ps_fld.get("name"):
+                    _ps_wp = [(float(q[0]), float(q[1])) for q in _ps_fd.get("poly") or []]
+                    if len(_ps_wp) >= 2:
+                        _ps_wat.append((_ps_wp, max(float(_ps_fd.get("w", 2.0)), float(_ps_fd.get("w_tail", _ps_fd.get("w", 2.0)))) / 2 + _ps_share))
+            for _ps_ch in M.get("channels", []):
+                _ps_wp = [(float(q[0]), float(q[1])) for q in _ps_ch.get("poly") or []]
+                if len(_ps_wp) >= 2:
+                    _ps_wat.append((_ps_wp, float(_ps_ch.get("w", 2.0)) / 2 + _ps_share))
+            for _ps_dc in M.get("drawn_channels", []):
+                _ps_wp = [(float(q[0]), float(q[1])) for q in _ps_dc.get("pts") or []]
+                if len(_ps_wp) >= 2:
+                    _ps_wat.append((_ps_wp, max(float(_ps_dc.get("w0", 2.0)), float(_ps_dc.get("w1", 2.0))) / 2 + _ps_share))
+            _ps_pond = [(float(_ps_fp["x"]), float(_ps_fp["y"]), float(_ps_fp["rx"]) + _ps_share, float(_ps_fp["ry"]) + _ps_share) for _ps_fp in M.get("field_ponds", []) if "rx" in _ps_fp]
+            # index the rings by the box they can reach across (prunes only, never decides)
+            _ps_idx = GridIndex(64.0)
+            _ps_box: list[tuple[float, float, float, float]] = []
+            for _ps_i, _ps_ring in enumerate(_ps_rings):
+                _ps_bb = (min(q[0] for q in _ps_ring) - _ps_max, min(q[1] for q in _ps_ring) - _ps_max, max(q[0] for q in _ps_ring) + _ps_max, max(q[1] for q in _ps_ring) + _ps_max)
+                _ps_box.append(_ps_bb)
+                _ps_idx.add(_ps_bb[0], _ps_bb[1], _ps_bb[2], _ps_bb[3], _ps_i)
+            for _ps_i, _ps_ring in enumerate(_ps_rings):
+                _ps_len = _ps_best = 0.0
+                _ps_spot = (0.0, 0.0)
+                _ps_host: dict[int, int] = {}  # samples of THIS ring sitting inside each neighbour
+                _ps_touch = 0  # ...and samples of it lying ON some neighbour's wall (a shared aze)
+                _ps_tot = 0
+                for _ps_e in range(len(_ps_ring)):
+                    _ps_a, _ps_b = _ps_ring[_ps_e], _ps_ring[(_ps_e + 1) % len(_ps_ring)]
+                    _ps_el = math.hypot(_ps_b[0] - _ps_a[0], _ps_b[1] - _ps_a[1])
+                    _ps_n = max(1, int(_ps_el / 3.0))
+                    for _ps_k in range(_ps_n):
+                        _ps_t = _ps_k / _ps_n
+                        _ps_x = _ps_a[0] + _ps_t * (_ps_b[0] - _ps_a[0])
+                        _ps_y = _ps_a[1] + _ps_t * (_ps_b[1] - _ps_a[1])
+                        _ps_tot += 1
+                        _ps_gap, _ps_in, _ps_near, _ps_on = _ps_max + 1.0, 0.0, -1, False
+                        for _ps_j in _ps_idx.near(_ps_x, _ps_y):
+                            if _ps_j == _ps_i or not (_ps_box[_ps_j][0] <= _ps_x <= _ps_box[_ps_j][2] and _ps_box[_ps_j][1] <= _ps_y <= _ps_box[_ps_j][3]):
+                                continue
+                            _ps_o = _ps_rings[_ps_j]
+                            # distance to the neighbour's BOUNDARY either way - `poly_dist` returns
+                            # 0 for an interior point, which is exactly the depth this needs
+                            _ps_d = min(seg_dist(_ps_x, _ps_y, _ps_o[_ps_m], _ps_o[(_ps_m + 1) % len(_ps_o)]) for _ps_m in range(len(_ps_o)))
+                            _ps_on = _ps_on or _ps_d <= _ps_share
+                            if point_in_poly(_ps_x, _ps_y, _ps_o):
+                                _ps_in = max(_ps_in, _ps_d)  # depth INSIDE the neighbour's basin
+                                _ps_gap = 0.0
+                                if _ps_d > _ps_share:
+                                    _ps_host[_ps_j] = _ps_host.get(_ps_j, 0) + 1
+                            elif _ps_d < _ps_gap:
+                                _ps_gap, _ps_near = _ps_d, _ps_j
+                        _ps_touch += _ps_on
+                        if _ps_in <= _ps_share and _ps_share < _ps_gap <= _ps_max and _ps_near >= 0:
+                            _ps_o = _ps_rings[_ps_near]
+                            _ps_cx = _ps_cy = 0.0
+                            _ps_cd = _ps_max * 4 + 1.0
+                            for _ps_m in range(len(_ps_o)):
+                                _ps_qx, _ps_qy = seg_closest(_ps_x, _ps_y, _ps_o[_ps_m], _ps_o[(_ps_m + 1) % len(_ps_o)])
+                                if math.hypot(_ps_qx - _ps_x, _ps_qy - _ps_y) < _ps_cd:
+                                    _ps_cd, _ps_cx, _ps_cy = math.hypot(_ps_qx - _ps_x, _ps_qy - _ps_y), _ps_qx, _ps_qy
+                            # FACING, not merely near: at a T-junction the far end of a bund runs
+                            # AWAY from the neighbour it corners on, so its nearest-neighbour
+                            # distance grows along the edge with nothing wrong. A doubled bund is
+                            # two roughly PARALLEL walls, so the crossing to the neighbour is near
+                            # NORMAL to this edge; 0.5 admits anything within 60 deg of normal.
+                            if _ps_cd > 1e-9 and _ps_el > 1e-9 and abs((_ps_cx - _ps_x) * (_ps_b[0] - _ps_a[0]) + (_ps_cy - _ps_y) * (_ps_b[1] - _ps_a[1])) / (_ps_cd * _ps_el) > 0.5:
+                                _ps_len = 0.0
+                                continue
+                            _ps_mx, _ps_my = (_ps_x + _ps_cx) / 2, (_ps_y + _ps_cy) / 2
+                            # AND THE STRIP MUST BE BARE. A doubled bund is two walls with unplanted
+                            # ground between them; where the ground between belongs to a basin there
+                            # is no second wall to remove. This is not pedantry - the fan toe carries
+                            # long re-entrant closing-rank plots, and a sample on such a plot's own
+                            # boundary can have a far-off neighbour across its OWN basin. Testing the
+                            # midpoint against every ring (this plot included) is what tells the two
+                            # apart, and it is the same question `paddy_fan_gapless` asks of the fan.
+                            if any(point_in_poly(_ps_mx, _ps_my, _ps_rings[_ps_c]) for _ps_c in _ps_idx.near(_ps_mx, _ps_my)):
+                                _ps_len = 0.0
+                                continue
+                            _ps_wet = any(((_ps_mx - _ps_pe[0]) / _ps_pe[2]) ** 2 + ((_ps_my - _ps_pe[1]) / _ps_pe[3]) ** 2 <= 1.0 for _ps_pe in _ps_pond)
+                            for _ps_wq, _ps_hw in _ps_wat:
+                                if _ps_wet:
+                                    break
+                                _ps_wet = any(seg_dist(_ps_mx, _ps_my, _ps_wq[_ps_s], _ps_wq[_ps_s + 1]) < _ps_hw for _ps_s in range(len(_ps_wq) - 1))
+                            if not _ps_wet:
+                                _ps_len += _ps_el / _ps_n
+                                if _ps_len > _ps_best:
+                                    _ps_best, _ps_spot = _ps_len, (_ps_x, _ps_y)
+                                continue
+                        _ps_len = 0.0
+                if _ps_best >= _ps_run:
+                    _ps_seams.append((round(_ps_spot[0]), round(_ps_spot[1]), round(_ps_best)))
+                # NESTED, not merely lapping. A plot drawn OVER part of its neighbour paints out
+                # the stretch of bund it covers, so the pair still reads as one shared wall wherever
+                # the lap runs along their common edge - measured on the fixed Inashiro, the deepest
+                # such lap covers 41% of a ring and the map reads clean. What does NOT is a ring
+                # sitting INSIDE a basin: the host's own wall is still drawn all the way round it,
+                # so the reader sees a second, free-standing rectangle of wall in the middle of the
+                # paddy - the GM's report exactly.
+                #
+                # TWO CONDITIONS, because the depth alone does not separate them. A ring that is
+                # 60% inside a neighbour and 40% welded to the basins around it is an odd-shaped
+                # parcel, not a floating box; a 24-seed cohort produced two of those and they read
+                # fine. What makes the box a box is that it shares NO wall with anybody - so the
+                # second condition is that almost none of the ring lies ON another plot's bund.
+                # (The pre-fix Inashiro fillers: 70-73% inside, and 0% shared.) Stating both is
+                # what let the depth stay at a level the real defect clears rather than a threshold
+                # tuned until this pool happened to pass.
+                if _ps_tot and _ps_host and max(_ps_host.values()) >= 0.6 * _ps_tot and _ps_touch < 0.25 * _ps_tot:
+                    _ps_laps.append(
+                        (round(sum(_ps_q[0] for _ps_q in _ps_ring) / len(_ps_ring)), round(sum(_ps_q[1] for _ps_q in _ps_ring) / len(_ps_ring)), round(100 * max(_ps_host.values()) / _ps_tot))
+                    )
+        check(
+            "paddy_plot_seams_shared",
+            not _ps_seams and not _ps_laps,
+            f"{len(_ps_seams)} paddy plot(s) run a bund alongside a neighbour's across dry floor {[list(_ps_s) for _ps_s in _ps_seams[:4]]} (x, y, run px) and {len(_ps_laps)} draw their whole bund ring inside a neighbouring basin {[list(_ps_l) for _ps_l in _ps_laps[:4]]} (x, y, % of the ring inside it) - two adjacent basins share ONE aze, so a plot's boundary either coincides with its neighbour's, abuts water, or is the edge of the planted block; the wedge filler must fit each bare pocket to the bunds that already bound it instead of seating a shrunken rectangle inside it",
+        )
+    return _kept(locals(), ())
+
+
 def _seg_0601__flooded_plots_read_as_basins(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 601 (flooded_plots_read_as_basins) - hand-added 2026-08-16 past the legacy
     range (see _seg_0595 for the numbering convention). New-style: temps stay local, writes=()."""
