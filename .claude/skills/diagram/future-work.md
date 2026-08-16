@@ -114,3 +114,33 @@ its area):
   alternating chain of kept bank plots and dropped slivers that reads as a dashed line of boxes; a
   coarser keep-or-drop over a whole bank strip would read cleaner. Same area as the hem work but a
   presentation refinement, not a correctness one.
+
+## Review residue from the canal-B fork re-roll (settlement-review + cohort, 2026-08-16)
+
+The fork feature (research/water.md "The head-race forks - supply commands both flanks") re-rolled
+the four live hamlets three times; the review rounds' errors are fixed (thread tails, minimax
+wells, the board's clump keep-out, the lane-crossing guards). What remains, recorded as debt:
+
+- **A hairline bund-in-supply-stroke on ~2 of 48 rolled seeds** (25, 34; also seed 41 at
+  hh=15). One plot vertex sits ~0.06 px inside a canal-B stroke's drawn width - manifest
+  rounding scale, but `paddy_bunds_clear_the_supply_channels` rightly fires. The offending
+  rings are SMALL plots near the fork (likely `_fill_wedges` fillers or a piece-joint
+  governance gap in `clear_supply`'s per-piece `past` exemption - diagnosis half-done, see the
+  session log). The pool and the cohort ratchet (seeds 41-44) are clean; fix before shipping
+  any map rolled from a fresh seed, or when converting the village tier.
+- **`meta.cluster_shape` records only when the cluster-seeds cloud actually runs** (Kashikawa:
+  front rows + frontage seated all 20 houses, so a rolled knob went unhonored with no trace).
+  A knob that can silently not-record is the "check that never runs" shape - record either the
+  knob or the seeding mode, always.
+- **Mizuguchi's SE floor wedge** - the field outline juts ~350 ft beyond its own drain as a bare
+  green needle (grew ~33% in the re-roll). Wants the marsh treatment or trimming to the drain.
+- **Sawada's woodland commons mostly crop out of the view** (two of three parcels wholly above
+  the frame; the third half-cropped, hosting the title placard). Either the crop admits them or
+  they seat inside the ground the crop keeps.
+- **The in/out width ladder at junctions**: the 14 px head-race is fed by a 7 px brook and
+  splits into arms summing 23.6 - drawn capacity grows downstream at every junction. All four
+  round-2/3 reviewers flagged the same thing; it is the sanctioned linework convention (GM
+  2026-07-21) but the fork makes the head junction the map's focal water feature, so it wants a
+  conscious ruling either way.
+- **Collector-junction wedge plots render in the water-gray fill** and at fit zoom read as tiny
+  triangular ponds - conspicuous on Sawada, whose brief is "no pond".

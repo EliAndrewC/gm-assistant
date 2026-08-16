@@ -30,3 +30,11 @@ head-race) - a pipeline note, logged in `future-work.md`.
   every well after the first take the legal seat FARTHEST from the wells already placed
   (`hamletgen.place_wells`), which put the second well by the eastern houses. It also caught this
   file's stale `cross`/round claim and a gen docstring copied from Inashiro's - both fixed.
+
+- 2026-08-16 (the fork draws both arms - engine change, this map re-rolled): the GM's Inashiro
+  question settled in research/water.md "The head-race forks - supply commands both flanks";
+  every `OFFTAKE_LADDER` row now draws canal B, gated by `comb_supply_commands_both_flanks`.
+  This map re-rolled three times as review fallout was fixed at the engine (canal-B thread
+  tails via interpolated piece boundaries, minimax worst-served well placement, the notice
+  board's grove-clump keep-out, accidental-lane-crossing guards). Review log: round-2 DELTA
+  flagged the exterior second well (fixed: minimax moved it to serve the worst-served west house, 532 -> 444 ft); round-3 follow-up in the session of 2026-08-16.

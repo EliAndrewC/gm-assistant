@@ -31,3 +31,11 @@ on-sheet woodland. Logged in `future-work.md`.
   re-rolled downstream. `settlement-review` (DELTA) passed the bund/channel read and the three
   re-seated wells, and caught this file's stale shortfall claim plus a gen docstring that was a
   copy of Inashiro's - both fixed the same day.
+
+- 2026-08-16 (the fork draws both arms - engine change, this map re-rolled): the GM's Inashiro
+  question settled in research/water.md "The head-race forks - supply commands both flanks";
+  every `OFFTAKE_LADDER` row now draws canal B, gated by `comb_supply_commands_both_flanks`.
+  This map re-rolled three times as review fallout was fixed at the engine (canal-B thread
+  tails via interpolated piece boundaries, minimax worst-served well placement, the notice
+  board's grove-clump keep-out, accidental-lane-crossing guards). Review log: round-2 DELTA
+  flagged the blunt canal-B cap (fixed: the arm now tapers 7.2 -> 3.2 past its offtake); round-3 follow-up in the session of 2026-08-16.
