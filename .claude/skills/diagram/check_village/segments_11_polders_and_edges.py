@@ -3,6 +3,8 @@
 import math
 from typing import Any
 
+from settlement import seg_in_ellipse_core
+
 from .common_01_geometry import point_in_poly, poly_area, poly_dist, pt_to_rect, seg_closest, seg_dist
 from .common_02_overlap_policy import in_ellipse
 from .common_03_capacity import _UNBOUND, WAIVER_META_CHECKS, WAIVER_MIN_REASON, _kept, crop_relocatable_singletons
@@ -468,6 +470,44 @@ def _seg_0577__paddy_features_match_archetype(
             off = [[p["x"], p["y"]] for p in M["field_ponds"] if (p["x"], p["y"]) not in wet]
             check("field_ponds_on_low_ground", not off, f"{len(off)} field pond(s) not on the low/wet ground that determines them (e.g. {off[:2]}) - a pond is a LOW pocket, not a mid-field puddle")
     return _kept(locals(), ('k', 'mis', 'off', 'ok', 'p', 'wet'))
+
+
+# A feature-012 pond is sunk INTO one paddy plot - the field tiles AROUND it (the overlap
+# registry's own words). Low/wet eligibility (`field_ponds_on_low_ground`, above) cannot hold that:
+# it reads the host plot's flag, not the ellipse's extent, so Inashiro (2026-08-16) shipped green
+# with a bbox-sized pond in a fan-toe WEDGE - the ellipse spilled over three neighboring wedge
+# plots and two drain-hem plots, spoke bunds drawn straight through open water. The bund geometry
+# here (`plot_rings` + `drain_hem`) is the FIELD pass's record and the pond is the FEATURE pass's,
+# two independent sources; the core inset (4 px, in `seg_in_ellipse_core`) is the rim allowance -
+# a bund may TOUCH the shore (the host plot's own ring does), it may not run through the water.
+
+
+def _seg_0577_500__field_ponds_sunk_into_one_plot(
+    *,
+    M: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    fld: Any = _UNBOUND,
+    fp: Any = _UNBOUND,
+    spilled: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 577.5 (field_ponds_sunk_into_one_plot) - no bund/hem line through a field pond's water."""
+    if M.get("field_ponds"):
+        spilled = []
+        for fp in M["field_ponds"]:
+            for fld in M.get("fields") or []:
+                if any(
+                    seg_in_ellipse_core(ring[i], ring[(i + 1) % len(ring)], fp["x"], fp["y"], fp["rx"], fp["ry"])
+                    for ring in (fld.get("plot_rings") or []) + (fld.get("drain_hem") or [])
+                    for i in range(len(ring))
+                ):
+                    spilled.append([fp["x"], fp["y"]])
+                    break
+        check(
+            "field_ponds_sunk_into_one_plot",
+            not spilled,
+            f"{len(spilled)} field pond(s) crossed by bund/hem lines (e.g. {spilled[:2]}) - a feature-012 pond is sunk INTO one plot and the field tiles AROUND it; an ellipse spanning plots reads as a flood, not a low pocket",
+        )
+    return _kept(locals(), ('fld', 'fp', 'spilled'))
 
 
 # A contour-TERRACES field (feature 005 US4) must actually read as STEPPED CROSS-SLOPE BANDS: enough terrace
