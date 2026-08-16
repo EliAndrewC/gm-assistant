@@ -85,7 +85,7 @@ def bench_hamlet(outdir: str) -> Result:
     argv = [PY, "hamletgen.py", "--name", "Bench", "--seed", "5", "--households", "14", "--out", out]
     with_png, ok_a, _ = sh(argv)
     without_png, ok_b, _ = sh(argv, NO_RENDER)
-    gate, ok_c, _ = sh([PY, "check_village.py", out + ".json"])
+    gate, ok_c, _ = sh([PY, "-m", "check_village", out + ".json"])  # a package since 024, not a file
     return Result(
         "hamlet_gen_gate",
         "scripted hamlet: one map, generated + gated + rendered (THE inner loop)",
@@ -117,14 +117,16 @@ def bench_cohort(count: int, quick: bool) -> Result:
 def bench_cache(outdir: str) -> Result:
     """The gen cache, measured honestly: the second regen is the one that can hit.
 
-    A cold regen must run FIRST or this measures a miss and reports it as the cache's speed - which
-    is exactly what the first version of this script did (15.1 s for what should be ~1 s)."""
-    cold, ok_a, _ = sh([PY, "regen.py", "pool/provincial-cities/minami.gen.py"], NO_RENDER)
-    warm, ok_b, out = sh([PY, "regen.py", "pool/provincial-cities/minami.gen.py"], NO_RENDER)
+    A cold regen is FORCED first (`--no-cache`) or this measures whatever the cache happened to
+    hold and reports it as the cache's speed. The subject moved from frozen Minami to Sawada at
+    the 2026-08-16 legacy freeze - a frozen map just prints FROZEN in 0.1 s, which the first
+    post-freeze ledger block duly recorded as the finding."""
+    cold, ok_a, _ = sh([PY, "regen.py", "--no-cache", "pool/hamlets/sawada.gen.py"], NO_RENDER)
+    warm, ok_b, out = sh([PY, "regen.py", "pool/hamlets/sawada.gen.py"], NO_RENDER)
     hit = "CACHED" in out
     return Result(
-        "map_regen_minami",
-        "heaviest hand-authored map through `regen.py`",
+        "map_regen_sawada",
+        "heaviest LIVE scripted map through `regen.py`",
         cold,
         [("cold (cache miss: compose + draw + gate)", cold), ("warm (cache hit)" if hit else "warm (STILL A MISS)", warm)],
         ok_a and ok_b,
@@ -138,7 +140,7 @@ def bench_pool_sweep() -> Result:
 
     Broken down by the slowest maps, via pytest's own durations, because the sweep is dominated by a
     handful of heavy city maps rather than spread evenly over the 23."""
-    secs, ok, out = sh([PY, "-m", "pytest", "test_villages.py", "-q", "-n", "auto", "--no-cov", "--durations=8"])
+    secs, ok, out = sh([PY, "-m", "pytest", "test_villages.py", "-q", "-n", "auto", "--no-cov", "--durations=8"], GATE_COLD)
     parts: list[tuple[str, float]] = []
     for line in out.splitlines():
         m = re.match(r"\s*([\d.]+)s\s+call\s+.*::(\S+)", line)
@@ -146,7 +148,7 @@ def bench_pool_sweep() -> Result:
             parts.append((m.group(2)[:52], float(m.group(1))))
     return Result(
         "pool_sweep",
-        "regenerate + gate all hand-authored maps, 22 workers",
+        "regenerate + gate every LIVE scripted map, parallel workers (GATE_NO_CACHE=1: cold)",
         secs,
         parts[:8],
         ok,
@@ -155,11 +157,19 @@ def bench_pool_sweep() -> Result:
     )
 
 
-def bench_gate() -> Result:
+GATE_COLD = {"GATE_NO_CACHE": "1"}  # the gate-cache bypass (026): every live map regenerates
+
+
+def bench_gate(bypass: bool = True) -> Result:
     """`make done`, phase by phase.
 
     The phases are timed individually rather than by running `make done` - the target is just a loop
-    over these four, so the sum IS the gate, and measuring this way costs one gate instead of two."""
+    over these four, so the sum IS the gate, and measuring this way costs one gate instead of two.
+
+    With `bypass` (the default, keyed `full_gate`) the sweep regenerates every live map under
+    GATE_NO_CACHE=1 - the COLD measurement, comparable with every pre-026 ledger row. `warm_gate`
+    is the same run immediately after, when the cold run has just stored every entry, so the pair
+    measures exactly what the cache-backed gate (feature 026) buys."""
     parts: list[tuple[str, float]] = []
     ok = True
     for phase, label in (
@@ -168,10 +178,12 @@ def bench_gate() -> Result:
         ("typecheck", "typecheck (mypy --strict, 9 modules)"),
         ("test", "test (pytest -n auto + 100% coverage gate)"),
     ):
-        secs, phase_ok, _ = sh(["make", phase])
+        secs, phase_ok, _ = sh(["make", phase], GATE_COLD if bypass else None)
         parts.append((label, secs))
         ok = ok and phase_ok
-    return Result("full_gate", "`make done` - the whole gate", sum(p[1] for p in parts), parts, ok)
+    if bypass:
+        return Result("full_gate", "`make done` - the whole gate (GATE_NO_CACHE=1: cold, comparable with pre-026 rows)", sum(p[1] for p in parts), parts, ok)
+    return Result("warm_gate", "`make done` again, warm gen cache - what feature 026 buys", sum(p[1] for p in parts), parts, ok)
 
 
 def context() -> dict[str, str]:
@@ -209,7 +221,7 @@ def render_block(results: list[Result], ctx: dict[str, str], note: str) -> str:
         "",
         f"### {date.today().isoformat()}",
         "",
-        f"*{ctx['cpus']} cpus, python {ctx['python']}, resvg {ctx['resvg']}, at commit `{ctx['commit']}` - {ctx['maps']} hand-authored maps, {ctx['tests']} tests.*" + (f" {note}" if note else ""),
+        f"*{ctx['cpus']} cpus, python {ctx['python']}, resvg {ctx['resvg']}, at commit `{ctx['commit']}` - {ctx['maps']} pool gen scripts, {ctx['tests']} tests.*" + (f" {note}" if note else ""),
         "",
         "| loop / part | what | wall clock | share |",
         "|---|---|---|---|",
@@ -240,10 +252,11 @@ def main(argv: list[str] | None = None) -> int:
         ]
         if not args.quick:
             plan += [
-                ("map_regen_minami", lambda: bench_cache(outdir)),
+                ("map_regen_sawada", lambda: bench_cache(outdir)),
                 ("cohort_24", lambda: bench_cohort(24, quick=False)),
                 ("pool_sweep", bench_pool_sweep),
                 ("full_gate", bench_gate),
+                ("warm_gate", lambda: bench_gate(bypass=False)),
             ]
         if args.dry_run:
             for key, _ in plan:

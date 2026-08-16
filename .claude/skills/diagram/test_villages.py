@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Automated tests for Mode B settlement maps (diagram skill).
 
-Regenerates every SCRIPTED map in pool/ from its generator and runs the full
-check_village gate over the resulting manifest. This pins the whole Mode B
-process: any change to settlement.py, a scripted engine, or a spec that breaks
-an invariant (no overlaps, every field ringed, households-consistent house
-counts, channels anchored, no label overlaps, ...) fails here.
+Obtains every SCRIPTED map in pool/ through the gate cache (feature 026: a
+verified gen-cache hit skips GENERATION only; any doubt - or GATE_NO_CACHE=1 -
+regenerates) and runs the full check_village gate over the resulting manifest.
+This pins the whole Mode B process: any change to the settlement/ package, a
+scripted engine, or a spec that breaks an invariant (no overlaps, every field
+ringed, households-consistent house counts, channels anchored, no label
+overlaps, ...) fails here - checking is never cached.
 
 THE HAND-AUTHORED POOL IS FROZEN (GM 2026-08-16; migration-plan.md "The accepted
 trade"): legacy maps are permanent exhibits - never regenerated, never re-gated -
@@ -23,11 +25,11 @@ import json
 import os
 import runpy
 import sys
-import time
 
 import pytest
 
 import check_village
+import gencache
 import poolmaps
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -151,28 +153,26 @@ def test_a_map_is_immune_to_an_upstream_change_in_the_number_of_random_draws():
 
 
 def _regen_and_gate(gen):
-    """Run a village generator, then its gate; return True if every check passes.
-    Runs the generator IN-PROCESS (not as a subprocess) so coverage measures settlement.py.
-    The gate reads the JSON manifest, never the PNG, so DIAGRAM_SKIP_RENDER skips the resvg
-    raster - cheap since the resvg switch, but still pure waste in the test loop."""
-    os.environ["DIAGRAM_SKIP_RENDER"] = "1"
-    t0 = time.process_time()
-    try:
-        runpy.run_path(gen, run_name="__main__")
-    finally:
-        del os.environ["DIAGRAM_SKIP_RENDER"]
-    cpu_s = time.process_time() - t0
-    name = os.path.basename(gen)[: -len(".gen.py")]
-    budget = GEN_TIME_BUDGETS.get(name, GEN_TIME_BUDGET_S)
-    assert cpu_s <= budget or os.environ.get("DIAGRAM_ALLOW_SLOW_GENS") == "1", (
-        f"{name}.gen.py took {cpu_s:.1f}s CPU against a {budget:.0f}s budget - it is a SURPRISE that this gen "
-        f"takes so long, and the last time one did (Minami, 2026-08-02) it was a 45-minute perf bug that "
-        f"nothing flagged. Please consider whether a perf regression landed (the known shape: re-scanning "
-        f"static geometry per candidate seat - see CLAUDE.md 'Gate and sweep timings') before anything else. "
-        f"If you are CERTAIN perf is fine, rerun with DIAGRAM_ALLOW_SLOW_GENS=1, and raise this map's entry "
-        f"in GEN_TIME_BUDGETS with the reason recorded beside it."
-    )
-    manifest = gen[: -len(".gen.py")] + ".json"
+    """Obtain a map through the gate cache, then run its gate; True if every check passes.
+
+    A verified HIT (feature 026) skips GENERATION only: the entry's stored coverage replays into
+    this run, and the check battery below still judges whatever manifest was served. A miss
+    regenerates in gencache's coverage-recording subprocess (with DIAGRAM_SKIP_RENDER inside -
+    the gate reads the JSON manifest, never the PNG). The budget assert reads the CHILD-measured
+    CPU, so it applies exactly when generation actually ran."""
+    manifest, how, cpu_s = gencache.gate_obtain(gen)
+    if how == "REGENERATED":
+        assert cpu_s is not None
+        name = os.path.basename(gen)[: -len(".gen.py")]
+        budget = GEN_TIME_BUDGETS.get(name, GEN_TIME_BUDGET_S)
+        assert cpu_s <= budget or os.environ.get("DIAGRAM_ALLOW_SLOW_GENS") == "1", (
+            f"{name}.gen.py took {cpu_s:.1f}s CPU against a {budget:.0f}s budget - it is a SURPRISE that this gen "
+            f"takes so long, and the last time one did (Minami, 2026-08-02) it was a 45-minute perf bug that "
+            f"nothing flagged. Please consider whether a perf regression landed (the known shape: re-scanning "
+            f"static geometry per candidate seat - see CLAUDE.md 'Gate and sweep timings') before anything else. "
+            f"If you are CERTAIN perf is fine, rerun with DIAGRAM_ALLOW_SLOW_GENS=1, and raise this map's entry "
+            f"in GEN_TIME_BUDGETS with the reason recorded beside it."
+        )
     assert os.path.exists(manifest), f"{os.path.basename(gen)} produced no manifest"
     return check_village.main(manifest) == 0
 
@@ -189,6 +189,11 @@ def test_slow_gen_budget_fires_and_the_override_silences_it(tmp_path, monkeypatc
     gen = tmp_path / "snail.gen.py"
     gen.write_text("import time\nt0 = time.process_time()\nwhile time.process_time() - t0 < 0.05:\n    pass\n")
     monkeypatch.setitem(GEN_TIME_BUDGETS, "snail", 0.001)
+    # Bypass the cache and keep the snail's entry out of the real .gencache (026): without the
+    # bypass the SECOND call would HIT on the entry the first call stored and never reach the
+    # budget assert at all - the override's silencing would be untested.
+    monkeypatch.setenv("GATE_NO_CACHE", "1")
+    monkeypatch.setattr(gencache, "CACHE_DIR", str(tmp_path / "cache"))
     # OWN THE ENVIRONMENT, do not inherit it (2026-08-03): the override is documented for
     # WHOLE-SWEEP use ("rerun with DIAGRAM_ALLOW_SLOW_GENS=1"), and a session that follows that
     # advice silenced the budget for this test too - so the one test proving the guard still has

@@ -16,7 +16,10 @@ nothing here predicts. The key is derived from EVERYTHING that can reach the out
     changing);
   * the source of every FUNCTION the map actually executed;
   * every non-source FILE the run opened for reading;
-  * the interpreter version, the renderer version, and this format's own version.
+  * the interpreter version, the renderer version, and this format's own version;
+  * the installed third-party distribution set and the renderer font bytes (feature 026) - the
+    dependency surface BELOW the Python-source horizon, where the PIL layout-engine incident
+    lived (a Pillow bump rewrote 16 manifests with no code change).
 
 SOUNDNESS OF THE FINE-GRAINED PART. A function the map never executed can only reach the map if
 something the map DOES execute calls it - and that requires changing the caller, which is in the
@@ -26,10 +29,18 @@ function's source moved. A dep whose source cannot be resolved (a renamed or del
 comprehension the AST walk does not name) degrades that file to a WHOLE-FILE hash rather than being
 ignored - the failure direction is always "regenerate unnecessarily", never "serve staleness".
 
-WHAT IT DELIBERATELY DOES NOT DO. It is never the source of truth. `test_villages.py` - the gate -
-calls the gens directly and always regenerates, so a stale entry cannot ship a wrong map: it could
-only mislead an interactive look, and `make done` catches it before any commit. Keep it that way;
-`test_gencache.py::test_the_gate_never_reads_the_cache` holds the line.
+WHAT THE GATE DOES WITH IT (GM 2026-08-16, feature 026 - reversing the 2026-08-08 "the gate never
+reads the cache" rule; the reversal's reasoning is recorded in specs/026-cache-backed-gate/).
+`test_villages.py` obtains each live map via `gate_obtain`: a verified HIT skips GENERATION only -
+the full current check battery still runs against the served manifest, and the entry's stored
+coverage data replays into the run so the coverage floors stay honest - while any doubt at all
+(key moved, entry absent or incomplete, no stored coverage, `GATE_NO_CACHE=1`) regenerates in a
+coverage-recording subprocess. What makes this safe to trust: generation is deterministic, so a
+sound key implies byte-identical output; the key's one known blind spot (dependencies below the
+Python-source horizon) is closed by `_deps_state`; and `cache_audit.py` remains the standing
+empirical auditor - run it after ANY change to this file or to how generation is driven. After a
+dependency-level change, the belt-and-suspenders procedure is one bypassed sweep:
+`GATE_NO_CACHE=1 make done`.
 
 Dependency capture costs nothing measurable: `sys.monitoring` reports each code object once and
 then returns DISABLE, so the overhead is proportional to the number of distinct functions (a few
@@ -40,13 +51,17 @@ from __future__ import annotations
 
 import ast
 import builtins
+import functools
+import glob
 import hashlib
+import importlib.metadata
 import json
 import os
 import runpy
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +74,8 @@ FORMAT_VERSION = "1"  # bump to invalidate every entry when this file's key sche
 # invalidate the whole pool on every test edit).
 _NOT_ENGINE = {"gencache.py", "regen.py"}
 OUTPUT_SUFFIXES = (".json", ".svg", ".png")
+GATE_BYPASS = "GATE_NO_CACHE"  # =1 forces the gate to regenerate everything (feature 026)
+COVERAGE_NAME = "coverage.data"  # per-entry generation coverage, stored by the gate's miss path
 
 
 def engine_files() -> list[str]:
@@ -69,7 +86,12 @@ def engine_files() -> list[str]:
     out: list[str] = []
     for dirpath, dirnames, filenames in os.walk(HERE):
         dirnames[:] = sorted(d for d in dirnames if d not in ("pool", "wip", "__pycache__", ".gencache") and not d.startswith(("test_", ".")))
-        out.extend(os.path.join(dirpath, f) for f in filenames if f.endswith(".py") and not f.startswith("test_") and f not in _NOT_ENGINE)
+        # dotFILES are excluded like dot-dirs: a hidden .py is never an engine module, it is a
+        # transient (an editor swap, a tool's scratch driver). The gate's own miss drivers used to
+        # land here as `.gatecov-*-driver.py` and every concurrent key computation counted them as
+        # engine modules - so a parallel sweep poisoned every other map's key and nothing ever hit
+        # (feature 026's first warm-gate measurement, 2026-08-16, came out SLOWER than cold).
+        out.extend(os.path.join(dirpath, f) for f in filenames if f.endswith(".py") and not f.startswith(("test_", ".")) and f not in _NOT_ENGINE)
     return sorted(out)
 
 
@@ -121,10 +143,32 @@ def _renderer_version() -> str:
         return "absent"
 
 
+_FONT_DIR = "/usr/share/fonts/truetype/dejavu"  # the faces PIL measures with and resvg renders with
+
+
+@functools.lru_cache(maxsize=1)
+def _deps_state() -> str:
+    """The dependency surface BELOW the Python-source horizon (feature 026, research R1).
+
+    Installed distributions rather than lockfile bytes, because what runs is what is INSTALLED - a
+    one-off exploratory `pip install` (blessed by project doctrine) changes behavior without
+    touching any lockfile. Font bytes because PIL opens them in C where the `open` spy cannot see,
+    and glyph metrics feed label boxes and therefore manifests - the PIL layout-engine incident
+    rewrote 16 manifests with no code change behind it. On any failure the component degrades to a
+    never-match marker: regenerate unnecessarily, never serve staleness - the same convention as
+    `split_sources`."""
+    try:
+        dists = sorted({f"{d.name}=={d.version}" for d in importlib.metadata.distributions()})
+        fonts = [f"font:{os.path.basename(p)}={_sha(Path(p).read_bytes())}" for p in sorted(glob.glob(os.path.join(_FONT_DIR, "*.ttf")))]
+        return _sha("\n".join(dists + fonts).encode())
+    except Exception:  # pragma: no cover - defensive: conservative degradation, never staleness
+        return "unresolvable-" + os.urandom(8).hex()
+
+
 def compute_key(gen: str, deps: dict[str, Any] | None) -> str:
     """The cache key for `gen`. With no recorded deps this is the COARSE key - every engine file
     hashed whole - which is what a first run and any unrecorded map get."""
-    parts = [FORMAT_VERSION, sys.version, _renderer_version(), _sha(Path(gen).read_bytes())]
+    parts = [FORMAT_VERSION, sys.version, _renderer_version(), _deps_state(), _sha(Path(gen).read_bytes())]
     funcs_wanted: dict[str, set[str]] = {}
     if deps is not None:
         for filename, qual in deps.get("functions", []):
@@ -247,13 +291,18 @@ def load(gen: str) -> bool:
         cached = os.path.join(entry, os.path.basename(out))
         if os.path.isfile(cached):
             shutil.copy2(cached, out)
-        elif os.path.exists(out):  # pragma: no cover - defensive: an output the build never made
-            os.remove(out)
+        # an output the entry lacks (e.g. a render-skipped PNG from a gate-built entry, 026) is
+        # left standing rather than deleted: the key just matched, so any standing artifact was
+        # derived from these same sources - deleting it would only force a pointless re-render
     return True
 
 
-def store(gen: str, deps: dict[str, Any]) -> None:
+def store(gen: str, deps: dict[str, Any], *, gen_cpu_s: float | None = None, coverage_data: str | None = None) -> None:
     """Write an entry so that a CONCURRENT reader never sees a half-made one.
+
+    The gate's miss path (026) also passes `coverage_data` (a coverage.py data file, copied in as
+    COVERAGE_NAME) and `gen_cpu_s` (child-measured CPU seconds, into meta.json). Both land BEFORE
+    the final meta.json publish, so the atomic-publish invariant below still holds for them.
 
     Two things make this safe. Every file lands by write-to-temp-then-os.replace, which is atomic
     within a filesystem, so a reader sees the old bytes or the new bytes and never a partial file.
@@ -276,4 +325,67 @@ def store(gen: str, deps: dict[str, Any]) -> None:
     for out in _outputs(gen):
         if os.path.isfile(out):
             place(Path(out).read_bytes(), os.path.join(entry, os.path.basename(out)))
-    place(json.dumps({"key": compute_key(gen, deps), "deps": deps}).encode(), os.path.join(entry, "meta.json"))
+    if coverage_data is not None and os.path.isfile(coverage_data):
+        place(Path(coverage_data).read_bytes(), os.path.join(entry, COVERAGE_NAME))
+    meta: dict[str, Any] = {"key": compute_key(gen, deps), "deps": deps}
+    if gen_cpu_s is not None:
+        meta["gen_cpu_s"] = gen_cpu_s
+    place(json.dumps(meta).encode(), os.path.join(entry, "meta.json"))
+
+
+def gate_obtain(gen: str) -> tuple[str, str, float | None]:
+    """Obtain a map for the GATE (feature 026): returns `(manifest_path, how, gen_cpu_s)`.
+
+    HIT ("HIT"): the key matches AND the entry carries generation coverage data - restore the
+    artifacts, replay the stored coverage into this run as a parallel-mode data file, execute no
+    generation. MISS ("REGENERATED"): anything else - key moved, entry absent or incomplete, no
+    coverage data (an iteration-path entry), or the GATE_NO_CACHE=1 bypass - regenerate in a
+    subprocess under `coverage run --parallel-mode`, so the refreshed entry gains the coverage
+    data and the child-measured CPU seconds the next hit needs. The caller runs the check battery
+    in-process on BOTH paths - checking is never cached. Contract and pinning tests:
+    specs/026-cache-backed-gate/contracts/gate-cache.md."""
+    manifest = gen[: -len(".gen.py")] + ".json"
+    stem = os.path.basename(gen)[: -len(".gen.py")]
+    cov_src = os.path.join(_entry_dir(gen), COVERAGE_NAME)
+    if os.environ.get(GATE_BYPASS) != "1" and os.path.isfile(cov_src) and os.path.getsize(cov_src) > 0 and load(gen):
+        shutil.copyfile(cov_src, os.path.join(HERE, f".coverage.gatehit-{stem}-{os.getpid()}"))
+        return manifest, "HIT", None
+    # The child's scratch files (driver, record, raw coverage data) live OUTSIDE the engine tree:
+    # anything transient dropped into HERE risks contaminating concurrent key computations - the
+    # dotfile filter in engine_files() is the second layer of the same defense.
+    workdir = tempfile.mkdtemp(prefix=f"gatecov-{stem}-")
+    covbase = os.path.join(workdir, "cov")
+    recfile = os.path.join(workdir, "rec.json")
+    driver = os.path.join(workdir, "driver.py")
+    Path(driver).write_text(
+        "import json, sys, time\n"
+        f"sys.path.insert(0, {HERE!r})\n"
+        "import gencache\n"
+        "t0 = time.process_time()\n"
+        f"deps = gencache.run_and_record({gen!r})\n"
+        f"json.dump({{'deps': deps, 'cpu': time.process_time() - t0}}, open({recfile!r}, 'w'))\n"
+    )
+    # the child must be the ONLY coverage recorder in its process: strip the parent pytest-cov
+    # session's subprocess hooks, or two recorders fight over the sys.monitoring tool id
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("COV_CORE_", "COVERAGE_"))}
+    env["DIAGRAM_SKIP_RENDER"] = "1"  # the gate reads the manifest, never the PNG
+    env["COVERAGE_FILE"] = covbase
+    try:
+        proc = subprocess.run([sys.executable, "-m", "coverage", "run", "--parallel-mode", driver], cwd=HERE, env=env, capture_output=True, text=True)
+        if proc.returncode:
+            raise RuntimeError(f"gate regeneration failed for {os.path.basename(gen)} (exit {proc.returncode}):\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}")
+        with open(recfile) as fh:
+            rec = json.load(fh)
+        covfiles = sorted(glob.glob(covbase + ".*"))
+        store(gen, rec["deps"], gen_cpu_s=rec["cpu"], coverage_data=covfiles[0] if covfiles else None)
+        for i, covfile in enumerate(covfiles):
+            # the child's recording also feeds THIS run's coverage: published onto the session
+            # data-file glob (`.coverage.*`) that the Makefile's `coverage combine --append`
+            # sweeps. Copy-then-replace, because the scratch dir is on another filesystem (a bare
+            # os.replace raises EXDEV) and the final landing must still be atomic.
+            dest = os.path.join(HERE, f".coverage.gatehit-{stem}-{os.getpid()}-{i}")
+            shutil.copyfile(covfile, dest + ".tmp")
+            os.replace(dest + ".tmp", dest)
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+    return manifest, "REGENERATED", float(rec["cpu"])
