@@ -47,8 +47,9 @@ head-race) - a pipeline note, logged in `future-work.md`.
   125 ft; gates `woodland_commons_within_the_frame` / `woodland_commons_on_dry_ground`); and
   `meta.cluster_seeding` records the seeding mode always ("frontage" on this roll).
   Map-specific: the SE bare-green needle (~350 ft of floor past the drain's thin head - this map's
-  own ledger item) is gone, and the freed common now carries two byres and their fodder plots;
-  three dry woodland parcels (250/250/160 ft). Review log: full DELTA verified the trimmed corner
+  own ledger item) is gone, and the trim frees command-area ground the placers RE-USE (what stands
+  there is roll-dependent - the merged roll seats two farmsteads and the second well on it); three
+  dry woodland parcels (250/250/160 ft). Review log: full DELTA verified the trimmed corner
   reads as worked field (bund-edged hem staircase, not a cut) and caught the marsh-seated parcel
   that drove the marsh keep-out; follow-up pass on the re-seat. Cosmetic residue logged, not
   fixed: the collector's blue stroke fades out along the hem staircase at the trimmed corner
