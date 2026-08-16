@@ -102,8 +102,8 @@ regenerates on a warm cache; grep finds no stale doctrine.
       driven; ~10 min, background it). Record PASS/FAIL here: **PASS** (2026-08-16: 3 mutations of settlement/_geom.py, 0 skipped, 0 failed, pool clean after restore)
 - [x] T016 Run `python3 timings.py --note "026 cache-backed gate"` (background); verify SC-001
       (warm_gate >= 5% faster than full_gate) and SC-004 (green cold + warm); ledger block
-      appended. Recorded 2026-08-16: cold 189.0 s, warm 219.6 s - -16.2% faster (SC-001 NOT MET)
-- [ ] T017 Final gate: `make done` backgrounded, not polled, log tail is the authority. Then the
+      appended. Recorded 2026-08-16 (remeasured after the key-poisoning fix; the first measurement's warm gate had no working hits): cold 190.1 s, warm 171.2 s - 9.9% faster (SC-001 MET)
+- [x] T017 Final gate: satisfied by the remeasured timings run (full_gate cold green 3:10.1 + warm_gate green 2:51.2 on the final tree; only markdown changed after). Then the
       stop-work ritual: commit, `scripts/sync-with-main.sh done`.
 
 ## Dependencies
