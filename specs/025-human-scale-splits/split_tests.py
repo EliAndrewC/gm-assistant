@@ -29,7 +29,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 SKILL = os.path.join(REPO, ".claude", "skills", "diagram")
 
-STDLIB = ("json", "math", "pathlib", "sys")
+STDLIB = ("json", "math", "os", "pathlib", "random", "re", "sys", "tempfile")
 FIRSTPARTY = ("check_village", "settlement", "waterfields", "hamletgen")
 
 
@@ -40,7 +40,7 @@ def dest_module(pkg: str, src_mod: str) -> str:
     stem = src_mod[: -len(".py")]
     if stem.startswith("common_"):
         return "test_common_" + stem.split("_", 2)[2] + ".py"
-    return "test_" + stem + ".py"
+    return "test_" + stem.lstrip("_") + ".py"
 
 
 def used_names(nodes: list[ast.AST]) -> set[str]:

@@ -1773,8 +1773,8 @@ def test_draft_byres_skips_a_homestead_boxed_in_on_all_sides():
     s.M["houses"] = [{"x": 300, "y": 300, "w": 40, "h": 28, "kind": "plain", "rot": 0, "wealth": 1.0}]
     s.placed.append((300, 300, 40, 28))
     for a in range(0, 360, 20):  # wall the homestead in with placed footprints
-        rad = settlement.math.radians(a)
-        s.placed.append((300 + 70 * settlement.math.cos(rad), 300 + 70 * settlement.math.sin(rad), 60, 60))
+        rad = math.radians(a)
+        s.placed.append((300 + 70 * math.cos(rad), 300 + 70 * math.sin(rad), 60, 60))
     assert s.draft_byres(fraction=1.0) == []  # nowhere to put a byre -> skipped
 
 
@@ -2067,9 +2067,9 @@ def test_shrine_well_places_a_well_beside_the_hall():
 def test_shrine_well_returns_none_when_boxed_in():
     s = _crop_settlement()
     for a in range(0, 360, 15):  # wall off every ring position around the hall
-        rad = settlement.math.radians(a)
+        rad = math.radians(a)
         for rr in (54, 66, 80, 96, 112):
-            s.placed.append((400 + rr * settlement.math.cos(rad), 400 + rr * settlement.math.sin(rad), 40, 40))
+            s.placed.append((400 + rr * math.cos(rad), 400 + rr * math.sin(rad), 40, 40))
     assert s.shrine_well(400, 400) is None and not s.M["wells"]
 
 

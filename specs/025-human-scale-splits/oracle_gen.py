@@ -37,9 +37,10 @@ COHORT_DIR = "/tmp/l7r-025-cohort"
 if SKILL not in sys.path:
     sys.path.insert(0, SKILL)
 
-# Pinned cohort: (seed, households). Seeds chosen to differ from the pool gens' own so rolled
-# knobs (water_sink, cluster_shape, field_archetype, down_deg, windward) take other branches.
-COHORT = [(3, 9), (8, 15), (13, 21), (18, 12), (27, 18)]
+# Pinned cohort: (seed, households) within the 10-20 hamlet band. Seeds chosen to differ from
+# the pool gens' own so rolled knobs (water_sink, cluster_shape, field_archetype, down_deg,
+# windward) take other branches.
+COHORT = [(3, 10), (8, 15), (13, 20), (18, 12), (27, 17)]
 
 
 def stamp_stripped_sha(path: str) -> str:
@@ -66,7 +67,7 @@ def generate() -> dict[str, dict[str, str]]:
     for seed, households in COHORT:
         stem = os.path.join(COHORT_DIR, f"oracle-s{seed}-h{households}")
         subprocess.run(
-            [sys.executable, "hamletgen.py", "--name", f"Oracle-s{seed}", "--seed", str(seed), "--households", str(households), "--out", stem],
+            [sys.executable, "hamletgen.py", "--name", f"Oracle-s{seed}", "--seed", str(seed), "--households", str(households), "--out", stem, "--no-render"],
             cwd=SKILL,
             check=True,
             capture_output=True,
