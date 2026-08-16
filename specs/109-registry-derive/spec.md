@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-16
 
-**Status**: Draft
+**Status**: Implemented (2026-08-16)
 
 **Input**: User description: "Collapse check_village/registry.py (8,432 lines) to a derived surface per constitution clause 14 (rosters that restate code are derived, not maintained)."
 
