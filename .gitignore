@@ -105,3 +105,9 @@ top_up-improvement.md
 .claude/skills/diagram/wip/*.svg
 .claude/skills/diagram/wip/*.png
 .claude/skills/diagram/wip/*.json
+
+# Spec-kit ACTIVE-FEATURE POINTER - per-session state, never shared.
+# It OUTRANKS the SPECIFY_FEATURE env var when spec-kit resolves FEATURE_DIR, so a peer session
+# committing theirs silently redirects the next session -s spec-kit writes into their specs/NNN-*/.
+# Committed by features 114, 115 and 116 before anyone noticed the ignore rule was missing entirely.
+.specify/feature.json
