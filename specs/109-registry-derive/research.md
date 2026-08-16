@@ -129,3 +129,16 @@ justification header both describe the old file and are updated by this feature 
 constitution's clause 13 text names "a registry whose row order is the execution contract" as
 the carve-out example in the abstract - it does not name this file, so no constitution edit is
 needed; CLAUDE.md's operational mirror likewise names only the 027 exemplar.
+
+## R10. Outcome (implementation, 2026-08-16)
+
+Post-merge corpus: **1,371 rows** (0597/0598/0599/0600 arrived from a peer session mid-feature;
+`probe3_final.py` re-proved derivability and auto-discovered the placement set). Shipped:
+`registry.py` 8,432 -> ~200 lines + `registry_analysis.py` ~300 lines (both 100% covered,
+mypy --strict); `_PLACEMENTS` = 6 entries (0596 after 0317; 0595 after 0532 with 0600, 0597,
+0599, 0598 chained after it), `_NEEDS_OVERRIDES` = 1 entry (0324_500). Fixture equality green
+across all 1,371 rows. Import timing (FR-009): cold (derive + cache store) 1.84 s; warm (cache
+hit) **0.415 s - faster than the old 8,432-line file's ~1.3 s import**, so the steady state is a
+net speedup, not a budgeted cost. One workflow subtlety found by the T009 dry-run and written
+into the package CLAUDE.md: sub-numbering places relative to the BASE key order, so a segment
+meant to run beside a PLACED segment needs its own `_PLACEMENTS` entry.

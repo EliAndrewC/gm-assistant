@@ -8,13 +8,13 @@
 
 Replace the 8,432-line hand-maintained `check_village/registry.py` with a derived surface per
 constitution clause 14. Every row field is reproducible from the segment modules themselves -
-proven empirically by the two probes in this directory across all 1,367 rows: `free` is the
+proven empirically by the two probes in this directory across all rows (1,371 after the 2026-08-16 sync-in brought four more hand-added segments): `free` is the
 keyword-only signature (exact), `writes` is the literal `_kept` return tuple (exact),
 `checks`/`meta`/`always` derive from the body AST (exact), `needs` derives from the
 upward-exposed-reads analysis plus the via_helpers fixpoint (exact but one row), and order
-derives from the numeric name key (exact but two rows). The three exceptions are genuine
-decisions and stay as explicit data: a 2-entry `PLACEMENTS` table and a 1-entry
-`NEEDS_OVERRIDES` table, each entry with its why. Derivation output is cached keyed by a hash
+derives from the numeric name key (exact but the hand-added cluster). The exceptions are genuine
+decisions and stay as explicit data: a 6-entry `_PLACEMENTS` table (0595, 0596, and the
+0597-0600 cluster chained after 0595) and a 1-entry `_NEEDS_OVERRIDES` table, each entry with its why. Derivation output is cached keyed by a hash
 of the segment sources (feature 026 gencache precedent) so the ~1.4 s AST cost is paid only
 when a segment file changes. The pre-collapse rows are frozen as a committed JSON fixture; a
 by-name equality test plus structural guards (each proven to fire) hold the contract. Zero
@@ -44,7 +44,7 @@ hash + JSON load); cold (cache miss) re-derive ~1.4 s, paid only when segment so
 **Constraints**: FR-002 exact row equality to the frozen fixture; FR-003 zero consumer changes;
 no new dependencies; mypy --strict; ruff clean
 
-**Scale/Scope**: 1,367 rows x 7 fields; 12 segment modules (~30k lines parsed); one file
+**Scale/Scope**: 1,371 rows x 7 fields; 12 segment modules (~30k lines parsed); one file
 replaced, two new modules, one test module, one fixture
 
 ## Constitution Check
