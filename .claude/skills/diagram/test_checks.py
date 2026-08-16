@@ -11473,3 +11473,75 @@ def test_bund_beans_on_bunds_fires_on_a_bead_in_pond_water():
     assert "bund_beans_on_bunds" in f({**_bb_M([[200, 300]], [_BB_HOST]), "pond": [200, 300, 30, 20]})
     assert "bund_beans_on_bunds" in f({**_bb_M([[200, 300]], [_BB_HOST]), "field_ponds": [{"x": 200, "y": 300, "rx": 30, "ry": 20}]})
     assert "bund_beans_on_bunds" not in f({**_bb_M([[200, 300]], [_BB_HOST]), "pond": [200, 300, 1.5, 1.5]})
+
+
+# ---- comb_supply_commands_both_flanks (2026-08-16) -----------------------------------------------
+# A gravity canal commands only ground BELOW it, so a comb fan planted on both sides of its
+# bunsuiguchi fork must DRAW supply down both margins (research/water.md "The head-race forks -
+# supply commands both flanks"). The check reads the `fork` build_comb records on the field.
+
+
+def _both_flanks_manifest(arm_b=True, west_sliver=False):
+    """A comb fan falling due south, fork at (500, 300): canal A inked down the east margin, plots
+    on both flanks (or only a sliver on the west when `west_sliver`), canal B optional."""
+    west_x = (460, 490) if west_sliver else (210, 260)
+    fld = {
+        "name": "f",
+        "kind": "paddy",
+        "down_deg": 90,
+        "fork": [500.0, 300.0],
+        "outline": [[200, 300], [800, 300], [800, 900], [200, 900]],
+        "bbox": [200, 300, 800, 900],
+        "plot_rings": [
+            [[west_x[0], 340], [west_x[1], 340], [west_x[1], 390], [west_x[0], 390]],
+            [[740, 340], [790, 340], [790, 390], [740, 390]],
+            [[480, 600], [520, 600], [520, 640], [480, 640]],
+        ],
+    }
+    ditches = [
+        {"field": "f", "role": "main", "w": 7.0, "poly": [[500, 260], [500, 300]]},
+        {"field": "f", "role": "main", "w": 6.0, "poly": [[500, 300], [700, 420], [790, 520]]},
+        {"field": "f", "role": "drain", "w": 3.0, "poly": [[210, 880], [790, 880]]},
+    ]
+    if arm_b:
+        ditches.append({"field": "f", "role": "main", "w": 5.6, "poly": [[500, 300], [350, 420], [290, 520]]})
+    return manifest(fields=[fld], field_ditches=ditches)
+
+
+def test_comb_supply_commands_both_flanks_fires_on_a_bare_flank():
+    fails = check_village.gate(_both_flanks_manifest(arm_b=False), verbose=False, only={"comb_supply_commands_both_flanks"})
+    assert "comb_supply_commands_both_flanks" in fails
+
+
+def test_comb_supply_commands_both_flanks_passes_with_both_arms_inked():
+    fails = check_village.gate(_both_flanks_manifest(arm_b=True), verbose=False, only={"comb_supply_commands_both_flanks"})
+    assert "comb_supply_commands_both_flanks" not in fails
+
+
+def test_comb_supply_commands_both_flanks_spares_a_sliver_flank():
+    # under ~150 ft of paddy past the fork demands no second arm - a genuinely lopsided fan is honest
+    fails = check_village.gate(_both_flanks_manifest(arm_b=False, west_sliver=True), verbose=False, only={"comb_supply_commands_both_flanks"})
+    assert "comb_supply_commands_both_flanks" not in fails
+
+
+def test_comb_supply_commands_both_flanks_skips_manifests_without_a_fork():
+    # legacy manifests record no fork (conversion, not retrofit, is their fix - migration doctrine)
+    M = _both_flanks_manifest(arm_b=False)
+    del M["fields"][0]["fork"]
+    fails = check_village.gate(M, verbose=False, only={"comb_supply_commands_both_flanks"})
+    assert "comb_supply_commands_both_flanks" not in fails
+
+
+def test_comb_supply_commands_both_flanks_skips_a_field_with_no_declared_fall():
+    M = _both_flanks_manifest(arm_b=False)
+    del M["fields"][0]["down_deg"]
+    fails = check_village.gate(M, verbose=False, only={"comb_supply_commands_both_flanks"})
+    assert "comb_supply_commands_both_flanks" not in fails
+
+
+def test_comb_supply_commands_both_flanks_reads_the_map_fall_when_the_field_has_none():
+    M = _both_flanks_manifest(arm_b=False)
+    del M["fields"][0]["down_deg"]
+    M["meta"]["down_deg"] = 90
+    fails = check_village.gate(M, verbose=False, only={"comb_supply_commands_both_flanks"})
+    assert "comb_supply_commands_both_flanks" in fails

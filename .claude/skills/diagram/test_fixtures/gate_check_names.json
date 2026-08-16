@@ -215,6 +215,7 @@
  "city_wells_in_block_interiors",
  "city_wharf_jetties_on_bank",
  "cluster_abuts_fields",
+ "comb_supply_commands_both_flanks",
  "common_fields_vary_orientation",
  "commons_beyond_the_windbreak",
  "commons_clear_of_paddies",

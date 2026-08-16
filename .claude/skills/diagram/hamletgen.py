@@ -248,9 +248,18 @@ FAN_ASPECTS = (0.88, 0.95, 1.0, 1.08, 1.16)
 # away with it because its fan happens to be wide there; across a cohort of twenty that came back as
 # one dangling collector. A last offtake at ~0.88 - which is also `build_comb`'s own default - keeps
 # the tail short and inside the rice.
+# ...AND EVERY ROW DRAWS CANAL B (GM caught Inashiro's bare west margin 2026-08-16; researched -
+# research/water.md "The head-race forks - supply commands both flanks"). A gravity canal commands
+# only the ground BELOW it, and the carve plants paddy on BOTH sides of the bunsuiguchi fork - so
+# the hamlet rows' old offtakes_b=() (copied from Ikegami's authored choice, now a frozen exhibit)
+# left the whole canal-B flank carved as watered ground with no drawn water: the modeled net and
+# the inked net disagreed, exactly the failure the paragraph above warns about. One offtake at
+# ~0.55 inks the second arm partway down its margin, tapering to a thread (Minuma-dai divides its
+# head into TWO margin canals; the Isawa fan's canals radiate from the fan head). Gated by
+# comb_supply_commands_both_flanks.
 OFFTAKE_LADDER: tuple[tuple[int, tuple[float, ...], tuple[float, ...]], ...] = (
-    (11, (0.36, 0.93), ()),
-    (21, (0.30, 0.62, 0.93), ()),
+    (11, (0.36, 0.93), (0.55,)),
+    (21, (0.30, 0.62, 0.93), (0.55,)),
     (99, (0.26, 0.52, 0.78, 0.93), (0.6,)),
 )
 
@@ -1758,6 +1767,23 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
     # start point inside a crop makes EVERY bearing fail - which is how the fallback below came to
     # fire at all. Step it clear first.
     start = pull_clear(start, (plan.seat["cx"], plan.seat["cy"]), avoid or [plan.envelope], 12.0)
+    # A WET POLY IS SCORED WITH THE LANE'S WIDTH ON, not as a bare region (Cohort-41 2026-08-16).
+    # `roads_clear_of_marsh` measures every marsh VERTEX against the way's CENTERLINE with the
+    # way's half-width + 2 px of pad - so a track whose centerline clears the toe band's corner by
+    # 4.5 px routes clean here and fails there. Inflating the polygon by 8 px (half the 6 px
+    # connector lane + the gate's 2 px pad + 3 px slack) makes the router score the tread the gate
+    # will measure, the same probe-measures-what-the-check-measures rule the bow comment below
+    # states for the crop.
+    def _inflated(w: Poly) -> Poly:
+        wcx = sum(p[0] for p in w) / len(w)
+        wcy = sum(p[1] for p in w) / len(w)
+        out: Poly = []
+        for wx, wy in w:
+            wl = math.hypot(wx - wcx, wy - wcy) or 1.0
+            out.append((wx + (wx - wcx) / wl * 8.0, wy + (wy - wcy) / wl * 8.0))
+        return out
+
+    wet_grown = [_inflated(w) for w in wet if len(w) >= 3]
     best: tuple[tuple[int, int], Poly] | None = None
     for swing in sorted((9.0 * k for k in range(-20, 21)), key=abs):
         theta = math.radians(base + swing)
@@ -1781,7 +1807,7 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
         # leave along the contour and exit the frame ABOVE the marsh, which is what a real valley
         # road does; whatever crop it then clips is bent round afterwards by `route_around`, which
         # the marsh has no equivalent of because a track through a marsh cannot be nudged dry.
-        soaked = sum(path_violations(path, [w], None, ()) for w in wet)  # the WET POLYGON only - pond and brook are scored once, below
+        soaked = sum(path_violations(path, [w], None, ()) for w in wet_grown)  # the WET POLYGON only - pond and brook are scored once, below
         violations = path_violations(path, avoid or [plan.envelope], pond, brook, waters)
         if soaked == 0 and violations == 0:
             return path
@@ -2119,7 +2145,14 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
         pool = sorted(seats)
         while pool and len(placed) < want:
             if placed:
-                pool.sort(key=lambda c: (-min(math.hypot(c[1] - px, c[2] - py) for px, py in placed), c[0]))
+                # ...in coverage BUCKETS of ~3 grid steps, centrality breaking ties inside a bucket
+                # (Sawada 2026-08-16, after the canal-B re-roll): a strict farthest-first sort let a
+                # seat 91 px OUTSIDE the cluster beat an interior seat covering essentially the same
+                # households, and the exterior well held the whole map frame open by its own width
+                # (crop_not_held_open_by_one_feature). A well 60-odd px nearer the unserved end is
+                # the same well to the household walking to it; a well past every drawn feature is a
+                # different map.
+                pool.sort(key=lambda c: (-(min(math.hypot(c[1] - px, c[2] - py) for px, py in placed) // 66.0), c[0]))
             _, x, y = pool.pop(0)
             if any(math.hypot(x - px, y - py) < 170.0 for px, py in placed):
                 continue  # `wells_not_clustered`: shared wells serve separate courtyards

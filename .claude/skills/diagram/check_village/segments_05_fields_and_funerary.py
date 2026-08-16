@@ -2000,6 +2000,108 @@ def _seg_0324__field_ditches_terminate(
 # a stream would be judged at a position it is never drawn at.
 
 
+# THE HEAD-RACE FORKS AND SUPPLY COMMANDS BOTH FLANKS (GM caught Inashiro's bare west margin
+# 2026-08-16; researched - research/water.md "The head-race forks - supply commands both flanks").
+# A gravity canal waters only ground BELOW it (Chinese canal doctrine: every tier sits on the high
+# ground of ITS OWN command area; Minuma-dai 1728 divides its head into TWO canals along the two
+# elevated margins with the drain down the center), and build_comb carves paddy on BOTH sides of
+# the bunsuiguchi division - so a fan whose drawn supply runs down one margin only has a whole
+# flank of modeled-as-watered plots with no visible water. Measured on the motivating map: ~255 ft
+# of planted paddy west of Inashiro's fork against 0 ft of drawn supply. The check reads the fork
+# build_comb records on the field (legacy manifests carry none, so the frozen pool skips it -
+# conversion, not retrofit, is their fix per the migration doctrine) and compares each flank's
+# planted cross-slope extent against the drawn main/branch reach on that flank. Thresholds are
+# real feet (scaled by ftpx): a flank with more than ~150 ft of paddy needs drawn supply reaching
+# at least 80 ft, or 30% of that flank's extent, whichever is greater - calibrated so a genuinely
+# lopsided fan (a sliver of ground past the fork) demands nothing, while a flank the carve
+# actually planted must show the arm that waters it.
+
+
+def _seg_0324_500__comb_supply_commands_both_flanks(
+    *,
+    M: Any = _UNBOUND,
+    _csf_bad: Any = _UNBOUND,
+    _csf_c: Any = _UNBOUND,
+    _csf_d: Any = _UNBOUND,
+    _csf_deg: Any = _UNBOUND,
+    _csf_ext: Any = _UNBOUND,
+    _csf_f: Any = _UNBOUND,
+    _csf_fork: Any = _UNBOUND,
+    _csf_ftpx: Any = _UNBOUND,
+    _csf_i: Any = _UNBOUND,
+    _csf_reach: Any = _UNBOUND,
+    _csf_ring: Any = _UNBOUND,
+    _csf_s: Any = _UNBOUND,
+    _csf_seen: Any = _UNBOUND,
+    _csf_v: Any = _UNBOUND,
+    check: Any = _UNBOUND,
+    meta: Any = _UNBOUND,
+) -> dict[str, Any]:
+    """Gate segment 0324.500 (comb_supply_commands_both_flanks) - new check 2026-08-16, see the comment bank above."""
+    _csf_bad = []
+    _csf_ftpx = float(meta.get("ftpx") or 1.0)
+    _csf_seen = False
+    for _csf_f in M.get("fields") or []:
+        _csf_fork = _csf_f.get("fork")
+        _csf_deg = _csf_f.get("down_deg", meta.get("down_deg"))
+        if _csf_fork is None or _csf_deg is None or _csf_f.get("kind") != "paddy":
+            continue
+        _csf_seen = True
+        # cross-slope unit vector: fall d = (cos, sin), c = d rotated 90 deg - flank membership is
+        # the SIGN of a point's cross-slope offset from the fork (an AGGREGATE bearing question is
+        # fine on vertices; every quantity here is an extent, not a gap verdict)
+        _csf_c = (-math.sin(math.radians(float(_csf_deg))), math.cos(math.radians(float(_csf_deg))))
+        _csf_ext = [0.0, 0.0]
+        for _csf_ring in _csf_f.get("plot_rings") or []:
+            for _csf_v in _csf_ring:
+                _csf_s = (_csf_v[0] - _csf_fork[0]) * _csf_c[0] + (_csf_v[1] - _csf_fork[1]) * _csf_c[1]
+                _csf_i = 0 if _csf_s >= 0 else 1
+                _csf_ext[_csf_i] = max(_csf_ext[_csf_i], abs(_csf_s))
+        _csf_reach = [0.0, 0.0]
+        for _csf_d in M.get("field_ditches") or []:
+            if _csf_d.get("field") != _csf_f.get("name") or _csf_d.get("role") not in ("main", "branch"):
+                continue
+            for _csf_v in _csf_d["poly"]:
+                _csf_s = (_csf_v[0] - _csf_fork[0]) * _csf_c[0] + (_csf_v[1] - _csf_fork[1]) * _csf_c[1]
+                _csf_i = 0 if _csf_s >= 0 else 1
+                _csf_reach[_csf_i] = max(_csf_reach[_csf_i], abs(_csf_s))
+        for _csf_i in (0, 1):
+            if _csf_ext[_csf_i] > 150.0 / _csf_ftpx and _csf_reach[_csf_i] < max(80.0 / _csf_ftpx, 0.3 * _csf_ext[_csf_i]):
+                _csf_bad.append(
+                    f"{_csf_f.get('name')}: the {'+cross' if _csf_i == 0 else '-cross'} flank has ~{round(_csf_ext[_csf_i] * _csf_ftpx)} ft "
+                    f"of paddy but its drawn supply reaches only ~{round(_csf_reach[_csf_i] * _csf_ftpx)} ft from the fork"
+                )
+    if _csf_seen:
+        check(
+            "comb_supply_commands_both_flanks",
+            not _csf_bad,
+            "a gravity canal commands only the ground BELOW it, so a comb fan planted on both sides of its "
+            "bunsuiguchi fork must DRAW supply down both margins - canal A along one, canal B partway down the "
+            "other, tapering (the Minuma-dai split; research/water.md 'The head-race forks - supply commands "
+            f"both flanks'). Give the fan a canal-B offtake (hamletgen OFFTAKE_LADDER offtakes_b) so the second "
+            f"arm is inked: {_csf_bad}",
+        )
+    return _kept(
+        locals(),
+        (
+            '_csf_bad',
+            '_csf_c',
+            '_csf_d',
+            '_csf_deg',
+            '_csf_ext',
+            '_csf_f',
+            '_csf_fork',
+            '_csf_ftpx',
+            '_csf_i',
+            '_csf_reach',
+            '_csf_ring',
+            '_csf_s',
+            '_csf_seen',
+            '_csf_v',
+        ),
+    )
+
+
 def _seg_0325___wj_strokes(*, M: Any = _UNBOUND, c: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 325 (_wj_strokes, c) - body verbatim from the legacy gate() (feature 022)."""
     _wj_strokes = [c for c in M.get("drawn_channels", []) or [] if len(c.get("pts") or []) >= 2]
