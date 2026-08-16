@@ -65,21 +65,28 @@ def _predicted_svg(gen_path: str) -> str:
 
 
 def engine_fingerprint(skill_dir: str = SKILL_DIR) -> str:
-    """Hash of every render-determining engine source (all root *.py except test files and this
-    module). Any engine edit changes this -> every map's input_hash goes stale -> full refresh.
+    """Hash of every render-determining engine source: all *.py under the skill dir AT ANY DEPTH
+    (feature 025 made settlement/ a package, so root-only listing would silently DROP the main
+    engine from the fingerprint), excluding test files and test packages, pool/ and wip/ trees,
+    and this module. Any engine edit changes this -> every map's input_hash goes stale -> full
+    refresh.
 
-    Deliberately a SAFE SUPERSET: including a non-rendering root module (an audit tool, say) costs
-    at most one needless full regen, whereas UNDER-including a module that does affect pixels would
-    silently serve stale renders - the exact outcome this whole mechanism exists to prevent. This
-    module is excluded because a change to the cache logic already invalidates old stamps by value
-    (an old stamp cannot match a new hash), so it need not also be in the fingerprint; test files
-    are excluded because they never determine a render."""
+    Deliberately a SAFE SUPERSET: including a non-rendering module (an audit tool, the validator
+    package) costs at most one needless full regen, whereas UNDER-including a module that does
+    affect pixels would silently serve stale renders - the exact outcome this whole mechanism
+    exists to prevent. This module is excluded because a change to the cache logic already
+    invalidates old stamps by value (an old stamp cannot match a new hash), so it need not also
+    be in the fingerprint; test files are excluded because they never determine a render."""
     parts: list[bytes] = []
-    for name in sorted(os.listdir(skill_dir)):
-        if not name.endswith(".py") or name.startswith("test_") or name == os.path.basename(__file__):
-            continue
-        with open(os.path.join(skill_dir, name), "rb") as fh:
-            parts.append(name.encode() + b"\0" + _sha256(fh.read()).encode())
+    for dirpath, dirnames, filenames in os.walk(skill_dir):
+        dirnames[:] = sorted(d for d in dirnames if d not in ("pool", "wip", "__pycache__") and not d.startswith(("test_", ".")))
+        rel_dir = os.path.relpath(dirpath, skill_dir)
+        for name in sorted(filenames):
+            if not name.endswith(".py") or name.startswith("test_") or (rel_dir == "." and name == os.path.basename(__file__)):
+                continue
+            rel = os.path.normpath(os.path.join(rel_dir, name))
+            with open(os.path.join(dirpath, name), "rb") as fh:
+                parts.append(rel.encode() + b"\0" + _sha256(fh.read()).encode())
     return _sha256(b"\n".join(parts))
 
 

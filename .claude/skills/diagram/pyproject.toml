@@ -25,6 +25,8 @@ ignore = ["E501"]   # long descriptive lines are house style; the formatter caps
 # the package __init__ exists to re-export the full legacy `import check_village` surface
 # (feature 024); every import there is intentionally "unused"
 "check_village/__init__.py" = ["F401"]
+# same rationale for the settlement package split (feature 025)
+"settlement/__init__.py" = ["F401"]
 
 [tool.ruff.format]
 # Preserve the existing quote style: the SVG f-strings use single-outer/double-inner
@@ -37,7 +39,7 @@ quote-style = "preserve"
 [tool.mypy]
 python_version = "3.14"
 strict = true
-files = ["settlement.py", "check_village", "waterfields.py", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "hamletgen.py", "timings.py", "pool_index.py", "poolmaps.py"]
+files = ["settlement", "check_village", "waterfields.py", "pack_audit.py", "compound.py", "citybudget.py", "why_placed.py", "hamletgen.py", "timings.py", "pool_index.py", "poolmaps.py"]
 
 # RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
 # settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is

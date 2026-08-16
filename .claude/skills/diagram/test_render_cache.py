@@ -46,6 +46,17 @@ def repo(tmp_path):
     # engine sources + files the fingerprint must SKIP (non-.py, test_, and the module's own name)
     with open(os.path.join(skill, "settlement.py"), "w") as fh:
         fh.write("# engine v1\n")
+    # a PACKAGE engine (feature 025: settlement/ split) - subdir .py files must be fingerprinted
+    os.makedirs(os.path.join(skill, "engine_pkg"))
+    with open(os.path.join(skill, "engine_pkg", "core.py"), "w") as fh:
+        fh.write("# pkg engine v1\n")
+    # ...but test packages and the pool/wip trees must not be
+    os.makedirs(os.path.join(skill, "test_pkg"))
+    with open(os.path.join(skill, "test_pkg", "_builders.py"), "w") as fh:
+        fh.write("# excluded: test package helper\n")
+    os.makedirs(os.path.join(skill, "wip"))
+    with open(os.path.join(skill, "wip", "draft.gen.py"), "w") as fh:
+        fh.write("# excluded: wip\n")
     with open(os.path.join(skill, "waterfields.py"), "w") as fh:
         fh.write("# engine\n")
     with open(os.path.join(skill, "test_engine.py"), "w") as fh:
@@ -72,11 +83,16 @@ def test_engine_fingerprint_covers_and_skips(repo):
     with open(os.path.join(skill, "settlement.py"), "w") as fh:
         fh.write("# engine v2\n")
     assert rc.engine_fingerprint(skill) != fp1
-    # ...but editing a skipped file (test_/non-.py/the module itself) does not
+    # editing a PACKAGE engine file changes it too (feature 025: settlement/ is a package)
+    fp_pkg_before = rc.engine_fingerprint(skill)
+    with open(os.path.join(skill, "engine_pkg", "core.py"), "w") as fh:
+        fh.write("# pkg engine v2\n")
+    assert rc.engine_fingerprint(skill) != fp_pkg_before
+    # ...but editing a skipped file (test_/non-.py/the module itself/test packages/pool+wip) does not
     with open(os.path.join(skill, "settlement.py"), "w") as fh:
         fh.write("# engine v2\n")
     fp2 = rc.engine_fingerprint(skill)
-    for skipped in ("test_engine.py", "notes.md", "render_cache.py"):
+    for skipped in ("test_engine.py", "notes.md", "render_cache.py", os.path.join("test_pkg", "_builders.py"), os.path.join("wip", "draft.gen.py")):
         with open(os.path.join(skill, skipped), "w") as fh:
             fh.write("# changed but irrelevant\n")
     assert rc.engine_fingerprint(skill) == fp2

@@ -95,8 +95,9 @@ def main() -> int:
     doc_node = tree.body[0]
     assert isinstance(doc_node, ast.Expr), "expected module docstring first"
     import_nodes = [n for n in pre_nodes if isinstance(n, (ast.Import, ast.ImportFrom))]
-    guard_call = [n for n in pre_nodes if isinstance(n, ast.Expr) and n is not doc_node]
-    helper_nodes = [n for n in pre_nodes if n is not doc_node and n not in import_nodes and n not in guard_call]
+    # ALL other top-level statements (defs, assigns, AND Expr calls like the import-time guard
+    # and the register_knob catalog) route positionally - calls stay right after their banner/defs
+    helper_nodes = [n for n in pre_nodes if n is not doc_node and n not in import_nodes]
 
     # name -> the import statement line that binds it, from the monolith's own imports
     import_binds: dict[str, str] = {}
@@ -124,16 +125,18 @@ def main() -> int:
                         helper_home[t.id] = module
             elif isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name):
                 helper_home[n.target.id] = module
-    for n in guard_call:
-        pass  # the guard call is re-emitted in __init__.py
+            elif isinstance(n, ast.TypeAlias):
+                helper_home[n.name.id] = module
 
     # ---- split the class body -----------------------------------------------------------------
     methods = [n for n in cls.body if isinstance(n, ast.FunctionDef)]
-    attrs = [n for n in cls.body if not isinstance(n, ast.FunctionDef)]
-    method_entries = contiguous(methods, lines, cls.body[0].lineno - 1)
-    # class-body attribute slices (verbatim, order preserved)
-    attr_segs = ["".join(lines[n.lineno - 1 : n.end_lineno]) for n in attrs if n is not cls.body[0] or not isinstance(n, ast.Expr)]
-    cls_doc = "".join(lines[cls.body[0].lineno - 1 : cls.body[0].end_lineno]) if isinstance(cls.body[0], ast.Expr) else ""
+    # Class-body attribute assignments are NOT extracted separately: contiguous method slicing
+    # already carries each one inside the slice of the method that follows it, so an attribute
+    # lands (once) on whichever mixin owns that method - reachable on Settlement via the MRO
+    # exactly as before. The class docstring is the only body prefix handled by hand.
+    has_doc = isinstance(cls.body[0], ast.Expr)
+    method_entries = contiguous(methods, lines, cls.body[0].end_lineno if has_doc else cls.lineno)
+    cls_doc = "".join(lines[cls.body[0].lineno - 1 : cls.body[0].end_lineno]) if has_doc else ""
 
     groups: dict[str, list[tuple[ast.stmt, str]]] = {m: [] for m, _, _ in MIXIN_RANGES}
     groups["core"] = []
@@ -154,7 +157,21 @@ def main() -> int:
     all_std_names = set(import_binds)
 
     def synth(body: str, local_names: set[str], wrap: bool, type_checking: bool) -> str:
-        reads = free_reads("class _M:\n" + body if wrap else body)
+        wrapped = "class _M:\n" + body if wrap else body
+        reads = free_reads(wrapped)
+        # py314 lazy annotations: annotation-only names do not surface in symtable - walk them
+        for node in ast.walk(ast.parse(wrapped)):
+            ann = []
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                ann = [a.annotation for a in list(node.args.args) + list(node.args.kwonlyargs) + [node.args.vararg, node.args.kwarg] if a and a.annotation] + ([node.returns] if node.returns else [])
+            elif isinstance(node, ast.AnnAssign):
+                ann = [node.annotation]
+            elif isinstance(node, ast.TypeAlias):
+                ann = [node.value]
+            for a in ann:
+                reads |= {s.id for s in ast.walk(a) if isinstance(s, ast.Name)}
+        if "Settlement" in reads:
+            type_checking = True  # annotation-only in helpers; py314 lazy annotations make it safe
         blocks: list[str] = []
         std = sorted({import_binds[n] for n in reads & all_std_names})
         if std:
@@ -168,7 +185,11 @@ def main() -> int:
         return "\n".join(blocks)
 
     def annotate_self(seg: str) -> str:
-        return re.sub(r'(\n    def \w+\(\s*self)([,)])', r'\1: "Settlement"\2', "\n" + seg)[1:]
+        out = re.sub(r'(\n    def \w+\(\s*self)([,)])', r'\1: "Settlement"\2', "\n" + seg)[1:]
+        # mypy flags the mixin self-type shape itself ("erased type of self is not a supertype of
+        # its class", [misc]) while still fully type-checking every method BODY against
+        # Settlement. Silence exactly that shape complaint, per def line, nothing else.
+        return re.sub(r'(\n    def \w+\([^\n]*self: "Settlement"[^\n]*)', r'\1  # type: ignore[misc]', "\n" + out)[1:]
 
     written: dict[str, int] = {}
 
@@ -192,7 +213,7 @@ def main() -> int:
         write_mod(module, text)
 
     core_methods = annotate_self("".join(seg for _, seg in groups["core"]))
-    core_body = cls_doc + "".join(attr_segs) + "\n" + core_methods.lstrip("\n")
+    core_body = cls_doc + "\n" + core_methods.lstrip("\n")
     mixin_imports = "\n".join(f"from .{m} import {c}" for m, c, _ in MIXIN_RANGES)
     core_text = (
         hdr
@@ -215,9 +236,9 @@ def main() -> int:
     for n in sorted(wanted):
         by_mod.setdefault("core" if n == "Settlement" else helper_home[n], []).append(n)
     by_mod.setdefault(helper_home["_assert_not_main_tree"], []).append("_assert_not_main_tree")
-    exports = "\n".join(f"from .{m} import {', '.join(sorted(set(ns)))}" for m, ns in sorted(by_mod.items()))
-    guard_src = "".join("".join(lines[n.lineno - 1 : n.end_lineno]) for n in guard_call)
-    init = doc + "\n" + exports + "\n\n" + guard_src
+    # `X as X` is the explicit-reexport form mypy --strict's no_implicit_reexport requires
+    exports = "\n".join(f"from .{m} import {', '.join(f'{n} as {n}' for n in sorted(set(ns)))}" for m, ns in sorted(by_mod.items()))
+    init = doc + "\n" + exports + "\n"
     with open(os.path.join(PKG, "__init__.py"), "w") as fh:
         fh.write(init)
 
