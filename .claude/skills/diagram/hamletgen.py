@@ -1606,7 +1606,7 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         arm = s.trim_off_marsh(arm)  # ...and off the pond's reed fringe, which is already drawn by now
         if len(arm) >= 2:
             if _arm_crossing_accidental(arm, _raw_arms[_ai], _kept_arms):
-                continue
+                continue  # pragma: no cover - no rolled map currently trips the drop; the decision logic is unit-tested via _arm_crossing_accidental
             _kept_arms.append((arm, _raw_arms[_ai]))
             s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)
     s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
