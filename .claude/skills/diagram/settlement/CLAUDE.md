@@ -26,8 +26,8 @@ Two invariants the split does NOT touch:
 | `core.py` | `class Settlement(...)` itself: `__init__`, the record streams (`add`/`add_top`/`add_wall`/`add_label`), meta/header, knob resolve + rng scoping, viewport/crop |
 | `fields/` | the field subsystem - a PACKAGE with its own [`CLAUDE.md`](fields/CLAUDE.md) index since feature 112. Read that first, then load one of: `paddy.py` (paddy/water/fallow field bodies + plot geometry), `comb.py` (the comb-field builder, base fill, bund junctions, furrows), `landuse.py` (mulberry/lotus/tea overlays), `features.py` (feature-012 in-field pond/rock/grave island + every pond glyph) |
 | `water_ways.py` | focal features (mill/market/halls), streams/rivers/channels + water clipping, lanes/streets/kido/wards/quarters/alleys |
-| `shrines_wells.py` | hills, shrines + shrine halls, torii + avenues, wells (+ well indexes/placement), tree stands, forest |
-| `structures.py` | manor, merchant estates, roads, generic `building`, servant ranges, rowpack/pack placement engines, pasture, theater, fire tower, kosatsuba + label-blocker plumbing, punishment-spot placement, drum tower |
+| `shrines_wells/` | the shrines/wells subsystem - a PACKAGE with its own [`CLAUDE.md`](shrines_wells/CLAUDE.md) index since feature 116. Read that first, then load one of: `shrines.py` (shrine halls + the two simple glyphs, the hill, the hall caption), `torii.py` (the arch and the whole avenue engine - count, stride, threshold, wall clearance), `wellground.py` (whether ground may take a wellhead at all: the index, `frozen_terrain`, the wet-toe and scrub refusals - the hub), `wells.py` (the wellhead glyph and the four placement passes), `seats.py` (`open_seat` + `_footprint_clear`), `byres.py` (draft-animal sheds), `woods.py` (tree stands, the fringe, `forest`) |
+| `structures/` | the structures subsystem - a PACKAGE with its own [`CLAUDE.md`](structures/CLAUDE.md) index since feature 114. Read that first, then load one of: `compounds.py` (manor, merchant estates), `ground.py` (roads, pasture), `urban.py` (the `URBAN` palette, generic `building`, per-building seating), `servants.py` (servant ranges + their door/solid probes), `packing.py` (the rowpack/pack placement engines, `_shortfall`), `captions.py` (label-blocker plumbing and the caption-seat probes), `fixtures.py` (theater, fire tower, kosatsuba, drum tower, punishment-spot and notice-board siting) |
 | `trades.py` | trade works: brewery, dye yard, lumber, oil press, pawnshop, bathhouses, farrier, kiln, charcoal yard, refining forge, tanning yard, border lines |
 | `homestead_parts.py` | threshing yards, gardens, farm sheds, homestead groves, the village grove, canopy/corridor keepouts |
 | `land.py` | perimeter dikes + dike-top housing, commons, marsh, toe bands, hinterland, near-ring cropland/paddy, farmstead nudge plumbing |
@@ -58,5 +58,5 @@ test in the suite patches a settlement module-level name (census in
 
 The package holds the 94% RATCHET floor from the 2026-08-16 legacy freeze (see
 `SETTLEMENT_COV_FLOOR` in the Makefile): the uncovered town/city/capital wings live mostly in
-`city/`, `castle_civic.py`, and parts of `structures.py`/`civic_grounds.py`, and re-cover as
+`city/`, `castle_civic.py`, and parts of `structures/`/`civic_grounds.py`, and re-cover as
 those tiers convert to scripted generation. Raise the floor with each conversion; never lower it.

@@ -13,7 +13,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from .banks import _TINT_MIN_APEX, dedup_ring, pointed_ring, polyline_cum, supply_bank_clearance
-from .frame import BANK_MARGIN, Poly, Pt, _at_f, _f_at_u, _Frame, _miter_normals, _pip, _seg_d, _Thread
+from .frame import BANK_MARGIN, Poly, Pt, _at_f, _f_at_u, _Frame, _miter_normals, _pip, _seg_d, _Thread, taper_w
 from .palette import DRY_CROPS, FLOODED, RICE_GREENS
 
 # a supply-stroke index row: (pts, cumulative arc-length, head width, tail width, padded bbox)
@@ -738,7 +738,7 @@ def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spac
                 continue
             for i in range(len(cpts) - 1):
                 # taper measured at the segment head - within one segment it moves less than tol
-                if _seg_d(x, y, cpts[i], cpts[i + 1]) < (w0 + (w1 - w0) * cum[i] / tot) / 2 + tol:
+                if _seg_d(x, y, cpts[i], cpts[i + 1]) < taper_w(w0, w1, cum[i] / tot) / 2 + tol:
                     return True
         return False
 
