@@ -40,7 +40,7 @@ Three invariants the split does NOT touch:
 | `homesteads.py` | STAGE 5-6 - the houses and what stands among them: `stage_homesteads`, `front_row`, `lane_frontage`, `stage_appurtenances`, `place_wells`, `well_target` |
 | `hinterland.py` | STAGE 7 - the ground between everything: `stage_hinterland`, `open_ground_patches` (the scan that seats woodland commons on dry ground inside the predicted crop window), `stage_woodland`, `stage_windbreak`, `belt_polygon`, plus the title-pocket helpers `content_box`, `title_pocket`, `_clear_gap`, `_near_line` |
 | `frame.py` | STAGE 8 - `stage_crossings`, `stage_notice` (the kosatsuba), `stage_frame` (crop-to-content and the title) |
-| `driver.py` | the pipeline and everything that drives it: the `STAGES` tuple, `Report`, `build`, `generate` (which finishes AND gates in-process), `cohort`, `main` |
+| `driver.py` | the pipeline and everything that drives it: the `STAGES` tuple, `Report`, `build`, `generate` (which finishes AND gates in-process), `cohort` (fanned out across processes since 2026-08-16 - `generate` IS the worker; `jobs=1` forces serial, which is what in-gate callers want), `default_jobs` (the one cpus-minus-2 rule, reused by `cohort_audit.py`), `main` |
 
 ## Adding a stage
 
