@@ -5,7 +5,7 @@ import random
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from ._geom import _union_area, edge_dist, point_in_poly, seg_dist
+from ._geom import _union_area, boxed_seg_hit, edge_dist, point_in_poly, seg_dist
 
 if TYPE_CHECKING:
     from .core import Settlement
@@ -512,15 +512,45 @@ class HomesteadPartsMixin:
             corr.append(([tuple(p) for p in self.M["road"]], self.M.get("road_width", 26) / 2 + extra))
         return corr
 
-    def _on_watercourse(self: Settlement, px: float, py: float, pad: float = 2.0) -> bool:  # type: ignore[misc]
-        """True if (px, py) lies ON a drawn watercourse - a stream or an irrigation channel (within its half-
-        width + `pad`). Decorative ground-cover (scrub, reeds) skips it: vegetation never draws OVER open water,
-        the same reason it skips the lane tread and the pond. Uses M['streams'] + M['channels'] recorded so far."""
-        for wc in self.M.get("streams", []) + self.M.get("channels", []):
-            p = wc["poly"]
-            half = wc.get("w", 6) / 2 + pad
-            if any(seg_dist(px, py, p[i], p[i + 1]) < half for i in range(len(p) - 1)):
+    def _watercourse_segs(self: Settlement, pad: float = 2.0) -> list[tuple[Any, float]]:  # type: ignore[misc]
+        """Every drawn watercourse as (polyline, half-width + pad) pairs in boxed_segs shape: streams,
+        channels, and the comb laterals' drawn truth (M['drawn_channels'] - added 2026-08-16, GM,
+        Inashiro: grass tufts stood ON the head-race, because the scatter knew only the hairline
+        topology record in M['channels'], w 2.5, while the drawn lateral ran ~14 wide on its own
+        filleted post-clip polyline - the "same manifest source" trap, settlements.md 'PLANK
+        BRIDGES'). A tapered lateral is split into the SAME 7 piece slices field_channel strokes,
+        each at its own drawn width. Factored so the per-point test (_on_watercourse) and the
+        ground-cover scatters' pre-boxed grids provably test the same geometry."""
+        out: list[tuple[Any, float]] = [(wc["poly"], wc.get("w", 6) / 2 + pad) for wc in self.M.get("streams", []) + self.M.get("channels", [])]
+        for ch in self.M.get("drawn_channels", []):
+            p, w0, w1 = ch["pts"], ch["w0"], ch["w1"]
+            if len(p) < 2:
+                continue
+            if abs(w1 - w0) < 0.2:  # drawn as ONE stroke at w0 (field_channel's uniform branch)
+                out.append((p, w0 / 2 + pad))
+            else:  # drawn as 7 tapering pieces - the same slice/width ladder field_channel strokes
+                n, L = 7, len(p)
+                for k in range(n):
+                    piece = p[k * (L - 1) // n : (k + 1) * (L - 1) // n + 1]
+                    if len(piece) >= 2:
+                        out.append((piece, (w0 + (w1 - w0) * (k + 0.5) / n) / 2 + pad))
+        return out
+
+    def _on_watercourse(self: Settlement, px: float, py: float, pad: float = 2.0, near: Any = None) -> bool:  # type: ignore[misc]
+        """True if (px, py) lies ON a drawn watercourse - a stream, an irrigation channel, or a comb
+        lateral (within its drawn half-width + `pad`; _watercourse_segs says which registries and
+        why). Decorative ground-cover (scrub, reeds) skips it: vegetation never draws OVER open
+        water, the same reason it skips the lane tread and the pond. `near` is an optional
+        pre-boxed accessor (boxed_grid(boxed_segs(self._watercourse_segs())).near) for callers that
+        test per scatter POINT - the same hoist-the-invariant discipline as their other keep-outs
+        (fld_b / cor_b); verdicts are identical either way (the grid prunes, it never decides)."""
+        if near is not None:
+            if boxed_seg_hit(px, py, near(px, py)):
                 return True
+        else:
+            for p, half in self._watercourse_segs(pad):
+                if any(seg_dist(px, py, p[i], p[i + 1]) < half for i in range(len(p) - 1)):
+                    return True
         # ... and the fengshui crescent pond's open water (found 2026-07-21: scrub tufts drew ON the
         # half-moon pond - the skip knew M['pond'] and the linear courses but not this water body)
         return any(math.hypot(px - cp["cx"], py - cp["cy"]) < cp["r"] + pad for cp in self.M.get("crescent_ponds", []))
