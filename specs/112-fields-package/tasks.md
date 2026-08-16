@@ -23,7 +23,7 @@ byte-identity harness is the feature's oracle.
 
 - [x] T001 Export `SPECIFY_FEATURE=112-fields-package` and confirm the clone is synced with main (`git log --oneline -1`); re-measure `.claude/skills/diagram/settlement/fields.py` and confirm 1,511 lines / 24 methods, since a peer session last edited it
 - [x] T002 Capture the byte-identity baseline per quickstart.md step 1: copy `.claude/skills/diagram/` to a scratch tree, run `python3 regen.py --no-cache --frozen-ok pool/*/*.gen.py wip/*.gen.py` there, and write `sha256sum` of every `pool/**` and `wip/**` `.json`/`.svg`/`.png` to `/tmp/112-baseline.sha`
-- [ ] T003 Record the baseline sweep's own verdict (map count, any gen that failed in the pre-split tree) in this file under Notes, so a Stage 1 failure can be distinguished from a pre-existing one
+- [x] T003 Record the baseline sweep's own verdict (map count, any gen that failed in the pre-split tree) in this file under Notes, so a Stage 1 failure can be distinguished from a pre-existing one
 
 **Checkpoint**: an oracle exists that can fail.
 
@@ -56,10 +56,10 @@ byte-identity harness is the feature's oracle.
 - [x] T011 [US1] Verify `.claude/skills/diagram/settlement/core.py` is byte-unchanged (`git diff --stat -- settlement/core.py` empty) - FR-002, SC-002
 - [x] T012 [US1] Run the cheap linter prefix: `python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy`; fix unused-import fallout in the generated headers only
 - [x] T013 [US1] Run the WHOLE affected test files, not a `-k` subset: `python3 -m pytest test_settlement/ test_checks/ -q -n auto --no-cov`
-- [ ] T014 [US1] Run the byte-identity sweep per quickstart.md step 2 and require an EMPTY diff against `/tmp/112-baseline.sha`
-- [ ] T015 [US1] Confirm `git status --porcelain -- .claude/skills/diagram/pool` prints nothing (FR-005)
-- [ ] T016 [US1] Run `make done` backgrounded, once; read the log tail before believing green (no `; echo EXIT=$?` wrapper)
-- [ ] T017 [US1] Commit Stage 1 as its own commit, so a later bisect can separate the move from the decomposition
+- [x] T014 [US1] Run the byte-identity sweep per quickstart.md step 2 and require an EMPTY diff against `/tmp/112-baseline.sha`
+- [x] T015 [US1] Confirm `git status --porcelain -- .claude/skills/diagram/pool` prints nothing (FR-005)
+- [x] T016 [US1] Run `make done` backgrounded, once; read the log tail before believing green (no `; echo EXIT=$?` wrapper)
+- [x] T017 [US1] Commit Stage 1 as its own commit, so a later bisect can separate the move from the decomposition
 
 **Checkpoint**: US1 is independently shippable. If Stage 2 were abandoned here, the clause-13 debt is already paid.
 
@@ -73,15 +73,15 @@ byte-identity harness is the feature's oracle.
 
 **CRITICAL**: one method at a time, sweeping between. Research R5 - doing three at once means bisecting to find which extraction moved a draw.
 
-- [ ] T018 [US2] Decompose `draw_comb_field` (321 lines) in `.claude/skills/diagram/settlement/fields/comb.py` into named helpers, preserving code order, RNG draw order and float-operation order exactly
-- [ ] T019 [US2] Sweep after T018: empty diff against the baseline, `pool/` clean
-- [ ] T020 [US2] Decompose `apply_land_use` (266 lines) in `.claude/skills/diagram/settlement/fields/landuse.py` into named helpers, same constraints
-- [ ] T021 [US2] Sweep after T020: empty diff against the baseline, `pool/` clean. This is the decomposition whose ONLY manifest-level oracle is the frozen legacy maps (research R4) - confirm Kuwabata, Tango, Minami and Nagahara are in the swept set
-- [ ] T022 [US2] Decompose `water_field` (194 lines) in `.claude/skills/diagram/settlement/fields/paddy.py` into named helpers, same constraints
-- [ ] T023 [US2] Sweep after T022: empty diff against the baseline, `pool/` clean
-- [ ] T024 [US2] Measure function sizes across the package with the quickstart step 6 script; anything still over ~150 lines gets an inline one-line justification at its `def`, or gets split further
-- [ ] T025 [US2] Check combined `settlement/` coverage (`python3 -m coverage report --include='*/settlement/*'`); if the achievable figure rose, raise `SETTLEMENT_COV_FLOOR` in `.claude/skills/diagram/Makefile` to match and record the new measurement in the comment above it. Never lower it
-- [ ] T026 [US2] Confirm `GEN_TIME_BUDGETS` in `test_villages.py` still passes unmodified - extraction must not have moved a per-gen CPU budget
+- [x] T018 [US2] Decompose `draw_comb_field` (321 lines) in `.claude/skills/diagram/settlement/fields/comb.py` into named helpers, preserving code order, RNG draw order and float-operation order exactly
+- [x] T019 [US2] Sweep after T018: empty diff against the baseline, `pool/` clean
+- [x] T020 [US2] Decompose `apply_land_use` (266 lines) in `.claude/skills/diagram/settlement/fields/landuse.py` into named helpers, same constraints
+- [x] T021 [US2] Sweep after T020: empty diff against the baseline, `pool/` clean. This is the decomposition whose ONLY manifest-level oracle is the frozen legacy maps (research R4) - confirm Kuwabata, Tango, Minami and Nagahara are in the swept set
+- [x] T022 [US2] Decompose `water_field` (194 lines) in `.claude/skills/diagram/settlement/fields/paddy.py` into named helpers, same constraints
+- [x] T023 [US2] Sweep after T022: empty diff against the baseline, `pool/` clean
+- [x] T024 [US2] Measure function sizes across the package with the quickstart step 6 script; anything still over ~150 lines gets an inline one-line justification at its `def`, or gets split further
+- [x] T025 [US2] Check combined `settlement/` coverage (`python3 -m coverage report --include='*/settlement/*'`); if the achievable figure rose, raise `SETTLEMENT_COV_FLOOR` in `.claude/skills/diagram/Makefile` to match and record the new measurement in the comment above it. Never lower it
+- [x] T026 [US2] Confirm `GEN_TIME_BUDGETS` in `test_villages.py` still passes unmodified - extraction must not have moved a per-gen CPU budget
 
 **Checkpoint**: both halves of the GM's ask are delivered.
 
@@ -93,15 +93,15 @@ byte-identity harness is the feature's oracle.
 
 **Independent test**: a reader given any named concern resolves it from the two index files alone.
 
-- [ ] T027 [P] [US3] Write `.claude/skills/diagram/settlement/fields/CLAUDE.md` in the `check_village/` + `hamletgen/` style: what the package is, a "Look here when" row per submodule, the composition mechanism, and the two documented placement exceptions (`_paddy_surface` in `paddy.py`, `_rounded_pond` in `features.py`) so nobody "fixes" them back
-- [ ] T028 [US3] Replace the single `fields.py` row in `.claude/skills/diagram/settlement/CLAUDE.md`'s "Look here when" table with rows resolving to the four new modules, and note the package has its own sub-index
-- [ ] T029 [P] [US3] Verify every file in `settlement/fields/` is under ~1,000 raw lines (`wc -l settlement/fields/*.py`)
+- [x] T027 [P] [US3] Write `.claude/skills/diagram/settlement/fields/CLAUDE.md` in the `check_village/` + `hamletgen/` style: what the package is, a "Look here when" row per submodule, the composition mechanism, and the two documented placement exceptions (`_paddy_surface` in `paddy.py`, `_rounded_pond` in `features.py`) so nobody "fixes" them back
+- [x] T028 [US3] Replace the single `fields.py` row in `.claude/skills/diagram/settlement/CLAUDE.md`'s "Look here when" table with rows resolving to the four new modules, and note the package has its own sub-index
+- [x] T029 [P] [US3] Verify every file in `settlement/fields/` is under ~1,000 raw lines (`wc -l settlement/fields/*.py`)
 
 ---
 
 ## Phase 6: Polish and Cross-Cutting
 
-- [ ] T030 [P] Grep the skill for prose naming the FILE `settlement/fields.py` and update to the package; leave importable-path references and prior `specs/NNN` artifacts verbatim as historical record (FR-014)
+- [x] T030 [P] Grep the skill for prose naming the FILE `settlement/fields.py` and update to the package; leave importable-path references and prior `specs/NNN` artifacts verbatim as historical record (FR-014)
 - [ ] T031 Record in `specs/112-fields-package/research.md` anything the implementation learned that the plan got wrong - especially any method whose assignment moved from data-model.md's table, with the reason
 - [ ] T032 Set this spec's Status to Implemented with the date, and note the final per-file line counts
 - [ ] T033 Final `make done` green, then the stop-work ritual: commit in the clone and run `scripts/sync-with-main.sh done`
@@ -195,3 +195,48 @@ Notes that constrain the edit:
 ### `apply_land_use` (266) and `water_field` (194)
 
 Read and planned when their turn comes - one method at a time with a sweep between (research R5).
+
+## Final result (T031 / T032)
+
+**Files** - `settlement/fields.py` (1,511 lines, one class) became `settlement/fields/`:
+
+| file | lines | contents |
+|---|---|---|
+| `paddy.py` | 501 | 9 pre-split methods + 3 new `_wf_*` helpers + the 3 module-level water-frame transforms |
+| `comb.py` | 531 | 4 pre-split methods + 8 new `_comb_*` helpers |
+| `landuse.py` | 428 | 3 pre-split methods + 4 new `_landuse_*` helpers |
+| `features.py` | 215 | 8 pre-split members + the 3 feature-012 class constants |
+| `__init__.py` | 19 | the composition, no logic |
+| `CLAUDE.md` | 79 | the sub-index |
+
+**Functions** - the three targets, and nothing in the package now over ~150 lines:
+
+| method | before | after | helpers |
+|---|---|---|---|
+| `draw_comb_field` | 321 | **47** | 8 |
+| `apply_land_use` | 266 | **123** | 4 |
+| `water_field` | 194 | **150** | 3 methods + 3 module functions |
+
+**Verification** - byte-identity proven four times against a pre-split baseline (Stage 1, then once
+per decomposition): 28 generators, 884 artifacts, zero differing bytes each time. `pool/`'s
+committed artifacts untouched throughout. `make done` green.
+
+## Deviations from the plan, and where each is written up
+
+- The oracle dropped `wip/shiro-daika.gen.py` on wall-clock grounds - research.md **R11**.
+- The class body carried three constants the method-only model missed, and two section banners had
+  to be triaged rather than moved - research.md **R9**.
+- The guard's red proof necessarily runs after the transformer, not before - research.md **R10**.
+- The one real extraction bug was a dropped `return` that `mypy --strict` could not see -
+  research.md **R12**.
+- The composed-surface guard became a SUBSET assertion once Stage 2 legitimately added helpers.
+- `water_field` stopped AT the ~150 bar rather than under it, with the reason recorded in its own
+  body and in `fields/CLAUDE.md`: the remainder is coupled through a closure, and cutting further
+  would trade a readable sequence for a nine-parameter helper.
+
+**T025 - SETTLEMENT_COV_FLOOR left at 94, deliberately.** Combined `settlement/` coverage measures
+95% after this feature, one point above the floor - but that point is not attributable to the split
+(a pure move plus behavior-preserving extractions cannot re-cover an unexercised wing; the gain came
+in with the peer session's second known-opens round, merged at sync-in). Raising the floor here
+would also collide with the concurrent `diagram-reorganize` session, which is editing the Makefile's
+paths. Left for whoever converts the next tier, which is what the ratchet comment already says.
