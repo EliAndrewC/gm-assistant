@@ -673,10 +673,13 @@ def test_surface_water_dist_survives_the_split_at_both_import_paths():
     # It is the one MODULE-LEVEL member, defined after the class, so a transformer that sliced only
     # the class body would have dropped it and broken three consumers at import time.
     #
-    # import_module rather than a plain `import l7r.diagram.settlement.land`: ruff reads the latter
-    # as unused and deletes it, which leaves the assertion below resolving `settlement.land` only
-    # through the parent package's own re-export side effect. That still passes, so the weakening is
-    # silent - exactly the failure mode this whole contract exists to prevent.
+    # import_module rather than a plain `import l7r.diagram.settlement.land` because ruff deletes
+    # the latter as unused (F401) and the churn is not worth re-litigating; it is also the idiom the
+    # package-surface guards in tests/*/test_surface.py already use. It is NOT stronger: measured
+    # 2026-08-17, both forms pass clean, both ERROR when land/__init__ drops the re-export, and both
+    # FAIL when surface_water_dist moves out of land/ - because `settlement.land` is bound either
+    # way by core.py's `from .land import LandMixin`. An earlier version of this comment claimed the
+    # stripped form was a silent weakening; that was reasoning, not measurement, and it was wrong.
     land = importlib.import_module("l7r.diagram.settlement.land")
 
     assert settlement.surface_water_dist is land.surface_water_dist
