@@ -22,12 +22,48 @@ _BankAt = Callable[[float], float]
 _EdgeFn = Callable[[float, int, int], Pt]
 
 
+_SPAN_EPS = 0.5  # px; see _supply_index
+
+
+def _extend_span(pts: Poly, eps: float) -> Poly:
+    """`pts` with both ends pushed out by `eps` along their own terminal direction.
+
+    Only the placer uses this (see `_supply_index`); the gate measures the true span. Degenerate
+    terminal segments are left alone rather than normalized by a zero length."""
+    out = [(float(p[0]), float(p[1])) for p in pts]
+    for i, j in ((0, 1), (-1, -2)):
+        ax, ay = out[i]
+        bx, by = out[j]
+        d = ((ax - bx) ** 2 + (ay - by) ** 2) ** 0.5
+        if d > 1e-9:
+            out[i] = (ax + (ax - bx) / d * eps, ay + (ay - by) / d * eps)
+    return out
+
+
 def _supply_index(supply: list[dict[str, Any]] | None, g: float) -> list[_SupRow]:
-    """Index the supply strokes for the bank-clearance passes (see `_carve`'s SUPPLY-SIDE BANKS note)."""
+    """Index the supply strokes for the bank-clearance passes (see `_carve`'s SUPPLY-SIDE BANKS note).
+
+    THE PLACER'S SPAN IS A HAIR LONGER THAN THE GATE'S, on purpose (2026-08-17). Both use the same
+    `supply_bank_clearance`, and it exempts a point that projects PAST a stroke's head or tail -
+    ground beyond the span is not governed by that stroke, because a delivery ditch's takeoff sits
+    on its parent canal, which governs there in its own right. That exemption is a BOOLEAN sitting
+    on a knife edge, and the manifest records coordinates to 1dp: a corner at a branch's mouth can
+    be `past=True` here, against full-precision geometry, and `past=False` in the gate, against the
+    rounded copy - so the placer exempts a corner the gate then reports as a bund drawn down the
+    middle of the water. Cohort seed 24 carried exactly one, 0.006 px off a branch's centerline and
+    0.28 px from that branch's own end vertex.
+
+    Extending each stroke by half a pixel at both ends makes the placer govern that sliver too, so
+    it pushes the corner clear and no rounding flip can put one back inside. It is the same
+    convention `_sun_corridor_ok` states: the placer is stricter than the check by a hair, and the
+    margin is chosen to sit where the disagreement cannot bite - 0.5 px is ~7x the worst 1dp
+    rounding error (0.07 px diagonal) and far below any feature the fan draws.
+    """
     sup_idx: list[_SupRow] = []
     for sc in supply or []:
         spts = [(float(p[0]), float(p[1])) for p in sc["pts"]]
         if len(spts) >= 2:
+            spts = _extend_span(spts, _SPAN_EPS)
             _sw0, _sw1 = float(sc["w"]), float(sc.get("w_tail", sc["w"]))
             _sreach = max(_sw0, _sw1) / 2 + BANK_MARGIN * g + 2.0  # bbox prefilter: prunes only, never decides
             _sbb = (min(p[0] for p in spts) - _sreach, min(p[1] for p in spts) - _sreach, max(p[0] for p in spts) + _sreach, max(p[1] for p in spts) + _sreach)

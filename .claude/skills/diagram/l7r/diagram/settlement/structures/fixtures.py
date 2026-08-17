@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from .._geom import (
     Pt,
     label_tilt,
+    linear_tilt,
     point_in_poly,
     seg_dist,
     tilt_caption_seat,
@@ -164,7 +165,17 @@ class PublicFixturesMixin:
             # read as the board's own. A hand seat keeps its SPOT but the text still tilts
             # with a diagonal board (angled captions, GM 2026-08-02) - same merge as
             # punishment_spot's label_xy.
-            _t = label_tilt(rot)
+            # A BOARD IS A LINE SUBJECT, NOT A BUILDING (settlement-review on Kashikawa,
+            # 2026-08-17). This used `label_tilt`, which FOLDS mod 90 because a building has two
+            # real edge families - and a kosatsuba has ONE meaningful axis, its FACE, the other
+            # being its 5 ft depth. The fold is invisible while a board stands nearly square to the
+            # page and catastrophic when it does not: a re-pack moved this board onto a lane
+            # crossing the old one, its rot went 139.3 -> 49.3, and `label_tilt` returned -40.7 both
+            # times - so the caption ran at right angles to the board's face and PARALLEL TO THE
+            # OTHER LANE, reading as though it named that way instead. `linear_tilt` clamps rather
+            # than folds and goes level past 45 degrees, which is the rule this file's own labels.md
+            # docstring states for a line subject ("swapping them" is named there as the trap).
+            _t = linear_tilt(rot)
             if label_xy:
                 _lx, _ly = label_xy
             elif _t:

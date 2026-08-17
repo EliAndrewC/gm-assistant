@@ -105,6 +105,45 @@ byte-identical): the SW farmstead at (1352.4, 3062.7) stands 469 ft from its nea
 moved the other 19 houses a median of 362 ft and left it, so the placer had every chance to fold it
 in. Needs a one-line ruling: outlying holding by intent, or a seeding gap.
 
+## 2026-08-17 (later) - the outlying farmstead: SUPERSEDED, see the note at the end
+
+The settlement-review of the feature-121 re-pack asked for a ruling on the farmstead at
+(1352, 3063): 469 ft from its nearest neighbour, 385 ft from any drawn way, with no track reaching
+it, on a map declaring `nucleated: true`. Two separate complaints were tangled together, and they
+have different answers.
+
+**The isolation is GONE, and not by touching this house.** The front-row density fix (front_row now
+samples by one-bundle-pitch spacing along the field edge instead of by household count) pulled the
+rest of the cluster toward the paddy, and this farmstead's nearest neighbour is now **170 ft**
+against 111 / 110 / 105 for the next three - an ordinary outer-edge spacing, not a hamlet of one.
+The house itself did not move; the settlement grew toward it.
+
+**The way-access is ACCEPTED, deliberately.** It still stands 385 ft from any lane against 41-70 ft
+for its neighbours, and that is correct rather than an oversight: a lane must NOT run through the
+flooded paddy (`settlements/ways.md`), and people cross into the fields on foot **along the bunds**.
+An edge farmstead standing at the paddy margin is reached the same way every field worker reaches
+the same ground. Drawing a lane out to it would put a no-build corridor across the crop to serve one
+household - the opposite of the rule.
+
+**What was declined**: (a) folding the house into the nucleus - it sits 50 ft from the drawn stream
+with its own byre, which is a coherent holding, and the placer had every chance to move it and did
+not; (b) drawing a spur lane to it - see above, it would cross the paddy; (c) a check requiring every
+farmhouse within N ft of a way - it would fire on exactly this legitimate case and on nothing else.
+
+~~Ruled 2026-08-17. Not to be reopened as a bug.~~
+
+**SUPERSEDED THE SAME DAY - do not quote the ruling above.** The front-row cap re-packed this map
+again and **there is no house at (1352, 3063) any more**. The westernmost farmhouse is now at
+(1634, 3141), 68 ft from the spine. Measured across the shipped manifest: no farmhouse on this map
+is more than **103 ft** from a way by center, or **71.7 ft** by corner-to-tread. The section above
+says "The house itself did not move; the settlement grew toward it" and "It still stands 385 ft from
+any lane" - both are false of the map that ships.
+
+The paddy argument it rests on is still SOUND as reasoning (a lane may not cross the flooded paddy,
+and field workers reach that ground along the bunds); it simply has nothing left to cover here. It
+is kept for provenance rather than deleted, because the failure mode being guarded against is a
+future session quoting "not to be reopened as a bug" at a genuinely stranded farmstead on some later
+roll. If one appears, rule it fresh.
 ## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
 
 The GM, reading a hamlet sheet: *"most of the rice paddy fields are rectangular, but then there are

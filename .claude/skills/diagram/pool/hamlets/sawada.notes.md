@@ -145,6 +145,30 @@ rake, up to ~0.95 ft of drawn-corner displacement. Nothing was at risk here (tig
 but it is exactly the drawn-versus-placed divergence this feature exists to close, and no check can
 see it because every check reads the manifest and never the SVG. Now `.1f` / `.2f`.
 
+RETRACTED 2026-08-17 (same day), and the retraction is the point. The entry that stood here asked
+for a ruling on "18 of 19 gardens on the E wall, which `_find_garden_spot` treats as the LAST
+RESORT" plus "groves = 0". A second review reconstructed every bed's candidate signature from
+`geom.gardens` against `_find_garden_spot`'s own `sides` table and the manifest refutes both halves:
+
+- **21 SE, 2 SW, 0 E, 0 W.** ZERO beds took the last-resort E-wall candidate, in this roll or the
+  previous one. SE is candidate #4 of 11 and is explicitly sanctioned. The windward wall is free.
+- **`groves` is 0 for a documented and unrelated reason**: a `_nucleated` bundle emits no
+  `grove_n`/`grove_w` at all (`bundle.py` - "the houses stand close and SHELTER EACH OTHER... The
+  windbreak becomes a VILLAGE-EDGE belt placed in the second pass"). Sawada is nucleated, so no
+  garden placement could ever have produced a per-house grove here - and the map DOES carry the
+  belt the doctrine promises, 1,774 x 150 ft at aspect 11.8 on the windward side.
+
+A ruling on that premise would have been a ruling about nothing, and it was written into this file
+on one reviewer's measurement without being checked. Recorded rather than deleted: the lesson is
+that a review finding is evidence, not a verdict, and a claim about WHICH candidate the placer took
+is cheap to verify against the placer's own table.
+
+THE REAL UNIFORMITY FINDING, which the wrong one was hiding: 21 of 23 beds sit SE, and `bundle.py`
+promises the nucleated garden goes on "an ADAPTIVE sunny side (chosen by the placer for fit + no
+shading), so it packs into a real nucleus and the gardens VARY instead of all sitting east between
+houses." The adaptive choice is choosing the same side nearly every time, so all 19 homesteads read
+as one stamp repeated. That is a genuine gap between the code's stated intent and its behavior, and
+it is logged in `future-work.md` rather than ruled here.
 OPEN, pre-existing and tier-wide, raised for a ruling rather than a fix: 18 of 19 gardens sit on the
 E wall, which `_find_garden_spot` treats as the LAST RESORT (keeping the garden off the windward
 wall is what frees that wall for the grove). `windward="NE"` makes E windward here, so the last

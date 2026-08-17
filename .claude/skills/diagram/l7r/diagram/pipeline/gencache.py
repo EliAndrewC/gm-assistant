@@ -293,9 +293,18 @@ def load(gen: str) -> bool:
         cached = os.path.join(entry, os.path.basename(out))
         if os.path.isfile(cached):
             shutil.copy2(cached, out)
-        # an output the entry lacks (e.g. a render-skipped PNG from a gate-built entry, 026) is
-        # left standing rather than deleted: the key just matched, so any standing artifact was
-        # derived from these same sources - deleting it would only force a pointless re-render
+        elif os.path.isfile(out):
+            # DELETE an output the entry LACKS - do not leave it standing (2026-08-17). This used to
+            # keep it, arguing that "the key just matched, so any standing artifact was derived from
+            # these same sources". That step is false, and it shipped four maps whose .png was the
+            # PREVIOUS roll while their .json and .svg were the current one: a gate-built entry is
+            # stored with rendering skipped, so it has no PNG, and the stale one on disk was left in
+            # place and then re-dated by the copy of its siblings. Nothing looked wrong - all three
+            # files carried the same mtime - and two review rounds judged the wrong image.
+            # The key matched THIS entry's outputs; it says nothing about a file the entry does not
+            # contain. Deleting is what forces the re-render, and a re-render is exactly right when
+            # the only alternative is showing the wrong map.
+            os.remove(out)
     return True
 
 
@@ -324,7 +333,15 @@ def store(gen: str, deps: dict[str, Any], *, gen_cpu_s: float | None = None, cov
         Path(tmp).write_bytes(data)
         os.replace(tmp, dest)  # atomic: a reader sees old or new, never half
 
+    # FILE ONLY WHAT THIS RUN WROTE. With `DIAGRAM_SKIP_RENDER` the run produces no PNG, and the
+    # file standing on disk belongs to some earlier roll - filing it would declare a stale render to
+    # be this key's output, which is how four hamlets came to ship the previous roll's image while
+    # their manifests were current. The entry is simply PNG-less; `load` deletes any standing PNG
+    # rather than restoring one, and the next render regenerates it.
+    _skip_render = bool(os.environ.get("DIAGRAM_SKIP_RENDER"))
     for out in _outputs(gen):
+        if _skip_render and out.endswith(".png"):
+            continue
         if os.path.isfile(out):
             place(Path(out).read_bytes(), os.path.join(entry, os.path.basename(out)))
     if coverage_data is not None and os.path.isfile(coverage_data):

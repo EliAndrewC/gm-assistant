@@ -15,6 +15,7 @@ adapt its checks per village instead of assuming one village's specifics.
 """
 
 from ._geom import BUNDLE_PITCH_FT as BUNDLE_PITCH_FT
+from ._geom import FARMHOUSE_EAVE_GAP_FT as FARMHOUSE_EAVE_GAP_FT
 from ._geom import GOVERNOR_CAPTION_FS as GOVERNOR_CAPTION_FS
 from ._geom import HALL_CAPTION_FS as HALL_CAPTION_FS
 from ._geom import LABEL_AIR_CAP as LABEL_AIR_CAP
