@@ -583,3 +583,49 @@ follow-ups, either of which closes it:
 - Profile it. A capital map costing more than 3x the entire 28-map pool is itself a finding - the
   "one performance bug this engine keeps growing" section of `CLAUDE.md` describes the shape it is
   most likely to be.
+
+## The gate's 15 over-150-line segment functions (found by feature 122, deliberately NOT fixed there)
+
+This file records "the largest function in the engine is now `_bundle_geom` at 81 lines, so nothing
+is over the ~150-line bar features 112/115 converged on and there is no standing clause-12
+candidate". That is true, and it is scoped to the ENGINE. **The GATE was never measured**, and it
+has fifteen segment functions over the bar:
+
+| lines | segment | file |
+|---|---|---|
+| 293 | `_seg_0555_007__execution_ground_outside_the_settlement` | `segments_09a_justice_grounds_and_land_fall.py` |
+| 273 | `_seg_0324__field_ditches_terminate` | `segments_05c_streams_and_field_ditches.py` |
+| 255 | `_seg_0581__polder_dike_is_earthwork` | `segments_11b_polder_dikes_and_waivers.py` |
+| 248 | `_seg_0571__torii_count_canonical` | `segments_11a_taxfree_terraces_and_dikeponds.py` |
+| 228 | `_seg_0580__dikepond_is_ponds_in_a_block` | `segments_11a_taxfree_terraces_and_dikeponds.py` |
+| 227 | `_seg_0563_072__city_neighborhoods_have_wells` | `segments_10b_city_civic_and_commerce.py` |
+| 221 | `_seg_0556__walled_town_has_wall` | `segments_09a_justice_grounds_and_land_fall.py` |
+| 208 | `_seg_0033__hard_features_within_frame` | `segments_01a_city_ring_and_frame.py` |
+| 199 | `_seg_0104__city_wall_tower_coverage` | `segments_02a_capital_budget_and_ministries.py` |
+| 196 | `_seg_0563_325__city_moat_feeder_matches_width` | `segments_10g_city_streets_and_docks.py` |
+| 195 | `_seg_0275__labels_clear_of_other_buildings` | `segments_04a_margins_lanes_and_wells.py` |
+| 185 | `_seg_0603__paddy_plot_seams_shared` | `segments_08d_kosatsuba_and_paddy_basins.py` |
+| 183 | `_seg_0127__city_fan_heads_quilted` | `segments_02c_walls_gates_and_housing.py` |
+| 153 | `_seg_0563_335__city_streets_connected` | `segments_10h_city_torii_and_estate_grounds.py` |
+| 151 | `_seg_0108__merchant_estate_wall_clear_of_water` | `segments_02b_capital_ways_and_burial.py` |
+
+**Why 122 left them, which is the part worth keeping.** 122's whole safety argument is that it moved
+whole functions and changed no character inside one - which let it prove itself with a byte-identity
+oracle over 24,354 content lines plus an identical 1,377-row `GATE_SEGMENTS`. Decomposing a check
+BODY is the opposite kind of edit: it changes text inside a function, so neither oracle can hold it,
+and folding the two together would have meant a 24,000-line diff whose correctness rested on reading
+rather than on a check. Doing them in one feature would have bought nothing and cost the proof.
+
+**The bar these should be measured against is NOT the engine's.** A segment is a check, and a check
+that is long because it walks a lot of geometry to reach one verdict is not the same defect as a
+draw method doing eight things. Before decomposing any of these, ask which it is:
+`_seg_0571__torii_count_canonical` at 248 lines is likely one long enumeration (the numerology has
+cases), while `_seg_0555_007__execution_ground_outside_the_settlement` at 293 is the check with six
+interacting rules that `dev/diagnostics.md` describes needing `site_justice.py` to adjudicate, and
+that one probably does decompose into named predicates.
+
+**Pre-flight, both cheap, both mandated by the 115/118 lesson** (recorded in `dev/pool.md`, where
+each of them changed the plan once): measure the RNG surface - free here, since a check draws
+nothing - and count the closures. Then decompose behind the same registry contract, with one trap
+worth stating out loud: the numeric key in the NAME is the execution position, so a helper extracted
+out of a segment must NOT be named `_seg_*`, or the registry will try to run it as a segment.
