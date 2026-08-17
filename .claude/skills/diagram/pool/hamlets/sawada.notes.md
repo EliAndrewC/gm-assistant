@@ -113,3 +113,63 @@ Catch-rate: round-N DELTA - CAUGHT the tint-threshold collision (above); raised 
 `wet_plots` side effect; verified clean by its own measurements that the toe reads as a real cascade
 toe, that no declined weld opened floor reading as a hole (floor fill = plot fill at the pixel), that
 no new doubled bund appeared, and `scatter_audit` 0 violations.
+
+
+## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
+
+The GM, reading a hamlet sheet: *"most of the rice paddy fields are rectangular, but then there are
+a few very small triangles. Is that realistic? It looks like it is just a mistake, like, basically,
+a rendering artifact rather than something that is from our historical research. Relatedly, should
+there be a minimum rice paddy size?"*
+
+Three answers came out of the research pass, and only one of them is yes. There is **no absolute
+minimum** - Shiroyone Senmaida works 1,004 basins on ~4 ha, averaging ~18-20 m2, the smallest about
+half a meter square - so a floor in acres was declined. **Four-sides-only** was declined too: it
+would re-impose the *kochi seiri* consolidation grid the research already flags as the anachronism.
+What is real is a **ratio**: on a terrace the wall is a riser the slope demands anyway, but on a
+valley-floor fan the aze is the whole structure, built only to hold water and re-plastered every
+spring, and the alternative to a scrap is never no-rice - it is making the basin next door bigger.
+So a comb basin under **0.25 of the fan's own design cell** is dropped by the toe pass and absorbed
+by `close_seams`; the gate `paddy_basins_are_worth_their_bund` fires under 0.20. The triangularity
+was the symptom - a fragment clipped off the lattice at the fan boundary comes out triangular - and
+the size was the cause. Full findings, both declined alternatives, the two derivations of 0.25 and
+why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
+
+**On this map.** 843 -> 818 basins (-25, 2.97%, the largest share in the pool); 25 fragments into 20
+hosts; smallest surviving basin 379 sq ft against a 372 sq ft floor. Acreage 1,138,088 -> 1,138,102
+sq ft (**+0.001%**) - absorbed, not deleted - 19 of 19 households, field outline unchanged.
+
+**What the review measured.** No drift toward a consolidation grid: near-rectangles 61.7% ->
+**62.2%** (+0.5 pp, inside noise), quad share 81.5% -> 81.7%, median 1,347 -> 1,356 sq ft, max
+unchanged, area CV 0.404 -> **0.375**. Slivers under 15 ft wide **20 -> 11**, none under 10 ft, and
+the survivors are a coherent ladder of ~14 ft bank strips down the NW canal - a real form an
+area-only floor would have been the wrong tool to remove. Minimum interior angle over all 818 basins
+26.3 deg; max convergence node still 4 plots (no new sunburst hub); no new doubled bund; bare comb
+floor unchanged; `scatter_audit` 0 violations.
+
+**And what it caught, which became the tint's guard.** The absorb pass hung a lobe on the fan's ONE
+blue plot at (751, 2272) - 94 x 24 ft became 94 x 38 ft at solidity 0.731 - and at fit zoom it read
+as an **arrowhead pond**, on the map whose brief is explicitly "no pond". This is the same defect
+class the tint threshold work chased on 2026-08-17 above, and it slipped both existing guards for
+the reason that entry should have generalized: they measure a TAPER (apex 41.8 deg, both ends far
+wider than `_TINT_END_FT`) and this defect is **concavity**. So the tint re-judge gained a third
+clause, `_TINT_MIN_SOLIDITY` = 0.85, run after the absorb pass because that is what reshaped the
+plot; and `_WELD_MIN_SOLIDITY` (see Mizuguchi's notes) keeps the weld off a host it would deform in
+the first place. After both, the blue plot is back at its own 1,060 sq ft and solidity 0.870.
+
+**Logged, not fixed.** The self-intersecting bowtie ring at (167, 2558) is byte-identical before and
+after - pre-existing - and worth naming because the new floor cannot reach it: its shoelace area is
+nearly 3x the floor, so a bowtie passes as a comfortable basin. The west-seam hub at ~(394, 2413),
+logged in the entry above, was not relieved by this change either.
+
+**The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
+rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
+outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
+44/48. Measured in a detached worktree, seed 41's FIELD geometry was byte-identical either way, so
+the failure was not a paddy defect at all: it was a well landing on a pre-existing weakness in
+`hamletgen.place_wells`, whose minimax tie-break (distance to centroid) cannot express "this seat is
+outside the settlement". The GM's call was to take that fix as its OWN piece of work first and land
+the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
+are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
+Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).

@@ -408,6 +408,13 @@ class CombMixin:
             "plot_rings": [[[round(vx, 1), round(vy, 1)] for vx, vy in p["poly"]] for p in net["plots"]],
             "bund_beans": [[round(bx, 1), round(by, 1)] for bx, by in net["bund_beans"]],
         }
+        if net.get("cell") is not None:
+            # THE DESIGN CELL this fan was carved to, in px^2 (build_comb only - the terrace, ribbon
+            # and polder engines record none, and the size floor is deliberately comb-only). Carried
+            # so `paddy_basins_are_worth_their_bund` measures each basin against the reference the
+            # PLACER used instead of re-deriving one from `meta.ftpx`, which `plot_texture` makes
+            # wrong. Legacy manifests lack it and the check skips them.
+            _fld["cell"] = round(float(net["cell"]), 1)
         if net.get("down_deg") is not None:
             _fld["down_deg"] = net["down_deg"]  # this fan's LOCAL fall (see build_comb)
         if net.get("fork") is not None:

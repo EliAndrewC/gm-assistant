@@ -60,7 +60,21 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from .banks import _GATE_MIN_APEX, _TINT_END_FT, _TINT_MIN_APEX, _TOE_MIN_APEX, _WELD_MIN_APEX, dedup_ring, pointed_ring, polyline_cum, tapers_to_a_point
+from .banks import (
+    _GATE_MIN_APEX,
+    _TINT_END_FT,
+    _TINT_MIN_APEX,
+    _TINT_MIN_SOLIDITY,
+    _TOE_MIN_APEX,
+    _TOE_MIN_AREA,
+    _WELD_MIN_APEX,
+    _WELD_MIN_SOLIDITY,
+    cell_area,
+    dedup_ring,
+    pointed_ring,
+    polyline_cum,
+    tapers_to_a_point,
+)
 from .frame import BANK_MARGIN, Poly, _f_at_u, _Frame, taper_w
 from .palette import FLOODED, RICE_GREENS
 
@@ -290,6 +304,7 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
     # matter - 64 of 255 welds on Inashiro - and each failure leaves the doubled bund it was there
     # to close. The runner-up basin borders the same strip and usually takes it cleanly.
     _fallback: tuple[float, int, Polygon] | None = None
+    _lumpy: tuple[float, int, Polygon] | None = None
     for _neg, j in sorted(ranked):
         # dilate the scrap by a hair before the union. A scrap and the basin beside it only TOUCH
         # (they were cut from each other), and a union of two merely-touching polygons comes back
@@ -368,6 +383,28 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
             if _fallback is None or _apex > _fallback[0]:
                 _fallback = (_apex, j, candidate)
             continue
+        # AND A WELD MUST NOT MAKE A LUMP OUT OF THE HOST EITHER. The ranking above is by shared
+        # bund length, which is blind to the SHAPE the union comes out as, and both guards it has
+        # already passed measure an apex - so a union that grows a blunt-cornered lobe or an
+        # out-and-back prong sails through them (settlement-review, Mizuguchi and Sawada
+        # 2026-08-17; see `_WELD_MIN_SOLIDITY` for the measurements and for why solidity rather
+        # than an angle). Treated exactly like a needling weld, and for the same reason: the
+        # runner-up borders the same strip and usually takes it in a shape a farmer would
+        # recognize, but refusing every host outright would trade the lump for a doubled bund.
+        _sol = candidate.area / (candidate.convex_hull.area or 1.0)
+        if _sol < _WELD_MIN_SOLIDITY:
+            if _lumpy is None or _sol > _lumpy[0]:
+                _lumpy = (_sol, j, candidate)
+            continue
+        into[j] = candidate
+        grown.add(j)
+        return
+    # THE LEAST-LUMPY WELD, ahead of the needle fallback below. A lobe is a milder defect than an
+    # unworkable apex - it is a basin a farmer would call awkward rather than one they could not
+    # flood - so when no host takes the scrap cleanly, the shape complaint yields before the
+    # workability one does.
+    if _lumpy is not None:
+        _, j, candidate = _lumpy
         into[j] = candidate
         grown.add(j)
         return
@@ -470,9 +507,19 @@ def close_seams(
                     # the carve's generous 25 deg, for the reason the tint rule below gives: the
                     # merge retires some apexes and creates others, and the placer must stay
                     # strictly stricter than the gate's 15.
+                    # A FRAGMENT IS A SCRAP TOO, on exactly the same argument and for the same
+                    # destination. `_plant` tiles at ~plot_across x row_step, so its whole tiles are
+                    # fine; what it also hands back are the part-tiles where the pocket ran out, and
+                    # a part-tile under `_TOE_MIN_AREA` of the design cell is not a basin worth its
+                    # own perimeter of azenuri when the neighbor can simply take the ground in (see
+                    # `_TOE_MIN_AREA` in banks.py for why the floor is a RATIO and not an acreage).
+                    # This is the seam-pass half of the rule `_comb_toe_and_hem` applies to the
+                    # carve: without it the toe pass drops a fragment, the ground returns here as
+                    # bare pocket, and this pass plants the same fragment straight back.
+                    _floor = _TOE_MIN_AREA * cell_area(plot_across, row_step)
                     for _q in got:
                         _qr = _ring(_q)
-                        if len(_qr) >= 3 and (pointed_ring(_qr, _TOE_MIN_APEX) or pointed_ring(dedup_ring(_qr, 1.0), _TOE_MIN_APEX)):
+                        if len(_qr) >= 3 and (pointed_ring(_qr, _TOE_MIN_APEX) or pointed_ring(dedup_ring(_qr, 1.0), _TOE_MIN_APEX) or _q.area < _floor):
                             scraps.append(_q)
                         else:
                             basins.append(_q)
@@ -529,6 +576,15 @@ def close_seams(
         # which is exactly what cohort seed 8 did when this briefly tested the end-collapsed ring
         # alone. The second clause catches the defect the gate CANNOT see: a needle truncated a few
         # feet short of its point, which no interior angle on the 1.0 ring will ever report.
+        # AND A THIRD CLAUSE, WHICH MEASURES SHAPE RATHER THAN TAPER. Both clauses above ask "does
+        # this come to a point"; neither can see a blunt-cornered LOBE, and welding a scrap into
+        # the fan's one blue plot is exactly how a lobe gets there. Sawada shipped a 0.731-solidity
+        # flooded plot reading as an arrowhead pond with a 41.8 deg minimum apex and both ends
+        # wider than 5 ft - clear of both guards (see `_TINT_MIN_SOLIDITY`). Blue has to mean "a
+        # leveled basin pooling on the collector", so a blue plot that does not read as a basin
+        # goes back to rice green whatever its corners measure.
         _t_end = _TINT_END_FT * g / 2
-        if p.get("fill") == FLOODED and (pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX) or tapers_to_a_point(p["poly"], _t_end, _TINT_MIN_APEX, 4 * _t_end)):
+        _pg = Polygon(p["poly"]).buffer(0)
+        _psol = (_pg.area / (_pg.convex_hull.area or 1.0)) if isinstance(_pg, Polygon) and not _pg.is_empty else 1.0
+        if p.get("fill") == FLOODED and (pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX) or tapers_to_a_point(p["poly"], _t_end, _TINT_MIN_APEX, 4 * _t_end) or _psol < _TINT_MIN_SOLIDITY):
             p["fill"] = RICE_GREENS[(int(abs(p["poly"][0][0]) * 7) + int(abs(p["poly"][0][1]) * 3)) % len(RICE_GREENS)]

@@ -128,6 +128,105 @@ honest answer rather than a failure - the fan's base floor (`comb_base_fill`) dr
 reads as the toe's own ground. This is the same treatment the slivers dropped for thinness have
 always had.
 
+### Minimum basin SIZE - there is no absolute floor, and the real floor is a ratio
+
+*GM question 2026-08-17, reading a scripted hamlet:* "most of the rice paddy fields are rectangular,
+but then there are a few very small triangles. Is that realistic? It looks like it is just a
+mistake, like, basically, a rendering artifact rather than something that is from our historical
+research. Relatedly, should there be a minimum rice paddy size? I would expect that there would be."
+
+**Grounds:** `_TOE_MIN_AREA` / `_GATE_MIN_AREA` in `waterfields/banks.py`;
+`waterfields/comb.py::_comb_toe_and_hem`; `waterfields/seams.py`; the gate checks
+`paddy_basins_are_worth_their_bund` and `comb_fans_record_their_design_cell`
+
+**Evidence:** attested for the size range; the ratio is derived, from two independent arguments
+
+**Sources:** `senmaida`, `bench-terrace-riser`
+
+#### What the research found: no absolute minimum exists
+
+Shiroyone Senmaida on the Noto peninsula works **1,004 basins on about 4 hectares**. The average
+paddy is quoted at ~18-20 m2; many run about 1 m2, and the smallest is roughly **half a meter
+square - two rice stalks**. The local anecdote is the clearest statement of the scale: a paddy once
+reported missing turned up under a straw raincoat that had been laid on the ground. Obasute carries
+over 2,000 small paddies; Longsheng's largest terrace is 0.62 mu (~0.10 acre) and most are far
+smaller. So a floor stated in acres would condemn the most famous paddies in Japan, and our own
+smallest scripted-hamlet basin - 240 sq ft, ~22 m2 - is *larger* than a typical Senmaida paddy.
+
+**The absolute floor was therefore PRICED AND DECLINED.** It is the obvious rule and it is wrong,
+in the same way and for the same reason that a minimum plot WIDTH was the obvious rule and wrong
+when the fan-toe needles were fixed above.
+
+#### Why those micro-basins are a TERRACE phenomenon, which is the whole finding
+
+The discriminator is what the wall is for, and it is a physical difference, not a matter of degree.
+
+- **On a terrace the wall already exists.** A bench terrace is a level platform cut into a slope and
+  held by a **riser** - a near-vertical retaining face 0.8-1.5 m high, stone-faced where stone is to
+  hand - and the riser is demanded by the SLOPE whether or not anyone subdivides. Water is held by a
+  small 10-15 cm lip on top of it. The marginal cost of one more tiny bench is close to nothing, and
+  the alternative to a 2 m2 bench is bare rock. Micro-paddies follow.
+- **On a valley-floor cascade fan there is no riser.** The *aze* IS the whole structure, built only
+  to hold water: puddled mud, re-plastered every spring (*azenuri*, the largest single maintenance
+  job the bund network carries), standing on a strip of the most valuable land on the map. Its cost
+  is charged entirely to the basin it creates, and the alternative to a scrap is never "no rice" -
+  it is **making the basin next door bigger**, which costs no new wall at all.
+
+That is this file's own shared-bund answer for an awkward scrap ("taken into the basin beside it
+rather than walled off on its own") arrived at from the size direction. So the floor is real, it is
+**contextual**, and it is a **ratio to the fan's own design cell** rather than an area.
+
+#### Where the ratio sits - two independent derivations, and they agree
+
+1. **Geometry.** A quarter of the design cell's AREA is half its linear size in both directions. A
+   parcel below that is not a cell that came out small; it is a fragment of one.
+2. **Cost.** With `AZE_FT` 1.5 and half charged to each side, the bund eats a share of the ground it
+   encloses that climbs as the basin shrinks: 8.1% at a hamlet's 38.6 ft design cell, 16.2% at
+   19.2 ft. A quarter of the cell is exactly the square at which that overhead has **doubled**. The
+   doubling point barely moves with scale - 0.248 of the cell at 38.6 ft, 0.256 at the village's
+   47 ft - so the number is not scale-tuned.
+
+Both land on **0.25**, which is why it is not a compromise. The gate fires lower, at **0.20**, and
+that pair is deliberately *not* the 0.6 ratio the apex rule uses (15 of 25) - see below.
+
+#### Why the gate could not sit at 0.15, which is the transferable part
+
+`_TOE_MIN_THICKNESS` already implies an area floor. It demands an inradius of `0.16 * plot_across`,
+and a compact basin's inradius is half its side, so a square basin bottoms out near
+`(0.32 * plot_across)^2` - about **0.16 of the cell**. Measured with the size floor patched off, the
+smallest basin on any of the four scripted hamlets is 0.160 of its cell and nothing sits below it.
+A gate at 0.15 was therefore a check that **could never fire**, and it was caught the only way that
+works: by generating a manifest with the new rule switched off and watching the check pass on it.
+The band the placer newly refuses is [0.16, 0.25), and the gate takes the middle of it.
+
+The residue this leaves is also worth naming: the defect the GM saw lives in that narrow band, so it
+is small parcels rather than absurd ones - 240-370 sq ft against a 1,488 sq ft cell. The rule is a
+fabric correction, not a rescue.
+
+#### The cost, measured before the number was chosen
+
+Over the 2,829 basins of the four scripted hamlets, **1.63% sit under 0.25 of their cell** and 0.46%
+under 0.20. Nothing is lost: each is dropped by the toe pass and then absorbed by `close_seams` into
+the basin it shares the most bund with, so planted acreage, the field outline, the farmhouse rings
+and the household arithmetic are all unchanged (Inashiro stays at 20.5 / 19.5 acres and 15 of 15
+households across the change).
+
+One measurement trap is recorded because it cost a full calibration pass: the reference must be the
+fan's **recorded** `cell`, not `paddy_grain(ftpx)`. `plot_texture` had already scaled the hamlets'
+target down to 1,488 sq ft, so measuring against the un-textured 2,176 sq ft grain overstated every
+ratio by about 1.5x. `build_comb` now records the cell it actually carved to, and
+`comb_fans_record_their_design_cell` keeps that record from quietly disappearing.
+
+#### The other declined alternative: paddies are NOT restricted to four sides
+
+The GM raised this himself and doubted it, correctly. A rule that every basin be a quadrilateral was
+considered and **DECLINED outright**: it would re-impose exactly the tidy rectangular grid that this
+file's own "irregular patchwork" section identifies as the *kochi seiri* land-consolidation artifact,
+and it would contradict the attested look - the tanada mosaic of odd, piecemeal parcels meeting at
+T-junctions. A triangular basin is legitimate; several survive on every map. What was wrong was never
+the number of sides but the SIZE, with triangularity as its symptom, because a clipped corner of the
+plot lattice at the fan's boundary is the shape a fragment naturally takes.
+
 ## Nitrogen - a flooded paddy makes its own
 
 **Grounds:** the ~6% soy share; azemame as a food crop

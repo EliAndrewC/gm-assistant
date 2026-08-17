@@ -572,3 +572,39 @@ def test_paddy_ring_overcount_skips_a_field_that_records_no_plot_rings():
     M = _seam_M([_box(10, 10, 110, 110), _box(60, 10, 160, 110)])
     del M["fields"][0]["plot_rings"]
     assert "paddy_plot_rings_overcount_stays_marginal" not in _lap_f(M)
+
+
+def _worth_M(rings, cell=1488.0, gen="hamletgen"):
+    """A generated comb fan recording its design `cell` - what the size floor measures against."""
+    return manifest(
+        meta={"scale": "hamlet", "W": 1000, "H": 1000, "ftpx": 1.0, "generated_by": gen},
+        fields=[{**_field("f", 10, 10, 900, 900), "cell": cell, "plot_rings": rings}],
+    )
+
+
+def test_paddy_basins_are_worth_their_bund_fires_on_a_fragment_of_the_design_cell():
+    # 0.20 of a 1,488 sq ft cell is 298; a 15 x 15 basin is 225, a 40 x 40 one is 1,600.
+    assert "paddy_basins_are_worth_their_bund" in f(_worth_M([_box(100, 100, 140, 140), _box(300, 300, 315, 315)]))
+    assert "paddy_basins_are_worth_their_bund" not in f(_worth_M([_box(100, 100, 140, 140), _box(300, 300, 340, 340)]))
+
+
+def test_paddy_basins_are_worth_their_bund_skips_a_field_recording_no_design_cell():
+    # A terrace, ribbon or polder fan records no `cell` and is deliberately exempt - hill rice is
+    # where the real micro-basins are (research/fields.md, "Minimum basin SIZE"). With no comb fan
+    # on the map the check does not run at all rather than passing vacuously.
+    M = _worth_M([_box(300, 300, 315, 315)])
+    del M["fields"][0]["cell"]
+    assert "paddy_basins_are_worth_their_bund" not in f(M)
+
+
+def test_paddy_basins_are_worth_their_bund_ignores_a_degenerate_ring():
+    # A ring with fewer than three vertices encloses nothing, so its area is 0 and it would trip a
+    # floor stated as an area - but it is not a basin at all and there is nothing to absorb. The
+    # guard is defensive (no shipped manifest carries one), which is exactly why it needs a test:
+    # without one the branch is unreachable and a later edit could invert it unnoticed.
+    assert "paddy_basins_are_worth_their_bund" not in f(_worth_M([_box(100, 100, 140, 140), [[500, 500], [520, 500]]]))
+
+
+def test_paddy_basins_are_worth_their_bund_is_off_for_a_legacy_map():
+    # no meta.generated_by = a legacy comb map; it inherits the rule at conversion (migration doctrine)
+    assert "paddy_basins_are_worth_their_bund" not in f(_worth_M([_box(300, 300, 315, 315)], gen=None))

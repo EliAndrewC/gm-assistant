@@ -5,7 +5,7 @@ import random
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from .banks import _TOE_MIN_APEX, _TOE_MIN_THICKNESS, dedup_ring, floor_overhang, hem_to_bank, pointed_ring, round_channel_joints
+from .banks import _TOE_MIN_APEX, _TOE_MIN_AREA, _TOE_MIN_THICKNESS, cell_area, dedup_ring, floor_overhang, hem_to_bank, pointed_ring, round_channel_joints
 from .carve import _bund_beans, _carve, _dry_fields
 from .frame import (
     CANAL_A_FT,
@@ -141,7 +141,7 @@ def build_comb(
 
     envelope = _comb_floor_and_winding(plots, threads, a_pts, dpts, F)
 
-    _comb_toe_and_hem(plots, dpts, down_deg, plot_across, grain)
+    _comb_toe_and_hem(plots, dpts, down_deg, plot_across, row_step, grain)
     # Sweep the channel bends BEFORE the seam pass, not after: rounding a joint moves the drawn
     # water sideways by a few px, and `close_seams` holds its new basins off the water it is shown.
     # Called last (as it was) the pass reconciled the fan against a course the map does not draw,
@@ -176,6 +176,13 @@ def build_comb(
         "fork": fork,  # the bunsuiguchi division point - recorded so comb_supply_commands_both_flanks
         # can measure each flank's planted extent and drawn-supply reach FROM the point the model
         # itself divides at (placement and check reading the same source; GM 2026-08-16)
+        # THE DESIGN CELL this fan was carved to, recorded so `paddy_basins_are_worth_their_bund`
+        # judges each basin against the reference the PLACER used rather than one it re-derives.
+        # It cannot be re-derived from `meta.ftpx`: `plot_texture` scales the target per map
+        # (small_irregular 0.72x, medium 1.0x, large_block 1.35x, strip long-and-narrow), so a gate
+        # computing `paddy_grain(ftpx)` for itself would hold a textured fan to a cell it never
+        # aimed at.
+        "cell": cell_area(plot_across, row_step),
         "channels": channels,
         "plots": plots,
         "threads": threads,
@@ -190,7 +197,7 @@ def build_comb(
     }
 
 
-def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, plot_across: float, grain: float) -> None:
+def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, plot_across: float, row_step: tuple[float, float], grain: float) -> None:
     """The fan's toe discipline: drop unbundable slivers, then hold every bund off the drain."""
     # THE FAN'S TOE IS A HEADLAND, NOT A ROW OF FAKE BASINS (settlement-review 2026-07-26; GM
     # 2026-07-27). Where the fan narrows to its collector vertex, the carve and the wedge filler
@@ -243,11 +250,21 @@ def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, 
     # the invariant here rather than left standing in the water.
     for pl in plots:
         pl["poly"] = hem_to_bank(pl["poly"], dpts, down_deg, chan_px(DRAIN_FT[0], grain), chan_px(DRAIN_FT[1], grain))
+    # THREE WAYS TO BE UNBUNDABLE, and they are genuinely independent measurements - each constant's
+    # own comment in `banks.py` says what it is answering. Thinness catches the sliver too narrow to
+    # hold water anywhere; the apex catches the long wedge that is workable through its middle and a
+    # needle at its tip; AREA catches the fragment that is neither - a boundary offcut with honest
+    # angles and honest width that is simply not worth a perimeter of aze when the basin beside it
+    # can take it in. The GM read that third one off a hamlet sheet as "a few very small triangles"
+    # (2026-08-17), which is what a clipped corner of the lattice looks like: the triangularity is
+    # the symptom and the size is the cause, so the rule is written on size.
+    _cell = cell_area(plot_across, row_step)
     _thin = [
         q
         for q in plots
         if _poly_perim(q["poly"]) <= 0
         or 2 * _poly_area(q["poly"]) / _poly_perim(q["poly"]) < _TOE_MIN_THICKNESS * plot_across
+        or _poly_area(q["poly"]) < _TOE_MIN_AREA * _cell
         or pointed_ring(dedup_ring([(float(_p[0]), float(_p[1])) for _p in q["poly"]], 1.0), _TOE_MIN_APEX)
     ]
     if _thin:
