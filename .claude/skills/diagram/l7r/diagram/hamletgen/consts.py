@@ -5,8 +5,15 @@ Split from hamletgen.py by feature 111; bodies verbatim. See hamletgen/CLAUDE.md
 
 from __future__ import annotations
 
-Pt = tuple[float, float]
-Poly = list[Pt]
+# Pt, Poly and SQ_FT_PER_ACRE moved to the shared sitegen package (feature 119) - they were
+# never about hamlets. Re-exported here so `from .consts import Poly, Pt` keeps working inside
+# this package and hamletgen's public surface is unchanged.
+# The `X as X` form is not stylistic: mypy --strict turns on --no-implicit-reexport, so a
+# plain `from ... import X` would NOT re-export X and every `from .consts import Poly, Pt`
+# in this package would fail to type-check.
+from l7r.diagram.sitegen.types import SQ_FT_PER_ACRE as SQ_FT_PER_ACRE  # noqa: F401
+from l7r.diagram.sitegen.types import Poly as Poly  # noqa: F401
+from l7r.diagram.sitegen.types import Pt as Pt  # noqa: F401
 
 # ---- researched constants, each with the reasoning that fixed it -------------------------------
 
@@ -23,7 +30,6 @@ Poly = list[Pt]
 # single case in this experiment of scripted beating authored on PRECISION rather than speed.
 GROSS_ACRES_PER_HOUSEHOLD = 1.3
 
-SQ_FT_PER_ACRE = 43560.0
 
 # LANE CLEARANCE - the no-build corridor a lane reserves, in px.
 #

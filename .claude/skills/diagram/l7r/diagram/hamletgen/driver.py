@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from l7r.diagram.settlement import Settlement
+from l7r.diagram.sitegen.jobs import default_jobs as default_jobs  # noqa: PLC0414 - explicit re-export so `hamletgen.default_jobs` still resolves under --strict
 
 from .consts import REF_HOUSEHOLDS
 from .frame import stage_crossings, stage_frame, stage_notice
@@ -109,12 +110,6 @@ def generate(spec: HamletSpec, out_base: str | None = None, render: bool = True)
         with tempfile.TemporaryDirectory() as tmp:
             s.finish(os.path.join(tmp, "scratch"), render=False)
     return Report(plan=plan, failures=sorted(gate(s.M)), path=out_base)
-
-
-def default_jobs(count: int) -> int:
-    """Leave two cpus for the harness and whatever else is on the box (the same courtesy `regen.py`
-    and `cohort_audit.py` extend); never spawn more workers than there are maps to roll."""
-    return max(1, min(count, (os.cpu_count() or 2) - 2))
 
 
 def cohort(count: int, first_seed: int = 1, households: int | None = None, jobs: int | None = None) -> list[Report]:

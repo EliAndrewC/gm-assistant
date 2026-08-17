@@ -73,13 +73,14 @@ if SKILL not in sys.path:  # so the package works when run from anywhere
 # with external consumers, which a bare star import silently DROPS. The bootstrap above must run
 # BEFORE any of it (submodules import `settlement` and `waterfields` by absolute name), which is
 # why the imports are not at the top of the file. Guard: tests/hamletgen/test_surface.py. No logic here.
+from l7r.diagram.sitegen.geom import *
+
 from .cluster import *
 from .cluster import _arm_crossing_accidental as _arm_crossing_accidental
 from .cluster import _fork_spur as _fork_spur
 from .consts import *
 from .driver import *
 from .frame import *
-from .geom import *
 from .hinterland import *
 from .hinterland import _clear_gap as _clear_gap
 from .hinterland import _near_line as _near_line

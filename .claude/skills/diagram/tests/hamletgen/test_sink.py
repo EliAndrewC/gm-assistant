@@ -3,16 +3,52 @@
 Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen/CLAUDE.md.
 """
 
+import math
+from typing import Any, cast
+
 import pytest
 
 from l7r.diagram import hamletgen as hg
+from l7r.diagram.settlement import Settlement
 
 from ._builders import a_plan
+
+
+def _with_drain(poly: list[tuple[float, float]]) -> Settlement:
+    """The only thing `drain_heading` reads is the manifest, so the manifest is the whole fixture."""
+    stub: Any = type("_S", (), {})()
+    stub.M = {"field_ditches": [{"role": "drain", "field": "test-paddies", "poly": [list(p) for p in poly]}]}
+    return cast(Settlement, stub)
+
+
+def _bearing(v: tuple[float, float] | None) -> float:
+    assert v is not None
+    return math.degrees(math.atan2(v[1], v[0]))
 
 
 def test_the_run_to_the_map_edge_is_measured_along_the_fall() -> None:
     plan = a_plan()  # falls due south
     assert hg.edge_run(plan, (500.0, plan.H - 300.0)) == pytest.approx(300.0)
+
+
+def test_the_drain_heading_is_read_over_the_gates_span_not_the_final_vertex_pair() -> None:
+    """A collector's LAST SEGMENT is noise, and reading the heading off it is what let cohort seed 2
+    draw a brook 1,100 px uphill.
+
+    `drainage_junction_smooth` measures the corner with `_flow_dir(..., span=40.0)` - it walks back
+    up the collector until the chord is at least 40 px long. Here the collector runs due east and
+    then hooks 2 px east, 4 px north at its outfall: the final pair reads -63.4 deg, the gate's span
+    reads -5.4 deg. The placer must agree with the gate, or it optimizes a corner nobody measures."""
+    heading = hg.drain_heading(_with_drain([(0.0, 0.0), (100.0, 0.0), (140.0, 0.0), (142.0, -4.0)]), "test-paddies")
+    assert _bearing(heading) == pytest.approx(-5.44, abs=0.1), "the span bearing, over the last 40+ px"
+    assert _bearing(heading) != pytest.approx(-63.4, abs=1.0), "NOT the final vertex pair's hook"
+
+
+def test_a_collector_shorter_than_the_span_is_read_end_to_end() -> None:
+    """The walk-back can run out of collector before it runs out of span, and then the whole ditch IS
+    the chord - there is no shorter honest answer, and no reason to fall back to the noisy last pair."""
+    heading = hg.drain_heading(_with_drain([(0.0, 0.0), (10.0, 0.0), (20.0, 0.0)]), "test-paddies")
+    assert heading == pytest.approx((1.0, 0.0)), "due east, measured over the entire 20 px ditch"
 
 
 def test_pond_setback_walks_past_blocked_probes() -> None:

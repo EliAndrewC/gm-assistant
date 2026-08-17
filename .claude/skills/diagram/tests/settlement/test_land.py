@@ -1,5 +1,6 @@
 """Split from test_settlement.py by feature 025 - see tests/settlement/CLAUDE.md for the index."""
 
+import importlib
 import math
 import random
 
@@ -584,3 +585,102 @@ def test_a_map_with_no_field_has_no_wet_toe_to_ask_about():
     s = Settlement(800, 800, seed=1)
     s.meta(name="Dry", scale="hamlet", ftpx=1, toscale=True, households=12)
     assert s.toe_band() == []
+
+
+# ---- feature 120: the composed LandMixin surface -------------------------------------------------
+# The one thing a package split can break SILENTLY. A member dropped by the transformer yields a
+# package that imports cleanly, type-checks cleanly under mypy --strict, and draws nothing - it
+# surfaces only when whichever generator calls that member happens to run. A member defined TWICE
+# yields a working import, a clean typecheck, and one silently dead implementation, because the MRO
+# just picks the first base. Contract: specs/120-land-package/contracts/surface.md.
+#
+# This split has a wrinkle its seven predecessors did not: three members left the package entirely
+# for homestead_parts.py, so the surface that must survive is the one on the composed SETTLEMENT,
+# not the one on LandMixin. Pinning it to LandMixin would fail for a relocation that is correct, and
+# training a reader to move names out of the pin is exactly the reflex that lets a real loss through.
+
+_LAND_SURFACE = frozenset(
+    {
+        # public - called from pool gens, wip/, hamletgen and other engine modules
+        "commons",
+        "dike_top_houses",
+        "hinterland",
+        "marsh",
+        "near_ring_cropland",
+        "near_ring_paddy",
+        "perimeter_dike",
+        "reserve_clearing",
+        "toe_band",
+        "trim_off_marsh",
+        # private - reached through self., including from OUTSIDE the package
+        "_attach_grove",
+        "_clear_ground",
+        "_farmstead_nudges",
+        "_find_appurtenances",
+    }
+)
+
+# The three that deliberately left the package. Recorded as its own pin because the RELOCATION is a
+# decision, not an accident: every function they call was already in homestead_parts.py, and a
+# future session moving them back into land/ should have to say so rather than drift.
+_RELOCATED_TO_HOMESTEAD_PARTS = frozenset({"_attach_grove", "_farmstead_nudges", "_find_appurtenances"})
+
+
+def _own(cls: type) -> set[str]:
+    """Every non-dunder name this class body defines - data attributes included, not just callables."""
+    return {k for k in vars(cls) if not k.startswith("__")}
+
+
+def _land_sub_mixins() -> list[type]:
+    from l7r.diagram.settlement.land import LandMixin
+
+    return [c for c in LandMixin.__mro__ if c is not LandMixin and c is not object]
+
+
+def test_no_member_of_the_pre_split_land_surface_is_lost():
+    # SUPERSET, not equality, deliberately: a later decomposition legitimately adds named private
+    # helpers, and equality would turn every such change into a contract edit.
+    composed = set().union(*(_own(c) for c in Settlement.__mro__))
+    assert composed >= _LAND_SURFACE, f"missing={sorted(_LAND_SURFACE - composed)}"
+
+
+def test_no_land_member_is_defined_in_two_sub_mixins():
+    # The census above cannot see this: a name defined in two bases still appears in the union, so a
+    # duplicate passes it, passes the import, passes mypy --strict, and runs whichever definition the
+    # MRO reaches first - leaving the other as dead code a future reader will edit believing it live.
+    # The transformer refuses such a partition, but the transformer is a one-shot script; this test
+    # outlives it and covers the member somebody adds by hand later.
+    seen: dict[str, str] = {}
+    dupes: list[str] = []
+    for cls in _land_sub_mixins():
+        for name in _own(cls):
+            if name in seen:
+                dupes.append(f"{name} in both {seen[name]} and {cls.__name__}")
+            seen[name] = cls.__name__
+    assert not dupes, f"defined twice: {sorted(dupes)}"
+
+
+def test_the_relocated_farmstead_helpers_live_in_homestead_parts_not_in_land():
+    from l7r.diagram.settlement.homestead_parts import HomesteadPartsMixin
+    from l7r.diagram.settlement.land import LandMixin
+
+    land_names = set().union(*(_own(c) for c in LandMixin.__mro__))
+    assert _own(HomesteadPartsMixin) >= _RELOCATED_TO_HOMESTEAD_PARTS, f"not relocated: {sorted(_RELOCATED_TO_HOMESTEAD_PARTS - _own(HomesteadPartsMixin))}"
+    assert not (_RELOCATED_TO_HOMESTEAD_PARTS & land_names), f"still in land/: {sorted(_RELOCATED_TO_HOMESTEAD_PARTS & land_names)}"
+
+
+def test_surface_water_dist_survives_the_split_at_both_import_paths():
+    # It is the one MODULE-LEVEL member, defined after the class, so a transformer that sliced only
+    # the class body would have dropped it and broken three consumers at import time.
+    #
+    # import_module rather than a plain `import l7r.diagram.settlement.land` because ruff deletes
+    # the latter as unused (F401) and the churn is not worth re-litigating; it is also the idiom the
+    # package-surface guards in tests/*/test_surface.py already use. It is NOT stronger: measured
+    # 2026-08-17, both forms pass clean, both ERROR when land/__init__ drops the re-export, and both
+    # FAIL when surface_water_dist moves out of land/ - because `settlement.land` is bound either
+    # way by core.py's `from .land import LandMixin`. An earlier version of this comment claimed the
+    # stripped form was a silent weakening; that was reasoning, not measurement, and it was wrong.
+    land = importlib.import_module("l7r.diagram.settlement.land")
+
+    assert settlement.surface_water_dist is land.surface_water_dist
+    assert settlement.surface_water_dist({"channels": [], "streams": []}, 0, 0) == 1e9

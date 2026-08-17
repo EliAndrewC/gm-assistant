@@ -47,6 +47,30 @@ confidence.
 scatter is draw-time ink, so both parse the rendered SVG. They are the source of truth for their
 own questions rather than a restatement of someone else's.
 
+## A tool whose input is a PATH will be broken by a refactor - point it at a directory
+
+`cache_audit` mutates a numeric literal and demands a cached sweep and a fresh sweep agree. Its
+mutation target was a single hand-picked FILE, and that was invalidated twice - by the
+`settlement.py` package split (feature 025) and again by `_geom.py`'s (feature 117). Both times the
+path silently became a directory and the tool crashed on its next mandatory run, which is the worst
+moment to discover it.
+
+Since 2026-08-17 the target is the set of trees that DRAW a map (`settlement`, `waterfields`,
+`sitegen`, `hamletgen`), and the site is chosen from what the audited maps actually EXECUTE,
+measured by a coverage pass over the gens. Three things about that are worth carrying to any tool
+with the same shape:
+
+- **A directory target cannot be invalidated by a split inside it.** The recurring bug is gone by
+  construction rather than by remembering to update a constant.
+- **The candidate pool went from 7 usable literals to 1,147**, and a 3-trial run from ~11 minutes to
+  a few. The old pool was mostly literals in code these maps never run, where a mutation changes no
+  byte and the trial proves nothing while printing the same `[OK ]` as a real one.
+- **State the membership rule at BOTH ends.** Leaving it to coverage's config was wrong in both
+  directions on the same day: `--include` is ignored when `[tool.coverage.run] source` is set (so
+  the census swept `check_village`, whose literals cannot move an artifact), and that same `source`
+  list omits `waterfields` (so the comb-field engine, which draws every paddy on these maps,
+  contributed zero candidates and nothing said so).
+
 ## Coverage
 
 `pack_audit`, `site_justice` and `scatter_audit` are under the 100% rule - they are pure logic over
