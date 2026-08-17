@@ -45,7 +45,7 @@ class HomesteadPartsMixin:
         for poly in self.field_polys:  # keep the whole DRY footprint out of every paddy
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < r + 4:
                 return False
-        for px, py, pw, ph in self.placed:
+        for px, py, pw, ph, *_ in self.placed:
             if px == hx and py == hy:  # the yard abuts its OWN farmhouse - allowed
                 continue
             if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 2:
@@ -130,7 +130,7 @@ class HomesteadPartsMixin:
             return False  # not on top of this house's own threshing yard
         if shed_rect and math.hypot(x - shed_rect[0], y - shed_rect[1]) < r + math.hypot(shed_rect[2], shed_rect[3]) / 2 + 2:
             return False  # not on top of this house's own storehouse/shed (its west side)
-        for px, py, pw, ph in self.placed:
+        for px, py, pw, ph, *_ in self.placed:
             if px == hx and py == hy:  # the garden abuts its OWN farmhouse - allowed
                 continue
             if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 2:
@@ -241,7 +241,7 @@ class HomesteadPartsMixin:
             return False  # (same corner/vertex/edge test, with the bbox pre-filter)
         if self._rect_hits((x, y, w, h), self.dry_polys):  # ...and out of the dry crop strips (hems / garden
             return False  # tracts): trees do not grow in the barley either
-        for px, py, pw, ph in self.placed:  # clear of every footprint but its OWN homestead
+        for px, py, pw, ph, *_ in self.placed:  # clear of every footprint but its OWN homestead
             if any(abs(px - ox) < 1.5 and abs(py - oy) < 1.5 for ox, oy in own):
                 continue
             if abs(x - px) < (w + pw) / 2 + 2 and abs(y - py) < (h + ph) / 2 + 2:

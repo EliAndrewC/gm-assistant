@@ -201,3 +201,59 @@ Instrumented BESIDE the real verdict (one scope, same variables, so the number a
 - *Unfreeze a city to measure the benefit* - rejected on the same grounds as D5(b).
 
 **The trigger for finishing the job**: when a town or city tier converts, its cohort becomes the test bed. Convert the remaining rotated sites THEN, against maps that regenerate, and measure the refusal attribution again on that tier - where the 38.7% was originally observed.
+
+---
+
+## D9. What the three reviews found - including two corrections to my own reporting
+
+`settlement-review`, one agent per moved map, run the moment each map's regen and gate were green.
+Inashiro did not move (byte-identical) and needed none.
+
+| map | verdict | what it caught |
+|---|---|---|
+| Kashikawa | **pass**, no errors | confirmed the change landed and IMPROVED spacing |
+| Sawada | **pass** | the renderer was still rounding the rake |
+| Mizuguchi | **ship with notes** | two farmhouses merged to a 2.0 ft gap |
+
+### Two things I reported to the GM that were wrong
+
+1. **"Sawada lost 3 dooryard gardens."** It did not. `gardens` counts **beds, not households**, and
+   all 19 households have a bed before and after; total dooryard area moved -0.16%. What fell is bed
+   FRAGMENTATION - households drawn with two beds went 4 -> 1 - because `_garden_beds` splits on a
+   POSITION hash (`_hjit(hx, hy, 8.0) < 0.26`), which the re-pack re-rolled. The reviewer recomputed
+   the hash independently and confirmed the set that split is exactly the set the hash says should,
+   with zero placements blocked. Expected ~4.9 splits from 19, landed 1: a ~2.5% lower-tail draw.
+   Unlucky, not systematic.
+2. **"Two mizuguchi homesteads gained a garden."** All 12 had one throughout; what changed is the
+   count with a SECOND bed (2 -> 4) - and garden AREA per household went DOWN for both gainers. The
+   tighter corridor bought bed count, not ground.
+
+Both errors have the same shape, and it is worth naming because it is the shape this whole feature
+is about: **I compared COUNTS of a record type and inferred a change in the thing the record type is
+named after.** A `gardens` list is beds; a `houses` list is dwellings; the two do not have the same
+relationship to their owner. The reviewers grouped by `of` and got the right answer.
+
+### The finding that became a fix
+
+Sawada's reviewer read the SVG rather than the manifest and found the house glyph emitting
+`translate({cx:.0f},{cy:.0f}) rotate({rot:.0f})` - whole pixels, whole DEGREES - against a placer and
+a gate working in floats. **Every one of the 19 drawn rakes differed from its recorded rake**, worth
+up to ~0.95 ft of drawn-corner displacement. Nothing was at risk on any current map, but it is
+precisely the drawn-versus-placed divergence this feature exists to close, `LANE_CLEARANCE` is now
+derived to the foot, and **no check can ever see it** because every check reads the manifest and
+never the SVG. Fixed at both sites that rounded (`houses.py`, `structures/urban.py`).
+
+That is the argument for the review step in one paragraph: the gate proved internal consistency
+across 189 checks and could not, even in principle, see this.
+
+### The finding that was ledgered rather than fixed
+
+Mizuguchi's pair at (829.4, 1682.7) / (771.5, 1693.6): raked-corner gap **3.6 -> 2.0 ft**, because
+the re-pack flipped one house's rake so the two diverge instead of running parallel. At 1 px = 1 ft
+they merge into one long building at fit zoom.
+
+The mechanism is this feature's own defect one level down: house-to-house separation is still
+adjudicated on the whole-bundle BBOX, which knows nothing about either house's rake. It is a lone
+outlier (the other three maps sit at 23-29 ft minimum), no check exists for it, and the cohort is
+22/24 before and after - so it is a NEW rule rather than a regression, and it is recorded in
+`future-work.md` with the measurement, the mechanism and a check-before-fix sketch.

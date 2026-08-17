@@ -60,7 +60,7 @@ class PlacerMixin:
         """The center of the nearest already-placed homestead/house - the neighbor to pack against."""
         best: Pt | None = None
         bd = float("inf")
-        for px, py, _pw, _ph in self.placed:
+        for px, py, _pw, _ph, *_ in self.placed:
             d = (px - cx) ** 2 + (py - cy) ** 2
             if d < bd:
                 bd, best = d, (px, py)

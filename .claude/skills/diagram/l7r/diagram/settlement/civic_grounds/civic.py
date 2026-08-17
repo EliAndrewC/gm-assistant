@@ -257,7 +257,7 @@ class CivicWorksMixin:
             if self._in_blocked(ox, oy) or self._near_corridor(ox, oy):
                 continue
             mc = corners(ox, oy, w, h, b["rot"])  # (_in_blocked above already keeps it off the paddies)
-            if any(overlap(mc, corners(px, py, pw, ph)) for (px, py, pw, ph) in self.placed if abs(px - ox) + abs(py - oy) <= 150):  # rectangular, not circular: clears the tight band
+            if any(overlap(mc, corners(px, py, pw, ph)) for (px, py, pw, ph, *_) in self.placed if abs(px - ox) + abs(py - oy) <= 150):  # rectangular, not circular: clears the tight band
                 continue
             if any(math.hypot(ox - ux, oy - uy) < spread for ux, uy in used):
                 continue  # keep the rich homes spread along the band

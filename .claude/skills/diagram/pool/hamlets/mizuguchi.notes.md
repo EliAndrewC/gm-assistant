@@ -84,3 +84,42 @@ head-race) - a pipeline note, logged in `future-work.md`.
   Review log: DELTA pass; the reviewer caught the grave island (undisclosed in the brief) and
   verified pond containment, old-site healing and 0 scatter violations; the rim kisses its bund
   at 0.65 px (nitpick, physically fine - dug up to the bund).
+
+## 2026-08-17 - re-packed by feature 121 (the placer tests the rake it draws)
+
+6 of 12 houses moved. All 12 households had a dooryard garden before AND after; what changed is that
+the number with a SECOND bed went 2 -> 4 (`gardens` counts BEDS, not households - a distinction
+worth keeping straight, since garden AREA per household went DOWN for both gainers, 1006 -> 724 sq
+ft at h0). The tighter corridor bought bed COUNT, not ground.
+
+WHY the corridor changed: see kashikawa.notes.md's entry of the same date, or
+specs/121-placer-drawn-footprint/research.md D1/D6/D7.
+
+MEASURED HERE (settlement-review, DELTA): all six moved houses moved TOWARD their lane. Lane-2
+frontage clearance went 13.6/16.8/17.1/21.6/14.5 ft to 11.8/8.9/8.1/15.2/9.8 - close fronting that
+still leaves a verge, nothing crowding or overhanging.
+
+Review verdict: SHIP WITH NOTES.
+
+OPEN, and it is the same defect class one level down - TWO FARMHOUSES CAN MERGE. The pair at
+(829.4, 1682.7) and (771.5, 1693.6) had their raked-corner gap fall 3.6 -> 2.0 ft, because the
+re-pack flipped h5's rake from -4.0 to +4.4 deg so the two houses now diverge instead of running
+parallel. At 1 px = 1 ft that is two pixels between two dark roof strokes: at fit zoom they merge
+and read as ONE long building, and two feet between thatched eaves is not a thing a hamlet does.
+
+MECHANISM: feature 121 made the placer test its raked quad against the LANE TREAD, but house-to-
+house separation is still adjudicated on the whole-bundle BBOX (`_bundle_side_fits`), which knows
+nothing about either house's rake. Measured across the four scripted hamlets, this is a lone
+outlier - inashiro/kashikawa/sawada sit at 28.8/25.5/23.0 ft minimum and only mizuguchi has a pair
+under 6 ft - so a rule with a lot of headroom would catch it and disturb nothing else.
+
+SKETCH (check before fix, per the project rule): add a gap verdict using the existing
+`within_edge_gap(a, b, N)` helper over `M["houses"]` pairs - it already measures real footprints -
+confirm it fires on mizuguchi and on nothing else in the pool, then require the same clearance in
+`_bundle_common_fits` against every placed house's raked quad (the sun-corridor rule already reads
+neighbours' geometry off `M["houses"]`, so the precedent and the plumbing both exist). Ground the
+number in "two thatched roofs must shed separately" - the principle research/buildings.md already
+records for a building against a compound wall.
+
+DEFERRED DELIBERATELY: this is a NEW rule, not a regression (no check fires, and the gate is 22/24
+before and after), so it was not folded into feature 121's scope.
