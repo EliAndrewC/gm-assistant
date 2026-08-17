@@ -11,7 +11,7 @@ import os
 
 import pytest
 
-from tools import pack_audit as pa
+from l7r.diagram.tools import pack_audit as pa
 
 COURT = "url(#court-earth)"
 _FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "fixtures")

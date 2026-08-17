@@ -22,7 +22,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, SKILL)
-from settlement import Settlement, knob_rng  # noqa: E402
+from l7r.diagram.settlement import Settlement, knob_rng  # noqa: E402
 
 W, H = 3400, 3100
 SEED = 41

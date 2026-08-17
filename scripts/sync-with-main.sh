@@ -14,7 +14,7 @@
 # disagree, CLAUDE.md wins and this script has a bug.
 #
 # RENDER MODEL (GM 2026-07-22): renders no longer flow clone -> main by copy. render-sync
-# REGENERATES main's diagram renders in place from main's own committed tip (via pipeline/render_cache.py),
+# REGENERATES main's diagram renders in place from main's own committed tip (via l7r/diagram/pipeline/render_cache.py),
 # so a render in main is a pure function of main's code and can never be a stale copy. A content
 # hash stamped into each derived svg makes the regen a cheap no-op when nothing a map depends on
 # changed. This retired the whole copy machinery: no clone-side pre-render, no rsync, no tip-guard,
@@ -34,7 +34,7 @@ MAIN=${CLONE_MAIN:-/gm-assistant}   # CLONE_MAIN: test seam only; production is 
 LOCK=$MAIN/.clones/.ritual.lock   # keep this NAME: it is the cross-session lock convention in CLAUDE.md - renaming it would stop serializing against other sessions
 POOL=.claude/skills/diagram/pool
 SKILL_DIR=.claude/skills/diagram
-RENDER_CACHE_MOD=pipeline.render_cache   # run as a MODULE from SKILL_DIR: it imports its package siblings relatively
+RENDER_CACHE_MOD=l7r.diagram.pipeline.render_cache   # run as a MODULE from SKILL_DIR: it imports its package siblings relatively
 
 die() { echo "sync-with-main: $*" >&2; exit 1; }
 
@@ -124,7 +124,7 @@ render_sync() {
   # old build-in-clone-then-rsync-copy machinery). Renders now become a pure function of main's
   # committed code - nothing is copied, so nothing can be copied stale (the fragility that copy
   # approach had: whether a clone had touched a given render was situational, so a stale copy
-  # could linger in main). pipeline/render_cache.py runs each generator FROM ITS OWN DIRECTORY (the Mode A
+  # could linger in main). l7r/diagram/pipeline/render_cache.py runs each generator FROM ITS OWN DIRECTORY (the Mode A
   # cwd trap) and short-circuits on a content hash stamped into each derived svg: an unconditional
   # post-push regen is therefore cheap - only maps whose source actually changed re-run, so a push
   # that touched no map's inputs costs ~0.3s while still self-healing every render from tip.

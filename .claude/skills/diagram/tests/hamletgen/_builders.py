@@ -1,6 +1,6 @@
 """Shared fixtures for the hamletgen test package: a known square field, and a plan that uses it."""
 
-import hamletgen as hg
+from l7r.diagram import hamletgen as hg
 
 SQUARE: list[tuple[float, float]] = [(400.0, 400.0), (1000.0, 400.0), (1000.0, 1000.0), (400.0, 1000.0)]
 

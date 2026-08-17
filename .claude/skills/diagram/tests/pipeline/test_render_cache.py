@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline import render_cache as rc
+from l7r.diagram.pipeline import render_cache as rc
 
 # A trivial stand-in generator: writes <stem>.svg + <stem>.png next to itself (the Mode B naming
 # convention render_cache predicts) and records whether the main-tree override reached it.

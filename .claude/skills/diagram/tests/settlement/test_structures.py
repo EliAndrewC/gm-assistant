@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-import settlement
-from settlement import Settlement
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _cap020, _city, _crop_settlement, _estate_settlement, _scatter_base_points, _town, _ward_city_with_samurai
 
 
@@ -320,7 +320,7 @@ def test_merchant_estate_raises_when_no_clear_seat_exists():
 def test_merchant_estates_rolls_seats_and_records_the_target():
     import random as _rr
 
-    from settlement import roll_merchant_estate_count
+    from l7r.diagram.settlement import roll_merchant_estate_count
 
     s = Settlement(1200, 1200, seed=11)
     s.meta(name="c", scale="city", ftpx=3)
@@ -650,7 +650,7 @@ def _structures_submixins():
     # settlement.structures.urban et al. directly - the shape feature 112 used - cannot be written
     # before the package it imports from exists, which is what made 112's own red proof for the
     # collision assertion impossible to run in the order its task list implied (113 tasks T007).
-    from settlement.structures import StructuresMixin
+    from l7r.diagram.settlement.structures import StructuresMixin
 
     return [c for c in StructuresMixin.__mro__ if c is not StructuresMixin and c is not object]
 
@@ -669,7 +669,7 @@ def test_no_pre_split_structures_member_was_lost_in_the_move():
     # thinking, which is exactly the reflex that lets a real subtraction through. What must never
     # happen is a pre-split member going MISSING: an addition is visible in review, a subtraction
     # is silent until whichever generator calls it happens to run.
-    from settlement.structures import StructuresMixin
+    from l7r.diagram.settlement.structures import StructuresMixin
 
     composed = set().union(*(_own_members(c) for c in StructuresMixin.__mro__))
     assert composed >= _STRUCTURES_SURFACE, f"missing={sorted(_STRUCTURES_SURFACE - composed)}"

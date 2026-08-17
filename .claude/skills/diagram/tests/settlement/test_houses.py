@@ -5,8 +5,8 @@ import random
 
 import pytest
 
-import settlement
-from settlement import Settlement
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _crop_settlement, _ladder_map, _nuc_village, _pos_where, _town, _village
 
 
@@ -300,7 +300,7 @@ def test_cluster_anchor_places_each_position_on_the_right_dry_margin():
 
 
 def test_plot_texture_drives_build_comb_grain():
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     s = Settlement(2000, 2800, seed=1)
     s.meta(name="Pt", scale="village", ftpx=2)  # ftpx>=2 -> the real-feet calibration branch (the ft/px=1 hamlet legacy branch is covered by honda/shimizu)

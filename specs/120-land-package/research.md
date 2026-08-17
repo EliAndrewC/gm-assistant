@@ -166,5 +166,53 @@ Two things went wrong while taking the baseline, both cheap and both worth recor
    taken in the clone.**
 2. **A baseline is only a baseline for the commit it was measured at.** Main moved under this clone
    mid-feature (a peer session pushed a `waterfields/frame.py` change), which invalidated the first
-   baseline entirely. Re-taken at `56f6dfb` after sync-in, and that is the commit both halves of the
-   oracle refer to.
+   baseline entirely. Re-taken at `56f6dfb` after sync-in - and then invalidated AGAIN by R9 below.
+
+## R9 - the base MOVED THE FILE mid-feature, and the conflict was the good outcome
+
+The most expensive thing that happened in this feature, and a sharper instance of R8.
+
+Between this work going green at `56f6dfb` and its stop-work ritual, a peer session landed feature
+119's second half: the entire engine moved from `.claude/skills/diagram/<pkg>/` to
+`.claude/skills/diagram/l7r/diagram/<pkg>/`, making `l7r` a PEP 420 namespace portion shared with
+the L7R Toolkit webapp. So the pull produced exactly the conflict it should have:
+
+    CONFLICT (rename/delete): settlement/land.py renamed to l7r/diagram/settlement/land.py
+    in 801dbd4, but deleted in HEAD.
+
+**The conflict is git refusing to guess, and that is what made this safe.** One side moved the file;
+the other side replaced it with a package. There is no correct automatic answer, and a merge tool
+that picked one would have either silently resurrected the unsplit `land.py` beside the new package
+(two definitions of `LandMixin`, whichever the import found first) or dropped main's rename.
+
+**What made resolution cheap rather than a redo**, and it is worth knowing before panicking:
+
+- **git followed the renames for every file this feature MODIFIED rather than deleted.** The
+  `homestead_parts.py` relocation, the `scatter_audit.py` comment, the `settlement/CLAUDE.md` row,
+  `test_land.py` and `test_fields.py` all auto-merged into their new homes. Only the one
+  delete-vs-rename needed hands.
+- **The diff between the file this feature split and main's moved copy was THREE LINES** - all of
+  them the same mechanical rewrite the relocation applied everywhere (`from waterfields import X`
+  -> `from l7r.diagram.waterfields import X`). Checked by diffing the two blobs directly rather
+  than assumed.
+- **The package's own relative imports needed nothing.** `land/` sits at the same depth under
+  `settlement/` either way, so `from .._geom import ...` still resolves. Only ABSOLUTE imports moved.
+
+Resolution: drop main's `land.py`, `git mv` the package to the new path, apply the three-line
+rewrite, repoint the four guard-test imports this feature had ADDED (auto-merge could not, since
+they were new text with no rename to follow), and **re-verify from scratch against the new base**.
+
+**Three transferable rules:**
+
+- **Diff the two blobs before deciding how to resolve a rename/delete.** "Main moved the file" and
+  "main changed the file" need different responses, and here it was both - but only barely, and
+  knowing that turned a feared redo into a five-minute move.
+- **Auto-merge fixes text that MOVED, never text you ADDED.** Every import in this feature's new
+  guard tests still pointed at the old module path after a clean-looking merge, and mypy/ruff did
+  not care because the old names no longer existed to shadow anything - the tests would simply have
+  failed at collection. Grep your own additions for the old path after any rename-heavy merge.
+- **A byte-identity oracle does not survive a base change.** The 893-artifact baseline taken at
+  `56f6dfb` proved nothing about a tree containing a peer's engine edits, so both halves were
+  re-taken against `origin/main` (`801dbd4`) using `git worktree add --detach origin/main` - the
+  documented alternative to stashing, and the right tool for "give me a clean copy of another
+  commit" as well.

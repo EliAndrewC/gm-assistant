@@ -10,6 +10,7 @@ changed, you know which directory to open.
 | `settlement/` | the Mode B drawing engine | [CLAUDE.md](settlement/CLAUDE.md) |
 | `check_village/` | the gate (the ~1,371-segment check battery) | [CLAUDE.md](check_village/CLAUDE.md) |
 | `hamletgen/` | the scripted hamlet generator | - |
+| `sitegen/` | the machinery the tiers SHARE (geometry, types, worker counts) | - |
 | `waterfields/` | the water-first field engine | - |
 | `pipeline/` | the cache, regen driver, render cache and pool index | - |
 | `tools/` | the audits and diagnostics that are under the 100% rule | - |
@@ -64,4 +65,10 @@ invalidate every map in the pool on any edit to a test helper.
 
 The consequence worth knowing: **a `.py` file placed under `tests/` can never affect a map's cache
 key.** That is correct for tests and helpers. If you ever need a module here that a generator
-imports, it does not belong here - put it in the engine, or in [`../pipeline/`](../pipeline/CLAUDE.md).
+imports, it does not belong here - put it in the engine, or in
+[`../l7r/diagram/pipeline/`](../l7r/diagram/pipeline/CLAUDE.md).
+
+**`tests/` did not move under `l7r/diagram/` and should not.** The skill directory stays the
+`sys.path` root (feature 119), so `HERE`-style roots computed here are unchanged, while the engine's
+own roots moved two levels deeper. Tests import the engine by its full name -
+`from l7r.diagram.settlement import Settlement`, `from l7r.diagram import check_village`.

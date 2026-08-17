@@ -1,6 +1,6 @@
 """Split from test_checks.py by feature 025 - see tests/check_village/CLAUDE.md for the index."""
 
-import check_village
+from l7r.diagram import check_village
 from tests.check_village._builders import _gate_parts, bldg, house, manifest
 
 

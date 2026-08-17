@@ -1,13 +1,13 @@
 """Split from test_settlement.py by feature 025 - see tests/settlement/CLAUDE.md for the index."""
 
+import importlib
 import math
 import random
 
 import pytest
 
-import check_village
-import settlement
-from settlement import Settlement
+from l7r.diagram import check_village, settlement
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _crop_settlement, _hamlet_with_field, _nuc_village, _town
 
 
@@ -348,7 +348,7 @@ def test_near_ring_cropland_skips_fields_structures_hill_and_groves():
     s.M["houses"] = [{"x": 800, "y": 800, "w": 40, "h": 30, "rot": 0}]  # a dwelling, SE
     s.M["village_groves"] = [{"poly": [[600, 600], [760, 600], [760, 760], [600, 760]], "role": "copse", "clumps": [[680, 680]]}]
     s.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=5)
-    from settlement import point_in_poly
+    from l7r.diagram.settlement import point_in_poly
 
     for p in s.M["dry_plots"]:
         cx = sum(v[0] for v in p["poly"]) / 4
@@ -376,7 +376,7 @@ def test_near_ring_cropland_keeps_a_city_ring_outside_the_wall():
     s.meta(name="C", scale="city")
     s.M["wall"] = [[300, 300], [700, 300], [700, 700], [300, 700]]  # a square rampart
     s.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=4)
-    from settlement import point_in_poly
+    from l7r.diagram.settlement import point_in_poly
 
     for p in s.M["dry_plots"]:
         cx = sum(v[0] for v in p["poly"]) / 4
@@ -426,7 +426,7 @@ def test_near_ring_paddy_keeps_basins_off_streams_and_the_hill():
     s.M["hill"] = [700, 200, 200, 140]
     s.M["streams"] = [{"poly": [[700, 0], [700, 1400]], "w": 8}]  # a stream down the middle
     s.near_ring_paddy((0, 0, 1400, 1400), seed=4, cell_ft=150)
-    from settlement import seg_dist
+    from l7r.diagram.settlement import seg_dist
 
     for fld in s.M["fields"]:
         if fld["name"].startswith("nrp_"):
@@ -453,7 +453,7 @@ def test_near_ring_paddy_moat_feeds_a_walled_city_basin_with_a_channel():
     # interior (non-off-edge) basins are moat-fed: there is at least one moat->field channel
     assert any((c.get("frm") or {}).get("kind") == "moat" for c in s.M.get("channels", []))
     # no moat channel crosses the building (the clearance keep-out held)
-    from settlement import seg_dist
+    from l7r.diagram.settlement import seg_dist
 
     for c in s.M.get("channels", []):
         if (c.get("frm") or {}).get("kind") == "moat":
@@ -632,7 +632,7 @@ def _own(cls: type) -> set[str]:
 
 
 def _land_sub_mixins() -> list[type]:
-    from settlement.land import LandMixin
+    from l7r.diagram.settlement.land import LandMixin
 
     return [c for c in LandMixin.__mro__ if c is not LandMixin and c is not object]
 
@@ -661,8 +661,8 @@ def test_no_land_member_is_defined_in_two_sub_mixins():
 
 
 def test_the_relocated_farmstead_helpers_live_in_homestead_parts_not_in_land():
-    from settlement.homestead_parts import HomesteadPartsMixin
-    from settlement.land import LandMixin
+    from l7r.diagram.settlement.homestead_parts import HomesteadPartsMixin
+    from l7r.diagram.settlement.land import LandMixin
 
     land_names = set().union(*(_own(c) for c in LandMixin.__mro__))
     assert _own(HomesteadPartsMixin) >= _RELOCATED_TO_HOMESTEAD_PARTS, f"not relocated: {sorted(_RELOCATED_TO_HOMESTEAD_PARTS - _own(HomesteadPartsMixin))}"
@@ -672,7 +672,12 @@ def test_the_relocated_farmstead_helpers_live_in_homestead_parts_not_in_land():
 def test_surface_water_dist_survives_the_split_at_both_import_paths():
     # It is the one MODULE-LEVEL member, defined after the class, so a transformer that sliced only
     # the class body would have dropped it and broken three consumers at import time.
-    import settlement.land
+    #
+    # import_module rather than a plain `import l7r.diagram.settlement.land`: ruff reads the latter
+    # as unused and deletes it, which leaves the assertion below resolving `settlement.land` only
+    # through the parent package's own re-export side effect. That still passes, so the weakening is
+    # silent - exactly the failure mode this whole contract exists to prevent.
+    land = importlib.import_module("l7r.diagram.settlement.land")
 
-    assert settlement.surface_water_dist is settlement.land.surface_water_dist
+    assert settlement.surface_water_dist is land.surface_water_dist
     assert settlement.surface_water_dist({"channels": [], "streams": []}, 0, 0) == 1e9

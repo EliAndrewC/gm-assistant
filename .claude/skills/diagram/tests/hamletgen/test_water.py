@@ -9,9 +9,9 @@ import tempfile
 
 import pytest
 
-import hamletgen as hg
-import waterfields as wf
-from settlement import point_in_poly, seg_dist
+from l7r.diagram import hamletgen as hg
+from l7r.diagram import waterfields as wf
+from l7r.diagram.settlement import point_in_poly, seg_dist
 
 # ---- the derivations that read the map ----------------------------------------------------------
 
@@ -107,7 +107,7 @@ def test_a_polder_hamlet_draws_its_grid_dike_and_reservoir() -> None:
 def test_declared_knob_pins_reach_the_engine() -> None:
     """A `pins` entry is forwarded to the engine's own knob catalog, so a spec can steer a knob this
     module does not model (a land-use overlay, a field archetype)."""
-    from settlement import Settlement
+    from l7r.diagram.settlement import Settlement
 
     plan = hg.plan_site(hg.HamletSpec(name="Pinned", seed=2, households=12, pins={"land_use_overlay": "lotus"}))
     s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)

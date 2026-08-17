@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-import check_village
+from l7r.diagram import check_village
 from tests.check_village._builders import _WHY, _farmhouse, _feature_022_manifest, _field, _waived_map, f
 
 

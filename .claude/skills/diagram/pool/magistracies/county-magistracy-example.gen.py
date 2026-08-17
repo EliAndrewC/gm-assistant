@@ -19,7 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-import compound as C  # noqa: E402
+from l7r.diagram import compound as C  # noqa: E402
 
 OUT_SVG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "county-magistracy-example.svg")
 

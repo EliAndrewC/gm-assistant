@@ -5,8 +5,8 @@ import tempfile
 
 import pytest
 
-import settlement
-from settlement import Settlement
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _cap020, _castle_map, _crop_settlement, _ladder_map, _town
 
 

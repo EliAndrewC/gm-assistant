@@ -7,7 +7,7 @@ import math
 
 import pytest
 
-import hamletgen as hg
+from l7r.diagram import hamletgen as hg
 
 
 def test_place_wells_never_clusters_two_wells_inside_the_spacing_floor():

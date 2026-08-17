@@ -7,7 +7,7 @@ import math
 
 import pytest
 
-import hamletgen as hg
+from l7r.diagram import hamletgen as hg
 
 # ---- the spec refuses what the tier cannot draw --------------------------------------------------
 

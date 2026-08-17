@@ -28,8 +28,8 @@ import sys
 
 import pytest
 
-import check_village
-from pipeline import gencache, poolmaps
+from l7r.diagram import check_village
+from l7r.diagram.pipeline import gencache, poolmaps
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # the skill root; the tests live one level down in tests/
 POOL = os.path.join(HERE, "pool")
@@ -123,7 +123,7 @@ def test_a_map_is_immune_to_an_upstream_change_in_the_number_of_random_draws():
     """
     import random
 
-    import settlement
+    from l7r.diagram import settlement
 
     gen = os.path.join(HERE, "pool", "hamlets", "kashikawa.gen.py")
 
@@ -245,7 +245,7 @@ def _typical_cell_acres(svgpath, ftpx):
     def _sl(poly):
         return abs(sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly)))) / 2
 
-    from waterfields import AZE
+    from l7r.diagram.waterfields import AZE
 
     # comb plots carry the AZE bund stroke at aze_w's 2-decimal width (the patchwork field() path
     # formats its width to 1 decimal, so \d+\.\d\d selects exactly the comb cells, as the old

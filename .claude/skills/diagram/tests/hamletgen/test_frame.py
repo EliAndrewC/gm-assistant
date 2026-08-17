@@ -3,7 +3,7 @@
 Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen/CLAUDE.md.
 """
 
-import hamletgen as hg
+from l7r.diagram import hamletgen as hg
 
 
 def test_stage_notice_reseats_a_board_the_frame_would_lose():

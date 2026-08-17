@@ -4,7 +4,7 @@
 current method has changed.*
 
 **Load this file when:** you are deciding whether to extend, adopt, or abandon the scripted
-generation path, or you are about to work on [`hamletgen/`](hamletgen/). To DRAW a map today,
+generation path, or you are about to work on [`hamletgen/`](l7r/diagram/hamletgen/). To DRAW a map today,
 ignore this file - [`SKILL.md`](SKILL.md) and [`settlements.md`](settlements.md) are unchanged and
 still describe the live method.
 
@@ -22,7 +22,7 @@ would still be generated normally and then modified by hand.
 
 ## What exists now
 
-- **[`hamletgen/`](hamletgen/)** - the generator. An eleven-stage pipeline (`STAGES`), each stage
+- **[`hamletgen/`](l7r/diagram/hamletgen/)** - the generator. An eleven-stage pipeline (`STAGES`), each stage
   a function of `(settlement, plan)`, run in the order the engine's DRAW ORDER map requires: the
   water frame, the field, the sink, the ways, the homesteads, their appurtenances, the notice board,
   the hinterland, the woodland, the windbreak, the crossings, the frame.
@@ -65,7 +65,7 @@ map like Ikegami contains:
 full `check_village/` gate.** That is the test that matters: one good map proves a person can
 drive the script to a good map; a correct cohort proves the script is doing the work.
 
-    python3 -m hamletgen --batch 20
+    python3 -m l7r.diagram.hamletgen --batch 20
 
 Household counts land exactly on the declared figure on essentially every map, and the paddy
 acreage lands on the target the household count implies - the four demo maps come out at 19.4
