@@ -397,6 +397,18 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   over; and `MIN_CHANNEL_PX` (1.5) lands exactly on `aze_w` (1.5), so the finest water tier is drawn
   at the paddy bund's stroke width and separated from it only by hue.
 
+  RULED the same day, and the reason this map is where it is written down: the GM looked at the
+  finished sheet and asked whether the channels actually narrow - *"Is that getting narrower as it
+  goes down into the fields, or along the edge at the top, though? It doesn't visually look like it
+  is."* They do not, and measuring said so plainly: a delivery sheds **1.0 px over ~500 px** and
+  canal A **3.0 over 1,504**, both 0.20 px per 100 px against 0.93 before true size, with canal B
+  (2.5 over 343) the only stroke that reads as tapering. The head-to-tail RATIO is honest; the
+  GRADIENT is not, and the two had been conflated - including in this file's own first draft, which
+  claimed the taper "still reads on the canals". It does not; canal A's gradient is a delivery's.
+  **x1.5 and x2 legibility multipliers were priced (gradients 0.39 and 0.52) and the GM chose true
+  size.** So the invisible taper is a deliberate, costed trade rather than an open defect, and every
+  doc that used to promise a reader they would see it has been corrected. Do not re-inflate the net.
+
 ## 2026-08-17 - the fan-toe SUNBURST, ruled and fixed
 
 The GM ruled on the open question the previous entry left: *"I would like for us to be rendering
