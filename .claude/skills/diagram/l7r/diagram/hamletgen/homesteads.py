@@ -170,6 +170,15 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
             if math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
                 placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
+    # NOW A FALLBACK, and measured to still be one worth keeping (2026-08-17). Since `front_row`
+    # began sampling by bundle pitch, the field-edge rows seat every household on all four
+    # scripted hamlets, so this pass breaks on its first candidate and places nothing. That is
+    # NOT the regression it looks like: the front row's seats lie along the margin, which is
+    # where the lanes run, so fronting held or improved - median house-to-lane went 83 -> 68 ft
+    # on Inashiro and 97 -> 77 on Mizuguchi, 59 -> 61 and 121 -> 137 on the other two, with
+    # houses within 60 ft of a lane flat at 5/5, 10/9, 5/4, 2/2. It stays because a map whose
+    # near margin is too blocked to fill still needs it; `test_lane_frontage_seats_the_hamlet_
+    # when_the_field_row_offers_nothing` keeps it exercised.
     # cluster seeded only by its shape leaves them running across empty middle: the review of the
     # first draft measured a median house-to-lane distance of 94 ft against Ikegami's 55, with one
     # lane dead-ending in open ground and no house at its end. Offering the placer seats at exactly

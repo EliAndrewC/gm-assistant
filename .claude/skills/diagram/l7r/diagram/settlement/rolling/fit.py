@@ -3,9 +3,10 @@
 Split from settlement/rolling.py by feature 118 - see settlement/rolling/CLAUDE.md for the index.
 """
 
+import math
 from typing import TYPE_CHECKING, Any, cast
 
-from .._geom import Pt, edge_dist, point_in_poly, seg_dist, segments_cross
+from .._geom import FARMHOUSE_EAVE_GAP_FT, Pt, edge_dist, point_in_poly, poly_gap, rot_rect, seg_dist, segments_cross
 
 if TYPE_CHECKING:
     from ..core import Settlement
@@ -159,6 +160,45 @@ class BundleFitMixin:
         cx, cy, w, h = rect
         return self._on_a_tread(cx, cy, w, h, rot=self._house_rot(cx, cy))
 
+    def _house_too_near_a_neighbor(self: Settlement, rect: Any) -> bool:  # type: ignore[misc]
+        """Would this house stand so close to one already placed that the two stop reading as two?
+
+        TWO THATCHED ROOFS MUST SHED SEPARATELY (2026-08-17). A minka's kayabuki thatch is pitched
+        45 deg or steeper, so each roof throws its own drip line; two set a couple of feet apart
+        pool their runoff against each other's walls. `FARMHOUSE_EAVE_GAP_FT` carries the number and
+        the grounding, and the gate reads the SAME constant (`farmhouses_shed_separately`).
+
+        WHY IT WAS NEEDED. House-to-house separation had no rule at all - `no_structure_overlaps`
+        only fires at zero, and bundles are kept apart by their whole-bundle BBOX, which knows
+        nothing about either house's rake. So a re-pack that flipped one house's rake from -4.0 to
+        +4.4 deg left a Mizuguchi pair 2.0 ft apart at the corners: two pixels between two dark roof
+        strokes at 1 px = 1 ft, merging into one long building at fit zoom. Caught by
+        settlement-review, not by the gate, because nothing measured it.
+
+        THE PLACER IS STRICTER THAN THE CHECK BY A HAIR, the same convention `_sun_corridor_ok`
+        states and for the same reason: the placer measures the bundle rects it is about to commit
+        while the gate measures the records `farmsteads()` finally draws, and the two differ by
+        fractions of a pixel. Two feet of margin costs nothing in packing and puts the disagreement
+        where it cannot bite.
+
+        GAP VERDICT family: real rotated corners via `poly_gap`, never centers, never a
+        circumscribed radius (dev/placement.md, "CENTER vs FOOTPRINT"). The centre-distance test in
+        front of it is a PREFILTER - it over-states both extents, so it can only admit a pair the
+        exact test then rejects."""
+        lim = self.px(FARMHOUSE_EAVE_GAP_FT + 2.0)
+        cx, cy, w, h = rect
+        quad = rot_rect(cx, cy, w, h, self._house_rot(cx, cy))
+        reach = lim + math.hypot(w, h) / 2
+        for rec in self.M.get("houses", []):
+            if rec.get("kind") == "abandoned":
+                continue  # a derelict has no roof left to shed
+            ow, oh = rec["w"], rec["h"]
+            if math.hypot(cx - rec["x"], cy - rec["y"]) > reach + math.hypot(ow, oh) / 2:
+                continue  # prefilter: prunes, never decides
+            if poly_gap(quad, rot_rect(rec["x"], rec["y"], ow, oh, rec.get("rot", 0.0))) < lim:
+                return True
+        return False
+
     def _bundle_fits(self: Settlement, geom: Any, grove_off_field: bool = True) -> bool:  # type: ignore[misc]
         """A homestead bundle fits where it is in-bounds, its SOLID parts (house/yard/garden) clear every
         paddy/block/lane/ellipse, its GROVE clears all of those (and may abut - but not enter - a paddy when
@@ -230,6 +270,8 @@ class BundleFitMixin:
         if self._rect_blocked(geom["house"], fields=True) or self._rect_blocked(geom["yard"], fields=True) or ("shed" in geom and self._rect_blocked(geom["shed"], fields=True)):
             return False
         if self._house_on_a_tread(geom["house"]):
+            return False
+        if self._house_too_near_a_neighbor(geom["house"]):
             return False
         if "grove_n" in geom and any(self._rect_blocked(geom[k], fields=grove_off_field) for k in ("grove_n", "grove_w")):
             return False

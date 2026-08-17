@@ -654,7 +654,7 @@ nothing - and count the closures. Then decompose behind the same registry contra
 worth stating out loud: the numeric key in the NAME is the execution position, so a helper extracted
 out of a segment must NOT be named `_seg_*`, or the registry will try to run it as a segment.
 
-## OPEN after feature 121: two farmhouses can still MERGE (2026-08-17)
+## DONE 2026-08-17 (same day): two farmhouses could MERGE - now ruled and gated
 
 Feature 121 made the placer test the raked quad it draws against the lane TREAD, and made
 `houses_clear_of_lanes` read the same corners. **House-to-house separation was not touched**, and it
@@ -695,7 +695,7 @@ costs no sunlight at all. The placer is free to; nothing asks it to yet. That be
 tier's own work. (`research/homesteads.md` "The threshing yard's sun";
 `specs/121-placer-drawn-footprint/research.md` D2.)
 
-## OPEN after feature 121: Kashikawa's hamlet-of-one (2026-08-17)
+## RULED 2026-08-17 (same day): Kashikawa's hamlet-of-one
 
 Raised by `settlement-review`, **not caused by** feature 121 (the house is byte-identical across the
 re-pack). The farmstead at (1352.4, 3062.7) stands **469 ft** from its nearest neighbour - the
@@ -707,3 +707,31 @@ What makes it worth a ruling rather than a shrug: the re-pack moved the other 19
 362 ft and left this one exactly where it was, so the placer had every opportunity to fold it into
 the nucleus and did not. **Needs one line either way** - an outlying holding by intent, or a seeding
 gap - because an undocumented oddity is indistinguishable from a bug next session.
+
+### How both of the above were closed (2026-08-17)
+
+**The merge: a rule now exists, and it was never a one-off.** `farmhouses_shed_separately` measures
+the true gap between two raked farmhouse footprints (`within_edge_gap`, the gap-verdict helper) and
+fires below **8 ft** wall to wall - two drip lines plus a footpath, grounded in the same "two roofs
+shed separately" principle `research/buildings.md` records for a building against a compound wall.
+The constant lives ONCE, in `_geom/village.py`, and both the placer and the gate read it.
+
+The check was written FIRST and confirmed red on the shipped Mizuguchi and green on the other three
+maps. Then the placer got the matching rule (`_house_too_near_a_neighbor`, stricter by 2 ft - the
+`_sun_corridor_ok` convention). The pre-rule Mizuguchi manifest is frozen in `pool/regressions/`, so
+this is pinned by a whole real map rather than only by a synthetic pair.
+
+**The measurement that justifies the rule existing at all**: across the 24-seed cohort, before the
+fix, there were **11 farmhouse pairs under 8 ft** on eight different seeds, the worst at **1.35 ft**.
+The review caught one instance; the check revealed it was systemic and invisible - `no_structure_overlaps`
+only fires at zero, and bundles are spaced by their whole-bundle BBOX, which knows nothing about
+either house's rake. Cohort after: 24/24 with the new rule live.
+
+**The hamlet-of-one: half fixed itself, half accepted.** The front-row density fix pulled the
+cluster toward the paddy and Kashikawa's outlier went from 469 ft to **170 ft** from its nearest
+neighbour - ordinary outer-edge spacing - without the house moving at all. Its remaining 385 ft from
+any lane is ACCEPTED: a lane may not run through the flooded paddy, and field workers reach that
+ground along the bunds, so an edge farmstead is reached the way the fields are. Declined: folding it
+into the nucleus, drawing it a spur lane across the crop, and a "every farmhouse within N ft of a
+way" check that would fire on this legitimate case and nothing else. Full ruling in
+`pool/hamlets/kashikawa.notes.md`.
