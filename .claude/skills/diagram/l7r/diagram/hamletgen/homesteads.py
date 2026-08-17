@@ -274,6 +274,12 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # the rolled shape went unhonored. `settlement_records_cluster_seeding` holds the invariant.
     s.M["meta"]["cluster_seeding"] = "cloud" if "cluster_shape" in s.M["meta"] else "frontage"
     plan.placed = s.farmsteads()
+    # ...and NOW the lanes can be told what they actually serve. They were laid first because a lane
+    # is a no-build corridor the homesteads front, so at lay time nothing knew where the houses would
+    # land, and an arm that met neither crop nor water ran the whole cluster band into open ground.
+    # Trimming only ever shortens, so it cannot invalidate a seat already taken. See
+    # `Settlement.trim_lane_stubs` for the measurement that prompted it.
+    s.trim_lane_stubs()
 
 
 # ---- STAGE 6: what stands among the houses ------------------------------------------------------
