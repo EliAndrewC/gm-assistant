@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from .._geom import (
     WARD_BARRED_KINDS,
+    drawn_extent,
     point_in_poly,
     seg_closest,
 )
@@ -110,7 +111,13 @@ class UrbanBuildingMixin:
         if of is not None:
             rec["of"] = [round(of["x"], 1), round(of["y"], 1)]  # the household this is service accommodation FOR
         self.M["buildings"].append(rec)
-        self.placed.append((cx, cy, w, h))
+        # DECLARE THE DRAWN EXTENT (feature 121). A building is drawn at `rot`, and 390 of the
+        # pool's building records carry a non-zero one - many at 90 deg, where `w` and `h` swap
+        # outright. Reserving the unrotated `w`/`h` therefore under-states a rotated shop along one
+        # axis; the trailing pair is what it actually occupies, and it is what lets `_fits` measure
+        # this building with an exact box instead of a circumscribed circle. `w`/`h` stay first and
+        # unchanged, because the reach-box prefilter is still built from them.
+        self.placed.append((cx, cy, w, h, *drawn_extent(w, h, rot)))
         return True
 
     def _dims(self: Settlement, kind: str) -> tuple[float, float]:  # type: ignore[misc]

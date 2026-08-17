@@ -46,6 +46,25 @@ def _rect_ring(x: float, y: float, w: float, h: float, rot: float = 0.0) -> Poly
     return pts + [pts[0]]
 
 
+def drawn_extent(w: float, h: float, rot: float = 0.0) -> tuple[float, float]:
+    """The axis-aligned extent a `w` x `h` rect actually OCCUPIES once drawn at `rot` degrees.
+
+    This is the honest replacement for the circumscribed circle in a collision test (feature 121).
+    The circle is rotation-invariant, which is why it was safe, but it reserves the half-DIAGONAL in
+    every direction: a 46 x 28 house gets r = 26.9 against a true half-width of 23, so two of them
+    are forced 57.8 px apart where true touching is 46. This returns 46 x 28 at rot 0, and swaps to
+    28 x 46 at 90 deg, so a box test on it is EXACT for an axis-aligned pair and a tight bound for a
+    raked one - and it can never permit a real overlap, because a rotated rect always fits inside
+    its own axis-aligned extent.
+
+    NOT A PREFILTER. The `_reach_index` boxes keep the half-diagonal deliberately: an index may
+    over-state an extent (it only admits pairs the exact test then rejects) but must never
+    under-state one, or it starts deciding instead of pruning. See `_fits`."""
+    a = math.radians(rot)
+    ca, sa = abs(math.cos(a)), abs(math.sin(a))
+    return (w * ca + h * sa, w * sa + h * ca)
+
+
 def sat_overlap(p: Sequence[Sequence[float]], q: Sequence[Sequence[float]]) -> bool:
     """Do two CONVEX polygons overlap? (separating-axis test; touching edges do not count.)"""
     for poly in (p, q):

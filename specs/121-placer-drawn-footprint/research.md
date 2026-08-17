@@ -164,3 +164,40 @@ The placer and the check disagreed about the same house. Reading the check showe
 **Success is (2) reaching zero**, with (1) unchanged. A rise in (1) means the tightened verdict has started refusing things it should not.
 
 **Alternatives considered**: (a) trust the Tango figures - rejected, unreproducible and taken on a map with a different tier, scale and building mix; (b) unfreeze Tango to re-measure - rejected outright, the freeze exists precisely so engine work stops paying rent on deprecated compositions, and the fix for a frozen map is conversion, never retrofit.
+
+### The measurement, taken - and it re-prices the whole of US2
+
+Instrumented BESIDE the real verdict (one scope, same variables, so the number and its explanation cannot come from different expressions), across four hamlet rolls:
+
+| | count |
+|---|---|
+| `_fits` calls | 63,083 |
+| refused by real occupancy | 2,832 |
+| **refused by the approximation only** | **1,494** |
+| **approximation-only share of refusals** | **3.9%** |
+
+**3.9%, against the 38.7% every ledger entry quotes.** The cause is structural, not statistical: **the bundle path places every farmhouse and never calls `_fits` at all.** `_bundle_side_fits` collides bundles with an axis-aligned bbox test (`abs(cx - px) < (W + pw) / 2 + 2 ...`) - which is to say the homestead placer has never used the circle. The 38.7% was measured on Tango, a provincial CITY, where the house-first path sends everything through `_fits`.
+
+**So the stated reason for doing item 2 before the village tier does not survive contact with the measurement.** A village uses the same bundle path as a hamlet, so retiring the circle buys village homestead packing almost nothing. Where it IS worth 38.7% is the town/city/capital tiers - which is exactly where the documented symptoms are ("the capital cannot seat a wellhead"; "6 of 10 paddy positions refused"). Reported to the GM with the option to defer; **the GM chose to land it now anyway** (2026-08-17), so it ships in this feature.
+
+---
+
+## D8. What item 2 actually shipped, and what it is NOT verified to do
+
+**ACCEPTED LIMITATION, recorded per the project's decision-recording rule.**
+
+**What shipped**: `drawn_extent(w, h, rot)` plus an **opt-in** declaration on `placed` entries. An entry that declares its drawn extent as a trailing `(ew, eh)` is collided with an exact box; a plain 4-tuple keeps the circumscribed circle, byte-for-byte as before. `_fits` gained `rot: float | None = None`, where `None` means **unknown**, not zero.
+
+**Why opt-in rather than a clean sweep.** 37 sites append to `placed`, and 19 recorded feature types are drawn rotated - `buildings` alone accounts for 390 rotated records at up to 180 degrees, many at 90 where `w` and `h` swap outright. A site that stores the UNROTATED size of a feature the map draws raked would silently under-state itself the moment the verdict became a box, and an under-stated extent is a permitted overlap. That is precisely the failure the 2026-08-08 trial hit (five gate failures, two genuine overlaps, a fire tower on a wellhead, a well inside a building). Opt-in makes an un-audited site **impossible** to break: it simply keeps today's conservative circle.
+
+**Converted so far**: `structures/urban.py::building` - the generic urban building, the single site with the most rotated records and the one every pack, frontage and top-up funnels through.
+
+**WHAT IS NOT VERIFIED, and this is the honest part**: the tier this change exists to help is **frozen**. Towns and provincial cities never regenerate and are never re-gated, so the live test bed cannot exercise the converted path in anger - a hamlet cohort barely places urban buildings at all. The cohort therefore proves the change is **harmless**, not that it is **beneficial**. Its benefit is banked, and will be demonstrated (or disproved) when the town/city tiers convert to scripted generation and acquire a live cohort of their own.
+
+**Alternatives priced**:
+
+- *Sweep all 37 sites now* - rejected. The audit cannot be verified against any live artifact for the majority of those feature types, for the same freeze reason, so it would trade a proven-safe mechanism for an unverifiable one.
+- *Defer item 2 entirely to the town/city conversion* - offered to the GM with the 3.9% measurement and **declined** (GM 2026-08-17): landing it now means one pool re-roll rather than two.
+- *Unfreeze a city to measure the benefit* - rejected on the same grounds as D5(b).
+
+**The trigger for finishing the job**: when a town or city tier converts, its cohort becomes the test bed. Convert the remaining rotated sites THEN, against maps that regenerate, and measure the refusal attribution again on that tier - where the 38.7% was originally observed.
