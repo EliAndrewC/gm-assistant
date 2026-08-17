@@ -321,7 +321,32 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                         for h in needy
                     )
 
-                pool.sort(key=lambda c: (_worst_after(c) // 66.0, c[0]))
+                # AND AN INTERIOR SEAT BEATS A PADDED ONE THAT SERVES THE SAME HOUSEHOLDS. The sweep
+                # box above is padded 120 px past the house CENTERS because a bundle's courtyard
+                # really does reach that far, and without the pad seed 44 shipped well-less. But the
+                # pad is symmetric, so it equally offers seats BEYOND the outermost homestead on
+                # every side - and a wellhead is a hard crop feature with a 16 px extent, so one
+                # seated out there drags the map's frame after it and leaves a band of empty scrub
+                # (`crop_not_held_open_by_one_feature`). The RESCUE pass below already refuses
+                # exactly that, with its `min(xs) <= x <= max(xs)` test and a comment giving this
+                # very reason; the greedy pass did not - two passes carrying two definitions of
+                # "inside the house cloud", with the looser one running first.
+                #
+                # MEASURED on cohort seed 41: the second well won its minimax bucket on the strength
+                # of one north-east household, then seated 76 px NORTH of that household and 66 px
+                # past every other feature on the map. The minimax objective is right and is not
+                # what moved here - the tie-break was, because distance-to-centroid cannot express
+                # "this seat is outside the settlement".
+                #
+                # SO IT IS A TIE-BREAK AHEAD OF CENTRALITY, NOT A FILTER. The padded ground stays in
+                # the pool and still wins when nothing inside the cloud serves the same households,
+                # which is what the pad was added for; it simply can no longer outrank an interior
+                # seat that does. Same shape as every other rule in this function: relax rather than
+                # forbid, because a settlement with a badly-placed well beats one with no well.
+                def _outside_cloud(c: tuple[float, float, float]) -> int:
+                    return 0 if min(xs) <= c[1] <= max(xs) and min(ys) <= c[2] <= max(ys) else 1
+
+                pool.sort(key=lambda c: (_worst_after(c) // 66.0, _outside_cloud(c), c[0]))
             _, x, y = pool.pop(0)
             if any(math.hypot(x - px, y - py) < 170.0 for px, py in placed):
                 continue  # `wells_not_clustered`: shared wells serve separate courtyards
