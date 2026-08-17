@@ -45,4 +45,13 @@ LAND = '#EFE3C2'
 PADDY_SHADES = ['#A7C49C', '#9FBE93', '#AECBA1', '#9BBA8F', '#B4CCA6']  # rice mid-growth (green)
 FLOODED_SHADES = ['#93B0A2', '#8AAB9A', '#9DBAAB', '#88A99A', '#9AB6A8']  # just-transplanted paddy (water+shoots, blue-green)
 RIPE_SHADES = ['#CBBB74', '#C4B36A', '#D1C180']  # ripening rice (golden) - a few plots
+# CROWN FILLS - every colour the engine paints a tree CROWN with, in one place so a reader of the
+# ink can find them all. `tools/scatter_audit.py` imports this rather than carrying its own copy:
+# it used to hardcode #6E8B4A / #7C9856 / #87A45C, none of which the engine has drawn for some time,
+# so the audit parsed ZERO crowns on maps recording thousands and still printed "crown checked".
+# A palette copied into a reader is a copy that drifts, and this one drifted silently because
+# nothing compared the two. (Two conifer greens are listed because the woodland stand and the
+# homestead grove each picked their own - #4A6733 and #496733 - which is itself a small drift, left
+# alone deliberately: unifying them would change committed ink for no gain the eye can see.)
+CROWN_FILLS = ('#4A6733', '#496733', '#6E8B43', '#7C9A4E')
 RICE_GREENS = ['#A6C398', '#A2C094', '#A9C69C']  # rice at ONE stage - near-identical greens (reads uniform)
