@@ -70,6 +70,19 @@ push_cmd() {
   # first: a checker that cannot prove it still bites is the failure mode that motivated it.
   python3 "$ROOT/scripts/check-duplicate-defs.py" --selftest >/dev/null || die "check-duplicate-defs selftest failed - the guard itself is broken; fix scripts/check-duplicate-defs.py before pushing"
   python3 "$ROOT/scripts/check-duplicate-defs.py" "$ROOT" || die "duplicate top-level definitions (above) - a later def silently shadows the earlier; fix before pushing"
+  # GREEN-GATE GUARD (constitution Principle XIII, GM 2026-08-17). The principle's enforcement
+  # clause says this ritual "does not run to completion on a red or regressed state" - which was
+  # ASPIRATIONAL until now: nothing here knew whether a gate had run, so compliance was a session
+  # remembering to comply, the very shape the principle abolishes. Python-only and per-area, so a
+  # docs-only push still skips the gate (CLAUDE.md) and a webapp change is not blocked by the
+  # diagram gate. Selftest FIRST, same reason check-duplicate-defs does it: a checker that cannot
+  # prove it still bites is the failure mode that motivated it.
+  if [ -n "${GATE_STAMP_OK:-}" ]; then
+    echo "sync-with-main: green-gate guard BYPASSED - $GATE_STAMP_OK" >&2
+  else
+    python3 "$ROOT/scripts/gate-stamp.py" --selftest >/dev/null || die "gate-stamp selftest failed - the guard itself is broken; fix scripts/gate-stamp.py before pushing"
+    python3 "$ROOT/scripts/gate-stamp.py" --check origin/main || die "push refused by the green-gate guard (above)"
+  fi
   # files OUR unpushed commits touch, captured BEFORE the pull so the overlap test is honest.
   # INCOMING files = what the pull moves HEAD across - NOT a diff against post-push origin/main,
   # which contains our own commits and false-flags every push (the script's own first dogfood run

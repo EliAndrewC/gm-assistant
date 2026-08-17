@@ -10,7 +10,7 @@ straight line, a bund gets drawn inside the water.
 import math
 
 from waterfields import supply_bank_clearance, taper_pieces, taper_w
-from waterfields.frame import DRAIN_W_HEAD, DRAIN_W_TAIL, _drain_bank, _Frame
+from waterfields.frame import CANAL_A_FT, DELIVERY_FT, DELIVERY_PARENT_FRAC, DRAIN_FT, MIN_CHANNEL_PX, _drain_bank, _Frame, chan_px
 
 
 def _linear(w0: float, w1: float, t: float) -> float:
@@ -98,6 +98,72 @@ def test_the_drawn_stroke_and_the_bank_clearance_use_the_SAME_law() -> None:
         assert halfw > _linear(w0, w1, x / 200.0) / 2  # and it is the NEW law, not the old one
 
 
+def test_the_delivery_taper_holds_then_dwindles() -> None:
+    """THE WORKED EXAMPLE for the taper law, kept HERE rather than in `taper_w`'s docstring.
+
+    Twice the docstring carried measured magnitudes and twice they went false with nothing failing -
+    once when the sampling was wrong, once when the true-size ladder changed every figure the same
+    day. A number in prose is not falsifiable; this is. So it asserts the SHAPE the doctrine
+    promises, in the units the engine actually ships, and stays true when the tiers move again:
+
+      - wider than a straight line at every interior point (it HOLDS its working width),
+      - more of the total narrowing in the back half than the front (it DWINDLES late),
+      - and the tail value reached only at the tail, never as a flat run.
+    """
+    head, tail = DELIVERY_FT
+    pts = [(float(x) * 30, 0.0) for x in range(18)]  # an evenly-sampled delivery ditch
+    pieces = taper_pieces(pts, head, tail)
+    widths = [w for _p, w in pieces]
+
+    assert all(a >= b for a, b in zip(widths, widths[1:], strict=False)), "the taper must not widen mid-run"
+    # HOLDS: every interior width beats the straight line between the same two ends
+    for k, w in enumerate(widths):
+        t = (k + 0.5) / len(widths)
+        assert w > _linear(head, tail, t) - 1e-9, f"piece {k} is thinner than a straight line at t={t:.2f}"
+    # DWINDLES LATE: the back half of the run sheds more width than the front half
+    mid = taper_w(head, tail, 0.5)
+    assert (mid - tail) > (head - mid), "the narrowing must be back-loaded, not spread evenly"
+    # ...and the tail figure is not held as a FLAT run - only the last piece may sit at it
+    assert sum(1 for w in widths if abs(w - tail) < 0.01) <= 1
+
+
+def test_chan_px_converts_TRUE_FEET_to_pixels_at_the_map_scale() -> None:
+    """The net is drawn at true size (GM 2026-08-17), so a width in feet must come out as that many
+    feet of pixels. `grain` is defined as 2 / ftpx, so grain 2.0 is a 1 ft/px hamlet and grain 2/3 is
+    a 3 ft/px provincial city - where the same channel is a third as many pixels wide."""
+    assert chan_px(5.0, 2.0) == 5.0  # hamlet: 1 ft/px, so 5 ft is 5 px
+    assert chan_px(6.0, 1.0) == 3.0  # village: 2 ft/px
+    assert math.isclose(chan_px(12.0, 2.0 / 3.0), 4.0)  # city: 3 ft/px
+
+
+def test_chan_px_floors_at_the_visibility_minimum_and_only_there() -> None:
+    """The floor is the ONE place map scale enters the ladder: a true width below it would not be a
+    line at all. It must never REDUCE a width that already clears it - that would be inflation's
+    mirror, quietly flattening the hierarchy from the top."""
+    assert chan_px(0.4, 2.0 / 3.0) == MIN_CHANNEL_PX  # city terminal tier: 0.13 px true -> floored
+    assert chan_px(DELIVERY_FT[1], 2.0) == MIN_CHANNEL_PX  # a 1.2 ft tail at 1 ft/px floors too
+    assert chan_px(5.0, 2.0) == 5.0  # well clear of the floor, returned untouched
+    # and the floor is BELOW the finest true tier at hamlet scale, so a delivery still TAPERS there
+    # rather than arriving pre-flattened - which is the whole reason it is 1.5 and not 2.0
+    assert chan_px(DELIVERY_FT[0], 2.0) > MIN_CHANNEL_PX
+
+
+def test_a_delivery_head_never_exceeds_its_parents_local_width() -> None:
+    """The rank read must not invert (settlement-review 2026-08-17, twice). Whatever the canal has
+    tapered to where a delivery taps it, the delivery leaves narrower - checked across every cut of a
+    canal, including the last, where the parent is at its thinnest and the cap actually bites."""
+    from waterfields.comb import _canal_ft
+
+    n = 6
+    for j in range(n):
+        parent = _canal_ft(CANAL_A_FT, j + 1, n)
+        head = min(DELIVERY_FT[0], parent * DELIVERY_PARENT_FRAC)
+        assert head < parent, f"delivery at cut {j + 1} would be drawn wider than its parent"
+    # the cap is SLACK high in the tree (the delivery keeps its own tier) and BINDS low in it
+    assert min(DELIVERY_FT[0], _canal_ft(CANAL_A_FT, 1, n) * DELIVERY_PARENT_FRAC) == DELIVERY_FT[0]
+    assert min(DELIVERY_FT[0], _canal_ft(CANAL_A_FT, n, n) * DELIVERY_PARENT_FRAC) < DELIVERY_FT[0]
+
+
 def test_taper_pieces_parameterizes_by_ARC_not_by_vertex_index() -> None:
     """THE SECOND RATCHET (settlement-review 2026-08-17). The law was right and the SAMPLING was
     wrong: the stroke used to be cut into 7 equal slices of the INDEX range, which only lands the
@@ -159,5 +225,5 @@ def test_the_collector_bank_follows_the_same_law_as_its_stroke() -> None:
     lo, hi = us[0], us[-1]
     mid = bank((lo + hi) / 2)
     # the half-width at mid-run, before the margin and the slope correction, is the sqrt law's
-    assert mid > (taper_w(DRAIN_W_HEAD * g, DRAIN_W_TAIL * g, 0.5) / 2)
+    assert mid > (taper_w(chan_px(DRAIN_FT[0], g), chan_px(DRAIN_FT[1], g), 0.5) / 2)
     assert bank(lo) < mid < bank(hi)  # and it still grows monotonically toward the outfall

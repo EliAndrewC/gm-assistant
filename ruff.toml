@@ -1,0 +1,21 @@
+# ROOT ruff config. This is a FENCE, not a style: it makes a repo-root `ruff format .` /
+# `ruff check .` touch NOTHING, so linting only happens where a package owns it.
+#
+# THE INCIDENT (2026-08-17). A lint command ran with the shell's cwd at the clone root rather than
+# the diagram skill, so `ruff format .` walked the whole repository and reformatted 19 files of
+# RETIRED one-shot migration tooling under specs/ (features 022-116) - frozen artifacts nobody is
+# working on, which would have ridden into main inside an unrelated commit. It was caught only
+# because `git status` happened to print paths starting with `../../../`.
+#
+# WHY A BLANKET EXCLUDE RATHER THAN A LIST. Every package that is actually linted carries its own
+# pyproject.toml (the diagram skill, webapp) and ruff discovers it per-file, so running the gate
+# from inside a package is completely unaffected by this file. What a root-level run reaches is the
+# UNOWNED remainder - specs/, scripts/, the non-diagram skills, and `.clones/` (other sessions'
+# working trees; ruff does not read .gitignore, and neither do pytest or ripgrep - the same gotcha
+# is recorded in CLAUDE.md for those two). None of that has an owner who has chosen a style, so a
+# root run reformatting it is always an accident. Naming the directories instead would be
+# whack-a-mole, and would silently start enforcing a style on 16 files no package has adopted.
+#
+# If you genuinely want to format one of those trees, do it deliberately from inside it, in its own
+# commit - not as a side effect of being in the wrong directory.
+exclude = ["*"]

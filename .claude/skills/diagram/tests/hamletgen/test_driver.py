@@ -75,6 +75,83 @@ def test_the_cli_batch_mode_returns_zero_when_every_member_passes(monkeypatch, c
     assert "1/1 passed" in capsys.readouterr().out
 
 
+_PIN = {22: frozenset({"field_ringed"}), 24: frozenset({"paddy_bunds_clear_the_supply_channels"})}
+
+
+def _cohort(**seeds: list[str]) -> list[hg.Report]:
+    """Reports keyed `s<seed>`, each failing whatever the caller names (empty = it passed)."""
+    return [hg.Report(plan=hg.plan_site(hg.HamletSpec(name="T", seed=int(s[1:]), households=12, down_deg=90.0, windward="N")), failures=f) for s, f in sorted(seeds.items())]
+
+
+def test_a_cohort_matching_its_pinned_baseline_is_clean() -> None:
+    """The pin is what makes `22/24 passed` mean something: the RATE is identical whether the two
+    failures are the expected ones or two fresh regressions."""
+    lines, clean = hg.baseline_verdict(_cohort(s21=[], s22=["field_ringed[cohort-22-paddies]"], s23=[], s24=["paddy_bunds_clear_the_supply_channels"]), _PIN)
+    assert clean and "NO NEW REGRESSIONS" in lines[0]
+
+
+def test_the_instance_suffix_is_not_part_of_a_check_identity() -> None:
+    # `field_ringed[cohort-22-paddies]` and `field_ringed[whatever]` are the same rule; the suffix
+    # carries the map's own feature ids and would make the pin unmatchable
+    _, clean = hg.baseline_verdict(_cohort(s22=["field_ringed[some-other-field]"], s24=["paddy_bunds_clear_the_supply_channels"]), _PIN)
+    assert clean
+
+
+def test_a_failure_on_an_unpinned_seed_is_a_regression() -> None:
+    lines, clean = hg.baseline_verdict(_cohort(s9=["paddy_plot_seams_shared"], s22=["field_ringed"], s24=["paddy_bunds_clear_the_supply_channels"]), _PIN)
+    assert not clean
+    assert any("REGRESSION seed 9" in line and "paddy_plot_seams_shared" in line for line in lines)
+    assert any("Principle XIII" in line for line in lines), "the message must name the rule that blocks the merge"
+
+
+def test_a_NEW_check_on_an_ALREADY_failing_seed_is_still_a_regression() -> None:
+    """The subtle one: seed 22 was already failing, so the pass RATE does not move at all."""
+    lines, clean = hg.baseline_verdict(_cohort(s22=["field_ringed", "paddy_plot_seams_shared"], s24=["paddy_bunds_clear_the_supply_channels"]), _PIN)
+    assert not clean
+    assert any("REGRESSION seed 22" in line and "paddy_plot_seams_shared" in line for line in lines)
+
+
+def test_a_pinned_failure_that_starts_PASSING_fails_too_so_the_pin_ratchets_down() -> None:
+    """Same discipline as `waivers_are_live`: a baseline nobody maintains stops being a baseline,
+    and a pin that only ever loosens hides the next real regression on that seed."""
+    lines, clean = hg.baseline_verdict(_cohort(s24=["paddy_bunds_clear_the_supply_channels"]), _PIN)
+    assert not clean
+    assert any("STALE PIN seed 22" in line and "COHORT_BASELINE" in line for line in lines), "it must name the edit to make"
+
+
+def _as_pinned() -> list[hg.Report]:
+    """Reports reproducing exactly today's `COHORT_BASELINE` - built FROM the pin, so this test
+    keeps testing the WIRING rather than freezing whatever the baseline happens to be."""
+    return [
+        hg.Report(plan=hg.plan_site(hg.HamletSpec(name="T", seed=seed, households=12, down_deg=90.0, windward="N")), failures=sorted(checks))
+        for seed, checks in sorted(hg.driver.COHORT_BASELINE.items())
+    ]
+
+
+def test_the_canonical_cohort_is_judged_against_the_pin_not_the_rate(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    """`--batch 24` from seed 1 exits ZERO on its known failures - the steady state is success, and
+    only a change from it is a failure. Before the pin this exact run exited 1, which meant the
+    signal everyone read was a rate that cannot distinguish two expected failures from two new ones."""
+    monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: _as_pinned())
+    assert hg.main(["--batch", str(hg.driver.COHORT_BASELINE_SIZE)]) == 0
+    assert "NO NEW REGRESSIONS" in capsys.readouterr().out
+
+
+def test_the_canonical_cohort_fails_on_a_seed_the_pin_does_not_cover(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    extra = hg.Report(plan=hg.plan_site(hg.HamletSpec(name="T", seed=999, households=12, down_deg=90.0, windward="N")), failures=["something_new"])
+    monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: [*_as_pinned(), extra])
+    assert hg.main(["--batch", str(hg.driver.COHORT_BASELINE_SIZE)]) == 1
+    assert "REGRESSION seed 999" in capsys.readouterr().out
+
+
+def test_a_non_canonical_range_says_it_has_no_pin(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    """A held-out or ad-hoc range must NOT be judged against the fitted cohort's baseline, and must
+    say so rather than implying it was checked."""
+    monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: [hg.Report(plan=a_plan(), failures=[])])
+    assert hg.main(["--batch", "1"]) == 0
+    assert "no pinned baseline for this range" in capsys.readouterr().out
+
+
 def test_the_cli_returns_nonzero_for_a_failing_single_map(monkeypatch, capsys) -> None:
     monkeypatch.setattr(hg.driver, "generate", lambda spec, out_base=None, render=True: hg.Report(plan=a_plan(), failures=["boom"]))
     assert hg.main(["--name", "X"]) == 1
