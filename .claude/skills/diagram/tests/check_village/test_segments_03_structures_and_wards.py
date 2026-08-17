@@ -3,7 +3,7 @@
 import math
 import sys
 
-import check_village
+from l7r.diagram import check_village
 from tests.check_village._builders import (
     _CHAN,
     _MOAT,
@@ -787,7 +787,7 @@ def test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key(
     # since feature 024 the gate is a package: each submodule that imported _OVERLAP_STRUCTS holds
     # its own binding, so patch every holder, not just the package namespace
     _new = check_village._OVERLAP_STRUCTS + ("hawk_mews",)
-    for _m in [m for m in list(sys.modules.values()) if getattr(m, "__name__", "").startswith("check_village") and hasattr(m, "_OVERLAP_STRUCTS")]:
+    for _m in [m for m in list(sys.modules.values()) if getattr(m, "__name__", "").startswith("l7r.diagram.check_village") and hasattr(m, "_OVERLAP_STRUCTS")]:
         monkeypatch.setattr(_m, "_OVERLAP_STRUCTS", _new)
     assert "every_solid_feature_classified_for_labels" in f(M)
 

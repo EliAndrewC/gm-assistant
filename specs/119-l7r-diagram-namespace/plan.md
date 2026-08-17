@@ -91,8 +91,38 @@ commit), never a stash.
 | webapp gate | `cd /tmp/119-base/webapp && make done` | **GREEN** (exit 0) |
 | pool artifacts | `python3 -m pipeline.regen --frozen-ok pool/*/*.gen.py` then `sha256sum` every artifact | **890 artifacts** hashed to `/tmp/119-baseline-hashes.txt`; regen exit 0 |
 
-**Zero pre-existing failures**, so there is no ledger and the merge bar is absolute: both gates
-green and all 890 artifacts byte-identical. Anything else is a regression under Principle XIII.
+**Zero pre-existing GATE failures**, so the merge bar is absolute: both gates green and every pool
+artifact byte-identical. Anything else is a regression under Principle XIII.
+
+### Ledger: pre-existing defects found while sweeping, NOT fixed here
+
+Four latent references to files that stopped existing in earlier features. Each was **verified
+against the unmodified baseline worktree** before being classified - they are not collateral from
+this move, and per Principle XIII a pre-existing failure is ledgered, not fixed under someone else's
+feature. Each is a stale path in a by-hand tool that no test exercises, which is why all four
+survived their own feature's gate:
+
+| site | references | dead since |
+|---|---|---|
+| `tools/make_regressions.py:116` | `open(HERE/"check_village.py")` | feature 024 made it a package |
+| `tools/timings.py:85` | `[PY, "hamletgen.py", ...]` | feature 111 made it a package |
+| `wip/shiro-daika.gen.py:50` | `while not exists(_D/"settlement.py")` | feature 025 made it a package |
+| `research/buildings.md` | a malformed `](../pack_audit.py)` link spanning prose | never resolved |
+
+The common shape is worth naming for whoever picks these up: **a module path written as a string
+literal is invisible to every check the project runs** - it is not an import, so nothing resolves it;
+not a test, so nothing runs it. This feature hit the same class of bug three times in code that IS
+exercised (`gencache`'s generated subprocess driver, the three `test_surface.py` censuses, and
+`cache_audit`'s `TARGET` path), and only the test suite caught them.
+
+### Baseline v2 - why it was re-taken
+
+The first pool baseline ran `regen --frozen-ok` WITHOUT `--no-cache`; the post-change sweep ran with
+it. The comparison came back "890 identical, 4 extra files" - and the 4 extras
+(`kashikawa.png`, `mizuguchi.png`, `sawada.png`, `pool/index.html`) were simply artifacts the cached
+baseline run never produced. Zero artifacts differed. Rather than argue the extras away, the
+baseline was **re-taken with identical flags** (`--no-cache --frozen-ok`) so the oracle compares
+like with like, and every landing is judged against that v2 manifest.
 
 *Noise to ignore, recorded so nobody re-diagnoses it*: both gates print a `NotADirectoryError` for
 `/tmp/119-base/.git/gate-green-<area>` from `scripts/gate-stamp.py`. In a worktree `.git` is a FILE,

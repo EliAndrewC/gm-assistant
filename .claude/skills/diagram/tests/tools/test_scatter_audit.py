@@ -10,8 +10,8 @@ import json
 
 import pytest
 
-from settlement import Settlement
-from tools import scatter_audit as sa
+from l7r.diagram.settlement import Settlement
+from l7r.diagram.tools import scatter_audit as sa
 
 
 def _mini_channel_settlement(seed: int = 1) -> Settlement:

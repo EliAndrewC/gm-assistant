@@ -26,7 +26,7 @@ import types
 
 import pytest
 
-import waterfields
+from l7r.diagram import waterfields
 
 HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # the skill root
 
@@ -36,7 +36,7 @@ def _is_package() -> bool:
 
 
 def _submodules() -> list[types.ModuleType]:
-    return [importlib.import_module(f"waterfields.{info.name}") for info in pkgutil.iter_modules(waterfields.__path__)]
+    return [importlib.import_module(f"l7r.diagram.waterfields.{info.name}") for info in pkgutil.iter_modules(waterfields.__path__)]
 
 
 def _public_clashes(modules: list[types.ModuleType]) -> list[tuple[str, str, str]]:
@@ -89,11 +89,11 @@ CONSUMED_PUBLIC = [
 # (settlement/fields/: _RICE_GREEN; tests/hamletgen/: _Frame, _miter_normals;
 # tests/settlement/test_core.py: _bund_beans, _seg_d).
 ALIASED_UNDERSCORE = {
-    "_Frame": "waterfields.frame",
-    "_RICE_GREEN": "waterfields.palette",
-    "_bund_beans": "waterfields.carve",
-    "_miter_normals": "waterfields.frame",
-    "_seg_d": "waterfields.frame",
+    "_Frame": "l7r.diagram.waterfields.frame",
+    "_RICE_GREEN": "l7r.diagram.waterfields.palette",
+    "_bund_beans": "l7r.diagram.waterfields.carve",
+    "_miter_normals": "l7r.diagram.waterfields.frame",
+    "_seg_d": "l7r.diagram.waterfields.frame",
 }
 
 
@@ -119,10 +119,10 @@ def _census() -> set[str]:
                 continue
             aliases: set[str] = set()
             for node in ast.walk(tree):
-                if isinstance(node, ast.ImportFrom) and node.module == "waterfields":
+                if isinstance(node, ast.ImportFrom) and node.module == "l7r.diagram.waterfields":
                     names.update(a.name for a in node.names)
                 elif isinstance(node, ast.Import):
-                    aliases.update(a.asname or a.name for a in node.names if a.name == "waterfields")
+                    aliases.update(a.asname or a.name for a in node.names if a.name == "l7r.diagram.waterfields")
             if aliases:
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id in aliases and not node.attr.startswith("__"):

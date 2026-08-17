@@ -6,8 +6,8 @@ import tempfile
 
 import pytest
 
-import settlement
-from settlement import Settlement
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _crop_settlement, _nuc_village, _town, _village, _walled, _zoned_city
 
 
@@ -480,7 +480,7 @@ def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
     # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending
     # exactly AT the sluice (distance ~0) is already joined and stays untouched
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     s = Settlement(W=1400, H=1400, seed=5)
     s.meta(name="Sn", scale="town", ftpx=1, down_deg=90)

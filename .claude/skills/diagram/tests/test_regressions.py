@@ -23,7 +23,7 @@ full runs is held by the 022 oracle sweeps and by
 `test_feature_022_targeted_verdict_matches_the_full_gate` (in tests/check_village/); a fixture naming a
 META check (whole-run state, e.g. waivers_are_live) falls back to the full gate.
 
-Regenerate the backfilled corpus from the in-test fixtures with `python3 -m tools.make_regressions`;
+Regenerate the backfilled corpus from the in-test fixtures with `python3 -m l7r.diagram.tools.make_regressions`;
 hand-dropped real-map captures are replayed identically and survive regeneration if named
 distinctly from the auto-captured ones.
 
@@ -37,7 +37,7 @@ import os
 
 import pytest
 
-import check_village
+from l7r.diagram import check_village
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # the skill root; the tests live one level down in tests/
 CORPUS = sorted(glob.glob(os.path.join(HERE, "pool", "regressions", "*.json")))

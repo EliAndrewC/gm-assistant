@@ -8,8 +8,8 @@ import random
 
 import pytest
 
-import settlement
-from settlement import Settlement, seg_dist
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement, seg_dist
 from tests.settlement._builders import _IDX_POLY, _cap020, _ladder_map, _max_turn_deg, _memo_city, _torii_city, _ward_city_with_samurai
 
 

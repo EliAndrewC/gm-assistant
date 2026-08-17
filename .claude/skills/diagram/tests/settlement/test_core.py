@@ -7,9 +7,9 @@ import tempfile
 
 import pytest
 
-from settlement import Settlement, roll_merchant_estate_count, roll_torii_count, surface_water_dist, village_population
+from l7r.diagram.settlement import Settlement, roll_merchant_estate_count, roll_torii_count, surface_water_dist, village_population
+from l7r.diagram.waterfields import dedup_ring, floor_overhang, pointed_ring, polyline_cum, supply_bank_clearance
 from tests.settlement._builders import _cap020, _castle_map, _city, _crop_settlement, _max_turn_deg, _memo_city, _shoelace, _torii_city, _town
-from waterfields import dedup_ring, floor_overhang, pointed_ring, polyline_cum, supply_bank_clearance
 
 
 def test_png_width_env_overrides_render_resolution(monkeypatch):
@@ -94,7 +94,7 @@ def test_rects_overlap_detects_overlap_and_separation():
     # the gate-furniture walk-outward uses rects_overlap (SAT); its True branch stopped being covered
     # incidentally once the gate guard house/inspection went TRUE SCALE (2026-07-22) and no longer
     # overlapped at their initial walk positions - so test it directly
-    from settlement import rects_overlap
+    from l7r.diagram.settlement import rects_overlap
 
     a = [(0, 0), (10, 0), (10, 10), (0, 10)]
     assert rects_overlap(a, [(5, 5), (15, 5), (15, 15), (5, 15)]) is True  # corner-overlapping
@@ -224,7 +224,7 @@ def test_build_comb_supply_banks_hems_bunds_onto_the_channel_banks():
     # supply_banks=True holds every carved corner off every supply stroke by its local half-width
     # + BANK_MARGIN*grain, perpendicular to the stroke; the default (False) keeps the legacy carve
     # so the hand-authored pool re-runs byte-identical.
-    from waterfields import BANK_MARGIN, build_comb
+    from l7r.diagram.waterfields import BANK_MARGIN, build_comb
 
     def buried_corners(net, line_off):
         n = 0
@@ -256,7 +256,7 @@ def test_build_comb_supply_banks_hems_bunds_onto_the_channel_banks():
 def test_paddy_grain_hits_the_real_feet_target():
     # the real-feet paddy calibration (GM 2026-07-22): plot_across x mean row_step, converted at the
     # map's ftpx, must equal the ~0.05-acre target - the SAME real cell at every scale (see paddy_grain)
-    from waterfields import PADDY_CELL_ACRES, paddy_grain
+    from l7r.diagram.waterfields import PADDY_CELL_ACRES, paddy_grain
 
     for ftpx in (1, 2, 3):
         across, (rlo, rhi) = paddy_grain(ftpx)
@@ -270,7 +270,7 @@ def test_paddy_grain_hits_the_real_feet_target():
 
 
 def test_build_polder_parcel_fabric():
-    from waterfields import build_polder
+    from l7r.diagram.waterfields import build_polder
 
     net = build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=11, cols=6, cell=150)
     plots = net["plots"]
@@ -385,7 +385,7 @@ def test_roll_merchant_estate_count_distribution():
     import collections
     import random as _rr
 
-    from settlement import MERCHANT_ESTATE_WEIGHTS
+    from l7r.diagram.settlement import MERCHANT_ESTATE_WEIGHTS
 
     rng = _rr.Random(7)
     n = 6000
@@ -406,7 +406,7 @@ def test_build_polder_mosaic_knob():
     # (some 桑基魚塘 dike-pond districts read that way; some 圩田 polders read as the clean grid). It must be
     # deterministic, byte-identical at mosaic=0 (a separate rng drives it), CHANGE the geometry when on, and
     # make the parcels measurably MORE irregular (skewed toward trapezoids: larger opposite-edge angles).
-    from waterfields import build_polder
+    from l7r.diagram.waterfields import build_polder
 
     kw = {"down_deg": 90, "rows": 10, "cols": 6, "cell": 160, "parcel_mix": (0.10, 0.0, 0.60), "gap": (11.0, 11.0), "edge_wander": 0.4}
     grid = build_polder(2200, 2600, (360, 320), 21, mosaic=0.0, **kw)
@@ -459,7 +459,7 @@ def test_settlement_form_dike_top_is_low_ground_gated():
 
 def test_round_channel_joints_sweeps_the_seam_between_two_records():
     # a run emitted as two tapering records turns at the SEAM, where fillet_polyline cannot reach it
-    from waterfields import round_channel_joints
+    from l7r.diagram.waterfields import round_channel_joints
 
     a = {"pts": [(0.0, 0.0), (200.0, 0.0)], "w": 7.0, "role": "main"}
     b = {"pts": [(200.0, 0.0), (200.0, 200.0)], "w": 6.0, "role": "main"}
@@ -470,7 +470,7 @@ def test_round_channel_joints_sweeps_the_seam_between_two_records():
 
 
 def test_round_channel_joints_leaves_offtakes_and_gentle_seams_alone():
-    from waterfields import round_channel_joints
+    from l7r.diagram.waterfields import round_channel_joints
 
     # a node where a BRANCH also leaves is a junction, not a bend: an offtake is a notch in the bank
     a = {"pts": [(0.0, 0.0), (200.0, 0.0)], "w": 7.0, "role": "main"}
@@ -739,7 +739,7 @@ def test_bund_beans_drop_beads_buried_by_a_later_plot():
     # (the R stream is positional per plot, so the pin is stable).
     import random as _random
 
-    from waterfields import _bund_beans, _seg_d
+    from l7r.diagram.waterfields import _bund_beans, _seg_d
 
     host = {"poly": [(200.0, 200.0), (400.0, 200.0), (400.0, 400.0), (200.0, 400.0)]}
     filler = {"poly": [(340.0, 150.0), (500.0, 150.0), (500.0, 450.0), (340.0, 450.0)]}
@@ -759,7 +759,7 @@ def test_bund_beans_drop_beads_under_the_ditch_net():
     # unpaintable and must be skipped, not crash.
     import random as _random
 
-    from waterfields import _bund_beans
+    from l7r.diagram.waterfields import _bund_beans
 
     host = {"poly": [(200.0, 200.0), (400.0, 200.0), (400.0, 400.0), (200.0, 400.0)]}
     chan = {"pts": [(400.0, 190.0), (400.0, 410.0)], "w": 8.0, "w_tail": 4.0}

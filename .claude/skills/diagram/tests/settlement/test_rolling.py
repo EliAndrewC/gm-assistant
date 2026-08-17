@@ -5,7 +5,7 @@ import random
 
 import pytest
 
-from settlement import Settlement
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _crop_settlement, _nuc_village, _town, _village
 
 
@@ -409,7 +409,7 @@ def _own_members(cls: type) -> set[str]:
 
 
 def _rolling_sub_mixins() -> list[type]:
-    from settlement.rolling import RollingMixin
+    from l7r.diagram.settlement.rolling import RollingMixin
 
     return [c for c in RollingMixin.__mro__ if c is not RollingMixin and c is not object]
 
@@ -419,7 +419,7 @@ def test_no_member_of_the_pre_split_rolling_surface_is_lost():
     # helpers, and equality would turn every such change into a contract edit - training a reader to
     # bump the frozenset without thinking, which is the reflex that lets a real subtraction through.
     # This feature is itself that case: the roll_village stage split adds seven _roll_* members.
-    from settlement.rolling import RollingMixin
+    from l7r.diagram.settlement.rolling import RollingMixin
 
     composed = set().union(*(_own_members(c) for c in RollingMixin.__mro__))
     assert composed >= _ROLLING_SURFACE, f"missing={sorted(_ROLLING_SURFACE - composed)}"

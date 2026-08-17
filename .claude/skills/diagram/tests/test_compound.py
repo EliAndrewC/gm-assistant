@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import compound as c
+from l7r.diagram import compound as c
 
 
 def _env(w: float = 200.0, h: float = 200.0, div: float = 100.0, gate: float = 13.0) -> c.Envelope:

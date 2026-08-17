@@ -53,8 +53,16 @@ alias, no re-export at the old path.
 | `sitegen/jobs.py` | `default_jobs` | `hamletgen/driver.py` (verbatim) |
 
 **Membership rule (the invariant that decides future additions)**: a module belongs in `sitegen`
-only if it names no concept from any one settlement tier - no households, paddies, bunds, hamlet
-bands, headmen, walls, wards. A module that does belongs in that tier's generator.
+only if its LOGIC is tier-independent - **parameterized by scale rather than assuming one**. If it
+hard-codes a household count, a hamlet band, a headman, a ward or a wall, it belongs to that tier's
+generator.
+
+The keyword heuristic ("does it say hamlet?") is a first filter, not the test, and applying it
+literally gets the wrong answer at least once: `net_acres` mentions both "the village grain of
+1 px = 2 ft" and "a 1 ft/px hamlet" - and it takes `ftpx` as a PARAMETER precisely so it is correct
+at either. That docstring is evidence FOR inclusion: it is the record of someone checking the
+function against two tiers. Conversely `frame.py` never says "hamlet" in its signatures and is
+excluded anyway, because all three of its members take a `SitePlan`.
 
 **Direction rule**: `hamletgen` may import `sitegen`. `sitegen` may **never** import `hamletgen` or
 any other tier generator. Asserted by a test, not by convention.

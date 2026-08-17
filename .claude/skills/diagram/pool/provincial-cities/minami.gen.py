@@ -49,10 +49,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import settlement  # noqa: E402
-from citybudget import BudgetLine, CityProgram, budget_to_manifest, plan_city  # noqa: E402
-from settlement import Settlement, moat_swept_tap  # noqa: E402
-from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
+from l7r.diagram import settlement  # noqa: E402
+from l7r.diagram.citybudget import BudgetLine, CityProgram, budget_to_manifest, plan_city  # noqa: E402
+from l7r.diagram.settlement import Settlement, moat_swept_tap  # noqa: E402
+from l7r.diagram.waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
 
 PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 

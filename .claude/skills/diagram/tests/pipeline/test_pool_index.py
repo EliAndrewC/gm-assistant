@@ -9,7 +9,7 @@ actual pool: every generator in it appears in the index.
 import glob
 import os
 
-from pipeline import pool_index as pi
+from l7r.diagram.pipeline import pool_index as pi
 
 
 def _mk(path: str, content: str = "") -> str:

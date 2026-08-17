@@ -194,7 +194,7 @@ The GM's standing constraint: *the difference between 5 minutes and 50 minutes t
 is huge, and inefficient loops have been the single biggest stumbling block.*
 
 **The numbers live in [`timings.md`](timings.md), not here** - one dated block per measurement,
-appended by `python3 -m tools.timings`. They are deliberately NOT duplicated into this plan, because a
+appended by `python3 -m l7r.diagram.tools.timings`. They are deliberately NOT duplicated into this plan, because a
 number written in two places eventually disagrees with itself, which is exactly how the skill's
 CLAUDE.md came to claim a "~2 to 2.5 minute" sweep long after it had passed four minutes.
 
@@ -232,12 +232,45 @@ Ordered by value per unit of effort, not by tier.
 4. **`contour_terraces` and `ribbon_valley`** - closes the hamlet tier entirely, at which point
    every hamlet in the pool has a scripted equivalent.
 5. **Village tier** - the first new generator. Biggest single step in the project: it must learn the
-   institutions (headman, shrine, tax-free plots) and multi-field composition. Expect this to
-   surface the architectural question of whether `hamletgen/` generalizes or whether tiers share a
-   stage library.
+   institutions (headman, shrine, tax-free plots) and multi-field composition. The architectural
+   question this step used to be expected to surface - whether `hamletgen/` generalizes or whether
+   tiers share a stage library - is **ANSWERED**, see below.
 6. **Town, then provincial city.**
 7. **Capital** - last, and blocked on the tier being finished by hand first (Shiro Daika's housing
    pass is still open). Do not script a tier whose rules are not settled.
+
+### The architecture question, ANSWERED (GM 2026-08-17, feature 119)
+
+**Tiers share a library.** `hamletgen/` does not generalize into the village generator; both stand
+on a shared package of tier-agnostic machinery, `l7r.diagram.sitegen`.
+
+The engine now lives under `l7r/diagram/`, a PEP 420 namespace portion sharing the `l7r` parent
+package with the toolkit webapp - so `import l7r.app` and `import l7r.diagram.settlement` resolve in
+one interpreter, and the webapp can render a map when we want it to. The skill directory is still
+the `sys.path` root; `pool/`, `tests/` and the gate config did not move.
+
+**The rule that keeps `sitegen` honest, and it is the rule the village tier will actually meet:**
+
+- **Membership**: a module belongs in `sitegen` only if its LOGIC is tier-independent -
+  **parameterized by scale rather than assuming one**. A hard-coded household count, hamlet band,
+  headman, ward or wall means it belongs to that tier's generator. Asking "does it say hamlet?" is
+  a first filter, not the test: `net_acres` mentions both a village grain and a hamlet grain and
+  takes `ftpx` as a parameter so it is right at either - the mention is the record of someone
+  checking it against two tiers. `frame.py` says "hamlet" nowhere and is excluded anyway, because
+  all three of its members take a `SitePlan`.
+- **Direction**: `hamletgen` (and `villagegen`, `towngen` after it) imports `sitegen`. `sitegen`
+  never imports them. A test asserts this rather than trusting the convention.
+- **Growth: MOVE, never copy.** When the village generator needs a stage that currently lives in
+  `hamletgen`, move it into `sitegen` and have both tiers import it. Copying is how two tiers
+  quietly drift apart, and the drift is invisible until the maps disagree.
+
+**`sitegen` started deliberately small** (~110 lines: the geometry helper set, the `Pt`/`Poly`/
+`SQ_FT_PER_ACRE` types and units, `default_jobs`). Feature 119's research had estimated ~450 by
+filename, then read the dependency edges and found the rest was hamlet-specific after all -
+`frame.py` is three `stage_*(s, plan: SitePlan)` functions, and `Report` prints a hamlet cohort row.
+That is the correct size for a FIRST extraction: the remaining candidates (`WIND_VECTORS`,
+`FALL_BEARINGS` and friends are the obvious ones) move when the village tier makes them a second
+real consumer, so the seam is observed rather than predicted.
 
 ## 9. Vocabulary
 

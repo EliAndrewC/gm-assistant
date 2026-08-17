@@ -3,7 +3,7 @@
 import json
 import pathlib
 
-import check_village
+from l7r.diagram import check_village
 from tests.check_village._builders import _CITY_WALL_SMALL, _FULL_Q, _POND_OUTLIER, _SHRINE_GRAVEYARD_GROUP, _diamond_city, _dwell_grid, _lanes, _pop_city, _ward_lane, bldg
 
 

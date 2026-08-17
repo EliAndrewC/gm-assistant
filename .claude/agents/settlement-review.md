@@ -49,7 +49,7 @@ When the change under review touches ground-cover scatter (commons scrub, the cu
 margin, crop margins), do not hand-build the SVG parse - the 2026-08-16 cut-bank DELTA spent ~21
 tool uses and most of its 350s rebuilding exactly this:
 
-    python3 -m tools.scatter_audit pool/<type>/<subject>        # seconds; exit 0 clean / 1 violations / 2 audit-broken
+    python3 -m l7r.diagram.tools.scatter_audit pool/<type>/<subject>        # seconds; exit 0 clean / 1 violations / 2 audit-broken
 
 It extracts every scatter BASE point (grass blades, brush dots, pine trunks, woodland crowns;
 marsh reeds counted but report-only) and adjudicates them against the ENGINE'S OWN keep-out

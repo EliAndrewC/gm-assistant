@@ -5,8 +5,7 @@ import pathlib
 
 import pytest
 
-import check_village
-import settlement
+from l7r.diagram import check_village, settlement
 from tests.check_village._builders import (
     _CAP_GOV_CHECKS,
     _GAP_RATCHET,
@@ -228,7 +227,7 @@ def test_twin_settlement_form_is_an_axis():
 def test_convex_hull_degenerate_point_clouds():
     """The hull helper returns <3 unique points as-is (a degenerate, zero-area hull) - the guard the pool
     maps never reach (the compactness check needs >=12 houses) but that must not crash on a stray call."""
-    import check_village as cv
+    from l7r.diagram import check_village as cv
 
     assert cv.convex_hull([]) == []
     assert cv.convex_hull([(1.0, 2.0)]) == [(1.0, 2.0)]
@@ -306,7 +305,7 @@ def test_capital_packed_overflow_names_the_wall_resize_cure(capsys):
         return [{"kind": "laborer", "x": x0 + 14 * (i % 20), "y": 120 + 14 * (i // 20), "w": 10, "h": 7} for i in range(n)]
 
     M["buildings"] = _pk(40, 120) + _pk(60, 1220)
-    import check_village
+    from l7r.diagram import check_village
 
     check_village.gate(M, verbose=True)
     out = capsys.readouterr().out

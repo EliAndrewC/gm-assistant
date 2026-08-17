@@ -1,7 +1,7 @@
 """Split from test_settlement.py by feature 025 - see tests/settlement/CLAUDE.md for the index."""
 
-import check_village
-from settlement import Settlement
+from l7r.diagram import check_village
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _crop_settlement, _nuc_village, _scatter_base_points, _town
 
 

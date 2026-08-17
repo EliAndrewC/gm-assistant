@@ -23,7 +23,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-import compound as C  # noqa: E402
+from l7r.diagram import compound as C  # noqa: E402
 
 # cwd-INDEPENDENT output path (fixed 2026-07-21): the old cwd-relative "pool/..." wrote a stray
 # file at the pool ROOT when run from the skill dir and crashed when run from this dir - anchor

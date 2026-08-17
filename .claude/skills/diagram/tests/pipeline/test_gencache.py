@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline import gencache
+from l7r.diagram.pipeline import gencache
 
 HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # the skill root; this test lives in tests/pipeline/
 
@@ -409,7 +409,7 @@ def test_a_hit_still_runs_current_checks(tmp_path, monkeypatch, clean_gatehit):
     Path(gencache.CACHE_DIR, "toy", "toy.json").write_text('{"meta": {}}')
     manifest, how, _ = gencache.gate_obtain(str(gen))
     assert how == "HIT" and Path(manifest).read_text() == '{"meta": {}}'
-    import check_village
+    from l7r.diagram import check_village
 
     try:
         rc = check_village.main(manifest)
@@ -546,7 +546,7 @@ def test_regen_skips_frozen_legacy_maps():
     import contextlib
     import io
 
-    from pipeline import regen
+    from l7r.diagram.pipeline import regen
 
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):

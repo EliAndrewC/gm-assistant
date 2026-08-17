@@ -9,8 +9,8 @@ straight line, a bund gets drawn inside the water.
 
 import math
 
-from waterfields import supply_bank_clearance, taper_pieces, taper_w
-from waterfields.frame import CANAL_A_FT, DELIVERY_FT, DELIVERY_PARENT_FRAC, DRAIN_FT, MIN_CHANNEL_PX, _drain_bank, _Frame, chan_px
+from l7r.diagram.waterfields import supply_bank_clearance, taper_pieces, taper_w
+from l7r.diagram.waterfields.frame import CANAL_A_FT, DELIVERY_FT, DELIVERY_PARENT_FRAC, DRAIN_FT, MIN_CHANNEL_PX, _drain_bank, _Frame, chan_px
 
 
 def _linear(w0: float, w1: float, t: float) -> float:
@@ -152,7 +152,7 @@ def test_a_delivery_head_never_exceeds_its_parents_local_width() -> None:
     """The rank read must not invert (settlement-review 2026-08-17, twice). Whatever the canal has
     tapered to where a delivery taps it, the delivery leaves narrower - checked across every cut of a
     canal, including the last, where the parent is at its thinnest and the cap actually bites."""
-    from waterfields.comb import _canal_ft
+    from l7r.diagram.waterfields.comb import _canal_ft
 
     n = 6
     for j in range(n):
