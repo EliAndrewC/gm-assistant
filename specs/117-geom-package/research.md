@@ -178,6 +178,11 @@ backstop for the reverse error: a name used in an annotation and never imported 
 
 ## R7. `tools/cache_audit.py`'s mutation target
 
+> **SUPERSEDED the same day, by its own measurements - see "R7b" below.** The decision recorded here
+> (pick a better FILE) was the right shape of answer to the question as asked, and the numbers it
+> produced are what showed the question itself was wrong. Kept rather than rewritten, because the
+> reasoning is what led to the replacement.
+
 **Decision**: `TARGET = settlement/_geom/curves.py`, and the audit gains one measured line per trial
 reporting whether the mutation actually MOVED any artifact.
 
@@ -255,6 +260,62 @@ reason to keep the empirical `moved` measurement rather than trusting the table.
 The budget is recorded in the comment above `TARGET` so the next session plans for ~10-15 minutes
 rather than the 10 the docs claimed for the old single-pass behavior. It is the honest trade: the
 old run was faster because it was counting trials that tested nothing.
+
+## R7b. The target should not be a FILE at all (GM, 2026-08-17)
+
+**The GM's question on reading R7's result**: *"How do we fix that tools/cache_audit.py issue so that
+it's not taking so long and is also safe? Taking 11 minutes seems bad, as does 2 of 3 trials testing
+nothing and printing [OK]."* Both halves have the same root, and it is not which file was picked.
+
+**Decision**: the audit mutates a literal chosen from **what the audited maps actually EXECUTE**,
+across the four trees that DRAW a map (`settlement`, `waterfields`, `sitegen`, `hamletgen`) rather
+than one hand-picked file. A coverage pass over the gens supplies the executed lines;
+`numeric_sites` additionally drops DEFAULT-argument literals.
+
+**Why the file-shaped target was the actual bug, twice over:**
+
+- **It has been invalidated by a package split twice** - feature 025's (`settlement.py`) and this
+  feature's (`_geom.py`) - and both times the audit crashed on its next mandatory run, which is the
+  worst possible moment. A directory target cannot be broken by a split inside it.
+- **It made the candidate pool tiny and mostly inert.** Measured across the whole `settlement`
+  package: 4,306 numeric literals, of which **684** are in code these two maps execute. The file R7
+  picked offered **7**. That is where the eleven minutes went, and why 2 of 3 trials tested nothing.
+
+**Measured after the rewrite**: pool **1,147 candidates across 40 executed engine files**
+(settlement 660, hamletgen 244, waterfields 241, sitegen 2); `--trials 3` audited **3 of 3, none
+vacuous, none skipped, none failed**, each moving all four artifacts, landing in a placer spiral, a
+civic fixture and a hinterland scatter - three subsystems, where before all three trials were in one
+geometry file. **~7 minutes** (~75s coverage pass, 100-135s per trial; a trial is slower than before
+because a site in hot placement code genuinely makes generation more expensive, which is the price
+of the site meaning something).
+
+**Why excluding a site is SAFE, which is the half the GM's question turns on.** A literal in code no
+audited map runs leaves every artifact identical, so a cached sweep and a fresh sweep agree whatever
+the key does - there is no cache defect the exclusion could hide. The filter is an observation of
+the GENERATOR (coverage over the gens), never of the cache, so it cannot inherit the blind spots of
+the thing under audit. That distinction is the whole reason this is not simply "ask the cache key
+which sites matter", which would be circular and is explicitly not done.
+
+**Two traps found while implementing it**, both instances of "state the membership rule at the end
+where nothing can override it":
+
+- `--include` is IGNORED when `[tool.coverage.run] source` is set, which this skill's
+  `pyproject.toml` does. The first draft trusted the flag and censused 1,460 candidates across 101
+  files, most of them in `check_village` - whose literals cannot move an artifact at all.
+- That same config `source` list does not name `waterfields`, so the comb-field engine - which draws
+  every paddy on these maps - was invisible and contributed **zero** candidates, with nothing saying
+  so. `--source` now names the four trees explicitly AND the result is filtered by the same rule.
+
+**Alternatives considered**:
+
+- **Keep the file target, just pick a better file.** That is R7, and R7's own numbers refute it: the
+  best file in the package still offers a fraction of the executed pool, and the next split
+  invalidates it again.
+- **Probe vacuity on the cheapest map only, then verify on both.** Rejected: it would discard a site
+  that moves only the bigger map, narrowing the audit to buy back seconds that the coverage filter
+  already recovers.
+- **Filter sites by whether the cache key moves for them.** Rejected outright - that is the tool
+  asking the thing it audits, and a key bug would then hide exactly the sites that would expose it.
 
 **Alternatives considered**:
 
