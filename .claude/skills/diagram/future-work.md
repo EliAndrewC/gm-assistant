@@ -761,3 +761,61 @@ fix wants its own pass with its own sweep rather than riding along.
    important object. **Fix sketch**: offset the 2-cottage case the way the 3-cottage case already
    is asymmetric in effect, or move the private well off the axis. Cheap, but it changes every
    two-cottage works, so it belongs with item 1 in one pass.
+
+## OPEN, all PRE-EXISTING: three found by the 2026-08-17 review round
+
+None of these came from that day's changes - each was verified byte-identical to the prior roll -
+and each is a form defect the gate structurally cannot see. Logged rather than fixed in-flight,
+because widening scope mid-fix is exactly what produced the cluster-flattening regression that same
+day: the density fix was landed on a `field_ringed` count, which is monotone in "more front row" and
+could never push back, and it took three reviews to notice the cluster had become a ribbon.
+
+### 1. The flooded tint is PAINTED in more places than it is RECORDED (Sawada)
+
+Rendering exactly `#93B7AC`, the PNG carries **three** substantial regions plus fragments;
+`M["flooded_plots"]` records **two**, and neither recorded centroid matches the third painted bbox
+(675-722 x 2329-2362 does not overlap either in y). Only two SVG elements carry that fill under a
+straightforward parse, so the third comes from a path form the decomposition does not reach.
+
+Why it matters more than a count: `flooded_plots_read_as_basins` adjudicates the RECORDED set, so a
+basin painted outside it is invisible to the rule - and **all three painted wedges taper to a
+point**, which is the composition `research/fields.md` names in "A basin never tapers to a point".
+On the one map briefed as pond-free, the sharpest of them reads at zoom as a small triangular pond
+at a ditch mouth.
+
+**Sketch**: make the census a TEST - count painted `#93B7AC` regions in the SVG and assert equality
+with `len(flooded_plots)` - then apply `_TINT_END_FT` at whichever emitter paints the unrecorded
+ones, not only at the one `flooded_plots` records. The 2026-08-16 entry established "4 painted, 4
+recorded, 1:1" as the guard by hand; this makes it a check.
+
+### 2. A lane dead-ends 90 ft past its own junction (Sawada)
+
+Lane 2's end lies 0.3 ft off lane 0's centerline - a clean T - and then lane 0 continues **81 ft
+past that node** to a free end 12.6 ft to the side of lane 2, on a bearing ~9 degrees off it. On the
+sheet that is two near-parallel tracks with a hairline sliver between them, ending in a blunt cap in
+open ground that serves no house, reaches no field and connects to nothing. Both arms are legal ways
+with legal clearances, so nothing fires.
+
+**Sketch**: require a dangling lane end to terminate ON something - a homestead frontage, the field
+edge, or another way - and trim the overshoot at the junction. `connector_lane_runs_off_edge`
+already makes exactly this kind of "must end somewhere" demand for the connector; this is its
+internal-lane counterpart.
+
+### 3. The "adaptive" garden side is not adapting (Sawada, and it is tier-wide)
+
+`bundle.py` promises the nucleated garden goes on "an ADAPTIVE sunny side (chosen by the placer for
+fit + no shading), so it packs into a real nucleus and the gardens VARY instead of all sitting east
+between houses." Measured on Sawada: **21 of 23 beds SE, 2 SW, 0 E, 0 W**. The adaptive choice is
+choosing the same side nearly every time, so every homestead reads as one stamp repeated - house,
+yard directly below, bed to the lower-right.
+
+Note this is the finding that a WRONG one was hiding: an earlier review reported "18 of 19 on the E
+wall, the last-resort candidate", that claim went into `sawada.notes.md` unverified, and a later
+review reconstructed each bed's candidate signature and refuted it (zero beds took the E-wall
+candidate; `groves = 0` is the documented nucleated-bundle behavior, not a symptom). A review
+finding is evidence, not a verdict.
+
+**Sketch**: decide first whether the variation is meant to be real or the comment is aspirational -
+that is a GM-facing question, not a code one. If real, the shading/fit score is presumably
+near-constant across sides for a compact bundle, so it wants a tie-break that varies (the
+position-seeded `_hjit` idiom) rather than a strict preference order.
