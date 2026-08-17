@@ -36,9 +36,9 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from citybudget import BudgetLine, CityProgram, budget_to_manifest, plan_city  # noqa: E402
-from settlement import Settlement, moat_swept_tap  # noqa: E402
-from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
+from l7r.diagram.citybudget import BudgetLine, CityProgram, budget_to_manifest, plan_city  # noqa: E402
+from l7r.diagram.settlement import Settlement, moat_swept_tap  # noqa: E402
+from l7r.diagram.waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
 
 # Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this city's 3 ft/px (was hand-set 26px
 # -> ~0.08 acre, at Bray's "large" ceiling). Subdivides the same fans into finer cells; the ~3,000 urban

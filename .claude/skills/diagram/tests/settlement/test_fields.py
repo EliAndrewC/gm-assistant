@@ -8,9 +8,9 @@ import tempfile
 
 import pytest
 
-from settlement import Settlement, _centroid
+from l7r.diagram.settlement import Settlement, _centroid
+from l7r.diagram.waterfields import hem_on_paddy
 from tests.settlement._builders import _inwall_settlement, _town, _village
-from waterfields import hem_on_paddy
 
 
 def test_ring_big_falls_back_to_plain_when_capped():
@@ -152,7 +152,7 @@ def test_bund_junctions_pile_earth_only_where_bunds_actually_cross():
 
 
 def test_land_use_overlay_draws_and_records_each_kind():
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     net = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=())
     for overlay in ("mulberry_fishpond", "lotus", "tea_fringe"):
@@ -179,7 +179,7 @@ def test_land_use_overlay_draws_and_records_each_kind():
 def test_land_use_overlay_topography_paths():
     """Feature 010: the three placement paths - no eligible ground at all, the clustered dike-pond
     growth, and the named wholesale-conversion opt-out that ignores the topographic filter."""
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     net = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=())
     dry = {**net, "plots": [{**p, "low": False} for p in net["plots"]]}  # a field with NO low/wet ground
@@ -250,7 +250,7 @@ def test_draw_comb_field_existing_stream_and_cascade_sources():
     # drawn, but the hairline topology channel is still recorded. source={"kind":"cascade"} skips
     # the hairline too: the caller records its own connector channel (the field-to-field cascade,
     # e.g. Hirameki's e1 -> e2), whose to={"kind":"field"} anchor replaces it.
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     s = Settlement(W=1400, H=1400, seed=5)
     s.meta(name="Cs", scale="town", ftpx=1, down_deg=90)
@@ -305,7 +305,7 @@ def test_draw_comb_field_drops_hem_plots_on_a_prior_fan():
     # recorded fan's rice is dropped via the shared hem_on_paddy predicate (the Tango fe2-into-fe1
     # incident; gated by dry_plots_clear_of_paddies). The prior fan here is a synthetic field
     # record blanketing the second comb's hem band, so every hem plot must go.
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     s = Settlement(W=1400, H=1400, seed=5)
     s.meta(name="Cp", scale="town", ftpx=1, down_deg=90)
@@ -322,7 +322,7 @@ def test_draw_comb_field_drops_hem_plots_on_a_prior_fan():
 
 
 def test_draw_comb_field_trims_an_inwall_drain_through_the_helper():
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     s = _inwall_settlement()
     net = build_comb(1000, 1000, (500, 200), 5, down_deg=90, field_fall=300)
@@ -430,7 +430,7 @@ def test_a_comb_hem_is_registered_as_CROPLAND_not_only_as_no_build_ground():
     the clusters happened to sit away from the hem, and three simultaneous gate failures the moment
     one did not. Every hand-authored comb gen carries its own `s.dry_polys.append(...)` to
     compensate; this holds the line for the ones that do not."""
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     s = Settlement(1800, 1800, seed=5)
     s.meta(name="Hem", scale="hamlet", ftpx=1, toscale=True, households=12, down_deg=90, water_flow=90)
@@ -449,7 +449,7 @@ def test_draw_comb_field_records_rings_and_beads():
     # cannot express "this plot paints over that one's bund"). Recording is unconditional at this
     # one draw site, which is what lets the check skip legacy manifests without going silently
     # toothless on regenerated ones (GM 2026-08-15).
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     s = Settlement(W=1400, H=1400, seed=5)
     s.meta(name="Rb", scale="town", ftpx=1, down_deg=90)
@@ -465,7 +465,7 @@ def test_draw_comb_field_records_rings_and_beads():
 def test_draw_comb_field_drops_beads_in_pond_water():
     # the draw-site half of the water-honesty rule: beads inside the source pond's ellipse or a
     # pocket pond's are dropped BEFORE the bead line draws and records, so dots and manifest agree
-    from waterfields import build_comb
+    from l7r.diagram.waterfields import build_comb
 
     s = Settlement(W=1400, H=1400, seed=7)
     s.meta(name="Pw", scale="town", ftpx=1, down_deg=90)
@@ -520,10 +520,10 @@ _FIELDS_SURFACE = frozenset(
 
 
 def _fields_submixins():
-    from settlement.fields.comb import CombMixin
-    from settlement.fields.features import FieldFeaturesMixin
-    from settlement.fields.landuse import LandUseMixin
-    from settlement.fields.paddy import PaddyMixin
+    from l7r.diagram.settlement.fields.comb import CombMixin
+    from l7r.diagram.settlement.fields.features import FieldFeaturesMixin
+    from l7r.diagram.settlement.fields.landuse import LandUseMixin
+    from l7r.diagram.settlement.fields.paddy import PaddyMixin
 
     return [PaddyMixin, CombMixin, LandUseMixin, FieldFeaturesMixin]
 

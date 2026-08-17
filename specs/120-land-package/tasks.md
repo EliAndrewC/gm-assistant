@@ -80,6 +80,37 @@ exists to prevent.
 
 - [x] **T026** Commit in the clone and run `scripts/sync-with-main.sh done`.
 
+## Phase 5 - the base moved the file (unplanned; see research.md R9)
+
+The stop-work ritual's pull brought in feature 119's second half, which relocated the whole engine
+to `l7r/diagram/`. `land.py` was therefore RENAMED on main and DELETED here, which git correctly
+refused to auto-resolve.
+
+- [x] **T027** Diff the two blobs before choosing a resolution.
+      *Observed*: main's `l7r/diagram/settlement/land.py` differs from the file this feature split by
+      exactly **three lines**, all the relocation's `from waterfields import X` ->
+      `from l7r.diagram.waterfields import X` rewrite. That turned a feared redo into a move.
+- [x] **T028** Resolve: drop main's `land.py`, `git mv` the package to
+      `l7r/diagram/settlement/land/`, apply the three-line rewrite (2 in `dikes.py`, 1 in
+      `nearring.py`), delete the emptied old `settlement/` tree.
+      *Observed*: the package's own relative imports needed nothing - `land/` sits at the same depth
+      under `settlement/` either way, so only ABSOLUTE imports moved.
+- [x] **T029** Repoint the guard-test imports this feature ADDED. Auto-merge follows renames for
+      text that MOVED, never for text that is new, so all four still named the old module path.
+      *Observed*: `from settlement.land import ...` x2, `from settlement.homestead_parts import ...`,
+      and the `import settlement.land` in C4 -> all re-rooted at `l7r.diagram.settlement`.
+- [x] **T030** Keep C4 honest against its linter. Ruff read the plain
+      `import l7r.diagram.settlement.land` as unused and deleted it, which left the assertion
+      resolving `settlement.land` only through the parent package's own re-export side effect - it
+      still PASSED, so the weakening was silent. Rewritten to `importlib.import_module`, with the
+      reason in a comment so the next linter pass does not re-open it.
+- [x] **T031** Re-verify EVERYTHING against the new base. A byte-identity oracle does not survive a
+      base change, so both halves were re-taken at `origin/main` (`801dbd4`) via
+      `git worktree add --detach` - the documented alternative to stashing, and the right tool for
+      "give me a clean copy of another commit" too.
+- [x] **T032** Smoke-check the composed surface after the move: all 14 pre-split members reachable
+      on `Settlement`, `LandMixin` bases in order, `surface_water_dist` importable.
+
 ## Not done, deliberately
 
 - **No `settlement-review` pass.** A byte-identical pool has no visual residue to judge; the maps

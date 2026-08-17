@@ -47,8 +47,8 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from settlement import Settlement  # noqa: E402
-from waterfields import build_comb  # noqa: E402
+from l7r.diagram.settlement import Settlement  # noqa: E402
+from l7r.diagram.waterfields import build_comb  # noqa: E402
 
 s = Settlement(2600, 2000, seed=77)
 # downhill is SOUTH: the hill/manor sit in the north, so the land falls away southward and

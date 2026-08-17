@@ -15,8 +15,8 @@ import math
 
 import pytest
 
-import settlement
-from tools import site_justice as sj
+from l7r.diagram import settlement
+from l7r.diagram.tools import site_justice as sj
 
 WALL = [[600, 600], [1400, 600], [1400, 1400], [600, 1400]]
 

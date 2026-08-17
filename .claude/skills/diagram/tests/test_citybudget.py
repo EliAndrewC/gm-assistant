@@ -14,9 +14,8 @@ import os
 
 import pytest
 
-import check_village
-import citybudget
-from citybudget import BudgetLine, CityProgram, budget_to_manifest, derive_wall, format_budget, plan_capital, plan_city
+from l7r.diagram import check_village, citybudget
+from l7r.diagram.citybudget import BudgetLine, CityProgram, budget_to_manifest, derive_wall, format_budget, plan_capital, plan_city
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # the skill root; the tests live one level down in tests/
 

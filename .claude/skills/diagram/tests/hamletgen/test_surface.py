@@ -30,8 +30,7 @@ from pathlib import Path
 
 import pytest
 
-import hamletgen
-import settlement
+from l7r.diagram import hamletgen, settlement
 
 HERE = Path(__file__).resolve().parents[2]  # the skill root; this test lives in tests/hamletgen/
 
@@ -43,7 +42,7 @@ def _is_package() -> bool:
 def _submodules() -> list[types.ModuleType]:
     if not _is_package():
         return []
-    return [importlib.import_module(f"hamletgen.{info.name}") for info in pkgutil.iter_modules(hamletgen.__path__) if info.name != "__main__"]
+    return [importlib.import_module(f"l7r.diagram.hamletgen.{info.name}") for info in pkgutil.iter_modules(hamletgen.__path__) if info.name != "__main__"]
 
 
 def _public_clashes(modules: list[types.ModuleType]) -> list[tuple[str, str, str]]:
@@ -117,10 +116,10 @@ CONSUMED_PUBLIC = [
 # The four underscore names with external consumers (test_hamletgen), and the submodule
 # that owns each. A bare star import DROPS these - they need the aliased explicit block.
 ALIASED_UNDERSCORE = {
-    "_arm_crossing_accidental": "hamletgen.cluster",
-    "_clear_gap": "hamletgen.hinterland",
-    "_fork_spur": "hamletgen.cluster",
-    "_near_line": "hamletgen.hinterland",
+    "_arm_crossing_accidental": "l7r.diagram.hamletgen.cluster",
+    "_clear_gap": "l7r.diagram.hamletgen.hinterland",
+    "_fork_spur": "l7r.diagram.hamletgen.cluster",
+    "_near_line": "l7r.diagram.hamletgen.hinterland",
 }
 
 
@@ -194,7 +193,7 @@ def _censused_names() -> set[str]:
         if "hamletgen" not in text:
             continue
         found.update(re.findall(r"\bhg\.([A-Za-z_][A-Za-z0-9_]*)", text))
-        for group in re.findall(r"^from hamletgen import (.+)$", text, re.M):
+        for group in re.findall(r"^from l7r\.diagram\.hamletgen import (.+)$", text, re.M):
             found.update(n.strip() for n in group.split("#")[0].split(","))
     return {n for n in found if n}
 

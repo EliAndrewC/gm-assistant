@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-import settlement
-from settlement import Settlement
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _byre_village, _caption_size, _crop_settlement, _nuc_village, _scatter_base_points, _town, _village, _walled_city
 
 
@@ -536,7 +536,7 @@ def _shrines_wells_submixins():
     # settlement.shrines_wells.wells et al. directly - the shape feature 112 used - cannot be written
     # before the package it imports from exists, which is what made 112's own red proof for the
     # collision assertion impossible to run in the order its task list implied (113 tasks T007).
-    from settlement.shrines_wells import ShrinesWellsMixin
+    from l7r.diagram.settlement.shrines_wells import ShrinesWellsMixin
 
     return [c for c in ShrinesWellsMixin.__mro__ if c is not ShrinesWellsMixin and c is not object]
 
@@ -556,7 +556,7 @@ def test_no_pre_split_shrines_wells_member_was_lost_in_the_move():
     # which is exactly the reflex that lets a real subtraction through. What must never happen is a
     # pre-split member going MISSING: an addition is visible in review, a subtraction is silent
     # until whichever generator calls it happens to run.
-    from settlement.shrines_wells import ShrinesWellsMixin
+    from l7r.diagram.settlement.shrines_wells import ShrinesWellsMixin
 
     composed = set().union(*(_own_members(c) for c in ShrinesWellsMixin.__mro__))
     assert composed >= _SHRINES_WELLS_SURFACE, f"missing={sorted(_SHRINES_WELLS_SURFACE - composed)}"

@@ -27,11 +27,11 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, SKILL)
-from settlement import Settlement  # noqa: E402
+from l7r.diagram.settlement import Settlement  # noqa: E402
 import math  # noqa: E402
 import random as _random  # noqa: E402
 
-from waterfields import AZE, BEAN_GREEN, aze_w, build_comb  # noqa: E402
+from l7r.diagram.waterfields import AZE, BEAN_GREEN, aze_w, build_comb  # noqa: E402
 
 W, H = 1900, 2680                    # tall: the N-high -> S-low valley; zoomed in (1 ft/px). Roomy so 15 DISPERSED farms fit
 SEED = 16

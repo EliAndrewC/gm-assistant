@@ -6,7 +6,25 @@ is declared with `export SPECIFY_FEATURE=119-l7r-diagram-namespace` and
 
 **Created**: 2026-08-17
 
-**Status**: Draft
+**Status**: Implemented 2026-08-17, in three commits (one per landing).
+
+Oracle: **894/894 pool artifacts byte-identical** to a baseline taken on unmodified code in a
+detached worktree - every generator, frozen legacy maps included (`--frozen-ok --no-cache`), plus
+`pool/index.html` generated from each tree's own code. Zero artifacts differed at any landing.
+
+Gates: diagram `make done` green (3,287 tests); webapp `make done` green (553 tests, 100%
+coverage). Both had been green at baseline, so the bar was absolute and was met. `sitegen` lands at
+100% coverage on all four modules.
+
+Guards: all three proven RED before being trusted. The direction guard's RED proof **found a bug in
+the guard itself** - `from l7r.diagram import hamletgen` puts the tier name in the `ImportFrom`
+node's NAMES, not its module path, so the first version passed while the offending import sat in a
+`sitegen` module. It now collects both forms and was re-proven RED against each.
+
+Scope corrections made during the work, both recorded rather than smoothed over: `sitegen` is ~110
+lines, not the ~450 first estimated (research R7); and 39 live-doc command references were updated,
+not 97 - the other ~61 are in historical `specs/` artifacts, which are dated records and are not
+rewritten (research R6).
 
 **Input**: GM, 2026-08-17: *"I thought it was possible to have different submodules in different
 directories/locations with the same parent module like l7r.xxx despite being in different places.

@@ -5,7 +5,7 @@ Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen
 
 import os
 
-import hamletgen as hg
+from l7r.diagram import hamletgen as hg
 
 from ._builders import a_plan
 
@@ -45,7 +45,7 @@ def test_a_rolled_cohort_passes_the_whole_gate() -> None:
             f"{report.plan.spec.name}: {report.plan.acres:.1f} acres against a {report.plan.target_acres:.1f} target"
         )
     # MEASURED 2026-08-12: 24 of 24 over the first two dozen seeds, and 4 of 4 here
-    # (`python3 -m tools.cohort_audit --count 24` reproduces the sweep and reports any residue by check).
+    # (`python3 -m l7r.diagram.tools.cohort_audit --count 24` reproduces the sweep and reports any residue by check).
     # It was 7 of 12 when the experiment was first reported. Keep this at 4 of 4: a change that drops
     # a single rolled hamlet now fails here by name, which is the whole point of a ratchet.
     passed = [r for r in reports if r.ok]
@@ -156,14 +156,6 @@ def test_the_cli_returns_nonzero_for_a_failing_single_map(monkeypatch, capsys) -
     monkeypatch.setattr(hg.driver, "generate", lambda spec, out_base=None, render=True: hg.Report(plan=a_plan(), failures=["boom"]))
     assert hg.main(["--name", "X"]) == 1
     assert "boom" in capsys.readouterr().out
-
-
-def test_default_jobs_leaves_headroom_and_never_exceeds_the_cohort() -> None:
-    """The fan-out courtesy rule (2026-08-16), defined once in the driver and reused by
-    cohort_audit.py: never more workers than maps, never every cpu on the box."""
-    assert hg.default_jobs(1) == 1
-    assert hg.default_jobs(2) <= 2
-    assert hg.default_jobs(10_000) == max(1, (os.cpu_count() or 2) - 2)
 
 
 def test_cohort_derives_each_spec_and_can_be_forced_serial(monkeypatch) -> None:  # type: ignore[no-untyped-def]

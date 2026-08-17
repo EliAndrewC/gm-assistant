@@ -11,8 +11,8 @@ import types
 
 import pytest
 
-from check_village import registry as reg
-from check_village.registry_analysis import _check_names, _DerivationError, _derive_fields, _exposed_reads
+from l7r.diagram.check_village import registry as reg
+from l7r.diagram.check_village.registry_analysis import _check_names, _DerivationError, _derive_fields, _exposed_reads
 
 
 def test_check_name_resolves_through_local_assignment_and_counts_opaque():

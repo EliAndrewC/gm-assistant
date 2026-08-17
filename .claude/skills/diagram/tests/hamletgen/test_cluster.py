@@ -5,7 +5,7 @@ Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen
 
 import pytest
 
-import hamletgen as hg
+from l7r.diagram import hamletgen as hg
 
 from ._builders import SQUARE, a_plan
 

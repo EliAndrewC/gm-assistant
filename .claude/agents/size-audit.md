@@ -57,7 +57,7 @@ Paths under `/gm-assistant/.claude/skills/diagram/`:
 - `buildings.md` - the vocabulary's stated sizes and the Scale section's
   exemptions, all subject to re-verification.
 - `tools/pack_audit.py` - a read-only packing/whitespace reporter. RUN it from the
-  skill dir (`python3 -m tools.pack_audit pool/<subject>.svg`) for building-coverage %,
+  skill dir (`python3 -m l7r.diagram.tools.pack_audit pool/<subject>.svg`) for building-coverage %,
   the largest vacant rectangle, and the aligned inter-building gaps. It reports
   numbers; YOU judge them (which flagged gap is loose slack vs an intentional
   court).

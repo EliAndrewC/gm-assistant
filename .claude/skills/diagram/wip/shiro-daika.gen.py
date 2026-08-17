@@ -50,9 +50,9 @@ _D = os.path.dirname(os.path.abspath(__file__))
 while not os.path.exists(os.path.join(_D, "settlement.py")):
     _D = os.path.dirname(_D)
 sys.path.insert(0, _D)
-from citybudget import CapitalProgram, budget_to_manifest, plan_capital  # noqa: E402
-from settlement import Settlement, moat_swept_tap  # noqa: E402
-from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
+from l7r.diagram.citybudget import CapitalProgram, budget_to_manifest, plan_capital  # noqa: E402
+from l7r.diagram.settlement import Settlement, moat_swept_tap  # noqa: E402
+from l7r.diagram.waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
 
 PLOT_ACROSS, ROW_STEP = paddy_grain(3)  # the capital's 3 ft/px paddy grain
 

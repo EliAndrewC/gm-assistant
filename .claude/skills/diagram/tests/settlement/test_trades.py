@@ -2,7 +2,7 @@
 
 import pytest
 
-from settlement import Settlement
+from l7r.diagram.settlement import Settlement
 from tests.settlement._builders import _city, _crop_settlement, _town
 
 

@@ -3,8 +3,8 @@
 import math
 import re
 
-import settlement
-from settlement import Settlement
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement
 
 
 def _town():

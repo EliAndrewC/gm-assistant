@@ -11,9 +11,9 @@ import random
 import pytest
 from shapely.geometry import Polygon
 
-from waterfields.banks import _WELD_MIN_APEX, dedup_ring, tapers_to_a_point
-from waterfields.frame import _Frame
-from waterfields.seams import MIN_PLOT_SIDE, _absorb, _despike, _min_apex, _open_to, _parts, _plant, _ring, _water, close_seams
+from l7r.diagram.waterfields.banks import _WELD_MIN_APEX, dedup_ring, tapers_to_a_point
+from l7r.diagram.waterfields.frame import _Frame
+from l7r.diagram.waterfields.seams import MIN_PLOT_SIDE, _absorb, _despike, _min_apex, _open_to, _parts, _plant, _ring, _water, close_seams
 
 GRAIN = 2.0
 HALF = MIN_PLOT_SIDE * GRAIN / 2  # 6 px: a pocket narrower than 12 px cannot hold a basin

@@ -21,11 +21,11 @@ import types
 
 import pytest
 
-import check_village
+from l7r.diagram import check_village
 
 
 def _submodules() -> list[types.ModuleType]:
-    return [importlib.import_module(f"check_village.{info.name}") for info in pkgutil.iter_modules(check_village.__path__) if info.name != "__main__"]
+    return [importlib.import_module(f"l7r.diagram.check_village.{info.name}") for info in pkgutil.iter_modules(check_village.__path__) if info.name != "__main__"]
 
 
 def _public_clashes(modules: list[types.ModuleType]) -> list[tuple[str, str, str]]:
@@ -88,12 +88,12 @@ CONSUMED_PUBLIC = [
 
 # The six underscore names with external consumers, and the submodule that owns each.
 ALIASED_UNDERSCORE = {
-    "_LABEL_EXEMPT": "check_village.common_01_geometry",
-    "_LABEL_GROUP": "check_village.common_01_geometry",
-    "_MATRIX_OUTSTANDING": "check_village.common_01_geometry",
-    "_OVERLAP_EXEMPT": "check_village.common_01_geometry",
-    "_OVERLAP_STRUCTS": "check_village.common_01_geometry",
-    "_ward_interior": "check_village.common_02_overlap_policy",
+    "_LABEL_EXEMPT": "l7r.diagram.check_village.common_01_geometry",
+    "_LABEL_GROUP": "l7r.diagram.check_village.common_01_geometry",
+    "_MATRIX_OUTSTANDING": "l7r.diagram.check_village.common_01_geometry",
+    "_OVERLAP_EXEMPT": "l7r.diagram.check_village.common_01_geometry",
+    "_OVERLAP_STRUCTS": "l7r.diagram.check_village.common_01_geometry",
+    "_ward_interior": "l7r.diagram.check_village.common_02_overlap_policy",
 }
 
 

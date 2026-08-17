@@ -42,6 +42,13 @@ THREE THINGS ARE NEW HERE, and each is a place a fresh implementation would lose
     downstream reads a comment. (The other candidate, hinterland's "see the comment at the marsh
     block", needs no rewrite: that comment is inside hinterland's own `if marsh:` block and travels
     with it.)
+
+RETIRED, and the paths below are the ones it RAN against (2026-08-17, at commit 56f6dfb). Feature
+119's relocation landed while this feature was in flight and moved the whole engine to
+`l7r/diagram/`, so a re-run today would need `SRC`/`PKG`/`RELOC_FILE` re-rooted there and the
+in-body `from waterfields import ...` rewrite that the relocation applied. The paths are left as
+they were rather than "fixed", because this file's value is the record of what was actually
+executed - see research.md R9 for the merge and how it was resolved.
 """
 
 import ast

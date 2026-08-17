@@ -3,8 +3,8 @@
 import math
 import re
 
-import settlement
-from settlement import Settlement, seg_dist
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement, seg_dist
 from tests.settlement._builders import _cap020, _caption_size, _crop_settlement, _inwall_settlement, _plank_bed, _town
 
 
@@ -719,7 +719,7 @@ def _city_submixins():
     # settlement.city.walls et al. directly - the shape feature 112 used - cannot be written
     # before the package it imports from exists, which is what made 112's own red proof for
     # assertion 2 impossible to run in the order its task list implied.
-    from settlement.city import CityMixin
+    from l7r.diagram.settlement.city import CityMixin
 
     return [c for c in CityMixin.__mro__ if c is not CityMixin and c is not object]
 
@@ -734,7 +734,7 @@ def test_no_pre_split_city_member_was_lost_in_the_move():
     # legitimately holds MORE than the pre-split 27, and will hold more again the next time a
     # method is split. What must never happen is a pre-split member going MISSING - an addition is
     # visible in review, a subtraction is silent until whichever generator calls it happens to run.
-    from settlement.city import CityMixin
+    from l7r.diagram.settlement.city import CityMixin
 
     composed = set().union(*(_own_callables(c) for c in CityMixin.__mro__))
     assert composed >= _CITY_SURFACE, f"missing={sorted(_CITY_SURFACE - composed)}"
