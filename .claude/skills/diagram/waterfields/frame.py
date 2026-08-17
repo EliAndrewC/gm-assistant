@@ -10,14 +10,78 @@ Poly = list[Pt]  # a polyline / polygon as a list of points
 DF = 30.0  # fall step of the lockstep march (px)
 GAP = 26.0  # threads never pinch closer than this - a plot must fit between them
 
-# THE COLLECTOR'S DRAWN WIDTH at its head and at its outfall (both x grain). The akusui GATHERS the
-# plots' tail-water as it crosses the low side, so it is the mirror of the supply taper - the long
-# note at the `role: "drain"` channel append carries the hydraulic-vs-maintenance argument for 1.5.
-# Named, rather than written twice, because `_drain_bank` has to know the same two numbers: the
-# paddies' bottom bunds are laid against the ditch's EDGE, and an edge nothing can compute is an
-# edge the carve draws straight through.
-DRAIN_W_HEAD = 1.5
-DRAIN_W_TAIL = 6.0
+# THE CHANNEL LADDER, IN TRUE FEET (GM 2026-08-17: "update the net to be actual size").
+#
+# These were multipliers-times-grain chosen by eye, and pricing them against a real irrigation duty
+# found the whole net drawn 5-6x oversize - a hamlet's head-race wants ~2.5-5 ft and was drawn at 14.
+# They are now TRUE WIDTHS IN FEET, converted to pixels by `chan_px`, so the comb net is to scale
+# like everything else on a to-scale sheet. The research, the two independent derivations behind
+# each figure, and the disclosed departures are in
+# `../research/water.md#the-comb-net-is-drawn-at-true-size`.
+#
+# Sized from the ATTESTED tier ladder (a field ditch watering one paddy ~0.3 m; a distribution
+# lateral ~1 m; a district main/yosui ~5 m) placed by COMMAND AREA, with a Manning/Lacey check on a
+# real duty as corroboration rather than as the primary source - the attested tiers are measurements
+# of real channels, while a Manning figure rests on four assumed parameters. A hamlet fan of ~8.5 ha
+# sits between the lateral and the small-main tiers, which is where the head-race lands.
+# The trunk, above the fork. Set to 6.0 rather than 5.0 on the tier-consistency check that
+# `settlement-review` raised (2026-08-17): at 5.0 the top three tiers sat within 1 ft of each other,
+# so the ONE junction where hierarchy most wants to read - the bunsuiguchi - was where it read least.
+# A trunk that splits into 4.5 and 4.0 ft arms carries both, and under the width-goes-as-sqrt(Q) law
+# this engine already adopts that is sqrt(4.5^2 + 4.0^2) = 6.0. This is TIER SELECTION using the law
+# as a sanity check on where the trunk sits, NOT conservation-at-junctions (ruled against 2026-08-16
+# - never chain drawn widths down from the source). It also has a real referent: a sluice-fed
+# head-race genuinely is wider and slower than the water feeding it, ponding above the weir.
+HEAD_RACE_FT = 6.0
+CANAL_A_FT = (4.5, 1.5)  # the high-margin supply canal: head -> the thread it dies as
+CANAL_B_FT = (4.0, 1.5)  # the far-margin arm, commanding the smaller flank
+DELIVERY_FT = (2.5, 1.2)  # a delivery ditch: head at its takeoff -> the terminal field-ditch tier
+DRAIN_FT = (1.2, 5.5)  # the akusui, mirrored: a thread at its head, full at the outfall. Drainage
+# EXCEEDS supply at the outfall (it passes drawdown plus storm, not just the irrigation duty), which
+# is why the drain's tail is wider than the head-race that fed the same ground.
+
+# A DELIVERY IS NEVER DRAWN WIDER THAN THE CANAL FEEDING IT (settlement-review 2026-08-17: the flat
+# delivery head read 7.96 px against a parent tapered to 5.73, inverting the rank read low in the
+# tree - the one thing width-as-rank exists to convey). The head is capped at this fraction of the
+# parent's LOCAL width at the takeoff. It binds on roughly HALF the deliveries of a hamlet fan
+# (three of five on Inashiro, including the second offtake off canal A with the canal still at
+# two-thirds of its head) - not merely on the last one or two, which an earlier draft of this
+# comment claimed.
+# This is NOT a switch to conservation-at-junctions, which the GM ruled against on 2026-08-16
+# (drawn width is RANK, not discharge; do not chain widths down from the source) - it is the weaker
+# and sufficient guarantee that a child reads as subordinate to its parent.
+DELIVERY_PARENT_FRAC = 0.8
+# A mid-block sub-ditch against the HEAD of the delivery it branches off - not that delivery's local
+# width at the junction, which is what a delivery itself uses against its canal. The asymmetry is
+# deliberate and was measured: at true scale a delivery is ~2.2 ft a third of the way down, so 0.75
+# of its LOCAL width is 1.64 ft, which against the 1.5 px floor leaves a sub-ditch 0.14 px of room to
+# taper in - and `delivery_ditches_taper` rejected exactly that on 22 of 24 cohort maps. A ditch that
+# cannot taper should not be drawn claiming to.
+SUB_PARENT_FRAC = 0.75
+
+# THE VISIBILITY FLOOR, and the one place map SCALE enters the ladder. True widths are honest at
+# hamlet/village resolution (1-2 ft/px) and vanish above it: at a provincial city's 3 ft/px the
+# terminal tier is 0.4 px, i.e. not a line at all. So a stroke is drawn at its true width or this
+# floor, whichever is larger - the coarser the sheet, the more of the ladder collapses onto it,
+# which is the honest form of the "minimum-visibility floor" the stroke convention in
+# `../settlements/water.md` already sanctions. The GM accepted ~2 px at the narrowest point
+# (2026-08-17); this sits just under that so the FINEST tier still shows a taper rather than
+# arriving pre-flattened - a delivery ditch runs 2.5 -> 1.5 px at hamlet scale instead of 2.5 -> 2.0.
+MIN_CHANNEL_PX = 1.5
+
+
+def chan_px(ft: float, grain: float) -> float:
+    """A channel's DRAWN width in pixels, from its true width in feet.
+
+    `grain` is defined as `2 / ftpx` (see `build_comb`'s docstring and `hamletgen.consts.GRAIN`), so
+    `ft * grain / 2` is `ft / ftpx` - the true width in pixels at this map's scale. Written through
+    grain rather than taking `ftpx` directly because grain is what every caller already threads
+    down, and inventing a second scale parameter is how the two drift apart.
+
+    The floor is applied to each END of a taper independently, because it is a floor on the DRAWN
+    stroke, not on the taper: a run whose true head clears the floor and whose true tail does not
+    should still narrow, just less far than the truth would take it."""
+    return max(MIN_CHANNEL_PX, ft * grain / 2.0)
 
 
 def taper_w(w0: float, w1: float, t: float) -> float:
@@ -42,25 +106,22 @@ def taper_w(w0: float, w1: float, t: float) -> float:
     GM caught (2026-08-17): the stroke thins almost imperceptibly for its whole length and then stops
     dead at a still-substantial width. Under the true law a delivery ditch holds most of its working
     width while it still has most of its water to deliver, then dwindles hard over the last stretch -
-    which is what "the water is leaving it" is supposed to look like. MEASURED IN THE INK on
-    Inashiro's five 8.0 -> 3.0 ft delivery ditches - the MEDIAN drawn width of the piece covering
-    each of the tenths 0.10 / 0.25 / 0.50 / 0.75 / 0.90 of the run: **7.7 / 7.0 / 6.1 / 4.8 / 3.7
-    px**, against the straight line's 7.5 / 6.8 / 5.5 / 4.3 / 3.5. So it holds ~6 ft at mid-run
-    where the old law had already given up half of its 5 ft of narrowing.
+    which is what "the water is leaving it" is supposed to look like.
 
-    A piece carries the law at its OWN midpoint, so the ink brackets the continuous law rather than
-    sitting on it, and the SPREAD widens where the segments are coarse: the five ditches agree
-    within ~0.1 px at the first four tenths but span 3.46 to 4.13 px at 0.90 against the law's 3.81.
-    Quote the median and that spread, never a single tight figure.
+    **THE WORKED EXAMPLE LIVES IN A TEST, NOT HERE** -
+    `test_the_delivery_taper_holds_then_dwindles` asserts the SHAPE this paragraph promises (wider
+    than a straight line at every interior point; more of the drop in the back half than the front;
+    the floor reached only at the tail) against the shipped tier constants. That is deliberate and
+    it is the third attempt at this paragraph. Twice it carried magnitudes in prose and twice they
+    went false without anything failing: first the formula's numbers while `field_channel` was still
+    sampling by vertex index, so the real ink was 4.6 px at mid-run; then a re-measured set that the
+    true-size ladder invalidated the same day, leaving this docstring describing 8.0 -> 3.0 ft
+    ditches on a map whose ditches are 2.5 -> 1.2. **A number in a docstring is not falsifiable by
+    any gate; a number in a test is.** So state the shape here, assert it there, and if you need a
+    magnitude, measure the SVG - never compute it from the rule this docstring is describing.
 
-    Those are drawn widths, not formula values, and the distinction has now bitten this docstring
-    TWICE. It first carried the formula's numbers while `field_channel` still sampled the law by
-    vertex index, so the ink was 4.6 px at mid-run and the claim here was false on its own example
-    map; the correction then quoted the formula's 7.1 at the 0.25 tenth where the ink's median is
-    7.0 (both caught by settlement-review, 2026-08-17). **Re-measure in the SVG. Do not compute
-    these from the rule this docstring is describing.** `taper_pieces` in `banks.py` carries the
-    arc-parameterization half of the story, and the bound between its piecewise ink and the
-    continuous law the bank clearances evaluate.
+    `taper_pieces` in `banks.py` carries the arc-parameterization half of the story, and the bound
+    between its piecewise ink and the continuous law the bank clearances evaluate.
 
     NOT a taper to nothing: `w1` is a real tier, not zero. See the same research anchor for why the
     finest channel we DRAW stops at the terminal-lateral width instead of vanishing to a point.
@@ -111,6 +172,10 @@ class _Thread:
         self.f_end: float | None = None
         self.spawn_sub: bool = False  # set True on interior blocks that split once
         self.offtake_fs: list[float] = []  # falls at which this canal spawns offtakes
+        # This ditch's TRUE head width in feet, set by whoever creates it from the width of the
+        # channel it takes off from (see DELIVERY_PARENT_FRAC). Defaulted rather than left unset so
+        # a thread that reaches the drawing pass by some other route still has an honest width.
+        self.head_ft: float = DELIVERY_FT[0]
 
     def step(self, f: float, R: random.Random) -> float:
         k = math.exp(-max(0.0, f - self.f0) / self.decay)
@@ -165,7 +230,7 @@ def _drain_bank(F: _Frame, dpts: Poly, g: float) -> Callable[[float], float]:
     A paddy's low bund IS the collector's top-of-bank - the two touch - so the drawn bund line
     belongs at the EDGE of the ditch's stroke, never on its centerline. Until 2026-08-08 the carve
     held off by a flat `2 * g` everywhere, which is INSIDE the stroke over most of the collector's
-    run (it widens `DRAIN_W_HEAD * g` -> `DRAIN_W_TAIL * g` downstream, so the half-width alone
+    run (it widens `chan_px(DRAIN_FT[0], g)` -> `chan_px(DRAIN_FT[1], g)` downstream, so the half-width alone
     reaches `3 * g`): the field's bottom bunds were drawn under the blue ditch with the paddy fill
     poking out the far side. That is half of the GM's "the earthen bunds overlap with the drainage
     ditch" on Hoshizora - the other half was the HEM PASS laying its quads on the contour, fixed
@@ -198,7 +263,7 @@ def _drain_bank(F: _Frame, dpts: Poly, g: float) -> Callable[[float], float]:
 
     def bank(u: float) -> float:
         t = max(0.0, min(1.0, (u - u_lo) / span))
-        half = taper_w(DRAIN_W_HEAD * g, DRAIN_W_TAIL * g, t) / 2
+        half = taper_w(chan_px(DRAIN_FT[0], g), chan_px(DRAIN_FT[1], g), t) / 2
         slope = next((s for lo, hi, s in segs if lo <= u <= hi), segs[0][2] if u <= u_lo else segs[-1][2])
         return (half + BANK_MARGIN * g) * slope
 

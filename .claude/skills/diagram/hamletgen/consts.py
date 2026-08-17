@@ -58,9 +58,22 @@ LANE_FRONTAGE_STANDOFF = 70.0
 # How far outside the paddy's outline a field spur's tip stops. The lane is drawn 5 px wide and
 # `fields_clear_of_road` allows w/2 + 2, so 8 px would clear it on paper - but the outline is a
 # rolled, ragged polygon and the tip is placed against a VERTEX, whose two edges may fall away on
-# either side. 14 px is the smallest set-back that keeps every cohort map's tip out of the standing
+# either side. This is the smallest set-back that keeps every cohort map's tip out of the standing
 # water, and it is still under a farmhouse's width, so the track visibly reaches the field.
-SPUR_SETBACK = 14.0
+#
+# RE-CALIBRATED 14 -> 17 when the comb net went to TRUE SIZE (2026-08-17). Narrower channels let the
+# carve plant closer to the water and `close_seams` recover more scraps, so a field's DRAWN extent
+# (`vis_bbox`, which is what `fields_clear_of_road` intersects with the outline) grew - and ground a
+# spur tip had legitimately occupied became rice. Seed 11 of the 24-map cohort was the one that
+# tipped: its tip stood 2.7 px from an outline vertex against the check's 4.5 px allowance. Swept
+# 14/16/17/18/20/22 against that seed - 14 and 16 fail, 17 is the first that clears - and 17 returns
+# the whole cohort to its pre-change residue (22/24, the same two maps).
+#
+# THE LESSON, since this is the second knob this ladder has moved: a constant calibrated as "the
+# smallest value that passes the cohort" is calibrated against a GEOMETRY, not against a principle,
+# so anything that changes what the fan draws can invalidate it silently. Re-run the cohort after
+# any change to channel widths, carve thresholds or the seam pass, and expect this number to move.
+SPUR_SETBACK = 17.0
 
 # How much open ground a threshing yard needs to its SOUTH, in feet. A thatched roof is pitched 45
 # degrees or steeper, so the 46 x 28 ft minka's ridge stands ~20 ft up; at 38N in the threshing
