@@ -1,4 +1,4 @@
-"""One-shot splitter for `check_village/segments_*.py` (feature 121).
+"""One-shot splitter for `check_village/segments_*.py` (feature 122).
 
 Cuts a segment file into contiguous sub-files at SEGMENT BOUNDARIES, preserving definition
 order exactly. Safe because feature 109 made the registry derive itself: `registry.py`
