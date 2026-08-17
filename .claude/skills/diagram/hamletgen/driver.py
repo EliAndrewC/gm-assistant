@@ -153,6 +153,56 @@ def cohort(count: int, first_seed: int = 1, households: int | None = None, jobs:
         return list(ex.map(generate, specs))
 
 
+# THE FITTED COHORT'S KNOWN FAILURES, pinned. Constitution Principle XIII requires a regression to
+# be judged against a MEASURED baseline - and until 2026-08-17 no such baseline existed anywhere in
+# the tree, so every session either re-measured it by hand (a detached worktree and a full 24-map
+# roll, minutes each time) or carried "22 of 24, seeds 22 and 24" in its head. Worse, the summary
+# line reads `22/24 passed` whether the two failures are the expected ones or two brand-new ones, so
+# a real regression and the steady state are INDISTINGUISHABLE at a glance. That is the exact shape
+# the principle exists to stop, left unenforced in the principle's own test bed.
+#
+# Keyed by seed, valued by the BASE check names (the `[instance]` suffix varies with the map's own
+# feature ids and is not part of the identity). Keep this pinned to the FITTED cohort only - the
+# held-out range is measured, never tuned, so pinning it would defeat its purpose.
+COHORT_BASELINE: dict[int, frozenset[str]] = {
+    22: frozenset({"field_ringed"}),
+    24: frozenset({"paddy_bunds_clear_the_supply_channels"}),
+}
+COHORT_BASELINE_SIZE = 24  # the pin describes exactly `--batch 24` from seed 1
+
+
+def baseline_verdict(reports: Sequence[Report], pin: dict[int, frozenset[str]] | None = None) -> tuple[list[str], bool]:
+    """Judge a canonical cohort against `COHORT_BASELINE`: `(lines to print, is_clean)`.
+
+    `pin` is injectable so the LOGIC can be tested without pinning the tests to today's baseline -
+    otherwise every honest cohort improvement would break this function's own tests, which is how a
+    guard ends up loosened to keep the suite quiet.
+
+    Two ways to be dirty, and BOTH are failures, for the same reason `waivers_are_live` fails on a
+    waiver whose defect was fixed: a baseline nobody maintains stops being a baseline.
+
+    - A NEW failure (a seed or a check the pin does not cover) is a regression. Blocking.
+    - A pinned failure that now PASSES means the pin is stale and is quietly excusing a seed that no
+      longer needs it. Blocking too, with the edit to make - otherwise the pin only ever loosens,
+      and the next real regression on that seed is invisible."""
+    base = COHORT_BASELINE if pin is None else pin
+    actual = {r.plan.spec.seed: {f.split("[")[0] for f in r.failures} for r in reports if r.failures}
+    new = {seed: sorted(checks - base.get(seed, frozenset())) for seed, checks in actual.items()}
+    new = {seed: checks for seed, checks in new.items() if checks}
+    gone = {seed: sorted(expected - actual.get(seed, set())) for seed, expected in base.items()}
+    gone = {seed: checks for seed, checks in gone.items() if checks}
+    if not new and not gone:
+        return [f"cohort matches the pinned baseline ({len(base)} expected failures) - NO NEW REGRESSIONS"], True
+    lines: list[str] = []
+    for seed, checks in sorted(new.items()):
+        lines.append(f"REGRESSION seed {seed}: {', '.join(checks)} - not in the pinned baseline")
+    for seed, checks in sorted(gone.items()):
+        lines.append(f"STALE PIN seed {seed}: {', '.join(checks)} now PASSES - remove it from COHORT_BASELINE in hamletgen/driver.py")
+    if new:
+        lines.append("A new cohort failure BLOCKS the merge (constitution Principle XIII): fix it, revert, or get an explicit GM waiver.")
+    return lines, False
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Generate a Rokugani rice hamlet from a seed, and gate it.")
     ap.add_argument("--name", default="Hamlet")
@@ -173,6 +223,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(r.line())
         good = sum(1 for r in reports if r.ok)
         print(f"\n{good}/{len(reports)} passed the full gate")
+        # The RATE is not the verdict - the failing SET is. `22/24` reads identically whether the
+        # two are the pinned pre-existing ones or two fresh regressions, which is why the pin exists.
+        if args.seed == 1 and args.batch == COHORT_BASELINE_SIZE:
+            lines, clean = baseline_verdict(reports)
+            for line in lines:
+                print(line)
+            return 0 if clean else 1
+        print(f"(no pinned baseline for this range - it describes --batch {COHORT_BASELINE_SIZE} from seed 1)")
         return 0 if good == len(reports) else 1
 
     report = generate(

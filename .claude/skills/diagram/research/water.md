@@ -105,7 +105,7 @@ artifact, not computed from the rule it is describing.**
 *The departure we are taking knowingly.* This corrects the taper's SHAPE and the tier ORDERING, not the
 absolute widths - and the absolute widths are inflated. See the disclosed-departure entry below.
 
-*Still OPEN, and it wants a GM ruling (raised by the same review).* A delivery ditch's head is a flat
+*RESOLVED 2026-08-17 - see [A delivery is never drawn wider than the canal feeding it](#a-delivery-is-never-drawn-wider-than-the-canal-feeding-it). The account below is what the defect WAS.* A delivery ditch's head was a flat
 `4.0 * grain` while its parent supply canal tapers below that, so low in the tree the LATERAL is drawn
 wider than the canal feeding it - on Inashiro at (2524.8, 1540) the lateral leaves at **7.96 px**
 against a parent drawn **5.73** and continuing at **5.35**. This is not the junction-conservation
@@ -118,7 +118,7 @@ width - which would make every delivery's width depend on where it takes off, an
 
 ## Where the drawn net STOPS - the tier below the last ditch we can draw
 
-**Grounds:** the `w_tail` floors in `build_comb` (delivery ditches to 1.5 * grain, supply canals to 1.6, the collector's head at `DRAIN_W_HEAD`)
+**Grounds:** the tail figures in the `frame.py` ladder - `DELIVERY_FT[1]`, `CANAL_A_FT[1]` / `CANAL_B_FT[1]`, `DRAIN_FT[0]` - and the `MIN_CHANNEL_PX` floor they meet at coarse scales
 
 **Evidence:** attested
 
@@ -204,39 +204,153 @@ resolution of the sheet, exactly as they understand that a drawn farmhouse has a
 standing list of things a settlement map states rather than depicts. **Do not "fix" the unbroken bund by
 notching it**, and do not read the unbroken bund as a claim that the paddies are unwatered.
 
-## The comb net's ABSOLUTE widths are inflated ~5-6x, deliberately - and this is the open question
+## The comb net is drawn at TRUE SIZE
 
-**Grounds:** the channel widths in `build_comb` (head-race 7.0, canal A 6.2, canal B 5.6, delivery 4.0, `DRAIN_W_TAIL` 6.0, all x grain)
+**Grounds:** the ladder in `waterfields/frame.py` - `HEAD_RACE_FT`, `CANAL_A_FT`, `CANAL_B_FT`, `DELIVERY_FT`, `DRAIN_FT` - converted by `chan_px`, floored by `MIN_CHANNEL_PX`
 
-**Evidence:** derived (a measurement against the sources, not a rule change)
+**Evidence:** attested, derived
 
-**Sources:** [`lacey-regime`](SOURCES.md#lacey-regime), [`fao-paddy-duty`](SOURCES.md#fao-paddy-duty)
+**Sources:** [`gb50288`](SOURCES.md#gb50288), [`nougyoudoboku-matsutan`](SOURCES.md#nougyoudoboku-matsutan), [`lacey-regime`](SOURCES.md#lacey-regime), [`fao-paddy-duty`](SOURCES.md#fao-paddy-duty)
 
-*What the check was.* Having sourced the taper law, the same sources price the absolute widths, which
-nothing had ever done. FAO puts a paddy's net irrigation need near 1 L/s/ha continuous, with the
-puddling peak the figure that actually sizes a supply canal - call it ~3 L/s/ha. Inashiro's fan is a
-20.9-acre (~8.5 ha) command area, so its head-race carries on the order of 0.025 m3/s at peak. Lacey
-gives a wetted perimeter of ~0.75 m for that; Manning on a hand-dug 1:1 earthen trapezoid at a 1/500
-grade agrees at ~0.6 m top width. **The true head-race for this hamlet is about 2 to 2.5 ft. We draw
-14 ft.** The whole ladder is scaled to match, so every drawn channel is roughly 5-6x its true size.
+*What prompted it.* Having sourced the taper law, the same sources let the ABSOLUTE widths be priced,
+which nothing had ever done - they were multipliers chosen by eye. The answer was that the net was
+about **5-6x oversize**: Inashiro's 20.9-acre (~8.5 ha) fan carries roughly 0.025 m3/s at the puddling
+peak, for which Lacey gives a wetted perimeter near 0.75 m and Manning a ~0.6 m top width on a
+hand-dug 1:1 earthen section - call it 2.5 to 5 ft depending on how much freeboard and bank you count
+as "the channel". It was drawn at **14 ft**. The GM's ruling (2026-08-17), given the measurement:
+*"we can narrow the widths to be more realistic... update the net to be actual size (at least for
+hamlets)... it sounds like we want to keep things absolute scale."*
 
-*Why this is not a bug, and what it costs.* The true figures are also the reason: at 1 ft/px a truthful
-head-race is a 2.5 px line, a truthful delivery ditch ~1.5 px, and the field ditch below them 1 px - so
-truth-to-scale would compress the entire irrigation hierarchy into two pixels of range and erase the
-tiering that [the water-width ladder](#water-width-ladder-the-real-world-tiers) exists to keep legible.
-This is the sanctioned "drawn larger than true scale for legibility while keeping RELATIVE sizes roughly
-honest" carve-out, and the relative honesty does hold: head-race > supply canal > delivery ditch >
-terminal lateral, in the same order and roughly the same ratios as the real ladder.
+*How each figure was set.* The **attested tier ladder is primary** and the hydraulic calculation only
+corroborates it, deliberately: the tiers are measurements of real channels, while a Manning figure
+rests on four assumed parameters (roughness, grade, section aspect, freeboard) and moves by a factor
+of two if you nudge them. So each stroke is placed on the attested ladder by the COMMAND AREA it
+serves - a field ditch watering one paddy ~0.3 m, a distribution lateral ~1 m, a district main
+(*yosui*) ~5 m - and a hamlet fan of 8.5 ha lands its head-race between the lateral and small-main
+tiers. The result, in true feet:
 
-*What is NOT settled.* The ladder's *magnitude* has never been a GM decision - it was authored by eye and
-has simply never been priced until now. A 5-6x inflation is a good deal larger than the "minimum
-visibility floor" the stroke convention in [`../settlements/water.md`](../settlements/water.md) claims to
-be operating under, which honestly describes a 2.5 px floor on the FINEST tier and not a uniform scaling
-of the whole net. So the convention as written and the code as drawn are not the same policy.
-**Open for the GM**, with the trade stated: drawing nearer to true scale would make the comb net much
-fainter and flatten the hierarchy, and would re-roll every scripted map; leaving it is a legibility
-exaggeration on the most-repeated feature of a to-scale map. Nothing was changed here either way - this
-entry records the measurement so the decision is made on numbers rather than on eye.
+  | stroke | true width | tier it sits on |
+  |---|---|---|
+  | head-race (whole fan, above the fork) | 5.0 | small main |
+  | canal A (high margin) | 4.5 -> 1.5 | main dwindling to lateral |
+  | canal B (far margin) | 4.0 -> 1.5 | branch dwindling to lateral |
+  | delivery ditch | 2.5 -> 1.2 | lateral dwindling to field ditch |
+  | drain / *akusui* | 1.2 -> 5.5 | field ditch gathering to a branch drain |
+
+  The drain's tail is WIDER than the head-race that watered the same ground, and that is right rather
+  than sloppy: a collector is sized for drawdown plus storm runoff, not for the irrigation duty, so it
+  passes appreciably more water than the supply ever delivered.
+
+*The decision, and the one place SCALE enters.* Widths are stored in FEET and converted at draw time
+by `chan_px(ft, grain)`, so the same real channel is the same real size on every sheet - which is what
+"to-scale" has always meant for every other feature on these maps. The single scale-dependent knob is
+`MIN_CHANNEL_PX` (1.5): true widths are honest at hamlet and village resolution and vanish above it
+(at a provincial city's 3 ft/px the terminal tier is 0.4 px, which is not a line), so a stroke draws at
+its true width or the floor, whichever is larger. The coarser the sheet, the more of the ladder
+collapses onto that floor. This is the honest form of the minimum-visibility convention the water-width
+ladder already sanctions - a floor on the finest tier - as opposed to what was actually happening,
+which was a uniform 5-6x scaling of the whole net wearing that convention's name.
+
+*What it changed, measured on Inashiro (1 ft/px).* Head-race 14 -> 5.0 px; canal A 12.4 -> 4.5;
+delivery ditches 8.0 -> 2.5 at the head and 3.0 -> 1.5 at the tail; drain outfall 12.0 -> 5.5. The
+paddy fabric now dominates the sheet and the water reads as a fine engineered net over it, rather than
+as blue ropes laid across the crop. The hierarchy survives the narrowing (5.0 > 4.5 > 4.0 > 2.5 > 1.5,
+a ~3.3:1 span) because the floor sits below the finest tier rather than on top of it.
+
+*The departure we are taking knowingly.* The floor is a real, if small, inflation of the finest tier
+at hamlet scale: a 1.2 ft delivery tail draws at 1.5 px rather than 1.2. The GM sanctioned ~2 px at the
+narrowest point; 1.5 was chosen instead precisely so the finest tier still SHOWS a taper rather than
+arriving pre-flattened at the floor - at 2.0 a delivery ditch would run 2.5 -> 2.0 px and the taper
+work above would be invisible on the very tier it matters most for. **Do not re-inflate the FEET to
+make a coarse-scale map read better** - that lies about every scale to fix one; raise `MIN_CHANNEL_PX`,
+or raise it with the GM.
+
+## A delivery is never drawn wider than the canal feeding it
+
+**Grounds:** `DELIVERY_PARENT_FRAC`, `SUB_PARENT_FRAC`, and the `head_ft` a thread carries from `_comb_threads` to `_comb_canal_pieces`
+
+**Evidence:** derived
+
+**Sources:** none - this is a legibility rule following from the width-as-rank convention, not a finding about real channels
+
+*The defect.* A delivery ditch's head was a flat constant while its parent supply canal tapered below
+it, so low in the tree the LATERAL was drawn wider than the canal feeding it - measured on Inashiro at
+(2524.8, 1540): lateral 7.96 px against a parent at 5.73 and a continuation at 5.35. Found by
+`settlement-review` twice, the second time noting the arc-sampling fix had nudged it further the wrong
+way (that lateral's first segment is 6 px long, so its arc midpoint sits at t ~ 0.01 and the head piece
+inks at nearly the full flat head).
+
+*Why it matters more than it looks.* [Drawn width is RANK, not discharge](#drawn-width-is-rank-not-discharge-junctions-do-not-conserve-it-gm-ruling-2026-08-16) - that ruling
+explicitly tells reviewers not to check conservation arithmetic at junctions, because width exists to
+convey position in the hierarchy. A child drawn wider than its parent breaks the ONE thing the
+convention is for, which is why this is a defect where an unbalanced junction is not.
+
+*The decision.* A delivery's head is capped at `DELIVERY_PARENT_FRAC` (0.8) of its parent's LOCAL width
+at the takeoff, and a mid-block sub-ditch at `SUB_PARENT_FRAC` (0.75) of the delivery it branches off.
+The cap only bites low in the tree, where the parent has already dwindled - at the first offtake the
+delivery keeps its full tier. `_canal_ft` is now the single definition of a canal's width profile, read
+both by the drawing pass and by the thread constructor that sizes the delivery, because the previous
+arrangement had that profile written out in one place and nowhere in the other.
+
+*What was deliberately NOT done.* Deriving the delivery's width from the flow the parent sheds at that
+offtake - `sqrt(w_before^2 - w_after^2)` - is the physically exact version and was rejected: it is
+conservation at junctions by another name, which the 2026-08-16 ruling forbids, and it makes a
+delivery's width depend on how steeply its parent happens to taper there. The cap is the weaker and
+sufficient guarantee. Verified on Inashiro after the change: **zero inversions**, every delivery head
+(1.8-2.5 px) below its parent's local width (2.2-4.5 px), measured from the SVG's per-piece stroke
+widths rather than from the manifest's declarations.
+
+*One asymmetry, and it was measured rather than chosen.* A delivery is capped against its canal's
+LOCAL width; a mid-block SUB-ditch is capped against its parent delivery's **HEAD**. Sizing the sub
+against the local width too was implemented first, and it is worse: at true scale a delivery is
+~2.2 ft a third of the way down, so 0.75 of that is 1.64 ft, which against the 1.5 px visibility
+floor leaves a sub-ditch **0.14 px of room to taper in**. `delivery_ditches_taper` (`w_tail <
+0.85 * w`) rejected it on **22 of 24** cohort maps, and rightly - a ditch that cannot taper should
+not be drawn claiming to. So the docs were corrected to match the code rather than the reverse.
+
+## What drawing at TRUE SIZE left open
+
+**Grounds:** the dry-hem stand-off in the carve; `channel_footbridges`; `MIN_CHANNEL_PX` against `aze_w`
+
+**Evidence:** derived (measurements from the `settlement-review` pass on the true-size Inashiro)
+
+**Sources:** none - these are consequences of the true-size decision, recorded so they are not rediscovered one map at a time
+
+Narrowing the net by 5-6x did not break anything the gate catches, but it changed what several
+neighbouring rules were tuned against. Each of these is measured, none is shipped broken, and each
+carries the sketch its fix would follow.
+
+- **The dry-hem stand-off is PINNED to the channel centerline, so it did not track the change.**
+  Measured centerline-to-nearest-dry-plot on Inashiro: min/median/max **identical before and after**
+  (15.4 / 16.0 / 74.5 px) while the water inside that gap shrank threefold, so the bare berm went
+  12.3 -> 14.8 px median. Canal A now runs hard against the paddy on one side with a ~15 ft empty
+  verge on the other. This is the standing derive-don't-pin rule: a berm defined by its relationship
+  to a channel's BANK must be derived from that channel's local width at draw time. *Sketch:* the
+  hem stand-off becomes `supply_bank_clearance`'s local half-width plus a named berm constant (the
+  spoil bank and service walk are the real referent, so the constant is what wants researching), in
+  the carve's dry-hem pass; it re-rolls every scripted map.
+- **The delivery taper is now a sub-perceptual event, and the doctrine oversells it.**
+  [The taper rule](#a-channel-taper-is-a-square-root-not-a-straight-line) promises a ditch that
+  "holds most of its working width... then dwindles hard" - at true scale that is a **1.0 px** change
+  on the widest delivery and **0.3 px** on a sub-ditch. The LAW is intact and the floor is not the
+  culprit (nothing arrives pre-flattened; every ditch reaches its tail value only at the tail), but
+  the visible consequence the rule advertises is largely gone below the canal tier. It still reads
+  on the canals (4.5 -> 1.5) and on the collector (1.5 -> 5.5), which is where the eye actually
+  tracks rank. Recorded rather than fixed because the honest options are all worse: inflating the
+  deliveries re-opens the thing we just closed.
+- **A plank footbridge now spans a 20-inch ditch.** Eight of Inashiro's fifteen bridges cross water
+  1.7-2.3 ft wide. The geometry tracked the change correctly (spans fell 18.4 -> 10.5 px, landings a
+  uniform 3.0-4.5 ft, nothing short or floating) - it is the FEATURE's justification that did not
+  travel: a farmer steps over a 20-inch ditch, they do not deck it. *Sketch:* gate
+  `channel_footbridges` on a minimum crossed width (~3 ft, i.e. the canal tiers and the head-race)
+  and let the deliveries be stepped over; check what that does to `bridges_span_their_water` and to
+  the lane-crossing checks, which currently assume a plank wherever a way meets water.
+- **The visibility floor lands exactly on the paddy bund's stroke width.** `MIN_CHANNEL_PX` is 1.5
+  and `aze_w` at hamlet grain is also 1.5, so the finest water tier is drawn at precisely the width
+  of the field boundaries it runs among, separated only by hue - and against a lower-contrast color
+  at that. Nothing is wrong and no check fires; it is simply the one width guaranteed to be
+  ambiguous, chosen for visibility without anyone checking what else was already there. Worth
+  revisiting if the finest tier ever needs to be legible on its own.
 
 ## A fed closed moat must drain - the physics and the precedent
 

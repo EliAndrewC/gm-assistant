@@ -213,7 +213,7 @@ def _outside_command(F: _Frame, a_pts: Poly, dpts: Poly, field: Polygon, g: floa
     # hems its closing rank onto - not a flat margin. `_fill_wedges` used a flat 3 * grain, which
     # is neither: too much where the collector is narrow (it left the last residue of doubled bunds
     # along the fan's toe, wedges this pass was forbidden to reach) and too little downstream,
-    # where the drain widens to DRAIN_W_TAIL and `paddy_bunds_clear_the_collector` measures a
+    # where the drain widens to DRAIN_FT[1] and `paddy_bunds_clear_the_collector` measures a
     # slope-leaned set-back that a flat margin does not cover. Same predicate as the placer, so
     # ground this pass plants is ground the carve would have been allowed to plant.
     below = _band(F, us, [drain_f(u) - bank(u) for u in us], fhi + span)

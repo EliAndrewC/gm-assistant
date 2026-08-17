@@ -8,8 +8,9 @@ from __future__ import annotations
 import math
 
 from settlement import Settlement, point_in_poly
+from waterfields import DRAIN_FT, chan_px
 
-from .consts import POND_SETBACK_LIMIT, REF_HOUSEHOLDS, Poly, Pt
+from .consts import GRAIN, POND_SETBACK_LIMIT, REF_HOUSEHOLDS, Poly, Pt
 from .geom import crosses_poly, unit
 from .plan import SitePlan
 
@@ -241,7 +242,22 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
     # acute hairpin (`water_channels_obtuse_turns`); proportional keeps the turn obtuse at any length
     mid = ((out[0] + pcx) / 2 - dy * bow, (out[1] + pcy) / 2 + dx * bow)
     ditch: Poly = [out, mid, (pcx, pcy)]
-    s.field_channel(ditch, "#7C9EB0", 2.5, 2.5)
+    # WIDTH IS THE DRAIN'S OWN, NOT A LITERAL. This is the collector's last few strides into the
+    # tameike, so it carries everything the collector carries - and it used to be drawn at a flat
+    # 2.5 px whatever the drain arrived at. Harmless while the net was 5-6x oversize (12.0 -> 2.5
+    # reads as one line among many fat ones) and conspicuous the moment the net went to TRUE SIZE:
+    # `settlement-review` measured a 5.5 px collector butting a 2.5 px stub at the pond mouth and
+    # called it a pinch rather than a mouth, on the sheet's most visible water feature. Derived from
+    # `DRAIN_FT[1]` so it tracks any future change to the ladder - the standing derive-don't-pin
+    # rule, which a literal here quietly broke.
+    outfall_w = chan_px(DRAIN_FT[1], GRAIN)
+    s.field_channel(ditch, "#7C9EB0", outfall_w, outfall_w)
+    # ...but the TOPOLOGY record stays at the hairline. `M["channels"]` is the connectivity graph the
+    # anchor checks walk, and its widths are held in a hairline band on purpose
+    # (`irrigation_channels_hairline`, `watercourses_wider_than_ditches` - a natural watercourse must
+    # out-measure a field ditch by a wide margin). The DRAWN truth lives in `M["drawn_channels"]`,
+    # which is where the widened stroke above is recorded. Writing the drawn width into the topology
+    # record instead fires both of those checks on 14 cohort maps apiece - measured, not guessed.
     s.M["channels"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in ditch], "frm": {"kind": "drain"}, "to": {"kind": "pond"}, "w": 2.5})
     # RESERVE IT AS A NO-BUILD CORRIDOR. `s.channel` and `s.stream` register one; `s.field_channel`
     # does not - which is fine for the comb's own ditches, because they run inside a field envelope
