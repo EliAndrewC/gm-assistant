@@ -1,6 +1,7 @@
 """Split from settlement.py by feature 025 - see settlement/CLAUDE.md for the index."""
 
 import math
+import re
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
@@ -28,6 +29,43 @@ from ._knobs import machi_mouths
 
 if TYPE_CHECKING:
     from .core import Settlement
+
+
+_LANE_MIN_FT = 71.0  # one homestead's frontage: below this a lane can front nobody (see trim_lane_stubs)
+
+
+def _lane_len(pts: list[Pt]) -> float:
+    return sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:], strict=False))
+
+
+def _pull_back(pts: list[Pt], reaches: Any, step: float = 8.0, keep_frac: float = 0.4) -> list[Pt]:
+    """Shorten a polyline from its LAST vertex until that end reaches something, or the guard stops it.
+
+    Walks the final segment inward in `step` px, dropping a whole vertex when one is consumed and
+    more than two remain. NEVER trims below `keep_frac` of the original length and never below two
+    points: a lane whose whole run serves nothing is a siting problem, not something to delete - the
+    map still needs the way it drew, and silently removing one would trade a visible stub for an
+    invisible missing lane."""
+    full = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:], strict=False))
+    floor = full * keep_frac
+    out = list(pts)
+    while len(out) >= 2:
+        a, b = out[-2], out[-1]
+        seg = math.hypot(b[0] - a[0], b[1] - a[1])
+        if seg <= step:
+            if len(out) == 2:
+                return out
+            out.pop()
+            continue
+        t = (seg - step) / seg
+        cand = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+        trial = [*out[:-1], cand]
+        if sum(math.hypot(q[0] - r[0], q[1] - r[1]) for q, r in zip(trial, trial[1:], strict=False)) < floor:
+            return out
+        out = trial
+        if reaches(cand):
+            return out
+    return out
 
 
 class WaterWaysMixin:
@@ -449,17 +487,100 @@ class WaterWaysMixin:
         half-width (keep houses off the tread). `connector=True` marks the trodden path that LEAVES the
         village for the wider world - it MUST run off the map edge (checked), never stop mid-landscape.
         See settlements.md 'Village lanes and connecting paths'."""
-        dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
-        if worn:
-            self.add(f'<path d="{dd}" fill="none" stroke="#A98C58" stroke-width="{width + 2.5:.1f}" opacity="0.4" stroke-linejoin="round" stroke-linecap="round"/>')  # soft worn-earth shoulder
-            self.add(f'<path d="{dd}" fill="none" stroke="#C9AE79" stroke-width="{width:.1f}" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')  # packed-earth tread, no centerline
-        else:
-            self.add(f'<path d="{dd}" fill="none" stroke="#CBB178" stroke-width="{width}" opacity="0.65"/>')
-            self.add(f'<path d="{dd}" fill="none" stroke="#6B4F2A" stroke-width="1.4" stroke-dasharray="8,8" opacity="0.7"/>')
+        _z = self._lane_ink_at(pts, width, worn)
         self.M.setdefault("lanes", []).append({"pts": [[x, y] for x, y in pts], "worn": worn, "w": width, "connector": connector})
+        # THE INK'S OWN STREAM SLOTS, remembered so a later pass can TRIM this lane without moving it
+        # in z (see `trim_lane_stubs`). `add` returns the index it wrote, and rewriting that index in
+        # place is what lets the trim happen after the houses are down - which is the only moment the
+        # engine knows what a lane actually serves - while the lane keeps the exact draw position it
+        # has always had. Kept engine-side rather than on the record so no manifest byte moves.
+        self._lane_ink.append(_z)
         self.M["lane"] = [[x, y] for x, y in pts]
         self.corridors.append((pts, clearance))
         self._record_tread(pts, width / 2)
+
+    def _lane_ink_at(self: Settlement, pts: Any, width: float, worn: bool) -> tuple[int, int]:  # type: ignore[misc]
+        """Emit a lane's two strokes and return the stream slots they landed in."""
+        dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
+        if worn:
+            z0 = self.add(f'<path d="{dd}" fill="none" stroke="#A98C58" stroke-width="{width + 2.5:.1f}" opacity="0.4" stroke-linejoin="round" stroke-linecap="round"/>')  # soft worn-earth shoulder
+            z1 = self.add(f'<path d="{dd}" fill="none" stroke="#C9AE79" stroke-width="{width:.1f}" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')  # packed-earth tread, no centerline
+        else:
+            z0 = self.add(f'<path d="{dd}" fill="none" stroke="#CBB178" stroke-width="{width}" opacity="0.65"/>')
+            z1 = self.add(f'<path d="{dd}" fill="none" stroke="#6B4F2A" stroke-width="1.4" stroke-dasharray="8,8" opacity="0.7"/>')
+        return (z0, z1)
+
+    def trim_lane_stubs(self: Settlement, way_reach: float = 40.0, house_reach: float = 90.0) -> int:  # type: ignore[misc]
+        """Pull back any internal lane end that REACHES NOTHING. Returns how many ends were trimmed.
+
+        A lane exists to be fronted. The engine already ends an arm where it meets crop or water
+        ("shortening the arm is the honest fix: the lane simply ends where the crop starts"), but an
+        arm that meets neither runs the full cluster band into open ground - and the thing that says
+        where it should stop, namely where the houses actually landed, does not exist when the lanes
+        are laid. Lanes must be laid FIRST: a lane is a no-build corridor the homesteads front. So
+        the trim happens here instead, after the flush, by rewriting the ink in the stream slots the
+        lane already owns - the lane keeps its exact draw position and nothing re-layers.
+
+        MEASURED before it existed: five internal lane ends across the four live scripted hamlets
+        (and honda, ubame x4, kikuta x2, tanada, hoshizora among the frozen ones) ended more than
+        40 ft from any other way AND more than 90 ft from any farmhouse - a blunt tread stopping in
+        bare grass, serving no house, reaching no field, connecting to nothing. On Sawada one such
+        arm also ran 13 ft from and near-parallel to the lane it had already met, reading at fit zoom
+        as one doubled track rather than a fork.
+
+        TRIMMING ONLY EVER SHORTENS, which is what makes it safe to run after placement: a corridor
+        that shrinks cannot invalidate a house already seated against it. The CONNECTOR is exempt and
+        must stay whole - it is the track out of the settlement and `connector_lane_runs_off_edge`
+        requires it to reach the frame; a path stopping mid-landscape is the defect, not the cure."""
+        lanes = self.M.get("lanes") or []
+        houses = self.M.get("houses") or []
+        trimmed = 0
+        _drop: set[int] = set()
+        for i, ln in enumerate(lanes):
+            if ln.get("connector") or i >= len(self._lane_ink):
+                continue
+            pts = [(float(x), float(y)) for x, y in ln["pts"]]
+            if len(pts) < 2:
+                continue
+
+            def _reaches(q: Pt, me: int = i) -> bool:
+                for k, other in enumerate(lanes):
+                    if k == me or len(other["pts"]) < 2:
+                        continue
+                    op = [(float(x), float(y)) for x, y in other["pts"]]
+                    if min(seg_dist(q[0], q[1], a, b) for a, b in zip(op, op[1:], strict=False)) <= way_reach:
+                        return True
+                return any(math.hypot(q[0] - h["x"], q[1] - h["y"]) <= house_reach for h in houses)
+
+            for _ in range(2):  # each end in turn; a 2-point lane can lose at most one
+                if len(pts) >= 2 and not _reaches(pts[-1]):
+                    pts = _pull_back(pts, _reaches)
+                    trimmed += 1
+                pts.reverse()
+            # ...and a lane too SHORT to front anybody is not a lane at all, it is clipping debris.
+            # An arm cut back by crop or water can be left as a stub, and a stub cannot be trimmed
+            # into legitimacy - shortening it only moves the same unserved end closer in. A lane
+            # exists to be fronted and one homestead's frontage is ~71 ft, so below that it fronts
+            # nobody by construction. Measured: the shortest genuine internal lane in the whole pool
+            # is 90 ft and the median is 361; cohort seed 5 carried a 33 ft fragment whose far end
+            # stood 97 ft from the nearest farmhouse and which no amount of trimming could rescue.
+            if _lane_len(pts) < _LANE_MIN_FT / max(float(self.M["meta"].get("ftpx", 1) or 1), 0.01):
+                _drop.add(i)
+                for _z in self._lane_ink[i]:
+                    self.out[_z] = ""
+                trimmed += 1
+                continue
+            if [list(p) for p in pts] == ln["pts"]:
+                continue
+            ln["pts"] = [[round(x, 1), round(y, 1)] for x, y in pts]
+            z0, z1 = self._lane_ink[i]
+            dd = 'M' + ' L'.join(f'{x},{y}' for x, y in ln["pts"])
+            for z in (z0, z1):
+                self.out[z] = re.sub(r'd="M[^"]*"', f'd="{dd}"', self.out[z], count=1)
+        if _drop:  # rebuild record and ink together so their indices stay aligned
+            self.M["lanes"] = [ln for k, ln in enumerate(lanes) if k not in _drop]
+            self._lane_ink = [z for k, z in enumerate(self._lane_ink) if k not in _drop]
+        return trimmed
 
     def street(self: Settlement, pts: Any, width: float | None = None, label: Any = None, main: bool = False) -> None:  # type: ignore[misc]
         """A town street (packed earth): the gate-to-yamen main avenue (main=True) or a
