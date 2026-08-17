@@ -448,23 +448,35 @@ byte-identity oracle answer two questions at once.
 Both are cheap: every consumer reaches these through `self.`, so the move is the member's text, its
 row in the two indexes, and the name migrating between the two mixins' surface frozensets.
 
-## The next clause-12 candidate: `rolling.py::roll_village` (256 lines)
+## DONE (feature 118): `rolling.py::roll_village` - and the measurement worth keeping
 
-With `_stable_yard` decomposed (feature 115, 335 -> longest stage 85), **`roll_village` is now the
-largest function in the engine at 256 lines** - the only one left over the ~150-line bar features
-112/115 converged on. It is the homestead-bundle solver's entry point in `settlement/rolling.py`.
+**Closed 2026-08-17.** `roll_village` went 256 lines -> a 60-line orchestrator over seven `_roll_*`
+stages, cut at the banner comments it already carried, inside the new `settlement/rolling/` package.
+The largest function in the engine is now `_bundle_geom` at 81 lines, so nothing is over the
+~150-line bar features 112/115 converged on and there is no standing clause-12 candidate. Method and
+oracle: `specs/118-rolling-package/`.
 
-Two things a decomposing session should know before starting, both learned the expensive way in 115:
+The two pre-flight checks this entry used to prescribe were both run, and **one of them overturned
+the prediction written here** - which is the whole argument for measuring rather than reasoning, so
+both results are kept:
 
-- **Measure the RNG surface FIRST.** Grep every `random.*` call in the function and note which
-  stages draw and which do not. In `_stable_yard` that measurement collapsed the perceived risk from
-  "a lattice-wide hazard" to one adjacency, and it took two minutes. `roll_village` is a *seeding*
-  routine, so its draw density is likely much higher and the answer may well go the other way - but
-  knowing which is the whole difference between a safe refactor and a guess.
-- **Check for closures before promising straight-line stages.** `_stable_yard` looked like seven
-  banner-marked blocks and was actually eight closures over a shared lattice, which is why 115's
-  plan had to be amended mid-flight (research R13). An AST walk for nested `FunctionDef`s answers it
-  in one command.
+- **The RNG surface, MEASURED: `roll_village` draws NOTHING from the main stream.** All four
+  generators it builds are seeded from `self.seed` (`knob_rng` for the water source, `self.seed ^
+  0x1A7D` for the land-use overlay, `self.seed * 2654435761` for the cluster seeds,
+  `self.seed * 977 + 13` for the torii count) and its knobs go through `scope_seed`. Every
+  main-stream draw happens inside a callee, so **the sequence of those calls IS the output**, and any
+  stage split preserving the sequence preserves every byte. This entry had predicted the opposite
+  ("a *seeding* routine, so its draw density is likely much higher and the answer may well go the
+  other way"). It is a fact about the ENGINE rather than about the refactor, so it now lives in
+  `settlement/rolling/CLAUDE.md`, where the next session to move a stage boundary will find it.
+- **Closures, MEASURED: exactly one** - `to_screen`, over six frame values, against
+  `_stable_yard`'s eight-over-a-shared-lattice. It became the frozen `_MarginFrame` dataclass.
+
+**The transferable rule, now that this is the second data point.** The two checks cost about five
+minutes between them and each time they changed the plan: 115's had to be amended mid-flight for
+skipping one, and 118 was safe to attempt only because it ran both first. Run them before
+decomposing any engine function - and write the ANSWER somewhere the CODE lives, not only in the
+spec, because the next session reads the module, not the feature directory.
 
 ## `wip/shiro-daika.gen.py`'s cost is UNKNOWN and unbounded
 
