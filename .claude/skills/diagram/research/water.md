@@ -331,9 +331,10 @@ carries the sketch its fix would follow.
   a ~1 m embankment top, which is GB50288's minimum for a lateral/farm canal, plus room to stand for
   the annual dredging. The old effective ~10 ft was never chosen - it is what 16 ft from the
   centerline left once a 12.4 px canal was subtracted, i.e. an artifact of the inflation. Measured
-  after: bare berm 4.5-5.0 ft everywhere along canal A.
+  after: bare berm **4.89 ft median**, held unbroken over a 1,592 ft chain, with the residue at the
+  fork recorded below.
 
-  *And a guard, whose THRESHOLD took three attempts - worth recording because the shape recurs.* The
+  *And a guard, whose THRESHOLD took four attempts - worth recording because the shape recurs.* The
   stand-off is applied along one canal's normal, which does not clear a stroke running at a different
   angle; at the bunsuiguchi two hem corners came out **0.2 ft** off the head-race's bank against an
   intended 5.0. A cell whose corner **or edge** (corners alone missed it - the same trap
@@ -342,10 +343,25 @@ carries the sketch its fix would follow.
   measures anywhere on the cell against the NEAREST canal, and those disagree wherever a canal curves
   or a cell's nearest stroke is not the one it was laid against. At the full berm the hem collapsed
   **23 cells -> 8**; at half it wiped **347 px** off the fork triangle's west reach, freeing ground
-  that re-packed the wells and left one holding the map's frame open (cohort seed 4 broke). At a
-  QUARTER it clears the real 0.2 ft defect by 6x and touches nothing else. The lesson: a guard that
-  re-measures a rule from a different reference is a FLOOR under that rule, never a restatement of
-  it, and its threshold has to be calibrated against the defect rather than inherited from the rule.
+  that re-packed the wells and left one holding the map's frame open (cohort seed 4 broke); at a
+  QUARTER it still dropped four cells on cohort seed 41, whose wells moved the same way and broke the
+  4-of-4 ratchet in `tests/hamletgen/test_driver.py`. It settles at **0.5 px** - the same margin
+  `_quad_in_supply` uses - which drops only ground genuinely in the water, and that is all that was
+  ever wrong. Two lessons: a guard that re-measures a rule from a different reference is a FLOOR under
+  that rule, never a restatement of it, and its threshold has to be calibrated against the defect
+  rather than inherited from the rule; and **a guard that DELETES a map feature hands its footprint to
+  the next placer**, so its blast radius is never confined to the thing it deletes - every one of the
+  three failures above was freed ground re-packing something else.
+
+  *What remains, measured and ACCEPTED.* Three hem corners at the bunsuiguchi keep less than the full
+  berm - **2.00 ft** at (1590.0, 489.8), **2.19** at (1486.6, 584.0), **2.90** at (1600.9, 490.6) -
+  against a 4.89 ft median held over the whole 1,592 ft chain. Geometric rather than a bug: the
+  stand-off runs along ONE canal's normal and cannot clear a stroke crossing at an angle, and a fork
+  is where three strokes meet. Invisible at fit zoom, and a review judged it shippable. **The fix, if
+  ever wanted, is NOT to raise the guard's floor** - those costs are priced above. It is to CHAMFER
+  the offending corner in a repair pass after the boundary points are placed: measure true
+  perpendicular distance to the nearest stroke and cut the corner back along its own two edges, which
+  frees a few square feet rather than a whole cell and therefore cannot move anything else.
 - **The taper is SUB-PERCEPTUAL at true scale - RULED ON, not merely noticed.** The GM looked at the
   finished map and asked the right question: *"Is that getting narrower as it goes down into the
   fields, or along the edge at the top, though? It doesn't visually look like it is."* It is not.

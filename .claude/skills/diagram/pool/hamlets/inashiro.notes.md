@@ -438,15 +438,25 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   OWN taper width. Local water under the seven planks as shipped: **2.42 / 3.00 / 3.22 / 3.36 / 3.62
   / 3.99 / 4.34 ft**.
 
-  The 2.42 is a DELIBERATE FALLBACK, and it is the interesting part. Making seat width a hard refusal
-  produced the classic placer/check split immediately - cohort seeds 41 and 43 had a long ditch the
-  GATE demanded a plank on and the placer would not lay, because its other constraints (houses, hem
-  crop, other decks, oblique confluences) ruled out every wide seat and it had no way to say "then
-  take the best one". So the placer now ORDERS candidate seats wide-first rather than refusing narrow
-  ones: a board lands on real water wherever one legally can, and a ditch the gate requires a crossing
-  for still gets one. The check was tightened to match from the other side - `_ditch_plankable` now
-  demands useful ground AND enough water at the SAME sample, so it stops demanding crossings on
-  ditches that are only wide at one end and only crossable at the other.
+  Getting there took three passes, and the interesting part is that my diagnosis of the LAST one was
+  wrong until a review corrected it. Making seat width a hard refusal produced the classic placer/check
+  split immediately - cohort seeds 41 and 43 had a long ditch the GATE demanded a plank on and the
+  placer would not lay, because its other constraints (houses, hem crop, other decks, oblique
+  confluences) ruled out every wide seat. So the placer ORDERS candidate seats wide-first rather than
+  refusing narrow ones, and `_ditch_plankable` was tightened to match from the other side: useful
+  ground AND enough water at the SAME sample, so the gate stops demanding crossings on ditches that
+  are only wide at one end and only crossable at the other.
+
+  That left one plank at 2.42 ft, which I recorded as the price of the fallback. **It was not.** The
+  review traced it to the SLOT COUNT: `n` came from the ditch's whole LENGTH, so a main whose only
+  qualifying water is its head still drew two slots, and the second fell through the wide-first sort
+  onto 2.42 ft - bunched 120 ft from its neighbour while a 349 ft gap sat beside it. `n` is now
+  measured over the QUALIFYING run, which collapses it to 1 there. Final: **6 planks, every one over
+  3.00 ft or more** (3.00 / 3.22 / 3.36 / 3.62 / 3.99 / 4.34). The fallback stays as the safety net it
+  was meant to be, and no longer has to excuse anything. *The transferable bit*: on a tapering ditch
+  the widest seat is always the HEAD, and a head is always a junction - so "prefer wide seats" pulls
+  planks onto junction nodes and bunches them, which is a second-order effect of the width rule that
+  only a spacing measurement reveals.
 
   **`MIN_CHANNEL_PX` stays 1.5, and that is now evidence-backed rather than inertia.** It collides
   exactly with `aze_w`, so the finest water tier is the paddy bund's stroke width and differs only by
@@ -480,6 +490,35 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   Corners alone also missed the original defect - an EDGE can cross a stroke between two dry corners,
   the trap `_quad_in_supply` already documents - and testing corners only shipped
   `dry_plots`/`field_ditches` overlaps on three cohort seeds.
+
+  Review log: **pass, no errors**, over three passes (the first two reviewed a map that was still
+  moving under them, which is itself worth remembering - hand a reviewer a settled artifact). What the
+  final pass CAUGHT: the 2.42 ft plank's real root cause, which was the slot count and not the
+  gate/placer fallback I had written into the notes, together with the 120 ft plank bunching and its
+  mechanism (widest seat = head = junction); and **two more short berm corners at the fork that I had
+  not measured** - 2.19 ft at (1486.6, 584.0) and 2.90 ft at (1600.9, 490.6) beside the 2.00 ft at
+  (1590.0, 489.8). So the fork residue is three corners, not one. Earlier passes caught the `past`-at-
+  a-junction bug and the ditch-vs-seat width scope.
+
+  Independently reproduced and closed by that pass, none of it taken on trust: the 2.00 ft berm
+  minimum against a 4.89 ft median held over a 1,592 ft chain; the plank widths; **full pedestrian
+  connectivity by flood fill** - all 15 houses, both wells, all 3 lane heads and 49 of 50 field
+  parcels reachable, with the two NE households routing over both fork planks at a 1.36-1.39 path
+  ratio, i.e. no real detour (this closes the "two households across an unbridged brook" finding from
+  an earlier roll); the hem's INNER rank gap-free from arc 25 to 1,592 ft, so the dropped cells read
+  as patchwork rather than holes; and `scatter_audit` clean at 0 violations over 270,493 bases with
+  density RISING outward from the water keep-out.
+
+  Two things left open, both recorded rather than fixed. **The three fork corners** sit under the 1 m
+  embankment top `CANAL_BERM_FT` cites, at the map's one hydraulic control point; invisible at fit
+  zoom, and the reviewer's suggested fix is better than raising the `_in_berm` floor (whose costs are
+  priced above) - CHAMFER the offending corner in a repair pass, which frees a few square feet instead
+  of a whole cell and so cannot re-pack the map. **Farm sheds are 6 of 15 = 40% here** against a
+  ~30% figure, but the pool-wide rate is **129/486 = 26.5%** spanning 13% to 40%, and 6 of 15 from a
+  p=0.30 binomial is unremarkable (p~0.15). Recommendation on record: do NOT pin a per-map floor -
+  that converts a researched rate into a quota and gives every hamlet the same 4-5 sheds, which is the
+  twin problem arriving by the back door. If the pool wants to sit nearer 30% the honest lever is the
+  per-household probability, and it is currently 3.5 points UNDER target, not over.
 
 ## 2026-08-17 - the fan-toe SUNBURST, ruled and fixed
 
