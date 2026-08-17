@@ -10,10 +10,10 @@ from collections.abc import Mapping
 from typing import Any
 
 from l7r.diagram.settlement import Settlement, point_in_poly, seg_intersect, segments_cross
+from l7r.diagram.sitegen.geom import crosses_poly, net_acres, poly_area
 from l7r.diagram.waterfields import build_comb, build_polder
 
 from .consts import FAN_ASPECTS, GRAIN, POLDER_CELL_FT, REF_CANAL_A, REF_CANAL_B, REF_FIELD_FALL, Poly, Pt
-from .geom import crosses_poly, net_acres, poly_area
 from .plan import SitePlan, _roll
 
 # ---- STAGE 1: the water frame -------------------------------------------------------------------

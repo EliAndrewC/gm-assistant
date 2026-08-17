@@ -70,9 +70,13 @@ appeared on landing 1 rather than landing 2. The fix is mypy's own documented re
 where module paths begin so each file has exactly one identity. Verified: `Success: no issues found
 in 59 source files`.
 
-**Lesson for landing 2**: whether the diagram tree needs the same pair depends on whether its mypy
-invocation names packages (`files = [...]`, which it does) or walks a directory. Expect it to be
-fine, verify rather than assume, and if it errors the fix is already known.
+**Landing 2 needed it too, and the prediction was wrong.** The reasoning above - "`files = [...]`
+names packages explicitly, so expect it to be fine" - did not survive contact: the diagram tree
+raised the same error on `l7r/diagram/waterfields/__init__.py` ("Source file found twice under
+different module names: `diagram.waterfields` and `l7r.diagram.waterfields`"). Naming a package in
+`files` does not tell mypy where module paths BEGIN; only `explicit_package_bases` + `mypy_path`
+does. Both trees now carry the pair, each with the comment explaining why the obvious fix (adding
+`l7r/__init__.py`) is the wrong one.
 
 The `[tool.mypy]` block carries a comment saying all this, including "do NOT fix this by adding
 `l7r/__init__.py`" - the wrong fix is the obvious one and it silently hides the other portion.
@@ -180,6 +184,31 @@ CherryPy tree". Consumers of that side effect:
 **Decision**: `l7r.app` is the mount module; nothing new is created to hold the side effect. The
 `__init__.py`'s docstring content ("Importing this package wires the CherryPy tree") is not lost -
 it moves to `l7r/app.py`'s module docstring, where it is now literally true.
+
+## R11. Three traps this feature hit, each worth the next session knowing
+
+**A module path in a STRING LITERAL is invisible to every check the project runs.** It is not an
+import, so nothing resolves it; not a test, so nothing runs it. Landing 2 hit this class three
+times in code that IS exercised: `gencache` WRITES a subprocess driver containing
+`"from pipeline import gencache"`; the three `test_surface.py` censuses build module names with
+`importlib.import_module(f"check_village.{...}")`; `cache_audit` holds its `TARGET` as
+`os.path.join("settlement", "_geom", "curves.py")`. The test suite caught all three - grep for the
+import form caught none. The same class also accounts for all four entries in `plan.md`'s
+pre-existing-defect ledger, dead since features 024, 111 and 025 respectively.
+
+**`sed` treats `.` as "any character", and that silently corrupted the gate config.** Adding
+`sitegen` to `pyproject.toml` ran two seds - one for the mypy path list (`"l7r/diagram/hamletgen",`)
+and one for the coverage dotted list (`"l7r.diagram.hamletgen",`). The second pattern matched the
+FIRST line too, rewriting a real path into a dotted non-path. mypy then reported a nonsense
+"Duplicate module named `__main__`" pointing at packages that had nothing to do with it. Use `-F`,
+or escape the dots, whenever a substitution's two forms differ only by separator.
+
+**`mypy --strict` implies `--no-implicit-reexport`, so a re-export must be spelled `X as X`.**
+`hamletgen/consts.py` re-exports `Pt` / `Poly` / `SQ_FT_PER_ACRE` from `sitegen.types` so that
+`from .consts import Poly, Pt` keeps working inside the package; written as a plain import, every
+one of those consumers fails to type-check with "does not explicitly export attribute". Same for
+`driver.py`'s `default_jobs`. This is what makes a "the public surface does not change" refactor
+actually not change it.
 
 ## R10. The baseline, per Principle XIII
 

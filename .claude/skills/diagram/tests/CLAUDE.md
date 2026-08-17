@@ -10,6 +10,7 @@ changed, you know which directory to open.
 | `settlement/` | the Mode B drawing engine | [CLAUDE.md](settlement/CLAUDE.md) |
 | `check_village/` | the gate (the ~1,371-segment check battery) | [CLAUDE.md](check_village/CLAUDE.md) |
 | `hamletgen/` | the scripted hamlet generator | - |
+| `sitegen/` | the machinery the tiers SHARE (geometry, types, worker counts) | - |
 | `waterfields/` | the water-first field engine | - |
 | `pipeline/` | the cache, regen driver, render cache and pool index | - |
 | `tools/` | the audits and diagnostics that are under the 100% rule | - |

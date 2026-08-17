@@ -8,10 +8,10 @@ from __future__ import annotations
 import math
 
 from l7r.diagram.settlement import Settlement, point_in_poly
+from l7r.diagram.sitegen.geom import crosses_poly, unit
 from l7r.diagram.waterfields import DRAIN_FT, chan_px
 
 from .consts import GRAIN, POND_SETBACK_LIMIT, REF_HOUSEHOLDS, Poly, Pt
-from .geom import crosses_poly, unit
 from .plan import SitePlan
 
 # ---- STAGE 3: where the runoff goes -------------------------------------------------------------

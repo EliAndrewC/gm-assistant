@@ -10,9 +10,9 @@ from collections.abc import Sequence
 from typing import Any
 
 from l7r.diagram.settlement import point_in_poly, seg_closest, seg_dist, seg_intersect
+from l7r.diagram.sitegen.geom import centroid, unit
 
 from .consts import BUNDLE_PITCH, Poly, Pt
-from .geom import centroid, unit
 from .plan import SitePlan
 
 # ---- STAGE 4: seating the settlement, and its ways ----------------------------------------------

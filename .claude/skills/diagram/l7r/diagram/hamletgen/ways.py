@@ -9,10 +9,10 @@ import math
 from collections.abc import Sequence
 
 from l7r.diagram.settlement import Settlement, point_in_poly, seg_closest, seg_dist, seg_intersect, segments_cross, skeleton_layout
+from l7r.diagram.sitegen.geom import centroid, crop_polys, crosses_disc, crosses_poly, pull_clear, unit
 
 from .cluster import _arm_crossing_accidental, _fork_spur, seat_cluster
 from .consts import LANE_CLEARANCE, SPUR_SETBACK, WIND_VECTORS, Poly, Pt
-from .geom import centroid, crop_polys, crosses_disc, crosses_poly, pull_clear, unit
 from .plan import SitePlan
 
 

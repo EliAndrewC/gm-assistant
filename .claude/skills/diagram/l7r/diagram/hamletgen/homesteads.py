@@ -11,9 +11,9 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from l7r.diagram.settlement import Settlement, surface_water_dist
+from l7r.diagram.sitegen.geom import centroid, unit
 
 from .consts import LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
-from .geom import centroid, unit
 from .plan import SitePlan
 
 # ---- STAGE 5: the homesteads --------------------------------------------------------------------
