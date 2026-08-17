@@ -114,6 +114,42 @@ Catch-rate: round-N DELTA - CAUGHT the tint-threshold collision (above); raised 
 toe, that no declined weld opened floor reading as a hole (floor fill = plot fill at the pixel), that
 no new doubled bund appeared, and `scatter_audit` 0 violations.
 
+## 2026-08-17 - re-packed by feature 121 (the placer tests the rake it draws)
+
+14 of 19 houses moved; the windbreak re-derived, both woodland parcels re-seated, the viewport
+shifted 20 px. Household count unchanged.
+
+WHY the corridor changed: see kashikawa.notes.md's entry of the same date, or
+specs/121-placer-drawn-footprint/research.md D1/D6/D7.
+
+**`gardens` 23 -> 20 IS NOT THREE LOST GARDENS - do not re-open it.** `gardens` counts BEDS. Every
+one of the 19 households has a bed before and after; what fell is bed FRAGMENTATION - households
+drawn with two beds went 4 -> 1. Total dooryard area 12,221 -> 12,202 sq ft (-0.16%), mean per
+household 643 -> 642. `_garden_beds` splits on `self._hjit(hx, hy, 8.0) < 0.26`, a POSITION hash, so
+moving 14 houses re-rolled it; the settlement-review recomputed the hash independently and confirmed
+the set that split is exactly the set the hash says should, with zero blocked by width guards.
+Expected ~4.9 splits from 19, landed 1 - a ~2.5% lower-tail draw. Unlucky, not systematic, and a
+re-roll would take the texture back.
+
+MEASURED HERE: tightest raked-corner-to-tread gap 46.4 -> 27.3 ft, median house-to-lane 125 -> 121,
+min 71 -> 51. Houses moved ONTO the lanes without crowding them. Farm sheds 4 -> 5 = 26% of
+households, closer to the ~30%-had-a-storehouse research norm than the old 21%. `scatter_audit`
+exit 0, 0 violations across 443,994 bases.
+
+Review verdict: PASS.
+
+FOUND BY THAT REVIEW AND FIXED IN THE SAME FEATURE: the house glyph emitted
+`translate({cx:.0f},{cy:.0f}) rotate({rot:.0f})` - whole pixels and whole DEGREES - while the placer
+clears and the gate measures full floats. Every one of the 19 drawn rakes differed from its recorded
+rake, up to ~0.95 ft of drawn-corner displacement. Nothing was at risk here (tightest gap 27.3 ft),
+but it is exactly the drawn-versus-placed divergence this feature exists to close, and no check can
+see it because every check reads the manifest and never the SVG. Now `.1f` / `.2f`.
+
+OPEN, pre-existing and tier-wide, raised for a ruling rather than a fix: 18 of 19 gardens sit on the
+E wall, which `_find_garden_spot` treats as the LAST RESORT (keeping the garden off the windward
+wall is what frees that wall for the grove). `windward="NE"` makes E windward here, so the last
+resort is winning 18 times out of 19 - and `groves` is 0, as it is in 12 of the 13 pool hamlets.
+Sawada is the map that shows why homestead groves never appear at hamlet tier.
 
 ## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
 
@@ -136,8 +172,14 @@ the size was the cause. Full findings, both declined alternatives, the two deriv
 why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
 
 **On this map.** 843 -> 818 basins (-25, 2.97%, the largest share in the pool); 25 fragments into 20
-hosts; smallest surviving basin 379 sq ft against a 372 sq ft floor. Acreage 1,138,088 -> 1,138,102
+hosts; smallest surviving basin 379 sq ft against a 372 sq ft floor. Acreage 1,138,088 -> 1,138,097
 sq ft (**+0.001%**) - absorbed, not deleted - 19 of 19 households, field outline unchanged.
+
+**The cluster partly re-packs**, which the first draft of this round's write-up asserted away
+(settlement-review, 2026-08-17): changing the drawn plot count re-rolls the shared placement stream.
+Measured against main's tip: **6 of 19 houses move** (up to 78 px) with their threshing yards, six
+gardens move (up to 160 px), and one shed, one byre, one well and the kosatsuba shift a little.
+Household count, acreage and the view hold.
 
 **What the review measured.** No drift toward a consolidation grid: near-rectangles 61.7% ->
 **62.2%** (+0.5 pp, inside noise), quad share 81.5% -> 81.7%, median 1,347 -> 1,356 sq ft, max

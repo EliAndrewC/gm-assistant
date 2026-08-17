@@ -730,7 +730,7 @@ class CastleCivicMixin:
             return quad is None or sat_overlap(quad, [(bx - bw / 2, by - bh / 2), (bx + bw / 2, by - bh / 2), (bx + bw / 2, by + bh / 2), (bx - bw / 2, by + bh / 2)])
 
         n = 0
-        for px, py, pw, ph in self.placed:
+        for px, py, pw, ph, *_ in self.placed:
             if covers(px, py, pw, ph):
                 n += 1
         for gx, gy, gw, gh in self.grove_rects:

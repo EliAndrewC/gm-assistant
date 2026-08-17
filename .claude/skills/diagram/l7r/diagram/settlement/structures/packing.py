@@ -95,7 +95,7 @@ class PackingMixin:
                         if seg_hits_rect(pts[k], pts[k + 1], ex0, ey0, ex1, ey1):
                             return False
                 r = math.hypot(w, h) / 2
-                return all(math.hypot(cx - ox, cy - oy) >= r + math.hypot(ow, oh) / 2 + 1 for ox, oy, ow, oh in self.placed[:n0])
+                return all(math.hypot(cx - ox, cy - oy) >= r + math.hypot(ow, oh) / 2 + 1 for ox, oy, ow, oh, *_ in self.placed[:n0])
 
             n, idx, row = 0, 0, 0
             ytop = y0

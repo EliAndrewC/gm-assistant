@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from .._geom import (
     WARD_BARRED_KINDS,
+    drawn_extent,
     point_in_poly,
     seg_closest,
 )
@@ -63,7 +64,10 @@ class UrbanBuildingMixin:
         fill, edge = self.URBAN.get(kind, self.URBAN["shop"])[:2]
         x0, y0 = -w / 2, -h / 2
         dash = ' stroke-dasharray="5,3"' if kind == "burakumin" else ''
-        g = [f'<g transform="translate({cx:.0f},{cy:.0f}) rotate({rot:.0f})">']
+        # EMIT WHAT WAS PLACED - the same rounding the farmhouse glyph carried (feature 121; the
+        # measurement is at houses.py's copy). A building declares its DRAWN extent to the placer
+        # now, so the renderer must not then round away the rake it was told about.
+        g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.2f})">']
         # THE COSMETICS SCALE WITH THE THIN DIMENSION (settlement-review 2026-08-03). The fixed
         # rx=2 / stroke=1.6 / 0.60-length ridge were tuned on a squarish house and become absurd on
         # a LONG THIN footprint: at the servant range's 5 px depth the rounding is 40% of the depth
@@ -110,7 +114,13 @@ class UrbanBuildingMixin:
         if of is not None:
             rec["of"] = [round(of["x"], 1), round(of["y"], 1)]  # the household this is service accommodation FOR
         self.M["buildings"].append(rec)
-        self.placed.append((cx, cy, w, h))
+        # DECLARE THE DRAWN EXTENT (feature 121). A building is drawn at `rot`, and 390 of the
+        # pool's building records carry a non-zero one - many at 90 deg, where `w` and `h` swap
+        # outright. Reserving the unrotated `w`/`h` therefore under-states a rotated shop along one
+        # axis; the trailing pair is what it actually occupies, and it is what lets `_fits` measure
+        # this building with an exact box instead of a circumscribed circle. `w`/`h` stay first and
+        # unchanged, because the reach-box prefilter is still built from them.
+        self.placed.append((cx, cy, w, h, *drawn_extent(w, h, rot)))
         return True
 
     def _dims(self: Settlement, kind: str) -> tuple[float, float]:  # type: ignore[misc]
@@ -159,7 +169,7 @@ class UrbanBuildingMixin:
             ux, uy = -math.sin(th), math.cos(th)
             fx, fy = cx + ux * h / 2, cy + uy * h / 2
             ok = True
-            for ox, oy, ow, oh in self.placed:
+            for ox, oy, ow, oh, *_ in self.placed:
                 if abs(ox - cx) > (w + ow) / 2 + clear + 2 or abs(oy - cy) > (h + oh) / 2 + clear + 2:
                     continue
                 for d in (1.0, clear * 0.55, clear):
