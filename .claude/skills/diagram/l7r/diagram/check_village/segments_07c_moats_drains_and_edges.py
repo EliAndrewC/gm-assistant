@@ -502,8 +502,15 @@ def _seg_0493___house_pts(*, h: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 493 (_house_pts) - body verbatim from the legacy gate() (feature 022)."""
 
     def _house_pts(h: dict[str, Any]) -> list[tuple[float, float]]:
-        hw2, hh2 = h["w"] / 2, h["h"] / 2
-        return [(h["x"] - hw2, h["y"] - hh2), (h["x"] + hw2, h["y"] - hh2), (h["x"] + hw2, h["y"] + hh2), (h["x"] - hw2, h["y"] + hh2), (h["x"], h["y"])]
+        # THE RAKE IS PART OF THE FOOTPRINT (feature 121). This built its own axis-aligned corner
+        # list, while `rect_corners` - already imported, already used by the overlap checks - has
+        # read `rot` all along. A farmhouse is DRAWN raked by +/-5 deg, so the square-on version
+        # measured a rect the map does not draw, and disagreed with the placer's own tread test:
+        # a seat `_house_on_a_tread` had cleared came back from the gate as a house on a lane.
+        # ONE MEASUREMENT, NOT SEVERAL - the duplicate is why the two could drift apart at all.
+        # GAP VERDICT family: real rotated corners. The centre stays in the list because a lane
+        # narrower than a house would otherwise thread between its corners.
+        return [*rect_corners({**h, "rot": h.get("rot", 0.0)}), (h["x"], h["y"])]
 
     return _kept(locals(), ('_house_pts',))
 

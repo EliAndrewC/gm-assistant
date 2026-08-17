@@ -50,6 +50,21 @@ def test_houses_clear_of_lanes_fires_when_a_house_sits_on_the_tread():
     assert "houses_clear_of_lanes" in f(M)
 
 
+def test_houses_clear_of_lanes_reads_the_RAKE_the_house_is_drawn_at():
+    """A farmhouse is drawn raked (`_house_rot`, +/-5 deg), and this check built its own
+    axis-aligned corner list instead of using `rect_corners`, which has read `rot` all along
+    (feature 121). So the gate measured a square-on rect while the map drew a raked one - and it
+    disagreed with the PLACER, which is how a seat the placer had cleared came back from the gate
+    as a house standing on a lane.
+
+    The seat below is clear of the tread square-on and ON it once raked, so the axis-aligned
+    version of this check cannot pass this test."""
+    lane = {"pts": [[100, 500], [900, 500]], "worn": True, "w": 6, "connector": False}
+    house = {"x": 500, "y": 521.5, "w": 62, "h": 30, "kind": "plain"}  # a LONG minka (the 1.35x length jitter)
+    assert "houses_clear_of_lanes" not in f({"lanes": [lane], "houses": [{**house, "rot": 0}]}), "square-on it clears, so the rake is the only thing under test"
+    assert "houses_clear_of_lanes" in f({"lanes": [lane], "houses": [{**house, "rot": -5}]}), "RAKED, the same house overhangs the tread and the gate must say so"
+
+
 def test_houses_clear_of_lanes_passes_when_the_house_fronts_the_lane():
     M = {
         "lanes": [{"pts": [[100, 500], [900, 500]], "worn": True, "w": 6, "connector": False}],
