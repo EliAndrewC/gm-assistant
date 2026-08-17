@@ -64,6 +64,13 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # the skill 
 # straight back to 0.0. indexes/ fails harder: its literals are prefilter pads and the grid cell
 # size, and the defining property of the prefilter family is that widening it cannot change a
 # verdict. Hence the `moved N` figure printed per trial below - see main().
+#
+# BUDGET, MEASURED RATHER THAN PREDICTED (2026-08-17): coverage said 9 of curves.py's 35 literals
+# are executed, so ~26% of random picks should bite. The real rate is **16%** - `--trials 3` took 19
+# attempts and about 11 minutes - because "executed" is not the same as "moves an artifact": most of
+# the misses are DEFAULT-argument literals on functions every caller passes explicitly (winding's
+# amp/n, fillet_polyline's steps/min_turn_deg). Budget ~10-15 minutes for 3 trials here, and if that
+# ever matters more than the audit's independence, the fix is a better TARGET, not fewer retries.
 SUBSET = ("sawada", "inashiro")
 TARGET = os.path.join("settlement", "_geom", "curves.py")
 
@@ -142,7 +149,7 @@ def main(argv: list[str]) -> int:
         # skill's "a check that never RUNS looks exactly like a check that passes", here in the very
         # tool that exists to keep the cache honest.
         clean = snapshot(paths, "/tmp/audit-clean")
-        moved_any = 0
+        vacuous = 0
         while done < args.trials and sites:
             site = sites.pop(rng.randrange(len(sites)))
             target.write_text(mutate(original, site))
@@ -163,7 +170,18 @@ def main(argv: list[str]) -> int:
                 continue
             differing = sorted(k for k in with_cache if with_cache[k] != without.get(k))
             moved = sorted(k for k in with_cache if with_cache[k] != clean.get(k))
-            moved_any += bool(moved)
+            if not moved and not differing:
+                # A mutation that moved NO artifact tested nothing: the sweeps agreed because there
+                # was nothing to disagree about. Counting it toward --trials is how a run of three
+                # ends up having audited one - measured on this tool's first run against the
+                # feature-117 target, where 2 of 3 trials were vacuous and printed an identical
+                # `[OK ]`. So it is a skip, not a trial. (`differing` is still checked first: a
+                # mutation that moved nothing and STILL produced disagreeing sweeps is a genuine
+                # finding and must never be swallowed by this branch.)
+                vacuous += 1
+                print(f"  [----] line {site[0]}: {site[3]} -> perturbed | moved nothing, so it tested nothing - not counted | {time.time() - started:.0f}s")
+                target.write_text(original)
+                continue
             done += 1
             verdict = "OK " if not differing else "STALE"
             print(f"  [{verdict}] line {site[0]}: {site[3]} -> perturbed | moved {len(moved)} of {len(with_cache)} artifacts | {time.time() - started:.0f}s")
@@ -180,11 +198,11 @@ def main(argv: list[str]) -> int:
         dirty = subprocess.run(["git", "status", "--short", "pool"], capture_output=True, text=True, cwd=HERE).stdout
         print(f"\nrestored {TARGET}; pool dirty after restore: {dirty.strip() or 'NONE'}")
 
-    print(f"\n{done} mutation(s) audited, {skipped} skipped, {len(failures)} FAILED")
-    if done and not moved_any:
-        print("WARNING: no trial moved a single artifact, so this run proved nothing about the cache.")
-        print(f"         Every mutation landed on a literal {' / '.join(SUBSET)} never execute, or one that rounds away.")
-        print(f"         Re-run with more --trials, or pick a TARGET these maps exercise (see the comment above TARGET).")
+    print(f"\n{done} mutation(s) audited, {skipped} skipped, {vacuous} vacuous (moved nothing, retried), {len(failures)} FAILED")
+    if done < args.trials:
+        print(f"WARNING: only {done} of {args.trials} requested trials moved an artifact - the candidate literals ran out.")
+        print(f"         Every remaining literal in {TARGET} is one {' / '.join(SUBSET)} never execute, or one that rounds away.")
+        print("         Pick a TARGET these maps exercise harder (see the comment above TARGET).")
     if failures:
         print("A failure means a cached sweep and a fresh sweep disagreed - the cache is serving stale maps.")
     return 1 if failures else 0
