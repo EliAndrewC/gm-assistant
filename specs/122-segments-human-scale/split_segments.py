@@ -29,23 +29,36 @@ TARGET_LINES = 850  # the aim per sub-file; the bar is ~1,000 (constitution X cl
 
 
 def segments_of(path: pathlib.Path) -> tuple[list[str], int, list[tuple[str, int, int]]]:
-    """Return (header_lines, first_def_line, [(name, start_line, end_line), ...]), 1-indexed."""
+    """Return (header_lines, first_body_line, [(name, start_line, end_line), ...]), 1-indexed.
+
+    The HEADER is the module docstring and the import statements and nothing else. It is the
+    only text copied into every sub-file, so anything else that lands in it is DUPLICATED - and
+    several of these files carry a check's `# WHY:` comment bank between the imports and the
+    first `def`, which a naive "everything before the first def" header silently triples. That
+    bank belongs to the first segment, exactly like every other bank.
+    """
     src = path.read_text().splitlines()
     tree = ast.parse("\n".join(src))
     fns = [n for n in tree.body if isinstance(n, ast.FunctionDef)]
     if not fns:
         raise SystemExit(f"{path.name}: no top-level functions")
-    first = fns[0].lineno
-    # a decorator-free segment starts at its own lineno; comment banks ABOVE a def belong to it,
-    # so a cut point is the first line after the previous segment's last line
+    header_end = 0
+    for node in tree.body:
+        if isinstance(node, ast.Import | ast.ImportFrom) or (
+            isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant)
+        ):
+            header_end = max(header_end, node.end_lineno or 0)
+        else:
+            break
+    # a comment bank ABOVE a def belongs to it, so a cut point is the first line after the
+    # previous segment's last line (or the end of the header, for the first segment)
     spans: list[tuple[str, int, int]] = []
     for i, fn in enumerate(fns):
-        start = fns[i - 1].end_lineno + 1 if i else first
-        end = fn.end_lineno
-        spans.append((fn.name, start, end))
+        start = fns[i - 1].end_lineno + 1 if i else header_end + 1
+        spans.append((fn.name, start, fn.end_lineno))
     assert spans[-1][2] <= len(src)
     spans[-1] = (spans[-1][0], spans[-1][1], len(src))  # trailing blank lines ride with the last
-    return src[: first - 1], first, spans
+    return src[:header_end], header_end + 1, spans
 
 
 def propose(path: pathlib.Path) -> list[tuple[str, int]]:
@@ -67,29 +80,17 @@ def propose(path: pathlib.Path) -> list[tuple[str, int]]:
     return cuts
 
 
-def prune_imports(header: list[str], body: list[str]) -> list[str]:
-    """Drop import lines (and from-import names) the body never references."""
-    used: set[str] = set()
-    for node in ast.walk(ast.parse("\n".join(body))):
-        if isinstance(node, ast.Name):
-            used.add(node.id)
-        elif isinstance(node, ast.Attribute):
-            pass
-    for tok in " ".join(body).replace("(", " ").replace(")", " ").replace(".", " ").split():
-        used.add(tok.strip(",:[]{}\"'"))
-    out: list[str] = []
-    for line in header:
-        stripped = line.strip()
-        if stripped.startswith("from ") and " import " in stripped:
-            mod, names = stripped.split(" import ", 1)
-            keep = [n for n in (x.strip() for x in names.split(",")) if n.split(" as ")[-1] in used]
-            if keep:
-                out.append(f"{mod} import {', '.join(keep)}")
-        elif stripped.startswith("import "):
-            if stripped.split()[1].split(".")[0] in used:
-                out.append(line)
-        else:
-            out.append(line)
+def header_for(header: list[str], docstring: str) -> list[str]:
+    """The original header VERBATIM, with only its module docstring replaced.
+
+    Deliberately no import pruning here. Pruning by hand means understanding every header shape
+    (single-line, parenthesized multi-line, aliased, `__future__`), and a prune that silently
+    drops a needed name is exactly the class of edit this feature must not make. `ruff check
+    --select F401 --fix`, run over the package afterwards, is the authority instead: it decides
+    from the parsed module, it cannot drop a name the body uses, and anything it leaves behind
+    that IS unused fails the normal lint gate rather than passing quietly.
+    """
+    out = [docstring, *header[1:]]
     while out and not out[-1].strip():
         out.pop()
     return out
@@ -117,7 +118,7 @@ def split_apply(path: pathlib.Path, spec: list[tuple[str, str]]) -> list[pathlib
         keys = f"{spans[starts[i]][0].split('__')[0][5:]}-{spans[last][0].split('__')[0][5:]}"
         theme = stem.split("_", 2)[2].replace("_", " ")
         newdoc = f'"""Gate segments ({theme}; keys {keys}) - bodies verbatim, registry order preserved."""'
-        head = prune_imports([newdoc, *header[1:]], body)
+        head = header_for(header, newdoc)
         out = PKG / f"{stem}.py"
         if out.exists() and out != path:
             raise SystemExit(f"{out.name} already exists")
