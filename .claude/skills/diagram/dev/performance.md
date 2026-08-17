@@ -5,7 +5,7 @@
 Split out of [`../CLAUDE.md`](../CLAUDE.md) so it is not in every diagram session's
 context. The text is verbatim; the short always-on version of each rule stays in the index.
 
-## The one performance bug this engine keeps growing, and how to find it
+## Shape one: a per-candidate scan of geometry that does not change during the scan
 
 **The one performance bug this engine keeps growing, and how to find it.** Every slow gen ever
 profiled here has had the same shape: *a per-candidate scan of geometry that does not change during
