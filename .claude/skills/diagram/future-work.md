@@ -377,6 +377,30 @@ was never needed.
 survivors came from (the carve, then the hem - both wrong) before a provenance probe classified
 every remaining needle in one run as `carved_grown`, i.e. made by a weld. Instrument first.
 
+### STILL OPEN after the 2026-08-17 well tie-break: cohort seed 62's northern lobe
+
+`hamletgen.place_wells` now prefers a seat INSIDE the house cloud over one in the sweep box's 120 px
+pad when the two tie on the minimax-need bucket (see the comment at the sort - it exists because
+cohort seed 41 seated a well 76 px north of the household it served and held the whole frame open).
+Two things that fix did NOT do, both measured rather than assumed:
+
+- **The four shipped hamlets are byte-identical across it.** Their wells were already interior
+  seats, so the guard is inert on every map in the pool - which is why the change shipped with no
+  `settlement-review` pass: no map's ink moved.
+- **Seed 62 still fails `crop_not_held_open_by_one_feature`** with the same message it failed with at
+  baseline (`wells[1] stands 65px past the next feature`, 24-seed window from 41: 20/24 before, 20/24
+  after). Its well[1] at (2215, 594) is genuinely outside the cloud (which starts at y=670) and there
+  is **no interior seat in its minimax bucket** - the northern lobe is served from the pad or not at
+  all. So the tie-break cannot reach it: this is the "nothing inside serves these households" case,
+  and a tie-break by construction only decides ties.
+
+**What would actually close it**, when someone takes the northern-lobe case on: make the objective
+itself frame-aware rather than only the tie-break - score a seat by `_worst_after` PLUS the crop
+extent it would add, so a pad seat has to buy enough coverage to pay for the frame it drags out. That
+is a change to the objective three settlement-reviews have already shaped, so it wants its own pass
+and a per-map review. Until then seed 62 is a pre-existing ledgered failure, not a regression, and it
+is the reason the cohort rate is 45/48 rather than 46/48.
+
 ### OPEN (low priority): the flooded tint discriminates on TRUNCATION DEPTH, not on taper
 
 Recorded as a deliberate choice with its trigger, not as a defect. `tapers_to_a_point` demotes a
