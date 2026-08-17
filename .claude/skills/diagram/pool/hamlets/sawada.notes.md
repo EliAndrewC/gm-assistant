@@ -172,38 +172,29 @@ the size was the cause. Full findings, both declined alternatives, the two deriv
 why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
 
 **On this map.** 843 -> 818 basins (-25, 2.97%, the largest share in the pool); 25 fragments into 20
-hosts; smallest surviving basin 379 sq ft against a 372 sq ft floor. Acreage 1,138,088 -> 1,138,097
-sq ft (**+0.001%**) - absorbed, not deleted - 19 of 19 households, field outline unchanged.
+hosts; smallest surviving basin 379 sq ft against a 372 sq ft floor. Acreage +0.001% - absorbed, not
+deleted - 19 of 19 households, field outline unchanged.
 
-**The cluster partly re-packs**, which the first draft of this round's write-up asserted away
-(settlement-review, 2026-08-17): changing the drawn plot count re-rolls the shared placement stream.
-Measured against main's tip: **6 of 19 houses move** (up to 78 px) with their threshing yards, six
-gardens move (up to 160 px), and one shed, one byre, one well and the kosatsuba shift a little.
-Household count, acreage and the view hold.
+**The cluster partly re-packs**, and the numbers here are the ones that taught the project to state
+its metric (settlement-review, 2026-08-17). A first draft said "6 of 19 houses move, up to 78 px ...
+the view holds". Both halves were wrong: 78 px was each new house's distance to the NEAREST OLD one,
+which lets one old house partner several new ones; under a one-to-one matching the largest
+displacement is **286 px** at minimum and 471 px on the min-total pairing, with a household leaving
+the mid-string for the SE pocket (pocket 1 -> 2, string 10 -> 9). And `meta.view` GREW - it did not
+hold - to contain exactly that move. Post-fix: **11 of 19 unmoved, min-max 540 px**, gardens
+20 -> 23, farm sheds 5 -> 6.
 
-**What the review measured.** No drift toward a consolidation grid: near-rectangles 61.7% ->
-**62.2%** (+0.5 pp, inside noise), quad share 81.5% -> 81.7%, median 1,347 -> 1,356 sq ft, max
-unchanged, area CV 0.404 -> **0.375**. Slivers under 15 ft wide **20 -> 11**, none under 10 ft, and
-the survivors are a coherent ladder of ~14 ft bank strips down the NW canal - a real form an
-area-only floor would have been the wrong tool to remove. Minimum interior angle over all 818 basins
-26.3 deg; max convergence node still 4 plots (no new sunburst hub); no new doubled bund; bare comb
-floor unchanged; `scatter_audit` 0 violations.
-
-**And what it caught, which became the tint's guard.** The absorb pass hung a lobe on the fan's ONE
-blue plot at (751, 2272) - 94 x 24 ft became 94 x 38 ft at solidity 0.731 - and at fit zoom it read
-as an **arrowhead pond**, on the map whose brief is explicitly "no pond". This is the same defect
-class the tint threshold work chased on 2026-08-17 above, and it slipped both existing guards for
-the reason that entry should have generalized: they measure a TAPER (apex 41.8 deg, both ends far
-wider than `_TINT_END_FT`) and this defect is **concavity**. So the tint re-judge gained a third
-clause, `_TINT_MIN_SOLIDITY` = 0.85, run after the absorb pass because that is what reshaped the
-plot; and `_WELD_MIN_SOLIDITY` (see Mizuguchi's notes) keeps the weld off a host it would deform in
-the first place. After both, the blue plot is back at its own 1,060 sq ft and solidity 0.870.
+**Lane frontage, fixed here rather than ledgered** (Principle XIV): front-row seats must lie within
+150 px of a drawn lane, the first five exempt for `field_ringed`. This map improves most of the four
+- **median 118 -> 77 ft**, houses past 150 px 6 -> 3 - and it is the map that showed the naive
+version does nothing (a relaxation ladder simply re-seated the refused houses; recorded at the point
+of change).
 
 **Logged, not fixed.** The self-intersecting bowtie ring at (167, 2558) is byte-identical before and
-after - pre-existing - and worth naming because the new floor cannot reach it: its shoelace area is
-nearly 3x the floor, so a bowtie passes as a comfortable basin. The west-seam hub at ~(394, 2413),
-logged in the entry above, was not relieved by this change either.
-
+after and worth naming because the new floor cannot reach it: its shoelace area is nearly 3x the
+floor, so a bowtie passes as a comfortable basin. The two-household off-lane satellite (628 and
+701 ft from any drawn lane, no path to it) and the windbreak sheltering 17 of 19 rather than 18 are
+GM questions rather than defects - both are in `future-work.md`.
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
 outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->

@@ -149,38 +149,29 @@ cell. Acreage conserved to 6 sq ft in 715,849; 12 of 12 households; field outlin
 
 **The cluster partly re-packs**, which the first draft of this round's write-up asserted away
 (settlement-review, 2026-08-17): changing the drawn plot count re-rolls the shared placement stream.
-Measured against main's tip: **5 of 12 houses move** (up to 56 px) with their threshing yards, five
-gardens move, **farm sheds 2 -> 0**, three byres and both wells re-seat, and `meta.view` shifts
-slightly. Household count and acreage hold.
+**7 of 12 houses unmoved, min-max displacement 250 px** (one-to-one matching), gardens 16 -> 17, farm
+sheds 2 -> 1, byres and both wells re-seated, `meta.view` shifted. Household count and acreage hold.
 
-**What the review measured, which is the answer to the GM's real worry.** The fear with any size
-floor is that it tidies the mosaic into the consolidation grid. It did not: near-rectangular rings
-229 -> **229** (44% -> 45%), 4-sided share 74% -> 75%, area CV 0.38 -> **0.37**, median 1,365 ->
-1,370 sq ft, max unchanged. The only number that moved is the bottom of the distribution: min area
-237 -> **405 sq ft**. The floor amputated the tail and touched nothing else. Literal 3-sided rings
-**2 -> 0**; snipped-corner quads 8 -> 6; prong vertices 41 -> 38.
+**Two defects the review caught here, both FIXED rather than ledgered** (Principle XIV):
 
-**And what it caught, which became a second guard.** Absorption ranks candidate hosts by shared bund
-length, which is blind to the shape the union comes out as - so a 306 sq ft fragment went to the
-lumpiest basin on the sheet and made it worse: 26 vertices, eight reflex corners, four out-and-back
-prongs 5-11 ft wide that each draw as a bund with a FREE END sticking into the paddy. The GM's
-"rendering artifact" complaint, transplanted from area to outline. Both guards already in the ladder
-measure an APEX and neither can see a blunt lobe, so the fix measures **solidity** (area / convex
-hull): `_WELD_MIN_SOLIDITY` = 0.85, chosen off a wide gap in the measured population (eighteen of
-twenty welds scored >= 0.90, the two the reviewer picked out by eye scored 0.731 and 0.78). It is a
-preference and not a veto - the next-best host is tried and the least-lumpy candidate taken only if
-none is clean - because refusing outright trades a lump for a doubled bund, which the apex guard
-already learned is worse. After the guard the fragment goes to a 0.919-solidity neighbor and the
-lumpy basin is left at its pre-existing shape.
+- **All three shared byres had collapsed onto the three westernmost farmsteads** - a 208 ft span in a
+  911 ft row, median nearest-byre 373 ft and max 771, nine households with none within 300. The
+  mechanism was exact: hosts were ranked `(-wealth, x, y)` and every hamlet house carries
+  `wealth: 1.0`, so it degenerated to X ASCENDING. Hosts are now chosen FARTHEST-FIRST from the sheds
+  already standing - the objective `place_wells` was given for the same reason. **Median 107 ft,
+  max 210.**
+- **The windbreak was clipped by the tightened crop**: 58 of 217 clumps touching the frame and 23
+  drawn WHOLLY outside the viewBox. `village_grove` gained `within=`, which skips a clump whose crown
+  would fall outside, so the BELT itself does not move. **0 off-canvas.** Clamping the polygon was
+  tried first and is recorded as wrong in `hinterland.py`: the outline's bbox center is what the
+  grove records and what `village_windbreak_on_windward_side` judges, so pulling vertices inward
+  walked cohort seeds 19 and 28 onto the LEE side.
 
-**Logged, not fixed.** The dart-shaped ring at (1021-1084, 968-1012) is 1,034 sq ft - 0.69 of a
-cell, nearly three times the floor - and reads as an arrowhead; it is byte-identical before and
-after, so it is pre-existing and out of this change's scope. The reviewer's broader point stands and
-is worth a GM ruling some day: the floor is an AREA rule and some remaining offcuts are a SHAPE
-problem (a 436 sq ft parallelogram at (1486, 1138) meeting a wedge at a 27.4 deg needle; a quad at
-(1594, 836) whose fourth side is 3.1 ft). A minimum-side or tip-angle companion is the shape of that
-rule - not the declined four-sides rule, which is a different thing.
-
+**Still open, and it is a shape question the area floor cannot reach.** The dart-shaped ring at
+(1021-1084, 968-1012) is 1,034 sq ft - 0.69 of a cell, nearly three times the floor - and reads as an
+arrowhead; it is byte-identical before and after, so pre-existing. The reviewer's broader point
+stands for a GM ruling some day: a minimum-side or tip-angle companion to the area floor, which is
+NOT the declined four-sides rule.
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
 outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->

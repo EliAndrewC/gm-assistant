@@ -217,18 +217,32 @@ it is true because that change subdivides the same envelope into more cells and 
 number of everything else. **This rule changes the NUMBER of drawn plots**, the patchwork draws from
 the shared placement RNG, and so every downstream placement re-rolls. Measured against main's tip:
 
-| map | basins | homestead cluster |
-|---|---|---|
-| Inashiro | 640 -> 634 | re-packs wholesale: all 15 houses move (up to 149 px), gardens 18 -> 17, farm sheds 6 -> 3, 3 byres re-seat (up to 288 px), both wells and the kosatsuba move, the view shifts |
-| Kashikawa | 827 -> 814 | byte-identical - houses, gardens, yards, wells, kosatsuba and windbreak all unmoved; one byre re-seats |
-| Mizuguchi | 519 -> 511 | 5 of 12 houses move (up to 56 px), 5 gardens, farm sheds 2 -> 0, 3 byres, both wells |
-| Sawada | 843 -> 818 | 6 of 19 houses move (up to 78 px), 6 gardens (up to 160 px), one shed, one byre, one well, the kosatsuba |
+**And SAY WHICH METRIC.** The first version of this table did not, and was wrong by 2-4x as a result
+(caught by the Sawada review). "Up to 78 px" was every new house's distance to the *nearest old*
+house - which lets one old house partner several new ones, and so structurally under-reports. The
+honest figure is a **one-to-one matching**: the smallest possible LARGEST displacement over all
+pairings. On Sawada that is 286 px rather than 78, and one household leaves the mid-string for an
+outlying pocket entirely.
+
+Measured against main's tip, with the three review-found placement fixes in:
+
+| map | basins | houses unmoved | min-max displacement | other |
+|---|---|---|---|---|
+| Inashiro | 640 -> 634 | 0 of 15 | **564 px** | gardens 18 -> 17, farm sheds 6 -> 3, view shifts |
+| Kashikawa | 827 -> 814 | 20 of 20 | **0 px** | byte-identical, view included |
+| Mizuguchi | 519 -> 511 | 7 of 12 | **250 px** | gardens 16 -> 17, farm sheds 2 -> 1 |
+| Sawada | 843 -> 818 | 11 of 19 | **540 px** | gardens 20 -> 23, farm sheds 5 -> 6 |
+
+Household counts (15/15, 20/20, 12/12, 19/19), acreage and the field outlines all hold - it is the
+positions that rotate, by a map-specific amount, and Kashikawa proves the amount can be zero.
 
 The lesson is general and belongs with the rule: **any change to a drawn COUNT re-rolls the shared
 placement stream, so its ripple has to be measured rather than reasoned about** - and the reasoning
 that feels safest ("the field outline is the same, so the rings that key off it are the same") is
 exactly the one that fails, because the rings do not key off the outline through the RNG. It is also
-how the cohort seed-41 regression happened: a well moved, not a paddy.
+how the cohort seed-41 well regression happened: a well moved, not a paddy. Three further defects
+came out of the same rotation and were fixed under Principle XIV rather than ledgered - the byre
+ranking, the windbreak's frame clip, and lane frontage; each map's notes carry its own.
 
 One measurement trap is recorded because it cost a full calibration pass: the reference must be the
 fan's **recorded** `cell`, not `paddy_grain(ftpx)`. `plot_texture` had already scaled the hamlets'

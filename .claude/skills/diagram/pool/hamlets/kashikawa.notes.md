@@ -129,12 +129,11 @@ why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
 Acreage 26.1 / 26.0, 20 of 20 households, field outline unchanged - every dropped fragment absorbed
 into the basin it shares the most bund with, not deleted.
 
-**The cluster barely rippled here, which is worth recording precisely because Inashiro's did.** The
-rule changes the drawn plot count and so re-rolls the shared placement stream, but measured against
-main's tip this map's houses, gardens, threshing yards, farm sheds, wells, kosatsuba and windbreak
-are all **byte-identical**, `meta.view` included; the only movement is one byre re-seating 308 px. So
-the ripple is real but its SIZE is map-specific - do not generalize either way from one map.
-
+**The cluster did not ripple at all here, and that is worth recording precisely because Inashiro's
+re-packed wholesale.** The rule changes the drawn plot count and so re-rolls the shared placement
+stream, but measured against main's tip this map's houses are **20 of 20 unmoved** - gardens, yards,
+sheds, byres, wells, kosatsuba, windbreak and `meta.view` all byte-identical. So the ripple is real
+and its SIZE is map-specific; do not generalize in either direction from one map.
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
 outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->

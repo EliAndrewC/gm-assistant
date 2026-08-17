@@ -702,14 +702,27 @@ fragment is absorbed into the basin it shares the most bund with, not deleted.
 **THE CLUSTER RE-PACKS, and the first draft of this entry denied it** (settlement-review,
 2026-08-17). It had claimed "farmhouse rings all unchanged", copied from the paddy-CELL note where
 that is true; this rule changes the NUMBER of drawn plots, the patchwork draws from the shared
-placement RNG, and so every downstream placement re-rolls. Measured against main's tip, this is the
-worst-rippling of the four maps: **all 15 houses move** (up to 149 px), gardens **18 -> 17**,
-threshing yards travel with their houses, **farm sheds 6 -> 3**, three byres re-seat (up to 288 px),
-both wells and the kosatsuba move, the windbreak re-derives, and `meta.view` shifts
-`[1050, 325, 1696, 1831]` -> `[1065, 360, 1677, 1796]`. The shed drop is the item worth watching: it
-is the third consecutive round this count has drifted on this map, and the standing decision is to
-treat it as small-n noise rather than floor it per map.
+placement RNG, and so every downstream placement re-rolls. This is the worst-rippling of the four:
+**0 of 15 houses unmoved, min-max displacement 564 px** (one-to-one matching - the metric matters,
+see below), gardens **18 -> 17**, farm sheds **6 -> 3**, both wells and the kosatsuba re-seated, the
+windbreak re-derived, and `meta.view` shifted.
 
+**Say which metric.** A first pass reported "up to 149 px" - each new house's distance to the
+NEAREST OLD one, which lets a single old house partner several new ones and under-reports by 2-4x.
+The 564 px above is the smallest possible LARGEST displacement over all one-to-one pairings.
+
+**The shed drop is NOT a trend**, which the same review established and an earlier draft of this
+entry got wrong. The kura flip is position-seeded (`_hjit(x, y, 3.0) < 0.30`), so re-packing re-rolls
+all fifteen: P(X<=3 | n=15, p=0.30) = 0.297 and P(X>=6) = 0.278. The baseline's 6 was no more
+"correct" than this 3, and "three rounds drifting down" described re-rolls rather than a drift.
+
+**What the review caught, and what it cost to fix.** The re-pack pushed house-to-lane median to
+109 ft with the whole seven-farmstead north lobe fronting no track and a 252 ft spur with no house
+within 96 ft - past the 94 ft figure `homesteads.py` records as the very defect its frontage pass
+exists to cure. Fixed here under Principle XIV rather than ledgered: front-row seats must now lie
+within 150 px of a drawn lane, the first five exempt because `field_ringed`'s floor is a gate check
+and frontage is not. This map lands at **108 ft**, houses past 150 px halved (4 -> 2), 11 farmhouses
+still inside the ring band. Two dead ends are recorded in `homesteads.py` at the point of change.
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
 outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
