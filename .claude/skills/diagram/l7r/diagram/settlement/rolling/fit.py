@@ -182,7 +182,7 @@ class BundleFitMixin:
         where it cannot bite.
 
         GAP VERDICT family: real rotated corners via `poly_gap`, never centers, never a
-        circumscribed radius (dev/placement.md, "CENTER vs FOOTPRINT"). The centre-distance test in
+        circumscribed radius (dev/placement.md, "CENTER vs FOOTPRINT"). The center-distance test in
         front of it is a PREFILTER - it over-states both extents, so it can only admit a pair the
         exact test then rejects."""
         lim = self.px(FARMHOUSE_EAVE_GAP_FT + 2.0)

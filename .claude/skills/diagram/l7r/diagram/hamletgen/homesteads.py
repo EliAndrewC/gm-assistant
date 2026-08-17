@@ -69,7 +69,20 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
         if nx * (a[0] - cen[0]) + ny * (a[1] - cen[1]) < 0:
             nx, ny = -nx, -ny
         out.append((a[0] + nx * standoff, a[1] + ny * standoff))
-    return out
+    # ORDER CENTER-OUT, so the row FILLS rather than SPREADS (settlement-review on Inashiro,
+    # 2026-08-17). Sampling by density fixed the starved row, but it also handed the placer a dense
+    # line of seats along the WHOLE reachable margin in span order, and the caller takes them until
+    # the households run out - so the row walked from one end of the arc to the other and the
+    # cluster stretched with it. Measured cost on Inashiro: width 569 -> 445 ft at unchanged length,
+    # elongation 3.79 -> 5.42 against 1.22 for the authored Ikegami on the identical brief, and two
+    # more households pushed past the end of the lane skeleton.
+    #
+    # Offering the same seats in a different ORDER fixes it without giving the density back: the
+    # busiest ground is the middle of the band, the row fills there first, and the `placed >=
+    # households` break stops it before it reaches the far ends - which is exactly what
+    # `lane_frontage` already does ("ordered from the cluster's center outward, so the lanes fill
+    # from their busy end"), and a nucleated hamlet grows the same way, outward from its middle.
+    return sorted(out, key=lambda q: math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]))
 
 
 def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0) -> list[Pt]:
@@ -161,12 +174,31 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # stretches with their corridors, the field spur - so a row that stops at 92 px can land four
     # houses where five are wanted while perfectly good ground sits at 120. A farmhouse 150 px from
     # its paddy is still a farmhouse on its paddy.
+    # THE FRONT ROW IS ONE RANK, NOT THE WHOLE HAMLET (settlement-review on Inashiro and Mizuguchi,
+    # 2026-08-17). Once the row began sampling by density it could seat every household by itself,
+    # and it did: the cluster came out a single file along the paddy margin - Mizuguchi 891 x 123 ft,
+    # aspect 7.24, with an rms residual of 22 ft about a smooth curve, so NO house stood behind any
+    # other anywhere on the map. Inashiro went the same way (elongation 3.79 -> 5.42, width 569 ->
+    # 445 ft at unchanged length) against 1.22 for the authored Ikegami on the identical brief. It
+    # took the courtyards with it: Mizuguchi's copse collapsed 11 -> 4 clumps and its byres were
+    # pushed 20+ ft out of the homestead courtyards into the windbreak, because a one-rank cluster
+    # has no interior gap ground left. `consts.py` says the pitch is chosen to keep the cluster
+    # "dense enough to read as a nucleus and open enough for its courtyards, its wells and its
+    # byres"; a single rank has neither half.
+    #
+    # THE CAP IS ONE RANK'S WORTH OF THE BAND, derived rather than picked: the margin band is `lat`
+    # long, and homesteads in it stand a bundle pitch apart, so `2 * lat / pitch` is how many fit in
+    # the rank that fronts the field. Everything past that is a household the flanking and cloud
+    # passes should seat BEHIND, which is what makes a nucleus a nucleus. Floored at 6 so
+    # `field_ringed` (five farmhouses within 165 px of a big field's outline) can always be met by
+    # the row alone - the defect this row exists to prevent.
+    front_cap = min(plan.spec.households, max(6, int(2 * lat / BUNDLE_PITCH)))
     for standoff in (46.0, 56.0, 66.0, 78.0, 92.0, 110.0, 130.0, 150.0):
-        if placed >= plan.spec.households:
-            break  # pragma: no cover - the ask-met guards. The row rarely fills a whole hamlet by itself on real ground, but eight standoffs x twelve seats CAN offer more than the households asked for, and a row that overshoots fails households_consistent
+        if placed >= front_cap:
+            break
         for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
-            if placed >= plan.spec.households:
-                break  # pragma: no cover - the ask-met guards. The row rarely fills a whole hamlet by itself on real ground, but eight standoffs x twelve seats CAN offer more than the households asked for, and a row that overshoots fails households_consistent
+            if placed >= front_cap:
+                break
             if math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
                 placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
