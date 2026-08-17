@@ -13,7 +13,7 @@ from typing import Any
 from l7r.diagram.settlement import Settlement, seg_dist, surface_water_dist
 from l7r.diagram.sitegen.geom import centroid, unit
 
-from .consts import LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
+from .consts import BUNDLE_PITCH, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
 from .plan import SitePlan
 
 # ---- STAGE 5: the homesteads --------------------------------------------------------------------
@@ -42,6 +42,25 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
     if len(span) < 2:  # pragma: no cover - a band always spans several outline vertices
         return []
     span.sort(key=lambda ip: (ip[1][0] - seat["anchor"][0]) * ax + (ip[1][1] - seat["anchor"][1]) * ay)
+    # SAMPLE BY DENSITY, NOT BY HOUSEHOLD COUNT (2026-08-17). `count` is what the caller still WANTS
+    # seated, but using it to space the candidates too made the row's resolution depend on the size
+    # of the village rather than on the length of the field edge it fronts - so a 10-household
+    # hamlet beside a 28-acre paddy got ten seats spread over a very long outline, several hundred
+    # px apart. The near margin is the busiest ground on the map (crop up to the bund, delivery
+    # ditches and their corridors, the field spur), so a coarse row loses most of its candidates to
+    # blocked ground and leaves the field ringed by three houses instead of five - which is cohort
+    # seed 22, where the front row placed 5 of 32 offers and only 3 finished inside `field_ringed`'s
+    # 165 px band.
+    #
+    # THE HONEST SPACING IS ONE BUNDLE PITCH: two homesteads cannot stand closer than that, so
+    # sampling finer wastes offers, and sampling coarser leaves gaps a blocked seat cannot recover
+    # from. Offering more costs nothing - a seat too far along is dropped by the caller's own band
+    # test, and the loop stops as soon as the households are seated. Measured across the cohort:
+    # seed 22 goes 3 -> 10 farmhouses within the band (and its gate clean), seed 1 goes 11 -> 15,
+    # seed 4 goes 15 -> 16, and no map loses ground. It is also how a farming hamlet really sits -
+    # the houses crowd the field they work.
+    _span_len = sum(math.dist(span[i][1], span[i + 1][1]) for i in range(len(span) - 1))
+    count = max(count, min(int(_span_len / BUNDLE_PITCH) + 1, 64))  # capped so a huge fan cannot make the row unbounded
     out: list[Pt] = []
     for k in range(count):
         idx = span[min(len(span) - 1, round(k * (len(span) - 1) / max(1, count - 1)))][0]
@@ -50,7 +69,20 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
         if nx * (a[0] - cen[0]) + ny * (a[1] - cen[1]) < 0:
             nx, ny = -nx, -ny
         out.append((a[0] + nx * standoff, a[1] + ny * standoff))
-    return out
+    # ORDER CENTER-OUT, so the row FILLS rather than SPREADS (settlement-review on Inashiro,
+    # 2026-08-17). Sampling by density fixed the starved row, but it also handed the placer a dense
+    # line of seats along the WHOLE reachable margin in span order, and the caller takes them until
+    # the households run out - so the row walked from one end of the arc to the other and the
+    # cluster stretched with it. Measured cost on Inashiro: width 569 -> 445 ft at unchanged length,
+    # elongation 3.79 -> 5.42 against 1.22 for the authored Ikegami on the identical brief, and two
+    # more households pushed past the end of the lane skeleton.
+    #
+    # Offering the same seats in a different ORDER fixes it without giving the density back: the
+    # busiest ground is the middle of the band, the row fills there first, and the `placed >=
+    # households` break stops it before it reaches the far ends - which is exactly what
+    # `lane_frontage` already does ("ordered from the cluster's center outward, so the lanes fill
+    # from their busy end"), and a nucleated hamlet grows the same way, outward from its middle.
+    return sorted(out, key=lambda q: math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]))
 
 
 _FIELD_RING_FLOOR = 5
@@ -170,47 +202,63 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # stretches with their corridors, the field spur - so a row that stops at 92 px can land four
     # houses where five are wanted while perfectly good ground sits at 120. A farmhouse 150 px from
     # its paddy is still a farmhouse on its paddy.
-    # ...AND A FRONT-ROW SEAT MUST BE REACHABLE FROM A TRACK, not merely near the paddy
-    # (settlement-review, Inashiro 2026-08-17). The front row runs FIRST and follows the field
-    # OUTLINE, which on a long fan strings it hundreds of px past wherever the rolled lane skeleton
-    # happens to lie - so the row won every seat and the frontage pass below got only the leftovers.
-    # Measured on Inashiro: house-to-lane median 109 ft with five houses past 150 and a whole
-    # seven-farmstead lobe fronting nothing, plus a 252 ft lane spur with no house within 96 ft of
-    # it anywhere. That is the SAME defect the frontage pass's own comment below records curing
-    # ("a median house-to-lane distance of 94 ft ... with one lane dead-ending in open ground"),
-    # returned by a different route - and no gate check can see it, because `field_ringed` is
-    # satisfied by exactly the seats that cause it.
+    # THE FRONT ROW IS ONE RANK, NOT THE WHOLE HAMLET (settlement-review on Inashiro and Mizuguchi,
+    # 2026-08-17). Once the row began sampling by density it could seat every household by itself,
+    # and it did: the cluster came out a single file along the paddy margin - Mizuguchi 891 x 123 ft,
+    # aspect 7.24, with an rms residual of 22 ft about a smooth curve, so NO house stood behind any
+    # other anywhere on the map. Inashiro went the same way (elongation 3.79 -> 5.42, width 569 ->
+    # 445 ft at unchanged length) against 1.22 for the authored Ikegami on the identical brief. It
+    # took the courtyards with it: Mizuguchi's copse collapsed 11 -> 4 clumps and its byres were
+    # pushed 20+ ft out of the homestead courtyards into the windbreak, because a one-rank cluster
+    # has no interior gap ground left. `consts.py` says the pitch is chosen to keep the cluster
+    # "dense enough to read as a nucleus and open enough for its courtyards, its wells and its
+    # byres"; a single rank has neither half.
     #
-    # A CAP ON THE ROW, NOT A LADDER ON IT - and the difference was MEASURED, because the ladder is
-    # the shape every other rung in this function uses and here it did nothing. Offering the whole
-    # standoff ladder twice, once capped and once admitting anything, left every median exactly where
-    # it started (109 / 59 / 65 / 118 ft): the capped pass cannot fill the row on a long fan, so the
-    # uncapped pass seated the very houses the cap had just refused. A cap only bites when there is no
-    # second chance at the same seats - and none is needed, because the passes BELOW this one (lane
-    # frontage, then the in-band cloud, then four widening rounds) are the real fallback and they seat
-    # in-band ground by construction. Measured with the cap alone: 106 / 59 / 65 / 77 ft, houses past
-    # 150 px down 4 -> 2 on Inashiro and 6 -> 4 on Sawada, every map gating clean with 11-15
-    # farmhouses inside `field_ringed`'s 165 px band against its floor of 5.
+    # THE CAP IS ONE RANK'S WORTH OF THE BAND, derived rather than picked: the margin band is `lat`
+    # long, and homesteads in it stand a bundle pitch apart, so `2 * lat / pitch` is how many fit in
+    # the rank that fronts the field. Everything past that is a household the flanking and cloud
+    # passes should seat BEHIND, which is what makes a nucleus a nucleus. Floored at 6 so
+    # `field_ringed` (five farmhouses within 165 px of a big field's outline) can always be met by
+    # the row alone - the defect this row exists to prevent.
+    front_cap = min(plan.spec.households, max(6, int(2 * lat / BUNDLE_PITCH)))
+    # ...AND A FRONT-ROW SEAT MUST ALSO BE REACHABLE FROM A TRACK, not merely near the paddy
+    # (settlement-review, Inashiro 2026-08-17 - the same review round as the rank cap above, which
+    # is the OTHER half of this defect: that one bounds HOW MANY seats the row takes, this one bounds
+    # WHICH). The row runs FIRST and follows the field OUTLINE, which on a long fan strings it
+    # hundreds of px past wherever the rolled lane skeleton lies - so the row won every seat and the
+    # frontage pass below got the leftovers. Measured on Inashiro: house-to-lane median 109 ft, five
+    # houses past 150, a whole seven-farmstead lobe fronting nothing, and a 252 ft lane spur with no
+    # house within 96 ft anywhere. That is the defect the frontage pass's own comment below records
+    # curing ("a median house-to-lane distance of 94 ft ... with one lane dead-ending in open
+    # ground"), returned by a different route - and no gate check can see it, because `field_ringed`
+    # is satisfied by exactly the seats that cause it.
+    #
+    # A CAP, NOT A LADDER - the difference was MEASURED, because the ladder is the shape every other
+    # rung in this function uses and here it did nothing. Offering the whole standoff ladder twice,
+    # once capped and once admitting anything, left every median where it started (109/59/65/118 ft):
+    # the capped pass cannot fill the row on a long fan, so the uncapped pass seated the very houses
+    # the cap had just refused. A cap only bites when there is no second chance at the same seats -
+    # and none is needed, because the passes BELOW this one (lane frontage, the in-band cloud, four
+    # widening rounds) are the real fallback and seat in-band ground by construction.
     #
     # TIGHTENING THE BAND INSTEAD WAS TRIED AND IS WRONG - recorded so it is not retried. Dropping the
-    # row's own `bound * 1.3` allowance to `bound` made Inashiro WORSE (109 -> 158 ft, houses past
-    # 150 px 4 -> 8) and Mizuguchi too (65 -> 93). A front row that cannot follow the field outline
-    # does not move inward; it loses its seats to the cloud, which sits further from the tracks still.
-    # The row's reach past the band was never the defect - its blindness to the tracks was.
-    # THE FIRST `_FIELD_RING_FLOOR` SEATS ARE EXEMPT FROM THE CAP, because the ring comes first.
-    # `field_ringed` wants five farmhouses within 165 px of the outline and it is a GATE check, while
-    # lane frontage is a form rule with no check at all - so the cap must never be the reason a map
-    # ships with four. Measured: capping every seat took cohort seeds 22 and 47 from passing to
-    # `field_ringed` 3-of-5 and 4-of-5. Exempting the first five costs almost nothing on the
-    # frontage side (the defect was a TAIL of seven houses strung down the margin, not the ring
-    # itself) and it makes the ring unconditional again.
+    # row's `bound * 1.3` allowance to `bound` made Inashiro WORSE (109 -> 158 ft, houses past 150 px
+    # 4 -> 8) and Mizuguchi too (65 -> 93). A front row that cannot follow the field outline does not
+    # move inward; it loses its seats to the cloud, which sits further from the tracks still. The
+    # row's reach past the band was never the defect - its blindness to the tracks was.
+    #
+    # THE FIRST `_FIELD_RING_FLOOR` SEATS ARE EXEMPT, because the ring comes first and it is a GATE
+    # check where frontage is a form rule with none. Capping every seat took cohort seeds 22 and 47
+    # from passing to `field_ringed` 3-of-5 and 4-of-5. This is the same concern the rank cap's floor
+    # of 6 answers from its own side; both are needed, because that floor bounds the COUNT while this
+    # exemption is about WHICH seats may fill it.
     _row_seats = 0
     for standoff in (46.0, 56.0, 66.0, 78.0, 92.0, 110.0, 130.0, 150.0):
-        if placed >= plan.spec.households:
-            break  # pragma: no cover - the ask-met guards. The row rarely fills a whole hamlet by itself on real ground, but eight standoffs x twelve seats CAN offer more than the households asked for, and a row that overshoots fails households_consistent
+        if placed >= front_cap:
+            break
         for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
-            if placed >= plan.spec.households:
-                break  # pragma: no cover - the ask-met guards. The row rarely fills a whole hamlet by itself on real ground, but eight standoffs x twelve seats CAN offer more than the households asked for, and a row that overshoots fails households_consistent
+            if placed >= front_cap:
+                break
             if (_row_seats < _FIELD_RING_FLOOR or _lane_dist(s, fx, fy) <= _FRONT_ROW_LANE_CAP) and math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
                 placed += 1
                 _row_seats += 1
@@ -219,6 +267,23 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # first draft measured a median house-to-lane distance of 94 ft against Ikegami's 55, with one
     # lane dead-ending in open ground and no house at its end. Offering the placer seats at exactly
     # the corridor's edge is what puts the doors on the street.
+    #
+    # THIS PASS IS WHAT BUILDS THE BACK RANK (2026-08-17, and the history is worth two sentences
+    # because a comment here was briefly WRONG about it). For part of one day `front_row` sampled by
+    # density with no cap and seated every household by itself, this pass placed nothing, and a
+    # comment was written saying so - "now a fallback". Three settlement-reviews then showed what
+    # that actually meant: the cluster had become a single rank along the paddy, Mizuguchi at aspect
+    # 7.24 with no house standing behind any other. The cap above is the fix, and it makes THIS pass
+    # load-bearing again: the households past one rank's worth are seated here, behind the front row.
+    # Measured on Mizuguchi after the cap, distance from each house to the field outline falls in
+    # four bands - 18/41/58/58, then 96/101/116/128, then 193/193/216, then 297 ft - and everything
+    # past 150 ft (the front row's furthest standoff) came from this loop.
+    #
+    # WHAT THE CAP COSTS, recorded rather than left implied: fronting loosens. Mizuguchi's median
+    # house-to-lane went back to ~98 ft from the ribbon's 77, with 4 of 12 within 60 ft rather than
+    # 10. The ribbon's tighter fronting was an artifact of the defect, not a baseline worth keeping -
+    # but ~98 is the figure an early review criticized against Ikegami's 55, and this loop is where
+    # a future tightening belongs, since it is the pass now doing the seating.
     for lx, ly in lane_frontage(s, seat):
         if placed >= plan.spec.households:
             break

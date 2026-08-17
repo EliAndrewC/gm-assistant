@@ -118,6 +118,47 @@ def test_farm_sheds_attached_fires_on_a_stranded_kura():
     assert "farm_sheds_attached" in f(M)
 
 
+def test_farmhouses_shed_separately_fires_on_a_pair_that_merges_into_one_building():
+    # Two steep thatched roofs need their own drip lines and a way between them. Caught by
+    # settlement-review on Mizuguchi 2026-08-17: a re-pack flipped one house's rake so a pair
+    # diverged instead of running parallel and their raked-corner gap fell to 2.0 ft - two pixels
+    # at 1 px = 1 ft, merging into one long building. Nothing measured house-to-house separation
+    # at all before this; `no_structure_overlaps` only fires at zero.
+    near = {
+        "meta": {"scale": "hamlet", "ftpx": 1},
+        "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "kind": "plain", "rot": 0}, {"x": 550, "y": 500, "w": 46, "h": 28, "kind": "plain", "rot": 0}],
+    }  # 4 ft of daylight between the walls
+    assert "farmhouses_shed_separately" in f(near)
+
+
+def test_farmhouses_shed_separately_passes_at_an_ordinary_nucleated_spacing():
+    # The rule must not fire on a tight-but-honest nucleus: the scripted hamlets sit at 23-29 ft.
+    far = {
+        "meta": {"scale": "hamlet", "ftpx": 1},
+        "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "kind": "plain", "rot": 0}, {"x": 570, "y": 500, "w": 46, "h": 28, "kind": "plain", "rot": 0}],
+    }  # 24 ft apart
+    assert "farmhouses_shed_separately" not in f(far)
+
+
+def test_farmhouses_shed_separately_measures_FEET_not_pixels():
+    # The clearance is a physical distance, so it converts through meta.ftpx (FEET per pixel) rather
+    # than being a raw pixel literal that would silently mean two different rules at two tiers.
+    # The same 6 px wall gap is 6 ft at a hamlet (1 ft/px) - a merge - and 12 ft at a village
+    # (2 ft/px), which is honest spacing. So the SAME geometry must fire at one tier and not the other.
+    houses = [{"x": 500, "y": 500, "w": 23, "h": 14, "kind": "plain", "rot": 0}, {"x": 529, "y": 500, "w": 23, "h": 14, "kind": "plain", "rot": 0}]
+    assert "farmhouses_shed_separately" in f({"meta": {"scale": "hamlet", "ftpx": 1}, "houses": houses}), "6 px = 6 ft at a hamlet: a merge"
+    assert "farmhouses_shed_separately" not in f({"meta": {"scale": "village", "ftpx": 2}, "houses": houses}), "the same 6 px = 12 ft at a village: honest spacing"
+
+
+def test_farmhouses_shed_separately_ignores_a_derelict():
+    # A ruin has no roof left to shed, so it is not held to the drip-line rule - the placer skips it too.
+    M = {
+        "meta": {"scale": "hamlet", "ftpx": 1},
+        "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "kind": "plain", "rot": 0}, {"x": 550, "y": 500, "w": 46, "h": 28, "kind": "abandoned", "rot": 0}],
+    }
+    assert "farmhouses_shed_separately" not in f(M)
+
+
 def test_labels_clear_of_other_buildings_fires_on_a_caption_over_a_torii_arch():
     # GM 2026-07-27: an arch is "never covered by the 'temple of X' label" - and the hall's OWN
     # caption was the commonest offender, since caption and sando both want the ground at the front.

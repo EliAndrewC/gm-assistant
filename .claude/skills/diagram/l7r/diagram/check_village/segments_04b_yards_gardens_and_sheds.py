@@ -3,7 +3,7 @@
 import math
 from typing import Any
 
-from l7r.diagram.settlement import sat_overlap, surface_water_dist
+from l7r.diagram.settlement import FARMHOUSE_EAVE_GAP_FT, sat_overlap, surface_water_dist
 
 from .common_01_geometry import (
     _OVERLAP_STRUCTS,
@@ -808,5 +808,66 @@ def _seg_0285_065__groves_clear_of_paddies(*, check: Any = _UNBOUND, g_in_paddy:
             f"homestead grove(s) sit squarely IN a flooded paddy (center over water): {g_in_paddy[:3]} - the "
             f"windbreak HUGS the bund (abutting/overlapping the field edge is correct) but must not be planted "
             f"out in the paddy itself",
+        )
+    return _kept(locals(), ())
+
+
+# TWO FARMHOUSES MUST SHED SEPARATELY. A minka carries a steep kayabuki thatch (45 deg or steeper -
+# thatch has to shed hard or it rots), so each roof throws its own drip line, and two of them set a
+# couple of feet apart pool their runoff against each other's walls. `research/buildings.md` already
+# records the principle for a building standing against a compound wall - "rear wall a foot or two
+# off it so the two roofs shed separately" - and the same physics governs two houses.
+#
+# THE DEFECT IT CATCHES, and why a rule was needed at all (settlement-review on Mizuguchi,
+# 2026-08-17): a re-pack flipped one house's rake from -4.0 to +4.4 deg so a neighboring pair
+# diverged instead of running parallel, and their raked-corner gap fell 3.6 -> 2.0 ft. At 1 px = 1 ft
+# that is two pixels between two dark roof strokes; at fit zoom they merge and read as ONE long
+# building rather than two households. Nothing caught it, because house-to-house separation had no
+# rule at all - `no_structure_overlaps` only fires at zero.
+#
+# THE NUMBER, and its headroom. 8 ft: two drip lines plus a footpath between them, which is the
+# least ground that reads as a gap rather than a seam. It is deliberately far below what the pool
+# actually does - the scripted hamlets sit at 23-29 ft minimum - so this fires on a merge, never on
+# a tight-but-honest nucleus. A denser tier may legitimately approach it; it may not cross it.
+#
+# IN FEET, NOT PIXELS. The rule is a physical clearance, so it converts through `meta.ftpx` rather
+# than being a raw px literal that would silently mean 8 ft at a hamlet and 16 ft at a village.
+# GAP VERDICT family: `within_edge_gap` on real rotated corners, never centers (dev/placement.md).
+#
+# THE TIER GUARD IS DECLARED, not incidental (settlement-review on Mizuguchi, 2026-08-17: 'a check
+# that never RUNS looks exactly like a check that passes'). It runs at town/village/hamlet and NOT
+# at city, and that is deliberate: a city's dwellings are `buildings` on a street wall, where
+# sharing a party wall is the correct machiya form, not a merge. City maps do carry `houses`
+# records, and the rule was run against the whole pool with the guard bypassed - no city map
+# violates it - so the guard currently hides nothing.
+#
+# A PIXEL FLOOR WAS CONSIDERED AND NOT ADDED. The motivating defect was both physical (two roofs
+# with nowhere to shed) and PERCEPTUAL (two dark strokes 2 px apart merging into one building),
+# and only the physical half converts through ftpx: 8 ft is 8 px at a hamlet but 4 px at a village
+# and 2.7 px at a city, which is the very seam width that read as one building here. Declined for
+# now because no map at those tiers is near the line and a floor nothing exercises is a rule
+# nobody has tested; the trigger to add one is the first village or town map that draws a
+# legal-in-feet pair under ~4 px. Recorded so the next reader knows it was a decision.
+
+
+def _seg_0606__farmhouses_shed_separately(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0606 (farmhouses_shed_separately) - added 2026-08-17, see the note above.
+
+    Numbered past the legacy range (the number is a LABEL; the registry tuple is the execution
+    order). It binds only M/check/scale, all established long before any homestead segment, so its
+    position carries no dependency."""
+    if scale in ('town', 'village', 'hamlet'):
+        _fh = [h for h in M.get("houses", []) if h.get("kind") != "abandoned"]
+        _lim = FARMHOUSE_EAVE_GAP_FT / float(M["meta"].get("ftpx", 1) or 1)
+        _merged = []
+        for _i in range(len(_fh)):
+            for _j in range(_i + 1, len(_fh)):
+                if within_edge_gap(_fh[_i], _fh[_j], _lim):
+                    _merged.append((round(_fh[_i]["x"]), round(_fh[_i]["y"])))
+        check(
+            "farmhouses_shed_separately",
+            not _merged,
+            f"{len(_merged)} farmhouse pair(s) stand closer than {FARMHOUSE_EAVE_GAP_FT:.0f} ft wall to wall, at {_merged[:4]} - "
+            f"two steep thatched roofs need their own drip lines and a way between them; at this range the pair merges into one long building on the sheet",
         )
     return _kept(locals(), ())
