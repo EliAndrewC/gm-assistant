@@ -341,3 +341,101 @@ def test_ring_drops_candidates_severed_from_their_field_by_a_road():
     s.farmsteads()
     assert s.M["houses"]  # the near side seats normally
     assert all(h["y"] < 620 for h in s.M["houses"])
+
+
+# ---- feature 118: the composed RollingMixin surface ----------------------------------------------
+# The one thing a package split can break SILENTLY. A member dropped by the transformer yields a
+# package that imports cleanly, type-checks cleanly under mypy --strict, and draws nothing - it
+# surfaces only when whichever generator calls that member happens to run. A member defined TWICE
+# yields a working import, a clean typecheck, and one silently dead implementation, because the MRO
+# just picks the first base. Contract: specs/118-rolling-package/contracts/mixin-surface.md.
+
+_ROLLING_SURFACE = frozenset(
+    {
+        # public - called from pool gens, wip/, other engine modules and tests
+        "farmsteads",
+        "headman",
+        "line_seeds",
+        "ring",
+        "roll_village",
+        "scatter_seeds",
+        "sun_corridor",
+        "waterfront_seeds",
+        # private - reached through self., including from OUTSIDE the package
+        "_bbox_of",
+        "_bundle_common_fits",
+        "_bundle_fits",
+        "_bundle_geom",
+        "_bundle_side_fits",
+        "_closest_on_seg",
+        "_east_trees",
+        "_farmsteads_bundle",
+        "_farmsteads_legacy",
+        "_field_adjacent",
+        "_field_dist",
+        "_fits_any_side",
+        "_garden_beds",
+        "_garden_beds_clear",
+        "_garden_shaded",
+        "_kura_side",
+        "_nearest_field_point",
+        "_nearest_placed_point",
+        "_perim_bbox",
+        "_perim_poly",
+        "_place_bundle",
+        "_place_bundle_nucleated",
+        "_poly_bboxes",
+        "_rect_blocked",
+        "_rect_corners",
+        "_rect_hits",
+        "_rect_on_water",
+        "_relax_gardens_south",
+        "_slide",
+        "_slide_nuc",
+        "_solve_homestead",
+        "_sun_corridor_ok",
+        "_water_obstacles",
+        "_yard_sun_conflict",
+        # class-level DATA, not a callable - a callable-only census would not notice it going
+        # missing, which is the extra test feature 112 had to write after the fact
+        "_NUC_SIDES",
+    }
+)
+
+
+def _own_members(cls: type) -> set[str]:
+    """Every non-dunder name this class body defines - data attributes included, not just callables."""
+    return {k for k in vars(cls) if not k.startswith("__")}
+
+
+def _rolling_sub_mixins() -> list[type]:
+    from settlement.rolling import RollingMixin
+
+    return [c for c in RollingMixin.__mro__ if c is not RollingMixin and c is not object]
+
+
+def test_no_member_of_the_pre_split_rolling_surface_is_lost():
+    # SUPERSET, not equality, deliberately: a later decomposition legitimately adds named private
+    # helpers, and equality would turn every such change into a contract edit - training a reader to
+    # bump the frozenset without thinking, which is the reflex that lets a real subtraction through.
+    # This feature is itself that case: the roll_village stage split adds seven _roll_* members.
+    from settlement.rolling import RollingMixin
+
+    composed = set().union(*(_own_members(c) for c in RollingMixin.__mro__))
+    assert composed >= _ROLLING_SURFACE, f"missing={sorted(_ROLLING_SURFACE - composed)}"
+
+
+def test_no_rolling_member_is_defined_in_two_sub_mixins():
+    # C1 cannot see this: a name defined in two bases still appears in the union, so a duplicate
+    # passes C1, passes the import, passes mypy --strict, and runs whichever definition the MRO
+    # reaches first - leaving the other as dead code a future reader will edit believing it is live.
+    # The transformer refuses such a partition, but the transformer is a one-shot script; this test
+    # outlives it and covers the member somebody adds by hand later.
+    seen: dict[str, str] = {}
+    dupes: list[str] = []
+    for cls in _rolling_sub_mixins():
+        for name in _own_members(cls):
+            if name in seen:
+                dupes.append(f"{name} in both {seen[name]} and {cls.__name__}")
+            seen[name] = cls.__name__
+    assert not dupes, f"defined twice: {sorted(dupes)}"
