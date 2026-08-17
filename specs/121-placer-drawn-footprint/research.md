@@ -18,18 +18,21 @@ One of these findings has already changed the plan. See D2.
 
 **Does the current value match?** No, and it does not claim to. The constant's own comment says it stays wide "until then" - until the bundle path tests the rect it draws. It is a workaround wearing a constant's clothes.
 
-**The honest arithmetic**, at hamlet scale (1 px = 1 ft):
+**The honest arithmetic**, at hamlet scale (1 px = 1 ft). **Corrected after D6's measurement** - an earlier draft of this table mis-stated why the 32 px trial failed:
 
 | quantity | value | source |
 |---|---|---|
 | lane tread width | ~10 ft -> half-tread 5 px | `settlements/ways.md`: `s.lane(width=5)` at 1 px = 2 ft, i.e. 10 ft |
 | plain minka footprint | 46 x 28 ft -> half-diagonal **26.9 px** | the standard farmhouse rect |
-| wealthy minka, as DRAWN | ~61 x 37 ft -> half-diagonal **~35.6 px** | the wealth render scale, per `consts.py`'s frontage note |
-| plain-house blanket clearance | 26.9 + 5 = **~32 px** | |
-| worst-case (wealthy) blanket clearance | 35.6 + 5 = **~41 px** | |
-| **shipped value** | **48 px** | exceeds even the worst case by ~7 ft |
+| **longest nucleated minka, as DRAWN** | up to **62.1 x 30.8 ft** -> half-diagonal **34.7 px** | `houses.py::_try_place_bundle`: length factor `[0.85, 1.35]`, depth factor `[0.90, 1.10]` |
+| longest actually observed in the pool | 60.5 x 29.4 ft -> half-diagonal 33.6 px | measured on `pool/hamlets/inashiro.json`, D6 |
+| plain-house blanket clearance | 26.9 + 5 = ~32 px | |
+| **honest blanket clearance for the DRAWN population** | 34.7 + 5 = **~40 px** | |
+| **shipped value** | **48 px** | exceeds the honest blanket by ~8 ft, not the ~16 an earlier reading suggested |
 
-The 32 px that was tried on 2026-08-12 and reverted is exactly the plain-house blanket figure - it failed not because it was wrong about lanes but because the bundle path never tested the drawn rect at all, so the wealthy steadings it did not model walked onto the tread.
+**Why the 32 px trial failed, correctly stated.** Not because the drawn rect was a different size or in a different place - D6 measures both as identical to the cleared rect, to four decimal places. It failed because **32 is the PLAIN house's figure and the nucleated path jitters a minka's length up to 1.35x**: a minka grew by adding bays along the ridge, so the generator varies length a lot and depth only a little. A 62 ft house has a 34.7 px half-diagonal, which reaches past a 32 px corridor and onto the tread. The blanket was derived from the wrong member of the population.
+
+That is a real defect and it is worth separating from the rotation one, because they have different fixes: this one is arithmetic (derive from the longest drawn house, not the base one), and D6's is geometric (test the rotated quad).
 
 **What this means for the fix.** Once a bundle's drawn footprint is tested against the drawn tread, a blanket worst-case margin is no longer doing correctness work: any seat that would put a corner on the tread is refused on its own geometry, whatever the constant says. The constant then answers a different and much smaller question - *how far out do we offer seats, so houses front the lane rather than crowd it* - and it should be set to that, with the tread test as the guarantee behind it.
 
@@ -90,6 +93,33 @@ make done                                                        # ruff + format
 **These two are PRE-EXISTING and are ledgered, not fixed here.** Principle XIII is explicit that a pre-existing failure is not a regression and is not this feature's to repair under someone else's flag - which is exactly why the baseline is mandatory. If either seed's check is still failing at merge, that is the baseline holding, not a regression. If a **third** appears, it blocks.
 
 **Known measurement artifact, recorded so nobody re-diagnoses it**: in a detached worktree `.git` is a *file* rather than a directory, so `scripts/gate-stamp.py` raises `NotADirectoryError` when it writes its green-stamp. The gate itself completes and prints `gate green`; the traceback is worktree plumbing, not a gate failure.
+
+---
+
+## D6. Where drawn diverges from placed - and the ledger was wrong about it
+
+**Decision**: the divergence is **ROTATION, and only rotation**. The fix is a rotated-quad test, not a re-derivation of size or position.
+
+**What the ledger says** (`hamletgen.md` finding 2, `dev/placement.md` item 3, and the deferral comment in `consts.py`, all in the same words): *"the house inside it is offset from the seed point AND scaled by the wealth/length jitter - so the rect the placer clears is neither the size nor the position of the rect the map draws."*
+
+**What is actually true**, measured on the recorded artifact `pool/hamlets/inashiro.json` (15 of 15 houses carry their `geom`):
+
+| comparison | result |
+|---|---|
+| `max abs(geom["house"] position - rec position)` | **0.0000 px** |
+| `max abs(geom["house"] size - rec size)` | **0.0000 px** |
+| `rot` range across the map | **-4.96 to +2.55 degrees** |
+| **corner bulge beyond the cleared axis-aligned rect** | **2.56 px** (a 60.5 x 29.4 house at -4.96 deg) |
+
+The size and the position agree **exactly**. Reading the code confirms why: `hw`/`hh` are computed with their wealth and length jitter *before* `_place_bundle` is called, and `_bundle_geom` is rebuilt at the final slid position `(cx, cy)`, which is then used verbatim as `rec["x"], rec["y"], rec["w"], rec["h"]`. What the record adds afterward is `"rot": self._hjit(cx, cy, 11.0) * 10.0 - 5.0`, and **`_rect_corners` returns axis-aligned corners** - so the placer clears a square-on rect and the renderer draws it raked.
+
+**The 2.56 px bulge matches the independently-recorded symptom exactly**: *"a corner ended 2.4 px from a track's centerline while its centre stood a legal 34 px off."* Two measurements taken years apart in different ways agreeing to a quarter of a pixel is the best evidence available that this is the whole of it.
+
+**Why this makes the fix cleaner than the ledger implied.** The rake is `_hjit(cx, cy, 11.0) * 10 - 5` - **position-seeded**, a pure function of the candidate's coordinates, deliberately so that a house's rake never ripples other placement. It is therefore fully computable *at seat time*, before anything is committed. The placer can know the exact quad it will draw without any change to when rotation is decided. There is no ordering problem here at all, which is what a "the rect is a different size and in a different place" diagnosis would have implied.
+
+**Consequence for the tasks**: T004's helper needs the rotation and nothing else; T008 routes the bundle's solid rects through a rotated-quad tread test. No re-derivation of bundle sizing is required, and the plan does not need a stage for one.
+
+**Recorded for correction**: the "offset AND scaled" wording is wrong in three places and gets fixed under T030 rather than repeated.
 
 ---
 
