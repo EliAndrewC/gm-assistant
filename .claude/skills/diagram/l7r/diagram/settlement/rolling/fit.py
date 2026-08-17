@@ -129,6 +129,36 @@ class BundleFitMixin:
                     return True
         return self._near_corridor(cx, cy)
 
+    def _house_on_a_tread(self: Settlement, rect: Any) -> bool:  # type: ignore[misc]
+        """Would this bundle's house, AS DRAWN, put a corner on a way's drawn tread?
+
+        THE HALF OF THE FOOTPRINT DEBT THE BUNDLE PATH NEVER PAID (feature 121). `_fits` gained the
+        footprint-vs-tread test on 2026-08-12, but a homestead BUNDLE is seated by `_bundle_fits`
+        from its own geometry and never goes through `_fits` at all - so the only thing standing
+        between a drawn steading and the lane was `_rect_blocked`'s closing `_near_corridor(cx, cy)`,
+        a bare CENTRE test, plus enough corridor width to cover the difference by margin. Measured
+        at a 32 px clearance: 10 of 24 cohort maps put a farmhouse corner on a lane.
+
+        WHAT ACTUALLY DIVERGES IS THE RAKE, and only the rake. The bundle's house rect matches the
+        drawn record's position and size exactly (four decimal places, measured across
+        pool/hamlets/inashiro.json); `_house_rot` is what the renderer adds afterward, and an
+        axis-aligned clearance ignores up to 2.56 px of corner bulge. Since the rake is
+        position-seeded it is knowable at seat time, so this is an exact test and not an estimate.
+
+        SURFACE, NOT CLEARANCE (this skill's dev/placement.md, and specs/121's contracts/placement.md
+        C4). Only the drawn tread is tested this way. The soft corridor keeps its centre test above,
+        deliberately: footprint-testing a clearance was tried once and reverted, because a clearance
+        is slack a footprint routinely overhangs, and tightening it cost Nagahara a well and pushed
+        Hoshizora's punishment ground off its street.
+
+        THE HOUSE ONLY, and that is a decision rather than an oversight. The yard, garden and grove
+        are drawn axis-aligned, so for them the rect already IS the drawn footprint and the corridor
+        test they get is honest. Extending a tread test to them would be a new rule about where a
+        threshing yard may lie - which no check currently makes and which would re-pack every
+        nucleated map to enforce - so it is deliberately out of scope here."""
+        cx, cy, w, h = rect
+        return self._on_a_tread(cx, cy, w, h, rot=self._house_rot(cx, cy))
+
     def _bundle_fits(self: Settlement, geom: Any, grove_off_field: bool = True) -> bool:  # type: ignore[misc]
         """A homestead bundle fits where it is in-bounds, its SOLID parts (house/yard/garden) clear every
         paddy/block/lane/ellipse, its GROVE clears all of those (and may abut - but not enter - a paddy when
@@ -198,6 +228,8 @@ class BundleFitMixin:
         yard, a north kura, the windward grove (dispersed only), and the yard sun-corridor. Same for every
         garden side at a given position, so it is tested once per position."""
         if self._rect_blocked(geom["house"], fields=True) or self._rect_blocked(geom["yard"], fields=True) or ("shed" in geom and self._rect_blocked(geom["shed"], fields=True)):
+            return False
+        if self._house_on_a_tread(geom["house"]):
             return False
         if "grove_n" in geom and any(self._rect_blocked(geom[k], fields=grove_off_field) for k in ("grove_n", "grove_w")):
             return False

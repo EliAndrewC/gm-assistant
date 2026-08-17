@@ -51,7 +51,7 @@ GROSS_ACRES_PER_HOUSEHOLD = 1.3
 # and is the right end state, but it re-rolls four hand-authored maps and breaks Hoshigaoka's gate,
 # so it is a reviewed pool job rather than a side effect (recorded in hamletgen.md, finding 2).
 # Until then this stays wide enough that the drawn steading clears the tread from any seat.
-LANE_CLEARANCE = 48.0
+LANE_CLEARANCE = 32.0  # TEMPORARY (feature 121, T006): the manufactured RED STATE. Restored/re-derived in T020.
 
 # How far off a lane's centerline a frontage seat is offered. This is a PLACEMENT decision and is
 # deliberately not derived from LANE_CLEARANCE, which is the corridor rule: fronting a lane excuses

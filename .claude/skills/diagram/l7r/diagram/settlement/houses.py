@@ -240,7 +240,7 @@ class HousesMixin:
         replaced by a real footprint test, which frees the ground those wells need."""
         self.treads.append(([(float(q[0]), float(q[1])) for q in pts], float(half), pts))
 
-    def _on_a_tread(self: Settlement, x: float, y: float, w: float, h: float, skip: Any = None) -> bool:  # type: ignore[misc]
+    def _on_a_tread(self: Settlement, x: float, y: float, w: float, h: float, skip: Any = None, rot: float = 0.0) -> bool:  # type: ignore[misc]
         """Would a building of this size, at this spot, have any CORNER on a way's drawn tread?
 
         THE DEBT THIS PAYS (this skill's CLAUDE.md, "placement tests a different footprint than the
@@ -253,10 +253,17 @@ class HousesMixin:
         The two tests are kept SEPARATE on purpose. Footprint-testing the whole clearance was tried
         once for `block_polys` and reverted, because a clearance is slack that a footprint routinely
         overhangs by a few px; the TREAD is not slack. So the clearance keeps its centre test and
-        the tread gets an exact one, with the same 2 px hair `houses_clear_of_lanes` allows."""
+        the tread gets an exact one, with the same 2 px hair `houses_clear_of_lanes` allows.
+
+        `rot` IS THE FOOTPRINT (feature 121). This used to pass 0.0 unconditionally, which made the
+        "exact" test axis-aligned - so it measured a square-on rect while the map drew a raked one,
+        the very substitution the paragraph above is about. It defaults to 0.0 because most callers
+        seat something genuinely unrotated; a caller that knows its rake passes it, and the bundle
+        placer gets it from `_house_rot`. GAP VERDICT family (this skill's dev/placement.md, "CENTER
+        vs FOOTPRINT"): real rotated corners, never a centre, never a circumscribed radius."""
         if not self.treads:
             return False
-        quad = rot_rect(x, y, w, h, 0.0)
+        quad = rot_rect(x, y, w, h, rot)
         corners = [*quad, (x, y)]
         return any(not self._tread_skipped(orig, skip) and any(seg_dist(qx, qy, tp[i], tp[i + 1]) < half + 2.0 for qx, qy in corners for i in range(len(tp) - 1)) for tp, half, orig in self.treads)
 
@@ -533,6 +540,23 @@ class HousesMixin:
         v = math.sin(x * 12.9898 + y * 4.1414 + salt * 7.373) * 43758.5453
         return v - math.floor(v)
 
+    def _house_rot(self: Settlement, cx: float, cy: float) -> float:  # type: ignore[misc]
+        """The rake a farmhouse seated at (cx, cy) will be DRAWN at, in degrees.
+
+        ONE DEFINITION, because the placer and the renderer must not each have their own (feature
+        121). This expression used to be written out at both farmhouse record sites, and the bundle
+        placer had no third copy at all - it cleared an AXIS-ALIGNED rect and the map then drew the
+        house raked, which is the whole of the drawn-versus-placed divergence. Measured on
+        pool/hamlets/inashiro.json: the bundle's position and size match the drawn record to four
+        decimal places, and the rake alone pushes a corner up to 2.56 px outside the rect that was
+        cleared - which is the 2.4 px `_on_a_tread`'s own docstring reports.
+
+        POSITION-SEEDED, and that is what makes the fix possible: the rake is a pure function of the
+        seat's coordinates (so it never ripples other placement - see `_hjit`), and therefore the
+        placer can know the exact quad it is going to draw BEFORE it commits to the seat. Nothing
+        about when rotation is decided had to change."""
+        return self._hjit(cx, cy, 11.0) * 10.0 - 5.0
+
     def _quad(self: Settlement, cx: float, cy: float, w: float, h: float, jit: float, salt: float) -> list[Pt]:  # type: ignore[misc]
         """A slightly-IRREGULAR 4-sided polygon INSCRIBED in the (cx,cy,w,h) rect: each corner is pulled
         INWARD by a deterministic, position-seeded fraction (0..jit of the half-span), so the footprint loses
@@ -581,7 +605,7 @@ class HousesMixin:
             # POSITION-SEEDED, not a stream draw (2026-08-08): a farmhouse's rake is a property of
             # the house, not of how many houses preceded it. See _hjit - "so it never ripples other
             # placement or household counts" - which is the convention this line was missing.
-            rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": self._hjit(x, y, 11.0) * 10.0 - 5.0, "role": role, "shed": False, "wealth": 1.0}
+            rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": self._house_rot(x, y), "role": role, "shed": False, "wealth": 1.0}
             self.M["houses"].append(rec)
             self._pending_farmsteads.append(rec)
             return True
@@ -629,7 +653,7 @@ class HousesMixin:
             "w": hw,
             "h": hh,
             "kind": kind,
-            "rot": self._hjit(cx, cy, 11.0) * 10.0 - 5.0,
+            "rot": self._house_rot(cx, cy),
             "role": role,
             "shed": _shed,
             "shed_side": "N",
