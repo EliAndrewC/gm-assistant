@@ -15,6 +15,7 @@ done:
 	  $(MAKE) --no-print-directory $$phase || fail="$$fail $$phase"; \
 	done; \
 	if [ -n "$$fail" ]; then printf '\n\033[1mGATE FAILED:%s\033[0m (every phase ran - fix them together, then re-run once)\n' "$$fail"; exit 1; fi; \
+	root=$$(git rev-parse --show-toplevel 2>/dev/null) && [ -n "$$root" ] && python3 "$$root/scripts/gate-stamp.py" --write webapp || true; \
 	printf '\n\033[1mgate green\033[0m\n'
 
 # Refuse to run from the MAIN /gm-assistant tree (CLAUDE.md "Session clones": main is the

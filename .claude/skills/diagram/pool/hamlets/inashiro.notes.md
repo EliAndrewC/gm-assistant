@@ -337,6 +337,66 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   polyline, not the piece count). Delivery ditches, whose vertices are 3-30 px apart, are clean at a
   worst 0.78 px step.
 
+- **2026-08-17, the net is drawn at TRUE SIZE** (GM ruling, on the measurement the taper work turned
+  up: *"we can narrow the widths to be more realistic... update the net to be actual size (at least
+  for hamlets)"*). The comb net was 5-6x oversize - this fan wants a ~5 ft head-race and was drawn at
+  14. Widths now live in `waterfields/frame.py` as TRUE FEET and convert at draw time through
+  `chan_px(ft, grain)`, so the same real channel is the same real size on every sheet. On this map
+  (1 ft/px): head-race **14 -> 6.0 px**, canal A **12.4 -> 4.5**, delivery ditches **8.0 -> 2.5** at
+  the head and **3.0 -> 1.5** at the tail, drain outfall **12.0 -> 5.5**. The paddy fabric now
+  dominates the sheet and the water reads as a fine engineered net over it rather than as blue ropes
+  laid across the crop. Scale enters in exactly one place - `MIN_CHANNEL_PX` (1.5) - which is what
+  will keep the coarser tiers drawable when they convert; the FEET are not the lever for that.
+
+  Same commit: **a delivery is never drawn wider than the canal feeding it** (`DELIVERY_PARENT_FRAC`
+  0.8, `SUB_PARENT_FRAC` 0.75), capping a delivery's head against its parent's LOCAL width at the
+  takeoff. That closes the rank inversion two review passes flagged at (2524.8,1540) - 7.96 px
+  against a parent at 5.73 - and it is deliberately a CAP rather than conservation at the junction,
+  which the GM ruled against on 2026-08-16. Measured after: zero inversions, every delivery head
+  1.8-2.5 px against parents of 2.2-4.5 px.
+
+  Review log: **pass** on the headline question - *"the sheet now reads more like a real paddy fan
+  than it did... I would not go back"* - with the width ladder judged to have stopped carrying rank
+  at fit zoom, which drove the head-race from 5.0 to **6.0** ft: at 5.0 the top three tiers sat
+  within 1 ft of each other, so the bunsuiguchi, the one junction where hierarchy most wants to
+  read, read least. 6.0 is `sqrt(4.5^2 + 4.0^2)`, i.e. where the engine's own width-goes-as-sqrt(Q)
+  law puts a trunk feeding those two arms - tier selection using the law as a sanity check, NOT
+  conservation-at-junctions. The pass also verified, by measuring the SVG's per-piece widths rather
+  than the manifest: zero inversions at all six junctions; **0 of 640 plot rings inside the blue**
+  against 10 (worst -1.73 px) before, with the tightest along-run clearance +0.77 px against a
+  designed 0.75; footbridge decks tracked the widths down (spans 18.4 -> 10.5, landings a uniform
+  3.0-4.5 ft); and `scatter_audit` clean at 0 violations over 270,741 bases with a flat near-margin
+  density profile, so narrowing every watercourse produced no sterile halo.
+
+  It CAUGHT four things, all now fixed: the `taper_w` worked example false for the THIRD time (its
+  magnitudes are now asserted in `test_the_delivery_taper_holds_then_dwindles` and the docstring
+  states only the shape - a number in prose is not falsifiable, a number in a test is); the drain's
+  mouth drawn at a flat 2.5 px against a 5.5 px collector, a pinch on the sheet's most visible water
+  feature, now derived from `DRAIN_FT[1]` (the TOPOLOGY record stays hairline - writing the drawn
+  width there fires `irrigation_channels_hairline` and `watercourses_wider_than_ditches` on 14
+  cohort maps apiece, measured); a doc-says-LOCAL / code-uses-HEAD divergence on `SUB_PARENT_FRAC`,
+  resolved in the docs' favour after the code version was tried and rejected the cohort (a sub-ditch
+  sized off its parent's local width has 0.14 px of room above the floor, and
+  `delivery_ditches_taper` failed 22 of 24 maps); and an overstatement that the delivery cap "only
+  bites where the parent has already dwindled" when it binds on three of five.
+
+  RIPPLE, which this file's practice requires and the first draft omitted: `SPUR_SETBACK` **14 -> 17**
+  in `hamletgen/consts.py`, forced by this change and recorded at the constant - narrower channels
+  let the carve plant closer to the water, so the field's DRAWN extent grew and ground a spur tip had
+  legitimately occupied became rice (cohort seed 11, tip 2.7 px from an outline vertex against a
+  4.5 px allowance). Also: 1 house moved 67 px, 1 byre 136 px, 2 wells 14 px, the notice board 13 px,
+  the threshing yard 64 px, 6 gardens re-seated, `gardens` 17 -> 18, `flooded_plots` 5 -> 2,
+  `wet_plots` 25 -> 24, `tree_crowns` 10,473 -> 10,632. Every moved item is on open cluster ground,
+  fronting a lane, clear of the crop and the grove.
+
+  Recorded and NOT fixed, each with its sketch, in `research/water.md` "What drawing at TRUE SIZE
+  left open": the dry-hem stand-off is pinned to the channel CENTERLINE and so did not track the
+  narrowing (identical before and after while the water inside it shrank threefold - a
+  derive-don't-pin violation); the delivery taper is now a 1.0 px event and sub-perceptual below the
+  canal tier; eight of fifteen footbridges now deck water 1.7-2.3 ft wide, which a farmer would step
+  over; and `MIN_CHANNEL_PX` (1.5) lands exactly on `aze_w` (1.5), so the finest water tier is drawn
+  at the paddy bund's stroke width and separated from it only by hue.
+
 ## 2026-08-17 - the fan-toe SUNBURST, ruled and fixed
 
 The GM ruled on the open question the previous entry left: *"I would like for us to be rendering

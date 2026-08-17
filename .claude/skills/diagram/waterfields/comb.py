@@ -7,7 +7,30 @@ from typing import Any
 
 from .banks import _TOE_MIN_APEX, _TOE_MIN_THICKNESS, dedup_ring, floor_overhang, hem_to_bank, pointed_ring, round_channel_joints
 from .carve import _bund_beans, _carve, _dry_fields
-from .frame import DF, DRAIN_W_HEAD, DRAIN_W_TAIL, GAP, Poly, Pt, _drain_bank, _dug_polyline, _f_at_u, _Frame, _point_along, _poly_area, _poly_perim, _seg_x, _signed_area, _Thread
+from .frame import (
+    CANAL_A_FT,
+    CANAL_B_FT,
+    DELIVERY_FT,
+    DELIVERY_PARENT_FRAC,
+    DF,
+    DRAIN_FT,
+    GAP,
+    HEAD_RACE_FT,
+    SUB_PARENT_FRAC,
+    Poly,
+    Pt,
+    _drain_bank,
+    _dug_polyline,
+    _f_at_u,
+    _Frame,
+    _point_along,
+    _poly_area,
+    _poly_perim,
+    _seg_x,
+    _signed_area,
+    _Thread,
+    chan_px,
+)
 from .seams import close_seams
 
 
@@ -219,7 +242,7 @@ def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, 
     # carve's sector geometry and not to this rule - so until that is done, the corner is held to
     # the invariant here rather than left standing in the water.
     for pl in plots:
-        pl["poly"] = hem_to_bank(pl["poly"], dpts, down_deg, DRAIN_W_HEAD * grain, DRAIN_W_TAIL * grain)
+        pl["poly"] = hem_to_bank(pl["poly"], dpts, down_deg, chan_px(DRAIN_FT[0], grain), chan_px(DRAIN_FT[1], grain))
     _thin = [
         q
         for q in plots
@@ -230,6 +253,17 @@ def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, 
     if _thin:
         _drop = {id(q) for q in _thin}
         plots[:] = [q for q in plots if id(q) not in _drop]
+
+
+def _canal_ft(tier: tuple[float, float], i: int, n: int) -> float:
+    """A supply canal's TRUE width in feet at cut `i` of `n` - Tabayashi's taper, in real units.
+
+    The canal sheds flow into each offtake it passes, so it steps down at every cut and dies as a
+    thread past the last one. Shared by the drawing pass and by `_comb_threads`, which needs the
+    parent's width AT a takeoff to size the delivery leaving there (`DELIVERY_PARENT_FRAC`); the
+    two used to be one formula written out and one written nowhere, which is how a delivery came to
+    be drawn wider than the canal feeding it."""
+    return tier[0] - (tier[0] - tier[1]) * i / n
 
 
 def _mk_thread(
@@ -253,10 +287,12 @@ def _comb_skeleton(
 ) -> tuple[Pt, Poly]:
     """The water skeleton's head: head-race to the division point, then canal A's dug polyline
     (canal B's is drawn and discarded - its RNG draw is part of the frozen stream)."""
-    # head-race: sluice -> the division point (bunsuiguchi), straight down the fall
-    # (channel widths x grain throughout: the same REAL-feet channel sizes at every map scale)
+    # head-race: sluice -> the division point (bunsuiguchi), straight down the fall.
+    # Every width below goes through `chan_px`, which converts a TRUE width in feet to pixels at
+    # this map's scale (and floors it at the visibility minimum) - so the net is to scale, and the
+    # same real channel is the same real size on every sheet that draws it.
     hr = [sluice, (sluice[0] + 45 * F.d[0], sluice[1] + 45 * F.d[1]), (sluice[0] + 90 * F.d[0], sluice[1] + 90 * F.d[1])]
-    channels.append({"pts": hr, "w": 7.0 * grain, "role": "main"})
+    channels.append({"pts": hr, "w": chan_px(HEAD_RACE_FT, grain), "role": "main"})
     fork = hr[-1]
 
     # supply canal A: cross-slope along the high margin, descending gently
@@ -282,19 +318,24 @@ def _comb_threads(
     """Boundary + delivery threads off the two canals, and the spawn events for mid-march offtakes."""
     # canal B is itself the far-side boundary thread (its dug prefix IS the canal)
     bc = _mk_thread(F, DOWN, fork[0], fork[1], DOWN + math.radians(58), R.uniform(*canal_b_len), decay=170.0)
+    bc.head_ft = CANAL_B_FT[0]  # bc is a SUPPLY canal, not a delivery - it carries its own tier
     threads = [bc]
     # delivery ditches are MIN-SPACED: two ditches closer than ~2 plot-columns would water the same
     # ground twice (a redundant near-pair that reads as an artifact, not design), so drop the closer.
     min_gap = 2.0 * plot_across
     placed_u = [bc.u0]  # canal B is a SUPPLY canal - deliveries must not hug it either
     a_ths = []
-    for frac in offtakes_a:  # delivery ditches off canal A
+    # canal A is cut at every offtake, so offtake j leaves where the canal has already stepped down
+    # to cut j+1 of its len(offtakes_a)+1 pieces - the same profile `_comb_canal_pieces` draws.
+    n_a_cuts = len(offtakes_a) + 1
+    for j, frac in enumerate(offtakes_a):  # delivery ditches off canal A
         bx, by = _point_along(a_pts, frac)
         tu = F.to_uf(bx, by)[0]
         if any(abs(tu - pu) < min_gap for pu in placed_u):
             continue  # redundant near-pair - skip it (keeps the net sparse)
         placed_u.append(tu)
         th = _mk_thread(F, DOWN, bx, by, DOWN + R.uniform(-0.15, 0.1), R.uniform(420, 620), fallback=a_pts)
+        th.head_ft = min(DELIVERY_FT[0], _canal_ft(CANAL_A_FT, j + 1, n_a_cuts) * DELIVERY_PARENT_FRAC)
         a_ths.append(th)
         threads.append(th)
     for th in a_ths[1:-1]:  # only the INTERIOR (widest) blocks split once
@@ -304,19 +345,30 @@ def _comb_threads(
     threads.sort(key=lambda t: t.u0)
 
     # spawn events: west-canal offtakes + mid-block subs take off ON their parent's path
-    spawns: list[list[Any]] = []  # [f_at, parent_thread, heading, ditch_len, side] - heterogeneous
+    spawns: list[list[Any]] = []  # [f_at, parent_thread, heading, ditch_len, side, head_ft] - heterogeneous
     bc.offtake_fs = []
-    for frac in offtakes_b:
+    n_b_cuts = len(offtakes_b) + 1
+    for j, frac in enumerate(offtakes_b):
         f_at = bc.f0 + (sum(canal_b_len) / 2 * frac) * math.cos(math.radians(58))
         bc.offtake_fs.append(f_at)
-        spawns.append([f_at, bc, DOWN + R.uniform(-0.2, 0.0), R.uniform(340, 560), +1])
+        head_ft = min(DELIVERY_FT[0], _canal_ft(CANAL_B_FT, j + 1, n_b_cuts) * DELIVERY_PARENT_FRAC)
+        spawns.append([f_at, bc, DOWN + R.uniform(-0.2, 0.0), R.uniform(340, 560), +1, head_ft])
     # a sub takes off HIGH on its parent and DIVERGES steeply (bigger heading, longer run) so the two
     # channels end up > ~2 columns apart - a real Y-junction serving a distinct sub-block, NOT two
     # ditches running adjacent for a stretch (which read as a redundant artifact, per the GM).
     for th in [t for t in threads if getattr(t, "spawn_sub", False)]:
         f_at = th.f0 + (th.ditch_f - th.f0) * R.uniform(0.24, 0.38)
         side = R.choice((-1, 1))
-        spawns.append([f_at, th, DOWN + side * R.uniform(0.5, 0.66), R.uniform(300, 430), side])
+        # A sub-ditch is sized against its parent's HEAD, deliberately - not its local width there.
+        # `settlement-review` (2026-08-17) flagged the divergence between this and the docs, which
+        # said LOCAL, and the docs have been corrected to match rather than the other way round,
+        # because the local version was TRIED and is worse: at true scale a delivery's local width a
+        # third of the way down is ~2.2 ft, so 0.75 of it is 1.64 - against a 1.5 px floor, a
+        # sub-ditch with 0.14 px of room to taper in. `delivery_ditches_taper` (w_tail < 0.85*w)
+        # correctly rejected that on 22 of 24 cohort maps: a ditch that cannot taper should not be
+        # drawn claiming to. Sizing off the head keeps the sub a real tier below its parent while
+        # leaving it somewhere to dwindle to.
+        spawns.append([f_at, th, DOWN + side * R.uniform(0.5, 0.66), R.uniform(300, 430), side, th.head_ft * SUB_PARENT_FRAC])
     bc.ditch_f = max([e[0] for e in spawns if e[1] is bc], default=bc.f0 + 40) + 22
     return threads, bc, spawns
 
@@ -337,9 +389,10 @@ def _comb_march(R: random.Random, F: _Frame, DOWN: float, threads: list[_Thread]
         f += DF
         for ev in [e for e in spawns if e[0] <= f]:
             spawns.remove(ev)
-            _, par, head, dlen, side = ev
+            _, par, head, dlen, side, head_ft = ev
             px, py = par.pts[-1]
             child = _mk_thread(F, DOWN, px, py, head, dlen, fallback=par)
+            child.head_ft = head_ft  # sized against its parent's local width, never wider than it
             child.u0 = child.u = par.u + GAP * 0.55 * side
             child.pts = [(px, py)]
             threads.insert(threads.index(par) + (1 if side > 0 else 0), child)
@@ -413,7 +466,7 @@ def _comb_drain(R: random.Random, F: _Frame, threads: list[_Thread], W: float, H
     # side slopes, i.e. ~1.5 ft across the top. Below that it is not a maintained ditch at all, it is the
     # seasonal furrow a farmer re-cuts at each drawdown. So the hydraulic floor and the maintenance floor
     # meet exactly at the finest ditch the supply side already draws, and the drain starts there.
-    channels.append({"pts": dpts, "w": DRAIN_W_HEAD * grain, "w_tail": DRAIN_W_TAIL * grain, "role": "drain"})
+    channels.append({"pts": dpts, "w": chan_px(DRAIN_FT[0], grain), "w_tail": chan_px(DRAIN_FT[1], grain), "role": "drain"})
     return dpts
 
 
@@ -497,7 +550,7 @@ def _comb_canal_pieces(F: _Frame, threads: list[_Thread], bc: _Thread, a_pts: Po
     n_a = len(cuts) - 1
     for i in range(len(cuts) - 1):
         piece = [_point_along(a_pts, cuts[i] + (cuts[i + 1] - cuts[i]) * t / 6) for t in range(7)]
-        channels.append({"pts": piece, "w": (6.2 - 4.6 * i / n_a) * grain, "w_tail": (6.2 - 4.6 * (i + 1) / n_a) * grain, "role": "main"})
+        channels.append({"pts": piece, "w": chan_px(_canal_ft(CANAL_A_FT, i, n_a), grain), "w_tail": chan_px(_canal_ft(CANAL_A_FT, i + 1, n_a), grain), "role": "main"})
     bc_cuts = sorted(F.to_uf(*e[1].pts[0])[1] if False else e[0] for e in []) if False else sorted([bc.f0] + [f for f in getattr(bc, "offtake_fs", [])] + [bc.ditch_f])
     for t in threads:
         pre = [p for p in t.pts if F.to_uf(*p)[1] <= t.ditch_f]
@@ -536,7 +589,7 @@ def _comb_canal_pieces(F: _Frame, threads: list[_Thread], bc: _Thread, a_pts: Po
                 if _pb is not None:
                     piece = [*piece, _pb]
                 if len(piece) >= 2 and math.dist(piece[0], piece[-1]) > 2.0:
-                    channels.append({"pts": piece, "w": (5.6 - 4.0 * i / m_b) * grain, "w_tail": (5.6 - 4.0 * (i + 1) / m_b) * grain, "role": "main"})
+                    channels.append({"pts": piece, "w": chan_px(_canal_ft(CANAL_B_FT, i, m_b), grain), "w_tail": chan_px(_canal_ft(CANAL_B_FT, i + 1, m_b), grain), "role": "main"})
         elif math.hypot(pre[0][0] - fork[0], pre[0][1] - fork[1]) < 40.0:
             # a delivery must take off WELL DOWNSTREAM of the head fork. A delivery sprouting AT the
             # division point (a short canal B whose single offtake lands ~0px from the fork - Tango's
@@ -552,7 +605,9 @@ def _comb_canal_pieces(F: _Frame, threads: list[_Thread], bc: _Thread, a_pts: Po
             # THREAD at the delivery point where it stops (continuously "tapped by the plots it feeds",
             # extending Tabayashi's supply-canal taper rule to the delivery ditches). w_tail marks the
             # narrow end so the gen draws it dwindling, not a blunt constant-width stub that stops dead.
-            channels.append({"pts": pre, "w": (5.6 if t is bc else 4.0) * grain, "w_tail": 1.5 * grain, "role": "branch"})
+            # `head_ft` was capped against the parent's LOCAL width where this ditch takes off, so a
+            # delivery can never be drawn wider than the canal feeding it (DELIVERY_PARENT_FRAC).
+            channels.append({"pts": pre, "w": chan_px(t.head_ft, grain), "w_tail": chan_px(DELIVERY_FT[1], grain), "role": "branch"})
 
 
 def _comb_floor_and_winding(plots: list[dict[str, Any]], threads: list[_Thread], a_pts: Poly, dpts: Poly, F: _Frame) -> Poly:
