@@ -47,9 +47,12 @@ THE TRADE, drawn (feature 016). Two new works carry the county's declared econom
     (charcoal self-heats, so new stock may not go straight in with the old), and a weighing floor
     (the charcoal bale had no standard weight, so nothing leaves this yard unweighed);
   - the REFINING FORGE east and DOWNWIND - the okaji that works hill-smelted pig into wrought bar.
-The KILNS AND FURNACES ARE NOT DRAWN, and that is canon rather than an omission: a kiln reduces
-roughly six parts wood to one of charcoal, so the kiln goes to the wood and the furnace follows the
-fuel out into the hills. What comes down to the town is finished charcoal and pig iron.
+The CHARCOAL KILNS AND THE SMELTING FURNACES ARE NOT DRAWN, and that is canon rather than an
+omission: a kiln reduces roughly six parts wood to one of charcoal, so the kiln goes to the wood and
+the furnace follows the fuel out into the hills. What comes down to the town is finished charcoal and
+pig iron. The POTTERS' KILN WORKS added on 2026-08-17 is not an exception to that rule but the other
+side of it - a pottery kiln stands at its CLAY rather than at its fuel, which is why every other seat
+in the pool has one and why this one is captioned to say which kind it is. See ubame.notes.md.
 
 Full grounding, with the China-first research and the one disclosed divergence (Ubame follows the
 Japanese two-site tatara/okaji split, not the Chinese adjacent-hearth arrangement, because dispersed
@@ -291,6 +294,83 @@ s.block_polys.append([(1710, 480), (1955, 480), (1955, 645), (1710, 645)])
 s.refining_forge(1855, 800, rot=0)
 s.block_polys.append([(1740, 700), (1975, 700), (1975, 905), (1740, 905)])
 
+# THE POTTERS' KILN WORKS on the frontier strip, east of the charcoal yard (GM, 2026-08-17 - the one
+# deliberate edit to this map since the legacy pool was frozen; see ubame.notes.md "The potters' kiln
+# works and the two carts" for the campaign reason and for the freeze exception).
+#
+# IT DOES NOT CONTRADICT THE MAP'S OWN "kilns are off-map" CANON, and the distinction is the whole
+# point of siting it here. What this sheet banishes to the hills are CHARCOAL kilns and IRON
+# SMELTING furnaces, because a kiln reduces roughly six parts wood to one of charcoal and the furnace
+# follows the fuel - so both go to the wood, miles up the county. A POTTERY kiln obeys the opposite
+# pull: it stands at its CLAY, and every seat has one, because pottery demand is continuous where
+# tile demand is lumpy (s.kiln's docstring). Ubame had been the one town in the pool with no works at
+# all, which was an omission rather than a decision.
+#
+# WHY HERE, in three constraints that happen to agree:
+#   - THE CLAY AND THE SLOPE. The frontier strip is the sheet's high side - the land falls NE -> SW
+#     (down_deg=135) - and it lies under the ubame-oak hill, so a chambered climbing kiln has real
+#     rising ground to be built into.
+#   - THE FIRE LADDER, satisfied by geometry rather than by luck: the kiln body sits ~96 ft off the
+#     charcoal yard and ~82 ft off the refining forge, against the 60 ft attended-fire rung.
+#   - THE GROUND WAS ALREADY THE RIGHT KIND. This is the ox-teams' standing ground - hard, tamped,
+#     peripheral, town-owned, and carted over all day. A works is what such ground grows.
+#
+# THE ANGLE IS DERIVED, NOT PINNED, and it has to satisfy two things at once. A hand-picked rot=-90
+# ("climb due north up the oak stand") was tried FIRST and failed `roadside_works_stand_on_their_road`
+# at 82 deg adrift, correctly: a kiln carts its fuel, its clay and its ware, so it lies along its haul
+# road. But the road ALONE is not enough either, because s.kiln lays the kiln's UPSLOPE axis along
+# local +x and `_way_bearing_near` returns the way's stored direction - and ROAD is authored east to
+# west, so taking it raw pointed the chambers WSW and the first render climbed downhill: firebox high,
+# chimney low, the one thing a noborigama cannot be. (Nothing in the gate can see this. The roadside
+# check compares axes mod 180, so both senses pass it identically.)
+# So the AXIS comes from the road and the SENSE comes from the fall: keep the road's bearing, flip it
+# by 180 if it points down-fall, and the works ends up lying along its haul road AND climbing. Derived
+# from both, so a re-routed road or a re-declared land fall turns the works instead of falsifying it.
+KILN_X, KILN_Y = 2000, 625
+_kiln_dist, _kiln_bear = s._way_bearing_near(KILN_X, KILN_Y)
+_uphill = s.M["meta"]["down_deg"] + 180.0
+KILN_ROT = _kiln_bear if math.cos(math.radians(_kiln_bear - _uphill)) > 0 else _kiln_bear + 180.0
+s.kiln(KILN_X, KILN_Y, rot=KILN_ROT, cottages=2, label="potters' kiln works")
+assert _kiln_dist < s.px(400), f"the kiln works is {_kiln_dist:.0f}px off the trunk road - s.kiln would ignore a derived rot at that range"
+s.block_polys.append([(1910, 545), (2090, 545), (2090, 705), (1910, 705)])
+
+# ---- THE TWO CARTS, which are a CAMPAIGN CLUE and not scenery (GM, 2026-08-17). A pottery kiln
+# burns cordwood - never charcoal, and least of all white charcoal, which gives radiant heat with no
+# flame and costs many times what a firing is worth. So a load of black charcoal standing in this
+# yard has no business here, and a load of WHITE standing beside it has none twice over: the county's
+# white charcoal belongs in the tallied charcoal yard 100 paces west, and this is the one industrial
+# ground on the approach that the magistrate's TALLY does not reach. Note what that claim is and is
+# not - it is documentary, not visual. Nothing here is hidden or even fenced (the works' boundary is a
+# tamped-earth panel, not an enclosure), and the yard stands 286 ft from the magistrate's own south
+# gate, 20 ft off its ceremonial axis, in plain sight of it. That is the intended reading rather than
+# an accident of packing, and it is on the record in ubame.notes.md "Standing it in plain sight".
+# The works is also the town's supply of the exact material the Imperial bulletin names - sieved kiln
+# ash - which a potter has every honest reason to keep by the barrel for ash glaze.
+# Deliberately UNLABELED and drawn at true size (a 12 ft bed, 5 ft wide): the map states what stands
+# there and lets the reader ask why. A caption would answer the question the clue exists to pose.
+_cart = []
+for _cy, _load, _stroke in ((-26.0, "#2E2A26", "#1C1A17"), (-12.0, "#DAD6CB", "#8C8778")):
+    # DRAW ORDER: wheels, then bed, then load. The first pass drew the wheels LAST and the outer one
+    # covered ~70% of the third bale, so a three-bale load read as two and a sliver (settlement-review,
+    # 2026-08-17). Under the bed is also where an axle actually is, so the physical order is the legible
+    # one; the wheels still show as stubs proud of the bed on both sides, which is all they need to do.
+    for _wx in (43.0, 49.0):
+        _cart.append(f'<rect x="{s.px(_wx):.1f}" y="{s.px(_cy - 0.9):.1f}" width="{s.px(1.4):.1f}" height="{s.px(6.8):.1f}" rx="0.5" fill="#5A4326"/>')
+    _cart.append(f'<rect x="{s.px(40):.1f}" y="{s.px(_cy):.1f}" width="{s.px(12):.1f}" height="{s.px(5):.1f}" rx="0.8" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.1"/>')
+    for _bi in range(3):  # the load: three tawara bales, the same glyph the charcoal yard stacks
+        _cart.append(
+            f'<rect x="{s.px(41.2 + _bi * 3.4):.1f}" y="{s.px(_cy + 1.1):.1f}" width="{s.px(2.6):.1f}" height="{s.px(2.8):.1f}" rx="0.6" fill="{_load}" stroke="{_stroke}" stroke-width="0.5"/>'
+        )
+    # the shafts, DOWN-FALL (WSW, ~30 deg off the SW fall) - an unhitched cart resting on its shafts.
+    # They do not point at the trunk road, whose nearest point is 233 ft NNW; an earlier version of
+    # this comment claimed they did (settlement-review, 2026-08-17), which is exactly the pinned-reason
+    # -that-the-geometry-does-not-support shape this project guards against.
+    _cart.append(
+        f'<path d="M {s.px(40):.1f} {s.px(_cy + 1.1):.1f} L {s.px(34):.1f} {s.px(_cy + 1.4):.1f} M {s.px(40):.1f} {s.px(_cy + 3.9):.1f} L {s.px(34):.1f} {s.px(_cy + 3.6):.1f}" fill="none" stroke="#6B4F2A" stroke-width="0.8"/>'
+    )
+# the same transform string s.kiln emits for its own group, to one decimal, so the two read as one frame
+s.add(f'<g transform="translate({KILN_X},{KILN_Y}) rotate({KILN_ROT:.1f})">' + "".join(_cart) + "</g>")
+
 # ---- the TANNING YARD, downstream on the valley stream below every intake - the burakumin trade on
 # marginal bank ground. rot follows the BANK's own bearing there (the yard is a working frontage, so
 # its water side must lie along the water, not square to the map). Its 120 ft stench keep-out is
@@ -456,11 +536,23 @@ s.commons([(1060, -40), (1620, -40), (1640, 165), (1080, 175)], role="grazing")
 # STRIP along the line. Merging swallows the aisles, so cover goes UP: ~116k px of boxes becomes
 # ~141k of continuous grazing. West edge at x=1900 clears the charcoal yard (east edge 1881) and the
 # refining forge (1892), both of which stand on their own fire gaps and must not be grazed over.
-s.commons([(1900, 450), (2104, 462), (2096, 1112), (1908, 1100)], role="grazing")
+# SPLIT IN TWO by the potters' kiln works (2026-08-17), which stands on this ground between y 556
+# and y 694 - scrub may not claim ground the town stands on. This is NOT the 2026-07-26 "boxes with
+# bare aisles" defect coming back: that was four rectangles with nothing between them, satisfying a
+# cover check rather than being a place. Here the interruption is a BUILDING, which is what actually
+# happens to a common when a works is put up on it, and the two bands still read as one strip along
+# the line because the works fills the gap. It does not fill it EDGE TO EDGE - the works' rotated
+# extent is x 1922-2078 against a 1900-2104 band, so ~22 ft of bare ground survives down its west
+# side and ~26 ft down its east. Immaterial at this scale and left alone deliberately; scrub drawn
+# into slivers that thin is the shape the 2026-07-26 finding was actually about.
+s.commons([(1900, 450), (2104, 462), (2100, 545), (1908, 540)], role="grazing")
+s.commons([(1900, 706), (2101, 700), (2096, 1112), (1908, 1100)], role="grazing")
 s.commons([(1600, 0), (1850, 10), (1842, 200), (1608, 190)], role="grazing")
 s.commons([(150, 300), (330, 310), (322, 580), (158, 570)], role="grazing")
 s.commons([(900, 1200), (1150, 1210), (1142, 1400), (908, 1390)], role="grazing")
-s.commons([(680, 1160), (830, 1166), (824, 1340), (687, 1331)], role="grazing")  # E edge pulled in 70px 2026-08-08: the re-roll moved a wellhead to (849,1197), inside the old corner (scrub_clear_of_urban_fabric)
+s.commons(
+    [(680, 1160), (830, 1166), (824, 1340), (687, 1331)], role="grazing"
+)  # E edge pulled in 70px 2026-08-08: the re-roll moved a wellhead to (849,1197), inside the old corner (scrub_clear_of_urban_fabric)
 s.commons([(1160, 1360), (1440, 1369), (1433, 1500), (1167, 1491)], role="grazing")
 s.commons([(960, 0), (1120, 9), (1113, 240), (967, 231)], role="grazing")
 s.commons([(1120, 1080), (1400, 1089), (1393, 1220), (1127, 1211)], role="grazing")

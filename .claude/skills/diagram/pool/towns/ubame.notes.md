@@ -21,7 +21,8 @@ covers.
 | Road | domain trunk road (the charcoal road) | **unlabeled**; no farrier |
 | Land fall | mountains NE -> `down_deg = water_flow = 135` | stream runs south; downstream is SW |
 | Trade | a charcoal yard **and** a refining forge, drawn | two new engine features (feature 016) |
-| Kilns / furnaces | off-map in the hills | canon: charcoal is burned where the wood grows |
+| Charcoal kilns / iron furnaces | off-map in the hills | canon: charcoal is burned where the wood grows |
+| Potters' kiln works | drawn, on the frontier strip (added 2026-08-17) | a pottery kiln stands at its CLAY, the opposite pull; carries the campaign clue |
 | Clan | Scorpion | monasteries default to Benten and Jurojin |
 
 ## The border, which is the map's organizing fact
@@ -80,6 +81,184 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
   its reason: dispersed fuel forces two sites. Full grounding in
   [`../../settlements/urban-features.md`](../../settlements/urban-features.md) and
   [`../../research/urban-features.md`](../../research/urban-features.md).
+
+## The potters' kiln works and the two carts (GM, 2026-08-17)
+
+**The one deliberate edit to this map since the legacy pool was frozen on 2026-08-16.** The GM's
+party is running an adventure in Ubame county, and asked for something in the county town that an
+attentive player could notice and act on - a clue to the charcoal-counterfeiting bounty on the
+Imperial bulletin (`l7r.md`, *"Kitsune Denhei" the charcoal counterfeiter*). The GM's own proposal
+was carts of black and white charcoal standing at a kiln works, on the reasoning that white charcoal
+has no business at a kiln works; that is what is drawn. **Who is behind the counterfeit is
+deliberately not recorded in this file** - the bulletin is public canon, the culprit is not, and a
+design journal that ships in the repo is the wrong place for it.
+
+### The freeze exception, and what it actually cost
+
+`ubame.gen.py` is in `LEGACY_FROZEN_GENS`, so this needed the GM's explicit say-so and it got it.
+The cost was **measured before anything was edited** rather than assumed, and it was near zero:
+
+- The unmodified gen was copied to `wip/`, re-run on the current engine, and its manifest compared
+  key-by-key against the committed `ubame.json`. **Byte-identical** - same counts, same positions,
+  every house and building in the same place. Nothing in the engine has re-rolled this map since it
+  shipped, so regenerating it does not silently produce a different town.
+- The gate on that re-run showed **three failures**, all in the field/water engine
+  (`dry_plot_seams_shared`, `delivery_ditches_taper`, `comb_supply_commands_both_flanks`), plus the
+  map's own documented `tanning_yard_on_the_outcast_side` waiver. Those are post-freeze rules landing
+  on a pre-freeze map - **pre-existing, ledgered, and not fixed under this change** (constitution
+  Principle XIII). The bar this edit had to clear was "no fourth failure", and it clears it.
+- Regeneration is 7 s. **This does not reopen the freeze**: the list stays closed, and the fix for a
+  frozen map that breaks a post-freeze rule is still conversion, not retrofit.
+
+### Why a kiln works does not contradict this map's "kilns are off-map" canon
+
+The GM decision table above says *Kilns / furnaces: off-map in the hills*, and that stands unchanged.
+It is about **charcoal kilns and iron smelting furnaces**, which follow the fuel: a kiln reduces
+roughly six parts wood to one of charcoal, so both go to the wood, miles up the county, and what
+comes down to the town is finished charcoal and pig iron.
+
+A **pottery kiln obeys the opposite pull** - it stands at its clay, not at its customer - which is
+why `s.kiln` exists as a peripheral works in the first place, and why Tango, Minami and Nagahara all
+carry one. Ubame was the only settlement in the pool with no kiln works at all, which on inspection
+was an omission rather than a decision: every seat breaks and replaces bowls, pots and jars on a
+continuous cycle, and this one has a brewery's worth of vessels to keep in service besides.
+
+**The confusion hazard is real and is why the label is not the default.** `research/urban-features.md`
+records that the pre-2026-07-27 kiln glyph was a low earthen mound - a charcoal kiln's shape - and
+that Ubame's charcoal district made the two indistinguishable. The glyph is now a chambered climbing
+kiln, which is a different silhouette, but on **this** sheet that is not enough on its own: a caption
+reading "kiln works" in a charcoal county invites exactly the wrong reading. So it is captioned
+**"potters' kiln works"**, and that is a disambiguation rather than a violation of the
+don't-label-the-obvious rule.
+
+### Where it stands, and why
+
+On the frontier strip east of the charcoal yard, at (2000, 625). Three constraints agree there:
+
+- **Clay and slope.** The strip is the sheet's high side - the land falls NE -> SW (`down_deg=135`) -
+  and it lies under the ubame-oak hill, so a chambered climbing kiln has real rising ground to be
+  built into.
+- **The fire ladder, by geometry rather than luck.** The kiln body sits ~96 ft off the charcoal yard
+  and ~82 ft off the refining forge, against the 60 ft attended-fire rung (`kiln_keeps_fire_gap`).
+- **The ground was already the right kind.** This is the ox-teams' standing ground: hard, tamped,
+  peripheral, town-owned and carted over all day. A works is what such ground grows.
+
+### The angle is derived from TWO things, and needed both
+
+`rot` is computed in the gen, not picked. Two wrong answers were rendered first, and both are worth
+recording because each looked right until something else was consulted:
+
+1. **A hand-picked `rot=-90`** ("climb due north up the oak stand") failed
+   `roadside_works_stand_on_their_road` at 82 deg adrift. The check is right and the intuition was
+   wrong: a kiln carts its fuel, its clay and its ware, so it lies along its haul road.
+2. **Taking `_way_bearing_near` raw** then put the chambers WSW, and the render came out with the
+   firebox high and the chimney low - a noborigama climbing downhill, which is the one thing it
+   cannot do. `ROAD` is authored east-to-west, and the helper returns the way's *stored* direction.
+   **Nothing in the gate can see this**: `roadside_works_stand_on_their_road` compares axes mod 180,
+   so both senses pass it identically. Only the render caught it.
+
+So the **axis** comes from the road and the **sense** comes from the fall: keep the way's bearing,
+flip it 180 deg if it points down-fall. Both inputs are read at draw time, so a re-routed road or a
+re-declared land fall turns the works rather than falsifying it.
+
+**What that costs, priced rather than assumed** (`settlement-review`, 2026-08-17): the works climbs
+at 351.9 deg while the fall line runs 315/135, so it lies **37 deg oblique to the slope** and takes
+only cos(37) = 0.80 of the available gradient. A chambered climbing kiln would ideally be built
+straight up the fall line. The road pull won, deliberately - a works that does not stand on its haul
+road is wrong in a way a reader can see from the road itself, where 20% of a gradient is not - and
+37 deg sits inside the obliquity this pool has accepted elsewhere. Recorded so the next reader does
+not re-derive it and reach a different answer.
+
+## Standing it in plain sight
+
+`settlement-review` measured something the siting reasons above do not mention: the works sits
+**286 ft from the magistracy's south gate and 20 ft off its ceremonial axis**, and the Mode A sheet
+is explicit that the south face is this compound's formal face to the county town. So a smoking
+kiln, a cordwood stack and two heimen cottages now stand on the magistrate's own approach.
+
+**That is the intended reading, not an accident of packing**, and it is written down here precisely
+because an unexamined coincidence and a deliberate choice look identical a month later. Two things
+already made it defensible - the charcoal yard and the refining forge sit on the same approach 150
+to 250 ft west, and the works is downwind of the compound - so nothing about it is anomalous to a
+passer-by. What makes it worth choosing rather than merely tolerating is the fiction: the ground the
+counterfeit runs through is not hidden, and the note above should not be read as claiming it is.
+Nothing here is fenced; the works' boundary is a tamped-earth panel, not an enclosure. The claim
+that "the magistrate's tally does not reach it" is **documentary, not visual** - everything crossing
+the charcoal yard is weighed and sealed, and nothing crossing this yard is. Concealment was never
+the mechanism. Standing it where anyone can see it, including the magistrate, is the mechanism.
+
+**The alternative was priced and declined**: shifting the works 60 to 100 ft east or south takes it
+off the gate axis and behind the charcoal yard's line, and costs nothing geometrically. It was
+declined because it buys tidiness at the cost of the only thing on this part of the sheet that is
+saying something.
+
+### The frontier common is now two bands, and that is not the old defect
+
+The strip used to be one polygon from y 450 to y 1112; the works stands on it between y 556 and 694,
+and scrub may not claim ground the town stands on (`scrub_clear_of_urban_fabric`). It is now two
+bands with the works standing in the gap. **This is not the 2026-07-26 "boxes with bare aisles"
+finding coming back** - that was four rectangles with nothing between them, polygons satisfying a
+cover check instead of being a place. Here the interruption is a building, which is what happens to
+a common when a works is put up on it, and note which way the numbers go: the split makes cover fall
+rather than rise, which is not an edit a check-driven author makes.
+
+It does **not** fill the gap edge to edge, and an earlier draft of this paragraph said it did
+(`settlement-review`, 2026-08-17, which measured it). The works' rotated extent is x 1922-2078
+against a 1900-2104 band, so ~22 ft of bare ground survives down its west side and ~26 ft down its
+east, each running the gap's ~160 ft. Left alone deliberately: scrub drawn into slivers that thin is
+much closer to what the 2026-07-26 finding was actually about than a little bare margin is.
+
+### The carts: what was accepted, and what was declined
+
+Two handcarts stand in the works' yard, one loaded with black charcoal and one with white. A pottery
+kiln burns **cordwood** - never charcoal, and least of all white charcoal, which gives radiant heat
+with no flame and costs many times what a firing is worth. So a load of black charcoal here has no
+business in this yard, and a load of white beside it has none twice over: the county's white charcoal
+belongs in the tallied charcoal yard 100 paces west. The works is also the town's supply of the exact
+material the bulletin names - sieved kiln ash, which a potter has every honest reason to keep by the
+barrel for ash glaze.
+
+- **Drawn at true size and DELIBERATELY UNLABELED.** A 12 ft bed, 5 ft wide, with shafts and wheels.
+  The map states what stands there and lets the reader ask why; a caption would answer the question
+  the carts exist to pose.
+- **ACCEPTED: at 1 px = 1 ft they are small**, and at fit zoom they read as two pale-and-dark marks
+  rather than as carts. They resolve properly at 100% and above, which is how the GM reads these
+  sheets. **Two alternatives were priced and declined.** Drawing them at 1.5x-2x for legibility was
+  rejected outright - to-scale modes encode true researched sizes, and this map's own notes already
+  turn down size inflation elsewhere. Captioning them ("charcoal carts") was rejected because it
+  destroys the only thing they are for. The residual cost is that a player handed a printout at page
+  scale will not see them, and the GM points at them instead; that is the trade, chosen knowingly.
+- **They are interior detail of the works' record, not a feature of their own** - the same convention
+  the charcoal yard's sheds and the tanning yard's furniture follow. They sit inside one footprint
+  that is already classified for overlap, so nothing in the matrix needs to learn about them.
+- **The draw order is load-bearing.** The first pass drew the wheels LAST, and the outer wheel
+  covered ~70% of the third bale, so a three-bale load read as two and a sliver
+  (`settlement-review`, 2026-08-17). Wheels now go down first, which is also where an axle is.
+
+### What `settlement-review` found (DELTA pass, 2026-08-17)
+
+Verdict **pass, no errors**, five judgment findings, all invisible to the green gate. It
+independently re-ran the gate against a HEAD manifest and confirmed the three pre-existing failures
+report **byte-identical text**, and that the manifest blast radius is one well, one label, the new
+kiln record, and eleven dry plots in the SE hem moved by <= 4.7 ft. Nothing else changed.
+
+Applied: the "edge to edge" overclaim (above), the cart-shaft comment that named a road 233 ft in
+the wrong direction, the wheel occluding the third bale, the obliquity that was underived (above),
+and the magistracy gate axis, which became "Standing it in plain sight" above rather than a move.
+
+**Two findings were referred to the ENGINE rather than fixed here**, because both are `s.kiln`
+defects that this map merely became the first to exhibit, and fixing them under a one-off content
+edit would put a shared glyph change on four other sheets' account. Both are logged in
+[`../../future-work.md`](../../future-work.md):
+
+- the kiln's **smoke wisp is drawn in the glyph's local frame**, so on this sheet it trails NNW into
+  a declared NW wind - the siting is right and the ink contradicts it;
+- the works' **two cottages are mirrored about its axis with the well's saturated disc centered
+  above them**, which puts the loudest mark in the works on its least important object.
+
+Two more were heard and left: the kiln bar and the charcoal yard's bale sheds are both "a brown rect
+with divisions" at fit zoom (the caption is the disambiguation, which is why it is not the default
+one), and a cart is the same 12x5 ft as the kosatsuba (1,550 ft apart, one of them captioned).
 
 ## Deliberate choices
 
