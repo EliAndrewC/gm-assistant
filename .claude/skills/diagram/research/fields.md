@@ -207,9 +207,28 @@ fabric correction, not a rescue.
 
 Over the 2,829 basins of the four scripted hamlets, **1.63% sit under 0.25 of their cell** and 0.46%
 under 0.20. Nothing is lost: each is dropped by the toe pass and then absorbed by `close_seams` into
-the basin it shares the most bund with, so planted acreage, the field outline, the farmhouse rings
-and the household arithmetic are all unchanged (Inashiro stays at 20.5 / 19.5 acres and 15 of 15
-households across the change).
+the basin it shares the most bund with, so planted acreage, the field outline and the household
+COUNT are all unchanged (Inashiro stays at 20.5 / 19.5 acres and 15 of 15 households).
+
+**The ripple is NOT nothing, though, and the first draft of this section said it was.** A
+`settlement-review` pass on Inashiro measured what the write-up had asserted away, and it was wrong:
+the claim "farmhouse rings unchanged" was copied from the paddy-CELL calibration note above, where
+it is true because that change subdivides the same envelope into more cells and draws the same
+number of everything else. **This rule changes the NUMBER of drawn plots**, the patchwork draws from
+the shared placement RNG, and so every downstream placement re-rolls. Measured against main's tip:
+
+| map | basins | homestead cluster |
+|---|---|---|
+| Inashiro | 640 -> 634 | re-packs wholesale: all 15 houses move (up to 149 px), gardens 18 -> 17, farm sheds 6 -> 3, 3 byres re-seat (up to 288 px), both wells and the kosatsuba move, the view shifts |
+| Kashikawa | 827 -> 814 | byte-identical - houses, gardens, yards, wells, kosatsuba and windbreak all unmoved; one byre re-seats |
+| Mizuguchi | 519 -> 511 | 5 of 12 houses move (up to 56 px), 5 gardens, farm sheds 2 -> 0, 3 byres, both wells |
+| Sawada | 843 -> 818 | 6 of 19 houses move (up to 78 px), 6 gardens (up to 160 px), one shed, one byre, one well, the kosatsuba |
+
+The lesson is general and belongs with the rule: **any change to a drawn COUNT re-rolls the shared
+placement stream, so its ripple has to be measured rather than reasoned about** - and the reasoning
+that feels safest ("the field outline is the same, so the rings that key off it are the same") is
+exactly the one that fails, because the rings do not key off the outline through the RNG. It is also
+how the cohort seed-41 regression happened: a well moved, not a paddy.
 
 One measurement trap is recorded because it cost a full calibration pass: the reference must be the
 fan's **recorded** `cell`, not `paddy_grain(ftpx)`. `plot_texture` had already scaled the hamlets'

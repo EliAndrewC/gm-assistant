@@ -149,7 +149,9 @@ Three answers, and only one of them is yes.
 
 The GM's "triangles" were the symptom, not the rule: a fragment clipped off the plot lattice at the
 fan's boundary naturally comes out triangular. Cost: 1.63% of the scripted hamlets' basins absorbed,
-with acreage, field outline, farmhouse rings and household counts all unchanged. Full findings,
+with acreage, field outline and household COUNTS unchanged - but **the homestead POSITIONS re-roll**,
+because changing a drawn count moves the shared placement RNG (Inashiro re-packs wholesale,
+Kashikawa not at all; the per-map ripple is in the research file and in each map's notes). Full findings,
 both declined alternatives, the two derivations of 0.25, and why the gate could not sit at 0.15:
 [`../research/fields.md#minimum-basin-size---there-is-no-absolute-floor-and-the-real-floor-is-a-ratio`](../research/fields.md).
 

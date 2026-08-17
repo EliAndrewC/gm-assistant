@@ -118,15 +118,42 @@ not. Lanes only, deliberately: the other ways already pad their corridors by han
 them cost Tango a public well. No pool manifest moved.
 
 **But the BUNDLE path never reaches `_fits` at all**, which is the bigger half and was not visible
-until a cohort went looking. `_bundle_fits` seats a homestead from its own geometry, and the house
-inside it is offset from the seed point AND scaled by the wealth/length jitter - so the rect the
-placer clears is neither the size nor the position of the rect that gets drawn. Instrumented on a
-failing map: `_fits` was never called at the offending farmhouse's position with its own w/h, and
-12 of 24 cohort maps put a house corner on a lane at the authored clearance. Testing the drawn house
-rect inside `_bundle_common_fits` fixes it in three lines - and re-rolls Ikegami, Kuwabata, Tanada
-and Hoshigaoka, breaking Hoshigaoka's gate. So it is a reviewed pool job (one `settlement-review`
-per map), and the natural companion to item 2's collision-circle swap: do them in one re-roll rather
-than two.
+until a cohort went looking. **DONE 2026-08-17 (feature 121)** - and the diagnosis this paragraph
+used to carry was WRONG, so read the correction before quoting it anywhere.
+
+*What it used to say:* the house inside the bundle "is offset from the seed point AND scaled by the
+wealth/length jitter - so the rect the placer clears is neither the size nor the position of the
+rect that gets drawn."
+
+*What is true:* measured across `pool/hamlets/inashiro.json`, the bundle's house rect matches the
+drawn record's position and size to **0.0000 px**. `hw`/`hh` are computed with their jitter BEFORE
+`_place_bundle` is called, and `_bundle_geom` is rebuilt at the final slid position. **The
+divergence was the RAKE, and only the rake** - `_house_rot`'s +/-5 deg, worth up to **2.56 px** of
+corner bulge, which is exactly the 2.4 px `_on_a_tread`'s own docstring reports. Because the rake is
+position-seeded it is knowable at seat time, so the fix needed no change to when rotation is
+decided; a "different size, different place" diagnosis would have implied one.
+
+*Three defects, not one, and the second two were unknown:*
+
+1. the bundle path never tested a drawn surface at all - `_rect_blocked` ended at
+   `_near_corridor(cx, cy)`, a bare centre test. Now `_house_on_a_tread`.
+2. **`_on_a_tread` itself passed `rot_rect(..., 0.0)`** - so the path that HAD the footprint test was
+   measuring a square-on rect too. It takes `rot` now; `None` from a caller means UNKNOWN, not zero.
+3. **the GATE was rake-blind** - `houses_clear_of_lanes`'s `_house_pts` built its own axis-aligned
+   corner list beside `rect_corners`, which reads `rot` and is imported into the same module. So the
+   check meant to catch the defect had the defect, and disagreed with the fixed placer about the
+   same house. One measurement, not two (contract C7).
+4. and the RENDERER rounded: the house glyph emitted `rotate({rot:.0f})`, whole degrees, against a
+   placer and a gate working in floats - ~0.95 ft of drawn-corner displacement, invisible to every
+   check because checks read the manifest and never the SVG. Found by `settlement-review`.
+
+*The old cost estimate was stale in the other direction too*: it budgeted re-rolling Ikegami,
+Kuwabata, Tanada and Hoshigaoka, all of which entered `LEGACY_FROZEN_GENS` on 2026-08-16 and are
+never regenerated. Actual cost: three live scripted hamlets moved, one review each.
+
+Measured: **10 of 24 cohort maps** put a house corner on a lane at a 32 px clearance before, **0**
+after; cohort 22/24 both before and after, same two pre-existing failures on the same two seeds.
+`LANE_CLEARANCE` is now derived (48 -> 40) and no longer the thing holding houses off lanes.
 
 **The general lesson.** A point test is right for a SCATTER (each tuft is a point) and wrong for
 anything with an extent. The same trap bit the ground-cover tiler: `near_ring_cropland` sampled a

@@ -696,11 +696,19 @@ the size was the cause. Full findings, both declined alternatives, the two deriv
 why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
 
 **On this map.** 640 -> 634 basins (-6, 0.94%); smallest surviving basin 0.262 of the cell.
-Acreage 20.5 / 19.5, 15 of 15 households, field outline and farmhouse rings all unchanged - every
-dropped fragment is absorbed into the basin it shares the most bund with, not deleted. Not
-independently reviewed this round (Sawada and Mizuguchi carried the `settlement-review` pass for the
-change; see their notes for the measured before/after regularity statistics and the two second-order
-defects the reviews caught).
+Acreage 20.5 / 19.5 and 15 of 15 households hold, and so does the field outline - every dropped
+fragment is absorbed into the basin it shares the most bund with, not deleted.
+
+**THE CLUSTER RE-PACKS, and the first draft of this entry denied it** (settlement-review,
+2026-08-17). It had claimed "farmhouse rings all unchanged", copied from the paddy-CELL note where
+that is true; this rule changes the NUMBER of drawn plots, the patchwork draws from the shared
+placement RNG, and so every downstream placement re-rolls. Measured against main's tip, this is the
+worst-rippling of the four maps: **all 15 houses move** (up to 149 px), gardens **18 -> 17**,
+threshing yards travel with their houses, **farm sheds 6 -> 3**, three byres re-seat (up to 288 px),
+both wells and the kosatsuba move, the windbreak re-derives, and `meta.view` shifts
+`[1050, 325, 1696, 1831]` -> `[1065, 360, 1677, 1796]`. The shed drop is the item worth watching: it
+is the third consecutive round this count has drifted on this map, and the standing decision is to
+treat it as small-n noise rather than floor it per map.
 
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well

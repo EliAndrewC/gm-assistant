@@ -317,7 +317,19 @@ _GATE_MIN_APEX = 15.0
 # had already scaled the hamlets' target down to 1,488 sq ft): over the 2,829 basins of the four
 # scripted hamlets, 1.63% sit under 0.25 of their cell and 0.46% under 0.20. Nothing is LOST -
 # every basin under the floor is absorbed into the one it shares the most bund with, so planted
-# area, the field outline, the farmhouse rings and the household arithmetic are all untouched.
+# area, the field outline and the household COUNT are all untouched.
+#
+# BUT THE HOMESTEAD POSITIONS ARE NOT, and that has to be said here rather than discovered later
+# (settlement-review, Inashiro 2026-08-17, correcting this comment's first draft, which had copied
+# the paddy-CELL note's "farmhouse rings are unchanged" - true there, false here). The cell change
+# subdivided the same envelope and drew the same number of things; this rule changes the NUMBER of
+# drawn plots, and the patchwork draws from the SHARED placement RNG, so every downstream placement
+# re-rolls. Measured against main's tip: Inashiro re-packs wholesale (all 15 houses move, up to
+# 149 px; gardens 18 -> 17; farm sheds 6 -> 3; both wells and the kosatsuba re-seat; the view
+# shifts), Sawada and Mizuguchi move 6 of 19 and 5 of 12 houses, and Kashikawa's cluster is
+# byte-identical but for one byre. The household COUNT holds on all four (15/15, 20/20, 12/12,
+# 19/19) and so does the acreage - it is the positions that rotate. Any future rule that changes a
+# drawn COUNT carries the same ripple, and the honest place to look for it is the per-map notes.
 #
 # DELIBERATELY COMB-ONLY. `build_terraces` and `build_ribbon` are the hill-rice engines, and hill
 # rice is exactly where the Senmaida micro-basins above are real; `build_polder`'s parcels are

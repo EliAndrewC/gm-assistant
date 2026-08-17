@@ -417,6 +417,36 @@ def test_the_way_a_row_FRONTS_does_not_refuse_it_its_own_tread():
     assert s._on_a_tread(x, y, w, h, skip=[[700.0, 700.0]]), "a degenerate one-point skip excuses nothing"
 
 
+def test_the_tread_test_measures_the_RAKE_a_house_will_be_drawn_at():
+    """A farmhouse is drawn raked by `_house_rot` (+/-5 deg), and the rake pushes a corner OUTSIDE
+    the axis-aligned rect the placer clears - up to 2.56 px, measured across the pool. `_on_a_tread`
+    used to pass 0.0 unconditionally, so its "exact" footprint test measured a square-on rect and
+    the map then drew a raked one (feature 121).
+
+    THIS TEST HAS TEETH BY CONSTRUCTION: the seat below is clear of the tread when measured
+    square-on and ON it once raked, so an implementation that ignores `rot` fails the third
+    assertion. That is the whole defect, in one fixture."""
+    s = Settlement(1400, 1400, seed=3)
+    s.meta(name="Rake", scale="hamlet", ftpx=1, toscale=True, households=12)
+    s.lane([[200.0, 700.0], [1200.0, 700.0]], width=16, clearance=22)
+    x, y, w, h = 700.0, 726.5, 62.0, 30.0  # a LONG minka (the 1.35x length jitter), just clear square-on
+    assert not s._on_a_tread(x, y, w, h), "square-on, this seat clears the tread - so the rake is the only thing under test"
+    assert not s._on_a_tread(x, y, w, h, rot=0.0), "an explicit zero rake must agree with the default"
+    assert s._on_a_tread(x, y, w, h, rot=-5.0), "RAKED, the same seat puts a corner on the tread and must be refused"
+
+
+def test_the_drawn_rake_has_ONE_definition_shared_by_placer_and_renderer():
+    """`_house_rot` exists so the placer cannot disagree with the renderer about the rake. The
+    expression was written out at both farmhouse record sites and nowhere in the bundle placer,
+    which is how the bundle path came to clear an axis-aligned rect for a raked house."""
+    s = Settlement(1400, 1400, seed=3)
+    s.meta(name="Rake", scale="hamlet", ftpx=1, toscale=True, households=12)
+    for cx, cy in ((100.0, 200.0), (713.5, 918.25), (1200.0, 40.0)):
+        assert s._house_rot(cx, cy) == s._hjit(cx, cy, 11.0) * 10.0 - 5.0
+        assert -5.0 <= s._house_rot(cx, cy) < 5.0, "the rake stays inside the +/-5 deg band the glyph is drawn in"
+    assert s._house_rot(100.0, 200.0) == s._house_rot(100.0, 200.0), "position-seeded: same seat, same rake, no stream draw"
+
+
 def test_a_house_is_refused_a_seat_whose_DRAWN_corner_lands_on_a_lane():
     """THE RATCHET for the engine's "placement tests a different footprint than the one drawn" debt,
     at the lane (this skill's CLAUDE.md, "CENTER vs FOOTPRINT" item 3).
