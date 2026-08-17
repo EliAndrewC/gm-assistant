@@ -28,10 +28,10 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, SKILL)
-from settlement import PLANK_ABUTMENT, Settlement, edge_dist, point_in_poly  # noqa: E402
+from l7r.diagram.settlement import PLANK_ABUTMENT, Settlement, edge_dist, point_in_poly  # noqa: E402
 import math  # noqa: E402
 
-from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, paddy_grain  # noqa: E402
+from l7r.diagram.waterfields import AZE, BEAN_GREEN, aze_w, build_comb, paddy_grain  # noqa: E402
 
 # Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this map's 2 ft/px, replacing the old
 # hand-set build_comb defaults (48px plots -> ~0.13 acre real, over Bray's "large" ceiling). This subdivides

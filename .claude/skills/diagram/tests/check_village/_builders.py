@@ -3,7 +3,7 @@
 import json
 import math
 
-import check_village
+from l7r.diagram import check_village
 
 WALL = [[50, 50], [950, 50], [950, 950], [50, 950]]  # a simple square enclosure
 

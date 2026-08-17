@@ -13,34 +13,52 @@ round-trips.
 
 ## Where things live (read this first; load only the index you need)
 
-The skill's Python is grouped by what a module is FOR. Each group carries its own `CLAUDE.md`
-index, so a session can open the one directory its task is in instead of paging this file.
+The skill's Python lives under **`l7r/diagram/`** (feature 119) and is grouped by what a module is
+FOR. Each group carries its own `CLAUDE.md` index, so a session can open the one directory its task
+is in instead of paging this file.
+
+**Why the extra two levels.** `l7r/` here is a PEP 420 *namespace portion* - it deliberately has no
+`__init__.py` - and it shares the `l7r` parent package with the L7R Toolkit webapp's `l7r.app` /
+`l7r.names` in `/gm-assistant/webapp/l7r/`. Both directories contribute to one `l7r.__path__`, so
+`import l7r.app` and `import l7r.diagram.settlement` work in the same interpreter and the webapp
+can render a map without two colliding top-level packages named `l7r`. **Never create
+`l7r/__init__.py`**: that makes it a regular package, terminates the import search, and makes the
+webapp's portion silently stop existing. `tests/test_namespace_portion.py` guards it in both trees.
+
+This directory - not `l7r/diagram/` - is still the `sys.path` root, and `pool/`, `tests/`, the
+`Makefile` and `pyproject.toml` all stay here. That is why every pool generator's bootstrap block
+is unchanged by the move: `SKILL = dirname(dirname(HERE))` from `pool/<tier>/x.gen.py` still lands
+here. Engine modules that compute the skill root from their OWN location moved two levels deeper and
+were adjusted to match (`gencache`, `pool_index`, `render_cache`, `cohort_audit`, `cache_audit`,
+`make_regressions`, `timings`, `hamletgen`, `check_village/__main__`) - a test asserts three of them
+still resolve here, because a wrong depth is silent and just lands one directory short of `pool/`.
 
 | directory | what is in it | load its index when |
 |---|---|---|
-| [`settlement/`](settlement/CLAUDE.md) | the Mode B drawing engine (the `Settlement` class and its mixins) | you are changing what a settlement map DRAWS or where it places something |
-| [`check_village/`](check_village/CLAUDE.md) | the gate: the whole check battery, as a registry of segments | you are adding, changing or running a check |
-| [`waterfields/`](waterfields/CLAUDE.md) | the water-first field engine (v2 comb fields) | you are changing paddies, bunds, canals or the field frame |
-| [`hamletgen/`](hamletgen/CLAUDE.md) | the scripted hamlet generator - a whole hamlet from a 9-line spec | you are working on scripted generation |
-| [`pipeline/`](pipeline/CLAUDE.md) | how a map gets regenerated, cached, rendered and indexed | the cache is behaving oddly, or you are changing how generation is DRIVEN |
-| [`tools/`](tools/CLAUDE.md) | read-only diagnostics and audits you run by hand | a map came out wrong and you need to ask WHY, or a number needs measuring |
+| [`l7r/diagram/settlement/`](l7r/diagram/settlement/CLAUDE.md) | the Mode B drawing engine (the `Settlement` class and its mixins) | you are changing what a settlement map DRAWS or where it places something |
+| [`l7r/diagram/check_village/`](l7r/diagram/check_village/CLAUDE.md) | the gate: the whole check battery, as a registry of segments | you are adding, changing or running a check |
+| [`l7r/diagram/waterfields/`](l7r/diagram/waterfields/CLAUDE.md) | the water-first field engine (v2 comb fields) | you are changing paddies, bunds, canals or the field frame |
+| [`l7r/diagram/hamletgen/`](l7r/diagram/hamletgen/CLAUDE.md) | the scripted hamlet generator - a whole hamlet from a 9-line spec | you are working on scripted generation |
+| [`l7r/diagram/sitegen/`](l7r/diagram/sitegen/CLAUDE.md) | tier-agnostic generation machinery the tiers SHARE (geometry, types, worker counts) | you are adding a tier generator, or moving a stage out of one |
+| [`l7r/diagram/pipeline/`](l7r/diagram/pipeline/CLAUDE.md) | how a map gets regenerated, cached, rendered and indexed | the cache is behaving oddly, or you are changing how generation is DRIVEN |
+| [`l7r/diagram/tools/`](l7r/diagram/tools/CLAUDE.md) | read-only diagnostics and audits you run by hand | a map came out wrong and you need to ask WHY, or a number needs measuring |
 | [`tests/`](tests/CLAUDE.md) | every test, mirroring the source layout, plus the frozen fixtures | you need to find or add a test |
 | `pool/` | the shipped maps: `<name>.gen.py`, its manifest, its render, its `.notes.md` design journal | - |
 | `wip/` | maps staged outside the pool (not gated, not swept) | - |
 
-Two engine modules are still single top-level files, and stay that way on purpose:
-**`compound.py`** (the Mode A compound program and perimeter-first placer) and **`citybudget.py`**
-(the space-budget city/capital planner). Both are peers of the engine packages above - pool
-generators import them directly - and folding them into a package would rewrite six frozen
-generator scripts for no navigational gain.
+Two engine modules are still single files rather than packages, and stay that way on purpose:
+**`l7r/diagram/compound.py`** (the Mode A compound program and perimeter-first placer) and
+**`l7r/diagram/citybudget.py`** (the space-budget city/capital planner). Both are peers of the
+engine packages above - pool generators import them directly - and folding them into a package
+would rewrite six frozen generator scripts for no navigational gain.
 
 The prose reference (as opposed to the code) splits the same way: [`SKILL.md`](SKILL.md) is the
 usage-facing index, and it indexes [`settlements/`](settlements/) and [`buildings/`](buildings/)
 (the per-topic design doctrine) and [`research/`](research/) (the historical grounding). Read a
 skill index, then load only the topics the subject calls for.
 
-**Run the packaged modules as modules**, from this directory - `python3 -m pipeline.regen ...`,
-`python3 -m tools.why_placed ...`. Running a package module as a loose script path puts its own
+**Run the packaged modules as modules**, from this directory - `python3 -m l7r.diagram.pipeline.regen ...`,
+`python3 -m l7r.diagram.tools.why_placed ...`. Running a package module as a loose script path puts its own
 directory on `sys.path` instead of the skill root, which is how one file ends up imported twice
 under two names.
 
@@ -53,17 +71,17 @@ The old heavy maps (Minami ~14.5s, Nagahara / Tango / Kikuta / Hoshizora ~10s af
 optimization passes) are FROZEN since 2026-08-16 and never regenerate - see "The legacy pool is
 FROZEN" below:
 
-    DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 -m check_village pool/<type>/<map>.json
+    DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 -m l7r.diagram.check_village pool/<type>/<map>.json
 
 **...or let the CACHE skip the work entirely** (2026-08-08). `pipeline/regen.py` regenerates a map only if
 something that map depends on actually changed, and prints `CACHED` or `REGENERATED` every time:
 
-    python3 -m pipeline.regen pool/hamlets/sawada.gen.py              # ~20s cold, ~1s cached
-    python3 -m pipeline.regen pool/*/*.gen.py                         # every LIVE map, fanned out (frozen legacy maps print FROZEN, skipped)
-    python3 -m pipeline.regen --no-cache pool/hamlets/inashiro.gen.py # force the work
+    python3 -m l7r.diagram.pipeline.regen pool/hamlets/sawada.gen.py              # ~20s cold, ~1s cached
+    python3 -m l7r.diagram.pipeline.regen pool/*/*.gen.py                         # every LIVE map, fanned out (frozen legacy maps print FROZEN, skipped)
+    python3 -m l7r.diagram.pipeline.regen --no-cache pool/hamlets/inashiro.gen.py # force the work
 
 Multi-map runs fan out across worker processes (cpus minus 2; `--jobs 1` for serial), as do
-`tools/cohort_audit.py` and `python3 -m hamletgen --batch`. The audit since 2026-08-15, when the
+`tools/cohort_audit.py` and `python3 -m l7r.diagram.hamletgen --batch`. The audit since 2026-08-15, when the
 timings ledger showed the serial cohort was the biggest available win; the batch CLI since
 2026-08-16, when a profile found that round had MISSED it - the fan-toe pond fix spent **17.3 of its
 45.7 minutes** on two serial 24-seed rolls, ~11 min of it as critical-path idle (**526s -> 71s,
@@ -121,7 +139,7 @@ valid says nothing about the coverage half. When you add anything else to an ent
 THAT part stale, because the key answers only for the bytes it was designed to protect. The contract's pinning tests are in
 `tests/pipeline/test_gencache.py`; the decision's full reasoning in `specs/026-cache-backed-gate/`.
 
-**AUDIT IT when you change the cache, or how generation is driven:** `python3 -m tools.cache_audit`
+**AUDIT IT when you change the cache, or how generation is driven:** `python3 -m l7r.diagram.tools.cache_audit`
 (~10 min, or `--all` for the whole pool). It perturbs a random numeric literal inside a
 `settlement/` function, sweeps the pool WITH the cache and again with `--no-cache`, and demands
 byte-identical artifacts - so it tests the only property anyone cares about without ever looking at
@@ -146,7 +164,7 @@ against code that no longer exists. Testing "does an edit to X invalidate?" ther
 baseline re-established (run until you see `CACHED`) before each trial, or the previous trial's
 cleanup produces the miss and you conclude the cache is broken when it is working perfectly.
 
-**TIMINGS ARE TRACKED IN [`timings.md`](timings.md), MEASURED BY `python3 -m tools.timings`** - one dated
+**TIMINGS ARE TRACKED IN [`timings.md`](timings.md), MEASURED BY `python3 -m l7r.diagram.tools.timings`** - one dated
 block per run, each benchmark carrying its BREAKDOWN as well as its total, so a slow loop can be
 attributed instead of merely noticed. Do not write fresh timings into prose here: this paragraph
 used to say the full sweep was "~2 to 2.5 minutes" and was still saying it on 2026-08-15, when the
@@ -416,10 +434,10 @@ work you will throw away, because the next conversion produces a different fallo
 
 ## Ask the GEN who placed it - do not grep for the caller
 
-The other half of the same lesson. `open_seat` answers "where does this fit?"; **[`tools/why_placed.py`](tools/why_placed.py)** answers *"who put this here?"* and *"what refused to put anything here?"* - the two questions you actually have when a map comes out wrong.
+The other half of the same lesson. `open_seat` answers "where does this fit?"; **[`tools/why_placed.py`](l7r/diagram/tools/why_placed.py)** answers *"who put this here?"* and *"what refused to put anything here?"* - the two questions you actually have when a map comes out wrong.
 
-    python3 -m tools.why_placed pool/provincial-cities/nagahara.gen.py --at 1102.6,1429.5
-    python3 -m tools.why_placed pool/provincial-cities/nagahara.gen.py --refused 1102.6,1429.5 --radius 12
+    python3 -m l7r.diagram.tools.why_placed pool/provincial-cities/nagahara.gen.py --at 1102.6,1429.5
+    python3 -m l7r.diagram.tools.why_placed pool/provincial-cities/nagahara.gen.py --refused 1102.6,1429.5 --radius 12
 
 `--at` prints every manifest record appended within the radius **with its call chain** - the gen
 line to go and look at, and the engine method under it that chose the spot. `--refused` prints how
@@ -448,10 +466,10 @@ the keep-outs. And a `--at` miss usually just wants a bigger `--radius`: a re-pa
 governed by many INTERACTING rules, that is not enough: the justice works (feature 015) must be
 outside the wall, on the way out, past the boundary stone, clear of the community's dead, off the
 farmland, on the outcast side, clear of every structure, and inside the map's current view. Use
-[`tools/site_justice.py`](tools/site_justice.py):
+[`tools/site_justice.py`](l7r/diagram/tools/site_justice.py):
 
-    python3 -m tools.site_justice pool/provincial-cities/nagahara.json execution_ground --limit=25
-    python3 -m tools.site_justice pool/towns/hirameki.json boundary_marker --ground=1620,1900
+    python3 -m l7r.diagram.tools.site_justice pool/provincial-cities/nagahara.json execution_ground --limit=25
+    python3 -m l7r.diagram.tools.site_justice pool/towns/hirameki.json boundary_marker --ground=1620,1900
 
 It proposes seats **cheapest-on-the-frame first** (`frame_cost=0` means the crop is unchanged by
 that seat) and adjudicates each one by building a trial manifest and running `check_village.gate()`
@@ -935,12 +953,12 @@ wall time is model-turn latency (root CLAUDE.md, 2026-07-20 profile), so each ex
 pure cost. Instead: in ONE Bash call, crop EVERY region you want to look at (all four viewports of
 a defect, before/after of several maps, the toe + the top + a control), then Read them together in
 the next turn. A footbridge review that touched 3 maps should be ~2 turns of imagery, not ~10.
-**Use [`tools/crop_map.py`](tools/crop_map.py) rather than re-writing the arithmetic** - it reads the viewBox
+**Use [`tools/crop_map.py`](l7r/diagram/tools/crop_map.py) rather than re-writing the arithmetic** - it reads the viewBox
 itself and takes as many regions as you like in one invocation, which is the batching win made easy:
 
-    python3 -m tools.crop_map pool/towns/hoshizora 1600,900,220 1200,400,150   # x,y,radius (world coords)
-    python3 -m tools.crop_map pool/hamlets/moritono --box 2100,150,2418,760 --zoom 1.5
-    python3 -m tools.crop_map pool/villages/ueda --whole --zoom 0.4            # whole map, downscaled
+    python3 -m l7r.diagram.tools.crop_map pool/towns/hoshizora 1600,900,220 1200,400,150   # x,y,radius (world coords)
+    python3 -m l7r.diagram.tools.crop_map pool/hamlets/moritono --box 2100,150,2418,760 --zoom 1.5
+    python3 -m l7r.diagram.tools.crop_map pool/villages/ueda --whole --zoom 0.4            # whole map, downscaled
 
 It prints one path per line - feed them straight to Read, together. (The conversion is
 `(coord - viewBox_origin) * (png_w / viewBox_w)`; it was hand-written five times in one session,
@@ -1066,7 +1084,7 @@ always the same: a rule gated on an OPTIONAL declaration that almost nothing dec
 the lines are covered while other maps never reach them. What catches it is asking, per map, whether
 the check appears in the output at all:
 
-    python3 -m check_village pool/<type>/<map>.json | grep -c "<check_name>"     # 0 = never ran
+    python3 -m l7r.diagram.check_village pool/<type>/<map>.json | grep -c "<check_name>"     # 0 = never ran
 
 Run that across the pool for any check whose body sits behind `if meta.get(...)` or
 `if <thing> is not None:`. A `0` on a map that plainly has the feature is the bug.
@@ -1339,10 +1357,10 @@ what is converted, what order the rest goes in, the bar a conversion has to clea
 iteration budget - is [`migration-plan.md`](migration-plan.md). **Update its status table as part of
 finishing any conversion.**
 
-[`hamletgen.md`](hamletgen.md) is the writeup; [`hamletgen/`](hamletgen/) is the generator - a PACKAGE
-since feature 111 (clause 13), whose [`CLAUDE.md`](hamletgen/CLAUDE.md) says which submodule holds
+[`hamletgen.md`](hamletgen.md) is the writeup; [`hamletgen/`](l7r/diagram/hamletgen/) is the generator - a PACKAGE
+since feature 111 (clause 13), whose [`CLAUDE.md`](l7r/diagram/hamletgen/CLAUDE.md) says which submodule holds
 which stage, so **load the one stage you need rather than the whole engine**; the CLI is now
-`python3 -m hamletgen`. [`pool/hamlets/`](pool/hamlets/) holds its demo maps beside the hand-authored hamlets (the pool is
+`python3 -m l7r.diagram.hamletgen`. [`pool/hamlets/`](pool/hamlets/) holds its demo maps beside the hand-authored hamlets (the pool is
 foldered by tier, not by method; `meta.generated_by` marks a scripted map). The hand-authored pool
 froze on 2026-08-16 (see "The legacy pool is FROZEN" above) - it is no longer held byte-identical,
 its gens are simply never re-run - and a session drawing anything but a `valley_paddy` hamlet

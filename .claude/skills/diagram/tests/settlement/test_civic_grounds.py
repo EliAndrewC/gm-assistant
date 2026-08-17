@@ -5,8 +5,8 @@ import random
 
 import pytest
 
-import settlement
-from settlement import Settlement, seg_dist
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement, seg_dist
 from tests.settlement._builders import _assert_no_glyph_overlaps, _cap020, _city, _crop_settlement, _town
 
 
@@ -536,7 +536,7 @@ def _civic_grounds_submixins():
     # before and after the split: pre-split the list is empty (CivicGroundsMixin is the single class
     # and the collision assertion is vacuous), post-split it is the five sub-mixins. Feature 114's
     # tasks T007 records why the by-name-import shape cannot be red-proven in task order.
-    from settlement.civic_grounds import CivicGroundsMixin
+    from l7r.diagram.settlement.civic_grounds import CivicGroundsMixin
 
     return [c for c in CivicGroundsMixin.__mro__ if c is not CivicGroundsMixin and c is not object]
 
@@ -556,7 +556,7 @@ def test_no_pre_split_civic_grounds_member_was_lost_in_the_move():
     # must never happen is a pre-split member going MISSING: an addition is visible in review, a
     # subtraction is silent until whichever generator calls it happens to run - and for
     # precinct_interior that is one wip/ map nobody runs by default.
-    from settlement.civic_grounds import CivicGroundsMixin
+    from l7r.diagram.settlement.civic_grounds import CivicGroundsMixin
 
     composed = set().union(*(_cg_own_members(c) for c in CivicGroundsMixin.__mro__))
     assert composed >= _CIVIC_GROUNDS_SURFACE, f"missing={sorted(_CIVIC_GROUNDS_SURFACE - composed)}"
@@ -589,7 +589,7 @@ def test_yard_ctx_construction_draws_no_rng():
     catches it in 2ms, and it is the invariant a future edit to `_YardCtx.__init__` is most likely
     to break (adding a jittered field would look harmless).
     """
-    from settlement.civic_grounds._yardctx import _YardCtx
+    from l7r.diagram.settlement.civic_grounds._yardctx import _YardCtx
 
     s = _city()
     before = random.getstate()

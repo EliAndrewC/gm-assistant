@@ -2,8 +2,7 @@
 
 import pytest
 
-import check_village
-import settlement
+from l7r.diagram import check_village, settlement
 from tests.check_village._builders import _kiln_map, bldg, well
 
 

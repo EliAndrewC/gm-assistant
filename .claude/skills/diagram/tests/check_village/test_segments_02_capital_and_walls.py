@@ -2,7 +2,7 @@
 
 import pytest
 
-import check_village
+from l7r.diagram import check_village
 from tests.check_village._builders import WALL, WALLSQ, _agri_city, _budget_city, _cap_gov, _cap_water, _capital_manifest, _door_city, _fort_city, _mest_city, _ring_towers, _scaled_city, bldg, f
 
 

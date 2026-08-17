@@ -5,7 +5,7 @@ Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen
 
 import os
 
-import hamletgen as hg
+from l7r.diagram import hamletgen as hg
 
 from ._builders import a_plan
 
@@ -45,7 +45,7 @@ def test_a_rolled_cohort_passes_the_whole_gate() -> None:
             f"{report.plan.spec.name}: {report.plan.acres:.1f} acres against a {report.plan.target_acres:.1f} target"
         )
     # MEASURED 2026-08-12: 24 of 24 over the first two dozen seeds, and 4 of 4 here
-    # (`python3 -m tools.cohort_audit --count 24` reproduces the sweep and reports any residue by check).
+    # (`python3 -m l7r.diagram.tools.cohort_audit --count 24` reproduces the sweep and reports any residue by check).
     # It was 7 of 12 when the experiment was first reported. Keep this at 4 of 4: a change that drops
     # a single rolled hamlet now fails here by name, which is the whole point of a ratchet.
     passed = [r for r in reports if r.ok]

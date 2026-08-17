@@ -18,11 +18,11 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, SKILL)
-from settlement import Settlement  # noqa: E402
+from l7r.diagram.settlement import Settlement  # noqa: E402
 import math      # noqa: E402
 import random    # noqa: E402
 
-from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, paddy_grain  # noqa: E402
+from l7r.diagram.waterfields import AZE, BEAN_GREEN, aze_w, build_comb, paddy_grain  # noqa: E402
 
 # Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at 2 ft/px (was hand-set 48px -> ~0.13 acre).
 # Subdivides the same field into finer cells; farmhouses/households/field area unchanged. See paddy_grain.

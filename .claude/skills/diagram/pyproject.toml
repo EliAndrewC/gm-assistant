@@ -25,19 +25,19 @@ ignore = ["E501"]   # long descriptive lines are house style; the formatter caps
 # the package __init__ re-exports the consumed legacy `import check_village` surface via star
 # imports (feature 027, superseding 024's verbatim roster): F403 because the stars ARE the
 # re-export mechanism there, F401 for the aliased explicit block
-"check_village/__init__.py" = ["F401", "F403"]
+"l7r/diagram/check_village/__init__.py" = ["F401", "F403"]
 # same rationale for the settlement package split (feature 025)
-"settlement/__init__.py" = ["F401"]
+"l7r/diagram/settlement/__init__.py" = ["F401"]
 # the _geom package split (feature 117) re-exports its surface the 027 way rather than with a
 # roster (Principle X clause 14): F403 because the stars ARE the mechanism, F401 for the aliased
 # block that carries the six underscore names a star import cannot
-"settlement/_geom/__init__.py" = ["F401", "F403"]
+"l7r/diagram/settlement/_geom/__init__.py" = ["F401", "F403"]
 # same star-import re-export mechanism for the waterfields package split (feature 110)
-"waterfields/__init__.py" = ["F401", "F403"]
+"l7r/diagram/waterfields/__init__.py" = ["F401", "F403"]
 # same again for the hamletgen package split (feature 111), plus E402: this __init__ runs a
 # sys.path bootstrap BEFORE its imports, because every submodule imports `settlement` and
 # `waterfields` by absolute name and the package must work when run from anywhere
-"hamletgen/__init__.py" = ["E402", "F401", "F403"]
+"l7r/diagram/hamletgen/__init__.py" = ["E402", "F401", "F403"]
 
 [tool.ruff.format]
 # Preserve the existing quote style: the SVG f-strings use single-outer/double-inner
@@ -50,7 +50,17 @@ quote-style = "preserve"
 [tool.mypy]
 python_version = "3.14"
 strict = true
-files = ["settlement", "check_village", "waterfields", "hamletgen", "compound.py", "citybudget.py", "tools/pack_audit.py", "tools/why_placed.py", "tools/scatter_audit.py", "tools/timings.py", "pipeline/pool_index.py", "pipeline/poolmaps.py"]
+
+# `l7r` is a PEP 420 namespace portion (feature 119) - no `__init__.py`, deliberately, so that the
+# webapp's `l7r.app` and this engine's `l7r.diagram.*` share one parent package. Without the two
+# settings below mypy walks up from a file, finds no `__init__.py` to stop at, and reports
+# "Source file found twice under different module names: diagram.waterfields and
+# l7r.diagram.waterfields". `explicit_package_bases` + an explicit root say where module paths
+# begin, so each file has exactly one identity. Do NOT "fix" this by adding `l7r/__init__.py` -
+# that silently hides the webapp's portion (tests/test_namespace_portion.py).
+explicit_package_bases = true
+mypy_path = "."
+files = ["l7r/diagram/settlement", "l7r/diagram/check_village", "l7r/diagram/waterfields", "l7r/diagram/hamletgen", "l7r/diagram/compound.py", "l7r/diagram/citybudget.py", "l7r/diagram/tools/pack_audit.py", "l7r/diagram/tools/why_placed.py", "l7r/diagram/tools/scatter_audit.py", "l7r/diagram/tools/timings.py", "l7r/diagram/pipeline/pool_index.py", "l7r/diagram/pipeline/poolmaps.py"]
 
 # RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
 # settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is
@@ -71,7 +81,7 @@ addopts = "--cov --cov-report=term"
 # not under the 100% rule (the by-hand audits and drivers - cache_audit, cohort_audit, crop_map,
 # timings, make_regressions, gencache, regen). Naming the measured modules one by one keeps that
 # boundary explicit instead of making a new tool silently owe 100% coverage the day it lands.
-source = ["check_village", "settlement", "hamletgen", "compound", "citybudget", "tools.pack_audit", "tools.site_justice", "tools.scatter_audit", "pipeline.render_cache", "pipeline.pool_index", "pipeline.poolmaps"]
+source = ["l7r.diagram.check_village", "l7r.diagram.settlement", "l7r.diagram.hamletgen", "l7r.diagram.compound", "l7r.diagram.citybudget", "l7r.diagram.tools.pack_audit", "l7r.diagram.tools.site_justice", "l7r.diagram.tools.scatter_audit", "l7r.diagram.pipeline.render_cache", "l7r.diagram.pipeline.pool_index", "l7r.diagram.pipeline.poolmaps"]
 omit = ["*/tests/*", "pool/*/*.gen.py"]
 
 # COVERAGE ENFORCEMENT LIVES IN THE MAKEFILE since the 2026-08-16 legacy freeze, not here. The

@@ -80,7 +80,7 @@ launched early, they finished inside the cohort's shadow, which is the launch-ea
 Why a "simple" fix ran long, and what each finding bought:
 
 - **The two 24-seed cohort rolls were 17.3 min of the 45.7, ~11 min of it critical-path idle.** The
-  cohort is the verification step of every placement-rule change, and `python3 -m hamletgen --batch`
+  cohort is the verification step of every placement-rule change, and `python3 -m l7r.diagram.hamletgen --batch`
   was still SERIAL - `regen.py` and `cohort_audit.py` had been fanned out in the 2026-08-15 round
   and this CLI was simply missed. Fixed the same day: **526s -> 71s (7.4x)**. Two lessons past the
   fix itself. First, when a perf round parallelizes a class of work, census every entry point into

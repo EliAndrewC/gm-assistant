@@ -4,8 +4,8 @@ import random
 
 import pytest
 
-import settlement
-from settlement import Settlement
+from l7r.diagram import settlement
+from l7r.diagram.settlement import Settlement
 
 
 def test_kosatsuba_draws_a_location_marker_at_the_coarse_tiers():

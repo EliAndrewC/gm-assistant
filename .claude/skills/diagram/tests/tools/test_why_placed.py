@@ -9,11 +9,11 @@ the tracer into unrelated maps.
 
 from __future__ import annotations
 
-import settlement
-from tools import why_placed as W
+from l7r.diagram import settlement
+from l7r.diagram.tools import why_placed as W
 
 GEN = """
-import settlement
+from l7r.diagram import settlement
 s = settlement.Settlement(600, 500, seed=1)
 s.meta(name="T", scale="town", ftpx=1)
 s.building(300, 300, 20, 12, "shop")

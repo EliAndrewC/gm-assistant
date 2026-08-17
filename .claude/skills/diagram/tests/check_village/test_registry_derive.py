@@ -17,9 +17,9 @@ from pathlib import Path
 
 import pytest
 
-import check_village
-from check_village import registry as reg
-from check_village.registry_analysis import _DerivationError, _derive_fields
+from l7r.diagram import check_village
+from l7r.diagram.check_village import registry as reg
+from l7r.diagram.check_village.registry_analysis import _DerivationError, _derive_fields
 
 HERE = Path(__file__).resolve().parent
 FIXTURE = json.loads((HERE.parent / "fixtures" / "registry_legacy_rows.json").read_text())

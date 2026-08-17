@@ -18,7 +18,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, SKILL)
-from hamletgen import HamletSpec, generate  # noqa: E402
+from l7r.diagram.hamletgen import HamletSpec, generate  # noqa: E402
 
 report = generate(HamletSpec(name="Sawada", seed=6, households=19, down_deg=225, water_sink="offmap"), out_base=os.path.join(HERE, "sawada"))
 print(report.line())

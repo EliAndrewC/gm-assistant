@@ -202,7 +202,7 @@ wells, the board's clump keep-out, the lane-crossing guards).
 
 ## Cohort seed 2: pre-existing drainage-routing failures (found 2026-08-16, fan-toe pond session)
 
-`python3 -m hamletgen --batch 1 --seed 2` fails FOUR checks - `drainage_discharges_downhill`,
+`python3 -m l7r.diagram.hamletgen --batch 1 --seed 2` fails FOUR checks - `drainage_discharges_downhill`,
 `drainage_junction_smooth`, `features_do_not_overlap`, `watercourses_flow_downstream` - and fails
 them IDENTICALLY on unmodified HEAD with the pond fix stashed, so it is a pre-existing engine
 issue, not fallout. Spec: 13 households, fall=135 (SE), wind=NW, `water_sink="offmap"`, round
@@ -375,7 +375,7 @@ for these two it is the only thing left.
 
 **Implementation sketch** (per the open-decision rule - carry the sketch, not just the question):
 the landing site is `waterfields/carve.py`'s sector opening, and the reproduction is
-`python3 -m hamletgen --batch 1 --seed 9`. Instrument `close_seams`'s bare-ground pass to dump the
+`python3 -m l7r.diagram.hamletgen --batch 1 --seed 9`. Instrument `close_seams`'s bare-ground pass to dump the
 offending pocket (seed 9 has it near the `paddy_plot_seams_shared` report at 1161,1866) and check
 whether its taper comes from a sector whose boundary thread has been clipped onto the collector -
 the same degenerate-sector signature `_comb_toe_and_hem`'s comment names at Ubame's west corner.

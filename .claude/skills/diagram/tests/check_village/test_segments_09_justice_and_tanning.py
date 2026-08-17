@@ -1,6 +1,6 @@
 """Split from test_checks.py by feature 025 - see tests/check_village/CLAUDE.md for the index."""
 
-import check_village
+from l7r.diagram import check_village
 from tests.check_village._builders import _TY_DIAG, _WHY, WALL, _dw, _fall_map, _justice_town, _side_map, _tower, _ty_map, _waived_map, _wf_map, bldg, bstone, exground, f, house, pspot
 
 
