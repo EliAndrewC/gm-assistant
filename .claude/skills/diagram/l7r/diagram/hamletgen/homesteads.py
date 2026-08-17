@@ -13,7 +13,7 @@ from typing import Any
 from l7r.diagram.settlement import Settlement, surface_water_dist
 from l7r.diagram.sitegen.geom import centroid, unit
 
-from .consts import LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
+from .consts import BUNDLE_PITCH, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
 from .plan import SitePlan
 
 # ---- STAGE 5: the homesteads --------------------------------------------------------------------
@@ -42,6 +42,25 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
     if len(span) < 2:  # pragma: no cover - a band always spans several outline vertices
         return []
     span.sort(key=lambda ip: (ip[1][0] - seat["anchor"][0]) * ax + (ip[1][1] - seat["anchor"][1]) * ay)
+    # SAMPLE BY DENSITY, NOT BY HOUSEHOLD COUNT (2026-08-17). `count` is what the caller still WANTS
+    # seated, but using it to space the candidates too made the row's resolution depend on the size
+    # of the village rather than on the length of the field edge it fronts - so a 10-household
+    # hamlet beside a 28-acre paddy got ten seats spread over a very long outline, several hundred
+    # px apart. The near margin is the busiest ground on the map (crop up to the bund, delivery
+    # ditches and their corridors, the field spur), so a coarse row loses most of its candidates to
+    # blocked ground and leaves the field ringed by three houses instead of five - which is cohort
+    # seed 22, where the front row placed 5 of 32 offers and only 3 finished inside `field_ringed`'s
+    # 165 px band.
+    #
+    # THE HONEST SPACING IS ONE BUNDLE PITCH: two homesteads cannot stand closer than that, so
+    # sampling finer wastes offers, and sampling coarser leaves gaps a blocked seat cannot recover
+    # from. Offering more costs nothing - a seat too far along is dropped by the caller's own band
+    # test, and the loop stops as soon as the households are seated. Measured across the cohort:
+    # seed 22 goes 3 -> 10 farmhouses within the band (and its gate clean), seed 1 goes 11 -> 15,
+    # seed 4 goes 15 -> 16, and no map loses ground. It is also how a farming hamlet really sits -
+    # the houses crowd the field they work.
+    _span_len = sum(math.dist(span[i][1], span[i + 1][1]) for i in range(len(span) - 1))
+    count = max(count, min(int(_span_len / BUNDLE_PITCH) + 1, 64))  # capped so a huge fan cannot make the row unbounded
     out: list[Pt] = []
     for k in range(count):
         idx = span[min(len(span) - 1, round(k * (len(span) - 1) / max(1, count - 1)))][0]
