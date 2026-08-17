@@ -108,6 +108,13 @@ def taper_w(w0: float, w1: float, t: float) -> float:
     width while it still has most of its water to deliver, then dwindles hard over the last stretch -
     which is what "the water is leaving it" is supposed to look like.
 
+    THAT PROFILE IS DATA, NOT A VISIBLE GRADIENT, and saying so is part of the rule. Since the net
+    went to true size a delivery ditch sheds one pixel over five hundred (0.20 px per 100 px, against
+    0.93 before), so the shape below is correct and unreadable at once. The GM asked directly, was
+    given x1.5 and x2 legibility multipliers with the gradients priced, and chose true size
+    (2026-08-17). Do NOT widen these strokes to make the taper show - the numbers and the reasoning
+    are in `../research/water.md#what-drawing-at-true-size-left-open`.
+
     **THE WORKED EXAMPLE LIVES IN A TEST, NOT HERE** -
     `test_the_delivery_taper_holds_then_dwindles` asserts the SHAPE this paragraph promises (wider
     than a straight line at every interior point; more of the drop in the back half than the front;
