@@ -121,8 +121,13 @@ artifact is byte-identical.
       counts and the oracle result, matching feature 116's spec-status convention
 - [x] T026 Update `.claude/skills/diagram/CLAUDE.md` if the `settlement/` row's wording needs it, and
       confirm `settlement/CLAUDE.md`'s coverage note still reads true
-- [ ] T027 Stop-work ritual: commit in the clone, then `scripts/sync-with-main.sh done`. NOT run on a
-      regressed state - Principle XIII's three exits are fix, revert, or an explicit GM waiver
+- [x] T027 Stop-work ritual: commit in the clone, then `scripts/sync-with-main.sh done`. NOT run on a
+      regressed state - Principle XIII's three exits are fix, revert, or an explicit GM waiver.
+      **DONE** 2026-08-17. The push's pull auto-merged feature 118's (`rolling/`) edits into
+      `settlement/CLAUDE.md`, which my commits also touched, so the ritual's fix-forward branch
+      applied: re-gated on the combined 117+118 state (**3283 passed, gate green**) and then ran
+      `sync-with-main.sh render-sync` (9 live maps regenerated, 19 frozen skipped, index
+      refreshed). Both package rows survived the merge.
 
 ## Dependencies
 
