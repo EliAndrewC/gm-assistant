@@ -5,7 +5,7 @@ import random
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, cast
 
-from ._geom import PointGrid, Pt, boxed_polys, edge_dist, indexed_grid, point_in_poly, quad_hits_poly, rot_rect, seg_dist
+from ._geom import PointGrid, Pt, boxed_polys, drawn_extent, edge_dist, indexed_grid, point_in_poly, quad_hits_poly, rot_rect, seg_dist
 from ._knobs import skeleton_layout
 
 if TYPE_CHECKING:
@@ -291,7 +291,9 @@ class HousesMixin:
                 return True
         return False
 
-    def _fits(self: Settlement, x: float, y: float, w: float, h: float, skip: Any = None, corridors: bool = True, row_mates: Any = None, row_axis: Any = None, disc: bool = False) -> bool:  # type: ignore[misc]
+    def _fits(  # type: ignore[misc]
+        self: Settlement, x: float, y: float, w: float, h: float, skip: Any = None, corridors: bool = True, row_mates: Any = None, row_axis: Any = None, disc: bool = False, rot: float | None = None
+    ) -> bool:
         if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:  # keep clear of edges + title
             return False
         if self.bound and not point_in_poly(x, y, self.bound):  # stay inside a bounding ring (city wall)
@@ -327,6 +329,10 @@ class HousesMixin:
         # was blocking the capital: open_seat refused a wellhead at 12, 10 and 8 px in two blocks
         # that the well-density rule says need one.
         r = (min(w, h) / 2) if disc else (math.hypot(w, h) / 2)
+        # THE CANDIDATE'S OWN DRAWN EXTENT, when the caller knows its rake (feature 121). `None`
+        # means UNKNOWN, not "zero": a caller that does not say keeps the circumscribed circle,
+        # because assuming axis-aligned for a candidate the map draws raked would under-state it.
+        _cw, _ch = drawn_extent(w, h, rot) if rot is not None and not disc else (None, None)
         _mates = {(round(m[0], 2), round(m[1], 2)) for m in (row_mates or ())}
         _ax = row_axis or (1.0, 0.0)
         # the angle that matters is the seat's rotation RELATIVE TO THE ROW's bearing, not its
@@ -334,7 +340,7 @@ class HousesMixin:
         # its reach with the absolute angle returns its depth where the row needs its width
         _rel = math.radians(getattr(self, "_row_rot", 0.0)) - math.atan2(_ax[1], _ax[0])
         _along = abs(w * math.cos(_rel)) + abs(h * math.sin(_rel))  # the seat's reach ALONG the row
-        for px, py, pw, ph, *_ in self._reach_index(self.placed, "placed_reach").near(x, y, r):
+        for px, py, pw, ph, _pw_drawn, _ph_drawn, *_ in self._reach_index(self.placed, "placed_reach").near(x, y, r):
             if (round(px, 2), round(py, 2)) in _mates:
                 # SAME FILE ONLY. A both=True row alternates sides of the street, so a seat's
                 # immediate mate is often its twin ACROSS the way - zero distance along the row and
@@ -346,7 +352,15 @@ class HousesMixin:
                 if _d_across < (max(w, h) + max(pw, ph)) / 2 and _d_along < (_along + _mate_along) / 2 + 1.5:
                     return False
                 continue
-            if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 4:
+            # EXACT BOX when BOTH sides have declared what they draw; the circumscribed circle
+            # otherwise. The circle refuses seats nothing occupies - measured on a provincial city,
+            # 38.7% of all refusals - but it is rotation-invariant, and that invariance is what has
+            # been covering for placement dimensions that ignore rake, so it may only be given up
+            # where the real extent is known on both sides.
+            if _cw is not None and _pw_drawn is not None:
+                if abs(x - px) < (_cw + _pw_drawn) / 2 + 4 and abs(y - py) < (_ch + _ph_drawn) / 2 + 4:
+                    return False
+            elif math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 4:
                 return False
         return all(math.hypot(x - gx, y - gy) >= r + math.hypot(gw, gh) / 2 + 4 for gx, gy, gw, gh, *_ in self._reach_index(self.grove_rects, "grove_reach").near(x, y, r))
 
@@ -355,10 +369,25 @@ class HousesMixin:
         """(x, y, w, h) footprints boxed by their COLLISION REACH - the half-diagonal `_fits`
         measures against, plus its 4px. Boxing by reach means a query pads by the CANDIDATE's own
         radius alone: anything that could collide has the query point inside its reach box widened
-        by r, so it shares a cell with the query span and is never pruned away."""
-        for px, py, pw, ph in entries:
+        by r, so it shares a cell with the query span and is never pruned away.
+
+        THE REACH BOX KEEPS THE HALF-DIAGONAL even though the verdict no longer does (feature 121).
+        It is a PREFILTER: over-stating an extent can only admit a pair the exact test then rejects,
+        while under-stating one starts rejecting before the exact test runs - the index would be
+        deciding. Tightening this to match `drawn_extent` would look like a tidy-up and would be a
+        bug. (specs/121-placer-drawn-footprint/contracts/placement.md, C1.)
+
+        AN ENTRY MAY DECLARE ITS DRAWN EXTENT, as a trailing `(ew, eh)`. Declaring it opts that
+        entry into the exact box verdict; a plain 4-tuple keeps the circle, unchanged. That is
+        deliberate rather than a migration half-done: an entry whose stored `w`/`h` is the UNROTATED
+        size of a feature the map draws raked would silently under-state itself under a box test,
+        and a 90-degree building is the case where that is worst. Opt-in means a site nobody has
+        checked cannot become an overlap - it just keeps today's conservative circle.
+        `PointGrid` reads the box as the LAST FOUR fields, so the declaration rides in front of it."""
+        for px, py, pw, ph, *decl in entries:
             rr = math.hypot(pw, ph) / 2 + 4
-            yield (px, py, pw, ph, px - rr, py - rr, px + rr, py + rr)
+            ew, eh = (decl[0], decl[1]) if len(decl) >= 2 else (None, None)
+            yield (px, py, pw, ph, ew, eh, px - rr, py - rr, px + rr, py + rr)
 
     def _reach_index(self: Settlement, registry: Any, key: str) -> PointGrid:  # type: ignore[misc]
         def build(lst: Any) -> PointGrid:
