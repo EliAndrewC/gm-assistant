@@ -85,41 +85,48 @@ head-race) - a pipeline note, logged in `future-work.md`.
   verified pond containment, old-site healing and 0 scatter violations; the rim kisses its bund
   at 0.65 px (nitpick, physically fine - dug up to the bund).
 
-## 2026-08-17 - re-packed by feature 121 (the placer tests the rake it draws)
+## 2026-08-17 - re-packed twice: feature 121, then the front-row cap
 
-6 of 12 houses moved. All 12 households had a dooryard garden before AND after; what changed is that
-the number with a SECOND bed went 2 -> 4 (`gardens` counts BEDS, not households - a distinction
-worth keeping straight, since garden AREA per household went DOWN for both gainers, 1006 -> 724 sq
-ft at h0). The tighter corridor bought bed COUNT, not ground.
+**Read this entry, not an earlier draft of it.** A first version was written after the feature-121
+re-pack and was refuted by the very next roll - it quoted lane-2 frontage clearances of
+11.8/8.9/8.1/15.2/9.8 ft and left an OPEN item about a merging pair at (829.4,1682.7)/(771.5,1693.6).
+Neither survives: the map re-rolled twice more the same day, those two houses do not exist, and the
+closest house to any lane is now 42 ft. Rewritten from the shipped manifest.
 
-WHY the corridor changed: see kashikawa.notes.md's entry of the same date, or
-specs/121-placer-drawn-footprint/research.md D1/D6/D7.
+WHAT HAPPENED, in order. Feature 121 made the placer test the rake it draws and dropped
+`LANE_CLEARANCE` 48 -> 40. Then `front_row` began sampling seats by bundle pitch instead of by
+household count, to stop a starved row leaving a big field under-ringed - and, uncapped, it seated
+every household by itself. Mizuguchi came out **891 x 123 ft, aspect 7.24**, with an rms residual of
+22 ft about a smooth curve: no house stood behind any other anywhere on the map. Its copse collapsed
+11 -> 4 clumps and its byres were pushed out of the courtyards into the windbreak, because a
+one-rank cluster has no interior gap ground. Then the front row was capped at one rank's worth of
+the band, and the surplus went back to the flanking pass, which seats BEHIND.
 
-MEASURED HERE (settlement-review, DELTA): all six moved houses moved TOWARD their lane. Lane-2
-frontage clearance went 13.6/16.8/17.1/21.6/14.5 ft to 11.8/8.9/8.1/15.2/9.8 - close fronting that
-still leaves a verge, nothing crowding or overhanging.
+WHERE IT LANDED (settlement-review, verified against a correctly-registered render):
 
-Review verdict: SHIP WITH NOTES.
+- cluster **511 x 276 ft, aspect 2.01** (eigen) / 1.85 (extent), against 7.24 in the ribbon state and
+  5.85 before any of it. rms residual about a best-fit curve **22 -> 68.9 ft**, max 140 - larger than
+  a farmhouse's own 28 ft depth, so the houses are genuinely off any single line.
+- **four depth bands** to the field outline: 18/41/58/58, then 96/101/116/128, then 193/193/216,
+  then 297 ft. Everything past 150 ft (the front row's furthest standoff) was seated by the flanking
+  pass - the mechanism working as intended.
+- copse **4 -> 18 clumps**, threading the courtyards the ranks reopened; better than the 11 it had
+  before any of this. Nobody touched the grove code - it followed the cluster.
+- all three byres out of the windbreak (32/89/145 ft from the nearest clump, none under canopy). One
+  is a textbook courtyard stall between four homesteads; two sit in an open western pocket 84-85 ft
+  from the nearest house, so the recovery on this symptom is partial where the copse's is complete.
+- minimum house-to-house footprint gap **2.0 -> 10.8 ft**, rest at 27+ ft. The merge is gone.
+- notice board at the traffic optimum: 10 of 12 houses within 250 ft, equal to the best point on the
+  map, even though every house it is measured against moved.
 
-OPEN, and it is the same defect class one level down - TWO FARMHOUSES CAN MERGE. The pair at
-(829.4, 1682.7) and (771.5, 1693.6) had their raked-corner gap fall 3.6 -> 2.0 ft, because the
-re-pack flipped h5's rake from -4.0 to +4.4 deg so the two houses now diverge instead of running
-parallel. At 1 px = 1 ft that is two pixels between two dark roof strokes: at fit zoom they merge
-and read as ONE long building, and two feet between thatched eaves is not a thing a hamlet does.
+THE COST, recorded rather than left implied: fronting loosened. Median house-to-lane is back to
+~98 ft (4 of 12 within 60) from the ribbon's 77 (10 of 12). The ribbon's tighter fronting was an
+artifact of the defect, not a baseline worth keeping - but ~98 is the figure an early review
+criticized against Ikegami's 55, and the flanking pass is where a future tightening belongs, since
+it is the pass now doing the seating.
 
-MECHANISM: feature 121 made the placer test its raked quad against the LANE TREAD, but house-to-
-house separation is still adjudicated on the whole-bundle BBOX (`_bundle_side_fits`), which knows
-nothing about either house's rake. Measured across the four scripted hamlets, this is a lone
-outlier - inashiro/kashikawa/sawada sit at 28.8/25.5/23.0 ft minimum and only mizuguchi has a pair
-under 6 ft - so a rule with a lot of headroom would catch it and disturb nothing else.
-
-SKETCH (check before fix, per the project rule): add a gap verdict using the existing
-`within_edge_gap(a, b, N)` helper over `M["houses"]` pairs - it already measures real footprints -
-confirm it fires on mizuguchi and on nothing else in the pool, then require the same clearance in
-`_bundle_common_fits` against every placed house's raked quad (the sun-corridor rule already reads
-neighbours' geometry off `M["houses"]`, so the precedent and the plumbing both exist). Ground the
-number in "two thatched roofs must shed separately" - the principle research/buildings.md already
-records for a building against a compound wall.
-
-DEFERRED DELIBERATELY: this is a NEW rule, not a regression (no check fires, and the gate is 22/24
-before and after), so it was not folded into feature 121's scope.
+THE MERGE RULE ITSELF is `farmhouses_shed_separately` (8 ft wall to wall, two thatched drip lines
+plus a footpath). The pre-rule manifest is frozen in
+`pool/regressions/farmhouses_shed_separately_fires_on_the_pre_rule_mizuguchi.json` - which matters
+more than it looks, because this map has since re-rolled twice and the motivating pair no longer
+exists anywhere but that fixture.

@@ -70,12 +70,11 @@ def test_a_house_beside_open_water_needs_no_rescue_well() -> None:
 
 
 def test_lane_frontage_seats_the_hamlet_when_the_field_row_offers_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The lane-frontage pass became a FALLBACK on 2026-08-17, when `front_row` started sampling by
-    bundle pitch and began seating every household by itself. Fronting did not suffer (the front
-    row's seats lie along the margin, which is where the lanes run - see the note at the call site),
-    but the pass now breaks on its first candidate on every real map, so nothing exercises the code
-    that puts a door on a lane. Drive it: with the field row silent, the lanes have to seat the
-    hamlet."""
+    """The lane-frontage pass seats the BACK RANK on a real map, but only the households past one
+    rank's worth of the band - so on a small hamlet it can place very few, and for part of one day
+    (while `front_row` sampled by density with no cap) it placed nothing at all and the cluster came
+    out a single rank. Drive it directly, with the field row silent, so the code that puts a door on
+    a lane is exercised whatever the cap leaves it."""
     from l7r.diagram.hamletgen import homesteads as HS
 
     monkeypatch.setattr(HS, "front_row", lambda plan, count, standoff=46.0: [])

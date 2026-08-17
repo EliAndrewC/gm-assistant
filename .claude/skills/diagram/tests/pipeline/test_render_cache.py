@@ -5,6 +5,7 @@ against a throwaway git repo and trivial fake generators, per the project's fixt
 
 from __future__ import annotations
 
+import glob
 import os
 import subprocess
 from pathlib import Path
@@ -12,6 +13,8 @@ from pathlib import Path
 import pytest
 
 from l7r.diagram.pipeline import render_cache as rc
+
+HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))  # the skill root: tests/pipeline/ -> two up
 
 # A trivial stand-in generator: writes <stem>.svg + <stem>.png next to itself (the Mode B naming
 # convention render_cache predicts) and records whether the main-tree override reached it.
@@ -240,3 +243,36 @@ def test_main_no_allow_main_flag(repo):
     gen = _make_gen(pool, "villages", "m")
     assert rc.main(["--pool", pool, "--main-repo", repo_dir, "--skill-dir", skill, "--no-allow-main"]) == 0
     assert Path(rc._predicted_svg(gen)[:-4] + ".ran").read_text() == "unset"
+
+
+def test_every_live_pool_png_matches_its_own_svg_viewbox():
+    """A shipped PNG must depict the SVG beside it - the guard that would have caught four hamlets
+    shipping the PREVIOUS roll's image while their manifests were current (2026-08-17).
+
+    `render_png` fixes the width at 2600 and lets the height follow the viewBox, so
+    `png_h / png_w` must equal `viewBox_h / viewBox_w` to within rounding. That is a cheap,
+    decisive test: any mechanism that lets the two drift - the gencache store/load bug this
+    accompanies, an interrupted render, a hand-copied file - changes the aspect and fails here.
+    Nothing else notices, because the gate reads manifests and never opens the PNG, and
+    `crop_map.py` reads the viewBox from the SVG and the pixels from the PNG without checking
+    they agree, so a stale render silently mis-registers every crop taken for review."""
+    import re
+    import struct
+
+    from l7r.diagram.pipeline import poolmaps
+
+    checked = 0
+    for gen in sorted(glob.glob(os.path.join(HERE, "pool", "*", "*.gen.py"))):
+        if poolmaps.classify(gen) != "scripted":
+            continue  # frozen legacy renders are committed exhibits; Mode A compounds have no viewBox contract here
+        stem = gen[: -len(".gen.py")]
+        svg_path, png_path = stem + ".svg", stem + ".png"
+        if not (os.path.isfile(svg_path) and os.path.isfile(png_path)):
+            continue  # renders are gitignored for live maps; a clean checkout simply has none to check
+        vb = re.search(r'viewBox="([\d.eE+\- ]+)"', Path(svg_path).read_text()[:4000])
+        assert vb, f"{svg_path} has no viewBox"
+        _x, _y, vw, vh = (float(v) for v in vb.group(1).split())
+        pw, ph = struct.unpack(">II", Path(png_path).read_bytes()[16:24])
+        assert abs(round(pw * vh / vw) - ph) <= 2, f"{os.path.basename(png_path)} is {pw}x{ph} but its own SVG renders to {pw}x{round(pw * vh / vw)} - the PNG is not this SVG"
+        checked += 1
+    assert checked, "no live scripted map had both a .svg and a .png - the guard checked nothing"
