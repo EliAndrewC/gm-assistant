@@ -72,7 +72,7 @@ From `/gm-assistant/webapp/`, with the Gemini API key configured:
 
 ```python
 python3 - <<'EOF'
-import l7r
+import l7r.app
 from chargen import synthesis, opcache, brief
 
 snapshot, recent, n = opcache.get_campaign_context()

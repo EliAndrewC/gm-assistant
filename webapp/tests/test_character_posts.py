@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-import l7r  # noqa: F401  -- force l7r to load first (chargen<->l7r circular import)
+import l7r.app  # noqa: F401  -- force l7r to load first (chargen<->l7r circular import)
 from chargen import constants as c
 from chargen.character import Samurai
 

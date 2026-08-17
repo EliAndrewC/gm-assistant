@@ -15,11 +15,11 @@ so the lore can be tuned without touching code.
 
 Run the prompt-iteration harness against a few sample characters with:
 
-    python3 -c "import l7r; from chargen import synthesis; synthesis._main()"
+    python3 -c "import l7r.app; from chargen import synthesis; synthesis._main()"
 
 (``l7r`` is imported first only to dodge a pre-existing circular import in the
 chargen package's __init__; the app itself launches the same way, via
-``cherryd --import l7r``.)
+``cherryd --import l7r.app``.)
 """
 
 import os

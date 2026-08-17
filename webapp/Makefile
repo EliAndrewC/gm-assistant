@@ -62,7 +62,7 @@ cov:
 	fi
 
 serve:
-	cherryd --import l7r
+	cherryd --import l7r.app
 
 # Capture multi-scroll contact sheets at all four standard viewports. Output
 # in /tmp/l7r-shots/sheet-<page>-<viewport>.png. Assumes a server is running
@@ -100,7 +100,7 @@ prepare-deploy:
 	@cp "$${L7R_SETTING_DIR:-/host-l7r-repo/setting}/budgets.md" setting/budgets.md
 	@echo "[deploy] corpus ready: $$(find setting -type f | wc -l) files"
 	@echo "[deploy] refreshing campaign-character cache into webapp/opcache/"
-	@python3 -c "import l7r; from chargen import opcache; opcache.refresh_cache_file()"
+	@python3 -c "import l7r.app; from chargen import opcache; opcache.refresh_cache_file()"
 	@echo "[deploy] opcache ready: $$(find opcache -type f | wc -l) files"
 
 # Deploy to Fly.io. Reads FLY_API_TOKEN from .env (handled by grep, not `source`,

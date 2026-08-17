@@ -82,11 +82,23 @@ references across 13 files; ~10 webapp files; ~110 lines extracted into `sitegen
 
 ## Baseline (Principle XIII) - recorded before any file moves
 
+Taken 2026-08-17 in `/tmp/119-base`, a detached worktree at `286e302` (the pre-implementation
+commit), never a stash.
+
 | baseline | command | result |
 |---|---|---|
-| diagram gate | `cd /tmp/119-base/.claude/skills/diagram && make done` | *filled in at task T001* |
-| webapp gate | `cd /tmp/119-base/webapp && make done` | *filled in at task T001* |
-| pool artifacts | regen every gen with `--frozen-ok` in a scratch copy; `sha256` every `pool/**` artifact into `baseline-hashes.txt` | *filled in at task T002* |
+| diagram gate | `cd /tmp/119-base/.claude/skills/diagram && make done` | **GREEN** (exit 0) |
+| webapp gate | `cd /tmp/119-base/webapp && make done` | **GREEN** (exit 0) |
+| pool artifacts | `python3 -m pipeline.regen --frozen-ok pool/*/*.gen.py` then `sha256sum` every artifact | **890 artifacts** hashed to `/tmp/119-baseline-hashes.txt`; regen exit 0 |
+
+**Zero pre-existing failures**, so there is no ledger and the merge bar is absolute: both gates
+green and all 890 artifacts byte-identical. Anything else is a regression under Principle XIII.
+
+*Noise to ignore, recorded so nobody re-diagnoses it*: both gates print a `NotADirectoryError` for
+`/tmp/119-base/.git/gate-green-<area>` from `scripts/gate-stamp.py`. In a worktree `.git` is a FILE,
+not a directory, so the stamp cannot be written. The Makefile's `|| true` swallows it and both
+gates still report green - it is an artifact of measuring in a worktree, not a failure of the code
+under test.
 
 The hash manifest is the oracle for all three landings. It is taken ONCE, against unmodified code,
 and every landing compares against that original - never against the previous landing's output.

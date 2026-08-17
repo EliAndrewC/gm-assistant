@@ -8,7 +8,7 @@ visible at a glance.
 The contact sheet is the Principle I verification artifact - UI changes
 are not "done" until a contact sheet has been reviewed at the GM's viewport.
 
-Assumes `cherryd --import l7r` is running at http://127.0.0.1:8080/.
+Assumes `cherryd --import l7r.app` is running at http://127.0.0.1:8080/.
 
 To capture authenticated pages, set L7R_TEST_COOKIE to a valid session cookie
 value (see tests/_session_cookie.py for the helper).
