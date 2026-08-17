@@ -75,6 +75,7 @@ CONSUMED_PUBLIC = [
     "SitePlan",
     "WIND_VECTORS",
     "back_fouled",
+    "baseline_verdict",
     "below_drain",
     "belt_polygon",
     "build",
