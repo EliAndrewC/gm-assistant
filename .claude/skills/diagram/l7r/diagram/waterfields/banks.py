@@ -324,12 +324,25 @@ _GATE_MIN_APEX = 15.0
 # the paddy-CELL note's "farmhouse rings are unchanged" - true there, false here). The cell change
 # subdivided the same envelope and drew the same number of things; this rule changes the NUMBER of
 # drawn plots, and the patchwork draws from the SHARED placement RNG, so every downstream placement
-# re-rolls. Measured against main's tip: Inashiro re-packs wholesale (all 15 houses move, up to
-# 149 px; gardens 18 -> 17; farm sheds 6 -> 3; both wells and the kosatsuba re-seat; the view
-# shifts), Sawada and Mizuguchi move 6 of 19 and 5 of 12 houses, and Kashikawa's cluster is
-# byte-identical but for one byre. The household COUNT holds on all four (15/15, 20/20, 12/12,
-# 19/19) and so does the acreage - it is the positions that rotate. Any future rule that changes a
-# drawn COUNT carries the same ripple, and the honest place to look for it is the per-map notes.
+# re-rolls.
+#
+# MEASURED, and SAY WHICH METRIC - the first write-up did not, and was wrong by 2-4x because of it
+# (settlement-review, Sawada). "Up to 78 px" was each new house's distance to the NEAREST OLD house,
+# which quietly lets one old house partner several new ones and so always under-reports. Under a
+# real one-to-one matching (the smallest possible LARGEST displacement) the same map moves a
+# household 286 px. Against main's tip - houses unmoved, then min-max displacement:
+#
+#   Inashiro    0 of 15   564 px   gardens 18 -> 17, farm sheds 6 -> 3, view shifts
+#   Kashikawa  20 of 20     0 px   byte-identical, view included
+#   Mizuguchi   7 of 12   250 px   gardens 16 -> 17, farm sheds 2 -> 1
+#   Sawada     11 of 19   540 px   gardens 20 -> 23, farm sheds 5 -> 6
+#
+# The household COUNT holds on all four (15/15, 20/20, 12/12, 19/19) and so does the acreage - it is
+# the positions that rotate, by a map-specific amount, and Kashikawa proves the amount can be zero.
+# Any future rule that changes a drawn COUNT carries the same ripple; MEASURE it rather than reason
+# about it, because the reasoning that feels safest ("the field outline is the same, so the rings
+# that key off it are the same") is exactly the one that fails. It is also how the cohort seed-41
+# well regression happened: a well moved, not a paddy.
 #
 # DELIBERATELY COMB-ONLY. `build_terraces` and `build_ribbon` are the hill-rice engines, and hill
 # rice is exactly where the Senmaida micro-basins above are real; `build_polder`'s parcels are

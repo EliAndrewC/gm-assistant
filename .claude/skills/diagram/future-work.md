@@ -398,23 +398,45 @@ which is why `e0fb2417` (the well tie-break, byte-identical on every shipped map
 in history. The general lesson: when a fabric change trips a check in a different subsystem, measure
 whether the geometry moved before assuming the change is at fault, and separate the commits.
 
-### OPEN (low priority): `_outside_cloud` tests a BOX, not the settlement
+### BLOCKING, with the GM: cohort seed 5's drain gets no plank (a placer/check split)
 
-Found by settlement-review on Inashiro, 2026-08-17, while confirming the well tie-break. The guard
-asks whether a candidate seat lies inside the AABB of the house CENTERS - which is deliberately the
-same test the rescue pass below it uses, so the two passes finally agree, and that consistency is
-the point. But an AABB cannot tell "in the settlement" from "in the box": on Inashiro the box spans
-y 492.7-1571.8 and so contains the ~345 px of grove and scrub between the north group (last house
-y=868.8) and the south group (first house y=1215.6). A seat in that empty middle scores 0 -
-interior - identically to a courtyard seat.
+**State: the paddy size floor plus three review-found placement fixes are green on the gate (3319
+passed) and committed in the clone, NOT pushed.** Cohort seeds 1-48 are **45/48 against a 46/48
+baseline** - one regression, and constitution Principle XIII allows only fix, revert or an explicit
+waiver.
 
-Harmless on every current map, because the `near[0] <= ~105 px` rung binds long before the tie-break
-is consulted. But it is the same class of imprecision the tie-break's own comment indicts centrality
-for, and on a genuinely two-lobed cluster it would prefer inter-lobe emptiness over a courtyard just
-outside the box. **Fix sketch**: test the seat against the union of the households' own courtyard
-discs (`near[0] <= nearest` already computes that distance) rather than against the bounding box -
-a one-line change to `_outside_cloud`, but it re-rolls well positions, so it wants a cohort
-measurement and a per-map review like any placement change.
+**The defect.** Seed 5 fails `long_ditches_have_a_footbridge` on a 996 px drain tapering 1.5 -> 5.5 px.
+Traced, not guessed: moving houses (the lane-frontage cap) flips the CHECK's useful-ground verdict to
+"this ditch needs a plank", while the PLACER refuses all ~40 candidate seats because
+`_plank_reaches_useful_ground` is evaluated against the **confluence-widened** span, whose ends land
+on marsh/scrub. Two predicates asking the same question about different geometry - the classic split
+`channel_footbridges` has fought twice before in its own comments.
+
+**Two attempted fixes, both reverted, both recorded at the point of change**: re-sizing the deck at
+each seat from the local taper (correct by the docstring, but it widened every collector's downstream
+decks and cost `features_do_not_overlap`, cohort 45 -> 44), and re-basing the obliqueness ceiling on
+`max(w, w_tail)` (a real defect - a head-based ceiling is meaningless on a collector that starts as a
+thread - so it was KEPT, but it was not the blocker).
+
+**Fix sketch**: unify the two useful-ground tests over ONE span, so the check and the placer judge
+the same deck. The honest options are to have the placer fall back to the nominal span when the
+widened deck cannot reach useful ground (and record the span it actually used), or to give the check
+the placer's own predicate. Either changes the shared footbridge contract that a placer AND a gate
+check both depend on, which is why it is with the GM rather than folded in.
+
+### DONE 2026-08-17: `_outside_cloud` now tests the CROP's box, not a box of house centers
+
+Filed the same day it was found and fixed the same day, once cohort seed 29 turned the predicted
+flaw into a real failure. The tie-break asked whether a well seat lay inside the AABB of house
+CENTERS, and settlement-review (Inashiro) named the hole before it bit: an AABB cannot tell "in the
+settlement" from "in the box", so the ~345 px of grove and scrub BETWEEN a two-lobed cluster's lobes
+scored as interior. Seed 29 then seated a well 64 px north of every other feature, inside the
+centers' box, holding the whole frame open (`crop_not_held_open_by_one_feature`).
+
+It now asks `s._crop_boxes(city=False)` - the source `crop_to_content` itself reads - so "outside the
+settlement" means outside the box the crop will actually set, and it picks up the houses' DRAWN
+extents plus their yards, gardens, sheds and byres instead of one point per house. The box can only
+GROW after well placement (woodland and the pond come later), so the test errs in the safe direction.
 
 ### STILL OPEN after the 2026-08-17 well tie-break: cohort seed 62's northern lobe
 
