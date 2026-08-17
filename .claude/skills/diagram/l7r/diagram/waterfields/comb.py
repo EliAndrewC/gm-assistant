@@ -673,7 +673,11 @@ def _comb_dry_and_beans(
 ) -> tuple[list[dict[str, Any]], float, Poly]:
     """DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
     BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md."""
-    dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift)
+    # The hem's stand-off is derived from the SUPPLY strokes' drawn banks (`CANAL_BERM_FT`), so the
+    # drawn channels have to be in hand - they are, because this pass runs after `_comb_canal_pieces`
+    # and after `round_channel_joints`, i.e. against the geometry that will actually be painted.
+    _supply_strokes = [c for c in channels if c.get("role") != "drain"]
+    dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift, supply=_supply_strokes)
     if grain != 1.0:
         # the INTER-ARM FORK TRIANGLE (coarse grains only): the ground between the two supply
         # canals just below the fork is commanded by neither (it sits upslope of canal B), and
@@ -691,7 +695,7 @@ def _comb_dry_and_beans(
         _bc_supply = [p for p in bc.pts if F.to_uf(*p)[1] <= _bc_tri_f]
         if len(_bc_supply) >= 2:
             dry_plots += _dry_fields(
-                R, F, _bc_supply, W, H, dry_keepout, band=(dry_band[0] * 0.6, dry_band[1] * 0.6), g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift
+                R, F, _bc_supply, W, H, dry_keepout, band=(dry_band[0] * 0.6, dry_band[1] * 0.6), g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift, supply=_supply_strokes
             )  # thinner than the a-side hem: it only needs to cover the fork triangle, and a full-depth band crowds the farmhouse ring off the fan's visible edge
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac, channels=channels)

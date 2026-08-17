@@ -194,7 +194,10 @@ def _seg_0415__long_ditches_have_a_footbridge(
             length = sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
             if length < FB_MIN:
                 continue
-            if not _ditch_plankable(pts, d.get("w", 4.2), _plank_good):
+            # ...and `_ditch_plankable` now also asks whether the water is wide enough to be worth a
+            # board AT THE SAME POINT it finds useful ground, which is the pair of conditions the
+            # placer has to satisfy at a seat. One test, not two independent ones - see its docstring.
+            if not _ditch_plankable(pts, d.get("w", 4.2), _plank_good, float(d.get("w_tail", d.get("w", 4.2))), meta.get("ftpx", 1.0)):
                 continue  # a margin/toe ditch with nothing to cross TO needs no plank (footbridges_reach_useful_ground)
             if not any(poly_dist(b["x"], b["y"], pts) <= 20 for b in M.get("bridges", [])):
                 unplanked.append((round(pts[0][0]), round(pts[0][1])))

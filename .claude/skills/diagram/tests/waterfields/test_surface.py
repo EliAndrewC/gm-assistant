@@ -83,6 +83,7 @@ CONSUMED_PUBLIC = [
     "supply_bank_clearance",
     "taper_pieces",
     "taper_w",
+    "worth_planking",
 ]
 
 # The underscore names with external consumers, and the submodule that owns each
