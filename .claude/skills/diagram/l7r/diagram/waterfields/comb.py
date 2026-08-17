@@ -117,6 +117,17 @@ def build_comb(
     drain_bank = _drain_bank(F, dpts, grain)  # the ditch's own edge, the one line the field may not cross
     _comb_clip_and_cap(R, F, threads, dpts, drain_bank)
     _comb_canal_pieces(F, threads, bc, a_pts, offtakes_a, fork, grain, channels)
+    # SWEEP THE BENDS BEFORE ANYTHING CLEARS GROUND AGAINST THEM (2026-08-17). This used to run
+    # after `_carve`, which meant the carve hemmed its bunds onto UN-SWEPT channel centerlines and
+    # the sweep then moved the drawn water sideways underneath them - so a bund the carve had
+    # cleared ended up inside a branch's swept bend. That is the identical defect the note below
+    # records against `close_seams`, one call earlier and unnoticed: cohort seed 24 carried a bund
+    # vertex 0.6 px from a branch ditch, buried in the stroke the map actually paints.
+    # `_comb_canal_pieces` is the last thing that appends to `channels`, and neither
+    # `_comb_floor_and_winding` nor `_comb_toe_and_hem` reads them, so this is the earliest point
+    # the list is complete - and the latest one that is still before any consumer.
+    # PLACEMENT AND ITS CHECK MUST READ THE SAME SOURCE, AND THE SOURCE IS WHAT GETS PAINTED.
+    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
 
     # `supply_banks` hands the carve the very strokes assembled above, so the bunds hem onto the
     # banks that will actually be painted - placer and paint reading the same source. OPT-IN
@@ -147,7 +158,6 @@ def build_comb(
     # Called last (as it was) the pass reconciled the fan against a course the map does not draw,
     # and 9 basins came out with a bund inside a swept branch bend - placement and its check must
     # read the same source, and the source is what will actually be painted.
-    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     # SEAM CLOSING, LAST. The carve leaves awkward ground wherever ditch threads diverge, the
     # closing geometry misses, or a guard drops a quad - and a real cascade fan wasted nothing:
     # fork wedges were terraced into small IRREGULAR paddies, and the odd unplantable scrap was
