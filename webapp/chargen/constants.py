@@ -165,7 +165,7 @@ ADVANTAGES_AND_DISADVANTAGES = {
     'Dark Secret': 0.01,
     'Driven': 0.02,
     'Emotional': 0.05,
-    'Geneologist': 0.05,
+    'Genealogist': 0.05,
     'Humble': 0.05,
     'Transparent': 0.05,
     'Thoughtless': 0.05,
@@ -185,7 +185,7 @@ SAMURAI_TRAITS = {
     "resentful about another's promotion": 0.05,
     'always asking whether something is official or on behalf of a superior': 0.05,
     'keeping a deathbed secret': 0.05,
-    'incense-scented / purfumed / overly purfumed / smells of horse': (0.10, 0.10, 0.05, 0.05),
+    'incense-scented / perfumed / overly perfumed / smells of horse': (0.10, 0.10, 0.05, 0.05),
 }
 """Some traits are only valid for samurai, and not monks or peasants."""
 
