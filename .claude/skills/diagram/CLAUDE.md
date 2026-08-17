@@ -140,11 +140,23 @@ THAT part stale, because the key answers only for the bytes it was designed to p
 `tests/pipeline/test_gencache.py`; the decision's full reasoning in `specs/026-cache-backed-gate/`.
 
 **AUDIT IT when you change the cache, or how generation is driven:** `python3 -m l7r.diagram.tools.cache_audit`
-(~10 min, or `--all` for the whole pool). It perturbs a random numeric literal inside a
-`settlement/` function, sweeps the pool WITH the cache and again with `--no-cache`, and demands
-byte-identical artifacts - so it tests the only property anyone cares about without ever looking at
-the key, and cannot share the key's blind spots. Verified to have teeth: sabotaging `compute_key`
-to return a constant makes it report STALE artifacts on the first mutation. This is deliberately
+(~7 min, or `--all` for the whole pool). It perturbs a random numeric literal in the engine, sweeps
+the pool WITH the cache and again with `--no-cache`, and demands byte-identical artifacts - so it
+tests the only property anyone cares about without ever looking at the key, and cannot share the
+key's blind spots. Verified to have teeth: sabotaging `compute_key` to return a constant makes it
+report STALE artifacts on the first mutation.
+
+**Its site selection was rebuilt on 2026-08-17 and the lesson generalizes to any mutation-style
+tool.** The site used to be a random literal from one hand-picked FILE, which was wrong twice over:
+the file was invalidated by a package split TWICE (settlement.py, then _geom.py) and crashed the
+audit on its next mandatory run each time; and most of its literals sat in code the audited maps
+never execute, so a `--trials 3` run took 19 attempts and 11 minutes and printed a green `[OK ]` for
+the 16 mutations that changed no byte at all. It now measures which lines the audited gens actually
+RUN (a coverage pass over the gens - an observation of the GENERATOR, never of the cache) and
+mutates only executed, non-default-argument literals in the four trees that DRAW a map. Pool: 7
+usable literals -> **1,147**; last run 3 of 3 productive, 0 vacuous, ~7 min. **A mutation that moves
+no artifact is no longer counted as a trial** - it tested nothing, and looking exactly like a real
+trial is this file's oldest failure shape wearing a new hat. This is deliberately
 NOT in `make done` (minutes) - and since the gate trusts the cache (026), this audit is the
 empirical backstop for the key itself, which makes running it after cache/driver changes MORE
 important, not less.

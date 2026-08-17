@@ -99,11 +99,41 @@ refused to auto-resolve.
       text that MOVED, never for text that is new, so all four still named the old module path.
       *Observed*: `from settlement.land import ...` x2, `from settlement.homestead_parts import ...`,
       and the `import settlement.land` in C4 -> all re-rooted at `l7r.diagram.settlement`.
-- [x] **T030** Keep C4 honest against its linter. Ruff read the plain
-      `import l7r.diagram.settlement.land` as unused and deleted it, which left the assertion
-      resolving `settlement.land` only through the parent package's own re-export side effect - it
-      still PASSED, so the weakening was silent. Rewritten to `importlib.import_module`, with the
-      reason in a comment so the next linter pass does not re-open it.
+- [x] **T030** Ruff read the plain `import l7r.diagram.settlement.land` as unused and deleted it.
+      Rewritten to `importlib.import_module` so the linter has nothing to remove - the idiom
+      `tests/*/test_surface.py` already uses.
+- [x] **T033** **CORRECTION - the claim attached to T030 was wrong, and the correction is the
+      finding.** T030 originally recorded that ruff's deletion left C4 resolving `settlement.land`
+      through a side effect and therefore "silently weakened" it. That was reasoning offered as a
+      result, and the GM asked the right question: was the underlying cause fixed, or just this
+      instance? Measuring it answered neither - it dissolved the premise. All four combinations, run
+      2026-08-17:
+
+      | variant | clean | `land/__init__` drops the re-export | `surface_water_dist` moves out of `land/` |
+      |---|---|---|---|
+      | ruff-stripped | passed | error | failed |
+      | `importlib` | passed | error | failed |
+
+      **Identical teeth.** `settlement.land` is bound either way, because `core.py` does
+      `from .land import LandMixin` - so the stripped assertion reached the same object by the same
+      route. There was no weakening and nothing to fix. The `importlib` form stays because it is the
+      established idiom and stops the F401 churn, not because it is stronger.
+
+      The transferable lesson is the one this skill's CLAUDE.md already states under "A DIAGNOSTIC
+      that restates what it observes will lie to you": **print the value and its provenance from ONE
+      expression, or do not print the provenance at all.** A plausible mechanism written up as an
+      observed one is a wrong answer wearing the costume of a measurement - and it went into a
+      commit message and a spec doc before anyone ran it. Cost here was small (the guard was fine
+      all along); the habit is what matters.
+- [x] **T034** Census the GENERAL category the wrong claim was pointing at - a linter removing a
+      genuinely load-bearing side-effect import - since that risk is real even though this was not
+      an instance of it. *Observed*: the only side-effect imports in the skill are three lines in
+      `hamletgen/consts.py`, already carrying `# noqa: F401` and the `X as X` re-export idiom; every
+      package `__init__.py` where re-export IS the mechanism has a per-file `F401`/`F403` ignore in
+      `pyproject.toml`; and the re-export surfaces are held by DERIVED-census guards
+      (`tests/*/test_surface.py`, `pkgutil.iter_modules` + `import_module`) rather than by import
+      statements a linter can touch. So the structural answer was already in place from feature 027,
+      and no new mechanism is needed.
 - [x] **T031** Re-verify EVERYTHING against the new base. A byte-identity oracle does not survive a
       base change, so both halves were re-taken at `origin/main` (`801dbd4`) via
       `git worktree add --detach` - the documented alternative to stashing, and the right tool for
