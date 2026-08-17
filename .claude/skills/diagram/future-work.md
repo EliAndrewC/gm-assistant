@@ -305,7 +305,7 @@ Both items are the CARVE's fan-toe geometry, not the seam pass that surfaced the
 measured rather than impressionistic. Full context in `pool/hamlets/inashiro.notes.md` (2026-08-17)
 and `research/fields.md` "Bunds are shared, and the fabric is continuous".
 
-### `plot_rings` is a paint-order STACK, not a partition
+### DECIDED 2026-08-17: `plot_rings` STAYS a paint-order stack - documented, with a lap ceiling
 
 On Inashiro 39 ring pairs lap, double-counting **0.10 acre** of the recorded fabric (worst: a
 21.3 x 41 ft slab between #471 and #529). This is invisible in ink and correctly so - each plot is
@@ -314,15 +314,46 @@ bund it covers and the pair reads as the single shared wall it should be. `paddy
 therefore judges near-CONTAINMENT rather than depth, deliberately (its comment carries the
 reasoning, and the fixed map's deepest legal lap covers 41% of a ring).
 
-`close_seams` HALVED the double-count (8,583 -> 4,445 sq ft) as a side effect, so this is moving the
-right way on its own. What is still owed is a decision, not a fix: either trim a lapped ring to its
-visible extent at record time - which makes the manifest a true partition and lets any future
-basin-to-basin rule trust it - or state in the field record's own comment that `plot_rings` is a
-paint-order stack, so the next session measuring area or adjacency from it knows to dissolve first.
-**Implementation sketch** (per the open-decision rule): the trim lands in
-`settlement/fields/comb.py::_comb_draw_paddies`, where the record is written and draw order is
-already known; hold it with a check that the rings' area sum equals their union's area; the
-deliberate exclusion is the drain hem, which is recorded separately and does not participate.
+**The GM chose to ACCEPT the limitation and document it** (2026-08-17, on being shown the three
+options priced below). What shipped:
+
+- **The contract is written where the record is** - `settlement/fields/comb.py::_comb_record_field`,
+  at the `plot_rings` key itself: this is a paint-order stack, dissolve (later ring wins) before
+  computing acreage, per-field yield or basin-to-basin adjacency. *(Note for anyone following the
+  old sketch below: the record is assembled in `_comb_record_field`, NOT `_comb_draw_paddies`,
+  which only paints.)*
+- **A ceiling keeps the note true** - `paddy_plot_rings_overcount_stays_marginal` (segment 0605)
+  fires when the pairwise lap passes **4.0%** of the recorded fabric. Measured over the four
+  scripted hamlets and a 48-seed cohort: 0.53 / 0.54 / 0.79 / 1.06% on the pool, cohort median
+  ~0.9%, tail 1.49 / 1.51 / 1.57 / 2.49%. The measurement is a deliberate UPPER bound (each pair
+  clipped against the neighbour's convex hull, every pair summed), so a pass is a real verdict.
+
+**What it costs, observably:** anyone summing `plot_rings` areas without dissolving over-counts by
+up to 4% (up to 2.5% on anything shipped today), and ring adjacency does not imply visible
+adjacency. Nothing in the gate measures acreage off these rings today, so the cost is latent until
+the first rule that does.
+
+**The two declined alternatives, so this is not reopened from scratch:**
+
+- **TRIM each ring to its visible extent at record time** (making the manifest a true partition).
+  Declined on two costs, neither of which was visible when the option was written: half the
+  record's current consumers want the STACK - `bund_beans_on_bunds` is built on burial (a bead is
+  legal iff no ring painted later buries it), and `paddy_plot_seams_shared`, the supply-bank bund
+  rule, `field_ponds_sunk_into_one_plot` and `comb_supply_commands_both_flanks` all read the drawn
+  vertices - so the trim is a re-derivation of a check with its own GM-caught defect history, not a
+  three-line change. And the holding check it needs (ring area sum equals union area) requires
+  polygon booleans: shapely is an ENGINE dependency (`waterfields/seams.py`) and `check_village` is
+  hand-rolled geometry throughout, so this would put a new dependency on the gate's path.
+- **Record BOTH** (keep `plot_rings`, add a derived visible-extent key). Declined on size:
+  `plot_rings` is already 25-40% of a hamlet manifest (Inashiro 53 KB of 206; Kashikawa 69 KB of
+  242), so a parallel copy adds that again for a partition nothing reads yet.
+
+**And one thing the ceiling deliberately does NOT do:** fire on the pre-`close_seams` Inashiro
+frozen in `pool/regressions/`. That manifest scores 2.58% against a live worst of 2.49% - the
+populations overlap, so a map-wide lap fraction cannot separate that defect from ordinary fabric,
+and a ceiling tuned to catch it would fail a cohort seed that passes today. `paddy_plot_seams_shared`
+is the rule that discriminates it. The new rule's teeth are therefore a synthetic break in
+`tests/check_village/test_segments_08_town_and_fire.py`, not a frozen fixture.
 
 ### DONE 2026-08-17: the fan-toe SUNBURST - RULED and fixed
 

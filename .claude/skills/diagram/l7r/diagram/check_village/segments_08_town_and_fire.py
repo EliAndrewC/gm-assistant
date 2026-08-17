@@ -5,7 +5,7 @@ from typing import Any
 
 from l7r.diagram.waterfields import BANK_MARGIN, dedup_ring, drain_bank_clearance, floor_overhang, pointed_ring, polyline_cum, supply_bank_clearance
 
-from .common_01_geometry import CLAN_FORTUNES, Poly, Pt, point_in_poly, pt_to_rect, seg_closest, seg_dist, within_edge_gap
+from .common_01_geometry import CLAN_FORTUNES, Poly, Pt, clip_to_convex, convex_hull, point_in_poly, poly_area, pt_to_rect, seg_closest, seg_dist, within_edge_gap
 from .common_02_overlap_policy import GridIndex, check_fire_features, check_theater_stage, in_ellipse
 from .common_03_capacity import _UNBOUND, DWELLING_KINDS, _fronts_route, _kept
 
@@ -2545,6 +2545,83 @@ def _seg_0604__paddy_plots_are_workable_basins(*, M: Any = _UNBOUND, check: Any 
             not _wb_bad,
             f"{len(_wb_bad)} paddy plot(s) taper to a needle apex (interior angle < 15 deg) at {_wb_bad[:4]} - a paddy is a level bunded basin, and the last yards of a wedge that acute carry an aze on each side with no floor between them, so it can be neither leveled nor transplanted; a real fan toe ends in a headland or leaves the odd corner unpaddied rather than drawing the needle, so the plot must be DROPPED by the toe pass or ABSORBED into the basin beside it (pointed_ring at _TOE_MIN_APEX / _WELD_MIN_APEX) - no code truncates a corner, so do not go looking for it",
         )
+    return _kept(locals(), ())
+
+
+def _seg_0605__paddy_plot_rings_overcount_stays_marginal(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 605 (paddy_plot_rings_overcount_stays_marginal) - hand-added 2026-08-17 past the
+    legacy range (see _seg_0595 for the numbering convention). No `_PLACEMENTS` entry: it reads only
+    `M`, `check` and `fields`. New-style: temps stay function-local, writes=()."""
+    # `plot_rings` IS A PAINT-ORDER STACK, NOT A PARTITION - and this rule is what keeps that
+    # ACCEPTED limitation from drifting into a lie (GM ruling 2026-08-17; the decision, the two
+    # priced alternatives and why each was declined are in future-work.md, "`plot_rings` is a
+    # paint-order STACK"). Each paddy is one <polygon> carrying fill AND stroke, emitted in index
+    # order, so a later basin paints out the stretch of bund it laps and the pair reads as the
+    # single shared wall a real fan has. The record is therefore honest about the INK and is NOT a
+    # partition: sum the ring areas and you count the lapped ground twice.
+    #
+    # THE RULE IS A CEILING ON THAT OVER-COUNT, not a ban on the lap. Nothing in the gate measures
+    # acreage off these rings today, so the cost is latent - it lands on the first future rule that
+    # does (a per-field yield, a basin-to-basin adjacency). What the ceiling buys is that an
+    # acreage read off the UNDISSOLVED stack stays wrong by less than one significant figure, which
+    # is what makes comb.py's "dissolve before you measure" note a small documented approximation
+    # rather than a trap.
+    #
+    # MEASURED, 2026-08-17, over the four scripted hamlets and a 48-seed cohort: sawada 0.53%,
+    # kashikawa 0.54%, inashiro 0.79%, mizuguchi 1.06%; cohort median ~0.9%, and the tail runs
+    # 1.49 / 1.51 / 1.57 / 2.49% (seed 24). `close_seams` halved the double-count as a side effect
+    # (8,583 -> 4,445 sq ft on Inashiro), so the fabric is moving the right way on its own. 4.0% is
+    # ~1.6x the worst live map and would fire on a doubling of it.
+    #
+    # WHY IT IS NOT TIGHTER, since the obvious question is why the ceiling does not fire on the
+    # pre-`close_seams` Inashiro frozen in pool/regressions/. That manifest scores 2.58% against a
+    # live worst of 2.49% - the two populations OVERLAP, so a map-wide lap fraction cannot separate
+    # that defect from ordinary fabric, and a ceiling tuned to catch it would fail a cohort seed
+    # that passes today. The defect it looks like is `paddy_plot_seams_shared`'s business (a whole
+    # ring drawn inside a neighbour), and that rule does discriminate it. So this one is a DRIFT
+    # ceiling, and its teeth are the synthetic break in
+    # `test_paddy_ring_overcount_fires_when_a_ring_is_painted_over_its_neighbour` rather than a
+    # frozen fixture - the honest home for a rule whose defect has never yet been shipped.
+    #
+    # THE MEASUREMENT IS AN UPPER BOUND, deliberately. Each pair is clipped against the NEIGHBOUR's
+    # convex hull (`clip_to_convex`), which over-states a concave neighbour's share, and every
+    # pairwise lap is summed, which double-counts ground three rings share - both errors push the
+    # figure UP, so passing this ceiling is a real verdict while a marginal failure may be
+    # generous. That buys a hand-rolled measurement: the true figure is a polygon UNION, and
+    # shapely is an engine dependency (`waterfields/seams.py`) that the gate has never carried.
+    # The drain hem is excluded - it is recorded separately and does not paint over the plots.
+    if M["meta"].get("generated_by"):
+        _pr_ceiling = 4.0  # percent of the recorded fabric; see the calibration above
+        _pr_tot, _pr_lap = 0.0, 0.0
+        _pr_worst: list[tuple[int, int, int]] = []
+        for _pr_fld in fields:
+            _pr_rings = [[(float(_pr_q[0]), float(_pr_q[1])) for _pr_q in _pr_r] for _pr_r in (_pr_fld.get("plot_rings") or []) if len(_pr_r) >= 3]
+            if not _pr_rings:
+                continue
+            _pr_box, _pr_hull = [], []
+            _pr_idx = GridIndex(64.0)
+            for _pr_i, _pr_ring in enumerate(_pr_rings):
+                _pr_tot += poly_area(_pr_ring)
+                _pr_bb = (min(_pr_q[0] for _pr_q in _pr_ring), min(_pr_q[1] for _pr_q in _pr_ring), max(_pr_q[0] for _pr_q in _pr_ring), max(_pr_q[1] for _pr_q in _pr_ring))
+                _pr_box.append(_pr_bb)
+                _pr_hull.append(convex_hull(_pr_ring))
+                _pr_idx.add(_pr_bb[0], _pr_bb[1], _pr_bb[2], _pr_bb[3], _pr_i)
+            for _pr_i, _pr_ring in enumerate(_pr_rings):
+                for _pr_j in _pr_idx.near_rect(_pr_box[_pr_i][0], _pr_box[_pr_i][1], _pr_box[_pr_i][2], _pr_box[_pr_i][3]):
+                    if _pr_j <= _pr_i:
+                        continue  # each pair once (the index reports both directions)
+                    _pr_a = poly_area(clip_to_convex(_pr_ring, _pr_hull[_pr_j]))
+                    if _pr_a > 0:
+                        _pr_lap += _pr_a
+                        _pr_worst.append((round(sum(_pr_q[0] for _pr_q in _pr_ring) / len(_pr_ring)), round(sum(_pr_q[1] for _pr_q in _pr_ring) / len(_pr_ring)), round(_pr_a)))
+        if _pr_tot > 0:
+            _pr_pct = 100.0 * _pr_lap / _pr_tot
+            _pr_worst.sort(key=lambda _pr_w: -_pr_w[2])
+            check(
+                "paddy_plot_rings_overcount_stays_marginal",
+                _pr_pct <= _pr_ceiling,
+                f"recorded plot rings lap by {_pr_pct:.2f}% of the fabric they describe (ceiling {_pr_ceiling}%), worst pairs at {[list(_pr_w) for _pr_w in _pr_worst[:4]]} (x, y, lapped sq px) - `plot_rings` is a PAINT-ORDER STACK and a shallow lap is correct ink, but past this line the stack stops being a fair proxy for the fabric and any acreage summed off it is wrong by more than the figure's own precision; fix the CARVE that is laying whole basins over their neighbours (close_seams / the toe pass), not the record",
+            )
     return _kept(locals(), ())
 
 

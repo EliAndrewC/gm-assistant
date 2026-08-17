@@ -96,6 +96,48 @@ def convex_hull(pts: Sequence[Pt]) -> Poly:
     return lower[:-1] + upper[:-1]
 
 
+def clip_to_convex(subject: Poly, clip: Poly) -> Poly:
+    """Sutherland-Hodgman clip of an arbitrary `subject` polygon by a CONVEX `clip` polygon, as a
+    vertex list (empty when the two do not meet). Exact for a convex clip - which is why the one
+    consumer (`paddy_plot_rings_overcount_stays_marginal`) passes a `convex_hull`: clipping against
+    a hull can only OVER-state the intersection, and that check wants an upper bound. A non-convex
+    SUBJECT is fine; the result may carry degenerate edges along the clip boundary and they
+    contribute nothing to `poly_area`.
+
+    The clip is re-oriented rather than assumed, and the crossing point is solved from the two
+    signed side values (`sc / (sc - sd)`) rather than from an edge-vs-edge determinant: the branch
+    only runs when the signs differ, so that denominator is nonzero by the very comparison that
+    reached it - no guard, and no division-by-zero to defend against on degenerate geometry."""
+    if len(clip) < 3:
+        return []
+    s = 0.0
+    for i in range(len(clip)):
+        x0, y0 = clip[i]
+        x1, y1 = clip[(i + 1) % len(clip)]
+        s += x0 * y1 - x1 * y0
+    if s < 0:
+        clip = clip[::-1]
+    out: list[Pt] = [(float(p[0]), float(p[1])) for p in subject]
+    for i in range(len(clip)):
+        if not out:
+            return []
+        ax, ay = clip[i]
+        bx, by = clip[(i + 1) % len(clip)]
+        ex, ey = bx - ax, by - ay
+        side = [ex * (p[1] - ay) - ey * (p[0] - ax) for p in out]
+        nxt: list[Pt] = []
+        for j, c in enumerate(out):
+            d = out[(j + 1) % len(out)]
+            sc, sd = side[j], side[(j + 1) % len(out)]
+            if sc >= 0:
+                nxt.append(c)
+            if (sc >= 0) != (sd >= 0):
+                t = sc / (sc - sd)
+                nxt.append((c[0] + t * (d[0] - c[0]), c[1] + t * (d[1] - c[1])))
+        out = nxt
+    return out
+
+
 def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, Any]] | None = None, step: float = 30) -> float:
     """The radius of the largest empty pocket inside `poly`: the max over interior grid points of the
     distance to the nearest point in `pts`. A thin firebreak strip stays within a house-reach of homes
