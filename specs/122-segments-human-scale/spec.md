@@ -1,4 +1,4 @@
-# 121 - the gate's segment files come down to human scale
+# 122 - the gate's segment files come down to human scale
 
 **Status**: implementing
 **Motivation**: GM, 2026-08-17, after asking what the next file-splitting candidate was and being
