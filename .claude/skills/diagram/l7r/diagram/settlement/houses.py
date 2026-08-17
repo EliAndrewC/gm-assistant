@@ -31,7 +31,15 @@ class HousesMixin:
         # west wall (dispersed farms, where the west is free); NORTH = a wide block on the shaded back wall
         # (nucleated farms, where the garden takes the sunnier walls). Shared by the draw + the record below.
         _sox, _soy, _ssw, _ssh = (0.0, -0.60 * h, 0.46 * w, 0.30 * h) if shed_side == "N" else (-0.64 * w, 0.0, 0.32 * w, 0.56 * h)
-        g = [f'<g transform="translate({cx:.0f},{cy:.0f}) rotate({rot:.0f})">']
+        # EMIT WHAT WAS PLACED (feature 121, found by settlement-review on Sawada). This rounded the
+        # centre to whole pixels and the rake to whole DEGREES, while the placer clears and the gate
+        # measure full floats - so after all of this feature's work the drawn quad was still not the
+        # tested quad, by up to ~0.5 deg of rake plus ~0.7 px of centre: about 0.95 ft at a long
+        # minka's corner. Nothing was at risk on any current map (the tightest lane gap is 27 ft),
+        # but LANE_CLEARANCE is now DERIVED to the foot, and handing an exact derivation to a
+        # renderer that rounds is how the next tightening quietly stops being true. No check can see
+        # this: every check reads the manifest, never the SVG.
+        g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.2f})">']
         if shed and kind == "plain":
             g.append(f'<rect x="{_sox - _ssw / 2:.1f}" y="{_soy - _ssh / 2:.1f}" width="{_ssw:.1f}" height="{_ssh:.1f}" rx="2" fill="{dark}" stroke="{edge}" stroke-width="1.1"/>')
         g.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w}" height="{h / 2:.1f}" fill="{dark}"/>')

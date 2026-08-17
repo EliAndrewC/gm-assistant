@@ -64,7 +64,10 @@ class UrbanBuildingMixin:
         fill, edge = self.URBAN.get(kind, self.URBAN["shop"])[:2]
         x0, y0 = -w / 2, -h / 2
         dash = ' stroke-dasharray="5,3"' if kind == "burakumin" else ''
-        g = [f'<g transform="translate({cx:.0f},{cy:.0f}) rotate({rot:.0f})">']
+        # EMIT WHAT WAS PLACED - the same rounding the farmhouse glyph carried (feature 121; the
+        # measurement is at houses.py's copy). A building declares its DRAWN extent to the placer
+        # now, so the renderer must not then round away the rake it was told about.
+        g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.2f})">']
         # THE COSMETICS SCALE WITH THE THIN DIMENSION (settlement-review 2026-08-03). The fixed
         # rx=2 / stroke=1.6 / 0.60-length ridge were tuned on a squarish house and become absurd on
         # a LONG THIN footprint: at the servant range's 5 px depth the rounding is 40% of the depth
@@ -166,7 +169,7 @@ class UrbanBuildingMixin:
             ux, uy = -math.sin(th), math.cos(th)
             fx, fy = cx + ux * h / 2, cy + uy * h / 2
             ok = True
-            for ox, oy, ow, oh in self.placed:
+            for ox, oy, ow, oh, *_ in self.placed:
                 if abs(ox - cx) > (w + ow) / 2 + clear + 2 or abs(oy - cy) > (h + oh) / 2 + clear + 2:
                     continue
                 for d in (1.0, clear * 0.55, clear):

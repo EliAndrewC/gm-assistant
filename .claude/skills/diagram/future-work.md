@@ -653,3 +653,57 @@ each of them changed the plan once): measure the RNG surface - free here, since 
 nothing - and count the closures. Then decompose behind the same registry contract, with one trap
 worth stating out loud: the numeric key in the NAME is the execution position, so a helper extracted
 out of a segment must NOT be named `_seg_*`, or the registry will try to run it as a segment.
+
+## OPEN after feature 121: two farmhouses can still MERGE (2026-08-17)
+
+Feature 121 made the placer test the raked quad it draws against the lane TREAD, and made
+`houses_clear_of_lanes` read the same corners. **House-to-house separation was not touched**, and it
+is still adjudicated on the whole-bundle BBOX (`_bundle_side_fits`), which knows nothing about
+either house's rake.
+
+Caught by `settlement-review` on Mizuguchi: the pair at (829.4, 1682.7) and (771.5, 1693.6) had
+their raked-corner gap fall **3.6 -> 2.0 ft** when the re-pack flipped one house's rake from -4.0 to
++4.4 deg, so the two now diverge instead of running parallel. At 1 px = 1 ft that is two pixels
+between two dark roof strokes - at fit zoom they merge and read as ONE long building. Two feet
+between thatched eaves is not a thing a hamlet does.
+
+**It is a lone outlier, which makes it cheap.** Minimum raked-corner house-to-house gap across the
+four scripted hamlets: Inashiro 28.8, Kashikawa 25.5, Sawada 23.0, **Mizuguchi 1.96**. A rule with
+15+ ft of headroom catches it and disturbs nothing else.
+
+**Not a regression, deliberately not folded into 121**: no check fires (there is no house-to-house
+gap rule at all), and the cohort is 22/24 before and after with the same two seeds. It is a NEW
+rule, and 121 was already carrying three fixes.
+
+**Sketch (check before fix).** Add a gap verdict over `M["houses"]` pairs using the existing
+`within_edge_gap(a, b, N)` - it already measures real footprints, and `farm_sheds_attached` is the
+model to copy. Confirm it fires on Mizuguchi and on nothing else in the pool. Then require the same
+clearance in `_bundle_common_fits` against every placed house's raked quad: `_sun_corridor_ok`
+already reads neighbours' geometry off `M["houses"]` during placement, so both the precedent and the
+plumbing exist. Ground the number in **"two thatched roofs must shed separately"** - the principle
+[`research/buildings.md`](research/buildings.md) already records for a building standing against a
+compound wall - plus the drawn-scale fact that two strokes 2 px apart merge to the eye.
+
+### The density that is actually available, and it is not the pitch
+
+Recorded here because feature 121 declined the obvious move and the reasoning should not be lost.
+`BUNDLE_PITCH` is **not** padding to be recovered: it is set by the threshing yard's sun (45-degree
+*kayabuki* thatch, ~20 ft ridge, 39 ft of shadow at 9am at 38N in the 10th month). Lowering it puts
+houses in each other's drying shadow. The honest way to pack a nucleus tighter is what real
+*yashiki* lots did - **STAGGER the rows east-west** rather than space them further apart, which
+costs no sunlight at all. The placer is free to; nothing asks it to yet. That belongs to the village
+tier's own work. (`research/homesteads.md` "The threshing yard's sun";
+`specs/121-placer-drawn-footprint/research.md` D2.)
+
+## OPEN after feature 121: Kashikawa's hamlet-of-one (2026-08-17)
+
+Raised by `settlement-review`, **not caused by** feature 121 (the house is byte-identical across the
+re-pack). The farmstead at (1352.4, 3062.7) stands **469 ft** from its nearest neighbour - the
+next-most-isolated house is 128 ft - and **385 ft from any lane, with no way reaching it at all**, on
+a map that declares `meta.nucleated: true`. It is coherent in itself (50 ft from the stream, its own
+byre).
+
+What makes it worth a ruling rather than a shrug: the re-pack moved the other 19 houses a median of
+362 ft and left this one exactly where it was, so the placer had every opportunity to fold it into
+the nucleus and did not. **Needs one line either way** - an outlying holding by intent, or a seeding
+gap - because an undocumented oddity is indistinguishable from a bug next session.

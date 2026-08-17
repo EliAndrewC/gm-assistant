@@ -80,3 +80,27 @@ beyond the frame.
   recorded-vs-drawn crown agreement, 35=35 / 15=15); the shipped roll seats TWO 125 ft stands
   (15 and 17 crowns), dry and on-frame - the exact stands are roll-derived, the invariants
   (dry, on-frame, recorded canopy, check-legal set-backs) are what hold.
+
+## 2026-08-17 - re-packed by feature 121 (the placer tests the rake it draws)
+
+19 of 20 houses re-seated (median 362 ft, max 866 - a full re-seed, not a nudge); the SW outlier at
+(1352.4, 3062.7) is byte-identical. Household, garden, yard, well and shed counts all unchanged.
+
+WHY: the bundle placer used to clear an axis-aligned rect for a house the map draws raked by up to
++/-5 deg, and `houses_clear_of_lanes` measured an axis-aligned rect too. Both read the drawn raked
+corners now, so `LANE_CLEARANCE` stopped being what holds a house off a lane and dropped 48 -> 40 px
+(derived: longest drawn minka's half-diagonal 34.7 + the lane's half-tread 5).
+
+MEASURED HERE (settlement-review, DELTA): house-corner-to-tread min 13.0 -> 5.2 ft, median 35.0 ->
+29.1, and **0 on the tread** before and after. Cluster density 1.42 -> 1.45 houses/acre - it
+compacted rather than re-composed. Bundle spacing IMPROVED: sub-5-ft bundle pairs 10 -> 7, min gap
+2.0 -> 2.4 ft. The windbreak re-derived and stayed a belt (aspect 0.10) with no house corner under a
+crown. Nothing else drifted onto a lane - the closest accessory is a threshing yard at 18.4 ft.
+
+Review verdict: PASS, no errors.
+
+OPEN, ruled nowhere (raised by that review, NOT caused by this change - the house is
+byte-identical): the SW farmstead at (1352.4, 3062.7) stands 469 ft from its nearest neighbor and
+385 ft from any lane, with no way reaching it, on a map declaring `nucleated: true`. The re-pack
+moved the other 19 houses a median of 362 ft and left it, so the placer had every chance to fold it
+in. Needs a one-line ruling: outlying holding by intent, or a seeding gap.

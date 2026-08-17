@@ -248,7 +248,7 @@ class BundleFitMixin:
             return False
         if any(self._rect_blocked(g, fields=True) for g in geom["gardens"]):
             return False
-        return all(not (abs(cx - px) < (W + pw) / 2 + 2 and abs(cy - py) < (H + ph) / 2 + 2) for px, py, pw, ph in self.placed)
+        return all(not (abs(cx - px) < (W + pw) / 2 + 2 and abs(cy - py) < (H + ph) / 2 + 2) for px, py, pw, ph, *_ in self.placed)
 
     def _yard_sun_conflict(self: Settlement, geom: Any) -> bool:  # type: ignore[misc]
         """A threshing yard dries rice in the southern sun, so no grove may sit in the ~22px strip directly
