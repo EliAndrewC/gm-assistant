@@ -1,6 +1,6 @@
 ---
 name: chargen
-description: Generate a brand-new Rokugani NPC end-to-end and upload it to Obsidian Portal - roll a skeleton character with the chargen engine, write a Claude-native backstory (the /synthesize method, NOT Gemini), generate and attach an AI portrait, and create the OP record. Public by default; GM-only if the GM asks for private/hidden.
+description: Generate a brand-new Rokugani NPC end-to-end and upload it to Obsidian Portal - roll a skeleton character with the chargen engine, write a Claude-native backstory (the /synthesize method, NOT Gemini), generate and attach an AI portrait, and create the OP record. Public by default; GM-only if the GM asks for private/hidden. Uploads with no pre-review gate - the GM reviews after the fact and asks for a re-roll or rewrite if they want one.
 argument-hint: <free-text character concept> [ ... private/gm-only if it should be hidden]
 allowed-tools: Bash Read Grep AskUserQuestion
 ---
@@ -184,17 +184,16 @@ print(synthesis.format_character(d))
 PY
 ```
 
-**Read** `$SCRATCH/chargen-formatted.txt` and show the GM the rolled sheet
-(name, clan/family, rank, age, honor, traits, and the tags - including the
-location tag(s) you added). Then ask with AskUserQuestion:
+**Read** `$SCRATCH/chargen-formatted.txt` and go straight on to Step 3.
 
-1. **Use this character** -> Step 3.
-2. **Re-roll** -> rerun Step 2 unchanged, present the new roll.
+**Do NOT stop here to have the roll approved** (GM 2026-08-17). Report the rolled
+sheet (name, clan/family, rank, age, honor, traits, and the tags - including the
+location tag(s) you added) in your final message along with everything else, not
+as a gate in the middle. See "No pre-review gate" below.
 
-A free-text ("Other") answer is a re-roll *with new constraints* (e.g. "re-roll
-but make them Crane", "older", "make them a woman"): fold it into `PARAMS` /
-`GENDER` and rerun. Do this cheap re-roll loop BEFORE spending on a portrait or a
-backstory.
+Re-roll only when the GM ASKS for one, which they may do at any point after the
+fact - including with new constraints ("make them Crane", "older", "make them a
+woman"), which fold into `PARAMS` / `GENDER` before rerunning Step 2.
 
 ## Step 3 - Tagline, backstory, and portrait
 
@@ -209,8 +208,8 @@ character's formal office title where the setting gives one. Do NOT include
 anything the PCs might not know (birth clan/family or origin, secrets, hidden
 loyalties - nothing that lives only in the GM-only backstory), and do NOT add
 color commentary or evaluative flourish ("the capable hand that...", "ambitious",
-"in the shadow of..."). Write it to `$SCRATCH/chargen-tagline.txt`; you will show
-it in the review for the GM to accept or edit.
+"in the shadow of..."). Write it to `$SCRATCH/chargen-tagline.txt`; it ships with
+the upload, and you report it afterwards along with the backstory.
 
 **3b. Targeted setting research + write the backstory yourself.** Follow the
 `/synthesize` skill's **Step 2b (targeted research)** and **Step 2c (write it
@@ -298,23 +297,33 @@ PY
 / text-only image, fix the prompt and regenerate before proceeding. Tell the GM the
 portrait's scratch path so they can open it if they want.
 
-Present to the GM: the **tagline**, the **portrait path**, and the **FULL
-backstory reproduced verbatim in your reply** (never leave it only in a file),
-plus which caste and how many campaign characters you used.
+## Step 4 - NO PRE-REVIEW GATE: go straight to Step 5
 
-## Step 4 - Review menu
+**When the GM asks for a character to be generated, that IS the authorization to
+upload it. Do not ask whether they are sure, do not present a review menu, and do
+not wait** (GM 2026-08-17: *"I no longer need to pre-review what the /synthesize
+skill generates, so you should not ask if I'm sure and should instead just
+upload, since I can always ask to replace something later"*). Obsidian Portal is
+editable and every step of this skill is re-runnable, so a draft the GM does not
+like costs one follow-up message; a review gate costs a round trip on every
+character, including all the ones they would have approved unchanged.
 
-Use AskUserQuestion. State the destination explicitly, including **public vs
-GM-only** (from Step 0), so the GM confirms privacy here:
+What this does NOT relax:
 
-1. **Upload to Obsidian Portal** (`public` or `GM-only` as parsed) -> Step 5.
-2. **Regenerate the backstory** -> rewrite it yourself from the same inputs (a
-   genuinely different angle), re-present. Portrait unchanged.
-3. **Regenerate the portrait** -> rerun 3c only. Backstory unchanged.
+- **`backstory-review` (Step 3b-review) still runs, always.** That is Principle I -
+  the author is not a reliable reviewer of their own prose - and it is a check on
+  YOUR work, not a request for the GM's approval. It has never been the GM gate.
+- **Genuinely-missing essentials are still worth ONE question** (Step 0). That is
+  about missing INPUT, not about reviewing output. If you can infer it, infer it.
+- **Public vs GM-only is still parsed, not asked** (Step 0), and you state which
+  one you used in the report.
 
-A free-text ("Other") answer is "upload with these changes": apply the described
-edits (to backstory, tagline, or the public/GM-only choice), then Step 5. If the
-GM asks to re-roll the whole character, go back to Step 2.
+Then, AFTER Step 5 has uploaded, report in your final message: the **rolled
+sheet**, the **tagline**, the **destination** (public or GM-only), the **OP URL**,
+the **portrait path**, and the **FULL backstory reproduced verbatim in your reply**
+(never leave it only in a file), plus which caste and how many campaign characters
+you used. Then offer - as an offer, not a question that blocks anything - to
+re-roll, rewrite, or regenerate the portrait.
 
 ## Step 5 - Upload (create the OP record with everything attached)
 
