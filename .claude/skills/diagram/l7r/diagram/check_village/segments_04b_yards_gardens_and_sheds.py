@@ -819,7 +819,7 @@ def _seg_0285_065__groves_clear_of_paddies(*, check: Any = _UNBOUND, g_in_paddy:
 # off it so the two roofs shed separately" - and the same physics governs two houses.
 #
 # THE DEFECT IT CATCHES, and why a rule was needed at all (settlement-review on Mizuguchi,
-# 2026-08-17): a re-pack flipped one house's rake from -4.0 to +4.4 deg so a neighbouring pair
+# 2026-08-17): a re-pack flipped one house's rake from -4.0 to +4.4 deg so a neighboring pair
 # diverged instead of running parallel, and their raked-corner gap fell 3.6 -> 2.0 ft. At 1 px = 1 ft
 # that is two pixels between two dark roof strokes; at fit zoom they merge and read as ONE long
 # building rather than two households. Nothing caught it, because house-to-house separation had no
@@ -833,6 +833,21 @@ def _seg_0285_065__groves_clear_of_paddies(*, check: Any = _UNBOUND, g_in_paddy:
 # IN FEET, NOT PIXELS. The rule is a physical clearance, so it converts through `meta.ftpx` rather
 # than being a raw px literal that would silently mean 8 ft at a hamlet and 16 ft at a village.
 # GAP VERDICT family: `within_edge_gap` on real rotated corners, never centers (dev/placement.md).
+#
+# THE TIER GUARD IS DECLARED, not incidental (settlement-review on Mizuguchi, 2026-08-17: 'a check
+# that never RUNS looks exactly like a check that passes'). It runs at town/village/hamlet and NOT
+# at city, and that is deliberate: a city's dwellings are `buildings` on a street wall, where
+# sharing a party wall is the correct machiya form, not a merge. City maps do carry `houses`
+# records, and the rule was run against the whole pool with the guard bypassed - no city map
+# violates it - so the guard currently hides nothing.
+#
+# A PIXEL FLOOR WAS CONSIDERED AND NOT ADDED. The motivating defect was both physical (two roofs
+# with nowhere to shed) and PERCEPTUAL (two dark strokes 2 px apart merging into one building),
+# and only the physical half converts through ftpx: 8 ft is 8 px at a hamlet but 4 px at a village
+# and 2.7 px at a city, which is the very seam width that read as one building here. Declined for
+# now because no map at those tiers is near the line and a floor nothing exercises is a rule
+# nobody has tested; the trigger to add one is the first village or town map that draws a
+# legal-in-feet pair under ~4 px. Recorded so the next reader knows it was a decision.
 
 
 def _seg_0606__farmhouses_shed_separately(*, M: Any = _UNBOUND, check: Any = _UNBOUND, scale: Any = _UNBOUND) -> dict[str, Any]:
