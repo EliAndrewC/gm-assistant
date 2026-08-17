@@ -1100,3 +1100,41 @@ def test_paddy_seams_skips_a_field_that_records_no_plot_rings():
     M = _seam_M([_box(10, 10, 110, 110), _box(122, 10, 222, 110)])
     del M["fields"][0]["plot_rings"]
     assert "paddy_plot_seams_shared" not in _seam_f(M)
+
+
+# --- paddy_plot_rings_overcount_stays_marginal --------------------------------------------
+# The record is a PAINT-ORDER STACK by decision, and this rule is the ceiling that keeps the
+# accepted approximation small enough for the contract in comb.py's record comment to stay true.
+# Its teeth are HERE, deliberately, not in a frozen fixture: the pre-close_seams Inashiro scores
+# 2.58% against a worst live cohort seed of 2.49%, so a map-wide lap fraction does not separate
+# that defect from ordinary fabric (paddy_plot_seams_shared is the rule that does). This one
+# catches DRIFT, and drift is what a synthetic break models.
+
+
+def _lap_f(M):
+    return check_village.gate(M, only={"paddy_plot_rings_overcount_stays_marginal"}, verbose=False)
+
+
+def test_paddy_ring_overcount_fires_when_a_ring_is_painted_over_its_neighbour():
+    # half of one basin laid over the next: 25% of the recorded fabric counted twice
+    assert "paddy_plot_rings_overcount_stays_marginal" in _lap_f(_seam_M([_box(10, 10, 110, 110), _box(60, 10, 160, 110)]))
+
+
+def test_paddy_ring_overcount_passes_a_shallow_lap():
+    # a filler lapping a couple of feet onto its neighbour is correct ink - the later plot simply
+    # paints out the stretch of bund it covers, and the pair reads as one shared aze
+    assert "paddy_plot_rings_overcount_stays_marginal" not in _lap_f(_seam_M([_box(10, 10, 110, 110), _box(108, 10, 208, 110)]))
+
+
+def test_paddy_ring_overcount_passes_basins_that_share_their_bund_exactly():
+    assert "paddy_plot_rings_overcount_stays_marginal" not in _lap_f(_seam_M([_box(10, 10, 110, 110), _box(110, 10, 210, 110)]))
+
+
+def test_paddy_ring_overcount_skips_legacy_maps():
+    assert "paddy_plot_rings_overcount_stays_marginal" not in _lap_f(_seam_M([_box(10, 10, 110, 110), _box(60, 10, 160, 110)], gen=None))
+
+
+def test_paddy_ring_overcount_skips_a_field_that_records_no_plot_rings():
+    M = _seam_M([_box(10, 10, 110, 110), _box(60, 10, 160, 110)])
+    del M["fields"][0]["plot_rings"]
+    assert "paddy_plot_rings_overcount_stays_marginal" not in _lap_f(M)
