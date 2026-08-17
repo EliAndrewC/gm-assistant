@@ -770,7 +770,7 @@ because widening scope mid-fix is exactly what produced the cluster-flattening r
 day: the density fix was landed on a `field_ringed` count, which is monotone in "more front row" and
 could never push back, and it took three reviews to notice the cluster had become a ribbon.
 
-### 1. The flooded tint is PAINTED in more places than it is RECORDED (Sawada)
+### 1. RETRACTED - the flooded tint census does NOT reproduce; keep only the test sketch
 
 Rendering exactly `#93B7AC`, the PNG carries **three** substantial regions plus fragments;
 `M["flooded_plots"]` records **two**, and neither recorded centroid matches the third painted bbox
@@ -801,7 +801,7 @@ edge, or another way - and trim the overshoot at the junction. `connector_lane_r
 already makes exactly this kind of "must end somewhere" demand for the connector; this is its
 internal-lane counterpart.
 
-### 3. The "adaptive" garden side is not adapting (Sawada, and it is tier-wide)
+### 3. NOT REPRODUCED as written - the "adaptive" garden side needs re-measuring
 
 `bundle.py` promises the nucleated garden goes on "an ADAPTIVE sunny side (chosen by the placer for
 fit + no shading), so it packs into a real nucleus and the gardens VARY instead of all sitting east
@@ -819,3 +819,108 @@ finding is evidence, not a verdict.
 that is a GM-facing question, not a code one. If real, the shading/fit score is presumably
 near-constant across sides for a compact bundle, so it wants a tie-break that varies (the
 position-seeded `_hjit` idiom) rather than a strict preference order.
+
+## OPEN: three more from the 2026-08-17 re-review round
+
+### 4. `scatter_audit` reports `crown=0` on a map recording 2,665 crowns
+
+Caught on Kashikawa: the audit parsed `blade=312447 dot=17240 pine=1517 crown=0 reed=72420` and
+exited 0, on a map whose manifest carries 2,665 tree crowns. Its exit-2 guard fires only on a ZERO
+TOTAL, so **one blind family looks exactly like a clean family** - the "a check that never runs looks
+exactly like a check that passes" shape, one level down inside a tool that is itself used as
+evidence. Every review that has quoted "scatter_audit: crown checked, 0 violations" on a hamlet may
+have been quoting a family the parser never saw.
+
+**Sketch**: find out whether the village-grove crown emission still matches the parser's styling
+(the belt and copse crowns are emitted differently from woodland-stand crowns, which is the likely
+cause), then make a family that parses ZERO bases on a map that RECORDS that feature a failure, not
+a silence. Per-family, not just per-total.
+
+### 5. The shared byres end-load onto one flank of the cluster
+
+Kashikawa's four shared draft-animal byres sit at cluster-axis positions -442, -430, -340, -300 in a
+settlement spanning -478..+516 - all four inside the SW 143 ft of 994 ft, leaving fifteen of twenty
+households 400-900 ft from the nearest one. `settlements/homesteads.md` makes these SHARED sheds
+precisely so a poorer neighbor can borrow or hire a team, so end-loading them defeats the sharing
+the feature exists to depict. Pre-existing (the previous roll had them at -799..-492, one past the
+westernmost house), but the tighter cluster makes it obvious.
+
+**Mechanism**: the placer walks homesteads in seat order and takes the first clear gap, so byres
+drain toward whichever end still has open verge. **Sketch**: spread the seats over the cluster's
+principal axis before spiraling, the way the well siting already does its minimax.
+
+### 6. The kura flag is stable against regeneration but NOT against re-packing
+
+`homesteads.md` says the position-seeded kura roll (`_hjit(x, y, 3.0) < 0.30`) makes the flag
+"stable across regenerations". Measured, the hash itself is honest - 0.2993 over 200k realistic
+coordinates, and the live pool sits at 343/1208 = 28.4% against the 30% knob. But a placer that
+RE-SEATS a house re-rolls that house's kura, so a re-pack redistributes wealth wholesale
+(Kashikawa 25% -> 15% in one roll, a -1.5 sigma 20-draw sample, not a bug).
+
+Not a defect and not worth a check - but the doc's claim is wrong as written, and someone will one
+day chase a "disappearing kura" because of it. **Sketch**: one clause in `homesteads.md`, or key the
+roll on something the placer does not move (a household index) if stability is actually wanted.
+
+### Corrections to items 1 and 3 above (2026-08-17, same day)
+
+Both were logged from measurements that do not survive re-measurement, and saying so is the point -
+a logged defect that does not exist costs a future session exactly as much as an unlogged one that
+does, and this file's own retraction of the E-wall garden claim two entries up is the same lesson.
+
+**Item 1 does NOT reproduce.** The three-painted-versus-two-recorded census was taken on a STALE
+PNG - the render that had drifted from its own SVG. Re-taken on fresh ink: **2 painted regions, 2
+recorded, 1:1**, at svg-coords x55-126 y2558-2626 and x699-786 y2264-2283, matching the recorded
+centroids (84.4, 2607.2) and (754.5, 2267.6) exactly. The current SVG contains exactly two `#93B7AC`
+elements. The "third region" and "a path form the decomposition does not reach" existed only in the
+stale image. **What is still worth doing is the SKETCH, not the defect**: a test that counts painted
+`#93B7AC` regions and asserts equality with `len(flooded_plots)` would have caught the staleness
+itself, which is a better reason to write it than the one it was logged under.
+
+**Item 3 does not reproduce AS WRITTEN.** "21 of 23 beds SE" was measured on the pre-cap roll; the
+front-row cap moved 19 of 19 houses and re-rolled `_garden_beds`' position hash. Measured on the
+shipped roll the spread is roughly **8 SE / 7 E / 7 W of 22 beds** - which is variation, not a
+monoculture. The re-measurement was taken in the reviewer's own frame rather than
+`_find_garden_spot`'s `sides` convention, so it is not authoritative either. **Re-measure in the
+placer's own frame before acting**, and do not quote either number as established.
+
+The general rule both of these earn: **a review finding measured on an artifact is only as current
+as that artifact.** Two of this round's findings were taken on a stale render and one on a
+superseded roll; all three read as solid until re-measured.
+
+## OPEN: two more from the Sawada re-review (2026-08-17)
+
+### 7. The title placard prints over a woodland commons parcel - and the keep-out is ONE-DIRECTIONAL
+
+On Sawada, **71% of the 125 ft woodland commons at (912, 2012) lies inside the title+scalebar box**,
+and 12 crown centers under it ghost through as pale circles inside the cartouche while 4-5 peek out
+along its edge. Two failures at once: one of only two woodland commons on the sheet is two-thirds
+invisible, so its "stocked" record is not what a reader sees, and the title itself reads as smudged.
+Pre-existing in kind (57% before) but the re-pack made it worse by re-seating the parcel 90 px
+further into the box.
+
+**The mechanism is NOT the one it looks like, so do not apply the obvious fix.** `title_pocket` is
+already the first entry in `open_ground_patches`' `keep_rects`, so the coppice scan does avoid the
+reserved cartouche ground. But `title_pocket`'s own docstring says it is "a reservation, not a
+placement: `title()` still does its own search and may well sit somewhere else" - and when it does,
+it lands on ground the woodland was entitled to take. The keep-out runs one way only.
+
+**Sketch**: the fix belongs at the TITLE's scan, not at the woodland placer - `_blank_label_spot`
+must count woodland-commons crowns as an obstacle, the way it already counts the distinct wet
+surfaces. Note the blast radius before starting: that scan sites the cartouche on every map, so this
+is a change that can move titles pool-wide, and it wants its own before/after over the live maps.
+
+### 8. `TWIN_AXES` believes a declared knob over the drawn shape
+
+The cap pushed the surplus households into the cloud pass, so Sawada's `cluster_seeding` flipped
+`frontage` -> `cloud` and `meta.cluster_shape: "round"` is now emitted for the first time. The drawn
+cluster is **808 x 235 ft, 3.48:1**. That would be harmless bookkeeping except `check_village/driver.py`'s
+`TWIN_AXES` reads *"the declared knob if present, else the cluster-bbox aspect"* - so the
+twin-distinctness axis now reports **round** on the strength of a rolled knob, where before the cap
+it fell through to the MEASUREMENT and would have said elongated.
+
+This is the derive-don't-pin rule inverted: a declaration is being trusted over the geometry it is
+supposed to describe, and the flip was a side effect of a placer change that never touched the twin
+detector. **Sketch**: prefer the measurement when both exist (a knob says what was ASKED for, the
+bbox says what was DRAWN, and the twin detector's question is about what a reader sees) - or make
+the cloud record what it actually produced. Either way it wants a GM ruling on which the axis is
+for, since it changes what "reads as its own place" is measured against.

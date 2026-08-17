@@ -202,19 +202,27 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
             if math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
                 placed += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
-    # NOW A FALLBACK, and measured to still be one worth keeping (2026-08-17). Since `front_row`
-    # began sampling by bundle pitch, the field-edge rows seat every household on all four
-    # scripted hamlets, so this pass breaks on its first candidate and places nothing. That is
-    # NOT the regression it looks like: the front row's seats lie along the margin, which is
-    # where the lanes run, so fronting held or improved - median house-to-lane went 83 -> 68 ft
-    # on Inashiro and 97 -> 77 on Mizuguchi, 59 -> 61 and 121 -> 137 on the other two, with
-    # houses within 60 ft of a lane flat at 5/5, 10/9, 5/4, 2/2. It stays because a map whose
-    # near margin is too blocked to fill still needs it; `test_lane_frontage_seats_the_hamlet_
-    # when_the_field_row_offers_nothing` keeps it exercised.
     # cluster seeded only by its shape leaves them running across empty middle: the review of the
     # first draft measured a median house-to-lane distance of 94 ft against Ikegami's 55, with one
     # lane dead-ending in open ground and no house at its end. Offering the placer seats at exactly
     # the corridor's edge is what puts the doors on the street.
+    #
+    # THIS PASS IS WHAT BUILDS THE BACK RANK (2026-08-17, and the history is worth two sentences
+    # because a comment here was briefly WRONG about it). For part of one day `front_row` sampled by
+    # density with no cap and seated every household by itself, this pass placed nothing, and a
+    # comment was written saying so - "now a fallback". Three settlement-reviews then showed what
+    # that actually meant: the cluster had become a single rank along the paddy, Mizuguchi at aspect
+    # 7.24 with no house standing behind any other. The cap above is the fix, and it makes THIS pass
+    # load-bearing again: the households past one rank's worth are seated here, behind the front row.
+    # Measured on Mizuguchi after the cap, distance from each house to the field outline falls in
+    # four bands - 18/41/58/58, then 96/101/116/128, then 193/193/216, then 297 ft - and everything
+    # past 150 ft (the front row's furthest standoff) came from this loop.
+    #
+    # WHAT THE CAP COSTS, recorded rather than left implied: fronting loosens. Mizuguchi's median
+    # house-to-lane went back to ~98 ft from the ribbon's 77, with 4 of 12 within 60 ft rather than
+    # 10. The ribbon's tighter fronting was an artifact of the defect, not a baseline worth keeping -
+    # but ~98 is the figure an early review criticized against Ikegami's 55, and this loop is where
+    # a future tightening belongs, since it is the pass now doing the seating.
     for lx, ly in lane_frontage(s, seat):
         if placed >= plan.spec.households:
             break
