@@ -1,6 +1,7 @@
-"""Geometry predicates and measures shared by every stage.
+"""Geometry predicates and measures shared by every stage of every tier generator.
 
-Split from hamletgen.py by feature 111; bodies verbatim. See hamletgen/CLAUDE.md.
+Split from hamletgen.py by feature 111 (bodies verbatim), moved out of hamletgen/ into the shared
+sitegen/ by feature 119 when the GM ruled that tiers share a library. See sitegen/CLAUDE.md.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from typing import Any
 
 from l7r.diagram.settlement import Settlement, point_in_poly, seg_dist, segments_cross
 
-from .consts import SQ_FT_PER_ACRE, Poly, Pt
+from .types import SQ_FT_PER_ACRE, Poly, Pt
 
 # ---- geometry helpers ---------------------------------------------------------------------------
 
