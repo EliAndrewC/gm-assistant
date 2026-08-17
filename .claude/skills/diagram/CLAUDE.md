@@ -1161,6 +1161,19 @@ the measurement together:
   and testing it *instead of* the gate's own ring meant a plot pointed on the gate's ring but blunt
   on the new one kept its tint and tripped the gate. Cost: cohort seed 8.
 
+- **And a measurement can differ by its SPAN alone, which looks like no difference at all.** The
+  offmap drain brook's junction: the placer read the collector's heading off its final vertex pair,
+  `drainage_junction_smooth` reads the same corner over a 40 px chord (`_flow_dir(span=40.0)`). Same
+  quantity, same units, same corner - and on cohort seed 2 they disagreed by **76.1 deg**, because a
+  comb's collector ends in a hook a couple of px long that points wherever the carve left it. The
+  placer therefore scored the route that continued straight along the collector as a PERFECT
+  junction (0.0 deg) while the gate scored it a 76.1 deg kink, and scored the genuinely smooth route
+  (2.2 deg) as a 73.9 deg corner and refused it - electing the worst candidate and rejecting the best
+  one, from one definition. Fixed by giving `drain_heading` the gate's span (`GATE_FLOW_SPAN` in
+  `hamletgen/sink.py`). **When you mirror a gate measurement, mirror its WINDOW, not just its
+  formula** - a bearing is a function of the chord you take it over, and a short final segment is
+  noise in every polyline this engine draws.
+
 **So the shape that is actually correct**: keep the gate's own measurement with a stricter threshold,
 and ADD any extra measurement as a second clause rather than a substitution -
 `pointed(gate_ring, 25) or pointed(better_ring, 25)` against a gate that fires at 15 on `gate_ring`.
