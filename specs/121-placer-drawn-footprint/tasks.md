@@ -33,9 +33,9 @@ description: "Task list for feature 121 - the placer tests the footprint it draw
 
 **Purpose**: the one shared primitive both stories need - a single expression yielding the rect a candidate will actually be DRAWN as. Without it, US1 and US2 each grow their own version, which is exactly how the three wrong distance conventions in contracts/placement.md C2 got started.
 
-- [ ] T003 Read `l7r/diagram/settlement/rolling/bundle.py`, `rolling/place.py`, `rolling/farmsteads.py` and `houses.py` in ONE batched pass and record, in `specs/121-placer-drawn-footprint/research.md` under a new "D6. Where drawn diverges from placed" heading, every way the drawn house rect differs from `geom["house"]` - offset, wealth/length scale, rotation - naming the exact expression the renderer uses. Settle this BEFORE writing code: the failure mode for ordering-critical work is discovering the sequence one gate failure at a time.
-- [ ] T004 Add a single helper in `l7r/diagram/settlement/rolling/fit.py` returning the DRAWN rotated corner quad for a candidate seat, derived from the renderer's own expression identified in T003 - not re-implemented beside it. Comment it with which doctrine row it serves (gap verdict), per contracts/placement.md C6.
-- [ ] T005 [P] Add a unit test for T004's helper in the `tests/settlement/` file covering `rolling/fit.py`, pinning that a rotated, wealth-scaled, offset candidate yields the same quad the renderer draws. This test must FAIL before T004 lands.
+- [x] T003 Read `l7r/diagram/settlement/rolling/bundle.py`, `rolling/place.py`, `rolling/farmsteads.py` and `houses.py` in ONE batched pass and record, in `specs/121-placer-drawn-footprint/research.md` under a new "D6. Where drawn diverges from placed" heading, every way the drawn house rect differs from `geom["house"]` - offset, wealth/length scale, rotation - naming the exact expression the renderer uses. Settle this BEFORE writing code: the failure mode for ordering-critical work is discovering the sequence one gate failure at a time.
+- [x] T004 Add a single helper in `l7r/diagram/settlement/rolling/fit.py` returning the DRAWN rotated corner quad for a candidate seat, derived from the renderer's own expression identified in T003 - not re-implemented beside it. Comment it with which doctrine row it serves (gap verdict), per contracts/placement.md C6.
+- [x] T005 [P] Add a unit test for T004's helper in the `tests/settlement/` file covering `rolling/fit.py`, pinning that a rotated, wealth-scaled, offset candidate yields the same quad the renderer draws. This test must FAIL before T004 lands.
 
 **Checkpoint**: the placer can ask "what will this look like when drawn?" and get one answer.
 
@@ -49,13 +49,13 @@ description: "Task list for feature 121 - the placer tests the footprint it draw
 
 ### Red state first
 
-- [ ] T006 [US1] Manufacture the red state: set `LANE_CLEARANCE = 32.0` in `l7r/diagram/hamletgen/consts.py` and run `python3 -m l7r.diagram.tools.cohort_audit --count 24 --seed 1 --only houses_clear_of_lanes`. Record the failing seed list in research.md D6. **If it does not fail, STOP** - the defect has moved and the diagnosis needs redoing before any fix.
+- [x] T006 [US1] Manufacture the red state: set `LANE_CLEARANCE = 32.0` in `l7r/diagram/hamletgen/consts.py` and run `python3 -m l7r.diagram.tools.cohort_audit --count 24 --seed 1 --only houses_clear_of_lanes`. Record the failing seed list in research.md D6. **If it does not fail, STOP** - the defect has moved and the diagnosis needs redoing before any fix.
 - [ ] T007 [US1] Save a regression fixture from one failing seed into `pool/regressions/` per the project's negative-fixture convention, so the defect is pinned by an artifact and not only by a constant. Coverage alone does not prove a check has teeth.
 
 ### Implementation
 
-- [ ] T008 [US1] Give the bundle path the drawn-footprint-versus-tread test in `l7r/diagram/settlement/rolling/fit.py`: `_rect_blocked` currently ends at `self._near_corridor(cx, cy)`, a bare center test, while the footprint test `_on_a_tread(x, y, w, h)` exists only in `houses.py::_fits`. Route the bundle's SOLID rects (house, yard, garden, shed) through the tread test using T004's helper, with the same 2 px hair `houses_clear_of_lanes` allows and the same `skip` semantics `_near_corridor` uses.
-- [ ] T009 [US1] Do NOT extend the footprint test to soft clearances (corridors, caption bands, civic aprons, fence standoffs) - contracts/placement.md C4. Add a comment at the point of the test naming which side of the split each call is on, per FR-003.
+- [x] T008 [US1] Give the bundle path the drawn-footprint-versus-tread test in `l7r/diagram/settlement/rolling/fit.py`: `_rect_blocked` currently ends at `self._near_corridor(cx, cy)`, a bare center test, while the footprint test `_on_a_tread(x, y, w, h)` exists only in `houses.py::_fits`. Route the bundle's SOLID rects (house, yard, garden, shed) through the tread test using T004's helper, with the same 2 px hair `houses_clear_of_lanes` allows and the same `skip` semantics `_near_corridor` uses.
+- [x] T009 [US1] Do NOT extend the footprint test to soft clearances (corridors, caption bands, civic aprons, fence standoffs) - contracts/placement.md C4. Add a comment at the point of the test naming which side of the split each call is on, per FR-003.
 - [ ] T010 [US1] Verify: `cohort_audit --count 24 --seed 1` at `LANE_CLEARANCE = 32.0` shows `houses_clear_of_lanes` green across the cohort, pass rate **>= 22/24**, and no check failing that passed at baseline.
 - [ ] T011 [US1] Run the WHOLE affected test file (never a `-k` subset), then `make done`.
 
