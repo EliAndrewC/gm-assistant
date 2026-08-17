@@ -24,7 +24,7 @@ re-cut later without touching `core.py`.
 
 **Cross-submodule calls need no import.** Every sub-mixin is a base of the same `Settlement`, so
 `self._paddy_surface(...)` resolves through the MRO wherever the caller's text lives. The engine
-already relies on this from outside the package too: `settlement/land.py` calls
+already relies on this from outside the package too: `settlement/land/nearring.py` calls
 `self._draw_furrows(...)`, which is defined in `comb.py`.
 
 **Two members deliberately do NOT live with their primary caller.** Both are recorded so nobody

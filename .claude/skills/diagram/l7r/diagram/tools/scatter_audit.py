@@ -37,7 +37,8 @@ from l7r.diagram.settlement._geom import boxed_grid, boxed_hit, boxed_polys, box
 Base = tuple[float, float]
 
 _NUM = r"(-?[\d.]+)"
-# Anchors are the engine's exact emission styling (settlement/land.py; research.md R2). Attribute
+# Anchors are the engine's exact emission styling (the grass bucket in settlement/land/cover.py, the
+# reed bucket in settlement/land/wet.py; research.md R2). Attribute
 # order is stable because one code path emits each family.
 _BLADE_GROUP = re.compile(r'<g stroke="#A7A860"[^>]*>(.*?)</g>', re.S)  # commons grass bucket
 _REED_GROUP = re.compile(r'<g stroke="#6E9377"[^>]*>(.*?)</g>', re.S)  # marsh reed bucket

@@ -412,8 +412,11 @@ changed something".
 
 - **`road` -> `water_ways.py`.** It is a way, and `water_ways.py` is already the ways module (lanes,
   streets, alleys, kido). It sits in `structures/ground.py` today.
-- **`pasture` -> `land.py`.** It is a land surface, and `land.py` already holds the commons, marsh,
-  toe bands and hinterland. Same module today.
+- **`pasture` -> `land/cover.py`.** It is a land surface, and `cover.py` already holds the commons
+  and the hinterland layout (marsh and the toe band sit next door in `land/wet.py`). Same module
+  today. Destination updated by feature 120, which split `land.py` into a package; the move itself
+  was explicitly left out of that feature's scope, because a cross-package relocation does not
+  belong in a split whose whole safety argument is that nothing moves but text.
 - **`structures/captions.py` -> `castle_civic.py`, but this one is an OPEN QUESTION, not a pending
   move.** `castle_civic.py` holds `place_caption` (the draw-time seat ladder) while `captions.py`
   holds the probes underneath it - so folding them gives one caption subsystem, but three of the
