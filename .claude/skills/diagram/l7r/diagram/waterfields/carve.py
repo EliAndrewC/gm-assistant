@@ -13,7 +13,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from .banks import _TINT_END_FT, _TINT_MIN_APEX, dedup_ring, pointed_ring, polyline_cum, supply_bank_clearance, tapers_to_a_point
-from .frame import BANK_MARGIN, Poly, Pt, _at_f, _f_at_u, _Frame, _miter_normals, _pip, _seg_d, _Thread, taper_w
+from .frame import BANK_MARGIN, CANAL_BERM_FT, Poly, Pt, _at_f, _f_at_u, _Frame, _miter_normals, _pip, _seg_d, _Thread, taper_w
 from .palette import DRY_CROPS, FLOODED, RICE_GREENS
 
 # a supply-stroke index row: (pts, cumulative arc-length, head width, tail width, padded bbox)
@@ -599,6 +599,7 @@ def _dry_fields(
     g: float = 1.0,
     furrow_spread: float = 1.1,
     grain_drift: float = 0.0,
+    supply: Sequence[dict[str, Any]] = (),
 ) -> list[dict[str, Any]]:
     """DRY FIELDS (hatake) on the UPSLOPE margin the irrigation cannot command - the band just ABOVE the
     supply canal. Grain and pulses (barley/wheat, millet, buckwheat, field soy) in an irregular PATCHWORK of
@@ -661,14 +662,105 @@ def _dry_fields(
         56**2
     )  # the furrow-variety neighborhood stays UNSCALED: dry_plot_furrows_vary judges adjacency at this px radius on every map, and a generator that varies over a WIDER circle than the check demands is safely conservative
     prev_crop = R.choice(list(DRY_CROPS))
-    berm = 8 * g  # a thin bund holds the dry plots just ABOVE (upslope of) the canal (grain-scaled: 8px was 16 real ft at the village grain; unscaled it left a 24 ft bare stripe on the city maps)
+    # THE BERM IS MEASURED FROM THE CANAL'S BANK, NOT ITS CENTERLINE (settlement-review 2026-08-17).
+    # This used to be a flat `8 * g` from the centerline, which silently bundled the canal's own
+    # half-width into the stand-off - so when the net went to TRUE SIZE the water shrank threefold and
+    # the bare stripe GREW, leaving a canal running hard against the paddy on one side with a ~15 ft
+    # empty verge on the other. `CANAL_BERM_FT` is now the berm itself (spoil bank + room to stand for
+    # the annual dredging), added to the stroke's LOCAL half-width where each boundary point sits, via
+    # the same `supply_bank_clearance` the carve and the gate already share. Derive, never pin.
+    berm_px = CANAL_BERM_FT * g / 2.0  # grain is 2 / ftpx, so ft * g / 2 is ft in pixels
+    _hem_reach = 8 * g  # where `band` is measured OUTWARD from - the legacy offset off the canal line, deliberately unchanged so the hem's outer edge stays put (see the o_near/o_far note below)
+    _sup = []
+    for _c in supply:
+        _sp = [(float(p[0]), float(p[1])) for p in _c.get("pts") or ()]
+        if len(_sp) < 2:
+            continue
+        _w0, _w1 = float(_c["w"]), float(_c.get("w_tail", _c["w"]))
+        _reach = max(_w0, _w1) / 2 + berm_px + 2.0  # bbox prefilter: prunes only, never decides
+        _sup.append((_sp, _w0, _w1, polyline_cum(_sp), (min(p[0] for p in _sp) - _reach, min(p[1] for p in _sp) - _reach, max(p[0] for p in _sp) + _reach, max(p[1] for p in _sp) + _reach)))
+
+    def _bank(q: Pt) -> tuple[float, float]:
+        """`(gap, halfw)` against the NEAREST supply stroke at `q` - distance to its centerline and
+        half its drawn width there. `(1e9, 0.0)` where no stroke governs the point."""
+        best: tuple[float, float] | None = None
+        past_best: tuple[float, float] | None = None
+        for _pts, _w0, _w1, _cum, _bb in _sup:
+            if not (_bb[0] <= q[0] <= _bb[2] and _bb[1] <= q[1] <= _bb[3]):
+                continue
+            gap, halfw, past, _foot, _nrm = supply_bank_clearance(q, _pts, _w0, _w1, _cum)
+            if past:
+                if past_best is None or gap < past_best[0]:
+                    past_best = (gap, halfw)
+                continue
+            if best is None or gap < best[0]:
+                best = (gap, halfw)
+        # `past` means "this ground is beyond MY ends, so some other stroke governs it" - an
+        # assumption that holds along a run and FAILS AT A JUNCTION, where the pieces meet end to end
+        # and every one of them reports past. Returning nothing there gave the hem no berm at all at
+        # the bunsuiguchi, which is precisely where the defect this berm exists to fix lives: a hem
+        # corner shipped 0.70 ft off the head-race's painted bank against an intended 5.0
+        # (settlement-review 2026-08-17, which replayed this predicate on the shipped geometry to
+        # prove the guard should have caught it). So when NOTHING governs the point, fall back to the
+        # nearest stroke that merely ends near it rather than pretending there is no water.
+        return best or past_best or (1e9, 0.0)
+
     bpts = [at(b) for b in bounds]
+
+    # ONE berm per BOUNDARY POINT, so adjacent columns still share each seam as a single straight
+    # line (the invariant `_miter_normals` exists for) even though the stand-off now varies along the
+    # canal as the canal tapers.
+    def _in_berm(q: Pt) -> bool:
+        """Is `q` ON a supply canal's bank - i.e. effectively in the water?
+
+        0.5 px, the same margin `_quad_in_supply` uses, and deliberately NOT a fraction of
+        `CANAL_BERM_FT`. The berm above is a stand-off measured at a BOUNDARY POINT, against THAT
+        point's own canal, along that point's normal. This re-measures anywhere on the cell, against
+        whichever stroke happens to be NEAREST, by true perpendicular distance. Those are different
+        questions, so this is a FLOOR under the berm rule and never a restatement of it - and a floor
+        has to be sized to the defect it catches, not inherited from the rule it backstops.
+
+        THREE SETTINGS WERE TRIED, ALL MEASURED, because each one that was too generous cost
+        something real - and every cost arrived by the same route, FREED GROUND:
+
+          - the FULL berm collapsed the hem, 23 cells -> 8 on Inashiro;
+          - HALF wiped 347 px off the fork triangle's west reach, and the ground it freed re-packed
+            the wells until one stood 84 px out holding the map's frame open (cohort seed 4);
+          - a QUARTER still dropped four cells on cohort seed 41, whose wells moved the same way and
+            broke the 4-of-4 ratchet in `tests/hamletgen/test_driver.py`.
+
+        At 0.5 px it drops only ground genuinely in the water - which is all that was ever wrong (two
+        corners at the bunsuiguchi stood 0.2 ft off the head-race's bank against an intended 5.0) -
+        while still clearing the `dry_plots`/`field_ditches` overlaps that testing CORNERS ALONE let
+        through on three cohort seeds. **A guard that DELETES a map feature hands its footprint to
+        the next placer, so its blast radius is never confined to the thing it deletes.**"""
+        gap, halfw = _bank(q)
+        return gap - halfw < 0.5
+
+    def _quad_in_berm(quad: Poly) -> bool:
+        """Corners AND every edge, at a 3 px step. A cell can keep four dry corners while an EDGE
+        crosses a stroke between them - the same trap `_quad_in_supply` documents for the paddy
+        carve, and testing corners alone shipped `dry_plots`/`field_ditches` overlaps on three of
+        twenty-four cohort seeds before this was widened (2026-08-17)."""
+        for i in range(len(quad)):
+            a, b = quad[i], quad[(i + 1) % len(quad)]
+            n = max(1, int(math.dist(a, b) / 3.0))
+            for k in range(n + 1):
+                t = k / n
+                if _in_berm((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]))):
+                    return True
+        return False
+
+    berms = [_bank(p)[1] + berm_px for p in bpts]
     bnorm = _miter_normals(bpts, F)  # ONE shared upslope normal per boundary point - see its WHY
     for i in range(len(bounds) - 1):
         pL, pR = bpts[i], bpts[i + 1]
         (nLx, nLy), (nRx, nRy) = bnorm[i], bnorm[i + 1]
         depth = R.uniform(*band)  # ragged outer edge (per-column depth)
-        nrow = max(1, round(depth / (36 * g)))
+        outer = _hem_reach + depth  # the band's OUTER edge, measured from the canal line as always
+        # Rows keep their ~36g depth, so a hem that starts nearer the water gains a ROW rather than
+        # stretching its parcels - `dry_plots_to_scale` judges parcel size, not band depth.
+        nrow = max(1, round((outer - (berms[i] + berms[i + 1]) / 2) / (36 * g)))
         for k in range(nrow):
             # per-plot crop with coherence: usually keep the last crop (holdings cluster), sometimes switch
             if R.random() < 0.45:
@@ -677,14 +769,31 @@ def _dry_fields(
             fill, furrow = DRY_CROPS[crop]
             # PERPENDICULAR offset from the canal (both edges UPSLOPE of it): near = canal side, far = upslope.
             # The whole plot stays on the DRY side - it never dips across the canal onto the wet paddy.
-            o_near = berm + depth * k / nrow
-            o_far = berm + depth * (k + 1) / nrow
-            quad = [(pL[0] + nLx * o_far, pL[1] + nLy * o_far), (pR[0] + nRx * o_far, pR[1] + nRy * o_far), (pR[0] + nRx * o_near, pR[1] + nRy * o_near), (pL[0] + nLx * o_near, pL[1] + nLy * o_near)]
+            # THE BERM MOVES THE HEM'S INNER EDGE ONLY - its OUTER reach is unchanged. `band` has
+            # always measured outward from the canal LINE, and it still does (`_hem_reach`); the berm
+            # decides where the hem STARTS. So narrowing the verge gives the HEM the recovered ground
+            # rather than giving the MAP an empty strip - which matters because a strip of newly-open
+            # ground is something the placers downstream will wander into: an earlier draft that let
+            # the outer edge move in with the inner one re-packed the wells on two cohort maps and
+            # left one of them (Cohort-41) with a well 66 px out, holding the whole frame open.
+            bL, bR = berms[i], berms[i + 1]
+            o_nL, o_fL = bL + (outer - bL) * k / nrow, bL + (outer - bL) * (k + 1) / nrow
+            o_nR, o_fR = bR + (outer - bR) * k / nrow, bR + (outer - bR) * (k + 1) / nrow
+            quad = [(pL[0] + nLx * o_fL, pL[1] + nLy * o_fL), (pR[0] + nRx * o_fR, pR[1] + nRy * o_fR), (pR[0] + nRx * o_nR, pR[1] + nRy * o_nR), (pL[0] + nLx * o_nL, pL[1] + nLy * o_nL)]
             cx = sum(p[0] for p in quad) / 4
             cy = sum(p[1] for p in quad) / 4
             if any(p[0] < 12 or p[0] > W - 12 or p[1] < 12 or p[1] > H - 12 for p in quad):
                 continue
             if blocked(cx, cy):
+                continue
+            # ...AND NO CORNER SITS IN A CANAL'S BERM. The stand-off above is applied along THIS
+            # canal's normal, which does not clear a stroke running at a different angle - at the
+            # bunsuiguchi the hem's first cells are offset from canal A while the wider head-race
+            # passes beside them, and two corners came out 0.2 ft off its bank (measured on Inashiro,
+            # 2026-08-17). Dropping the cell keeps the shared-seam invariant that pulling the vertex
+            # back would break, and the hem is a patchwork of family strips where a missing cell at
+            # the fork reads as ordinary.
+            if _quad_in_berm(quad):
                 continue
             lo, hi = theta0 - HW, theta0 + HW  # furrows stay within HW rad of the contour
             nb = sorted(min(hi, max(lo, t)) for (px, py, t) in placed if (cx - px) ** 2 + (cy - py) ** 2 < ADJ2)

@@ -64,10 +64,64 @@ SUB_PARENT_FRAC = 0.75
 # terminal tier is 0.4 px, i.e. not a line at all. So a stroke is drawn at its true width or this
 # floor, whichever is larger - the coarser the sheet, the more of the ladder collapses onto it,
 # which is the honest form of the "minimum-visibility floor" the stroke convention in
-# `../settlements/water.md` already sanctions. The GM accepted ~2 px at the narrowest point
-# (2026-08-17); this sits just under that so the FINEST tier still shows a taper rather than
-# arriving pre-flattened - a delivery ditch runs 2.5 -> 1.5 px at hamlet scale instead of 2.5 -> 2.0.
+# `../settlements/water.md` already sanctions.
+#
+# 1.5, AND 1.2 WAS TRIED AND REVERTED (2026-08-17) - the number is load-bearing on the carve, not
+# just on legibility. `settlement-review` noted that 1.5 COLLIDES with `aze_w`, which at hamlet grain
+# is also exactly 1.5 px: the finest water tier is drawn at precisely the paddy bund's stroke width
+# and separated from the brown lattice it runs among only by hue. 1.2 fixes that and is also truer
+# (1.2 ft IS the field-ditch tier, ~0.3-0.37 m, so at hamlet scale the floor would bind on nothing).
+#
+# But the floor feeds `supply_bank_clearance`, so lowering it moves every bund that hems a supply
+# stroke, and `close_seams` then welds a different set of scraps. Measured on the 24-seed cohort,
+# with the change isolated by reverting this line alone: **1.2 costs seeds 19 and 22 to
+# `paddy_plot_seams_shared` (22/24 -> 20/24); at 1.5 they pass.** A cosmetic ambiguity is not worth
+# two broken maps, so the collision stands as recorded-and-accepted rather than fixed.
+#
+# IF IT IS EVER WORTH CLOSING, the lever is the OTHER side: `AZE_FT` is 1.5 by its own research
+# (a plain aze ran ~1-2 ft), so there is room to take the BUND to 1.3 and leave the water alone -
+# which changes only a stroke width and touches no clearance. That was not attempted here.
 MIN_CHANNEL_PX = 1.5
+
+# THE CANAL BERM: bare ground between a supply canal's BANK and the dry-crop hem above it, in feet.
+# Measured from the bank, never from the centerline - the hem's stand-off used to be a flat `8 * g`
+# from the canal's CENTERLINE, which is a pinned number wearing a derived one's clothes: it did not
+# move when the net went to true size, so the water inside it shrank threefold while the bare stripe
+# GREW (12.3 -> 14.8 px median on Inashiro, identical before and after - settlement-review
+# 2026-08-17). A berm defined by its relationship to a bank has to be derived from that bank.
+#
+# 5.0 ft is the spoil bank plus standing room: GB50288 puts a lateral/farm canal's embankment TOP at
+# not less than 1 m, and a canal wants a walkable side for the annual dredging that keeps it flowing.
+# The old effective figure was ~10 ft of bare ground, which was never chosen - it is what 16 ft from
+# the centerline left once a 12.4 px canal was subtracted, i.e. an artifact of the inflation.
+CANAL_BERM_FT = 5.0
+
+# A FARMER STEPS OVER A DITCH THIS NARROW RATHER THAN DECKING IT (settlement-review 2026-08-17).
+# The footplank rule used to be about LENGTH only - any ditch over ~140 px got a plank about midway -
+# which was harmless while the net was 5-6x oversize and absurd the moment it went to true size:
+# eight of Inashiro's fifteen planks were decking water 1.7-2.3 ft wide, with 3-4 ft abutments each
+# side. A plank bridge is a real object a household builds and maintains; nobody builds one over
+# something they can stride across. 3 ft is about that stride, and it lands cleanly in the gap the
+# measured pool leaves - the delivery ditches carry 1.8-2.5 ft and the supply canals 3.0-4.5, so the
+# rule separates "step over it" from "lay a board" without cutting through either group.
+FOOTPLANK_MIN_FT = 3.0
+
+
+def worth_planking(w_px: float, w_tail_px: float, ftpx: float) -> bool:
+    """Is this ditch wide enough anywhere to be worth a plank rather than a stride?
+
+    ONE predicate, called by the placer (`channel_footbridges`) and by the gate
+    (`long_ditches_have_a_footbridge`), because a ditch the placer declines to deck and the check
+    still demands a deck on is the classic disagreement this engine keeps rediscovering.
+
+    TWO SCOPES, and both are needed. Pass the ditch's HEAD and TAIL and this answers "is this ditch
+    worth a crossing ANYWHERE" - which is the question the gate asks, since it demands one plank per
+    long ditch. Pass the same value twice and it answers "is the water wide enough HERE", which is
+    what the placer must ask at each candidate seat: a tapering run can qualify on its head and still
+    put a board over 2.4 ft if the seat is chosen by arc fraction alone, which is what shipped and
+    what a review caught (2026-08-17). The placer now tests both - the ditch to decide whether to
+    look at all, then each seat as it slides - so the board lands where the water earns it."""
+    return max(w_px, w_tail_px) * ftpx >= FOOTPLANK_MIN_FT
 
 
 def chan_px(ft: float, grain: float) -> float:

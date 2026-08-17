@@ -184,6 +184,8 @@ class BridgesMixin:
         the village, or a dike (via _plank_reaches_useful_ground). A drain/toe stretch whose far bank opens onto
         marsh/scrub/off-map carries NO plank (GM 2026-07-22, Hikari no Sato: crossings into the reed marsh)."""
 
+        from l7r.diagram.waterfields import taper_w, worth_planking  # local: the engine packages are peers, imported lazily
+
         houses = [_deck_quad(h["x"], h["y"], h["w"], h["h"], h.get("rot", 0)) for h in self.M.get("houses", [])]
         n0 = len(self.M.get("bridges", []))
         # THREE MORE THINGS A PLANK SLIDES AWAY FROM (2026-08-11, found by rolling cohorts of
@@ -232,6 +234,9 @@ class BridgesMixin:
                     continue
                 n = min(n, cap)
             w = d.get("w", 4.2)
+            w_tail = float(d.get("w_tail", w))
+            if not worth_planking(w, w_tail, self.ftpx):
+                continue  # narrow enough to stride across ANYWHERE - see `worth_planking`; the gate agrees
             span = w + PLANK_ABUTMENT  # deck = local ditch width + a short abutment each bank
             for k in range(n):
                 base = (k + 0.5) / n * total  # midway for n=1, evenly spaced otherwise
@@ -249,7 +254,24 @@ class BridgesMixin:
                 # as reading the same manifest source: placement and its check must also LOOK at the
                 # same resolution, or one of them is answering a different question.
                 _step = max(8.0, total / 40)
-                for frac in sorted((k * _step / total for k in range(-int(total / 2 / _step), int(total / 2 / _step) + 1)), key=abs):
+                _cands = [k2 * _step / total for k2 in range(-int(total / 2 / _step), int(total / 2 / _step) + 1)]
+
+                def _wide_enough(fr: float, _base: float = base, _tot: float = total, _w0: float = w, _w1: float = w_tail) -> bool:  # noqa: B008 - bind this ditch's geometry at definition, not at call
+                    """Does the water at this seat earn a board (`worth_planking` at the seat's own taper)?"""
+                    _a = max(0.0, min(_tot, _base + fr * _tot))
+                    _lw = taper_w(_w0, _w1, _a / _tot if _tot else 0.0)
+                    return worth_planking(_lw, _lw, self.ftpx)
+
+                # PREFER wide water, but do not REFUSE the ditch over it. Sorting by
+                # (narrow-first-loses, distance-from-slot) puts every seat whose own taper earns a
+                # board ahead of every seat that does not, so a plank lands on real water wherever
+                # one legally can - while a ditch the GATE demands a crossing on still gets one at
+                # the best available spot. Making the width a hard `continue` instead was tried and
+                # is the classic placer/check split: it left cohort seeds 41 and 43 with a long
+                # ditch the gate required a plank on and the placer would not lay, because the
+                # placer's other constraints (houses, hem crop, other decks, oblique confluences)
+                # ruled out every wide seat and it had no way to say "then take the best one".
+                for frac in sorted(_cands, key=lambda fr: (not _wide_enough(fr), abs(fr))):
                     px, py, ang = _at_arc(pts, seg, max(0.0, min(total, base + frac * total)))
                     deck = ang + 90  # deck runs ACROSS the ditch (perpendicular)
                     quad = _deck_quad(px, py, span, plank_w, deck)

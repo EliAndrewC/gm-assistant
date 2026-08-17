@@ -5,6 +5,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from l7r.diagram.settlement import sat_overlap
+from l7r.diagram.waterfields import taper_w, worth_planking
 
 from .common_01_geometry import (
     _MATRIX_PARENT_FIELD,
@@ -390,10 +391,19 @@ def _footbridge_useful_ground(M: Manifest) -> Any:
     return good
 
 
-def _ditch_plankable(pts: Poly, w: float, good: Any) -> bool:
+def _ditch_plankable(pts: Poly, w: float, good: Any, w_tail: float, ftpx: float) -> bool:
     """True if some point along the ditch has USEFUL ground (per `good`) on BOTH banks - i.e. it separates
     two places worth crossing between, so it warrants a footplank. A MARGIN/toe ditch (cultivation on one
-    side, marsh/scrub on the other for its whole run) is not plankable and needs no plank (GM 2026-07-22)."""
+    side, marsh/scrub on the other for its whole run) is not plankable and needs no plank (GM 2026-07-22).
+
+    ...AND ENOUGH WATER AT THAT SAME POINT to be worth a board rather than a stride (`worth_planking`,
+    2026-08-17). Both conditions at ONE sample, deliberately: testing them independently lets a ditch
+    qualify because it is wide at its head and crossable at its tail, and then the placer - which must
+    satisfy both AT THE SEAT - finds nowhere legal and the check demands a plank nobody can lay. That
+    is exactly what happened on cohort seeds 41 and 43 when the width rule was added to the placer
+    alone. Both extra arguments are REQUIRED rather than defaulted: a default would let a future
+    caller silently opt out of half the rule, which is the shape of every check-that-never-runs
+    incident in this skill's notes."""
     seg = [math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1)]
     total = sum(seg)  # always >= FB_MIN at the one call site (the long-ditch loop pre-filters by length)
     reach = (w + FOOT_ABUTMENT) / 2 + FOOT_BANK_REACH
@@ -410,7 +420,9 @@ def _ditch_plankable(pts: Poly, w: float, good: Any) -> bool:
                 a = math.radians(math.degrees(math.atan2(by - ay, bx - ax)) + 90.0)  # deck axis, across the ditch
                 ux, uy = math.cos(a), math.sin(a)
                 if good(px + ux * reach, py + uy * reach) and good(px - ux * reach, py - uy * reach):
-                    return True
+                    _lw = taper_w(w, w_tail, s / total if total else 0.0)
+                    if worth_planking(_lw, _lw, ftpx):
+                        return True
                 break
             acc += sl
         s += step

@@ -409,6 +409,78 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   size.** So the invisible taper is a deliberate, costed trade rather than an open defect, and every
   doc that used to promise a reader they would see it has been corrected. Do not re-inflate the net.
 
+- **2026-08-17, the three consequences of true size** (GM: *"Yes please tackle those now"*, on the
+  items the true-size review left recorded-not-fixed). Two fixed, one accepted with evidence:
+
+  **The dry-crop hem now stands off the canal's BANK, not its centerline** (`CANAL_BERM_FT` = 5.0 ft,
+  a ~1 m embankment top per GB50288 plus room to dredge). The old flat offset from the centerline did
+  not track the narrowing - measured identical before and after while the water inside it shrank
+  threefold - so canal A ran hard against the paddy on one side with a ~15 ft empty verge on the
+  other. Bare berm now ~4.9 ft median along canal A, **minimum 2.0 ft** at the bunsuiguchi throat;
+  hem 24 cells here.
+
+  That minimum took a review to reach and the bug was mine. `supply_bank_clearance` reports `past`
+  for a stroke when the point lies beyond that stroke's ends, and the berm helper skipped past
+  strokes on the reasoning that "some other stroke governs that ground" - true along a run, FALSE AT
+  A FORK, where the pieces meet end to end and every one of them reports past. So at the one junction
+  this berm exists to protect, the helper found no governing stroke, returned no berm at all, and a
+  hem corner shipped **0.70 ft** off the head-race's painted bank. It now falls back to the nearest
+  past stroke when nothing governs. The residual 2.0 ft is geometric rather than a bug: the stand-off
+  is applied along ONE canal's normal and cannot clear a stroke crossing at an angle.
+
+  **Planks only where you cannot stride** (`FOOTPLANK_MIN_FT` = 3.0 ft, `worth_planking`, called by
+  the placer AND by `long_ditches_have_a_footbridge` so they cannot disagree). This map: **15 planks
+  -> 7**, removing exactly the eight that decked delivery ditches 1.8-2.5 ft wide.
+
+  A review caught the first version measuring the wrong thing: `worth_planking` judged the DITCH's
+  widest point while the placer seated by arc fraction, so two survivors decked 2.80 and 2.40 ft -
+  narrower than decks the same rule had just removed. The placer now evaluates each candidate seat's
+  OWN taper width. Local water under the seven planks as shipped: **2.42 / 3.00 / 3.22 / 3.36 / 3.62
+  / 3.99 / 4.34 ft**.
+
+  The 2.42 is a DELIBERATE FALLBACK, and it is the interesting part. Making seat width a hard refusal
+  produced the classic placer/check split immediately - cohort seeds 41 and 43 had a long ditch the
+  GATE demanded a plank on and the placer would not lay, because its other constraints (houses, hem
+  crop, other decks, oblique confluences) ruled out every wide seat and it had no way to say "then
+  take the best one". So the placer now ORDERS candidate seats wide-first rather than refusing narrow
+  ones: a board lands on real water wherever one legally can, and a ditch the gate requires a crossing
+  for still gets one. The check was tightened to match from the other side - `_ditch_plankable` now
+  demands useful ground AND enough water at the SAME sample, so it stops demanding crossings on
+  ditches that are only wide at one end and only crossable at the other.
+
+  **`MIN_CHANNEL_PX` stays 1.5, and that is now evidence-backed rather than inertia.** It collides
+  exactly with `aze_w`, so the finest water tier is the paddy bund's stroke width and differs only by
+  hue; 1.2 fixes that and is truer. It was implemented and REVERTED: the constant feeds
+  `supply_bank_clearance`, so it moves every supply-side bund, and isolating it against the cohort
+  showed **1.2 costs seeds 19 and 22 to `paddy_plot_seams_shared` (22/24 -> 20/24)**. The lever, if it
+  is ever worth closing, is `AZE_FT` (1.5 by its own research, with room to go to ~1.3), which changes
+  a stroke width and no clearance at all.
+
+  Cohort: **22/24 against a 22/24 baseline** rolled in a detached worktree, with the residue check-for-
+  check IDENTICAL (`field_ringed` + `paddy_bunds_clear_the_supply_channels`, same two seeds). Gate
+  green. No regression on any axis - which took four calibrations of ONE threshold to reach, and they
+  are worth the ink because every wrong setting failed the same way.
+
+  The hem guard re-measures the berm rule from a DIFFERENT REFERENCE - anywhere on the cell, against
+  the NEAREST stroke, rather than at a boundary point against ITS OWN - so it is a FLOOR under that
+  rule, never a restatement of it, and its threshold has to be sized to the defect rather than
+  inherited from the rule. At the FULL berm the hem collapsed **23 cells -> 8**. At HALF it wiped
+  **347 px** off the fork triangle and the freed ground re-packed the wells until one stood 84 px out
+  holding the map's frame open (seed 4). At a QUARTER it still dropped four cells on seed 41, whose
+  wells moved the same way and broke the 4-of-4 ratchet in `tests/hamletgen/test_driver.py`. At
+  **0.5 px** - the same margin `_quad_in_supply` uses - it drops only ground genuinely in the water,
+  which is all that was ever wrong.
+
+  **The through-line: a guard that DELETES a map feature hands its footprint to the next placer, so
+  its blast radius is never confined to the thing it deletes.** Every one of those three failures was
+  freed ground re-packing something else. The same instinct is why the berm moves the hem's INNER edge
+  only and leaves its outer reach fixed - the recovered strip goes to the crop rather than becoming
+  open ground for a placer to wander into.
+
+  Corners alone also missed the original defect - an EDGE can cross a stroke between two dry corners,
+  the trap `_quad_in_supply` already documents - and testing corners only shipped
+  `dry_plots`/`field_ditches` overlaps on three cohort seeds.
+
 ## 2026-08-17 - the fan-toe SUNBURST, ruled and fixed
 
 The GM ruled on the open question the previous entry left: *"I would like for us to be rendering
