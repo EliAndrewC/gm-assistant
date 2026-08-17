@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from l7r.diagram.settlement import Settlement
-from l7r.diagram.settlement._geom import boxed_grid, boxed_hit, boxed_polys, boxed_seg_hit, boxed_segs
+from l7r.diagram.settlement._geom import CROWN_FILLS, boxed_grid, boxed_hit, boxed_polys, boxed_seg_hit, boxed_segs
 
 Base = tuple[float, float]
 
@@ -45,7 +45,12 @@ _REED_GROUP = re.compile(r'<g stroke="#6E9377"[^>]*>(.*?)</g>', re.S)  # marsh r
 _LINE_BASE = re.compile(rf'<line x1="{_NUM}" y1="{_NUM}"')  # a blade/reed line's root
 _DOT = re.compile(rf'<circle cx="{_NUM}" cy="{_NUM}" r="[\d.]+" fill="#94A063"')  # brush dot
 _PINE = re.compile(rf'<line x1="{_NUM}" y1="{_NUM}" x2="{_NUM}" y2="{_NUM}" stroke="#7A6A48"')  # trunk (branches are #6E8452 - canopy ink, not a base)
-_CROWN = re.compile(rf'<circle cx="{_NUM}" cy="{_NUM}" r="{_NUM}" fill="#(?:6E8B4A|7C9856|87A45C)"')  # woodland crown (highlight #A6BA79 / shadow ellipse are companion ink)
+# THE CROWN FILLS COME FROM THE ENGINE, not from a copy here (2026-08-17). This pattern used to
+# hardcode #6E8B4A / #7C9856 / #87A45C - none of which the engine has painted for some time - so the
+# audit parsed ZERO crowns on maps recording thousands and still reported "crown checked". A family
+# that sees nothing looks exactly like a family with nothing wrong, which is the same shape as a
+# check that never runs, one level down inside the tool reviewers quote as evidence.
+_CROWN = re.compile(rf'<circle cx="{_NUM}" cy="{_NUM}" r="{_NUM}" fill="(?:{"|".join(c.lstrip("#") and re.escape(c) for c in CROWN_FILLS)})"')
 
 ADJUDICATED = ("blade", "dot", "pine", "crown")
 DENSITY_BANDS = ((0.0, 15.0), (15.0, 30.0), (30.0, 45.0))
@@ -158,6 +163,21 @@ def main(argv: list[str] | None = None) -> int:
         # looks exactly like a check that passes") - most likely the engine's scatter styling
         # drifted from the anchors at the top of this file.
         print("scatter_audit: ERROR - zero scatter bases parsed; suspect emission-styling drift, treat the AUDIT as broken (not the map as clean)", file=sys.stderr)
+        return 2
+    # ...AND A SINGLE BLIND FAMILY IS THE SAME FAILURE, one level down (2026-08-17). The zero-TOTAL
+    # guard above cannot see a parser that lost ONE family: `crown` matched three fills the engine
+    # had stopped painting, so this tool reported `crown=0 ... checked: blade/dot/pine/crown,
+    # violations: 0` on maps recording thousands of crowns, and every review that quoted it was
+    # quoting a family nobody had looked at. Where the MANIFEST records a feature the family draws,
+    # parsing none of it is drift, not cleanliness.
+    _blind = [fam for fam, key in (("crown", "tree_crowns"),) if len(fams[fam]) == 0 and manifest.get(key)]
+    if _blind:
+        print(
+            f"scatter_audit: ERROR - parsed 0 bases for {'/'.join(_blind)} while the manifest records them "
+            f"(tree_crowns={len(manifest.get('tree_crowns') or [])}); the emission styling has drifted from this "
+            f"file's anchors - treat the AUDIT as broken, not the map as clean",
+            file=sys.stderr,
+        )
         return 2
     report = adjudicate(fams, manifest, Path(stem).name)
     print(json.dumps(report) if ns.as_json else format_report(report))
