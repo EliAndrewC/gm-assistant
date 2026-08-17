@@ -21,7 +21,7 @@ Two invariants the split does NOT touch:
 | file | look here when |
 |---|---|
 | `__init__.py` | you need the re-export list or the import-time main-tree guard; never add logic here |
-| `_geom.py` | pure geometry/spatial helpers: point/seg/poly math, overlap + gap predicates, `Indexed`/`SeatMemo`/`PointGrid` spatial indexes, label tilt/quad/AABB helpers, smoothing, `village_population` |
+| `_geom/` | the geometry/spatial subsystem - a PACKAGE with its own [`CLAUDE.md`](_geom/CLAUDE.md) index since feature 117. Read that first, then load one of: `base.py` (the `Pt`/`Poly`/`Manifest` aliases, the import-time main-tree guard, the palette), `primitives.py` (point/segment/ring math), `overlap.py` (corner rings + the collision/gap/region predicates), `indexes.py` (the `boxed_*` prefilters, `PointGrid`, `Indexed`), `seatmemo.py` (`SeatMemo`), `labels.py` (the caption standoff ladder, the two caption sizes, tilt/quad/AABB), `ways.py` (the travelled ways, the kido bar, the crossing constants), `walls.py` (walls, ward closure, torii-vs-wall clearance), `extents.py` (a recorded feature's drawn extent), `curves.py` (fillets, smoothing, organic jitter), `village.py` (`village_population`, `BUNDLE_PITCH_FT`) |
 | `_knobs.py` | the knob engine (`Knob`, `register_knob`, `resolve_knob`, `scope_seed`, `knob_rng`, layout validators, `skeleton_layout`) and roll/size helpers (`roll_torii_count`, `execution_ground_ft`, wall/bridge/moat/crop helpers) |
 | `core.py` | `class Settlement(...)` itself: `__init__`, the record streams (`add`/`add_top`/`add_wall`/`add_label`), meta/header, knob resolve + rng scoping, viewport/crop |
 | `fields/` | the field subsystem - a PACKAGE with its own [`CLAUDE.md`](fields/CLAUDE.md) index since feature 112. Read that first, then load one of: `paddy.py` (paddy/water/fallow field bodies + plot geometry), `comb.py` (the comb-field builder, base fill, bund junctions, furrows), `landuse.py` (mulberry/lotus/tea overlays), `features.py` (feature-012 in-field pond/rock/grave island + every pond glyph) |
@@ -49,7 +49,9 @@ subsystem file, add its mixin to the `class Settlement(...)` bases in `core.py` 
 
 Submodules bind helper names at import (`from ._geom import poly_gap`), so patching
 `settlement.poly_gap` does not reach a mixin that already imported it - patch the DEFINING
-submodule (`settlement._geom.poly_gap`) or, for anything reached via `self.`, patch
+submodule (since feature 117 that is one level deeper: `settlement._geom.overlap.poly_gap`, not
+`settlement._geom.poly_gap` - the package index says which submodule defines what) or, for anything
+reached via `self.`, patch
 `settlement.Settlement` (class-level patching is unaffected by the split). As of the split, no
 test in the suite patches a settlement module-level name (census in
 `specs/025-human-scale-splits/consumer-census.json`).

@@ -1,6 +1,9 @@
 """Split from test_settlement.py by feature 025 - see tests/settlement/CLAUDE.md for the index."""
 
+import ast
+import collections
 import math
+import pathlib
 import random
 
 import pytest
@@ -351,3 +354,91 @@ def test_a_rolled_cluster_band_is_sized_in_REAL_FEET_at_the_map_s_grain():
     village.meta(scale="village", ftpx=2)
     assert hamlet.px(settlement.BUNDLE_PITCH_FT) == pytest.approx(settlement.BUNDLE_PITCH_FT)
     assert village.px(settlement.BUNDLE_PITCH_FT) == pytest.approx(settlement.BUNDLE_PITCH_FT / 2)
+
+
+# ---- THE PACKAGE SURFACE (feature 117) --------------------------------------------------------
+# _geom was one 1,303-line module until feature 117 cut it into eleven submodules behind a
+# star-import re-export (specs/117-geom-package/contracts/surface.md). Two properties hold that
+# design up and NEITHER is visible to ruff, to mypy --strict, or to any other test in this suite:
+#
+#   - the whole pre-split surface still resolving (a dropped member gives a package that imports
+#     cleanly and fails only when whichever caller needs it happens to run - and 12 of these names
+#     have no test of their own, several reachable only from the frozen city wing);
+#   - no public name bound in two submodules. This one is new to 117: the mixin splits (025,
+#     112-116) composed an MRO, which at least keeps a duplicate reachable, while
+#     `from .a import *` followed by `from .b import *` silently keeps b's binding and leaves a's
+#     implementation dead. Python, ruff and mypy all report nothing.
+#
+# Principle X clause 14's bargain, exactly: the roster is DERIVED (the stars), so the roster's
+# safety property moves into a guard proven to fire. Both halves were demonstrated red before they
+# were trusted - see specs/117-geom-package/tasks.md T014/T015 for the observed failure text.
+
+# The 89 module-level names of settlement/_geom.py as it stood at the split, by AST census. A
+# FROZEN literal, deliberately: its whole job is to remember a state that no longer exists.
+_PRE_SPLIT_GEOM_SURFACE = (
+    'BUNDLE_PITCH_FT', 'CARRIED_LANDING_FLOOR_FT', 'FLOODED_SHADES', 'GOVERNOR_CAPTION_FS', 'HALL_CAPTION_FS', 'Indexed', 'LABEL_AIR_CAP', 'LABEL_AIR_RINGS', 'LABEL_AIR_STEP', 'LABEL_MIN_AIR',
+    'LAND', 'LANDING_FT', 'LANE_CROSSES_MIN_DEG', 'LANE_THROUGH_TOL', 'Manifest', 'PADDY_SHADES', 'PLANK_ABUTMENT', 'PLANK_BANK_REACH', 'PLANK_VILLAGE_REACH', 'PointGrid', 'Poly', 'Pt',
+    'RICE_GREENS', 'RIPE_SHADES', 'SeatMemo', 'TORII_PITCH_FT', 'TORII_PITCH_MAX_SPANS', 'WARD_BARRED_KINDS', 'YARD_GLYPH_SLACK', '_VILLAGE_POP_DIST', '_aabb_gap', '_assert_not_main_tree',
+    '_box_hits_run', '_rect_ring', '_signed_area', '_union_area', 'box_gap', 'boxed_grid', 'boxed_hit', 'boxed_polys', 'boxed_seg_hit', 'boxed_segs', 'edge_dist', 'fillet_polyline',
+    'forest_frame_span', 'forest_reveal_x', 'indexed_grid', 'kido_bar_deg', 'label_aabb', 'label_quad', 'label_tilt', 'lane_runs', 'lane_through_gate', 'linear_tilt', 'linear_tilt_full',
+    'organic_bbox', 'organic_poly', 'paddy_wet_rings', 'point_in_poly', 'point_quad_dist', 'poly_gap', 'quad_hits_poly', 'quad_hits_seg', 'rail_quad', 'rects_overlap', 'region_blocked',
+    'ring_touches', 'rot_rect', 'sat_overlap', 'seg_closest', 'seg_dist', 'seg_in_ellipse_core', 'seg_intersect', 'segments_cross', 'smooth_closed', 'smooth_points', 'stroke_quads',
+    'tilt_caption_seat', 'torii_halfbox', 'torii_seat_on_wall', 'torii_wall_conflicts', 'tower_quad', 'trough_quad', 'village_population', 'wall_runs', 'ward_interior', 'way_beds',
+    'wellhead_quad', 'winding'
+)  # fmt: skip
+
+
+def _geom_submodule_members() -> dict[str, list[str]]:
+    """Every top-level name each `settlement/_geom/` submodule DEFINES, by AST.
+
+    By AST rather than by `vars(module)`, for two reasons a runtime census gets wrong: a submodule's
+    namespace also holds the names it IMPORTS (overlap.py imports `point_in_poly`), and filtering
+    those out by `__module__` would drop every module-level CONSTANT - which is most of `labels.py`
+    and `ways.py`, and exactly the population a duplicate could hide in."""
+    out: dict[str, list[str]] = {}
+    for path in sorted(pathlib.Path(settlement._geom.__path__[0]).glob("*.py")):
+        if path.name == "__init__.py":
+            continue
+        names: list[str] = []
+        for node in ast.parse(path.read_text()).body:
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+                names.append(node.name)
+            elif isinstance(node, ast.Assign):
+                names += [t.id for t in node.targets if isinstance(t, ast.Name)]
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                names.append(node.target.id)
+        out[path.stem] = names
+    return out
+
+
+def test_the_geom_package_surface_still_carries_every_pre_split_name():
+    """A SUBSET assertion, so a helper added later needs no bookkeeping here - only a name that
+    LEAVES is a defect. Underscore names are in the census on purpose: `import *` does not carry
+    them, so they exist on the surface only through the aliased block in `__init__.py`, and that
+    block is the thing most likely to be forgotten when a member moves between submodules."""
+    missing = [n for n in _PRE_SPLIT_GEOM_SURFACE if not hasattr(settlement._geom, n)]
+    assert missing == [], f"the _geom package no longer exposes: {missing}"
+
+
+def test_no_public_geom_name_is_bound_in_two_submodules():
+    """The star-import shadowing guard - see the bank above for why nothing else catches this.
+
+    Private names are checked too: a duplicated `_helper` is shadowed just as silently, and the
+    aliased block in `__init__.py` would then re-export whichever one the import order happened to
+    keep."""
+    owners = collections.defaultdict(list)
+    for mod, names in _geom_submodule_members().items():
+        for name in names:
+            owners[name].append(mod)
+    clashes = {name: mods for name, mods in owners.items() if len(mods) > 1}
+    assert clashes == {}, f"a name is defined in more than one _geom submodule (the later star import silently wins): {clashes}"
+
+
+def test_the_import_time_main_tree_guard_survived_the_split():
+    """The guard's CALL is the one unnamed top-level statement in the pre-split file, so it is the
+    one member a name-keyed partition can drop - and its failure mode is silence, because every test
+    already runs inside a session clone. Read for the call rather than trusting the move; the
+    `_assert_not_main_tree` tests above exercise the FUNCTION and would pass with the call gone."""
+    base = pathlib.Path(settlement._geom.__path__[0]) / "base.py"
+    assert "\n_assert_not_main_tree()\n" in base.read_text()
+    assert settlement._assert_not_main_tree is settlement._geom.base._assert_not_main_tree

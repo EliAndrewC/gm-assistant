@@ -28,6 +28,10 @@ ignore = ["E501"]   # long descriptive lines are house style; the formatter caps
 "check_village/__init__.py" = ["F401", "F403"]
 # same rationale for the settlement package split (feature 025)
 "settlement/__init__.py" = ["F401"]
+# the _geom package split (feature 117) re-exports its surface the 027 way rather than with a
+# roster (Principle X clause 14): F403 because the stars ARE the mechanism, F401 for the aliased
+# block that carries the six underscore names a star import cannot
+"settlement/_geom/__init__.py" = ["F401", "F403"]
 # same star-import re-export mechanism for the waterfields package split (feature 110)
 "waterfields/__init__.py" = ["F401", "F403"]
 # same again for the hamletgen package split (feature 111), plus E402: this __init__ runs a
