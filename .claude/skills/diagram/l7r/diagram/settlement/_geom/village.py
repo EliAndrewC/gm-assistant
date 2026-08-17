@@ -27,3 +27,18 @@ def village_population(rng: random.Random) -> int:
     """Draw a village population (200-500, mode 350) from the weighted distribution, using the passed
     random.Random so the draw is DETERMINISTIC from the map seed. Returns the integer population."""
     return rng.choices([p for p, _ in _VILLAGE_POP_DIST], weights=[w for _, w in _VILLAGE_POP_DIST])[0]
+
+
+# TWO FARMHOUSES MUST SHED SEPARATELY - the minimum clearance, wall to wall, in FEET.
+#
+# A minka carries a steep kayabuki thatch (45 deg or steeper; thatch sheds hard or it rots), so each
+# roof throws its own drip line, and two set a couple of feet apart pool their runoff against each
+# other's walls. `research/buildings.md` records the same principle for a building standing against
+# a compound wall - "rear wall a foot or two off it so the two roofs shed separately". 8 ft is two
+# drip lines plus a footpath: the least ground that reads as a gap rather than a seam.
+#
+# ONE DEFINITION, read by BOTH sides - the placer (`_house_too_near_a_neighbor`) and the gate
+# (`farmhouses_shed_separately`). A clearance whose two readers each carry their own number is how
+# a placer and its check drift into disagreeing, which this engine has on record several times.
+# The placer adds its own hair of margin on top; the gate measures this figure exactly.
+FARMHOUSE_EAVE_GAP_FT = 8.0
