@@ -39,19 +39,27 @@ GROSS_ACRES_PER_HOUSEHOLD = 1.3
 # well-off farmhouse's drawn corner ended 2.4 px from a connector track's centerline with its centre
 # a legal 34 px off, and `houses_clear_of_lanes` measures the DRAWN corners.
 #
-# THE ENGINE FIXED HALF OF IT (2026-08-12): a lane now registers its drawn TREAD as well as its
-# corridor, and `_fits` tests a candidate's whole footprint against the tread, so anything seated
-# THROUGH `_fits` can no longer put a corner on a lane. The other half is not the corridor's size at
-# all, which is why lowering this to 32 did not work: a homestead BUNDLE is seated by its own
-# geometry (`_bundle_fits`), never through `_fits`, and the house inside it is offset from the seed
-# point AND scaled by the wealth/length jitter - so the rect the placer clears is neither the size
-# nor the position of the rect the map draws. Measured: at 32, 12 of 24 cohort maps put a farmhouse
-# corner on a lane, and instrumenting one showed `_fits` was never called at the offending house's
-# position with its own w/h at all. Testing the drawn house rect inside `_bundle_fits` DOES fix it
-# and is the right end state, but it re-rolls four hand-authored maps and breaks Hoshigaoka's gate,
-# so it is a reviewed pool job rather than a side effect (recorded in hamletgen.md, finding 2).
-# Until then this stays wide enough that the drawn steading clears the tread from any seat.
-LANE_CLEARANCE = 32.0  # TEMPORARY (feature 121, T006): the manufactured RED STATE. Restored/re-derived in T020.
+# THE WORKAROUND IS OVER (feature 121, 2026-08-17), and this is no longer what keeps a house off a
+# lane. The bundle path now tests the rect it will DRAW against the lane's drawn tread
+# (`_house_on_a_tread`), and the gate reads the same raked corners (`rect_corners`), so a seat that
+# would put a wall on the trodden surface is refused on its own geometry whatever this number says.
+# CORRECTNESS LIVES IN THE TREAD TEST; this constant is now only a PLACEMENT preference - how far
+# out seats are offered, so houses FRONT the lane instead of crowding it.
+#
+# THE OLD DIAGNOSIS WAS WRONG, so do not restore it from an old copy of this comment. It said the
+# drawn house "is offset from the seed point AND scaled by the wealth/length jitter - so the rect
+# the placer clears is neither the size nor the position of the rect the map draws." Measured across
+# pool/hamlets/inashiro.json: position and size match the drawn record to 0.0000 px. The divergence
+# was the RAKE (`_house_rot`, +/-5 deg, up to 2.56 px of corner bulge) - and separately, 32 was the
+# PLAIN house's arithmetic while the nucleated path jitters a minka's length to 1.35x, because a
+# minka grew by adding bays along the ridge.
+#
+# DERIVED, at 1 ft/px: longest drawn minka 62.1 x 30.8 ft -> half-diagonal 34.7, plus the lane's own
+# half-tread (a ~10 ft tread -> 5), = 39.7 -> 40. Measured on the 24-seed cohort: 22/24 at 40, with
+# the same two pre-existing failures on the same two seeds as the 48 baseline - so the 8 ft this
+# returns to the cluster costs nothing. (At 32 the cohort drops to 21/24: the lane checks stay
+# green, but a corridor that tight re-packs the cluster into gardens and crops.)
+LANE_CLEARANCE = 40.0
 
 # How far off a lane's centerline a frontage seat is offered. This is a PLACEMENT decision and is
 # deliberately not derived from LANE_CLEARANCE, which is the corridor rule: fronting a lane excuses
@@ -121,10 +129,26 @@ ROLLED_ARCHETYPES = ("valley_paddy",)
 POLDER_CELL_FT = 110.0
 
 # HOW MUCH GROUND ONE HOMESTEAD TAKES, in px at 1 ft/px - the pitch the cluster band is sized on.
-# A bundle's reserved rects come to ~71 x 57 ft; the placer then keeps bundles apart by
-# circumscribed circles rather than real footprints, so the effective pitch is larger again. 92 px
-# per household leaves the cluster dense enough to read as a nucleus and open enough for its
-# courtyards, its wells and its byres. See `seat_cluster` for what the wrong number does.
+# A bundle's reserved rects come to ~71 x 57 ft. 92 px per household leaves the cluster dense enough
+# to read as a nucleus and open enough for its courtyards, its wells and its byres. See
+# `seat_cluster` for what the wrong number does.
+#
+# ASKED vs ACHIEVED - do NOT lower this to "recover" the difference (feature 121, 2026-08-17). This
+# comment used to run the two together: the placer keeps bundles apart by circumscribed circles
+# rather than real footprints, "so the effective pitch is larger again". True, and it is the
+# ACHIEVED pitch that the circle inflates, not this number. Retiring the circle closes that gap by
+# itself - the cluster lands at the pitch it asks for instead of overshooting it.
+#
+# THIS NUMBER IS HISTORICALLY GROUNDED, which is why it survives the fix unchanged: the spacing of
+# farmsteads in a nucleated wet-rice village is set by the THRESHING YARD'S SUN, not by how tightly
+# buildings can be packed. Rice dries on the niwa, so a yard needs clear ground to its south; a
+# kayabuki thatch must be pitched 45 deg or steeper to shed rain, putting the ridge ~20 ft up, and
+# at 38N in the 10th month that throws 39 ft of shadow by 9am. Lowering the asked pitch would put
+# houses inside each other's drying shadow - a defect against the rule, arriving disguised as a
+# density win. (research/homesteads.md, "The threshing yard's sun"; specs/121 research.md D2.)
+#
+# THE HONEST WAY TO GET MORE DENSITY HERE is what real yashiki lots did: STAGGER east-west rather
+# than space rows further apart. The placer is free to; nothing asks it to yet.
 #
 # RAISED 92 -> 100 when the SUN CORRIDOR landed (2026-08-13). The pitch was calibrated before the
 # rule existed, and a row now needs house depth (28) + yard (~26) + 39 ft of sun + the gaps between

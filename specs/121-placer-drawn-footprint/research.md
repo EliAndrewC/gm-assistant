@@ -123,6 +123,30 @@ The size and the position agree **exactly**. Reading the code confirms why: `hw`
 
 ---
 
+## D7. The gate was rake-blind too - found by the fix, not by the plan
+
+**Decision**: `houses_clear_of_lanes` reads `rect_corners`, the rake-aware helper already imported into its own file, instead of its private axis-aligned copy.
+
+**How it surfaced.** With the placer fixed, the cohort at a 32 px clearance went from 10 failing maps to 4 - better, but not closed. Reproducing seed 16 and asking the placer directly about the offending seat gave the decisive answer:
+
+```
+offender: (1270.3,1421.0) 60.0x29.5 rot=-2.29  HAS_GEOM=True
+_house_on_a_tread(...)  = False        <- the PLACER says this seat is clear
+gate                    = houses_clear_of_lanes FAILS at (1270, 1421)
+```
+
+The placer and the check disagreed about the same house. Reading the check showed why: segment 493's `_house_pts` builds `(x +/- w/2, y +/- h/2)` - **axis-aligned**, ignoring `rot` - while `rect_corners`, defined in `common_01_geometry` and imported into the very same module, has applied `h["rot"]` all along and is what the overlap checks use.
+
+**So the defect was in both halves.** The placer cleared a square-on rect; the gate that was supposed to catch it measured a square-on rect too. A rotation moves corners around the same circumscribed circle rather than uniformly outward, so the two square-on measurements were not even wrong in the same direction - which is why the residue looked like a partial fix rather than a second bug.
+
+**This is contract C7 violated in the field**: *"`edge_gap` is the only exact footprint-gap helper... Two CORRECT helpers for one question is how the three wrong conventions got started."* A private duplicate of `rect_corners` is exactly that, and it drifted the moment houses started being drawn raked.
+
+**What was NOT changed, deliberately.** The house CENTRE stays in the point list beside the four corners. A lane narrower than a house can otherwise thread between two corners without touching either - the same sampling trap that once let a wellhead sit 1 px inside a hatake plot. The corners answer "does a wall overhang the tread"; the centre answers "is the house sitting astride it".
+
+**Method note worth keeping.** The diagnosis came from asking the ENGINE about the seat (`_house_on_a_tread` on the offender's own coordinates) rather than from re-deriving the geometry beside it. A re-derivation would have produced a number and an explanation from two different expressions - the failure mode this skill has on record twice.
+
+---
+
 ## D5. Refusal attribution, re-taken on maps that still exist
 
 **Decision**: re-measure on the live scripted cohort; treat the historical figures as motivation, not as evidence.
