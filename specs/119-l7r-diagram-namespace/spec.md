@@ -80,7 +80,7 @@ surfaces as a `ModuleNotFoundError` somewhere unrelated.
 | pool + wip generator scripts importing the engine | **26** (of 28 gens) |
 | markdown command references (`python3 -m check_village`, `-m pipeline.regen`, `-m tools.why_placed`) | **97 lines across 44 files** |
 | webapp files touched by the namespace conversion | **~10**, none of them logic |
-| `hamletgen/` lines that are tier-agnostic today | **~450 of 3,275** |
+| `hamletgen/` lines that are tier-agnostic today | **~110 of 3,275** (revised down from an initial ~450 estimate by Phase 0 research R7 - see below) |
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -154,10 +154,17 @@ followed the code.
 ### User Story 3 - `sitegen` exists, and the rule for growing it is written down (Priority: P2)
 
 A future village generator has a package to build on. The tier-agnostic pieces move out of
-`hamletgen/` into `l7r/diagram/sitegen/`: the geometry helpers, the sheet frame, the driver's
-`Report` / batch fan-out / `default_jobs` machinery, and the tier-agnostic half of `consts.py`.
-`hamletgen` keeps every stage whose content is about hamlets, and its public surface
-(`HamletSpec`, `generate`) does not move, so no pool generator changes.
+`hamletgen/` into `l7r/diagram/sitegen/`: the geometry helper set, the `Pt`/`Poly`/`SQ_FT_PER_ACRE`
+types and units, and `default_jobs`. `hamletgen` keeps every stage whose content is about hamlets,
+and its public surface (`HamletSpec`, `generate`) does not move, so no pool generator changes.
+
+**Revised by Phase 0 research (R7).** This story originally also claimed `frame.py` and the
+driver's `Report`. Reading the dependency edges refuted that: `frame.py`'s three members are all
+`stage_*(s, plan: SitePlan)` and it imports `CROP_MARGIN` from `hinterland`, and `Report` wraps
+`SitePlan` to print a hamlet cohort row. Both stay. The extraction is ~110 lines, not ~450 - and
+that is the correct size for a first extraction, because the remaining candidates move under the
+MOVE-don't-copy rule when the village tier makes them their second real consumer, rather than being
+predicted now.
 
 **Why this priority**: it is the smallest landing and the one with the least mechanical certainty
 about *where* the seam falls, so it ships last, after the two moves whose oracle is exact. It is
@@ -241,17 +248,21 @@ coverage and typing followed.
 - **FR-009**: `pyproject.toml` MUST be repathed in all four places that name modules by path: the
   ruff per-file-ignores, the mypy `files` list, the coverage `source` list, and the coverage `omit`
   patterns. The Makefile's coverage include/omit globs MUST still select the intended trees.
-- **FR-010**: All 97 markdown command references MUST be updated to module paths that resolve. No
-  compatibility shim or alias module may be introduced to avoid this - a shim would leave two live
-  names for one module, which is the specific thing the namespace exists to prevent.
+- **FR-010**: All **live-doc** markdown command references (39 lines across 13 files) MUST be
+  updated to module paths that resolve. No compatibility shim or alias module may be introduced to
+  avoid this - a shim would leave two live names for one module, which is the specific thing the
+  namespace exists to prevent. Historical `specs/NNN-*/` artifacts MUST NOT be rewritten: they are
+  dated records of what was true when each feature shipped, not live mirrors (research R6).
 - **FR-011**: Every directory-level `CLAUDE.md` index that states where engine code lives MUST be
   updated, the skill's own "Where things live" table included.
 
 **Landing 3 - `sitegen`**
 
 - **FR-012**: A `l7r/diagram/sitegen/` package MUST hold the tier-agnostic machinery extracted from
-  `hamletgen/`: the geometry helpers, the sheet frame, the driver's `Report` / batch fan-out /
-  `default_jobs`, and the tier-agnostic constants.
+  `hamletgen/`: the geometry helper set (`geom.py`), the `Pt` / `Poly` / `SQ_FT_PER_ACRE` types and
+  units, and `default_jobs`. Every member MUST move VERBATIM, comments included. A module that
+  names any tier concept MUST NOT be in `sitegen`, and `sitegen` MUST NOT import `hamletgen` - the
+  import direction is one-way and is asserted by a test.
 - **FR-013**: `hamletgen`'s public surface (`HamletSpec`, `generate`, its `__main__` CLI) MUST NOT
   move, and no pool or wip generator may need changing for this landing.
 - **FR-014**: The hamlet-specific stage modules (`water`, `sink`, `ways`, `cluster`, `homesteads`,
