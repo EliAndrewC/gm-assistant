@@ -68,6 +68,8 @@ the way the GM caught: a straight line spreads the whole narrowing evenly along 
 thins imperceptibly for its entire length and then stops dead at a still-substantial width. Under the
 true law the ditch keeps most of its working width while it still has most of its water to deliver, and
 then dwindles hard over the last stretch - which is what "the water is leaving it" ought to look like.
+**At the widths this engine now draws, that shape is data rather than something the eye can follow**:
+see [the sub-perceptual ruling](#what-drawing-at-true-size-left-open) before repeating the claim.
 Measured on Inashiro's delivery ditches (8.0 -> 3.0 ft):
 
   | fraction along | 0 | 0.25 | 0.5 | 0.75 | 0.9 | 1.0 |
@@ -329,15 +331,34 @@ carries the sketch its fix would follow.
   hem stand-off becomes `supply_bank_clearance`'s local half-width plus a named berm constant (the
   spoil bank and service walk are the real referent, so the constant is what wants researching), in
   the carve's dry-hem pass; it re-rolls every scripted map.
-- **The delivery taper is now a sub-perceptual event, and the doctrine oversells it.**
-  [The taper rule](#a-channel-taper-is-a-square-root-not-a-straight-line) promises a ditch that
-  "holds most of its working width... then dwindles hard" - at true scale that is a **1.0 px** change
-  on the widest delivery and **0.3 px** on a sub-ditch. The LAW is intact and the floor is not the
-  culprit (nothing arrives pre-flattened; every ditch reaches its tail value only at the tail), but
-  the visible consequence the rule advertises is largely gone below the canal tier. It still reads
-  on the canals (4.5 -> 1.5) and on the collector (1.5 -> 5.5), which is where the eye actually
-  tracks rank. Recorded rather than fixed because the honest options are all worse: inflating the
-  deliveries re-opens the thing we just closed.
+- **The taper is SUB-PERCEPTUAL at true scale - RULED ON, not merely noticed.** The GM looked at the
+  finished map and asked the right question: *"Is that getting narrower as it goes down into the
+  fields, or along the edge at the top, though? It doesn't visually look like it is."* It is not.
+  What matters here is the GRADIENT, not the ratio, and the two had been quietly conflated:
+
+  | stroke | run | width | px lost per 100 px |
+  |---|---|---|---|
+  | canal A (the top edge) | 1,504 px | 4.5 -> 1.5 | **0.20** |
+  | delivery ditch (down into the fields) | ~500 px | 2.5 -> 1.5 | **0.20** |
+  | canal B (short west arm) | 343 px | 4.0 -> 1.5 | 0.73 |
+  | *the same delivery before true size* | 540 px | 8.0 -> 3.0 | *0.93* |
+
+  So a delivery sheds ONE PIXEL over five hundred, and canal A three over fifteen hundred. The ink is
+  monotone and the head-to-tail ratio is honest, so the two ENDS of a canal differ plainly side by
+  side - but there is no gradient to follow along a stroke, and canal B is the only one that reads,
+  because it is short. **Correcting an earlier claim in this file: it does NOT "still read on the
+  canals".** Canal A's gradient is identical to a delivery's; only its total drop is larger.
+
+  *Why this is the honest outcome rather than a defect.* A real ditch narrowing from ~1.4 m to
+  ~0.45 m over 460 m is not visually dramatic from above either. The taper people remember from the
+  pre-2026-08-17 maps came from the 2-5x inflation, not from the taper - so true absolute size and a
+  visible taper are in genuine tension and no amount of engineering dissolves it.
+
+  *The decision, with the alternatives priced.* Both were put to the GM against keeping true size:
+  **x1.5** (delivery 3.75 -> 1.8, gradient 0.39) and **x2** (5.0 -> 2.4, gradient 0.52), each a single
+  documented multiplier preserving every relative size. **The GM chose true size.** Recorded here so
+  a future reader meets a deliberate trade rather than an apparent bug: do not re-inflate the net to
+  make the taper show, and do not write doctrine promising a reader they will see it.
 - **A plank footbridge now spans a 20-inch ditch.** Eight of Inashiro's fifteen bridges cross water
   1.7-2.3 ft wide. The geometry tracked the change correctly (spans fell 18.4 -> 10.5 px, landings a
   uniform 3.0-4.5 ft, nothing short or floating) - it is the FEATURE's justification that did not
