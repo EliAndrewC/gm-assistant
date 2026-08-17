@@ -499,7 +499,7 @@ _FIELDS_SURFACE = frozenset(
         "pond",
         "water_field",
         # private helpers, reached through self. (several also called on an instance from tests
-        # and from settlement/land.py, which is why they are part of the surface)
+        # and from settlement/land/nearring.py, which is why they are part of the surface)
         "_draw_furrows",
         "_fallow_patch",
         "_mulberry_rows",
