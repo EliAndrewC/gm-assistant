@@ -389,6 +389,22 @@ class CombMixin:
             # the buried stretch surfaced as green dots floating mid-paddy on Inashiro. A check can
             # only judge bead-on-visible-bund from the real rings in paint order, so they are
             # recorded in full (bund_beans_on_bunds reads both; draw order IS list order).
+            #
+            # THIS IS A PAINT-ORDER STACK, NOT A PARTITION - DISSOLVE BEFORE YOU MEASURE ANYTHING
+            # (GM decision 2026-08-17). Rings LAP: a filler painted later covers part of its
+            # neighbour, which is exactly why the pair reads as the one shared aze a real fan has,
+            # and the stack is the honest record of the INK. It is NOT an area record. Summing
+            # these areas double-counts the lapped ground (0.4-2.5% of the fabric, measured over
+            # the scripted hamlets and a 48-seed cohort), and treating two rings as adjacent
+            # because they touch says nothing about
+            # which of them the reader can see. So anything computing acreage, per-field yield or
+            # basin-to-basin adjacency must dissolve the stack first (later ring wins) rather than
+            # trusting the list. Trimming each ring to its visible extent here - which would make
+            # this a true partition - was priced and DECLINED: it would re-derive
+            # `bund_beans_on_bunds`, which is built ON the burial, and put polygon booleans on the
+            # gate's path. The ceiling that keeps the lap small enough for this note to stay true
+            # is `paddy_plot_rings_overcount_stays_marginal`; the full decision, with both declined
+            # alternatives, is in future-work.md.
             "plot_rings": [[[round(vx, 1), round(vy, 1)] for vx, vy in p["poly"]] for p in net["plots"]],
             "bund_beans": [[round(bx, 1), round(by, 1)] for bx, by in net["bund_beans"]],
         }
