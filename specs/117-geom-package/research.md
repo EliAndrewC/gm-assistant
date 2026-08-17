@@ -216,14 +216,45 @@ moves drawn geometry directly - the fillet cut-back and its 35% cap, the bend's 
 organic densify pitch, the jitter amplitudes. Fillets are on every hamlet's channels and organic
 outlines are on every hamlet's fields.
 
-**The audit change that makes this checkable rather than argued.** Today a vacuous mutation (one on
-a line no map executes, or one that rounds away) prints exactly the same `[OK ]` as a mutation that
-genuinely exercised the key. That is the "a check that never runs looks exactly like a check that
-passes" shape, one level up, in the very tool that exists to keep the cache honest. The audit already
-snapshots artifacts twice per trial; it now also snapshots the CLEAN baseline once, before the loop,
-and prints `moved N artifacts` per trial. A run whose trials all report `moved 0` is a run that
-proved nothing, and now says so. `tools.cache_audit` is deliberately outside the coverage `source`
-list (it is a by-hand audit), so this adds no test debt.
+**The audit change that makes this checkable rather than argued.** Before this feature a vacuous
+mutation - one on a line no map executes, or one that rounds away - printed exactly the same `[OK ]`
+as a mutation that genuinely exercised the key. That is the "a check that never runs looks exactly
+like a check that passes" shape, one level up, in the very tool that exists to keep the cache honest.
+The audit already snapshots artifacts twice per trial; it now also snapshots the CLEAN baseline once,
+before the loop, and measures whether each mutation MOVED anything. `tools.cache_audit` is
+deliberately outside the coverage `source` list (it is a by-hand audit), so this adds no test debt.
+
+**And the measurement immediately paid for itself, which is why the rule got stricter.** The first
+run against the new target reported:
+
+    [OK ] line 84: 2 -> perturbed | moved 0 of 4 artifacts | 23s
+    [OK ] line 83: 2 -> perturbed | moved 0 of 4 artifacts | 30s
+    [OK ] line 36: 3 -> perturbed | moved 2 of 4 artifacts | 72s
+
+Three green trials, of which **two tested nothing**: the sweeps agreed because there was nothing to
+disagree about. Under the old reporting that run was indistinguishable from three real audits. So a
+vacuous trial is no longer counted as a trial - it is retried, like a syntax-error skip, and the
+closing line reports the vacuous count separately. The expected cost is the honest one: at a ~26%
+executed-literal rate, `--trials 3` now takes roughly a dozen sweeps rather than three, and the run
+genuinely delivers three tests of the cache instead of one. A run that exhausts the candidate
+literals before reaching its trial count says so and names the fix.
+
+The `differing` check is deliberately evaluated BEFORE the vacuous branch: a mutation that moved
+nothing and still produced disagreeing sweeps is a real finding, and must never be swallowed by the
+"this tested nothing" path.
+
+**What the stricter rule then measured, and it corrected this research's own prediction.** The
+verifying run: `3 mutation(s) audited, 0 skipped, 16 vacuous (moved nothing, retried), 0 FAILED` -
+three real trials for nineteen attempts, about eleven minutes. That is a **16%** hit rate where the
+coverage table above predicted ~26%, and the gap is instructive: *executed* is not *moves an
+artifact*. Most of the misses are DEFAULT-ARGUMENT literals on functions whose every caller passes
+the argument explicitly (`winding`'s `amp`/`n`, `fillet_polyline`'s `steps`/`min_turn_deg`) - the
+line runs, the value is never used. A coverage-based prediction cannot see that, which is a good
+reason to keep the empirical `moved` measurement rather than trusting the table.
+
+The budget is recorded in the comment above `TARGET` so the next session plans for ~10-15 minutes
+rather than the 10 the docs claimed for the old single-pass behavior. It is the honest trade: the
+old run was faster because it was counting trials that tested nothing.
 
 **Alternatives considered**:
 

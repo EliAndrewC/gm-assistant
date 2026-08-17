@@ -22,15 +22,15 @@ shippable; US2 (the guard) and US3 (the index) each add a separate kind of assur
 
 ## Phase 1: Setup
 
-- [ ] T001 Confirm the clone is synced to main's tip and `git status --short` is clean under
+- [x] T001 Confirm the clone is synced to main's tip and `git status --short` is clean under
       `.claude/skills/diagram/pool` before anything runs, in `/gm-assistant/.clones/diagram-tokens`
-- [ ] T002 Confirm the Principle XIII baseline exists and is the PRE-split one: `/tmp/117-baseline-hashes.txt`
+- [x] T002 Confirm the Principle XIII baseline exists and is the PRE-split one: `/tmp/117-baseline-hashes.txt`
       (893 artifacts) and `/tmp/117-baseline-sweep.log` (exit 0, `REGENERATED 28`), captured from the
       detached worktree `/tmp/base117` per quickstart step 1
 
 ## Phase 2: Foundational (blocks every user story)
 
-- [ ] T003 Add the per-file-ignores entry for `settlement/_geom/__init__.py` (`F401`, `F403`) with a
+- [x] T003 Add the per-file-ignores entry for `settlement/_geom/__init__.py` (`F401`, `F403`) with a
       one-line rationale matching the four existing star-import entries, in `pyproject.toml`
 
 ## Phase 3: User Story 1 - Behavior-preserving package split (P1) - MVP
@@ -41,23 +41,23 @@ artifact is byte-identical.
 **Independent test**: `diff /tmp/117-baseline-hashes.txt /tmp/117-post-hashes.txt` is empty, and
 `git diff --stat` shows no consumer file changed.
 
-- [ ] T004 [US1] Run the transformer: `python3 ../../../specs/117-geom-package/split_geom.py` -
+- [x] T004 [US1] Run the transformer: `python3 ../../../specs/117-geom-package/split_geom.py` -
       it must report the folded unnamed guard call, the moved doctrine bank, and eleven written
       modules, and must exit 0 (a REFUSAL is the design working: fix the partition, never bypass it)
-- [ ] T005 [US1] Prune and format the copied headers:
+- [x] T005 [US1] Prune and format the copied headers:
       `python3 -m ruff check --select F401 --fix settlement/_geom/ && python3 -m ruff format settlement/_geom/`
-- [ ] T006 [US1] Delete the pre-split module: `git rm -q settlement/_geom.py` (FR-006 - never leave a
+- [x] T006 [US1] Delete the pre-split module: `git rm -q settlement/_geom.py` (FR-006 - never leave a
       module beside a package of the same name)
-- [ ] T007 [US1] Run the cheap linters before anything expensive:
+- [x] T007 [US1] Run the cheap linters before anything expensive:
       `python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy` - mypy is what catches
       an ANNOTATION-only name no submodule imports, which PEP 649 would otherwise hide until runtime
-- [ ] T008 [US1] Run the whole affected test files (never a `-k` subset):
+- [x] T008 [US1] Run the whole affected test files (never a `-k` subset):
       `python3 -m pytest tests/settlement/ tests/tools/ -q -n auto --no-cov`
-- [ ] T009 [US1] Capture the post-split oracle in a SCRATCH COPY (never in the clone - the frozen
+- [x] T009 [US1] Capture the post-split oracle in a SCRATCH COPY (never in the clone - the frozen
       renders are tracked): copy the skill dir to `/tmp/post117`, run
       `python3 -m pipeline.regen --no-cache --frozen-ok pool/*/*.gen.py`, hash all `pool/**`
       artifacts to `/tmp/117-post-hashes.txt`
-- [ ] T010 [US1] Prove FR-004/SC-003: `diff /tmp/117-baseline-hashes.txt /tmp/117-post-hashes.txt`
+- [x] T010 [US1] Prove FR-004/SC-003: `diff /tmp/117-baseline-hashes.txt /tmp/117-post-hashes.txt`
       is EMPTY, and the post sweep's exit code is 0 with 28 REGENERATED
 
 ## Phase 4: User Story 2 - The move is proven complete (P2)
@@ -66,17 +66,17 @@ artifact is byte-identical.
 
 **Independent test**: sabotage each half and observe the named failure.
 
-- [ ] T011 [US2] Add the surface census (contract C1) to `tests/settlement/test_geom.py`: the 89-name
+- [x] T011 [US2] Add the surface census (contract C1) to `tests/settlement/test_geom.py`: the 89-name
       literal tuple, asserted as a SUBSET of `dir(settlement._geom)`
-- [ ] T012 [US2] Add the shadowing guard (contract C2) to `tests/settlement/test_geom.py`: no public
+- [x] T012 [US2] Add the shadowing guard (contract C2) to `tests/settlement/test_geom.py`: no public
       name bound to two different objects across the eleven submodules
-- [ ] T013 [US2] Add the guard-call check (contract C3) to `tests/settlement/test_geom.py`:
+- [x] T013 [US2] Add the guard-call check (contract C3) to `tests/settlement/test_geom.py`:
       `settlement/_geom/base.py` still contains the bare `_assert_not_main_tree()` call, and
       `settlement._assert_not_main_tree` still resolves
-- [ ] T014 [US2] RED PROOF for C1: delete one member from a submodule, run
+- [x] T014 [US2] RED PROOF for C1: delete one member from a submodule, run
       `python3 -m pytest tests/settlement/test_geom.py -q -k surface`, record the observed failure
       text in this file, restore
-- [ ] T015 [US2] RED PROOF for C2: bind `seg_dist` in a second submodule, run the same, record the
+- [x] T015 [US2] RED PROOF for C2: bind `seg_dist` in a second submodule, run the same, record the
       observed failure text in this file, restore
 
 ## Phase 5: User Story 3 - The package is navigable without reading it (P3)
@@ -85,40 +85,41 @@ artifact is byte-identical.
 
 **Independent test**: every one of the 89 members is covered by exactly one row.
 
-- [ ] T016 [P] [US3] Write `settlement/_geom/CLAUDE.md`: a "look here when" row per submodule, the
+- [x] T016 [P] [US3] Write `settlement/_geom/CLAUDE.md`: a "look here when" row per submodule, the
       layering rule (`base` <- `primitives` <- `overlap` <- everything else), the monkeypatching
       note (the defining submodule is now `settlement._geom.<module>`), and the four recorded
       placements from FR-008
-- [ ] T017 [P] [US3] Re-point the `_geom` row in `settlement/CLAUDE.md` at the sub-index, matching
+- [x] T017 [P] [US3] Re-point the `_geom` row in `settlement/CLAUDE.md` at the sub-index, matching
       the shape of the `fields/`, `city/`, `structures/`, `civic_grounds/` and `shrines_wells/` rows
 
 ## Phase 6: The audit target (cross-cutting - FR-012)
 
-- [ ] T018 Move `TARGET` to `settlement/_geom/curves.py` in `tools/cache_audit.py` and rewrite the
+- [x] T018 Move `TARGET` to `settlement/_geom/curves.py` in `tools/cache_audit.py` and rewrite the
       comment above it to say what was MEASURED (35 candidate literals, 9 executed by the live
       hamlets, all geometry-moving) and why `labels`/`indexes` were rejected - research R7
-- [ ] T019 Add the per-trial `moved N artifacts` line to `tools/cache_audit.py`: snapshot the CLEAN
+- [x] T019 Add the per-trial `moved N artifacts` line to `tools/cache_audit.py`: snapshot the CLEAN
       baseline once before the loop, and report per trial whether the mutation moved anything. A
       trial that moved nothing proved nothing, and today it prints an identical `[OK ]`
-- [ ] T020 Run `python3 -m tools.cache_audit --trials 3` (~10 min, backgrounded, NOT polled) and
-      confirm exit 0 with at least one trial reporting a non-zero `moved` count (SC-008)
+- [x] T020 Run `python3 -m tools.cache_audit --trials 3` (~10 min, backgrounded, NOT polled) and
+      confirm exit 0 with at least one trial reporting a non-zero `moved` count (SC-008).
+      **PASS** (2026-08-17, against settlement/_geom/curves.py): 3 mutation(s) audited, 0 skipped, 16 vacuous (moved nothing, retried), 0 FAILED
 
 ## Phase 7: Polish and verification
 
-- [ ] T021 Prove FR-011/SC-007: comment-line count of the pre-split file
+- [x] T021 Prove FR-011/SC-007: comment-line count of the pre-split file
       (`git show HEAD:.claude/skills/diagram/settlement/_geom.py | grep -c '^\s*#'`) is <= the
       package's total (`cat settlement/_geom/*.py | grep -c '^\s*#'`), and the four re-pointed
       sentences are the only comment TEXT changes
-- [ ] T022 Prove SC-001/SC-002: `wc -l settlement/_geom/*.py` - no file over 280 raw lines
-- [ ] T023 Prove SC-005/C4: `git diff --stat` names no file outside the contract's allowed list -
+- [x] T022 Prove SC-001/SC-002: `wc -l settlement/_geom/*.py` - no file over 280 raw lines
+- [x] T023 Prove SC-005/C4: `git diff --stat` names no file outside the contract's allowed list -
       no engine importer, no pool gen, no `wip/` script, not `tools/scatter_audit.py`, not
       `settlement/__init__.py`
-- [ ] T024 Run the gate, backgrounded and NOT polled, nothing after the redirect:
+- [x] T024 Run the gate, backgrounded and NOT polled, nothing after the redirect:
       `cd /gm-assistant/.clones/diagram-tokens/.claude/skills/diagram && make done > /tmp/117-gate.log 2>&1`;
       tail the log before believing green (SC-004, ratchet floor unchanged)
-- [ ] T025 Update `specs/117-geom-package/spec.md` Status to Implemented with the final per-file line
+- [x] T025 Update `specs/117-geom-package/spec.md` Status to Implemented with the final per-file line
       counts and the oracle result, matching feature 116's spec-status convention
-- [ ] T026 Update `.claude/skills/diagram/CLAUDE.md` if the `settlement/` row's wording needs it, and
+- [x] T026 Update `.claude/skills/diagram/CLAUDE.md` if the `settlement/` row's wording needs it, and
       confirm `settlement/CLAUDE.md`'s coverage note still reads true
 - [ ] T027 Stop-work ritual: commit in the clone, then `scripts/sync-with-main.sh done`. NOT run on a
       regressed state - Principle XIII's three exits are fix, revert, or an explicit GM waiver

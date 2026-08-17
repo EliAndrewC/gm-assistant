@@ -5,7 +5,18 @@ is declared with `export SPECIFY_FEATURE=117-geom-package`.
 
 **Created**: 2026-08-17
 
-**Status**: Draft
+**Status**: Implemented 2026-08-17. Final per-file line counts: `indexes.py` 247, `walls.py` 197,
+`overlap.py` 184, `labels.py` 151, `curves.py` 139, `extents.py` 131, `ways.py` 116, `seatmemo.py`
+110, `primitives.py` 97, `base.py` 48, `__init__.py` 43, `village.py` 29 (1,303 -> largest 247).
+Oracle: every `pool/` artifact regenerated `--no-cache --frozen-ok` in a scratch copy and hashed
+against a baseline captured the same way from a detached worktree at the pre-split HEAD - exit 0,
+28/28 generators, **893/893 byte-identical**, frozen legacy maps included. Comment lines 132 -> 132.
+ZERO consumer files changed except `tools/cache_audit.py`, whose `TARGET` was a file path that had
+just become a directory. Both surface-guard halves proven red before being trusted - and the census
+also fired for real on its first run, naming `_VILLAGE_POP_DIST` on a package that imported cleanly,
+type-checked cleanly and passed all 713 tests. The cache audit passed against the new target
+(3 mutations, 0 skipped, 0 failed) and its new vacuity measurement immediately showed 2 of those 3
+trials had tested nothing, which is why a vacuous trial no longer counts as a trial.
 
 **Input**: User description: "Please refactor _geom.py - which is over a thousand lines of code - to
 comport to our documented conventions for function and file size." Split
