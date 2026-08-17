@@ -119,6 +119,39 @@ def test_a_pinned_failure_that_starts_PASSING_fails_too_so_the_pin_ratchets_down
     assert any("STALE PIN seed 22" in line and "COHORT_BASELINE" in line for line in lines), "it must name the edit to make"
 
 
+def _as_pinned() -> list[hg.Report]:
+    """Reports reproducing exactly today's `COHORT_BASELINE` - built FROM the pin, so this test
+    keeps testing the WIRING rather than freezing whatever the baseline happens to be."""
+    return [
+        hg.Report(plan=hg.plan_site(hg.HamletSpec(name="T", seed=seed, households=12, down_deg=90.0, windward="N")), failures=sorted(checks))
+        for seed, checks in sorted(hg.driver.COHORT_BASELINE.items())
+    ]
+
+
+def test_the_canonical_cohort_is_judged_against_the_pin_not_the_rate(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    """`--batch 24` from seed 1 exits ZERO on its known failures - the steady state is success, and
+    only a change from it is a failure. Before the pin this exact run exited 1, which meant the
+    signal everyone read was a rate that cannot distinguish two expected failures from two new ones."""
+    monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: _as_pinned())
+    assert hg.main(["--batch", str(hg.driver.COHORT_BASELINE_SIZE)]) == 0
+    assert "NO NEW REGRESSIONS" in capsys.readouterr().out
+
+
+def test_the_canonical_cohort_fails_on_a_seed_the_pin_does_not_cover(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    extra = hg.Report(plan=hg.plan_site(hg.HamletSpec(name="T", seed=999, households=12, down_deg=90.0, windward="N")), failures=["something_new"])
+    monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: [*_as_pinned(), extra])
+    assert hg.main(["--batch", str(hg.driver.COHORT_BASELINE_SIZE)]) == 1
+    assert "REGRESSION seed 999" in capsys.readouterr().out
+
+
+def test_a_non_canonical_range_says_it_has_no_pin(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    """A held-out or ad-hoc range must NOT be judged against the fitted cohort's baseline, and must
+    say so rather than implying it was checked."""
+    monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: [hg.Report(plan=a_plan(), failures=[])])
+    assert hg.main(["--batch", "1"]) == 0
+    assert "no pinned baseline for this range" in capsys.readouterr().out
+
+
 def test_the_cli_returns_nonzero_for_a_failing_single_map(monkeypatch, capsys) -> None:
     monkeypatch.setattr(hg.driver, "generate", lambda spec, out_base=None, render=True: hg.Report(plan=a_plan(), failures=["boom"]))
     assert hg.main(["--name", "X"]) == 1
