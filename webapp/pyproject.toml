@@ -45,6 +45,16 @@ quote-style = "single"  # match chargen convention per its CLAUDE.md
 python_version = "3.14"
 strict = true
 
+# `l7r` is a PEP 420 namespace portion (feature 119) - it has no `__init__.py`, deliberately, so
+# that the diagram engine's `l7r/diagram/` portion can share the same parent package. Without the
+# two settings below, `mypy .` walks up from `l7r/auth_routes.py`, finds no `__init__.py` to stop
+# at, and reports "Source file found twice under different module names: auth_routes and
+# l7r.auth_routes". `explicit_package_bases` + an explicit `mypy_path` root tell mypy where module
+# paths begin, so each file gets exactly one module identity. Do NOT "fix" this by adding
+# `l7r/__init__.py` - that silently hides the diagram portion (tests/test_namespace_portion.py).
+explicit_package_bases = true
+mypy_path = "."
+
 # Strict mypy on production modules. Legacy chargen modules get the one-time
 # grace period per Principle X — they're ignored (not excluded; ignored means
 # their types don't have to be right, but imports against them are tolerated

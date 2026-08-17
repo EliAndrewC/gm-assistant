@@ -44,4 +44,4 @@ ENV L7R_DREAM_POOL_DIR=/app/skills/dream/pool
 
 EXPOSE 8080
 
-CMD ["cherryd", "--import", "l7r"]
+CMD ["cherryd", "--import", "l7r.app"]

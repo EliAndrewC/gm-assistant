@@ -11,6 +11,15 @@ Routes:
 - GET /dreams/<slug>   single worked dream-omen example
 - /chargen/*           mounted chargen Root (legacy)
 - /static/*            static assets
+
+Importing THIS module wires the CherryPy tree - `cherryd --import l7r.app` is how the app starts,
+and anything that wants the tree mounted (conftest, the character tests, the opcache refresh)
+imports `l7r.app` rather than `l7r`.
+
+`l7r` itself is a PEP 420 namespace portion with no code in it, shared with the diagram engine's
+`l7r.diagram.*` under `.claude/skills/diagram/l7r/` (feature 119). It must never gain an
+`__init__.py`: that would make it a regular package, terminate the import search, and silently
+hide the other portion. `tests/test_namespace_portion.py` guards this.
 """
 
 from __future__ import annotations
@@ -552,7 +561,7 @@ def _apply_server_config() -> None:
 def mount_application() -> None:
     """Wire the L7R toolkit and chargen into the CherryPy tree.
 
-    Called when `cherryd --import l7r` boots the process.
+    Called when `cherryd --import l7r.app` boots the process.
 
     Chargen's website module self-mounts at '/' on import (legacy behavior). We
     import it first, swap its Jinja env for the shared one, re-mount it at

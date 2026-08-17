@@ -51,8 +51,31 @@ Success: no issues found in 2 source files
 Adding `explicit_package_bases = true` + `mypy_path = "."` also succeeds, so it is available if the
 real tree surfaces a duplicate-module error, but it is **not** required up front.
 
-**Decision**: repath `[tool.mypy] files` to the `l7r/diagram/...` paths and change nothing else.
-Add `explicit_package_bases` only if the real run demands it, and record it if so.
+**Decision**: repath `[tool.mypy] files` to the `l7r/diagram/...` paths, and add
+`explicit_package_bases` where the real tree demands it.
+
+**The real tree DID demand it, and the probe did not predict it - recorded rather than smoothed
+over.** The scratch tree passed because `files = ["l7r"]` names the package explicitly. The webapp
+runs `mypy .` (the whole directory), which walks up from `l7r/auth_routes.py`, finds no
+`__init__.py` to stop at, and reports:
+
+```
+l7r/auth_routes.py: error: Source file found twice under different module names:
+                    "auth_routes" and "l7r.auth_routes"
+```
+
+This is precisely the duplicate-identity failure this research flagged as the residual risk, and it
+appeared on landing 1 rather than landing 2. The fix is mypy's own documented resolution (b):
+`explicit_package_bases = true` plus `mypy_path = "."` in `webapp/pyproject.toml`, which tells mypy
+where module paths begin so each file has exactly one identity. Verified: `Success: no issues found
+in 59 source files`.
+
+**Lesson for landing 2**: whether the diagram tree needs the same pair depends on whether its mypy
+invocation names packages (`files = [...]`, which it does) or walks a directory. Expect it to be
+fine, verify rather than assume, and if it errors the fix is already known.
+
+The `[tool.mypy]` block carries a comment saying all this, including "do NOT fix this by adding
+`l7r/__init__.py`" - the wrong fix is the obvious one and it silently hides the other portion.
 
 **The risk this leaves**: mypy's classic namespace failure is one file reachable under two module
 identities (`settlement.core` and `l7r.diagram.settlement.core`). That can only happen if the old
