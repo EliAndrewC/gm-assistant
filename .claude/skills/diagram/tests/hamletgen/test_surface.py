@@ -61,8 +61,11 @@ def _public_clashes(modules: list[types.ModuleType]) -> list[tuple[str, str, str
     return clashes
 
 
-# The 43 public names consumed as hamletgen.<name> / hg.<name>, plus the two imported
-# directly by the pool gens (HamletSpec, generate). Census 2026-08-16, contracts/package-surface.md.
+# The 48 public names reached as hamletgen.<name> / hg.<name>, including the two the pool gens
+# import directly (HamletSpec, generate). Census 2026-08-16, contracts/package-surface.md;
+# `drain_heading` joined 2026-08-17 when its 40 px span rule gained a unit test (sink.py).
+# The count is the LIST's length - it was carrying a stale figure from an earlier census, which is
+# harmless only because `test_census_matches_pin` reads the list and never the comment.
 CONSUMED_PUBLIC = [
     "FIELD_ARCHETYPES",
     "GROSS_ACRES_PER_HOUSEHOLD",
@@ -87,6 +90,7 @@ CONSUMED_PUBLIC = [
     "crosses_poly",
     "crossing_lands_on_crop",
     "default_jobs",
+    "drain_heading",
     "edge_run",
     "generate",
     "head_sluice",
