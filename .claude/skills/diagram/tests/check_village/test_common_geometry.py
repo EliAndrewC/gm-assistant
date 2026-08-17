@@ -74,3 +74,34 @@ def test_edge_gap_handles_a_wellhead_which_is_drawn_as_a_disc_not_a_rect():
     assert check_village.edge_gap(hall, well(500, 600)) == pytest.approx(600 - 500 - 20 - 12)
     assert check_village.edge_gap(well(500, 500), well(500, 560)) == pytest.approx(60 - 12 - 12)
     assert check_village.edge_gap(well(500, 500), hall) == 0.0  # inside the hall's footprint
+
+
+def _sq(x0, y0, x1, y1):
+    return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+
+
+def test_clip_to_convex_measures_the_overlap_of_two_rings():
+    assert check_village.poly_area(check_village.clip_to_convex(_sq(0, 0, 100, 100), _sq(60, 0, 200, 100))) == pytest.approx(4000)
+
+
+def test_clip_to_convex_orients_the_clip_itself():
+    """The caller passes whatever ring it has, so a CW clip must give the same answer as a CCW one -
+    the function computes the clip's signed area and flips it rather than trusting an orientation."""
+    ccw, cw = _sq(60, 0, 200, 100), _sq(60, 0, 200, 100)[::-1]
+    assert check_village.poly_area(check_village.clip_to_convex(_sq(0, 0, 100, 100), cw)) == pytest.approx(check_village.poly_area(check_village.clip_to_convex(_sq(0, 0, 100, 100), ccw)))
+
+
+def test_clip_to_convex_returns_nothing_for_rings_that_do_not_meet():
+    assert check_village.clip_to_convex(_sq(0, 0, 100, 100), _sq(300, 300, 400, 400)) == []
+
+
+def test_clip_to_convex_returns_nothing_for_a_degenerate_clip():
+    assert check_village.clip_to_convex(_sq(0, 0, 100, 100), [(10.0, 10.0), (20.0, 20.0)]) == []
+
+
+def test_clip_to_convex_takes_a_concave_subject():
+    """An L-shaped plot clipped by a box that takes the whole notch: the result may carry degenerate
+    edges along the clip boundary, and they contribute nothing to the area."""
+    ell = [(0.0, 0.0), (100.0, 0.0), (100.0, 40.0), (40.0, 40.0), (40.0, 100.0), (0.0, 100.0)]
+    assert check_village.poly_area(check_village.clip_to_convex(ell, _sq(-10, -10, 110, 110))) == pytest.approx(check_village.poly_area(ell))
+    assert check_village.poly_area(check_village.clip_to_convex(ell, _sq(50, 50, 110, 110))) == pytest.approx(0)
