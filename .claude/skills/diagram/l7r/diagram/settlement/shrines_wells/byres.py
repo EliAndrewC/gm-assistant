@@ -48,9 +48,24 @@ class DraftByresMixin:
         ranked = sorted(houses, key=lambda h: (-h.get("wealth", 1.0), h["x"], h["y"]))  # buffalo owners = the wealthier
         target = max(1, round(len(houses) * fraction))
         out: list[Pt] = []
-        for h in ranked:
-            if len(out) >= target:
-                break
+        # SPREAD THE BYRES ACROSS THE SETTLEMENT, do not drain toward one end (settlement-review on
+        # Kashikawa and Sawada, 2026-08-17). Walking the wealth ranking in order and taking the first
+        # clear gap sends every byre to whichever flank still has open verge: measured along each
+        # cluster's own principal axis, all four byres occupied the SW 143 ft of a 993 ft settlement
+        # on Kashikawa (14%), 160 of 810 ft on Sawada (20%), and every map put them in one half.
+        # These are SHARED sheds - the whole point is that a household too poor for its own team
+        # borrows or hires one (`settlements/homesteads.md`) - so a byre quarter at one end defeats
+        # the sharing the feature exists to depict, leaving most households several hundred feet from
+        # the nearest.
+        #
+        # The fix is the MINIMAX idiom the well siting already uses: after the first, take the
+        # wealthiest candidate that stands FURTHEST from every byre already placed. Deterministic (no
+        # RNG - the key is a distance, then wealth, then position), and it only changes WHICH owners
+        # get one, never how many or how the spiral seats them.
+        _pool = list(ranked)
+        while len(out) < target and _pool:
+            h = max(_pool, key=lambda q: (min(math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out), q.get("wealth", 1.0), -q["x"], -q["y"])) if out else _pool[0]
+            _pool.remove(h)
             rr = math.hypot(h["w"], h["h"]) / 2 + bh
             done = False
             while rr < math.hypot(h["w"], h["h"]) / 2 + bh + 70 and not done:
