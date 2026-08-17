@@ -223,7 +223,21 @@ class BridgesMixin:
             total = sum(seg)
             if total < min_len:
                 continue  # a short stub (e.g. the head-race) is stepped over, no plank
-            n = max(1, round(total / spacing))
+            w = d.get("w", 4.2)
+            w_tail = float(d.get("w_tail", w))
+            if not worth_planking(w, w_tail, self.ftpx):
+                continue  # narrow enough to stride across ANYWHERE - see `worth_planking`; the gate agrees
+            # HOW MANY planks, measured over the run that can actually TAKE one. `n` used to come
+            # from the ditch's whole LENGTH, which on a tapering ditch asks for crossings along a
+            # stretch too narrow to deserve any: on Inashiro one main qualified only at its head,
+            # drew n=2, and its second slot fell through the wide-first sort onto 2.42 ft of water -
+            # narrower than decks this very rule had just removed, and bunched 120 ft from its
+            # neighbour (settlement-review 2026-08-17, which traced it to the slot count rather than
+            # to the gate/placer standoff I had assumed). Measuring the QUALIFYING run collapses n to
+            # 1 there. `long_ditches_have_a_footbridge` is unaffected - it demands one plank per long
+            # ditch, never one per spacing interval - so this cannot re-open the placer/check split.
+            _lw = [taper_w(w, w_tail, k2 / 40.0) for k2 in range(41)]
+            n = max(1, round(total * sum(1 for v in _lw if worth_planking(v, v, self.ftpx)) / len(_lw) / spacing))
             # SIDE-AWARE crossings (research 2026-07-22): on a polder the ring-canal `seg` tag caps crossings
             # per side - they cluster on the SETTLEMENT (east) toe, sparse on the interior laterals, NONE on
             # the unsettled feeder / far toe / drain (people cross to the fields where they live, then walk the
@@ -233,10 +247,6 @@ class BridgesMixin:
                 if cap <= 0:
                     continue
                 n = min(n, cap)
-            w = d.get("w", 4.2)
-            w_tail = float(d.get("w_tail", w))
-            if not worth_planking(w, w_tail, self.ftpx):
-                continue  # narrow enough to stride across ANYWHERE - see `worth_planking`; the gate agrees
             span = w + PLANK_ABUTMENT  # deck = local ditch width + a short abutment each bank
             for k in range(n):
                 base = (k + 0.5) / n * total  # midway for n=1, evenly spaced otherwise
