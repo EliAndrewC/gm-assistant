@@ -274,7 +274,7 @@ wellhead's drawn extent bigger") can name the file to open from the index alone,
   | `overlap.py` | footprint corner rings, and the predicates that ask whether two regions meet or how far apart they are | 13 | 175 |
   | `indexes.py` | the prefilter family and the spatial indexes: `boxed_*`, `PointGrid`, `Indexed`, `indexed_grid` | 8 | 245 |
   | `seatmemo.py` | `SeatMemo` - the refusal memo, and the invariant it asserts rather than assumes | 1 | 105 |
-  | `labels.py` | caption typography: the standoff ladder, the two caption sizes, tilt/quad/AABB/seat | 15 | 145 |
+  | `labels.py` | caption typography: the standoff ladder, the two caption sizes, tilt/quad/AABB/seat | 12 | 145 |
   | `ways.py` | the travelled ways read off a manifest, the gate that bars one, and the plank/deck landing constants | 11 | 125 |
   | `walls.py` | every wall on the map, what closes a ward against one, and the arches that must stand clear of one | 9 | 170 |
   | `extents.py` | a recorded feature's DRAWN extent read back off the manifest: the wet paddy rings, the forest reveal band, the four stable-yard glyph quads | 8 | 120 |

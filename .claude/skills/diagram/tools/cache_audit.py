@@ -44,12 +44,28 @@ from pipeline import poolmaps
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # the skill root; this module lives in tools/
 # The LIVE pool is the scripted maps - the hand-authored maps froze on 2026-08-16 and are never
 # regenerated (poolmaps.py) - so the audit sweeps those: sawada is the biggest, inashiro the
-# cheapest. The mutation target moved when feature 025 made settlement.py the settlement/ package
-# (the file-shaped target crashed the audit, found by feature 026's mandatory run): _geom.py is
-# the package module the live hamlets execute MOST (49 of sawada's recorded dep functions), and
-# geometry literals genuinely move what gets drawn.
+# cheapest.
+#
+# THE MUTATION TARGET HAS MOVED TWICE, BOTH TIMES BECAUSE A FILE BECAME A DIRECTORY. Feature 025
+# made settlement.py the settlement/ package and the file-shaped target crashed the audit (found by
+# feature 026's mandatory run); feature 117 did the same to _geom.py, so the target is now one
+# SUBMODULE of settlement/_geom/. curves.py was chosen on measurement rather than on argument
+# (specs/117-geom-package/research.md R7): coverage over the two maps below, mapped onto the eleven
+# submodules and counting only the literals numeric_sites() would consider, gives curves 35
+# candidates - the most in the package - of which 9 sit on lines these gens execute, and every one
+# of them moves drawn geometry directly (the fillet cut-back and its 35% cap, the bend step count,
+# the organic densify pitch, the jitter amplitudes). Fillets are on every hamlet's channels and
+# organic outlines on every hamlet's fields.
+#
+# Two better-looking candidates were rejected for the same reason, and it is the reason worth
+# remembering: a mutation that changes no byte tests NOTHING about the cache. labels/ has the
+# highest executed share (12 of 19) but its literals are the fold constants of label_tilt and
+# linear_tilt, and almost every pool caption is level, where a perturbed fold constant rounds
+# straight back to 0.0. indexes/ fails harder: its literals are prefilter pads and the grid cell
+# size, and the defining property of the prefilter family is that widening it cannot change a
+# verdict. Hence the `moved N` figure printed per trial below - see main().
 SUBSET = ("sawada", "inashiro")
-TARGET = os.path.join("settlement", "_geom.py")
+TARGET = os.path.join("settlement", "_geom", "curves.py")
 
 
 def gens(all_maps: bool) -> list[str]:
@@ -119,6 +135,14 @@ def main(argv: list[str]) -> int:
     try:
         print("\nestablishing a clean baseline...")
         sweep(paths, use_cache=True)
+        # The UNMUTATED artifacts, so each trial can report whether its mutation actually moved
+        # anything. Without this a trial that changed no byte - a literal on a line these maps never
+        # execute, or one that rounds away - prints exactly the same `[OK ]` as a trial that really
+        # exercised the key, and a whole run can pass having proven nothing. Same shape as the
+        # skill's "a check that never RUNS looks exactly like a check that passes", here in the very
+        # tool that exists to keep the cache honest.
+        clean = snapshot(paths, "/tmp/audit-clean")
+        moved_any = 0
         while done < args.trials and sites:
             site = sites.pop(rng.randrange(len(sites)))
             target.write_text(mutate(original, site))
@@ -138,9 +162,11 @@ def main(argv: list[str]) -> int:
                 target.write_text(original)
                 continue
             differing = sorted(k for k in with_cache if with_cache[k] != without.get(k))
+            moved = sorted(k for k in with_cache if with_cache[k] != clean.get(k))
+            moved_any += bool(moved)
             done += 1
             verdict = "OK " if not differing else "STALE"
-            print(f"  [{verdict}] line {site[0]}: {site[3]} -> perturbed | {len(with_cache)} artifacts | {time.time() - started:.0f}s")
+            print(f"  [{verdict}] line {site[0]}: {site[3]} -> perturbed | moved {len(moved)} of {len(with_cache)} artifacts | {time.time() - started:.0f}s")
             if differing:
                 failures.append((site, differing))
                 print(f"          CACHE SERVED STALE ARTIFACTS: {differing}")
@@ -150,10 +176,15 @@ def main(argv: list[str]) -> int:
         sweep(paths, use_cache=False)
         shutil.rmtree("/tmp/audit-a", ignore_errors=True)
         shutil.rmtree("/tmp/audit-b", ignore_errors=True)
+        shutil.rmtree("/tmp/audit-clean", ignore_errors=True)
         dirty = subprocess.run(["git", "status", "--short", "pool"], capture_output=True, text=True, cwd=HERE).stdout
         print(f"\nrestored {TARGET}; pool dirty after restore: {dirty.strip() or 'NONE'}")
 
     print(f"\n{done} mutation(s) audited, {skipped} skipped, {len(failures)} FAILED")
+    if done and not moved_any:
+        print("WARNING: no trial moved a single artifact, so this run proved nothing about the cache.")
+        print(f"         Every mutation landed on a literal {' / '.join(SUBSET)} never execute, or one that rounds away.")
+        print(f"         Re-run with more --trials, or pick a TARGET these maps exercise (see the comment above TARGET).")
     if failures:
         print("A failure means a cached sweep and a fresh sweep disagreed - the cache is serving stale maps.")
     return 1 if failures else 0
