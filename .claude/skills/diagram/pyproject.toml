@@ -60,7 +60,7 @@ strict = true
 # that silently hides the webapp's portion (tests/test_namespace_portion.py).
 explicit_package_bases = true
 mypy_path = "."
-files = ["l7r/diagram/settlement", "l7r/diagram/check_village", "l7r/diagram/waterfields", "l7r/diagram/hamletgen", "l7r/diagram/compound.py", "l7r/diagram/citybudget.py", "l7r/diagram/tools/pack_audit.py", "l7r/diagram/tools/why_placed.py", "l7r/diagram/tools/scatter_audit.py", "l7r/diagram/tools/timings.py", "l7r/diagram/pipeline/pool_index.py", "l7r/diagram/pipeline/poolmaps.py"]
+files = ["l7r/diagram/settlement", "l7r/diagram/check_village", "l7r/diagram/waterfields", "l7r/diagram/hamletgen", "l7r/diagram/sitegen", "l7r/diagram/compound.py", "l7r/diagram/citybudget.py", "l7r/diagram/tools/pack_audit.py", "l7r/diagram/tools/why_placed.py", "l7r/diagram/tools/scatter_audit.py", "l7r/diagram/tools/timings.py", "l7r/diagram/pipeline/pool_index.py", "l7r/diagram/pipeline/poolmaps.py"]
 
 # RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
 # settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is
@@ -81,7 +81,7 @@ addopts = "--cov --cov-report=term"
 # not under the 100% rule (the by-hand audits and drivers - cache_audit, cohort_audit, crop_map,
 # timings, make_regressions, gencache, regen). Naming the measured modules one by one keeps that
 # boundary explicit instead of making a new tool silently owe 100% coverage the day it lands.
-source = ["l7r.diagram.check_village", "l7r.diagram.settlement", "l7r.diagram.hamletgen", "l7r.diagram.compound", "l7r.diagram.citybudget", "l7r.diagram.tools.pack_audit", "l7r.diagram.tools.site_justice", "l7r.diagram.tools.scatter_audit", "l7r.diagram.pipeline.render_cache", "l7r.diagram.pipeline.pool_index", "l7r.diagram.pipeline.poolmaps"]
+source = ["l7r.diagram.check_village", "l7r.diagram.settlement", "l7r.diagram.hamletgen", "l7r.diagram.sitegen", "l7r.diagram.compound", "l7r.diagram.citybudget", "l7r.diagram.tools.pack_audit", "l7r.diagram.tools.site_justice", "l7r.diagram.tools.scatter_audit", "l7r.diagram.pipeline.render_cache", "l7r.diagram.pipeline.pool_index", "l7r.diagram.pipeline.poolmaps"]
 omit = ["*/tests/*", "pool/*/*.gen.py"]
 
 # COVERAGE ENFORCEMENT LIVES IN THE MAKEFILE since the 2026-08-16 legacy freeze, not here. The

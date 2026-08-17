@@ -200,24 +200,80 @@ wells, the board's clump keep-out, the lane-crossing guards).
   profile (40/100 px, still 2.9x/1.4x above the gate's own 14/69 floors) that runs only when
   the generous 80/180 profile seats nothing.
 
-## Cohort seed 2: pre-existing drainage-routing failures (found 2026-08-16, fan-toe pond session)
+## DONE 2026-08-17: cohort seed 2's four drainage failures - ONE defect, and the ledger's sketch was right
 
-`python3 -m l7r.diagram.hamletgen --batch 1 --seed 2` fails FOUR checks - `drainage_discharges_downhill`,
-`drainage_junction_smooth`, `features_do_not_overlap`, `watercourses_flow_downstream` - and fails
-them IDENTICALLY on unmodified HEAD with the pond fix stashed, so it is a pre-existing engine
-issue, not fallout. Spec: 13 households, fall=135 (SE), wind=NW, `water_sink="offmap"`, round
-cluster, T lanes. No pool map hits it; it only surfaces in the cohort, which is exactly what the
-cohort is for.
+Filed 2026-08-16 (fan-toe pond session) as four failures on `--batch 1 --seed 2` -
+`drainage_discharges_downhill`, `drainage_junction_smooth`, `features_do_not_overlap`,
+`watercourses_flow_downstream` - with the guess that they were "ONE routing defect, not four". They
+were, and the landing site named in the sketch (`hamletgen/sink.py::stage_sink`'s offmap bearing
+search) was the right one. Two things the sketch did not predict:
 
-Sketch for the picking-up session (the open-decision rule - carry the sketch, not just the
-question): the failure cluster smells like ONE routing defect, not four - the offmap sink brook
-for this fan geometry likely lands on ground that makes its junction acute and its run uphill,
-with the overlap a symptom of the same bad route. Landing site: `hamletgen/sink.py::stage_sink`
-offmap branch (the swing-major bearing/junction search and its `bad` scoring); reproduce with the
-seed-2 roll above, read which route was chosen and which candidate SHOULD have won, and check
-whether the least-bad fallback (`best`) was taken - the `# pragma: no cover` on that path says no
-cohort fan exercised it when it was written, and seed 2 may be the first. Hold it with a frozen
-cohort-2 manifest in `pool/regressions/` once diagnosed (fires: the four names above).
+**Seed 2 had stopped failing before anyone picked it up, and that proved nothing.** Commit 411b9d7
+(the comb net at TRUE SIZE) moved the fan geometry, and seed 2 went green at HEAD - the marginal-seed
+ROTATION this file warns about, arriving on the one seed a ledger entry was watching. The defect was
+untouched. It only reproduces at `a43c955` (the last commit before the true-size change), which is
+where it was diagnosed and where the fix was verified: **4 failures there, 0 with the two changes
+below, nothing else altered.** A ledgered seed that quietly goes green is NOT evidence the entry is
+closed - re-check at the commit the entry was filed against.
+
+**The root cause is a measurement mismatch, not a scoring gap.** The placer read the drain
+collector's heading off its FINAL VERTEX PAIR; `drainage_junction_smooth` reads the same corner over
+a 40 px chord (`_flow_dir(span=40.0)`). A comb's collector ends in a hook a couple of px long, so on
+seed 2 the two definitions of "the direction this ditch is running" disagreed by **76.1 deg**
+(last-pair 347.1, span 63.3). Consequences, both from that one number:
+
+- The route continuing straight along the collector scored a PERFECT junction (turn 0.0) by the
+  placer and a 76.1 deg kink by the gate - so the search elected it. It ran **1,100 px uphill**,
+  147.9 deg off the fall, back across the dry plots it had already passed. That is three of the four
+  failures; `features_do_not_overlap` was the symptom of the other two.
+- The genuinely smooth route (2.2 deg by the gate, descending 680 px, 5.7 deg off the fall) was the
+  very FIRST candidate tried, and was refused for a 73.9 deg turn it does not have.
+
+**The two changes** (`hamletgen/sink.py`), both "adjudicate against the gate, never a re-statement of
+it" in its cheap form:
+
+1. `drain_heading` measures over `GATE_FLOW_SPAN` (40 px), mirroring `_flow_dir`, so the placer
+   optimizes the number the gate computes. Held by
+   `test_the_drain_heading_is_read_over_the_gates_span_not_the_final_vertex_pair` (fails on the old
+   last-pair code: -63.4 deg against the span's -5.4).
+2. The `bad` score gained the two terms nothing else covered - net descent along the fall, and
+   divergence of the net upstream->downstream bearing from the map's flow, mirroring
+   `drainage_discharges_downhill` and `watercourses_flow_downstream`. **Downhill was never scored at
+   all**, and it is reachable precisely because candidate bearings are tried around the DRAIN'S OWN
+   HEADING as well as the fall: a collector runs cross-slope by design (`drain_runs_cross_slope`), so
+   "continue along the collector" can sit 90+ deg off the fall before any swing is added. Defense in
+   depth for the class, not just for this instance - (1) alone fixes seed 2.
+
+Measured on seed 2 at `a43c955`: 28 of 72 candidates satisfy all three gate predicates, so the search
+had plenty of legal routes and was simply scoring them against the wrong corner.
+
+**The least-bad fallback (`best`) was NOT taken** - the ledger's other hypothesis. Its
+`# pragma: no cover` is still accurate: seed 2 found a bad==0 candidate, it was just the wrong one.
+
+**Why this was worth doing BEFORE the village tier**, since that is what it was queued behind.
+`stage_sink` is tier-agnostic and a village drains a bigger, differently-shaped fan through the same
+offmap branch, so it meets this more often, not less. More to the point, the cohort baseline is the
+instrument every village-tier change will be judged with, and a baseline carrying an undiagnosed
+four-check failure cannot tell a regression from the weather.
+
+**Measured, baseline first, in a detached worktree at the same HEAD (Principle XIII):**
+
+| | `--batch 48` | `--batch 24` (pinned) | live pool maps |
+|---|---|---|---|
+| unmodified HEAD | 45/48, seeds 22, 24, 26 | 22/24 | - |
+| with the fix | 45/48, **same three seeds** | 22/24, `NO NEW REGRESSIONS` | kashikawa + sawada **byte-identical** |
+
+The only two LIVE maps that drain offmap are kashikawa and sawada, and both regenerate byte-for-byte
+unchanged - their collectors' final segments already agreed with the 40 px chord - so **no ink moved
+in the pool and no `settlement-review` is owed**. Within the cohort, 6 of the 28 offmap brooks (seeds
+19, 27, 37, 38, 39, 42) took a different route, with every one of the 48 verdicts unchanged.
+
+**Honest scope of the verification.** At current HEAD the defect fires on NO seed in 1-48 - every
+brook already descended (min +134.4 px) and stayed within 72.6 deg of the flow - which is the same
+rotation that took seed 2 green. So the cohort proves the fix costs nothing; what proves it WORKS is
+`a43c955`, the commit where the defect reproduces: 4 failures before, 0 after, no other change. The
+frozen fixture `pool/regressions/drainage_discharges_downhill_fires_on_cohort_seed_2s_uphill_brook.json`
+is that manifest, and it still fires all four names under the current battery.
 
 ## Fold settlement/city/civic.py into castle_civic.py (feature 113, 2026-08-16)
 
@@ -412,8 +468,11 @@ changed something".
 
 - **`road` -> `water_ways.py`.** It is a way, and `water_ways.py` is already the ways module (lanes,
   streets, alleys, kido). It sits in `structures/ground.py` today.
-- **`pasture` -> `land.py`.** It is a land surface, and `land.py` already holds the commons, marsh,
-  toe bands and hinterland. Same module today.
+- **`pasture` -> `land/cover.py`.** It is a land surface, and `cover.py` already holds the commons
+  and the hinterland layout (marsh and the toe band sit next door in `land/wet.py`). Same module
+  today. Destination updated by feature 120, which split `land.py` into a package; the move itself
+  was explicitly left out of that feature's scope, because a cross-package relocation does not
+  belong in a split whose whole safety argument is that nothing moves but text.
 - **`structures/captions.py` -> `castle_civic.py`, but this one is an OPEN QUESTION, not a pending
   move.** `castle_civic.py` holds `place_caption` (the draw-time seat ladder) while `captions.py`
   holds the probes underneath it - so folding them gives one caption subsystem, but three of the

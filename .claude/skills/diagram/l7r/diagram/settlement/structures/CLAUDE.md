@@ -56,7 +56,8 @@ that lives only in a spec file is a decision nobody will find.
 ### `road` and `pasture` are in a module of their own because neither belongs HERE
 
 `road` belongs with `water_ways.py`'s ways (lanes, streets, alleys, kido); `pasture` belongs with
-`land.py`'s land surfaces (commons, marsh, toe bands, hinterland). Both are in this package only
+`land/`'s land surfaces - specifically `land/cover.py`, which holds the commons and the hinterland
+layout, with marsh and the toe band next door in `land/wet.py`. Both are in this package only
 because feature 025's cut put them here.
 
 They were NOT moved to their proper homes by feature 114, and the reason is not timidity: moving a

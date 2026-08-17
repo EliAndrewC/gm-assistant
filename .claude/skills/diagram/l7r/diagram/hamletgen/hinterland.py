@@ -10,9 +10,9 @@ import random
 from collections.abc import Sequence
 
 from l7r.diagram.settlement import Settlement, point_in_poly, seg_dist
+from l7r.diagram.sitegen.geom import crop_polys
 
 from .consts import Poly, Pt
-from .geom import crop_polys
 from .plan import SitePlan
 
 # ---- STAGE 7: the ground between everything ------------------------------------------------------

@@ -158,14 +158,6 @@ def test_the_cli_returns_nonzero_for_a_failing_single_map(monkeypatch, capsys) -
     assert "boom" in capsys.readouterr().out
 
 
-def test_default_jobs_leaves_headroom_and_never_exceeds_the_cohort() -> None:
-    """The fan-out courtesy rule (2026-08-16), defined once in the driver and reused by
-    cohort_audit.py: never more workers than maps, never every cpu on the box."""
-    assert hg.default_jobs(1) == 1
-    assert hg.default_jobs(2) <= 2
-    assert hg.default_jobs(10_000) == max(1, (os.cpu_count() or 2) - 2)
-
-
 def test_cohort_derives_each_spec_and_can_be_forced_serial(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """`jobs=1` is the path an in-gate caller wants (a pytest worker that spawns its own pool
     competes with the other 21), and the spec derivation is the same on either path: consecutive

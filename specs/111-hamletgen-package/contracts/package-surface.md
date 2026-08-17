@@ -33,11 +33,11 @@ Consumers: `test_hamletgen.py`, `cohort_audit.py`.
 Object identity matters: consumers read these, so re-export must bind the same objects, never
 copies.
 
-### Public functions (34)
+### Public functions (36)
 
 `plan_site`, `canvas_for`, `offtakes_for`, `windward_for`, `net_acres`, `poly_area`, `centroid`,
 `unit`, `pull_clear`, `crosses_disc`, `crosses_poly`, `point_in_poly`, `head_sluice`,
-`net_bends_acutely`, `stage_water_frame`, `drain_outfall`, `edge_run`, `pond_clear_of_crop`,
+`net_bends_acutely`, `stage_water_frame`, `drain_outfall`, `drain_heading`, `edge_run`, `pond_clear_of_crop`,
 `pond_setback`, `below_drain`, `back_fouled`, `seat_cluster`, `push_out_of`, `route_around`,
 `clip_to_clear`, `connector_track`, `path_violations`, `crossing_lands_on_crop`,
 `shallow_crossing`, `well_target`, `place_wells`, `stage_notice`, `build`, `main`, `cohort`

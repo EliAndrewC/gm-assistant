@@ -8,10 +8,10 @@ from __future__ import annotations
 import math
 
 from l7r.diagram.settlement import Settlement, point_in_poly
+from l7r.diagram.sitegen.geom import crosses_poly, unit
 from l7r.diagram.waterfields import DRAIN_FT, chan_px
 
 from .consts import GRAIN, POND_SETBACK_LIMIT, REF_HOUSEHOLDS, Poly, Pt
-from .geom import crosses_poly, unit
 from .plan import SitePlan
 
 # ---- STAGE 3: where the runoff goes -------------------------------------------------------------
@@ -30,13 +30,39 @@ def drain_outfall(s: Settlement, name: str) -> Pt | None:
     return None  # pragma: no cover - build_comb always emits a drain collector for a comb fan
 
 
-def drain_heading(s: Settlement, name: str) -> Pt | None:
+# THE SPAN THE GATE MEASURES A JUNCTION OVER. `drainage_junction_smooth` does not read a watercourse's
+# final vertex pair; it calls `_flow_dir(poly, at_start=..., span=40.0)`, which walks back from the end
+# until it is at least 40 px away and takes the bearing over THAT chord. Mirrored here as a named
+# constant so the placer optimizes the number the gate will actually compute - if the gate's span ever
+# moves, this is the one line to move with it. (Diagnosed 2026-08-17; see `drain_heading` below.)
+GATE_FLOW_SPAN = 40.0
+
+
+def drain_heading(s: Settlement, name: str, span: float = GATE_FLOW_SPAN) -> Pt | None:
     """The direction the drain collector is running where it ends - so its continuation leaves it as
-    a smooth junction rather than a hard corner."""
+    a smooth junction rather than a hard corner.
+
+    MEASURED OVER THE GATE'S 40 px SPAN, NOT OVER THE FINAL VERTEX PAIR, and that distinction is the
+    whole defect this function used to carry. A comb's collector ends in a short hook - its last
+    segment can be a couple of px long and point anywhere - so "the direction it is running where it
+    ends" read off `poly[-2] -> poly[-1]` is noise, while `drainage_junction_smooth` reads the same
+    corner over 40 px and gets the collector's real bearing. On cohort seed 2 the two disagreed by
+    76.1 deg (last-pair 347.1, span 63.3): the placer therefore believed that continuing straight
+    along the collector was a PERFECT junction (turn 0.0) when the gate scored that same route a
+    76.1 deg kink, and it believed the genuinely smooth route (2.2 deg by the gate) was a 73.9 deg
+    corner and refused it. One corner, two verdicts, split by the definition - the same "placement
+    and its check must read the SAME manifest source" rule `drain_outfall` above obeys, one level
+    down."""
     for ditch in s.M.get("field_ditches", []):
         if ditch.get("role") == "drain" and ditch.get("field") == name and len(ditch["poly"]) >= 2:
-            a, b = ditch["poly"][-2], ditch["poly"][-1]
-            return unit(float(b[0]) - float(a[0]), float(b[1]) - float(a[1]))
+            pts = ditch["poly"]
+            end = pts[-1]
+            ref = end
+            for q in pts[-2::-1]:  # walk back up the collector until the chord is long enough to mean something
+                ref = q
+                if math.hypot(float(q[0]) - float(end[0]), float(q[1]) - float(end[1])) >= span:
+                    break
+            return unit(float(end[0]) - float(ref[0]), float(end[1]) - float(ref[1]))
     return None  # pragma: no cover - drain_outfall found the same record a line earlier
 
 
@@ -178,6 +204,36 @@ def stage_sink(s: Settlement, plan: SitePlan) -> None:
             bad = int(point_in_poly(mid[0], mid[1], plan.envelope)) + int(crosses_poly(mid, end, plan.envelope))
             bad += int(not anchored and crosses_poly(out, mid, plan.envelope))
             bad += int(turn > 55.0)
+            # AND THE WATER MUST RUN DOWNHILL - scored, because nothing else here scores it.
+            #
+            # Every other term is about where the brook GOES; none of them is about whether it goes
+            # DOWN, and the search happily returns a route that climbs. Cohort seed 2 drew one 1,100
+            # px uphill and 147.9 deg off the fall, failing `drainage_discharges_downhill` and
+            # `watercourses_flow_downstream` (and `features_do_not_overlap`, because a brook running
+            # back up the valley re-crosses the dry plots it already passed). The bearing list is why
+            # the hole is reachable at all: candidates are tried around the DRAIN'S OWN HEADING as
+            # well as around the fall, and a collector runs CROSS-SLOPE by design
+            # (`drain_runs_cross_slope`), so "continue along the collector" is a bearing that can sit
+            # 90+ deg off the fall before any swing is added. Downhill is not an emergent property of
+            # a smooth junction; it has to be asked for.
+            #
+            # Scored on the gate's own two predicates so the placer cannot pass its own test and fail
+            # the real one: net descent along the fall (`drainage_discharges_downhill` fails below
+            # -8 px; the placer wants a real descent, not a tolerated one) and divergence of the
+            # net upstream->downstream bearing from the map's flow (`watercourses_flow_downstream`
+            # fails at 90 deg). Both are measured out->end, exactly the span those checks read.
+            #
+            # AND THEY ARE MEASURED AGAINST TWO DIFFERENT BEARINGS, which is not a slip. The land's
+            # fall (`down_deg`) and the drainage bearing (`water_flow`) are separate declarations -
+            # `plan.water_flow` merely DEFAULTS to `down_deg` - and the two checks read one each:
+            # `drainage_discharges_downhill` projects on the fall, `watercourses_flow_downstream`
+            # compares to `meta.water_flow`. Scoring both against the fall would silently mis-judge
+            # every map that declares its own flow (they may sit up to 90 deg apart before
+            # `water_flow_consistent_with_slope` objects).
+            descent = (end[0] - out[0]) * dx + (end[1] - out[1]) * dy
+            bear = math.degrees(math.atan2(end[1] - out[1], end[0] - out[0]))
+            div = abs((bear - plan.water_flow + 180.0) % 360.0 - 180.0)
+            bad += int(descent <= 0.0) + int(div >= 90.0)
             if bad == 0:
                 s.stream([out, mid, end], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)  # s.stream reserves its own corridor
                 plan.sink_brook = [out, mid, end]
