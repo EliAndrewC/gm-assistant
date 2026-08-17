@@ -30,6 +30,12 @@ def stage_hinterland(s: Settlement, plan: SitePlan) -> None:
 
 CROP_MARGIN = 48.0  # the one crop margin, shared by stage_frame's crop_to_content call and the
 # predicted-kept-window math in open_ground_patches - two hardcoded 48s would drift
+WINDBREAK_INSET = 14.0  # how far inside the predicted frame the windbreak's polygon is held, so the
+# CROWNS stay in too: village_grove scatters its clumps up to about a crown radius past the outline
+# it is given, so a vertex sitting exactly on the frame still spills leaves over the edge. Verified
+# empirically rather than derived - the check is "zero clumps recorded outside meta.view", measured
+# across the four scripted hamlets after the clamp landed. See stage_windbreak for why the belt is
+# clamped at all when every other soft cover is allowed to clip.
 
 
 def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float = 250.0) -> list[Poly]:
@@ -299,14 +305,44 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
     # polder, 3 of 4 falls). Pushing the belt's vertices out of that rectangle costs the band a
     # local dent where a hamlet's own name goes, which is cheaper than the alternative of moving a
     # windbreak that is correct on every other count.
+    # ...AND CLAMPED TO THE FRAME THE CROP WILL SET (settlement-review, Mizuguchi 2026-08-17). Soft
+    # cover clips at the map edge on purpose - the commons and the marsh trail off as "more wild
+    # ground this way" - but a settlement's own PLANTED windbreak is not wild ground: it is a belt of
+    # finite depth that the hamlet made, and a belt sliced by the page edge along its whole length
+    # reads as woodland running off-map instead. On Mizuguchi the re-pack pulled the crop's bottom up
+    # 37 px while the belt's canopy still reached 62 px below it, so 58 of 217 clumps touched the
+    # edge and 23 were drawn WHOLLY outside the viewBox - ink emitted where nothing can ever see it,
+    # which is a record-vs-drawing mismatch as much as a composition one.
+    #
+    # The clamp can be exact rather than a guess, because every HARD feature that sets the crop is
+    # already placed by the time this stage runs: ask `_crop_boxes` - the very source
+    # `crop_to_content` reads - and hold the belt inside that box. Same-source doctrine, and the same
+    # move the title-pocket dent above already makes: push the vertices, keep the belt. (Only
+    # `stage_crossings` follows, and a footbridge sits on water well inside the frame, so it cannot
+    # pull the box back out from under this.)
+    _boxes = s._crop_boxes(city=False)
+    _fx0 = min((b[0] for b in _boxes), default=0.0) - CROP_MARGIN
+    _fx1 = max((b[1] for b in _boxes), default=float(s.W)) + CROP_MARGIN
+    _fy0 = min((b[2] for b in _boxes), default=0.0) - CROP_MARGIN
+    _fy1 = max((b[3] for b in _boxes), default=float(s.H)) + CROP_MARGIN
     _tp = title_pocket(s, plan)
-    _belt = []
+    _dented = []
     for _bx, _by in plan.belt:
         if _tp[0] <= _bx <= _tp[2] and _tp[1] <= _by <= _tp[3]:
             _cands = ((_tp[0] - 6.0, _by), (_tp[2] + 6.0, _by), (_bx, _tp[1] - 6.0), (_bx, _tp[3] + 6.0))
             _bx, _by = min(_cands, key=lambda q: (q[0] - _bx) ** 2 + (q[1] - _by) ** 2)
-        _belt.append((_bx, _by))
-    s.village_grove(_belt, role="windbreak")
+        _dented.append((_bx, _by))
+    # WINDBREAK_INSET keeps the CROWNS inside too, not just the polygon: `village_grove` scatters
+    # clumps up to a crown radius past its outline, so a vertex exactly on the frame still spills
+    # leaves over the edge.
+    # THE BELT ITSELF IS NOT MOVED - the CLUMPS are held inside the frame instead, via
+    # `village_grove(within=...)`. Clamping the polygon was tried first and is wrong, recorded so it
+    # is not retried: the outline's bbox center is what `village_grove` records as the grove's `x`,`y`
+    # and what `village_windbreak_on_windward_side` judges, so pulling vertices inward walks that
+    # center toward the cluster - cohort seeds 19 and 28 crossed to the LEE side, and a guard on the
+    # polygon's centroid did not catch it because the centroid is not the point the check reads. The
+    # belt's position is its meaning; only its leaves needed containing.
+    s.village_grove(_dented, role="windbreak", within=(_fx0 + WINDBREAK_INSET, _fy0 + WINDBREAK_INSET, _fx1 - WINDBREAK_INSET, _fy1 - WINDBREAK_INSET))
     # The COPSE fills the leafy gaps AMONG the homes, over the house cloud. That is only reasonable
     # ground because `stage_homesteads` now bounds every seat to the cluster band: over a cloud with
     # a strewn farmstead in it, this became a scatter across 1,446 x 1,244 px - a wood over the whole

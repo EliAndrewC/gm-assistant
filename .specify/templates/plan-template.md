@@ -143,11 +143,12 @@ approval before /speckit-tasks may run.
   - **A MEASURED baseline, taken before any judging** - on unmodified code, in
     a detached worktree (`git worktree add --detach`), never a stash. Name the
     command and the number in the plan.
-  - **Zero NEW failures at merge.** Pre-existing failures stay ledgered and are
-    not this feature's to fix; anything that passed before and fails after is a
-    regression and BLOCKS the merge. Smallness, "only a cohort seed", having
-    documented it, net-positive arithmetic, and a "rotated" residue are
-    explicitly not excuses. Exits: fix, revert, or an explicit GM waiver.
+  - **Zero NEW failures at merge.** Pre-existing failures do not BLOCK this
+    feature's merge (though see Principle XIV - one you actually find is still
+    yours to fix); anything that passed before and fails after is a regression
+    and BLOCKS the merge. Smallness, "only a cohort seed", having documented it,
+    net-positive arithmetic, and a "rotated" residue are explicitly not
+    excuses. Exits: fix, revert, or an explicit GM waiver.
   - Where a re-roll destroys per-seed comparison, the pass RATE must not drop
     AND each newly-failing check must be individually diagnosed in the plan's
     closing notes.
