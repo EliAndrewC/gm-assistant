@@ -57,7 +57,7 @@ sub-number places you after the plain-numbered segment only if that segment sort
 key order - to run beside a PLACED segment (one with a `_PLACEMENTS` entry, e.g. 0595-0600),
 add your own `_PLACEMENTS` entry anchored on it rather than sub-numbering its label; and a
 hand-decided `needs` tighter than the derived one goes in `_NEEDS_OVERRIDES` with its why.
-Full doctrine: `.claude/skills/diagram/CLAUDE.md` "The gate is a REGISTRY".
+Full doctrine: `.claude/skills/diagram/dev/gate.md` "The gate is a REGISTRY".
 
 ## Monkeypatching a policy table
 
