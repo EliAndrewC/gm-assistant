@@ -247,7 +247,7 @@ class BridgesMixin:
                 if cap <= 0:
                     continue
                 n = min(n, cap)
-            span = w + PLANK_ABUTMENT  # deck = local ditch width + a short abutment each bank
+            span = w + PLANK_ABUTMENT  # provisional; re-sized at each seat from the LOCAL width below
             for k in range(n):
                 base = (k + 0.5) / n * total  # midway for n=1, evenly spaced otherwise
                 # SLIDE along the ditch to a spot that (a) misses every home and (b) lands on
@@ -282,7 +282,8 @@ class BridgesMixin:
                 # placer's other constraints (houses, hem crop, other decks, oblique confluences)
                 # ruled out every wide seat and it had no way to say "then take the best one".
                 for frac in sorted(_cands, key=lambda fr: (not _wide_enough(fr), abs(fr))):
-                    px, py, ang = _at_arc(pts, seg, max(0.0, min(total, base + frac * total)))
+                    _arc = max(0.0, min(total, base + frac * total))
+                    px, py, ang = _at_arc(pts, seg, _arc)
                     deck = ang + 90  # deck runs ACROSS the ditch (perpendicular)
                     quad = _deck_quad(px, py, span, plank_w, deck)
                     # WIDEN the deck to the widest water actually under it, then re-cut the quad:
@@ -290,7 +291,21 @@ class BridgesMixin:
                     # this deck", not "another course passes within a deck's length" - the looser
                     # form catches a ditch merely running parallel to a neighbor.
                     span_here = self._widen_for_confluence(quad, deck, pts, other_water, span, plank_w)
-                    if span_here > 3.0 * span:
+                    # THE OBLIQUENESS CEILING IS MEASURED AGAINST THE DITCH'S WIDEST SECTION, not
+                    # against `span`, which is built from the HEAD width. On a COLLECTOR the head is
+                    # the narrow end - a drain starts as a thread and earns its section at the
+                    # outfall (`waterfields`, "a collector STARTS as a thread") - so a head-based
+                    # ceiling is tiny and `_widen_for_confluence` clears it at every seat. Cohort
+                    # seed 5 is the case: a 996 px drain tapering 1.5 -> 5.5 px got NO plank because
+                    # all 40-odd seats read as "too oblique", while the gate rightly demanded one.
+                    # `max(w, w_tail)` is the same section `worth_planking` uses to decide the ditch
+                    # deserves a plank at all, so the two questions are now asked about one width.
+                    #
+                    # Re-sizing the DECK at each seat was tried first and is wrong: it widened decks
+                    # on the downstream half of every collector and cost `features_do_not_overlap`
+                    # (48-seed cohort 45 -> 44). The deck's size was never the defect; the ceiling's
+                    # basis was.
+                    if span_here > 3.0 * (max(w, w_tail) + PLANK_ABUTMENT):
                         continue  # too oblique to plank: widen where a longer deck is reasonable, but a
                         # crossing that needs three times the nominal span is a course running nearly
                         # ALONGSIDE this one, and the answer there is to cross somewhere else. (The fine

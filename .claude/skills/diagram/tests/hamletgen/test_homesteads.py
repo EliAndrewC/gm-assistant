@@ -19,7 +19,11 @@ def test_place_wells_never_clusters_two_wells_inside_the_spacing_floor():
     from types import SimpleNamespace
 
     houses = [{"x": 500, "y": 500}, {"x": 520, "y": 500}, {"x": 500, "y": 520}, {"x": 520, "y": 520}]
-    s = SimpleNamespace(well_at=lambda x, y: math.hypot(x - 510, y - 510) < 60.0, M={})  # M={}: no surface water, so every house is needy (the minimax filter reads s.M)
+    # M={}: no surface water, so every house is needy (the minimax filter reads s.M).
+    # `_crop_boxes` returning [] is deliberate, not a shrug: the later-well tie-break asks the crop
+    # for the box it will set (see `_outside_cloud`), and an empty answer is what exercises its
+    # house-centers FALLBACK - so this stub covers both the call and the default it degrades to.
+    s = SimpleNamespace(well_at=lambda x, y: math.hypot(x - 510, y - 510) < 60.0, M={}, _crop_boxes=lambda city=False: [])
     plan = SimpleNamespace(spec=SimpleNamespace(households=12), ftpx=1.0)
     assert hg.place_wells(s, plan, houses) == 1  # type: ignore[arg-type]
 

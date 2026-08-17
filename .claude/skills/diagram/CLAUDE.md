@@ -175,7 +175,18 @@ the doc is right - it is where the measurement lives.
 
 **Reviews** ([`dev/reviews.md`](dev/reviews.md)) - `settlement-review` is mandatory before a Mode B
 map ships. Say the SCOPE (`DELTA:` vs `FULL`), one map per agent in parallel, and launch it the
-moment the map's regen + gate is green, BEFORE your own visual pass.
+moment the map's regen + gate is green, BEFORE your own visual pass. **A finding OUTSIDE the delta
+is still yours to fix** (constitution Principle XIV) - a reviewer pointed at a delta reliably turns
+up unrelated defects, and that is it working.
+
+**Fix defects where you find them** (constitution Principle XIV, NON-NEGOTIABLE) - this engine is
+where the rule bites hardest, because its reviewers and diagnostics surface defects constantly and
+almost none of them belong to the feature in hand. Fix them in the work at hand; defer ONLY an
+architectural fix, and then with its measurement, mechanism and sketch. Do not cite Principle XIII's
+"pre-existing failures stay ledgered" - that governs what blocks a push, not what you owe a defect
+you have seen. And when a fix attempt FAILS, record it at the point of change: `homesteads.py`
+carries two dead ends for the front-row lane cap, either of which a later session would otherwise
+re-try.
 
 **Recording decisions** ([`dev/decisions.md`](dev/decisions.md)) - before you build on a property of
 the engine, check whether anyone DECIDED it; a side effect is not a rule. And an open decision

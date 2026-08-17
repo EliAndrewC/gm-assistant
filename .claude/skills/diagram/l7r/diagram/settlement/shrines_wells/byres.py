@@ -45,12 +45,30 @@ class DraftByresMixin:
         else:
             bw, bh = round(15.5 * bs, 1), round(10.5 * bs, 1)
         houses = [h for h in self.M.get("houses", []) if h.get("kind") == "plain"]
-        ranked = sorted(houses, key=lambda h: (-h.get("wealth", 1.0), h["x"], h["y"]))  # buffalo owners = the wealthier
+        # FARTHEST-FIRST AMONG THE WEALTHIEST TIER, not `x` ascending (settlement-review, Mizuguchi
+        # 2026-08-17). The old key was `(-wealth, x, y)`, and on a hamlet every house carries
+        # `wealth: 1.0` - so it degenerated to X ASCENDING and the byre hosts were literally the
+        # three lowest-x houses. On Mizuguchi that put all three shared sheds in a 208 ft span at one
+        # end of a 911 ft row: median nearest-byre 373 ft, max 771 ft, with nine households having
+        # none within 300. That contradicts this method's own docstring twice over - "~one per 4-5
+        # households" (three sheds serving the SAME three farmsteads serve three) and "so they read
+        # as scattered, not clumped" - and the gate cannot see it, because `fraction` and the
+        # pairwise `gap` are both satisfied by a tight clump.
+        #
+        # So pick each host to be FAR from the sheds already standing, which is the same objective
+        # `place_wells` was given for the same reason (a second well exists to serve the households
+        # the first does not). Wealth stays the first tier - buffalo owners really are the wealthier -
+        # and distance only breaks ties within it, so a mixed-wealth village is unaffected. The FIRST
+        # host has no placed shed to be far from, so it falls through to the old `x`, `y` order and
+        # the ladder stays deterministic.
         target = max(1, round(len(houses) * fraction))
         out: list[Pt] = []
-        for h in ranked:
-            if len(out) >= target:
-                break
+        remaining = list(houses)
+        while remaining and len(out) < target:
+            _top = max(q.get("wealth", 1.0) for q in remaining)
+            _tier = [q for q in remaining if q.get("wealth", 1.0) >= _top - 1e-9]
+            h = max(_tier, key=lambda q: (min((math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out), default=0.0), -q["x"], -q["y"]))
+            remaining.remove(h)
             rr = math.hypot(h["w"], h["h"]) / 2 + bh
             done = False
             while rr < math.hypot(h["w"], h["h"]) / 2 + bh + 70 and not done:

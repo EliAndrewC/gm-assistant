@@ -10,7 +10,7 @@ import random
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from l7r.diagram.settlement import Settlement, surface_water_dist
+from l7r.diagram.settlement import Settlement, seg_dist, surface_water_dist
 from l7r.diagram.sitegen.geom import centroid, unit
 
 from .consts import LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
@@ -51,6 +51,34 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
             nx, ny = -nx, -ny
         out.append((a[0] + nx * standoff, a[1] + ny * standoff))
     return out
+
+
+_FIELD_RING_FLOOR = 5
+"""How many front-row seats are taken before `_FRONT_ROW_LANE_CAP` starts applying. It is
+`field_ringed`'s own floor - five farmhouses within 165 px of the field outline - because that is a
+GATE check while lane frontage is a form rule with none, so the cap must never be the reason a map
+ships with four."""
+
+_FRONT_ROW_LANE_CAP = 150.0
+"""How far a FRONT-ROW seat may stand from a drawn lane before the row is offered it only as a
+fallback. `field_ringed`'s own band is 165 px; a seat inside 150 of a track and 165 of the field
+outline is both fronted and on its paddy, which is what the front row is for. See the ladder in
+`stage_homesteads` for the defect this cures and why it relaxes rather than filters."""
+
+
+def _lane_dist(s: Settlement, x: float, y: float) -> float:
+    """Distance from a point to the nearest drawn lane centerline (inf when the map draws none).
+
+    The CONNECTOR counts: it is the track the hamlet's traffic actually leaves by, and a farmstead
+    fronting it is fronting a way. Reads `M["lanes"]`, which is what the map draws and what the
+    frontage pass and `place_kosatsuba` both measure against - one source, per the same-source
+    doctrine."""
+    best = math.inf
+    for lane in s.M.get("lanes", []):
+        pts = lane.get("pts") or []
+        for i in range(len(pts) - 1):
+            best = min(best, seg_dist(x, y, pts[i], pts[i + 1]))
+    return best
 
 
 def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0) -> list[Pt]:
@@ -142,14 +170,50 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # stretches with their corridors, the field spur - so a row that stops at 92 px can land four
     # houses where five are wanted while perfectly good ground sits at 120. A farmhouse 150 px from
     # its paddy is still a farmhouse on its paddy.
+    # ...AND A FRONT-ROW SEAT MUST BE REACHABLE FROM A TRACK, not merely near the paddy
+    # (settlement-review, Inashiro 2026-08-17). The front row runs FIRST and follows the field
+    # OUTLINE, which on a long fan strings it hundreds of px past wherever the rolled lane skeleton
+    # happens to lie - so the row won every seat and the frontage pass below got only the leftovers.
+    # Measured on Inashiro: house-to-lane median 109 ft with five houses past 150 and a whole
+    # seven-farmstead lobe fronting nothing, plus a 252 ft lane spur with no house within 96 ft of
+    # it anywhere. That is the SAME defect the frontage pass's own comment below records curing
+    # ("a median house-to-lane distance of 94 ft ... with one lane dead-ending in open ground"),
+    # returned by a different route - and no gate check can see it, because `field_ringed` is
+    # satisfied by exactly the seats that cause it.
+    #
+    # A CAP ON THE ROW, NOT A LADDER ON IT - and the difference was MEASURED, because the ladder is
+    # the shape every other rung in this function uses and here it did nothing. Offering the whole
+    # standoff ladder twice, once capped and once admitting anything, left every median exactly where
+    # it started (109 / 59 / 65 / 118 ft): the capped pass cannot fill the row on a long fan, so the
+    # uncapped pass seated the very houses the cap had just refused. A cap only bites when there is no
+    # second chance at the same seats - and none is needed, because the passes BELOW this one (lane
+    # frontage, then the in-band cloud, then four widening rounds) are the real fallback and they seat
+    # in-band ground by construction. Measured with the cap alone: 106 / 59 / 65 / 77 ft, houses past
+    # 150 px down 4 -> 2 on Inashiro and 6 -> 4 on Sawada, every map gating clean with 11-15
+    # farmhouses inside `field_ringed`'s 165 px band against its floor of 5.
+    #
+    # TIGHTENING THE BAND INSTEAD WAS TRIED AND IS WRONG - recorded so it is not retried. Dropping the
+    # row's own `bound * 1.3` allowance to `bound` made Inashiro WORSE (109 -> 158 ft, houses past
+    # 150 px 4 -> 8) and Mizuguchi too (65 -> 93). A front row that cannot follow the field outline
+    # does not move inward; it loses its seats to the cloud, which sits further from the tracks still.
+    # The row's reach past the band was never the defect - its blindness to the tracks was.
+    # THE FIRST `_FIELD_RING_FLOOR` SEATS ARE EXEMPT FROM THE CAP, because the ring comes first.
+    # `field_ringed` wants five farmhouses within 165 px of the outline and it is a GATE check, while
+    # lane frontage is a form rule with no check at all - so the cap must never be the reason a map
+    # ships with four. Measured: capping every seat took cohort seeds 22 and 47 from passing to
+    # `field_ringed` 3-of-5 and 4-of-5. Exempting the first five costs almost nothing on the
+    # frontage side (the defect was a TAIL of seven houses strung down the margin, not the ring
+    # itself) and it makes the ring unconditional again.
+    _row_seats = 0
     for standoff in (46.0, 56.0, 66.0, 78.0, 92.0, 110.0, 130.0, 150.0):
         if placed >= plan.spec.households:
             break  # pragma: no cover - the ask-met guards. The row rarely fills a whole hamlet by itself on real ground, but eight standoffs x twelve seats CAN offer more than the households asked for, and a row that overshoots fails households_consistent
         for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
             if placed >= plan.spec.households:
                 break  # pragma: no cover - the ask-met guards. The row rarely fills a whole hamlet by itself on real ground, but eight standoffs x twelve seats CAN offer more than the households asked for, and a row that overshoots fails households_consistent
-            if math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
+            if (_row_seats < _FIELD_RING_FLOOR or _lane_dist(s, fx, fy) <= _FRONT_ROW_LANE_CAP) and math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
                 placed += 1
+                _row_seats += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
     # cluster seeded only by its shape leaves them running across empty middle: the review of the
     # first draft measured a median house-to-lane distance of 94 ft against Ikegami's 55, with one
@@ -343,8 +407,29 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                 # which is what the pad was added for; it simply can no longer outrank an interior
                 # seat that does. Same shape as every other rule in this function: relax rather than
                 # forbid, because a settlement with a badly-placed well beats one with no well.
-                def _outside_cloud(c: tuple[float, float, float]) -> int:
-                    return 0 if min(xs) <= c[1] <= max(xs) and min(ys) <= c[2] <= max(ys) else 1
+                # OUTSIDE WHAT, EXACTLY - the CROP's own box, not a box round the house CENTERS. The
+                # first version of this tie-break tested `min(xs)..max(xs)`, an AABB of house centers,
+                # and settlement-review (Inashiro 2026-08-17) named the flaw before it bit: an AABB
+                # cannot tell "in the settlement" from "in the box", so on a two-lobed cluster the
+                # ~345 px of grove and scrub BETWEEN the lobes scores as interior, exactly like a
+                # courtyard. Cohort seed 29 then did bite - a well 64 px north of every other feature,
+                # inside the centers' box and holding the whole frame open.
+                #
+                # `_crop_boxes` is what `crop_to_content` itself reads, so asking it is asking the
+                # question the check will ask: a seat inside the box the crop will set cannot hold the
+                # frame open, whatever its relation to the house centers. Same-source doctrine, and it
+                # picks up the houses' DRAWN extents plus their yards, gardens, sheds and byres rather
+                # than a point per house. (The box can only GROW later - the woodland and the pond are
+                # placed after - so this is conservative in the safe direction.)
+                _cb = s._crop_boxes(city=False)
+                _bx0 = min((b[0] for b in _cb), default=min(xs))
+                _bx1 = max((b[1] for b in _cb), default=max(xs))
+                _by0 = min((b[2] for b in _cb), default=min(ys))
+                _by1 = max((b[3] for b in _cb), default=max(ys))
+
+                # bound as defaults: the closure lives one loop iteration (B023), same as `on_crop` below
+                def _outside_cloud(c: tuple[float, float, float], bx0: float = _bx0, bx1: float = _bx1, by0: float = _by0, by1: float = _by1) -> int:
+                    return 0 if bx0 <= c[1] <= bx1 and by0 <= c[2] <= by1 else 1
 
                 pool.sort(key=lambda c: (_worst_after(c) // 66.0, _outside_cloud(c), c[0]))
             _, x, y = pool.pop(0)

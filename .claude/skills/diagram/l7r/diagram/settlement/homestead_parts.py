@@ -393,7 +393,7 @@ class HomesteadPartsMixin:
             self._record_crowns(drawn)
             random.setstate(st)
 
-    def village_grove(self: Settlement, poly: Any, role: str = "windbreak", dense: bool = True) -> int:  # type: ignore[misc]
+    def village_grove(self: Settlement, poly: Any, role: str = "windbreak", dense: bool = True, within: tuple[float, float, float, float] | None = None) -> int:  # type: ignore[misc]
         """A COMMUNAL village grove - the Chinese *fengshui* forest (风水林). Unlike the per-house *yashikirin*,
         a NUCLEATED village shelters behind ONE village-scale grove, in three roles (see settlements.md 'Village
         windbreak'):
@@ -468,6 +468,19 @@ class HomesteadPartsMixin:
                 jx = gx + (self._hjit(gx, gy, 21.0) - 0.5) * step  # jitter the grid so the stand + its edge read ragged
                 jy = gy + (self._hjit(gx, gy, 22.0) - 0.5) * step
                 if not point_in_poly(jx, jy, poly):
+                    continue
+                # ...AND INSIDE `within`, CROWN AND ALL, when the caller gives one. This is how a belt
+                # is kept out of the page margin WITHOUT moving the belt (settlement-review, Mizuguchi
+                # 2026-08-17: a tightened crop left 58 of 217 clumps touching the frame's bottom edge
+                # and 23 drawn WHOLLY outside the viewBox - ink nothing can ever see). Clamping the
+                # POLYGON was tried first and is wrong: it drags the outline inward, which moves the
+                # recorded bbox center this method writes, and that center is exactly what
+                # `village_windbreak_on_windward_side` judges - three cohort seeds crossed to the lee
+                # side. Skipping CLUMPS leaves `poly`, `x`, `y`, `w` and `h` untouched, so every belt
+                # check still sees the belt it was given and only the invisible leaves go.
+                # The inset is 0.9*clump, the same canopy reach the shrine/torii keep-outs above use,
+                # because a crown spills past its clump center by that much.
+                if within is not None and not (within[0] + clump * 0.9 <= jx <= within[2] - clump * 0.9 and within[1] + clump * 0.9 <= jy <= within[3] - clump * 0.9):
                     continue
                 if any((jx - ox) ** 2 + (jy - oy) ** 2 < rr * rr for ox, oy, rr in occ):
                     continue
