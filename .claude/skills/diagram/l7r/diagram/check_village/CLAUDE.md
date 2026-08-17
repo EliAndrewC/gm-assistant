@@ -52,7 +52,7 @@ Two invariants the split does NOT touch:
 | `segments_08a_ponds_marshes_and_drainage.py` | segs 0513-0523_018: ponds connected to their field, defense marshes, drainage discharge, bunds |
 | `segments_08b_flow_bands_and_the_burakumin_seam.py` | segs 0523_019-0543_010: flow direction and bands, abandoned ground, banks, the burakumin seam |
 | `segments_08c_town_trades_and_theater.py` | segs 0543_011-0543_057: town battery - farmers plurality, storefronts, inns, caravans, theater, monasteries |
-| `segments_08d_kosatsuba_and_paddy_basins.py` | segs 0544-0601: manor gates, kosatsuba, punishment spots, paddy plot seams and basins; hand-added 0595 (supply-bank bunds), 0600 (comb floor ends at the collector) |
+| `segments_08d_kosatsuba_and_paddy_basins.py` | segs 0544-0607: manor gates, kosatsuba, punishment spots, paddy plot seams and basins; hand-added 0595 (supply-bank bunds), 0600 (comb floor ends at the collector), 0606 (basins worth their bund - the paddy size floor), 0607 (comb fans record their design cell) |
 | `segments_09a_justice_grounds_and_land_fall.py` | segs 0555_000-0561: punishment spots, execution grounds (road/boundary/outcast-side rules), the land-fall and water-flow declarations |
 | `segments_09b_tanning_yards.py` | segs 0562_000-0562_042: tanning yards - water discharge, intakes, the outcast side, squareness to the water |
 | `segments_10a_city_castes_and_dojos.py` | segs 0563_000-0563_044: city caste counts and shifts, samurai housing, dojos, outside farmland |

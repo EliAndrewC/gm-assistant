@@ -678,3 +678,81 @@ def _seg_0601__flooded_plots_read_as_basins(*, M: Any = _UNBOUND, check: Any = _
             f"{len(_fb_bad)} FLOODED plot(s) taper to a needle apex (interior angle < 15 deg) at {_fb_bad[:4]} - a leveled flooded basin is bunded and near-rectangular, so a pointed blue sliver reads as a tiny pond hanging at the fan seam; the carve demotes pointed slivers to rice green (pointed_ring, 25 deg), so regenerate the map",
         )
     return _kept(locals(), ())
+
+
+def _seg_0606__paddy_basins_are_worth_their_bund(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 606 (paddy_basins_are_worth_their_bund) - hand-added 2026-08-17 past the legacy
+    range (see _seg_0595 for the numbering convention). No `_PLACEMENTS` entry: it reads only `M`,
+    `check` and `fields`, so the tail of the derived order is as good a seat as any."""
+    # A BASIN TOO SMALL TO BE WORTH ITS OWN BUND IS TAKEN INTO THE ONE BESIDE IT (GM question
+    # 2026-08-17, reading a hamlet sheet: "most of the rice paddy fields are rectangular, but then
+    # there are a few very small triangles ... should there be a minimum rice paddy size?"). The
+    # triangularity was the symptom - a clipped corner of the plot lattice where the carve meets the
+    # fan boundary - and the size is the cause, so the rule is written on size.
+    #
+    # THERE IS NO ABSOLUTE MINIMUM, AND THIS CHECK DOES NOT IMPOSE ONE. Shiroyone Senmaida works
+    # 1,004 basins averaging ~18-20 m2, the smallest about half a meter square; a floor in acres
+    # would condemn them. The floor is a RATIO to the fan's OWN design cell, and the two independent
+    # derivations of the number, the terrace-versus-valley reasoning behind treating them
+    # differently, and the declined absolute-acreage alternative all live on `_TOE_MIN_AREA` in
+    # `waterfields/banks.py` and in `research/fields.md`. Read those before retuning this.
+    #
+    # THE CELL COMES FROM THE RECORD, NOT FROM `meta.ftpx`. `build_comb` writes the design cell it
+    # actually carved to onto the field (`cell`), because `plot_texture` scales the target per map -
+    # a gate recomputing `paddy_grain(ftpx)` for itself would hold a `small_irregular` fan to a cell
+    # it never aimed at, which is the same-source doctrine failing in the quiet direction. A field
+    # with no `cell` is not a comb fan (terrace, ribbon, polder) or is a legacy manifest, and is
+    # skipped - the size floor is deliberately comb-only, because hill rice is exactly where the
+    # Senmaida micro-basins are real.
+    #
+    # 0.20 IS THE GATE'S LINE, AGAINST THE PLACER'S 0.25 (`_GATE_MIN_AREA` / `_TOE_MIN_AREA`), and
+    # it is deliberately NOT the 0.6-of-the-placer ratio the apex pair holds at 15/25. It cannot be:
+    # `_TOE_MIN_THICKNESS` already implies an area floor near 0.16 of the cell for a compact basin,
+    # so a gate at 0.15 is a check that can never fire - which is how it was caught, by generating a
+    # manifest with the size floor switched off and watching 0.15 pass on it. The band the placer
+    # newly refuses is [0.16, 0.25) and the gate sits in the middle of it. The literal is repeated
+    # here rather than imported for the reason `paddy_plots_are_workable_basins` repeats 15.0: the
+    # underscore constants are not on the waterfields re-export surface, and banks.py stays the one
+    # place the whole ladder is stated together.
+    #
+    # RAW RING AREA IS THE RIGHT MEASURE even though `plot_rings` is a paint-order stack. The
+    # question is what the aze encloses, which is the ring as drawn; the lap that makes the stack a
+    # non-partition runs 0.5-2.5% map-wide (`paddy_plot_rings_overcount_stays_marginal`) and cannot
+    # move a basin across a floor set at 15% of a cell.
+    if M["meta"].get("generated_by"):
+        _wb2_bad: list[tuple[int, int, int]] = []
+        _wb2_seen = 0
+        for _wb2_fld in fields:
+            _wb2_cell = _wb2_fld.get("cell")
+            if not _wb2_cell:
+                continue
+            _wb2_seen += 1
+            for _wb2_r in _wb2_fld.get("plot_rings") or []:
+                if len(_wb2_r) < 3:
+                    continue
+                _wb2_ring = [(float(_wb2_p[0]), float(_wb2_p[1])) for _wb2_p in _wb2_r]
+                _wb2_a = poly_area(_wb2_ring)
+                if _wb2_a < 0.20 * float(_wb2_cell):
+                    _wb2_bad.append(
+                        (round(sum(_wb2_q[0] for _wb2_q in _wb2_ring) / len(_wb2_ring)), round(sum(_wb2_q[1] for _wb2_q in _wb2_ring) / len(_wb2_ring)), round(100.0 * _wb2_a / float(_wb2_cell)))
+                    )
+        if _wb2_seen:
+            check(
+                "paddy_basins_are_worth_their_bund",
+                not _wb2_bad,
+                f"{len(_wb2_bad)} paddy basin(s) are a fragment of the fan's own design cell (under 20% of it) at {_wb2_bad[:4]} (x, y, percent of cell) - on a valley-floor fan the aze is the whole structure, built only to hold water and re-plastered every spring, so a scrap this far under the cell is not walled off on its own: the toe pass DROPS it and close_seams ABSORBS it into the basin it shares the most bund with (_TOE_MIN_AREA at 0.25, this gate at 0.20). This is not an absolute size floor - hill-rice terraces legitimately run far smaller and record no `cell` - so regenerate the map rather than raising the number",
+            )
+    return _kept(locals(), ())
+
+
+# THE COMPANION DECLARATION GUARD IS A TEST, NOT A CHECK - and the reason is worth recording,
+# because "a check that never RUNS looks exactly like a check that passes" argues the other way and
+# a gate check was written first. `paddy_basins_are_worth_their_bund` skips any field with no
+# `cell`, so dropping the record from `build_comb` would retire the size floor on every comb map at
+# once with the gate still green; that genuinely needs a guard. But a GATE check cannot be the
+# guard here: pool/regressions/ holds two dozen frozen hamlet manifests captured before `cell`
+# existed, and the corpus is replayed through the whole gate, so an in-gate rule fired on 23 of
+# them for a reason that has nothing to do with the defect each was frozen for. Freezing is a
+# one-way door - a fixture cannot be re-captured without losing the geometry it exists to pin - so
+# the guard moved to `test_every_scripted_comb_fan_records_its_design_cell` in tests/test_villages.py,
+# which reads the SHIPPED pool maps and is proven to fire by deleting the key from a loaded copy.

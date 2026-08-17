@@ -84,3 +84,67 @@ head-race) - a pipeline note, logged in `future-work.md`.
   Review log: DELTA pass; the reviewer caught the grave island (undisclosed in the brief) and
   verified pond containment, old-site healing and 0 scatter violations; the rim kisses its bund
   at 0.65 px (nitpick, physically fine - dug up to the bund).
+
+
+## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
+
+The GM, reading a hamlet sheet: *"most of the rice paddy fields are rectangular, but then there are
+a few very small triangles. Is that realistic? It looks like it is just a mistake, like, basically,
+a rendering artifact rather than something that is from our historical research. Relatedly, should
+there be a minimum rice paddy size?"*
+
+Three answers came out of the research pass, and only one of them is yes. There is **no absolute
+minimum** - Shiroyone Senmaida works 1,004 basins on ~4 ha, averaging ~18-20 m2, the smallest about
+half a meter square - so a floor in acres was declined. **Four-sides-only** was declined too: it
+would re-impose the *kochi seiri* consolidation grid the research already flags as the anachronism.
+What is real is a **ratio**: on a terrace the wall is a riser the slope demands anyway, but on a
+valley-floor fan the aze is the whole structure, built only to hold water and re-plastered every
+spring, and the alternative to a scrap is never no-rice - it is making the basin next door bigger.
+So a comb basin under **0.25 of the fan's own design cell** is dropped by the toe pass and absorbed
+by `close_seams`; the gate `paddy_basins_are_worth_their_bund` fires under 0.20. The triangularity
+was the symptom - a fragment clipped off the lattice at the fan boundary comes out triangular - and
+the size was the cause. Full findings, both declined alternatives, the two derivations of 0.25 and
+why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
+
+**On this map.** 519 -> 511 basins (-8, 1.54%); smallest surviving basin 405 sq ft, 0.273 of the
+cell. Acreage conserved to 6 sq ft in 715,849; 12 of 12 households; field outline unchanged.
+
+**What the review measured, which is the answer to the GM's real worry.** The fear with any size
+floor is that it tidies the mosaic into the consolidation grid. It did not: near-rectangular rings
+229 -> **229** (44% -> 45%), 4-sided share 74% -> 75%, area CV 0.38 -> **0.37**, median 1,365 ->
+1,370 sq ft, max unchanged. The only number that moved is the bottom of the distribution: min area
+237 -> **405 sq ft**. The floor amputated the tail and touched nothing else. Literal 3-sided rings
+**2 -> 0**; snipped-corner quads 8 -> 6; prong vertices 41 -> 38.
+
+**And what it caught, which became a second guard.** Absorption ranks candidate hosts by shared bund
+length, which is blind to the shape the union comes out as - so a 306 sq ft fragment went to the
+lumpiest basin on the sheet and made it worse: 26 vertices, eight reflex corners, four out-and-back
+prongs 5-11 ft wide that each draw as a bund with a FREE END sticking into the paddy. The GM's
+"rendering artifact" complaint, transplanted from area to outline. Both guards already in the ladder
+measure an APEX and neither can see a blunt lobe, so the fix measures **solidity** (area / convex
+hull): `_WELD_MIN_SOLIDITY` = 0.85, chosen off a wide gap in the measured population (eighteen of
+twenty welds scored >= 0.90, the two the reviewer picked out by eye scored 0.731 and 0.78). It is a
+preference and not a veto - the next-best host is tried and the least-lumpy candidate taken only if
+none is clean - because refusing outright trades a lump for a doubled bund, which the apex guard
+already learned is worse. After the guard the fragment goes to a 0.919-solidity neighbor and the
+lumpy basin is left at its pre-existing shape.
+
+**Logged, not fixed.** The dart-shaped ring at (1021-1084, 968-1012) is 1,034 sq ft - 0.69 of a
+cell, nearly three times the floor - and reads as an arrowhead; it is byte-identical before and
+after, so it is pre-existing and out of this change's scope. The reviewer's broader point stands and
+is worth a GM ruling some day: the floor is an AREA rule and some remaining offcuts are a SHAPE
+problem (a 436 sq ft parallelogram at (1486, 1138) meeting a wedge at a 27.4 deg needle; a quad at
+(1594, 836) whose fourth side is 3.1 ft). A minimum-side or tip-angle companion is the shape of that
+rule - not the declined four-sides rule, which is a different thing.
+
+**The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
+rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
+outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
+44/48. Measured in a detached worktree, seed 41's FIELD geometry was byte-identical either way, so
+the failure was not a paddy defect at all: it was a well landing on a pre-existing weakness in
+`hamletgen.place_wells`, whose minimax tie-break (distance to centroid) cannot express "this seat is
+outside the settlement". The GM's call was to take that fix as its OWN piece of work first and land
+the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
+are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
+Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).

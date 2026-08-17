@@ -377,6 +377,45 @@ was never needed.
 survivors came from (the carve, then the hem - both wrong) before a provenance probe classified
 every remaining needle in one run as `carved_grown`, i.e. made by a weld. Instrument first.
 
+### DONE 2026-08-17: the paddy size floor, and the well fix it had to wait behind
+
+The GM's question - *"most of the rice paddy fields are rectangular, but then there are a few very
+small triangles ... should there be a minimum rice paddy size?"* - produced `_TOE_MIN_AREA` (0.25 of
+a comb fan's own design cell, gate at 0.20). Findings, both declined alternatives (an absolute
+acreage floor; a four-sides rule) and the two derivations of 0.25: `research/fields.md`, "Minimum
+basin SIZE". Two second-order defects the `settlement-review` pass caught became
+`_WELD_MIN_SOLIDITY` / `_TINT_MIN_SOLIDITY`, the first guards in this engine to measure a SHAPE
+rather than an apex.
+
+**The process note worth keeping, because it is the transferable part.** The floor shifts the drawn
+plot count, which rotates the shared placement stream, and on cohort seed 41 the rotated roll seated
+a well outside the house cloud and tripped `crop_not_held_open_by_one_feature` - taking seeds 1-48
+from 45/48 to 44/48. The paddy work was CORRECT and the failure was not a paddy defect at all: the
+field geometry was byte-identical either way, and what moved was a well landing on a pre-existing
+weakness in `place_wells`. Rather than waive the seed or fold a placement fix into a fabric feature,
+the GM's call was to **take the well fix as its own piece of work first and land the floor on top** -
+which is why `e0fb2417` (the well tie-break, byte-identical on every shipped map) precedes the floor
+in history. The general lesson: when a fabric change trips a check in a different subsystem, measure
+whether the geometry moved before assuming the change is at fault, and separate the commits.
+
+### OPEN (low priority): `_outside_cloud` tests a BOX, not the settlement
+
+Found by settlement-review on Inashiro, 2026-08-17, while confirming the well tie-break. The guard
+asks whether a candidate seat lies inside the AABB of the house CENTERS - which is deliberately the
+same test the rescue pass below it uses, so the two passes finally agree, and that consistency is
+the point. But an AABB cannot tell "in the settlement" from "in the box": on Inashiro the box spans
+y 492.7-1571.8 and so contains the ~345 px of grove and scrub between the north group (last house
+y=868.8) and the south group (first house y=1215.6). A seat in that empty middle scores 0 -
+interior - identically to a courtyard seat.
+
+Harmless on every current map, because the `near[0] <= ~105 px` rung binds long before the tie-break
+is consulted. But it is the same class of imprecision the tie-break's own comment indicts centrality
+for, and on a genuinely two-lobed cluster it would prefer inter-lobe emptiness over a courtyard just
+outside the box. **Fix sketch**: test the seat against the union of the households' own courtyard
+discs (`near[0] <= nearest` already computes that distance) rather than against the bounding box -
+a one-line change to `_outside_cloud`, but it re-rolls well positions, so it wants a cohort
+measurement and a per-map review like any placement change.
+
 ### STILL OPEN after the 2026-08-17 well tie-break: cohort seed 62's northern lobe
 
 `hamletgen.place_wells` now prefers a seat INSIDE the house cloud over one in the sweep box's 120 px

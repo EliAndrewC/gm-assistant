@@ -80,3 +80,43 @@ beyond the frame.
   recorded-vs-drawn crown agreement, 35=35 / 15=15); the shipped roll seats TWO 125 ft stands
   (15 and 17 crowns), dry and on-frame - the exact stands are roll-derived, the invariants
   (dry, on-frame, recorded canopy, check-legal set-backs) are what hold.
+
+
+## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
+
+The GM, reading a hamlet sheet: *"most of the rice paddy fields are rectangular, but then there are
+a few very small triangles. Is that realistic? It looks like it is just a mistake, like, basically,
+a rendering artifact rather than something that is from our historical research. Relatedly, should
+there be a minimum rice paddy size?"*
+
+Three answers came out of the research pass, and only one of them is yes. There is **no absolute
+minimum** - Shiroyone Senmaida works 1,004 basins on ~4 ha, averaging ~18-20 m2, the smallest about
+half a meter square - so a floor in acres was declined. **Four-sides-only** was declined too: it
+would re-impose the *kochi seiri* consolidation grid the research already flags as the anachronism.
+What is real is a **ratio**: on a terrace the wall is a riser the slope demands anyway, but on a
+valley-floor fan the aze is the whole structure, built only to hold water and re-plastered every
+spring, and the alternative to a scrap is never no-rice - it is making the basin next door bigger.
+So a comb basin under **0.25 of the fan's own design cell** is dropped by the toe pass and absorbed
+by `close_seams`; the gate `paddy_basins_are_worth_their_bund` fires under 0.20. The triangularity
+was the symptom - a fragment clipped off the lattice at the fan boundary comes out triangular - and
+the size was the cause. Full findings, both declined alternatives, the two derivations of 0.25 and
+why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
+
+**On this map.** 827 -> 814 basins (-13, 1.57%); smallest surviving basin 0.254 of the cell.
+Acreage 26.1 / 26.0, 20 of 20 households, field outline and farmhouse rings all unchanged - every
+dropped fragment is absorbed into the basin it shares the most bund with, not deleted. Not
+independently reviewed this round (Sawada and Mizuguchi carried the `settlement-review` pass for the
+change; see their notes for the measured before/after regularity statistics and the two second-order
+defects the reviews caught).
+
+**The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
+rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
+outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
+44/48. Measured in a detached worktree, seed 41's FIELD geometry was byte-identical either way, so
+the failure was not a paddy defect at all: it was a well landing on a pre-existing weakness in
+`hamletgen.place_wells`, whose minimax tie-break (distance to centroid) cannot express "this seat is
+outside the settlement". The GM's call was to take that fix as its OWN piece of work first and land
+the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
+are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
+Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).

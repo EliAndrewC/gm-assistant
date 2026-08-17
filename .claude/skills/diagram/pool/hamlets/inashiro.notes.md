@@ -673,3 +673,79 @@ end); the only thing separating them is how deep the toe cut. That is the intend
 two aze still leaves ~7.4 ft of standing water - a workable basin, which is what it reads as at fit
 zoom. Revisit only if a roll produces a 5-8 ft end that reads as a point; see future-work.md for the
 sketch, since the convergence measure now exists and switching is a one-line change.
+
+
+## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
+
+The GM, reading a hamlet sheet: *"most of the rice paddy fields are rectangular, but then there are
+a few very small triangles. Is that realistic? It looks like it is just a mistake, like, basically,
+a rendering artifact rather than something that is from our historical research. Relatedly, should
+there be a minimum rice paddy size?"*
+
+Three answers came out of the research pass, and only one of them is yes. There is **no absolute
+minimum** - Shiroyone Senmaida works 1,004 basins on ~4 ha, averaging ~18-20 m2, the smallest about
+half a meter square - so a floor in acres was declined. **Four-sides-only** was declined too: it
+would re-impose the *kochi seiri* consolidation grid the research already flags as the anachronism.
+What is real is a **ratio**: on a terrace the wall is a riser the slope demands anyway, but on a
+valley-floor fan the aze is the whole structure, built only to hold water and re-plastered every
+spring, and the alternative to a scrap is never no-rice - it is making the basin next door bigger.
+So a comb basin under **0.25 of the fan's own design cell** is dropped by the toe pass and absorbed
+by `close_seams`; the gate `paddy_basins_are_worth_their_bund` fires under 0.20. The triangularity
+was the symptom - a fragment clipped off the lattice at the fan boundary comes out triangular - and
+the size was the cause. Full findings, both declined alternatives, the two derivations of 0.25 and
+why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
+
+**On this map.** 640 -> 634 basins (-6, 0.94%); smallest surviving basin 0.262 of the cell.
+Acreage 20.5 / 19.5, 15 of 15 households, field outline and farmhouse rings all unchanged - every
+dropped fragment is absorbed into the basin it shares the most bund with, not deleted. Not
+independently reviewed this round (Sawada and Mizuguchi carried the `settlement-review` pass for the
+change; see their notes for the measured before/after regularity statistics and the two second-order
+defects the reviews caught).
+
+**The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
+rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
+outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
+44/48. Measured in a detached worktree, seed 41's FIELD geometry was byte-identical either way, so
+the failure was not a paddy defect at all: it was a well landing on a pre-existing weakness in
+`hamletgen.place_wells`, whose minimax tie-break (distance to centroid) cannot express "this seat is
+outside the settlement". The GM's call was to take that fix as its OWN piece of work first and land
+the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
+are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
+Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).
+
+### The second well moved 48 px, and the frame reason does NOT apply here
+
+`e0fb2417` gave `place_wells` a tie-break preferring a seat INSIDE the house-center cloud over one in
+the sweep box's 120 px pad when the two tie on minimax need. On this map it fired mechanically and
+for exactly its stated reason: the old seat sat at x=1148.7, **10 px west of `min(xs)`=1158.7** - so
+outside the cloud - and both seats score in the SAME minimax bucket (187.9 // 66 == 146.2 // 66), so
+`_outside_cloud` is what decided it, ahead of centrality. `wells[1]` (1148.7, 1538.7) ->
+**(1192.7, 1560.7)**.
+
+**What it bought here is the READ and the walk, NOT a tighter crop - and the distinction is recorded
+because the write-up got it wrong first** (settlement-review, 2026-08-17). `meta.view` is
+byte-identical across the change (`[1063, 360, 1678, 1796]`), and re-deriving the crop drivers with
+the engine's own `crop_boxes` on both manifests puts the west edge on `gardens[13]` at x=1111.3, with
+`gardens[15]` and `houses[12]` next: **the old well's box at 1136.3 was third-west and never a crop
+driver at all.** There was no band of dead ground for it to hold open. The frame argument belongs to
+cohort seed 41 and to Sawada, not to Inashiro. What DID improve is measurable in two other ways: the
+worst-served household's walk fell **187.9 -> 146.2 ft**, and the seat moved off the scrub fringe
+into swept dooryard (nearest commons scatter base **35.1 -> 57.5 ft**; the old seat had scrub within
+44 ft on three sides).
+
+**The ripple, small and worth recording because this file's practice requires it.** The wellhead's
+keep-out suppressed four windbreak clumps that were the belt's easternmost outliers at that latitude
+and re-seated four further west; `tree_crowns` went 11,550 -> **11,463** (-87). The belt stayed
+continuous - 6/8/7/8/12/6 clumps per 40 px band from y 1400 to 1680, no hole and no notch - and the
+vacated old seat did not ship as a bald patch: the windbreak closed over it with four new clumps plus
+one copse clump. Nothing else on the sheet moved.
+
+**A known bound of the tie-break, from the same review.** `_outside_cloud` tests the AABB of house
+CENTERS, so it cannot tell "in the settlement" from "in the box". On this very map that box spans
+y 492.7-1571.8 and therefore contains the ~345 px of grove and scrub between the north group (last
+house y=868.8) and the south group (first house y=1215.6): a seat in that empty middle scores 0,
+i.e. interior, identically to a courtyard seat. Harmless here because the `near[0] <= ~105 px` rung
+binds first, and deliberately consistent with the rescue pass's own test - but on a genuinely
+two-lobed cluster the tie-break would prefer inter-lobe emptiness over a courtyard just outside the
+box. Also in `future-work.md`.
