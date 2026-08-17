@@ -6,7 +6,24 @@ is declared with `export SPECIFY_FEATURE=118-rolling-package` and
 
 **Created**: 2026-08-17
 
-**Status**: Draft
+**Status**: Implemented 2026-08-17, in two commits (split, then decomposition - research R6).
+
+Final per-file line counts: `roll.py` 300, `fit.py` 267, `farmsteads.py` 229, `place.py` 208,
+`seeds.py` 159, `bundle.py` 132, `__init__.py` 39 (1,197 -> largest 300). `roll_village` 256 -> a
+60-line orchestrator over seven `_roll_*` stages; the largest function anywhere in the package is
+now `_bundle_geom` at 81 lines, so the engine has no function over the ~150-line bar and no standing
+clause-12 candidate.
+
+Oracle: every `pool/` artifact regenerated in a scratch copy and hashed against a pre-split
+baseline - **893/893 byte-identical, 28/28 generators, frozen legacy maps included** (`--frozen-ok`,
+which is load-bearing: all three `roll_village` callers are frozen). Run TWICE, once per commit,
+and the second run compares against the ORIGINAL pre-split baseline rather than the intermediate.
+`settlement/core.py` byte-unchanged; ZERO consumer files changed. Both guard assertions proven RED
+against synthetic breakage before being trusted, each naming the exact member.
+
+Independently verified beyond the plan's asks: all 43 members compared text-for-text against the
+pre-split file (only `_farmsteads_legacy` differs, by the documented annotation), and the 30-call
+main-stream sequence inside `roll_village` compared before/after (identical).
 
 **Input**: User description: "Please refactor rolling.py - which is over a thousand lines of code -
 to comport to our documented conventions for function and file size."
@@ -237,6 +254,17 @@ to a file that no longer exists.
   code in a detached worktree (constitution Principle XIII).
 - **SC-005**: Zero consumer files change.
 - **SC-006**: Comment lines lost: 0.
+
+  **Measured, and the two halves differ - recorded honestly rather than rounded to a pass.** The
+  SPLIT met it exactly: 211 `#` lines before, 211 after. The DECOMPOSITION then took the package to
+  198, because 22 comment lines became docstring text: the five `# --- banner ---` lines are now the
+  stage names themselves, and the cluster-seat and windbreak explanations moved into
+  `_roll_margin_frame`'s and `_roll_windbreak`'s docstrings, which is where a function's own
+  reasoning belongs. Nine comment lines were ADDED (the `placed` annotation's rationale and the
+  literal-arithmetic note). No PROSE was lost, and that is asserted rather than assumed - every
+  migrated phrase was checked to still be present in the package text. The census remains the right
+  guard for a pure move; it just cannot see a comment that legitimately became a docstring, so the
+  phrase check is what covers the decomposition.
 
 ## Assumptions
 

@@ -17,6 +17,12 @@ chosen on **cost per read**: those four are each one long cohesive subsystem, an
 file is one you meant to open. It was also chosen because it held `_stable_yard` at 335 lines, the
 largest function anywhere in the engine.
 
+**Historical note (2026-08-17):** three of those four have since been cut on the same cost-per-read
+argument - `shrines_wells/` (116), `rolling/` (118) and `_geom/` (117) - which says the "long
+cohesive subsystem" reprieve was about ORDER, not exemption. Only `land.py` is still whole. The
+sentence above is preserved as written because it records why THIS file went first; do not read it
+as a current statement of what is unsplit.
+
 ## Look here when
 
 | file | look here when |
