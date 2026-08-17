@@ -1,6 +1,6 @@
 ---
 name: synthesize
-description: Write a backstory for an existing Obsidian Portal NPC, Claude-native - reads the OP record + tagline and the campaign-context cast, researches the setting files directly, writes the prose IN-SESSION (no external LLM), optionally steered by GM notes after a ` - ` separator, presents a review (upload as-is, regenerate, or upload with typed changes), and merges the result into GM-only notes.
+description: Write a backstory for an existing Obsidian Portal NPC, Claude-native - reads the OP record + tagline and the campaign-context cast, researches the setting files directly, writes the prose IN-SESSION (no external LLM), optionally steered by GM notes after a ` - ` separator, then uploads it and merges it into GM-only notes with no pre-review gate (the GM reviews after the fact and asks for a replacement if they want one).
 argument-hint: <character name> [ - steering notes]
 allowed-tools: Bash Read Grep AskUserQuestion
 ---
@@ -219,28 +219,35 @@ THIS session, launching by `subagent_type` gets the stale snapshot - instead
 launch a `general-purpose` agent told to Read that definition and adopt it
 verbatim, then review (see the harness-behavior note in the project CLAUDE.md).
 
-Then present to the GM: the inferred **caste**, the **tagline**, the
-**steering** applied, how many campaign characters you read - and **reproduce
-the FULL backstory verbatim in your reply message** (never leave it only in a
-tool result).
+## Step 3 - NO PRE-REVIEW GATE: go straight to Step 4
 
-## Step 3 - Review menu (two options plus free-text changes)
+**When the GM asks for a backstory to be synthesized, that IS the authorization
+to upload it. Do not ask whether they are sure, do not present a review menu, and
+do not wait** (GM 2026-08-17: *"I no longer need to pre-review what the
+/synthesize skill generates, so you should not ask if I'm sure and should instead
+just upload, since I can always ask to replace something later"*). The upload is
+idempotent and notes-preserving, so a synthesis the GM does not like costs one
+follow-up message; a review gate costs a round trip on every character, including
+all the ones they would have accepted unchanged.
 
-Use AskUserQuestion with exactly these TWO options:
+What this does NOT relax:
 
-1. **Upload as-is to Obsidian Portal** -> Step 4 unchanged.
-2. **Generate another synthesis** -> rewrite it yourself from the same inputs
-   (take a genuinely different angle, don't lightly rephrase), re-present.
+- **`backstory-review` (Step 2c-review) still runs, always.** That is Principle I -
+  the author is not a reliable reviewer of their own prose - and it is a check on
+  YOUR work, not a request for the GM's approval. It has never been the GM gate.
+- **An ambiguous character match is still a question** (Step 1). That is about
+  which record to write to, not about reviewing prose. Never guess a record.
 
-Free-text ("Other") answers are "upload with these changes": apply the
-described edits yourself, then Step 4 with the edited text.
+Then, AFTER Step 4 has uploaded, report in your final message: the inferred
+**caste**, the **tagline**, the **steering** applied, how many campaign characters
+you read, the **OP URL** - and **reproduce the FULL backstory verbatim in your
+reply message** (never leave it only in a tool result). Then offer - as an offer,
+not a question that blocks anything - to regenerate it from a different angle.
 
 ## Step 4 - Upload (idempotent, notes-preserving)
 
-Upload the reviewed prose. It already lives in
-`$SCRATCH/synthesize-backstory.txt` from Step 2c-review; if the GM chose "upload
-with these changes" (Step 3 free-text), apply those edits to that same file
-first, then:
+Upload the prose. It already lives in `$SCRATCH/synthesize-backstory.txt` from
+Step 2c-review, with any `backstory-review` fixes already applied to that file:
 
 ```bash
 cd /gm-assistant/webapp && python3 - <<'PY'
