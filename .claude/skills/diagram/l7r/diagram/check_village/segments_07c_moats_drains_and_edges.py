@@ -843,6 +843,87 @@ _WEB_REACH = 100.0
 _LANE_JOIN = 40.0
 
 
+# TWO LANE ENDS MAY NOT FRONT THE SAME FARMHOUSE FROM THE SAME SIDE.
+#
+# `_LANE_HOUSE_REACH` lets a lane end discharge its obligation by stopping at a farmhouse. Nothing
+# said the farmhouse could only do that once - so three ends standing within 40 ft of each other, all
+# claiming the same house at 66.9, 55.1 and 40.0 ft, all passed, and a settlement-review read the
+# result at 3x zoom as a broom: not three ways, one way drawn three times with the ends fanned.
+#
+# TWO NUMBERS, and they are doing different jobs. `_FAN_SPREAD_FT` is how close two ends must be
+# before they are the same arrival rather than two arrivals; `_FAN_BEARING_DEG` is how nearly they
+# must point the same way. The bearing clause is what keeps a genuine CROSSROADS legal - two lanes
+# reaching one house from opposite quarters is a house on a corner, which is a real thing and reads
+# as one. It is only when they arrive alongside each other that the eye merges them.
+# Below this divergence an end has not MET the way it is near, it is running alongside it - the
+# engine's `_FRAY_DEG`, restated here because the gate does not import the generator it gates.
+_FAN_FRAY_DEG = 20.0
+
+_FAN_SPREAD_FT = 60.0
+_FAN_BEARING_DEG = 25.0
+
+
+def _seg_0611__lane_ends_front_different_houses(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0611 (lane_ends_front_different_houses) - added 2026-08-18, feature 124."""
+    # ONLY BLUNT ENDS CAN FAN. An end that MEETS another way is a junction, and a junction beside a
+    # junction is a crossroads however tightly they sit - the defect is specifically an end with no
+    # reason to exist except a house that another end is already fronting. Leaving this clause out
+    # made the rule flag every close pair of real junctions, which is most of a nucleated cluster's
+    # middle.
+    _fd_ways = [[(float(x), float(y)) for x, y in (_fd_l.get("pts") or [])] for _fd_l in (M.get("lanes") or [])]
+    _fd_ends = []
+    for _fd_i, _fd_ln in enumerate(M.get("lanes") or []):
+        if _fd_ln.get("connector"):
+            continue
+        _fd_p = _fd_ways[_fd_i]
+        if len(_fd_p) < 2:
+            continue
+        for _fd_tip, _fd_prev in ((_fd_p[0], _fd_p[1]), (_fd_p[-1], _fd_p[-2])):
+            _fd_met = False
+            for _fd_k, _fd_o in enumerate(_fd_ways):
+                if _fd_k == _fd_i or len(_fd_o) < 2:
+                    continue
+                _fd_seg = min(zip(_fd_o, _fd_o[1:], strict=False), key=lambda _ab: seg_dist(_fd_tip[0], _fd_tip[1], _ab[0], _ab[1]))
+                if seg_dist(_fd_tip[0], _fd_tip[1], _fd_seg[0], _fd_seg[1]) > _LANE_WAY_REACH:
+                    continue
+                # PROXIMITY IS NOT ARRIVAL - the engine's own rule, and it is the whole reason this
+                # check exists. The ends a review read as a broom stood 21.6 and 24.3 ft from another
+                # way, i.e. INSIDE the 40 ft reach, and were near-parallel to it: they had not met
+                # that way, they were running alongside it. Counting them as junctions is exactly the
+                # mistake `lanes_reach_something` made before `_FRAY_DEG` was added to it.
+                _fd_ang = abs(
+                    (math.degrees(math.atan2(_fd_tip[1] - _fd_prev[1], _fd_tip[0] - _fd_prev[0])) - math.degrees(math.atan2(_fd_seg[1][1] - _fd_seg[0][1], _fd_seg[1][0] - _fd_seg[0][0])) + 90.0)
+                    % 180.0
+                    - 90.0
+                )
+                if _fd_ang >= _FAN_FRAY_DEG:
+                    _fd_met = True
+                    break
+            if _fd_met:
+                continue  # it crossed a way at a real angle; that is a junction, not a tine
+            _fd_h = min(((math.hypot(_fd_tip[0] - _fd_q["x"], _fd_tip[1] - _fd_q["y"]), (round(float(_fd_q["x"]), 1), round(float(_fd_q["y"]), 1))) for _fd_q in M.get("houses") or []), default=None)
+            if _fd_h is not None and _fd_h[0] <= _LANE_HOUSE_REACH:
+                _fd_ends.append((_fd_tip, math.degrees(math.atan2(_fd_tip[1] - _fd_prev[1], _fd_tip[0] - _fd_prev[0])), _fd_h[1]))
+    _fd_fans = []
+    for _fd_i in range(len(_fd_ends)):
+        for _fd_j in range(_fd_i + 1, len(_fd_ends)):
+            _fd_a, _fd_b = _fd_ends[_fd_i], _fd_ends[_fd_j]
+            if _fd_a[2] != _fd_b[2] or math.dist(_fd_a[0], _fd_b[0]) > _FAN_SPREAD_FT:
+                continue
+            _fd_turn = abs((_fd_a[1] - _fd_b[1] + 180.0) % 360.0 - 180.0)
+            if _fd_turn <= _FAN_BEARING_DEG:
+                _fd_fans.append((round(_fd_a[0][0]), round(_fd_a[0][1]), round(_fd_turn)))
+    check(
+        "lane_ends_front_different_houses",
+        not _fd_fans,
+        f"{len(_fd_fans)} pair(s) of lane ends front the SAME farmhouse from the same side, at {_fd_fans[:4]} (x, y, degrees apart) - "
+        f"a farmhouse discharges one lane end's obligation, not three. Ends standing within {_FAN_SPREAD_FT:.0f} ft of each other and pointing "
+        f"within {_FAN_BEARING_DEG:.0f} degrees the same way read as one way drawn twice with its tip frayed, not as two ways; a house reached "
+        f"from OPPOSITE quarters is a corner and is fine",
+    )
+    return _kept(locals(), ())
+
+
 def _seg_0610__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 0610 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
 

@@ -327,3 +327,24 @@ def test_the_footpath_search_stops_looking_past_its_backstop_radius() -> None:
     before = len(s.M["lanes"])
     hg.ways._serve_stragglers(s, _Plan(), [], [], [])
     assert len(s.M["lanes"]) == before, "nothing drawn for a steading beyond the backstop"
+
+
+def test_margin_frame_without_a_house_cloud_falls_back_to_the_along_axis() -> None:
+    """`near` is the placed houses, and callers inside the engine always have them. The fallback is
+    for a caller that does not - it walks the outline by the seat band's own lateral reach instead,
+    which is the same test `front_row` makes."""
+    plan = a_plan()
+    plan.seat = hg.seat_cluster(plan)
+    frame = _margin_frame(plan, 150.0)
+    assert frame.arc > 0.0
+    assert len(frame.pts) >= 2
+
+
+def test_reachable_runs_with_no_candidates_is_empty() -> None:
+    assert hg.ways._reachable_runs([], [((0.0, 0.0), (10.0, 0.0))]) == []
+    assert hg.ways._reachable_runs([[(0.0, 0.0)]], [((0.0, 0.0), (10.0, 0.0))]) == [], "a one-point run is not a run"
+
+
+def test_join_orphan_ways_on_a_map_with_one_way_has_nothing_to_join() -> None:
+    s = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 200.0)]])
+    assert hg.ways._join_orphan_ways(s, [], [], []) == 0

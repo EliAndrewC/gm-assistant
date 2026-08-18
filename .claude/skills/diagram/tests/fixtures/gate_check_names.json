@@ -360,6 +360,7 @@
   "labels_render_on_top",
   "labels_within_image",
   "land_use_overlay_drawn",
+  "lane_ends_front_different_houses",
   "lanes_clear_of_dry_plots",
   "lanes_reach_something",
   "log_boom_leaves_the_fairway",

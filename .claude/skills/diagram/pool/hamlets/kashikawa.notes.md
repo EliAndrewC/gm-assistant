@@ -291,3 +291,28 @@ the reach, so no house passes by inches and none gets a path drawn to cure a rou
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead
 really has: a footpath of its own, routed round the neighboring plots rather than ruled at them,
 stopping at its first contact with the network, and planked where it crosses a ditch.
+
+## Feature 124 - a farmhouse fronts one lane end, not three
+
+A `settlement-review` read this map's east node at 3x zoom as **a broom**: ways leaving one point
+within about 23 degrees of each other, two of them ending blunt, and **all of them claiming the same
+farmhouse** - at 66.9, 55.1 and 40.0 ft. Three ends, one house answering for all three.
+
+Two rules should have caught it. `lanes_reach_something` lets an end discharge its obligation by
+stopping at a farmhouse and never said a house could only do that once. The lane web's shadow rule
+tests a new web run against what is already drawn - but both offending arms are SKELETON lanes, laid
+before the houses exist, so they are never tested against each other.
+
+The fix is one clause in `trim_lane_stubs`, which was already the right place: it runs after
+placement, only ever SHORTENS (so it cannot invalidate a seated house), and rewrites ink in the
+stream slots a lane already owns. Its house test is now **exclusive** - the end nearest a farmhouse
+keeps it, and any end standing alongside it and pointing the same way must find its own reason to
+exist or be trimmed until it does. Below one homestead's frontage the existing floor drops it, which
+is what the reviewer proposed.
+
+**A house reached from OPPOSITE quarters is a corner, and stays legal.** Without that clause the rule
+flags most of a nucleated cluster's middle. And "blunt" means what `_FRAY_DEG` already means: the
+ends in question stood 21.6 and 24.3 ft from another way and near-parallel to it, so they had not MET
+it - proximity is not arrival, which this engine had already learned once.
+
+This map now has no fan, and every farmhouse is still reached: worst 85 ft, median 60.

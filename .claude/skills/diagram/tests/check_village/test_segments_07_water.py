@@ -848,3 +848,52 @@ def test_farmhouses_reach_a_way_is_silent_on_a_map_with_no_ways_or_no_houses():
     assert "farmhouses_reach_a_way" not in f(_lane_map([{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}], []))
     hand = _lane_map([{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}], [{"x": 2000, "y": 2000, "w": 46, "h": 28, "rot": 0, "kind": "plain"}], gen="")
     assert "farmhouses_reach_a_way" not in f(hand), "hand-authored maps are not gated by this rule"
+
+
+# ---- two lane ends may not front the same farmhouse from the same side --------------------------
+def test_lane_ends_front_different_houses_fires_on_a_fan_of_blunt_tines():
+    """A farmhouse discharges ONE lane end's obligation, not three. A settlement-review read three
+    ways leaving one node within 23 degrees, two ending blunt and all three claiming the same house
+    at 66.9 / 55.1 / 40.0 ft, as a broom at 3x zoom: not three ways, one way drawn three times with
+    the ends fanned. `lanes_reach_something` was silent because each end could point at the house."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 500], [700, 505]], "w": 5, "connector": False},
+            {"pts": [[500, 540], [700, 549]], "w": 5, "connector": False},
+        ],
+        [{"x": 740, "y": 525, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lane_ends_front_different_houses" in f(M)
+
+
+def test_lane_ends_front_different_houses_allows_a_house_on_a_CORNER():
+    """Two lanes reaching one house from OPPOSITE quarters is a corner - a real thing that reads as
+    one. The bearing clause is what keeps that legal; without it the rule would flag most of a
+    nucleated cluster's middle."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 525], [700, 525]], "w": 5, "connector": False},
+            {"pts": [[980, 525], [780, 525]], "w": 5, "connector": False},
+        ],
+        [{"x": 740, "y": 525, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lane_ends_front_different_houses" not in f(M)
+
+
+def test_lane_ends_front_different_houses_exempts_an_end_that_MET_a_way():
+    """An end that crosses another way at a real angle is a junction, and a junction beside a
+    junction is a crossroads however tightly they sit. Only a BLUNT end can be a tine."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 500], [700, 505]], "w": 5, "connector": False},
+            {"pts": [[500, 540], [700, 549]], "w": 5, "connector": False},
+            {"pts": [[700, 460], [700, 600]], "w": 5, "connector": False},  # crosses both, squarely
+        ],
+        [{"x": 740, "y": 525, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lane_ends_front_different_houses" not in f(M)
+
+
+def test_lane_ends_front_different_houses_is_silent_without_lanes_or_houses():
+    assert "lane_ends_front_different_houses" not in f(_lane_map([], []))
+    assert "lane_ends_front_different_houses" not in f(_lane_map([{"pts": [[500, 500]], "w": 5, "connector": False}], []))
