@@ -71,6 +71,7 @@ from .banks import (
     _WELD_MIN_SOLIDITY,
     cell_area,
     dedup_ring,
+    is_chevron,
     pointed_ring,
     polyline_cum,
     tapers_to_a_point,
@@ -305,6 +306,7 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
     # to close. The runner-up basin borders the same strip and usually takes it cleanly.
     _fallback: tuple[float, int, Polygon] | None = None
     _lumpy: tuple[float, int, Polygon] | None = None
+    _chev: tuple[float, int, Polygon] | None = None
     for _neg, j in sorted(ranked):
         # dilate the scrap by a hair before the union. A scrap and the basin beside it only TOUCH
         # (they were cut from each other), and a union of two merely-touching polygons comes back
@@ -376,7 +378,12 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
                     _s2 = _m2.simplify(0.05)
                     _c2 = _s2 if isinstance(_s2, Polygon) and _s2.is_valid and not _s2.interiors else _m2
                     _r2 = _ring(_c2)
-                    if Polygon(_r2).is_valid and _min_apex(dedup_ring(_r2, 1.0)) >= _WELD_MIN_APEX:
+                    # ...and the partial weld faces the arrowhead test too. This path had only the
+                    # apex guard, and a provenance probe found it was where the survivors came from:
+                    # ZERO chevrons entered `close_seams` on Inashiro and Mizuguchi and three left,
+                    # because welding the workable PART of a scrap is exactly how a basin acquires a
+                    # point at one end and a bite in its side.
+                    if Polygon(_r2).is_valid and _min_apex(dedup_ring(_r2, 1.0)) >= _WELD_MIN_APEX and not is_chevron(_r2):
                         into[j] = _c2
                         grown.add(j)
                         return
@@ -391,7 +398,16 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
         # than an angle). Treated exactly like a needling weld, and for the same reason: the
         # runner-up borders the same strip and usually takes it in a shape a farmer would
         # recognize, but refusing every host outright would trade the lump for a doubled bund.
+        # A WELD MUST NOT MAKE AN ARROWHEAD EITHER, and this is a third measurement rather than a
+        # tighter one: a chevron is pointed AND notched, and this ladder's apex guard (18 deg) and
+        # solidity guard (0.85) each pass a ring at 39 deg / 0.878 that is plainly an arrowhead. See
+        # `_CHEVRON_MIN_APEX` for the measured population. Same treatment as a lump - remembered, not
+        # refused outright, so the scrap still finds a host when no clean one exists.
         _sol = candidate.area / (candidate.convex_hull.area or 1.0)
+        if is_chevron(_ring(candidate)):
+            if _chev is None or _sol > _chev[0]:
+                _chev = (_sol, j, candidate)
+            continue
         if _sol < _WELD_MIN_SOLIDITY:
             if _lumpy is None or _sol > _lumpy[0]:
                 _lumpy = (_sol, j, candidate)
@@ -405,6 +421,14 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
     # workability one does.
     if _lumpy is not None:
         _, j, candidate = _lumpy
+        into[j] = candidate
+        grown.add(j)
+        return
+    # ...then the least-bad ARROWHEAD, behind the lump. A chevron is the worse read of the two - a
+    # lump is an awkward basin, an arrowhead does not read as a basin at all - so it is the last
+    # shape the ladder will accept, and only when no other host will take the scrap.
+    if _chev is not None:
+        _, j, candidate = _chev
         into[j] = candidate
         grown.add(j)
         return
@@ -556,7 +580,7 @@ def close_seams(
                     _floor = _TOE_MIN_AREA * cell_area(plot_across, row_step)
                     for _q in got:
                         _qr = _ring(_q)
-                        if len(_qr) >= 3 and (pointed_ring(_qr, _TOE_MIN_APEX) or pointed_ring(dedup_ring(_qr, 1.0), _TOE_MIN_APEX) or _q.area < _floor):
+                        if len(_qr) >= 3 and (pointed_ring(_qr, _TOE_MIN_APEX) or pointed_ring(dedup_ring(_qr, 1.0), _TOE_MIN_APEX) or _q.area < _floor or is_chevron(_qr)):
                             scraps.append(_q)
                         else:
                             basins.append(_q)
