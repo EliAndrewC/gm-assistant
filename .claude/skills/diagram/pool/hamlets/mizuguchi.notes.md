@@ -266,3 +266,35 @@ Sawada figure being the re-pack's own effect on the house cloud the belt derives
 **The transferable part**: the first review's complaint was itself against a documented rule, and
 following it literally made three maps worse. A reviewer's finding is evidence, not a verdict - check
 it against the doctrine file before acting on it.
+
+## Feature 123 - the lane web (back_lane)
+
+**5 of this map's 12 farmhouses stood more than 100 ft from any way. Now none do** - the worst
+is 80 ft and the median 48 ft - **and every lane on the sheet is one connected
+network**, which is the part that took four review passes to get right.
+
+The research is decisive that a house in a nucleated cluster is reached: "every house in the
+nucleated village is accessible via the interconnected system of narrow lanes and alleys". The FORM
+of that access is a seeded knob, because the record supports two and two supportable answers become
+variance rather than a choice (constitution Principle XII). This map rolled **`back_lane`**, which
+runs PARALLEL to the field margin behind the ranks of plots, tied together by cross-links - the planned form the sources call a "rectangular framework", the one that says the place was LAID OUT. It carries **4 web lanes** of 8.
+
+**Two orderings are load-bearing, and both were learned the hard way.**
+
+*The web is laid AFTER the houses AND after their appurtenances.* Laid first, as the skeleton is, it
+reserves ground from a cluster that has not been packed yet and competes with the very houses it
+exists to serve - measured across the four hamlets, that grew their long axes 15-97%, sprawl no check
+measures. Laid between the houses and their appurtenances it was still reserving courtyard ground
+ahead of the byres and wells and exiling them up to 210 ft, which erased feature 121's byre-service
+fix. It now runs last of the built things, and threads what is actually left.
+
+*Connectivity is decided before any ink goes down.* A lane once drawn cannot be taken back, so
+candidate runs are grown outward from the skeleton and only the reachable ones are drawn. The check
+enforces the same thing from the other side: `farmhouses_reach_a_way` measures to the connected
+COMPONENT containing the connector, not to any polyline, because a check an island can satisfy
+rewards drawing an island - which is exactly what the first version did, on this map among others.
+
+Where the regular web still cannot reach a steading, that house gets what an outlying farmstead
+really has: a footpath of its own, routed round the neighboring plots rather than ruled at them, and
+planked where it crosses a ditch. It may cross nobody's garden bed and nobody's threshing floor,
+including its own.
