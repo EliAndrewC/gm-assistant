@@ -100,7 +100,6 @@ WEB_CLEARANCE = 28.0
 # NEXT - byres, sheds, wells. At 12 those were landing on the tread and `features_do_not_overlap`
 # fired on 7 of 24 cohort seeds. 28 holds a byre off the way while staying well under the 40 ft a
 # fronting lane reserves, which is the distinction the two constants exist to keep.
-MIN_WEB_GAP = 16.0
 
 # HOW FAR A WEB LANE'S CENTERLINE STAYS OFF THE SETTLEMENT'S OWN FABRIC, in feet.
 #
@@ -109,8 +108,36 @@ MIN_WEB_GAP = 16.0
 # tread is judged as a 3 ft half-width; and a dooryard garden records both a `poly` and a rect, with
 # the rect running up to ~2.3 ft proud of the poly. At 6 ft of margin that leaves well under a foot
 # of true clearance, and `features_do_not_overlap` fired on `lanes` vs `gardens` across the cohort.
-# 9 covers the matrix's half-width, the rect/poly discrepancy and a hand's breadth on top.
-WEB_FABRIC_GAP = 9.0
+# It was 9 while the fabric list carried only a garden's `poly`. Now that `_homestead_polys` records
+# the RECT as well, the discrepancy is covered by the geometry instead of by the margin, and 9 was
+# doing a second job it should not have been: `MIN_WEB_GAP` says a 16 ft gap between two steadings is
+# walkable, while a 9 ft margin needs 18 - so the cut solver offered gaps the router could not
+# thread, and a house sat 296 ft from any way with no route found at all. The two are now derived
+# from each other and cannot contradict again.
+WEB_FABRIC_GAP = 7.0
+
+# A FOOTPATH IS NOT A LANE, and it may squeeze where a lane may not. This is the clearance for the
+# path from an outlying steading's door to the nearest way - the thing the sources describe as
+# "colonised as semi private space by the adjoining house", i.e. the residual room between two
+# plots, walked in single file. It still clears the overlap matrix's 3 ft half-tread with room over,
+# but it lets a path thread a gap a back lane could not, which is the difference between a house
+# being reached and a house being 296 ft from anything with no route at all.
+FOOTPATH_FABRIC_GAP = 5.0
+
+# HOW FAR A WEB LANE STAYS OFF THE CROP, THE TOE AND THE MARSH, in feet.
+#
+# The skeleton's arms are clipped at 20, which is right for them: they are 5-6 px cart ways and they
+# are laid before anything else, so there is no cost to being generous. A web lane is 3 px and is
+# threading ground that is already full, and 20 was not a rule, it was a copied default - the gate's
+# own bar is `fields_clear_of_road`, which allows w/2 + 2, i.e. about 3.5 ft for a tread this narrow.
+# Measured cost of the copied 20: a farmstead 251 ft from its nearest neighbor had NO route to the
+# network at all, not because any single obstacle blocked it but because the crop, the toe and the
+# marsh each took 20 ft off the same corridor and closed it between them. 8 keeps better than double
+# the gate's bar while leaving a path somewhere to go. It also matches the doctrine: a real farm
+# track runs on the baulk between plots, not twenty feet clear of the rice.
+WEB_HARD_GAP = 8.0
+
+MIN_WEB_GAP = 2.0 * WEB_FABRIC_GAP + 4.0  # 18 ft: both neighbors' clearance, plus the tread between them
 
 # THE REACH A FARMHOUSE IS ENTITLED TO: every house center must be within this of some drawn way
 # (`farmhouses_reach_a_way`). It is BUNDLE_PITCH, deliberately and by reference rather than by

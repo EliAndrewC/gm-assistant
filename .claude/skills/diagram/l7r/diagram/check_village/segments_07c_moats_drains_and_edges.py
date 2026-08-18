@@ -843,8 +843,13 @@ _WEB_REACH = 100.0
 _LANE_JOIN = 40.0
 
 
-def _seg_0608__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 0608 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
+def _seg_0609__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0609 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
+
+    Numbered 0609, not 0608: a peer session landed `paddy_basins_are_worth_their_bund` on 0608 in
+    `segments_08d` while this was unpushed, and a duplicate numeric key is a loud derivation error
+    rather than a silent reorder. It still runs directly after 0607 `lanes_reach_something`, which is
+    what matters - the two are converses and belong together.
 
     The CONVERSE of `lanes_reach_something`, and the half that was missing: that check asks whether
     each lane serves something, this one asks whether each house is served. A map can pass the first
