@@ -1019,6 +1019,23 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                 # outlying farmstead on seed 2 had NO route to the network at any clearance, and the
                 # thing between it and the cluster turned out not to be a yard or the crop but a
                 # ditch. A steading across a ditch is reached by a plank, not by being unreachable.
+                # A FINER LATTICE FOR THE FOOTPATH WAS TRIED AND REVERTED - do not pull this lever
+                # again. The arithmetic is genuinely suggestive: the router inflates its planning
+                # clearance to gap + cell * 0.71 so that a free cell means every point in it is
+                # clear, which at the default 10 ft cell is 11.1 ft for a footpath - it demands a
+                # 22 ft corridor to plan through, while the gaps between neighboring steadings are
+                # MIN_WEB_GAP, 16 ft. At a 5 ft cell the planning clearance is 7.6 ft and a 16 ft gap
+                # fits. It reads like the explanation of every unreachable steading, and it is not.
+                #
+                # Measured end to end (2026-08-18), coarse-only against a coarse-then-fine fallback,
+                # on cohort seed 5: 159.9s -> 672.3s, a 4.2x build, and the unserved count did not
+                # move (2 either way). Seed 25 improved 4 -> 2 across the same afternoon and it is
+                # tempting to credit this - it is not the cause: with the fallback DISABLED, seed 25
+                # measures 2 as well. That gain came from a peer session's merge, and attributing it
+                # here would have written a false why into the file.
+                #
+                # So the lattice is not what strands these houses, and 4x the generation time buys
+                # nothing. What does strand them is recorded with the reach residue.
                 routed = _route(door, tgt, hard, passable, [], gap=FOOTPATH_FABRIC_GAP)
                 if routed:
                     cands.append(routed)
