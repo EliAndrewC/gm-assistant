@@ -34,6 +34,14 @@ def test_stage_notice_reseats_a_board_the_frame_would_lose():
         def _fits(self, x, y, w, h, corridors=False):
             return x >= 500.0  # some verge candidates refused, so the refusal path runs too
 
+        def fixture_clear_of_water(self, x, y, half):
+            # a "stream" across the west half of the verge, so the re-seat's water REFUSAL runs too
+            # (the same reason `_fits` above refuses part of the range). The predicate's own behavior
+            # is covered where it lives, in settlement/structures/fixtures.py; what this pins is that
+            # the re-seat consults it at all - without the call a board lands in the water, which is
+            # exactly what cohort seed 13 shipped.
+            return x >= 540.0
+
         def kosatsuba(self, x, y, rot=0.0):
             self.reseated.append((x, y, rot))
             self.M["kosatsuba"].append({"x": x, "y": y})
@@ -43,5 +51,6 @@ def test_stage_notice_reseats_a_board_the_frame_would_lose():
     assert s.reseated, "the board was not re-seated"
     bx, by, _rot = s.reseated[0]
     assert 440.0 <= bx <= 600.0 and 440.0 <= by <= 600.0, f"re-seated outside the cloud: {(bx, by)}"
+    assert bx >= 540.0, f"re-seated into the stub's water at {(bx, by)} - the re-seat must consult fixture_clear_of_water"
     assert not any(len(lb) > 5 and lb[5] == "notice board" for lb in s.M["labels"]), "orphan caption left behind"
     assert len(s.M["kosatsuba"]) == 1, "old board not popped"

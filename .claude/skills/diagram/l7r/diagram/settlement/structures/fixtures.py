@@ -185,6 +185,33 @@ class PublicFixturesMixin:
             self.label(_lx, _ly, label, 8, italic=True, color="#7A5A30", rot=_t)
         return z
 
+    def fixture_clear_of_water(self: Settlement, x: float, y: float, half: float) -> bool:  # type: ignore[misc]
+        """Does a point fixture of half-diagonal `half` stand clear of every watercourse?
+
+        THE VERGE PROBES BYPASS THE WATER CLEARANCE, and this buys it back explicitly. A verge-hugging
+        fixture must probe with `_fits(..., corridors=False)` - the corridor test is a HOUSE setback
+        from the tread, and applying it would refuse every verge there is - but `corridors=False` also
+        switches off the watercourse clearance bundled into the same test, so the probe will happily
+        seat a board in a stream. Cohort seed 13 did exactly that (`features_do_not_overlap` on
+        ('kosatsuba', 'streams') plus `no_structure_on_stream`) once a homestead re-pack changed which
+        verges were free: the board sat at (715, 517) on a 7 px stream, INSIDE the house cloud, so the
+        hamlet tier's outside-the-cloud re-seat never even looked at it.
+
+        ONE predicate, two callers - `place_kosatsuba` here and `hamletgen.stage_notice`'s re-seat,
+        which faces the identical problem for the identical reason. Fixing only the caller that
+        happened to fail would have left the other seating boards in water on the next re-roll.
+
+        Reads the DRAWN courses (`drawn_channels`) as well as the recorded ones, because the filleted
+        stroke is what a reader sees and what the overlap matrix measures."""
+        for key, default in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 4.2), ("drawn_channels", 2.5)):
+            for rec in self.M.get(key) or []:
+                pts = rec.get("poly") or rec.get("pts") or []
+                need = float(rec.get("w") or default) / 2 + half
+                for i in range(len(pts) - 1):
+                    if seg_dist(x, y, (pts[i][0], pts[i][1]), (pts[i + 1][0], pts[i + 1][1])) < need:
+                        return False
+        return True
+
     def place_kosatsuba(self: Settlement, label: str = "notice board") -> Pt | None:  # type: ignore[misc]
         """AUTO-SITE the settlement kosatsuba on a lane/road verge at the busiest clear node -
         the village/hamlet tiers' procedural sibling of the town/city hand placement (GM
@@ -268,7 +295,7 @@ class PublicFixturesMixin:
                         off = _rw / 2 + h / 2 + 4
                         while off <= lim:
                             x, y = mx + ux * off * side, my + uy * off * side
-                            if off_every_bed(x, y) and self._fits(x, y, w, h, corridors=False):
+                            if off_every_bed(x, y) and self.fixture_clear_of_water(x, y, math.hypot(w, h) / 2) and self._fits(x, y, w, h, corridors=False):
                                 busy = sum(1 for sx, sy in spots if math.hypot(x - sx, y - sy) < 260)
                                 # THE CAPTION IS PART OF THE SEAT (GM 2026-07-27). The glyph is 11 px
                                 # and fits almost anywhere; its caption does not, and the busiest

@@ -85,6 +85,11 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
     return sorted(out, key=lambda q: math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]))
 
 
+_WELL_DRAWN_R = 12.0
+"""The wellhead's DRAWN half-extent, used when asking how far a candidate seat would push the crop.
+It is the `vr` the glyph draws (not the `r` clearance radius), because the frame follows the ink -
+`crop_not_held_open_by_one_feature` quotes a well's extent as 16 px across."""
+
 _FIELD_RING_FLOOR = 5
 """How many front-row seats are taken before `_FRONT_ROW_LANE_CAP` starts applying. It is
 `field_ringed`'s own floor - five farmhouses within 165 px of the field outline - because that is a
@@ -492,11 +497,24 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                 _by0 = min((b[2] for b in _cb), default=min(ys))
                 _by1 = max((b[3] for b in _cb), default=max(ys))
 
-                # bound as defaults: the closure lives one loop iteration (B023), same as `on_crop` below
-                def _outside_cloud(c: tuple[float, float, float], bx0: float = _bx0, bx1: float = _bx1, by0: float = _by0, by1: float = _by1) -> int:
-                    return 0 if bx0 <= c[1] <= bx1 and by0 <= c[2] <= by1 else 1
+                # A TIE-BREAK CANNOT REACH A SEAT WITH NO RIVAL IN ITS BUCKET, so the FRAME goes into
+                # the score itself. Ranking outside-ness ahead of centrality fixed cohort seed 29 and
+                # left seed 7 failing for the reason a tie-break always leaves one: its pad seat was
+                # alone in its minimax bucket, so there was nothing to break the tie against. Seed 7's
+                # well sits 25 px past the northernmost byre and holds the whole frame open
+                # (`crop_not_held_open_by_one_feature`), because a wellhead is a hard crop feature with
+                # a 16 px extent and the crop follows it out.
+                #
+                # THE EXCHANGE RATE IS 1:1 IN PIXELS, which is what makes this a rule rather than a
+                # knob: a seat that drags the frame out by N px must save at least N px of the
+                # worst-served household's walk to be worth it. Both quantities are distances in the
+                # same units, so no weighting has to be invented - and the well that genuinely serves
+                # an outlying lobe still wins, because the coverage it buys is real.
+                def _extent_added(c: tuple[float, float, float], bx0: float = _bx0, bx1: float = _bx1, by0: float = _by0, by1: float = _by1) -> float:
+                    """How far past the crop's predicted box this seat (drawn radius included) reaches."""
+                    return max(0.0, bx0 - (c[1] - _WELL_DRAWN_R), (c[1] + _WELL_DRAWN_R) - bx1, by0 - (c[2] - _WELL_DRAWN_R), (c[2] + _WELL_DRAWN_R) - by1)
 
-                pool.sort(key=lambda c: (_worst_after(c) // 66.0, _outside_cloud(c), c[0]))
+                pool.sort(key=lambda c: ((_worst_after(c) + _extent_added(c)) // 66.0, _extent_added(c), c[0]))
             _, x, y = pool.pop(0)
             if any(math.hypot(x - px, y - py) < 170.0 for px, py in placed):
                 continue  # `wells_not_clustered`: shared wells serve separate courtyards
