@@ -45,6 +45,22 @@ class HomesteadPartsMixin:
         for poly in self.field_polys:  # keep the whole DRY footprint out of every paddy
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < r + 4:
                 return False
+        # ...AND ASK THE QUESTION THE CHECK ASKS, OF THE SOURCE THE CHECK READS (cohort seed 31,
+        # 2026-08-18). The loop above is a CENTRE-and-circle test against `field_polys`, which holds
+        # the smoothed ENVELOPE; `harvest_yards_clear_of_paddies` is a CORNER test against each
+        # paddy's own recorded `outline`. Two sources and two geometries, so they can disagree - and
+        # on seed 31 they did: a yard cleared the envelope by its circle and still put a corner at
+        # (2024, 1908) inside a drawn basin. This is the same defect shape as the woodland scan
+        # mirroring its check's formula but not its window, fixed earlier the same day; the standing
+        # rule is that placement and its check read ONE source.
+        _fo = [f["outline"] for f in self.M.get("fields", []) if f.get("kind") == "paddy" and f.get("outline")]
+        if _fo:
+            _cn = [(x + sx * w / 2, y + sy * h / 2) for sx in (-1.0, 1.0) for sy in (-1.0, 1.0)]
+            for _ol in _fo:
+                if any(point_in_poly(_px, _py, _ol) for _px, _py in _cn):
+                    return False
+                if any(-w / 2 <= _vx - x <= w / 2 and -h / 2 <= _vy - y <= h / 2 for _vx, _vy in _ol):
+                    return False  # ...and the other direction: a basin vertex inside the yard, which the check also tests
         for px, py, pw, ph, *_ in self.placed:
             if px == hx and py == hy:  # the yard abuts its OWN farmhouse - allowed
                 continue
