@@ -170,12 +170,17 @@ def main(argv: list[str] | None = None) -> int:
     # violations: 0` on maps recording thousands of crowns, and every review that quoted it was
     # quoting a family nobody had looked at. Where the MANIFEST records a feature the family draws,
     # parsing none of it is drift, not cleanliness.
-    _blind = [fam for fam, key in (("crown", "tree_crowns"),) if len(fams[fam]) == 0 and manifest.get(key)]
-    if _blind:
+    # COVERAGE, NOT MERELY NON-ZERO. The first version of this guard fired only at exactly zero, and
+    # that is how the crown family went from 0% to 63% coverage and still reported "crown checked":
+    # `CROWN_FILLS` had been made "exhaustive" while missing every woodland-commons canopy. A partial
+    # family is the same failure as a blind one, just quieter - so compare what was PARSED against
+    # what the manifest RECORDS. Crowns are recorded as a flat [x, y, r] run, hence the // 3.
+    _rec_crowns = len(manifest.get("tree_crowns") or []) // 3
+    if _rec_crowns and len(fams["crown"]) < _rec_crowns:
         print(
-            f"scatter_audit: ERROR - parsed 0 bases for {'/'.join(_blind)} while the manifest records them "
-            f"(tree_crowns={len(manifest.get('tree_crowns') or [])}); the emission styling has drifted from this "
-            f"file's anchors - treat the AUDIT as broken, not the map as clean",
+            f"scatter_audit: ERROR - parsed {len(fams['crown'])} crown bases but the manifest records {_rec_crowns} "
+            f"({100 * len(fams['crown']) / _rec_crowns:.0f}% coverage); the emission styling has drifted from "
+            f"`CROWN_FILLS` - treat the AUDIT as broken, not the map as clean",
             file=sys.stderr,
         )
         return 2

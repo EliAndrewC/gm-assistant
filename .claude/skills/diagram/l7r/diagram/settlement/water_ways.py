@@ -31,6 +31,21 @@ if TYPE_CHECKING:
     from .core import Settlement
 
 
+_FRAY_DEG = 20.0  # below this the two ways are the same track fraying, not a junction (see trim_lane_stubs)
+
+
+def _angle_between(run: Any, other: Any) -> float:
+    """The acute angle in degrees between two segments, 0 = parallel (either direction)."""
+    (ax, ay), (bx, by) = run
+    (cx, cy), (dx, dy) = other
+    u, v = (bx - ax, by - ay), (dx - cx, dy - cy)
+    lu, lv = math.hypot(*u), math.hypot(*v)
+    if lu < 1e-9 or lv < 1e-9:
+        return 90.0
+    cos = abs(u[0] * v[0] + u[1] * v[1]) / (lu * lv)
+    return math.degrees(math.acos(max(0.0, min(1.0, cos))))
+
+
 _LANE_MIN_FT = 71.0  # one homestead's frontage: below this a lane can front nobody (see trim_lane_stubs)
 
 
@@ -49,23 +64,30 @@ def _pull_back(pts: list[Pt], reaches: Any, step: float = 8.0, keep_frac: float 
     full = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:], strict=False))
     floor = full * keep_frac
     out = list(pts)
+    best: list[Pt] | None = None  # the SHORTEST end seen that still reaches something
     while len(out) >= 2:
         a, b = out[-2], out[-1]
         seg = math.hypot(b[0] - a[0], b[1] - a[1])
         if seg <= step:
             if len(out) == 2:
-                return out
+                break
             out.pop()
             continue
         t = (seg - step) / seg
         cand = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
         trial = [*out[:-1], cand]
         if sum(math.hypot(q[0] - r[0], q[1] - r[1]) for q, r in zip(trial, trial[1:], strict=False)) < floor:
-            return out
+            break
         out = trial
+        # STOP AT THE LAST THING SERVED, not at the predicate's EDGE. Returning the first point that
+        # reaches anything leaves the tread ending on the 90 ft radius of a farmhouse centre - i.e.
+        # ~60 ft clear of that homestead's own footprint, petering out in grass (both the Kashikawa
+        # and Sawada reviews raised it independently). Walking on while it STILL reaches, and keeping
+        # the shortest such point, ends the lane at the homestead instead - and where the end also
+        # ran alongside a sibling arm, it shortens that parallel run by the same amount.
         if reaches(cand):
-            return out
-    return out
+            best = list(trial)
+    return best if best is not None else out
 
 
 class WaterWaysMixin:
@@ -543,18 +565,28 @@ class WaterWaysMixin:
             if len(pts) < 2:
                 continue
 
-            def _reaches(q: Pt, me: int = i) -> bool:
+            def _reaches(q: Pt, me: int = i, run: Any = None) -> bool:
                 for k, other in enumerate(lanes):
                     if k == me or len(other["pts"]) < 2:
                         continue
                     op = [(float(x), float(y)) for x, y in other["pts"]]
-                    if min(seg_dist(q[0], q[1], a, b) for a, b in zip(op, op[1:], strict=False)) <= way_reach:
-                        return True
+                    _near = min(zip(op, op[1:], strict=False), key=lambda ab: seg_dist(q[0], q[1], ab[0], ab[1]))
+                    if seg_dist(q[0], q[1], _near[0], _near[1]) > way_reach:
+                        continue
+                    # A LANE THAT MEETS ANOTHER CROSSES IT; ONE THAT FRAYS RUNS ALONGSIDE IT.
+                    # Proximity alone is not arrival, and taking it as such made this predicate blind
+                    # to the very arm the docstring above cites: Sawada's lane 0 ran 90 ft past its
+                    # own T with lane 2 and died 13 ft from it on an 8 deg divergence, so it was
+                    # "within 40 ft of another way" - the lane it had ALREADY met - and passed. The
+                    # adjacency that constitutes the defect was satisfying the test for it.
+                    if run is not None and _angle_between(run, _near) < _FRAY_DEG:
+                        continue  # near-parallel: this is the same track fraying, not a junction
+                    return True
                 return any(math.hypot(q[0] - h["x"], q[1] - h["y"]) <= house_reach for h in houses)
 
             for _ in range(2):  # each end in turn; a 2-point lane can lose at most one
-                if len(pts) >= 2 and not _reaches(pts[-1]):
-                    pts = _pull_back(pts, _reaches)
+                if len(pts) >= 2 and not _reaches(pts[-1], run=(pts[-2], pts[-1])):
+                    pts = _pull_back(pts, lambda q, _p=pts: _reaches(q, run=(_p[-2], _p[-1])))
                     trimmed += 1
                 pts.reverse()
             # ...and a lane too SHORT to front anybody is not a lane at all, it is clipping debris.

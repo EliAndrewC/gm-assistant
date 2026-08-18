@@ -45,13 +45,32 @@ LAND = '#EFE3C2'
 PADDY_SHADES = ['#A7C49C', '#9FBE93', '#AECBA1', '#9BBA8F', '#B4CCA6']  # rice mid-growth (green)
 FLOODED_SHADES = ['#93B0A2', '#8AAB9A', '#9DBAAB', '#88A99A', '#9AB6A8']  # just-transplanted paddy (water+shoots, blue-green)
 RIPE_SHADES = ['#CBBB74', '#C4B36A', '#D1C180']  # ripening rice (golden) - a few plots
-# CROWN FILLS - every colour the engine paints a tree CROWN with, in one place so a reader of the
-# ink can find them all. `tools/scatter_audit.py` imports this rather than carrying its own copy:
-# it used to hardcode #6E8B4A / #7C9856 / #87A45C, none of which the engine has drawn for some time,
-# so the audit parsed ZERO crowns on maps recording thousands and still printed "crown checked".
-# A palette copied into a reader is a copy that drifts, and this one drifted silently because
-# nothing compared the two. (Two conifer greens are listed because the woodland stand and the
-# homestead grove each picked their own - #4A6733 and #496733 - which is itself a small drift, left
-# alone deliberately: unifying them would change committed ink for no gain the eye can see.)
-CROWN_FILLS = ('#4A6733', '#496733', '#6E8B43', '#7C9A4E')
+# CROWN FILLS - every colour the engine paints a RECORDED tree crown with. `tools/scatter_audit.py`
+# imports this rather than carrying its own copy.
+#
+# THE LIST IS THE AUTHORITY AND IT IS CHECKED, because a hand-written "exhaustive" list is a claim
+# and claims rot. It has now rotted TWICE in one day. First the audit hardcoded #6E8B4A / #7C9856 /
+# #87A45C and parsed ZERO crowns on maps recording thousands. Then this constant replaced them with
+# the four fills two of the three drawing sites use - and asserted in its own comment that the
+# engine "has not painted [the old three] for some time", which was FALSE: `land/cover.py` paints
+# every woodland-commons canopy with exactly those three, two lines above the `M["tree_crowns"] +=`
+# that records them. The audit went from 0% to 63% coverage and still printed "crown checked".
+# `test_crown_fills_covers_every_recorded_crown` regenerates a map and compares parsed against
+# recorded, so the next drift fails instead of narrowing the count.
+#
+# The three sites, and why they differ: `shrines_wells/woods.py` (tree stands) and
+# `homestead_parts.py` (homestead groves) each pick a conifer green and two broadleaf greens -
+# #4A6733 vs #496733 is a small unintended drift between them, left alone because unifying it would
+# change committed ink for no gain the eye can see. `land/cover.py` (woodland commons) kept an older
+# triple. `homestead_parts.py` also caps bamboo with #BBD06A, recorded like any other crown.
+CROWN_FILLS = (
+    '#4A6733',  # woods.py conifer
+    '#496733',  # homestead_parts.py conifer (the drift above)
+    '#6E8B43',  # both, broadleaf
+    '#7C9A4E',  # both, broadleaf
+    '#6E8B4A',  # land/cover.py woodland commons
+    '#7C9856',  # land/cover.py woodland commons
+    '#87A45C',  # land/cover.py woodland commons
+    '#BBD06A',  # homestead_parts.py bamboo top
+)
 RICE_GREENS = ['#A6C398', '#A2C094', '#A9C69C']  # rice at ONE stage - near-identical greens (reads uniform)
