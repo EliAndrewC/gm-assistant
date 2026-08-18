@@ -823,3 +823,79 @@ def _seg_0598__nucleated_records_cluster_seeding(*, M: Any = _UNBOUND, check: An
             "a nucleated scripted map records neither meta.cluster_shape (the cluster-seeds cloud ran and honored the knob) nor meta.cluster_seeding (the rows/frontage passes seated every house and the rolled shape went unhonored) - a rolled knob must leave a trace either way, or it can silently not-record with nothing warning; stage_homesteads records the seeding mode",
         )
     return _kept(locals(), ())
+
+
+_BELT_MAX_GAP_FT = 30.0
+"""The widest hole a windbreak belt may carry, measured ACROSS the wind.
+
+WHAT THIS IS NOT, because the first version got it wrong and failed 17 of 48 held-out cohort seeds:
+it is not a minimum DEPTH per column. A belt is a jittered scatter, not a wall of masonry -
+`village_grove` lays clumps on a 20 px grid with a 14 px radius and +/-10 px of jitter, so two
+neighbors can sit 40 px apart and leave a single 10 ft column with no clump centre near it. Demanding
+canopy in every column measures the scatter's pitch, not the belt's integrity, and a rule calibrated
+that way passes the four maps whose belts happen to be dense and fails a third of the cohort.
+
+What a reader actually sees, and what a wind wall actually fails at, is a GAP: a RUN of bare columns
+wide enough to see through. 30 ft is a clump's own drawn diameter (28 ft) rounded up - narrower than
+that and the neighbouring canopies close the view. The two real breaches this rule exists for
+measured ~45 ft (a wellhead seated inside the belt) and ~60 ft (a peer session's lane crossing it);
+a scatter's own worst pitch is ~12 ft.
+"""
+
+
+def _seg_0613__village_windbreak_is_continuous(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0613 (village_windbreak_is_continuous) - added 2026-08-18.
+
+    NOTHING MEASURED THIS, and a wind wall with a hole through it passed every check we had. Inashiro
+    shipped one that morning: a wellhead seated inside the belt suppressed the clumps around it (the
+    grove keeps canopy off a well) and took a 40 ft band from six clumps to one. It was fixed, and
+    then a peer session's lane web crossed the belt on the same map and took the belt-wide minimum
+    from 17.1 ft to 4.8 ft - a 3 ft footpath removing ~45 ft of wall. Two different causes, one
+    invisible failure, because every windbreak check we had asks about the belt's POSITION (windward
+    side, embraces the cluster, scales with the cluster) and none about whether it is a wall.
+
+    MEASURED ALONG THE WIND, PER COLUMN ACROSS IT - and that is the correction two reviewers made to
+    my first framing. A bare LATITUDE is not a hole: wind crossing it still meets canopy north and
+    south, and a per-latitude scan flags a perfectly healthy diagonal belt while missing a genuinely
+    thin window. What matters is how much canopy the wind passes through, so the belt is projected
+    onto the wind axis and the across-wind axis, and each column's covered depth is summed with
+    overlaps merged."""
+    _wb = [g for g in M.get("village_groves", []) if g.get("role") == "windbreak" and g.get("clumps")]
+    if M["meta"].get("generated_by") and _wb:
+        _wv = {"N": (0.0, -1.0), "NE": (0.7071, -0.7071), "E": (1.0, 0.0), "SE": (0.7071, 0.7071), "S": (0.0, 1.0), "SW": (-0.7071, 0.7071), "W": (-1.0, 0.0), "NW": (-0.7071, -0.7071)}
+        _wx, _wy = _wv.get(str(M["meta"].get("windward", "S")), (0.0, 1.0))
+        _px, _py = -_wy, _wx  # the across-wind axis
+        _thin: list[tuple[int, int, int]] = []
+        for _g in _wb:
+            _r = float(_g.get("r", 6))
+            _pr = [(c[0] * _px + c[1] * _py, c[0] * _wx + c[1] * _wy, c[0], c[1]) for c in _g["clumps"]]
+            # AN EMPTY COLUMN IS THE WORST CASE, NOT A SKIPPED ONE. The first cut of this check wrote
+            # `if _spans:` and so scored a column with NO canopy as nothing at all - it passed a
+            # sabotaged Inashiro with a 60 ft band cut clean out of its belt, which is the exact
+            # shape both real causes produced. A check that cannot see the total absence of the thing
+            # it measures is the `if meta.get(...)` trap in another costume, and this segment is the
+            # third time today it has been written by accident.
+            #
+            # The ENDS are excluded by one clump radius at each side: a belt tapers where it stops,
+            # and the outermost column of a diagonal belt legitimately carries one clump's worth.
+            _lo, _hi = min(p[0] for p in _pr) + _r, max(p[0] for p in _pr) - _r
+            _run = 0.0
+            _t = _lo
+            while _t <= _hi:
+                if any(abs(p[0] - _t) <= _r for p in _pr):
+                    _run = 0.0
+                else:
+                    _run += 10.0
+                    if _run > _BELT_MAX_GAP_FT:
+                        _near = min(_pr, key=lambda p: abs(p[0] - _t))
+                        _thin.append((round(_near[2]), round(_near[3]), round(_run)))
+                _t += 10.0
+        check(
+            "village_windbreak_is_continuous",
+            not _thin,
+            f"the windbreak carries a gap wider than {_BELT_MAX_GAP_FT:.0f} ft at {len(_thin)} point(s): {sorted(set(_thin))[:4]} "
+            f"(x, y, ft of bare run ACROSS the wind) - a belt with a hole in it is not a wind wall. Measured as a RUN of bare columns rather than "
+            f"as depth per column, because a belt is a jittered scatter and its own pitch leaves single columns empty. Let the belt re-seat around "
+            f"whatever blocked it rather than losing the column",
+        )
+    return _kept(locals(), ())

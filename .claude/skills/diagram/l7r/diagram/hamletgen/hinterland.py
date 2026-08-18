@@ -31,6 +31,14 @@ def stage_hinterland(s: Settlement, plan: SitePlan) -> None:
 CROP_MARGIN = 48.0  # the one crop margin, shared by stage_frame's crop_to_content call and the
 # predicted-kept-window math in open_ground_patches - two hardcoded 48s would drift
 
+_COMMONS_REACH = 1.49
+"""How much further a rotated parcel reaches than the equal-AREA square, worst case.
+
+`open_ground_patches` rolls an aspect up to 2.2:1 while holding area, so the long half-axis grows by
+sqrt(2.2) = 1.483 and the short one shrinks to match. Every keep-out test is done at this reach, so
+a parcel that rotates cannot end up nearer a crop, a lane or the marsh than the square it replaced -
+rotating a footprint must never buy ground the square could not have had."""
+
 _COMMONS_FLOOR_FT = 120.0
 """The smallest square a woodland COMMONS may be drawn as, in feet.
 
@@ -354,7 +362,10 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                 # parcel too small to read as a managed wood should not be drawn smaller to satisfy
                 # a variance rule. If the floor does not fit, the rung fallback still applies, so
                 # this can only ever make a parcel larger or leave it alone.
-                half_used = half  # the rung, which the ladder above guarantees is at or over the floor
+                half_used = half  # the rung: the scan already tested this seat at REACH, so the rotated parcel fits
+                # the reach a rotated parcel needs is its circumscribing half - a 2.2:1 parcel of the
+                # same AREA reaches sqrt(2.2) further along its long axis than the square did, so the
+                # candidate is tested at that reach and the rotation cannot buy ground.
                 for _cand in (max(half * _f, _COMMONS_FLOOR_FT / 2.0), max(half * 0.84, _COMMONS_FLOOR_FT / 2.0)):
                     if _ok(jx, jy, _cand):
                         x, y, half_used = jx, jy, _cand
@@ -376,7 +387,49 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                 # so a dropped parcel does not silently consume a size band the next one could use.
                 if _bands:
                     _bands.pop(_bi)
-                chosen.append([(x - half_used, y - half_used), (x + half_used, y - half_used), (x + half_used, y + half_used), (x - half_used, y + half_used)])
+                # ...AND IT IS NOT A SQUARE (settlement-review x2, 2026-08-18 round 2). Every woodland
+                # parcel the engine had ever drawn was `rot: 0` with `w == h` - 12 of 12 across the
+                # four hamlets - and the reviewers' point was that the size work made this MORE
+                # conspicuous, not less: four identical squares read as one repeated stamp, but four
+                # differently-sized perfect squares read as a lattice with a size knob bolted on,
+                # because the varying dimension proves the constant one was a choice.
+                #
+                # The record is decisive rather than two-sided, so this is calibrated liberty and not
+                # a knob between forms: *iriai* commons boundaries were customary and described by
+                # ridge, stream and path, and satoyama coppice sits on the slope break - there is no
+                # attested rectilinear woodlot. Aspect and bearing therefore roll per parcel from its
+                # own position, AREA HELD (hw*hh is unchanged, so every size rule above still means
+                # what it says), and the bearing is taken off the fall line because a hillside wood
+                # runs with the contour rather than with the page.
+                #
+                # The keep-out tests keep using the CIRCUMSCRIBING half, so a rotated parcel clears
+                # everything a square of the same reach would have: rotating a footprint must not be
+                # able to buy ground the square could not have had.
+                # THE ASPECT ADAPTS TO THE ROOM, it does not demand it. Testing every seat at the
+                # worst-case circumscribing reach was the first cut and it was far too strict: it
+                # left Kashikawa - the oak map - woodless again, undoing the morning's fix, because
+                # that map's ground is genuinely tight and a 1.49x reach requirement refuses nearly
+                # all of it. So the rolled aspect is a TARGET, stepped down to whatever this seat
+                # actually supports, with the square as the floor. A roomy seat gets a long wood, a
+                # tight one still gets its square, and no map loses a parcel to the shape roll.
+                # The ladder steps DOWN from the rolled target toward the square. The first cut wrote
+                # the rungs as literals (target, 1.6, 1.3) and so could step UP - a seat that rolled
+                # 1.2 was then offered 1.6, a LONGER parcel than the roll asked for - and it needed a
+                # guard clause to stop that, which was itself unreachable. Scaling the rolled excess
+                # says what was meant in one expression: at the last rung the excess is 45% of the
+                # roll, and if even that will not fit the square always does, because the seat was
+                # accepted at exactly this half.
+                _excess = 1.2 * s._hjit(x, y, 77.0)
+                _asp = 1.0
+                for _step in (1.0, 0.72, 0.45, 0.0):
+                    _try = 1.0 + _excess * _step
+                    if _ok(x, y, half_used * math.sqrt(_try)):
+                        _asp = _try
+                        break
+                _hw, _hh = half_used * math.sqrt(_asp), half_used / math.sqrt(_asp)
+                _bear = math.radians(math.degrees(math.atan2(dy, dx)) + 90.0 + 40.0 * (s._hjit(x, y, 78.0) - 0.5))
+                _bc, _bs = math.cos(_bear), math.sin(_bear)  # not `_cb` - that name is the crop-boxes list above
+                chosen.append([(x + ex * _hw * _bc - ey * _hh * _bs, y + ex * _hw * _bs + ey * _hh * _bc) for ex, ey in ((-1, -1), (1, -1), (1, 1), (-1, 1))])
                 centers.append((x, y, size * (1.15 + 1.35 * s._hjit(x, y, 74.0))))
     return chosen
 
