@@ -326,7 +326,7 @@ options priced below). What shipped:
   fires when the pairwise lap passes **4.0%** of the recorded fabric. Measured over the four
   scripted hamlets and a 48-seed cohort: 0.53 / 0.54 / 0.79 / 1.06% on the pool, cohort median
   ~0.9%, tail 1.49 / 1.51 / 1.57 / 2.49%. The measurement is a deliberate UPPER bound (each pair
-  clipped against the neighbour's convex hull, every pair summed), so a pass is a real verdict.
+  clipped against the neighbor's convex hull, every pair summed), so a pass is a real verdict.
 
 **What it costs, observably:** anyone summing `plot_rings` areas without dissolving over-counts by
 up to 4% (up to 2.5% on anything shipped today), and ring adjacency does not imply visible
@@ -398,31 +398,50 @@ which is why `e0fb2417` (the well tie-break, byte-identical on every shipped map
 in history. The general lesson: when a fabric change trips a check in a different subsystem, measure
 whether the geometry moved before assuming the change is at fault, and separate the commits.
 
-### BLOCKING, with the GM: cohort seed 5's drain gets no plank (a placer/check split)
+### OPEN, each with its measurement: four things the 2026-08-18 review round raised and left
 
-**State: the paddy size floor plus three review-found placement fixes are green on the gate (3319
-passed) and committed in the clone, NOT pushed.** Cohort seeds 1-48 are **45/48 against a 46/48
-baseline** - one regression, and constitution Principle XIII allows only fix, revert or an explicit
-waiver.
+All four came from `settlement-review` on the paddy size floor and are NOT in that feature's scope;
+each is here with the number that establishes it, per Principle XIV's deferral bar.
 
-**The defect.** Seed 5 fails `long_ditches_have_a_footbridge` on a 996 px drain tapering 1.5 -> 5.5 px.
-Traced, not guessed: moving houses (the lane-frontage cap) flips the CHECK's useful-ground verdict to
-"this ditch needs a plank", while the PLACER refuses all ~40 candidate seats because
-`_plank_reaches_useful_ground` is evaluated against the **confluence-widened** span, whose ends land
-on marsh/scrub. Two predicates asking the same question about different geometry - the classic split
-`channel_footbridges` has fought twice before in its own comments.
+- **A tip-angle companion to the area floor.** The area rule cannot reach a dart: Mizuguchi's ring at
+  (1021-1084, 968-1012) is 0.69 of a cell and reads as an arrowhead, and the sharpest interior angles
+  on that sheet are 27.4 / 27.6 / 30.4 deg on basins of 0.55-0.72 cell. A minimum tip angle of
+  ~25-30 deg would catch the family without re-imposing the grid the four-sides rule was declined
+  for. **Not** the declined rule - a 5-sided basin with an 8 ft shortest side is fine.
+- **The woodland commons sit on an exact lattice.** Mizuguchi's three parcels are identical 250 x 250
+  ft squares at (456,967), (726,697), (996,427) - offsets of exactly (+270,-270) each - so they read
+  as three stamps of one wood marching up a ruled diagonal. `open_ground_patches` scans a uniform
+  lattice with a monotone score and a mutual-separation term, which produces an equal-step chain by
+  construction. The fourth parcel, off the ladder, reads fine and is the control. **Fix sketch**:
+  jitter the accepted seat off the lattice by up to half a step from the map's own seed, and roll
+  `size` per parcel instead of stepping a shared ladder.
+- **Sawada lost a woodland parcel this roll**, 2 -> 1: a 200 ft, 54-crown stand at (230, 3040) did
+  not re-seat, leaving one 125 ft, 15-crown parcel as the map's only wood. The view narrowed and
+  `dry_plots` went 25 -> 26, so the shrink ladder or the frame/marsh keep-out is the likely refuser.
+- **`byre_form` should be a KNOB, not a fixed behavior** (Principle XII's two-supportable-answers
+  rule). Both forms are attested - the ox under the farmhouse roof in the wealthier
+  magariya/sanheyuan pattern, and a detached shed on common ground where a team is shared - and the
+  current behavior is only the second. Rolling between `courtyard` and `detached_commons` per
+  settlement would also be one of the cheapest visible differences between two same-region hamlets.
 
-**Two attempted fixes, both reverted, both recorded at the point of change**: re-sizing the deck at
-each seat from the local taper (correct by the docstring, but it widened every collector's downstream
-decks and cost `features_do_not_overlap`, cohort 45 -> 44), and re-basing the obliqueness ceiling on
-`max(w, w_tail)` (a real defect - a head-based ceiling is meaningless on a collector that starts as a
-thread - so it was KEPT, but it was not the blocker).
+### RESOLVED 2026-08-18 (was BLOCKING): cohort seed 5's drain, and the well tie-break's cost
 
-**Fix sketch**: unify the two useful-ground tests over ONE span, so the check and the placer judge
-the same deck. The honest options are to have the placer fall back to the nominal span when the
-widened deck cannot reach useful ground (and record the span it actually used), or to give the check
-the placer's own predicate. Either changes the shared footbridge contract that a placer AND a gate
-check both depend on, which is why it is with the GM rather than folded in.
+Seed 5's unplanked drain resolved itself in the merge: a peer's front-row rank cap moved the houses
+enough to reopen the plank seats. Recorded because the diagnosis still stands and the split it
+describes is real - the CHECK's useful-ground verdict and the PLACER's are evaluated against
+different spans (the placer uses the confluence-widened one), so the two can disagree again. One real
+defect was found while chasing it and IS fixed: the obliqueness ceiling was measured against the
+ditch's HEAD width, meaningless on a collector that starts as a thread and earns its section at the
+outfall; it now measures against `max(w, w_tail)`, the same section `worth_planking` uses.
+
+**Still open from the same round**: the well tie-break prices crop extent against the worst-served
+walk at 1:1 px, and on Sawada that traded a well from a seat with 11 households within 300 ft to one
+with 5, taking the worst walk 364 -> 493 ft. Inashiro shows the same shape (median walk 159 -> 194
+ft, both wells ~100 ft from any door). The idiom 井戸端会議 - "well-side conference" - says a
+communal well is a dooryard social node, so the direction is wrong even though the rule is right in
+principle; the likely cause is that the final tie-break is distance to the cluster CENTROID, which on
+a two-lobed cluster prefers the empty middle. **Fix sketch**: break the tie on distance to the
+nearest house instead of to the centroid.
 
 ### DONE 2026-08-17: `_outside_cloud` now tests the CROP's box, not a box of house centers
 
@@ -740,7 +759,7 @@ rule, and 121 was already carrying three fixes.
 `within_edge_gap(a, b, N)` - it already measures real footprints, and `farm_sheds_attached` is the
 model to copy. Confirm it fires on Mizuguchi and on nothing else in the pool. Then require the same
 clearance in `_bundle_common_fits` against every placed house's raked quad: `_sun_corridor_ok`
-already reads neighbours' geometry off `M["houses"]` during placement, so both the precedent and the
+already reads neighbors' geometry off `M["houses"]` during placement, so both the precedent and the
 plumbing exist. Ground the number in **"two thatched roofs must shed separately"** - the principle
 [`research/buildings.md`](research/buildings.md) already records for a building standing against a
 compound wall - plus the drawn-scale fact that two strokes 2 px apart merge to the eye.
@@ -759,7 +778,7 @@ tier's own work. (`research/homesteads.md` "The threshing yard's sun";
 ## RULED 2026-08-17 (same day): Kashikawa's hamlet-of-one
 
 Raised by `settlement-review`, **not caused by** feature 121 (the house is byte-identical across the
-re-pack). The farmstead at (1352.4, 3062.7) stands **469 ft** from its nearest neighbour - the
+re-pack). The farmstead at (1352.4, 3062.7) stands **469 ft** from its nearest neighbor - the
 next-most-isolated house is 128 ft - and **385 ft from any lane, with no way reaching it at all**, on
 a map that declares `meta.nucleated: true`. It is coherent in itself (50 ft from the stream, its own
 byre).
@@ -790,7 +809,7 @@ either house's rake. Cohort after: 24/24 with the new rule live.
 
 **The hamlet-of-one: half fixed itself, half accepted.** The front-row density fix pulled the
 cluster toward the paddy and Kashikawa's outlier went from 469 ft to **170 ft** from its nearest
-neighbour - ordinary outer-edge spacing - without the house moving at all. Its remaining 385 ft from
+neighbor - ordinary outer-edge spacing - without the house moving at all. Its remaining 385 ft from
 any lane is ACCEPTED: a lane may not run through the flooded paddy, and field workers reach that
 ground along the bunds, so an edge farmstead is reached the way the fields are. Declined: folding it
 into the nucleus, drawing it a spur lane across the crop, and a "every farmhouse within N ft of a
