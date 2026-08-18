@@ -1153,3 +1153,83 @@ the maps currently depict, and it is defensible - a lane is a cart way, and peop
 and `lanes_reach_something`'s house threshold stops being a number nobody has justified.
 
 </details>
+
+## OPEN 2026-08-18: paddy bunds still step sideways - the placement half of the GM's report
+
+**The report (GM 2026-08-18, on Inashiro).** *"The earthen wall is kind of going in a southward
+direction, and then instead of just continuing on and meeting at the four way intersection between
+the north south earthen walls and the east west earthen walls, it just goes sharply to the left
+before going down, thus making these extremely irregular shapes. This really, really looks like a
+rendering error."*
+
+**The measurement, which is the part worth keeping.** Snapshotting `close_seams`'s input and output
+on Inashiro: **0 steps on the 543 carved rings, 26 on the 634 it hands back** - 20 welded into
+carved basins by `_absorb`, 8 on pockets `_plant` planted. Every frozen pre-`close_seams` fixture in
+`pool/regressions/` scores 0. The carve does not make this shape; the seam pass does.
+
+**The mechanism.** A thin residual strip between two carved rows is one connected scrap. `_plant`
+grids a pocket from the POCKET'S OWN bounding box at `plot_across` (48 ft on a hamlet), which is
+where neither the row above nor the row below has a seam, and hands the too-thin cells back as
+offcuts. `_absorb` then welds each offcut into whichever basin shares the most bund with it -
+alternately the row above and the row below - and the wall between the rows comes out a staircase.
+Inashiro's east flank at (2283-2474, 1718) is four rectangular tabs in a row, which is the one the
+GM circled.
+
+**What landed** (2026-08-18): `waterfields/banks.py::jog_steps` / `jog_vertices`, the predicate; a
+jog guard in `_absorb`'s ladder, ranked with the needle and lump guards and preferring the
+least-jogging weld among the fallbacks; and `tools/jogs.py`, the by-hand report. Measured on the
+four scripted hamlets: **26 -> 23, 37 -> 33, 20 -> 17, 24 -> 16** steps at the intended gate
+thresholds, no regression on any other check, and no measurable cost (regeneration 21.1 s before,
+20.8 s after on Inashiro). The research is in `research/fields.md`, "A bund runs on, or it turns for
+a reason".
+
+**What is left, and it is the bulk of it**: get the four maps to zero, then move the rule out of
+`tools/jogs.py` into `check_village` as `paddy_bunds_do_not_jog` (3 ft offset, 8 ft runs, 25 ft link
+cap, headings compared over the full circle), with a frozen pre-fix Inashiro fixture in
+`pool/regressions/`. The check text, its seven unit tests and the fixture were all written and
+proven to fire before being backed out with the failed attempts below; recover them from this
+commit's parent if the next session wants them rather than rewriting.
+
+**TWO DEAD ENDS, both implemented, measured and reverted.** Neither is a reason not to try again -
+both got most of the way - but each broke something specific, and the next attempt should start by
+answering the specific thing.
+
+1. **`_share` - partition a scrap among the basins along it by NEAREST BASIN.** The right idea, and
+   the numbers say so: each basin takes the ground in front of its own bund, so its wall moves
+   outward across its whole frontage and stays one line, and the T-junctions that leaves are what
+   the research says real fabric looks like. Inashiro went **23 -> 7** (at the predicate as it stood before the curve clause below), and the staircase the GM
+   circled disappeared from the render. Grown by dilating each basin's frontage in one-foot rounds
+   (flat caps and mitre joins, or the band boundaries come back as thirty-vertex arcs), bounded to
+   16 ft of reach since a scrap is thinner than a plot everywhere, then straightened with
+   Douglas-Peucker at 0.9 of the step - straightening at the FULL step moves a wall past the 3 ft
+   `paddy_plot_seams_shared` treats as one line and broke it.
+   **What it broke**: `paddy_plot_seams_shared` on Mizuguchi and Sawada, later Kashikawa too - and
+   an A/B (disable `_share`, regenerate) confirms the causation. The failing geometry is at
+   Mizuguchi (1550, 881): the partition leaves rings of 18-35 vertices with runs of near-duplicate
+   points along a near-vertical cut, and somewhere in that noise a bund ends up standing a short way
+   off its neighbour's across dry floor. Two things were tried and did not fix it - re-offering any
+   piece no basin would take, merged back with its siblings (a good idea on its own merits, keep
+   it), and deduping each piece's ring at 0.5 px (made every count worse). **The question to answer
+   first**: why does the partition leave hairline vertex noise at all, given every piece is
+   intersected back with the scrap? Suspect the interaction of `_despike`'s mitred opening with the
+   flat-capped prisms, and instrument the piece rings before welding rather than after.
+   It also cost **~10% of the regeneration** (21.1 s -> 23.3 s on Inashiro), which is affordable.
+2. **`_unjog` - repair what neither guard could avoid, by straightening a surviving step.** Took
+   Inashiro from 5 to **0** and the whole gate green, which is why it is worth recording in detail.
+   Two implementations. Dropping the step's two vertices from every ring that carries them is NOT
+   partition-preserving - the two rings either side of a wall have different neighbouring vertices,
+   so the chords they close over differ, and Inashiro's rings 460 and 592 lost 400 px2 and gained
+   259, the difference being bare floor. The second implementation trades the corner explicitly
+   (`traded = was.difference(now)`, then the neighbour unions or differences it), which conserves
+   ground by construction and is the right shape. **What it broke**: on Mizuguchi,
+   `paddy_bunds_clear_the_supply_channels` (a straightened wall moves, and can move into a delivery
+   ditch) and `paddy_plots_are_workable_basins` (the repair can draw a basin out to a needle) - both
+   have guards written for them in that reverted commit, judged at the GATE's thresholds since a
+   repair is not a placement choice, and the guards were not enough on their own. It also needs the
+   three refusals it already had - a T-junction, a repair that takes a basin under `_TOE_MIN_AREA`,
+   and a one-basin wall where the cut would SHRINK the basin - and it must not rebuild the vertex
+   index per plot (that alone took a regeneration from 26 s to 80 s).
+
+**The order to do it in**: `_share` first and alone, because it is where the win is and its failure
+is a specific, locatable geometry bug rather than a design problem; then re-measure; then `_unjog`
+only for whatever the partition cannot avoid.

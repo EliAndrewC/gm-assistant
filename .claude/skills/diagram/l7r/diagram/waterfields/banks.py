@@ -517,6 +517,88 @@ def tapers_to_a_point(poly: Poly, end: float, min_deg: float, arm: float) -> boo
     return False
 
 
+# A BUND RUNS ON, OR IT TURNS FOR A REASON - IT DOES NOT STEP SIDEWAYS AND CARRY ON (GM 2026-08-18,
+# on Inashiro: "instead of just continuing on and meeting at the four way intersection ... it just
+# goes sharply to the left before going down"). The aze is puddled mud re-plastered every spring
+# (azenuri) and its bill is its LENGTH, with the corners the part that slumps hardest; a jog buys two
+# right-angle corners and the run between them in exchange for ground that sits at the same level,
+# floods from the same offtake and is reachable from either basin. `research/fields.md` is equally
+# firm the other way - the organic waver is period-correct and an odd-shaped parcel is honest - so
+# the shape this refuses is narrow and specific: a run of wall, a short hop SIDEWAYS, and the same
+# run resuming in the SAME DIRECTION a few feet over.
+#
+# THESE ARE THE PLACER'S NUMBERS, one notch stricter on every axis than the rule they answer to, the
+# way `_WELD_MIN_APEX` sits above `_GATE_MIN_APEX`: the rule fires at a 3 ft offset with 8 ft runs
+# and a 25 ft link, so a weld is refused here at 2 ft with 6 ft runs and a 30 ft link. Same
+# measurement, stricter threshold - never a second measurement bolted alongside it.
+#
+# THE RULE IS NOT IN THE GATE YET, and that is the open half of this work rather than a decision:
+# the engine still leaves 16-33 steps on each scripted hamlet, so a gate check would fail the pool
+# on day one. `tools/jogs.py` reports them on demand meanwhile, and `future-work.md` "paddy bunds
+# still step sideways" carries the residual counts, the two reverted implementation attempts with
+# what each broke, and the sketch - of which moving this rule into `check_village` is the last step.
+_JOG_OFF_FT = 2.0
+_JOG_RUN_FT = 6.0
+_JOG_LINK_FT = 30.0
+_JOG_PARALLEL_DEG = 20.0
+# AND THE HOP MUST BE ACROSS THE WALL, NOT ALONG IT. Without this the test fires on a gently CURVING
+# bund: sample a curve into ~30 px segments and every three of them read as a run, a link and a run
+# resuming near-parallel, with a perpendicular offset of a few feet purely from the bend. Measured
+# 2026-08-18 on Kuwabata, whose paddies are drawn as long curved parcels - 57 reported steps on 43
+# plot rings, every one of them a smooth bend, against 6 for the same map when the turn is tested.
+# A real step turns hard at both ends of the hop; 55 deg is well clear of the ~10-20 deg a sampled
+# curve turns and well under the 90 deg a rectangular tab turns, so it separates them without
+# needing to be tuned. (The two turns are opposite in sign by construction once the runs are
+# required to be near-parallel, so only the magnitude is tested.)
+_JOG_CORNER_DEG = 55.0
+
+
+def jog_steps(ring: Poly, g: float) -> int:
+    """How many times `ring` steps sideways and carries on parallel to itself."""
+    return len(jog_vertices(ring, g))
+
+
+def jog_vertices(ring: Poly, g: float) -> list[tuple[Pt, Pt]]:
+    """The two vertices of each sideways step in `ring` - the ends of the hop, in ring order.
+
+    `g` is the engine's grain (`2 / ftpx`), so px-per-foot is `g / 2` - the same unit conversion
+    `close_seams` uses for the 3 ft doubled-bund floor, and the one place to get it wrong.
+
+    HEADINGS ARE COMPARED OVER THE FULL CIRCLE, not modulo 180 deg. Modulo 180 the test also matches
+    a plain thin rectangle (long side, short end, long side coming back), so every narrow basin the
+    fabric legitimately carries would report a step on its own end wall - measured 2026-08-18 on the
+    shipped Inashiro, 78 hits against 28 for the directed test, the extra 50 all end walls."""
+    ring = dedup_ring(ring, 0.5)
+    n = len(ring)
+    if n < 5:
+        return []  # a quad has no room for a run, a hop and the run resuming
+    px = g / 2.0
+    run = _JOG_RUN_FT * px
+    link = _JOG_LINK_FT * px
+    off = _JOG_OFF_FT * px
+    out: list[tuple[Pt, Pt]] = []
+    for i in range(n):
+        a, b, c, d = ring[i], ring[(i + 1) % n], ring[(i + 2) % n], ring[(i + 3) % n]
+        e1 = (b[0] - a[0], b[1] - a[1])
+        e2 = (c[0] - b[0], c[1] - b[1])
+        e3 = (d[0] - c[0], d[1] - c[1])
+        l1 = math.hypot(*e1)
+        l2 = math.hypot(*e2)
+        l3 = math.hypot(*e3)
+        if l1 < run or l3 < run or not (0.0 < l2 <= link):
+            continue
+        h1 = math.degrees(math.atan2(e1[1], e1[0]))
+        h3 = math.degrees(math.atan2(e3[1], e3[0]))
+        if abs((h3 - h1 + 180.0) % 360.0 - 180.0) > _JOG_PARALLEL_DEG:
+            continue
+        h2 = math.degrees(math.atan2(e2[1], e2[0]))
+        if abs((h2 - h1 + 180.0) % 360.0 - 180.0) < _JOG_CORNER_DEG or abs((h3 - h2 + 180.0) % 360.0 - 180.0) < _JOG_CORNER_DEG:
+            continue
+        if abs(-(e1[1] / l1) * e2[0] + (e1[0] / l1) * e2[1]) >= off:
+            out.append((b, c))
+    return out
+
+
 def pointed_ring(poly: Poly, min_deg: float = 25.0) -> bool:
     """Does this ring taper to a POINT - an interior angle sharper than `min_deg`?
 
