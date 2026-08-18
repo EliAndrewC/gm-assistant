@@ -260,7 +260,18 @@ class PublicFixturesMixin:
         if not routes:
             if self.M.get("lane"):
                 routes.append(([(p[0], p[1]) for p in self.M["lane"]], 8.0))
-            routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
+            # A SERVICE LANE IS NOT A PLACE TO POST THE STATE'S NOTICE. The fallback takes the whole
+            # network when no way declares itself main, which a hamlet never does - so when the lane
+            # web arrived it put ~1,000 ft of 3 ft footpaths into the candidate list on equal footing
+            # with the 5 ft spine, and the board re-seated onto one: a settlement-review measured it
+            # 34.9 ft off the spine where it had been 9.0, now facing a way the engine itself calls
+            # SERVICE. This function's own docstring already states the rule it was breaking - "a
+            # side lane's busiest node is still a side lane, so scoring must never see it" - and
+            # `web` is exactly the hierarchy flag the hamlet tier lacked. Web lanes are used only if
+            # there is nothing else to stand beside.
+            _ways = self.M.get("lanes") or []
+            _main = [ln for ln in _ways if not ln.get("web")] or _ways
+            routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in _main)
             routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [])
         spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
 

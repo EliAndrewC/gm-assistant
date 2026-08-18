@@ -820,6 +820,175 @@ _LANE_WAY_REACH = 40.0  # a lane end this close to another way has MET it
 _LANE_HOUSE_REACH = 90.0  # ...or it stops at a homestead it fronts
 
 
+# THE REACH A FARMHOUSE IS ENTITLED TO, in feet. This is `BUNDLE_PITCH` - the ground one homestead
+# occupies - restated here rather than imported, because the gate does not import the generators it
+# gates (a check that reads a generator's constant cannot catch that constant being wrong). The
+# hamlet generator's `WEB_REACH_FT` is the same number and `tests/hamletgen/test_consts.py` asserts
+# the two agree, which is where the coupling is allowed to live.
+#
+# WHY A HOUSE IS ENTITLED TO ONE AT ALL (research/homesteads.md, "Is every farmhouse reached by a
+# lane, and in what FORM?"): the record is decisive that a house in a nucleated cluster is reached -
+# "every house in the nucleated village is accessible via the interconnected system of narrow lanes
+# and alleys". The earlier reading, that a back rank is walked to along unfigured footpaths, was
+# defensible-sounding with nothing behind it, and it left 25 of the four pool hamlets' 66 farmhouses
+# more than 120 ft from any way. WHY THIS DISTANCE: one bundle pitch is the distance at which a lane
+# passes your own plot or your immediate neighbor's, which is what the sources describe when they
+# say a lateral is "colonized as semi-private space by the adjoining house".
+_WEB_REACH = 100.0
+
+# How close two drawn treads must come to count as ONE network. Same figure `lanes_reach_something`
+# uses for "this end has met another way", deliberately: the two rules are about the same fact from
+# opposite ends, and letting them disagree would let a lane be connected for one and isolated for
+# the other.
+_LANE_JOIN = 40.0
+
+
+# TWO LANE ENDS MAY NOT FRONT THE SAME FARMHOUSE FROM THE SAME SIDE.
+#
+# `_LANE_HOUSE_REACH` lets a lane end discharge its obligation by stopping at a farmhouse. Nothing
+# said the farmhouse could only do that once - so three ends standing within 40 ft of each other, all
+# claiming the same house at 66.9, 55.1 and 40.0 ft, all passed, and a settlement-review read the
+# result at 3x zoom as a broom: not three ways, one way drawn three times with the ends fanned.
+#
+# TWO NUMBERS, and they are doing different jobs. `_FAN_SPREAD_FT` is how close two ends must be
+# before they are the same arrival rather than two arrivals; `_FAN_BEARING_DEG` is how nearly they
+# must point the same way. The bearing clause is what keeps a genuine CROSSROADS legal - two lanes
+# reaching one house from opposite quarters is a house on a corner, which is a real thing and reads
+# as one. It is only when they arrive alongside each other that the eye merges them.
+# Below this divergence an end has not MET the way it is near, it is running alongside it - the
+# engine's `_FRAY_DEG`, restated here because the gate does not import the generator it gates.
+_FAN_FRAY_DEG = 20.0
+
+_FAN_SPREAD_FT = 60.0
+_FAN_BEARING_DEG = 25.0
+
+
+def _seg_0611__lane_ends_front_different_houses(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0611 (lane_ends_front_different_houses) - added 2026-08-18, feature 124."""
+    # ONLY BLUNT ENDS CAN FAN. An end that MEETS another way is a junction, and a junction beside a
+    # junction is a crossroads however tightly they sit - the defect is specifically an end with no
+    # reason to exist except a house that another end is already fronting. Leaving this clause out
+    # made the rule flag every close pair of real junctions, which is most of a nucleated cluster's
+    # middle.
+    _fd_ways = [[(float(x), float(y)) for x, y in (_fd_l.get("pts") or [])] for _fd_l in (M.get("lanes") or [])]
+    _fd_ends = []
+    for _fd_i, _fd_ln in enumerate(M.get("lanes") or []):
+        if _fd_ln.get("connector"):
+            continue
+        _fd_p = _fd_ways[_fd_i]
+        if len(_fd_p) < 2:
+            continue
+        for _fd_tip, _fd_prev in ((_fd_p[0], _fd_p[1]), (_fd_p[-1], _fd_p[-2])):
+            _fd_met = False
+            for _fd_k, _fd_o in enumerate(_fd_ways):
+                if _fd_k == _fd_i or len(_fd_o) < 2:
+                    continue
+                _fd_seg = min(zip(_fd_o, _fd_o[1:], strict=False), key=lambda _ab: seg_dist(_fd_tip[0], _fd_tip[1], _ab[0], _ab[1]))
+                if seg_dist(_fd_tip[0], _fd_tip[1], _fd_seg[0], _fd_seg[1]) > _LANE_WAY_REACH:
+                    continue
+                # PROXIMITY IS NOT ARRIVAL - the engine's own rule, and it is the whole reason this
+                # check exists. The ends a review read as a broom stood 21.6 and 24.3 ft from another
+                # way, i.e. INSIDE the 40 ft reach, and were near-parallel to it: they had not met
+                # that way, they were running alongside it. Counting them as junctions is exactly the
+                # mistake `lanes_reach_something` made before `_FRAY_DEG` was added to it.
+                _fd_ang = abs(
+                    (math.degrees(math.atan2(_fd_tip[1] - _fd_prev[1], _fd_tip[0] - _fd_prev[0])) - math.degrees(math.atan2(_fd_seg[1][1] - _fd_seg[0][1], _fd_seg[1][0] - _fd_seg[0][0])) + 90.0)
+                    % 180.0
+                    - 90.0
+                )
+                if _fd_ang >= _FAN_FRAY_DEG:
+                    _fd_met = True
+                    break
+            if _fd_met:
+                continue  # it crossed a way at a real angle; that is a junction, not a tine
+            _fd_h = min(((math.hypot(_fd_tip[0] - _fd_q["x"], _fd_tip[1] - _fd_q["y"]), (round(float(_fd_q["x"]), 1), round(float(_fd_q["y"]), 1))) for _fd_q in M.get("houses") or []), default=None)
+            if _fd_h is not None and _fd_h[0] <= _LANE_HOUSE_REACH:
+                _fd_ends.append((_fd_tip, math.degrees(math.atan2(_fd_tip[1] - _fd_prev[1], _fd_tip[0] - _fd_prev[0])), _fd_h[1]))
+    _fd_fans = []
+    for _fd_i in range(len(_fd_ends)):
+        for _fd_j in range(_fd_i + 1, len(_fd_ends)):
+            _fd_a, _fd_b = _fd_ends[_fd_i], _fd_ends[_fd_j]
+            if _fd_a[2] != _fd_b[2] or math.dist(_fd_a[0], _fd_b[0]) > _FAN_SPREAD_FT:
+                continue
+            _fd_turn = abs((_fd_a[1] - _fd_b[1] + 180.0) % 360.0 - 180.0)
+            if _fd_turn <= _FAN_BEARING_DEG:
+                _fd_fans.append((round(_fd_a[0][0]), round(_fd_a[0][1]), round(_fd_turn)))
+    check(
+        "lane_ends_front_different_houses",
+        not _fd_fans,
+        f"{len(_fd_fans)} pair(s) of lane ends front the SAME farmhouse from the same side, at {_fd_fans[:4]} (x, y, degrees apart) - "
+        f"a farmhouse discharges one lane end's obligation, not three. Ends standing within {_FAN_SPREAD_FT:.0f} ft of each other and pointing "
+        f"within {_FAN_BEARING_DEG:.0f} degrees the same way read as one way drawn twice with its tip frayed, not as two ways; a house reached "
+        f"from OPPOSITE quarters is a corner and is fine",
+    )
+    return _kept(locals(), ())
+
+
+def _seg_0610__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0610 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
+
+    Numbered 0610, and it moved twice: a peer landed `paddy_basins_are_worth_their_bund` on 0608 in
+    `segments_08d` while this was unpushed, and then took 0609 for the byre-form checks - on my own
+    advice, since I had told them 0608 was mine and then quietly moved onto 0609 myself. A duplicate
+    numeric key is at least a loud derivation error rather than a silent reorder. It still runs directly after 0607 `lanes_reach_something`, which is
+    what matters - the two are converses and belong together.
+
+    The CONVERSE of `lanes_reach_something`, and the half that was missing: that check asks whether
+    each lane serves something, this one asks whether each house is served. A map can pass the first
+    with every lane busy and still strand a third of its houses, which is exactly what the four pool
+    hamlets did."""
+    if M["meta"].get("generated_by"):
+        _fw_ways = [[(float(x), float(y)) for x, y in (_fw_ln.get("pts") or [])] for _fw_ln in (M.get("lanes") or [])]
+        # THE NETWORK, NOT ANY LINE ON THE GROUND. "Every house in the nucleated village is
+        # accessible via the INTERCONNECTED system of narrow lanes and alleys" - so a house served
+        # only by an isolated stub is not served, and the first version of this check could not tell
+        # the difference, because it measured distance to any drawn polyline. Two settlement-reviews
+        # found the same thing independently: 4 of Sawada's 6 web lanes touched nothing, and 7 of its
+        # 19 houses were "reached" only by an island whose nearest real lane was 136-296 ft away -
+        # exactly where they had been before the feature. A check satisfiable by an island rewards
+        # drawing an island.
+        #
+        # The component is grown from the ways that are the settlement's connection to the world:
+        # the connector if one is drawn, else the longest lane. Two lanes are in the same component
+        # when their drawn treads come within _LANE_JOIN, which is the same distance
+        # `lanes_reach_something` treats as one way having met another.
+        _fw_lanes = M.get("lanes") or []
+        _fw_seed = next((_fw_i for _fw_i, _fw_l in enumerate(_fw_lanes) if _fw_l.get("connector")), None)
+        if _fw_seed is None and _fw_ways:
+            _fw_seed = max(range(len(_fw_ways)), key=lambda _fw_i: sum(math.dist(_fw_a, _fw_b) for _fw_a, _fw_b in zip(_fw_ways[_fw_i], _fw_ways[_fw_i][1:], strict=False)))
+
+        def _fw_touch(_fw_p: Any, _fw_q: Any) -> bool:
+            return any(seg_dist(_fw_v[0], _fw_v[1], _fw_a, _fw_b) <= _LANE_JOIN for _fw_v in _fw_p for _fw_a, _fw_b in zip(_fw_q, _fw_q[1:], strict=False)) or any(
+                seg_dist(_fw_v[0], _fw_v[1], _fw_a, _fw_b) <= _LANE_JOIN for _fw_v in _fw_q for _fw_a, _fw_b in zip(_fw_p, _fw_p[1:], strict=False)
+            )
+
+        _fw_main = set() if _fw_seed is None else {_fw_seed}
+        _fw_grew = True
+        while _fw_grew:
+            _fw_grew = False
+            for _fw_i, _fw_p in enumerate(_fw_ways):
+                if _fw_i in _fw_main or len(_fw_p) < 2:
+                    continue
+                if any(_fw_touch(_fw_p, _fw_ways[_fw_j]) for _fw_j in _fw_main if len(_fw_ways[_fw_j]) >= 2):
+                    _fw_main.add(_fw_i)
+                    _fw_grew = True
+        _fw_segs = [(_fw_a, _fw_b) for _fw_i in sorted(_fw_main) for _fw_a, _fw_b in zip(_fw_ways[_fw_i], _fw_ways[_fw_i][1:], strict=False)]
+        _fw_far = []
+        if _fw_segs:
+            for _fw_h in M.get("houses") or []:
+                _fw_c = (float(_fw_h["x"]), float(_fw_h["y"]))  # x, y ARE the center here - same convention as rect_corners
+                _fw_d = min(seg_dist(_fw_c[0], _fw_c[1], _fw_a, _fw_b) for _fw_a, _fw_b in _fw_segs)
+                if _fw_d > _WEB_REACH:
+                    _fw_far.append((round(_fw_c[0]), round(_fw_c[1]), round(_fw_d)))
+        check(
+            "farmhouses_reach_a_way",
+            not _fw_far,
+            f"{len(_fw_far)} farmhouse(s) stand more than {_WEB_REACH:.0f} ft from any drawn way, worst {max((_f[2] for _f in _fw_far), default=0)} ft, at {_fw_far[:4]} - "
+            f"every house in a nucleated cluster is reached by the lane network; that is what compactness is for, and a house the web does not touch is not a back rank, it is an omission",
+        )
+    return _kept(locals(), ())
+
+
 def _seg_0607__lanes_reach_something(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 0607 (lanes_reach_something) - added 2026-08-17, see the note above."""
     if M["meta"].get("generated_by"):

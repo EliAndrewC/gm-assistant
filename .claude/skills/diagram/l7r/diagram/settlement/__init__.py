@@ -81,6 +81,7 @@ from ._knobs import KIDO_TOWER_KEEPCLEAR as KIDO_TOWER_KEEPCLEAR
 from ._knobs import KNOBS as KNOBS
 from ._knobs import KOSATSUBA_MARKER_MIN_PX as KOSATSUBA_MARKER_MIN_PX
 from ._knobs import LANE_SKELETONS as LANE_SKELETONS
+from ._knobs import LANE_WEBS as LANE_WEBS
 from ._knobs import MERCHANT_ESTATE_WEIGHTS as MERCHANT_ESTATE_WEIGHTS
 from ._knobs import PUNISHMENT_SPOT_FT as PUNISHMENT_SPOT_FT
 from ._knobs import WALL_DEFENSE as WALL_DEFENSE
@@ -102,5 +103,6 @@ from ._knobs import roll_torii_count as roll_torii_count
 from ._knobs import scope_seed as scope_seed
 from ._knobs import skeleton_layout as skeleton_layout
 from ._knobs import wall_tower_spacing_px as wall_tower_spacing_px
+from ._knobs import web_cuts as web_cuts
 from .core import Settlement as Settlement
 from .land import surface_water_dist as surface_water_dist
