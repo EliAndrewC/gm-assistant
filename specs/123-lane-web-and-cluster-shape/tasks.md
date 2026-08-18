@@ -62,7 +62,47 @@ deterministic, so the objection did not survive contact.
 | excluding a steading's whole bundle from its own footpath | 7 seeds `lanes` vs `gardens`, then `lanes` vs `threshing_yards` | only the house itself may step aside; the dog-leg is what finds the way out |
 | `CLUSTER_SPAN_FACTOR` as the frame's span | 4 seeds, ALL `shape=crescent`, worst 431 ft | a crescent wraps past the seat band; the span is measured off the placed houses instead |
 
-## THE ACCEPTED LIMITATION: four crescent seeds, ledgered not waived
+## STATE: NOT SHIPPABLE. The check is right; the engine does not yet satisfy it.
+
+**Three independent settlement-reviews (Sawada, Inashiro, Mizuguchi, and Kashikawa afterwards) found
+the same defect, none of which the gate could see: THE WEB IS NOT A WEB.** It reached the houses and
+joined nothing.
+
+- Sawada: 4 of 6 web lanes touched no other way; **7 of 19 houses were "served" by an island** whose
+  nearest real lane was still 136-296 ft off - exactly where it had been before the feature.
+- Inashiro: the ways came out as **three disconnected components**, with a 110 ft gap between them,
+  plus a footpath unattached at BOTH ends (24 ft of grass at one, 13 ft at the other) that renders as
+  a floating chevron, and one that folded back 133 ft through the windbreak, costing the shelter belt
+  six clumps.
+- Mizuguchi: a **38 ft mark drawn 71 ft from the house it served, touching nothing, to cure a ONE
+  FOOT violation** - a caret in a field.
+- Kashikawa: a 29 ft lane drawn for a house that a lane two draws earlier had already served, because
+  `_serve_stragglers` snapshotted the network once per pass; and a back lane laid a median 10 ft from
+  a skeleton lane for 81% of its length, which reads as one lane drawn twice.
+
+**The reviews also caught a real regression I had missed**: the web's corridor was reserving
+courtyard ground before `stage_appurtenances` ran, exiling byres and wells by up to 210 ft and
+erasing feature 121's byre-service fix (worst walk 165 -> 266 ft on Mizuguchi; a byre serving 8
+households moved to serve 2 on Inashiro). Fixed by moving `stage_web` after `stage_appurtenances` -
+the same "reserve before, fill after" rule that put it after the houses, applied consistently.
+
+**`farmhouses_reach_a_way` is now TRANSITIVE**, and that is the important correction. It measures to
+the connected component containing the connector, not to any polyline on the ground, because the
+research the whole feature rests on says "the INTERCONNECTED system of narrow lanes and alleys" - a
+check satisfiable by an island rewards drawing an island. It fires on three of the four shipped maps.
+**The check is correct and should stay.**
+
+**What is unfinished is the engine.** Requiring every web lane to join the network (refusing to draw
+one that cannot, snapping the ones that can, and dog-legging the footpaths) is written and in place,
+but it trades one residue for another rather than converging: forcing connectivity costs coverage,
+and snapping ink onto the network reopens `features_do_not_overlap` / `houses_clear_of_lanes` on the
+seeds where the connecting ground is tight. Best cohort state reached with the honest check is 0 of 4
+in-gate seeds fully clean; with the earlier, dishonest check it was 20 of 24 with the pool green.
+
+**Do not "fix" this by reverting the check.** That reading was measured and rejected: the pool maps
+were green under it only because an island counts.
+
+## THE CRESCENT FINDING (still true, still separate)
 
 **Cohort: 20/24, and the ONLY check failing anywhere is the new one.** No pre-existing check fails on
 any seed, so this is not a Principle XIII regression - it is the new rule finding real defects. The

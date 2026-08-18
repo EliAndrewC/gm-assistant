@@ -836,6 +836,12 @@ _LANE_HOUSE_REACH = 90.0  # ...or it stops at a homestead it fronts
 # say a lateral is "colonised as semi-private space by the adjoining house".
 _WEB_REACH = 100.0
 
+# How close two drawn treads must come to count as ONE network. Same figure `lanes_reach_something`
+# uses for "this end has met another way", deliberately: the two rules are about the same fact from
+# opposite ends, and letting them disagree would let a lane be connected for one and isolated for
+# the other.
+_LANE_JOIN = 40.0
+
 
 def _seg_0608__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 0608 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
@@ -846,7 +852,40 @@ def _seg_0608__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUN
     hamlets did."""
     if M["meta"].get("generated_by"):
         _fw_ways = [[(float(x), float(y)) for x, y in (_fw_ln.get("pts") or [])] for _fw_ln in (M.get("lanes") or [])]
-        _fw_segs = [(_fw_a, _fw_b) for _fw_p in _fw_ways for _fw_a, _fw_b in zip(_fw_p, _fw_p[1:], strict=False)]
+        # THE NETWORK, NOT ANY LINE ON THE GROUND. "Every house in the nucleated village is
+        # accessible via the INTERCONNECTED system of narrow lanes and alleys" - so a house served
+        # only by an isolated stub is not served, and the first version of this check could not tell
+        # the difference, because it measured distance to any drawn polyline. Two settlement-reviews
+        # found the same thing independently: 4 of Sawada's 6 web lanes touched nothing, and 7 of its
+        # 19 houses were "reached" only by an island whose nearest real lane was 136-296 ft away -
+        # exactly where they had been before the feature. A check satisfiable by an island rewards
+        # drawing an island.
+        #
+        # The component is grown from the ways that are the settlement's connection to the world:
+        # the connector if one is drawn, else the longest lane. Two lanes are in the same component
+        # when their drawn treads come within _LANE_JOIN, which is the same distance
+        # `lanes_reach_something` treats as one way having met another.
+        _fw_lanes = M.get("lanes") or []
+        _fw_seed = next((_fw_i for _fw_i, _fw_l in enumerate(_fw_lanes) if _fw_l.get("connector")), None)
+        if _fw_seed is None and _fw_ways:
+            _fw_seed = max(range(len(_fw_ways)), key=lambda _fw_i: sum(math.dist(_fw_a, _fw_b) for _fw_a, _fw_b in zip(_fw_ways[_fw_i], _fw_ways[_fw_i][1:], strict=False)))
+
+        def _fw_touch(_fw_p: Any, _fw_q: Any) -> bool:
+            return any(seg_dist(_fw_v[0], _fw_v[1], _fw_a, _fw_b) <= _LANE_JOIN for _fw_v in _fw_p for _fw_a, _fw_b in zip(_fw_q, _fw_q[1:], strict=False)) or any(
+                seg_dist(_fw_v[0], _fw_v[1], _fw_a, _fw_b) <= _LANE_JOIN for _fw_v in _fw_q for _fw_a, _fw_b in zip(_fw_p, _fw_p[1:], strict=False)
+            )
+
+        _fw_main = set() if _fw_seed is None else {_fw_seed}
+        _fw_grew = True
+        while _fw_grew:
+            _fw_grew = False
+            for _fw_i, _fw_p in enumerate(_fw_ways):
+                if _fw_i in _fw_main or len(_fw_p) < 2:
+                    continue
+                if any(_fw_touch(_fw_p, _fw_ways[_fw_j]) for _fw_j in _fw_main if len(_fw_ways[_fw_j]) >= 2):
+                    _fw_main.add(_fw_i)
+                    _fw_grew = True
+        _fw_segs = [(_fw_a, _fw_b) for _fw_i in sorted(_fw_main) for _fw_a, _fw_b in zip(_fw_ways[_fw_i], _fw_ways[_fw_i][1:], strict=False)]
         _fw_far = []
         if _fw_segs:
             for _fw_h in M.get("houses") or []:

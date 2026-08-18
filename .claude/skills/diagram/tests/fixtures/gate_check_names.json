@@ -268,6 +268,7 @@
   "farm_wells_within_reach",
   "farmhouse_aspect_in_range",
   "farmhouse_sizes_vary",
+  "farmhouses_reach_a_way",
   "farmhouses_shed_separately",
   "farmsteads_reach_their_fields_unsevered",
   "farrier_keeps_fire_gap",
@@ -606,6 +607,5 @@
   "woodland_commons_visibly_stocked",
   "woodland_commons_within_the_frame",
   "yards_unshaded_by_groves",
-  "yards_unshaded_by_neighbors",
-  "farmhouses_reach_a_way"
+  "yards_unshaded_by_neighbors"
 ]
