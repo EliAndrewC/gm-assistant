@@ -1527,3 +1527,46 @@ knob AND make the borrow-coverage term binding within whichever form is rolled.
   is gated); it is a legibility consequence of the grove scatter, and it belongs with the byre-siting
   work above rather than with the groves.
 
+
+## OPEN after the 2026-08-18 round-2 reviews (everything else from that round is FIXED)
+
+Round 2 confirmed five defects and refuted one; all five are fixed at their point of change, and the
+rulings the GM asked me to make are recorded there too. What is left:
+
+### The belt POLYGON pinches on cohort seed 10 - a placement fix, not a check fix
+
+`village_windbreak_is_continuous` (0613, new) fires on exactly one of 48 seeds: seed 10 carries a
+40 ft bare run across the wind at (1266, 1793). **Diagnosed, and it is not the case the belt re-seat
+handles**: nothing blocks that column - the nearest structure is 53 ft away and the nearest lane
+49 ft - so no clump was refused and there is nothing to re-seat around. The grid points simply fall
+OUTSIDE the belt polygon there, which means `belt_polygon` itself pinches.
+
+**Why deferred**: the fix belongs in `belt_polygon`'s near-face sampling (it samples the windward
+fringe in 8 columns and interpolates; a cluster whose fringe steps sharply between two columns can
+produce a waist), and changing how the belt outline is derived re-rolls the belt on every map -
+which is a placement change wanting its own measured pass, not a tail-end edit to a session that has
+already moved a great deal. **Sketch**: after sampling the near face, enforce a minimum band depth
+by pushing any column whose depth falls under one clump diameter out to that depth; the belt is
+documented as "a band of constant depth" already, so this makes the code match its own docstring.
+The check now exists to catch it, which is the part that was missing.
+
+### The belt and the copse share one crown vocabulary
+
+Sawada's two grove records sit 23 ft apart with half the copse's clumps touching the belt's, so the
+manifest declares two features and the sheet shows one wood. A planted *yashikirin* windbreak was
+typically one tall species in a row against mixed broadleaf coppice, so the honest fix is a
+different crown treatment for the belt - darker, taller, ranked - rather than a separation distance.
+That would also make the belt's form legible: Sawada's measures 906 x 199 ft at aspect 4.5, which is
+a textbook belt that currently does not read as one.
+
+**Why deferred**: it changes how every grove on every map is drawn, at every tier, which is a
+visual-doctrine pass rather than a defect fix. Ledgered with the measurement so it is not rediscovered.
+
+### The grazing commons are a tiling, not a landscape
+
+Every hamlet's `commons` records partition the whole frame remainder into four rectangles plus a
+leftover. Nothing on the sheet is wrong - the scatter reads as continuous rough grazing and carries
+no boundary ink - but the RECORD is bookkeeping rather than places, and nothing distinguishes
+hill-foot rough grazing from the beaten ground by the houses. Raised by two reviewers independently,
+both as a note rather than an error. Worth knowing before any rule starts reading `commons` as
+though each entry were a distinct place.
