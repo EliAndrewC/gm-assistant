@@ -93,11 +93,44 @@ three of the four shipped maps. **In-gate cohort is now 4 of 4 under the honest 
 | a footpath may cross a ditch | `stage_crossings` decks it, exactly as it already does for the spur and the connector |
 | wells use their DRAWN radius (`vr`), not `r` | the obstacle was a diamond inside the glyph, and a lane clipped a wellhead |
 
-### What the reviews are re-checking now
+### The second review round - what it confirmed, and the six defects it found
 
-The four maps were re-rolled and handed back to the same reviewers with their own findings quoted,
-which is the only honest way to close a review: each is asked whether the specific thing it found is
-fixed, and whether the rebuild broke something new.
+All four maps were re-rolled and handed back to the same reviewers with their own findings quoted.
+**Every prior finding was confirmed fixed by independent measurement**, not by assertion:
+
+- **connectivity**: each reviewer rebuilt the component graph from the manifest themselves. One
+  component per map, and the joins measure **0.0 ft** - not "within tolerance", touching.
+- **the byre/well regression**: byres and wells are **byte-identical to the pre-web manifest**,
+  coordinate for coordinate, on all four maps. Three reviewers checked this independently against
+  the git baseline. The stage reorder is exact, not approximate.
+- **access**: Sawada median 91 -> 45 ft and max 268 -> 83; Inashiro max 229 -> 66; Mizuguchi median
+  97.6 -> 44.1 with houses within 60 ft going 3/12 -> 8/12; Kashikawa median 82 -> 42, max 323 -> 93.
+- **the caret, the unattached ends, the fold, the duplicated back lane**: all gone.
+
+**Six new defects, all found by review and none visible to the gate:**
+
+| found | cause | fixed by |
+|---|---|---|
+| a 158-178 deg **hairpin** on all four maps | the snap measured the run's two ENDS, so a run whose BODY had already arrived got a perpendicular drawn back to it | measure nearest approach over the WHOLE run; if it already arrives, do not snap, and trim the short tail |
+| a back lane crossing the connector mid-run and sharing its corridor for 91% of its length | the shadow test used `MIN_WEB_GAP` (18 ft) - what a lane can squeeze THROUGH, not what a reader can separate | a `WEB_SHADOW_FT` of 30 ft, plus an ABSOLUTE clause: no unbroken shadowed stretch longer than one bundle pitch |
+| a back lane laid **100% lengthwise inside the shelter belt**, cutting out 15 of its clumps | nothing tested a run against the windbreak | a web lane may cross a belt but not run its length |
+| 32.6 ft of a footpath drawn **on top of** a back lane | the router has no cost term for travelling along an existing tread | a footpath stops at its FIRST contact with the network |
+| the **notice board re-seated onto a 3 ft service lane** | `place_kosatsuba` falls back to the whole network when no way declares itself main - which a hamlet never does - so the web entered the candidate list on equal footing with the spine | web lanes are excluded from the board's candidates whenever a non-web lane exists. The function's own docstring already stated the rule it was breaking |
+| `licence`, `colonised`, `maximises` in code prose | - | corrected; the project spelling rule covers comments and docstrings |
+
+**One finding is ledgered rather than fixed**: Mizuguchi's east "crow's foot", where three ways leave
+one node within 23 degrees and two end blunt. It is **skeleton-vs-skeleton**, laid by `stage_ways`
+before the houses exist, so the web's shadow test structurally cannot see it; and
+`lanes_reach_something` is silent because all three ends claim the same farmhouse within its 90 ft
+bar. The reviewer named the missing rule precisely - *two lane ends may not front the same farmhouse
+from the same side* - and that is a `stage_ways` change that would move every map. Deferred with its
+mechanism, per Principle XIV's architectural exception.
+
+**One question was answered by the reviewers rather than by me**: whether the `back_lane` form owes a
+closed block. Kashikawa's reviewer found the quoted "rectangular framework" phrasing is the English
+planned-village case, while the non-European warrant attests the back lane without the closed block -
+and measured that Mizuguchi produces 4 circuits and Inashiro 1 on the same code, so the form encloses
+blocks when the ground allows. **Do not force a cycle.**
 
 ## THE CRESCENT FINDING - RETRACTED, and the retraction is the lesson
 

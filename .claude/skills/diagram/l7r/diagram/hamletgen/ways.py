@@ -13,7 +13,22 @@ from l7r.diagram.settlement import Settlement, point_in_poly, rot_rect, seg_clos
 from l7r.diagram.sitegen.geom import centroid, crop_polys, crosses_disc, crosses_poly, pull_clear, unit
 
 from .cluster import _arm_crossing_accidental, _fork_spur, seat_cluster
-from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, FOOTPATH_FABRIC_GAP, LANE_CLEARANCE, MIN_WEB_GAP, SPUR_SETBACK, WEB_CLEARANCE, WEB_FABRIC_GAP, WEB_HARD_GAP, WEB_REACH_FT, WIND_VECTORS, Poly, Pt
+from .consts import (
+    BUNDLE_PITCH,
+    CLUSTER_SPAN_FACTOR,
+    FOOTPATH_FABRIC_GAP,
+    LANE_CLEARANCE,
+    MIN_WEB_GAP,
+    SPUR_SETBACK,
+    WEB_CLEARANCE,
+    WEB_FABRIC_GAP,
+    WEB_HARD_GAP,
+    WEB_REACH_FT,
+    WEB_SHADOW_FT,
+    WIND_VECTORS,
+    Poly,
+    Pt,
+)
 from .plan import SitePlan
 
 
@@ -63,12 +78,22 @@ class _margin_frame:  # noqa: N801 - used as a callable coordinate map, not as a
         def worth_continuing(i: int, step: int) -> bool:
             return any(close_enough(env[(i + step * k) % n_env]) for k in range(1, look + 1))
 
+        # THE WALK MAY NOT LAP THE FIELD. Bounded by arc as well as by vertex count: on a compact
+        # outline the look-ahead can carry the walk right round the ring and back to where it began,
+        # and a frame that laps has no single answer for `project` - two stretches of it sit on top
+        # of each other, so a point maps to whichever the scan met first. Half the ring is the most
+        # margin any one cluster can honestly front.
+        ring = sum(math.dist(env[i], env[(i + 1) % n_env]) for i in range(n_env))
+        cap = ring * 0.5
         start = min(range(n_env), key=lambda i: math.dist(env[i], (seat["cx"], seat["cy"])))
+        walked = 0.0
         lo = start
-        while (start - lo) < n_env - 1 and worth_continuing(lo, -1):
+        while (start - lo) < n_env - 1 and walked < cap and worth_continuing(lo, -1):
+            walked += math.dist(env[(lo - 1) % n_env], env[lo % n_env])
             lo -= 1
         hi = start
-        while (hi - start) < n_env - 1 and worth_continuing(hi, +1):
+        while (hi - start) < n_env - 1 and walked < cap and worth_continuing(hi, +1):
+            walked += math.dist(env[hi % n_env], env[(hi + 1) % n_env])
             hi += 1
         pts = [env[i % n_env] for i in range(lo, hi + 1)]
         if len(pts) < 2:  # pragma: no cover - a band always spans several outline vertices
@@ -187,7 +212,7 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     measures. Given a narrow one the houses collided with it instead. Laid AFTERWARDS the conflict
     simply is not there: placement is untouched, the cluster is exactly as compact as it was, and the
     web goes in the room that is actually left. That is also the truer account of these ways - an
-    alley IS the residual gap between two plots, "colonised as semi private space by the adjoining
+    alley IS the residual gap between two plots, "colonized as semi private space by the adjoining
     house", not a corridor set aside in advance.
 
     THE FORM IS THE ROLLED KNOB, and the two differ by which axis is cut (`web_cuts` does both):
@@ -270,6 +295,8 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     hard = [list(plan.envelope), *crops, *([toe] if toe else []), *wet]
     fabric = _homestead_polys(s)
     walls = [poly for poly, _, _ in fabric]
+    # The shelter belts, separately: a web lane may CROSS one but may not run its length.
+    belts = [[(float(a), float(b)) for a, b in g["poly"]] for g in s.M.get("village_groves", []) if g.get("poly")]
     drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
     cands: list[Poly] = []
     for line in lines:
@@ -285,7 +312,7 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # went could only ever refuse the ones it had not reached yet. Growing the component from the
     # skeleton outward also lets a run join THROUGH another web run, which is what a framework is.
     for run in _reachable_runs(cands, _net_segs(s)):
-        _lay_web_lane(s, run, hard, walls, list(plan.watercourses) + drawn_water)
+        _lay_web_lane(s, run, hard, walls, list(plan.watercourses) + drawn_water, belts=belts, houses=[(float(h["x"]), float(h["y"])) for h in houses])
     # A WEB LANE STOPS WHERE IT STOPS SERVING. Clipping ends an arm wherever the crop or a steading
     # happens to begin, which can leave a tail running on into bare grass - `lanes_reach_something`
     # is right to call that a tread that serves nobody. The engine already owns this trim; the web
@@ -524,6 +551,7 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
         link = _route(best[1], best[2], hard, walls, water, gap=FOOTPATH_FABRIC_GAP)
         if not link or polyline_len(link) > _PATH_DIRECTNESS * max(best[0], 1.0):
             return made
+        link = _trim_to_service(link, [sg for j in main for sg in zip(ways[j], ways[j][1:], strict=False)], [(float(q["x"]), float(q["y"])) for q in s.M.get("houses", [])])
         s.lane(link, width=3, clearance=WEB_CLEARANCE, worn=True)
         s.M["lanes"][-1]["web"] = True
         made += 1
@@ -535,7 +563,28 @@ def _net_segs(s: Settlement) -> list[tuple[Pt, Pt]]:
     return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for ln in s.M.get("lanes", []) for p, q in zip(ln["pts"], ln["pts"][1:], strict=False)]
 
 
-def _lay_web_lane(s: Settlement, run: Poly, hard: list[Poly], walls: list[Poly], water: list[tuple[Pt, Pt]]) -> bool:
+def _trim_to_service(run: Poly, segs: Sequence[tuple[Pt, Pt]], houses: Sequence[Pt]) -> Poly:
+    """Pull a run's ends back to the last point that actually serves something.
+
+    `lanes_reach_something` asks of every internal lane end that it reach another way within 40 ft or
+    a farmhouse within 90; a web lane's ends come out of the clipper, which stops where the ground
+    stops being walkable and has no opinion about whether anything is there. Trimming BEFORE the ink
+    goes down is better than trimming after: `trim_lane_stubs` drops anything under its 71 ft floor,
+    which is the right rule for a skeleton arm and would delete the door paths this feature exists to
+    draw."""
+
+    def serves(q: Pt) -> bool:
+        return (any(seg_dist(q[0], q[1], a, b) <= 40.0 for a, b in segs) if segs else False) or any(math.dist(q, h) <= 90.0 for h in houses)
+
+    out = list(run)
+    while len(out) > 2 and not serves(out[-1]):
+        out.pop()
+    while len(out) > 2 and not serves(out[0]):
+        out.pop(0)
+    return out
+
+
+def _lay_web_lane(s: Settlement, run: Poly, hard: list[Poly], walls: list[Poly], water: list[tuple[Pt, Pt]], belts: Sequence[Poly] = (), houses: Sequence[Pt] = ()) -> bool:
     """Draw one web lane - but ONLY if it joins the way network, and TOUCHING it where it joins.
 
     A WEB THAT DOES NOT JOIN UP IS NOT A WEB, and this is the rule that makes the name honest. Three
@@ -565,12 +614,64 @@ def _lay_web_lane(s: Settlement, run: Poly, hard: list[Poly], walls: list[Poly],
     segs = _net_segs(s)
     if len(run) < 2:  # pragma: no cover - clear_runs never returns a single point
         return False
+    # TRIM FIRST, JOIN SECOND. The join is computed from the run's ENDS, so trimming afterwards moves
+    # the end out from under the link that was drawn to it - which left a 187 ft lane whose start
+    # stood 178 ft from any way, the exact dangling tread `lanes_reach_something` exists to catch.
+    run = _trim_to_service(run, segs, houses)
+    if len(run) < 2:  # pragma: no cover - a run always keeps two points
+        return False
     if segs:
-        shadowed = sum(1 for q in run if min(seg_dist(q[0], q[1], a, b) for a, b in segs) < MIN_WEB_GAP)
-        if shadowed > 0.6 * len(run):
+        # SHARING A CORRIDOR IS SHADOWING, whether the two lines are parallel or crossing. The test
+        # was written against `MIN_WEB_GAP` (the room a lane needs to pass BETWEEN two steadings),
+        # which is far too tight to describe two ways a reader sees as one: Inashiro laid a back lane
+        # that crossed the connector mid-run and stayed within 30 ft of it for 91% of its length, and
+        # the 18 ft test did not fire once. A reader reads them as one lane drawn twice, so the
+        # threshold is what a reader can separate, not what a lane can squeeze through.
+        # SHADOWING IS A LENGTH, NOT ONLY A FRACTION. A fraction alone lets a long run hide: a lane
+        # that parallels the connector for 128 continuous feet at a median 16 ft measured 50%
+        # shadowed against a 60% bar and was drawn. Doubled ink is doubled ink whether it is half the
+        # run or four fifths of it, so the longest UNBROKEN shadowed stretch is capped at one bundle
+        # pitch as well. Both clauses are needed - the fraction catches a short lane laid alongside
+        # another for all of its length, the absolute catches a long one that eventually diverges.
+        near_flags = [min(seg_dist(q[0], q[1], a, b) for a, b in segs) < WEB_SHADOW_FT for q in run]
+        if sum(near_flags) > 0.6 * len(run):
             return False
-        d0 = min(seg_dist(run[0][0], run[0][1], a, b) for a, b in segs)
-        d1 = min(seg_dist(run[-1][0], run[-1][1], a, b) for a, b in segs)
+        _step_ft = polyline_len(run) / max(len(run) - 1, 1)
+        _worst = _cur = 0
+        for _f in near_flags:
+            _cur = _cur + 1 if _f else 0
+            _worst = max(_worst, _cur)
+        if _worst * _step_ft > BUNDLE_PITCH:
+            return False
+        # ...AND A LANE DOES NOT RUN THE LENGTH OF A SHELTER BELT. Crossing one costs the belt a
+        # lane's width of wall, which is a fair price for a way that has somewhere to be; running
+        # ALONG it splits one wind wall into two thinner ones and opens a slot down the middle. A
+        # review measured a back lane 237 of 237 ft inside the belt, having deleted 15 of its 169
+        # clumps, on a map whose notes already record this belt being damaged the same way once.
+        for belt in belts:
+            inside = sum(1 for q in run if point_in_poly(q[0], q[1], list(belt)))
+            if inside * (polyline_len(run) / max(len(run), 1)) > 60.0:
+                return False
+        # THE WHOLE RUN ARRIVES, NOT JUST ITS TWO ENDS. Measuring only the endpoints is how the snap
+        # came to draw a hairpin: a run whose BODY already passes 2.75 ft from a lane, but whose end
+        # wandered 23.8 ft beyond it, got a perpendicular drawn back to the foot - a needle-thin
+        # triangular loop hanging off the junction, which a review found on all four hamlets (turn
+        # deviations of 158, 178, 110 and 107 degrees, against a pre-web maximum of 7). If the run
+        # has already arrived somewhere along its length there is nothing to snap; the only thing
+        # worth doing is trimming the short tail that carried on past.
+        vert = [min(seg_dist(v[0], v[1], a, b) for a, b in segs) for v in run]
+        k = min(range(len(vert)), key=lambda i: vert[i])
+        if 0 < k < len(run) - 1 and vert[k] <= _LANE_JOIN_FT:
+            head = polyline_len(run[: k + 1])
+            tail = polyline_len(run[k:])
+            if tail < 40.0:
+                run = run[: k + 1]
+            elif head < 40.0:
+                run = run[k:]
+            s.lane(run, width=3, clearance=WEB_CLEARANCE, worn=True)
+            s.M["lanes"][-1]["web"] = True
+            return True
+        d0, d1 = vert[0], vert[-1]
         end = 0 if d0 <= d1 else -1
         gap = min(d0, d1)
         p = run[end]
@@ -636,20 +737,31 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                 continue
             # Everything EXCEPT this steading's own house, yard, garden and shed - the path has to
             # be able to leave its own dooryard, and `of` says which features those are.
-            # ONLY THE HOUSE ITSELF STEPS ASIDE - not its yard, not its garden. The path has to be
-            # able to start at the door, which is why the house is excluded at all; everything else
-            # the steading owns is ground the overlap matrix will not let a lane cross, and each
-            # relaxation was tried and measured. Excluding the whole bundle put spurs through their
-            # own garden beds (7 of 24 cohort seeds, `lanes` vs `gardens`); excluding the yard as
-            # well put them across the threshing floor (`lanes` vs `threshing_yards`). The
-            # dog-legs below are what finds a way out that does not need any of those exemptions.
-            # GROUND COVER IS NOT FABRIC. A footpath may cross grazing scrub and may run along a
-            # tree belt - those are what the ground IS, not things built on it - and a review has
-            # already confirmed that "the only polygons they cross are the grazing commons, which is
-            # what a lane crosses". Counting them as obstacles walled an outlying steading in behind
-            # its own commons and left it with no route at any clearance.
-            others = [poly for poly, owner, kind in fabric if kind not in ("commons", "village_groves") and (owner is None or math.dist(owner, c) > 1.0 or kind != "houses")]
-            step = math.hypot(float(h["w"]), float(h["h"])) / 2 + 8.0
+            # NOTHING BUILT STEPS ASIDE - not even this steading's own house. Exempting it was how
+            # the path got out of its own dooryard, and it was also a license for the router to drive
+            # straight THROUGH the farmhouse: seeds 41 and 43 came back with `houses_clear_of_lanes`
+            # and `houses_off_corridors`, which is a lane drawn over a wall. The door is pushed clear
+            # of the house instead (see `step` below), which solves the same problem without letting
+            # a path cross anything.
+            #
+            # GROUND COVER IS NOT FABRIC, though. A footpath may cross grazing scrub and may run
+            # along a tree belt - those are what the ground IS, not things built on it, and a review
+            # confirmed "the only polygons they cross are the grazing commons, which is what a lane
+            # crosses". Counting them walled an outlying steading in behind its own commons.
+            # TWO OBSTACLE SETS, because a steading's own yard is ground you WALK but not ground a
+            # lane is DRAWN on. `others` is everything solid and is what the drawn tread is clipped
+            # against. `passable` additionally lets the route PLAN through this steading's own yard
+            # and garden - on a hemmed-in farmstead the bundle wraps the house completely, so with
+            # its own yard solid there is no doorstep and the router reports no route at all, when
+            # what does not exist is the doorstep. Planning through it and drawing only what survives
+            # the clip gives the answer the sources describe: the lane ends AT the yard, and the yard
+            # is private ground the household crosses on foot.
+            _mine = [id(poly) for poly, owner, kind in fabric if owner is not None and math.dist(owner, c) <= 1.0 and kind in ("threshing_yards", "gardens")]
+            others = [poly for poly, _owner, kind in fabric if kind not in ("commons", "village_groves")]
+            passable = [poly for poly in others if id(poly) not in _mine]
+            # The door stands clear of the steading's own wall by the same margin every other lane
+            # keeps, so it is a legal starting point with the house left in the obstacle set.
+            step = math.hypot(float(h["w"]), float(h["h"])) / 2 + 8.0 + FOOTPATH_FABRIC_GAP
             # EVERY WAY WITHIN REACH IS A CANDIDATE, not merely the closest one. A path aimed at the
             # nearest lane can run the length of a neighbor's threshing yard and be refused for its
             # whole run, while a way ten feet further off is reachable across open ground - measured,
@@ -663,10 +775,38 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                 # at twice the reach gave up on exactly the houses that needed it - two of seed 3's,
                 # at 171 and 201 ft, were never attempted at all. A long path is a real thing on the
                 # edge of a hamlet; a house with no path is not.
-                if math.dist(c, tgt) > WEB_REACH_FT * 3.5:
+                # THE DIRECTNESS BOUND IS THE LIMIT, not a radius. Capping candidate targets at
+                # 3.5x the reach meant a steading 399 ft from the network never had a single target
+                # tried, though a clear route to one existed - the cap was a guess at "too far" and
+                # the path's own shape is the honest test. Kept only as a backstop against searching
+                # the whole map.
+                if math.dist(c, tgt) > WEB_REACH_FT * 8.0:
                     break
+                # THE DOOR IS WHERE THERE IS ROOM FOR ONE, not wherever the target happens to lie.
+                # Placed blindly along the bearing to the way, it lands in the steading's own
+                # threshing yard whenever the way is on the yard's side - and the route then fails at
+                # its very first cell, which reads as "no route exists" when what does not exist is
+                # that particular doorstep. Ring the house and take the clear standing-place nearest
+                # the direction of travel.
                 dx, dy = unit(tgt[0] - c[0], tgt[1] - c[1])
-                door = (c[0] + dx * step, c[1] + dy * step)
+                # ...and OUTWARD until there is room, not only around at one radius. A hemmed-in
+                # farmstead has its own threshing yard and garden wrapped right around it, so every
+                # point on a ring at the house's own standoff lies inside its own bundle and there is
+                # no legal doorstep at all - which the router reports as "no route", when what does
+                # not exist is the doorstep. Exempting the steading's own open ground was tried and
+                # rejected: it bought this house nothing and cost an overlap on another seed. Walking
+                # out past the yard is what a person does, and it keeps every footprint solid.
+                door = next(
+                    (
+                        q
+                        for q in sorted(
+                            ((c[0] + math.cos(math.tau * k / 16) * (step + out), c[1] + math.sin(math.tau * k / 16) * (step + out)) for out in (0.0, 12.0, 24.0, 40.0, 60.0, 85.0) for k in range(16)),
+                            key=lambda q: (math.dist(q, c), -((q[0] - c[0]) * dx + (q[1] - c[1]) * dy)),
+                        )
+                        if _clear_link(q, q, hard, passable, water, gap=FOOTPATH_FABRIC_GAP)
+                    ),
+                    (c[0] + dx * step, c[1] + dy * step),
+                )
                 # A FOOTPATH BENDS. The straight run is tried first and is usually right, but a path
                 # that meets a neighbor's garden bed head-on should go round it rather than be
                 # abandoned - which is what a person does, and abandoning it was the single biggest
@@ -686,7 +826,7 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                 # outlying farmstead on seed 2 had NO route to the network at any clearance, and the
                 # thing between it and the cluster turned out not to be a yard or the crop but a
                 # ditch. A steading across a ditch is reached by a plank, not by being unreachable.
-                routed = _route(door, tgt, hard, others, [], gap=FOOTPATH_FABRIC_GAP)
+                routed = _route(door, tgt, hard, passable, [], gap=FOOTPATH_FABRIC_GAP)
                 if routed:
                     cands.append(routed)
                 # THE BEND IS A FRACTION OF THE RUN, not a fixed number of feet. Offsets of 40, 80
@@ -720,9 +860,9 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                     # other.
                     #
                     # So: the path must reach the DOOR, not merely the house's neighborhood; it must
-                    # reach the network; and its length may not exceed 1.6x its own chord, which is
-                    # the band every honest way on these maps already sits in (1.00-1.34).
-                    hit = [r for r in runs if _reach(c, r) <= step + 14.0 and _net_reach(r, segs) <= _LANE_JOIN_FT and polyline_len(r) <= _PATH_DIRECTNESS * max(math.dist(r[0], r[-1]), 1.0)]
+                    # reach the network; and its length may not exceed `_PATH_DIRECTNESS` times its own
+                    # chord, which is the band every honest way on these maps already sits in (1.00-1.34).
+                    hit = [r for r in runs if _reach(c, r) <= WEB_REACH_FT and _net_reach(r, segs) <= _LANE_JOIN_FT and polyline_len(r) <= _PATH_DIRECTNESS * max(math.dist(r[0], r[-1]), 1.0)]
                     if hit:
                         break
                 # THE TEST IS WHETHER THE PATH SERVES THE HOUSE, not whether it starts exactly at
@@ -737,7 +877,18 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                     # Both ends SNAPPED, for the same reason a web lane's joining end is: acceptance
                     # tolerances are not ink tolerances, and a path that stops 13 ft short of the
                     # lane it aims at is drawn as a gap whatever the gate thinks of it.
+                    # A PATH STOPS AT ITS FIRST CONTACT WITH THE NETWORK - it does not then travel
+                    # ALONG it. The router has no cost term for running down an existing tread, so
+                    # once it entered a lane's corridor it was free to follow it: a review measured
+                    # 32.6 ft of a door path drawn on top of a back lane at 0.0-1.2 ft separation,
+                    # 27% of its length as duplicate ink, showing on the sheet as a seam and a width
+                    # discontinuity. Truncating at first contact also takes that path's directness
+                    # from 1.57 to 1.14. The snap below closes whatever gap is left.
                     path = list(hit[0])
+                    for _i, _v in enumerate(path):
+                        if _i and min(seg_dist(_v[0], _v[1], _a, _b) for _a, _b in segs) <= _LANE_JOIN_FT:
+                            path = path[: _i + 1]
+                            break
                     join = min((seg_closest(path[-1][0], path[-1][1], a, b) for a, b in segs), key=lambda z: math.dist(path[-1], z))
                     if _clear_link(path[-1], join, hard, others, water):
                         path = [*path, join]
@@ -746,8 +897,12 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                     # a further point in at 0.6 of that standoff put the start of the lane INSIDE the
                     # farmhouse, and `houses_clear_of_lanes` and the overlap matrix both said so. The
                     # steading's own footprint is exempt from this path's obstacle list so that it
-                    # can leave the dooryard; that exemption is not a licence to draw through the
+                    # can leave the dooryard; that exemption is not a license to draw through the
                     # house.
+                    # The path's own start can have been clipped away from the door, so it gets the
+                    # same end-trim every web lane gets - a footpath that begins in bare grass is a
+                    # dangling tread whatever drew it.
+                    path = _trim_to_service(path, segs, [(float(q["x"]), float(q["y"])) for q in s.M.get("houses", [])])
                     s.lane(path, width=3, clearance=WEB_CLEARANCE, worn=True)
                     s.M["lanes"][-1]["web"] = True
                     added += 1

@@ -833,7 +833,7 @@ _LANE_HOUSE_REACH = 90.0  # ...or it stops at a homestead it fronts
 # defensible-sounding with nothing behind it, and it left 25 of the four pool hamlets' 66 farmhouses
 # more than 120 ft from any way. WHY THIS DISTANCE: one bundle pitch is the distance at which a lane
 # passes your own plot or your immediate neighbor's, which is what the sources describe when they
-# say a lateral is "colonised as semi-private space by the adjoining house".
+# say a lateral is "colonized as semi-private space by the adjoining house".
 _WEB_REACH = 100.0
 
 # How close two drawn treads must come to count as ONE network. Same figure `lanes_reach_something`
@@ -843,12 +843,13 @@ _WEB_REACH = 100.0
 _LANE_JOIN = 40.0
 
 
-def _seg_0609__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 0609 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
+def _seg_0610__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0610 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
 
-    Numbered 0609, not 0608: a peer session landed `paddy_basins_are_worth_their_bund` on 0608 in
-    `segments_08d` while this was unpushed, and a duplicate numeric key is a loud derivation error
-    rather than a silent reorder. It still runs directly after 0607 `lanes_reach_something`, which is
+    Numbered 0610, and it moved twice: a peer landed `paddy_basins_are_worth_their_bund` on 0608 in
+    `segments_08d` while this was unpushed, and then took 0609 for the byre-form checks - on my own
+    advice, since I had told them 0608 was mine and then quietly moved onto 0609 myself. A duplicate
+    numeric key is at least a loud derivation error rather than a silent reorder. It still runs directly after 0607 `lanes_reach_something`, which is
     what matters - the two are converses and belong together.
 
     The CONVERSE of `lanes_reach_something`, and the half that was missing: that check asks whether
