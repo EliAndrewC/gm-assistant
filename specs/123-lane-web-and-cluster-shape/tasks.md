@@ -62,7 +62,29 @@ deterministic, so the objection did not survive contact.
 | excluding a steading's whole bundle from its own footpath | 7 seeds `lanes` vs `gardens`, then `lanes` vs `threshing_yards` | only the house itself may step aside; the dog-leg is what finds the way out |
 | `CLUSTER_SPAN_FACTOR` as the frame's span | 4 seeds, ALL `shape=crescent`, worst 431 ft | a crescent wraps past the seat band; the span is measured off the placed houses instead |
 
-## STATE: the check is honest and the engine satisfies it
+## FINAL STATE (measured, not asserted)
+
+| | baseline | shipped |
+|---|---|---|
+| farmhouses beyond reach, four pool maps | **29 of 66** | **0** |
+| worst house-to-way | 268-345 ft | **77 / 79 / 86 / 80 ft** |
+| median house-to-way | 78-97 ft | **44 / 41 / 63 / 61 ft** |
+| lane components per map | up to 3 | **1** |
+| in-gate cohort (seeds 41-44) | 4/4 under a check an island could satisfy | **4/4 under the transitive check** |
+| `make done` | green | **green, 3,371 tests** |
+| byres and wells | - | **byte-identical to pre-web**, verified by three reviewers against the git baseline |
+
+**The wider 24-seed sweep is 19/24, and the only check failing anywhere on it is the new one.** No
+pre-existing check fails on any seed, so there is no Principle XIII regression - the baseline was
+24/24 measured before `farmhouses_reach_a_way` existed, and the five failures are that rule finding
+real defects on held-out seeds it has never been run against. Per the project's "new rules ship
+un-gated" convention, that is the expected shape for a rule's first outing; it is recorded here
+rather than waived, and the five seeds are named below so the next session has somewhere to start.
+
+Both knob forms occur across the cohort (11 `alleys` / 13 `back_lane` on 24 seeds), and they read as
+different kinds of place - which is the whole reason the form is a knob rather than a pick.
+
+## HOW IT WAS BUILT: the check is honest and the engine satisfies it
 
 **Four settlement-reviews found the same defect the gate could not see: THE WEB WAS NOT A WEB.** It
 reached the houses and joined nothing - Sawada 4 of 6 lanes touching no other way and 7 of 19 houses
