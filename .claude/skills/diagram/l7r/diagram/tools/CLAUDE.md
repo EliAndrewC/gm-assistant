@@ -25,6 +25,7 @@ Not `python3 tools/why_placed.py`. A package module run as a loose script puts `
 | I fixed one hamlet - does the fix generalize across a cohort, and what exactly collides? | `cohort_audit` |
 | I want to look closely at one spot on a rendered map, in manifest coordinates | `crop_map` |
 | How long does this loop actually take, and where does the time go? | `timings` |
+| Does a paddy bund step sideways and carry on parallel to itself anywhere on this map? | `jogs` |
 | Rebuild the frozen negative-fixture corpus in `pool/regressions/` | `make_regressions` |
 
 Each module's own docstring carries the WHY it exists, usually with the incident that produced it.

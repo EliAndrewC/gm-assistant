@@ -72,6 +72,7 @@ from .banks import (
     cell_area,
     dedup_ring,
     is_chevron,
+    jog_steps,
     pointed_ring,
     polyline_cum,
     tapers_to_a_point,
@@ -285,7 +286,7 @@ def _min_apex(ring: Poly) -> float:
     return out
 
 
-def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) -> None:
+def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, g: float) -> bool:
     """Fold a too-thin pocket into the basin it shares the most bund with - the weld that turns two
     walls with a strip between them into the one wall a real aze is. The neighbor is chosen by
     SHARED BOUNDARY LENGTH rather than by distance or area: the basin whose wall actually forms
@@ -307,6 +308,7 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
     _fallback: tuple[float, int, Polygon] | None = None
     _lumpy: tuple[float, int, Polygon] | None = None
     _chev: tuple[float, int, Polygon] | None = None
+    _jogged: tuple[int, int, Polygon] | None = None
     for _neg, j in sorted(ranked):
         # dilate the scrap by a hair before the union. A scrap and the basin beside it only TOUCH
         # (they were cut from each other), and a union of two merely-touching polygons comes back
@@ -386,7 +388,7 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
                     if Polygon(_r2).is_valid and _min_apex(dedup_ring(_r2, 1.0)) >= _WELD_MIN_APEX and not is_chevron(_r2):
                         into[j] = _c2
                         grown.add(j)
-                        return
+                        return True
             if _fallback is None or _apex > _fallback[0]:
                 _fallback = (_apex, j, candidate)
             continue
@@ -412,9 +414,34 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
             if _lumpy is None or _sol > _lumpy[0]:
                 _lumpy = (_sol, j, candidate)
             continue
+        # AND A WELD MUST NOT MAKE THE HOST'S WALL STEP SIDEWAYS. This is the third shape complaint
+        # in the same ladder and it is blind to the two above it by construction: a scrap welded on
+        # flush at both its own ends but a few feet PAST the host's leaves the host a rectangular
+        # tab, which is a right-angled 90/270 corner pair (no apex to fail) at solidity ~0.8 (no lump
+        # to fail) - and reads as an earthen wall randomly zigzagging, which is how the GM found it
+        # (2026-08-18, `jog_steps`). It arises because `_plant` grids a pocket at ITS OWN pitch, so
+        # the offcuts it hands back are cut where neither the row above nor the row below has a seam;
+        # welding one alternately up and down builds the staircase. Judged as a DELTA against the
+        # host's current ring rather than as an absolute, for the reason the apex guard gives about
+        # measuring what the rule measures: a host that already carries a step must not be barred
+        # from taking in the scrap beside it because of a step that was there first.
+        _jog = jog_steps(_ring(candidate), g) - jog_steps(_ring(into[j]), g)
+        if _jog > 0:
+            if _jogged is None or _jog < _jogged[0]:
+                _jogged = (_jog, j, candidate)
+            continue
         into[j] = candidate
         grown.add(j)
-        return
+        return True
+    # THE LEAST-JOGGING WELD, ahead of both. When no host takes the scrap without complaint, a wall
+    # standing a few feet off line is the mildest of the three: the basin is still a basin a farmer
+    # would build, which is more than the lump or the needle can say. Ranked by how many steps the
+    # weld ADDS, so a host that takes the scrap with one step beats one that takes it with three.
+    if _jogged is not None:
+        _, j, candidate = _jogged
+        into[j] = candidate
+        grown.add(j)
+        return True
     # THE LEAST-LUMPY WELD, ahead of the needle fallback below. A lobe is a milder defect than an
     # unworkable apex - it is a basin a farmer would call awkward rather than one they could not
     # flood - so when no host takes the scrap cleanly, the shape complaint yields before the
@@ -423,15 +450,18 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
         _, j, candidate = _lumpy
         into[j] = candidate
         grown.add(j)
-        return
+        return True
     # ...then the least-bad ARROWHEAD, behind the lump. A chevron is the worse read of the two - a
     # lump is an awkward basin, an arrowhead does not read as a basin at all - so it is the last
-    # shape the ladder will accept, and only when no other host will take the scrap.
+    # shape the ladder will accept, and only when no other host will take the scrap. (Merged
+    # 2026-08-18: this tier and the jog tier above were added independently by two sessions to the
+    # same ladder. Order is by how badly the shape reads - jog, then lump, then arrowhead - so the
+    # mildest complaint yields first, which is the ordering rule the two tiers above already state.)
     if _chev is not None:
         _, j, candidate = _chev
         into[j] = candidate
         grown.add(j)
-        return
+        return True
     # THE LEAST-BAD WELD, and only if it still clears the GATE. `_WELD_MIN_APEX` is the placer's
     # margin, not the rule; a union between the gate line and that margin is a basin the gate
     # ACCEPTS, so welding it is strictly better than leaving a doubled bund. Below the gate line it
@@ -442,6 +472,8 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float) 
         _, j, candidate = _fallback
         into[j] = candidate
         grown.add(j)
+        return True
+    return False
 
 
 def _plant(F: _Frame, pocket: Polygon, plot_across: float, row_step: tuple[float, float], half: float) -> tuple[list[Polygon], list[Polygon]]:
@@ -597,7 +629,7 @@ def close_seams(
             # a strip whose whole mean width was 5.6 px, so it annihilated every scrap it was handed
             # and the escape hatch silently did nothing (cohort seeds 9 and 11). Measured at the
             # corrected width the same weld comes out at a 77.1 deg apex.
-            _absorb(scrap, keep, grown, 1.5 * g)
+            _absorb(scrap, keep, grown, 1.5 * g, g)
     for j in sorted(j for j in grown if j < carved):
         plots[j]["poly"] = _ring(keep[j])
     for basin in keep[carved:]:
