@@ -230,3 +230,25 @@ Three ways to clear it, and the failure message names all three:
   city gens' district-fill idiom. It is report-only in BOTH `pack` and `frontage` - it suppresses
   the record and changes no geometry - so declaring it on the three provincial cities moved only
   the `shortfalls` key of each manifest.
+
+## "HAS THIS WAY MET THAT ONE?" IS NEVER A DISTANCE ALONE
+
+Two checks have now got this wrong in the same way, a feature apart, so it is written down here
+rather than left in each one's comments.
+
+`lanes_reach_something` originally accepted any lane end within 40 ft of another way as having
+arrived. That made it blind to the very defect it was written for: Sawada's lane 0 ran 90 ft past its
+own T with lane 2 and died 13 ft from it on an 8 degree divergence - so it was "within 40 ft of
+another way", namely the lane it had ALREADY met, and passed. `_FRAY_DEG = 20.0` was added with the
+note *"a lane that MEETS another crosses it; one that FRAYS runs alongside it. Proximity alone is not
+arrival."*
+
+Feature 124's `lane_ends_front_different_houses` then repeated it exactly. Its first draft exempted
+any end within 40 ft of another way, reasoning that such an end is a junction rather than the spare
+tine of a fan - and that silently un-fired its own motivating fixture, because the ends a review had
+read as a broom stood **21.6 and 24.3 ft** from another way and near-parallel to it.
+
+**So: if your check needs to know whether two ways have met, it needs the angle too.** Distance says
+they are close; only the angle says whether one arrived at the other or is running alongside it. The
+gate does not import the generator, so the constant is restated on the gate side - keep the two
+numbers equal and say in a comment that they are meant to be.

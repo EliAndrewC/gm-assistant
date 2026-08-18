@@ -13,7 +13,7 @@ from typing import Any
 from l7r.diagram.settlement import Settlement, seg_dist, surface_water_dist
 from l7r.diagram.sitegen.geom import centroid, unit
 
-from .consts import BUNDLE_PITCH, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
+from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
 from .plan import SitePlan
 
 # ---- STAGE 5: the homesteads --------------------------------------------------------------------
@@ -38,7 +38,7 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
     # a delivery ditch's corridor, the field spur), the whole row is refused together and the field
     # ends up ringed by four houses instead of five. Wrapping further round the field costs nothing:
     # a seat too far along is dropped by the caller's own band test.
-    span = [(i, p) for i, p in enumerate(env) if abs((p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay) <= seat["lat"] * 1.6]
+    span = [(i, p) for i, p in enumerate(env) if abs((p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay) <= seat["lat"] * CLUSTER_SPAN_FACTOR]
     if len(span) < 2:  # pragma: no cover - a band always spans several outline vertices
         return []
     span.sort(key=lambda ip: (ip[1][0] - seat["anchor"][0]) * ax + (ip[1][1] - seat["anchor"][1]) * ay)
@@ -128,7 +128,7 @@ def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0) ->
     out: list[Pt] = []
     off = LANE_FRONTAGE_STANDOFF
     for lane in s.M.get("lanes", []):
-        if lane.get("connector"):
+        if lane.get("connector") or lane.get("web"):
             continue
         pts = lane["pts"]
         for i in range(len(pts) - 1):

@@ -21,7 +21,7 @@ from .homesteads import stage_appurtenances, stage_homesteads
 from .plan import HamletSpec, SitePlan, plan_site
 from .sink import stage_sink
 from .water import stage_field, stage_water_frame
-from .ways import stage_ways
+from .ways import stage_ways, stage_web
 
 # THE PIPELINE. Read top to bottom: this is the generator.
 #
@@ -44,6 +44,17 @@ STAGES = (
     stage_ways,
     stage_homesteads,
     stage_appurtenances,
+    # THE WEB RUNS LAST OF THE BUILT THINGS, after the byres, sheds and wells - not just after the
+    # houses. It FILLS leftover ground, so everything that RESERVES ground has to be seated first;
+    # that is the same rule that put it after `stage_homesteads` in the first place, applied
+    # consistently. Placed between the two, its corridor reserved courtyard ground before the
+    # appurtenances were seated and pushed them out of it: measured on Mizuguchi by a
+    # settlement-review, three fixtures sat 2-4 ft inside a new lane's clearance and were exiled up
+    # to 210 ft, taking byre service from a mean 109 ft to 146 and worst-walk 165 to 266 - which
+    # erased feature 121's borrow-coverage fix outright. A 2-to-4-foot conflict should bend the
+    # lane, and after this reorder it does, because the byre is simply part of the fabric the web
+    # threads around.
+    stage_web,
     stage_notice,
     stage_hinterland,
     stage_woodland,

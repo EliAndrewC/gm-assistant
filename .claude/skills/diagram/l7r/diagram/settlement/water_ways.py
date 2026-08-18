@@ -53,7 +53,7 @@ def _lane_len(pts: list[Pt]) -> float:
     return sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:], strict=False))
 
 
-def _pull_back(pts: list[Pt], reaches: Any, step: float = 8.0, keep_frac: float = 0.4) -> list[Pt]:
+def _pull_back(pts: list[Pt], reaches: Any, step: float = 8.0, keep_frac: float = 0.4, min_len: float = 0.0) -> list[Pt]:
     """Shorten a polyline from its LAST vertex until that end reaches something, or the guard stops it.
 
     Walks the final segment inward in `step` px, dropping a whole vertex when one is consumed and
@@ -62,7 +62,10 @@ def _pull_back(pts: list[Pt], reaches: Any, step: float = 8.0, keep_frac: float 
     map still needs the way it drew, and silently removing one would trade a visible stub for an
     invisible missing lane."""
     full = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:], strict=False))
-    floor = full * keep_frac
+    # `min_len` is the HARD floor a junction sets - see `_junction_floor`. It is a maximum with the
+    # proportional guard rather than a replacement for it: a lane may not be trimmed past a way that
+    # ties into it, whatever fraction of its length that leaves.
+    floor = max(full * keep_frac, min_len)
     out = list(pts)
     best: list[Pt] | None = None  # the SHORTEST end seen that still reaches something
     while len(out) >= 2:
@@ -532,7 +535,7 @@ class WaterWaysMixin:
             z1 = self.add(f'<path d="{dd}" fill="none" stroke="#6B4F2A" stroke-width="1.4" stroke-dasharray="8,8" opacity="0.7"/>')
         return (z0, z1)
 
-    def trim_lane_stubs(self: Settlement, way_reach: float = 40.0, house_reach: float = 90.0) -> int:  # type: ignore[misc]
+    def trim_lane_stubs(self: Settlement, way_reach: float = 40.0, house_reach: float = 90.0, fan_spread: float = 60.0, fan_bearing: float = 25.0) -> int:  # type: ignore[misc]
         """Pull back any internal lane end that REACHES NOTHING. Returns how many ends were trimmed.
 
         A lane exists to be fronted. The engine already ends an arm where it meets crop or water
@@ -558,6 +561,22 @@ class WaterWaysMixin:
         houses = self.M.get("houses") or []
         trimmed = 0
         _drop: set[int] = set()
+
+        def _fan_rival(q: Pt, bearing: float, house: Pt, mine: float, me: int) -> bool:
+            """Is another lane's end standing beside this one, pointing the same way, and NEARER the
+            same house? If so this end is the spare tine of a fan and the house is not its to claim."""
+            for k, other in enumerate(lanes):
+                if k == me or k in _drop or other.get("connector") or len(other.get("pts") or []) < 2:
+                    continue
+                op = [(float(x), float(y)) for x, y in other["pts"]]
+                for tip, prev in ((op[0], op[1]), (op[-1], op[-2])):
+                    if math.dist(tip, q) > fan_spread or math.hypot(tip[0] - house[0], tip[1] - house[1]) >= mine:
+                        continue
+                    _b = math.degrees(math.atan2(tip[1] - prev[1], tip[0] - prev[0]))
+                    if abs((bearing - _b + 180.0) % 360.0 - 180.0) <= fan_bearing:
+                        return True
+            return False
+
         for i, ln in enumerate(lanes):
             if ln.get("connector") or i >= len(self._lane_ink):
                 continue
@@ -582,11 +601,68 @@ class WaterWaysMixin:
                     if run is not None and _angle_between(run, _near) < _FRAY_DEG:
                         continue  # near-parallel: this is the same track fraying, not a junction
                     return True
-                return any(math.hypot(q[0] - h["x"], q[1] - h["y"]) <= house_reach for h in houses)
+                # A FARMHOUSE DISCHARGES ONE LANE END'S OBLIGATION, NOT THREE.
+                #
+                # Nothing said a house could only be claimed once, so three ends standing within 40
+                # ft of each other, all fronting the same house at 66.9 / 55.1 / 40.0 ft, all passed
+                # - and a settlement-review read the result at 3x zoom as a broom: not three ways,
+                # one way drawn three times with the ends fanned. The end NEAREST the house keeps it;
+                # any other end alongside it, pointing the same way, has to find its own reason to
+                # exist or be trimmed back until it does.
+                #
+                # The bearing clause is what keeps a genuine CROSSROADS legal. Two lanes reaching one
+                # house from opposite quarters is a house on a corner - a real thing that reads as
+                # one. It is only ends arriving ALONGSIDE each other that the eye merges.
+                _my = math.degrees(math.atan2(run[1][1] - run[0][1], run[1][0] - run[0][0])) if run else None
+                for h in houses:
+                    _d = math.hypot(q[0] - h["x"], q[1] - h["y"])
+                    if _d > house_reach:
+                        continue
+                    if _my is None or not _fan_rival(q, _my, (h["x"], h["y"]), _d, me):
+                        return True
+                return False
+
+            def _junction_floor(_p: list[Pt], me: int = i) -> float:
+                """How much of this lane may NOT be trimmed away, because another way ties into it.
+
+                AN END THAT CARRIES A JUNCTION IS NOT BLUNT - holding the network together is its own
+                reason to exist. `_pull_back` keeps the SHORTEST end that reaches something, so
+                without this it happily cuts past a tie point and orphans whatever was tied on.
+                Measured on Mizuguchi: the trim cut 160 ft off a lane, taking its junction with it,
+                the orphan-healer then re-laid the same alignment as a 3 ft web path, and the street
+                came out stroked 5 / 3 / 5 with a round-cap knuckle at the step - a repair scar in
+                open ground, which a review read at 2x as a lollipop knob mid-street."""
+                _acc, _keep = 0.0, 0.0
+                for _n in range(len(_p) - 1):
+                    _acc += math.dist(_p[_n], _p[_n + 1])
+                    _q = _p[_n + 1]
+                    for _k, _o in enumerate(lanes):
+                        if _k == me or _k in _drop or len(_o["pts"]) < 2:
+                            continue
+                        _op = [(float(x), float(y)) for x, y in _o["pts"]]
+                        _seg = min(zip(_op, _op[1:], strict=False), key=lambda _ab: seg_dist(_q[0], _q[1], _ab[0], _ab[1]))
+                        if seg_dist(_q[0], _q[1], _seg[0], _seg[1]) > way_reach:
+                            continue
+                        # AND IT HAS TO BE A CROSSING, NOT A NEIGHBOR - the `_FRAY_DEG` rule again.
+                        # Counting proximity alone made every point of a near-parallel arm look like
+                        # a tie, so the floor came out at the full length and nothing could be
+                        # trimmed at all.
+                        #
+                        # A CONTINUATION - two lanes meeting end to end at a shallow angle - is
+                        # deliberately NOT protected here, though it is a real tie. Protecting it
+                        # was tried, and it deadlocks against the fan rule on a map where the two
+                        # tines of the fan are themselves a continuation: the arm cannot be trimmed
+                        # without cutting the street, and the fan cannot be cleared without trimming
+                        # the arm. The repair scar that motivated the attempt was a WIDTH problem,
+                        # not a trim problem, and is fixed where the width is chosen instead.
+                        if _angle_between((_p[_n], _q), _seg) >= _FRAY_DEG:
+                            _keep = _acc
+                            break
+                return _keep
 
             for _ in range(2):  # each end in turn; a 2-point lane can lose at most one
                 if len(pts) >= 2 and not _reaches(pts[-1], run=(pts[-2], pts[-1])):
-                    pts = _pull_back(pts, lambda q, _p=pts: _reaches(q, run=(_p[-2], _p[-1])))
+                    pts = _pull_back(pts, lambda q, _p=pts: _reaches(q, run=(_p[-2], _p[-1])), min_len=_junction_floor(pts))
                     trimmed += 1
                 pts.reverse()
             # ...and a lane too SHORT to front anybody is not a lane at all, it is clipping debris.

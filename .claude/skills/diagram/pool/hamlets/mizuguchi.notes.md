@@ -266,3 +266,79 @@ Sawada figure being the re-pack's own effect on the house cloud the belt derives
 **The transferable part**: the first review's complaint was itself against a documented rule, and
 following it literally made three maps worse. A reviewer's finding is evidence, not a verdict - check
 it against the doctrine file before acting on it.
+
+## Feature 123 - the lane web (back_lane)
+
+**5 of this map's 12 farmhouses stood more than 100 ft from any way. Now none do** - the worst is
+80 ft and the median 61 - **and every lane on the sheet belongs to one connected
+network**, which is the part that took two review rounds to get right.
+
+The research is decisive that a house in a nucleated cluster is reached: "every house in the
+nucleated village is accessible via the interconnected system of narrow lanes and alleys". The FORM
+is a seeded knob, because the record supports two and two supportable answers become variance rather
+than a choice (Principle XII). This map rolled **`back_lane`**, which runs PARALLEL to the field margin behind the ranks of plots, tied to the rest by cross-links - the planned form the sources call a "rectangular framework", the one that says the place was LAID OUT. It carries **4 web
+lanes** of 8.
+
+**Four things here are load-bearing, and each was learned by getting it wrong first.**
+
+*The web is laid last of the built things* - after the houses AND their byres, sheds and wells. Laid
+before the houses it reserved ground from a cluster not yet packed and grew the four hamlets' long
+axes 15-97%; laid between the two it exiled byres up to 210 ft and erased feature 121's
+borrow-coverage fix. Reviewers verified the final order costs nothing: byres and wells are
+byte-identical to the pre-web manifest, coordinate for coordinate.
+
+*Connectivity is decided before any ink.* Candidate runs grow outward from the skeleton and only the
+reachable ones are drawn, because a lane once drawn cannot be taken back.
+`farmhouses_reach_a_way` enforces the same thing from the other side - it measures to the connected
+COMPONENT containing the connector, since a check an island can satisfy rewards drawing an island,
+which is exactly what the first version did. Orphaned SKELETON arms are linked too; the transitive
+check found some, which no rule could see before.
+
+*A lane is not drawn where a reader would see one lane twice.* A run that shadows an existing way -
+by fraction OR by one unbroken bundle pitch - is refused, and so is one that would run the length of
+the shelter belt rather than crossing it.
+
+*A house is served with margin, not to the millimetre.* The footpath pass triggers at nine tenths of
+the reach, so no house passes by inches and none gets a path drawn to cure a rounding error.
+
+Where the regular web still cannot reach a steading, that house gets what an outlying farmstead
+really has: a footpath of its own, routed round the neighboring plots rather than ruled at them,
+stopping at its first contact with the network, and planked where it crosses a ditch.
+
+## Feature 124 - a farmhouse fronts one lane end, not three
+
+A `settlement-review` read this map's east node at 3x zoom as **a broom**: ways leaving one point
+within about 23 degrees of each other, two of them ending blunt, and **all of them claiming the same
+farmhouse** - at 66.9, 55.1 and 40.0 ft. Three ends, one house answering for all three.
+
+Two rules should have caught it. `lanes_reach_something` lets an end discharge its obligation by
+stopping at a farmhouse and never said a house could only do that once. The lane web's shadow rule
+tests a new web run against what is already drawn - but both offending arms are SKELETON lanes, laid
+before the houses exist, so they are never tested against each other.
+
+The fix is one clause in `trim_lane_stubs`, which was already the right place: it runs after
+placement, only ever SHORTENS (so it cannot invalidate a seated house), and rewrites ink in the
+stream slots a lane already owns. Its house test is now **exclusive** - the end nearest a farmhouse
+keeps it, and any end standing alongside it and pointing the same way must find its own reason to
+exist or be trimmed until it does. Below one homestead's frontage the existing floor drops it, which
+is what the reviewer proposed.
+
+**A house reached from OPPOSITE quarters is a corner, and stays legal.** Without that clause the rule
+flags most of a nucleated cluster's middle. And "blunt" means what `_FRAY_DEG` already means: the
+ends in question stood 21.6 and 24.3 ft from another way and near-parallel to it, so they had not MET
+it - proximity is not arrival, which this engine had already learned once.
+
+This map now has no fan, and every farmhouse is still reached: worst 80 ft, median 61.
+
+**RIPPLE, and the fix that was tried and reverted.** Trimming the fan cut past a junction, orphaning
+the lane tied on there; the orphan-healer re-laid the same alignment at the web's own 3 ft, so the
+street came out stroked **5 / 3 / 5 with a round-cap knuckle at each step** - a repair scar in open
+ground that a review read at 2x as a lollipop knob mid-street.
+
+Stopping the trim at the last junction is the obvious fix and it does not work HERE: the two tines of
+this map's fan are themselves a continuation of one another, so the arm cannot be trimmed without
+cutting the street, and the fan cannot be cleared without trimming the arm. Protecting continuations
+put the crow's foot straight back. **The scar was a width problem, not a trim problem** - a healing
+link now inherits the width of the way it joins, because a link exists to make two lanes one and
+should look like the lane it completes. The junction floor survives for CROSSINGS, where a way ties
+in at a real angle and pins the trim.
