@@ -802,3 +802,98 @@ def test_lanes_reach_something_is_gated_on_generated_by():
     legacy = _lane_map([{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}], [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain"}], gen=None)
     legacy["meta"].pop("generated_by")
     assert "lanes_reach_something" not in f(legacy)
+
+
+# ---- every farmhouse is reached by a way (the converse of lanes_reach_something) ----------------
+def test_farmhouses_reach_a_way_fires_on_a_house_the_web_does_not_touch():
+    """The research is decisive that a house in a nucleated cluster is reached - "every house in the
+    nucleated village is accessible via the interconnected system of narrow lanes and alleys". The
+    earlier reading, that a back rank is walked to along unfigured footpaths, was defensible-sounding
+    with nothing behind it, and it left 29 of the four pool hamlets' 66 farmhouses out of reach.
+
+    Note this is the CONVERSE of `lanes_reach_something`, and a map can pass that one with every
+    lane busy while still stranding a third of its houses - which is exactly what the pool did."""
+    M = _lane_map(
+        [{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}],
+        [{"x": 500, "y": 600, "w": 46, "h": 28, "rot": 0, "kind": "plain"}, {"x": 900, "y": 700, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "farmhouses_reach_a_way" in f(M), "the second house is 400 ft from the only lane"
+
+
+def test_farmhouses_reach_a_way_passes_when_every_house_is_within_a_bundle_pitch():
+    """The threshold is one BUNDLE_PITCH - the ground a single homestead occupies, which is the
+    distance at which a lane passes your own plot or your neighbor's. Derived rather than chosen:
+    the number it replaced was flagged in future-work.md as one nobody had justified."""
+    M = _lane_map(
+        [{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}],
+        [{"x": 560, "y": 600, "w": 46, "h": 28, "rot": 0, "kind": "plain"}, {"x": 440, "y": 800, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "farmhouses_reach_a_way" not in f(M)
+
+
+def test_farmhouses_reach_a_way_measures_from_the_house_CENTER():
+    """x, y ARE the center in this manifest, not the top-left corner - `rect_corners` reads them
+    that way. Measuring from x + w/2 instead shifts every house half its own size, which is a real
+    mistake this check made before it was caught: it moved the baseline count by three."""
+    M = _lane_map(
+        [{"pts": [[500, 400], [500, 600]], "w": 5, "connector": False}],
+        [{"x": 590, "y": 500, "w": 100, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "farmhouses_reach_a_way" not in f(M), "center is 90 ft off the lane; a corner-read would call it 140"
+
+
+def test_farmhouses_reach_a_way_is_silent_on_a_map_with_no_ways_or_no_houses():
+    """Scoped to scripted maps, and it makes no claim about a manifest that has nothing to measure."""
+    assert "farmhouses_reach_a_way" not in f(_lane_map([], [{"x": 900, "y": 900, "w": 46, "h": 28, "rot": 0, "kind": "plain"}]))
+    assert "farmhouses_reach_a_way" not in f(_lane_map([{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}], []))
+    hand = _lane_map([{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}], [{"x": 2000, "y": 2000, "w": 46, "h": 28, "rot": 0, "kind": "plain"}], gen="")
+    assert "farmhouses_reach_a_way" not in f(hand), "hand-authored maps are not gated by this rule"
+
+
+# ---- two lane ends may not front the same farmhouse from the same side --------------------------
+def test_lane_ends_front_different_houses_fires_on_a_fan_of_blunt_tines():
+    """A farmhouse discharges ONE lane end's obligation, not three. A settlement-review read three
+    ways leaving one node within 23 degrees, two ending blunt and all three claiming the same house
+    at 66.9 / 55.1 / 40.0 ft, as a broom at 3x zoom: not three ways, one way drawn three times with
+    the ends fanned. `lanes_reach_something` was silent because each end could point at the house."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 500], [700, 505]], "w": 5, "connector": False},
+            {"pts": [[500, 540], [700, 549]], "w": 5, "connector": False},
+        ],
+        [{"x": 740, "y": 525, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lane_ends_front_different_houses" in f(M)
+
+
+def test_lane_ends_front_different_houses_allows_a_house_on_a_CORNER():
+    """Two lanes reaching one house from OPPOSITE quarters is a corner - a real thing that reads as
+    one. The bearing clause is what keeps that legal; without it the rule would flag most of a
+    nucleated cluster's middle."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 525], [700, 525]], "w": 5, "connector": False},
+            {"pts": [[980, 525], [780, 525]], "w": 5, "connector": False},
+        ],
+        [{"x": 740, "y": 525, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lane_ends_front_different_houses" not in f(M)
+
+
+def test_lane_ends_front_different_houses_exempts_an_end_that_MET_a_way():
+    """An end that crosses another way at a real angle is a junction, and a junction beside a
+    junction is a crossroads however tightly they sit. Only a BLUNT end can be a tine."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 500], [700, 505]], "w": 5, "connector": False},
+            {"pts": [[500, 540], [700, 549]], "w": 5, "connector": False},
+            {"pts": [[700, 460], [700, 600]], "w": 5, "connector": False},  # crosses both, squarely
+        ],
+        [{"x": 740, "y": 525, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lane_ends_front_different_houses" not in f(M)
+
+
+def test_lane_ends_front_different_houses_is_silent_without_lanes_or_houses():
+    assert "lane_ends_front_different_houses" not in f(_lane_map([], []))
+    assert "lane_ends_front_different_houses" not in f(_lane_map([{"pts": [[500, 500]], "w": 5, "connector": False}], []))

@@ -90,3 +90,30 @@ A corollary worth stating separately, from the same day's ruling on the twin det
 and the geometry disagree, that is a placer bug, not an axis-selection question.** Keep reading the
 declared knob, and fix the drawing to match what was rolled - switching the measurement hides the
 disagreement instead of resolving it.
+
+## WHEN A FORM IS A KNOB, CHECK THAT BOTH FORMS CAN ACTUALLY DO THE JOB
+
+Feature 123 rolled a `lane_web` knob over two attested forms - `alleys` (laterals off a spine) and
+`back_lane` (ways parallel to the field margin behind the plots) - and shipped a first version in
+which one of them could not possibly work.
+
+**Parallel lanes never meet.** That is arithmetic, not a bug to tune around, and it means the
+back-lane form was disconnected BY CONSTRUCTION: an alley crosses the spine it branches from, a back
+lane runs beside its neighbor forever. Three settlement-reviews independently reported the maps
+rolling `back_lane` as two and three separate lane components while the `alleys` maps came out fine,
+and the knob is exactly why the defect landed on some maps and not others.
+
+The source had already said what was missing, in the same sentence the form was taken from: the
+planned form is back lanes "which, **together with the main street itself, provides a rectangular
+FRAMEWORK** for the development of the village". A framework is the parallels PLUS the ties. Only the
+parallels were being drawn.
+
+**Two transferable rules.**
+
+- **A knob multiplies your test surface, and the halves are not symmetric.** Both values need the
+  same functional property demonstrated - here, "the ways form one network" - and a green cohort
+  proves it only for the values that happened to roll. Ask what each form makes STRUCTURALLY
+  impossible before trusting the rate.
+- **Re-read the source sentence the form came from, in full, when the form misbehaves.** The clause
+  that fixed this was in the same quotation the feature was built on, and had been skimmed past as
+  scene-setting. A form taken from a source usually arrives with its own constraints attached.

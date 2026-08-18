@@ -1205,15 +1205,32 @@ The two forms also read differently at a glance, which is the whole point: a bac
 place was laid out, alleys say it grew. That is exactly the kind of variance a player should be able
 to see.
 
-**Live work** (its own feature - engine change, new knob, new gate check, cohort re-roll):
+**IMPLEMENTED** as feature 123 (`specs/123-lane-web-and-cluster-shape/`), except item 4:
 
-1. Roll a `lane_web` knob per settlement over the two forms.
-2. Generate the chosen form in `hamletgen/ways.py` after the homesteads are seated, deriving the
-   lateral or back-lane geometry from the house rank actually placed (derive, never pin) and keeping
-   it off the crop the way `connector_track` does.
-3. Turn `lanes_reach_something`'s unjustified house threshold around into its converse - **every
-   farmhouse is within reach of some way** - so the rule has a research basis instead of a number.
-4. Same feature carries B's obligation: the placer honors the rolled `cluster_shape`.
+1. DONE - a `lane_web` knob rolls per settlement over the two forms and is recorded as
+   `meta.lane_web`.
+2. DONE - `stage_web` in `hamletgen/ways.py`, laid AFTER the homesteads are seated and derived from
+   where they actually landed. **The after is load-bearing**: laid before them, as every other lane
+   is, the web competed for ground with the very houses it existed to serve and grew the four pool
+   clusters' long axes 15-97%. The whole sequence of dead ends is in that feature's `research.md`.
+3. DONE - `farmhouses_reach_a_way`, the converse of `lanes_reach_something`, at a threshold derived
+   from `BUNDLE_PITCH` rather than chosen. It was written first and proved red on all four pool
+   manifests, which are frozen in `pool/regressions/` as its negative fixtures.
+5. KNOWN AND LEDGERED - **four cohort seeds, all `shape=crescent`, still strand houses.** A
+   crescent cluster wraps around the paddy and puts a few steadings on the far arm, ACROSS the
+   field from the rest; probed directly, a footpath to them is blocked by the crop even with every
+   yard, garden and grove removed from the obstacle list. The web is built in coordinates that
+   follow the field margin, and those houses are not on it. Three fixes were tried and moved the
+   numbers by zero feet (the distances were byte-identical across all three, which is the
+   diagnostic). Not forced, because the honest reading is that it is item 4 wearing a different
+   hat: a shape that strands houses across its own field is a PLACEMENT defect, and a lane rule
+   bent to compensate for one is the exact bug the last two features were spent removing. Full
+   record, including the alternatives priced and declined, in
+   `specs/123-lane-web-and-cluster-shape/tasks.md`.
+4. NOT DONE - B's obligation, that the placer honor the rolled `cluster_shape`, is untouched and
+   wants its own feature. `stage_homesteads` still seats by rows and frontage and records
+   `meta.cluster_seeding`, which says in writing that the rolled knob went unhonored. Note this is
+   NOT a regression introduced here - it is the pre-existing state the GM's ruling B calls out.
 
 <details><summary>The question as it was originally posed (kept for the record)</summary>
 
