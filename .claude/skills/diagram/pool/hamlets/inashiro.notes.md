@@ -251,7 +251,7 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
 
   Review log: DELTA pass. CAUGHT one new defect - basin #570 recorded as a self-intersecting ring:
   the union was valid and `_ring`'s 0.1 px rounding crossed it afterwards, so the weld now
-  round-trips the ring it will actually record and declines in favour of the runner-up basin if it
+  round-trips the ring it will actually record and declines in favor of the runner-up basin if it
   does not survive. Ink-invisible under a 1.5 px stroke, which is exactly why it needed catching in
   geometry rather than by eye. Two items put on record as PRE-EXISTING with measurements, both
   belonging to the carve's toe geometry rather than to this pass:
@@ -375,7 +375,7 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   feature, now derived from `DRAIN_FT[1]` (the TOPOLOGY record stays hairline - writing the drawn
   width there fires `irrigation_channels_hairline` and `watercourses_wider_than_ditches` on 14
   cohort maps apiece, measured); a doc-says-LOCAL / code-uses-HEAD divergence on `SUB_PARENT_FRAC`,
-  resolved in the docs' favour after the code version was tried and rejected the cohort (a sub-ditch
+  resolved in the docs' favor after the code version was tried and rejected the cohort (a sub-ditch
   sized off its parent's local width has 0.14 px of room above the floor, and
   `delivery_ditches_taper` failed 22 of 24 maps); and an overstatement that the delivery cap "only
   bites where the parent has already dwindled" when it binds on three of five.
@@ -690,12 +690,13 @@ WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
 - **the well tie-break's last key is the objective itself, not a proxy** - `_worst_after` at full
   resolution inside the 66 px bucket, instead of distance to the cluster centroid.
 
-RIPPLE ON THIS MAP: This map rolled `detached_commons`, so the byre FORM is unchanged - but 1 of
-its 3 byres did move, displaced by the well re-seat, and the morning's note claiming none had was
-false against its own manifest. The wells moved to [[1318, 1123], [1098, 1387]]: worst walk 430 ->
-430 ft, mean 212 -> 210 ft, and - the metric the placer actually optimizes - the worst walk among
-the 5 of 15 houses that NEED a well went 194 -> 180 ft. The shelter belt runs unbroken (183
-clumps, up from 169 - it now re-seats around a blocking structure instead of losing the column).
+RIPPLE ON THIS MAP (re-measured 2026-08-18 after the round-2 review): 3 byres at the placer's
+target of 3, form `detached_commons`, owned by the houses ranking [4, 11, 13] by footprint of 15 -
+the owner ranking was reading a `wealth` field that is 1.0 on every scripted house, so it had
+collapsed to smallest-x and was handing oxen to the west edge. The shelter belt carries 194 clumps
+with a minimum canopy depth of 28.0 ft measured ACROSS the wind, which is the measure that means
+anything on a diagonal belt; the per-latitude framing an earlier entry used flags healthy belts
+and misses thin windows. Worst walk among the 5 houses that actually need a well: 180 ft.
 
 ## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
 
@@ -721,7 +722,7 @@ Two ledgered defects that turned out to be one, with a worse one underneath.
   the way the check does.
 
 RIPPLE ON THIS MAP: The ruled chain is gone. The pair that stepped exactly (+270,+270) at an
-identical 250 ft is now part of a set of four at 128, 195, 222, 264 ft, with nearest-neighbour
+identical 250 ft is now part of a set of four at 128, 195, 222, 264 ft, with nearest-neighbor
 strides of 552, 1103, 1420, 1591 ft - no repeated step, no shared size.
 
 ## 2026-08-18 - the six-defect pass
@@ -752,11 +753,12 @@ order they matter to a reader of these maps:
 - **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
   gate reads the same raked corners the placer does.
 
-RIPPLE ON THIS MAP: 11 of 15 houses re-seated; lane 1 shortened; all three byres re-sited;
-`farm_sheds` 5 -> 4, `gardens` 19 -> 18 beds over an unchanged 15 owners, `tree_crowns` +99;
-`lanes`, `dry_plots`, `fields`, `field_ponds` and `marshes` byte-identical - the re-pack stayed out
-of the field fabric entirely. Cluster aspect 3.79 -> 2.91 with two genuine ranks (front 52-104 ft
-from the crop, back 124-249). Review: PASS.
+RIPPLE ON THIS MAP (re-measured 2026-08-18): woodland is [(142, 37), (243, 108), (264, 128)] -
+each pair is (ft across, crowns) - stocked at 540-554 sq ft per crown, which is the stated density
+rather than an artifact of how much of a parcel lies near a keep-out. Crown count used to be the
+number of THROWS at a parcel, and `_sparse` rejected a share of them, so small parcels came out
+both smaller AND thinner; it is a target now. Parcels under the 120 ft legibility floor are
+DROPPED rather than drawn small.
 
 CLOSED 2026-08-18, having first been STALE. This paragraph read "two houses stand past 200 ft from
 any lane (max 345) at the north tip", and a settlement-review re-measured it that day: the figure was
@@ -921,7 +923,7 @@ check found some, which no rule could see before.
 by fraction OR by one unbroken bundle pitch - is refused, and so is one that would run the length of
 the shelter belt rather than crossing it.
 
-*A house is served with margin, not to the millimetre.* The footpath pass triggers at nine tenths of
+*A house is served with margin, not to the millimeter.* The footpath pass triggers at nine tenths of
 the reach, so no house passes by inches and none gets a path drawn to cure a rounding error.
 
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead
