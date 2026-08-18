@@ -228,8 +228,45 @@ def test_crown_fills_covers_every_recorded_crown():
         recorded = len(json.loads(Path(stem + ".json").read_text()).get("tree_crowns") or []) // 3
         if not recorded:
             continue
-        parsed = len(sa.parse_bases(Path(stem + ".svg").read_text())["crown"])
-        assert parsed >= recorded, f"{os.path.basename(stem)}: parsed {parsed} crowns against {recorded} recorded - CROWN_FILLS has lost a drawing site"
+        parsed = sa.parse_bases(Path(stem + ".svg").read_text())["crown"]
+        assert len(parsed) >= recorded, f"{os.path.basename(stem)}: parsed {len(parsed)} crowns against {recorded} recorded - CROWN_FILLS has lost a drawing site"
+        # ...AND ON THE CANVAS, which counting cannot tell you. The count half of this guard passed
+        # at 1446 >= 1446 for weeks while ~78% of the crown family was adjudicated at LOCAL
+        # coordinates: `_draw_grove` emits its canopy inside `<g transform="translate(cx,cy)">`, and
+        # `parse_bases` read `cx`/`cy` raw, so a crown at world (710.9, 1815.8) was judged at
+        # (4.9, -14.2) and the audit reported 0 violations on a map that had 5 crown bases inside the
+        # crop margin (settlement-review, Mizuguchi 2026-08-18). A family that sees the right NUMBER
+        # of things somewhere else is exactly as blind as one that sees nothing.
+        #
+        # EVERY PARSED CROWN MUST SIT NEAR SOMETHING THE MANIFEST RECORDS, and finding an invariant
+        # that actually separates a good parse from a broken one took two wrong tries, both recorded
+        # because each looked obviously right:
+        #   - comparing parsed bases to the recorded `tree_crowns` points fails, because that key
+        #     records the tree STANDS' canopy while a grove clump records only its CENTRE in
+        #     `village_groves[].clumps` - barely a fifth of parsed crowns coincide with a recorded
+        #     one under ANY parser, broken or fixed;
+        #   - an on-canvas test fails too, because a local offset is small (+-25 px) and so still
+        #     lands inside a 2000 px canvas. Off-canvas is what it LOOKS like, not what it IS.
+        # What a mis-parsed crown cannot do is land near a recorded ANCHOR - a stand crown or a clump
+        # centre - because its coordinates are an offset, not a position. Measured on the four
+        # scripted hamlets: 0 orphans with the transform resolved, 1,503-2,387 without.
+        _flat = json.loads(Path(stem + ".json").read_text()).get("tree_crowns") or []
+        anchors = [(_flat[i], _flat[i + 1]) for i in range(0, len(_flat), 3)]
+        for _g in json.loads(Path(stem + ".json").read_text()).get("village_groves") or []:
+            anchors += [(c[0], c[1]) for c in _g["clumps"]]
+        reach = 60.0
+        buckets: dict[tuple[int, int], list[tuple[float, float]]] = {}
+        for ax, ay in anchors:
+            buckets.setdefault((int(ax // reach), int(ay // reach)), []).append((ax, ay))
+        orphans = []
+        for px, py in parsed:
+            gx, gy = int(px // reach), int(py // reach)
+            if not any((px - ax) ** 2 + (py - ay) ** 2 <= reach * reach for dx in (-1, 0, 1) for dy in (-1, 0, 1) for ax, ay in buckets.get((gx + dx, gy + dy), ())):
+                orphans.append((px, py))
+        assert not orphans, (
+            f"{os.path.basename(stem)}: {len(orphans)} parsed crown bases sit near NOTHING the manifest records, e.g. {orphans[:3]} "
+            f"- parse_bases is reading a family in LOCAL coordinates (an unresolved transform), so the audit is judging it in the wrong place"
+        )
         checked += 1
     assert checked, "no live scripted map had both a .svg and a .json - the guard checked nothing"
 

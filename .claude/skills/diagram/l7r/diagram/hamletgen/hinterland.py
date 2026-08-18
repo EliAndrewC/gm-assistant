@@ -30,12 +30,6 @@ def stage_hinterland(s: Settlement, plan: SitePlan) -> None:
 
 CROP_MARGIN = 48.0  # the one crop margin, shared by stage_frame's crop_to_content call and the
 # predicted-kept-window math in open_ground_patches - two hardcoded 48s would drift
-WINDBREAK_INSET = 14.0  # how far inside the predicted frame the windbreak's polygon is held, so the
-# CROWNS stay in too: village_grove scatters its clumps up to about a crown radius past the outline
-# it is given, so a vertex sitting exactly on the frame still spills leaves over the edge. Verified
-# empirically rather than derived - the check is "zero clumps recorded outside meta.view", measured
-# across the four scripted hamlets after the clamp landed. See stage_windbreak for why the belt is
-# clamped at all when every other soft cover is allowed to clip.
 
 
 def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float = 250.0) -> list[Poly]:
@@ -332,9 +326,6 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
             _cands = ((_tp[0] - 6.0, _by), (_tp[2] + 6.0, _by), (_bx, _tp[1] - 6.0), (_bx, _tp[3] + 6.0))
             _bx, _by = min(_cands, key=lambda q: (q[0] - _bx) ** 2 + (q[1] - _by) ** 2)
         _dented.append((_bx, _by))
-    # WINDBREAK_INSET keeps the CROWNS inside too, not just the polygon: `village_grove` scatters
-    # clumps up to a crown radius past its outline, so a vertex exactly on the frame still spills
-    # leaves over the edge.
     # THE BELT ITSELF IS NOT MOVED - the CLUMPS are held inside the frame instead, via
     # `village_grove(within=...)`. Clamping the polygon was tried first and is wrong, recorded so it
     # is not retried: the outline's bbox center is what `village_grove` records as the grove's `x`,`y`
@@ -342,7 +333,11 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
     # center toward the cluster - cohort seeds 19 and 28 crossed to the LEE side, and a guard on the
     # polygon's centroid did not catch it because the centroid is not the point the check reads. The
     # belt's position is its meaning; only its leaves needed containing.
-    s.village_grove(_dented, role="windbreak", within=(_fx0 + WINDBREAK_INSET, _fy0 + WINDBREAK_INSET, _fx1 - WINDBREAK_INSET, _fy1 - WINDBREAK_INSET))
+    # The frame ITSELF, with no inset: `village_grove` skips only a clump lying WHOLLY outside it, so
+    # the belt still clips at the page edge the way every other soft cover does (and the way
+    # `settlements/presentation.md` requires) and only ink nobody can see is dropped. An inset was
+    # tried first and cost Sawada 46% of its canopy - see the comment at the skip.
+    s.village_grove(_dented, role="windbreak", within=(_fx0, _fy0, _fx1, _fy1))
     # The COPSE fills the leafy gaps AMONG the homes, over the house cloud. That is only reasonable
     # ground because `stage_homesteads` now bounds every seat to the cluster band: over a cloud with
     # a strewn farmstead in it, this became a scatter across 1,446 x 1,244 px - a wood over the whole
