@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from ..core import Settlement
 
 
+_BORROW_REACH = 120.0  # a neighbour this close can walk over and borrow the team (see draft_byres)
+
+
 class DraftByresMixin:
     def _draw_byre(self: Settlement, cx: float, cy: float, w: float, h: float, rot: float = 0) -> None:  # type: ignore[misc]
         """A small OPEN-FRONTED draft-animal shed (ox / water-buffalo byre): a plank-and-thatch roof with a
@@ -64,7 +67,20 @@ class DraftByresMixin:
         # get one, never how many or how the spiral seats them.
         _pool = list(ranked)
         while len(out) < target and _pool:
-            h = max(_pool, key=lambda q: (min(math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out), q.get("wealth", 1.0), -q["x"], -q["y"])) if out else _pool[0]
+            if out:
+                # SPREAD, THEN SHARE. Farthest-point alone minimises the worst walk, which is the
+                # right coverage objective - but with every house at wealth 1.0 the tie-break
+                # collapses to pure distance, so it picks the most ISOLATED homestead and the shed
+                # reads as that household's private one. That is the inverse of the doctrine: a byre
+                # is shared precisely so a household owning no team can borrow from a neighbour
+                # (settlements/homesteads.md), and the neighbour has to be there to borrow from.
+                # So: take the spread score, then among the candidates within a quarter of the best
+                # prefer the one with the most households in borrowing distance.
+                _best = max(min(math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out) for q in _pool)
+                _near = [q for q in _pool if min(math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out) >= _best * 0.75]
+                h = max(_near, key=lambda q: (sum(1 for o in houses if o is not q and math.hypot(o["x"] - q["x"], o["y"] - q["y"]) <= _BORROW_REACH), q.get("wealth", 1.0), -q["x"], -q["y"]))
+            else:
+                h = _pool[0]
             _pool.remove(h)
             rr = math.hypot(h["w"], h["h"]) / 2 + bh
             done = False

@@ -7,12 +7,16 @@ integration case so the audit and the engine provably agree; `main` is exercised
 files. The committed pool bytes are never touched."""
 
 import json
+import os
+from pathlib import Path
 
 import pytest
 
 from l7r.diagram.settlement import Settlement
 from l7r.diagram.settlement._geom import CROWN_FILLS
 from l7r.diagram.tools import scatter_audit as sa
+
+HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 
 
 def _mini_channel_settlement(seed: int = 1) -> Settlement:
@@ -203,8 +207,35 @@ def test_main_missing_ftpx_exits_two(tmp_path, capsys):
     assert "ftpx" in capsys.readouterr().err
 
 
+def test_crown_fills_covers_every_recorded_crown():
+    """`CROWN_FILLS` claims to be every colour the engine paints a RECORDED crown with. That claim
+    has rotted twice in one day - first the audit's own stale copy (0% coverage), then a
+    replacement that missed every woodland-commons canopy (63%) while its comment asserted the old
+    fills were unpainted. So the claim is TESTED against real ink rather than trusted: roll a map
+    and compare crowns parsed against crowns recorded. A palette that loses a drawing site narrows
+    the count, and this fails instead of quietly reporting a clean family."""
+    import glob
+
+    from l7r.diagram.pipeline import poolmaps
+
+    checked = 0
+    for gen in sorted(glob.glob(os.path.join(HERE, "pool", "*", "*.gen.py"))):
+        if poolmaps.classify(gen) != "scripted":
+            continue  # frozen maps predate the palette and are never re-rendered
+        stem = gen[: -len(".gen.py")]
+        if not (os.path.isfile(stem + ".svg") and os.path.isfile(stem + ".json")):
+            continue  # live renders are gitignored; a clean checkout simply has none
+        recorded = len(json.loads(Path(stem + ".json").read_text()).get("tree_crowns") or []) // 3
+        if not recorded:
+            continue
+        parsed = len(sa.parse_bases(Path(stem + ".svg").read_text())["crown"])
+        assert parsed >= recorded, f"{os.path.basename(stem)}: parsed {parsed} crowns against {recorded} recorded - CROWN_FILLS has lost a drawing site"
+        checked += 1
+    assert checked, "no live scripted map had both a .svg and a .json - the guard checked nothing"
+
+
 def test_a_family_that_parses_nothing_the_manifest_records_is_a_LOUD_failure(tmp_path, monkeypatch, capsys):
-    """A blind FAMILY must fail as loudly as a blind parser (2026-08-17).
+    """A blind - or merely PARTIAL - family must fail as loudly as a blind parser (2026-08-17).
 
     The zero-TOTAL guard cannot see a parser that lost one family, and that is what happened: the
     crown pattern matched three fills the engine no longer paints, so the audit printed
@@ -213,10 +244,10 @@ def test_a_family_that_parses_nothing_the_manifest_records_is_a_LOUD_failure(tmp
     MANIFEST records the feature, parsing none of it is drift in the tool, not cleanliness in the
     map - so it exits 2 and says the AUDIT is broken."""
     stem = tmp_path / "blind"
-    stem.with_suffix(".json").write_text(json.dumps({"meta": {"ftpx": 1, "scale": "hamlet"}, "tree_crowns": [[10, 10], [20, 20]]}))
+    stem.with_suffix(".json").write_text(json.dumps({"meta": {"ftpx": 1, "scale": "hamlet"}, "tree_crowns": [10, 10, 5, 20, 20, 5]}))
     # one parseable base so the zero-TOTAL guard does not fire first, and NO crown ink at all
     stem.with_suffix(".svg").write_text('<g stroke="#A7A860"><line x1="10.0" y1="20.0" x2="10.5" y2="16.0"/></g>')
     assert sa.main([str(stem)]) == 2
     err = capsys.readouterr().err
-    assert "0 bases for crown" in err and "tree_crowns=2" in err
+    assert "parsed 0 crown bases" in err and "records 2" in err and "0% coverage" in err
     assert "treat the AUDIT as broken" in err, "it must accuse the tool, not clear the map"
