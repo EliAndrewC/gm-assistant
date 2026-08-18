@@ -1159,7 +1159,7 @@ to see.
 #### C. Does a hamlet's back rank get a way, or is it walked to? (doctrine, tier-wide)
 
 Raised on Sawada, true of every scripted hamlet: nine of nineteen houses stand more than 120 ft from
-any way, and the whole SE block is touched by no lane. Inashiro is 6 of 15 with a worst of 345 ft,
+any way, and the whole SE block is touched by no lane. Inashiro is 6 of 15 with a worst of 254 ft (345 ft when this was written; re-measured on the shipped manifest 2026-08-18),
 Mizuguchi 4 of 12. This is not a defect of any one map and it is not delta-caused - the front-row
 cap is what put a genuine back rank there in the first place, which is what we wanted.
 
@@ -1250,3 +1250,44 @@ answering the specific thing.
 **The order to do it in**: `_share` first and alone, because it is where the win is and its failure
 is a specific, locatable geometry bug rather than a design problem; then re-measure; then `_unjog`
 only for whatever the partition cannot avoid.
+
+## OPEN 2026-08-18: the byre at the settlement EDGE - a knob candidate, and what to research first
+
+Raised by `settlement-review` on Inashiro while it was checking the jog delta, so it is a finding
+from outside the delta rather than part of it (which is the reviewer working as intended).
+
+**The measurement.** Byre 0 sits at (1047.8, 989.5) - 70 ft past the westernmost house, INSIDE the
+shelter belt, 29.3 ft from the nearest grove clump with 45 tree crowns within 40 ft - and reaches
+**2 of 15 households within 200 ft**, against 5 for byre 1 and 6 for byre 2. `settlements/homesteads.md`
+puts a shared draft-animal byre "in the COURTYARDS among the homesteads", and the 2026-08-18 pass
+added a borrow-coverage term to stop the maximin spread picking isolated seats. On this roll the
+spread term still wins at one seat of three. The notes ledger a version of this from an earlier roll
+(a different byre, at the NE outlier), so what recurs is the CLASS, not the instance.
+
+**The research question, and it is a research question rather than a ruling** (Principle XII): was a
+shared ox shed ever sited at the settlement edge under the shelter planting - for shade, for manure
+handling, for keeping the beasts out of the dooryard - as opposed to in a courtyard?
+`research/homesteads.md` covers the byre-vs-well question and does not address byre-vs-edge, so the
+search pass has not been run. **Run it before touching the placer.**
+
+**The likely shape of the answer.** The reviewer's read, which I share on the evidence so far, is
+that both sitings are defensible - which by Principle XII makes this a KNOB with per-settlement
+variance rolled from the map's own seed (courtyard byre vs edge byre), not a fix, and a knob that
+would visibly differentiate hamlets. What is NOT defensible on either reading is a byre reachable by
+2 of 15 households while two other seats on the same map reach 5 and 6: whichever form the roll
+picks, the coverage term has to bind. So the work is: research it; if it supports both forms, add the
+knob AND make the borrow-coverage term binding within whichever form is rolled.
+
+### Two nitpicks from the same review, neither worth its own feature
+
+- **Flooded-basin tint vs channel hue.** The two water-tinted basins sit in the same hue family as
+  the drawn channels, and at fit zoom the 19-ft-wide one at (2184.6, 1739.9) reads more as a sliver
+  of open water than as a flooded basin. The geometry is right (19 x 114 ft, 28.5 deg apex - a real
+  basin, and `flooded_plots_read_as_basins` agrees); it is a hue-separation question for
+  `waterfields/palette.py`, and it should be answered for the whole tint at once rather than for one
+  plot.
+- **Byres buried in canopy.** Two of three byres carry ~45 crowns within 40 ft while the third
+  stands clear, so at fit zoom the sheet reads as one byre rather than three. Nothing overlaps (that
+  is gated); it is a legibility consequence of the grove scatter, and it belongs with the byre-siting
+  work above rather than with the groves.
+
