@@ -146,12 +146,15 @@ WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
 - **the well tie-break's last key is the objective itself, not a proxy** - `_worst_after` at full
   resolution inside the 66 px bucket, instead of distance to the cluster centroid.
 
-RIPPLE ON THIS MAP: none - and it took two tries to get that. This map draws no byres, so the knob
-does not touch it. The FIRST well fix (breaking the tie on distance to the nearest house, which is
-what the ledger sketched) moved this map's second well 47 px and took its worst walk **203 -> 234
-ft** - a regression on a shipped map, caught by measuring all four hamlets rather than the one the
-item was filed about. Scoring the real objective inside the bucket instead returns this map to
-byte-identical wells while still buying Kashikawa its 386 -> 304 ft.
+RIPPLE ON THIS MAP: This map rolled `courtyard`, and the morning's note said the knob did not
+touch it because the map drew no byres. It drew THREE before the knob and ZERO after: the
+courtyard form silently deleted them all, and the note recorded that regression as a non-event.
+All 3 are back, at the placer's target of 3, each one attached to its owner's wall. The wells did
+not move: [[1006, 1708], [764, 1862]], byte-identical to before this round. Worst walk 203 ft,
+mean 155 ft, and among the 0 of 12 houses that actually need a well (the rest are within reach of
+surface water, which the objective excludes by design) the worst is 0 ft. The belt carries a pre-
+existing gap at y=1896 that this round did NOT cause and did not fix: it survives the flow-around
+change, so its cause is not a structure. Ledgered.
 
 ## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
 
@@ -176,12 +179,11 @@ Two ledgered defects that turned out to be one, with a worse one underneath.
   is fine". The scan mirrored the check's formula but not its WINDOW, and now judges a seat by area
   the way the check does.
 
-RIPPLE ON THIS MAP: this is the motivating sheet, and the ruled diagonal is gone. The three stamps
-at (456,967) / (726,697) / (996,427) - all exactly 250 ft - are now 238 ft at (485,899), 267 ft at
-(780,661) and 221 ft at (1032,401), with the fourth parcel 232 ft at (1590,1921). Four woods of four
-sizes on no line. Count unchanged at 4; gate green. The first cut of the size roll shrank only
-(`1.0 - 0.2*hjit`), compounded with the shrink ladder and produced a 116 ft "commons" here - a copse,
-not a commons - which is why the roll varies both ways.
+RIPPLE ON THIS MAP: This is the motivating sheet. The three IDENTICAL 250 ft squares stepping
+(+270,-270) twice are gone: four parcels at 219, 242, 265, 288 ft with strides of 304, 373, 671,
+1465 ft. The first fix only dithered the seats and left the ~375 ft stride intact; the stride is
+now rolled per parcel, and the sizes are drawn from distinct bands so no two woods can land within
+9% of each other.
 
 ## 2026-08-18 - the six-defect pass
 

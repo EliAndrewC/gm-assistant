@@ -487,8 +487,51 @@ class HomesteadPartsMixin:
                 # real defect was the 23 with no ink on the page.
                 if within is not None and (jx + clump * 0.9 < within[0] or jx - clump * 0.9 > within[2] or jy + clump * 0.9 < within[1] or jy - clump * 0.9 > within[3]):
                     continue
+                # A DENSE BELT FLOWS AROUND AN OBSTACLE INSTEAD OF LOSING THE COLUMN (settlement-review,
+                # Inashiro 2026-08-18). `occ` keeps a clump off a house, a yard, a byre and - the case
+                # that bit - a WELLHEAD, whose keep-out is the widest of the lot (`vr + 0.9*clump`,
+                # because a well lost under the canopy reads wrong). A wellhead seated inside the belt
+                # therefore deleted every clump around it, and the belt acquired a zero-canopy latitude
+                # on its WINDWARD side - a hole straight through the wind wall, which is the one thing
+                # a windbreak exists not to have. Measured on Inashiro: the 40 ft band at y1360-1400
+                # went 8 clumps -> 1, in a 930 ft run that had never had a gap.
+                #
+                # Fixing it at the WELL was tried first and is the wrong lever - recorded because it
+                # shipped for a moment. Ranking "not in the belt" ahead of coverage in the well
+                # tie-break closed Inashiro's hole and cost Mizuguchi 61 ft of worst walk, on a map
+                # whose own belt hole turned out not to be well-caused at all. The belt is what should
+                # give: a real planted windbreak is not laid out on a grid and abandoned where a shed
+                # stands, it is planted around the shed.
+                #
+                # So a blocked clump in a DENSE grove gets a short re-seat search before it is
+                # dropped, and only for `occ` - a clump refused by the CROP, open WATER or a LANE is
+                # refused for a reason that re-seating does not change, and those are the edges where
+                # a belt is supposed to stop. The nudge re-asks every other test, and keeps its
+                # distance from the clumps already down so a re-seat cannot just pile up on its
+                # neighbor.
                 if any((jx - ox) ** 2 + (jy - oy) ** 2 < rr * rr for ox, oy, rr in occ):
-                    continue
+                    if not dense:
+                        continue
+                    _alt = None
+                    for _nrad in (step * 0.6, step * 1.0):
+                        for _nang in range(0, 360, 45):
+                            _px = jx + _nrad * math.cos(math.radians(_nang))
+                            _py = jy + _nrad * math.sin(math.radians(_nang))
+                            if not point_in_poly(_px, _py, poly):
+                                continue
+                            if within is not None and (_px + clump * 0.9 < within[0] or _px - clump * 0.9 > within[2] or _py + clump * 0.9 < within[1] or _py - clump * 0.9 > within[3]):
+                                continue
+                            if any((_px - ox) ** 2 + (_py - oy) ** 2 < rr * rr for ox, oy, rr in occ):
+                                continue
+                            if any((_px - qx) ** 2 + (_py - qy) ** 2 < (step * 0.55) ** 2 for qx, qy in clumps):
+                                continue
+                            _alt = (_px, _py)
+                            break
+                        if _alt is not None:
+                            break
+                    if _alt is None:
+                        continue
+                    jx, jy = _alt
                 # THE KEEP-OUT IS FROM THE CROWNS, NOT THE CLUMP CENTER. 12 px held the center off the
                 # field, but a clump scatters its canopy about a radius past that center, so a legal
                 # center still threw crowns onto the crop margin - five of them on Mizuguchi, 0.7-5.5

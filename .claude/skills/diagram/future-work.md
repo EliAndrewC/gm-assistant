@@ -1231,3 +1231,110 @@ the maps currently depict, and it is defensible - a lane is a cart way, and peop
 and `lanes_reach_something`'s house threshold stops being a number nobody has justified.
 
 </details>
+
+## OPEN, from the 2026-08-18 settlement-review round (four maps, four independent agents)
+
+The round is worth its own heading because of what it caught: **every defect below and every one
+fixed that day was invisible to a green gate and a 48-seed cohort at baseline.** The worst of them -
+the `courtyard` byre form seating nothing at all on Mizuguchi, 3 byres -> 0 - passed 189 checks, all
+48 seeds, AND a check written in the same commit specifically to catch it, because that check was
+guarded on `M.get("byres")` and an empty list skipped it. Four reviewers found it independently.
+Fixed items are recorded at their point of change; these are the ones deliberately NOT fixed.
+
+### A. Every woodland commons is an axis-aligned SQUARE - 12 of 12 across the four hamlets
+
+`rot: 0`, `w == h`, on every parcel the engine has ever drawn (Inashiro 254/232/258/149, Mizuguchi
+219/242/265/288, Kashikawa 117/125, Sawada 136). The 2026-08-18 work fixed WHERE they sit and HOW BIG
+they are; the SHAPE is untouched, and the reviewer's point is that the chain was the artifact a
+MANIFEST reader saw while the square is the one a SHEET reader sees - the crown scatter only partly
+disguises it, and a parcel's top and left edges read as ruled lines at fit zoom.
+
+**Why deferred**: this is a new generative dimension, not a tuning change - `open_ground_patches`
+builds an axis-aligned quad by construction and every keep-out test downstream assumes that box.
+**Research first, and it looks decisive**: *iriai* boundaries were customary and described by ridge,
+stream and path, and satoyama coppice sits on the slope break above the paddy - so "no fixed shape"
+is very likely the answer, which per Principle XII makes this a KNOB (roll an aspect ratio and a
+bearing per parcel) rather than a number. **Sketch**: roll `aspect` in ~1.0-2.2 and `bearing` off the
+fall line per parcel from `_hjit`; emit the rotated quad; `_ok` already tests a centre plus a half
+extent, so give it the rotated half-extents. Do NOT square-to-rectangle uniformly - the point is that
+two hamlets differ.
+
+### B. Kashikawa's woodland sits DOWNSLOPE, against doctrine stated in three places
+
+Measured against the cluster centroid with the map's own fall vector: parcel 1 is 505 ft downslope,
+parcel 2 is 887 ft downslope and stands 75 ft from the reed marsh. `settlements/vegetation.md` says
+woodland goes "on the higher / farther ground", `research/fields.md` says "satoyama crowns the hills
+above", and `hinterland.py`'s own comment says "the back slope behind the houses". The scorer is
+`-hypot(dist_to_cluster) + 0.35 * upslope`, so a 90 px step toward the cluster outbids 257 px of
+height and the upslope term never binds.
+
+**Why this needs a RULING and not a tweak**: raising the weight until it binds returns Kashikawa to
+ZERO parcels - its only in-frame upslope ground is a shallow SW triangle already taken by the
+connector lane, the SW homesteads and the belt rect - which is the exact defect closed this morning.
+The two honest options are (a) raise the weight AND add an explicit, commented "no upslope seat
+qualified, taking the best cross-slope seat" fallback so the downslope outcome is a recorded decision
+rather than an accident, or (b) keep the scorer and correct the prose, including this map's own kanji
+paragraph, which currently claims the sheet draws the high-ground oaks. **Both files must not go on
+saying opposite things.**
+
+### C. `surface_water_dist` reads `channels`, but a comb map's watercourses live in `drawn_channels`
+
+The predicate behind the well objective's exclusion set reads `M["channels"] + M["streams"]`. On
+Sawada `channels` holds ONE 160 ft intake stub while the 13 real watercourses are in
+`drawn_channels`; every house is within 63-361 ft of one of those. So which houses count as "needing
+a well" is decided by **which manifest container a watercourse happens to be recorded in**, not by
+what kind of water it is. If `drawn_channels` counted, 19 of 19 Sawada houses would be watered and
+the objective would have no clients at all.
+
+**The exclusion is probably RIGHT and the mechanism is definitely wrong.** Research points to a real
+distinction - domestic water from a well or spring, ditch water for washing at a dedicated *kawado*
+stand - which would make excluding irrigation ditches correct. But then the intake stub should be
+excluded too, and the reason should be written down instead of being an accident of manifest shape.
+**Sketch**: decide the predicate on the water's KIND, not its container; document the ruling at
+`surface_water_dist`; expect the needy set to grow on comb maps and re-measure the cohort.
+
+### D. Two lane-topology defects the checks structurally cannot see
+
+- **Kashikawa's lane 2 is a 223 ft duplicate of lane 1.** It leaves lane 1 within 0.1 px of its
+  centerline, diverges 13.6 deg, and dead-ends 53 ft from lane 1's own dead end; both tips name the
+  same nearest dwelling. Of the six houses it passes within 110 ft, exactly ONE is nearer to it than
+  to lane 1, by 9 ft. It draws a 220 ft splinter of scrub between two parallel worn ways.
+- **Sawada's Y spine has a 110 ft hole.** `lanes[2]` ends at (1629,2274) and `lanes[0]` starts at
+  (1729,2321) - 8.3 deg from collinear, both in rounded caps in bare grass, in the middle of the
+  built-up frontage. The same-day `trim_lane_stubs` fix pulled the fraying arm back and left a
+  discontinuity instead.
+
+`lanes_reach_something` passes both because it tests each END independently against a 90 ft
+house-centre reach. **Sketch**: a PAIRED rule - two non-connector ends within ~150 ft and under ~15
+deg of collinear are one interrupted way, not two arms - plus dropping or merging any internal lane
+whose EXCLUSIVE frontage is under ~2 households, on the pass `trim_lane_stubs` already runs.
+Deferred because it is a new pass over lane topology, not an edit to an existing rule.
+
+### E. Two belt holes that are NOT structure-caused, on a belt whose continuity is ungated
+
+Mizuguchi y=1896 and Sawada y=2321 carry a zero-canopy latitude, and both PREDATE all of today's
+work (measured at `HEAD~1`). They survive the flow-around fix that closed Inashiro's, so a blocking
+structure is not the cause - the remaining candidates are the field/water/lane refusals, which are
+deliberate, or a pinch in the belt polygon itself. **The deeper gap is that nothing gates this**: a
+windbreak with a hole straight through it passes every check we have, which is how Inashiro shipped
+one this morning. **Sketch**: a `village_windbreak_is_continuous` check measuring canopy width per
+step ALONG the belt's principal axis (not per latitude - a diagonal belt makes that lie), red-first
+against these two maps before any placement change.
+
+### F. Woodland is stocked like parkland, not like a wood
+
+Sawada's parcel: 19 crowns over 127 x 127 ft = 1 crown per 852 sq ft, against the copse's ~1 per 287.
+`woodland_commons_visibly_stocked` tests `crowns >= 5`, a COUNT, so it cannot see density. A coppice
+is a thicket cut on rotation. **Sketch**: raise stand density inside a woodland parcel and make the
+check area-scaled rather than a flat floor; watch `woodland_clear_of_grove` and
+`structures_clear_of_trees` for fallout.
+
+### G. Two glyph-vocabulary collisions (cosmetic, both flagged twice)
+
+The byre and the notice board are both a small tan box with a dark bar at fit zoom, and there are
+several byres to one board; the board's caption disambiguates it, nothing disambiguates a byre. And
+the windbreak belt and the copse share one crown vocabulary - on Sawada their centroids are 23 ft
+apart and half the copse's clumps touch the belt's, so the manifest declares two features and the
+sheet shows one wood. A planted belt was typically one tall species in a row against mixed broadleaf
+coppice, so the fix is a different crown vocabulary for the belt, which would also make its
+(excellent, 906 x 199 ft, aspect 4.5) form legible.

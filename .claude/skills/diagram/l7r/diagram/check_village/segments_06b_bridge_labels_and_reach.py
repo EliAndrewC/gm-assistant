@@ -420,7 +420,7 @@ def _seg_0374__funerary_ground_within_reach(
         fg_bad = []
         for fg_k, fg_f in fg_out:
             fg_d = min(seg_dist(fg_f["x"], fg_f["y"], fg_wall[i9], fg_wall[(i9 + 1) % len(fg_wall)]) for i9 in range(len(fg_wall)))
-            fg_edge = fg_d - max(float(fg_f.get("w", 0)), float(fg_f.get("h", 0))) / 2  # the NEAR edge, not the centre
+            fg_edge = fg_d - max(float(fg_f.get("w", 0)), float(fg_f.get("h", 0))) / 2  # the NEAR edge, not the center
             if fg_edge > fg_max or fg_edge < fg_min:
                 fg_bad.append((fg_k, round(fg_f["x"]), round(fg_f["y"]), round(fg_edge * fg_ftpx)))
         check(

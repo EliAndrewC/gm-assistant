@@ -134,9 +134,9 @@ def seat_cluster(plan: SitePlan, dry_plots: Sequence[Poly] = (), drain: Poly | N
         if back_fouled(mid, (nx, ny), dep, dry_plots) > 0.30:
             continue
         # HARD 3: the band has to FIT ON THE CANVAS. A margin near the canvas edge seats its band
-        # centre outside it - and `_fits` refuses every candidate beyond `s.bound`, so the cluster
+        # center outside it - and `_fits` refuses every candidate beyond `s.bound`, so the cluster
         # simply does not get built: seed 106 seated 7 farmhouses of a declared 15, with the band's
-        # centre 56 px off the east edge. The map is not wrong, the seat is; another margin will do.
+        # center 56 px off the east edge. The map is not wrong, the seat is; another margin will do.
         seat_c = (mid[0] + nx * (dep + 12.0), mid[1] + ny * (dep + 12.0))
         if not (lat * 0.5 <= seat_c[0] <= plan.W - lat * 0.5 and lat * 0.5 <= seat_c[1] <= plan.H - lat * 0.5):
             continue

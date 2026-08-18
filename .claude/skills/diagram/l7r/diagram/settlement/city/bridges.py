@@ -148,7 +148,7 @@ class BridgesMixin:
                             # cannot ask for an absurd deck. Both are reasonable and both under-size
                             # a deck where the watercourse BENDS near the crossing: the check
                             # (`bridges_span_their_water`) measures every corner against the whole
-                            # crossed POLYLINE, so a neighbouring segment curving back toward a
+                            # crossed POLYLINE, so a neighboring segment curving back toward a
                             # corner is water the formula never saw. Rather than model that, ask the
                             # same question the check asks and lengthen until the answer is yes.
                             _need = ww / 2 + CARRIED_LANDING_FLOOR_FT / self.ftpx  # the check's own carried-way floor
@@ -232,7 +232,7 @@ class BridgesMixin:
             # stretch too narrow to deserve any: on Inashiro one main qualified only at its head,
             # drew n=2, and its second slot fell through the wide-first sort onto 2.42 ft of water -
             # narrower than decks this very rule had just removed, and bunched 120 ft from its
-            # neighbour (settlement-review 2026-08-17, which traced it to the slot count rather than
+            # neighbor (settlement-review 2026-08-17, which traced it to the slot count rather than
             # to the gate/placer standoff I had assumed). Measuring the QUALIFYING run collapses n to
             # 1 there. `long_ditches_have_a_footbridge` is unaffected - it demands one plank per long
             # ditch, never one per spacing interval - so this cannot re-open the placer/check split.

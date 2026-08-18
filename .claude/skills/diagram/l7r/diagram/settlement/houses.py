@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class HousesMixin:
     # ---- houses
     def house(self: Settlement, cx: float, cy: float, w: float, h: float, kind: str = "plain", rot: float = 0, shed: bool = False, shed_side: str = "W") -> None:  # type: ignore[misc]
-        # POSITION-SEEDED (2026-08-08). A house's wall colour is a property of the house, and this
+        # POSITION-SEEDED (2026-08-08). A house's wall color is a property of the house, and this
         # was the single most-executed stream draw in the engine - one per house, on every map - so
         # it moved the whole sequence for everything drawn afterwards.
         _plain = ('#C6AC76', '#BEA26C', '#C2A672', '#B89A62')
@@ -32,9 +32,9 @@ class HousesMixin:
         # (nucleated farms, where the garden takes the sunnier walls). Shared by the draw + the record below.
         _sox, _soy, _ssw, _ssh = (0.0, -0.60 * h, 0.46 * w, 0.30 * h) if shed_side == "N" else (-0.64 * w, 0.0, 0.32 * w, 0.56 * h)
         # EMIT WHAT WAS PLACED (feature 121, found by settlement-review on Sawada). This rounded the
-        # centre to whole pixels and the rake to whole DEGREES, while the placer clears and the gate
+        # center to whole pixels and the rake to whole DEGREES, while the placer clears and the gate
         # measure full floats - so after all of this feature's work the drawn quad was still not the
-        # tested quad, by up to ~0.5 deg of rake plus ~0.7 px of centre: about 0.95 ft at a long
+        # tested quad, by up to ~0.5 deg of rake plus ~0.7 px of center: about 0.95 ft at a long
         # minka's corner. Nothing was at risk on any current map (the tightest lane gap is 27 ft),
         # but LANE_CLEARANCE is now DERIVED to the foot, and handing an exact derivation to a
         # renderer that rounds is how the next tightening quietly stops being true. No check can see
@@ -252,15 +252,15 @@ class HousesMixin:
         """Would a building of this size, at this spot, have any CORNER on a way's drawn tread?
 
         THE DEBT THIS PAYS (this skill's CLAUDE.md, "placement tests a different footprint than the
-        one drawn"): `_near_corridor` tests a candidate's CENTRE against a way's soft clearance, so
+        one drawn"): `_near_corridor` tests a candidate's CENTER against a way's soft clearance, so
         a building whose drawn footprint is wider than the placer assumed can stand a legal distance
-        off by its centre and still put a corner on the road. Measured: a well-off farmhouse (the
-        minka's length varies to 1.35x) ended 2.4 px from a track's centreline with its centre a
+        off by its center and still put a corner on the road. Measured: a well-off farmhouse (the
+        minka's length varies to 1.35x) ended 2.4 px from a track's centreline with its center a
         legal 34 px away, which `houses_clear_of_lanes` reports as a house standing in the lane.
 
         The two tests are kept SEPARATE on purpose. Footprint-testing the whole clearance was tried
         once for `block_polys` and reverted, because a clearance is slack that a footprint routinely
-        overhangs by a few px; the TREAD is not slack. So the clearance keeps its centre test and
+        overhangs by a few px; the TREAD is not slack. So the clearance keeps its center test and
         the tread gets an exact one, with the same 2 px hair `houses_clear_of_lanes` allows.
 
         `rot` IS THE FOOTPRINT (feature 121). This used to pass 0.0 unconditionally, which made the
@@ -268,7 +268,7 @@ class HousesMixin:
         the very substitution the paragraph above is about. It defaults to 0.0 because most callers
         seat something genuinely unrotated; a caller that knows its rake passes it, and the bundle
         placer gets it from `_house_rot`. GAP VERDICT family (this skill's dev/placement.md, "CENTER
-        vs FOOTPRINT"): real rotated corners, never a centre, never a circumscribed radius."""
+        vs FOOTPRINT"): real rotated corners, never a center, never a circumscribed radius."""
         if not self.treads:
             return False
         quad = rot_rect(x, y, w, h, rot)
@@ -322,7 +322,7 @@ class HousesMixin:
         # missed - the filtered copies below are Indexed too, and each starts with an empty cache.
         # ROW MATES ARE MEASURED EDGE TO EDGE (GM 2026-08-11). The circumscribed circle is
         # rotation-safe and load-bearing everywhere else (this skill's CLAUDE.md, "CENTER vs
-        # FOOTPRINT", item 2), but it forces a 48x32 shopfront 62px from its neighbour where the
+        # FOOTPRINT", item 2), but it forces a 48x32 shopfront 62px from its neighbor where the
         # true touching distance is 48 - so a frontage asking for a 22px pitch placed every third
         # seat and a market row drew at a third of its density. A shop row is the one case where
         # the exception is safe: the buildings are AXIS-ALIGNED to the way they front and sit in a
