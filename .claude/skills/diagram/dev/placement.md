@@ -454,3 +454,33 @@ drawn path is exactly as legal as one drawn by hand; the grid only proposes.
 target, and unprefiltered it scans every polygon in the settlement's fabric each time. That took a
 hamlet from 15 s to 45 s and killed a cohort worker outright. A bounding-box test against the
 polyline's own bounds prunes it; it never decides.
+
+## A REPAIR PASS MUST RUN AFTER THE THINGS IT REPAIRS
+
+Three ordering bugs in one feature, all the same shape, all silent. Writing the shape down because
+fixing it three times separately is what a session does when it has not noticed the pattern.
+
+1. **The lane web ran before the houses.** It reserved ground from a cluster that had not been packed
+   yet, so it competed with the very houses it existed to serve - the four pool clusters' long axes
+   grew 15-97%. No check measures sprawl, so nothing said a word.
+2. **The web ran before the appurtenances.** Its corridor reserved courtyard ground ahead of the byre
+   placer and exiled byres up to 210 ft, erasing a previous feature's borrow-coverage fix.
+3. **The orphan-join ran before the bridges and the footpaths.** On cohort seed 39 it saw FOUR of the
+   twelve lanes the map finishes with, found nothing to join, and the eight lanes added after it
+   formed a second network of their own. Every house on that map is within 86 ft of a lane and twelve
+   of them still counted as unreached, because the lane serving them was not on the connector's
+   network.
+
+**The rule.** Sort every stage into one of three kinds and place it accordingly:
+
+- **RESERVES ground** (a no-build corridor the houses pack around) - runs BEFORE placement.
+- **FILLS ground left over** (the lane web, ground cover) - runs AFTER placement, reading the drawn
+  features as obstacles.
+- **REPAIRS what the others produced** (joining orphans, closing breaks, trimming stubs) - runs LAST,
+  after every pass that can create the thing it repairs. If a repair pass can be invalidated by a
+  later stage, it either moves after that stage or runs twice.
+
+**Why it stays silent.** Each of these produces a map that draws fine and gates green on everything
+except the one rule that happens to measure the consequence - and two of the three had no rule at all
+until this feature added one. The failure signature is a check firing on a map whose ink looks
+correct: that is usually an ordering problem, not a geometry one.
