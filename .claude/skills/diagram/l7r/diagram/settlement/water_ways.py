@@ -532,7 +532,7 @@ class WaterWaysMixin:
             z1 = self.add(f'<path d="{dd}" fill="none" stroke="#6B4F2A" stroke-width="1.4" stroke-dasharray="8,8" opacity="0.7"/>')
         return (z0, z1)
 
-    def trim_lane_stubs(self: Settlement, way_reach: float = 40.0, house_reach: float = 90.0) -> int:  # type: ignore[misc]
+    def trim_lane_stubs(self: Settlement, way_reach: float = 40.0, house_reach: float = 90.0, fan_spread: float = 60.0, fan_bearing: float = 25.0) -> int:  # type: ignore[misc]
         """Pull back any internal lane end that REACHES NOTHING. Returns how many ends were trimmed.
 
         A lane exists to be fronted. The engine already ends an arm where it meets crop or water
@@ -558,6 +558,22 @@ class WaterWaysMixin:
         houses = self.M.get("houses") or []
         trimmed = 0
         _drop: set[int] = set()
+
+        def _fan_rival(q: Pt, bearing: float, house: Pt, mine: float, me: int) -> bool:
+            """Is another lane's end standing beside this one, pointing the same way, and NEARER the
+            same house? If so this end is the spare tine of a fan and the house is not its to claim."""
+            for k, other in enumerate(lanes):
+                if k == me or k in _drop or other.get("connector") or len(other.get("pts") or []) < 2:
+                    continue
+                op = [(float(x), float(y)) for x, y in other["pts"]]
+                for tip, prev in ((op[0], op[1]), (op[-1], op[-2])):
+                    if math.dist(tip, q) > fan_spread or math.hypot(tip[0] - house[0], tip[1] - house[1]) >= mine:
+                        continue
+                    _b = math.degrees(math.atan2(tip[1] - prev[1], tip[0] - prev[0]))
+                    if abs((bearing - _b + 180.0) % 360.0 - 180.0) <= fan_bearing:
+                        return True
+            return False
+
         for i, ln in enumerate(lanes):
             if ln.get("connector") or i >= len(self._lane_ink):
                 continue
@@ -582,7 +598,26 @@ class WaterWaysMixin:
                     if run is not None and _angle_between(run, _near) < _FRAY_DEG:
                         continue  # near-parallel: this is the same track fraying, not a junction
                     return True
-                return any(math.hypot(q[0] - h["x"], q[1] - h["y"]) <= house_reach for h in houses)
+                # A FARMHOUSE DISCHARGES ONE LANE END'S OBLIGATION, NOT THREE.
+                #
+                # Nothing said a house could only be claimed once, so three ends standing within 40
+                # ft of each other, all fronting the same house at 66.9 / 55.1 / 40.0 ft, all passed
+                # - and a settlement-review read the result at 3x zoom as a broom: not three ways,
+                # one way drawn three times with the ends fanned. The end NEAREST the house keeps it;
+                # any other end alongside it, pointing the same way, has to find its own reason to
+                # exist or be trimmed back until it does.
+                #
+                # The bearing clause is what keeps a genuine CROSSROADS legal. Two lanes reaching one
+                # house from opposite quarters is a house on a corner - a real thing that reads as
+                # one. It is only ends arriving ALONGSIDE each other that the eye merges.
+                _my = math.degrees(math.atan2(run[1][1] - run[0][1], run[1][0] - run[0][0])) if run else None
+                for h in houses:
+                    _d = math.hypot(q[0] - h["x"], q[1] - h["y"])
+                    if _d > house_reach:
+                        continue
+                    if _my is None or not _fan_rival(q, _my, (h["x"], h["y"]), _d, me):
+                        return True
+                return False
 
             for _ in range(2):  # each end in turn; a 2-point lane can lose at most one
                 if len(pts) >= 2 and not _reaches(pts[-1], run=(pts[-2], pts[-1])):
