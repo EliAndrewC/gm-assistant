@@ -290,10 +290,13 @@ def test_a_web_lane_that_cannot_reach_the_network_draws_a_link_or_is_refused() -
 def test_join_orphan_ways_gives_up_rather_than_forcing_a_link() -> None:
     """An orphan that cannot be linked stays orphaned and the gate says so. Forcing a link would draw
     a way through whatever stood between them."""
+    # The barrier has to be genuinely CLOSED, not merely long: a link may now go the long way round,
+    # which is the fix that joined the two halves of a split hamlet. A fence it can walk around is
+    # not a test of giving up, it is a test of the detour.
     s = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 200.0)], [(900.0, 0.0), (900.0, 200.0)]])
-    fence = [(400.0, -900.0), (420.0, -900.0), (420.0, 1200.0), (400.0, 1200.0)]
-    assert hg.ways._join_orphan_ways(s, [fence], [], []) == 0
-    assert len(s.M["lanes"]) == 2, "no link drawn"
+    box = [(700.0, -300.0), (1150.0, -300.0), (1150.0, 520.0), (700.0, 520.0)]
+    assert hg.ways._join_orphan_ways(s, [box], [], []) == 0
+    assert len(s.M["lanes"]) == 2, "no link drawn when the orphan is walled in"
 
 
 def test_join_orphan_ways_links_an_orphan_when_the_ground_allows() -> None:
@@ -373,3 +376,35 @@ def test_bridge_collinear_breaks_closes_a_hole_and_leaves_an_honest_one() -> Non
     assert walled.M["lanes"][0] is not None
     assert hg.ways._bridge_collinear_breaks(walled, [fence], [], []) == 0
     assert len(walled.M["lanes"]) == 3
+
+
+def test_a_routed_path_never_passes_nearer_than_it_planned_for() -> None:
+    """THE PROPERTY THE LATTICE HAS TO GUARANTEE, and did not.
+
+    A cell was marked free by testing its CENTER, so the drawn line through a free cell could pass
+    half a cell nearer an obstacle than its center did - seven feet, at a 14 ft cell. Three web lanes
+    on a cohort map came within 4.0 ft of a farmhouse corner having been planned at 7, and a
+    farmhouse ended up standing on the lane. This asserts the guarantee directly rather than the
+    implementation: every point of the returned path clears the obstacle by the requested margin."""
+    wall = [(200.0, 0.0), (240.0, 0.0), (240.0, 300.0), (200.0, 300.0)]
+    gap = 7.0
+    for cell in (10.0, 14.0):
+        path = hg.ways._route((0.0, 400.0), (400.0, 400.0), [], [wall], [], cell=cell, gap=gap)
+        assert path, f"a way round the wall exists at cell {cell}"
+        worst = min(
+            hg.ways.seg_dist(q[0], q[1], wall[k], wall[(k + 1) % len(wall)])
+            for a, b in zip(path, path[1:], strict=False)
+            for q in [(a[0] + (b[0] - a[0]) * i / 20, a[1] + (b[1] - a[1]) * i / 20) for i in range(21)]
+            for k in range(len(wall))
+        )
+        assert worst >= gap - 0.5, f"at cell {cell} the path came within {worst:.1f} ft, planned for {gap}"
+
+
+def test_route_pad_mult_is_what_lets_a_link_go_the_long_way_round() -> None:
+    """A search box sized at 0.75x the gap has room for a path BETWEEN two steadings and nowhere near
+    enough to find the way AROUND a field - it reported NO ROUTE for a journey that plainly exists,
+    and that was a dozen houses counting as unreachable on one cohort seed."""
+    barrier = [(180.0, -400.0), (220.0, -400.0), (220.0, 260.0), (180.0, 260.0)]
+    a, b = (60.0, 0.0), (340.0, 0.0)
+    assert hg.ways._route(a, b, [], [barrier], [], cell=12.0, pad_mult=0.75) == [], "the short box cannot see the way round"
+    assert hg.ways._route(a, b, [], [barrier], [], cell=12.0, pad_mult=2.0), "the long box can"

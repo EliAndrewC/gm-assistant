@@ -884,10 +884,24 @@ def _seg_0612__lanes_do_not_break_mid_run(*, M: Any = _UNBOUND, check: Any = _UN
     """Gate segment 0612 (lanes_do_not_break_mid_run) - added 2026-08-18, feature 125."""
     _br_ways = [[(float(x), float(y)) for x, y in (_br_l.get("pts") or [])] for _br_l in (M.get("lanes") or [])]
     _br_solid = []
+    _br_small = []
     for _br_key in ("houses", "farm_sheds", "byres"):
         for _br_r in M.get(_br_key) or []:
-            _br_solid.append(rect_corners(_br_r))
-    for _br_key in ("threshing_yards", "gardens", "village_groves", "commons", "marshes"):
+            _br_small.append(rect_corners(_br_r))
+    _br_solid.extend(_br_small)
+    for _br_key in ("threshing_yards", "gardens"):
+        for _br_r in M.get(_br_key) or []:
+            if _br_r.get("poly"):
+                _br_bed = [(float(_a), float(_b)) for _a, _b in _br_r["poly"]]
+                _br_solid.append(_br_bed)
+                _br_small.append(_br_bed)
+    # TREE COVER AND OPEN COMMONS DO NOT BLOCK A LANE, and listing them here is what made this
+    # check silent on the break it was written for: the motivating gap lies inside a homestead
+    # grove, so all three corridors read as blocked and the hole was excused. A cart track runs
+    # through a copse perfectly well, and a yashikirin grove is PLANTED AROUND the way rather than
+    # across it - the trees arrive after the lane, not before. Marsh stays: wet ground genuinely
+    # stops a lane, which is why it is the one member of that group kept.
+    for _br_key in ("marshes",):
         _br_solid.extend([(float(_a), float(_b)) for _a, _b in _br_r["poly"]] for _br_r in (M.get(_br_key) or []) if _br_r.get("poly"))
     # ...and the GROUND, not only the built things. A break with the paddy, a ditch or a stream in it
     # is honest - a lane cannot be drawn there, so the way stops and resumes on the far side, and the
@@ -905,7 +919,9 @@ def _seg_0612__lanes_do_not_break_mid_run(*, M: Any = _UNBOUND, check: Any = _UN
                 _br_solid.append([(float(_a), float(_b)) for _a, _b in _br_c["poly"]])
     for _br_w in M.get("wells") or []:
         _br_rad = max(float(_br_w.get("r", 8.0)), float(_br_w.get("vr", 0.0)))
-        _br_solid.append([(float(_br_w["x"]) + _br_rad * math.cos(math.pi * _k / 4), float(_br_w["y"]) + _br_rad * math.sin(math.pi * _k / 4)) for _k in range(8)])
+        _br_ring = [(float(_br_w["x"]) + _br_rad * math.cos(math.pi * _k / 4), float(_br_w["y"]) + _br_rad * math.sin(math.pi * _k / 4)) for _k in range(8)]
+        _br_solid.append(_br_ring)
+        _br_small.append(_br_ring)
     _br_bad = []
     for _br_i, _br_li in enumerate(M.get("lanes") or []):
         if _br_li.get("connector") or len(_br_ways[_br_i]) < 2:
@@ -918,12 +934,50 @@ def _seg_0612__lanes_do_not_break_mid_run(*, M: Any = _UNBOUND, check: Any = _UN
                     _br_gap = math.dist(_br_ta, _br_tb)
                     if not (_LANE_JOIN < _br_gap <= _BREAK_GAP_FT):
                         continue
-                    _br_ha = math.degrees(math.atan2(_br_ta[1] - _br_pa[1], _br_ta[0] - _br_pa[0]))
-                    _br_hb = math.degrees(math.atan2(_br_tb[1] - _br_pb[1], _br_tb[0] - _br_pb[0]))
-                    if abs((_br_ha - _br_hb + 180.0) % 360.0 - 180.0) > _BREAK_ANGLE_DEG:
-                        continue  # they do not point at each other: two arms, not one way
-                    if any(seg_dist(_br_q[0], _br_q[1], _br_ta, _br_tb) <= 14.0 for _br_o in _br_solid for _br_q in _br_o):
-                        continue  # something stands in the gap; the interruption is honest
+
+                    # EACH END MUST AIM AT THE OTHER. Comparing the two outward headings for
+                    # SIMILARITY tests the wrong thing - two ends facing across a gap have opposite
+                    # outward headings - so it selected parallel arms and missed the collinear break
+                    # this rule is named for.
+                    def _aim(_p: Any, _tip: Any, _to: Any) -> float:
+                        _o = math.degrees(math.atan2(_tip[1] - _p[1], _tip[0] - _p[0]))
+                        _m = math.degrees(math.atan2(_to[1] - _tip[1], _to[0] - _tip[0]))
+                        return abs((_o - _m + 180.0) % 360.0 - 180.0)
+
+                    if _aim(_br_pa, _br_ta, _br_tb) > _BREAK_ANGLE_DEG or _aim(_br_pb, _br_tb, _br_ta) > _BREAK_ANGLE_DEG:
+                        continue  # two arms, not one way
+                    # SOMETHING IN THE GAP, NOT MERELY NEAR IT. Testing "is any vertex of any solid
+                    # within 14 ft of the gap line" is far too loose once the FIELD is in the list:
+                    # these lanes run along the field margin, so almost every gap has the paddy's
+                    # outline nearby and every break was excused as honest - the motivating fixture
+                    # stopped firing, which is how this was caught. The gap is honest only if
+                    # something actually occupies it, so the line is SAMPLED and each sample tested
+                    # for being inside an area or up against a small solid.
+                    # HONEST MEANS NO LANE COULD PASS, not that something is standing in the way.
+                    # A wellhead in the middle of a 110 ft hole does not justify the hole - a lane
+                    # goes ROUND a wellhead. So three parallel corridors are tested, the straight
+                    # line and one either side of it, and the break is excused only if ALL of them
+                    # are blocked. With only the straight line tested, the motivating fixture stopped
+                    # firing because a single wellhead sat on it, and the check lost its teeth on the
+                    # very defect it was written for.
+                    _br_ux, _br_uy = (_br_tb[0] - _br_ta[0]) / max(_br_gap, 1e-6), (_br_tb[1] - _br_ta[1]) / max(_br_gap, 1e-6)
+                    _br_open = False
+                    for _br_off in (0.0, 22.0, -22.0):
+                        _br_pts = [
+                            (
+                                _br_ta[0] + (_br_tb[0] - _br_ta[0]) * _k / 12.0 - _br_uy * _br_off,
+                                _br_ta[1] + (_br_tb[1] - _br_ta[1]) * _k / 12.0 + _br_ux * _br_off,
+                            )
+                            for _k in range(1, 12)
+                        ]
+                        if any(point_in_poly(_br_s[0], _br_s[1], list(_br_o)) for _br_s in _br_pts for _br_o in _br_solid):
+                            continue
+                        if any(min(seg_dist(_br_s[0], _br_s[1], _br_o[_br_m], _br_o[(_br_m + 1) % len(_br_o)]) for _br_m in range(len(_br_o))) <= 10.0 for _br_s in _br_pts for _br_o in _br_small):
+                            continue
+                        _br_open = True
+                        break
+                    if not _br_open:
+                        continue  # every corridor is blocked; the interruption is honest
                     # ...AND THE GAP MUST NOT ALREADY BE SPANNED. A third way running from one end to
                     # the other has closed the break, and the two ends are joined THROUGH it - which
                     # is exactly what the generator draws when it heals one. Without this clause the

@@ -210,6 +210,26 @@ check has no live map holding it honest. Drop the manifest as it stood BEFORE th
 `tanning_yard_on_the_outcast_side_fires_on_the_pre_waiver_tango.json`) so a refactor that neuters
 the check is still loud.
 
+**A fixture whose defect the generator has since LEARNED TO HEAL is built by removing the repair -
+and the provenance says so.** `lanes_do_not_break_mid_run` (feature 125) was written for a 110 ft
+hole a `settlement-review` found in Sawada, and by the time the check existed the generator closed
+that hole two independent ways: `_bridge_collinear_breaks` spans it, and `_join_orphan_ways` draws a
+link even with the bridge pass disabled. So a straight re-roll of seed 6 could not be the fixture -
+it is a green map - and the manifest frozen under that name was in fact a REPAIRED one, which is why
+the check sat silently passing on its own motivating defect while looking fully covered. The fixture
+is now that re-roll with the single link way deleted, and its `_regression` block records both the
+deletion and the two healers, because a fixture nobody can explain is a fixture the next session will
+regenerate wrong. **Check the fixture actually FIRES the moment you freeze it** - `pytest
+tests/test_regressions.py` is the whole cost, and a frozen fixture that does not fire reads as
+coverage and provides none.
+
+**And the honesty clause of a "there is a hole here" check must list only what genuinely STOPS a way.**
+The same check excused its own defect a second time after that, because tree cover was in its
+blocking list: the gap lay inside a homestead grove, so every corridor read as blocked. Crop, water,
+marsh and anything built stop a lane; a grove or an open common does not - a track runs through a
+copse, and a *yashikirin* belt is planted around the way rather than across it. Listing ground COVER
+alongside real obstacles is the easy way to write a check that can never fail.
+
 ## An unmet ASK is a defect, and the gate now says so
 
 `_shortfall` has recorded requested-vs-landed per placement run since 2026-08-05, and recording
