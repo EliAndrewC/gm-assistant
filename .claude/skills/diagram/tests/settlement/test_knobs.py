@@ -276,3 +276,51 @@ def test_sharp_corners_skips_a_duplicate_vertex_instead_of_counting_it():
     # zero-length and gets skipped too. So a ring carrying duplicates under-reports its corners,
     # which is exactly why `build_comb` merges them away instead of leaning on this guard.
     assert settlement._sharp_corners([*square, (0.0, 10.0)]) == 3
+
+
+# ---- feature 123: the lane web's cut solver ------------------------------------------------------
+
+
+def test_web_cuts_covers_every_house_within_reach():
+    """The contract: no coordinate is left further than `reach` from a cut. Proved over random rows
+    rather than one hand-picked case, because the greedy's failure mode was subtle - it took the
+    WIDEST gap in the window, which could sit beyond reach of the very house that triggered the cut
+    (houses at 0/95/190/300/410/505/600/700 left the one at 505 a full 145 away against a reach of
+    100). A single example would not have caught that; three hundred random rows do."""
+    rng = random.Random(11)
+    for _ in range(300):
+        xs = sorted(rng.uniform(0.0, 1200.0) for _ in range(rng.randint(2, 30)))
+        cuts = settlement.web_cuts(xs, 100.0, 20.0)
+        assert cuts, "a non-empty row always needs at least one cut"
+        assert max(min(abs(x - c) for c in cuts) for x in xs) <= 100.0 + 1e-9
+
+
+def test_web_cuts_regression_widest_gap_must_still_cover():
+    """The measured case that broke the first version, frozen."""
+    xs = [0.0, 95.0, 190.0, 300.0, 410.0, 505.0, 600.0, 700.0]
+    cuts = settlement.web_cuts(xs, 100.0, 20.0)
+    assert max(min(abs(x - c) for c in cuts) for x in xs) <= 100.0
+
+
+def test_web_cuts_is_minimal_enough_to_not_be_a_hairball():
+    """Fewest cuts that do the job. An earlier version put a lane between every pair of houses and
+    drew 34 internal lanes on a 19-house map."""
+    xs = [i * 50.0 for i in range(24)]  # 1,150 ft of houses at half-reach spacing
+    assert len(settlement.web_cuts(xs, 100.0, 20.0)) <= 8
+
+
+def test_web_cuts_places_the_cut_in_a_gap_not_through_a_house():
+    """With one wide gap available in the window, the cut lands in it."""
+    xs = [0.0, 10.0, 20.0, 30.0, 120.0]  # the only real gap is 30 -> 120
+    cuts = settlement.web_cuts(xs, 100.0, 40.0)
+    assert cuts and abs(cuts[0] - 75.0) < 1e-6
+
+
+def test_web_cuts_falls_back_when_no_gap_is_wide_enough():
+    """A packed row still gets a cut - a lane broken up by what it runs into is a better answer than
+    a house nothing reaches."""
+    assert settlement.web_cuts([0.0, 5.0, 10.0, 15.0], 100.0, 40.0) == [50.0]
+
+
+def test_web_cuts_on_an_empty_row_is_empty():
+    assert settlement.web_cuts([], 100.0, 20.0) == []

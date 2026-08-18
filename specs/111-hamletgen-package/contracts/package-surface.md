@@ -39,7 +39,8 @@ copies.
 `unit`, `pull_clear`, `crosses_disc`, `crosses_poly`, `point_in_poly`, `head_sluice`,
 `net_bends_acutely`, `stage_water_frame`, `drain_outfall`, `drain_heading`, `edge_run`, `pond_clear_of_crop`,
 `pond_setback`, `below_drain`, `back_fouled`, `seat_cluster`, `push_out_of`, `route_around`,
-`clip_to_clear`, `connector_track`, `path_violations`, `crossing_lands_on_crop`,
+`clip_to_clear`, `clear_runs` (feature 123 - every clear run of a through-lane, as opposed to
+`clip_to_clear`'s leading one), `connector_track`, `path_violations`, `crossing_lands_on_crop`,
 `shallow_crossing`, `well_target`, `place_wells`, `stage_notice`, `build`, `main`, `cohort`
 
 ### Underscore functions (4)

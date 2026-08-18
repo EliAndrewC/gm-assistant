@@ -175,3 +175,31 @@ text diff always shows the whole file and tells you nothing. Only `title`/`scale
 hair, uniformly across every map, is a measurement-environment signature; a house, a ditch, a crown
 or a count moving is a real bug. And when a recorded value depends on something git does not carry,
 pin the dependency rather than re-recording the drift - re-recording just waits for the next rebuild.
+
+## IDENTICAL NUMBERS ACROSS DIFFERENT CODE ARE EVIDENCE ABOUT THE HARNESS, NOT THE CODE
+
+Feature 123, and it cost three cohort rolls plus a confidently-wrong write-up that had to be
+retracted from its own spec.
+
+Four cohort seeds were failing a new check. Three separate fixes were applied and measured, and each
+time the failing distances came back **byte-identical** - 203 / 227 / 289 ft, to the foot, across
+three supposedly different implementations. That was written up as a finding: "none of which moved
+the numbers by a single foot, which is itself the diagnostic", and the conclusion drawn was that the
+maps were unfixable for a structural reason.
+
+The real diagnostic was staring at me. **Byte-identical output across three different changes does
+not mean the changes were ineffective; it means the changes were not running.** All three had been
+applied with heredoc'd Python patch scripts that printed a success line and never wrote to disk. The
+project already has a rule against this (root CLAUDE.md: edit with `Edit`, not with Python that
+rewrites files) and the reason it exists is precisely that a patch script fails SILENTLY, in the
+patcher, so the anchor never gets tested. Re-applied with `Edit`, the same three ideas took every one
+of those seeds green.
+
+**The rule:** a run that reproduces a previous run to the digit, after a change that should have
+altered it, is a claim about your TOOLING first. Before spending a measurement on it, verify the edit
+landed - `grep` the new symbol on disk, not in the script's output. One grep would have saved three
+rolls and a retraction.
+
+The general form is the same one this file already carries for probes: **a diagnostic that restates
+what it observes will lie to you.** A patch script that prints "patched" is restating its own
+intention, not observing the file.

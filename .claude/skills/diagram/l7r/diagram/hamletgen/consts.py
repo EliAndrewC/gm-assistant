@@ -61,6 +61,112 @@ GROSS_ACRES_PER_HOUSEHOLD = 1.3
 # green, but a corridor that tight re-packs the cluster into gardens and crops.)
 LANE_CLEARANCE = 40.0
 
+# HOW FAR ALONG THE FIELD OUTLINE THE CLUSTER ACTUALLY REACHES, as a multiple of the seat band's own
+# lateral half-extent. ONE definition, read by `front_row` (which samples outline vertices out to
+# this reach) and by `stage_ways` (which sizes the lane skeleton over it).
+#
+# It is one definition because the two being separate numbers WAS the defect. `front_row` had 1.6
+# inline and the skeleton was sized on the bare `lat`, so the lanes huddled in the middle of a
+# cluster 1.6x longer than they were, and the houses at the ends had nothing near them. Measured on
+# the four pool hamlets before the fix: every one of the 25 unserved farmhouses sat at a large
+# offset along the cluster's LONG axis (up to 478 ft), and none at a large offset across it - a
+# lateral coverage failure, not the depth failure the ledger had assumed. See
+# specs/123-lane-web-and-cluster-shape/research.md R2.
+CLUSTER_SPAN_FACTOR = 1.6
+
+# THE NO-BUILD CORRIDOR OF A WEB LANE, in feet - deliberately much tighter than LANE_CLEARANCE.
+#
+# LANE_CLEARANCE (40) is derived for a lane the homesteads FRONT: it is the drawn minka's
+# half-diagonal plus the lane's own half-tread, so the steading clears the way it faces. A web lane
+# is the other kind: the research describes the lateral ones as "colonized as semi private space by
+# the adjoining house", which is a way people build right up against. Holding 40 ft off both verges
+# of every web lane reserved the middle of the cluster and pushed the houses out - measured on the
+# four pool hamlets, the long axis grew 51%, 58%, 15% and 97%. This is the lane's own half-tread
+# plus a hand's breadth: enough that a wall is not drawn ON the tread, and no more.
+WEB_CLEARANCE = 28.0
+
+# THE LEAST ROOM BETWEEN TWO STEADINGS A WEB LANE WILL THREAD, in feet. `web_cuts` only cuts where a
+# gap is at least this wide, so a lane is placed where one can actually be walked rather than driven
+# through a wall and left to the clipper to sort out. Three feet of tread plus a hand's breadth on
+# each side, doubled for the two neighbors: a person with a carrying pole, which is the traffic these
+# lanes were for (see settlements/ways.md - the vehicle to picture is the wheelbarrow and the
+# shoulder-pole porter, never a cart).
+#
+# NOTE ON WEB_CLEARANCE ABOVE, because the number moved twice and the reason changed with it. While
+# the web was laid BEFORE the houses, a wide corridor was ruinous - it reserved the middle of the
+# cluster and the placer shoved the houses out, growing the four pool hamlets' long axes by 15-97%.
+# Laid AFTER them (see `stage_web`) the corridor no longer competes with a single farmhouse, because
+# every farmhouse is already seated; all it still governs is what `stage_appurtenances` puts down
+# NEXT - byres, sheds, wells. At 12 those were landing on the tread and `features_do_not_overlap`
+# fired on 7 of 24 cohort seeds. 28 holds a byre off the way while staying well under the 40 ft a
+# fronting lane reserves, which is the distinction the two constants exist to keep.
+
+# HOW FAR A WEB LANE'S CENTERLINE STAYS OFF THE SETTLEMENT'S OWN FABRIC, in feet.
+#
+# It has to clear the overlap MATRIX, not just the drawing, and the matrix is less forgiving than it
+# looks: it sizes EVERY lane at 6 ft wide whatever the record says (`_MX_LINE_W`), so a 3 px web
+# tread is judged as a 3 ft half-width; and a dooryard garden records both a `poly` and a rect, with
+# the rect running up to ~2.3 ft proud of the poly. At 6 ft of margin that leaves well under a foot
+# of true clearance, and `features_do_not_overlap` fired on `lanes` vs `gardens` across the cohort.
+# It was 9 while the fabric list carried only a garden's `poly`. Now that `_homestead_polys` records
+# the RECT as well, the discrepancy is covered by the geometry instead of by the margin, and 9 was
+# doing a second job it should not have been: `MIN_WEB_GAP` says a 16 ft gap between two steadings is
+# walkable, while a 9 ft margin needs 18 - so the cut solver offered gaps the router could not
+# thread, and a house sat 296 ft from any way with no route found at all. The two are now derived
+# from each other and cannot contradict again.
+WEB_FABRIC_GAP = 7.0
+
+# A FOOTPATH IS NOT A LANE, and it may squeeze where a lane may not. This is the clearance for the
+# path from an outlying steading's door to the nearest way - the thing the sources describe as
+# "colonized as semi private space by the adjoining house", i.e. the residual room between two
+# plots, walked in single file. It still clears the overlap matrix's 3 ft half-tread with room over,
+# but it lets a path thread a gap a back lane could not, which is the difference between a house
+# being reached and a house being 296 ft from anything with no route at all.
+# 4 ft, and the number is doing real work at the margin. The overlap matrix sizes every lane at 6 ft
+# wide whatever its record says, so 3 ft is the hard floor and this is 3 plus a hand's breadth; the
+# drawn tread is 3 px, so the ink clears a wall by better than two of its own widths. At 5 a hemmed-in
+# farmstead on cohort seed 41 had no route to the network at all, at any target - the gaps between
+# its neighbors' plots were simply narrower than a lane-and-two-margins. A footpath is the one way on
+# the map that is walked in single file, and this is the width that says so.
+FOOTPATH_FABRIC_GAP = 4.0
+
+# HOW FAR A WEB LANE STAYS OFF THE CROP, THE TOE AND THE MARSH, in feet.
+#
+# The skeleton's arms are clipped at 20, which is right for them: they are 5-6 px cart ways and they
+# are laid before anything else, so there is no cost to being generous. A web lane is 3 px and is
+# threading ground that is already full, and 20 was not a rule, it was a copied default - the gate's
+# own bar is `fields_clear_of_road`, which allows w/2 + 2, i.e. about 3.5 ft for a tread this narrow.
+# Measured cost of the copied 20: a farmstead 251 ft from its nearest neighbor had NO route to the
+# network at all, not because any single obstacle blocked it but because the crop, the toe and the
+# marsh each took 20 ft off the same corridor and closed it between them. 8 keeps better than double
+# the gate's bar while leaving a path somewhere to go. It also matches the doctrine: a real farm
+# track runs on the baulk between plots, not twenty feet clear of the rice.
+WEB_HARD_GAP = 8.0
+
+# HOW CLOSE TWO WAYS MAY RUN BEFORE A READER SEES ONE WAY DRAWN TWICE, in feet.
+#
+# This is a LEGIBILITY number, not a clearance: `MIN_WEB_GAP` says what a lane can squeeze through,
+# and using it here was a category error that let a back lane share a corridor with the connector -
+# median 14.6 ft apart, 91% of its length within 30 ft - without the shadow test firing once. A
+# review read the pair as "a long thin scissors with a drafting overlap". 30 ft is a third of a
+# bundle pitch: far enough apart that the eye separates them at fit zoom.
+WEB_SHADOW_FT = 30.0
+
+MIN_WEB_GAP = 2.0 * WEB_FABRIC_GAP + 4.0  # 18 ft: both neighbors' clearance, plus the tread between them
+
+# THE REACH A FARMHOUSE IS ENTITLED TO: every house center must be within this of some drawn way
+# (`farmhouses_reach_a_way`). It is BUNDLE_PITCH, deliberately and by reference rather than by
+# repetition - the ground one homestead occupies is exactly the distance at which a lane passes your
+# own plot or your neighbor's, which is what the sources mean by a lateral "colonized as semi-private
+# space by the adjoining house". The same number sets the web's lane spacing, so the requirement and
+# the geometry that satisfies it cannot drift apart.
+#
+# Grounding: research/homesteads.md, "Is every farmhouse reached by a lane, and in what FORM?" - the
+# record is decisive that a house in a nucleated cluster IS reached by a way. The previous 90 ft in
+# `lanes_reach_something` was flagged in future-work.md as a number nobody had justified; this one is
+# derived from a researched constant instead of chosen to make today's maps pass.
+WEB_REACH_FT = 100.0  # == BUNDLE_PITCH; asserted in tests rather than imported, since BUNDLE_PITCH is defined below
+
 # How far off a lane's centerline a frontage seat is offered. This is a PLACEMENT decision and is
 # deliberately not derived from LANE_CLEARANCE, which is the corridor rule: fronting a lane excuses
 # a seat from the corridor's setback (that is what `skip` means to `_near_corridor`), so the row's
@@ -286,5 +392,9 @@ SINKS = ("pond", "pond", "offmap")
 
 CLUSTER_SHAPES = ("round", "round", "elongated", "crescent")
 LANE_SKELETONS = ("spine", "T", "Y", "cross")
+# The two attested forms of making every house reachable. NOT weighted: the research supports both
+# equally, so an even roll is the honest one, and the two read differently enough at a glance
+# (a laid-out double row vs. a grown spine-and-alleys) to be worth a full half of the cohort each.
+LANE_WEBS = ("alleys", "back_lane")
 PLOT_SIZES = ("small_irregular", "medium", "medium", "large_block")
 GRAIN_DRIFTS = (-8, -4, 0, 0, 4, 8)

@@ -79,6 +79,7 @@ CONSUMED_PUBLIC = [
     "back_fouled",
     "baseline_verdict",
     "below_drain",
+    "clear_runs",
     "belt_polygon",
     "build",
     "canvas_for",

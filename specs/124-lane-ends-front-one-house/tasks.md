@@ -1,0 +1,63 @@
+# Tasks: feature 124
+
+**Baseline**: feature 123's shipped state (main at `1cefb97`) - `make done` green at 3,371 tests,
+in-gate cohort 4/4, four pool hamlets green.
+
+- [x] T001 Write the check FIRST. `_seg_0611__lane_ends_front_different_houses` in
+      `check_village/segments_07c_*.py`, registered in `tests/fixtures/gate_check_names.json`.
+- [x] T002 Prove it red before fixing anything: it fired on three of the four shipped maps,
+      including Mizuguchi at (1120, 1713) - the exact coordinate the review named.
+- [x] T003 Freeze the negative fixtures in `pool/regressions/`.
+- [x] T004 Narrow the rule twice, each time because it was measurably wrong:
+      a bearing clause (a house on a CORNER is not a fan), then the fray clause (an end 21.6 ft from
+      a near-parallel way has not MET it - the engine's own `_FRAY_DEG`, and leaving it out un-fired
+      the motivating fixture).
+- [x] T005 Fix: `trim_lane_stubs`'s house test is now EXCLUSIVE - the end nearest a farmhouse keeps
+      it, and any end alongside it pointing the same way must find its own reason or be trimmed.
+- [x] T006 Unit tests: the fan fires; a corner does not; an end that crossed a way squarely is
+      exempt; silent with no lanes or houses.
+- [x] T007 Re-roll, gate, cohort.
+
+## The fixture that was dropped, and why that is the honest move
+
+Three maps fired at first and three fixtures were frozen. Under the finished rule **Sawada's no
+longer fires** - its pair turned out to be a genuine junction, not a fan. A frozen fixture that does
+not fire is worse than no fixture: it reads as coverage and provides none. It was deleted rather than
+kept or "fixed" by loosening the rule back to where it would catch it.
+
+The two that remain (Kashikawa, Mizuguchi) fire on the pre-fix manifest and pass on the shipped one,
+which is the pair of facts that proves the fix rather than asserting it.
+
+## The review round
+
+Both changed maps went back to the reviewers that had found the original defect.
+
+**Kashikawa: PASS, no errors.** Verified independently rather than accepted: the frozen fixture
+fires and the shipped manifest passes; the blunt arm lost 208 ft; and **every accessory and dwelling
+is byte-identical** - houses, gardens, yards, byres, wells, sheds, the notice board. The house the
+removed arm used to serve came out BETTER served (74 -> 42 ft) by a footpath the straggler pass drew
+on almost exactly the ground the arm vacated. The reviewer also re-checked the "five of six web lanes
+are load-bearing" reading from the previous round and refined it: all six do real work, the sixth's
+being topological - dropping it splits the network into three components.
+
+**Mizuguchi: one new defect, caused by the fix.** The trim cut past a junction, orphaning a lane; the
+orphan-healer then re-laid the same alignment at web width, so the street came out stroked **5 / 3 /
+5 with a round-cap knuckle at each step** - a repair scar in open ground, read at 2x as a lollipop
+knob mid-street.
+
+### The fix for it, and the one that was tried first and reverted
+
+The reviewer's primary suggestion was to stop the trim at the last junction. **That was implemented
+and reverted**, because on this map it deadlocks: the two tines of the fan are themselves a
+continuation of one another, so the arm cannot be trimmed without cutting the street, and the fan
+cannot be cleared without trimming the arm. Protecting continuations put the crow's foot straight
+back.
+
+What shipped is the reviewer's own fallback, and it is the better diagnosis: **the scar was a WIDTH
+problem, not a trim problem.** A healing link now inherits the width of the way it joins. A link
+exists to make two lanes one; it should look like the lane it completes.
+
+The junction floor DID survive for crossings - a way that ties in at a real angle still pins the trim
+- and it needed the `_FRAY_DEG` clause for the third time in this pair of features: on a proximity
+test every point of a near-parallel arm looked like a tie, the floor came out at the full lane
+length, and nothing could be trimmed at all.

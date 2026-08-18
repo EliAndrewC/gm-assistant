@@ -123,6 +123,11 @@ def _water_source_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     return ctx.get("water_kind") != "stream"
 
 
+# The two attested ways of making every house in a nucleated cluster reachable. Defined up here
+# rather than beside `web_cuts` because the knob catalog below registers against it at import.
+LANE_WEBS = ("alleys", "back_lane")
+
+
 def _cluster_shape_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     """A 'split' cluster needs room for two hamlets to read separately - a village/town, not a hamlet."""
     return v != "split" or ctx.get("scale") in ("village", "town")
@@ -216,6 +221,7 @@ register_knob(Knob("field_archetype", ["valley_paddy", "contour_terraces", "pold
 register_knob(Knob("land_use_overlay", ["none", "mulberry_fishpond", "lotus", "tea_fringe"], default="none", typing_rule=_land_use_ok))
 register_knob(Knob("cluster_position", ["high_margin", "flank", "mid_margin", "valley_mouth", "valley_head", "on_rise"], default="high_margin"))
 register_knob(Knob("cluster_shape", ["round", "elongated", "crescent", "split"], default="round", typing_rule=_cluster_shape_ok))
+register_knob(Knob("lane_web", list(LANE_WEBS), default="alleys"))
 register_knob(Knob("lane_skeleton", ["spine", "T", "Y", "cross", "waterside"], default="spine", typing_rule=_lane_skeleton_ok))
 register_knob(
     Knob(
@@ -246,6 +252,50 @@ register_knob(Knob("byre_form", ["detached_commons", "courtyard"], default="deta
 
 
 LANE_SKELETONS = ("spine", "T", "Y", "cross", "waterside")
+
+
+def web_cuts(coords: Sequence[float], reach: float, gap: float) -> list[float]:
+    """WHERE TO CUT A LANE THROUGH A ROW OF HOUSES so every one of them is within `reach` of a way.
+
+    Pure 1-D, and that is what makes it serve both forms of the lane web off one implementation:
+    for `alleys` the coordinates are the houses' positions ALONG the field margin and each cut
+    becomes a lateral running back through the cluster; for `back_lane` they are the houses'
+    STANDOFFS from the field and each cut becomes a lane running the length of the settlement,
+    behind a rank. Same problem, same answer, turned ninety degrees.
+
+    THE CUT GOES IN A GAP, NEVER THROUGH A HOUSE. `gap` is the least room a lane needs between two
+    neighbors; among the gaps that qualify within reach ahead of an uncovered house, the widest wins,
+    because the widest gap is the one a lane fits down without crowding either steading. That is
+    also how these ways came to exist - the sources describe the lateral ones as "colonized as semi
+    private space by the adjoining house", which is a lane that IS the leftover room between two
+    plots rather than a corridor set aside before anyone built.
+
+    Fewest cuts that do the job, greedily: walk the houses in order, skip any already within reach of
+    the last cut, and when one is not, place the next cut as far ahead as it can go while still
+    covering that house. Minimal matters - a hamlet threaded with a lane between every pair of houses
+    is a hairball, not a settlement, and an earlier version of this feature drew 34 internal lanes on
+    a 19-house map.
+
+    Falls back to `reach * 0.5` ahead when no gap in the window is wide enough: a lane there will be
+    broken up by whatever it runs into, which is the honest outcome, and is preferable to leaving a
+    house unreachable because its neighbors are packed tight."""
+    xs = sorted(float(c) for c in coords)
+    if not xs:
+        return []
+    gaps = [((xs[k + 1] - xs[k]), (xs[k] + xs[k + 1]) / 2.0, xs[k]) for k in range(len(xs) - 1)]
+    cuts: list[float] = []
+    for x in xs:
+        if cuts and abs(x - cuts[-1]) <= reach:
+            continue
+        # The candidate must still COVER x. Filtering on the gap's left edge alone is not the same
+        # test and lets the widest gap in the window sit beyond reach of the very house that
+        # triggered the cut - measured: houses at 0/95/190/300/410/505/600/700 with reach 100 left
+        # the one at 505 a full 145 away, because a 100 ft gap starting at 600 outranked a 95 ft gap
+        # starting at 505. The midpoint is where the lane actually goes, so the midpoint is what has
+        # to be within reach.
+        window = [(w, mid) for w, mid, left in gaps if x <= left and mid <= x + reach and w >= gap]
+        cuts.append(max(window)[1] if window else x + reach * 0.5)
+    return cuts
 
 
 def skeleton_layout(kind: str, cx: float, cy: float, ex: float, ey: float) -> dict[str, Any]:
