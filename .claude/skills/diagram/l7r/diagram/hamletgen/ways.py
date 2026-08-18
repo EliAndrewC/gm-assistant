@@ -552,7 +552,16 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
         if not link or polyline_len(link) > _PATH_DIRECTNESS * max(best[0], 1.0):
             return made
         link = _trim_to_service(link, [sg for j in main for sg in zip(ways[j], ways[j][1:], strict=False)], [(float(q["x"]), float(q["y"])) for q in s.M.get("houses", [])])
-        s.lane(link, width=3, clearance=WEB_CLEARANCE, worn=True)
+        _w = max(
+            (
+                float(_l.get("w", 3))
+                for _l in s.M.get("lanes", [])
+                if len(_l.get("pts") or []) >= 2
+                and _net_reach(link, list(zip([(float(x), float(y)) for x, y in _l["pts"]], [(float(x), float(y)) for x, y in _l["pts"]][1:], strict=False))) <= _LANE_JOIN_FT
+            ),
+            default=3.0,
+        )
+        s.lane(link, width=int(_w), clearance=WEB_CLEARANCE, worn=True)
         s.M["lanes"][-1]["web"] = True
         made += 1
     return made  # pragma: no cover - six links is far more than any hamlet needs
@@ -684,7 +693,19 @@ def _lay_web_lane(s: Settlement, run: Poly, hard: list[Poly], walls: list[Poly],
             ]
             if not link:
                 return False
-            s.lane(link[0], width=3, clearance=WEB_CLEARANCE, worn=True)
+            # A HEALING LINK INHERITS THE WIDTH OF THE WAY IT JOINS. Laid at the web's own 3 ft
+            # between two 5 ft lanes it renders as a neck with a round-cap knuckle at each step - a
+            # review read it at 2x as a lollipop knob mid-street, and it is a repair scar rather than
+            # a way. A link exists to make two lanes one; it should look like the lane it completes.
+            _w = max(
+                (
+                    float(_l.get("w", 3))
+                    for _l in s.M.get("lanes", [])
+                    if _net_reach(link[0], list(zip([(float(x), float(y)) for x, y in _l["pts"]], [(float(x), float(y)) for x, y in _l["pts"]][1:], strict=False))) <= _LANE_JOIN_FT
+                ),
+                default=3.0,
+            )
+            s.lane(link[0], width=int(_w), clearance=WEB_CLEARANCE, worn=True)
             s.M["lanes"][-1]["web"] = True
         elif _clear_link(run[end], q, hard, walls, water):
             # SNAP ONLY IF THE GROUND BETWEEN IS CLEAR. Extending an end onto the way it meets is

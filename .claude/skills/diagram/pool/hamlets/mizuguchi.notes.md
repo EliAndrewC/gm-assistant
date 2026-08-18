@@ -329,3 +329,16 @@ ends in question stood 21.6 and 24.3 ft from another way and near-parallel to it
 it - proximity is not arrival, which this engine had already learned once.
 
 This map now has no fan, and every farmhouse is still reached: worst 80 ft, median 61.
+
+**RIPPLE, and the fix that was tried and reverted.** Trimming the fan cut past a junction, orphaning
+the lane tied on there; the orphan-healer re-laid the same alignment at the web's own 3 ft, so the
+street came out stroked **5 / 3 / 5 with a round-cap knuckle at each step** - a repair scar in open
+ground that a review read at 2x as a lollipop knob mid-street.
+
+Stopping the trim at the last junction is the obvious fix and it does not work HERE: the two tines of
+this map's fan are themselves a continuation of one another, so the arm cannot be trimmed without
+cutting the street, and the fan cannot be cleared without trimming the arm. Protecting continuations
+put the crow's foot straight back. **The scar was a width problem, not a trim problem** - a healing
+link now inherits the width of the way it joins, because a link exists to make two lanes one and
+should look like the lane it completes. The junction floor survives for CROSSINGS, where a way ties
+in at a real angle and pins the trim.
