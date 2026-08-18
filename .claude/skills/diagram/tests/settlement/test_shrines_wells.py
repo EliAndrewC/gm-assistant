@@ -208,7 +208,7 @@ def test_avenue_at_threshold_slides_a_marooned_sando_in_to_its_hall():
 
 
 def test_avenue_at_threshold_pulls_a_beside_the_hall_gate_onto_the_flank_it_stands_off():
-    # a run authored off to the SIDE is measured to the hall's nearest FACE, not its centre (the
+    # a run authored off to the SIDE is measured to the hall's nearest FACE, not its center (the
     # footprint discipline), so it slides onto the flank it actually stands off rather than diagonally
     # in toward the middle of the building - which is what makes a beside-the-hall gate read as
     # belonging to that hall.

@@ -487,8 +487,51 @@ class HomesteadPartsMixin:
                 # real defect was the 23 with no ink on the page.
                 if within is not None and (jx + clump * 0.9 < within[0] or jx - clump * 0.9 > within[2] or jy + clump * 0.9 < within[1] or jy - clump * 0.9 > within[3]):
                     continue
+                # A DENSE BELT FLOWS AROUND AN OBSTACLE INSTEAD OF LOSING THE COLUMN (settlement-review,
+                # Inashiro 2026-08-18). `occ` keeps a clump off a house, a yard, a byre and - the case
+                # that bit - a WELLHEAD, whose keep-out is the widest of the lot (`vr + 0.9*clump`,
+                # because a well lost under the canopy reads wrong). A wellhead seated inside the belt
+                # therefore deleted every clump around it, and the belt acquired a zero-canopy latitude
+                # on its WINDWARD side - a hole straight through the wind wall, which is the one thing
+                # a windbreak exists not to have. Measured on Inashiro: the 40 ft band at y1360-1400
+                # went 8 clumps -> 1, in a 930 ft run that had never had a gap.
+                #
+                # Fixing it at the WELL was tried first and is the wrong lever - recorded because it
+                # shipped for a moment. Ranking "not in the belt" ahead of coverage in the well
+                # tie-break closed Inashiro's hole and cost Mizuguchi 61 ft of worst walk, on a map
+                # whose own belt hole turned out not to be well-caused at all. The belt is what should
+                # give: a real planted windbreak is not laid out on a grid and abandoned where a shed
+                # stands, it is planted around the shed.
+                #
+                # So a blocked clump in a DENSE grove gets a short re-seat search before it is
+                # dropped, and only for `occ` - a clump refused by the CROP, open WATER or a LANE is
+                # refused for a reason that re-seating does not change, and those are the edges where
+                # a belt is supposed to stop. The nudge re-asks every other test, and keeps its
+                # distance from the clumps already down so a re-seat cannot just pile up on its
+                # neighbor.
                 if any((jx - ox) ** 2 + (jy - oy) ** 2 < rr * rr for ox, oy, rr in occ):
-                    continue
+                    if not dense:
+                        continue
+                    _alt = None
+                    for _nrad in (step * 0.6, step * 1.0):
+                        for _nang in range(0, 360, 45):
+                            _px = jx + _nrad * math.cos(math.radians(_nang))
+                            _py = jy + _nrad * math.sin(math.radians(_nang))
+                            if not point_in_poly(_px, _py, poly):
+                                continue
+                            if within is not None and (_px + clump * 0.9 < within[0] or _px - clump * 0.9 > within[2] or _py + clump * 0.9 < within[1] or _py - clump * 0.9 > within[3]):
+                                continue
+                            if any((_px - ox) ** 2 + (_py - oy) ** 2 < rr * rr for ox, oy, rr in occ):
+                                continue
+                            if any((_px - qx) ** 2 + (_py - qy) ** 2 < (step * 0.55) ** 2 for qx, qy in clumps):
+                                continue
+                            _alt = (_px, _py)
+                            break
+                        if _alt is not None:
+                            break
+                    if _alt is None:
+                        continue
+                    jx, jy = _alt
                 # THE KEEP-OUT IS FROM THE CROWNS, NOT THE CLUMP CENTER. 12 px held the center off the
                 # field, but a clump scatters its canopy about a radius past that center, so a legal
                 # center still threw crowns onto the crop margin - five of them on Mizuguchi, 0.7-5.5
@@ -505,7 +548,53 @@ class HomesteadPartsMixin:
                 if any(seg_dist(jx, jy, wl[k], wl[k + 1]) < whw + cr for wl, whw in water_lines for k in range(len(wl) - 1)):
                     continue  # no canopy stands over open water (canopy_clear_of_watercourses)
                 if any(seg_dist(jx, jy, lp[k], lp[k + 1]) < buf for lp, buf in corr for k in range(len(lp) - 1)):
-                    continue
+                    # A LANE THAT CROSSES THE BELT IS NOT AN EDGE THE BELT STOPS AT (settlement-review,
+                    # Inashiro 2026-08-18 round 2). The structure re-seat above deliberately declines to
+                    # re-seat a clump a LANE blocked, on the reasoning that a lane is an edge a belt
+                    # should stop at. That premise holds for a lane that ENDS at the belt and fails for
+                    # one that runs THROUGH it - and the peer session's lane web promptly drew two of
+                    # the latter. Measured on Inashiro: web lanes 3 and 10 terminate inside the belt
+                    # corridor, 12 clumps were deleted and none re-seated, and the 40 ft band at
+                    # y 660-720 went from six clumps to ONE - belt-wide minimum canopy 17.1 ft -> 4.8
+                    # ft, thinner than the wellhead hole this whole fix was written to close, on the
+                    # windward side. A 3 ft footpath was taking out ~45 ft of wind wall.
+                    #
+                    # INTERIOR is what separates the two cases, and it is cheap: a lane abutting the
+                    # belt blocks clumps at its BOUNDARY, a lane crossing it blocks clumps in the
+                    # MIDDLE. So a blocked clump more than one clump-width inside the polygon re-seats
+                    # like a structure-blocked one; a blocked clump near the rim still just stops. The
+                    # gap a crossing leaves is then sized to the way (a 3 ft path plus its clearance),
+                    # which is a gateway; 45 ft is a hole with a footpath in it.
+                    if not dense or edge_dist(jx, jy, poly) <= clump:
+                        continue
+                    _lalt = None
+                    for _lrad in (step * 0.6, step * 1.0, step * 1.4):
+                        for _lang in range(0, 360, 45):
+                            _lx = jx + _lrad * math.cos(math.radians(_lang))
+                            _ly = jy + _lrad * math.sin(math.radians(_lang))
+                            if not point_in_poly(_lx, _ly, poly):
+                                continue
+                            if within is not None and (_lx + clump * 0.9 < within[0] or _lx - clump * 0.9 > within[2] or _ly + clump * 0.9 < within[1] or _ly - clump * 0.9 > within[3]):
+                                continue
+                            if any((_lx - ox) ** 2 + (_ly - oy) ** 2 < rr * rr for ox, oy, rr in occ):
+                                continue
+                            if any(seg_dist(_lx, _ly, lp[k], lp[k + 1]) < buf for lp, buf in corr for k in range(len(lp) - 1)):
+                                continue
+                            if any(point_in_poly(_lx, _ly, f) or edge_dist(_lx, _ly, f) < 12 + cr for f in self.field_polys):
+                                continue
+                            if any(point_in_poly(_lx, _ly, d) or edge_dist(_lx, _ly, d) < 12 for d in self.dry_polys):
+                                continue
+                            if any(seg_dist(_lx, _ly, wl[k], wl[k + 1]) < whw + cr for wl, whw in water_lines for k in range(len(wl) - 1)):
+                                continue
+                            if any((_lx - qx) ** 2 + (_ly - qy) ** 2 < (step * 0.55) ** 2 for qx, qy in clumps):
+                                continue
+                            _lalt = (_lx, _ly)
+                            break
+                        if _lalt is not None:
+                            break
+                    if _lalt is None:
+                        continue
+                    jx, jy = _lalt
                 if any(abs(jx - sx) < shw and se - cr - 2 < jy < se + 24 + cr for sx, se, shw in sun):
                     continue
                 if any(ex - cr - 2 < jx < ex + 24 + cr and abs(jy - ey) < ehh for ex, ey, ehh in east):

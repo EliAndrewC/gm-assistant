@@ -172,7 +172,7 @@ These are the failure modes that have actually cost this project time. They are 
   (crop bounds, per-field bboxes) that does not exist at draw time. Use an explicit flag. A flag
   cannot drift; a replica silently does.
 - **Placement and the check must read the same geometry.** The recurring bug shape: the placer tests
-  a centre and the check tests a footprint; the placer reads the envelope and the check reads the
+  a center and the check tests a footprint; the placer reads the envelope and the check reads the
   drawn pixels. Both are "correct" and they disagree.
 - **Derive, don't pin.** A feature defined by a relationship - a towpath on a bank, a well between
   streets, a reservoir above the fields - must be computed from that geometry at draw time. A pinned

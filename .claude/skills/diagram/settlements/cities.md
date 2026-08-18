@@ -156,7 +156,7 @@ envelope and projects each seat outward, so on the low edge it throws households
 below the drainage collector - 38 of them on the capital, the wettest ground in the valley and the
 one place nobody builds. Clipping the polygon does not help: the cut edge still projects outward.
 So `_ring_upslope` walks the perimeter, skips the stretches facing downslope, measures each seat
-against the drain LINE (not the field's centre - a seat can be upslope of the middle and still below
+against the drain LINE (not the field's center - a seat can be upslope of the middle and still below
 the drain where it bends), and keeps farmsteads off every field's cropland. Its cropland boxes are
 snapshotted ONCE; rebuilding them per candidate took a gen from 11 seconds to over ten minutes.
 The provincial cities never needed it because their drains march off-view - which is why the plain

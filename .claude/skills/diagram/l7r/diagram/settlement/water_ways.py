@@ -83,7 +83,7 @@ def _pull_back(pts: list[Pt], reaches: Any, step: float = 8.0, keep_frac: float 
             break
         out = trial
         # STOP AT THE LAST THING SERVED, not at the predicate's EDGE. Returning the first point that
-        # reaches anything leaves the tread ending on the 90 ft radius of a farmhouse centre - i.e.
+        # reaches anything leaves the tread ending on the 90 ft radius of a farmhouse center - i.e.
         # ~60 ft clear of that homestead's own footprint, petering out in grass (both the Kashikawa
         # and Sawada reviews raised it independently). Walking on while it STILL reaches, and keeping
         # the shortest such point, ends the lane at the homestead instead - and where the end also
@@ -753,7 +753,7 @@ class WaterWaysMixin:
         #     furniture. Perpendicular crossings were fine either way (the box sits along the lane,
         #     off the fence line); it is the OBLIQUE crossings that cut the box, and two of the
         #     pool's fourteen gates were cut. Tested with SAT against the stroked fence, not by
-        #     corner distances: a line through the CENTRE of a 15x16 box leaves every corner ~8px
+        #     corner distances: a line through the CENTER of a 15x16 box leaves every corner ~8px
         #     clear, so the corner test the lane beds use would have reported it clear.
         y0 = 12.0 if guard_side >= 0 else -28.0
         verge = max(self.px(12), 4.0)

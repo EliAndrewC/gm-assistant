@@ -310,7 +310,7 @@ def _polder_lattice(
     # "mosaic-like constructed ponds with meandering natural river systems, [with] the boundary between
     # constructed and natural blurred" (research 2026-07-22; settlements.md 'Polder mosaic vs grid'). `mosaic`
     # (0 = the clean surveyed grid, the default) displaces the INTERIOR bund-node lattice by a smooth
-    # CORRELATED field, tapered to 0 at the pinned perimeter so the envelope + dike stay put: neighbouring
+    # CORRELATED field, tapered to 0 at the pinned perimeter so the envelope + dike stay put: neighboring
     # nodes move together, so the lattice lines stay continuous but BEND - the interior laterals become
     # meandering creeks and the parcels skew to trapezoids. Both are historically-grounded looks, so the knob
     # makes two same-type polders read differently (map variety). The displacement draws from a SEPARATE rng
@@ -332,10 +332,10 @@ def _polder_lattice(
     # parallel to one another in the way that these are depicted"). This is the root of the machine-made
     # read, and it outranks the corner treatment: `edge_wander` and `mosaic` both warp the lattice
     # COHERENTLY - they bend the block as one piece, on purpose, so that each field edge stays parallel
-    # to its own section of dike - which means every interior line keeps exactly its neighbours' shape
+    # to its own section of dike - which means every interior line keeps exactly its neighbors' shape
     # and the spacing between two bunds never changes. Real fragmented tenure does not look like that: a
     # bund is laid by eye between two points, by a different household in a different decade, so
-    # neighbouring lines drift, converge, and open out again, and the strip between them is wider at one
+    # neighboring lines drift, converge, and open out again, and the strip between them is wider at one
     # end than the other. So each row line and each column line gets its OWN low-frequency profile,
     # amplitude and phase drawn per line. Because a node is shared by its row and its column, the
     # lattice stays consistent - lines still meet, parcels are still quads, the laterals that follow the
@@ -416,7 +416,7 @@ def _polder_parcels(
         low = r >= rows - 2  # the lowest rows of the polder (feature 010)
         gt_lo, gt_hi = (g_t if gt_lo < 0 else gt_lo), (g_t if gt_hi < 0 else gt_hi)
         quad = [grid(s, t) for s, t in inset(quad_st, gt_lo, gt_hi)]
-        # cap the edge bow so two neighbours can never bow into contact: each side of a shared bund may
+        # cap the edge bow so two neighbors can never bow into contact: each side of a shared bund may
         # eat at most half of what the insets opened, less a 1 px hairline the drawn aze strokes keep
         cap = max(0.0, min(g_s, gt_lo, gt_hi) - 0.5)
         poly = organic_parcel(quad, RO, fillet=o_fillet * cell, bow=o_bow, bow_cap=cap)
@@ -487,7 +487,7 @@ def _polder_ring(R: random.Random, grid: _GridFn, span_s: float, span_t: float) 
         # Gently wave a trunk run: offset the CROSS coord by a low-freq sine so the canal is not dead
         # straight - TAPERED to zero at both ends of the run, so each side still starts and finishes
         # exactly on the fillet endpoints it continues from. Untapered, the sine displaced a side's
-        # first/last point by up to `amp` off its neighbour's fillet end, opening a small kink at each
+        # first/last point by up to `amp` off its neighbor's fillet end, opening a small kink at each
         # ring corner (up to 3.7px on Kuwabata - enough for the toe collector's tip to leave the drawn
         # band of the trunk it joins). The ring canal is a CLOSED loop; its corners must actually close.
         out = []

@@ -79,7 +79,7 @@ class ToriiAvenueMixin:
         The correction is a TRANSLATION, never a re-shaping: the run keeps its direction, its curve and
         its stride, and only its distance from the hall changes. It slides along the outward normal from
         the hall's FOOTPRINT to the innermost arch (`pt_to_rect`'s geometry, per CLAUDE.md's "Gap VERDICT
-        reads footprints, never centres") - so a run authored square in front of the hall walks straight
+        reads footprints, never centers") - so a run authored square in front of the hall walks straight
         in down its own axis, while one authored off to the side is pulled onto the flank it actually
         stands off, which is what makes the beside-the-hall gates read as that hall's. A run authored
         THROUGH the hall is left alone: that is `torii_clear_of_shrine`'s defect to report, not this

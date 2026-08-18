@@ -58,13 +58,13 @@ earthen walls"*).* Two halves. **Generation**: `waterfields/seams.py::close_seam
 wedge filler. It takes the bare ground exactly as the carve left it - the command area, minus
 everything planted, minus the drawn channels and their banks - then PLANTS every pocket wide enough
 to hold a basin (so the new basin's outline IS the surrounding bunds) and ABSORBS every pocket too
-thin to plant into the neighbour it shares the most bund with (so the two walls become one). Its
+thin to plant into the neighbor it shares the most bund with (so the two walls become one). Its
 postcondition is that no square foot inside the command area is bare. **Checking**:
-`paddy_plot_seams_shared` fails a plot that runs a bund alongside a neighbour's across dry floor,
-or that draws a whole ring inside a neighbouring basin.
+`paddy_plot_seams_shared` fails a plot that runs a bund alongside a neighbor's across dry floor,
+or that draws a whole ring inside a neighboring basin.
 
 *Disclosed departures.* (1) A **shallow lap** is left alone, in both halves: a plot drawn over part
-of its neighbour paints out the bund it covers, so the pair still reads as one shared wall. Only
+of its neighbor paints out the bund it covers, so the pair still reads as one shared wall. Only
 near-containment is a fault. (2) The rule's upper bound is 24 real ft of gap - wider than that the
 ground between two basins is bare FLOOR, which is `paddy_fan_gapless`'s rule, and stating it twice
 at two tolerances is how checks start disagreeing. (3) A pocket **too thin to bund** is absorbed
@@ -310,6 +310,40 @@ fan's **recorded** `cell`, not `paddy_grain(ftpx)`. `plot_texture` had already s
 target down to 1,488 sq ft, so measuring against the un-textured 2,176 sq ft grain overstated every
 ratio by about 1.5x. `build_comb` now records the cell it actually carved to, and
 `comb_fans_record_their_design_cell` keeps that record from quietly disappearing.
+
+#### The arrowhead: a chevron is pointed AND notched, and neither half alone can see one
+
+*Follow-up to the size floor, 2026-08-18, from a `settlement-review` dart on Mizuguchi at
+(1021-1084, 968-1012) that the area rule could not reach.*
+
+**Grounds:** `_CHEVRON_MIN_APEX` / `is_chevron` in `waterfields/banks.py`; the refusals in
+`comb.py::_comb_toe_and_hem` and `seams.py`
+
+**The ledger asked for a tip-angle floor and the measurement said no.** The review called the ring an
+arrowhead and quoted reflex corners of 311.9 / 273.1 deg, so a minimum tip angle of ~25-30 deg was
+the obvious rule. Measured on the ring itself it is **not pointed enough** (min apex 38.3 deg raw,
+39.0 deduped, against a placer that already refuses at 25), **not lobed enough** (solidity 0.878,
+against the 0.85 the weld and tint guards use) and **not deeply notched** (deepest interior angle
+227.4 deg, where 16 basins in the pool exceed 300). By every measure the project already owned it is
+an ordinary irregular basin - which is what the fabric is supposed to be full of.
+
+**What separates it is the conjunction.** A basin may taper honestly (the hem strips do). A basin may
+be concave honestly (one wrapped round a neighbor is). One that does BOTH has a point at one end and
+a bite out of its side, and that is an arrowhead. Over the 2,777 carved basins of the four scripted
+hamlets: apex < 40 deg alone is 71 (2.6%), solidity < 0.90 alone is 49 (1.8%), **the conjunction is
+13 (0.47%)** - small enough to read one by one, which is how the thresholds were chosen rather than
+fitted. Both are round on purpose: 40 deg is "comes to a point", 0.90 is "has a real notch". Fitting
+tightly to the motivating ring (39 / 0.88) would have caught 11 and been overfitting to one example.
+
+**NO GATE CHECK ACCOMPANIES THIS RULE, and that is a decision rather than an omission.** The carve is
+clean - a provenance probe measured **zero** chevrons entering `close_seams` on both affected maps -
+but `close_seams`' absorb ladder deliberately accepts a chevron as its LAST resort, because the
+alternative is leaving a scrap bare between two basins that each keep their own wall, which is the
+doubled bund `paddy_plot_seams_shared` exists to prevent and a worse defect than an awkward shape.
+So 5 of 2,774 survive pool-wide (13 -> 5, all from that tier). A gate would therefore either fail
+the shipped pool or be tuned to pass it, and tuning a check to its own output is how a check stops
+meaning anything. The placer rule stands on its own measurement; if the residue ever needs closing,
+the lever is the absorb ladder's last tier, not a new threshold.
 
 #### The other declined alternative: paddies are NOT restricted to four sides
 

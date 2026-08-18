@@ -54,7 +54,7 @@ but unsourced); the taper's SHAPE had never been examined.
 - **Discharge falls linearly along the run.** A delivery ditch sheds water through one *mizuguchi* per
   plot into a row of near-equal paddies, so it loses about the same flow per unit length; the collector
   gathers tail-water the same way in reverse. Uniform shedding over a run is Q linear in the fraction
-  travelled.
+  traveled.
 
 *The decision it drove.* `w(t) = sqrt(w0^2 + (w1^2 - w0^2) * t)` - the width SQUARED interpolates
 linearly, because the width squared is what tracks the discharge. One shared helper, `taper_w`, because
@@ -319,7 +319,7 @@ not be drawn claiming to. So the docs were corrected to match the code rather th
 **Sources:** none - these are consequences of the true-size decision, recorded so they are not rediscovered one map at a time
 
 Narrowing the net by 5-6x did not break anything the gate catches, but it changed what several
-neighbouring rules were tuned against. Each of these is measured, none is shipped broken, and each
+neighboring rules were tuned against. Each of these is measured, none is shipped broken, and each
 carries the sketch its fix would follow.
 
 - **FIXED 2026-08-17: the dry-hem stand-off is DERIVED from the canal's bank.** It had been a flat

@@ -72,7 +72,7 @@ class UrbanBuildingMixin:
         # rx=2 / stroke=1.6 / 0.60-length ridge were tuned on a squarish house and become absurd on
         # a LONG THIN footprint: at the servant range's 5 px depth the rounding is 40% of the depth
         # and the stroke 32% of it, so the fill is nearly eaten and the glyph reads as a pill - a
-        # rail or a kerb, the sheet's vocabulary for small gray fixtures - rather than as a long
+        # rail or a curb, the sheet's vocabulary for small gray fixtures - rather than as a long
         # roof. A long rectangle with a full-length ridge reads as a nagaya; a capsule with a
         # center dash does not. Keyed off min(w, h), so every squarish building on every existing
         # map is untouched (min(w,h)/4 >= 2 and min(w,h)*0.22 >= 1.6 for anything 8 px or thicker).

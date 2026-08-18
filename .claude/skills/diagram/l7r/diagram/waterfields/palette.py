@@ -116,7 +116,7 @@ def organic_parcel(
     (not a path), so every downstream consumer - the manifest record, the point-in-poly checks, the
     dike-pond overlay - keeps working on an ordinary polygon; `arc`/`bows` set the sampling density.
 
-    `bow_cap` is the caller's guarantee that two neighbouring parcels cannot bow into each other: it
+    `bow_cap` is the caller's guarantee that two neighboring parcels cannot bow into each other: it
     must leave a positive gap given the inset the caller applied, or the drawn bunds would touch."""
     n = len(poly)
     if n < 3:
@@ -143,7 +143,7 @@ def organic_parcel(
         # from one junction cut a clean disc out of it, and a repeated identical mark reads as a stamp
         # - MORE machine-made than the sharp corner it replaced. The physical truth is that corners
         # differ enormously: the one on the walked side is worn to a broad sweep while the one behind
-        # a neighbour's bund keeps almost its full angle for years. So the reach is drawn from a WIDE
+        # a neighbor's bund keeps almost its full angle for years. So the reach is drawn from a WIDE
         # triangular distribution - a long tail up to ~2.2x, a floor near 0.12x that leaves a corner
         # all but square - and the arc itself is roughed below, since a mathematically clean curve is
         # the other half of what reads as stamped.
