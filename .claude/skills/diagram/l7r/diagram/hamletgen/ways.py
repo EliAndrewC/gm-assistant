@@ -558,6 +558,17 @@ def _clear_link(a: Pt, b: Pt, hard: list[Poly], walls: Sequence[Poly], water: li
     return any(polyline_len(r) >= span - 3.0 for r in runs)
 
 
+def _aim_off(prev: Pt, tip: Pt, target: Pt) -> float:
+    """How far off this end's outward heading is from aiming at `target`, in degrees.
+
+    The honest test of "these two ends are one way with a hole in it": each end has to be heading
+    INTO the gap toward the other, which is a statement about each end separately and about the line
+    between them - not a comparison of the two headings with each other."""
+    out = math.degrees(math.atan2(tip[1] - prev[1], tip[0] - prev[0]))
+    aim = math.degrees(math.atan2(target[1] - tip[1], target[0] - tip[0]))
+    return abs((out - aim + 180.0) % 360.0 - 180.0)
+
+
 def _bridge_collinear_breaks(s: Settlement, hard: list[Poly], walls: Sequence[Poly], water: list[tuple[Pt, Pt]]) -> int:
     """Close a gap where ONE way has been drawn as two, and the ground between them is walkable.
 
@@ -593,10 +604,15 @@ def _bridge_collinear_breaks(s: Settlement, hard: list[Poly], walls: Sequence[Po
                         gap = math.dist(ta, tb)
                         if not (_LANE_JOIN_FT < gap <= _BREAK_SPAN_FT):
                             continue
-                        head = math.degrees(math.atan2(ta[1] - pra[1], ta[0] - pra[0]))
-                        tail = math.degrees(math.atan2(tb[1] - prb[1], tb[0] - prb[0]))
-                        if abs((head - tail + 180.0) % 360.0 - 180.0) > _BREAK_BEARING_DEG:
-                            continue  # they do not point at each other; two arms, not one way
+                        # POINTING AT EACH OTHER MEANS EACH END'S OUTWARD DIRECTION AIMS AT THE
+                        # OTHER END - not that the two outward bearings are similar. Two ends facing
+                        # across a gap have OPPOSITE outward bearings (one runs east, the other runs
+                        # west into the same hole), so comparing them for similarity tests the wrong
+                        # thing entirely: it selects pairs pointing the SAME way, which is two
+                        # parallel arms, and misses the collinear break it was written for. Caught by
+                        # a unit test built from the textbook case rather than from a map.
+                        if _aim_off(pra, ta, tb) > _BREAK_BEARING_DEG or _aim_off(prb, tb, ta) > _BREAK_BEARING_DEG:
+                            continue  # two arms, not one way
                         # ...unless a third way already spans it. Closing a break leaves the two
                         # original ends where they were, joined THROUGH the new lane - so without
                         # this the pass re-bridges the same pair every round and burns its budget on
@@ -718,9 +734,7 @@ def _draw_web(s: Settlement, pts: Poly, width: int = 3, houses: Sequence[Pt] = (
         return False
     if polyline_len(pts) < _WEB_MIN_FT:
         segs = _net_segs(s)
-        earns = any(
-            _reach(h, pts) <= WEB_REACH_FT and (not segs or min(seg_dist(h[0], h[1], a, b) for a, b in segs) > WEB_REACH_FT) for h in houses
-        )
+        earns = any(_reach(h, pts) <= WEB_REACH_FT and (not segs or min(seg_dist(h[0], h[1], a, b) for a, b in segs) > WEB_REACH_FT) for h in houses)
         if not earns:
             return False
     s.lane(pts, width=width, clearance=WEB_CLEARANCE, worn=True)
