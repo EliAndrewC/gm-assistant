@@ -336,6 +336,11 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # house on that map is within 86 ft of a lane and twelve of them still counted as unreached,
     # because the lane serving them was not on the network the connector is on. A repair pass that
     # runs before the things it repairs is not a repair pass.
+    # ...and CLOSE BREAKS again before joining, for the same reason the join runs twice: the
+    # footpath pass draws lanes, and a lane drawn after the bridge pass can leave a hole the bridge
+    # pass never saw. On cohort seed 48 the bridge found ZERO candidates and the finished map still
+    # had a 78 ft hole in a street, because the hole did not exist yet when it looked.
+    _bridge_collinear_breaks(s, hard, walls, list(plan.watercourses) + drawn_water)
     _join_orphan_ways(s, hard, walls, list(plan.watercourses) + drawn_water)
     s.M["meta"]["lane_web"] = plan.lane_web
 
