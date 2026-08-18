@@ -1211,26 +1211,55 @@ commit's parent if the next session wants them rather than rewriting.
 both got most of the way - but each broke something specific, and the next attempt should start by
 answering the specific thing.
 
-1. **`_share` - partition a scrap among the basins along it by NEAREST BASIN.** The right idea, and
-   the numbers say so: each basin takes the ground in front of its own bund, so its wall moves
-   outward across its whole frontage and stays one line, and the T-junctions that leaves are what
-   the research says real fabric looks like. Inashiro went **23 -> 7** (at the predicate as it stood before the curve clause below), and the staircase the GM
-   circled disappeared from the render. Grown by dilating each basin's frontage in one-foot rounds
-   (flat caps and mitre joins, or the band boundaries come back as thirty-vertex arcs), bounded to
-   16 ft of reach since a scrap is thinner than a plot everywhere, then straightened with
-   Douglas-Peucker at 0.9 of the step - straightening at the FULL step moves a wall past the 3 ft
-   `paddy_plot_seams_shared` treats as one line and broke it.
-   **What it broke**: `paddy_plot_seams_shared` on Mizuguchi and Sawada, later Kashikawa too - and
-   an A/B (disable `_share`, regenerate) confirms the causation. The failing geometry is at
-   Mizuguchi (1550, 881): the partition leaves rings of 18-35 vertices with runs of near-duplicate
-   points along a near-vertical cut, and somewhere in that noise a bund ends up standing a short way
-   off its neighbour's across dry floor. Two things were tried and did not fix it - re-offering any
-   piece no basin would take, merged back with its siblings (a good idea on its own merits, keep
-   it), and deduping each piece's ring at 0.5 px (made every count worse). **The question to answer
-   first**: why does the partition leave hairline vertex noise at all, given every piece is
-   intersected back with the scrap? Suspect the interaction of `_despike`'s mitred opening with the
-   flat-capped prisms, and instrument the piece rings before welding rather than after.
-   It also cost **~10% of the regeneration** (21.1 s -> 23.3 s on Inashiro), which is affordable.
+1. **`_share` - partition a scrap among the basins along it by NEAREST BASIN. Tried TWICE, and the
+   second attempt is the one to read.** The idea is right and the first numbers said so: each basin
+   takes the ground in front of its own bund, so its wall moves outward across its whole frontage and
+   stays one line, and the T-junctions that leaves are what the research says real fabric looks like.
+   Inashiro went 23 -> 7 and the staircase the GM circled disappeared from the render. Grown by
+   dilating each basin's frontage in one-foot rounds (flat caps and mitre joins, or the band
+   boundaries come back as thirty-vertex arcs), bounded to 16 ft of reach since a scrap is thinner
+   than a plot everywhere, then straightened with Douglas-Peucker at 0.9 of the step - straightening
+   at the FULL step moves a wall past the 3 ft `paddy_plot_seams_shared` treats as one line and broke
+   it. Cost: about 10% of the regeneration.
+
+   **What it breaks, and what the second attempt found out about WHY** - this is the part worth
+   keeping, because the first write-up guessed and the guess was wrong. It is not hairline vertex
+   noise (that was the visible symptom). Instrumented on Inashiro:
+
+   - **`_absorb` refuses 960 of 2,685 welds with the partition, against 5 of 370 without it** - 36%
+     against 1.4%. The pass leaves **16,767 px2 of bare ground inside the command area against
+     1,760** with no partition at all, worst single pocket 2,499 px2 against 245. Every one of those
+     pockets is a doubled bund, which is what `paddy_plot_seams_shared` fires on.
+   - **492 of the 960 refusals had NO ADJACENT BASIN AT ALL.** That is the mechanism: `_absorb` ranks
+     the basins whose bund forms part of the scrap, so a piece touching only its SIBLINGS has nothing
+     to rank and is refused outright. Two things strand pieces that way - a frontage's claim can come
+     back in two parts (it turns a corner and pinches off), and the recovery pieces for ground the
+     straightening gave up sit between other pieces by construction.
+   - **Both are fixable and were fixed**: abandon the partition for any scrap where a piece reaches no
+     basin, and FOLD the recovery ground into the neighbouring piece (by shared boundary, the same
+     rule `_absorb` uses one level down) instead of offering it separately. That took bare ground
+     16,767 -> ~4,900 px2 and refusals 960 -> 281.
+   - **And it still is not enough.** With both guards the partition applies to a minority of scraps,
+     `paddy_plot_seams_shared` still fails on all four hamlets, and the jog counts come out
+     38 -> 25, 45 -> 42, 30 -> 24, 21 -> 21 at the tool's thresholds - a real improvement, but a
+     fraction of the unguarded 23 -> 7, because the guards switch the partition off exactly where the
+     ground is awkward, which is exactly where the staircase is.
+   - **It is also fragile against GEOS**: three separate `TopologyException: side location conflict`
+     sites in one afternoon's sweeps (inside `_share`, inside the stranding test, and inside
+     `_absorb`'s own ranking loop, which had never needed a guard in its life). Each one was guarded
+     and the next appeared. A tidying pass that needs a net under every boolean it touches is telling
+     you something.
+
+   **The conclusion the second attempt reached, which is a change of direction rather than another
+   guard.** The partition is fighting `close_seams`'s architecture: it splits ground that the weld
+   ladder is built to take WHOLE, and the ladder's guards - needle, lump, jog - are all calibrated to
+   a scrap, not to a quarter of one. **The next attempt should go upstream instead.** The 48-ft pitch
+   that misaligns the strip is `_plant`'s, and `_plant` grids a pocket from the POCKET'S OWN bounding
+   box: cut it at the SURROUNDING FABRIC'S seams instead - the vertices the adjacent basins already
+   carry on the pocket boundary - and the offcuts come out where the rows actually break, so welding
+   one cannot step a wall in the first place. That is a smaller change, it needs no new booleans, and
+   it attacks the mechanism rather than the residue.
+
 2. **`_unjog` - repair what neither guard could avoid, by straightening a surviving step.** Took
    Inashiro from 5 to **0** and the whole gate green, which is why it is worth recording in detail.
    Two implementations. Dropping the step's two vertices from every ring that carries them is NOT
@@ -1247,9 +1276,10 @@ answering the specific thing.
    and a one-basin wall where the cut would SHRINK the basin - and it must not rebuild the vertex
    index per plot (that alone took a regeneration from 26 s to 80 s).
 
-**The order to do it in**: `_share` first and alone, because it is where the win is and its failure
-is a specific, locatable geometry bug rather than a design problem; then re-measure; then `_unjog`
-only for whatever the partition cannot avoid.
+**The order to do it in, revised after the second `_share` attempt**: `_plant`'s pitch first - cut a
+pocket at the surrounding fabric's seams rather than at its own bbox - because that is the mechanism
+and the other two are residue. Re-measure. Only then decide whether anything is left for a partition
+or a repair pass, and expect the answer to be less than it looks now.
 
 ## OPEN 2026-08-18: the byre at the settlement EDGE - a knob candidate, and what to research first
 
