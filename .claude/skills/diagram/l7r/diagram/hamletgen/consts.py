@@ -61,6 +61,43 @@ GROSS_ACRES_PER_HOUSEHOLD = 1.3
 # green, but a corridor that tight re-packs the cluster into gardens and crops.)
 LANE_CLEARANCE = 40.0
 
+# HOW FAR ALONG THE FIELD OUTLINE THE CLUSTER ACTUALLY REACHES, as a multiple of the seat band's own
+# lateral half-extent. ONE definition, read by `front_row` (which samples outline vertices out to
+# this reach) and by `stage_ways` (which sizes the lane skeleton over it).
+#
+# It is one definition because the two being separate numbers WAS the defect. `front_row` had 1.6
+# inline and the skeleton was sized on the bare `lat`, so the lanes huddled in the middle of a
+# cluster 1.6x longer than they were, and the houses at the ends had nothing near them. Measured on
+# the four pool hamlets before the fix: every one of the 25 unserved farmhouses sat at a large
+# offset along the cluster's LONG axis (up to 478 ft), and none at a large offset across it - a
+# lateral coverage failure, not the depth failure the ledger had assumed. See
+# specs/123-lane-web-and-cluster-shape/research.md R2.
+CLUSTER_SPAN_FACTOR = 1.6
+
+# THE NO-BUILD CORRIDOR OF A WEB LANE, in feet - deliberately much tighter than LANE_CLEARANCE.
+#
+# LANE_CLEARANCE (40) is derived for a lane the homesteads FRONT: it is the drawn minka's
+# half-diagonal plus the lane's own half-tread, so the steading clears the way it faces. A web lane
+# is the other kind: the research describes the lateral ones as "colonised as semi private space by
+# the adjoining house", which is a way people build right up against. Holding 40 ft off both verges
+# of every web lane reserved the middle of the cluster and pushed the houses out - measured on the
+# four pool hamlets, the long axis grew 51%, 58%, 15% and 97%. This is the lane's own half-tread
+# plus a hand's breadth: enough that a wall is not drawn ON the tread, and no more.
+WEB_CLEARANCE = 24.0
+
+# THE REACH A FARMHOUSE IS ENTITLED TO: every house center must be within this of some drawn way
+# (`farmhouses_reach_a_way`). It is BUNDLE_PITCH, deliberately and by reference rather than by
+# repetition - the ground one homestead occupies is exactly the distance at which a lane passes your
+# own plot or your neighbor's, which is what the sources mean by a lateral "colonised as semi-private
+# space by the adjoining house". The same number sets the web's lane spacing, so the requirement and
+# the geometry that satisfies it cannot drift apart.
+#
+# Grounding: research/homesteads.md, "Is every farmhouse reached by a lane, and in what FORM?" - the
+# record is decisive that a house in a nucleated cluster IS reached by a way. The previous 90 ft in
+# `lanes_reach_something` was flagged in future-work.md as a number nobody had justified; this one is
+# derived from a researched constant instead of chosen to make today's maps pass.
+WEB_REACH_FT = 100.0  # == BUNDLE_PITCH; asserted in tests rather than imported, since BUNDLE_PITCH is defined below
+
 # How far off a lane's centerline a frontage seat is offered. This is a PLACEMENT decision and is
 # deliberately not derived from LANE_CLEARANCE, which is the corridor rule: fronting a lane excuses
 # a seat from the corridor's setback (that is what `skip` means to `_near_corridor`), so the row's
@@ -286,5 +323,9 @@ SINKS = ("pond", "pond", "offmap")
 
 CLUSTER_SHAPES = ("round", "round", "elongated", "crescent")
 LANE_SKELETONS = ("spine", "T", "Y", "cross")
+# The two attested forms of making every house reachable. NOT weighted: the research supports both
+# equally, so an even roll is the honest one, and the two read differently enough at a glance
+# (a laid-out double row vs. a grown spine-and-alleys) to be worth a full half of the cohort each.
+LANE_WEBS = ("alleys", "back_lane")
 PLOT_SIZES = ("small_irregular", "medium", "medium", "large_block")
 GRAIN_DRIFTS = (-8, -4, 0, 0, 4, 8)

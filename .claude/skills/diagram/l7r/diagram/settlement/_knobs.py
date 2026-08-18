@@ -123,6 +123,11 @@ def _water_source_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     return ctx.get("water_kind") != "stream"
 
 
+# The two attested ways of making every house in a nucleated cluster reachable. Defined up here
+# rather than beside `web_lanes` because the knob catalog below registers against it at import.
+LANE_WEBS = ("alleys", "back_lane")
+
+
 def _cluster_shape_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     """A 'split' cluster needs room for two hamlets to read separately - a village/town, not a hamlet."""
     return v != "split" or ctx.get("scale") in ("village", "town")
@@ -216,6 +221,7 @@ register_knob(Knob("field_archetype", ["valley_paddy", "contour_terraces", "pold
 register_knob(Knob("land_use_overlay", ["none", "mulberry_fishpond", "lotus", "tea_fringe"], default="none", typing_rule=_land_use_ok))
 register_knob(Knob("cluster_position", ["high_margin", "flank", "mid_margin", "valley_mouth", "valley_head", "on_rise"], default="high_margin"))
 register_knob(Knob("cluster_shape", ["round", "elongated", "crescent", "split"], default="round", typing_rule=_cluster_shape_ok))
+register_knob(Knob("lane_web", list(LANE_WEBS), default="alleys"))
 register_knob(Knob("lane_skeleton", ["spine", "T", "Y", "cross", "waterside"], default="spine", typing_rule=_lane_skeleton_ok))
 register_knob(
     Knob(
@@ -231,6 +237,80 @@ register_knob(Knob("grain_drift", [-12, -8, -4, 0, 4, 8, 12], default=0))  # deg
 
 
 LANE_SKELETONS = ("spine", "T", "Y", "cross", "waterside")
+
+
+def web_lanes(web: str | None, arc: float, depth: float, pitch: float, inset: float = 0.0) -> list[Poly]:
+    """The LANE WEB: the lanes that make every farmhouse reachable, in one of two attested forms.
+
+    RETURNED IN OUTLINE COORDINATES, not in the seat frame: x is ARC LENGTH along the field margin
+    (0 .. `arc`) and y is STANDOFF out from the field edge (0 .. `depth`). The caller maps those onto
+    the drawn outline. That is not a stylistic choice - it is the fix for the first attempt, which
+    emitted straight lines in the seat frame and watched them get clipped to stubs. A field margin
+    CURVES, which is exactly why `front_row` follows the outline instead of ruling a straight line
+    across it; a straight lane parallel to a curved edge runs into the crop at both ends and the clip
+    pipeline correctly cuts it back. Measured on the straight-line version: Inashiro's two back lanes
+    survived as 203 ft of an intended ~1400, and its worst unserved house went from 362 ft to 591.
+    In arc/standoff space a lane at constant standoff parallels the edge everywhere it goes.
+
+    Purity is unchanged and is the point: this reads (arc, depth, pitch) and nothing else - no house
+    position - which is what lets the web be laid BEFORE the homesteads, where a no-build corridor
+    belongs.
+
+    WHY THIS EXISTS (research/homesteads.md, "Is every farmhouse reached by a lane, and in what
+    FORM?"). The record is decisive that a house in a nucleated cluster IS reached: "every house in
+    the nucleated village is accessible via the interconnected system of narrow lanes and alleys" -
+    compactness is what the lane network is FOR. It is NOT decisive about the shape, and both shapes
+    are well attested, so per constitution Principle XII the shape is a knob rather than a pick:
+
+      - "alleys"    - a spine with narrow LATERALS between the plots, colonised as semi-private
+                      space by the houses they pass. The accretive Chinese gridiron; it reads as a
+                      place that GREW.
+      - "back_lane" - lanes PARALLEL to the margin, one fronting the field and one behind the plots
+                      (the planned "back lanes on each side of the main street" framework, where the
+                      back lane doubles as the village/farmland edge). It reads as a place that was
+                      LAID OUT.
+
+    SPACING IS DERIVED, NOT CHOSEN. `pitch` is the ground one homestead occupies, which is also the
+    reach the gate requires (`farmhouses_reach_a_way`) - one number used twice, so the rule and the
+    geometry cannot drift apart. Lanes are laid at the centers of m equal bands across the extent
+    they cover, with m the smallest count that keeps every point within `pitch` of one: max distance
+    is extent/m, so m = ceil(extent / pitch) and never fewer than 2. Covering by construction is the
+    point - a web tuned until the current maps passed would say nothing about the next seed.
+
+    Note `pitch` is in the caller's units (px), so the caller converts. The hamlet tier passes its
+    own researched `BUNDLE_PITCH` (100 ft at 1 px = 1 ft); `BUNDLE_PITCH_FT` (92.0) is the village
+    tier's figure and the two are deliberately different numbers."""
+    if not web:
+        return []
+    if web not in LANE_WEBS:
+        raise ValueError(f"unknown lane_web {web!r}; expected one of {LANE_WEBS}")
+    # THE WEB AIMS INSIDE ITS OWN BUDGET. Spacing exactly at `pitch` puts the worst-case house at
+    # exactly the reach the gate allows, so a float epsilon or a millimetre of arm trimmed off an end
+    # fails the check - and the arms ARE trimmed, routinely, by crop, marsh and water. Targeting 90%
+    # of the reach costs at most one extra lane on a long cluster and leaves the geometry a margin to
+    # lose. It is headroom against clipping, not a second opinion about the reach.
+    target = max(pitch * 0.9, 1e-6)
+    # THE WEB LIVES IN THE BAND THE HOUSES LIVE IN, which starts at `inset` - the standoff at which
+    # buildable ground begins - and not at the field edge. Laid from standoff 0 every lateral began
+    # ON the outline, and `clip_to_clear` correctly returned nothing at all for it: measured on
+    # Sawada, 26 of 27 arms clipped to zero points, so the map came back with fewer lanes than before
+    # the feature. A lane starts where the settlement starts.
+    lo, hi = min(inset, depth), depth
+    band = max(hi - lo, 1e-6)
+
+    def along(standoff: float) -> Poly:
+        """One lane at a constant standoff, sampled densely enough to FOLLOW the margin's curve."""
+        n = max(2, math.ceil(arc / (pitch * 0.5)))
+        return [(arc * i / n, standoff) for i in range(n + 1)]
+
+    if web == "back_lane":
+        m = max(2, math.ceil(band / (2.0 * target)))
+        return [along(lo + (2 * j + 1) * band / (2 * m)) for j in range(m)]
+    # "alleys": one lane along the margin for the laterals to branch from, then the laterals
+    m = max(2, math.ceil(arc / (2.0 * target)))
+    lanes: list[Poly] = [along(lo + band / 2.0)]
+    lanes.extend([((2 * j + 1) * arc / (2 * m), lo), ((2 * j + 1) * arc / (2 * m), hi)] for j in range(m))
+    return lanes
 
 
 def skeleton_layout(kind: str, cx: float, cy: float, ex: float, ey: float) -> dict[str, Any]:

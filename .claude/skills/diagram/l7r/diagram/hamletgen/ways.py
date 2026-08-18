@@ -8,12 +8,78 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 
-from l7r.diagram.settlement import Settlement, point_in_poly, seg_closest, seg_dist, seg_intersect, segments_cross, skeleton_layout
+from l7r.diagram.settlement import Settlement, point_in_poly, seg_closest, seg_dist, seg_intersect, segments_cross, skeleton_layout, web_lanes
 from l7r.diagram.sitegen.geom import centroid, crop_polys, crosses_disc, crosses_poly, pull_clear, unit
 
 from .cluster import _arm_crossing_accidental, _fork_spur, seat_cluster
-from .consts import LANE_CLEARANCE, SPUR_SETBACK, WIND_VECTORS, Poly, Pt
+from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, LANE_CLEARANCE, SPUR_SETBACK, WEB_CLEARANCE, WIND_VECTORS, Poly, Pt
 from .plan import SitePlan
+
+
+class _margin_frame:  # noqa: N801 - used as a callable coordinate map, not as a type
+    """OUTLINE COORDINATES for the stretch of field margin this cluster fronts.
+
+    `f(arc, standoff)` maps a point given as (distance walked along the field edge, distance out
+    from it) to screen. It is the same walk `front_row` makes - the outline vertices within the
+    cluster's lateral reach, ordered along the margin, each offset outward on the local normal - and
+    it exists for the same reason: the margin CURVES, so anything meant to run parallel to the field
+    has to be built on the edge itself rather than ruled straight across it.
+
+    Read `.arc` for the total length of that stretch, which is the domain the web is laid over."""
+
+    def __init__(self, plan: SitePlan, span: float) -> None:
+        env, seat = plan.envelope, plan.seat
+        ax, ay = seat["along"]
+        cen = centroid(env)
+        # ONLY THE SIDE THE CLUSTER IS ON. The envelope is a closed ring, so the along-axis test
+        # alone admits the vertices DIRECTLY OPPOSITE too - and the arc then snakes down one flank
+        # of the fan, round the end and back up the other. Measured on Sawada: 3,060 ft of "margin"
+        # for a cluster 808 ft long, which over-generated laterals more than three to one and laid
+        # them where no house stands (`lanes_reach_something`). `front_row` gets away without this
+        # test because its caller drops any seat outside the band; the web has no such backstop, so
+        # it makes the test itself. The side is read off the seat's own outward normal, which is the
+        # direction the settlement lies in from the field.
+        ox_, oy_ = seat["out"]
+        cen0 = centroid(env)
+        pts = [
+            p
+            for p in env
+            if abs((p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay) <= span and (p[0] - cen0[0]) * ox_ + (p[1] - cen0[1]) * oy_ > 0.0
+        ]
+        pts.sort(key=lambda p: (p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay)
+        if len(pts) < 2:  # pragma: no cover - a band always spans several outline vertices
+            pts = [(seat["cx"], seat["cy"]), (seat["cx"] + ax, seat["cy"] + ay)]
+        self.pts = pts
+        self.cum = [0.0]
+        for i in range(len(pts) - 1):
+            self.cum.append(self.cum[-1] + math.dist(pts[i], pts[i + 1]))
+        self.arc = self.cum[-1]
+        # The outward normal at each vertex, averaged over the two edges meeting there and oriented
+        # AWAY from the field's centroid - the settlement is outside the crop, and a standoff that
+        # pointed inward would lay every web lane in the rice.
+        self.nrm: list[Pt] = []
+        for i, p in enumerate(pts):
+            nx, ny = 0.0, 0.0
+            for a, b in ((pts[max(0, i - 1)], p), (p, pts[min(len(pts) - 1, i + 1)])):
+                if a != b:
+                    ex, ey = unit(-(b[1] - a[1]), b[0] - a[0])
+                    nx, ny = nx + ex, ny + ey
+            nx, ny = unit(nx, ny) if (nx or ny) else (1.0, 0.0)
+            if nx * (p[0] - cen[0]) + ny * (p[1] - cen[1]) < 0:
+                nx, ny = -nx, -ny
+            self.nrm.append((nx, ny))
+
+    def __call__(self, arc: float, standoff: float) -> Pt:
+        t = min(max(arc, 0.0), self.arc)
+        i = max(0, min(len(self.pts) - 2, next((k for k in range(len(self.cum) - 1) if self.cum[k + 1] >= t), len(self.pts) - 2)))
+        run = self.cum[i + 1] - self.cum[i]
+        u = 0.0 if run <= 0 else (t - self.cum[i]) / run
+        px = self.pts[i][0] + (self.pts[i + 1][0] - self.pts[i][0]) * u
+        py = self.pts[i][1] + (self.pts[i + 1][1] - self.pts[i][1]) * u
+        nx = self.nrm[i][0] + (self.nrm[i + 1][0] - self.nrm[i][0]) * u
+        ny = self.nrm[i][1] + (self.nrm[i + 1][1] - self.nrm[i][1]) * u
+        nx, ny = unit(nx, ny) if (nx or ny) else self.nrm[i]
+        return (px + nx * standoff, py + ny * standoff)
 
 
 def stage_ways(s: Settlement, plan: SitePlan) -> None:
@@ -80,11 +146,34 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     # ...and every marsh ALREADY DRAWN - on a polder the header reservoir's reed fringe is laid in
     # `stage_polder`, before the ways, and a lane arm ran straight through it.
     wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
-    layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, seat["lat"], seat["dep"])
-    _raw_arms = [[to_screen((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
+    # THE SKELETON IS SIZED OVER THE GROUND THE HOUSES ACTUALLY TAKE, not over the seat band.
+    #
+    # `front_row` samples the outline out to `lat * CLUSTER_SPAN_FACTOR`, so the cluster is 1.6x
+    # longer than the band - and this call used to pass the bare `lat`. The lanes therefore huddled
+    # in the middle of the cluster and the houses at its two ends had nothing near them: 25 of the
+    # four pool hamlets' 66 farmhouses stood more than 120 ft from any way, every one of them at a
+    # large offset ALONG the long axis. One constant, read by both, is the fix.
+    _span = seat["lat"]
+    layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, _span, seat["dep"])
+    # ...plus the LANE WEB, which is what actually discharges the obligation that every farmhouse be
+    # reachable (research/homesteads.md; constitution Principle XII). Its FORM is the rolled knob -
+    # `alleys` (a spine with laterals between the plots; the place grew) or `back_lane` (lanes
+    # parallel to the margin, one fronting the field and one behind the plots; the place was laid
+    # out). Web arms are appended to the skeleton's own and go through the identical clip-and-trim
+    # path below, so they obey every rule an arm obeys: out of the crop, off the wet toe, off the
+    # marsh, and stopping at a watercourse rather than crossing it.
+    # Both families arrive in SCREEN coordinates here, from two different frames: the skeleton is
+    # laid in the seat frame (straight arms across a straight band) and the web in outline
+    # coordinates (arc along the margin, standoff out from the field edge), because a lane that runs
+    # PARALLEL to the field has to follow its curve or the clip cuts it to a stub.
+    _margin = _margin_frame(plan, _span)
+    _lanes = [([to_screen((p[0], p[1])) for p in lane_pts], False) for lane_pts in layout["lanes"]]
+    _lanes += [([_margin(p[0], p[1]) for p in _w], True) for _w in web_lanes(plan.lane_web, _margin.arc, seat["dep"] * 2.0, BUNDLE_PITCH, LANE_CLEARANCE)]
+    s.M["meta"]["lane_web"] = plan.lane_web
+    _raw_arms = [list(lane_pts) for lane_pts, _ in _lanes]
 
     _kept_arms: list[tuple[Poly, Poly]] = []
-    for _ai, lane_pts in enumerate(layout["lanes"]):
+    for _ai, (lane_pts, _is_web) in enumerate(_lanes):
         # ...pulled back out of any hem plot the arm would otherwise reach into. The skeleton is
         # sized from the household count, so on a cluster seated tight against the hem a `cross`
         # crossbar can overrun into the barley - and a lane may touch a plot's edge but never cross
@@ -107,13 +196,34 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         # cluster sits on a margin and the arms point away from the fan, and immediate on a POLDER,
         # where the block lies right beside the village and an arm reached into the rice. The
         # connector has always listed the envelope; the arms simply never did.
-        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
+        # A WEB lane keeps its longest clear RUN; a skeleton arm stops at the first blockage. See
+        # `longest_clear_run` for why the two ways of losing ground are not interchangeable.
+        _clip = longest_clear_run if _is_web else clip_to_clear
+        arm = _clip(list(lane_pts), [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
         arm = s.trim_off_marsh(arm)  # ...and off the pond's reed fringe, which is already drawn by now
         if len(arm) >= 2:
             if _arm_crossing_accidental(arm, _raw_arms[_ai], _kept_arms):
                 continue  # pragma: no cover - no rolled map currently trips the drop; the decision logic is unit-tested via _arm_crossing_accidental
             _kept_arms.append((arm, _raw_arms[_ai]))
-            s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)
+            # A WEB LANE IS NARROW, AND ITS CORRIDOR IS NARROW TOO. `LANE_CLEARANCE` is the setback
+            # for a lane the homesteads FRONT - it holds a minka's drawn footprint plus its dooryard
+            # off the tread. The web is not that: the sources describe "narrow lanes and alleys",
+            # with the lateral ones "colonised as semi private space by the adjoining house", which
+            # is a way you build right up to. Given the 40 ft corridor instead, the web ate the
+            # middle of the cluster and shoved the houses outward - the four hamlets' long axes went
+            # 808 -> 1220, 716 -> 1131, 994 -> 1144 and 518 -> 1022 ft, which is the opposite of
+            # nucleation and would have been a silent regression, since no check measures sprawl.
+            _w, _c = (3, WEB_CLEARANCE) if _is_web else (5, LANE_CLEARANCE)
+            s.lane(arm, width=_w, clearance=_c, worn=True)
+            # A WEB LANE IS SERVICE, NOT FRONTAGE. `lane_frontage` offers seats along both verges of
+            # every internal lane, so the web - which exists to REACH the houses - was also inviting
+            # more houses, and the cluster grew to meet it: the four hamlets' long axes went 808 ->
+            # 1220, 716 -> 1131, 994 -> 1144 and 518 -> 1022 ft, which is the opposite of nucleation.
+            # A back lane runs behind the plots and an alley is the residual gap between them;
+            # neither is a street you build a new farmhouse onto. Flagged like the connector, and
+            # skipped by `lane_frontage` for the same reason: some ways are not building ground.
+            if _is_web:
+                s.M["lanes"][-1]["web"] = True
     s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
 
     # the SPUR to the field: from the middle of the cluster to the nearest envelope point THE TRACK
@@ -270,6 +380,46 @@ def route_around(poly: Poly, path: Poly, margin: float, rounds: int = 6) -> Poly
         if not cut:
             break
     return out
+
+
+def longest_clear_run(pts: Poly, obstacles: Sequence[Poly], margin: float, step: float = 8.0, lines: Sequence[tuple[Pt, Pt]] = (), line_margin: float = 14.0) -> Poly:
+    """The longest UNBROKEN clear stretch of a polyline - the through-lane counterpart of
+    `clip_to_clear`.
+
+    The difference is which end the blockage is allowed to cost you. `clip_to_clear` stops at the
+    first ground the line may not cross, which is exactly right for a skeleton ARM: an arm radiates
+    outward from the cluster, so everything past the blockage is beyond it anyway. A WEB lane is not
+    an arm - it runs the length of the margin, and its two ends are just its two ends. Truncating it
+    at the first fouled sample threw away the whole lane whenever the sampling happened to start in
+    the crop, which is how Inashiro's back lanes came back as 250 ft of an intended 1400 while
+    Sawada's alley spine - identical code, luckier starting end - survived at 719 ft. A lane does not
+    cease to exist because the far end of the margin is under water.
+
+    Returns [] if no clear run reaches the same 70 ft floor `clip_to_clear` uses: a stub is not a
+    lane, whichever way it was measured."""
+    if not obstacles and not lines:
+        return pts
+
+    def fouled(q: Pt) -> bool:
+        if any(seg_dist(q[0], q[1], a, b) < line_margin for a, b in lines):
+            return True
+        return any(point_in_poly(q[0], q[1], list(o)) or min(seg_dist(q[0], q[1], o[j], o[(j + 1) % len(o)]) for j in range(len(o))) < margin for o in obstacles)
+
+    samples: Poly = [pts[0]]
+    for i in range(len(pts) - 1):
+        a, b = pts[i], pts[i + 1]
+        n = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) / step))
+        samples.extend((a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) for k in range(1, n + 1))
+    best: Poly = []
+    run: Poly = []
+    for q in samples:
+        if fouled(q):
+            run = []
+            continue
+        run.append(q)
+        if polyline_len(run) > polyline_len(best):
+            best = list(run)
+    return best if len(best) >= 2 and polyline_len(best) >= 70.0 else []
 
 
 def clip_to_clear(pts: Poly, obstacles: Sequence[Poly], margin: float, step: float = 8.0, lines: Sequence[tuple[Pt, Pt]] = (), line_margin: float = 14.0) -> Poly:
