@@ -34,9 +34,9 @@ GROSS_ACRES_PER_HOUSEHOLD = 1.3
 # LANE CLEARANCE - the no-build corridor a lane reserves, in px.
 #
 # This used to be 48 rather than the authored maps' 32, as a WORKAROUND: `_near_corridor` tests a
-# candidate's CENTRE against the corridor and the placer passed the farmhouse's BASE rect (46 x 28
+# candidate's CENTER against the corridor and the placer passed the farmhouse's BASE rect (46 x 28
 # ft), while a homestead's wealth variation renders the house up to ~1.33x that - so at 32 a
-# well-off farmhouse's drawn corner ended 2.4 px from a connector track's centerline with its centre
+# well-off farmhouse's drawn corner ended 2.4 px from a connector track's centerline with its center
 # a legal 34 px off, and `houses_clear_of_lanes` measures the DRAWN corners.
 #
 # THE WORKAROUND IS OVER (feature 121, 2026-08-17), and this is no longer what keeps a house off a

@@ -886,13 +886,44 @@ def _seg_0609__byres_stand_in_their_declared_form(*, M: Any = _UNBOUND, check: A
     spreading detached sheds by minimax across the whole cluster, and nothing noticed because nothing
     measured it. Only the courtyard form has geometry to hold: `detached_commons` says the shed is on
     the shared ground, which is not a claim about any one homestead."""
-    if M["meta"].get("generated_by") and M.get("byres"):
+    # GUARDED ON THE DECLARATION, NEVER ON THE DRAWING (corrected 2026-08-18, same day, by all four
+    # settlement-reviews independently). The first cut of this segment opened
+    # `if generated_by and M.get("byres")` - so a map that drew ZERO byres skipped both checks,
+    # including the declaration-exists one, which is the single state they were written for. It shipped
+    # that way and it immediately hid a real regression: the courtyard form seated nothing at all on
+    # Mizuguchi, 3 byres -> 0, and the gate said nothing. Guarding a declaration check on the presence
+    # of the thing being declared is the `if meta.get(...)` trap this segment's own docstring names one
+    # paragraph above, and writing the warning did not stop me reintroducing it in the same commit.
+    # The guard is now the SCALE - every settlement at these tiers plows, so every one of them runs
+    # `draft_byres`, which records `byre_form` and `byre_target` unconditionally before it seats
+    # anything.
+    if M["meta"].get("generated_by") and M["meta"].get("scale") in ("hamlet", "village"):
         _byf = M["meta"].get("byre_form")
         check(
             "byre_form_declared",
             _byf in ("courtyard", "detached_commons"),
-            f"the map draws {len(M['byres'])} byre(s) but declares byre_form={_byf!r} - a settlement must record WHICH of the two "
+            f"the map draws {len(M.get('byres') or [])} byre(s) but declares byre_form={_byf!r} - a settlement must record WHICH of the two "
             f"attested forms it used (the owner's own stable wing, or a shared shed on the commons), or nothing can hold the drawing to it",
+        )
+        # AND THE ASK IS RECORDED, so a silent shortfall is a failure rather than an absence. The
+        # placer walks its candidate pool and simply stops when nothing fits; with no record of what
+        # it MEANT to seat, "this hamlet has one byre" and "this hamlet wanted four and could only
+        # place one" are the same manifest. `byre_target` is written by `draft_byres` from the same
+        # expression it loops on, so the check cannot drift from the ask.
+        # `_byt is None` is a FAILURE, not a pass. The first cut wrote `_byt is None or _byn >= _byt`
+        # and Mizuguchi - the map with zero byres, the whole reason this check exists - sailed through
+        # it, because the target was not being recorded yet. That is the third shape of the same trap
+        # in one segment: guard on the drawing, guard on the declaration, then let a missing input
+        # stand in for a satisfied one. `draft_byres` records the target unconditionally, so on any
+        # map that reaches this guard its absence means the placer never ran.
+        _byt = M["meta"].get("byre_target")
+        _byn = len(M.get("byres") or [])
+        check(
+            "byres_meet_their_target",
+            _byt is not None and _byn >= _byt,
+            f"the placer asked for {_byt} byre(s) and seated {_byn} - a wet-rice settlement plows with a draft team, so a "
+            f"shortfall is a placement failure, not a settlement without oxen. Check the form's seat search: the courtyard "
+            f"form has only its owner's own walls to work with, and a homestead ringed by its yard and garden can refuse it",
         )
         if _byf == "courtyard":
             _by_houses = M.get("houses") or []

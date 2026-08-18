@@ -137,7 +137,7 @@ class BundleFitMixin:
         footprint-vs-tread test on 2026-08-12, but a homestead BUNDLE is seated by `_bundle_fits`
         from its own geometry and never goes through `_fits` at all - so the only thing standing
         between a drawn steading and the lane was `_rect_blocked`'s closing `_near_corridor(cx, cy)`,
-        a bare CENTRE test, plus enough corridor width to cover the difference by margin. Measured
+        a bare CENTER test, plus enough corridor width to cover the difference by margin. Measured
         at a 32 px clearance: 10 of 24 cohort maps put a farmhouse corner on a lane.
 
         WHAT ACTUALLY DIVERGES IS THE RAKE, and only the rake. The bundle's house rect matches the
@@ -147,7 +147,7 @@ class BundleFitMixin:
         position-seeded it is knowable at seat time, so this is an exact test and not an estimate.
 
         SURFACE, NOT CLEARANCE (this skill's dev/placement.md, and specs/121's contracts/placement.md
-        C4). Only the drawn tread is tested this way. The soft corridor keeps its centre test above,
+        C4). Only the drawn tread is tested this way. The soft corridor keeps its center test above,
         deliberately: footprint-testing a clearance was tried once and reverted, because a clearance
         is slack a footprint routinely overhangs, and tightening it cost Nagahara a well and pushed
         Hoshizora's punishment ground off its street.
@@ -211,7 +211,7 @@ class BundleFitMixin:
         return self._bundle_common_fits(geom, grove_off_field) and self._bundle_side_fits(geom)
 
     def _sun_corridor_ok(self: Settlement, geom: Any) -> bool:  # type: ignore[misc]
-        """Does this homestead leave every threshing yard - its own and the neighbours' - its sun?
+        """Does this homestead leave every threshing yard - its own and the neighbors' - its sun?
 
         THE RULE (GM 2026-08-13, researched in research/homesteads.md, "The threshing yard's sun"):
         rice is dried on the niwa, so a yard needs clear ground to its SOUTH. A thatched roof is
@@ -242,7 +242,7 @@ class BundleFitMixin:
         # the check's on a held-out cohort map. Both axes, or the disagreement just moves.
         hx, hy, hw, hh = geom["house"]
         yx, yy, yw, yh = geom["yard"]
-        # THE NEIGHBOURS' YARDS ARE READ OFF THE PLACED BUNDLES, not off `M["threshing_yards"]`.
+        # THE NEIGHBORS' YARDS ARE READ OFF THE PLACED BUNDLES, not off `M["threshing_yards"]`.
         # Yards are not drawn until `farmsteads()` flushes, long after every house is seated, so the
         # manifest list is EMPTY while placement runs - testing it caught nothing in the direction
         # that matters (a new house shading a yard already standing), and the first version of this

@@ -195,11 +195,16 @@ WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
   the empty ground between the lobes. It is now `_worst_after` at full resolution, with the
   neighborhood measure breaking exact ties.
 
-RIPPLE ON THIS MAP: this is the map that rolled `courtyard`, and it reads differently for it - all
-three byres now stand 50-51 ft from their owner's farmhouse, where Inashiro's and Kashikawa's
-detached sheds range 53-102 ft. Two same-region hamlets that a reader can tell apart, which is the
-whole point of the knob. The wells did NOT move: Sawada's were already correct, and the ledger entry
-saying otherwise was measuring the wrong thing - see the correction below.
+RIPPLE ON THIS MAP: This map rolled `courtyard` and is the only pool sheet that exercises it. All
+4 byres now stand as their owner's stable wing - attached to a side wall with a 3 ft drip line,
+rotation locked to the house, each recording the homestead it belongs to. Before the fix this map
+seated 3 of its 4 and stood them 8.9-23.0 ft off the BACK corner at rot 0, a range that overlapped
+the detached maps' and so bought the knob nothing. The wells did not move: [[1605, 2308], [1583,
+2066], [1363, 2000]], byte-identical to before this round. Worst walk 493 ft, mean 213 ft, and
+among the 6 of 19 houses that actually need a well (the rest are within reach of surface water,
+which the objective excludes by design) the worst is 122 ft. The belt carries a pre-existing gap
+at y=2321 that this round did NOT cause and did not fix: it survives the flow-around change, so
+its cause is not a structure. Ledgered.
 
 **THE LEDGERED DEFECT ON THIS MAP DID NOT EXIST.** The entry said the tie-break traded a well from a
 seat with 11 households within 300 ft to one with 5, worst walk 364 -> 493 ft. That counted EVERY
@@ -233,11 +238,8 @@ Two ledgered defects that turned out to be one, with a worse one underneath.
   is fine". The scan mirrored the check's formula but not its WINDOW, and now judges a seat by area
   the way the check does.
 
-RIPPLE ON THIS MAP: almost none, and that is the finding. This map's earlier 2 -> 1 loss was
-ledgered as a re-seat failure worth chasing; the census says otherwise. Sawada offers ONE qualifying
-seat in the entire scan - every rung, both profiles - and it takes it: the single parcel is 127 ft
-at (913,1986), up from 125 ft, and the count stays 1. The ground really is committed, so the ledger
-item is closed as "the land is spoken for" rather than left open as a placer bug. Gate green.
+RIPPLE ON THIS MAP: One parcel, 136 ft, up from 125. This map offers exactly one qualifying seat
+in the whole scan - genuine scarcity, not a placer bug.
 
 ## 2026-08-18 - the six-defect pass
 

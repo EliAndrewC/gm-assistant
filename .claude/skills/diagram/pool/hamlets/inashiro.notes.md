@@ -690,11 +690,12 @@ WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
 - **the well tie-break's last key is the objective itself, not a proxy** - `_worst_after` at full
   resolution inside the 66 px bucket, instead of distance to the cluster centroid.
 
-RIPPLE ON THIS MAP: this map rolled `detached_commons`, so its three byres are placed exactly as
-before. The second well moved from (1076,1299) to (1142,1409): worst walk unchanged at 430 ft, mean
-212 -> 210 ft. **The ledger's claim that this map showed a well-siting defect was mis-measured** -
-its 430 ft house is 304 ft from surface water and therefore watered by it; the worst walk among
-houses that actually need a well is 180 ft. See sawada.notes.md for the full correction.
+RIPPLE ON THIS MAP: This map rolled `detached_commons`, so the byre FORM is unchanged - but 1 of
+its 3 byres did move, displaced by the well re-seat, and the morning's note claiming none had was
+false against its own manifest. The wells moved to [[1318, 1123], [1098, 1387]]: worst walk 430 ->
+430 ft, mean 212 -> 210 ft, and - the metric the placer actually optimizes - the worst walk among
+the 5 of 15 houses that NEED a well went 194 -> 180 ft. The shelter belt runs unbroken (183
+clumps, up from 169 - it now re-seats around a blocking structure instead of losing the column).
 
 ## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
 
@@ -719,10 +720,9 @@ Two ledgered defects that turned out to be one, with a worse one underneath.
   is fine". The scan mirrored the check's formula but not its WINDOW, and now judges a seat by area
   the way the check does.
 
-RIPPLE ON THIS MAP: the ruled chain here was the pair at (2322,682) and (2592,952), offset exactly
-(+270,+270) at an identical 250 ft. They are now 275 ft at (2308,727) and 244 ft at (2666,889), with
-the other two 280 ft at (2620,526) and 202 ft at (1131,1741) - four sizes, no line. Count unchanged
-at 4; gate green.
+RIPPLE ON THIS MAP: The ruled chain is gone. The pair that stepped exactly (+270,+270) at an
+identical 250 ft is now part of a set of four at 128, 195, 222, 264 ft, with nearest-neighbour
+strides of 552, 1103, 1420, 1591 ft - no repeated step, no shared size.
 
 ## 2026-08-18 - the six-defect pass
 

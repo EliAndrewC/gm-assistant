@@ -163,11 +163,13 @@ WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
   CENTROID - the empty ground between the lobes of a two-lobed cluster. It is now `_worst_after` at
   full resolution, with the neighborhood measure breaking exact ties.
 
-RIPPLE ON THIS MAP: this map rolled `detached_commons`, so its four byres are placed exactly as
-before (53-102 ft from the nearest farmhouse) - Sawada rolled `courtyard` and now reads visibly
-differently, which is the point of the knob. The well change DID land here and is the best result of
-it: the worst walk drops **386 -> 304 ft** and the mean 176 -> 174 ft, with one house crossing back
-out of the 300 ft band (19 -> 18 of 20) because the objective is minimax, not a count.
+RIPPLE ON THIS MAP: This map rolled `detached_commons`, so the byre FORM is unchanged - but 2 of
+its 4 byres moved, displaced by the well re-seat and the woodland keep-outs, and the morning's
+note claiming all four were 'placed exactly as before' was false against its own manifest. The
+wells moved to [[2284, 2922], [2394, 2658], [1756, 3230]]: worst walk 386 -> 326 ft, mean 176 ->
+186 ft, and - the metric the placer actually optimizes - the worst walk among the 3 of 20 houses
+that NEED a well went 197 -> 152 ft. The shelter belt runs unbroken (206 clumps, up from 190 - it
+now re-seats around a blocking structure instead of losing the column).
 
 ## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
 
@@ -196,10 +198,9 @@ Two ledgered defects that turned out to be one, with a worse one underneath.
   Being stricter than your own gate is not the safe direction - it cost two of four hamlets their
   woodland outright.
 
-RIPPLE ON THIS MAP: the oak river has oaks. Woodland goes 0 -> 2 parcels - 122 ft at (1321,1459)
-and 110 ft at (2491,2089), both stocked and both on dry ground. They are small because Kashikawa's
-20 households genuinely commit the land: its field fills its own frame, which is the honest reason
-the earlier rounds could not seat a 250 ft stand and should not have tried. Gate green.
+RIPPLE ON THIS MAP: The oak river has oaks: 0 -> 2 parcels, 117, 125 ft. They are small because 20
+households genuinely commit this land, and both now clear the 120 ft legibility floor that stops
+the variance machinery compounding its way into a copse.
 
 ## 2026-08-18 - the six-defect pass
 

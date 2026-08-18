@@ -179,8 +179,8 @@ def _seg_0390__map_frame_hugs_its_content(
                 continue
             for fr_r in fr_v:
                 if isinstance(fr_r, dict) and isinstance(fr_r.get("x"), (int, float)):
-                    # the EXTENT, not the centre: a kiln's yard reaches 20px past its record, and
-                    # the crop frames boxes - measuring centres reads a tight frame as loose
+                    # the EXTENT, not the center: a kiln's yard reaches 20px past its record, and
+                    # the crop frames boxes - measuring centers reads a tight frame as loose
                     fr_hw = float(fr_r.get("w", 0) or fr_r.get("r", 0) * 2 or 0) / 2
                     fr_hh = float(fr_r.get("h", 0) or fr_r.get("r", 0) * 2 or 0) / 2
                     fr_pts += [(fr_r["x"] - fr_hw, fr_r["y"] - fr_hh), (fr_r["x"] + fr_hw, fr_r["y"] + fr_hh)]

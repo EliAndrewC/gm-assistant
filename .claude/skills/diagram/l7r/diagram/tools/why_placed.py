@@ -58,7 +58,7 @@ class Hit:
 def near(rec: dict[str, Any], x: float, y: float, radius: float) -> bool:
     """Whether a manifest record sits within `radius` of (x, y).
 
-    Prefers the record's own centre; falls back to the vertices of a `poly`/`outline` ring so
+    Prefers the record's own center; falls back to the vertices of a `poly`/`outline` ring so
     ring-shaped features (fields, flower beds, groves recorded as outlines) are findable too. A
     record with no position at all can never match."""
     if "x" in rec and "y" in rec:
@@ -195,7 +195,7 @@ def watching_fits(x: float, y: float, radius: float = 8.0) -> Iterator[list[Refu
             if verdict:
                 cause = "-"
             elif seen.get("_in_blocked"):
-                cause = "_in_blocked (a block_poly keep-out - CENTRE-tested)"
+                cause = "_in_blocked (a block_poly keep-out - CENTER-tested)"
             elif seen.get("_near_corridor"):
                 cause = "_near_corridor (a way's cleared band)"
             elif seen.get("_hard_clear") is False:

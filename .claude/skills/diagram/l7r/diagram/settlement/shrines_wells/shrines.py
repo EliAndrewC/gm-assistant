@@ -242,7 +242,7 @@ class ShrineHallsMixin:
             # carry one, re-seated by hand every time the hall moved - and the moment _hall_caption_y
             # started choosing the side, those hand bands were reserving ground the caption had left.
             # A caption's band belongs to whoever knows where the caption went, which is here. The pad
-            # absorbs half a dwelling, because block_polys is CENTRE-tested (CLAUDE.md, "CENTRE vs
+            # absorbs half a dwelling, because block_polys is CENTER-tested (CLAUDE.md, "CENTER vs
             # FOOTPRINT"); the stale hand bands are now merely redundant, not wrong.
             _lb = self.M["labels"][-1]
             _lp = max(14 * self.bscale, 8.0)  # half a dwelling past the recorded box, which is already ~13% wider than the drawn glyphs

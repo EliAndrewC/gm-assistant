@@ -403,7 +403,7 @@ _TINT_MIN_SOLIDITY = 0.85
 # which is exactly what the fabric is SUPPOSED to be full of.
 #
 # WHAT SEPARATES IT IS THE CONJUNCTION. A basin may taper - the hem strips do, honestly. A basin may
-# be concave - a plot wrapped round a neighbour does, honestly. One that does BOTH has a point at one
+# be concave - a plot wrapped round a neighbor does, honestly. One that does BOTH has a point at one
 # end and a bite out of its side, and that is an arrowhead. Measured over the 2,777 carved basins of
 # the four scripted hamlets: apex < 40 deg alone is 71 (2.6%), solidity < 0.90 alone is 49 (1.8%),
 # and the conjunction is **13 (0.47%)** - a population small enough to read one by one, and reading
@@ -548,11 +548,11 @@ def tapers_to_a_point(poly: Poly, end: float, min_deg: float, arm: float) -> boo
     zone, one roll away from demoting an honest basin.
 
     So the test is per-EDGE and local. A short edge is an END only if the sides it caps are real
-    basin walls: both neighbours at least `arm` long. Collapse that one edge (never a chain) and the
+    basin walls: both neighbors at least `arm` long. Collapse that one edge (never a chain) and the
     angle between the two arms is the apex the wedge would have had if the toe had not cut it off -
     which is what "reads as a point" means, and is invariant to how deep the truncation went.
 
-    `arm` is 4x the end width: a staircase's neighbours are themselves short, so requiring the arms
+    `arm` is 4x the end width: a staircase's neighbors are themselves short, so requiring the arms
     to be several times the end separates a capped taper from a chamfered corner without tuning."""
     n = len(poly)
     if n < 4:

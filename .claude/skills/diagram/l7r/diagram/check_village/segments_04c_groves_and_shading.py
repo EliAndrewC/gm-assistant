@@ -87,7 +87,7 @@ def _seg_0285_070__cyx(
     return _kept(locals(), ('cyx', 'cyy', 'gv', 'shaded', 'yd'))
 
 
-# ...AND NOT BY A NEIGHBOUR'S FARMHOUSE, which is the taller obstacle and was never
+# ...AND NOT BY A NEIGHBOR'S FARMHOUSE, which is the taller obstacle and was never
 # tested (GM 2026-08-13: "would the shadow from the farmhouse directly to the south
 # block too much light?"). Researched in research/homesteads.md, "The threshing yard's
 # sun": thatch is pitched 45 deg or steeper, so the 46x28 ft minka's ridge stands ~20 ft
@@ -96,7 +96,7 @@ def _seg_0285_070__cyx(
 #
 # GATED ON `meta.generated_by`, and that gate IS the GM's decision (2026-08-13). Every
 # hand-authored nucleated map in the pool breaks this - Ueda has 45 of 85 yards shaded at
-# noon, Hoshigaoka 31 of 70, Ubame 21 of 36, with neighbours' walls 2-8 ft off the yard
+# noon, Hoshigaoka 31 of 70, Ubame 21 of 36, with neighbors' walls 2-8 ft off the yard
 # edge - and re-packing them all was judged the wrong trade. Instead the rule binds the
 # SCRIPTED path, and each legacy map inherits it at the moment it is converted to a
 # generator. The exemption therefore cannot rot: it is not a list anyone has to prune,
@@ -137,7 +137,7 @@ def _seg_0285_071__yards_unshaded_by_neighbors(
         check(
             "yards_unshaded_by_neighbors",
             not nshade,
-            f"threshing yard(s) {nshade[:3]} stand within {sun_ft:.0f} ft of a NEIGHBOUR's farmhouse to their "
+            f"threshing yard(s) {nshade[:3]} stand within {sun_ft:.0f} ft of a NEIGHBOR's farmhouse to their "
             f"SOUTH - a minka's ~20 ft ridge throws 21 ft of shadow at noon in the threshing month and 39 ft by "
             f"9am, so that yard loses the drying day. Keep the sun corridor south of every yard clear of houses "
             f"(the placer does it with s.sun_corridor(39)); a yard may also stagger east or west out of the shadow",
