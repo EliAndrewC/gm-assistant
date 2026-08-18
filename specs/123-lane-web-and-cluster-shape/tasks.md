@@ -156,6 +156,18 @@ ordinary maps.
 runs is evidence about the HARNESS before it is evidence about the code. Verify the edit landed -
 `grep` the new symbol on disk - before you spend a run measuring it.
 
+## SERVE WITH MARGIN, NOT TO THE MILLIMETRE
+
+Mizuguchi's worst house measures **99.68 ft** against a 100 ft bar - a 0.32 ft margin, on the very
+house its reviewer flagged a round earlier as "satisfying the rule by 0.3 ft ... a re-roll will flip
+it into a straggler and produce another lane". It flipped back to the same knife-edge.
+
+The cause is that `_serve_stragglers` triggers at exactly the reach: a house at 99.7 ft is not a
+straggler, so it never gets a footpath, and a house at 100.3 ft gets a whole path drawn for four
+inches of violation. Both halves of that are wrong, and they are the same bug. The pass now triggers
+at **0.9 x the reach**, which gives every served house ten feet of headroom and stops the generator
+drawing a lane to cure a rounding error.
+
 ## Not done, and deliberately
 
 - [ ] **US3 / GM ruling B - honor the rolled `cluster_shape`.** Untouched. `stage_homesteads` still

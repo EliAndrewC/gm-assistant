@@ -733,7 +733,12 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
             # house that a previous lane had already taken from 100.7 ft to 38.9, and which the new
             # lane then left at 70.5. A way exists because feet use it.
             segs = _net_segs(s)
-            if min(math.dist(c, seg_closest(c[0], c[1], a, b)) for a, b in segs) <= WEB_REACH_FT:
+            # SERVE WITH MARGIN, NOT TO THE MILLIMETRE. Triggering at exactly the reach means a
+            # house at 99.7 ft is not a straggler and gets nothing, while one at 100.3 has a whole
+            # path drawn for four inches of violation - the same bug at both ends. A review caught
+            # the first half twice on the same steading ("satisfying the rule by 0.3 ft ... a re-roll
+            # will flip it"), and it had indeed flipped back. Ten feet of headroom fixes both.
+            if min(math.dist(c, seg_closest(c[0], c[1], a, b)) for a, b in segs) <= WEB_REACH_FT * 0.9:
                 continue
             # Everything EXCEPT this steading's own house, yard, garden and shed - the path has to
             # be able to leave its own dooryard, and `of` says which features those are.
