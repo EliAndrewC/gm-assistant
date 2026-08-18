@@ -758,10 +758,19 @@ RIPPLE ON THIS MAP: 11 of 15 houses re-seated; lane 1 shortened; all three byres
 of the field fabric entirely. Cluster aspect 3.79 -> 2.91 with two genuine ranks (front 52-104 ft
 from the crop, back 124-249). Review: PASS.
 
-KNOWN AND ACCEPTED HERE: two houses stand past 200 ft from any lane (max 345) at the north tip,
-reached across open ground. That is inside the pool's own range and the field paths take over at
-the fan head. The byre at the NE outlier serves fewer neighbors than the other two - the
-borrow-coverage term reduced but did not eliminate that, since the outlier is genuinely remote.
+CLOSED 2026-08-18, having first been STALE. This paragraph read "two houses stand past 200 ft from
+any lane (max 345) at the north tip", and a settlement-review re-measured it that day: the figure was
+254 ft, not 345, and the farther of the two houses was the map's SOUTHERNMOST, not at the north tip.
+It had been describing a roll that no longer existed - the accepted-limitation note outliving the
+composition it was written about, which is its own failure mode and the reason these paragraphs are
+now generated from the shipped manifest rather than carried forward by hand.
+
+Re-measured on the current sheet, the limitation is gone entirely: **no house stands more than 79 ft
+from a lane**, against the 200 ft this paragraph once accepted. The lane WEB (a peer session's
+feature 123/124, merged the same day) put a way behind the back rank, which is exactly what the
+accepted limitation was standing in for. Nothing here was accepted in the end - it was fixed
+elsewhere in the engine, and the note is kept only because deleting it would erase the fact that it
+was wrong for two rounds before it became unnecessary.
 
 ## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
 
