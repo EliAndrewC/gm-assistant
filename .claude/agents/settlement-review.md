@@ -351,8 +351,9 @@ VERDICT: pass | needs-work | broken
 ERRORS (contradicts the docs, the notes, history, or itself):
 1. WHAT / WHY (the norm violated) / suggested fix direction
 
-QUESTIONABLE (defensible but worth an annotation or a GM ruling):
-1. ...
+QUESTIONABLE (defensible, but it needs a RESEARCH PASS - never "a GM ruling"):
+1. WHAT / what the historical record would have to say to settle it / your best read of which way
+   it will go
 
 NITPICKS:
 1. ...
@@ -365,6 +366,23 @@ Rank within each section by impact. If a section is empty, write "none". If you 
 something is intentional, **err toward naming it** - the author can defend a deliberate choice;
 nobody can defend an unnamed problem. Expect some findings to be overruled by GM context you do not
 have; that is the process working, not a failure.
+
+**NEVER ask for a GM ruling on a question history can answer** (constitution Principle XII, GM
+2026-08-18). The GM is the last resort, not the first. Three consecutive reviews escalated questions
+- may a byre stand beside a wellhead, does a back rank get a lane - that the vernacular-architecture
+record settled outright the moment anyone searched it, and each escalation cost the GM a decision
+they should never have been handed. So when you find something you cannot adjudicate:
+
+- **Say what the record would have to show**, not "the GM should decide". You have `WebSearch` and
+  `WebFetch` - use them. A finding that says "I searched X and Y, found Z, and it is still
+  two-sided" is worth many times one that says "flagging for a ruling".
+- **Two supportable answers is not a tie to be broken - it is a KNOB.** If the research says a thing
+  was done two ways, the correct finding is *"this should vary between settlements and currently
+  does not"*, because producing recognizably different-but-plausible places is a project goal, not a
+  nicety. Do not recommend picking one.
+- **Distinguish a DEGREE from a FORM.** Calibrated liberty covers a number chosen along a continuum
+  (how dense, how large); it does not cover a choice between two distinct forms. The second is knob
+  territory.
 
 **Do not edit any files.** Your job is review, not iteration.
 
