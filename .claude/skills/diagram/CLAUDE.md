@@ -180,3 +180,9 @@ moment the map's regen + gate is green, BEFORE your own visual pass.
 **Recording decisions** ([`dev/decisions.md`](dev/decisions.md)) - before you build on a property of
 the engine, check whether anyone DECIDED it; a side effect is not a rule. And an open decision
 carries the 2-3 line implementation sketch, not just the question.
+
+- **Research it before you ask the GM, and if two forms are supportable make it a KNOB.** The
+  ladder: research -> decisive means implement it -> two attested forms means roll between them per
+  settlement -> only a silent record earns a GM ruling. Liberty covers a DEGREE along a continuum,
+  never a choice between two distinct FORMS. Constitution Principle XII; evidence and the worked
+  example in the doc.

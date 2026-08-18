@@ -46,3 +46,47 @@ its single largest LLM turn (75s) plus part of its diagnosis re-deriving exactly
 open-decision author knew - the commons scatter's `wat_b` grid was the landing site, the
 drawn-channels margin test was the one to extend, streams/marsh were the exclusions.
 `research/vegetation.md` "Scrub stays off open water" carries the retro-fitted worked example.
+
+## Do not put a question to the GM that history can answer - and two answers means a KNOB
+
+**GM 2026-08-18**, after three questions were escalated as "rulings wanted" and two of them turned
+out to be settled in the vernacular-architecture literature the moment anyone searched. Now
+constitution Principle XII; this is the diagram-side operational form of it.
+
+**The ladder, in order. Do not skip a rung.**
+
+1. **Research it.** Real sources, China first and Japan as tiebreaker per the project's standing
+   geography rule. Write the finding into [`../research/`](../research/) whether or not it changes
+   code - that is the record-the-why rule, and it is what stops the next session paying for the same
+   search.
+2. **If the research is decisive, implement the answer.** No knob, no ruling. Write down that it was
+   decisive, so a later reviewer who finds the adjacency surprising reads the finding instead of
+   re-opening it.
+3. **If two forms are supportable, add a KNOB.** This is not tie-breaking; it is the point of the
+   generator. The GM's framing: settlements should be *"within historical norms while being as
+   different from one another as is justifiable by our historical research, for the benefit of
+   players who need to be able to look at different maps and distinguish them from one another at a
+   glance."* Two attested forms are therefore a gift, not an obstacle - roll between them per
+   settlement in `_knobs.py` and let the maps differ.
+4. **Only if the record is genuinely silent does the GM rule** - and the ask must state what was
+   searched, what was found, and why it is still unsettled.
+
+**The distinction that decides rung 3 vs. calibrated liberty:** liberty covers a DEGREE along a
+continuum - how many temples per city, how dense a cluster - where the sources give a band and we
+pick within it. It does NOT cover a choice between two distinct FORMS (alleys off a spine vs. a back
+lane; a byre in the yard vs. under the house's roof). A form choice made once and hardcoded makes
+every map the same in a way the history does not require, which is the failure this rule exists to
+prevent.
+
+**The worked example** is the back-rank lane question, and it is worth reading because the research
+came back decisive on one axis and two-formed on the other in the same pass: *access* is
+non-negotiable ("every house in the nucleated village is accessible via the interconnected system of
+narrow lanes and alleys"), while the *form* of that access is genuinely two-shaped - accretive
+alleys off the spine, or a planned back lane behind the plots. So one axis became a requirement and
+the other became a knob. Full record in
+[`../research/homesteads.md`](../research/homesteads.md) and `future-work.md` section C.
+
+A corollary worth stating separately, from the same day's ruling on the twin detector: **when a knob
+and the geometry disagree, that is a placer bug, not an axis-selection question.** Keep reading the
+declared knob, and fix the drawing to match what was rolled - switching the measurement hides the
+disagreement instead of resolving it.
