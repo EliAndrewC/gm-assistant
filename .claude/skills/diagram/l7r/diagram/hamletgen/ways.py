@@ -12,7 +12,7 @@ from l7r.diagram.settlement import Settlement, point_in_poly, rot_rect, seg_clos
 from l7r.diagram.sitegen.geom import centroid, crop_polys, crosses_disc, crosses_poly, pull_clear, unit
 
 from .cluster import _arm_crossing_accidental, _fork_spur, seat_cluster
-from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, LANE_CLEARANCE, MIN_WEB_GAP, SPUR_SETBACK, WEB_CLEARANCE, WEB_REACH_FT, WIND_VECTORS, Poly, Pt
+from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, LANE_CLEARANCE, MIN_WEB_GAP, SPUR_SETBACK, WEB_CLEARANCE, WEB_FABRIC_GAP, WEB_REACH_FT, WIND_VECTORS, Poly, Pt
 from .plan import SitePlan
 
 
@@ -27,22 +27,49 @@ class _margin_frame:  # noqa: N801 - used as a callable coordinate map, not as a
 
     Read `.arc` for the total length of that stretch, which is the domain the web is laid over."""
 
-    def __init__(self, plan: SitePlan, span: float) -> None:
+    def __init__(self, plan: SitePlan, span: float, near: Sequence[Pt] = ()) -> None:
         env, seat = plan.envelope, plan.seat
         ax, ay = seat["along"]
         cen = centroid(env)
-        # ONLY THE SIDE THE CLUSTER IS ON. The envelope is a closed ring, so the along-axis test
-        # alone admits the vertices DIRECTLY OPPOSITE too - and the arc then snakes down one flank
-        # of the fan, round the end and back up the other. Measured on Sawada: 3,060 ft of "margin"
-        # for a cluster 808 ft long, which over-generated laterals more than three to one and laid
-        # them where no house stands (`lanes_reach_something`). `front_row` gets away without this
-        # test because its caller drops any seat outside the band; the web has no such backstop, so
-        # it makes the test itself. The side is read off the seat's own outward normal, which is the
-        # direction the settlement lies in from the field.
-        ox_, oy_ = seat["out"]
-        cen0 = centroid(env)
-        pts = [p for p in env if abs((p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay) <= span and (p[0] - cen0[0]) * ox_ + (p[1] - cen0[1]) * oy_ > 0.0]
-        pts.sort(key=lambda p: (p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay)
+        # ONE CONTIGUOUS RUN OF THE OUTLINE, WALKED FROM THE CLUSTER OUTWARD - not a filter.
+        #
+        # The envelope is a closed RING, so any test applied vertex-by-vertex admits the far side of
+        # the field as readily as the near one, and the arc then snakes down one flank of the fan,
+        # round the end and back up the other: 3,060 ft of "margin" for an 808 ft cluster, which
+        # over-generated laterals three to one and laid them where no house stands. A half-plane
+        # test off the seat's outward normal fixes that and breaks something else - a CRESCENT
+        # cluster wraps around the field, its far arm sits where the normal points elsewhere, and it
+        # was cut out of the frame entirely, so those houses could not be reached at any price.
+        #
+        # Walking instead of filtering settles both. Start at the outline vertex nearest the seat and
+        # step each way while the outline is still near the settlement: the run is contiguous by
+        # construction, so it can never jump the field, and it follows a crescent round for exactly
+        # as far as the crescent goes. The walk looks a few vertices AHEAD before giving up, because
+        # a crescent's two arms are separated by margin that no house stands near, and stopping at
+        # the first far vertex stops between the arms. `near` is the placed house centers - measured,
+        # not predicted, because by the time the web is laid they exist.
+        anchor = seat["anchor"]
+        limit = max(span, BUNDLE_PITCH)
+
+        def close_enough(q: Pt) -> bool:
+            if near:
+                return min(math.dist(q, h) for h in near) <= limit
+            return abs((q[0] - anchor[0]) * ax + (q[1] - anchor[1]) * ay) <= span
+
+        n_env = len(env)
+        look = 12
+
+        def worth_continuing(i: int, step: int) -> bool:
+            return any(close_enough(env[(i + step * k) % n_env]) for k in range(1, look + 1))
+
+        start = min(range(n_env), key=lambda i: math.dist(env[i], (seat["cx"], seat["cy"])))
+        lo = start
+        while (start - lo) < n_env - 1 and worth_continuing(lo, -1):
+            lo -= 1
+        hi = start
+        while (hi - start) < n_env - 1 and worth_continuing(hi, +1):
+            hi += 1
+        pts = [env[i % n_env] for i in range(lo, hi + 1)]
         if len(pts) < 2:  # pragma: no cover - a band always spans several outline vertices
             pts = [(seat["cx"], seat["cy"]), (seat["cx"] + ax, seat["cy"] + ay)]
         self.pts = pts
@@ -126,6 +153,9 @@ def _homestead_polys(s: Settlement) -> list[tuple[Poly, Pt | None, str]]:
                 out.append((rot_rect(float(rec["x"]), float(rec["y"]), float(rec["w"]), float(rec["h"]), float(rec.get("rot", 0.0))), owner, key))
     for key in ("village_groves", "commons"):
         out.extend(([(float(a), float(b)) for a, b in rec["poly"]], None, key) for rec in s.M.get(key, []) if rec.get("poly"))
+    for w in s.M.get("wells", []):
+        r = float(w.get("r", 8.0))
+        out.append(([(float(w["x"]) + r * c, float(w["y"]) + r * sn) for c, sn in ((1, 0), (0, 1), (-1, 0), (0, -1))], None, "wells"))
     for key in ("farm_sheds", "byres"):
         for r in s.M.get(key, []):
             own = r.get("of")
@@ -175,12 +205,10 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     _ax, _ay = plan.seat["along"]
     _anchor = plan.seat["anchor"]
     _reach_along = max(abs((float(h["x"]) - _anchor[0]) * _ax + (float(h["y"]) - _anchor[1]) * _ay) for h in houses)
-    frame = _margin_frame(plan, max(plan.seat["lat"] * CLUSTER_SPAN_FACTOR, _reach_along + BUNDLE_PITCH))
+    frame = _margin_frame(plan, max(plan.seat["lat"] * CLUSTER_SPAN_FACTOR, _reach_along + BUNDLE_PITCH), near=[(float(h["x"]), float(h["y"])) for h in houses])
     proj = [frame.project((float(h["x"]), float(h["y"]))) for h in houses]
     arcs = [a for a, _ in proj]
     stands = [d for _, d in proj]
-    lo_a, hi_a = min(arcs), max(arcs)
-    lo_d, hi_d = min(stands), max(stands)
     pad = 30.0  # a lane runs a little past the last steading it serves, not up to its wall
 
     # A WEB LANE SPANS THE HOUSES IT SERVES, AND NO MORE. Spanning the whole cluster's extent
@@ -224,12 +252,8 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
         # every 8 ft with a 6 ft margin it cut across dooryard gardens on 7 of 24 cohort seeds, both
         # endpoints of the offending step legally clear while the step between them crossed the bed.
         # 4 ft samples and an 8 ft margin close that; the cost is sampling time on a short line.
-        for run in clear_runs(line, hard, 20.0, step=4.0, lines=list(plan.watercourses) + drawn_water, tight=walls, tight_margin=6.0):
-            s.lane(run, width=3, clearance=WEB_CLEARANCE, worn=True)
-            # Flagged so `lane_frontage` does not offer seats along it. A web lane is SERVICE - it
-            # threads behind and between the steadings - and inviting new houses onto the way that
-            # exists to reach the old ones is how the cluster starts sprawling again.
-            s.M["lanes"][-1]["web"] = True
+        for run in clear_runs(line, hard, 20.0, step=4.0, lines=list(plan.watercourses) + drawn_water, tight=walls, tight_margin=WEB_FABRIC_GAP):
+            _lay_web_lane(s, run, hard, walls, list(plan.watercourses) + drawn_water)
     # A WEB LANE STOPS WHERE IT STOPS SERVING. Clipping ends an arm wherever the crop or a steading
     # happens to begin, which can leave a tail running on into bare grass - `lanes_reach_something`
     # is right to call that a tread that serves nobody. The engine already owns this trim; the web
@@ -254,12 +278,90 @@ def _reach(c: Pt, path: Poly) -> float:
     return min(math.dist(c, seg_closest(c[0], c[1], a, b)) for a, b in zip(path, path[1:], strict=False))
 
 
+def _clear_link(a: Pt, b: Pt, hard: list[Poly], walls: Sequence[Poly], water: list[tuple[Pt, Pt]]) -> bool:
+    """Is the short run between two points walkable? Used before extending a lane end onto the way
+    it meets, so a junction is drawn as a touch without the touch crossing anything."""
+    if math.dist(a, b) < 1.0:
+        return True
+    runs = clear_runs([a, b], hard, 20.0, step=3.0, lines=water, tight=walls, tight_margin=WEB_FABRIC_GAP, floor=0.5)
+    return bool(runs) and _reach(a, runs[0]) < 3.0 and _reach(b, runs[0]) < 3.0
+
+
+def _net_segs(s: Settlement) -> list[tuple[Pt, Pt]]:
+    """Every drawn way on the map right now, as segments."""
+    return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for ln in s.M.get("lanes", []) for p, q in zip(ln["pts"], ln["pts"][1:], strict=False)]
+
+
+def _lay_web_lane(s: Settlement, run: Poly, hard: list[Poly], walls: list[Poly], water: list[tuple[Pt, Pt]]) -> bool:
+    """Draw one web lane - but ONLY if it joins the way network, and TOUCHING it where it joins.
+
+    A WEB THAT DOES NOT JOIN UP IS NOT A WEB, and this is the rule that makes the name honest. Three
+    settlement-reviews found the same defect independently on three different maps: the lanes reached
+    the houses and reached nothing else. Sawada drew six web lanes of which four touched no other
+    way, so seven of its nineteen houses were "served" by an island whose nearest real lane was still
+    136-296 ft off - exactly where they had been before the feature. Inashiro came out as three
+    separate components with a 110 ft gap between them. The research this feature cites is explicit
+    that the thing being reproduced is "the INTERCONNECTED system of narrow lanes and alleys", so a
+    lane that connects to nothing is not an alley, it is a yard path.
+
+    Two distinct jobs, and both were missing:
+
+      - JOIN. A run whose nearest end is already within `_LANE_JOIN_FT` counts as arriving; one that
+        is further off gets a link drawn to the network, and if the link cannot be drawn the run is
+        not drawn either. Refusing to draw is the right answer - the alternative is ink that looks
+        like a way and is not one.
+      - TOUCH. Acceptance and INK are different tolerances, and conflating them is what left Inashiro
+        with a lane stopping 12.7 ft short of the junction it aimed at, a visible break of about 19
+        px on the sheet. So the joining end is extended onto the way it meets. The gate reach can
+        stay where it is; it is then satisfied by construction rather than by rounding.
+
+    Also refuses a run that merely SHADOWS an existing way - Inashiro laid a back lane a median 10 ft
+    from a skeleton lane for its whole length, which reads as one lane accidentally drawn twice.
+    `MIN_WEB_GAP` keeps the web's own cuts apart; nothing was keeping a cut off the lanes already
+    there."""
+    segs = _net_segs(s)
+    if len(run) < 2:  # pragma: no cover - clear_runs never returns a single point
+        return False
+    if segs:
+        shadowed = sum(1 for q in run if min(seg_dist(q[0], q[1], a, b) for a, b in segs) < MIN_WEB_GAP)
+        if shadowed > 0.6 * len(run):
+            return False
+        d0 = min(seg_dist(run[0][0], run[0][1], a, b) for a, b in segs)
+        d1 = min(seg_dist(run[-1][0], run[-1][1], a, b) for a, b in segs)
+        end = 0 if d0 <= d1 else -1
+        gap = min(d0, d1)
+        p = run[end]
+        q = min((seg_closest(p[0], p[1], a, b) for a, b in segs), key=lambda z: math.dist(p, z))
+        if gap > _LANE_JOIN_FT:
+            if math.dist(p, q) > WEB_REACH_FT * 2.0:
+                return False
+            link = [r for r in clear_runs([p, q], hard, 20.0, step=4.0, lines=water, tight=walls, tight_margin=WEB_FABRIC_GAP, floor=12.0) if _reach(p, r) < 12.0 and _net_reach(r, segs) < 12.0]
+            if not link:
+                return False
+            s.lane(link[0], width=3, clearance=WEB_CLEARANCE, worn=True)
+            s.M["lanes"][-1]["web"] = True
+        elif _clear_link(run[end], q, hard, walls, water):
+            # SNAP ONLY IF THE GROUND BETWEEN IS CLEAR. Extending an end onto the way it meets is
+            # what makes the junction read as a touch instead of a gap - but the few feet being
+            # added are ground like any other, and adding them blind put lane ink across houses and
+            # garden beds (`features_do_not_overlap`, `houses_clear_of_lanes` on every cohort seed
+            # the moment snapping went in). If the gap is not walkable the lane simply ends where it
+            # ended; a visible break is better than a lane through a wall.
+            run = ([q, *run]) if end == 0 else ([*run, q])
+    s.lane(run, width=3, clearance=WEB_CLEARANCE, worn=True)
+    # Flagged so `lane_frontage` does not offer seats along it. A web lane is SERVICE - it threads
+    # behind and between the steadings - and inviting new houses onto the way that exists to reach
+    # the old ones is how the cluster starts sprawling again.
+    s.M["lanes"][-1]["web"] = True
+    return True
+
+
 def _net_reach(path: Poly, segs: Sequence[tuple[Pt, Pt]]) -> float:
     """How near a candidate path comes to the EXISTING way network, at its nearest point."""
     return min(seg_dist(q[0], q[1], a, b) for q in path for a, b in segs)
 
 
-def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: list[Poly], water: list[tuple[Pt, Pt]]) -> None:
+def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: list[tuple[Poly, Pt | None, str]], water: list[tuple[Pt, Pt]]) -> None:
     """A FOOTPATH TO THE OUTLYING STEADING, for the few houses the web's regular cuts cannot reach.
 
     The web covers the cluster by construction, but its lanes are then clipped out of the crop, off
@@ -279,6 +381,12 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
         added = 0
         for h in list(s.M.get("houses", [])):
             c = (float(h["x"]), float(h["y"]))
+            # THE LIVE NETWORK, NOT A SNAPSHOT. `segs` was read once per pass, so a house already
+            # brought within reach by a path drawn two houses earlier IN THIS PASS still looked
+            # stranded and got a second path of its own - Kashikawa's 29 ft lane 12, drawn for a
+            # house that a previous lane had already taken from 100.7 ft to 38.9, and which the new
+            # lane then left at 70.5. A way exists because feet use it.
+            segs = _net_segs(s)
             if min(math.dist(c, seg_closest(c[0], c[1], a, b)) for a, b in segs) <= WEB_REACH_FT:
                 continue
             # Everything EXCEPT this steading's own house, yard, garden and shed - the path has to
@@ -321,13 +429,30 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                 cands += [[door, (mid[0] + px * off, mid[1] + py * off), tgt] for k in (40.0, 80.0, 130.0) for off in (k, -k)]
                 hit: list[Poly] = []
                 for cand in cands:
-                    runs = clear_runs(cand, hard, 20.0, step=4.0, lines=water, tight=others, tight_margin=6.0, floor=20.0)
+                    runs = clear_runs(cand, hard, 20.0, step=4.0, lines=water, tight=others, tight_margin=WEB_FABRIC_GAP, floor=20.0)
                     # JOINING THE NETWORK, not arriving at the point that was aimed at. A candidate
                     # is clipped into runs, and the run that survives is often a middle fragment
                     # that serves the house perfectly well and touches a DIFFERENT lane than the one
                     # the path was aimed down. Measured on seed 8: 1,566 of 2,309 attempts found a
                     # run and every one of them was thrown away by testing against `tgt` alone.
-                    hit = [r for r in runs if _reach(c, r) <= WEB_REACH_FT and _net_reach(r, segs) <= _LANE_JOIN_FT]
+                    # A PATH BENDS; IT DOES NOT SWITCHBACK, and it must actually arrive at both ends.
+                    #
+                    # Three things were wrong here and all three were found by review rather than by
+                    # the gate, because the gate measures distance and these are shapes. (1) The
+                    # dog-leg waypoints were tried in order and the first that CLEARED was taken,
+                    # with nothing scoring the result - so Inashiro accepted a 130 ft offset intact
+                    # and drew 271 ft of path to join two points 77 ft apart, folding back through
+                    # the windbreak and costing the shelter belt six clumps. (2) The house end was
+                    # only required within `WEB_REACH_FT`, i.e. 100 ft, so Mizuguchi drew a 38 ft
+                    # mark 71 ft from the house it served, touching nothing, to cure a ONE-FOOT
+                    # violation - a caret floating in a field. (3) Neither end had to touch, so
+                    # Inashiro's read as a free chevron with 24 ft of grass at one end and 13 at the
+                    # other.
+                    #
+                    # So: the path must reach the DOOR, not merely the house's neighborhood; it must
+                    # reach the network; and its length may not exceed 1.6x its own chord, which is
+                    # the band every honest way on these maps already sits in (1.00-1.34).
+                    hit = [r for r in runs if _reach(c, r) <= step + 14.0 and _net_reach(r, segs) <= _LANE_JOIN_FT and polyline_len(r) <= 1.6 * max(math.dist(r[0], r[-1]), 1.0)]
                     if hit:
                         break
                 # THE TEST IS WHETHER THE PATH SERVES THE HOUSE, not whether it starts exactly at
@@ -339,7 +464,17 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                 # grass, which `lanes_reach_something` rightly refuses - and it was the single
                 # biggest residue in the cohort (13 of 24 seeds) when only the house end was tested.
                 if hit:
-                    s.lane(hit[0], width=3, clearance=WEB_CLEARANCE, worn=True)
+                    # Both ends SNAPPED, for the same reason a web lane's joining end is: acceptance
+                    # tolerances are not ink tolerances, and a path that stops 13 ft short of the
+                    # lane it aims at is drawn as a gap whatever the gate thinks of it.
+                    path = list(hit[0])
+                    join = min((seg_closest(path[-1][0], path[-1][1], a, b) for a, b in segs), key=lambda z: math.dist(path[-1], z))
+                    if _clear_link(path[-1], join, hard, others, water):
+                        path = [*path, join]
+                    door_at = (c[0] + dx * step * 0.6, c[1] + dy * step * 0.6)
+                    if _clear_link(path[0], door_at, hard, others, water):
+                        path = [door_at, *path]
+                    s.lane(path, width=3, clearance=WEB_CLEARANCE, worn=True)
                     s.M["lanes"][-1]["web"] = True
                     added += 1
                     break

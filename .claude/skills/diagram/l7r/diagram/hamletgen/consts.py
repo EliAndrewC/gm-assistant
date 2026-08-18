@@ -102,6 +102,16 @@ WEB_CLEARANCE = 28.0
 # fronting lane reserves, which is the distinction the two constants exist to keep.
 MIN_WEB_GAP = 16.0
 
+# HOW FAR A WEB LANE'S CENTERLINE STAYS OFF THE SETTLEMENT'S OWN FABRIC, in feet.
+#
+# It has to clear the overlap MATRIX, not just the drawing, and the matrix is less forgiving than it
+# looks: it sizes EVERY lane at 6 ft wide whatever the record says (`_MX_LINE_W`), so a 3 px web
+# tread is judged as a 3 ft half-width; and a dooryard garden records both a `poly` and a rect, with
+# the rect running up to ~2.3 ft proud of the poly. At 6 ft of margin that leaves well under a foot
+# of true clearance, and `features_do_not_overlap` fired on `lanes` vs `gardens` across the cohort.
+# 9 covers the matrix's half-width, the rect/poly discrepancy and a hand's breadth on top.
+WEB_FABRIC_GAP = 9.0
+
 # THE REACH A FARMHOUSE IS ENTITLED TO: every house center must be within this of some drawn way
 # (`farmhouses_reach_a_way`). It is BUNDLE_PITCH, deliberately and by reference rather than by
 # repetition - the ground one homestead occupies is exactly the distance at which a lane passes your
