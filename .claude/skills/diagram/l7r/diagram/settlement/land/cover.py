@@ -66,7 +66,15 @@ class GroundCoverMixin:
             ys = [p[1] for p in poly]
             x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
             bs = self.bscale
-            area = (x1 - x0) * (y1 - y0)
+            # THE POLYGON'S AREA, NOT ITS BOUNDING BOX. These were the same number for as long as
+            # every commons was an axis-aligned rectangle, and stopped being the same the day
+            # woodland parcels started rolling a bearing (2026-08-18): a rect rotated 45 deg has a
+            # bbox 41% larger than itself, so a bbox-derived scatter target overshoots by that much
+            # and the realized density then depends on the rotation ANGLE - measured 433 sq ft per
+            # crown against the stated 540 on a parcel turned 7 deg. `_sparse` already refuses a
+            # point outside the ring, so nothing was drawn out of bounds; the count was simply
+            # computed against the wrong shape. Shoelace, so it is the ring the manifest records.
+            area = abs(sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly)))) / 2.0 or (x1 - x0) * (y1 - y0)
             st = random.getstate()
             random.seed(int(abs(x0) * 7 + abs(y0) * 3 + round(x1 - x0)))
             feather = 42 * bs  # scrub THINS toward the boundary (a soft, ragged edge, not a hard line)
