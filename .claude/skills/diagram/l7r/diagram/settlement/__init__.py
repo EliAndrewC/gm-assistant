@@ -101,6 +101,8 @@ from ._knobs import roll_merchant_estate_count as roll_merchant_estate_count
 from ._knobs import roll_torii_count as roll_torii_count
 from ._knobs import scope_seed as scope_seed
 from ._knobs import skeleton_layout as skeleton_layout
+from ._knobs import LANE_WEBS as LANE_WEBS
+from ._knobs import web_lanes as web_lanes
 from ._knobs import wall_tower_spacing_px as wall_tower_spacing_px
 from .core import Settlement as Settlement
 from .land import surface_water_dist as surface_water_dist

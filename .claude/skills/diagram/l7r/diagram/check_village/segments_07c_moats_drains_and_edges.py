@@ -820,6 +820,49 @@ _LANE_WAY_REACH = 40.0  # a lane end this close to another way has MET it
 _LANE_HOUSE_REACH = 90.0  # ...or it stops at a homestead it fronts
 
 
+# THE REACH A FARMHOUSE IS ENTITLED TO, in feet. This is `BUNDLE_PITCH` - the ground one homestead
+# occupies - restated here rather than imported, because the gate does not import the generators it
+# gates (a check that reads a generator's constant cannot catch that constant being wrong). The
+# hamlet generator's `WEB_REACH_FT` is the same number and `tests/hamletgen/test_consts.py` asserts
+# the two agree, which is where the coupling is allowed to live.
+#
+# WHY A HOUSE IS ENTITLED TO ONE AT ALL (research/homesteads.md, "Is every farmhouse reached by a
+# lane, and in what FORM?"): the record is decisive that a house in a nucleated cluster is reached -
+# "every house in the nucleated village is accessible via the interconnected system of narrow lanes
+# and alleys". The earlier reading, that a back rank is walked to along unfigured footpaths, was
+# defensible-sounding with nothing behind it, and it left 25 of the four pool hamlets' 66 farmhouses
+# more than 120 ft from any way. WHY THIS DISTANCE: one bundle pitch is the distance at which a lane
+# passes your own plot or your immediate neighbor's, which is what the sources describe when they
+# say a lateral is "colonised as semi-private space by the adjoining house".
+_WEB_REACH = 100.0
+
+
+def _seg_0608__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0608 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
+
+    The CONVERSE of `lanes_reach_something`, and the half that was missing: that check asks whether
+    each lane serves something, this one asks whether each house is served. A map can pass the first
+    with every lane busy and still strand a third of its houses, which is exactly what the four pool
+    hamlets did."""
+    if M["meta"].get("generated_by"):
+        _fw_ways = [[(float(x), float(y)) for x, y in (_fw_ln.get("pts") or [])] for _fw_ln in (M.get("lanes") or [])]
+        _fw_segs = [(_fw_a, _fw_b) for _fw_p in _fw_ways for _fw_a, _fw_b in zip(_fw_p, _fw_p[1:], strict=False)]
+        _fw_far = []
+        if _fw_segs:
+            for _fw_h in M.get("houses") or []:
+                _fw_c = (float(_fw_h["x"]) + float(_fw_h["w"]) / 2, float(_fw_h["y"]) + float(_fw_h["h"]) / 2)
+                _fw_d = min(seg_dist(_fw_c[0], _fw_c[1], _fw_a, _fw_b) for _fw_a, _fw_b in _fw_segs)
+                if _fw_d > _WEB_REACH:
+                    _fw_far.append((round(_fw_c[0]), round(_fw_c[1]), round(_fw_d)))
+        check(
+            "farmhouses_reach_a_way",
+            not _fw_far,
+            f"{len(_fw_far)} farmhouse(s) stand more than {_WEB_REACH:.0f} ft from any drawn way, worst {max((_f[2] for _f in _fw_far), default=0)} ft, at {_fw_far[:4]} - "
+            f"every house in a nucleated cluster is reached by the lane network; that is what compactness is for, and a house the web does not touch is not a back rank, it is an omission",
+        )
+    return _kept(locals(), ())
+
+
 def _seg_0607__lanes_reach_something(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 0607 (lanes_reach_something) - added 2026-08-17, see the note above."""
     if M["meta"].get("generated_by"):

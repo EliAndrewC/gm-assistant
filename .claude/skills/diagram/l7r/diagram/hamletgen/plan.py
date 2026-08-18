@@ -22,6 +22,7 @@ from .consts import (
     GROSS_ACRES_PER_HOUSEHOLD,
     HOUSEHOLD_BAND,
     LANE_SKELETONS,
+    LANE_WEBS,
     OFFTAKE_LADDER,
     PLOT_SIZES,
     REF_HOUSEHOLDS,
@@ -61,6 +62,7 @@ class HamletSpec:
     water_sink: str | None = None
     cluster_shape: str | None = None
     lane_skeleton: str | None = None
+    lane_web: str | None = None
     field_archetype: str | None = None
     plot_size: str | None = None
     grain_drift: int | None = None
@@ -97,6 +99,7 @@ class SitePlan:
     water_sink: str
     cluster_shape: str
     lane_skeleton: str
+    lane_web: str
     field_archetype: str
     plot_size: str
     grain_drift: int
@@ -209,6 +212,7 @@ def plan_site(spec: HamletSpec) -> SitePlan:
         water_sink=spec.water_sink or str(_roll(spec.seed, "water_sink", SINKS)),
         cluster_shape=spec.cluster_shape or str(_roll(spec.seed, "cluster_shape", CLUSTER_SHAPES)),
         lane_skeleton=spec.lane_skeleton or str(_roll(spec.seed, "lane_skeleton", LANE_SKELETONS)),
+        lane_web=spec.lane_web or str(_roll(spec.seed, "lane_web", LANE_WEBS)),
         field_archetype=_archetype,
         plot_size=spec.plot_size or str(_roll(spec.seed, "plot_size", PLOT_SIZES)),
         grain_drift=spec.grain_drift if spec.grain_drift is not None else int(_roll(spec.seed, "grain_drift", GRAIN_DRIFTS)),
