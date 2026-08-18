@@ -6,6 +6,7 @@ Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen
 import pytest
 
 from l7r.diagram import hamletgen as hg
+from l7r.diagram.hamletgen.ways import _margin_frame, _reach
 from l7r.diagram.settlement import point_in_poly
 
 from ._builders import SQUARE, a_plan
@@ -88,3 +89,60 @@ def test_a_way_is_clipped_at_a_watercourse_as_well_as_at_a_crop() -> None:
     clipped = hg.clip_to_clear([(100.0, 200.0), (900.0, 200.0)], [], 10.0, lines=ditch)
     assert clipped and max(p[0] for p in clipped) < 500.0, "the arm must stop short of the water"
     assert hg.clip_to_clear([(100.0, 200.0), (300.0, 200.0)], [], 10.0, lines=ditch) == [(100.0, 200.0), (300.0, 200.0)], "a run that never reaches the water is untouched"
+
+
+# ---- feature 123: the lane web -------------------------------------------------------------------
+
+
+def test_clear_runs_returns_every_run_not_just_the_first_or_longest() -> None:
+    """A back lane interrupted by a steading is two lanes, not one shortened one.
+
+    This is the whole difference from `clip_to_clear`, which stops at the first blockage - right for
+    an arm radiating out of the cluster, wrong for a way that runs the length of the settlement and
+    whose two ends are just its two ends. Measured when it was wrong: Inashiro's back lanes came back
+    as 250 ft of an intended 1,400 because the sampling happened to start in the crop."""
+    line = [(0.0, 0.0), (1000.0, 0.0)]
+    blocker = [(400.0, -50.0), (500.0, -50.0), (500.0, 50.0), (400.0, 50.0)]
+    runs = hg.clear_runs(line, [blocker], 10.0)
+    assert len(runs) == 2, "the run before the blocker and the run after it"
+    assert all(len(r) >= 2 for r in runs)
+    assert runs[0][0][0] < 400.0 < runs[1][-1][0]
+
+
+def test_clear_runs_holds_the_settlement_fabric_at_a_closer_margin_than_the_crop() -> None:
+    """Two obstacle families on purpose: a web lane may not go near the crop at all, but it threads
+    BETWEEN the steadings - it IS the leftover room between two plots. Held 20 ft off every wall
+    there would be nowhere for it to be."""
+    line = [(0.0, 0.0), (400.0, 0.0)]
+    wall = [(190.0, 12.0), (210.0, 12.0), (210.0, 40.0), (190.0, 40.0)]  # 12 ft off the line
+    assert len(hg.clear_runs(line, [wall], 20.0)) == 2, "as HARD ground, 20 ft, it severs the line in two"
+    assert len(hg.clear_runs(line, [], 20.0, tight=[wall], tight_margin=6.0)) == 1, "as fabric, 6 ft, the lane passes unbroken"
+
+
+def test_clear_runs_floor_admits_a_short_footpath_to_a_door() -> None:
+    """The 70 ft floor is right for a through-lane and wrong for the path from an outlying
+    steading's door to the nearest way, which is 60-odd feet by construction. Refusing those as
+    stubs left eight houses unreachable while a path to each was drawn and thrown away."""
+    short = [(0.0, 0.0), (60.0, 0.0)]
+    assert hg.clear_runs(short, [[(500.0, 500.0), (510.0, 500.0), (510.0, 510.0)]], 20.0) == []
+    assert hg.clear_runs(short, [[(500.0, 500.0), (510.0, 500.0), (510.0, 510.0)]], 20.0, floor=20.0)
+
+
+def test_margin_frame_round_trips_a_point_through_arc_and_standoff() -> None:
+    """`project` is the inverse of `__call__`, and the web depends on both agreeing: the cuts are
+    computed from projected house positions and then mapped back out to screen."""
+    plan = a_plan()
+    plan.seat = hg.seat_cluster(plan)
+    frame = _margin_frame(plan, plan.seat["lat"] * 2.0)
+    for arc_f, stand in ((0.25, 40.0), (0.5, 90.0), (0.8, 15.0)):
+        p = frame(frame.arc * arc_f, stand)
+        got_arc, got_stand = frame.project(p)
+        assert abs(got_arc - frame.arc * arc_f) < 20.0
+        assert abs(got_stand - stand) < 20.0
+
+
+def test_reach_measures_the_nearest_point_of_a_path_not_its_ends() -> None:
+    """The same measurement `farmhouses_reach_a_way` makes. Measuring to the ENDS would call a house
+    beside the middle of a long lane unreached."""
+    path = [(0.0, 0.0), (1000.0, 0.0)]
+    assert _reach((500.0, 30.0), path) == pytest.approx(30.0)

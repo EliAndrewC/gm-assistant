@@ -208,3 +208,26 @@ than a fork. Byres went from 20% of the settlement's length to spanning it. Clus
 THE FORK IS WHY THE CHECK LEARNED ABOUT ANGLES: `_reaches` counted ANY way within 40 ft as arrival,
 including the lane an arm had already met at its own junction - so the defect satisfied the test
 written for it. Proximity is not arrival.
+
+## Feature 123 - the lane web (alleys)
+
+**10 of this map's 19 farmhouses stood more than 100 ft from any way. Now none do.** The research
+is decisive that a house in a nucleated cluster is reached - "every house in the nucleated village is
+accessible via the interconnected system of narrow lanes and alleys" - so the back rank being walked
+to along unfigured footpaths was a defensible-sounding reading with nothing behind it
+([`../../research/homesteads.md`](../../research/homesteads.md)).
+
+The FORM of that access is a seeded knob, because the record supports two and the project's rule is
+that two supportable answers become variance rather than a choice (constitution Principle XII). This
+map rolled **`alleys`**: narrow LATERALS threading back between columns of houses, off the existing skeleton - the accretive Chinese gridiron, the form that says the place GREW. It now carries **6 web lanes** of 10 in all.
+
+**The web is laid AFTER the houses, which is the opposite of every other lane here, and that is the
+whole design.** Laid first, as the skeleton is, it has to reserve ground from a cluster that has not
+been packed yet - so it competes with the very houses it exists to serve. Measured across the four
+hamlets, that grew their long axes by 15-97%: sprawl no check measures, caught only by hand. Laid
+afterwards the conflict is not there, and this map's cluster is **810 ft** on its long axis
+against **808 ft** before the feature - placement untouched, which is the point.
+
+Where the regular web could not reach a steading, that house gets what an outlying farmstead really
+has: a short footpath of its own from the nearest way to its door, bending round a neighbor's plot
+if it must. It may cross nobody's garden bed and nobody's threshing floor, including its own.

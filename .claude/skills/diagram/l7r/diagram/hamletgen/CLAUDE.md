@@ -44,7 +44,7 @@ Three invariants the split does NOT touch:
 | `water.py` | STAGE 1-2 - the irrigation skeleton and the field it shapes: `stage_water_frame`, `stage_field`, `stage_polder`, `fit_field` (which SOLVES for a real acreage instead of taking a hand-tuned pixel fall), `fit_polder`, `head_sluice`, `feed_brook`, `tail_dangles`, `net_bends_acutely` |
 | `sink.py` | STAGE 3 - where the runoff goes: `stage_sink`, the tameike derived from the drain outfall, `drain_outfall`, `drain_heading` (which measures over `GATE_FLOW_SPAN`, the gate's own 40 px chord - read its docstring before touching the offmap route search, it is where a 76 deg disagreement with `drainage_junction_smooth` came from), `edge_run`, `pond_clear_of_crop`, `pond_setback` |
 | `cluster.py` | STAGE 4a - where the settlement sits: `seat_cluster` (the 背山面水 margin band), `below_drain`, `back_fouled`, and the spur helpers `_fork_spur`, `_arm_hit`, `_arm_crossing_accidental` |
-| `ways.py` | STAGE 4b - the lanes and what makes a path legal: `stage_ways`, `connector_track` (derived, steered clear of crops), `push_out_of`, `route_around`, `clip_to_clear`, `path_violations`, `crossing_lands_on_crop`, `shallow_crossing` |
+| `ways.py` | STAGES 4b and 5b - the lanes and what makes a path legal. **Two stages, and the order between them is the whole design**: `stage_ways` (4b) lays the SKELETON and the connector BEFORE the houses, so the homesteads front them; `stage_web` (5b) lays the LANE WEB AFTER the houses, because a web laid first competes for ground with the very houses it exists to serve (measured: it grew the four pool clusters' long axes 15-97%, sprawl no check measures). Also `_margin_frame` (outline coordinates: arc along the field edge, standoff out from it, plus the `project` inverse), `clear_runs` (every clear stretch of a through-lane, with a tight second obstacle family for the settlement's own fabric), `_serve_stragglers` (the footpath to an outlying steading), `_homestead_polys`: `stage_ways`, `connector_track` (derived, steered clear of crops), `push_out_of`, `route_around`, `clip_to_clear`, `path_violations`, `crossing_lands_on_crop`, `shallow_crossing` |
 | `homesteads.py` | STAGE 5-6 - the houses and what stands among them: `stage_homesteads`, `front_row`, `lane_frontage`, `stage_appurtenances`, `place_wells`, `well_target` |
 | `hinterland.py` | STAGE 7 - the ground between everything: `stage_hinterland`, `open_ground_patches` (the scan that seats woodland commons on dry ground inside the predicted crop window), `stage_woodland`, `stage_windbreak`, `belt_polygon`, plus the title-pocket helpers `content_box`, `title_pocket`, `_clear_gap`, `_near_line` |
 | `frame.py` | STAGE 8 - `stage_crossings`, `stage_notice` (the kosatsuba), `stage_frame` (crop-to-content and the title) |
@@ -54,8 +54,15 @@ Three invariants the split does NOT touch:
 
 Write the `stage_<name>(s, plan)` function in whichever submodule covers its theme (or a new one,
 if it is genuinely a new concern), then add it to `STAGES` in `driver.py` **at the position the
-draw order requires** - not at the end. Update the skill CLAUDE.md's DRAW ORDER map in the same
-change, and add the stage's row to the table above.
+draw order requires** - not at the end.
+
+**Before/after the houses is a real decision, not a detail.** Feature 123 is the worked example: a
+stage that RESERVES ground (a no-build corridor the houses pack around) belongs before
+`stage_homesteads`; a stage that FILLS ground left over belongs after it. Getting that backwards
+does not fail loudly - it just makes the settlement bigger and looser, and no check measures that.
+
+Update the skill CLAUDE.md's DRAW ORDER map in the same change, and add the stage's row to the
+table above.
 
 Sub-stage helpers extracted from a long stage are named for what they do (`_seat_*`, `_fit_*`,
 `_route_*`) and keep the extraction mechanical: same code order, same RNG draw order, same
