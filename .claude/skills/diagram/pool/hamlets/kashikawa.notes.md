@@ -145,6 +145,62 @@ is kept for provenance rather than deleted, because the failure mode being guard
 future session quoting "not to be reopened as a bug" at a genuinely stranded farmstead on some later
 roll. If one appears, rule it fresh.
 
+## 2026-08-18 - where the ox sleeps, and a well objective that measured the wrong houses
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+- **`byre_form` is a knob now.** The doctrine had been quietly self-contradictory: the *doma* rule
+  says the draft ox is stalled under the farmhouse roof, while the byre placer drew a detached shed
+  on the shared ground. Both are attested - a household that OWNS its team houses it in its own
+  homestead (the *magariya* 曲家, whose short arm IS the stable; the animal range of the north-China
+  *sanheyuan*), while a team that is SHARED or hired stands where the borrowing household can reach
+  it - so per Principle XII it becomes a per-settlement roll rather than a ruling.
+- **and the overlap registry had been describing code that no longer existed** - its `byres` entry
+  claimed the byre "abuts its own farmhouse (draft_byres places it against the wall)", which the
+  placer stopped doing long ago. Now corrected and GATED rather than asserted in prose.
+- **the well tie-break's last key is the objective itself, not a proxy.** The primary key buckets
+  coverage-plus-frame into 66 px steps, and inside a bucket the order was distance to the cluster
+  CENTROID - the empty ground between the lobes of a two-lobed cluster. It is now `_worst_after` at
+  full resolution, with the neighborhood measure breaking exact ties.
+
+RIPPLE ON THIS MAP: this map rolled `detached_commons`, so its four byres are placed exactly as
+before (53-102 ft from the nearest farmhouse) - Sawada rolled `courtyard` and now reads visibly
+differently, which is the point of the knob. The well change DID land here and is the best result of
+it: the worst walk drops **386 -> 304 ft** and the mean 176 -> 174 ft, with one house crossing back
+out of the 300 ft band (19 -> 18 of 20) because the objective is minimax, not a count.
+
+## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Two ledgered defects that turned out to be one, with a worse one underneath.
+
+- **the commons are off the lattice, and no two are the same size.** `open_ground_patches` samples a
+  uniform 90 ft lattice, scores every seat by ONE monotone function (near the cluster, leaning
+  upslope) and takes the best seat outside a FIXED separation radius - three ingredients that do not
+  merely tend toward an even chain, they produce one by construction. Mizuguchi shipped the proof:
+  three IDENTICAL 250 ft squares stepping (+270,-270) twice, reading as three stamps of one wood on
+  a ruled diagonal; Inashiro had the same chain the other way. The accepted seat is now nudged up to
+  half a step off the lattice and its size rolled +/-15%, both from the map's own position hash
+  (so a map is unchanged by regeneration and two maps differ from each other), and every nudge is
+  re-asked through the same qualification test - it can only move a legal seat to another legal one.
+- **a hamlet at the top of the band had no wood at all.** Kashikawa - the map NAMED 樫川, "oak
+  river" - seated ZERO parcels out of 231-286 candidate seats, at every rung of the shrink ladder
+  and both set-back profiles, with the best achievable clearance NEGATIVE (the square overlapped a
+  paddy). The shrink ladder and the relaxed set-backs were each added FOR Kashikawa in earlier
+  rounds and neither could ever have worked, because the binding constraint was not the set-back:
+  the scan demanded the whole square inside the predicted crop window plus a further 16 ft, while
+  its own gate check asks that **70% of the parcel's bbox** be inside the view and says outright
+  that a parcel clipping at the edge "reads as 'more wood that way' and is fine". The scan mirrored
+  the check's formula but not its WINDOW. It now judges a seat by area the way the check does.
+  Being stricter than your own gate is not the safe direction - it cost two of four hamlets their
+  woodland outright.
+
+RIPPLE ON THIS MAP: the oak river has oaks. Woodland goes 0 -> 2 parcels - 122 ft at (1321,1459)
+and 110 ft at (2491,2089), both stocked and both on dry ground. They are small because Kashikawa's
+20 households genuinely commit the land: its field fills its own frame, which is the honest reason
+the earlier rounds could not seat a 250 ft stand and should not have tried. Gate green.
+
 ## 2026-08-18 - the six-defect pass
 
 WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)

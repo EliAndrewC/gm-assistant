@@ -229,6 +229,21 @@ register_knob(Knob("plot_size", ["small_irregular", "medium", "large_block", "st
 register_knob(Knob("plot_regularity", ["organic", "grid"], default="organic", typing_rule=_plot_regularity_ok))
 register_knob(Knob("grain_drift", [-12, -8, -4, 0, 4, 8, 12], default=0))  # degrees of paddy-grain drift off the fall-line
 
+# THE OX SLEEPS IN TWO PLACES AND THE RECORD SUPPORTS BOTH, so this is a knob rather than a ruling
+# (constitution Principle XII's two-supportable-answers rule; 2026-08-18). A draft byre is either an
+# ANNEX of its owner's own homestead - the short arm of the magariya (曲家), the L-shaped Tohoku
+# farmhouse whose wing IS the stable, and the animal range of the north-China sanheyuan courtyard -
+# or a DETACHED shed on the common ground between homesteads, which is what a SHARED or hired team
+# gets, because the household borrowing it has to be able to reach it. Neither is the correct one:
+# the first follows the wealth of the household, the second follows the sharing.
+#
+# The engine had only the second form, silently and everywhere. That is exactly the case the
+# principle is about - a place the record permits two forms is a place two maps can honestly differ,
+# and these maps exist to be told apart at a glance, so picking one throws that away permanently.
+# Rolled per settlement from the map's own seed like every other knob. `draft_byres` reads it;
+# `byres_stand_in_their_declared_form` gates the declaration and the courtyard form's geometry.
+register_knob(Knob("byre_form", ["detached_commons", "courtyard"], default="detached_commons"))
+
 
 LANE_SKELETONS = ("spine", "T", "Y", "cross", "waterside")
 

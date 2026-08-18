@@ -674,6 +674,56 @@ two aze still leaves ~7.4 ft of standing water - a workable basin, which is what
 zoom. Revisit only if a roll produces a 5-8 ft end that reads as a point; see future-work.md for the
 sketch, since the convergence measure now exists and switching is a one-line change.
 
+## 2026-08-18 - where the ox sleeps, and a well objective that measured the wrong houses
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+- **`byre_form` is a knob now.** The doctrine had been quietly self-contradictory: the *doma* rule
+  says the draft ox is stalled under the farmhouse roof, while the byre placer drew a detached shed
+  on the shared ground. Both are attested - a household that OWNS its team houses it in its own
+  homestead (the *magariya* 曲家, whose short arm IS the stable; the animal range of the north-China
+  *sanheyuan*), while a team that is SHARED or hired stands where the borrowing household can reach
+  it - so per Principle XII it becomes a per-settlement roll rather than a ruling.
+- **and the overlap registry had been describing code that no longer existed** - its `byres` entry
+  claimed the byre "abuts its own farmhouse (draft_byres places it against the wall)", which the
+  placer stopped doing long ago. Now corrected and GATED rather than asserted in prose.
+- **the well tie-break's last key is the objective itself, not a proxy** - `_worst_after` at full
+  resolution inside the 66 px bucket, instead of distance to the cluster centroid.
+
+RIPPLE ON THIS MAP: this map rolled `detached_commons`, so its three byres are placed exactly as
+before. The second well moved from (1076,1299) to (1142,1409): worst walk unchanged at 430 ft, mean
+212 -> 210 ft. **The ledger's claim that this map showed a well-siting defect was mis-measured** -
+its 430 ft house is 304 ft from surface water and therefore watered by it; the worst walk among
+houses that actually need a well is 180 ft. See sawada.notes.md for the full correction.
+
+## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Two ledgered defects that turned out to be one, with a worse one underneath.
+
+- **the commons are off the lattice, and no two are the same size.** `open_ground_patches` samples a
+  uniform 90 ft lattice, scores every seat by ONE monotone function (near the cluster, leaning
+  upslope) and takes the best seat outside a FIXED separation radius - three ingredients that do not
+  merely tend toward an even chain, they produce one by construction. Mizuguchi shipped the proof:
+  three IDENTICAL 250 ft squares stepping (+270,-270) twice; THIS MAP had the same chain the other
+  way. The accepted seat is now nudged up to half a step off the lattice and its size rolled +/-15%,
+  both from the map's own position hash (so a map is unchanged by regeneration and two maps differ
+  from each other), and every nudge is re-asked through the same qualification test - it can only
+  move a legal seat to another legal one.
+- **a hamlet at the top of the band had no wood at all.** Kashikawa - the map NAMED 樫川, "oak
+  river" - seated ZERO parcels out of 231-286 candidate seats, at every rung of the shrink ladder
+  and both set-back profiles. The scan demanded the whole square inside the predicted crop window
+  plus a further 16 ft, while its own gate check asks that **70% of the parcel's bbox** be inside
+  the view and says outright that a parcel clipping at the edge "reads as 'more wood that way' and
+  is fine". The scan mirrored the check's formula but not its WINDOW, and now judges a seat by area
+  the way the check does.
+
+RIPPLE ON THIS MAP: the ruled chain here was the pair at (2322,682) and (2592,952), offset exactly
+(+270,+270) at an identical 250 ft. They are now 275 ft at (2308,727) and 244 ft at (2666,889), with
+the other two 280 ft at (2620,526) and 202 ft at (1131,1741) - four sizes, no line. Count unchanged
+at 4; gate green.
+
 ## 2026-08-18 - the six-defect pass
 
 WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)

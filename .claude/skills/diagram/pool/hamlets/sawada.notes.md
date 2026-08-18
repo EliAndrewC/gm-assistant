@@ -170,6 +170,75 @@ houses." The adaptive choice is choosing the same side nearly every time, so all
 as one stamp repeated. That is a genuine gap between the code's stated intent and its behavior, and
 it is logged in `future-work.md` rather than ruled here.
 
+## 2026-08-18 - where the ox sleeps, and a well objective that measured the wrong houses
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+- **`byre_form` is a knob now, and this map rolled `courtyard`.** The doctrine had been quietly
+  self-contradictory: the *doma* rule says the draft ox is stalled under the farmhouse roof, while
+  the byre placer drew a detached shed on the shared ground. Both are attested - a household that
+  OWNS its team houses it in its own homestead (the *magariya* 曲家, whose short arm IS the stable;
+  the animal range of the north-China *sanheyuan*), while a team that is SHARED or hired stands
+  where the borrowing household can reach it - so per Principle XII it becomes a per-settlement
+  roll rather than a ruling. `courtyard` follows the wealth (owners straight down the ranking, no
+  spread objective, the spiral held to the owner's own yard); `detached_commons` follows the sharing
+  and is unchanged and still the default.
+- **and the overlap registry had been describing code that no longer existed.** Its entry for
+  `byres` read "a draft-ox byre is an ANNEX abutting its own farmhouse (draft_byres places it
+  against the wall)" - which the placer stopped doing long ago. Nothing caught it because nothing
+  measured it, and that stale sentence is very likely why nobody questioned the form. The entry now
+  states what holds under either form, and the geometry is GATED
+  (`byres_stand_in_their_declared_form`) rather than asserted in prose.
+- **the well tie-break's last key is the objective itself, not a proxy.** The primary key buckets
+  coverage-plus-frame into 66 px steps so the frame term can outrank small coverage differences, and
+  inside a bucket the order was distance to the cluster CENTROID - which on a two-lobed cluster is
+  the empty ground between the lobes. It is now `_worst_after` at full resolution, with the
+  neighborhood measure breaking exact ties.
+
+RIPPLE ON THIS MAP: this is the map that rolled `courtyard`, and it reads differently for it - all
+three byres now stand 50-51 ft from their owner's farmhouse, where Inashiro's and Kashikawa's
+detached sheds range 53-102 ft. Two same-region hamlets that a reader can tell apart, which is the
+whole point of the knob. The wells did NOT move: Sawada's were already correct, and the ledger entry
+saying otherwise was measuring the wrong thing - see the correction below.
+
+**THE LEDGERED DEFECT ON THIS MAP DID NOT EXIST.** The entry said the tie-break traded a well from a
+seat with 11 households within 300 ft to one with 5, worst walk 364 -> 493 ft. That counted EVERY
+house. `place_wells` deliberately does not: a house within ~760 ft of a stream, channel or pond is
+watered (`settlement_dwellings_watered`, the GM-settled "no redundant well beside a living stream"),
+and those houses drop out of the minimax - the comment directly above the objective warns against
+exactly this, two definitions of "needs a well". Re-measured with the check's own predicate: the
+493 ft house is **308 ft from the stream**, 13 of 19 houses here are surface-watered, and the worst
+walk among houses that actually need a well is **122 ft**. A metric that ignores a documented
+exclusion will manufacture a defect, and this one survived a review round and a ledger entry.
+
+## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Two ledgered defects that turned out to be one, with a worse one underneath.
+
+- **the commons are off the lattice, and no two are the same size.** `open_ground_patches` samples a
+  uniform 90 ft lattice, scores every seat by ONE monotone function (near the cluster, leaning
+  upslope) and takes the best seat outside a FIXED separation radius - three ingredients that do not
+  merely tend toward an even chain, they produce one by construction. Mizuguchi shipped the proof:
+  three IDENTICAL 250 ft squares stepping (+270,-270) twice; Inashiro had the same chain the other
+  way. The accepted seat is now nudged up to half a step off the lattice and its size rolled +/-15%,
+  both from the map's own position hash, and every nudge is re-asked through the same qualification
+  test - it can only move a legal seat to another legal one.
+- **a hamlet at the top of the band had no wood at all.** Kashikawa - the map NAMED 樫川, "oak
+  river" - seated ZERO parcels out of 231-286 candidate seats, at every rung of the shrink ladder
+  and both set-back profiles. The scan demanded the whole square inside the predicted crop window
+  plus a further 16 ft, while its own gate check asks that **70% of the parcel's bbox** be inside
+  the view and says outright that a parcel clipping at the edge "reads as 'more wood that way' and
+  is fine". The scan mirrored the check's formula but not its WINDOW, and now judges a seat by area
+  the way the check does.
+
+RIPPLE ON THIS MAP: almost none, and that is the finding. This map's earlier 2 -> 1 loss was
+ledgered as a re-seat failure worth chasing; the census says otherwise. Sawada offers ONE qualifying
+seat in the entire scan - every rung, both profiles - and it takes it: the single parcel is 127 ft
+at (913,1986), up from 125 ft, and the count stays 1. The ground really is committed, so the ledger
+item is closed as "the land is spoken for" rather than left open as a placer bug. Gate green.
+
 ## 2026-08-18 - the six-defect pass
 
 WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)

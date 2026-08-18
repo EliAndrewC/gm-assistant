@@ -37,7 +37,7 @@ Two invariants the split does NOT touch:
 | `segments_03b_structures_vs_water_and_streets.py` | segs 0197-0231: structures vs stream/canal/moat/street, businesses fronting streets |
 | `segments_03c_clusters_and_labels.py` | segs 0232-0267: cluster edges, canopies, labels, subtitles and titles |
 | `segments_04a_margins_lanes_and_wells.py` | segs 0268-0285_005: field margins as a continuous ring, label clearances, lanes, wells vs shrine/torii |
-| `segments_04b_yards_gardens_and_sheds.py` | segs 0285_006-0285_065: wells, harvest yards, farm sheds, dooryard gardens, grove areas |
+| `segments_04b_yards_gardens_and_sheds.py` | segs 0285_006-0285_065 plus the hand-added 0606 / 0609 (numbered past the legacy range - the number is a LABEL, the position is the execution order): wells, harvest yards, farm sheds, dooryard gardens, grove areas, farmhouse spacing, and the `byre_form` declaration + its courtyard-form geometry |
 | `segments_04c_groves_and_shading.py` | segs 0285_066-0598: groves and shading (yards, gardens, village groves), windbreaks, commons; hand-added 0598 (cluster-seeding trace) |
 | `segments_05a_field_cover_and_cremation.py` | segs 0285_092-0286_024: barren and woodland cover, farmhouse size variation, ossuaries, bogs, external cremation grounds |
 | `segments_05b_graveyards_and_channel_sources.py` | segs 0286_025-0305: cemeteries in precincts, town graveyards and cremation, label rendering, ponds, channel-source anchoring |

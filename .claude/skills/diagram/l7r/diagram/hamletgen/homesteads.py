@@ -537,7 +537,28 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                     """How far past the crop's predicted box this seat (drawn radius included) reaches."""
                     return max(0.0, bx0 - (c[1] - _WELL_DRAWN_R), (c[1] + _WELL_DRAWN_R) - bx1, by0 - (c[2] - _WELL_DRAWN_R), (c[2] + _WELL_DRAWN_R) - by1)
 
-                pool.sort(key=lambda c: ((_worst_after(c) + _extent_added(c)) // 66.0, _extent_added(c), c[0]))
+                # ...AND THE LAST TIE-BREAK IS THE NEIGHBORHOOD, NOT THE CENTROID (settlement-review,
+                # Sawada 2026-08-18). Once the minimax bucket and the frame term are equal, the
+                # remaining sort was `c[0]` - the seat's distance to the cluster CENTROID, computed
+                # when the pool was built. On a ONE-lobed cluster that reads as "the most central
+                # seat wins" and is fine. On a TWO-lobed one the centroid is the empty ground
+                # BETWEEN the lobes, so the tie-break actively prefers the gap: Sawada's second well
+                # moved off a seat serving 11 households within 300 ft onto one serving 5, and the
+                # worst walk went 364 -> 493 ft. Same family as the `_extent_added` fix above and as
+                # the standing rule against letting an aggregate stand in for the distributed thing
+                # a verdict is about - a centroid is not a place anybody lives.
+                #
+                # The measure that IS the question: how tightly is this seat surrounded by
+                # homesteads - the distance to the `want_near`-th nearest house, which is exactly
+                # the rung's own "is this in a neighborhood" test, reused rather than restated.
+                # Distance to the SINGLE nearest house was the ledger's sketch and is rejected: it
+                # is minimized by hugging one outlying farmhouse, which is the same mistake in the
+                # other direction. Every seat in the pool already passed the rung, so this only
+                # orders seats that are all legally "among the dwellings".
+                def _neighborhood(c: tuple[float, float, float], wn: int = want_near) -> float:
+                    return sorted(math.hypot(c[1] - h["x"], c[2] - h["y"]) for h in houses)[wn - 1]
+
+                pool.sort(key=lambda c: ((_worst_after(c) + _extent_added(c)) // 66.0, _extent_added(c), _worst_after(c), _neighborhood(c)))
             _, x, y = pool.pop(0)
             if any(math.hypot(x - px, y - py) < 170.0 for px, py in placed):
                 continue  # `wells_not_clustered`: shared wells serve separate courtyards

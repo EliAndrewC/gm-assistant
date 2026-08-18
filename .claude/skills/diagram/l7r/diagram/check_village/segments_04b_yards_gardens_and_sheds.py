@@ -3,7 +3,7 @@
 import math
 from typing import Any
 
-from l7r.diagram.settlement import FARMHOUSE_EAVE_GAP_FT, sat_overlap, surface_water_dist
+from l7r.diagram.settlement import FARMHOUSE_EAVE_GAP_FT, courtyard_annex_span, sat_overlap, surface_water_dist
 
 from .common_01_geometry import (
     _OVERLAP_STRUCTS,
@@ -870,4 +870,45 @@ def _seg_0606__farmhouses_shed_separately(*, M: Any = _UNBOUND, check: Any = _UN
             f"{len(_merged)} farmhouse pair(s) stand closer than {FARMHOUSE_EAVE_GAP_FT:.0f} ft wall to wall, at {_merged[:4]} - "
             f"two steep thatched roofs need their own drip lines and a way between them; at this range the pair merges into one long building on the sheet",
         )
+    return _kept(locals(), ())
+
+
+def _seg_0609__byres_stand_in_their_declared_form(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0609 (byre_form_declared, courtyard_byres_annex_their_homestead) - added
+    2026-08-18 with the `byre_form` knob. Numbered past the legacy range; the number is a LABEL.
+
+    TWO CHECKS, BECAUSE A KNOB HAS TWO WAYS TO FAIL. The first is the declaration-exists invariant
+    this engine keeps re-learning: a rule that hides behind `if meta.get(...)` is indistinguishable
+    from a rule that passes, so a map that draws byres and names no form is a failure in itself, not
+    a map the geometry check quietly skips. The second holds the DRAWING to the DECLARATION, which is
+    the live hazard here - the overlap registry asserted for months that a byre "is an ANNEX abutting
+    its own farmhouse (draft_byres places it against the wall)" while the placer had long since been
+    spreading detached sheds by minimax across the whole cluster, and nothing noticed because nothing
+    measured it. Only the courtyard form has geometry to hold: `detached_commons` says the shed is on
+    the shared ground, which is not a claim about any one homestead."""
+    if M["meta"].get("generated_by") and M.get("byres"):
+        _byf = M["meta"].get("byre_form")
+        check(
+            "byre_form_declared",
+            _byf in ("courtyard", "detached_commons"),
+            f"the map draws {len(M['byres'])} byre(s) but declares byre_form={_byf!r} - a settlement must record WHICH of the two "
+            f"attested forms it used (the owner's own stable wing, or a shared shed on the commons), or nothing can hold the drawing to it",
+        )
+        if _byf == "courtyard":
+            _by_houses = M.get("houses") or []
+            _by_bad = []
+            for _by in M["byres"]:
+                if not _by_houses:
+                    break  # pragma: no cover - a map drawing byres always has the houses they belong to
+                _by_h = min(_by_houses, key=lambda q: math.hypot(q["x"] - _by["x"], q["y"] - _by["y"]))
+                _by_d = math.hypot(_by_h["x"] - _by["x"], _by_h["y"] - _by["y"])
+                if _by_d > courtyard_annex_span(_by_h["w"], _by_h["h"], _by["h"]) + 2.0:
+                    _by_bad.append((round(_by["x"]), round(_by["y"]), round(_by_d)))
+            check(
+                "courtyard_byres_annex_their_homestead",
+                not _by_bad,
+                f"{len(_by_bad)} byre(s) stand off on their own while the map declares byre_form='courtyard': {_by_bad[:4]} "
+                f"(x, y, ft to the nearest farmhouse) - in that form the byre is the owning homestead's stable wing, so it belongs in "
+                f"that household's yard; a shed out on the shared ground is the OTHER form and must say so",
+            )
     return _kept(locals(), ())

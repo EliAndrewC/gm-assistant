@@ -408,21 +408,78 @@ each is here with the number that establishes it, per Principle XIV's deferral b
   on that sheet are 27.4 / 27.6 / 30.4 deg on basins of 0.55-0.72 cell. A minimum tip angle of
   ~25-30 deg would catch the family without re-imposing the grid the four-sides rule was declined
   for. **Not** the declined rule - a 5-sided basin with an 8 ft shortest side is fine.
-- **The woodland commons sit on an exact lattice.** Mizuguchi's three parcels are identical 250 x 250
-  ft squares at (456,967), (726,697), (996,427) - offsets of exactly (+270,-270) each - so they read
-  as three stamps of one wood marching up a ruled diagonal. `open_ground_patches` scans a uniform
-  lattice with a monotone score and a mutual-separation term, which produces an equal-step chain by
-  construction. The fourth parcel, off the ladder, reads fine and is the control. **Fix sketch**:
-  jitter the accepted seat off the lattice by up to half a step from the map's own seed, and roll
-  `size` per parcel instead of stepping a shared ladder.
-- **Sawada lost a woodland parcel this roll**, 2 -> 1: a 200 ft, 54-crown stand at (230, 3040) did
-  not re-seat, leaving one 125 ft, 15-crown parcel as the map's only wood. The view narrowed and
-  `dry_plots` went 25 -> 26, so the shrink ladder or the frame/marsh keep-out is the likely refuser.
-- **`byre_form` should be a KNOB, not a fixed behavior** (Principle XII's two-supportable-answers
-  rule). Both forms are attested - the ox under the farmhouse roof in the wealthier
-  magariya/sanheyuan pattern, and a detached shed on common ground where a team is shared - and the
-  current behavior is only the second. Rolling between `courtyard` and `detached_commons` per
-  settlement would also be one of the cheapest visible differences between two same-region hamlets.
+- **DONE 2026-08-18: the woodland commons sat on an exact lattice - and two hamlets had no woodland
+  at all.** Ledgered as two items; one measurement pass showed they were one defect wearing two
+  faces, plus a second, worse one underneath.
+
+  *The lattice.* Mizuguchi's three parcels were identical 250 x 250 ft squares at (456,967),
+  (726,697), (996,427) - offsets of exactly (+270,-270) each - reading as three stamps of one wood
+  marching up a ruled diagonal; Inashiro had the same chain at (+270,+270). Not a tendency but a
+  construction: `open_ground_patches` samples a uniform 90 px lattice, scores every seat by ONE
+  monotone function (near the cluster, leaning upslope) and takes the best remaining seat outside a
+  FIXED separation radius, so each pick lands just past the previous one's exclusion circle in the
+  direction the score rises. Fixed as sketched - the accepted seat is nudged up to half a step off
+  the lattice and the parcel's size rolled +/-15%, both from `_hjit` (positional, so a map is
+  unchanged by regeneration and two maps differ from each other), and every nudge is re-asked
+  through the qualification predicate, so it can only move a legal seat to another legal seat.
+
+  *The size roll must vary BOTH ways.* First cut rolled `1.0 - 0.2*hjit` - shrink only - which
+  compounded with the existing shrink ladder and produced a 116 ft "commons" on Mizuguchi, a copse
+  rather than a commons. `0.85 + 0.3*hjit` instead; growth is safe because the predicate re-asks.
+
+  *What was underneath.* Kashikawa - the map NAMED 樫川, "oak river" - shipped **zero** woodland
+  parcels, and had at HEAD too; Sawada one. Census over the scan lattice, every rung of the shrink
+  ladder and both set-back profiles: Kashikawa **0 qualifying seats out of 231-286**, Sawada 1, with
+  the crop clause alone refusing 93-97% and the best achievable clearance NEGATIVE (the square
+  overlapped a paddy). So neither the shrink ladder nor the set-back relaxation - both added FOR
+  Kashikawa, in two separate rounds - could ever have worked: the binding constraint was never the
+  set-back. Two hypotheses tested and killed before the right one: that the scan's `crops` list
+  reading `plan.envelope` diverged from the check's paddy outlines (it does not - seat counts match
+  exactly, 16/16, 29/29, 35/35, 47/47 on Mizuguchi), and that the frame should give (it may not -
+  `crop_to_content`'s docstring carries the GM's ruling that the frame stays tight to real content
+  and commons clip like the marsh).
+
+  The actual divergence: **the scan mirrored the check's formula but not its WINDOW.**
+  `woodland_commons_within_the_frame` asks for 70% of the parcel's bbox inside the view and says in
+  as many words that a parcel clipping at the edge "reads as 'more wood that way' and is fine"; the
+  scan demanded the whole square inside the kept window plus a further 16 px. Being stricter than
+  your own gate is not the safe direction - it cost two of four hamlets their woodland. The seat is
+  now judged by AREA the way the check judges it (centre may sit 0.6*half outside, exact bbox
+  fraction >= 0.8 - the check's 0.7 plus slack, since this window is a PREDICTION of the crop). The
+  exact fraction, not a per-axis box: two 0.4*half overhangs pass a box test at 0.64 inside and ship
+  a check failure. **Kashikawa 0 -> 2 parcels, Sawada 1 -> 1** (Sawada's ground is genuinely that
+  tight; its earlier 2 -> 1 loss is closed as "the land is committed", not re-opened), Inashiro and
+  Mizuguchi 4 -> 4 at varied sizes and off the lattice. All four maps gate green.
+- **DONE 2026-08-18: `byre_form` is a KNOB** (Principle XII's two-supportable-answers rule). Both
+  forms are attested - the ox under the farmhouse roof in the wealthier magariya (曲家) /
+  sanheyuan pattern, and a detached shed on common ground where a team is shared - and the engine
+  had only the second, silently and everywhere. Registered in `_knobs.py` and rolled per settlement
+  from the map's own seed; `draft_byres` branches on it. `courtyard` follows the WEALTH (owners
+  straight down the wealth ranking, no minimax spread, no inter-byre separation, the spiral held to
+  the owner's own yard); `detached_commons` follows the SHARING and is byte-identical to the old
+  behavior, which is why it stays the default. Rolled results: Sawada `courtyard` (byres a tight
+  50-51 ft from their owner), Inashiro and Kashikawa `detached_commons` (53-102 ft, unchanged) - a
+  visible difference between two same-region hamlets, which is the point.
+
+  **A second defect was found doing it and is fixed in the same work** (Principle XIV). The overlap
+  registry's entry for `byres` read *"a draft-ox byre is an ANNEX abutting its own farmhouse
+  (draft_byres places it against the wall)"* - a description of code that had not existed for a long
+  time, since the placer spirals a DETACHED shed out past the homestead and spreads the set by
+  minimax across the cluster. Nothing noticed because nothing measured it, and the stale comment is
+  very likely why the form was never questioned in the first place. The entry now states the
+  property that holds under EITHER form, and the form-specific geometry is gated rather than
+  asserted in prose.
+
+  Gated by `_seg_0609__byres_stand_in_their_declared_form`, two checks: `byre_form_declared` (a map
+  that draws byres and names no form leaves the geometry half permanently skipped - the
+  `if meta.get(...)` failure mode) and `courtyard_byres_annex_their_homestead`. The span the check
+  measures is `courtyard_annex_span`, the SAME expression the placer's spiral uses, exported from
+  `byres.py` so the two cannot drift. Teeth proven by sabotage rather than by coverage: the
+  declaration stripped FIRES, a byre dragged 260 ft off FIRES (124 ft against a ~44 ft span), a 25 ft
+  nudge correctly does NOT. Both frozen into `pool/regressions/`. `detached_commons` deliberately has
+  no geometry check - "the shed is on the shared ground" is not a claim about any one homestead, so
+  mislabeling a courtyard map as detached passes, and that is recorded at the check rather than left
+  to be discovered.
 
 ### RESOLVED 2026-08-18 (was BLOCKING): cohort seed 5's drain, and the well tie-break's cost
 
@@ -434,14 +491,35 @@ defect was found while chasing it and IS fixed: the obliqueness ceiling was meas
 ditch's HEAD width, meaningless on a collector that starts as a thread and earns its section at the
 outfall; it now measures against `max(w, w_tail)`, the same section `worth_planking` uses.
 
-**Still open from the same round**: the well tie-break prices crop extent against the worst-served
-walk at 1:1 px, and on Sawada that traded a well from a seat with 11 households within 300 ft to one
-with 5, taking the worst walk 364 -> 493 ft. Inashiro shows the same shape (median walk 159 -> 194
-ft, both wells ~100 ft from any door). The idiom 井戸端会議 - "well-side conference" - says a
-communal well is a dooryard social node, so the direction is wrong even though the rule is right in
-principle; the likely cause is that the final tie-break is distance to the cluster CENTROID, which on
-a two-lobed cluster prefers the empty middle. **Fix sketch**: break the tie on distance to the
-nearest house instead of to the centroid.
+**DONE 2026-08-18, and the ledgered MEASUREMENT was wrong** - worth more than the fix. The entry
+read: the tie-break traded a Sawada well from a seat with 11 households within 300 ft to one with 5,
+worst walk 364 -> 493 ft, with the same shape on Inashiro. Both numbers counted **every** house.
+`place_wells`'s objective deliberately does not: `settlement_dwellings_watered` treats a house within
+~760 ft of a stream, channel or pond as watered, so those houses drop out of the minimax (the
+GM-settled "no redundant well beside a living stream"), and the comment directly above the objective
+warns in as many words against the objective and the check reading two definitions of "needs a well".
+Re-measured with the check's own predicate: Sawada's 493 ft house is **308 ft from the stream**, 13
+of its 19 houses are surface-watered, and the worst walk among houses that actually need a well is
+**122 ft**. Inashiro the same shape - 430 ft house, 304 ft from water, worst NEEDY walk 180 ft. There
+was no coverage defect on either map. Filed as a lesson: a metric that ignores a documented exclusion
+will manufacture a defect, and this one survived a review round and a ledger entry before anyone
+re-derived it.
+
+The tie-break WAS nonetheless mis-ordered, and the sketch was also wrong. Distance to the cluster
+CENTROID is a poor last key - on a two-lobed cluster the centroid is the empty ground between the
+lobes, so it prefers the gap - but replacing it with distance to the nearest house (the sketch) is
+the same mistake inverted: minimized by hugging one outlying farmhouse. Measured, that swap improved
+Kashikawa (worst 386 -> 304 ft) and **worsened Mizuguchi** (203 -> 234 ft), which is a regression on
+a shipped map, and left Sawada byte-identical - the tie-break was never what decided Sawada's wells.
+
+The real arbitrariness was upstream: the primary key buckets `_worst_after + _extent_added` into 66 px
+steps so the frame term can outrank small coverage differences, and INSIDE a bucket the ordering was
+whatever the last key said. So the third key is now `_worst_after` itself - the actual objective, at
+full resolution - with the neighborhood measure (distance to the `want_near`-th nearest house, the
+rung's own "is this in a neighborhood" test) only breaking exact ties. The bucket keeps doing its job;
+it simply no longer hands the choice inside it to a proxy. Measured across the four hamlets:
+Kashikawa worst 386 -> 304 ft, Inashiro mean 212 -> 210 ft, Mizuguchi and Sawada byte-identical to
+HEAD. **No map worse on any of the three metrics.**
 
 ### DONE 2026-08-17: `_outside_cloud` now tests the CROP's box, not a box of house centers
 
