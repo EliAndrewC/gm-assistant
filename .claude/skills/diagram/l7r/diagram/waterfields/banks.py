@@ -390,6 +390,71 @@ _WELD_MIN_SOLIDITY = 0.85
 _TINT_MIN_SOLIDITY = 0.85
 
 
+# A CHEVRON IS POINTED **AND** NOTCHED - neither measure alone can see one, and that is the whole
+# finding (GM-directed follow-up, 2026-08-18, from the settlement-review dart on Mizuguchi at
+# (1021-1084, 968-1012)).
+#
+# THE LEDGER ASKED FOR A TIP-ANGLE FLOOR AND THE MEASUREMENT SAID NO. The review described the ring
+# as an arrowhead and quoted reflex corners of 311.9 / 273.1 deg, so a minimum tip angle of ~25-30
+# deg was the obvious rule. Measured on the ring itself it is not pointed enough (min apex 38.3 deg
+# raw, 39.0 deduped), not lobed enough (solidity 0.878, against the 0.85 the weld and tint guards
+# use), and not deeply notched (deepest interior angle 227.4 deg deduped, where 16 basins in the pool
+# exceed 300). By every single measure the project already owns, it is an ordinary irregular basin -
+# which is exactly what the fabric is SUPPOSED to be full of.
+#
+# WHAT SEPARATES IT IS THE CONJUNCTION. A basin may taper - the hem strips do, honestly. A basin may
+# be concave - a plot wrapped round a neighbour does, honestly. One that does BOTH has a point at one
+# end and a bite out of its side, and that is an arrowhead. Measured over the 2,777 carved basins of
+# the four scripted hamlets: apex < 40 deg alone is 71 (2.6%), solidity < 0.90 alone is 49 (1.8%),
+# and the conjunction is **13 (0.47%)** - a population small enough to read one by one, and reading
+# them one by one is how these numbers were chosen rather than fitted. Both are round: 40 deg is
+# "comes to a point", 0.90 is "has a real notch". Fitting tightly to the motivating ring (39 / 0.88)
+# would have caught 11 and been overfitting to a single example.
+#
+# CAUGHT AT 40/0.90, GATED AT 35/0.85 - placer stricter than gate, as everywhere else here.
+_CHEVRON_MIN_APEX = 40.0
+_CHEVRON_MIN_SOLIDITY = 0.90
+_GATE_CHEVRON_APEX = 35.0
+_GATE_CHEVRON_SOLIDITY = 0.85
+
+
+def ring_solidity(poly: Poly) -> float:
+    """Area / convex-hull area - 1.0 for a convex ring, lower the more it is notched.
+
+    Hand-rolled rather than shapely, because the carve (`comb.py`) has never carried that dependency
+    and one predicate should not drag it in; the hull is a monotone chain, which is exact for the
+    handful of vertices a basin has. Degenerate rings score 1.0 so they are judged by the thinness
+    and area rules that DO speak about them, never condemned by this one."""
+    pts = sorted(set((round(p[0], 4), round(p[1], 4)) for p in poly))
+    if len(pts) < 3:
+        return 1.0
+
+    def _half(seq: list[Pt]) -> list[Pt]:
+        out: list[Pt] = []
+        for p in seq:
+            while len(out) >= 2 and (out[-1][0] - out[-2][0]) * (p[1] - out[-2][1]) - (out[-1][1] - out[-2][1]) * (p[0] - out[-2][0]) <= 0:
+                out.pop()
+            out.append(p)
+        return out
+
+    hull = _half(pts)[:-1] + _half(pts[::-1])[:-1]
+    if len(hull) < 3:
+        return 1.0
+
+    def _area(ring: list[Pt]) -> float:
+        return abs(sum(ring[i][0] * ring[(i + 1) % len(ring)][1] - ring[(i + 1) % len(ring)][0] * ring[i][1] for i in range(len(ring)))) / 2
+
+    ha = _area(hull)
+    return _area([(float(p[0]), float(p[1])) for p in poly]) / ha if ha > 0 else 1.0
+
+
+def is_chevron(poly: Poly, min_apex: float = _CHEVRON_MIN_APEX, min_solidity: float = _CHEVRON_MIN_SOLIDITY) -> bool:
+    """Does this ring read as an arrowhead - pointed AND notched? See `_CHEVRON_MIN_APEX` for why
+    the conjunction is the rule and why neither half alone can be."""
+    ring = dedup_ring([(float(p[0]), float(p[1])) for p in poly], 1.0)
+    return len(ring) >= 3 and pointed_ring(ring, min_apex) and ring_solidity(ring) < min_solidity
+
+
 def cell_area(plot_across: float, row_step: tuple[float, float]) -> float:
     """The fan's DESIGN cell in px^2 - the area one carved paddy was aimed at.
 
