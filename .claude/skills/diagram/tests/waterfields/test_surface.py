@@ -58,6 +58,7 @@ def _public_clashes(modules: list[types.ModuleType]) -> list[tuple[str, str, str
 # The public names consumed as waterfields.<name> across the skill tree
 # (contracts/package-surface.md census, re-taken 2026-08-16 at implement time).
 CONSUMED_PUBLIC = [
+    "jog_vertices",
     "AZE",
     "BANK_MARGIN",
     "BEAN_GREEN",
