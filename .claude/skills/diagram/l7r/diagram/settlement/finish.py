@@ -204,7 +204,16 @@ class FinishMixin:
         # obstacle only worked while some ground was left bare - once the commons properly clothes the field's
         # voids too, scrub covers nearly the whole map and a title could find nowhere at all to sit. The grove
         # (dense closed canopy) and the marsh (a distinct wetland) stay obstacles.
-        for o in self.M.get("village_groves", []) + self.M.get("marshes", []):
+        # ...and a WOODLAND commons is dense canopy too, so it is an obstacle by the same test the
+        # paragraph above applies (2026-08-17). The exclusion above is for the SCRUB commons - a
+        # feathered scatter of grass tufts that a bold place name reads perfectly well over - and a
+        # `role="woodland"` parcel is not that: it is a stand of tree crowns, the same closed canopy
+        # as a grove. Left out, the placard printed over 64-68% of one of Sawada's two woodland
+        # parcels, with a dozen crown circles ghosting up through the title card: one of the map's
+        # two woods two-thirds invisible, and the title reading as smudged. The grazing parcels stay
+        # excluded, which is what keeps a title from having nowhere to sit.
+        _woodland = [c for c in self.M.get("commons", []) if c.get("role") == "woodland" and c.get("poly")]
+        for o in self.M.get("village_groves", []) + self.M.get("marshes", []) + _woodland:
             polys.append([tuple(p) for p in o["poly"]])
         for fd in self.M.get("fields", []):
             polys.append([tuple(p) for p in fd["outline"]])

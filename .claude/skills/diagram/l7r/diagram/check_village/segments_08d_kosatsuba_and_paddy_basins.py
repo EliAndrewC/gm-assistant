@@ -680,8 +680,8 @@ def _seg_0601__flooded_plots_read_as_basins(*, M: Any = _UNBOUND, check: Any = _
     return _kept(locals(), ())
 
 
-def _seg_0607__paddy_basins_are_worth_their_bund(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 607 (paddy_basins_are_worth_their_bund) - hand-added 2026-08-17 past the legacy
+def _seg_0608__paddy_basins_are_worth_their_bund(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 608 (paddy_basins_are_worth_their_bund) - hand-added 2026-08-17 past the legacy
     range (see _seg_0595 for the numbering convention). No `_PLACEMENTS` entry: it reads only `M`,
     `check` and `fields`, so the tail of the derived order is as good a seat as any."""
     # A BASIN TOO SMALL TO BE WORTH ITS OWN BUND IS TAKEN INTO THE ONE BESIDE IT (GM question

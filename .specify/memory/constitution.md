@@ -1,7 +1,7 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.8.0 → 1.9.0
+Version change: 1.9.0 → 1.10.0
 MINOR: Principle XIV (Fix Defects Where You Find Them) ADDED (GM-directed,
 2026-08-17): "anytime we are working on the diagram skill and you in the
 course of implementing a feature come across some new defect - even if it is
@@ -38,6 +38,26 @@ Templates requiring review/update:
                               /diagram is where it bites hardest.
   ✅ .claude/skills/diagram/dev/reviews.md - states that a review finding
                               outside the delta is still yours to fix.
+
+PRIOR (1.7.0 → 1.8.0):
+
+PRIOR (1.8.0 → 1.9.0):
+MINOR: Principle XII (Historical Grounding Bookends) gains two GM-directed
+rules, 2026-08-18. (a) RESEARCH PRECEDES A RULING: a question about how a
+place was actually built, farmed or lived in is answered by a research pass
+BEFORE it reaches the GM, and an ask that does reach them must state what was
+searched and why the finding does not settle it. Binds the review loop above
+all, since a reviewer's "wants a one-line ruling" describes a question, not a
+delegation. (b) TWO SUPPORTABLE ANSWERS BECOME A KNOB, NOT A CHOICE: where
+research shows a thing was genuinely done more than one way, the variation
+becomes a tunable per-settlement knob rather than a pick, because a project
+goal is settlements within historical norms that differ from one another as
+far as the research justifies - players must tell two maps apart at a glance.
+This AMENDS the existing calibrated-liberty clause and takes precedence where
+they differ; liberty survives only for a DEGREE along a continuum, never for a
+choice between distinct FORMS. Motivating cases: the byre-beside-a-well and
+back-rank-access questions, both of which had been queued as GM rulings and
+were answered by a single research pass.
 
 PRIOR (1.7.0 → 1.8.0):
 MINOR: Principle XIII (No Known Regressions) ADDED (GM-directed,
@@ -720,6 +740,56 @@ support, or using "the record is unclear" to dodge a finding that is actually
 clear - the `rape` rotation was not a matter of degree, and no amount of
 project convenience makes rice and rape stand in the same field at once.
 
+**RESEARCH PRECEDES A RULING - the GM is the last resort, not the first
+(GM, 2026-08-18).** A question about how a place was actually built, farmed or
+lived in is a RESEARCH question, and it is answered by a research pass before
+it is ever put to the GM. *"This is a category of question which should ALWAYS
+be based on historical research when possible, so I should only be asked for a
+ruling on this kind of question when a research pass has already been done and
+has turned out to be inconclusive."*
+
+This binds the review loop in particular, because that is where such questions
+surface: a reviewer writing "this wants a one-line ruling" is describing a
+QUESTION, not delegating it. Run the search first. Only if the record is
+genuinely silent or contradictory does the question reach the GM - and when it
+does, the ask MUST state what was searched, what was found, and why the finding
+does not settle it. An unresearched question presented as a ruling spends the
+GM's attention on work the project could have done, and it launders "I did not
+look" into "the evidence is unclear".
+
+**TWO SUPPORTABLE ANSWERS BECOME A KNOB, NOT A CHOICE (GM, 2026-08-18).** This
+AMENDS the calibrated-liberty clause above, and takes precedence over it where
+the two differ. When research shows a thing was genuinely done more than one
+way, the project does NOT pick the reading it likes and write the other off.
+It makes the variation a **tunable knob with per-settlement variance**, so a
+map can be rolled either way and two maps can honestly differ.
+
+The reason is a project goal, not a historical one: these maps exist for
+players who must tell one settlement from another at a glance. *"One of our
+goals in this map generation project is to be able to produce settlements which
+are within historical norms while being as different from one another as is
+justifiable by our historical research."* Every place where the record permits
+two forms is therefore a place the generator can differ WITHOUT leaving those
+norms - which is exactly the variation worth having, and picking one form
+throws it away permanently.
+
+So the ladder for any such question is:
+
+1. **Research it.** If the record is decisive, implement what it says - there
+   is no knob and no ruling (the `rape` rotation was decisive; so was the
+   threshing yard's sun).
+2. **If the record supports two or more forms, add the knob**, rolled per
+   settlement like every other knob (`_knobs.py`, seeded from the map's own
+   seed so a value depends only on (seed, knob name)). Record the range and
+   its evidence where the knob lives.
+3. **Only if the record is silent or self-contradictory** does the GM rule -
+   and the ask carries the research that failed to settle it.
+
+Calibrated liberty survives for the case a knob cannot express: a single
+element whose DEGREE is uncertain along a continuum (how large, how dense, how
+often) where the project needs one figure to draw. Where the uncertainty is
+between DISTINCT FORMS, it is a knob.
+
 **Enforcement.** `/speckit-plan` MUST record both gates in its Constitution
 Check. A feature that cannot state its grounding is not ready to build. The
 findings MUST be written where the rule lives (per the "record the why" rule
@@ -985,4 +1055,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.9.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-17
+**Version**: 1.10.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-18

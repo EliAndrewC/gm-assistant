@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from ..core import Settlement
 
 
+_BORROW_REACH = 120.0  # a neighbour this close can walk over and borrow the team (see draft_byres)
+
+
 class DraftByresMixin:
     def _draw_byre(self: Settlement, cx: float, cy: float, w: float, h: float, rot: float = 0) -> None:  # type: ignore[misc]
         """A small OPEN-FRONTED draft-animal shed (ox / water-buffalo byre): a plank-and-thatch roof with a
@@ -45,30 +48,40 @@ class DraftByresMixin:
         else:
             bw, bh = round(15.5 * bs, 1), round(10.5 * bs, 1)
         houses = [h for h in self.M.get("houses", []) if h.get("kind") == "plain"]
-        # FARTHEST-FIRST AMONG THE WEALTHIEST TIER, not `x` ascending (settlement-review, Mizuguchi
-        # 2026-08-17). The old key was `(-wealth, x, y)`, and on a hamlet every house carries
-        # `wealth: 1.0` - so it degenerated to X ASCENDING and the byre hosts were literally the
-        # three lowest-x houses. On Mizuguchi that put all three shared sheds in a 208 ft span at one
-        # end of a 911 ft row: median nearest-byre 373 ft, max 771 ft, with nine households having
-        # none within 300. That contradicts this method's own docstring twice over - "~one per 4-5
-        # households" (three sheds serving the SAME three farmsteads serve three) and "so they read
-        # as scattered, not clumped" - and the gate cannot see it, because `fraction` and the
-        # pairwise `gap` are both satisfied by a tight clump.
-        #
-        # So pick each host to be FAR from the sheds already standing, which is the same objective
-        # `place_wells` was given for the same reason (a second well exists to serve the households
-        # the first does not). Wealth stays the first tier - buffalo owners really are the wealthier -
-        # and distance only breaks ties within it, so a mixed-wealth village is unaffected. The FIRST
-        # host has no placed shed to be far from, so it falls through to the old `x`, `y` order and
-        # the ladder stays deterministic.
+        ranked = sorted(houses, key=lambda h: (-h.get("wealth", 1.0), h["x"], h["y"]))  # buffalo owners = the wealthier
         target = max(1, round(len(houses) * fraction))
         out: list[Pt] = []
-        remaining = list(houses)
-        while remaining and len(out) < target:
-            _top = max(q.get("wealth", 1.0) for q in remaining)
-            _tier = [q for q in remaining if q.get("wealth", 1.0) >= _top - 1e-9]
-            h = max(_tier, key=lambda q: (min((math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out), default=0.0), -q["x"], -q["y"]))
-            remaining.remove(h)
+        # SPREAD THE BYRES ACROSS THE SETTLEMENT, do not drain toward one end (settlement-review on
+        # Kashikawa and Sawada, 2026-08-17). Walking the wealth ranking in order and taking the first
+        # clear gap sends every byre to whichever flank still has open verge: measured along each
+        # cluster's own principal axis, all four byres occupied the SW 143 ft of a 993 ft settlement
+        # on Kashikawa (14%), 160 of 810 ft on Sawada (20%), and every map put them in one half.
+        # These are SHARED sheds - the whole point is that a household too poor for its own team
+        # borrows or hires one (`settlements/homesteads.md`) - so a byre quarter at one end defeats
+        # the sharing the feature exists to depict, leaving most households several hundred feet from
+        # the nearest.
+        #
+        # The fix is the MINIMAX idiom the well siting already uses: after the first, take the
+        # wealthiest candidate that stands FURTHEST from every byre already placed. Deterministic (no
+        # RNG - the key is a distance, then wealth, then position), and it only changes WHICH owners
+        # get one, never how many or how the spiral seats them.
+        _pool = list(ranked)
+        while len(out) < target and _pool:
+            if out:
+                # SPREAD, THEN SHARE. Farthest-point alone minimises the worst walk, which is the
+                # right coverage objective - but with every house at wealth 1.0 the tie-break
+                # collapses to pure distance, so it picks the most ISOLATED homestead and the shed
+                # reads as that household's private one. That is the inverse of the doctrine: a byre
+                # is shared precisely so a household owning no team can borrow from a neighbour
+                # (settlements/homesteads.md), and the neighbour has to be there to borrow from.
+                # So: take the spread score, then among the candidates within a quarter of the best
+                # prefer the one with the most households in borrowing distance.
+                _best = max(min(math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out) for q in _pool)
+                _near = [q for q in _pool if min(math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out) >= _best * 0.75]
+                h = max(_near, key=lambda q: (sum(1 for o in houses if o is not q and math.hypot(o["x"] - q["x"], o["y"] - q["y"]) <= _BORROW_REACH), q.get("wealth", 1.0), -q["x"], -q["y"]))
+            else:
+                h = _pool[0]
+            _pool.remove(h)
             rr = math.hypot(h["w"], h["h"]) / 2 + bh
             done = False
             while rr < math.hypot(h["w"], h["h"]) / 2 + bh + 70 and not done:

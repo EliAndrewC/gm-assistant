@@ -748,3 +748,57 @@ def test_tanning_yards_on_water():
     189px inland (GM 2026-08-10)."""
     assert "tanning_yards_on_water" not in f(_water_map(tanning_yards=[{"x": 500, "y": 550, "w": 26, "h": 17, "rot": 0, "kind": "tanning yard"}]))
     assert "tanning_yards_on_water" in f(_water_map(tanning_yards=[{"x": 500, "y": 720, "w": 26, "h": 17, "rot": 0, "kind": "tanning yard"}]))
+
+
+# ---- a lane must reach something (the internal counterpart of connector_lane_runs_off_edge) ----
+def _lane_map(lanes, houses=(), gen="hamletgen"):
+    return {"meta": {"scale": "hamlet", "ftpx": 1, "generated_by": gen}, "lanes": lanes, "houses": list(houses)}
+
+
+def test_lanes_reach_something_fires_on_a_tread_that_stops_in_bare_grass():
+    """A lane exists to be fronted. An internal arm ending far from every other way AND every
+    farmhouse serves no house, reaches no field and connects to nothing - a blunt tread stopping in
+    open ground. Measured before the fix: five such ends across the four scripted hamlets, because
+    lanes are laid BEFORE the houses they serve and an arm meeting neither crop nor water had
+    nothing to stop it."""
+    M = _lane_map(
+        [{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}],
+        [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],  # serves the START only
+    )
+    assert "lanes_reach_something" in f(M)  # the far end is 400 ft from that house and there is no other way
+
+
+def test_lanes_reach_something_passes_when_the_end_meets_another_way_or_a_house():
+    served = _lane_map(
+        [{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}],
+        [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain"}, {"x": 540, "y": 890, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lanes_reach_something" not in f(served), "a house at the far end is something to reach"
+    met = _lane_map(
+        # the crossing lane is kept SHORT on purpose: a long one would dangle at its own far end and
+        # the check would fire for that instead, which is the check being right and the fixture wrong
+        [{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}, {"pts": [[480, 905], [560, 905]], "w": 5, "connector": False}],
+        [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain"}, {"x": 540, "y": 890, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lanes_reach_something" not in f(met), "meeting another way is something to reach"
+
+
+def test_lanes_reach_something_exempts_the_connector_and_skips_a_degenerate_lane():
+    """The connector is the track OUT of the settlement and `connector_lane_runs_off_edge` REQUIRES
+    it to reach the frame, so its far end is meant to serve nothing - exempting it is what stops the
+    two rules contradicting each other. A one-point lane has no end to judge."""
+    conn = _lane_map(
+        [{"pts": [[500, 500], [500, 3000]], "w": 5, "connector": True}],
+        [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lanes_reach_something" not in f(conn)
+    degenerate = _lane_map([{"pts": [[500, 500]], "w": 5, "connector": False}], [{"x": 900, "y": 900, "w": 46, "h": 28, "rot": 0, "kind": "plain"}])
+    assert "lanes_reach_something" not in f(degenerate)
+
+
+def test_lanes_reach_something_is_gated_on_generated_by():
+    """The migration doctrine: the rule binds the scripted path, and a frozen hand-authored map
+    inherits it at the moment it is CONVERTED rather than being retrofitted."""
+    legacy = _lane_map([{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}], [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain"}], gen=None)
+    legacy["meta"].pop("generated_by")
+    assert "lanes_reach_something" not in f(legacy)

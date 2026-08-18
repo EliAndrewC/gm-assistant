@@ -169,6 +169,45 @@ shading), so it packs into a real nucleus and the gardens VARY instead of all si
 houses." The adaptive choice is choosing the same side nearly every time, so all 19 homesteads read
 as one stamp repeated. That is a genuine gap between the code's stated intent and its behavior, and
 it is logged in `future-work.md` rather than ruled here.
+
+## 2026-08-18 - the six-defect pass
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Six known /diagram defects were cleared in one pass, plus one regression caused inside it. In the
+order they matter to a reader of these maps:
+
+- **the front row is ONE RANK.** `front_row` had begun sampling seats by density (to stop a starved
+  row leaving a big field under-ringed) and, uncapped, seated every household by itself - every
+  cluster came out a single file along the paddy. It now returns seats center-out and stops at one
+  rank's worth of the band; the surplus falls to the flanking and cloud passes, which seat BEHIND.
+- **a lane must reach something.** Internal lane ends ran the full cluster band into open grass,
+  serving no house and meeting no way, because lanes are laid BEFORE the houses they serve.
+  `trim_lane_stubs` now pulls such an end back AFTER the farmstead flush - rewriting the ink in the
+  stream slots the lane already owns, so nothing re-layers - and stops at the last homestead served
+  rather than at the rule's edge. A near-parallel contact does not count as arrival (a lane that
+  MEETS another crosses it; one that FRAYS runs alongside). A fragment below one homestead's
+  frontage (~71 ft) is dropped: it can front nobody. `lanes_reach_something` gates it.
+- **byres are shared, so they spread.** Owners are chosen by a maximin spread, then - among the
+  near-best - by how many households stand within borrowing distance. Spread alone picked the most
+  ISOLATED homestead, which is the inverse of a shared shed.
+- **the title placard may not sit on a woodland commons.** Dense canopy is an obstacle to the title
+  the way a grove already was; only the sparse grazing scrub is not.
+- **`scatter_audit` could not see tree crowns.** Its palette had drifted from the engine's; it now
+  imports `CROWN_FILLS`, and a coverage guard fails when the two disagree.
+- **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
+  gate reads the same raked corners the placer does.
+
+RIPPLE ON THIS MAP: the title placard no longer sits on the dry-shoulder woodland parcel - it
+covered 64-68% of it, with a dozen crowns ghosting up through the title card, and the overlap is
+now zero. The west fork was the map that motivated the lane trim: lane 0 ran 90 ft past its own T
+with lane 2 and died 13 ft from it on an 8-degree divergence, reading as one track fraying rather
+than a fork. Byres went from 20% of the settlement's length to spanning it. Cluster elongation
+4.60 -> 3.49, with a real back rank. Review: needs-work on the fork, now fixed.
+
+THE FORK IS WHY THE CHECK LEARNED ABOUT ANGLES: `_reaches` counted ANY way within 40 ft as arrival,
+including the lane an arm had already met at its own junction - so the defect satisfied the test
+written for it. Proximity is not arrival.
 OPEN, pre-existing and tier-wide, raised for a ruling rather than a fix: 18 of 19 gardens sit on the
 E wall, which `_find_garden_spot` treats as the LAST RESORT (keeping the garden off the windward
 wall is what frees that wall for the grove). `windward="NE"` makes E windward here, so the last

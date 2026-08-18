@@ -75,6 +75,7 @@ class Settlement(
         self.placed: list[Any] = Indexed()  # (x, y, w, h) - Indexed: _fits keeps a reach index on it, and the two filter-rebinds below stay Indexed so the index cannot go stale
         self.grove_rects: list[Any] = Indexed()  # (x, y, w, h) homestead-grove arms - kept OUT of `placed` so adjacent groves
         #                           may MERGE (abut) where houses cluster; `_fits` still steers wells off them
+        self._lane_ink: list[tuple[int, int]] = []  # each lane's two ink slots in `out`, so `trim_lane_stubs` can rewrite them in place
         self._pending_farmsteads: list[Any] = []  # farmhouses awaiting their threshing yard (drawn by farmsteads())
         self._rng_scope_n: dict[tuple[Any, ...], int] = {}  # per-key call counter for rng_scope (see its docstring)
         self.corridors: list[Any] = Indexed()  # polylines houses must avoid (Indexed: _near_corridor keeps a spatial index on it)

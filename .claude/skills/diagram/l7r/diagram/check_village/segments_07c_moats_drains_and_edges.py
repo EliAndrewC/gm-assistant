@@ -798,3 +798,54 @@ def _seg_0512__pond_fed_from_edge(
             f"a stream feeds the pond but its far end {unsourced[:3]} is not at the map edge - a pond's feeder brook must flow IN from off-map (the water source comes from the edge, not nowhere)",
         )
     return _kept(locals(), ('far', 'near', 'p', 'st', 'unsourced'))
+
+
+# A LANE MUST REACH SOMETHING. A lane exists to be fronted: it serves houses, meets another way, or
+# leaves for the wider world. An internal arm that ends far from all three is a blunt tread stopping
+# in bare grass - it reads as a drafting artifact, and where it runs alongside a way it has already
+# met, the pair reads as one doubled track rather than a fork. Measured before the fix: five such
+# ends across the four scripted hamlets, and more on the frozen pool (honda, ubame x4, kikuta x2,
+# tanada, hoshizora). The engine's own note already had the principle - "shortening the arm is the
+# honest fix: the lane simply ends where the crop starts" - but an arm meeting neither crop nor water
+# had nothing to stop it, because lanes are laid BEFORE the houses they serve. `trim_lane_stubs`
+# closes that after the flush; this holds it closed.
+#
+# THE CONNECTOR IS EXEMPT and must stay whole: it is the track OUT of the settlement, and
+# `connector_lane_runs_off_edge` requires it to reach the frame. This is that rule's internal
+# counterpart - both say a way must go somewhere, and they cover the two different somewheres.
+#
+# GATED ON `meta.generated_by`, the migration doctrine: the rule binds the scripted path, and each
+# legacy map inherits it at the moment it is converted rather than being retrofitted.
+_LANE_WAY_REACH = 40.0  # a lane end this close to another way has MET it
+_LANE_HOUSE_REACH = 90.0  # ...or it stops at a homestead it fronts
+
+
+def _seg_0607__lanes_reach_something(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0607 (lanes_reach_something) - added 2026-08-17, see the note above."""
+    if M["meta"].get("generated_by"):
+        _lr_lanes = M.get("lanes") or []
+        _lr_houses = M.get("houses") or []
+        _lr_dangling = []
+        for _lr_i, _lr_ln in enumerate(_lr_lanes):
+            if _lr_ln.get("connector"):
+                continue
+            _lr_pts = [(float(x), float(y)) for x, y in _lr_ln.get("pts") or []]
+            if len(_lr_pts) < 2:
+                continue
+            for _lr_end in (_lr_pts[0], _lr_pts[-1]):
+                _lr_way = 1e9
+                for _lr_k, _lr_o in enumerate(_lr_lanes):
+                    _lr_op = [(float(x), float(y)) for x, y in _lr_o.get("pts") or []]
+                    if _lr_k == _lr_i or len(_lr_op) < 2:
+                        continue
+                    _lr_way = min(_lr_way, min(seg_dist(_lr_end[0], _lr_end[1], _lr_a, _lr_b) for _lr_a, _lr_b in zip(_lr_op, _lr_op[1:], strict=False)))
+                _lr_house = min((math.hypot(_lr_end[0] - _lr_h["x"], _lr_end[1] - _lr_h["y"]) for _lr_h in _lr_houses), default=1e9)
+                if _lr_way > _LANE_WAY_REACH and _lr_house > _LANE_HOUSE_REACH:
+                    _lr_dangling.append((round(_lr_end[0]), round(_lr_end[1])))
+        check(
+            "lanes_reach_something",
+            not _lr_dangling,
+            f"{len(_lr_dangling)} internal lane end(s) reach neither another way ({_LANE_WAY_REACH:.0f} ft) nor a farmhouse ({_LANE_HOUSE_REACH:.0f} ft), at {_lr_dangling[:4]} - "
+            f"a lane exists to be fronted; a tread that stops in bare grass serves no house, reaches no field and connects to nothing (the connector is exempt - it leaves the map)",
+        )
+    return _kept(locals(), ())

@@ -823,7 +823,7 @@ fix wants its own pass with its own sweep rather than riding along.
    is asymmetric in effect, or move the private well off the axis. Cheap, but it changes every
    two-cottage works, so it belongs with item 1 in one pass.
 
-## OPEN, all PRE-EXISTING: three found by the 2026-08-17 review round
+## MOSTLY DONE 2026-08-18: three found by the 2026-08-17 review round (see the status on each)
 
 None of these came from that day's changes - each was verified byte-identical to the prior roll -
 and each is a form defect the gate structurally cannot see. Logged rather than fixed in-flight,
@@ -849,7 +849,7 @@ with `len(flooded_plots)` - then apply `_TINT_END_FT` at whichever emitter paint
 ones, not only at the one `flooded_plots` records. The 2026-08-16 entry established "4 painted, 4
 recorded, 1:1" as the guard by hand; this makes it a check.
 
-### 2. A lane dead-ends 90 ft past its own junction (Sawada)
+### 2. DONE 2026-08-18 - a lane dead-ends 90 ft past its own junction (Sawada)
 
 Lane 2's end lies 0.3 ft off lane 0's centerline - a clean T - and then lane 0 continues **81 ft
 past that node** to a free end 12.6 ft to the side of lane 2, on a bearing ~9 degrees off it. On the
@@ -862,28 +862,30 @@ edge, or another way - and trim the overshoot at the junction. `connector_lane_r
 already makes exactly this kind of "must end somewhere" demand for the connector; this is its
 internal-lane counterpart.
 
-### 3. NOT REPRODUCED as written - the "adaptive" garden side needs re-measuring
+### 3. RESOLVED BY MEASUREMENT 2026-08-18 - the "adaptive" garden side IS adapting
 
-`bundle.py` promises the nucleated garden goes on "an ADAPTIVE sunny side (chosen by the placer for
-fit + no shading), so it packs into a real nucleus and the gardens VARY instead of all sitting east
-between houses." Measured on Sawada: **21 of 23 beds SE, 2 SW, 0 E, 0 W**. The adaptive choice is
-choosing the same side nearly every time, so every homestead reads as one stamp repeated - house,
-yard directly below, bed to the lower-right.
+**It reproduces neither as first reported nor as re-reported, and the code's promise is being kept.**
+`bundle.py` says the nucleated garden takes "an ADAPTIVE sunny side (chosen by the placer for fit +
+no shading), so the gardens VARY instead of all sitting east between houses". Measured on the
+shipped manifests, in the placer's own side vocabulary (`_NUC_SIDES = SE, SW, E, W`), counting each
+bed by its offset from its own house:
 
-Note this is the finding that a WRONG one was hiding: an earlier review reported "18 of 19 on the E
-wall, the last-resort candidate", that claim went into `sawada.notes.md` unverified, and a later
-review reconstructed each bed's candidate signature and refuted it (zero beds took the E-wall
-candidate; `groves = 0` is the documented nucleated-bundle behavior, not a symptom). A review
-finding is evidence, not a verdict.
+| map | SE | SW | E | W |
+|---|---|---|---|---|
+| Inashiro | 2 | 11 | 1 | 4 |
+| Kashikawa | 10 | 9 | 4 | 1 |
+| Mizuguchi | 9 | 5 | 0 | 0 |
+| Sawada | 8 | 0 | 7 | 7 |
 
-**Sketch**: decide first whether the variation is meant to be real or the comment is aspirational -
-that is a GM-facing question, not a code one. If real, the shading/fit score is presumably
-near-constant across sides for a compact bundle, so it wants a tie-break that varies (the
-position-seeded `_hjit` idiom) rather than a strict preference order.
+All four sides appear, no map repeats one stamp, and the earlier "21 of 23 SE" and "18 of 19 E"
+readings are both artifacts of measuring in a frame that was not the placer's. **No GM ruling is
+wanted here after all** - the variation the comment promises is what the maps draw. Mizuguchi uses
+only two sides, which is the one thing worth re-checking if the cluster ever tightens further.
 
-## OPEN: three more from the 2026-08-17 re-review round
+THE LESSON, since this is the third time on this one item: a claim about WHICH candidate a placer
+took has to be measured in the placer's own vocabulary, or it measures the measurer's frame.
 
-### 4. `scatter_audit` reports `crown=0` on a map recording 2,665 crowns
+### 4. DONE 2026-08-18 - `scatter_audit` reported `crown=0` on a map recording 2,665 crowns
 
 Caught on Kashikawa: the audit parsed `blade=312447 dot=17240 pine=1517 crown=0 reed=72420` and
 exited 0, on a map whose manifest carries 2,665 tree crowns. Its exit-2 guard fires only on a ZERO
@@ -897,7 +899,7 @@ have been quoting a family the parser never saw.
 cause), then make a family that parses ZERO bases on a map that RECORDS that feature a failure, not
 a silence. Per-family, not just per-total.
 
-### 5. The shared byres end-load onto one flank of the cluster
+### 5. DONE 2026-08-18 - the shared byres end-loaded onto one flank of the cluster
 
 Kashikawa's four shared draft-animal byres sit at cluster-axis positions -442, -430, -340, -300 in a
 settlement spanning -478..+516 - all four inside the SW 143 ft of 994 ft, leaving fifteen of twenty
@@ -910,7 +912,7 @@ westernmost house), but the tighter cluster makes it obvious.
 drain toward whichever end still has open verge. **Sketch**: spread the seats over the cluster's
 principal axis before spiraling, the way the well siting already does its minimax.
 
-### 6. The kura flag is stable against regeneration but NOT against re-packing
+### 6. DONE 2026-08-18 - the kura flag is stable against regeneration but NOT against re-packing
 
 `homesteads.md` says the position-seeded kura roll (`_hjit(x, y, 3.0) < 0.30`) makes the flag
 "stable across regenerations". Measured, the hash itself is honest - 0.2993 over 200k realistic
@@ -948,9 +950,9 @@ The general rule both of these earn: **a review finding measured on an artifact 
 as that artifact.** Two of this round's findings were taken on a stale render and one on a
 superseded roll; all three read as solid until re-measured.
 
-## OPEN: two more from the Sawada re-review (2026-08-17)
+## ONE DONE, ONE OPEN: two more from the Sawada re-review (2026-08-17)
 
-### 7. The title placard prints over a woodland commons parcel - and the keep-out is ONE-DIRECTIONAL
+### 7. DONE 2026-08-18 - the title placard printed over a woodland commons parcel
 
 On Sawada, **71% of the 125 ft woodland commons at (912, 2012) lies inside the title+scalebar box**,
 and 12 crown centers under it ghost through as pale circles inside the cartouche while 4-5 peek out
@@ -985,3 +987,150 @@ detector. **Sketch**: prefer the measurement when both exist (a knob says what w
 bbox says what was DRAWN, and the twin detector's question is about what a reader sees) - or make
 the cloud record what it actually produced. Either way it wants a GM ruling on which the axis is
 for, since it changes what "reads as its own place" is measured against.
+
+## THE THREE QUESTIONS - ALL RESOLVED (2026-08-18)
+
+These were collected as "rulings wanted" and put to the GM. **Two of the three should never have
+been asked**, and the GM's answer changed how this project handles the whole category. The record of
+what was asked, what came back, and why, is kept below because the resolution doctrine is worth more
+than the three answers.
+
+**What the GM ruled about the ASKING** (now constitution Principle XII, v1.9.0, and the root
+`CLAUDE.md`):
+
+1. **Research precedes a ruling.** A design question of this kind goes to historical research FIRST.
+   The GM is to be asked only once a research pass has been made and come back inconclusive, and the
+   ask must say what was searched, what was found, and why it is still unsettled. A and C were both
+   answerable from the record and neither should have reached the GM's desk.
+2. **Two supportable answers become a KNOB, not a choice.** Where research says a thing was done two
+   ways, the generator does not pick one - it varies, per settlement, on a seeded knob. This is not a
+   tie-breaking convenience; it is the point of the project. In the GM's words, the goal is
+   settlements that are *"within historical norms while being as different from one another as is
+   justifiable by our historical research, for the benefit of players who need to be able to look at
+   different maps and distinguish them from one another at a glance."* Calibrated liberty still
+   covers a DEGREE along a continuum; it no longer covers a choice between two distinct FORMS.
+
+So the resolution ladder for anything of this shape, from now on: **research it -> if decisive,
+implement the answer -> if two forms are supportable, add a knob -> only if the record is silent
+does the GM rule.**
+
+### A. RESOLVED BY RESEARCH - a byre belongs beside a wellhead. Nothing to change.
+
+The research is not close, and it is recorded in full at
+[`research/homesteads.md`](research/homesteads.md) "May a byre stand beside a wellhead?". The short
+version: in the Japanese *magariya* the draft animal lives **under the farmhouse's own roof** (the
+*umaya* stable wing takes the south face for the sunlight), and a house well sat in the rear corner
+of the *doma* - i.e. animal and well inside one building. Chinese vernacular grouped the cattle shed
+with the pigsty and the latrine, because both ends feed the manure economy; nothing in the
+vernacular or geomantic material holds livestock away from drinking water, and public watering
+troughs were sited AT wells wherever water infrastructure existed at all. A byre 38 ft from a
+communal well is comfortably inside the norm; separating them would be drawing a modern sanitary
+intuition. `_fits` already prevents the only thing that was ever a defect - an actual overlap with
+the wellhead footprint. **No engine change. Not to be re-opened on the next re-pack.**
+
+<details><summary>The question as it was originally posed (kept for the record)</summary>
+
+#### A. Does a byre belong beside a wellhead? (Kashikawa)
+
+The byre-owner spread put one draft-animal shed **38 ft** from a communal wellhead; the other three
+stand 168-317 ft from any well. Nothing governs it: `settlements/homesteads.md` puts byres and wells
+in the same interstitial courtyard ground, so the two meeting is structural rather than accidental,
+and `_fits` already keeps the shed off the wellhead's own footprint - this can never become an
+overlap, only an adjacency.
+
+**The two readings**: (a) the beasts are watered at the well, so that is exactly where a byre goes -
+which is the reading the reviewer and I would both take; (b) a wellhead is drinking water for the
+settlement and wants a small apron clear of livestock. Either is defensible; what matters is that
+one of them is written down, because the next re-pack produces the same adjacency and the next
+session will otherwise re-open it from scratch.
+
+</details>
+
+### B. RULED BY THE GM - KEEP THE KNOB, and make the drawing match it.
+
+This one WAS a real ruling: it is a question about what our own generator promises, not about
+history, so no research pass could have settled it. **The GM keeps the declared knob as the twin
+detector's axis**, with a reason that generalizes well past the twin detector:
+
+> "When we ask for something, we want to get the thing that we asked for. And when we do not ask for
+> something and the knob is set randomly, then we still want what is drawn to match what was randomly
+> selected for the knob value."
+
+Read that carefully, because it is *not* "the knob wins over the geometry" - it is **the knob and the
+geometry must not be allowed to disagree**. A rolled `cluster_shape="round"` on a 3.48:1 band is a
+BUG in the placer, and switching the detector to measure the bbox would have hidden it rather than
+fixed it. The knob stays the axis precisely so that a disagreement stays visible, and it carries
+distinctions (crescent / split / elongated) that a bbox aspect cannot express.
+
+**The consequence, and it is an engine obligation:** whatever `cluster_shape` is rolled, the placer
+must actually produce it. The immediate contradiction is closed (the declaration is recorded only
+when the cloud shaped the cluster), but that is a mitigation - it makes the knob silent rather than
+wrong. Honoring the rolled shape in the nucleated placer is live work; see the ledger below.
+
+<details><summary>The question as it was originally posed (kept for the record)</summary>
+
+#### B. Is the twin detector's cluster axis about what was ASKED for, or what was DRAWN?
+
+`check_village/driver.py`'s `TWIN_AXES` reads *"the declared knob if present, else the cluster-bbox
+aspect"*. So when a map records `meta.cluster_shape`, the twin-distinctness axis believes the ROLLED
+KNOB over the geometry. That is the derive-don't-pin rule inverted, and it bit once already: a
+placer change that never touched the twin detector made Sawada declare "round" while drawing a
+3.48:1 band. The declaration is now only recorded when the cloud actually shaped the cluster, so the
+immediate contradiction is closed - but the general preference stands, and nine pool maps declare a
+shape.
+
+**The ruling wanted**: prefer the MEASUREMENT when both exist (the twin detector asks "does this
+read as its own place?", and a reader sees the drawing) - or keep the knob because it carries more
+than a bbox aspect can (crescent / split / elongated are distinctions the measurement cannot make).
+The second is a real argument, which is why this is a ruling and not a fix.
+
+</details>
+
+### C. RESOLVED BY RESEARCH - the back rank IS served, and the FORM of the service is a knob.
+
+The research is recorded at [`research/homesteads.md`](research/homesteads.md) "Is every farmhouse
+reached by a lane, and in what FORM?", and it split cleanly along the two axes the new ladder is
+built for:
+
+- **Decisive:** a house in a nucleated cluster is reached by a way. "Every house in the nucleated
+  village is accessible via the interconnected system of narrow lanes and alleys" - compactness is
+  what the lane network is FOR. So the current state (nine of Sawada's nineteen houses more than
+  120 ft from any way, a whole SE block touched by nothing) is a **defect with a research basis**,
+  not a defensible depiction, and the "people just walk" reading is retired.
+- **Two supportable FORMS**, so per the GM's ruling this becomes a seeded knob rather than a pick:
+  **(1) alleys off the spine** - narrow laterals between plots, colonised as semi-private space by
+  the houses they pass; the accretive Chinese gridiron form. **(2) a back lane** - a way parallel to
+  the main lane behind the plots, which typically doubles as the edge between village and fields;
+  the planned form, with rear-access ground behind housing lots separately attested in traditional
+  Manchu villages.
+
+The two forms also read differently at a glance, which is the whole point: a back lane says the
+place was laid out, alleys say it grew. That is exactly the kind of variance a player should be able
+to see.
+
+**Live work** (its own feature - engine change, new knob, new gate check, cohort re-roll):
+
+1. Roll a `lane_web` knob per settlement over the two forms.
+2. Generate the chosen form in `hamletgen/ways.py` after the homesteads are seated, deriving the
+   lateral or back-lane geometry from the house rank actually placed (derive, never pin) and keeping
+   it off the crop the way `connector_track` does.
+3. Turn `lanes_reach_something`'s unjustified house threshold around into its converse - **every
+   farmhouse is within reach of some way** - so the rule has a research basis instead of a number.
+4. Same feature carries B's obligation: the placer honors the rolled `cluster_shape`.
+
+<details><summary>The question as it was originally posed (kept for the record)</summary>
+
+#### C. Does a hamlet's back rank get a way, or is it walked to? (doctrine, tier-wide)
+
+Raised on Sawada, true of every scripted hamlet: nine of nineteen houses stand more than 120 ft from
+any way, and the whole SE block is touched by no lane. Inashiro is 6 of 15 with a worst of 345 ft,
+Mizuguchi 4 of 12. This is not a defect of any one map and it is not delta-caused - the front-row
+cap is what put a genuine back rank there in the first place, which is what we wanted.
+
+**The ruling wanted**: either a hamlet's back block earns a spur (an engine change, and one that
+would have to avoid the paddy the way the connector does), or a back rank is understood to be
+reached along unfigured footpaths between the homesteads and nothing is drawn. The second is what
+the maps currently depict, and it is defensible - a lane is a cart way, and people walk. Say which,
+and `lanes_reach_something`'s house threshold stops being a number nobody has justified.
+
+</details>
