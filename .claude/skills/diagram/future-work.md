@@ -1570,3 +1570,30 @@ no boundary ink - but the RECORD is bookkeeping rather than places, and nothing 
 hill-foot rough grazing from the beaten ground by the houses. Raised by two reviewers independently,
 both as a note rather than an error. Worth knowing before any rule starts reading `commons` as
 though each entry were a distinct place.
+
+### Seed 31's threshing yard laps a paddy - and TWO fixes for it FAILED, recorded so nobody re-tries them
+
+`harvest_yards_clear_of_paddies` has failed on cohort seed 31 since before the 2026-08-18 work
+began (it is in that session's first baseline, so it is pre-existing rather than a regression). The
+yard at (2040, 1898), 32 x 22, puts a corner at (2024, 1908) inside a drawn basin.
+
+**Fix attempt 1 - `_yard_fits` in `homestead_parts.py`: DEAD CODE on this path.** The reasoning was
+right (the check tests the yard's CORNERS against each paddy's recorded `outline`, while that
+function tested the yard's CENTRE with a circle against `field_polys`, the smoothed ENVELOPE - two
+sources and two geometries). The measurement that killed it: **`_yard_fits` is called ZERO times on
+a hamlet roll**. Hamlets seat homesteads through the bundle solver, not through that function.
+
+**Fix attempt 2 - the same test in `rolling/fit.py::_bundle_common_fits`: correct path, still no
+effect, and reverted.** That predicate IS the one hamlets use (6,104 calls on seed 31, with the
+paddy outline available on every one of them). But the rect it tests is not the rect that ships:
+probing yards within 30 ft of the target showed the tested rect as **(2055.4, 1921.7, 33.9, 27.8)**
+against a recorded **(2040, 1898, 32, 22)**. `farmsteads()` runs a south-nudge relaxation AFTER the
+fit, so the bundle moves and its yard is drawn from the moved geometry. Reverted rather than kept,
+because it cannot catch what it aims at and it costs a per-paddy-outline test inside a hot loop.
+
+**So the defect is the familiar one a layer further in**: the placer tests a RESERVATION and the
+engine draws something else, which is exactly what feature 121 fixed for houses ("the placer tests
+the rake it draws"). **Sketch**: re-assert the bundle's yard against the fields AFTER the relaxation
+nudge - in `farmsteads()` where `_attach_yard(rec["x"], rec["y"], geom["yard"])` is called, the geom
+is final, so the test belongs there and costs one check per homestead rather than one per candidate
+seat. If it refuses, the nudge should be undone rather than the yard dropped.
