@@ -69,7 +69,7 @@ pipeline's, and it is the same order a person follows:
   belt's side here is circular: the belt stands west because the cluster's back is west, and the
   wind was then named to match. On a cluster seated on the field's UPSLOPE margin the two rules
   agree and the declared wind carries real information; on a flank seat it does not.
-- **Dry hem plots run ~3.5x the size of Ikegami's** and chain single-file rather than packing two or
+- **Dry hem plots run ~4.5x the size of Ikegami's** (median 7,711 sq ft against 1,707; the coarsest of the four scripted hamlets - Kashikawa 6,221, Mizuguchi 6,092, Sawada 6,913. This bullet read "~3.5x" until a settlement-review re-measured it on the SHIPPED manifests, 2026-08-18: a standing known-open carries the current number or it is not a measurement) and chain single-file rather than packing two or
   three deep, so the hem reads as large fields rather than household strips (`settlement-review`,
   2026-08-11). Parcel size, not acreage - the total is comparable. It wants a researched constant of
   its own.
@@ -929,3 +929,29 @@ the reach, so no house passes by inches and none gets a path drawn to cure a rou
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead
 really has: a footpath of its own, routed round the neighboring plots rather than ruled at them,
 stopping at its first contact with the network, and planked where it crosses a ditch.
+
+### 2026-08-18 - the earthen walls that zigzag: diagnosed, half fixed
+
+Recorded here and referenced from the other three hamlet notes, because the defect is engine-wide.
+
+The GM, reading this sheet: *"the earthen wall is kind of going in a southward direction, and then
+instead of just continuing on and meeting at the four way intersection between the north south
+earthen walls and the east west earthen walls, it just goes sharply to the left before going down,
+thus making these extremely irregular shapes. This really, really looks like a rendering error."*
+The most egregious instance is the east flank at map (2283-2474, 1718): four rectangular tabs in a
+row, each about 48 ft wide and 8.5 ft deep, welded alternately into the row above and the row below.
+
+**It is a rendering error, and the provenance is measured**: snapshotting `close_seams`'s input and
+output gives **0 steps on the 543 carved rings and 26 on the 634 it hands back**. `_plant` grids a
+residual strip at its OWN pitch (`plot_across`, 48 ft), which is where neither adjacent row has a
+seam, and `_absorb` then welds the offcuts to whichever side shares the most bund.
+
+**Landed**: the `jog_steps` predicate, a jog guard in `_absorb`'s ladder (26 -> 23 here; 37 -> 33,
+20 -> 17, 24 -> 16 on the other three), and `python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json`.
+No other check moved and the regeneration is unchanged (21.1 s -> 20.8 s).
+
+**Not landed, and it is the bulk of the fix**: the two attempts that would have taken it to zero
+each broke another rule, and both are written up with their measurements, their failing geometry and
+the question to answer first in [`future-work.md`](../../future-work.md) "paddy bunds still step
+sideways". The gate check that belongs on top of that work is written and proven to fire; it is
+backed out with them rather than shipped red.
