@@ -1,7 +1,47 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.8.0 → 1.9.0
+Version change: 1.9.0 → 1.10.0
+MINOR: Principle XIV (Fix Defects Where You Find Them) ADDED (GM-directed,
+2026-08-17): "anytime we are working on the diagram skill and you in the
+course of implementing a feature come across some new defect - even if it is
+a defect that did not have anything to do with what you were working on - I
+would like you to fix it as part of that work ... in general, we should fix
+bugs before writing new code." A defect found during a piece of work is
+fixed in that work; the ONLY exception is one whose fix would be a complete
+overhaul or a giant architectural change, which is deferred with the
+measurement and the sketch. This deliberately NARROWS Principle XIII's
+"ledgered, not fixed under someone else's feature": that clause governs the
+MERGE BAR (a pre-existing failure does not block your push) and no longer
+licenses ledgering a defect you found and could have fixed. New principle:
+MINOR per the versioning policy. Motivating case: the /diagram paddy
+size-floor work (2026-08-17), where three `settlement-review` findings -
+lane frontage regressed past the engine's own recorded 94 ft threshold, the
+three shared byres collapsing onto three farmsteads, and a windbreak clipped
+with 23 clumps drawn wholly off-canvas - had nothing to do with paddy basin
+size, and the GM directed that all three be fixed before the feature landed
+rather than ledgered. The rationale in his words: keep the foundation rock
+solid, then hold that level of functionality as the skill expands into new
+settlement types.
+
+Sections updated:
+  - Core Principles: Principle XIV added; Principle XIII's "ledgered, not
+    fixed" sentence now cross-references XIV so the two do not read as
+    contradicting each other.
+
+Templates requiring review/update:
+  ✅ .specify/templates/plan-template.md - Constitution Check gains a
+                              Principle XIV entry.
+  ✅ CLAUDE.md - "Verification before reporting done" gains the
+                              fix-what-you-find rule.
+  ✅ .claude/skills/diagram/CLAUDE.md - the always-on list gains it, since
+                              /diagram is where it bites hardest.
+  ✅ .claude/skills/diagram/dev/reviews.md - states that a review finding
+                              outside the delta is still yours to fix.
+
+PRIOR (1.7.0 → 1.8.0):
+
+PRIOR (1.8.0 → 1.9.0):
 MINOR: Principle XII (Historical Grounding Bookends) gains two GM-directed
 rules, 2026-08-18. (a) RESEARCH PRECEDES A RULING: a question about how a
 place was actually built, farmed or lived in is answered by a research pass
@@ -19,7 +59,7 @@ choice between distinct FORMS. Motivating cases: the byre-beside-a-well and
 back-rank-access questions, both of which had been queued as GM rulings and
 were answered by a single research pass.
 
-Version change: 1.7.0 → 1.8.0
+PRIOR (1.7.0 → 1.8.0):
 MINOR: Principle XIII (No Known Regressions) ADDED (GM-directed,
 2026-08-17): "never count our work as being done when there are known
 regressions. Nothing should EVER be merged back into main if even one
@@ -779,10 +819,14 @@ fails, a measured rate that went down. It is defined against a **measured**
 baseline, never a remembered one: take the baseline on unmodified code (a
 detached worktree, not a stash) before judging your own numbers.
 
-**Pre-existing failures are NOT regressions** and are allowed to persist -
-they are ledgered, not fixed under someone else's feature. The distinction is
-exactly "did this pass before my change", which is why the baseline is
-mandatory rather than advisory.
+**Pre-existing failures are NOT regressions** and do not block your merge.
+The distinction is exactly "did this pass before my change", which is why the
+baseline is mandatory rather than advisory. **But "not a regression" is not
+"not your problem":** this clause governs the MERGE BAR only, and
+**Principle XIV** governs what you do about a defect you actually found -
+fix it in the work at hand, ledger it only when its fix would be an
+architectural overhaul. Read the two together; taken alone, this paragraph
+has been misread as a licence to ledger anything that predates the diff.
 
 **What does NOT excuse a regression:**
 
@@ -819,6 +863,56 @@ point: a regression merged there is silently inherited by every other
 session and by every artifact generated afterwards, and the person who pays
 for it is never the person who introduced it. The trade "I gained a feature
 and lost a check" is legible for about a day and invisible forever after.
+
+### XIV. Fix Defects Where You Find Them (NON-NEGOTIABLE)
+
+GM, 2026-08-17: *"anytime we are working on the diagram skill and you in the
+course of implementing a feature come across some new defect - even if it is a
+defect that did not have anything to do with what you were working on - I would
+like you to fix it as part of that work ... in general, we should fix bugs
+before writing new code."*
+
+**The rule.** A defect discovered in the course of a piece of work is FIXED in
+that piece of work, whether or not it has anything to do with the feature. Not
+filed, not deferred to "its own pass", not handed to a future session - fixed,
+in the same change, with the same verification every other fix gets.
+
+**The one exception** is a defect whose fix would be a complete overhaul or a
+giant architectural change: a stage reordering, a new subsystem, a rewrite of a
+placement engine. Those are deferred - and deferring one is a real deliverable,
+not a shrug: it carries the MEASUREMENT that establishes the defect, the
+mechanism, and the implementation sketch, so the next session starts from
+evidence rather than from a complaint. "This would take a while" is not the
+exception; "this cannot be done without changing the architecture" is.
+
+**Why this outranks the convenience of a tidy diff.** The reason is the GM's,
+and it is about compounding: the value of this project's generators comes from
+being able to expand them - new settlement tiers, new archetypes - on top of a
+foundation whose behavior is known-good. Every defect left in place is a
+defect the next tier inherits and builds over, and by then it is entangled with
+work that assumed it. Fixing on contact keeps the floor level as the building
+gets taller. It also removes the incentive that makes ledgers rot: a session
+that may fix what it finds writes down only what it genuinely cannot, so the
+ledger stays short and every entry in it is real.
+
+**Interaction with Principle XIII.** XIII says a pre-existing failure is not a
+regression and does not block your merge; that remains true and is about the
+MERGE BAR. XIV is about your OBLIGATION once you have seen the defect. Together:
+a pre-existing failure you never touched does not stop you shipping, and one you
+found gets fixed rather than ledgered. Where they appear to conflict, XIV
+decides what you do and XIII decides what blocks the push.
+
+**Where the defects actually come from, and so where this bites.** Mostly from
+the review subagents (`settlement-review`, `building-review`, `backstory-review`,
+`frontend-review`), which are pointed at a DELTA and reliably find things
+outside it - that is a feature of an independent reviewer, not scope creep by
+it. A finding outside the delta is still yours. The same applies to a defect a
+diagnostic surfaces, a number that looks wrong while measuring something else,
+and a comment that turns out to describe code that no longer exists.
+
+This principle is NON-NEGOTIABLE because the alternative is invisible: a
+skipped fix costs nothing today, shows up as "the generator has always been a
+bit off here" in a month, and is unattributable by the time it blocks a tier.
 
 ## Technical Standards
 
@@ -961,4 +1055,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.8.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-17
+**Version**: 1.10.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-18

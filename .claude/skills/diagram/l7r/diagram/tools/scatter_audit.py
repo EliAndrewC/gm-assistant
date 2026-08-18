@@ -43,6 +43,7 @@ _NUM = r"(-?[\d.]+)"
 _BLADE_GROUP = re.compile(r'<g stroke="#A7A860"[^>]*>(.*?)</g>', re.S)  # commons grass bucket
 _REED_GROUP = re.compile(r'<g stroke="#6E9377"[^>]*>(.*?)</g>', re.S)  # marsh reed bucket
 _LINE_BASE = re.compile(rf'<line x1="{_NUM}" y1="{_NUM}"')  # a blade/reed line's root
+_TRANSLATE_G = re.compile(rf'<g transform="translate\({_NUM},{_NUM}\)[^"]*"[^>]*>')  # grove clumps draw their canopy in a translated group
 _DOT = re.compile(rf'<circle cx="{_NUM}" cy="{_NUM}" r="[\d.]+" fill="#94A063"')  # brush dot
 _PINE = re.compile(rf'<line x1="{_NUM}" y1="{_NUM}" x2="{_NUM}" y2="{_NUM}" stroke="#7A6A48"')  # trunk (branches are #6E8452 - canopy ink, not a base)
 # THE CROWN FILLS COME FROM THE ENGINE, not from a copy here (2026-08-17). This pattern used to
@@ -61,17 +62,49 @@ DENSITY_BANDS = ((0.0, 15.0), (15.0, 30.0), (30.0, 45.0))
 _QUANT_EPS = 0.15
 
 
+def _translated_spans(svg: str) -> list[tuple[int, int, float, float]]:
+    """Every `<g transform="translate(tx,ty)">...</g>` span, as (start, end, tx, ty).
+
+    Nested groups are not produced by this engine's emitters, so a flat scan of matched pairs is
+    enough; a span is closed at the first `</g>` after its opening tag."""
+    spans: list[tuple[int, int, float, float]] = []
+    for m in _TRANSLATE_G.finditer(svg):
+        end = svg.find("</g>", m.end())
+        spans.append((m.end(), len(svg) if end < 0 else end, float(m.group(1)), float(m.group(2))))
+    return spans
+
+
 def parse_bases(svg: str) -> dict[str, list[Base]]:
-    """Every scatter BASE point per family, in document order. Element coords are world coords
-    (crop_to_content crops via the viewBox, never by rewriting coordinates - crop_map.py relies on
-    the same fact)."""
+    """Every scatter BASE point per family, in document order, in WORLD coordinates.
+
+    Most element coords already are world coords - `crop_to_content` crops via the viewBox and never
+    rewrites coordinates, which `crop_map.py` relies on too. But GROVE CLUMPS are not: `_draw_grove`
+    emits its canopy inside `<g transform="translate(cx,cy)">`, so a crown's `cx`/`cy` are LOCAL to
+    the clump. Reading them raw put a crown at world (710.9, 1815.8) on the map at (4.9, -14.2).
+
+    THE COUNT GUARD COULD NOT SEE THAT, which is the transferable half (settlement-review, Mizuguchi
+    2026-08-18). `tests/tools/test_scatter_audit.py` asserted `parsed >= recorded`, and 1,446 >= 1,446
+    passed while ~78% of the crown family was being adjudicated in the wrong place - the audit
+    reported 0 violations on a map that really had 5 crown bases inside the crop margin. A coverage
+    guard that counts is blind to a family that sees the right NUMBER of things somewhere else; the
+    guard is positional now, and this parser resolves the transform."""
     fams: dict[str, list[Base]] = {"blade": [], "dot": [], "pine": [], "crown": [], "reed": []}
     for group, fam in ((_BLADE_GROUP, "blade"), (_REED_GROUP, "reed")):
         for body in group.findall(svg):
             fams[fam] += [(float(x), float(y)) for x, y in _LINE_BASE.findall(body)]
     fams["dot"] = [(float(x), float(y)) for x, y in _DOT.findall(svg)]
     fams["pine"] = [(float(x), float(y)) for x, y, _, _ in _PINE.findall(svg)]
-    fams["crown"] = [(float(x), float(y)) for x, y, _ in _CROWN.findall(svg)]
+    spans = _translated_spans(svg)
+
+    def _offset(at: int) -> tuple[float, float]:
+        for lo, hi, tx, ty in spans:
+            if lo <= at < hi:
+                return tx, ty
+        return 0.0, 0.0
+
+    for m in _CROWN.finditer(svg):
+        ox, oy = _offset(m.start())
+        fams["crown"].append((float(m.group(1)) + ox, float(m.group(2)) + oy))
     return fams
 
 

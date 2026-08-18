@@ -30,3 +30,24 @@ Three rules, all of them free:
   second added to the task's total.
 
 Same three rules apply to `building-review` and `backstory-review`.
+
+## A finding OUTSIDE the delta is still yours to fix
+
+Constitution **Principle XIV** (GM 2026-08-17). An independent reviewer pointed at a DELTA reliably
+turns up defects that have nothing to do with it - that is the reviewer working, not the reviewer
+overreaching - and the answer is to FIX them in the work at hand, not to ledger them for a pass that
+never comes. The only exception is a fix that would be an architectural change (a stage reordering, a
+new subsystem, a placement engine rewritten); defer that WITH its measurement, its mechanism and an
+implementation sketch, which is a deliverable rather than a shrug.
+
+Do not reach for Principle XIII's "pre-existing failures stay ledgered" here. That clause is about
+what BLOCKS a push, not about what you owe a defect you have seen.
+
+Worked example, the paddy size floor (2026-08-17). Three `settlement-review` findings arrived that
+had nothing to do with basin size: lane frontage regressed past the 94 ft threshold `homesteads.py`
+records as its own diagnosed defect, the three shared byres collapsed onto three farmsteads
+(median nearest-byre 373 ft), and a windbreak was clipped with 23 clumps drawn wholly off-canvas.
+All three were fixed in that feature - 106/59/65/77 ft lane medians, byre median 107 ft, zero
+off-canvas clumps - and the *first* attempt at the lane fix (a relaxation ladder) is recorded at the
+point of change as having measurably done nothing, because a fix that fails is worth as much to the
+next reader as the one that works.

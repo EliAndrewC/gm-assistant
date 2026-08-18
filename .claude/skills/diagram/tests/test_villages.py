@@ -290,6 +290,44 @@ def test_village_passes_gate(gen):
         )
 
 
+def test_every_scripted_comb_fan_records_its_design_cell() -> None:
+    """The size floor's declaration guard: no `cell`, no `paddy_basins_are_worth_their_bund`.
+
+    That check measures each basin against the DESIGN CELL the placer carved to, recorded on the
+    field by `build_comb`, and it SKIPS a field that has none - which is correct, because the
+    terrace, ribbon and polder engines record none and are deliberately exempt from an area floor
+    (hill rice is where the real micro-basins are). The cost of that design is that dropping the
+    record would retire the floor on every comb map at once with the gate still green - "a check
+    that never RUNS looks exactly like a check that passes".
+
+    IT IS A TEST RATHER THAN A GATE CHECK, deliberately. An in-gate rule fires on the two dozen
+    frozen hamlet manifests in pool/regressions/ that were captured before `cell` existed, for a
+    reason unrelated to the defect each was frozen for - and a fixture cannot be re-captured
+    without losing the geometry it exists to pin. So the guard reads the SHIPPED pool maps instead,
+    where the record either exists or the floor is dark.
+    """
+    seen = 0
+    for gen in GENERATORS:
+        path = gen[: -len(".gen.py")] + ".json"
+        if not os.path.exists(path):
+            continue
+        with open(path) as fh:
+            M = json.load(fh)
+        irrigated = {c.get("field") for c in M.get("field_ditches") or []}
+        for fld in M.get("fields") or []:
+            if fld.get("kind") != "paddy" or fld.get("name") not in irrigated:
+                continue
+            if not fld.get("plot_rings"):
+                continue  # a fan that records no rings is invisible to the floor either way
+            seen += 1
+            assert fld.get("cell"), (
+                f"{os.path.basename(gen)}: comb fan {fld.get('name')!r} records no `cell`, so "
+                "paddy_basins_are_worth_their_bund silently skips it and the paddy size floor is "
+                "unguarded on this map (build_comb must return `cell`; see _TOE_MIN_AREA)"
+            )
+    assert seen >= 4, f"the guard inspected only {seen} comb fans - it has stopped reaching the scripted pool and is no longer guarding anything"
+
+
 if __name__ == "__main__":
     rc = 0
     for g in GENERATORS:

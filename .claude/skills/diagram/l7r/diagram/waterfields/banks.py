@@ -271,6 +271,131 @@ _TINT_END_FT = 5.0
 # constant above it is a margin over it, and the invariant the calibration rests on is that all of
 # them are strictly greater.
 _GATE_MIN_APEX = 15.0
+# ...and a THIRD way to be unworthy of a bund of its own, which is neither thinness nor a point:
+# being TOO SMALL RELATIVE TO THE FAN IT SITS IN. GM question 2026-08-17, reading a hamlet sheet:
+# "most of the rice paddy fields are rectangular, but then there are a few very small triangles ...
+# should there be a minimum rice paddy size? I would expect that there would be."
+#
+# THERE IS NO ABSOLUTE MINIMUM, AND THAT ANSWER IS RESEARCHED RATHER THAN ASSUMED. Shiroyone
+# Senmaida works 1,004 basins on about 4 ha: the average runs ~18-20 m2 and the smallest is roughly
+# half a meter square - two rice stalks - with the local anecdote that a paddy once reported missing
+# turned up under a straw raincoat. Our smallest scripted-hamlet basin is 240 sq ft (~22 m2), which
+# is LARGER than a typical Senmaida paddy. Any floor stated in acres would therefore condemn the
+# most famous paddies in Japan, so the absolute floor was priced and DECLINED (research/fields.md).
+#
+# WHAT IS REAL IS A RATIO, AND THE REASON IS THE AZE. On a terrace the wall a basin needs already
+# exists: the riser is a structural retaining wall the slope demands whether or not anyone
+# subdivides, and the water is held by a 10-15 cm lip on top of it - so the marginal cost of one
+# more tiny bench is near zero and the alternative to it is bare rock. On a valley-floor cascade fan
+# there is no riser. The aze IS the whole structure, built only to hold water, and it costs its own
+# strip of the most valuable land on the map plus a full perimeter of azenuri re-plastering every
+# spring. The alternative to a scrap here is never "no rice": it is making the basin NEXT DOOR
+# bigger, which costs no new wall at all. That is this module's own research answer for an awkward
+# scrap - "taken into the basin beside it rather than walled off on its own" - applied to SIZE.
+#
+# WHERE THE LINE SITS, BY TWO INDEPENDENT ROUTES THAT AGREE (the pattern the drain-head width note
+# already uses, and the reason 0.25 is not a compromise). (1) GEOMETRY: a quarter of the design
+# cell's AREA is half its linear size in both directions, so below it a parcel is not a cell that
+# came out small, it is a fragment of one. (2) COST: the aze eats a share of the ground it encloses
+# that climbs as the basin shrinks - at AZE_FT 1.5 with half charged to each side, a hamlet's 38.6 ft
+# design cell pays 8.1%, and 19.2 ft pays 16.2%. 0.25 of the cell is exactly the square at which
+# that overhead has DOUBLED off its design value. The two routes land on 0.25 together, and they
+# keep landing there at other scales because the doubling point moves so slowly: at the village
+# 47 ft cell (6.5% -> 13%) it is 0.256, at 38.6 ft it is 0.248.
+#
+# THE THICKNESS RULE ALREADY IMPLIED A FLOOR NEAR 0.16, WHICH IS WHY THE DEFECT LOOKS THE WAY IT
+# DOES - worth stating, because it explains both the shape of the tail and why the gate line below
+# is where it is. `_TOE_MIN_THICKNESS` demands an inradius of 0.16 * plot_across, and for a compact
+# basin the inradius is half the side, so it bottoms out at (0.32 * plot_across)^2 - about 0.16 of
+# the cell. Measured with the floor patched off, the smallest basin on any of the four scripted
+# hamlets is 0.160 of its cell and NOTHING sits below that. So the ground this rule newly covers is
+# the narrow band 0.16-0.25: real, compact, honestly-angled parcels that are simply fragments. That
+# band is exactly what the GM was looking at.
+#
+# THE COST WAS MEASURED BEFORE THE NUMBER WAS CHOSEN, against each fan's OWN recorded cell (an
+# earlier pass measured against `paddy_grain(ftpx)` and was wrong by ~1.5x, because `plot_texture`
+# had already scaled the hamlets' target down to 1,488 sq ft): over the 2,829 basins of the four
+# scripted hamlets, 1.63% sit under 0.25 of their cell and 0.46% under 0.20. Nothing is LOST -
+# every basin under the floor is absorbed into the one it shares the most bund with, so planted
+# area, the field outline and the household COUNT are all untouched.
+#
+# BUT THE HOMESTEAD POSITIONS ARE NOT, and that has to be said here rather than discovered later
+# (settlement-review, Inashiro 2026-08-17, correcting this comment's first draft, which had copied
+# the paddy-CELL note's "farmhouse rings are unchanged" - true there, false here). The cell change
+# subdivided the same envelope and drew the same number of things; this rule changes the NUMBER of
+# drawn plots, and the patchwork draws from the SHARED placement RNG, so every downstream placement
+# re-rolls.
+#
+# MEASURED, and SAY WHICH METRIC - the first write-up did not, and was wrong by 2-4x because of it
+# (settlement-review, Sawada). "Up to 78 px" was each new house's distance to the NEAREST OLD house,
+# which quietly lets one old house partner several new ones and so always under-reports. Under a
+# real one-to-one matching (the smallest possible LARGEST displacement) the same map moves a
+# household 286 px. Against main's tip - houses unmoved, then min-max displacement:
+#
+#   Inashiro    0 of 15   564 px   gardens 18 -> 17, farm sheds 6 -> 3, view shifts
+#   Kashikawa  20 of 20     0 px   byte-identical, view included
+#   Mizuguchi   7 of 12   250 px   gardens 16 -> 17, farm sheds 2 -> 1
+#   Sawada     11 of 19   540 px   gardens 20 -> 23, farm sheds 5 -> 6
+#
+# The household COUNT holds on all four (15/15, 20/20, 12/12, 19/19) and so does the acreage - it is
+# the positions that rotate, by a map-specific amount, and Kashikawa proves the amount can be zero.
+# Any future rule that changes a drawn COUNT carries the same ripple; MEASURE it rather than reason
+# about it, because the reasoning that feels safest ("the field outline is the same, so the rings
+# that key off it are the same") is exactly the one that fails. It is also how the cohort seed-41
+# well regression happened: a well moved, not a paddy.
+#
+# DELIBERATELY COMB-ONLY. `build_terraces` and `build_ribbon` are the hill-rice engines, and hill
+# rice is exactly where the Senmaida micro-basins above are real; `build_polder`'s parcels are
+# grounded true-scale on Buck's ~1 mu figure and are not cascade basins at all. Only the valley-floor
+# fan carries this floor, because only there is the aze a pure, unshared cost.
+_TOE_MIN_AREA = 0.25
+# THE GATE'S OWN LINE, and it is NOT 0.6 of the placer's the way the apex pair is 15 of 25. It
+# cannot be: the thickness rule's implicit floor sits at ~0.16, so a gate at 0.15 would be a check
+# that can never fire - the failure mode this package's own doctrine names first ("a check that
+# never RUNS looks exactly like a check that passes"), and it was measured, not guessed, when 0.15
+# passed on a manifest generated with the floor switched off. The band the placer newly refuses is
+# [0.16, 0.25), so the gate takes the MIDDLE of that band: clear of the placer by 25% so no rounding
+# can make the two disagree, clear of the implicit floor by the same, and firing at once on any
+# regression that reopens the band. On the pre-floor manifests it flags 2 basins on Inashiro, 1 on
+# Kashikawa, 4 on Mizuguchi and 6 on Sawada; two of those are frozen in pool/regressions/.
+_GATE_MIN_AREA = 0.20
+# A WELD MUST NOT MAKE A LUMP OUT OF THE BASIN THAT TAKES THE SCRAP, which is the size rule's own
+# second-order defect and was found by settlement-review on the first pass (Sawada and Mizuguchi,
+# 2026-08-17). `_absorb` ranks candidate hosts by SHARED BUND LENGTH, which is the right first
+# preference and is blind to the shape it produces: on Mizuguchi it handed a 306 sq ft fragment to
+# the single lumpiest basin on the sheet and made it worse - 26 vertices, eight reflex corners, and
+# four out-and-back prongs whose tips are 5-11 ft wide, each of which draws as a bund with a FREE
+# END sticking into the paddy. That is the GM's "rendering artifact" complaint transplanted from
+# area to outline, and it is a real construction error either way: a wall that goes out eleven feet
+# and comes straight back retains water on neither side and costs a full share of azenuri.
+#
+# SOLIDITY (area / convex-hull area) is the measure, because the defect is CONCAVITY and the two
+# guards already in the ladder both measure an APEX - `pointed_ring` cannot see a lobe whose every
+# corner is blunt. Measured over the 20 absorbed basins of the first Sawada pass: eighteen scored
+# >= 0.90 and the two the reviewer picked out by eye scored 0.731 and 0.78. 0.85 is the gap between
+# those populations, and it is wide - nothing sits between 0.78 and 0.90.
+#
+# IT IS A PREFERENCE, NOT A VETO, for the reason the apex guard learned the hard way: refusing
+# outright trades a lump for a doubled bund, which is worse. A lumpy weld is remembered and the
+# next-best host tried; the best of the lumpy candidates is taken only if no host is clean.
+_WELD_MIN_SOLIDITY = 0.85
+# ...and the same measure guards the TINT, for a defect the apex guards likewise could not see
+# (settlement-review, Sawada 2026-08-17). Absorbing a fragment into the fan's ONE flooded plot grew
+# it a lobe: 94 x 24 ft became 94 x 38 ft at solidity 0.731, and at fit zoom it reads as an
+# arrowhead POND - on the map whose brief is explicitly "no pond". `_TINT_MIN_APEX` scored it 41.8
+# deg and `_TINT_END_FT` found both ends far wider than 5 ft, so both passed a plot that fails the
+# thing the tint rule is actually for. Blue means "the closing rank pooling before the outfall", so
+# a blue plot has to READ as a leveled basin; the same 0.85 demotes it to rice green, and the check
+# runs after the absorb pass because that is what reshaped it.
+_TINT_MIN_SOLIDITY = 0.85
+
+
+def cell_area(plot_across: float, row_step: tuple[float, float]) -> float:
+    """The fan's DESIGN cell in px^2 - the area one carved paddy was aimed at.
+
+    ONE expression, so the placer's floor and the gate's read the same reference (the same-source
+    doctrine). `row_step` is a (min, max) band, so the cell takes its midpoint."""
+    return plot_across * (row_step[0] + row_step[1]) / 2.0
 
 
 def hem_on_paddy(quad: Poly, paddy_outline: Poly) -> bool:

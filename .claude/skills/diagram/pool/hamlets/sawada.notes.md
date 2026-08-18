@@ -208,26 +208,90 @@ than a fork. Byres went from 20% of the settlement's length to spanning it. Clus
 THE FORK IS WHY THE CHECK LEARNED ABOUT ANGLES: `_reaches` counted ANY way within 40 ft as arrival,
 including the lane an arm had already met at its own junction - so the defect satisfied the test
 written for it. Proximity is not arrival.
+OPEN, pre-existing and tier-wide, raised for a ruling rather than a fix: 18 of 19 gardens sit on the
+E wall, which `_find_garden_spot` treats as the LAST RESORT (keeping the garden off the windward
+wall is what frees that wall for the grove). `windward="NE"` makes E windward here, so the last
+resort is winning 18 times out of 19 - and `groves` is 0, as it is in 12 of the 13 pool hamlets.
+Sawada is the map that shows why homestead groves never appear at hamlet tier.
 
-## Feature 123 - the lane web (alleys)
+## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
 
-**10 of this map's 19 farmhouses stood more than 100 ft from any way. Now none do.** The research
-is decisive that a house in a nucleated cluster is reached - "every house in the nucleated village is
-accessible via the interconnected system of narrow lanes and alleys" - so the back rank being walked
-to along unfigured footpaths was a defensible-sounding reading with nothing behind it
-([`../../research/homesteads.md`](../../research/homesteads.md)).
+The GM, reading a hamlet sheet: *"most of the rice paddy fields are rectangular, but then there are
+a few very small triangles. Is that realistic? It looks like it is just a mistake, like, basically,
+a rendering artifact rather than something that is from our historical research. Relatedly, should
+there be a minimum rice paddy size?"*
 
-The FORM of that access is a seeded knob, because the record supports two and the project's rule is
-that two supportable answers become variance rather than a choice (constitution Principle XII). This
-map rolled **`alleys`**: narrow LATERALS threading back between columns of houses, off the existing skeleton - the accretive Chinese gridiron, the form that says the place GREW. It now carries **6 web lanes** of 10 in all.
+Three answers came out of the research pass, and only one of them is yes. There is **no absolute
+minimum** - Shiroyone Senmaida works 1,004 basins on ~4 ha, averaging ~18-20 m2, the smallest about
+half a meter square - so a floor in acres was declined. **Four-sides-only** was declined too: it
+would re-impose the *kochi seiri* consolidation grid the research already flags as the anachronism.
+What is real is a **ratio**: on a terrace the wall is a riser the slope demands anyway, but on a
+valley-floor fan the aze is the whole structure, built only to hold water and re-plastered every
+spring, and the alternative to a scrap is never no-rice - it is making the basin next door bigger.
+So a comb basin under **0.25 of the fan's own design cell** is dropped by the toe pass and absorbed
+by `close_seams`; the gate `paddy_basins_are_worth_their_bund` fires under 0.20. The triangularity
+was the symptom - a fragment clipped off the lattice at the fan boundary comes out triangular - and
+the size was the cause. Full findings, both declined alternatives, the two derivations of 0.25 and
+why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
 
-**The web is laid AFTER the houses, which is the opposite of every other lane here, and that is the
-whole design.** Laid first, as the skeleton is, it has to reserve ground from a cluster that has not
-been packed yet - so it competes with the very houses it exists to serve. Measured across the four
-hamlets, that grew their long axes by 15-97%: sprawl no check measures, caught only by hand. Laid
-afterwards the conflict is not there, and this map's cluster is **810 ft** on its long axis
-against **808 ft** before the feature - placement untouched, which is the point.
+**On this map, measured on the SHIPPED manifest against main's tip.** 843 -> 818 basins (the largest
+share in the pool); smallest surviving basin 379 sq ft against a 372 sq ft floor; total plot area
++0.001% - absorbed, not deleted; 19 of 19 households; field outline unchanged.
 
-Where the regular web could not reach a steading, that house gets what an outlying farmstead really
-has: a short footpath of its own from the nearest way to its door, bending round a neighbor's plot
-if it must. It may cross nobody's garden bed and nobody's threshing floor, including its own.
+**The cluster partly re-packs: 14 of 19 houses unmoved, min-max displacement 135 px.** An earlier
+draft said "6 of 19 move, up to 78 px ... the view holds" - wrong on both counts, and the metric is
+why: 78 px was each new house's distance to the NEAREST OLD one. Lane frontage improved most here,
+median **118 -> 91 ft**.
+
+**Three defects review caught on this sheet, all fixed:**
+
+- **A flooded plot fused to the drain outfall read as a POND**, on the one map whose whole brief is
+  that it has none. Every tint predicate passed it correctly - min apex 81.4 deg, solidity 0.910 -
+  because the defect is SITING, not shape. A fourth clause now demotes a blue plot within 1.5 plot
+  widths of the collector's terminus; the closing rank ALONG the drain keeps its tint.
+- **A self-intersecting bow-tie ring at (167, 2558)**, invisible in ink (the neighbor overpaints the
+  stray edge) but not a simple polygon, so every shape metric on it was meaningless. Now REPAIRED by
+  `buffer(0)` rather than dropped - dropping cost 12 cohort seeds, then 2 more purely to RNG
+  rotation. Zero self-intersecting rings on all four maps.
+- **The windbreak lost 46% of its canopy to the first version of the frame fix.** Restored to 171
+  clumps; see the shared entry below.
+
+**Still open**, raised by review and left with its measurement: the woodland commons went 2 -> 1
+parcels this roll (a 54-crown stand at (230, 3040) did not re-seat), and the SE pocket's two
+households still sit 240-292 ft from any internal lane. Both in `future-work.md`.
+**The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
+rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
+outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
+44/48. Measured in a detached worktree, seed 41's FIELD geometry was byte-identical either way, so
+the failure was not a paddy defect at all: it was a well landing on a pre-existing weakness in
+`hamletgen.place_wells`, whose minimax tie-break (distance to centroid) cannot express "this seat is
+outside the settlement". The GM's call was to take that fix as its OWN piece of work first and land
+the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
+are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
+Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).
+
+### 2026-08-18 - the windbreak frame fix, corrected: CLIPPING IS THE DOCTRINE
+
+Recorded once here and referenced from all four hamlet notes, because the mistake was general.
+
+A review asked for a belt whose clumps were "touching the frame" to be contained. The fix inset the
+allowed window by a canopy reach, which required the WHOLE crown to be inside - and that is
+backwards. `settlements/presentation.md` (GM 2026-07-20) says the belt CLIPS at the view edge and
+"a partially visible belt reads as 'the wood continues'"; `hard_features_within_frame` demands
+partial visibility of a village grove rather than containment. Only a clump with **no visible ink**
+is waste.
+
+The cost of getting it backwards, measured by two independent reviews: Mizuguchi dropped **40
+clumps to remove 3 invisible ones** - 37 at least partly visible, 12 not even touching the frame -
+leaving a ~100 ft bare channel through the middle of the wind wall on the windward side; Sawada lost
+**46% of its canopy** and its belt became shorter than the cluster it shelters.
+
+Inverted to skip only a clump lying WHOLLY outside the frame. Result across the pool: **zero
+invisible clumps on all four maps**, belt gaps 26-37 px against a 30 px baseline, and clump counts
+164 -> 169 (Inashiro), 212 -> 190 (Kashikawa), 131 -> 127 (Mizuguchi), 231 -> 171 (Sawada) - the
+Sawada figure being the re-pack's own effect on the house cloud the belt derives from, not the clip.
+
+**The transferable part**: the first review's complaint was itself against a documented rule, and
+following it literally made three maps worse. A reviewer's finding is evidence, not a verdict - check
+it against the doctrine file before acting on it.
