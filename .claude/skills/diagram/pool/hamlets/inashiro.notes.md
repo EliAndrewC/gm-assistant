@@ -830,3 +830,29 @@ Sawada figure being the re-pack's own effect on the house cloud the belt derives
 **The transferable part**: the first review's complaint was itself against a documented rule, and
 following it literally made three maps worse. A reviewer's finding is evidence, not a verdict - check
 it against the doctrine file before acting on it.
+
+### 2026-08-18 - the earthen walls that zigzag: diagnosed, half fixed
+
+Recorded here and referenced from the other three hamlet notes, because the defect is engine-wide.
+
+The GM, reading this sheet: *"the earthen wall is kind of going in a southward direction, and then
+instead of just continuing on and meeting at the four way intersection between the north south
+earthen walls and the east west earthen walls, it just goes sharply to the left before going down,
+thus making these extremely irregular shapes. This really, really looks like a rendering error."*
+The most egregious instance is the east flank at map (2283-2474, 1718): four rectangular tabs in a
+row, each about 48 ft wide and 8.5 ft deep, welded alternately into the row above and the row below.
+
+**It is a rendering error, and the provenance is measured**: snapshotting `close_seams`'s input and
+output gives **0 steps on the 543 carved rings and 26 on the 634 it hands back**. `_plant` grids a
+residual strip at its OWN pitch (`plot_across`, 48 ft), which is where neither adjacent row has a
+seam, and `_absorb` then welds the offcuts to whichever side shares the most bund.
+
+**Landed**: the `jog_steps` predicate, a jog guard in `_absorb`'s ladder (26 -> 23 here; 37 -> 33,
+20 -> 17, 24 -> 16 on the other three), and `python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json`.
+No other check moved and the regeneration is unchanged (21.1 s -> 20.8 s).
+
+**Not landed, and it is the bulk of the fix**: the two attempts that would have taken it to zero
+each broke another rule, and both are written up with their measurements, their failing geometry and
+the question to answer first in [`future-work.md`](../../future-work.md) "paddy bunds still step
+sideways". The gate check that belongs on top of that work is written and proven to fire; it is
+backed out with them rather than shipped red.

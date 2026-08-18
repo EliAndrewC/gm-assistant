@@ -11,7 +11,7 @@ import random
 import pytest
 from shapely.geometry import Polygon
 
-from l7r.diagram.waterfields.banks import _WELD_MIN_APEX, dedup_ring, tapers_to_a_point
+from l7r.diagram.waterfields.banks import _WELD_MIN_APEX, dedup_ring, jog_steps, jog_vertices, tapers_to_a_point
 from l7r.diagram.waterfields.frame import _Frame
 from l7r.diagram.waterfields.seams import MIN_PLOT_SIDE, _absorb, _despike, _min_apex, _open_to, _parts, _plant, _ring, _water, close_seams
 
@@ -131,7 +131,7 @@ def test_absorb_takes_the_neighbour_it_shares_the_most_bund_with():
     strip = Polygon(_rect(100, 0, 104, 100))
     into = [Polygon(_rect(0, 0, 100, 100)), Polygon(_rect(104, 40, 200, 60))]  # 100 px of shared wall vs 20
     grown: set[int] = set()
-    _absorb(strip, into, grown, 3.0)
+    _absorb(strip, into, grown, 3.0, GRAIN)
     assert grown == {0}
 
 
@@ -140,7 +140,7 @@ def test_absorb_falls_through_to_the_runner_up_when_the_best_neighbour_refuses()
     strip = Polygon(_rect(100, 100, 140, 140))
     into = [Polygon(_rect(0, 0, 100, 100)), Polygon(_rect(140, 100, 200, 140))]
     grown: set[int] = set()
-    _absorb(strip, into, grown, 3.0)
+    _absorb(strip, into, grown, 3.0, GRAIN)
     assert grown == {1}, "the weld gave up instead of trying the basin that could take it"
 
 
@@ -222,7 +222,7 @@ def test_absorb_trims_a_tapering_tail_rather_than_refusing_the_weld():
     # bare (the doubled bund that cost cohort seeds 9 and 11). Trimming rescues the weld.
     into = [Polygon(_rect(0, 0, 100, 100))]
     grown: set[int] = set()
-    _absorb(_wedge(60.0, 200.0), into, grown, 20.0)
+    _absorb(_wedge(60.0, 200.0), into, grown, 20.0, GRAIN)
     assert grown == {0}, "the weld was refused where trimming the tail would have carried it"
     assert _apex_of(into[0]) >= _WELD_MIN_APEX, "the trimmed weld still left a needle"
 
@@ -232,7 +232,7 @@ def test_absorb_takes_a_least_bad_weld_that_still_clears_the_gate():
     # beats leaving a doubled bund - a basin the gate ACCEPTS is not a defect.
     into = [Polygon(_rect(0, 0, 100, 100))]
     grown: set[int] = set()
-    _absorb(_wedge(60.0, 200.0), into, grown, 0.001)
+    _absorb(_wedge(60.0, 200.0), into, grown, 0.001, GRAIN)
     assert grown == {0}
 
 
@@ -241,7 +241,7 @@ def test_absorb_leaves_the_scrap_bare_when_every_weld_would_make_a_real_needle()
     # needle, so the honest answer is the odd corner left unpaddied.
     into = [Polygon(_rect(0, 0, 100, 100))]
     grown: set[int] = set()
-    _absorb(_wedge(60.0, 300.0), into, grown, 0.001)
+    _absorb(_wedge(60.0, 300.0), into, grown, 0.001, GRAIN)
     assert grown == set()
 
 
@@ -304,3 +304,56 @@ def test_close_seams_records_no_self_intersecting_ring():
     plots = _scene([_rect(10, 10, 100, 110), _rect(112, 10, 290, 110)], env)
     for p in plots:
         assert Polygon(p["poly"]).is_valid, f"recorded a crossing ring: {p['poly']}"
+
+
+# --- a bund runs on, or it turns for a reason: `jog_steps` and the two passes that answer to it ---
+
+
+def _stepped(off: float, link_at: float = 60.0, run: float = 140.0) -> list[tuple[float, float]]:
+    """A basin whose north wall runs east, hops `off` px south at x=link_at, and carries on east."""
+    return [(0.0, 0.0), (link_at, 0.0), (link_at, off), (link_at + run, off), (link_at + run, 100.0), (0.0, 100.0)]
+
+
+def test_jog_steps_counts_a_wall_that_steps_sideways_and_carries_on():
+    assert jog_steps(_stepped(9.0), GRAIN) == 1
+    assert jog_steps(_rect(0, 0, 200, 100), GRAIN) == 0
+
+
+def test_jog_steps_ignores_a_step_under_the_placer_floor():
+    # 2 ft is the placer's line (`_JOG_OFF_FT`), one notch under the gate's 3 ft; at GRAIN 2 a foot
+    # is a pixel, so 1.9 px is under it and 2.1 px is over.
+    assert jog_steps(_stepped(1.9), GRAIN) == 0
+    assert jog_steps(_stepped(2.1), GRAIN) == 1
+
+
+def test_jog_steps_ignores_a_hop_too_long_to_be_a_step():
+    # a 31 px hop is a LIMB - an L-shaped parcel, which is the honest odd shape reclamation leaves
+    assert jog_steps(_stepped(31.0), GRAIN) == 0
+
+
+def test_jog_steps_ignores_a_run_too_short_to_be_a_wall():
+    # the run BEFORE the hop is 5 px, under the 6 ft floor: a corner nub, not a wall carrying on
+    assert jog_steps(_stepped(9.0, link_at=5.0), GRAIN) == 0
+
+
+def test_jog_steps_passes_a_narrow_basin_on_its_own_end_wall():
+    # THE REASON HEADINGS ARE COMPARED OVER THE FULL CIRCLE - a thin rectangle is two long parallel
+    # runs a short link apart, which modulo 180 deg is indistinguishable from a step.
+    assert jog_steps(_rect(0, 0, 300, 9), GRAIN) == 0
+
+
+def test_jog_vertices_returns_the_two_ends_of_the_hop():
+    assert jog_vertices(_stepped(9.0), GRAIN) == [((60.0, 0.0), (60.0, 9.0))]
+
+
+def test_jog_steps_ignores_a_gently_curving_bund():
+    # THE CLAUSE THIS HOLDS. A curve sampled into segments is a run, a link and a run resuming
+    # near-parallel, with a perpendicular offset of a few feet purely from the bend - so without the
+    # corner test the rule fires all along it. Measured on Kuwabata, whose paddies are long curved
+    # parcels: 57 reported steps on 43 plot rings, every one a smooth bend.
+    curve = [(0.0, 0.0)]
+    for k in range(1, 9):
+        curve.append((30.0 * k, 7.0 * k + 1.5 * k * k))  # each segment turns a few degrees on the last
+    curve.append((curve[-1][0], curve[-1][1] + 200.0))
+    curve.append((0.0, 200.0))
+    assert jog_steps(curve, GRAIN) == 0

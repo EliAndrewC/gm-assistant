@@ -71,6 +71,67 @@ at two tolerances is how checks start disagreeing. (3) A pocket **too thin to bu
 rather than planted, matching the fan toe's existing thickness rule (`_TOE_MIN_THICKNESS`) - a
 needle basin cannot be leveled or bunded at any sane cost.
 
+### A bund runs on, or it turns for a reason - it does not step sideways and carry on
+
+**Grounds:** `waterfields/banks.py::jog_steps` (used by `_absorb`); `tools/jogs.py`; **not yet a gate check** - see the departures below
+
+**Evidence:** follows from the *aze*'s construction and maintenance, above; the *kochi seiri* framing at the head of this section
+
+*What the research found.* Nothing new about the *aze* - this is the shared-bund finding read one
+step further, and it is worth writing down separately because the two rules pull in opposite
+directions and a reader who has only one of them will break the other. The section above says real
+paddy fabric is odd-shaped and piecemeal, and the section head says STRAIGHT rectangular plots are
+the modern land-consolidation artifact: **the organic waver is period-correct and must not be
+cleaned up.** What that permits is a bund that BENDS, a basin that is a trapezoid, and a wall that
+runs out at a T-junction. What it does not permit, and what nothing in the record produces, is a
+wall that runs, hops a few feet SIDEWAYS, and carries on parallel to itself.
+
+Three reasons, all of them the *aze*'s own economics. The bill for a bund is its LENGTH, since
+*azenuri* is re-plastering along it every spring; a jog buys the extra run between two corners for
+nothing. Corners are the part of a puddled ridge that slumps and so the part that is re-plastered
+hardest, and a jog buys two of them. And the ground the jog trades is worth nothing to either
+party: it sits at the same level, floods from the same offtake and is reachable from either basin,
+so no farmer pays a wall's maintenance to move a boundary a few feet sideways along its own line.
+Where a real parcel boundary DOES step there is a thing at the corner - a ditch, a path, a rock, an
+inherited holding - and at the scale these maps are drawn we draw those things, so a step with
+nothing at its corner is not a boundary at all.
+
+*The decision it drove (GM 2026-08-18, on Inashiro:* "the earthen wall is kind of going in a
+southward direction, and then instead of just continuing on and meeting at the four way
+intersection between the north south earthen walls and the east west earthen walls, it just goes
+sharply to the left before going down, thus making these extremely irregular shapes. This really,
+really looks like a rendering error"*).* Measured, it was one: snapshotting `close_seams`'s input
+and output gives **0 steps on the 543 carved rings and 26 on the 634 it hands back**, and every
+frozen pre-`close_seams` fixture in `pool/regressions/` scores 0. The mechanism is that a thin
+residual strip between two carved rows gets cut at `_plant`'s own pitch - `plot_across`, 48 ft on a
+hamlet, which is where NEITHER row has a seam - and the pieces then weld alternately into the row
+above and the row below, building a staircase out of what should be one wall.
+
+**Generation, so far**: `_absorb` refuses a weld that adds a step to its host, ranked in the same
+ladder that already refuses a needle or a lump, with the least-jogging weld taken ahead of the
+lumpy and needling fallbacks (`jog_steps`). That is a partial answer and is measured as one - the
+four scripted hamlets go 26 -> 23, 37 -> 33, 20 -> 17 and 24 -> 16 steps - because the ladder's
+fallbacks must still put the ground somewhere. **Checking**: `tools/jogs.py` reports every step in a
+recorded manifest.
+
+*Disclosed departures, and the open one first.* (1) **This is not a gate check yet, deliberately,
+and it should be**: the engine still produces the shape, so a rule in the gate would fail the pool
+on day one. `future-work.md` "Paddy bunds still step sideways" carries the residual counts, the two
+implementation attempts that were tried and reverted with what each one broke, and the sketch; the
+LAST step of that work is moving the rule from the tool into `check_village`, where a
+`paddy_bunds_do_not_jog` firing at a 3 ft offset with 8 ft runs and a 25 ft link is written and
+proven to fire. (2) The rule is DIRECTED - it compares headings over the full circle, not modulo 180
+degrees - because a plain thin rectangle is two parallel runs a short link apart, and modulo 180
+every narrow basin the fabric legitimately carries fires on its own end wall (78 hits against 28 on
+Inashiro). (3) A hop longer than the link cap is not judged at all: past that the offset is a LIMB
+and the parcel is an L, which is exactly the honest odd shape this file describes. (4) The hop must
+turn HARD at both ends - 55 degrees or more - because a gently CURVING bund sampled into segments is
+otherwise a run, a link and a run resuming near-parallel, with a few feet of perpendicular offset
+coming purely from the bend. Kuwabata, whose paddies are drawn as long curved parcels, reported 57
+steps on 43 plot rings without that clause and 0 with it, and Enokida 106 on 188 rings against 0 -
+which is the same trap this section's first departure describes, caught from the other side: a rule
+written on "the wall is not where it was" fires on every bund that legitimately bends.
+
 ### A basin never tapers to a point - the fan toe truncates
 
 *GM ruling 2026-08-17, closing the fan-toe SUNBURST that `future-work.md` had carried as an open
