@@ -480,10 +480,19 @@ def _route(start: Pt, goal: Pt, hard: list[Poly], walls: Sequence[Poly], water: 
     def to_pt(ix: int, iy: int) -> Pt:
         return (x0 + ix * cell, y0 + iy * cell)
 
-    free = [[bool(clear_runs([to_pt(ix, iy), to_pt(ix, iy)], hard, WEB_HARD_GAP, step=cell, lines=water, tight=walls, tight_margin=gap, floor=0.0)) for ix in range(nx)] for iy in range(ny)]
+    # THE LATTICE TESTS CELL CENTERS, SO IT MUST CLEAR HALF A CELL MORE THAN THE PATH NEEDS.
+    #
+    # A cell whose CENTER is `gap` from a wall is marked free, and the drawn line through that cell
+    # can pass half a cell nearer than its center does - at a 14 ft cell, seven feet nearer. Measured:
+    # three web lanes on cohort seed 11 came within 4.0 ft of a farmhouse corner having been planned
+    # at 7, and a farmhouse ended up standing on the lane. Inflating the planning clearance by half
+    # the cell's diagonal makes "this cell is free" mean "every point in this cell is clear", which is
+    # what the rest of the router assumes it means.
+    _plan_gap = gap + cell * 0.71
+    free = [[bool(clear_runs([to_pt(ix, iy), to_pt(ix, iy)], hard, WEB_HARD_GAP, step=cell, lines=water, tight=walls, tight_margin=_plan_gap, floor=0.0)) for ix in range(nx)] for iy in range(ny)]
     sx, sy = min(nx - 1, max(0, round((start[0] - x0) / cell))), min(ny - 1, max(0, round((start[1] - y0) / cell)))
     gx, gy = min(nx - 1, max(0, round((goal[0] - x0) / cell))), min(ny - 1, max(0, round((goal[1] - y0) / cell)))
-    free[sy][sx] = free[gy][gx] = True
+    free[sy][sx] = free[gy][gx] = True  # the two given endpoints are the caller's, not the lattice's to refuse
     dist = {(sx, sy): 0.0}
     prev: dict[tuple[int, int], tuple[int, int]] = {}
     heap = [(0.0, sx, sy)]
@@ -666,7 +675,12 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
             # otherwise separated by its own field, and the alternative to an indirect link is a
             # dozen houses that count as unreachable. Water is crossable for the same reason it is
             # for a footpath - `stage_crossings` decks it afterwards.
-            _try = _route(cand[1], cand[2], hard, walls, [], gap=FOOTPATH_FABRIC_GAP, pad_mult=2.0, cell=14.0)
+            # PLAN AT THE CLEARANCE IT WILL BE DRAWN AT - the third and last place this was wrong.
+            # A link inherits the width of the way it joins, so planning it at the FOOTPATH clearance
+            # leaves about a foot between a 3 ft half-tread and a wall, and a farmhouse ends up
+            # standing on the lane (cohort seed 11). Only the true single-file footpath gets the
+            # footpath clearance; a street, a bridge and a link are all drawn wider than one.
+            _try = _route(cand[1], cand[2], hard, walls, [], gap=WEB_FABRIC_GAP, pad_mult=2.0, cell=14.0)
             if _try and polyline_len(_try) <= _LINK_DIRECTNESS * max(cand[0], 1.0):
                 link, best = _try, cand
                 break
