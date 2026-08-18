@@ -80,7 +80,7 @@ class Settlement(
         self._rng_scope_n: dict[tuple[Any, ...], int] = {}  # per-key call counter for rng_scope (see its docstring)
         self.corridors: list[Any] = Indexed()  # polylines houses must avoid (Indexed: _near_corridor keeps a spatial index on it)
         # THE DRAWN TREAD of every way, as (polyline, half-width). Distinct from `corridors`, which
-        # is a SOFT reservation (clearance, slack, standoff) tested against a candidate's CENTRE.
+        # is a SOFT reservation (clearance, slack, standoff) tested against a candidate's CENTER.
         # The tread is the hard thing - the surface a cart runs on - and a building's FOOTPRINT may
         # not overlap it at any angle. See `_fits`, which tests them differently on purpose.
         self.treads: list[Any] = []

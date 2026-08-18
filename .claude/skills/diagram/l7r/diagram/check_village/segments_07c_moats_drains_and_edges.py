@@ -508,7 +508,7 @@ def _seg_0493___house_pts(*, h: Any = _UNBOUND) -> dict[str, Any]:
         # measured a rect the map does not draw, and disagreed with the placer's own tread test:
         # a seat `_house_on_a_tread` had cleared came back from the gate as a house on a lane.
         # ONE MEASUREMENT, NOT SEVERAL - the duplicate is why the two could drift apart at all.
-        # GAP VERDICT family: real rotated corners. The centre stays in the list because a lane
+        # GAP VERDICT family: real rotated corners. The center stays in the list because a lane
         # narrower than a house would otherwise thread between its corners.
         return [*rect_corners({**h, "rot": h.get("rot", 0.0)}), (h["x"], h["y"])]
 

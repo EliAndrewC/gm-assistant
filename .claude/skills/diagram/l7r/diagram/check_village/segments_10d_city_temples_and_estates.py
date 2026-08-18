@@ -409,7 +409,7 @@ def _seg_0563_152__city_samurai_estates_vary_in_size(*, areas: Any = _UNBOUND, c
 
 # scattered country estates each front their OWN approach lane (not drawn at this scale), so
 # their depicted (formal) gates do NOT all open the same way - a uniform direction is the
-# unconsidered default. The formal gate favours the auspicious south; others face the cityward
+# unconsidered default. The formal gate favors the auspicious south; others face the cityward
 # approach (the cityward service gate, like the governor's, is omitted at this scale).
 
 

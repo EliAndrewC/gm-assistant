@@ -146,7 +146,7 @@ decided; a "different size, different place" diagnosis would have implied one.
 *Three defects, not one, and the second two were unknown:*
 
 1. the bundle path never tested a drawn surface at all - `_rect_blocked` ended at
-   `_near_corridor(cx, cy)`, a bare centre test. Now `_house_on_a_tread`.
+   `_near_corridor(cx, cy)`, a bare center test. Now `_house_on_a_tread`.
 2. **`_on_a_tread` itself passed `rot_rect(..., 0.0)`** - so the path that HAD the footprint test was
    measuring a square-on rect too. It takes `rot` now; `None` from a caller means UNKNOWN, not zero.
 3. **the GATE was rake-blind** - `houses_clear_of_lanes`'s `_house_pts` built its own axis-aligned

@@ -35,7 +35,7 @@ from tests.check_village._builders import (
 def test_yards_unshaded_by_neighbors_fires_only_on_a_scripted_map():
     """The check that carries the GM's 2026-08-13 migration decision.
 
-    A neighbour's farmhouse in the 39 ft sun corridor south of a threshing yard fails it - but ONLY
+    A neighbor's farmhouse in the 39 ft sun corridor south of a threshing yard fails it - but ONLY
     on a map a generator made (`meta.generated_by`). The whole hand-authored pool breaks this rule
     and is deliberately exempt until each map is converted, so the tag is what turns it on; if that
     gate ever inverts, every legacy map goes red at once and this test says so first."""

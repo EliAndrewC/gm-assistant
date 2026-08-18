@@ -5,7 +5,7 @@ import random
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from .banks import _TOE_MIN_APEX, _TOE_MIN_AREA, _TOE_MIN_THICKNESS, cell_area, dedup_ring, floor_overhang, hem_to_bank, pointed_ring, round_channel_joints
+from .banks import _TOE_MIN_APEX, _TOE_MIN_AREA, _TOE_MIN_THICKNESS, cell_area, dedup_ring, floor_overhang, hem_to_bank, is_chevron, pointed_ring, round_channel_joints
 from .carve import _bund_beans, _carve, _dry_fields
 from .frame import (
     CANAL_A_FT,
@@ -276,6 +276,12 @@ def _comb_toe_and_hem(plots: list[dict[str, Any]], dpts: Poly, down_deg: float, 
         or 2 * _poly_area(q["poly"]) / _poly_perim(q["poly"]) < _TOE_MIN_THICKNESS * plot_across
         or _poly_area(q["poly"]) < _TOE_MIN_AREA * _cell
         or pointed_ring(dedup_ring([(float(_p[0]), float(_p[1])) for _p in q["poly"]], 1.0), _TOE_MIN_APEX)
+        # ...and a FOURTH way, which is the conjunction of two the list already tests separately and
+        # is therefore invisible to both: an ARROWHEAD, pointed at one end and bitten out of one side.
+        # `is_chevron` carries the measurement and why neither half alone can see one. Dropped here so
+        # `close_seams` re-tiles the pocket at the fan's own grain, which is what it does for every
+        # other refusal above - a chevron of 2.5 cells comes back as two or three honest basins.
+        or is_chevron(q["poly"])
     ]
     if _thin:
         _drop = {id(q) for q in _thin}

@@ -115,7 +115,7 @@ def test_a_map_is_immune_to_an_upstream_change_in_the_number_of_random_draws():
 
     The subject was a hand-authored TOWN (hoshizora) until the 2026-08-16 legacy freeze, because a
     town exercises both mechanisms at once: position-seeded attributes (a house's rake, its wall
-    colour, its kura) and scoped phases (ring, pack, frontage, pasture, grove, wells, farmsteads).
+    color, its kura) and scoped phases (ring, pack, frontage, pasture, grove, wells, farmsteads).
     Legacy gens are never run by the suite now, so the subject is a large SCRIPTED hamlet - it
     holds the attribute mechanism and the farmstead/well/grove scopes, but not the urban scopes
     (ring, pack, frontage). When the town tier converts to scripted generation, move the subject

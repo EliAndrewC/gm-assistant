@@ -253,7 +253,7 @@ def stage_polder(s: Settlement, plan: SitePlan) -> None:
     # where the dike is cut for water (`dike_sluices`), and the reservoir is the body that sluice
     # draws from - so the link between them is the short square one Enokida draws, not a diagonal
     # across the block's whole head. Two earlier tries measured only in the fall frame: one blended
-    # the high corner with the centroid and put the pond INSIDE the crop; the next centred it across
+    # the high corner with the centroid and put the pond INSIDE the crop; the next centered it across
     # the block's head, and the inlet channel then ran so far that its field end dangled short of
     # the envelope (`watercourse_ends_reach_water`). The sluice is the anchor both ends agree on.
     # SEATED ON THE LINE THROUGH THE RING'S HEAD. `draw_comb_field` runs the inlet channel from the
@@ -343,7 +343,7 @@ def stage_polder(s: Settlement, plan: SitePlan) -> None:
     # ...over `channels` AS WELL as `field_ditches`. The polder's ring and laterals are field
     # ditches, but the inlet link and the topology hairline `draw_comb_field` records live in
     # `M["channels"]` - and it was one of THOSE that the last byre sat on, its vertex 3.4 px from
-    # the byre's centre. Reserving one list and not the other is the same shape as a check that
+    # the byre's center. Reserving one list and not the other is the same shape as a check that
     # reads one manifest key and not its sibling: the ground does not care which list the water
     # was written to.
     for ditch in list(s.M.get("field_ditches", [])) + list(s.M.get("channels", [])):

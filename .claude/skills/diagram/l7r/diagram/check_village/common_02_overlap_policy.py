@@ -171,7 +171,7 @@ def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, fl
         elif k == "kido":
             # THE FULL DRAWN FOOTPRINT, AND IT IS TWO DIFFERENT THINGS (GM 2026-07-27: "in general
             # we always want overlap checks to use full footprints"). A ward gate is a roofed bar +
-            # two posts + a guard box standing off to ONE flank, so no single centred w/h rect
+            # two posts + a guard box standing off to ONE flank, so no single centered w/h rect
             # describes it - and, carrying no w/h at all, it fell through every branch here and was
             # extracted as NOTHING. Classified, mounted, and completely invisible: a notice board
             # came to rest squarely on Nagahara's guard box with the gate green. That is the failure

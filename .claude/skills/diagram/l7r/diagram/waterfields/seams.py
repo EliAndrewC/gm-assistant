@@ -17,13 +17,13 @@ modern land-consolidation read, which `research/fields.md` already flags as anac
 
 WHAT THIS REPLACES, and why the old pass could not get there. `_fill_wedges` sampled the fan on a
 12 px grid, boxed each cluster of bare cells, and then SHRANK the box toward its own centroid
-until it lapped its neighbours only shallowly. Three consequences, all of them the defect above:
+until it lapped its neighbors only shallowly. Three consequences, all of them the defect above:
 
 - the box was sized from where the SAMPLES were, not from where the pocket's walls are, so a
   fitted tile stopped a few px short of the surrounding bunds on every side - a rectangle with its
   own four walls and a ribbon of bare floor around it;
-- the shrink was uniform, so a tile lapping one neighbour retreated from all four;
-- the acceptance test allowed every probe to sit up to 12 real ft INSIDE a neighbour as long as
+- the shrink was uniform, so a tile lapping one neighbor retreated from all four;
+- the acceptance test allowed every probe to sit up to 12 real ft INSIDE a neighbor as long as
   one probe stood on bare ground, which drew bund rings in the middle of other people's basins.
 
 Measured on the pre-fix pool (2026-08-17, by `paddy_plot_seams_shared`): 52 doubled-bund plots on
@@ -37,7 +37,7 @@ already planted, minus the water and its banks - and give every piece of it to t
 - a pocket wide enough to hold a basin is PLANTED, subdivided at the fan's own grain. Its outer
   boundary IS the surrounding plots' boundary, so the bunds coincide by construction rather than
   by tolerance, and its interior seams are cut from one box so they coincide too.
-- a pocket too thin to hold a basin is ABSORBED into the neighbour it shares the most bund with.
+- a pocket too thin to hold a basin is ABSORBED into the neighbor it shares the most bund with.
   That is what welds a doubled bund into a single one: the strip stops being ground between two
   walls and becomes part of the basin on one side of it.
 
@@ -71,6 +71,7 @@ from .banks import (
     _WELD_MIN_SOLIDITY,
     cell_area,
     dedup_ring,
+    is_chevron,
     jog_steps,
     pointed_ring,
     polyline_cum,
@@ -287,7 +288,7 @@ def _min_apex(ring: Poly) -> float:
 
 def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, g: float) -> bool:
     """Fold a too-thin pocket into the basin it shares the most bund with - the weld that turns two
-    walls with a strip between them into the one wall a real aze is. The neighbour is chosen by
+    walls with a strip between them into the one wall a real aze is. The neighbor is chosen by
     SHARED BOUNDARY LENGTH rather than by distance or area: the basin whose wall actually forms
     most of this strip is the one whose farmer would have taken it in."""
     bx0, by0, bx1, by1 = pocket.bounds
@@ -306,6 +307,7 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, 
     # to close. The runner-up basin borders the same strip and usually takes it cleanly.
     _fallback: tuple[float, int, Polygon] | None = None
     _lumpy: tuple[float, int, Polygon] | None = None
+    _chev: tuple[float, int, Polygon] | None = None
     _jogged: tuple[int, int, Polygon] | None = None
     for _neg, j in sorted(ranked):
         # dilate the scrap by a hair before the union. A scrap and the basin beside it only TOUCH
@@ -318,9 +320,9 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, 
             continue
         # SIMPLIFY CAN INVALIDATE. Douglas-Peucker moves vertices independently, and on the long
         # thin unions this pass makes that is enough to fold a ring back through itself: Inashiro
-        # shipped a 10-vertex bow-tie basin whose outline crossed its neighbour's twice and read as
+        # shipped a 10-vertex bow-tie basin whose outline crossed its neighbor's twice and read as
         # a doubled bund at the fan toe. Simplification here is only tidying, so a result that is
-        # not a clean simple polygon is discarded in favour of the union it came from.
+        # not a clean simple polygon is discarded in favor of the union it came from.
         simplified = merged.simplify(0.05)
         candidate = simplified if isinstance(simplified, Polygon) and simplified.is_valid and not simplified.interiors else merged
         # AND JUDGE THE RING THE MANIFEST WILL ACTUALLY CARRY. Validating the shapely polygon is
@@ -342,7 +344,7 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, 
         # MultiPolygon, hole and bow-tie rejections above and for the same reason: the runner-up
         # basin borders the same strip and usually takes it cleanly.
         #
-        # AND IF NO NEIGHBOUR CAN TAKE IT, THE SCRAP STAYS BARE, WHICH IS THE HONEST ANSWER. A
+        # AND IF NO NEIGHBOR CAN TAKE IT, THE SCRAP STAYS BARE, WHICH IS THE HONEST ANSWER. A
         # strip that needles every basin it touches is the "odd corner left unpaddied" that the
         # research describes at a real fan toe - the fan's base floor (`comb_base_fill`) draws
         # under it, so it reads as the toe's own ground rather than as a hole, exactly as it does
@@ -361,11 +363,11 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, 
             # bunds (seeds 9 and 11) and took the cohort 22 -> 20, because a scrap that needles the
             # basin it would join is often a TAPERING strip whose only alternative is to lie bare
             # between two walls. Neither outcome is realistic, so the choice is not decline-or-
-            # accept: it is WHICH NEIGHBOUR takes it. The ranking above is by shared bund length,
+            # accept: it is WHICH NEIGHBOR takes it. The ranking above is by shared bund length,
             # which is the right first preference (the farmer whose wall already forms most of the
-            # strip); when none of those is clean, the honest fallback is the neighbour that takes
+            # strip); when none of those is clean, the honest fallback is the neighbor that takes
             # the strip BEST rather than the one that shares the most of it.
-            # BEFORE GIVING UP ON THIS NEIGHBOUR, TRY THE WORKABLE PART OF THE SCRAP. `_open_to`
+            # BEFORE GIVING UP ON THIS NEIGHBOR, TRY THE WORKABLE PART OF THE SCRAP. `_open_to`
             # drops the tapering tail that is narrower than the doubled-bund rule's own 3 ft floor,
             # so the host takes the part worth walling and what is left is a sliver that rule
             # already treats as one line rather than two. This is what resolves cohort seeds 9 and
@@ -378,7 +380,12 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, 
                     _s2 = _m2.simplify(0.05)
                     _c2 = _s2 if isinstance(_s2, Polygon) and _s2.is_valid and not _s2.interiors else _m2
                     _r2 = _ring(_c2)
-                    if Polygon(_r2).is_valid and _min_apex(dedup_ring(_r2, 1.0)) >= _WELD_MIN_APEX:
+                    # ...and the partial weld faces the arrowhead test too. This path had only the
+                    # apex guard, and a provenance probe found it was where the survivors came from:
+                    # ZERO chevrons entered `close_seams` on Inashiro and Mizuguchi and three left,
+                    # because welding the workable PART of a scrap is exactly how a basin acquires a
+                    # point at one end and a bite in its side.
+                    if Polygon(_r2).is_valid and _min_apex(dedup_ring(_r2, 1.0)) >= _WELD_MIN_APEX and not is_chevron(_r2):
                         into[j] = _c2
                         grown.add(j)
                         return True
@@ -393,7 +400,16 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, 
         # than an angle). Treated exactly like a needling weld, and for the same reason: the
         # runner-up borders the same strip and usually takes it in a shape a farmer would
         # recognize, but refusing every host outright would trade the lump for a doubled bund.
+        # A WELD MUST NOT MAKE AN ARROWHEAD EITHER, and this is a third measurement rather than a
+        # tighter one: a chevron is pointed AND notched, and this ladder's apex guard (18 deg) and
+        # solidity guard (0.85) each pass a ring at 39 deg / 0.878 that is plainly an arrowhead. See
+        # `_CHEVRON_MIN_APEX` for the measured population. Same treatment as a lump - remembered, not
+        # refused outright, so the scrap still finds a host when no clean one exists.
         _sol = candidate.area / (candidate.convex_hull.area or 1.0)
+        if is_chevron(_ring(candidate)):
+            if _chev is None or _sol > _chev[0]:
+                _chev = (_sol, j, candidate)
+            continue
         if _sol < _WELD_MIN_SOLIDITY:
             if _lumpy is None or _sol > _lumpy[0]:
                 _lumpy = (_sol, j, candidate)
@@ -435,6 +451,17 @@ def _absorb(pocket: Polygon, into: list[Polygon], grown: set[int], thin: float, 
         into[j] = candidate
         grown.add(j)
         return True
+    # ...then the least-bad ARROWHEAD, behind the lump. A chevron is the worse read of the two - a
+    # lump is an awkward basin, an arrowhead does not read as a basin at all - so it is the last
+    # shape the ladder will accept, and only when no other host will take the scrap. (Merged
+    # 2026-08-18: this tier and the jog tier above were added independently by two sessions to the
+    # same ladder. Order is by how badly the shape reads - jog, then lump, then arrowhead - so the
+    # mildest complaint yields first, which is the ordering rule the two tiers above already state.)
+    if _chev is not None:
+        _, j, candidate = _chev
+        into[j] = candidate
+        grown.add(j)
+        return True
     # THE LEAST-BAD WELD, and only if it still clears the GATE. `_WELD_MIN_APEX` is the placer's
     # margin, not the rule; a union between the gate line and that margin is a basin the gate
     # ACCEPTS, so welding it is strictly better than leaving a doubled bund. Below the gate line it
@@ -454,7 +481,7 @@ def _plant(F: _Frame, pocket: Polygon, plot_across: float, row_step: tuple[float
 
     One giant slab would dwarf the ~0.08-acre plots around it (the relative-size doctrine), so the
     pocket's (u, f) box is cut into ~plot_across x row_step cells and the pocket clipped to each.
-    Cells are cut from ONE box, so neighbouring pieces share their seam exactly; the pocket's own
+    Cells are cut from ONE box, so neighboring pieces share their seam exactly; the pocket's own
     outline is the surrounding plots' outline, so the outer bunds are shared too.
 
     Returns `(basins, offcuts)`. Offcuts - cells the grid cut too thin to bund - are handed BACK
@@ -496,14 +523,14 @@ def close_seams(
 ) -> None:
     """Plant or absorb every scrap of bare ground the carve left inside the command area, so that
     each basin's bund is shared with whatever lies on the other side of it. Mutates `plots` in
-    place: absorbed neighbours get a new `poly`, planted pockets are appended."""
+    place: absorbed neighbors get a new `poly`, planted pockets are appended."""
     if not plots or len(envelope) < 3:
         return
     half = MIN_PLOT_SIDE * g / 2
     # A RING THAT CROSSES ITSELF IS NOT A BASIN, and it is drawn as ink whatever the manifest thinks.
     # Sawada shipped one: ring 688 at (167, 2558), four vertices whose edges 1-2 and 3-0 cross, and
     # the SVG carries it verbatim as a `<polygon>` (settlement-review 2026-08-18). It is INVISIBLE -
-    # the neighbour painted after it covers the stray edge and the nonzero fill hides the bow - so no
+    # the neighbor painted after it covers the stray edge and the nonzero fill hides the bow - so no
     # amount of looking would have found it; what makes it worth removing is that it is not a simple
     # polygon, so every shape metric computed on it is meaningless. It scores solidity 0.43, the
     # worst on the sheet, and the area floor cannot reach it because its shoelace area is 2.9x the
@@ -519,7 +546,7 @@ def close_seams(
     # the bare-ground problem below. A ring `buffer(0)` cannot rescue is still dropped.
     #
     # IT RUNS FIRST, not last, and that ordering is the whole fix. Dropped AFTER the plant/absorb
-    # passes the ring's ground is simply gone, and the neighbour's wall is left standing alone -
+    # passes the ring's ground is simply gone, and the neighbor's wall is left standing alone -
     # 12 of 48 cohort seeds failed `paddy_plot_seams_shared` that way. Dropped HERE the ground is
     # just more bare pocket, and this pass reclaims it like any other.
     for _p in plots:
@@ -544,7 +571,7 @@ def close_seams(
     carved = len(keep)
     grown: set[int] = set()
     # TWICE ROUND. Welding a scrap into a basin changes which basin borders the NEXT scrap, and
-    # planting a pocket gives its neighbours a new edge to weld against - so a second look at the
+    # planting a pocket gives its neighbors a new edge to weld against - so a second look at the
     # bare ground reaches scraps the first pass could not place (three of Inashiro's toe wedges,
     # where a strip's only candidate refused the union until the basin beside it had grown). A
     # third round finds nothing on any pool map: the set converges because every round can only
@@ -585,13 +612,13 @@ def close_seams(
                     _floor = _TOE_MIN_AREA * cell_area(plot_across, row_step)
                     for _q in got:
                         _qr = _ring(_q)
-                        if len(_qr) >= 3 and (pointed_ring(_qr, _TOE_MIN_APEX) or pointed_ring(dedup_ring(_qr, 1.0), _TOE_MIN_APEX) or _q.area < _floor):
+                        if len(_qr) >= 3 and (pointed_ring(_qr, _TOE_MIN_APEX) or pointed_ring(dedup_ring(_qr, 1.0), _TOE_MIN_APEX) or _q.area < _floor or is_chevron(_qr)):
                             scraps.append(_q)
                         else:
                             basins.append(_q)
                     scraps += offcuts
         # PLANT FIRST, WELD SECOND, and weld against the whole field including what was just
-        # planted: a scrap's best neighbour is often the new basin beside it, and a scrap offered
+        # planted: a scrap's best neighbor is often the new basin beside it, and a scrap offered
         # only its own siblings has nowhere to go when they refuse the union.
         keep += sorted(basins, key=lambda q: (round(q.bounds[0], 1), round(q.bounds[1], 1)))
         for scrap in sorted(scraps, key=lambda q: (round(q.bounds[0], 1), round(q.bounds[1], 1))):
@@ -623,9 +650,9 @@ def close_seams(
     # and this pass's welds - so the tint is re-judged here, at the end, against every plot's final
     # ring rather than only the ones this pass touched. The replacement green is indexed by POSITION
     # rather than drawn from R - the point is the ABSENT DRAW (the stream stays put, so demoting one
-    # plot cannot re-roll the rest), not variety: `RICE_GREENS` holds one colour three times today.
+    # plot cannot re-roll the rest), not variety: `RICE_GREENS` holds one color three times today.
     # Wording kept honest after a settlement-review read the old comment as promising shades.
-    # so it takes no draw from R and no other plot's colour moves; `low` is untouched, because it is
+    # so it takes no draw from R and no other plot's color moves; `low` is untouched, because it is
     # the topography and the tint is only the picture (feature 010).
     # BOTH the raw ring and the deduped one, because the two carry different apexes and the gate
     # judges the RAW one. `_sector_closing_rank` dedupes before testing for the reason its own

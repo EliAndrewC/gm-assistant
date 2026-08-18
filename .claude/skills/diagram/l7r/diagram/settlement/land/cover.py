@@ -137,7 +137,27 @@ class GroundCoverMixin:
             blades: list[str] = []
             _wd_crowns = 0
             if role == "woodland":
-                for _ in range(int(area / (540 * bs * bs))):  # spaced crowns: an OPEN coppice canopy, gaps showing
+                # A TARGET, NOT AN ATTEMPT COUNT (settlement-review x3, 2026-08-18 round 2 - Inashiro,
+                # Sawada and Mizuguchi found it independently). `int(area / 540)` looks like a density
+                # and is not: it is the number of THROWS, and `_sparse` rejects a share of them, so the
+                # realized spacing depends on how much of a parcel lies near a keep-out. Small parcels
+                # are proportionally more edge, so they came out both smaller AND thinner - measured
+                # 691-768 sq ft per crown on the big stands against 981 on Sawada's and 1101 on
+                # Inashiro's smallest, which at ~31% canopy reads as scattered trees on grass rather
+                # than a wood. The size-variance work made that worse rather than better: growing
+                # Sawada's parcel 125 -> 136 ft added no crowns at all, so the sparsest object on the
+                # sheet got sparser.
+                #
+                # A coppice is a worked thicket cut on rotation, and the sources describe the SMALL
+                # parcels near a settlement as the intensively worked ones - so density must not fall
+                # away with size. Throwing until the target is MET (capped, so a parcel that genuinely
+                # cannot hold its quota still terminates) makes the realized density the stated one on
+                # every parcel. The draws stay inside this function's `random.setstate` scope, so the
+                # extra throws cannot ripple into anything drawn later.
+                _wd_target = int(area / (540 * bs * bs))
+                for _ in range(_wd_target * 6):
+                    if _wd_crowns >= _wd_target:
+                        break
                     cx, cy = random.uniform(x0, x1), random.uniform(y0, y1)
                     if _sparse(cx, cy, 0.6, 11.5 * bs):  # lean = the largest crown radius, so no canopy overhangs a crop
                         continue
