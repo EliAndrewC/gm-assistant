@@ -270,31 +270,33 @@ it against the doctrine file before acting on it.
 ## Feature 123 - the lane web (back_lane)
 
 **5 of this map's 12 farmhouses stood more than 100 ft from any way. Now none do** - the worst
-is 80 ft and the median 48 ft - **and every lane on the sheet is one connected
-network**, which is the part that took four review passes to get right.
+is 100 ft, the median 61 - **and every lane on the sheet belongs to one connected
+network**, which is the part that took two review rounds to get right.
 
 The research is decisive that a house in a nucleated cluster is reached: "every house in the
 nucleated village is accessible via the interconnected system of narrow lanes and alleys". The FORM
-of that access is a seeded knob, because the record supports two and two supportable answers become
-variance rather than a choice (constitution Principle XII). This map rolled **`back_lane`**, which
-runs PARALLEL to the field margin behind the ranks of plots, tied together by cross-links - the planned form the sources call a "rectangular framework", the one that says the place was LAID OUT. It carries **4 web lanes** of 8.
+is a seeded knob, because the record supports two and two supportable answers become variance rather
+than a choice (Principle XII). This map rolled **`back_lane`**, which runs PARALLEL to the field margin behind the ranks of plots, tied to the rest by cross-links - the planned form the sources call a "rectangular framework", the one that says the place was LAID OUT. It carries **3 web
+lanes** of 7.
 
-**Two orderings are load-bearing, and both were learned the hard way.**
+**Three things here are load-bearing and each was learned by being got wrong first.**
 
-*The web is laid AFTER the houses AND after their appurtenances.* Laid first, as the skeleton is, it
-reserves ground from a cluster that has not been packed yet and competes with the very houses it
-exists to serve - measured across the four hamlets, that grew their long axes 15-97%, sprawl no check
-measures. Laid between the houses and their appurtenances it was still reserving courtyard ground
-ahead of the byres and wells and exiling them up to 210 ft, which erased feature 121's byre-service
-fix. It now runs last of the built things, and threads what is actually left.
+*The web is laid last of the built things* - after the houses AND after their byres, sheds and wells.
+Laid before the houses it reserved ground from a cluster not yet packed and grew the four hamlets'
+long axes 15-97%; laid between the two it exiled byres up to 210 ft and erased the borrow-coverage
+fix. Reviewers verified the final order costs nothing: byres and wells are byte-identical to the
+pre-web manifest, coordinate for coordinate.
 
-*Connectivity is decided before any ink goes down.* A lane once drawn cannot be taken back, so
-candidate runs are grown outward from the skeleton and only the reachable ones are drawn. The check
-enforces the same thing from the other side: `farmhouses_reach_a_way` measures to the connected
-COMPONENT containing the connector, not to any polyline, because a check an island can satisfy
-rewards drawing an island - which is exactly what the first version did, on this map among others.
+*Connectivity is decided before any ink.* Candidate runs are grown outward from the skeleton and only
+the reachable ones are drawn, because a lane once drawn cannot be taken back. `farmhouses_reach_a_way`
+enforces the same thing from the other side - it measures to the connected COMPONENT containing the
+connector, since a check an island can satisfy rewards drawing an island, which is exactly what the
+first version did.
+
+*A lane is not drawn where a reader would see one lane twice.* A run that shadows an existing way -
+by fraction OR by one unbroken bundle pitch - is refused, and so is one that would run the length of
+the shelter belt rather than crossing it.
 
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead
-really has: a footpath of its own, routed round the neighboring plots rather than ruled at them, and
-planked where it crosses a ditch. It may cross nobody's garden bed and nobody's threshing floor,
-including its own.
+really has: a footpath of its own, routed round the neighboring plots rather than ruled at them,
+stopping at its first contact with the network, and planked where it crosses a ditch.
