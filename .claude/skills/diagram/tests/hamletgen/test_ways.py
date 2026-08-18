@@ -3,6 +3,8 @@
 Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen/CLAUDE.md.
 """
 
+import math
+
 import pytest
 
 from l7r.diagram import hamletgen as hg
@@ -133,7 +135,12 @@ def test_margin_frame_round_trips_a_point_through_arc_and_standoff() -> None:
     computed from projected house positions and then mapped back out to screen."""
     plan = a_plan()
     plan.seat = hg.seat_cluster(plan)
-    frame = _margin_frame(plan, plan.seat["lat"] * 2.0)
+    # A SPAN, and a `near` cloud, that describe one flank rather than the whole ring. Given neither,
+    # the walk laps the field - and a frame that laps has no single answer for `project`, because two
+    # stretches of it lie on top of each other. That is now capped at half the ring in the engine,
+    # and the test says what a caller is expected to hand it.
+    frame = _margin_frame(plan, 120.0, near=[(plan.seat["cx"], plan.seat["cy"])])
+    assert frame.arc < 0.5 * sum(math.dist(plan.envelope[i], plan.envelope[(i + 1) % len(plan.envelope)]) for i in range(len(plan.envelope))) + 1.0
     for arc_f, stand in ((0.25, 40.0), (0.5, 90.0), (0.8, 15.0)):
         p = frame(frame.arc * arc_f, stand)
         got_arc, got_stand = frame.project(p)

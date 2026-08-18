@@ -40,7 +40,7 @@ def stage_notice(s: Settlement, plan: SitePlan) -> None:
     after them it silently found nowhere to go on one cohort map in six and the gate reported a
     hamlet with no notice board - a failure of ORDER, not of siting."""
     spot = s.place_kosatsuba()
-    # ...AND IT MUST STAND WHERE THE FRAME WILL KEEP IT. `place_kosatsuba` maximises passing traffic
+    # ...AND IT MUST STAND WHERE THE FRAME WILL KEEP IT. `place_kosatsuba` maximizes passing traffic
     # (dwellings within ~260 px) along the whole way network, and a lane ARM that runs past the
     # cluster still sees the whole cluster from its far end - so on a held-out cohort hamlet the
     # board landed 87 px north of the northernmost farmhouse, on a stretch of lane serving nobody.

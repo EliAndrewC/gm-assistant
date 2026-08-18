@@ -78,7 +78,7 @@ CLUSTER_SPAN_FACTOR = 1.6
 #
 # LANE_CLEARANCE (40) is derived for a lane the homesteads FRONT: it is the drawn minka's
 # half-diagonal plus the lane's own half-tread, so the steading clears the way it faces. A web lane
-# is the other kind: the research describes the lateral ones as "colonised as semi private space by
+# is the other kind: the research describes the lateral ones as "colonized as semi private space by
 # the adjoining house", which is a way people build right up against. Holding 40 ft off both verges
 # of every web lane reserved the middle of the cluster and pushed the houses out - measured on the
 # four pool hamlets, the long axis grew 51%, 58%, 15% and 97%. This is the lane's own half-tread
@@ -118,11 +118,17 @@ WEB_FABRIC_GAP = 7.0
 
 # A FOOTPATH IS NOT A LANE, and it may squeeze where a lane may not. This is the clearance for the
 # path from an outlying steading's door to the nearest way - the thing the sources describe as
-# "colonised as semi private space by the adjoining house", i.e. the residual room between two
+# "colonized as semi private space by the adjoining house", i.e. the residual room between two
 # plots, walked in single file. It still clears the overlap matrix's 3 ft half-tread with room over,
 # but it lets a path thread a gap a back lane could not, which is the difference between a house
 # being reached and a house being 296 ft from anything with no route at all.
-FOOTPATH_FABRIC_GAP = 5.0
+# 4 ft, and the number is doing real work at the margin. The overlap matrix sizes every lane at 6 ft
+# wide whatever its record says, so 3 ft is the hard floor and this is 3 plus a hand's breadth; the
+# drawn tread is 3 px, so the ink clears a wall by better than two of its own widths. At 5 a hemmed-in
+# farmstead on cohort seed 41 had no route to the network at all, at any target - the gaps between
+# its neighbors' plots were simply narrower than a lane-and-two-margins. A footpath is the one way on
+# the map that is walked in single file, and this is the width that says so.
+FOOTPATH_FABRIC_GAP = 4.0
 
 # HOW FAR A WEB LANE STAYS OFF THE CROP, THE TOE AND THE MARSH, in feet.
 #
@@ -137,12 +143,21 @@ FOOTPATH_FABRIC_GAP = 5.0
 # track runs on the baulk between plots, not twenty feet clear of the rice.
 WEB_HARD_GAP = 8.0
 
+# HOW CLOSE TWO WAYS MAY RUN BEFORE A READER SEES ONE WAY DRAWN TWICE, in feet.
+#
+# This is a LEGIBILITY number, not a clearance: `MIN_WEB_GAP` says what a lane can squeeze through,
+# and using it here was a category error that let a back lane share a corridor with the connector -
+# median 14.6 ft apart, 91% of its length within 30 ft - without the shadow test firing once. A
+# review read the pair as "a long thin scissors with a drafting overlap". 30 ft is a third of a
+# bundle pitch: far enough apart that the eye separates them at fit zoom.
+WEB_SHADOW_FT = 30.0
+
 MIN_WEB_GAP = 2.0 * WEB_FABRIC_GAP + 4.0  # 18 ft: both neighbors' clearance, plus the tread between them
 
 # THE REACH A FARMHOUSE IS ENTITLED TO: every house center must be within this of some drawn way
 # (`farmhouses_reach_a_way`). It is BUNDLE_PITCH, deliberately and by reference rather than by
 # repetition - the ground one homestead occupies is exactly the distance at which a lane passes your
-# own plot or your neighbor's, which is what the sources mean by a lateral "colonised as semi-private
+# own plot or your neighbor's, which is what the sources mean by a lateral "colonized as semi-private
 # space by the adjoining house". The same number sets the web's lane spacing, so the requirement and
 # the geometry that satisfies it cannot drift apart.
 #

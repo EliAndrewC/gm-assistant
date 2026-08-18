@@ -251,7 +251,7 @@ def web_cuts(coords: Sequence[float], reach: float, gap: float) -> list[float]:
     THE CUT GOES IN A GAP, NEVER THROUGH A HOUSE. `gap` is the least room a lane needs between two
     neighbors; among the gaps that qualify within reach ahead of an uncovered house, the widest wins,
     because the widest gap is the one a lane fits down without crowding either steading. That is
-    also how these ways came to exist - the sources describe the lateral ones as "colonised as semi
+    also how these ways came to exist - the sources describe the lateral ones as "colonized as semi
     private space by the adjoining house", which is a lane that IS the leftover room between two
     plots rather than a corridor set aside before anyone built.
 
