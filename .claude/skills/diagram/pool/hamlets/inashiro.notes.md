@@ -69,7 +69,7 @@ pipeline's, and it is the same order a person follows:
   belt's side here is circular: the belt stands west because the cluster's back is west, and the
   wind was then named to match. On a cluster seated on the field's UPSLOPE margin the two rules
   agree and the declared wind carries real information; on a flank seat it does not.
-- **Dry hem plots run ~3.5x the size of Ikegami's** and chain single-file rather than packing two or
+- **Dry hem plots run ~4.5x the size of Ikegami's** (median 7,711 sq ft against 1,707; the coarsest of the four scripted hamlets - Kashikawa 6,221, Mizuguchi 6,092, Sawada 6,913. This bullet read "~3.5x" until a settlement-review re-measured it on the SHIPPED manifests, 2026-08-18: a standing known-open carries the current number or it is not a measurement) and chain single-file rather than packing two or
   three deep, so the hem reads as large fields rather than household strips (`settlement-review`,
   2026-08-11). Parcel size, not acreage - the total is comparable. It wants a researched constant of
   its own.
