@@ -178,7 +178,7 @@ SKETCH (check before fix, per the project rule): add a gap verdict using the exi
 `within_edge_gap(a, b, N)` helper over `M["houses"]` pairs - it already measures real footprints -
 confirm it fires on mizuguchi and on nothing else in the pool, then require the same clearance in
 `_bundle_common_fits` against every placed house's raked quad (the sun-corridor rule already reads
-neighbours' geometry off `M["houses"]`, so the precedent and the plumbing both exist). Ground the
+neighbors' geometry off `M["houses"]`, so the precedent and the plumbing both exist). Ground the
 number in "two thatched roofs must shed separately" - the principle research/buildings.md already
 records for a building against a compound wall.
 
@@ -205,34 +205,31 @@ was the symptom - a fragment clipped off the lattice at the fan boundary comes o
 the size was the cause. Full findings, both declined alternatives, the two derivations of 0.25 and
 why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
 
-**On this map.** 519 -> 511 basins (-8, 1.54%); smallest surviving basin 405 sq ft, 0.273 of the
-cell. Acreage conserved to 6 sq ft in 715,849; 12 of 12 households; field outline unchanged.
+**On this map, measured on the SHIPPED manifest against main's tip.** 519 -> 511 basins; smallest
+surviving basin 407 sq ft = 0.273 of the design cell, and **zero** basins under 0.25; acreage
+715,843 -> 715,849 sq ft (6 sq ft in 716k, conserved); 12 of 12 households; field outline unchanged.
 
-**The cluster partly re-packs**, which the first draft of this round's write-up asserted away
-(settlement-review, 2026-08-17): changing the drawn plot count re-rolls the shared placement stream.
-**7 of 12 houses unmoved, min-max displacement 250 px** (one-to-one matching), gardens 16 -> 17, farm
-sheds 2 -> 1, byres and both wells re-seated, `meta.view` shifted. Household count and acreage hold.
+**THE CLUSTER DID NOT MOVE AT ALL - 12 of 12 houses unmoved, and an earlier draft of this entry
+claimed otherwise** (settlement-review 2026-08-18 diffed it key by key). Houses, gardens, farm sheds,
+byres, wells, threshing yards, lanes and the kosatsuba are byte-identical to main's tip. Only the
+fabric, the windbreak (131 -> 127 clumps), the crowns and the view-derived records moved. The draft
+also said "gardens 16 -> 17" (14 -> 14), "farm sheds 2 -> 1" (3 -> 3) and "byres and both wells
+re-seated" (identical). Those were pre-merge numbers that survived the merge; the lesson is that a
+notes entry must be re-measured on the shipped artifact after any merge, because it is the record the
+next session diffs against.
 
-**Two defects the review caught here, both FIXED rather than ledgered** (Principle XIV):
+**The byre defect this map was the motivating case for is fixed** - by a peer's rule, taken over mine
+in `eacc48e4`: minimax spread plus a borrow-reach tie-break, so a shared shed has neighbors close
+enough to borrow from. Median nearest-byre **101 ft, max 165**, against 373/771 before.
 
-- **All three shared byres had collapsed onto the three westernmost farmsteads** - a 208 ft span in a
-  911 ft row, median nearest-byre 373 ft and max 771, nine households with none within 300. The
-  mechanism was exact: hosts were ranked `(-wealth, x, y)` and every hamlet house carries
-  `wealth: 1.0`, so it degenerated to X ASCENDING. Hosts are now chosen FARTHEST-FIRST from the sheds
-  already standing - the objective `place_wells` was given for the same reason. **Median 107 ft,
-  max 210.**
-- **The windbreak was clipped by the tightened crop**: 58 of 217 clumps touching the frame and 23
-  drawn WHOLLY outside the viewBox. `village_grove` gained `within=`, which skips a clump whose crown
-  would fall outside, so the BELT itself does not move. **0 off-canvas.** Clamping the polygon was
-  tried first and is recorded as wrong in `hinterland.py`: the outline's bbox center is what the
-  grove records and what `village_windbreak_on_windward_side` judges, so pulling vertices inward
-  walked cohort seeds 19 and 28 onto the LEE side.
+**The windbreak's off-canvas clumps are gone (23 -> 0) - but the first fix for it was wrong** and
+this map is where the cost showed: it deleted 40 clumps to remove 3 invisible ones and punched a
+~100 ft hole through the wind wall. See the shared entry below.
 
-**Still open, and it is a shape question the area floor cannot reach.** The dart-shaped ring at
-(1021-1084, 968-1012) is 1,034 sq ft - 0.69 of a cell, nearly three times the floor - and reads as an
-arrowhead; it is byte-identical before and after, so pre-existing. The reviewer's broader point
-stands for a GM ruling some day: a minimum-side or tip-angle companion to the area floor, which is
-NOT the declined four-sides rule.
+**Still open here**, both raised by review and neither reachable by the area floor: the dart-shaped
+ring at (1021-1084, 968-1012), 0.69 of a cell, which wants a tip-angle companion rule rather than the
+declined four-sides rule; and the three woodland commons sitting on an exact (+270, -270) lattice,
+which read as three stamps of one wood. Both are in `future-work.md`.
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
 outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
@@ -244,3 +241,28 @@ the floor on top, which is why `e0fb2417` precedes this entry in history. With b
 are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
 Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
 its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).
+
+### 2026-08-18 - the windbreak frame fix, corrected: CLIPPING IS THE DOCTRINE
+
+Recorded once here and referenced from all four hamlet notes, because the mistake was general.
+
+A review asked for a belt whose clumps were "touching the frame" to be contained. The fix inset the
+allowed window by a canopy reach, which required the WHOLE crown to be inside - and that is
+backwards. `settlements/presentation.md` (GM 2026-07-20) says the belt CLIPS at the view edge and
+"a partially visible belt reads as 'the wood continues'"; `hard_features_within_frame` demands
+partial visibility of a village grove rather than containment. Only a clump with **no visible ink**
+is waste.
+
+The cost of getting it backwards, measured by two independent reviews: Mizuguchi dropped **40
+clumps to remove 3 invisible ones** - 37 at least partly visible, 12 not even touching the frame -
+leaving a ~100 ft bare channel through the middle of the wind wall on the windward side; Sawada lost
+**46% of its canopy** and its belt became shorter than the cluster it shelters.
+
+Inverted to skip only a clump lying WHOLLY outside the frame. Result across the pool: **zero
+invisible clumps on all four maps**, belt gaps 26-37 px against a 30 px baseline, and clump counts
+164 -> 169 (Inashiro), 212 -> 190 (Kashikawa), 131 -> 127 (Mizuguchi), 231 -> 171 (Sawada) - the
+Sawada figure being the re-pack's own effect on the house cloud the belt derives from, not the clip.
+
+**The transferable part**: the first review's complaint was itself against a documented rule, and
+following it literally made three maps worse. A reviewer's finding is evidence, not a verdict - check
+it against the doctrine file before acting on it.

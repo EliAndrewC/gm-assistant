@@ -108,18 +108,18 @@ in. Needs a one-line ruling: outlying holding by intent, or a seeding gap.
 ## 2026-08-17 (later) - the outlying farmstead: SUPERSEDED, see the note at the end
 
 The settlement-review of the feature-121 re-pack asked for a ruling on the farmstead at
-(1352, 3063): 469 ft from its nearest neighbour, 385 ft from any drawn way, with no track reaching
+(1352, 3063): 469 ft from its nearest neighbor, 385 ft from any drawn way, with no track reaching
 it, on a map declaring `nucleated: true`. Two separate complaints were tangled together, and they
 have different answers.
 
 **The isolation is GONE, and not by touching this house.** The front-row density fix (front_row now
 samples by one-bundle-pitch spacing along the field edge instead of by household count) pulled the
-rest of the cluster toward the paddy, and this farmstead's nearest neighbour is now **170 ft**
+rest of the cluster toward the paddy, and this farmstead's nearest neighbor is now **170 ft**
 against 111 / 110 / 105 for the next three - an ordinary outer-edge spacing, not a hamlet of one.
 The house itself did not move; the settlement grew toward it.
 
 **The way-access is ACCEPTED, deliberately.** It still stands 385 ft from any lane against 41-70 ft
-for its neighbours, and that is correct rather than an oversight: a lane must NOT run through the
+for its neighbors, and that is correct rather than an oversight: a lane must NOT run through the
 flooded paddy (`settlements/ways.md`), and people cross into the fields on foot **along the bunds**.
 An edge farmstead standing at the paddy margin is reached the same way every field worker reaches
 the same ground. Drawing a lane out to it would put a no-build corridor across the crop to serve one
@@ -205,15 +205,18 @@ was the symptom - a fragment clipped off the lattice at the fan boundary comes o
 the size was the cause. Full findings, both declined alternatives, the two derivations of 0.25 and
 why the gate could not sit at 0.15: `research/fields.md`, "Minimum basin SIZE".
 
-**On this map.** 827 -> 814 basins (-13, 1.57%); smallest surviving basin 0.254 of the cell.
-Acreage 26.1 / 26.0, 20 of 20 households, field outline unchanged - every dropped fragment absorbed
-into the basin it shares the most bund with, not deleted.
+**On this map, measured on the SHIPPED manifest against main's tip.** 827 -> 814 basins; smallest
+surviving basin 0.254 of the design cell; acreage, 20 of 20 households and the field outline all
+hold.
 
-**The cluster did not ripple at all here, and that is worth recording precisely because Inashiro's
-re-packed wholesale.** The rule changes the drawn plot count and so re-rolls the shared placement
-stream, but measured against main's tip this map's houses are **20 of 20 unmoved** - gardens, yards,
-sheds, byres, wells, kosatsuba, windbreak and `meta.view` all byte-identical. So the ripple is real
-and its SIZE is map-specific; do not generalize in either direction from one map.
+**The cluster barely moved: 19 of 20 houses unmoved, min-max displacement 8 px** - worth recording
+precisely because Inashiro's re-packed wholesale at 304 px on the same rule. Gardens, yards, sheds,
+byres, wells and the kosatsuba are unchanged; the windbreak went 212 -> 190 clumps and `meta.view`
+shifted. The ripple is real and its SIZE is map-specific; do not generalize from one map in either
+direction.
+
+This map needed no `settlement-review` pass this round: its cluster is effectively unchanged and the
+fabric rule was reviewed on Inashiro, Mizuguchi and Sawada.
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
 outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
@@ -225,3 +228,28 @@ the floor on top, which is why `e0fb2417` precedes this entry in history. With b
 are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
 Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
 its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).
+
+### 2026-08-18 - the windbreak frame fix, corrected: CLIPPING IS THE DOCTRINE
+
+Recorded once here and referenced from all four hamlet notes, because the mistake was general.
+
+A review asked for a belt whose clumps were "touching the frame" to be contained. The fix inset the
+allowed window by a canopy reach, which required the WHOLE crown to be inside - and that is
+backwards. `settlements/presentation.md` (GM 2026-07-20) says the belt CLIPS at the view edge and
+"a partially visible belt reads as 'the wood continues'"; `hard_features_within_frame` demands
+partial visibility of a village grove rather than containment. Only a clump with **no visible ink**
+is waste.
+
+The cost of getting it backwards, measured by two independent reviews: Mizuguchi dropped **40
+clumps to remove 3 invisible ones** - 37 at least partly visible, 12 not even touching the frame -
+leaving a ~100 ft bare channel through the middle of the wind wall on the windward side; Sawada lost
+**46% of its canopy** and its belt became shorter than the cluster it shelters.
+
+Inverted to skip only a clump lying WHOLLY outside the frame. Result across the pool: **zero
+invisible clumps on all four maps**, belt gaps 26-37 px against a 30 px baseline, and clump counts
+164 -> 169 (Inashiro), 212 -> 190 (Kashikawa), 131 -> 127 (Mizuguchi), 231 -> 171 (Sawada) - the
+Sawada figure being the re-pack's own effect on the house cloud the belt derives from, not the clip.
+
+**The transferable part**: the first review's complaint was itself against a documented rule, and
+following it literally made three maps worse. A reviewer's finding is evidence, not a verdict - check
+it against the doctrine file before acting on it.
