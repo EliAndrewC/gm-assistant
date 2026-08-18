@@ -762,7 +762,7 @@ fix wants its own pass with its own sweep rather than riding along.
    is asymmetric in effect, or move the private well off the axis. Cheap, but it changes every
    two-cottage works, so it belongs with item 1 in one pass.
 
-## OPEN, all PRE-EXISTING: three found by the 2026-08-17 review round
+## MOSTLY DONE 2026-08-18: three found by the 2026-08-17 review round (see the status on each)
 
 None of these came from that day's changes - each was verified byte-identical to the prior roll -
 and each is a form defect the gate structurally cannot see. Logged rather than fixed in-flight,
@@ -788,7 +788,7 @@ with `len(flooded_plots)` - then apply `_TINT_END_FT` at whichever emitter paint
 ones, not only at the one `flooded_plots` records. The 2026-08-16 entry established "4 painted, 4
 recorded, 1:1" as the guard by hand; this makes it a check.
 
-### 2. A lane dead-ends 90 ft past its own junction (Sawada)
+### 2. DONE 2026-08-18 - a lane dead-ends 90 ft past its own junction (Sawada)
 
 Lane 2's end lies 0.3 ft off lane 0's centerline - a clean T - and then lane 0 continues **81 ft
 past that node** to a free end 12.6 ft to the side of lane 2, on a bearing ~9 degrees off it. On the
@@ -801,28 +801,30 @@ edge, or another way - and trim the overshoot at the junction. `connector_lane_r
 already makes exactly this kind of "must end somewhere" demand for the connector; this is its
 internal-lane counterpart.
 
-### 3. NOT REPRODUCED as written - the "adaptive" garden side needs re-measuring
+### 3. RESOLVED BY MEASUREMENT 2026-08-18 - the "adaptive" garden side IS adapting
 
-`bundle.py` promises the nucleated garden goes on "an ADAPTIVE sunny side (chosen by the placer for
-fit + no shading), so it packs into a real nucleus and the gardens VARY instead of all sitting east
-between houses." Measured on Sawada: **21 of 23 beds SE, 2 SW, 0 E, 0 W**. The adaptive choice is
-choosing the same side nearly every time, so every homestead reads as one stamp repeated - house,
-yard directly below, bed to the lower-right.
+**It reproduces neither as first reported nor as re-reported, and the code's promise is being kept.**
+`bundle.py` says the nucleated garden takes "an ADAPTIVE sunny side (chosen by the placer for fit +
+no shading), so the gardens VARY instead of all sitting east between houses". Measured on the
+shipped manifests, in the placer's own side vocabulary (`_NUC_SIDES = SE, SW, E, W`), counting each
+bed by its offset from its own house:
 
-Note this is the finding that a WRONG one was hiding: an earlier review reported "18 of 19 on the E
-wall, the last-resort candidate", that claim went into `sawada.notes.md` unverified, and a later
-review reconstructed each bed's candidate signature and refuted it (zero beds took the E-wall
-candidate; `groves = 0` is the documented nucleated-bundle behavior, not a symptom). A review
-finding is evidence, not a verdict.
+| map | SE | SW | E | W |
+|---|---|---|---|---|
+| Inashiro | 2 | 11 | 1 | 4 |
+| Kashikawa | 10 | 9 | 4 | 1 |
+| Mizuguchi | 9 | 5 | 0 | 0 |
+| Sawada | 8 | 0 | 7 | 7 |
 
-**Sketch**: decide first whether the variation is meant to be real or the comment is aspirational -
-that is a GM-facing question, not a code one. If real, the shading/fit score is presumably
-near-constant across sides for a compact bundle, so it wants a tie-break that varies (the
-position-seeded `_hjit` idiom) rather than a strict preference order.
+All four sides appear, no map repeats one stamp, and the earlier "21 of 23 SE" and "18 of 19 E"
+readings are both artifacts of measuring in a frame that was not the placer's. **No GM ruling is
+wanted here after all** - the variation the comment promises is what the maps draw. Mizuguchi uses
+only two sides, which is the one thing worth re-checking if the cluster ever tightens further.
 
-## OPEN: three more from the 2026-08-17 re-review round
+THE LESSON, since this is the third time on this one item: a claim about WHICH candidate a placer
+took has to be measured in the placer's own vocabulary, or it measures the measurer's frame.
 
-### 4. `scatter_audit` reports `crown=0` on a map recording 2,665 crowns
+### 4. DONE 2026-08-18 - `scatter_audit` reported `crown=0` on a map recording 2,665 crowns
 
 Caught on Kashikawa: the audit parsed `blade=312447 dot=17240 pine=1517 crown=0 reed=72420` and
 exited 0, on a map whose manifest carries 2,665 tree crowns. Its exit-2 guard fires only on a ZERO
@@ -836,7 +838,7 @@ have been quoting a family the parser never saw.
 cause), then make a family that parses ZERO bases on a map that RECORDS that feature a failure, not
 a silence. Per-family, not just per-total.
 
-### 5. The shared byres end-load onto one flank of the cluster
+### 5. DONE 2026-08-18 - the shared byres end-loaded onto one flank of the cluster
 
 Kashikawa's four shared draft-animal byres sit at cluster-axis positions -442, -430, -340, -300 in a
 settlement spanning -478..+516 - all four inside the SW 143 ft of 994 ft, leaving fifteen of twenty
@@ -849,7 +851,7 @@ westernmost house), but the tighter cluster makes it obvious.
 drain toward whichever end still has open verge. **Sketch**: spread the seats over the cluster's
 principal axis before spiraling, the way the well siting already does its minimax.
 
-### 6. The kura flag is stable against regeneration but NOT against re-packing
+### 6. DONE 2026-08-18 - the kura flag is stable against regeneration but NOT against re-packing
 
 `homesteads.md` says the position-seeded kura roll (`_hjit(x, y, 3.0) < 0.30`) makes the flag
 "stable across regenerations". Measured, the hash itself is honest - 0.2993 over 200k realistic
@@ -887,9 +889,9 @@ The general rule both of these earn: **a review finding measured on an artifact 
 as that artifact.** Two of this round's findings were taken on a stale render and one on a
 superseded roll; all three read as solid until re-measured.
 
-## OPEN: two more from the Sawada re-review (2026-08-17)
+## ONE DONE, ONE OPEN: two more from the Sawada re-review (2026-08-17)
 
-### 7. The title placard prints over a woodland commons parcel - and the keep-out is ONE-DIRECTIONAL
+### 7. DONE 2026-08-18 - the title placard printed over a woodland commons parcel
 
 On Sawada, **71% of the 125 ft woodland commons at (912, 2012) lies inside the title+scalebar box**,
 and 12 crown centers under it ghost through as pale circles inside the cartouche while 4-5 peek out
@@ -924,3 +926,51 @@ detector. **Sketch**: prefer the measurement when both exist (a knob says what w
 bbox says what was DRAWN, and the twin detector's question is about what a reader sees) - or make
 the cloud record what it actually produced. Either way it wants a GM ruling on which the axis is
 for, since it changes what "reads as its own place" is measured against.
+
+## THE OPEN QUESTIONS, and they are RULINGS not bugs (2026-08-18)
+
+Collected here because they were scattered across a notes file and two ledger sections, and because
+a question nobody can find is a question nobody answers. Each is small, each will recur on the next
+re-pack, and none blocks anything.
+
+### A. Does a byre belong beside a wellhead? (Kashikawa)
+
+The byre-owner spread put one draft-animal shed **38 ft** from a communal wellhead; the other three
+stand 168-317 ft from any well. Nothing governs it: `settlements/homesteads.md` puts byres and wells
+in the same interstitial courtyard ground, so the two meeting is structural rather than accidental,
+and `_fits` already keeps the shed off the wellhead's own footprint - this can never become an
+overlap, only an adjacency.
+
+**The two readings**: (a) the beasts are watered at the well, so that is exactly where a byre goes -
+which is the reading the reviewer and I would both take; (b) a wellhead is drinking water for the
+settlement and wants a small apron clear of livestock. Either is defensible; what matters is that
+one of them is written down, because the next re-pack produces the same adjacency and the next
+session will otherwise re-open it from scratch.
+
+### B. Is the twin detector's cluster axis about what was ASKED for, or what was DRAWN?
+
+`check_village/driver.py`'s `TWIN_AXES` reads *"the declared knob if present, else the cluster-bbox
+aspect"*. So when a map records `meta.cluster_shape`, the twin-distinctness axis believes the ROLLED
+KNOB over the geometry. That is the derive-don't-pin rule inverted, and it bit once already: a
+placer change that never touched the twin detector made Sawada declare "round" while drawing a
+3.48:1 band. The declaration is now only recorded when the cloud actually shaped the cluster, so the
+immediate contradiction is closed - but the general preference stands, and nine pool maps declare a
+shape.
+
+**The ruling wanted**: prefer the MEASUREMENT when both exist (the twin detector asks "does this
+read as its own place?", and a reader sees the drawing) - or keep the knob because it carries more
+than a bbox aspect can (crescent / split / elongated are distinctions the measurement cannot make).
+The second is a real argument, which is why this is a ruling and not a fix.
+
+### C. Does a hamlet's back rank get a way, or is it walked to? (doctrine, tier-wide)
+
+Raised on Sawada, true of every scripted hamlet: nine of nineteen houses stand more than 120 ft from
+any way, and the whole SE block is touched by no lane. Inashiro is 6 of 15 with a worst of 345 ft,
+Mizuguchi 4 of 12. This is not a defect of any one map and it is not delta-caused - the front-row
+cap is what put a genuine back rank there in the first place, which is what we wanted.
+
+**The ruling wanted**: either a hamlet's back block earns a spur (an engine change, and one that
+would have to avoid the paddy the way the connector does), or a back rank is understood to be
+reached along unfigured footpaths between the homesteads and nothing is drawn. The second is what
+the maps currently depict, and it is defensible - a lane is a cart way, and people walk. Say which,
+and `lanes_reach_something`'s house threshold stops being a number nobody has justified.
