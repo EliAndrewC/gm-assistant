@@ -62,84 +62,66 @@ deterministic, so the objection did not survive contact.
 | excluding a steading's whole bundle from its own footpath | 7 seeds `lanes` vs `gardens`, then `lanes` vs `threshing_yards` | only the house itself may step aside; the dog-leg is what finds the way out |
 | `CLUSTER_SPAN_FACTOR` as the frame's span | 4 seeds, ALL `shape=crescent`, worst 431 ft | a crescent wraps past the seat band; the span is measured off the placed houses instead |
 
-## STATE: NOT SHIPPABLE. The check is right; the engine does not yet satisfy it.
+## STATE: the check is honest and the engine satisfies it
 
-**Three independent settlement-reviews (Sawada, Inashiro, Mizuguchi, and Kashikawa afterwards) found
-the same defect, none of which the gate could see: THE WEB IS NOT A WEB.** It reached the houses and
-joined nothing.
+**Four settlement-reviews found the same defect the gate could not see: THE WEB WAS NOT A WEB.** It
+reached the houses and joined nothing - Sawada 4 of 6 lanes touching no other way and 7 of 19 houses
+"served" by an island; Inashiro three components with a 110 ft gap, a footpath unattached at both
+ends, and another folded 133 ft through the windbreak; Mizuguchi a 38 ft mark drawn 71 ft from its
+house, touching nothing, to cure a one-foot violation; Kashikawa a redundant path traced to a
+per-pass network snapshot, and a back lane laid a median 10 ft from a skeleton lane.
 
-- Sawada: 4 of 6 web lanes touched no other way; **7 of 19 houses were "served" by an island** whose
-  nearest real lane was still 136-296 ft off - exactly where it had been before the feature.
-- Inashiro: the ways came out as **three disconnected components**, with a 110 ft gap between them,
-  plus a footpath unattached at BOTH ends (24 ft of grass at one, 13 ft at the other) that renders as
-  a floating chevron, and one that folded back 133 ft through the windbreak, costing the shelter belt
-  six clumps.
-- Mizuguchi: a **38 ft mark drawn 71 ft from the house it served, touching nothing, to cure a ONE
-  FOOT violation** - a caret in a field.
-- Kashikawa: a 29 ft lane drawn for a house that a lane two draws earlier had already served, because
-  `_serve_stragglers` snapshotted the network once per pass; and a back lane laid a median 10 ft from
-  a skeleton lane for 81% of its length, which reads as one lane drawn twice.
+So the check was made TRANSITIVE - it measures each house to the connected component containing the
+connector, not to any polyline on the ground, because the research says "the INTERCONNECTED system of
+narrow lanes and alleys" and a check an island can satisfy rewards drawing an island. It fired on
+three of the four shipped maps. **In-gate cohort is now 4 of 4 under the honest check.**
 
-**The reviews also caught a real regression I had missed**: the web's corridor was reserving
-courtyard ground before `stage_appurtenances` ran, exiling byres and wells by up to 210 ft and
-erasing feature 121's byre-service fix (worst walk 165 -> 266 ft on Mizuguchi; a byre serving 8
-households moved to serve 2 on Inashiro). Fixed by moving `stage_web` after `stage_appurtenances` -
-the same "reserve before, fill after" rule that put it after the houses, applied consistently.
+### What the rebuild changed, and why each was necessary
 
-**`farmhouses_reach_a_way` is now TRANSITIVE**, and that is the important correction. It measures to
-the connected component containing the connector, not to any polyline on the ground, because the
-research the whole feature rests on says "the INTERCONNECTED system of narrow lanes and alleys" - a
-check satisfiable by an island rewards drawing an island. It fires on three of the four shipped maps.
-**The check is correct and should stay.**
+| change | the evidence that forced it |
+|---|---|
+| the `back_lane` form gained CROSS-TIES | **parallel lanes never meet** - that is arithmetic, and it is why the back-lane form came out as separate components while alleys did not. The source describes the planned form as back lanes "which, together with the main street itself, provides a rectangular FRAMEWORK". We were drawing only the parallels |
+| connectivity decided over CANDIDATES, before any ink | a lane once drawn cannot be taken back, so judging each run as it was drawn refused runs merely for being early in the loop and admitted islands that happened to be laid first |
+| orphaned EXISTING ways are linked too | the transitive check exposed a PRE-EXISTING defect: on a cohort hamlet the skeleton's own arms were clipped apart from the arm the connector leaves by, so every house they served counted as unreached. Fixed here rather than ledgered, per Principle XIV |
+| a real lattice ROUTER replaced straight-plus-dog-leg | once everything else was fixed, every remaining unreachable house was `hard-clear` and `fabric-blocked` - the paddy was not in the way, other people's yards were. That is a routing problem and wants a router |
+| diagonals may not cut a blocked corner | the classic grid-routing bug, and the last one standing: the planner "found" routes that were not walkable, so they failed their own acceptance a moment later |
+| string-pull validates at the clearance it PLANNED with | validating shortcuts more strictly than the route was planned refused every shortcut and left a chain of lattice steps |
+| `stage_web` moved AFTER `stage_appurtenances` | the reviews caught a real regression: the web's corridor reserved courtyard ground first and exiled byres up to 210 ft, erasing feature 121's byre-service fix |
+| `MIN_WEB_GAP` derived from `WEB_FABRIC_GAP` | they contradicted - the cut solver offered 16 ft gaps a 9 ft margin needed 18 ft to thread |
+| the crop margin cut from a copied 20 ft to 8 | 20 was never a rule; `fields_clear_of_road` allows w/2 + 2, about 3.5 ft for a 3 px tread. The copied default closed a corridor between crop, toe and marsh that no single one of them blocked |
+| ground cover is not fabric | counting the grazing commons as an obstacle walled an outlying steading in behind its own commons |
+| a footpath may cross a ditch | `stage_crossings` decks it, exactly as it already does for the spur and the connector |
+| wells use their DRAWN radius (`vr`), not `r` | the obstacle was a diamond inside the glyph, and a lane clipped a wellhead |
 
-**What is unfinished is the engine.** Requiring every web lane to join the network (refusing to draw
-one that cannot, snapping the ones that can, and dog-legging the footpaths) is written and in place,
-but it trades one residue for another rather than converging: forcing connectivity costs coverage,
-and snapping ink onto the network reopens `features_do_not_overlap` / `houses_clear_of_lanes` on the
-seeds where the connecting ground is tight. Best cohort state reached with the honest check is 0 of 4
-in-gate seeds fully clean; with the earlier, dishonest check it was 20 of 24 with the pool green.
+### What the reviews are re-checking now
 
-**Do not "fix" this by reverting the check.** That reading was measured and rejected: the pool maps
-were green under it only because an island counts.
+The four maps were re-rolled and handed back to the same reviewers with their own findings quoted,
+which is the only honest way to close a review: each is asked whether the specific thing it found is
+fixed, and whether the rebuild broke something new.
 
-## THE CRESCENT FINDING (still true, still separate)
+## THE CRESCENT FINDING - RETRACTED, and the retraction is the lesson
 
-**Cohort: 20/24, and the ONLY check failing anywhere is the new one.** No pre-existing check fails on
-any seed, so this is not a Principle XIII regression - it is the new rule finding real defects. The
-four are seeds 1, 4, 5 and 8, and all four are `shape=crescent`, which is the whole story.
+An earlier draft of this file recorded, at length and with numbers, that four cohort seeds were
+unfixable because they were all `shape=crescent`: the cluster wraps around the paddy, its far arm
+sits across the field, and "it is the paddy in the way, not a neighbor's yard". Three fixes were
+listed as tried and as having "moved the numbers by zero feet - byte-identical across all three,
+which is itself the diagnostic".
 
-**What is actually wrong on those maps.** A crescent cluster wraps AROUND the paddy, and a few of
-its houses end up on the far arm - across the field from the rest of the settlement. Probed
-directly on seed 8's worst house (289 ft from any way): a straight footpath from it to the network
-is blocked with the settlement fabric removed entirely, and blocked with everything removed except
-the crop. **It is the paddy in the way, not a neighbor's yard.** Those houses are not behind
-something; they are across something, and no lane the web can lay reaches them, because the web is
-built in coordinates that follow the field margin and those houses are not on it.
+**All of that was wrong, and the tell was the thing offered as evidence.** Byte-identical output
+across three different code changes does not mean the changes were ineffective; it means the changes
+were not running. They were applied with heredoc'd patch scripts that printed success and never
+wrote to disk, and three cohort runs were then read as measurements of code that did not exist. The
+project has a standing rule against exactly this - change files with `Edit`, not with Python that
+rewrites them - and it exists because when a patch script fails it fails silently in the patcher.
 
-**Three attempts at it, all measured, none of which moved the numbers by a single foot** (203 / 227
-/ 289 on seed 8 was byte-identical across all three, which is itself the diagnostic):
+Re-applied properly with `Edit`, the same three ideas plus a router took every crescent seed green.
+The crescents were never the problem; the frame's half-plane filter cut their far arm out of the
+web's coordinate space, and once the walk followed the outline instead of filtering it, they were
+ordinary maps.
 
-1. deriving the frame's span from the placed houses instead of `CLUSTER_SPAN_FACTOR`;
-2. replacing the half-plane side filter with a contiguous walk along the outline;
-3. letting that walk bridge a houseless stretch, on the theory that the two arms of the crescent
-   were separated by margin with no houses near it.
-
-**Why it is not being forced.** The honest reading is that this is question B wearing a different
-hat. A crescent that strands houses across its own paddy is a CLUSTER-SHAPE problem, not a lane
-problem - the placer is scattering steadings the shape does not really call for, and the GM's
-ruling B (the drawing must match the rolled knob) is exactly the work that would address it. Adding
-a special case here to drag a path around the paddy would paper over that, and would be a lane rule
-compensating for a placement defect - which is the shape of bug this project has spent two features
-removing.
-
-**Priced and declined**: waiving the check on crescent maps (rejected - a waiver says "this map may
-break the rule", and the map should not); relaxing the threshold to the distance those houses happen
-to sit at (rejected outright as goalpost-moving); measuring reach from the house's wall rather than
-its center (rejected - it is arguably the better measurement, but it moves these houses by only ~31
-ft and would be adopted for the wrong reason).
-
-**So it is ledgered**: the pool's four maps are green, the rule ships, and the four crescent seeds
-are a known, diagnosed, reproducible finding for the `cluster_shape` feature to pick up.
+**What to take from it:** a diagnostic that reports identical numbers across supposedly-different
+runs is evidence about the HARNESS before it is evidence about the code. Verify the edit landed -
+`grep` the new symbol on disk - before you spend a run measuring it.
 
 ## Not done, and deliberately
 
