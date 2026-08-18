@@ -422,3 +422,35 @@ differ because the buildings around it moved - and will send you chasing the wro
 **Every one of these changes re-rolls the whole pool once**, so batch them: convert everything you
 intend to, THEN regenerate and fix the fallout in one pass. Fixing fallout between conversions is
 work you will throw away, because the next conversion produces a different fallout set.
+
+## ROUTING A WAY THROUGH GROUND THAT IS ALREADY FULL
+
+Feature 123's lane web needed paths from outlying steadings to the network, and got there by three
+successive answers, only the last of which works. Recorded because the first two look reasonable.
+
+**A straight run, then a straight run plus fixed dog-legs.** Fails in both directions and for the
+same reason - a fixed offset is not a length that means anything. 40/80/130 ft is a gentle correction
+on a 300 ft path and a switchback on an 80 ft one, and a review caught the switchback: 271 ft of path
+to join two points 77 ft apart, folded back through a windbreak. Scale the bend to the CHORD if you
+try this, and bound directness (a path may not exceed ~2x its own straight line; every honest way on
+these maps measures 1.00-1.34).
+
+**A lattice router, string-pulled.** This is the one that works, and two details are load-bearing:
+
+- **A diagonal may not cut a blocked corner.** Two cell centers can both be clear while the step
+  between them clips the corner of a steading standing between them. Require both orthogonal
+  neighbors on a diagonal move, or the planner "finds" routes that are not walkable and they fail
+  their own acceptance test a moment later - which reads as a mysterious rejection, not as a
+  planning bug.
+- **String-pull at the clearance the lattice PLANNED with.** Validating shortcuts more strictly than
+  the route was planned refuses every shortcut and leaves the raw lattice chain, whose diagonals then
+  clip the corners the cell centers had cleared. One number, used by both.
+
+**The lattice is an INDEX, not a decision** - the standing rule in this file's performance section
+applies verbatim. Every shortcut is re-tested against the real geometry before it is taken, so the
+drawn path is exactly as legal as one drawn by hand; the grid only proposes.
+
+**And prefilter.** The clearance predicate gets called once per lattice cell per candidate per
+target, and unprefiltered it scans every polygon in the settlement's fabric each time. That took a
+hamlet from 15 s to 45 s and killed a cohort worker outright. A bounding-box test against the
+polyline's own bounds prunes it; it never decides.
