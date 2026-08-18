@@ -889,6 +889,20 @@ def _seg_0612__lanes_do_not_break_mid_run(*, M: Any = _UNBOUND, check: Any = _UN
             _br_solid.append(rect_corners(_br_r))
     for _br_key in ("threshing_yards", "gardens", "village_groves", "commons", "marshes"):
         _br_solid.extend([(float(_a), float(_b)) for _a, _b in _br_r["poly"]] for _br_r in (M.get(_br_key) or []) if _br_r.get("poly"))
+    # ...and the GROUND, not only the built things. A break with the paddy, a ditch or a stream in it
+    # is honest - a lane cannot be drawn there, so the way stops and resumes on the far side, and the
+    # generator is right to leave it. Leaving crop and water out of this list made the check fire on
+    # exactly the gaps its own fix is forbidden to close, which is a check demanding the impossible.
+    for _br_p in M.get("dry_plots") or []:
+        if _br_p.get("poly"):
+            _br_solid.append([(float(_a), float(_b)) for _a, _b in _br_p["poly"]])
+    for _br_f in M.get("fields") or []:
+        if _br_f.get("outline"):
+            _br_solid.append([(float(_a), float(_b)) for _a, _b in _br_f["outline"]])
+    for _br_key in ("field_ditches", "channels", "streams"):
+        for _br_c in M.get(_br_key) or []:
+            if _br_c.get("poly"):
+                _br_solid.append([(float(_a), float(_b)) for _a, _b in _br_c["poly"]])
     for _br_w in M.get("wells") or []:
         _br_rad = max(float(_br_w.get("r", 8.0)), float(_br_w.get("vr", 0.0)))
         _br_solid.append([(float(_br_w["x"]) + _br_rad * math.cos(math.pi * _k / 4), float(_br_w["y"]) + _br_rad * math.sin(math.pi * _k / 4)) for _k in range(8)])
