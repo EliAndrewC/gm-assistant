@@ -12,6 +12,8 @@ from l7r.diagram.settlement import Settlement
 from .hinterland import CROP_MARGIN
 from .plan import SitePlan
 
+_BOARD_W, _BOARD_H = 14.0, 8.0  # the kosatsuba plank's footprint, as the re-seat probe measures it
+
 # ---- STAGE 8: crossings, the board, and the frame ------------------------------------------------
 
 
@@ -78,7 +80,15 @@ def stage_notice(s: Settlement, plan: SitePlan) -> None:
                             cx2, cy2 = mx + ux * 16.0 * side, my + uy * 16.0 * side
                             if not (hx0 <= cx2 <= hx1 and hy0 <= cy2 <= hy1):
                                 continue
-                            if not s._fits(cx2, cy2, 14.0, 8.0, corridors=False):
+                            if not s._fits(cx2, cy2, _BOARD_W, _BOARD_H, corridors=False):
+                                continue
+                            # ...AND NOT IN THE WATER. `_fits(corridors=False)` is required here - the
+                            # corridor test is a HOUSE setback from the tread and would refuse every
+                            # verge - but it also switches off the watercourse clearance bundled into
+                            # the same call, so this probe would seat a plank board in a stream.
+                            # ONE predicate, shared with `place_kosatsuba`, which had the identical
+                            # hole and shipped it on cohort seed 13.
+                            if not s.fixture_clear_of_water(cx2, cy2, math.hypot(_BOARD_W, _BOARD_H) / 2):
                                 continue
                             busy = sum(1 for h in hs if math.hypot(cx2 - h["x"], cy2 - h["y"]) < 260)
                             if best is None or -busy < best[0]:
