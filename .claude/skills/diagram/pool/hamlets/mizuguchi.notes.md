@@ -131,6 +131,58 @@ plus a footpath). The pre-rule manifest is frozen in
 more than it looks, because this map has since re-rolled twice and the motivating pair no longer
 exists anywhere but that fixture.
 
+## 2026-08-18 - where the ox sleeps, and a well objective that measured the wrong houses
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+- **`byre_form` is a knob now** - `courtyard` (the ox in its owner's own homestead: the *magariya*
+  曲家 whose short arm IS the stable, the north-China *sanheyuan* animal range) or
+  `detached_commons` (a shared shed on the ground between homesteads, the old behavior and still the
+  default), rolled per settlement per Principle XII. The *doma* rule and the byre placer had been
+  quietly contradicting each other; both forms are attested, so neither is the correction.
+- **and the overlap registry had been describing code that no longer existed** - its `byres` entry
+  claimed the byre "abuts its own farmhouse (draft_byres places it against the wall)", which the
+  placer stopped doing long ago. Now corrected and GATED rather than asserted in prose.
+- **the well tie-break's last key is the objective itself, not a proxy** - `_worst_after` at full
+  resolution inside the 66 px bucket, instead of distance to the cluster centroid.
+
+RIPPLE ON THIS MAP: none - and it took two tries to get that. This map draws no byres, so the knob
+does not touch it. The FIRST well fix (breaking the tie on distance to the nearest house, which is
+what the ledger sketched) moved this map's second well 47 px and took its worst walk **203 -> 234
+ft** - a regression on a shipped map, caught by measuring all four hamlets rather than the one the
+item was filed about. Scoring the real objective inside the bucket instead returns this map to
+byte-identical wells while still buying Kashikawa its 386 -> 304 ft.
+
+## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Two ledgered defects that turned out to be one, with a worse one underneath.
+
+- **the commons are off the lattice, and no two are the same size.** `open_ground_patches` samples a
+  uniform 90 ft lattice, scores every seat by ONE monotone function (near the cluster, leaning
+  upslope) and takes the best seat outside a FIXED separation radius - three ingredients that do not
+  merely tend toward an even chain, they produce one by construction. THIS MAP shipped the proof:
+  three IDENTICAL 250 ft squares stepping (+270,-270) twice, reading as three stamps of one wood on
+  a ruled diagonal; Inashiro had the same chain the other way. The accepted seat is now nudged up to
+  half a step off the lattice and its size rolled +/-15%, both from the map's own position hash
+  (so a map is unchanged by regeneration and two maps differ from each other), and every nudge is
+  re-asked through the same qualification test - it can only move a legal seat to another legal one.
+- **a hamlet at the top of the band had no wood at all.** Kashikawa - the map NAMED 樫川, "oak
+  river" - seated ZERO parcels out of 231-286 candidate seats, at every rung of the shrink ladder
+  and both set-back profiles. The scan demanded the whole square inside the predicted crop window
+  plus a further 16 ft, while its own gate check asks that **70% of the parcel's bbox** be inside
+  the view and says outright that a parcel clipping at the edge "reads as 'more wood that way' and
+  is fine". The scan mirrored the check's formula but not its WINDOW, and now judges a seat by area
+  the way the check does.
+
+RIPPLE ON THIS MAP: this is the motivating sheet, and the ruled diagonal is gone. The three stamps
+at (456,967) / (726,697) / (996,427) - all exactly 250 ft - are now 238 ft at (485,899), 267 ft at
+(780,661) and 221 ft at (1032,401), with the fourth parcel 232 ft at (1590,1921). Four woods of four
+sizes on no line. Count unchanged at 4; gate green. The first cut of the size roll shrank only
+(`1.0 - 0.2*hjit`), compounded with the shrink ladder and produced a 116 ft "commons" here - a copse,
+not a commons - which is why the roll varies both ways.
+
 ## 2026-08-18 - the six-defect pass
 
 WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)

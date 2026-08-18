@@ -20,7 +20,9 @@ The base order below is source order and is behaviorally irrelevant - no name is
 is what the composed-surface guard's second assertion exists to keep true.
 """
 
+from .byres import COURTYARD_REACH as COURTYARD_REACH
 from .byres import DraftByresMixin
+from .byres import courtyard_annex_span as courtyard_annex_span
 from .seats import OpenSeatMixin
 from .shrines import ShrineHallsMixin
 from .torii import ToriiAvenueMixin

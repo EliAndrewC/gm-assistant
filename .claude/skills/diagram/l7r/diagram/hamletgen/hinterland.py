@@ -153,21 +153,63 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
             half = size_try / 2.0
             _sb_pad = 0.415 * half if _sb_normal < 80.0 else 0.0  # the diagonal slack (see above); the generous profile keeps its historical thresholds exactly
             _sb_n, _sb_s = _sb_normal + _sb_pad, _sb_sunny + _sb_pad
-            sx0, sy0 = max(cbx0, _fx0 + half + 16.0), max(cby0, _fy0 + half + 16.0)
-            sx1, sy1 = min(cbx1, _fx1 - half - 16.0), min(cby1, _fy1 - half - 16.0)
+            # MIRROR THE CHECK'S WINDOW, NOT JUST ITS FORMULA (2026-08-18). The kept-window
+            # confinement above and `woodland_commons_within_the_frame` are meant to be the same
+            # rule, and they were not: the check asks for **70% of the parcel's bbox** inside the
+            # view and says in as many words that a parcel clipping at the edge "reads as 'more wood
+            # that way' and is fine", while the scan demanded the whole square inside the window
+            # plus a further 16 px. Being stricter than your own gate sounds safe and is not - it
+            # cost two of the four hamlets their woodland outright. Measured before the fix: at
+            # EVERY rung of the shrink ladder and BOTH set-back profiles, Kashikawa - the map named
+            # 樫川, "oak river" - had ZERO qualifying seats out of a 231-286 point lattice and Sawada
+            # exactly one, with the crop clause alone refusing 93-97% and the best achievable
+            # clearance NEGATIVE (the square overlapped a paddy). Neither the shrink ladder nor the
+            # set-back relaxation, both added FOR Kashikawa, could ever have worked: the binding
+            # constraint was never the set-back, it was that a 20-household hamlet's field fills its
+            # own frame and the scan would not let a wood touch the edge of it.
+            #
+            # So the seat is judged the way the check judges it, by AREA. The centre may now sit up
+            # to 0.6*half outside the kept window and the exact bbox-overlap fraction is tested in
+            # `_ok` - which is what makes the both-axes corner case safe, where a per-axis box test
+            # would pass two 0.4*half overhangs at 0.64 inside and ship a check failure. The floor
+            # is 0.8 rather than the check's 0.7 because this window is a PREDICTION of the crop:
+            # the margin absorbs the features that may still grow it.
+            sx0, sy0 = max(cbx0 + 16.0, _fx0 - 0.6 * half), max(cby0 + 16.0, _fy0 - 0.6 * half)
+            sx1, sy1 = min(cbx1 - 16.0, _fx1 + 0.6 * half), min(cby1 - 16.0, _fy1 + 0.6 * half)
+
+            # THE QUALIFICATION IS ONE PREDICATE, so a seat can be re-asked after it is nudged. It
+            # used to be an inline `if` that only the lattice scan could evaluate, which is why the
+            # jitter below could not exist: there was no way to check that a moved seat was still
+            # legal. Same shape as every other "placement and its check read one source" fix here.
+            def _ok(
+                x: float,
+                y: float,
+                half: float = half,
+                n: float = _sb_n,
+                sn: float = _sb_s,
+                sx0: float = sx0,
+                sy0: float = sy0,
+                sx1: float = sx1,
+                sy1: float = sy1,
+            ) -> bool:
+                if not (max(half + 40.0, sx0) <= x <= min(plan.W - half - 40.0, sx1) and max(half + 40.0, sy0) <= y <= min(plan.H - half - 40.0, sy1)):
+                    return False
+                if (max(0.0, min(x + half, _fx1) - max(x - half, _fx0)) * max(0.0, min(y + half, _fy1) - max(y - half, _fy0))) < 0.8 * (2.0 * half) ** 2:
+                    return False  # the check's own 70%-of-bbox rule, at 0.8 for prediction slack
+                return (
+                    _clear_gap((x, y), half, crops, dy, n, sn) is not None
+                    and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
+                    and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
+                    and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
+                    and not _wet(x, y, half)
+                )
+
             scored: list[tuple[float, float, float]] = []
             y = max(half + 40.0, sy0)
             while y <= min(plan.H - half - 40.0, sy1):
                 x = max(half + 40.0, sx0)
                 while x <= min(plan.W - half - 40.0, sx1):
-                    gap = _clear_gap((x, y), half, crops, dy, _sb_n, _sb_s)
-                    if (
-                        gap is not None
-                        and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
-                        and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
-                        and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
-                        and not _wet(x, y, half)
-                    ):
+                    if _ok(x, y):
                         # PREFER THE NEAREST QUALIFYING GROUND, leaning upslope. The first version of this
                         # maximized distance from the crop instead, which sounds right and is wrong twice
                         # over: it drove every patch to the canvas's far upslope margin, where the dedupe
@@ -185,7 +227,32 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                     break
                 if any(math.hypot(x - cx0, y - cy0) < size * 1.5 for cx0, cy0 in centers):
                     continue
-                chosen.append([(x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half)])
+                # OFF THE LATTICE, AND NOT ALL ONE SIZE (settlement-review, Mizuguchi 2026-08-18).
+                # The scan samples a uniform 90 px lattice, scores every seat by one monotone
+                # function (near the cluster, leaning upslope) and then takes the best remaining seat
+                # outside a FIXED separation radius. Those three together do not merely tend to
+                # produce an even chain - they produce one by construction, and Mizuguchi shipped the
+                # proof: three identical 250 x 250 ft squares at (456,967), (726,697), (996,427),
+                # offsets of exactly (+270,-270) and (+270,-270), reading as three stamps of one wood
+                # marching up a ruled diagonal. The fourth parcel, seated off the ladder at a
+                # different size, reads fine and is the control.
+                #
+                # So the LATTICE is a sampling artifact and must not survive into the output. The
+                # accepted seat is nudged up to half a step off it and the parcel's size rolled down
+                # by up to a fifth, both from `_hjit` - positional, so a map is unchanged by
+                # regeneration and two maps differ from each other. Every nudge is re-asked through
+                # `_ok`, and a nudge that would not qualify is simply not taken: this can only move a
+                # legal seat to another legal seat, never widen what the scan admits.
+                jx = x + (s._hjit(x, y, 71.0) - 0.5) * step
+                jy = y + (s._hjit(x, y, 72.0) - 0.5) * step
+                phalf = half * (0.85 + 0.3 * s._hjit(x, y, 73.0))
+                if _ok(jx, jy, phalf):
+                    x, y, half_used = jx, jy, phalf
+                elif _ok(x, y, phalf):
+                    half_used = phalf
+                else:
+                    half_used = half
+                chosen.append([(x - half_used, y - half_used), (x + half_used, y - half_used), (x + half_used, y + half_used), (x - half_used, y + half_used)])
                 centers.append((x, y))
     return chosen
 
