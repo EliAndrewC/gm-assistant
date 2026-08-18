@@ -393,7 +393,7 @@ class HomesteadPartsMixin:
             self._record_crowns(drawn)
             random.setstate(st)
 
-    def village_grove(self: Settlement, poly: Any, role: str = "windbreak", dense: bool = True) -> int:  # type: ignore[misc]
+    def village_grove(self: Settlement, poly: Any, role: str = "windbreak", dense: bool = True, within: tuple[float, float, float, float] | None = None) -> int:  # type: ignore[misc]
         """A COMMUNAL village grove - the Chinese *fengshui* forest (风水林). Unlike the per-house *yashikirin*,
         a NUCLEATED village shelters behind ONE village-scale grove, in three roles (see settlements.md 'Village
         windbreak'):
@@ -469,9 +469,34 @@ class HomesteadPartsMixin:
                 jy = gy + (self._hjit(gx, gy, 22.0) - 0.5) * step
                 if not point_in_poly(jx, jy, poly):
                     continue
+                # ...AND NOT WHOLLY OFF THE PAGE, when the caller gives a `within`. ONLY wholly - a
+                # clump whose crown merely CROSSES the frame edge is kept, and that is doctrine, not
+                # leniency: `settlements/presentation.md` (GM 2026-07-20) says the belt CLIPS at the
+                # view edge and "a partially visible belt reads as 'the wood continues'", which is
+                # why `hard_features_within_frame` demands partial visibility of a village grove
+                # rather than containment. Only a clump with NO visible ink is waste.
+                #
+                # THE FIRST VERSION INSET THE WINDOW INSTEAD, AND THAT WAS BACKWARDS - recorded
+                # because it shipped and two independent reviews caught it. Requiring the whole crown
+                # inside (`within[2] - 0.9*clump`) deleted every clump the edge merely touched, and on
+                # Mizuguchi that traded 3 invisible clumps for 40 dropped ones - 37 of them at least
+                # partly visible, 12 not touching the frame at all - punching a ~100 ft bare channel
+                # through the middle of the wind wall on the windward side. Sawada lost 46% of its
+                # canopy the same way. The earlier review that asked for "58 clumps touching the
+                # frame" to be fixed was itself against the presentation doctrine above; the only
+                # real defect was the 23 with no ink on the page.
+                if within is not None and (jx + clump * 0.9 < within[0] or jx - clump * 0.9 > within[2] or jy + clump * 0.9 < within[1] or jy - clump * 0.9 > within[3]):
+                    continue
                 if any((jx - ox) ** 2 + (jy - oy) ** 2 < rr * rr for ox, oy, rr in occ):
                     continue
-                if any(point_in_poly(jx, jy, f) or edge_dist(jx, jy, f) < 12 for f in self.field_polys):
+                # THE KEEP-OUT IS FROM THE CROWNS, NOT THE CLUMP CENTER. 12 px held the center off the
+                # field, but a clump scatters its canopy about a radius past that center, so a legal
+                # center still threw crowns onto the crop margin - five of them on Mizuguchi, 0.7-5.5
+                # ft inside the 6 ft margin band (settlement-review 2026-08-18, found only once
+                # `scatter_audit` stopped reading crowns at their LOCAL coordinates). Placer and audit
+                # were measuring two different things: centers here, crown bases there. `+ cr` makes
+                # this the same question the audit asks.
+                if any(point_in_poly(jx, jy, f) or edge_dist(jx, jy, f) < 12 + cr for f in self.field_polys):
                     continue
                 if any(point_in_poly(jx, jy, d) or edge_dist(jx, jy, d) < 12 for d in self.dry_polys):
                     continue  # the hem strips are barley: trees do not grow in the crop (groves_clear_of_dry_plots)

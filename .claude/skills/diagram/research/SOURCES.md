@@ -68,6 +68,18 @@ Buck, pre-mechanization farm survey of China, 1929-33
 
 *Used for:* mean dry parcel near 1 mu; mid-Qing Jiangnan holdings scattered over several parcels
 
+### `senmaida`
+
+Shiroyone Senmaida (Wajima, Ishikawa) - the Japanese government's *Highlighting Japan* feature (gov-online.go.jp, June 2025), the Wajima city cultural-property listing (wajima.hiddenheritage.jp), and JNTO's site page (japan.travel); cross-read against the Obasute and Maruyama Senmaida listings
+
+*Used for:* the SMALL end of a real worked paddy - 1,004 basins on ~4 ha, average ~18-20 m2, many near 1 m2, the smallest about half a meter square, and the straw-raincoat anecdote. Establishes that no ABSOLUTE minimum paddy area exists, which is why the size floor is a ratio to the fan's own design cell instead
+
+### `bench-terrace-riser`
+
+FAO STI-portal and ICIMOD pages on traditional irrigated / rainfed paddy rice terraces, plus general bench-terracing references
+
+*Used for:* the terrace riser as a structural retaining face (0.8-1.5 m, stone-faced where available, slope 80-160%) with water held by a separate 10-15 cm lip on the platform edge - the physical difference that makes micro-basins a terrace phenomenon and not a valley-floor one
+
 ### `li-bozhong-jiangnan`
 
 Li Bozhong, "The Practice of 'Ten Mu per Farmer' and the Scale of the Traditional Peasant Economy" (*Zhongguo Nongshi*, 1996) and *Agricultural Development in Jiangnan, 1620-1850* - consulted at secondhand via LSE economic-history working papers and the EH.net review

@@ -122,6 +122,39 @@ The cost is not uniform: sparse town fans shed 7-8 cells, but a dense city fan c
 `paddy_fan_gapless` included - but a city fan is the place to LOOK if this is ever retuned, because
 the gate is not the eye.
 
+### A basin too small to be worth its own bund is taken into the one beside it
+
+The GM, 2026-08-17, on a scripted hamlet: *"most of the rice paddy fields are rectangular, but then
+there are a few very small triangles. Is that realistic? It looks like it is just a mistake... should
+there be a minimum rice paddy size?"*
+
+Three answers, and only one of them is yes.
+
+- **A minimum in ACRES: no, and this is researched.** Shiroyone Senmaida works 1,004 basins on ~4 ha,
+  averaging ~18-20 m2, the smallest about half a meter square. Our smallest hamlet basin is bigger
+  than a typical Senmaida paddy. An absolute floor would condemn real paddies, so it is **declined**.
+- **Four sides only: no.** A quad rule would re-impose the *kochi seiri* consolidation grid that
+  [`../research/fields.md`](../research/fields.md) already flags as the anachronism, and would
+  contradict the attested tanada mosaic. Triangular basins are legitimate and several survive on
+  every map. **Declined.**
+- **A minimum RELATIVE to the fan's own design cell: yes.** On a terrace the wall a basin needs is
+  the riser, which the slope demands anyway; on a valley-floor fan the aze is the whole structure,
+  built only to hold water and re-plastered every spring, and the alternative to a scrap is making
+  the basin next door bigger. So a comb basin under **0.25 of the fan's design cell** is dropped by
+  the toe pass and absorbed by `close_seams` into the basin it shares the most bund with
+  (`_TOE_MIN_AREA`); the gate `paddy_basins_are_worth_their_bund` fires under **0.20**, and
+  `comb_fans_record_their_design_cell` keeps the recorded reference (`field.cell`) from vanishing.
+  **Comb-only** - the hill-rice engines record no cell and are exempt, because hill rice is exactly
+  where the micro-basins are real.
+
+The GM's "triangles" were the symptom, not the rule: a fragment clipped off the plot lattice at the
+fan's boundary naturally comes out triangular. Cost: 1.63% of the scripted hamlets' basins absorbed,
+with acreage, field outline and household COUNTS unchanged - but **the homestead POSITIONS re-roll**,
+because changing a drawn count moves the shared placement RNG (Inashiro re-packs wholesale,
+Kashikawa not at all; the per-map ripple is in the research file and in each map's notes). Full findings,
+both declined alternatives, the two derivations of 0.25, and why the gate could not sit at 0.15:
+[`../research/fields.md#minimum-basin-size---there-is-no-absolute-floor-and-the-real-floor-is-a-ratio`](../research/fields.md).
+
 ### The field hems onto the collector's BANK - bunds run WITH the ditch, never across it
 
 The GM, 2026-08-08, on Hoshizora: *"the dark brown earthen bunds appear to overlap with the drainage
