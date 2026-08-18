@@ -294,13 +294,14 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
             break
         if in_band((lx, ly)) and s.try_place(lx, ly, "plain"):
             placed += 1
+    _cloud_placed = 0
     for attempt in range(4):
         if placed >= plan.spec.households:
             break
         # each round widens the band a little (and reaches a little further back from the field)
         wlat, wdep = lat * (1.0 + 0.22 * attempt), dep * (1.0 + 0.16 * attempt)
         want = plan.spec.households * 6 + 30
-        for lx, ly in s.cluster_seeds(plan.cluster_shape, 0.0, 0.0, wlat, wdep, want, rng, record=(attempt == 0)):
+        for lx, ly in s.cluster_seeds(plan.cluster_shape, 0.0, 0.0, wlat, wdep, want, rng, record=False):
             if placed >= plan.spec.households:
                 break
             # THE CLOUD LEANS TOWARD THE FIELD. `cluster_seeds` returns a shape symmetric about the
@@ -314,6 +315,22 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
             ly = -wdep + (ly + wdep) * 0.75
             if s.try_place(seat["cx"] + ax * lx + ox * ly, seat["cy"] + ay * lx + oy * ly, "plain"):
                 placed += 1
+                _cloud_placed += 1
+    # THE SHAPE IS RECORDED ONLY IF THE CLOUD ACTUALLY SHAPED THE CLUSTER (2026-08-17).
+    # `cluster_seeds` used to stamp `meta.cluster_shape` on its first attempt, BEFORE it knew how
+    # many seats it would win - which was harmless while the cloud either ran for the whole hamlet
+    # or not at all. The front-row cap changed that: the rows now seat one rank and the cloud seats
+    # the SURPLUS, so on Sawada and Inashiro a knob describing a minority of the houses started
+    # being stamped for the first time. It is not idle bookkeeping - `check_village/driver.py`'s
+    # `TWIN_AXES` reads "the declared knob if present, else the cluster-bbox aspect", so Sawada
+    # began reporting its shape as "round" to the twin detector while drawing a 3.48:1 band.
+    #
+    # A DECLARATION MUST DESCRIBE THE DRAWING. The cloud shaped the cluster only if it seated most
+    # of it; below that the frontage rows did, and the rolled shape went unhonored exactly as it
+    # does when the cloud never runs at all. `meta.cluster_seeding` still records which happened, so
+    # nothing goes silent - that is the invariant `settlement_records_cluster_seeding` holds.
+    if _cloud_placed * 2 >= max(1, plan.spec.households):
+        s.M["meta"]["cluster_shape"] = plan.cluster_shape
     # THE ROLLED SHAPE MUST LEAVE A TRACE EVEN WHEN THE CLOUD NEVER RUNS (known-open ledger
     # 2026-08-16, Kashikawa: the front rows + lane frontage seated all 20 households, the
     # cluster-seeds cloud never ran, and the rolled cluster_shape knob went unhonored with no
@@ -323,6 +340,12 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # the rolled shape went unhonored. `settlement_records_cluster_seeding` holds the invariant.
     s.M["meta"]["cluster_seeding"] = "cloud" if "cluster_shape" in s.M["meta"] else "frontage"
     plan.placed = s.farmsteads()
+    # ...and NOW the lanes can be told what they actually serve. They were laid first because a lane
+    # is a no-build corridor the homesteads front, so at lay time nothing knew where the houses would
+    # land, and an arm that met neither crop nor water ran the whole cluster band into open ground.
+    # Trimming only ever shortens, so it cannot invalidate a seat already taken. See
+    # `Settlement.trim_lane_stubs` for the measurement that prompted it.
+    s.trim_lane_stubs()
 
 
 # ---- STAGE 6: what stands among the houses ------------------------------------------------------

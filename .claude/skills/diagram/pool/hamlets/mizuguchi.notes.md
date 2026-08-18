@@ -130,6 +130,44 @@ plus a footpath). The pre-rule manifest is frozen in
 `pool/regressions/farmhouses_shed_separately_fires_on_the_pre_rule_mizuguchi.json` - which matters
 more than it looks, because this map has since re-rolled twice and the motivating pair no longer
 exists anywhere but that fixture.
+
+## 2026-08-18 - the six-defect pass
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Six known /diagram defects were cleared in one pass, plus one regression caused inside it. In the
+order they matter to a reader of these maps:
+
+- **the front row is ONE RANK.** `front_row` had begun sampling seats by density (to stop a starved
+  row leaving a big field under-ringed) and, uncapped, seated every household by itself - every
+  cluster came out a single file along the paddy. It now returns seats center-out and stops at one
+  rank's worth of the band; the surplus falls to the flanking and cloud passes, which seat BEHIND.
+- **a lane must reach something.** Internal lane ends ran the full cluster band into open grass,
+  serving no house and meeting no way, because lanes are laid BEFORE the houses they serve.
+  `trim_lane_stubs` now pulls such an end back AFTER the farmstead flush - rewriting the ink in the
+  stream slots the lane already owns, so nothing re-layers - and stops at the last homestead served
+  rather than at the rule's edge. A near-parallel contact does not count as arrival (a lane that
+  MEETS another crosses it; one that FRAYS runs alongside). A fragment below one homestead's
+  frontage (~71 ft) is dropped: it can front nobody. `lanes_reach_something` gates it.
+- **byres are shared, so they spread.** Owners are chosen by a maximin spread, then - among the
+  near-best - by how many households stand within borrowing distance. Spread alone picked the most
+  ISOLATED homestead, which is the inverse of a shared shed.
+- **the title placard may not sit on a woodland commons.** Dense canopy is an obstacle to the title
+  the way a grove already was; only the sparse grazing scrub is not.
+- **`scatter_audit` could not see tree crowns.** Its palette had drifted from the engine's; it now
+  imports `CROWN_FILLS`, and a coverage guard fails when the two disagree.
+- **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
+  gate reads the same raked corners the placer does.
+
+RIPPLE ON THIS MAP: lane 2 shortened; byres re-sited and their SERVICE improved - mean house-to-
+nearest-byre 126 -> 109 ft, median 143 -> 101, households within 150 ft 8/12 -> 10/12, worst walk
+235 -> 165. (An intermediate version of the byre fix made those numbers WORSE: it maximised spread
+among the byres rather than service to the houses, which a review caught. The borrow-coverage term
+is what fixed it.) Houses and the cluster's four depth bands are untouched. Review: PASS.
+
+THE CROWN-PARSE DEFECT WAS FOUND HERE and is worth remembering: `scatter_audit` reported
+"crown checked, 0 violations" while seeing 63% of this map's crowns, because `CROWN_FILLS` claimed
+to be exhaustive and was not. It is now checked against real ink rather than asserted.
 MECHANISM: feature 121 made the placer test its raked quad against the LANE TREAD, but house-to-
 house separation is still adjudicated on the whole-bundle BBOX (`_bundle_side_fits`), which knows
 nothing about either house's rake. Measured across the four scripted hamlets, this is a lone

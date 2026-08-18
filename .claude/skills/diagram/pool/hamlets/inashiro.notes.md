@@ -674,6 +674,44 @@ two aze still leaves ~7.4 ft of standing water - a workable basin, which is what
 zoom. Revisit only if a roll produces a 5-8 ft end that reads as a point; see future-work.md for the
 sketch, since the convergence measure now exists and switching is a one-line change.
 
+## 2026-08-18 - the six-defect pass
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Six known /diagram defects were cleared in one pass, plus one regression caused inside it. In the
+order they matter to a reader of these maps:
+
+- **the front row is ONE RANK.** `front_row` had begun sampling seats by density (to stop a starved
+  row leaving a big field under-ringed) and, uncapped, seated every household by itself - every
+  cluster came out a single file along the paddy. It now returns seats center-out and stops at one
+  rank's worth of the band; the surplus falls to the flanking and cloud passes, which seat BEHIND.
+- **a lane must reach something.** Internal lane ends ran the full cluster band into open grass,
+  serving no house and meeting no way, because lanes are laid BEFORE the houses they serve.
+  `trim_lane_stubs` now pulls such an end back AFTER the farmstead flush - rewriting the ink in the
+  stream slots the lane already owns, so nothing re-layers - and stops at the last homestead served
+  rather than at the rule's edge. A near-parallel contact does not count as arrival (a lane that
+  MEETS another crosses it; one that FRAYS runs alongside). A fragment below one homestead's
+  frontage (~71 ft) is dropped: it can front nobody. `lanes_reach_something` gates it.
+- **byres are shared, so they spread.** Owners are chosen by a maximin spread, then - among the
+  near-best - by how many households stand within borrowing distance. Spread alone picked the most
+  ISOLATED homestead, which is the inverse of a shared shed.
+- **the title placard may not sit on a woodland commons.** Dense canopy is an obstacle to the title
+  the way a grove already was; only the sparse grazing scrub is not.
+- **`scatter_audit` could not see tree crowns.** Its palette had drifted from the engine's; it now
+  imports `CROWN_FILLS`, and a coverage guard fails when the two disagree.
+- **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
+  gate reads the same raked corners the placer does.
+
+RIPPLE ON THIS MAP: 11 of 15 houses re-seated; lane 1 shortened; all three byres re-sited;
+`farm_sheds` 5 -> 4, `gardens` 19 -> 18 beds over an unchanged 15 owners, `tree_crowns` +99;
+`lanes`, `dry_plots`, `fields`, `field_ponds` and `marshes` byte-identical - the re-pack stayed out
+of the field fabric entirely. Cluster aspect 3.79 -> 2.91 with two genuine ranks (front 52-104 ft
+from the crop, back 124-249). Review: PASS.
+
+KNOWN AND ACCEPTED HERE: two houses stand past 200 ft from any lane (max 345) at the north tip,
+reached across open ground. That is inside the pool's own range and the field paths take over at
+the fan head. The byre at the NE outlier serves fewer neighbours than the other two - the
+borrow-coverage term reduced but did not eliminate that, since the outlier is genuinely remote.
 
 ## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
 

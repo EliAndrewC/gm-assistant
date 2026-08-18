@@ -67,3 +67,89 @@ thatch, hence the large loft); solar elevations computed for 38N at the 10th-mon
 minka ridge heights cross-checked against surviving farmhouses.
 
 - *Historical scale - the real numbers (research grounding, for calibrating the glyph).* A homestead grove is a substantial STAND, not a few trees. The best hard data is a 1987 survey of Kashima in the Tonami plain (the classic *kainyo* dispersed-farmstead country, 46 households): **~33 trees of trunk diameter >= 10 cm per homestead**, of which cedar (*sugi*) was ~48% (**~16 cedars per house**), the rest spread over ~83 other species; **~6 species per homestead** (range 1-14); a large/notable homestead ran **200+ trees across 31 species**. That count is trunks >= 10 cm ONLY - it EXCLUDES the bamboo stand (hundreds of culms), saplings, and the trimmed hedge layer - so the honest figure for a typical grove is **~30-40 mature trees + a bamboo grove + understory**, and a big one **100-200+**. The grove canopy footprint is therefore the LARGEST homestead appurtenance - **bigger than the farmhouse**, and far bigger than the garden or threshing yard - wrapping the N/W as a belt several trees deep. The map need not draw every tree (houses/yards are already oversized symbols), but per Principle "relative sizes roughly honest" the grove glyph must read at the RIGHT relative scale: clearly the dominant homestead feature, a dense stand suggesting dozens of trees - not a garden-sized clump of 5-10. *(Cross-check on the windward rule: Okinawa's homestead groves sit on the E/N sides, because the islands' damaging wind is the typhoon/NE monsoon, not the mainland NW - same logic, different geography, which is exactly why `windward` is a per-map knob.)*
+
+## May a byre stand beside a wellhead? (researched 2026-08-18)
+
+**Answer: yes, and the vernacular puts them far closer than our maps do. No GM ruling wanted.**
+
+A `settlement-review` flagged a shared draft-animal byre standing 38 ft from a communal wellhead on
+Kashikawa and asked for a ruling. Under the constitution's Principle XII rule that research precedes
+a ruling, this was searched first, and the record is not ambiguous.
+
+**Japan (the closest analogue, and the strongest signal).** In the *magariya* L-plan farmhouse the
+draft animal lives **under the house's own roof**: the stable wing (*umaya*) meets the dwelling
+(*omoya*) at right angles and extends off its SOUTH face, deliberately taking the best sunlight,
+"indicating how valuable horses were". And the well (*ido*), where a house had one, sat "in the rear
+corner of the earthen-floored *doma* or in a rear projection room" - i.e. **inside the same
+building**. A household's horse and a household's well were therefore separated by the width of a
+farmhouse, on the order of 20-40 ft, as a matter of course. This is also why our own doctrine draws
+no European multi-stall barn (see the draft-animals-live-in-the-house rule in
+[`../settlements/homesteads.md`](../settlements/homesteads.md)).
+
+**China (the guiding star).** Vernacular villages **co-located the animal facilities with the
+latrine** - cattle sheds, chicken houses and pigsties grouped with the privy - because both ends of
+that group feed the same manure economy that kept the soil fertile for four thousand years
+("treasure nightsoil as if it were gold"). That is a positive siting rule about the muck cluster,
+and it is worth knowing; what it is NOT is a rule holding livestock away from drinking water. No
+separation doctrine turned up in the geomantic or vernacular-layout material.
+
+**Elsewhere, corroborating.** The public watering trough at a village or town water point - "a
+trough, preferably with a well and a pump" - is a widespread and well-documented arrangement. Where
+communities invested in water infrastructure at all, watering the beasts AT it was the norm rather
+than a transgression.
+
+**What is genuinely true and worth not over-reading:** livestock near a shallow, unsealed well IS a
+real contamination vector, and modern rural-water studies in China measure exactly that. But that is
+a public-health finding about the *consequences*, not evidence that the builders sited to avoid it.
+A generator that separated byre from well would be drawing a modern sanitary intuition, not a
+Rokugani village.
+
+**The decision, therefore:** the beasts are watered at the well, and a byre near one is correct.
+Nothing is changed in the placer; `_fits` already prevents an actual overlap with the wellhead's
+footprint, which is the only part that was ever a defect. Recorded so the next re-pack does not
+re-open it.
+
+## Is every farmhouse reached by a lane, and in what FORM? (researched 2026-08-18)
+
+**Answer: access is decisive (implement it); its FORM has two supportable shapes (make it a knob).**
+This one is worth reading as the worked example of the constitution's research-then-knob ladder,
+because the research came back decisive on one axis and genuinely two-formed on the other.
+
+**Decisive: a house in a nucleated cluster IS reached by a way.** The Chinese material is explicit -
+"the organisation of the village plan as a gridiron of narrow lanes is functionally the most
+efficient form of compact settlement", and "every house in the nucleated village is accessible via
+the interconnected system of narrow lanes and alleys". This is not a planner's ideal imposed after
+the fact; it is what compactness is FOR. The lanes are also socially live rather than purely
+circulatory - the narrow lateral ones are "colonised as semi-private space by the adjoining house",
+which is why they are narrow, irregular, and sometimes barely more than the gap between two walls.
+Our own doctrine already said as much in one line ("a nucleated village is threaded with lanes") but
+the generator was not honoring it: a back-rank house could sit with no way touching it at all.
+That is now a defect with a research basis, not a matter of taste.
+
+**Two supportable forms for delivering that access.** Both are attested, and neither dominates:
+
+1. **Alleys off the spine.** Narrow lateral lanes branch from the through-lane between house plots
+   and run back to serve the rank behind. This is the Chinese gridiron-of-lanes form, and the one
+   whose laterals get colonised as semi-private space by the houses they pass.
+2. **A back lane.** A way parallel to the main street, behind the plots, serving their rear. This is
+   documented as a planned-village device - "back lanes on each side of the main street which,
+   together with the main street itself, provides a rectangular framework" - and it typically
+   "divided the village from the main agricultural area", i.e. it doubles as the field-ward edge.
+   Rear-access ground behind the housing lots is separately documented in traditional Manchu
+   villages in northeast China, so this is not a purely European shape.
+
+Note what distinguishes them: a back lane implies PLANNING (someone laid the framework out at once,
+and the plots are regular), while alleys off a spine imply ACCRETION (each household cut its own way
+to the road, and the result is irregular). A Rokugani hamlet can plausibly be either, so this is
+exactly the axis the project wants varied between maps rather than settled once.
+
+**Therefore:** the generator must guarantee every farmhouse is served by a way, and must choose
+between the two forms per settlement via a seeded knob. Per Principle XII this is NOT a question to
+put to the GM - the research decided the part that was decidable and identified the part that is
+genuinely two-formed, and the two-formed part becomes variance.
+
+**Sources:** the lane-gridiron and semi-private-lateral findings are from the nucleated-village
+morphology literature; the back-lane framework from planned-village morphology (see
+[`SOURCES.md`](SOURCES.md)); rear-access in Manchu villages from Ushijima, "Spatial composition and
+premise arrangement of traditional Manchu village in Northeast China", *Japan Architectural Review*
+(2020).

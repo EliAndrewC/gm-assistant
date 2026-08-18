@@ -144,6 +144,47 @@ and field workers reach that ground along the bunds); it simply has nothing left
 is kept for provenance rather than deleted, because the failure mode being guarded against is a
 future session quoting "not to be reopened as a bug" at a genuinely stranded farmstead on some later
 roll. If one appears, rule it fresh.
+
+## 2026-08-18 - the six-defect pass
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Six known /diagram defects were cleared in one pass, plus one regression caused inside it. In the
+order they matter to a reader of these maps:
+
+- **the front row is ONE RANK.** `front_row` had begun sampling seats by density (to stop a starved
+  row leaving a big field under-ringed) and, uncapped, seated every household by itself - every
+  cluster came out a single file along the paddy. It now returns seats center-out and stops at one
+  rank's worth of the band; the surplus falls to the flanking and cloud passes, which seat BEHIND.
+- **a lane must reach something.** Internal lane ends ran the full cluster band into open grass,
+  serving no house and meeting no way, because lanes are laid BEFORE the houses they serve.
+  `trim_lane_stubs` now pulls such an end back AFTER the farmstead flush - rewriting the ink in the
+  stream slots the lane already owns, so nothing re-layers - and stops at the last homestead served
+  rather than at the rule's edge. A near-parallel contact does not count as arrival (a lane that
+  MEETS another crosses it; one that FRAYS runs alongside). A fragment below one homestead's
+  frontage (~71 ft) is dropped: it can front nobody. `lanes_reach_something` gates it.
+- **byres are shared, so they spread.** Owners are chosen by a maximin spread, then - among the
+  near-best - by how many households stand within borrowing distance. Spread alone picked the most
+  ISOLATED homestead, which is the inverse of a shared shed.
+- **the title placard may not sit on a woodland commons.** Dense canopy is an obstacle to the title
+  the way a grove already was; only the sparse grazing scrub is not.
+- **`scatter_audit` could not see tree crowns.** Its palette had drifted from the engine's; it now
+  imports `CROWN_FILLS`, and a coverage guard fails when the two disagree.
+- **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
+  gate reads the same raked corners the placer does.
+
+RIPPLE ON THIS MAP: the notice board's caption was 90 degrees out and is fixed - `kosatsuba` used
+`label_tilt`, which FOLDS mod 90 because a building has two edge families, where a board has ONE
+meaningful axis (its face). It now uses `linear_tilt` and reads level beside a 49.3-degree board,
+matching neither lane, so nothing on the sheet can steal it. Byres went from occupying 14% of the
+settlement's length to spanning it. Every farmhouse is now within ~97 ft of a way by centre.
+Review: PASS.
+
+OPEN, wanting a one-line ruling rather than a fix: the maximin spread put a byre 38 ft from a
+communal wellhead (the other three are 168-317 ft from any well). Nothing governs it - `homesteads.md`
+puts byres and wells in the same interstitial courtyard ground, so the adjacency is structural. The
+reading I would take is "the beasts are watered at the well, that is where a byre goes". Recording
+the decision matters more than which way it goes, because the next re-pack will produce it again.
 ## 2026-08-17 - the paddy size floor: a basin too small to be worth its own bund
 
 The GM, reading a hamlet sheet: *"most of the rice paddy fields are rectangular, but then there are
