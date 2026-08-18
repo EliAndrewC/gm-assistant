@@ -850,7 +850,7 @@ def _seg_0608__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUN
         _fw_far = []
         if _fw_segs:
             for _fw_h in M.get("houses") or []:
-                _fw_c = (float(_fw_h["x"]) + float(_fw_h["w"]) / 2, float(_fw_h["y"]) + float(_fw_h["h"]) / 2)
+                _fw_c = (float(_fw_h["x"]), float(_fw_h["y"]))  # x, y ARE the center here - same convention as rect_corners
                 _fw_d = min(seg_dist(_fw_c[0], _fw_c[1], _fw_a, _fw_b) for _fw_a, _fw_b in _fw_segs)
                 if _fw_d > _WEB_REACH:
                     _fw_far.append((round(_fw_c[0]), round(_fw_c[1]), round(_fw_d)))

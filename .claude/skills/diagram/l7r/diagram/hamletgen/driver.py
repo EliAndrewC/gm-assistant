@@ -21,7 +21,7 @@ from .homesteads import stage_appurtenances, stage_homesteads
 from .plan import HamletSpec, SitePlan, plan_site
 from .sink import stage_sink
 from .water import stage_field, stage_water_frame
-from .ways import stage_ways
+from .ways import stage_ways, stage_web
 
 # THE PIPELINE. Read top to bottom: this is the generator.
 #
@@ -43,6 +43,7 @@ STAGES = (
     stage_sink,
     stage_ways,
     stage_homesteads,
+    stage_web,
     stage_appurtenances,
     stage_notice,
     stage_hinterland,

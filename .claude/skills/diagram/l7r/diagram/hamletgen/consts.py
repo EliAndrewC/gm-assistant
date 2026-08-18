@@ -83,7 +83,24 @@ CLUSTER_SPAN_FACTOR = 1.6
 # of every web lane reserved the middle of the cluster and pushed the houses out - measured on the
 # four pool hamlets, the long axis grew 51%, 58%, 15% and 97%. This is the lane's own half-tread
 # plus a hand's breadth: enough that a wall is not drawn ON the tread, and no more.
-WEB_CLEARANCE = 24.0
+WEB_CLEARANCE = 28.0
+
+# THE LEAST ROOM BETWEEN TWO STEADINGS A WEB LANE WILL THREAD, in feet. `web_cuts` only cuts where a
+# gap is at least this wide, so a lane is placed where one can actually be walked rather than driven
+# through a wall and left to the clipper to sort out. Three feet of tread plus a hand's breadth on
+# each side, doubled for the two neighbors: a person with a carrying pole, which is the traffic these
+# lanes were for (see settlements/ways.md - the vehicle to picture is the wheelbarrow and the
+# shoulder-pole porter, never a cart).
+#
+# NOTE ON WEB_CLEARANCE ABOVE, because the number moved twice and the reason changed with it. While
+# the web was laid BEFORE the houses, a wide corridor was ruinous - it reserved the middle of the
+# cluster and the placer shoved the houses out, growing the four pool hamlets' long axes by 15-97%.
+# Laid AFTER them (see `stage_web`) the corridor no longer competes with a single farmhouse, because
+# every farmhouse is already seated; all it still governs is what `stage_appurtenances` puts down
+# NEXT - byres, sheds, wells. At 12 those were landing on the tread and `features_do_not_overlap`
+# fired on 7 of 24 cohort seeds. 28 holds a byre off the way while staying well under the 40 ft a
+# fronting lane reserves, which is the distinction the two constants exist to keep.
+MIN_WEB_GAP = 16.0
 
 # THE REACH A FARMHOUSE IS ENTITLED TO: every house center must be within this of some drawn way
 # (`farmhouses_reach_a_way`). It is BUNDLE_PITCH, deliberately and by reference rather than by

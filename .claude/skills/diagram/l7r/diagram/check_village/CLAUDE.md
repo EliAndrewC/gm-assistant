@@ -48,7 +48,7 @@ Two invariants the split does NOT touch:
 | `segments_06c_decks_yards_and_moat_clearances.py` | segs 0387-0409: decked crossings, animal yards, well clustering, castle-moat clearances |
 | `segments_07a_channels_and_bridge_spans.py` | segs 0410-0438_010: watercourses, bridge spans, dry mouths and drains, scrub clear of the urban fabric |
 | `segments_07b_ponds_hems_and_land_fall.py` | segs 0438_011-0464: lanes and ponds, hems, canopies, fields clear of the wall, the declared land fall |
-| `segments_07c_moats_drains_and_edges.py` | segs 0465-0512: moat junctions, in-wall drains, map-edge rules, halls on lanes, pond feeds |
+| `segments_07c_moats_drains_and_edges.py` | segs 0465-0512: moat junctions, in-wall drains, map-edge rules, halls on lanes, pond feeds; hand-added 0607 (`lanes_reach_something` - a lane must serve something) and 0608 (`farmhouses_reach_a_way` - and every house must be served by one). The two are converses and belong together |
 | `segments_08a_ponds_marshes_and_drainage.py` | segs 0513-0523_018: ponds connected to their field, defense marshes, drainage discharge, bunds |
 | `segments_08b_flow_bands_and_the_burakumin_seam.py` | segs 0523_019-0543_010: flow direction and bands, abandoned ground, banks, the burakumin seam |
 | `segments_08c_town_trades_and_theater.py` | segs 0543_011-0543_057: town battery - farmers plurality, storefronts, inns, caravans, theater, monasteries |

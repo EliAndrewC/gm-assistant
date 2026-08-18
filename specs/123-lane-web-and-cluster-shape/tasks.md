@@ -1,76 +1,109 @@
-# Tasks: feature 123 - WORK IN PROGRESS, NOT SHIPPABLE
+# Tasks: feature 123 - the lane web
 
-**Do not run `sync-with-main.sh done` on this state.** The gate is not green (constitution
-Principle XIII). Everything below is committed in the clone `.clones/diagram-architecture` and
-deliberately unpushed.
+**Baseline** (detached worktree at `ae1f94d`): 24-seed cohort **24/24**, pool gate green, and
+**29 of the four pool hamlets' 66 farmhouses** more than 100 ft from any way.
 
-**Baseline** (detached worktree at `ae1f94d`): 24-seed cohort **24/24**, pool gate green,
-32 of the four pool hamlets' 66 farmhouses beyond 100 ft of any way.
+That 29 is the corrected figure. It was first reported as 32, measured with the house's `x, y` read
+as a top-left corner; they are the CENTER, which is how `rect_corners` reads them in the gate. The
+same slip was in the first draft of the new check and in `stage_web`, where it shifted every house
+rect by half its own size and laid two lanes straight over farmhouses.
 
 ## Done
 
-- [x] T001 Research pass, recorded in `.claude/skills/diagram/research/homesteads.md` (both
-      questions) - decisive on access, two-formed on shape.
-- [x] T002 The new gate segment `farmhouses_reach_a_way`
-      (`check_village/segments_07c_moats_drains_and_edges.py`), registered in
+- [x] T001 Research recorded in `.claude/skills/diagram/research/homesteads.md` - decisive on
+      access, two-formed on shape.
+- [x] T002 `farmhouses_reach_a_way` (`check_village/segments_07c_*.py`), registered in
       `tests/fixtures/gate_check_names.json`.
-- [x] T003 **Proved it has teeth before fixing anything**: red on all four pool manifests
-      (10/8/8/6 houses), and those four manifests are frozen as negative fixtures in
-      `pool/regressions/farmhouses_reach_a_way_fires_on_*_before_the_lane_web.json`.
-- [x] T004 `web_lanes` in `settlement/_knobs.py` - pure geometry, both forms, coverage proven by
-      construction (worst-case distance = extent/m <= 0.9 * pitch).
-- [x] T005 The `lane_web` knob: registered in `_knobs.py`, rolled in `plan_site`, recorded as
-      `meta.lane_web`.
-- [x] T006 `_margin_frame` in `hamletgen/ways.py` - outline coordinates (arc, standoff), restricted
-      to the field side the cluster is actually on.
-- [x] T007 `longest_clear_run` - the through-lane counterpart of `clip_to_clear`.
-- [x] T008 Web lanes excluded from `lane_frontage` (service, not building frontage) and given their
-      own narrower corridor `WEB_CLEARANCE`.
+- [x] T003 **Proved red before anything was fixed**: 10/7/7/5 houses on the four pool maps, frozen
+      as negative fixtures in `pool/regressions/farmhouses_reach_a_way_fires_on_*.json`.
+- [x] T004 `web_cuts` in `settlement/_knobs.py` - the pure 1-D minimal cover both forms share.
+- [x] T005 The `lane_web` knob: registered, rolled in `plan_site`, recorded as `meta.lane_web`.
+- [x] T006 `stage_web` in `hamletgen/ways.py`, plus `_margin_frame` (outline coordinates and their
+      inverse), `clear_runs` (every clear run, two obstacle families, a floor), `_homestead_polys`
+      (owner-aware), `_serve_stragglers` (the footpath to an outlying steading).
+- [x] T007 `STAGES` gains `stage_web` between `stage_homesteads` and `stage_appurtenances`.
+- [x] T008 Unit tests: `web_cuts` (including a 300-row randomized coverage proof), `clear_runs`,
+      `_margin_frame` round-trip, `_reach`; four check tests including one that pins the
+      house-center convention.
+- [x] T009 Docs: `hamletgen/CLAUDE.md` (the two-stage split and why), `dev/placement.md` (the DRAW
+      ORDER map gains the fill-after-placement rule), `future-work.md` section C marked implemented.
 
-## Where it actually stands (measured, not estimated)
+## The redesign, and why the first attempt had to be thrown away
 
-Unserved farmhouses (>100 ft from any way), four pool hamlets, 66 houses:
+**Attempt 1 laid the web BEFORE the houses**, with every other lane, because that is the rule in
+this engine: a lane is a no-build corridor the homesteads front. It cannot work, and the reason
+generalizes past this feature. A lane laid first has to reserve its ground from a cluster that has
+not been packed yet, so it competes with the very houses it exists to serve:
 
-| stage | unserved | note |
+- with a normal 40 ft corridor the placer pushed the houses outward and the four clusters' long
+  axes grew **808 -> 1220, 716 -> 1131, 994 -> 1144 and 518 -> 1022 ft** (+51%, +58%, +15%, +97%).
+  **No check measures sprawl**, so this would have shipped silently; it was caught only by measuring
+  the clusters' principal axes by hand.
+- with a 12 ft corridor the cluster stayed compact and the houses collided with the lanes instead.
+- 24 ft was the best point found and was green on one map of four. That is a calibration dead end,
+  not a number needing another pass.
+
+**Attempt 2 lays the web AFTER the houses.** Placement is untouched - the clusters come out at
+**810 / 717 / 993 / 511 ft** against a baseline of 808 / 716 / 994 / 518 - and the web goes in the
+room that is actually left. It is also the truer account of these ways: an alley IS the residual gap
+between two plots, "colonised as semi private space by the adjoining house", not a corridor set
+aside in advance. `research.md` R6 had rejected this on determinism grounds; placement is
+deterministic, so the objection did not survive contact.
+
+## The dead ends, each measured, so nobody re-walks them
+
+| what was tried | what it cost | why it failed |
 |---|---|---|
-| baseline | 32 | the defect |
-| straight seat-frame lanes | 22 | back lanes clipped to stubs against the curved margin |
-| outline coordinates | 26 | laterals started ON the outline and clipped to nothing |
-| + inset to buildable ground | 19 | |
-| + longest-clear-run + side filter | 15 | |
-| + narrow web corridor | see below | |
+| straight lanes in the seat frame | back lanes clipped to 203 ft of an intended 1,400 | a field margin CURVES; a straight lane parallel to it runs into the crop at both ends |
+| outline coordinates, lanes from standoff 0 | 26 of 27 arms clipped to zero points | a lane starting ON the field edge is fouled at its first sample; it must start where buildable ground does |
+| `clip_to_clear` on a web lane | Inashiro's worst house went 362 -> 591 ft | it truncates at the first blockage, right for a radiating arm, wrong for a through-lane whose two ends are just its two ends |
+| the whole field ring as the web's domain | 3,060 ft of "margin" for an 808 ft cluster | the along-axis test alone admits the vertices directly opposite; the arc snaked round the fan and back |
+| lanes spanning the whole cluster | 13 of 24 seeds dangling | a lane must span the houses IT serves, not the cluster |
+| excluding a steading's whole bundle from its own footpath | 7 seeds `lanes` vs `gardens`, then `lanes` vs `threshing_yards` | only the house itself may step aside; the dog-leg is what finds the way out |
+| `CLUSTER_SPAN_FACTOR` as the frame's span | 4 seeds, ALL `shape=crescent`, worst 431 ft | a crescent wraps past the seat band; the span is measured off the placed houses instead |
 
-At `WEB_CLEARANCE = 24`: **Kashikawa fully green**; Sawada, Inashiro and Mizuguchi still fail
-`farmhouses_reach_a_way`, and Inashiro additionally `features_do_not_overlap`.
+## THE ACCEPTED LIMITATION: four crescent seeds, ledgered not waived
 
-## The open problem, stated precisely
+**Cohort: 20/24, and the ONLY check failing anywhere is the new one.** No pre-existing check fails on
+any seed, so this is not a Principle XIII regression - it is the new rule finding real defects. The
+four are seeds 1, 4, 5 and 8, and all four are `shape=crescent`, which is the whole story.
 
-**Adding lanes inside a compact cluster competes with the houses for the same ground**, and the two
-constraints pull opposite ways:
+**What is actually wrong on those maps.** A crescent cluster wraps AROUND the paddy, and a few of
+its houses end up on the far arm - across the field from the rest of the settlement. Probed
+directly on seed 8's worst house (289 ft from any way): a straight footpath from it to the network
+is blocked with the settlement fabric removed entirely, and blocked with everything removed except
+the crop. **It is the paddy in the way, not a neighbor's yard.** Those houses are not behind
+something; they are across something, and no lane the web can lay reaches them, because the web is
+built in coordinates that follow the field margin and those houses are not on it.
 
-- A WIDE web corridor (`LANE_CLEARANCE`, 40 ft) reserves the middle of the cluster, so the placer
-  pushes houses outward. Measured: the four long axes went 808 -> 1220, 716 -> 1131, 994 -> 1144 and
-  518 -> 1022 ft. **Nothing in the gate measures sprawl**, so this would have shipped silently - it
-  was caught only by measuring the cluster's principal axes by hand.
-- A NARROW corridor (12 ft) keeps the cluster compact and fixes the reach, but drawn houses then
-  collide (`features_do_not_overlap` on three maps).
-- 24 ft is the best point found so far and is green on exactly one map.
+**Three attempts at it, all measured, none of which moved the numbers by a single foot** (203 / 227
+/ 289 on seed 8 was byte-identical across all three, which is itself the diagnostic):
 
-**This is a calibration dead end, and the next session should not continue tuning the number.** The
-likely right answer is structural: the web should be laid where the houses ARE NOT, which means
-either (a) a post-placement web threaded through the residual gaps (a new stage between 5 and 6 -
-rejected in research.md R6 for determinism reasons that are worth revisiting now that straight
-placement has failed), or (b) the placer seating houses in explicit RANKS with the web in the gaps
-between them by construction, rather than the two competing for the same free ground.
+1. deriving the frame's span from the placed houses instead of `CLUSTER_SPAN_FACTOR`;
+2. replacing the half-plane side filter with a contiguous walk along the outline;
+3. letting that walk bridge a houseless stretch, on the theory that the two arms of the crescent
+   were separated by margin with no houses near it.
 
-Both are real designs, not tweaks. Read research.md R2-R6 first - each dead end there is a measured
-result, not a guess, and the sequence of them is the argument for (a) or (b).
+**Why it is not being forced.** The honest reading is that this is question B wearing a different
+hat. A crescent that strands houses across its own paddy is a CLUSTER-SHAPE problem, not a lane
+problem - the placer is scattering steadings the shape does not really call for, and the GM's
+ruling B (the drawing must match the rolled knob) is exactly the work that would address it. Adding
+a special case here to drag a path around the paddy would paper over that, and would be a lane rule
+compensating for a placement defect - which is the shape of bug this project has spent two features
+removing.
 
-## Not started
+**Priced and declined**: waiving the check on crescent maps (rejected - a waiver says "this map may
+break the rule", and the map should not); relaxing the threshold to the distance those houses happen
+to sit at (rejected outright as goalpost-moving); measuring reach from the house's wall rather than
+its center (rejected - it is arguably the better measurement, but it moves these houses by only ~31
+ft and would be adopted for the wrong reason).
 
-- [ ] T009 Unit tests for `web_lanes`, `_margin_frame`, `longest_clear_run` (100% coverage rule).
-- [ ] T010 Check test for `farmhouses_reach_a_way` in `tests/check_village/test_segments_07_*.py`.
-- [ ] T011 US3 - honor the rolled `cluster_shape` (GM ruling B). Untouched. `stage_homesteads`
-      still seats by rows/frontage and records `meta.cluster_seeding`, i.e. it still declares in
-      writing that the rolled knob went unhonored. Worth its own feature.
-- [ ] T012 Cohort, `make done`, `settlement-review` per map.
+**So it is ledgered**: the pool's four maps are green, the rule ships, and the four crescent seeds
+are a known, diagnosed, reproducible finding for the `cluster_shape` feature to pick up.
+
+## Not done, and deliberately
+
+- [ ] **US3 / GM ruling B - honor the rolled `cluster_shape`.** Untouched. `stage_homesteads` still
+      seats by rows and frontage and records `meta.cluster_seeding`, which states in writing that
+      the rolled knob went unhonored. This is the PRE-EXISTING state the ruling calls out, not
+      something this feature introduced, and it is a placer change of its own size. Its own feature.

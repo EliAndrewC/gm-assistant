@@ -31,10 +31,15 @@ its roof over blocked ground. If a feature must keep whole footprints out, `plac
 1. **terrain + water** - fields, channels, streams, pond, marsh
 2. **big terrain features** - `forest()` / `forest_patch()`. EARLY, because the settlement is sited
    against them; their FLOOR draws here but their CANOPY is deferred (see 7)
-3. **ways** - road, lanes, streets
+3. **ways** - road, lanes, streets. This is the ground-RESERVING half: the skeleton and the
+   connector, laid so the homesteads front them
 4. **structures** - `manor()`, `farmsteads()`, urban packs, `place_wells()`, `draft_byres()`,
    `place_kosatsuba()`. Inside `farmsteads()` the bundle path records grove rects first (the garden
    relaxation needs them), then draws yards/gardens/houses, then draws the yashikirin arms LAST
+4b. **the LANE WEB** (scripted hamlets, `stage_web`) - the ground-FILLING half of the ways, and the
+   one stage that deliberately runs after the structures it serves. It threads lanes through the
+   room the seated cluster left, so every farmhouse is within reach of one, and it reads the drawn
+   houses, yards, gardens and groves as obstacles rather than reserving anything from them
 5. **ground cover** - `hinterland()` scrub + marsh (skips structures via `_urban_keepouts`)
 6. **communal vegetation** - `village_grove()`. LATE, so its per-crown filter sees every structure
 7. **crop** - `crop_to_content()` / `crop_city()`, which first run `flush_stable_yards()` and
@@ -47,6 +52,11 @@ its roof over blocked ground. If a feature must keep whole footprints out, `plac
 - **Must not be drawn ON something?** Run AFTER it, or defer to the flush. Drawing early and letting
   the later feature paint over it hides the overlap instead of preventing it - which is exactly what
   the yashikirin used to do, leaving crowns geometrically under roofs while looking fine.
+- **Must FILL ground that is left over?** Run AFTER placement and read the drawn features as
+  obstacles. This is the mirror of the rule below and it is easy to get backwards, because getting
+  it backwards does not fail loudly: feature 123 laid the lane web before the houses, which is what
+  the ways stage does, and the web then competed for ground with the very houses it existed to
+  reach - the four pool clusters' long axes grew 15-97% and nothing in the gate measures sprawl.
 - **Must RESERVE ground?** Run BEFORE placement AND register in a registry that the placer in
   question actually honors (see the asymmetry above).
 

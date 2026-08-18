@@ -13,7 +13,7 @@ from typing import Any
 from l7r.diagram.settlement import Settlement, surface_water_dist
 from l7r.diagram.sitegen.geom import centroid, unit
 
-from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, LANE_FRONTAGE_STANDOFF, Pt, SUN_CORRIDOR_FT
+from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
 from .plan import SitePlan
 
 # ---- STAGE 5: the homesteads --------------------------------------------------------------------

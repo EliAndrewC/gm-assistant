@@ -712,3 +712,26 @@ KNOWN AND ACCEPTED HERE: two houses stand past 200 ft from any lane (max 345) at
 reached across open ground. That is inside the pool's own range and the field paths take over at
 the fan head. The byre at the NE outlier serves fewer neighbours than the other two - the
 borrow-coverage term reduced but did not eliminate that, since the outlier is genuinely remote.
+
+## Feature 123 - the lane web (back_lane)
+
+**7 of this map's 15 farmhouses stood more than 100 ft from any way. Now none do.** The research
+is decisive that a house in a nucleated cluster is reached - "every house in the nucleated village is
+accessible via the interconnected system of narrow lanes and alleys" - so the back rank being walked
+to along unfigured footpaths was a defensible-sounding reading with nothing behind it
+([`../../research/homesteads.md`](../../research/homesteads.md)).
+
+The FORM of that access is a seeded knob, because the record supports two and the project's rule is
+that two supportable answers become variance rather than a choice (constitution Principle XII). This
+map rolled **`back_lane`**: ways running PARALLEL to the field margin, behind the ranks of plots - the planned form, where the outermost doubles as the village/farmland edge, and the one that says the place was LAID OUT. It now carries **9 web lanes** of 12 in all.
+
+**The web is laid AFTER the houses, which is the opposite of every other lane here, and that is the
+whole design.** Laid first, as the skeleton is, it has to reserve ground from a cluster that has not
+been packed yet - so it competes with the very houses it exists to serve. Measured across the four
+hamlets, that grew their long axes by 15-97%: sprawl no check measures, caught only by hand. Laid
+afterwards the conflict is not there, and this map's cluster is **717 ft** on its long axis
+against **716 ft** before the feature - placement untouched, which is the point.
+
+Where the regular web could not reach a steading, that house gets what an outlying farmstead really
+has: a short footpath of its own from the nearest way to its door, bending round a neighbor's plot
+if it must. It may cross nobody's garden bed and nobody's threshing floor, including its own.
