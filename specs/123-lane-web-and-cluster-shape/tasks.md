@@ -79,7 +79,14 @@ pre-existing check fails on any seed, so there is no Principle XIII regression -
 24/24 measured before `farmhouses_reach_a_way` existed, and the five failures are that rule finding
 real defects on held-out seeds it has never been run against. Per the project's "new rules ship
 un-gated" convention, that is the expected shape for a rule's first outing; it is recorded here
-rather than waived, and the five seeds are named below so the next session has somewhere to start.
+rather than waived.
+
+**The five are cohort_audit seeds 5, 9, 12, 13 and 24** (`python3 -m l7r.diagram.tools.cohort_audit
+--count 24`). They are NAMED BUT NOT DIAGNOSED, and the distinction is the point: a first attempt to
+diagnose them rebuilt the maps with `cohort()`'s household formula, which is NOT the one
+`cohort_audit` uses, so it measured different maps and reported one of the five as having zero
+unserved houses. **Do not trust that reading, and do not repeat it** - take the households from
+`cohort_audit` itself, or diagnose from the manifests it writes rather than by rebuilding.
 
 Both knob forms occur across the cohort (11 `alleys` / 13 `back_lane` on 24 seeds), and they read as
 different kinds of place - which is the whole reason the form is a knob rather than a pick.
