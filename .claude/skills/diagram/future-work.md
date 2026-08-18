@@ -27,6 +27,71 @@ choose gates on the hull, then place gate programs and re-arrange locally; ring/
 wrap an irregular hull rather than an ellipse. This is a full feature with its own spec, not
 a mid-feature pivot. Candidate: the next city-tier map.
 
+## 2b. The packer must RESERVE ways, not merely avoid collisions - DEFERRED WITH MEASUREMENT
+(2026-08-18, feature 125. Deferred under constitution Principle XIV's named exception - it is a
+stage-reordering / new-reservation-stage change - and this entry is the deliverable that deferral
+owes: the measurement, the mechanism, the sketch, and the alternatives already priced and declined.)
+
+**The symptom.** `farmhouses_reach_a_way` fails on cohort seeds 5, 8 and 25 - 2, 2 and 4 farmhouses
+standing 172-237 ft from any way. It is the entire non-peer residue of the 48-seed sweep (43/48).
+
+**What it is NOT**, each ruled out by measurement rather than by argument:
+
+- Not a CONNECTIVITY split. The main component equals the full lane set on all three seeds
+  (`lanes 7 main 7`, `10/10`, `8/8`), unlike seeds 39 and 9 earlier in the same feature, which were
+  component splits and were fixed as such.
+- Not the straggler pass giving up early. It produced 391-1,572 candidate runs PER stranded house.
+- Not the acceptance criteria being too strict. Of those thousands of runs, every single one met the
+  network (`net = 0 ft`, bound 30) and every single one was perfectly direct (`1.00`, bound 2.0).
+  What failed was reach: the best run came within 132, 167, 173 and 210 ft of the house it was drawn
+  for, against a 100 ft bound. The runs are fine; they are just nowhere near the house.
+- Not the router's lattice resolution, though the arithmetic is seductive. `_route` inflates its
+  planning clearance to `gap + cell * 0.71` so a free cell means every point in it is clear - 11.1 ft
+  at the default 10 ft cell, i.e. it demands a 22 ft corridor for a footpath, while `MIN_WEB_GAP` is
+  18. Measured end to end at a 5 ft cell (7.6 ft clearance): **the unserved count did not move**, and
+  seed 5's build went 159.9s -> 672.3s, a 4.2x. Reverted; the dead end is recorded at the call site
+  in `hamletgen/ways.py` so nobody pulls that lever twice.
+
+**What it IS.** The homestead packer's only inter-bundle rule is that two bundle bboxes must not
+overlap, with two PIXELS of tolerance (`_bundle_side_fits`, the closing `all(...)`). So a run of
+steadings packs into a solid mass. Measured on the stranded houses: the widest escape corridor across
+**all 72 bearings** pinches to **1.4-1.9 ft**, and the straight line to the nearest way pinches to
+**0.1-1.1 ft**. A footpath needs about 11 (two `FOOTPATH_FABRIC_GAP` clearances plus its tread). These
+houses are not far from a way by accident of layout: **no way can be drawn to them at all**, which is
+exactly why the straggler pass generates thousands of impeccable runs that are all in the wrong place.
+There IS clear ground 10 ft from each front door - it simply goes nowhere.
+
+**The alternative already priced and DECLINED: a uniform minimum gap between steadings.** The obvious
+fix is to make the packer keep `n` feet between neighboring bundles' solid parts (groves excluded, so
+they still merge into one windbreak, and a footpath crosses grove and commons freely anyway). It was
+built, opted into by the scripted tier the way `sun_corridor` is, and measured on the full cohort:
+
+| | passes | reach | windbreak | other |
+|---|---|---|---|---|
+| baseline (no gap) | **43/48** | 3 | 1 | harvest 1 |
+| 18 ft gap (`MIN_WEB_GAP`) | **37/48** | **3 - the same three seeds** | 5 | harvest 1, bridges 1, lane-ends 1 |
+
+It fixed **nothing** and cost **six** new failures. A 12 ft gap was measured too and is no better
+(seed-level 1/3/2 against a 2/2/2 baseline, which is rotation, not improvement - the rule re-packs the
+map, so the houses are not the same houses and only the cohort rate means anything). The lesson is
+that inflating every gap uniformly does not put a way where one is needed: it loosens the whole
+cluster, moves the pinch somewhere else, and breaks the belt and the bridges on the way past.
+
+**The sketch.** The packer needs to know where the ways will be, instead of being made loose enough
+that a way might fit anywhere. Reserve a small number of corridors ACROSS the cluster before the
+homesteads pack - derived from the cluster polygon and the skeleton lanes, `MIN_WEB_GAP` wide - and
+have the packer treat them as keep-clear, the way it already treats a paddy. `stage_web` then lays
+its lanes down corridors that are guaranteed to exist rather than hunting for clear runs among
+whatever the packer happened to leave. This is feature 123's own lesson applied one level up: a stage
+that RESERVES ground belongs before `stage_homesteads`, and a stage that FILLS ground left over
+belongs after it. The web was moved after the houses because laying it first grew the four pool
+clusters' long axes 15-97%; a thin reservation is not the same thing as laying the whole web first,
+and that distinction is the feature.
+
+**Cost estimate**: a new pre-homestead stage, a keep-clear registry entry, the `STAGES` tuple, a
+re-roll of the four live hamlets and a full cohort sweep, plus one `settlement-review` per pool map.
+Its own spec-kit feature.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any
