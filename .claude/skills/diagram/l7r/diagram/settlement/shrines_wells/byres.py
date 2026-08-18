@@ -145,7 +145,18 @@ class DraftByresMixin:
         dark stall mouth along the front, distinct from the solid gray kura storehouse and from a dwelling."""
         g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-w / 2:.1f}" y="{-h / 2:.1f}" width="{w:.1f}" height="{h:.1f}" rx="1.6" fill="#B0905E" stroke="#59431F" stroke-width="1.1"/>')  # thatch/plank roof
-        g.append(f'<rect x="{-w / 2 + 2:.1f}" y="{h * 0.02:.1f}" width="{w - 4:.1f}" height="{h * 0.4:.1f}" rx="1" fill="#33291C"/>')  # the shaded open stall mouth
+        # THE STALL MOUTH IS SHADE, NOT A BOARD (settlement-review x2, 2026-08-18 round 2). At
+        # `#33291C` this bay was the darkest fill of its size anywhere on a hamlet sheet and filled
+        # ~30% of a 16 x 11 ft glyph, so at fit zoom a byre read as an oversized notice board - and
+        # there are several byres to one board, so the board's caption disambiguates the board while
+        # nothing disambiguates a byre. Lifted to a mid-tone shade and given two POSTS, which is what
+        # actually distinguishes an open-fronted shed from a plank: the eye reads a roof carried on
+        # supports rather than a solid dark rectangle, and the byre stops outranking the farmhouses
+        # it belongs to.
+        g.append(f'<rect x="{-w / 2 + 2:.1f}" y="{h * 0.02:.1f}" width="{w - 4:.1f}" height="{h * 0.4:.1f}" rx="1" fill="#4E4030"/>')  # the shaded open stall mouth
+        for _pf in (0.30, 0.70):  # the two posts carrying the open front
+            _pxq = -w / 2 + 2 + (w - 4) * _pf
+            g.append(f'<line x1="{_pxq:.1f}" y1="{h * 0.02:.1f}" x2="{_pxq:.1f}" y2="{h * 0.42:.1f}" stroke="#8A7350" stroke-width="0.9"/>')
         g.append(f'<line x1="{-w / 2 + 2:.1f}" y1="{-h * 0.08:.1f}" x2="{w / 2 - 2:.1f}" y2="{-h * 0.08:.1f}" stroke="#59431F" stroke-width="0.8" opacity="0.6"/>')  # roof ridge
         g.append('</g>')
         self.add(''.join(g))

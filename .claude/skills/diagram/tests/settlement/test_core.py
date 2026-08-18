@@ -828,16 +828,25 @@ def test_dedup_ring_collapses_the_trim_corner_reversals():
 
 
 def test_surface_water_dist_reads_the_checks_own_sources():
-    # channels + streams + moat polylines and the pond RIM, exactly as
-    # settlement_dwellings_watered measures them; wells deliberately not included
+    """DOMESTIC water only: streams, canals, the moat and the pond rim - never an irrigation ditch.
+
+    Ruled 2026-08-18. The predicate used to count `channels` too, which made the answer depend on
+    which manifest key a watercourse was recorded under rather than on what kind of water it is: on
+    a comb-field map `channels` holds one intake stub while the real watercourses live in
+    `drawn_channels`, so Mizuguchi's well objective had ZERO clients and was silently optimizing
+    nothing. The research says the exclusion is right and only the mechanism was accidental -
+    domestic water came from a well or spring, ditch water served washing at a *kawado* stand.
+    """
     M = {
-        "channels": [{"poly": [[0, 0], [100, 0]]}],
+        "channels": [{"poly": [[0, 0], [100, 0]]}],  # an irrigation ditch - NOT domestic water
         "streams": [{"poly": [[0, 200], [100, 200]]}],
         "pond": [500.0, 500.0, 30.0, 20.0],
     }
-    assert surface_water_dist(M, 50, 40) == pytest.approx(40.0)  # nearest is the channel
+    assert surface_water_dist(M, 50, 40) == pytest.approx(160.0)  # the ditch 40 away does not count; the stream 160 away does
     assert surface_water_dist(M, 50, 180) == pytest.approx(20.0)  # nearest is the stream
     assert surface_water_dist(M, 560, 500) == pytest.approx(30.0)  # pond RIM (60 from center - rx 30)
+    assert surface_water_dist({"channels": [{"poly": [[0, 0], [100, 0]]}]}, 50, 10) == 1e9  # a ditch ALONE is no water at all
     assert surface_water_dist({"channels": [], "streams": []}, 0, 0) == 1e9  # no surface water at all
     M["moat"] = [[0, 300], [100, 300]]
     assert surface_water_dist(M, 50, 310) == pytest.approx(10.0)  # the moat counts too
+    assert surface_water_dist({"canals": [{"poly": [[0, 0], [100, 0]]}]}, 50, 25) == pytest.approx(25.0)  # a town canal is an open watercourse, and does
