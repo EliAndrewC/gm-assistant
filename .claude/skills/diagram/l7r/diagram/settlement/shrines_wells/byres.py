@@ -182,7 +182,25 @@ class DraftByresMixin:
         _reach = COURTYARD_REACH if _courtyard else 70.0
         _sep = 0.0 if _courtyard else gap
         houses = [h for h in self.M.get("houses", []) if h.get("kind") == "plain"]
-        ranked = sorted(houses, key=lambda h: (-h.get("wealth", 1.0), h["x"], h["y"]))  # buffalo owners = the wealthier
+        # THE WEALTH KEY WAS A NO-OP, AND THE REAL SORT WAS LONGITUDE (settlement-review x2, Kashikawa
+        # and Sawada, 2026-08-18 round 2 - found independently on two maps). This read
+        # `key=(-wealth, x, y)` and called it "buffalo owners = the wealthier", but EVERY plain house
+        # in a scripted hamlet records `wealth: 1.0`, so the first term is constant and the ranking
+        # collapses to smallest x - the cluster's WEST EDGE. Measured: Sawada's four oxen went to the
+        # four westernmost houses, 230 ft of an 810 ft cluster with the whole SE lobe oxless, and by
+        # the only wealth signal a reader can actually see - footprint - those owners rank 4th, 6th,
+        # 17th and 18th of 19, with the three largest houses on the map owning no ox. Kashikawa's
+        # first byre went to a west-edge outlier with ZERO households inside borrowing distance, and
+        # the borrower floor added earlier that day could not reach it because the first byre never
+        # enters the branch the floor lives in.
+        #
+        # FOOTPRINT IS THE WEALTH SIGNAL THE SHEET ACTUALLY CARRIES. `wealth` and house size were
+        # decoupled at some point - the sizes here vary 1,040-1,688 sq ft while `wealth` stays 1.0 -
+        # so the ranking was reading the dead one. Area is what a reader judges wealth by, and it is
+        # what `farmhouse_sizes_vary` already makes meaningful. `wealth` stays first so a tier that
+        # DOES set it still wins; area breaks the tie it leaves behind; position only breaks an exact
+        # tie between two identical houses.
+        ranked = sorted(houses, key=lambda h: (-h.get("wealth", 1.0), -(float(h["w"]) * float(h["h"])), h["x"], h["y"]))
         target = max(1, round(len(houses) * fraction))
         self.M["meta"]["byre_target"] = target  # the ASK, recorded so a silent shortfall is visible (byres_meet_their_target)
         out: list[Pt] = []
@@ -201,8 +219,23 @@ class DraftByresMixin:
         # RNG - the key is a distance, then wealth, then position), and it only changes WHICH owners
         # get one, never how many or how the spiral seats them.
         _pool = list(ranked)
+
+        def _borrowers(q: Mapping[str, Any]) -> int:
+            """Households close enough to walk over and borrow this homestead's team."""
+            return sum(1 for o in houses if o is not q and math.hypot(o["x"] - q["x"], o["y"] - q["y"]) <= _BORROW_REACH)
+
         while len(out) < target and _pool:
-            if out and not _courtyard:
+            if not out and not _courtyard:
+                # THE FIRST SHARED BYRE NEEDS THE BORROWER FLOOR TOO (settlement-review, Kashikawa
+                # 2026-08-18 round 2). The floor below lives inside `if out and ...`, so the FIRST
+                # byre took `_pool[0]` unconditionally - and the floor had been written for exactly
+                # that byre. Measured on the shipped sheet: Kashikawa's byre 0 stood 53 ft from one
+                # farmhouse and 239 ft from the next, ONE household inside 200 ft against the other
+                # three sheds' 3, 5 and 5, unmoved by the fix meant to cure it. Same shape on
+                # Inashiro (2 within 200 ft) and Akagahara (1). A shared shed nobody can reach is
+                # the private-stable read, on a map that declares the shared form.
+                h = next((q for q in _pool if _borrowers(q)), _pool[0])
+            elif out and not _courtyard:
                 # SPREAD, THEN SHARE. Farthest-point alone minimizes the worst walk, which is the
                 # right coverage objective - but with every house at wealth 1.0 the tie-break
                 # collapses to pure distance, so it picks the most ISOLATED homestead and the shed
@@ -212,9 +245,6 @@ class DraftByresMixin:
                 # So: take the spread score, then among the candidates within a quarter of the best
                 # prefer the one with the most households in borrowing distance.
                 _best = max(min(math.hypot(q["x"] - bx, q["y"] - by) for bx, by in out) for q in _pool)
-
-                def _borrowers(q: Mapping[str, Any], _hs: Any = houses) -> int:
-                    return sum(1 for o in _hs if o is not q and math.hypot(o["x"] - q["x"], o["y"] - q["y"]) <= _BORROW_REACH)
 
                 # A BORROWER IS A FLOOR, NOT ONLY A TIE-BREAK (settlement-review, Kashikawa
                 # 2026-08-18). Preferring the best-connected owner AMONG the near-best spread was

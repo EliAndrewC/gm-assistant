@@ -444,7 +444,7 @@ each is here with the number that establishes it, per Principle XIV's deferral b
   as many words that a parcel clipping at the edge "reads as 'more wood that way' and is fine"; the
   scan demanded the whole square inside the kept window plus a further 16 px. Being stricter than
   your own gate is not the safe direction - it cost two of four hamlets their woodland. The seat is
-  now judged by AREA the way the check judges it (centre may sit 0.6*half outside, exact bbox
+  now judged by AREA the way the check judges it (center may sit 0.6*half outside, exact bbox
   fraction >= 0.8 - the check's 0.7 plus slack, since this window is a PREDICTION of the crop). The
   exact fraction, not a per-axis box: two 0.4*half overhangs pass a box test at 0.64 inside and ship
   a check failure. **Kashikawa 0 -> 2 parcels, Sawada 1 -> 1** (Sawada's ground is genuinely that
@@ -1266,13 +1266,18 @@ they are; the SHAPE is untouched, and the reviewer's point is that the chain was
 MANIFEST reader saw while the square is the one a SHEET reader sees - the crown scatter only partly
 disguises it, and a parcel's top and left edges read as ruled lines at fit zoom.
 
+**THE DEFERRAL GOT COSTLIER, not cheaper** (round-2 review, Inashiro): four IDENTICAL squares read as
+one repeated stamp, but four DIFFERENTLY-SIZED perfect squares read as a lattice with a size knob
+bolted on - because the varying dimension proves the constant one was a choice. The size-variance
+work made the shape more conspicuous, so this should be picked up sooner rather than later.
+
 **Why deferred**: this is a new generative dimension, not a tuning change - `open_ground_patches`
 builds an axis-aligned quad by construction and every keep-out test downstream assumes that box.
 **Research first, and it looks decisive**: *iriai* boundaries were customary and described by ridge,
 stream and path, and satoyama coppice sits on the slope break above the paddy - so "no fixed shape"
 is very likely the answer, which per Principle XII makes this a KNOB (roll an aspect ratio and a
 bearing per parcel) rather than a number. **Sketch**: roll `aspect` in ~1.0-2.2 and `bearing` off the
-fall line per parcel from `_hjit`; emit the rotated quad; `_ok` already tests a centre plus a half
+fall line per parcel from `_hjit`; emit the rotated quad; `_ok` already tests a center plus a half
 extent, so give it the rotated half-extents. Do NOT square-to-rectangle uniformly - the point is that
 two hamlets differ.
 
@@ -1310,33 +1315,49 @@ excluded too, and the reason should be written down instead of being an accident
 **Sketch**: decide the predicate on the water's KIND, not its container; document the ruling at
 `surface_water_dist`; expect the needy set to grow on comb maps and re-measure the cohort.
 
-### D. Two lane-topology defects the checks structurally cannot see
+### D. DONE / HANDED OVER 2026-08-18 - the two lane-topology defects
 
-- **Kashikawa's lane 2 is a 223 ft duplicate of lane 1.** It leaves lane 1 within 0.1 px of its
-  centerline, diverges 13.6 deg, and dead-ends 53 ft from lane 1's own dead end; both tips name the
-  same nearest dwelling. Of the six houses it passes within 110 ft, exactly ONE is nearer to it than
-  to lane 1, by 9 ft. It draws a 220 ft splinter of scrub between two parallel worn ways.
-- **Sawada's Y spine has a 110 ft hole.** `lanes[2]` ends at (1629,2274) and `lanes[0]` starts at
-  (1729,2321) - 8.3 deg from collinear, both in rounded caps in bare grass, in the middle of the
-  built-up frontage. The same-day `trim_lane_stubs` fix pulled the fraying arm back and left a
-  discontinuity instead.
+Both were re-measured after the peer session's lane-web feature merged, and both moved:
 
-`lanes_reach_something` passes both because it tests each END independently against a 90 ft
-house-centre reach. **Sketch**: a PAIRED rule - two non-connector ends within ~150 ft and under ~15
-deg of collinear are one interrupted way, not two arms - plus dropping or merging any internal lane
-whose EXCLUSIVE frontage is under ~2 households, on the pass `trim_lane_stubs` already runs.
-Deferred because it is a new pass over lane topology, not an edit to an existing rule.
+- **Kashikawa's 223 ft duplicate lane is GONE**, verified by the round-2 review. The peer's
+  `trim_lane_stubs` pulled lane 1 back from 354 ft to 146 ft, and lane 2 now starts 16.3 ft along
+  lane 1's own centerline with 0.3 ft of perpendicular offset - one continuous ~377 ft way with a
+  small overlap at the joint, not two parallel ways. A pairwise shadow test over all 10 lanes found
+  no remaining pair above 35% except short cross-links meeting their parent at 69-85 degrees, which
+  read as links. Nothing to fix.
+- **Sawada's 110 ft spine hole is CLOSED, and what replaced it is milder but still wrong.** Lane 2's
+  end is now the exact start of web lane 6, which runs 104 ft to a point lying ON lane 4, whose far
+  end passes 1.29 ft from lane 0's start - genuinely connected. But travelling the spine you arrive
+  at 46.7 deg, turn ~90 deg back up at -43 deg for 40 ft of alley, then leave at 25.4 deg, with a
+  33 ft stub off the apex: it draws as an arrowhead, not the `Y` the manifest declares. **Owned by
+  the peer session** (`ways.py` / `water_ways.py` are theirs, and their check 0612
+  `lanes_do_not_break_mid_run` is red-first against the pre-fix version of exactly this). Re-scoped
+  for them as: a skeleton arm may not be joined to another by a right-angle jog through a web alley.
 
-### E. Two belt holes that are NOT structure-caused, on a belt whose continuity is ungated
+Keeping the entry rather than deleting it, because the OLD numbers were quoted to the peer and to a
+reviewer, and a future session searching for "the 110 ft hole" needs to find that it is closed.
 
-Mizuguchi y=1896 and Sawada y=2321 carry a zero-canopy latitude, and both PREDATE all of today's
-work (measured at `HEAD~1`). They survive the flow-around fix that closed Inashiro's, so a blocking
-structure is not the cause - the remaining candidates are the field/water/lane refusals, which are
-deliberate, or a pinch in the belt polygon itself. **The deeper gap is that nothing gates this**: a
-windbreak with a hole straight through it passes every check we have, which is how Inashiro shipped
-one this morning. **Sketch**: a `village_windbreak_is_continuous` check measuring canopy width per
-step ALONG the belt's principal axis (not per latitude - a diagonal belt makes that lie), red-first
-against these two maps before any placement change.
+### E. RE-DESCRIBED 2026-08-18 - belt continuity is ungated, and a bare LATITUDE is the wrong measure
+
+The original entry said Mizuguchi (y=1896) and Sawada (y=2321) carry "zero-canopy latitudes". Two
+round-2 reviewers independently showed that framing is wrong, and both did the measurement I did not:
+
+- **A bare latitude is not a hole in a wind wall.** Wind crossing y=1896 still meets canopy north and
+  south of it. Measured the right way - bare COLUMN along the wind axis - Mizuguchi's belt is
+  continuous: 26 ft bare in total, one notch at x 765-791, on 717 ft of belt, inside the pool's own
+  documented baseline. A per-latitude rule would flag that healthy belt.
+- **Sawada's gap is where the road goes.** The notch spans y 2317-2376 at x 1924-2023, and the
+  connector track leaves at (1951,2318) on a 38 deg bearing straight through it. A wind wall with a
+  gate-gap for the cart track is what a real one has. The open question is not the gap; it is that
+  *nothing makes that coincidence stable*.
+- **What IS worth gating, and what the real defect looked like**: Inashiro's belt was measured at 17.1
+  ft minimum canopy after my fix and **4.8 ft** after the peer's lane web landed, with a 45 ft band at
+  y 660-720 down to ONE clump. That is a genuine breach, and no check saw it.
+
+**Sketch, corrected**: `village_windbreak_is_continuous` measuring canopy DEPTH per column ACROSS the
+wind, not coverage per latitude - a latitude rule flags healthy diagonal belts and misses thin
+windows. Gate key **0613** (0612 went to the peer). Red-first against Inashiro's y 660-720 band.
+Claimed by this session, explicitly, after offering it to the peer and being told to take it.
 
 ### F. Woodland is stocked like parkland, not like a wood
 

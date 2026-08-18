@@ -121,7 +121,7 @@ def test_the_roll_only_offers_archetypes_that_gate_clean() -> None:
 
     A rolled archetype with known failures mixes them into the valley tier's 36/36 and destroys the
     one number that says the scripted process is consistent - which is exactly what happened the
-    moment the polder was added to the roll. Pinning it is still honoured; only the ROLL is held
+    moment the polder was added to the roll. Pinning it is still honored; only the ROLL is held
     back, and this is the test that will fail (correctly) on the day someone promotes it."""
     assert set(hg.ROLLED_ARCHETYPES) <= set(hg.FIELD_ARCHETYPES)
     rolled = {hg.plan_site(hg.HamletSpec(name="X", seed=s, households=15)).field_archetype for s in range(1, 30)}

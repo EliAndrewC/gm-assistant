@@ -7,7 +7,7 @@ from l7r.diagram import hamletgen as hg
 
 
 def test_stage_notice_reseats_a_board_the_frame_would_lose():
-    """The board re-seat branch: place_kosatsuba maximises traffic along the WHOLE way network, so
+    """The board re-seat branch: place_kosatsuba maximizes traffic along the WHOLE way network, so
     a lane arm running past the cluster can seat the board outside the house cloud - where
     crop_to_content (which frames hard features only) would drop it off the sheet. stage_notice
     must then pop the board AND its caption and re-seat it on a lane verge inside the cloud.

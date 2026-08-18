@@ -255,7 +255,7 @@ class HousesMixin:
         one drawn"): `_near_corridor` tests a candidate's CENTER against a way's soft clearance, so
         a building whose drawn footprint is wider than the placer assumed can stand a legal distance
         off by its center and still put a corner on the road. Measured: a well-off farmhouse (the
-        minka's length varies to 1.35x) ended 2.4 px from a track's centreline with its center a
+        minka's length varies to 1.35x) ended 2.4 px from a track's centerline with its center a
         legal 34 px away, which `houses_clear_of_lanes` reports as a house standing in the lane.
 
         The two tests are kept SEPARATE on purpose. Footprint-testing the whole clearance was tried
@@ -476,7 +476,7 @@ class HousesMixin:
                 # a ROAD carries a SHOULDER the street does not: a highway's verge is the drained
                 # strip carts pull onto, and a shopfront built to the paved edge of one stands in
                 # the traffic. So a row fronting a road stands off by half its width PLUS the
-                # shoulder; a row fronting a street sits at the kerb, which is the machiya norm.
+                # shoulder; a row fronting a street sits at the curb, which is the machiya norm.
                 # the PRIMARY road is recorded under its own key as a bare polyline, not in
                 # M["roads"] - so a row fronting it derived nothing and sat in the roadbed (the
                 # north gate market, 2026-08-11). Fold it in with its own width.

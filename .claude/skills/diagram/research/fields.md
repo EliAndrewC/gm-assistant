@@ -58,13 +58,13 @@ earthen walls"*).* Two halves. **Generation**: `waterfields/seams.py::close_seam
 wedge filler. It takes the bare ground exactly as the carve left it - the command area, minus
 everything planted, minus the drawn channels and their banks - then PLANTS every pocket wide enough
 to hold a basin (so the new basin's outline IS the surrounding bunds) and ABSORBS every pocket too
-thin to plant into the neighbour it shares the most bund with (so the two walls become one). Its
+thin to plant into the neighbor it shares the most bund with (so the two walls become one). Its
 postcondition is that no square foot inside the command area is bare. **Checking**:
-`paddy_plot_seams_shared` fails a plot that runs a bund alongside a neighbour's across dry floor,
-or that draws a whole ring inside a neighbouring basin.
+`paddy_plot_seams_shared` fails a plot that runs a bund alongside a neighbor's across dry floor,
+or that draws a whole ring inside a neighboring basin.
 
 *Disclosed departures.* (1) A **shallow lap** is left alone, in both halves: a plot drawn over part
-of its neighbour paints out the bund it covers, so the pair still reads as one shared wall. Only
+of its neighbor paints out the bund it covers, so the pair still reads as one shared wall. Only
 near-containment is a fault. (2) The rule's upper bound is 24 real ft of gap - wider than that the
 ground between two basins is bare FLOOR, which is `paddy_fan_gapless`'s rule, and stating it twice
 at two tolerances is how checks start disagreeing. (3) A pocket **too thin to bund** is absorbed

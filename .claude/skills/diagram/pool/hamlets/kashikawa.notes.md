@@ -163,13 +163,13 @@ WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
   CENTROID - the empty ground between the lobes of a two-lobed cluster. It is now `_worst_after` at
   full resolution, with the neighborhood measure breaking exact ties.
 
-RIPPLE ON THIS MAP: This map rolled `detached_commons`, so the byre FORM is unchanged - but 2 of
-its 4 byres moved, displaced by the well re-seat and the woodland keep-outs, and the morning's
-note claiming all four were 'placed exactly as before' was false against its own manifest. The
-wells moved to [[2284, 2922], [2394, 2658], [1756, 3230]]: worst walk 386 -> 326 ft, mean 176 ->
-186 ft, and - the metric the placer actually optimizes - the worst walk among the 3 of 20 houses
-that NEED a well went 197 -> 152 ft. The shelter belt runs unbroken (206 clumps, up from 190 - it
-now re-seats around a blocking structure instead of losing the column).
+RIPPLE ON THIS MAP (re-measured 2026-08-18 after the round-2 review): 4 byres at the placer's
+target of 4, form `detached_commons`, owned by the houses ranking [3, 4, 10, 11] by footprint of
+20 - the owner ranking was reading a `wealth` field that is 1.0 on every scripted house, so it had
+collapsed to smallest-x and was handing oxen to the west edge. The shelter belt carries 207 clumps
+with a minimum canopy depth of 28.0 ft measured ACROSS the wind, which is the measure that means
+anything on a diagonal belt; the per-latitude framing an earlier entry used flags healthy belts
+and misses thin windows. Worst walk among the 3 houses that actually need a well: 152 ft.
 
 ## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
 
@@ -230,12 +230,12 @@ order they matter to a reader of these maps:
 - **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
   gate reads the same raked corners the placer does.
 
-RIPPLE ON THIS MAP: the notice board's caption was 90 degrees out and is fixed - `kosatsuba` used
-`label_tilt`, which FOLDS mod 90 because a building has two edge families, where a board has ONE
-meaningful axis (its face). It now uses `linear_tilt` and reads level beside a 49.3-degree board,
-matching neither lane, so nothing on the sheet can steal it. Byres went from occupying 14% of the
-settlement's length to spanning it. Every farmhouse is now within ~97 ft of a way by centre.
-Review: PASS.
+RIPPLE ON THIS MAP (re-measured 2026-08-18): woodland is [(125, 29)] - each pair is (ft across,
+crowns) - stocked at 540-554 sq ft per crown, which is the stated density rather than an artifact
+of how much of a parcel lies near a keep-out. Crown count used to be the number of THROWS at a
+parcel, and `_sparse` rejected a share of them, so small parcels came out both smaller AND
+thinner; it is a target now. Parcels under the 120 ft legibility floor are DROPPED rather than
+drawn small.
 
 OPEN, wanting a one-line ruling rather than a fix: the maximin spread put a byre 38 ft from a
 communal wellhead (the other three are 168-317 ft from any well). Nothing governs it - `homesteads.md`
@@ -342,7 +342,7 @@ check found some, which no rule could see before.
 by fraction OR by one unbroken bundle pitch - is refused, and so is one that would run the length of
 the shelter belt rather than crossing it.
 
-*A house is served with margin, not to the millimetre.* The footpath pass triggers at nine tenths of
+*A house is served with margin, not to the millimeter.* The footpath pass triggers at nine tenths of
 the reach, so no house passes by inches and none gets a path drawn to cure a rounding error.
 
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead

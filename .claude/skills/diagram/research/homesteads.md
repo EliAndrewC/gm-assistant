@@ -41,26 +41,26 @@ At 38N (mid-empire on the weather skill's east-coast analog) in the 10th month, 
 
 *The decision:* a yard needs **39 ft of clear ground to its south** - the 9-to-3 window, which is
 the drying day that matters. Inside ~21 ft the yard is shaded even at noon. The rule is a keep-out
-corridor south of every threshing yard, and a neighbouring FARMHOUSE may not stand in it.
+corridor south of every threshing yard, and a neighboring FARMHOUSE may not stand in it.
 
 *Why this was missed for so long, which is the useful part.* The engine already reasoned exactly
 this way about GROVES - `yards_unshaded_by_groves` keeps a strip south of each yard clear, with the
-comment "a neighbour's grove there would shade it" - and simply never applied it to houses, which
+comment "a neighbor's grove there would shade it" - and simply never applied it to houses, which
 are taller than a grove clump and shade further. A rule stated for one obstacle and not for the
 obvious other is the same shape as the way-list defects: the check could not see the case, so it
 looked like a passing check.
 
 *And the row pitch was already right.* `BUNDLE_PITCH_FT` is 92 ft, while house depth (28) + yard
 depth (~26) + 39 ft of sun comes to ~93. The spacing reserved the room; the packer just never
-aligned rows, so a neighbour dropped into the gap the pitch had set aside. Measured across the pool
-before the fix: a neighbour's wall commonly stood **2-8 ft** south of a yard's edge, and on the
+aligned rows, so a neighbor dropped into the gap the pitch had set aside. Measured across the pool
+before the fix: a neighbor's wall commonly stood **2-8 ft** south of a yard's edge, and on the
 dense nucleated maps that was most yards (Ueda 45 of 85 shaded at noon, Hoshigaoka 31 of 70, Ubame
 21 of 36). The provincial cities were clear (0-1 each) because their farm belt is loose.
 
 *The departure we take knowingly:* the corridor is measured on the yard's own cross-slope span, as a
 rectangle, not as a true solar wedge that swings through the day; and real *yashiki* lots also
 resolved this by STAGGERING east-west rather than by spacing rows, which the placer is free to do
-since the corridor only forbids the shadow, not the neighbour.
+since the corridor only forbids the shadow, not the neighbor.
 
 *Sources:* the 45-degree thatch pitch from the *kayabuki* literature (a steep pitch is required of
 thatch, hence the large loft); solar elevations computed for 38N at the 10th-month declination;
@@ -116,7 +116,7 @@ This one is worth reading as the worked example of the constitution's research-t
 because the research came back decisive on one axis and genuinely two-formed on the other.
 
 **Decisive: a house in a nucleated cluster IS reached by a way.** The Chinese material is explicit -
-"the organisation of the village plan as a gridiron of narrow lanes is functionally the most
+"the organization of the village plan as a gridiron of narrow lanes is functionally the most
 efficient form of compact settlement", and "every house in the nucleated village is accessible via
 the interconnected system of narrow lanes and alleys". This is not a planner's ideal imposed after
 the fact; it is what compactness is FOR. The lanes are also socially live rather than purely

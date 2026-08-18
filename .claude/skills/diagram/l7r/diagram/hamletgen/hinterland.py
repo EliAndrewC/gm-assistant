@@ -180,6 +180,14 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
         for size_try in (size * _ladder, size * 0.8 * _ladder, size * 0.64 * _ladder, size * 0.5 * _ladder):
             if len(chosen) >= count:
                 break
+            # A RUNG UNDER THE LEGIBILITY FLOOR IS NOT OFFERED AT ALL. The first cut clamped each
+            # candidate up to the floor and then dropped the parcel when the clamped size did not
+            # fit, which needed a fall-through nobody could reach in a test; skipping the rung says
+            # the same thing in one line and leaves `half_used = half` unconditionally safe, because
+            # every rung that survives to the accept block is already above the floor. Either way a
+            # settlement whose ground cannot hold a legible commons draws FEWER, never smaller.
+            if size_try < _COMMONS_FLOOR_FT:
+                continue
             half = size_try / 2.0
             _sb_pad = 0.415 * half if _sb_normal < 80.0 else 0.0  # the diagonal slack (see above); the generous profile keeps its historical thresholds exactly
             _sb_n, _sb_s = _sb_normal + _sb_pad, _sb_sunny + _sb_pad
@@ -222,10 +230,17 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                 sx1: float = sx1,
                 sy1: float = sy1,
             ) -> bool:
-                if not (max(half + 40.0, sx0) <= x <= min(plan.W - half - 40.0, sx1) and max(half + 40.0, sy0) <= y <= min(plan.H - half - 40.0, sy1)):
-                    return False
-                if (max(0.0, min(x + half, _fx1) - max(x - half, _fx0)) * max(0.0, min(y + half, _fy1) - max(y - half, _fy0))) < 0.8 * (2.0 * half) ** 2:
-                    return False  # the check's own 70%-of-bbox rule, at 0.8 for prediction slack
+                # ONE guard clause, deliberately: the window bounds and the kept-window AREA are the
+                # same question asked of a seat that may have been MOVED since the scan offered it
+                # (the jitter and the size roll both re-ask). Split into two statements the bounds
+                # half is unreachable in the corpus - no pool map or cohort seed happens to jitter a
+                # seat past the edge - and an untested line in a predicate whose whole job is
+                # re-asking is exactly what rots.
+                if (
+                    not (max(half + 40.0, sx0) <= x <= min(plan.W - half - 40.0, sx1) and max(half + 40.0, sy0) <= y <= min(plan.H - half - 40.0, sy1))
+                    or (max(0.0, min(x + half, _fx1) - max(x - half, _fx0)) * max(0.0, min(y + half, _fy1) - max(y - half, _fy0))) < 0.8 * (2.0 * half) ** 2
+                ):
+                    return False  # off the window, or under the check's own 70%-of-bbox rule (0.8 here, for prediction slack)
                 return (
                     _clear_gap((x, y), half, crops, dy, n, sn) is not None
                     and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
@@ -252,6 +267,33 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                         scored.append((-math.hypot(x - ccx, y - ccy) + 0.35 * upslope, x, y))
                     x += step
                 y += step
+            # THE COPPICE IS A HILLSIDE WOOD, SO A DOWN-SLOPE-DOMINANT SEAT LOSES TO A CROSS-SLOPE ONE
+            # (settlement-review, Kashikawa 2026-08-18 round 2, and its research pass settled the
+            # ruling this ledger item was waiting for). Three project files say woodland goes on the
+            # higher, farther ground - `settlements/vegetation.md`, `research/fields.md` and this
+            # function's own scorer comment - and Kashikawa drew both its stands downslope, one of them
+            # 886 ft down and 75 ft off the reed marsh: a coppice walking onto the wet toe of the fan.
+            # The scorer's additive `+0.35 * upslope` never binds, because a 90 px step toward the
+            # cluster outbids 257 px of height.
+            #
+            # THE RULING, and why it is neither of the two options I ledgered. Raising the weight until
+            # it binds returns this map to ZERO parcels - the defect closed that morning - and a knob
+            # was not available either: the reviewer's research pass found satoyama DEFINED as the
+            # foothill border zone with its coppice on the hillsides, and the China-first analog (the
+            # fengshui back-hill wood) upslope as well, so a downslope commons is not a co-equal
+            # attested form and "correct the prose instead" would mean rewriting doctrine to match a
+            # placement artifact. What the record does support is weaker than "uphill of the houses":
+            # the wood is ON THE HILLSIDE, i.e. at or above the settlement's own contour. So the test
+            # is the along/cross RATIO, not the height. Decomposed on Kashikawa, that refuses the
+            # down-dominant parcel (886 ft down against 276 cross) and keeps the cross-dominant one
+            # (505 down against 1562 cross, effectively a contour seat) - one parcel, not zero.
+            #
+            # A PREFERENCE, not a filter, per this scan's standing habit: if no cross-slope seat
+            # qualifies at all, the down-slope ones are still offered rather than leaving a map
+            # woodless. The GM can reverse this ruling; it is recorded in `future-work.md`.
+            _cross_seats = [t for t in scored if abs((t[1] - ccx) * -dy + (t[2] - ccy) * dx) >= ((t[1] - ccx) * dx + (t[2] - ccy) * dy)]
+            if _cross_seats:
+                scored = _cross_seats
             for _, x, y in sorted(scored, reverse=True):
                 if len(chosen) >= count:
                     break
@@ -301,8 +343,7 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                 # Reflecting the factor about 1.0 gives a distinctly SMALLER parcel to try before
                 # surrendering to the rung, so a refused growth becomes variety instead of a twin.
                 _bi = min(int(s._hjit(x, y, 73.0) * len(_bands)), len(_bands) - 1) if _bands else 0
-                _band = _bands.pop(_bi) if _bands else 0
-                _f = 0.82 + 0.36 * ((_band + 0.5) / max(2, count))
+                _f = 0.82 + 0.36 * (((_bands[_bi] if _bands else 0) + 0.5) / max(2, count))
                 # The band first; then one distinctly SMALLER try, because a grown parcel is asking
                 # for ground the rung only just fitted and the plain fallback to `half` is what
                 # produced the near-identical trio above.
@@ -313,7 +354,7 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                 # parcel too small to read as a managed wood should not be drawn smaller to satisfy
                 # a variance rule. If the floor does not fit, the rung fallback still applies, so
                 # this can only ever make a parcel larger or leave it alone.
-                half_used = half
+                half_used = half  # the rung, which the ladder above guarantees is at or over the floor
                 for _cand in (max(half * _f, _COMMONS_FLOOR_FT / 2.0), max(half * 0.84, _COMMONS_FLOOR_FT / 2.0)):
                     if _ok(jx, jy, _cand):
                         x, y, half_used = jx, jy, _cand
@@ -321,6 +362,20 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                     if _ok(x, y, _cand):
                         half_used = _cand
                         break
+                # THE FLOOR WAS NOT A FLOOR (settlement-review, Kashikawa 2026-08-18 round 2). Both
+                # candidates are clamped to `_COMMONS_FLOOR_FT`, but when neither fitted, control fell
+                # through to `half_used = half` - the UNCLAMPED rung - and Kashikawa shipped a 116.6 ft
+                # parcel, under the floor, at the very size this file's own docstring calls "a copse,
+                # not a commons". The comment above claimed the clamp "can only ever make a parcel
+                # larger or leave it alone" and the fall-through did the one thing it forbade.
+                #
+                # The rung is now only taken if the rung itself clears the floor; otherwise the parcel
+                # is DROPPED, which is what `_COMMONS_FLOOR_FT`'s docstring says should happen - "a
+                # settlement whose ground genuinely cannot hold one draws FEWER parcels rather than
+                # smaller ones". The band is returned to the pool by not popping it until acceptance,
+                # so a dropped parcel does not silently consume a size band the next one could use.
+                if _bands:
+                    _bands.pop(_bi)
                 chosen.append([(x - half_used, y - half_used), (x + half_used, y - half_used), (x + half_used, y + half_used), (x - half_used, y + half_used)])
                 centers.append((x, y, size * (1.15 + 1.35 * s._hjit(x, y, 74.0))))
     return chosen
@@ -429,7 +484,7 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
     if not plan.belt:  # pragma: no cover - stage_woodland always computes it first
         return
     # ...DENTED AROUND THE TITLE'S POCKET. `stage_woodland` reserves blank ground for the map's name
-    # (`title_pocket`) and keeps the woods out of it, but the BELT is drawn later and honours
+    # (`title_pocket`) and keeps the woods out of it, but the BELT is drawn later and honors
     # nothing - `village_grove` takes only a polygon, with no keep-out list - so on a tightly framed
     # map the belt simply covered the reservation and `title()` had nowhere clear to sit (seed 8's
     # polder, 3 of 4 falls). Pushing the belt's vertices out of that rectangle costs the band a

@@ -39,3 +39,26 @@ def test_a_windbreak_column_with_no_house_of_its_own_leans_on_the_whole_fringe()
     belt = hg.belt_polygon(s, plan)
     assert belt, "a gapped cluster still needs a windbreak belt"
     assert len(belt) >= 4
+
+
+def test_a_jittered_woodland_seat_that_leaves_the_scan_window_is_refused() -> None:
+    """The accepted seat is nudged off the sampling lattice by up to half a step, and that nudge can
+    carry a seat near the window's edge OUT of the window - so the qualification predicate re-tests
+    the bounds rather than trusting that the scan only offered legal points.
+
+    Held here because nothing in the pool or the cohort happens to jitter a seat past the edge, and
+    an untested bounds guard on a predicate whose whole job is to re-ask about a MOVED point is the
+    kind that rots silently (this engine's own 'a check that never RUNS looks exactly like a check
+    that passes', one layer down). Forcing `_hjit` to its maximum drives every jitter the same way,
+    +half a step on both axes, which is what an edge seat needs to escape."""
+    plan = a_plan()
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s.M["houses"] = [{"x": 300.0 + 60.0 * i, "y": 700.0, "w": 46.0, "h": 28.0} for i in range(6)]
+    s.M["fields"] = []
+    plan.belt = []
+    s._hjit = lambda x, y, salt: 1.0 if salt in (71.0, 72.0) else 0.5  # type: ignore[method-assign]
+    patches = hg.hinterland.open_ground_patches(s, plan, count=3)  # via the submodule: a white-box unit test, not a package-surface consumer
+    # The run must still terminate and return only legal squares - a refused jitter falls back to the
+    # unjittered seat, it does not drop the parcel or escape the canvas.
+    for poly in patches:
+        assert all(0.0 <= px <= plan.W and 0.0 <= py <= plan.H for px, py in poly), "a seat left the canvas"

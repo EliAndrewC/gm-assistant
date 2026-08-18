@@ -195,16 +195,13 @@ WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
   the empty ground between the lobes. It is now `_worst_after` at full resolution, with the
   neighborhood measure breaking exact ties.
 
-RIPPLE ON THIS MAP: This map rolled `courtyard` and is the only pool sheet that exercises it. All
-4 byres now stand as their owner's stable wing - attached to a side wall with a 3 ft drip line,
-rotation locked to the house, each recording the homestead it belongs to. Before the fix this map
-seated 3 of its 4 and stood them 8.9-23.0 ft off the BACK corner at rot 0, a range that overlapped
-the detached maps' and so bought the knob nothing. The wells did not move: [[1605, 2308], [1583,
-2066], [1363, 2000]], byte-identical to before this round. Worst walk 493 ft, mean 213 ft, and
-among the 6 of 19 houses that actually need a well (the rest are within reach of surface water,
-which the objective excludes by design) the worst is 122 ft. The belt carries a pre-existing gap
-at y=2321 that this round did NOT cause and did not fix: it survives the flow-around change, so
-its cause is not a structure. Ledgered.
+RIPPLE ON THIS MAP (re-measured 2026-08-18 after the round-2 review): 4 byres at the placer's
+target of 4, form `courtyard`, owned by the houses ranking [1, 2, 3, 4] by footprint of 19 - the
+owner ranking was reading a `wealth` field that is 1.0 on every scripted house, so it had
+collapsed to smallest-x and was handing oxen to the west edge. The shelter belt carries 181 clumps
+with a minimum canopy depth of 28.0 ft measured ACROSS the wind, which is the measure that means
+anything on a diagonal belt; the per-latitude framing an earlier entry used flags healthy belts
+and misses thin windows. Worst walk among the 6 houses that actually need a well: 122 ft.
 
 **THE LEDGERED DEFECT ON THIS MAP DID NOT EXIST.** The entry said the tie-break traded a well from a
 seat with 11 households within 300 ft to one with 5, worst walk 364 -> 493 ft. That counted EVERY
@@ -269,12 +266,12 @@ order they matter to a reader of these maps:
 - **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
   gate reads the same raked corners the placer does.
 
-RIPPLE ON THIS MAP: the title placard no longer sits on the dry-shoulder woodland parcel - it
-covered 64-68% of it, with a dozen crowns ghosting up through the title card, and the overlap is
-now zero. The west fork was the map that motivated the lane trim: lane 0 ran 90 ft past its own T
-with lane 2 and died 13 ft from it on an 8-degree divergence, reading as one track fraying rather
-than a fork. Byres went from 20% of the settlement's length to spanning it. Cluster elongation
-4.60 -> 3.49, with a real back rank. Review: needs-work on the fork, now fixed.
+RIPPLE ON THIS MAP (re-measured 2026-08-18): woodland is [(136, 34)] - each pair is (ft across,
+crowns) - stocked at 540-554 sq ft per crown, which is the stated density rather than an artifact
+of how much of a parcel lies near a keep-out. Crown count used to be the number of THROWS at a
+parcel, and `_sparse` rejected a share of them, so small parcels came out both smaller AND
+thinner; it is a target now. Parcels under the 120 ft legibility floor are DROPPED rather than
+drawn small.
 
 THE FORK IS WHY THE CHECK LEARNED ABOUT ANGLES: `_reaches` counted ANY way within 40 ft as arrival,
 including the lane an arm had already met at its own junction - so the defect satisfied the test
@@ -398,7 +395,7 @@ check found some, which no rule could see before.
 by fraction OR by one unbroken bundle pitch - is refused, and so is one that would run the length of
 the shelter belt rather than crossing it.
 
-*A house is served with margin, not to the millimetre.* The footpath pass triggers at nine tenths of
+*A house is served with margin, not to the millimeter.* The footpath pass triggers at nine tenths of
 the reach, so no house passes by inches and none gets a path drawn to cure a rounding error.
 
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead
