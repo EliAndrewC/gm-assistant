@@ -69,6 +69,23 @@ Sub-stage helpers extracted from a long stage are named for what they do (`_seat
 float-operation order. The generator is seeded and deterministic, so any reordering shifts every
 downstream coordinate.
 
+## The two cohorts are DIFFERENT COHORTS, and both have bitten
+
+`hamletgen.cohort(count, first_seed=...)` and `tools/cohort_audit.py` roll different maps, and a
+session that checks the wrong one gets a green it has not earned.
+
+- **The in-gate ratchet rolls seeds 41-44**, not 1-4: `tests/hamletgen/test_driver.py`'s
+  `test_a_rolled_cohort_passes_the_whole_gate` calls `cohort(4, first_seed=41, jobs=1)`. Feature 123
+  was validated against 1-4 for most of its life, passed 4/4 there, and failed in the gate - which
+  reads as a mysterious gate failure rather than as checking the wrong maps.
+- **`cohort_audit` uses its own household counts**, not `cohort()`'s `10 + (seed * 7) % 11`. A
+  diagnostic that rebuilds an audit seed with the wrong formula measures a different map: the first
+  attempt at feature 123's sweep residue reported one failing seed as having zero unserved houses.
+
+**So: reproduce a cohort failure with the SAME entry point that produced it.** If the gate found it,
+call `cohort(..., first_seed=41)`; if `cohort_audit` found it, read the manifest `cohort_audit`
+wrote, or take the spec from it - do not rebuild from a remembered formula.
+
 ## Verifying a change
 
 The oracle is the manifest, not the render. `specs/111-hamletgen-package/quickstart.md` holds the
