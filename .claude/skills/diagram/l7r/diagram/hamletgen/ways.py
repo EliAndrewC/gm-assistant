@@ -325,6 +325,10 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # ONE NETWORK FIRST, then the houses that it still does not reach. Order matters: a footpath
     # that joins an orphaned component is worth nothing while the component itself is an island.
     _join_orphan_ways(s, hard, walls, list(plan.watercourses) + drawn_water)
+    # ...and close any break where one way was drawn as two. Before the stragglers: a house beside
+    # the hole is served by the bridged street, and drawing it a footpath of its own first would be
+    # curing the symptom.
+    _bridge_collinear_breaks(s, hard, walls, list(plan.watercourses) + drawn_water)
     _serve_stragglers(s, plan, hard, fabric, list(plan.watercourses) + drawn_water)
     s.M["meta"]["lane_web"] = plan.lane_web
 
@@ -339,6 +343,21 @@ _LANE_JOIN_FT = 30.0  # inside lanes_reach_something's own 40 ft, with room to s
 # to join two points 77 ft apart, folded back through the windbreak. 2.0 admits a path that goes
 # properly round one steading, which is what the router draws, and still refuses a fold.
 _PATH_DIRECTNESS = 2.0
+
+# A GAP THIS SHORT BETWEEN TWO NEAR-COLLINEAR ENDS IS ONE WAY DRAWN AS TWO. 150 ft is about a
+# household and a half of frontage - far enough that a real interruption (a wellhead, a bed, a
+# clump) has somewhere to sit, close enough that the eye reads the two pieces as one street with a
+# hole in it. The bearing bound is tighter than the fan rule's: these ends have to point AT each
+# other, not merely lie alongside.
+# THE SHORTEST THING THAT IS STILL A WAY. `_LANE_MIN_FT` (71) is the floor for a lane the
+# homesteads FRONT and is right for one; a door path is legitimately about 65 ft and would be deleted
+# by it. But there is a floor below which nothing is a way at all: Sawada shipped 4 ft, 12 ft and
+# 20 ft fragments, left behind when the end-trim pulled a path back to its last serving point. A
+# 4 ft mark fronts nobody and reads as a speck of clipping debris. 30 ft is under half a door path.
+_WEB_MIN_FT = 30.0
+
+_BREAK_SPAN_FT = 150.0
+_BREAK_BEARING_DEG = 15.0
 
 
 def _reach(c: Pt, path: Poly) -> float:
@@ -508,6 +527,70 @@ def _clear_link(a: Pt, b: Pt, hard: list[Poly], walls: Sequence[Poly], water: li
     return any(polyline_len(r) >= span - 3.0 for r in runs)
 
 
+def _bridge_collinear_breaks(s: Settlement, hard: list[Poly], walls: Sequence[Poly], water: list[tuple[Pt, Pt]]) -> int:
+    """Close a gap where ONE way has been drawn as two, and the ground between them is walkable.
+
+    A lane that stops and resumes 110 ft further on, 8 degrees off collinear, is not two arms - it is
+    one street with a hole in the middle of the built-up frontage, and both its ends read as rounded
+    caps dying in bare grass. `lanes_reach_something` passes them because it tests each END
+    independently: an end 83 ft from a house CENTRE is "fronting" it even when that is 55 ft from the
+    wall, i.e. out past the dooryard.
+
+    THE TEST IS WHETHER THE GAP IS WALKABLE, which is what makes this a defect rather than an
+    observation. Two near-collinear ends with a wellhead or a garden bed between them are honestly
+    interrupted - the way goes round, or stops, because something is there. Two with nothing between
+    them are one way that was drawn in two pieces, and the fix is to draw the piece that is missing.
+
+    Found by a peer session's review of Sawada, where the ends sit either side of the cluster's own
+    middle; the same shape survives on other maps and is a plain gap in the network."""
+    made = 0
+    # TWELVE PASSES, not four. Each closure adds a lane whose own ends sit beside existing ones, so a
+    # map with several breaks needs several rounds - and Sawada ran out at four with three breaks
+    # still open, which reads as the fix not working rather than as the loop giving up. The bound
+    # exists only so a pathological map cannot spin; a hamlet uses two or three.
+    for _ in range(12):
+        ways = [[(float(x), float(y)) for x, y in ln["pts"]] for ln in s.M.get("lanes", [])]
+        best = None
+        for i, li in enumerate(s.M.get("lanes", [])):
+            if li.get("connector") or len(ways[i]) < 2:
+                continue
+            for j, lj in enumerate(s.M.get("lanes", [])):
+                if j <= i or lj.get("connector") or len(ways[j]) < 2:
+                    continue
+                for ta, pra in ((ways[i][0], ways[i][1]), (ways[i][-1], ways[i][-2])):
+                    for tb, prb in ((ways[j][0], ways[j][1]), (ways[j][-1], ways[j][-2])):
+                        gap = math.dist(ta, tb)
+                        if not (_LANE_JOIN_FT < gap <= _BREAK_SPAN_FT):
+                            continue
+                        head = math.degrees(math.atan2(ta[1] - pra[1], ta[0] - pra[0]))
+                        tail = math.degrees(math.atan2(tb[1] - prb[1], tb[0] - prb[0]))
+                        if abs((head - tail + 180.0) % 360.0 - 180.0) > _BREAK_BEARING_DEG:
+                            continue  # they do not point at each other; two arms, not one way
+                        # ...unless a third way already spans it. Closing a break leaves the two
+                        # original ends where they were, joined THROUGH the new lane - so without
+                        # this the pass re-bridges the same pair every round and burns its budget on
+                        # work already done.
+                        if any(
+                            k not in (i, j)
+                            and len(o) >= 2
+                            and min(seg_dist(ta[0], ta[1], a2, b2) for a2, b2 in zip(o, o[1:], strict=False)) <= _LANE_JOIN_FT
+                            and min(seg_dist(tb[0], tb[1], a2, b2) for a2, b2 in zip(o, o[1:], strict=False)) <= _LANE_JOIN_FT
+                            for k, o in enumerate(ways)
+                        ):
+                            continue
+                        if best is None or gap < best[0]:
+                            best = (gap, ta, tb, float(li.get("w", 5)), float(lj.get("w", 5)))
+        if best is None:
+            return made
+        span = _route(best[1], best[2], hard, walls, water, gap=FOOTPATH_FABRIC_GAP)
+        if not span or polyline_len(span) > _PATH_DIRECTNESS * max(best[0], 1.0):
+            return made  # something is genuinely in the way; the interruption is honest
+        if not _draw_web(s, span, int(max(best[3], best[4]))):
+            return made  # pragma: no cover - a bridge is always longer than the debris floor
+        made += 1
+    return made  # pragma: no cover - twelve bridges is far more than any hamlet needs
+
+
 def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], water: list[tuple[Pt, Pt]]) -> int:
     """Link any way that is not part of the settlement's one network - INCLUDING the skeleton's own.
 
@@ -561,8 +644,7 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
             ),
             default=3.0,
         )
-        s.lane(link, width=int(_w), clearance=WEB_CLEARANCE, worn=True)
-        s.M["lanes"][-1]["web"] = True
+        _draw_web(s, link, int(_w))
         made += 1
     return made  # pragma: no cover - six links is far more than any hamlet needs
 
@@ -570,6 +652,18 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
 def _net_segs(s: Settlement) -> list[tuple[Pt, Pt]]:
     """Every drawn way on the map right now, as segments."""
     return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for ln in s.M.get("lanes", []) for p, q in zip(ln["pts"], ln["pts"][1:], strict=False)]
+
+
+def _draw_web(s: Settlement, pts: Poly, width: int = 3) -> bool:
+    """Draw a web lane, unless it is too short to be a way at all. See `_WEB_MIN_FT`."""
+    if len(pts) < 2 or polyline_len(pts) < _WEB_MIN_FT:
+        return False
+    s.lane(pts, width=width, clearance=WEB_CLEARANCE, worn=True)
+    # Flagged so `lane_frontage` does not offer seats along it. A web lane is SERVICE - it threads
+    # behind and between the steadings - and inviting new houses onto the way that exists to reach
+    # the old ones is how the cluster starts sprawling again.
+    s.M["lanes"][-1]["web"] = True
+    return True
 
 
 def _trim_to_service(run: Poly, segs: Sequence[tuple[Pt, Pt]], houses: Sequence[Pt]) -> Poly:
@@ -677,8 +771,7 @@ def _lay_web_lane(s: Settlement, run: Poly, hard: list[Poly], walls: list[Poly],
                 run = run[: k + 1]
             elif head < 40.0:
                 run = run[k:]
-            s.lane(run, width=3, clearance=WEB_CLEARANCE, worn=True)
-            s.M["lanes"][-1]["web"] = True
+            _draw_web(s, run, 3)
             return True
         d0, d1 = vert[0], vert[-1]
         end = 0 if d0 <= d1 else -1
@@ -705,8 +798,7 @@ def _lay_web_lane(s: Settlement, run: Poly, hard: list[Poly], walls: list[Poly],
                 ),
                 default=3.0,
             )
-            s.lane(link[0], width=int(_w), clearance=WEB_CLEARANCE, worn=True)
-            s.M["lanes"][-1]["web"] = True
+            _draw_web(s, link[0], int(_w))
         elif _clear_link(run[end], q, hard, walls, water):
             # SNAP ONLY IF THE GROUND BETWEEN IS CLEAR. Extending an end onto the way it meets is
             # what makes the junction read as a touch instead of a gap - but the few feet being
@@ -715,11 +807,7 @@ def _lay_web_lane(s: Settlement, run: Poly, hard: list[Poly], walls: list[Poly],
             # the moment snapping went in). If the gap is not walkable the lane simply ends where it
             # ended; a visible break is better than a lane through a wall.
             run = ([q, *run]) if end == 0 else ([*run, q])
-    s.lane(run, width=3, clearance=WEB_CLEARANCE, worn=True)
-    # Flagged so `lane_frontage` does not offer seats along it. A web lane is SERVICE - it threads
-    # behind and between the steadings - and inviting new houses onto the way that exists to reach
-    # the old ones is how the cluster starts sprawling again.
-    s.M["lanes"][-1]["web"] = True
+    _draw_web(s, run, 3)
     return True
 
 
@@ -929,8 +1017,7 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                     # same end-trim every web lane gets - a footpath that begins in bare grass is a
                     # dangling tread whatever drew it.
                     path = _trim_to_service(path, segs, [(float(q["x"]), float(q["y"])) for q in s.M.get("houses", [])])
-                    s.lane(path, width=3, clearance=WEB_CLEARANCE, worn=True)
-                    s.M["lanes"][-1]["web"] = True
+                    _draw_web(s, path, 3)
                     added += 1
                     break
         if not added:

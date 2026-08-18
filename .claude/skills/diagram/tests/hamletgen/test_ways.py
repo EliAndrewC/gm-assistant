@@ -348,3 +348,28 @@ def test_reachable_runs_with_no_candidates_is_empty() -> None:
 def test_join_orphan_ways_on_a_map_with_one_way_has_nothing_to_join() -> None:
     s = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 200.0)]])
     assert hg.ways._join_orphan_ways(s, [], [], []) == 0
+
+
+def test_draw_web_refuses_a_lane_too_short_to_be_a_way() -> None:
+    """A 4 ft mark fronts nobody and reads as a speck of clipping debris - Sawada shipped 4, 12 and
+    20 ft fragments, left behind when the end-trim pulled a path back to its last serving point."""
+    s = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 400.0)]])
+    before = len(s.M["lanes"])
+    assert hg.ways._draw_web(s, [(100.0, 100.0), (104.0, 100.0)]) is False
+    assert len(s.M["lanes"]) == before
+    assert hg.ways._draw_web(s, [(100.0, 100.0), (100.0, 200.0)]) is True
+    assert s.M["lanes"][-1]["web"] is True
+
+
+def test_bridge_collinear_breaks_closes_a_hole_and_leaves_an_honest_one() -> None:
+    """One street drawn as two gets the missing piece drawn. A break with something genuinely in the
+    way keeps it - the route cannot be made, so the interruption stands."""
+    s = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 40.0)], [(200.0, 500.0), (400.0, 500.0)], [(510.0, 500.0), (710.0, 500.0)]])
+    assert hg.ways._bridge_collinear_breaks(s, [], [], []) == 1
+    assert len(s.M["lanes"]) == 4
+
+    walled = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 40.0)], [(200.0, 500.0), (400.0, 500.0)], [(510.0, 500.0), (710.0, 500.0)]])
+    fence = [(440.0, 200.0), (470.0, 200.0), (470.0, 800.0), (440.0, 800.0)]
+    assert walled.M["lanes"][0] is not None
+    assert hg.ways._bridge_collinear_breaks(walled, [fence], [], []) == 0
+    assert len(walled.M["lanes"]) == 3
