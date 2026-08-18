@@ -1159,7 +1159,7 @@ to see.
 #### C. Does a hamlet's back rank get a way, or is it walked to? (doctrine, tier-wide)
 
 Raised on Sawada, true of every scripted hamlet: nine of nineteen houses stand more than 120 ft from
-any way, and the whole SE block is touched by no lane. Inashiro is 6 of 15 with a worst of 345 ft,
+any way, and the whole SE block is touched by no lane. Inashiro is 6 of 15 with a worst of 254 ft (345 ft when this was written; re-measured on the shipped manifest 2026-08-18),
 Mizuguchi 4 of 12. This is not a defect of any one map and it is not delta-caused - the front-row
 cap is what put a genuine back rank there in the first place, which is what we wanted.
 
@@ -1170,3 +1170,154 @@ the maps currently depict, and it is defensible - a lane is a cart way, and peop
 and `lanes_reach_something`'s house threshold stops being a number nobody has justified.
 
 </details>
+
+## OPEN 2026-08-18: paddy bunds still step sideways - the placement half of the GM's report
+
+**The report (GM 2026-08-18, on Inashiro).** *"The earthen wall is kind of going in a southward
+direction, and then instead of just continuing on and meeting at the four way intersection between
+the north south earthen walls and the east west earthen walls, it just goes sharply to the left
+before going down, thus making these extremely irregular shapes. This really, really looks like a
+rendering error."*
+
+**The measurement, which is the part worth keeping.** Snapshotting `close_seams`'s input and output
+on Inashiro: **0 steps on the 543 carved rings, 26 on the 634 it hands back** - 20 welded into
+carved basins by `_absorb`, 8 on pockets `_plant` planted. Every frozen pre-`close_seams` fixture in
+`pool/regressions/` scores 0. The carve does not make this shape; the seam pass does.
+
+**The mechanism.** A thin residual strip between two carved rows is one connected scrap. `_plant`
+grids a pocket from the POCKET'S OWN bounding box at `plot_across` (48 ft on a hamlet), which is
+where neither the row above nor the row below has a seam, and hands the too-thin cells back as
+offcuts. `_absorb` then welds each offcut into whichever basin shares the most bund with it -
+alternately the row above and the row below - and the wall between the rows comes out a staircase.
+Inashiro's east flank at (2283-2474, 1718) is four rectangular tabs in a row, which is the one the
+GM circled.
+
+**What landed** (2026-08-18): `waterfields/banks.py::jog_steps` / `jog_vertices`, the predicate; a
+jog guard in `_absorb`'s ladder, ranked with the needle and lump guards and preferring the
+least-jogging weld among the fallbacks; and `tools/jogs.py`, the by-hand report. Measured on the
+four scripted hamlets: **26 -> 23, 37 -> 33, 20 -> 17, 24 -> 16** steps at the intended gate
+thresholds, no regression on any other check, and no measurable cost (regeneration 21.1 s before,
+20.8 s after on Inashiro). The research is in `research/fields.md`, "A bund runs on, or it turns for
+a reason".
+
+**What is left, and it is the bulk of it**: get the four maps to zero, then move the rule out of
+`tools/jogs.py` into `check_village` as `paddy_bunds_do_not_jog` (3 ft offset, 8 ft runs, 25 ft link
+cap, headings compared over the full circle), with a frozen pre-fix Inashiro fixture in
+`pool/regressions/`. The check text, its seven unit tests and the fixture were all written and
+proven to fire before being backed out with the failed attempts below; recover them from this
+commit's parent if the next session wants them rather than rewriting.
+
+**TWO DEAD ENDS, both implemented, measured and reverted.** Neither is a reason not to try again -
+both got most of the way - but each broke something specific, and the next attempt should start by
+answering the specific thing.
+
+1. **`_share` - partition a scrap among the basins along it by NEAREST BASIN. Tried TWICE, and the
+   second attempt is the one to read.** The idea is right and the first numbers said so: each basin
+   takes the ground in front of its own bund, so its wall moves outward across its whole frontage and
+   stays one line, and the T-junctions that leaves are what the research says real fabric looks like.
+   Inashiro went 23 -> 7 and the staircase the GM circled disappeared from the render. Grown by
+   dilating each basin's frontage in one-foot rounds (flat caps and mitre joins, or the band
+   boundaries come back as thirty-vertex arcs), bounded to 16 ft of reach since a scrap is thinner
+   than a plot everywhere, then straightened with Douglas-Peucker at 0.9 of the step - straightening
+   at the FULL step moves a wall past the 3 ft `paddy_plot_seams_shared` treats as one line and broke
+   it. Cost: about 10% of the regeneration.
+
+   **What it breaks, and what the second attempt found out about WHY** - this is the part worth
+   keeping, because the first write-up guessed and the guess was wrong. It is not hairline vertex
+   noise (that was the visible symptom). Instrumented on Inashiro:
+
+   - **`_absorb` refuses 960 of 2,685 welds with the partition, against 5 of 370 without it** - 36%
+     against 1.4%. The pass leaves **16,767 px2 of bare ground inside the command area against
+     1,760** with no partition at all, worst single pocket 2,499 px2 against 245. Every one of those
+     pockets is a doubled bund, which is what `paddy_plot_seams_shared` fires on.
+   - **492 of the 960 refusals had NO ADJACENT BASIN AT ALL.** That is the mechanism: `_absorb` ranks
+     the basins whose bund forms part of the scrap, so a piece touching only its SIBLINGS has nothing
+     to rank and is refused outright. Two things strand pieces that way - a frontage's claim can come
+     back in two parts (it turns a corner and pinches off), and the recovery pieces for ground the
+     straightening gave up sit between other pieces by construction.
+   - **Both are fixable and were fixed**: abandon the partition for any scrap where a piece reaches no
+     basin, and FOLD the recovery ground into the neighbouring piece (by shared boundary, the same
+     rule `_absorb` uses one level down) instead of offering it separately. That took bare ground
+     16,767 -> ~4,900 px2 and refusals 960 -> 281.
+   - **And it still is not enough.** With both guards the partition applies to a minority of scraps,
+     `paddy_plot_seams_shared` still fails on all four hamlets, and the jog counts come out
+     38 -> 25, 45 -> 42, 30 -> 24, 21 -> 21 at the tool's thresholds - a real improvement, but a
+     fraction of the unguarded 23 -> 7, because the guards switch the partition off exactly where the
+     ground is awkward, which is exactly where the staircase is.
+   - **It is also fragile against GEOS**: three separate `TopologyException: side location conflict`
+     sites in one afternoon's sweeps (inside `_share`, inside the stranding test, and inside
+     `_absorb`'s own ranking loop, which had never needed a guard in its life). Each one was guarded
+     and the next appeared. A tidying pass that needs a net under every boolean it touches is telling
+     you something.
+
+   **The conclusion the second attempt reached, which is a change of direction rather than another
+   guard.** The partition is fighting `close_seams`'s architecture: it splits ground that the weld
+   ladder is built to take WHOLE, and the ladder's guards - needle, lump, jog - are all calibrated to
+   a scrap, not to a quarter of one. **The next attempt should go upstream instead.** The 48-ft pitch
+   that misaligns the strip is `_plant`'s, and `_plant` grids a pocket from the POCKET'S OWN bounding
+   box: cut it at the SURROUNDING FABRIC'S seams instead - the vertices the adjacent basins already
+   carry on the pocket boundary - and the offcuts come out where the rows actually break, so welding
+   one cannot step a wall in the first place. That is a smaller change, it needs no new booleans, and
+   it attacks the mechanism rather than the residue.
+
+2. **`_unjog` - repair what neither guard could avoid, by straightening a surviving step.** Took
+   Inashiro from 5 to **0** and the whole gate green, which is why it is worth recording in detail.
+   Two implementations. Dropping the step's two vertices from every ring that carries them is NOT
+   partition-preserving - the two rings either side of a wall have different neighbouring vertices,
+   so the chords they close over differ, and Inashiro's rings 460 and 592 lost 400 px2 and gained
+   259, the difference being bare floor. The second implementation trades the corner explicitly
+   (`traded = was.difference(now)`, then the neighbour unions or differences it), which conserves
+   ground by construction and is the right shape. **What it broke**: on Mizuguchi,
+   `paddy_bunds_clear_the_supply_channels` (a straightened wall moves, and can move into a delivery
+   ditch) and `paddy_plots_are_workable_basins` (the repair can draw a basin out to a needle) - both
+   have guards written for them in that reverted commit, judged at the GATE's thresholds since a
+   repair is not a placement choice, and the guards were not enough on their own. It also needs the
+   three refusals it already had - a T-junction, a repair that takes a basin under `_TOE_MIN_AREA`,
+   and a one-basin wall where the cut would SHRINK the basin - and it must not rebuild the vertex
+   index per plot (that alone took a regeneration from 26 s to 80 s).
+
+**The order to do it in, revised after the second `_share` attempt**: `_plant`'s pitch first - cut a
+pocket at the surrounding fabric's seams rather than at its own bbox - because that is the mechanism
+and the other two are residue. Re-measure. Only then decide whether anything is left for a partition
+or a repair pass, and expect the answer to be less than it looks now.
+
+## OPEN 2026-08-18: the byre at the settlement EDGE - a knob candidate, and what to research first
+
+Raised by `settlement-review` on Inashiro while it was checking the jog delta, so it is a finding
+from outside the delta rather than part of it (which is the reviewer working as intended).
+
+**The measurement.** Byre 0 sits at (1047.8, 989.5) - 70 ft past the westernmost house, INSIDE the
+shelter belt, 29.3 ft from the nearest grove clump with 45 tree crowns within 40 ft - and reaches
+**2 of 15 households within 200 ft**, against 5 for byre 1 and 6 for byre 2. `settlements/homesteads.md`
+puts a shared draft-animal byre "in the COURTYARDS among the homesteads", and the 2026-08-18 pass
+added a borrow-coverage term to stop the maximin spread picking isolated seats. On this roll the
+spread term still wins at one seat of three. The notes ledger a version of this from an earlier roll
+(a different byre, at the NE outlier), so what recurs is the CLASS, not the instance.
+
+**The research question, and it is a research question rather than a ruling** (Principle XII): was a
+shared ox shed ever sited at the settlement edge under the shelter planting - for shade, for manure
+handling, for keeping the beasts out of the dooryard - as opposed to in a courtyard?
+`research/homesteads.md` covers the byre-vs-well question and does not address byre-vs-edge, so the
+search pass has not been run. **Run it before touching the placer.**
+
+**The likely shape of the answer.** The reviewer's read, which I share on the evidence so far, is
+that both sitings are defensible - which by Principle XII makes this a KNOB with per-settlement
+variance rolled from the map's own seed (courtyard byre vs edge byre), not a fix, and a knob that
+would visibly differentiate hamlets. What is NOT defensible on either reading is a byre reachable by
+2 of 15 households while two other seats on the same map reach 5 and 6: whichever form the roll
+picks, the coverage term has to bind. So the work is: research it; if it supports both forms, add the
+knob AND make the borrow-coverage term binding within whichever form is rolled.
+
+### Two nitpicks from the same review, neither worth its own feature
+
+- **Flooded-basin tint vs channel hue.** The two water-tinted basins sit in the same hue family as
+  the drawn channels, and at fit zoom the 19-ft-wide one at (2184.6, 1739.9) reads more as a sliver
+  of open water than as a flooded basin. The geometry is right (19 x 114 ft, 28.5 deg apex - a real
+  basin, and `flooded_plots_read_as_basins` agrees); it is a hue-separation question for
+  `waterfields/palette.py`, and it should be answered for the whole tint at once rather than for one
+  plot.
+- **Byres buried in canopy.** Two of three byres carry ~45 crowns within 40 ft while the third
+  stands clear, so at fit zoom the sheet reads as one byre rather than three. Nothing overlaps (that
+  is gated); it is a legibility consequence of the grove scatter, and it belongs with the byre-siting
+  work above rather than with the groves.
+
