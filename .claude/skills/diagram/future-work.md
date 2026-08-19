@@ -1743,7 +1743,7 @@ the north south earthen walls and the east west earthen walls, it just goes shar
 before going down."* Research, mechanism and the shipped design are in `research/fields.md`, "A bund
 runs on, or it turns for a reason"; the numbers and the two dead ends are here.
 
-**What shipped**, in the order of how much each mattered:
+**What shipped**, in the order of how much each mattered, measured against the maps as they shipped on 2026-08-18 (a peer session's lane-web work re-rolled all four the same day, so the rows are the effect of THESE changes, not of the day's total):
 
 | | inashiro | kashikawa | mizuguchi | sawada |
 |---|---|---|---|---|
@@ -1755,10 +1755,16 @@ runs on, or it turns for a reason"; the numbers and the two dead ends are here.
 **Rings carrying MORE THAN ONE step - the staircase itself - went 6 / 9 / 4 / 7 to 0 / 0 / 0 / 0.**
 Regeneration is unchanged (20.4 / 26.0 / 17.6 / 29.1 s against a 21.1 s baseline on Inashiro).
 
-### Still open: 7 isolated steps, and why each is refused
+### Still open: isolated steps, and why each is refused
 
-`python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json` lists them. Every one is a SINGLE step on a
-single ring; the largest is 15.2 ft (Mizuguchi 1580, 898) and four are under 7 ft. Traced, they are
+**Two counts, and they are measured at different thresholds - say which, or the numbers look wrong**
+(settlement-review caught this file quoting one and meaning the other, 2026-08-19). At the GATE's
+line (run 8 ft, link 25 ft, offset 3 ft) the four maps carry **0 / 1 / 5 / 1 = 7**. At the PLACER's
+stricter line, which is what `tools/jogs.py` runs (run 6 ft, link 30 ft, offset 2 ft), they carry
+**2 / 2 / 9 / 3 = 16**, the largest 16.0 ft at Mizuguchi (1571.7, 897.6). The table above is the gate
+column. `python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json` prints the placer column.
+
+Every one is a SINGLE step on a single ring - no map carries a flight of them. Traced, they are
 refused by guards that each protect a rule `_unjog` would otherwise break, so none is a matter of
 loosening a number:
 
@@ -1834,12 +1840,17 @@ knob AND make the borrow-coverage term binding within whichever form is rolled.
 
 ### Two nitpicks from the same review, neither worth its own feature
 
-- **Flooded-basin tint vs channel hue.** The two water-tinted basins sit in the same hue family as
-  the drawn channels, and at fit zoom the 19-ft-wide one at (2184.6, 1739.9) reads more as a sliver
-  of open water than as a flooded basin. The geometry is right (19 x 114 ft, 28.5 deg apex - a real
-  basin, and `flooded_plots_read_as_basins` agrees); it is a hue-separation question for
-  `waterfields/palette.py`, and it should be answered for the whole tint at once rather than for one
-  plot.
+- **DONE 2026-08-19: flooded-basin tint on a long wedge.** Raised twice - first as a hue-separation
+  nitpick, then again by a second review that measured it properly: Inashiro's two tinted plots ran
+  114 x 18.9 ft and 139 x 24.8 ft, aspects 6.0 and 5.6, and read at fit zoom as blue daggers of water
+  rather than as basins holding it. It was never a hue problem. The tint's demotion ladder had four
+  clauses (apex, truncated end, solidity, siting at the outfall) and every one of them asks about a
+  POINT, so a long parallel-sided wedge passes them all. Fixed by a fifth clause measuring
+  PROPORTION - `_TINT_MAX_ASPECT`, 4.0 on the minimum rotated rectangle, far above the ~1 a leveled
+  basin runs at. It demotes exactly the offenders: Inashiro 2 tinted plots -> 0 and Sawada 1 -> 0,
+  while Kashikawa's and Mizuguchi's single tinted basins are untouched. Inashiro now carries no blue
+  basin at all, which is the honest answer when neither candidate reads as one - the tameike and the
+  pocket pond still carry the map's water.
 - **Byres buried in canopy.** Two of three byres carry ~45 crowns within 40 ft while the third
   stands clear, so at fit zoom the sheet reads as one byre rather than three. Nothing overlaps (that
   is gated); it is a legibility consequence of the grove scatter, and it belongs with the byre-siting
