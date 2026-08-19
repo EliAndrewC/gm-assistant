@@ -268,10 +268,26 @@ class PublicFixturesMixin:
                 # be chosen BEFORE `self.label` lays the text out. 8 pt italic runs ~0.28 em per
                 # character: "notice board" estimates 26.9 px against a measured 26.4 on the shipped
                 # sheet, which is close enough to rank seats by.
-                if label_above:
-                    _lx, _ly = (x, y - hh - 11)
+                # ONE SEARCH, BOTH CONSTRAINTS. A caption must clear STRUCTURES and WAYS, and honoring
+                # them in separate places is what left two cohort seeds notched. `label_above` is a
+                # two-seat STRUCTURE verdict from the caller (`label_seat_clear` on below, then above);
+                # it knows nothing about lanes. Taking a fixed seat on it skipped the lane search
+                # entirely - instrumented on seed 14, three of the twenty-four candidates clear the
+                # structures and the best of those has 7.8 ft of lane clearance, while the seat the
+                # flag forced had -1.2 ft. The good seat was found and then discarded.
+                #
+                # So every candidate is filtered by the engine's own structure probe and scored on lane
+                # clearance. That subsumes the flag - the structural question is asked directly of every
+                # seat instead of being inherited as a verdict about two of them - and the flag is kept
+                # only for the case where nothing clears the structures at all, where its answer is the
+                # best information available.
+                _boxes = self.label_blockers("kosatsuba")
+                _tw_lab = self.label_caption_hw(label, 8.0)
+                _ok = [_q for _q in _cands if self.label_seat_clear(_q[0], _q[1], _tw_lab, 8.0, _boxes)]
+                if _ok:
+                    _lx, _ly = max(_ok, key=_box_clearance)
                 else:
-                    _lx, _ly = max(_cands, key=_box_clearance)
+                    _lx, _ly = (x, y - hh - 11) if label_above else (x, y + hh + 11)
             # OUTSIDE the branch chain - all three seats (hand, tilted, chosen) draw their caption here.
             # It sat one level deeper for one revision and a TILTED board silently lost its label
             # entirely: Kashikawa's rot=145.7 takes the `elif _t` branch, never reached the call, and
