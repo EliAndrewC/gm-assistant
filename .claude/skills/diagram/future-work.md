@@ -2895,3 +2895,34 @@ five-rung ladder is the change that would clear the tight seeds, and it deletes 
 it. What has to be handled: the board's caption carries the board's TILT, and `place_caption` takes a
 `rot`, so the tilt survives - but the interaction with `linear_tilt`'s clamp needs checking before the
 swap.
+
+## OPEN 2026-08-19: the five caption notches need a 2D seat search, and the engine's own search is not a drop-in
+
+Follow-up to gate 0617, which catches genuine caption-on-tread notches on cohort seeds 1, 7, 14, 33 and
+36. Two findings about how to clear them, so the next attempt does not repeat mine.
+
+**ALL FIVE FAILING BOARDS ARE TILTED** - sampled at rot 51.6 (seed 1), 52.1 (seed 7) and 128.9 (seed 14).
+They therefore take `fixtures.py`'s TILTED branch, and that branch searches a SINGLE AXIS: perpendicular
+to the board's baseline, both ways, at five distances. The untilted branch searches FOUR directions. A
+board whose perpendicular line runs between two lanes has no distance along that line which clears,
+however many rungs the ladder gains.
+
+So the tilted search wants to be **2D - gap x lateral**. This does NOT contradict the earlier finding that
+the lateral slide is useless: it is useless ALONE, because `kosatsuba_faces_the_road` makes the baseline
+parallel to the lane, so sliding at a fixed gap holds the perpendicular distance exactly constant. At a
+LARGE gap it becomes a different question, because the caption is then beside a different stretch of
+frontage. **Try the 2D grid before adding rungs to the 1D one.**
+
+**THE ENGINE'S EXISTING OUTWARD SEARCH IS NOT A DROP-IN**, which corrects a suggestion I made one commit
+earlier. `clear_label_seat` (`structures/captions.py`) rings outward through 16 rings and is exactly the
+right shape - it exists because verge-hugging features sit at the busiest node and nine rings ran out on
+Minami. But `label_blockers` collects only manifest dicts carrying x/y/w/h, and **a lane record has `pts`
+and no x/y, so lanes are NOT blockers**. Routing the board's caption through it would dodge structures and
+still notch the tread. Making lanes blockers is a change to every caption in the engine and wants its own
+pass with its own oracle.
+
+**A CAVEAT ON MY EVIDENCE, recorded because it would otherwise read as stronger than it is**: I did extend
+both ladders (tilted gap to 60; untilted four directions x six distances to 60 px) and measured no change
+on the five seeds - but an auto-sync reverted that edit before it was committed, so **that measurement is
+not reproducible from the current tree and should be re-taken rather than trusted**. The rot values above
+were measured independently and do stand.
