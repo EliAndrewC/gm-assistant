@@ -462,6 +462,21 @@ class HomesteadPartsMixin:
         # the village is the pond's open FORECOURT (the banyuetang fronted the settlement's ceremony/work
         # ground), so keeping the copse fringe off that band too is the historically right reading, not slack.
         occ += [(cp["cx"], cp["cy"], cp["r"] + clump * 0.90) for cp in self.M.get("crescent_ponds", [])]
+        # ... and OFF A GROVE THAT IS ALREADY PLANTED (settlement-review x1, 2026-08-19). Nothing here
+        # kept one grove out of another, and the copse is seated AFTER the windbreak, so it simply
+        # planted itself in the belt: measured on Inashiro, clump-to-nearest-belt-clump distances of
+        # 9, 8, 6, 4, 6, 4, 11, 9, 26, 30 and 83 ft against a belt clump radius of 14 - **10 of 11
+        # copse clumps inside the belt's own canopy**, spanning x 1096-1188 while the houses span
+        # 1108-1331. So the dooryards east of the front rank got no greenery at all and a whole
+        # feature was invisible, while `settlements/vegetation.md` says outright that "the copse, not
+        # the belt, fills the inner gaps".
+        #
+        # Sum of the two canopy reaches, so neither stand's ink laps the other. This also protects the
+        # reverse order (a belt seated after a copse) without needing to know which ran first, and it
+        # is why the keep-out is built from the RECORDED clumps rather than the grove's bbox - a belt's
+        # bbox is a long rectangle whose corners are open ground the copse may legitimately use.
+        # (the radius lives on the GROVE record, not the clump - a clump is a bare [x, y] pair)
+        occ += [(cl[0], cl[1], float(g.get("r") or 0.0) + clump * 0.90) for g in self.M.get("village_groves", []) for cl in (g.get("clumps") or [])]
         corr = self._corridor_buffers(clump * 0.45 + 4)  # ... and keep trees OFF the lanes / streets / road
         cr = clump / 2
         # ... and OUT of the SOUTHERN sun-corridor of every threshing yard + garden (a tree just south of them

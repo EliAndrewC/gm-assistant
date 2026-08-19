@@ -974,3 +974,41 @@ def _seg_0615__cluster_shape_matches_the_drawing(*, M: Any = _UNBOUND, check: An
                 f"Record `cluster_shape_unhonored` instead when the lane skeleton overrides the band",
             )
     return _kept(locals(), ())
+
+
+def _seg_0616__copse_stands_clear_of_the_belt(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0616 (copse_stands_clear_of_the_belt) - added 2026-08-19.
+
+    ONE GROVE MAY NOT BE PLANTED INSIDE ANOTHER. The copse and the windbreak are different features
+    doing different jobs - `settlements/vegetation.md` says outright that "the copse, not the belt,
+    fills the inner gaps" - and the copse is seated AFTER the belt, with nothing in the keep-out list
+    stopping it landing on the belt's own ground. Measured on Inashiro before the fix (settlement-
+    review, this date): clump-to-nearest-belt-clump distances of 9, 8, 6, 4, 6, 4, 11, 9, 26, 30 and
+    83 ft against a belt clump radius of 14 - **10 of 11 copse clumps inside the belt's canopy**,
+    spanning x 1096-1188 while the houses span 1108-1331. The dooryards got no greenery at all and a
+    whole feature was invisible on the sheet while every check stayed green.
+
+    This is the invisible-feature class, and it is exactly why it needs a rule rather than only a
+    keep-out: a copse hidden in the belt looks identical, from the manifest, to a copse that is
+    there. Measured to the RECORDED clumps, not to the grove bbox - a belt's bbox is a long rectangle
+    whose corners are open ground the copse may legitimately use, so a bbox test would forbid seats
+    that are correct."""
+    if M["meta"].get("generated_by") and M["meta"].get("scale") in ("hamlet", "village"):
+        _belts = [g for g in M.get("village_groves", []) if g.get("role") in ("windbreak", "water_mouth")]
+        _copses = [g for g in M.get("village_groves", []) if g.get("role") == "copse"]
+        _buried: list[tuple[int, int]] = []
+        for _cp in _copses:
+            for _cl in _cp.get("clumps") or []:
+                for _b in _belts:
+                    _br = float(_b.get("r") or 0.0)
+                    if any((float(_cl[0]) - float(_bc[0])) ** 2 + (float(_cl[1]) - float(_bc[1])) ** 2 < _br * _br for _bc in (_b.get("clumps") or [])):
+                        _buried.append((round(float(_cl[0])), round(float(_cl[1]))))
+                        break
+        check(
+            "copse_stands_clear_of_the_belt",
+            not _buried,
+            f"{len(_buried)} dooryard-copse clump(s) stand INSIDE the windbreak's canopy at {_buried[:4]} - the copse fills the gaps among the "
+            f"houses and the belt is the wind wall; a clump planted in the belt is ink nobody can see, and the dooryards it should have greened "
+            f"stay bare. Add the planted groves' clumps to the copse's keep-out (homestead_parts.village_grove's `occ`)",
+        )
+    return _kept(locals(), ())
