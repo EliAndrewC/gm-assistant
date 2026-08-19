@@ -421,3 +421,28 @@ def test_route_pad_mult_is_what_lets_a_link_go_the_long_way_round() -> None:
     a, b = (60.0, 0.0), (340.0, 0.0)
     assert hg.ways._route(a, b, [], [barrier], [], cell=12.0, pad_mult=0.75) == [], "the short box cannot see the way round"
     assert hg.ways._route(a, b, [], [barrier], [], cell=12.0, pad_mult=2.0), "the long box can"
+
+
+def test_trim_to_service_trims_the_FRONT_end_too() -> None:
+    """Both ends, not just the tail. This branch had no test of its own and was covered only because
+    some pool map happened to lay a run whose head hung in bare grass - so a cluster-shape change
+    that moved the houses took the coverage away with it, which is what a branch tested by luck
+    looks like when the luck runs out."""
+    run = [(-900.0, 0.0), (0.0, 0.0), (50.0, 0.0), (100.0, 0.0)]
+    segs = [((100.0, -20.0), (100.0, 20.0))]
+    out = hg.ways._trim_to_service(run, segs, [(0.0, 30.0)])
+    assert out[0] == (0.0, 0.0), "the 900 ft head into nothing is dropped"
+    assert out[-1] == (100.0, 0.0), "the end that meets a way is kept"
+
+
+def test_a_web_lane_that_arrives_early_keeps_the_long_half() -> None:
+    """The hairpin cure, on the side the existing test does not reach: when a run's closest approach
+    to the network is an interior point, the SHORT half is the stub to drop - and which half is short
+    is not always the tail. A run that touches the network 20 ft in and then travels 140 ft away is
+    one lane arriving, not a lane with a tail; keeping the 20 ft head instead would delete the whole
+    way and leave the houses it serves unserved."""
+    s = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 400.0)]], houses=[(160.0, 230.0)])
+    run = [(40.0, 200.0), (20.0, 200.0), (60.0, 200.0), (110.0, 200.0), (160.0, 200.0)]
+    assert hg.ways._lay_web_lane(s, run, [], [], [], houses=[(160.0, 230.0)]) is True
+    drawn = s.M["lanes"][-1]["pts"]
+    assert [tuple(q) for q in drawn] == run[1:], "the 20 ft head is dropped, the 140 ft body is kept"

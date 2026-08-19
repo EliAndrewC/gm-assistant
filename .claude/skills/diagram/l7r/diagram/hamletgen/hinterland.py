@@ -31,6 +31,18 @@ def stage_hinterland(s: Settlement, plan: SitePlan) -> None:
 CROP_MARGIN = 48.0  # the one crop margin, shared by stage_frame's crop_to_content call and the
 # predicted-kept-window math in open_ground_patches - two hardcoded 48s would drift
 
+# How much of a woodland parcel's ROTATED bbox must fall inside the predicted kept window for the
+# scan to seat it. Module-level so the attribution census can drive it - a floor buried in a closure
+# cannot be measured against, and this one had to be measured twice before it was right.
+#
+# 0.72 sits 2 points above `woodland_commons_within_the_frame`'s own 0.7, which is all the cushion
+# the prediction needs: instrumenting cohort seed 33 showed the window is byte-identical at all 16
+# `_crop_boxes` calls of a build AND equal to the final `meta.view`, because everything that sets the
+# frame is placed before the woodland scan runs. The neighbouring square test's 0.8 exists for drift
+# that measurement says does not happen; carrying 0.8 over to the rotated bbox cost seed 33 its
+# woodland outright. See future-work.md, "the woodland scan vetted a SQUARE".
+WOODLAND_BBOX_FLOOR = 0.72
+
 _COMMONS_REACH = 1.49
 """How much further a rotated parcel reaches than the equal-AREA square, worst case.
 
@@ -419,16 +431,69 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                 # says what was meant in one expression: at the last rung the excess is 45% of the
                 # roll, and if even that will not fit the square always does, because the seat was
                 # accepted at exactly this half.
-                _excess = 1.2 * s._hjit(x, y, 77.0)
-                _asp = 1.0
-                for _step in (1.0, 0.72, 0.45, 0.0):
-                    _try = 1.0 + _excess * _step
-                    if _ok(x, y, half_used * math.sqrt(_try)):
-                        _asp = _try
-                        break
-                _hw, _hh = half_used * math.sqrt(_asp), half_used / math.sqrt(_asp)
+                # THE LADDER MUST VET THE SHAPE THAT GETS DRAWN, NOT A SQUARE STAND-IN FOR IT
+                # (2026-08-19). `_ok` tests an axis-aligned square of the LONG half, which sounds
+                # conservative and is not: the parcel is drawn as a rotated rectangle, and rotating a
+                # box GROWS its axis-aligned bbox - by up to sqrt(2), at 45 degrees, even for a
+                # square. `woodland_commons_within_the_frame` measures that bbox. So a seat could
+                # pass the ladder at 0.8 of a square and draw a parcel 0.67 inside the window, which
+                # is exactly what cohort seed 33 did the moment the cluster change walked it to the
+                # edge: a check and the thing it checks measuring different quantities, the same
+                # defect as the drawn-vs-band aspect confusion in `CLUSTER_DRAWN_ASPECT`.
+                #
+                # The bearing is therefore computed BEFORE the ladder (it never depended on the
+                # aspect - only on the fall direction and the seat), and each rung is tested on the
+                # true rotated bbox. The line this replaced carried the comment "the scan already
+                # tested this seat at REACH, so the rotated parcel fits", which was an assumption
+                # stated as a fact; it is now the thing being checked.
                 _bear = math.radians(math.degrees(math.atan2(dy, dx)) + 90.0 + 40.0 * (s._hjit(x, y, 78.0) - 0.5))
                 _bc, _bs = math.cos(_bear), math.sin(_bear)  # not `_cb` - that name is the crop-boxes list above
+
+                def _bbox_ok(hw: float, hh: float, x: float = x, y: float = y, _bc: float = _bc, _bs: float = _bs) -> bool:
+                    """The rotated parcel's own bbox, against the check's own 70%-of-bbox rule.
+
+                    0.72, NOT the 0.8 the square test uses, and the difference is measured rather than
+                    taste. The 0.8 elsewhere buys slack because that window is called a PREDICTION of
+                    the crop - but instrumenting seed 33 showed the window is byte-identical at all 16
+                    `_crop_boxes` calls across the build AND equal to the final `meta.view`, because
+                    everything that sets the frame is already placed when the woodland scan runs. The
+                    prediction does not drift, so paying 10 points of slack for drift that does not
+                    happen just deletes coppices: at 0.8 on the rotated bbox seed 33 lost its woodland
+                    outright, which is a worse map than the 67%-clipped parcel this fix set out to
+                    stop. 0.72 keeps a 2-point cushion over the gate for float ordering."""
+                    _bw, _bh = abs(hw * _bc) + abs(hh * _bs), abs(hw * _bs) + abs(hh * _bc)
+                    _in = max(0.0, min(x + _bw, _fx1) - max(x - _bw, _fx0)) * max(0.0, min(y + _bh, _fy1) - max(y - _bh, _fy0))
+                    return _in >= WOODLAND_BBOX_FLOOR * (2.0 * _bw) * (2.0 * _bh)
+
+                _excess = 1.2 * s._hjit(x, y, 77.0)
+                _asp = 0.0  # 0.0 means "no rung fitted" - distinct from the square, which is 1.0
+                for _step in (1.0, 0.72, 0.45, 0.0):
+                    _try = 1.0 + _excess * _step
+                    if _ok(x, y, half_used * math.sqrt(_try)) and _bbox_ok(half_used * math.sqrt(_try), half_used / math.sqrt(_try)):
+                        _asp = _try
+                        break
+                if not _asp:
+                    # SHRINK BEFORE DROPPING - the same principle as the outer ladder, applied to the
+                    # rotated bbox. A seat whose square will not fit the window is usually a seat
+                    # near the edge that a slightly smaller square clears, and a smaller coppice on
+                    # the sheet beats a larger one the crop cuts off. Only when even the floor-sized
+                    # parcel fails is the seat genuinely unusable.
+                    for _sh in (0.9, 0.8, 0.7, 0.6):
+                        _cand_half = max(half_used * _sh, _COMMONS_FLOOR_FT / 2.0)
+                        if _ok(x, y, _cand_half) and _bbox_ok(_cand_half, _cand_half):
+                            half_used, _asp = _cand_half, 1.0
+                            break
+                if not _asp:
+                    # Nothing fits. Drop the parcel rather than draw one the crop will cut off: a
+                    # settlement whose ground cannot hold a legible commons draws FEWER, never one
+                    # that is half off the sheet.
+                    #
+                    # The size band popped above is NOT put back. Restoring it would mean pushing
+                    # `_bi` - an INDEX into a list that has since been mutated - back as a VALUE,
+                    # which silently corrupts the size distribution; and a consumed band costs only a
+                    # little size variety on a map that just declined to seat a parcel anyway.
+                    continue
+                _hw, _hh = half_used * math.sqrt(_asp), half_used / math.sqrt(_asp)
                 chosen.append([(x + ex * _hw * _bc - ey * _hh * _bs, y + ex * _hw * _bs + ey * _hh * _bc) for ex, ey in ((-1, -1), (1, -1), (1, 1), (-1, 1))])
                 centers.append((x, y, size * (1.15 + 1.35 * s._hjit(x, y, 74.0))))
     return chosen

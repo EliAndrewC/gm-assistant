@@ -217,6 +217,7 @@
   "city_wells_in_block_interiors",
   "city_wharf_jetties_on_bank",
   "cluster_abuts_fields",
+  "cluster_shape_matches_the_drawing",
   "comb_floor_ends_at_the_collector",
   "comb_supply_commands_both_flanks",
   "common_fields_vary_orientation",

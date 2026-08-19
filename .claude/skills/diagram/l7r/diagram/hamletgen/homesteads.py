@@ -13,7 +13,7 @@ from typing import Any
 from l7r.diagram.settlement import Settlement, point_in_poly, seg_dist, surface_water_dist
 from l7r.diagram.sitegen.geom import centroid, unit
 
-from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
+from .consts import BUNDLE_PITCH, CLUSTER_DRAWN_ASPECT, CLUSTER_ROW_SPAN, CLUSTER_SPAN_FACTOR, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
 from .plan import SitePlan
 
 # ---- STAGE 5: the homesteads --------------------------------------------------------------------
@@ -38,7 +38,11 @@ def front_row(plan: SitePlan, count: int, standoff: float = 46.0) -> list[Pt]:
     # a delivery ditch's corridor, the field spur), the whole row is refused together and the field
     # ends up ringed by four houses instead of five. Wrapping further round the field costs nothing:
     # a seat too far along is dropped by the caller's own band test.
-    span = [(i, p) for i, p in enumerate(env) if abs((p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay) <= seat["lat"] * CLUSTER_SPAN_FACTOR]
+    # The rolled shape governs how far the row wraps - see `CLUSTER_ROW_SPAN`. Without it the band
+    # aspect alone left an "elongated" map drawing 1.2:1, i.e. a declared knob that did not
+    # describe the sheet.
+    _rowspan = CLUSTER_ROW_SPAN.get(plan.cluster_shape or "crescent", CLUSTER_SPAN_FACTOR)
+    span = [(i, p) for i, p in enumerate(env) if abs((p[0] - seat["anchor"][0]) * ax + (p[1] - seat["anchor"][1]) * ay) <= seat["lat"] * _rowspan]
     if len(span) < 2:  # pragma: no cover - a band always spans several outline vertices
         return []
     span.sort(key=lambda ip: (ip[1][0] - seat["anchor"][0]) * ax + (ip[1][1] - seat["anchor"][1]) * ay)
@@ -329,8 +333,36 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # of it; below that the frontage rows did, and the rolled shape went unhonored exactly as it
     # does when the cloud never runs at all. `meta.cluster_seeding` still records which happened, so
     # nothing goes silent - that is the invariant `settlement_records_cluster_seeding` holds.
-    if _cloud_placed * 2 >= max(1, plan.spec.households):
+    # THE SHAPE IS ALWAYS HONORED NOW, so it is always declared (2026-08-19). This used to stamp the
+    # knob only when the CLOUD seated most of the cluster, on the correct principle that a
+    # declaration must describe the drawing - but the census behind `CLUSTER_BAND_ASPECT` showed the
+    # cloud never runs at all, so the guard meant the knob was declared on no map and honored on no
+    # map. It binds at the cluster BAND now (`seat_cluster`), which is what the front rows are seated
+    # along, so every map both honors and declares it and `TWIN_AXES` reads a shape the sheet
+    # actually has.
+    # ...BUT ONLY IF THE SHEET ACTUALLY HAS THAT SHAPE. Measured, and this is the third thing the
+    # shape work turned up: on a 20-household hamlet the LANE SKELETON seats most of the cluster
+    # through `lane_frontage`, and a T spreads houses two ways whatever the band and the row do -
+    # Kashikawa declares `elongated` and draws 1.0:1. The band and row bindings are real (Inashiro
+    # 3.3:1 crescent, Mizuguchi 1.7:1 round, Sawada 1.1:1 round) but they do not outrank the
+    # skeleton, so a blanket declaration would put a shape on the manifest that `TWIN_AXES` reads
+    # and the sheet does not have - the same "declaration must describe the drawing" failure the
+    # old cloud-only guard was written for, in a worse form because it would look honored.
+    #
+    # So the DRAWN aspect decides. Where the shape bound, it is declared; where the skeleton
+    # overrode it, `cluster_shape_unhonored` records the roll that did not take, because a knob
+    # that silently fails to bind is what this whole defect was. `cluster_shape_matches_the_drawing`
+    # gates it.
+    _cxs = [h["x"] for h in s.M.get("houses", [])] or [0.0]
+    _cys = [h["y"] for h in s.M.get("houses", [])] or [0.0]
+    _cw, _ch = max(_cxs) - min(_cxs), max(_cys) - min(_cys)
+    _drawn = max(_cw, _ch) / max(1.0, min(_cw, _ch))
+    _lo, _hi = CLUSTER_DRAWN_ASPECT.get(plan.cluster_shape or "crescent", (1.9, 4.2))
+    if _lo <= _drawn <= _hi:
         s.M["meta"]["cluster_shape"] = plan.cluster_shape
+    else:
+        s.M["meta"]["cluster_shape_unhonored"] = plan.cluster_shape
+    s.M["meta"]["cluster_aspect_drawn"] = round(_drawn, 2)
     # THE ROLLED SHAPE MUST LEAVE A TRACE EVEN WHEN THE CLOUD NEVER RUNS (known-open ledger
     # 2026-08-16, Kashikawa: the front rows + lane frontage seated all 20 households, the
     # cluster-seeds cloud never ran, and the rolled cluster_shape knob went unhonored with no
@@ -338,7 +370,10 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # shape). Record the seeding mode always: "cloud" when cluster_seeds ran (it records
     # meta.cluster_shape itself), "frontage" when the rows/frontage passes seated every house and
     # the rolled shape went unhonored. `settlement_records_cluster_seeding` holds the invariant.
-    s.M["meta"]["cluster_seeding"] = "cloud" if "cluster_shape" in s.M["meta"] else "frontage"
+    # ...and this stays a SEPARATE record, keyed on what actually seated the houses rather than on
+    # whether the shape got stamped. It used to be derived from the presence of `cluster_shape`,
+    # which stopped meaning anything the moment the shape was always declared.
+    s.M["meta"]["cluster_seeding"] = "cloud" if _cloud_placed * 2 >= max(1, plan.spec.households) else "frontage"
     plan.placed = s.farmsteads()
     # ...and NOW the lanes can be told what they actually serve. They were laid first because a lane
     # is a no-build corridor the homesteads front, so at lay time nothing knew where the houses would

@@ -302,6 +302,118 @@ rule these are candidate knobs - regular versus irregular plot layout is exactly
 record may well attest both ways - so the fix is a research pass per field, not a quiet default. Until
 then, do not read those `meta` lines as proof the maps differ along those axes.
 
+## DONE 2026-08-19: `cluster_shape` was the same defect as 2e, one tier worse - it WAS rolled and read by nothing
+
+The entry above says a `meta` line can look like evidence of variance the pool is not spending.
+`cluster_shape` was the acute case: genuinely rolled per settlement from `CLUSTER_SHAPES`, printed in
+every cohort-audit header, and consumed by exactly one caller - `cluster_seeds`, the CLOUD seeding
+pass, which only runs for households the front rows and lane frontage do not seat. **Census over 48
+cohort seeds plus the four pool hamlets: the rows seat every house on 47 of 48 seeds, so the cloud
+ran on ONE (seed 34) and `meta.cluster_shape` was stamped on one.** Round, elongated and crescent all
+drew the same 3:1 band. That is why a peer session was able to spend an attempt blaming the knob for
+a placement failure and then retract it: nothing read it, so it could not have caused anything.
+
+Fixed by binding the shape where the shape is actually decided - the seat BAND (`CLUSTER_BAND_ASPECT`,
+consumed in `seat_cluster`) and the front row's wrap along it (`CLUSTER_ROW_SPAN`, consumed in
+`front_row`). Area is held constant, so only the ratio moves; crescent keeps the old hardcoded 3.0 and
+is byte-identical to what it drew before.
+
+**It does not bind above the lane skeleton, and that is recorded rather than hidden.** On a large
+hamlet the skeleton seats most of the cluster and spreads it whatever the band says - Kashikawa's 20
+households draw 1.0:1 while the roll said `elongated`. So the generator stamps `cluster_shape` only
+when the drawn aspect is within tolerance of the declared one, stamps `cluster_shape_unhonored`
+otherwise, and always records `cluster_aspect_drawn`. Gate `cluster_shape_matches_the_drawing` (0614)
+holds both halves: a stamped shape whose drawing contradicts it fails, and a map recording NEITHER key
+fails - because a knob that never binds has to stay distinguishable from one that always does, which
+is the whole lesson of this entry and 2e.
+
+Priced and declined: making the skeleton itself shape-aware (a `T` on an elongated roll laid along the
+long axis rather than across it). That is a lane-topology change, it lands in the middle of the peer
+session's lane work, and the honest declaration already stops the manifest lying.
+
+**And it is NOT the next step - that was written here for about an hour and is now falsified.** The
+peer session built the idea in miniature the same day (`_serve_far_margin`, a short run laid at the
+unserved house's own frame position rather than searched for) and it fixes nothing: run before the
+repair passes it collapses the cohort to 17/48 by drawing speculative treads fronting nothing; run
+after them, for houses still unserved, it is 43/48 - exactly baseline - because no run survives
+clipping. The measurement under that result is the useful part: at the stranded houses' own arcs, a
+margin line of +/- one bundle pitch yields NO clear run at any stand offset (0, +40, +70, -40 ft) at
+either the web's 7 ft clearance or the footpath's 4 ft. Nothing is drawable along the margin there.
+Put beside the 60-120 ft of open ground that surrounds those same houses, the conclusion is that **the
+open ground is not aligned with the margin** - the frame's arc direction at those points heads into
+the paddy. So a skeleton following the field margin, shape-aware or not, cannot reach them. Whatever
+serves these houses must be oriented by the LOCAL DRY GROUND, which nothing in the engine computes
+today. That is a bigger piece of work than either session had priced.
+
+**What the peer session has already RULED OUT on this (2026-08-19, eight measured attempts, all
+reverted).** Do not re-price a shape-aware skeleton as more promising than it is without reading
+these first - and do not re-try any of them:
+
+- three spacing variants, a slide limit, an inner-arm-confined slide limit, a `front_row` filter of
+  negative-`out` seats (43/48, fixed nothing), a straight-line-crosses-crop seat test (42/48, added a
+  bridges and a field_ringed failure), and a one-flood-fill-per-map dry-region seat test (43/48,
+  rotated seed 10's windbreak into a seed 47 break failure, fixed nothing).
+- **The flood-fill attempt is the informative one, and it kills the obvious theory**: the stranded
+  houses ARE inside the dry region walkable from the cluster's middle. They are not cut off. The way
+  network simply never extends round to them, and the footpath router's search box never spans the
+  detour.
+- On seeds 5/8/25 specifically: a web line IS planned 17-33 ft from every stranded house and clipping
+  destroys it entirely (zero surviving runs); 36-56 of 59 points on the line to the nearest existing
+  way lie inside the paddy; `_route` finds no path at any lattice resolution or box size up to
+  pad_mult 3.0. The houses sit on the FAR MARGIN, across the water from the network, with dry ground
+  connecting them the long way round that nothing currently searches far enough to find.
+- This looked like the case FOR a shape-aware skeleton - put a way on that margin - and the peer
+  session then built it and disproved it the same day (attempt nine; see the paragraph above). The
+  margin is not where the open ground is. Read that before reviving any margin-following idea.
+
+**RETRACTED, and the retraction matters more than the claim**: an earlier peer measurement of a
+"1.4-1.9 ft corridor, the packer seals them in" - which justified the entire spacing line of attack -
+was an artifact. It walked outward from each house CENTER against ALL fabric, including the
+steading's own house, yard and garden, and every farmhouse is surrounded by its own bundle by
+construction, so it returns ~1.5 ft for a house standing alone in an empty field. Re-measured with
+the own bundle excluded: 63-120 ft. **There was never a packing problem.** Third retraction of the
+day from that session, and all three share one shape - a quantity was measured that could not
+distinguish the failing case from a healthy one. That is the failure mode to design against here,
+not any particular wrong number.
+
+## DONE 2026-08-19: the woodland scan vetted a SQUARE while the gate measured a ROTATED BBOX
+
+Found by chasing what looked like a cluster regression (cohort seed 33 newly failing
+`woodland_commons_within_the_frame` at 67% inside the view) and turned out to be neither new nor
+about clusters. `open_ground_patches` accepts a seat through `_ok`, which tests an axis-aligned
+SQUARE of the parcel's long half; the parcel is then DRAWN as a rectangle rotated to `_bear`. Rotating
+a box grows its axis-aligned bbox - by up to sqrt(2), at 45 degrees, even for a square - and the gate
+measures that bbox. So a seat could pass the scan at 0.8 of a square and draw a parcel 0.67 inside the
+window. The replaced line's own comment said "the scan already tested this seat at REACH, so the
+rotated parcel fits": an assumption written as a fact, and wrong.
+
+Latent since the aspect/bearing work landed earlier the same day. The cluster change did not cause it;
+it walked one parcel to the frame edge, where the discrepancy finally exceeded the slack. **Seed 33 was
+the messenger, not the defect** - worth remembering next time a cohort seed rotates under an unrelated
+change.
+
+FIXED by computing `_bear` before the aspect ladder (it never depended on the aspect) and testing each
+rung on the true rotated bbox, plus a local shrink ladder so a seat near the edge yields a SMALLER
+coppice rather than none.
+
+**The prediction slack was measured and mostly removed, and the first attempt at this fix FAILED
+because of it.** Instrumenting seed 33 showed the predicted kept window is byte-identical at all 16
+`_crop_boxes` calls across the build AND equal to the final `meta.view` - everything that sets the
+frame is already placed when the woodland scan runs, so the "prediction" does not drift at all. The
+first cut kept the neighboring 0.8 floor on the rotated bbox; that paid 10 points of slack for drift
+that does not happen and DELETED seed 33's woodland outright, which is a worse map than the clipped
+parcel the fix was for. 0.72 - a 2-point cushion over the gate's 0.7 for float ordering - keeps the
+coppices and still cannot draw an off-frame one. Do not raise it back to 0.8 without re-measuring the
+window drift first; the drift is the only thing that would justify it, and it is zero.
+
+**Watch the invisible half of this rule.** `woodland_commons_within_the_frame` fails a parcel that is
+DRAWN and mostly off-frame; it says nothing about a parcel never drawn. So any tightening of the scan
+can convert a visible failure into an invisible one and read as success. That is why the fix was
+verified with a PARCEL COUNT census across seeds and not with the gate alone - the gate is green in
+both worlds. Same family as the `cluster_shape` census (a knob honored on 1 of 48 seeds, nothing
+failing) and as `CLUSTER_DRAWN_ASPECT` (a guard comparing the drawn aspect against a mechanism
+parameter): a measurement that cannot distinguish the healthy case from the broken one.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any

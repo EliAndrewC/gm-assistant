@@ -74,6 +74,22 @@ LANE_CLEARANCE = 40.0
 # specs/123-lane-web-and-cluster-shape/research.md R2.
 CLUSTER_SPAN_FACTOR = 1.6
 
+CLUSTER_ROW_SPAN = {"round": 1.2, "crescent": 1.6, "elongated": 2.6, "split": 1.6}
+"""How far the FRONT ROW wraps along the field outline, per rolled `cluster_shape`, as a multiple of
+the seat band's own half-length.
+
+The band aspect (`CLUSTER_BAND_ASPECT`) was not enough on its own, and the measurement says why:
+with the band alone, Kashikawa declared `elongated` and DREW 1.2:1, because the row wraps 1.6x past
+the band in every direction and the lane-frontage pass then fills behind it. A declaration that does
+not describe the drawing is the exact failure the old stamping guard existed to prevent, so binding
+the shape at the band and declaring it unconditionally without this would have reintroduced it in a
+worse form - the knob would read as honored on every map while changing almost nothing.
+
+So the shape governs the ROW's reach too: a round hamlet keeps its row short and packs depth behind
+it, an elongated one strings along the margin. Crescent keeps 1.6, the value every map used before,
+so a crescent map is unchanged. `ways.py` keeps reading the plain `CLUSTER_SPAN_FACTOR` for the lane
+frame - that frame spans the houses that actually landed, which is a different question."""
+
 # THE NO-BUILD CORRIDOR OF A WEB LANE, in feet - deliberately much tighter than LANE_CLEARANCE.
 #
 # LANE_CLEARANCE (40) is derived for a lane the homesteads FRONT: it is the drawn minka's
@@ -391,6 +407,56 @@ WIND_VECTORS: dict[str, Pt] = {
 SINKS = ("pond", "pond", "offmap")
 
 CLUSTER_SHAPES = ("round", "round", "elongated", "crescent")
+
+CLUSTER_BAND_ASPECT = {"round": 2.2, "crescent": 3.0, "elongated": 5.0, "split": 3.0}
+"""How long the cluster BAND is against how deep, per rolled `cluster_shape`.
+
+THE KNOB WAS DEAD UNTIL THIS TABLE EXISTED (2026-08-19). `cluster_shape` is rolled per settlement
+and printed in every cohort-audit header, and it fed exactly one thing: `cluster_seeds`, the CLOUD
+pass, which runs only for households the front rows do not seat. Census: on all 48 cohort seeds and
+all four pool hamlets the rows plus lane frontage seat EVERY house, the cloud never runs, and
+`meta.cluster_shape` is stamped on none of them - so round, elongated and crescent all drew the
+same 3:1 band. A peer session found it while retracting a result that had blamed the knob for a
+placement failure; the knob could not have caused anything, because nothing read it.
+
+The band is where the shape has to bind, because the band is what the front rows are seated along.
+Area is HELD (`households * BUNDLE_PITCH^2`, the ground a homestead actually takes), so only the
+ratio moves and no settlement gains or loses room by its shape. The 3.0 that was hardcoded here is
+kept as the crescent/split value, so a crescent map is byte-identical to what it drew before and the
+change is visible only where it should be.
+
+Depth floors at 112 px, so a small round hamlet reads at ~1.4:1 and a small elongated one is pushed
+toward 2.5:1 rather than 5:1 - the floor is a real minimum (a band shallower than that cannot hold a
+homestead bundle and its yard), and letting it compress the extremes is honester than pretending a
+10-household string can be five times longer than it is deep."""
+
+CLUSTER_DRAWN_ASPECT = {"round": (1.0, 2.4), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
+"""What the FINISHED cluster's long:short ratio must fall inside for a rolled shape to be declared.
+
+THIS IS NOT `CLUSTER_BAND_ASPECT`, AND CONFLATING THE TWO WAS A BUG (caught 2026-08-19, in the sweep
+that chose the round value). The band aspect is a MECHANISM parameter - the proportions of the seat
+band the front rows are laid along. The drawn aspect is an OBSERVABLE - the bounding box of where the
+houses actually ended up. They are not the same quantity and they do not even track each other
+closely: at `CLUSTER_BAND_ASPECT["round"] = 2.2` the five swept seeds drew 1.01, 1.07, 1.17, 1.76 and
+2.21, because the front row wraps and the rows stack, so a 2.2:1 band routinely yields a ~1:1 cluster.
+
+The first honesty guard compared the drawn aspect directly against the band parameter and passed only
+because its tolerance was wide enough to swallow the mismatch - one seed sat 1.19 outside a 1.2
+tolerance and was declared honored on what was effectively a rounding accident. That is this
+project's most-repeated defect wearing yet another hat: A CHECK AND THE THING IT CHECKS MEASURING
+DIFFERENT QUANTITIES. So the guard now tests the observable against these ranges, which are stated in
+the observable's own units and can be read off a finished map with a ruler.
+
+The ranges are wide on purpose. They are not a target the generator aims at; they are the band inside
+which a reader looking at the sheet would agree with the word. `round` tops out at 2.4 because past
+that a clump reads as a string; `crescent` starts at 1.9 and `elongated` at 2.8, overlapping
+deliberately, because the difference between those two at the margin is the CURVE of the band and not
+its ratio, and this rule is not the place to adjudicate curvature. The upper bound of 12.0 on
+`elongated` is a sanity rail, not a shape statement.
+
+Kept in step with the gate's own copy in `check_village/segments_04c_groves_and_shading.py` by
+`tests/hamletgen/test_cluster_shape.py` - the gate may not import the generator, so the table is
+duplicated, and a duplicated table with no pin is a table that drifts."""
 LANE_SKELETONS = ("spine", "T", "Y", "cross")
 # The two attested forms of making every house reachable. NOT weighted: the research supports both
 # equally, so an even roll is the honest one, and the two read differently enough at a glance
