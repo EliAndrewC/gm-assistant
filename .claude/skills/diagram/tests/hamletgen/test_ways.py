@@ -364,6 +364,19 @@ def test_draw_web_refuses_a_lane_too_short_to_be_a_way() -> None:
     assert s.M["lanes"][-1]["web"] is True
 
 
+def test_draw_web_refuses_a_run_with_only_one_point() -> None:
+    """A single point is not a way, and it reaches `_draw_web` for a real reason rather than as a
+    defensive nicety: `clear_runs` returns whatever survived clipping, and a candidate clipped down
+    to one surviving vertex arrives here looking like a run. Drawing it would put a zero-length lane
+    in the manifest, which every way rule then measures - `lanes_reach_something` would see a tread
+    that fronts nothing and `polyline_len` would divide by a zero chord."""
+    s = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 400.0)]])
+    before = len(s.M["lanes"])
+    assert hg.ways._draw_web(s, [(100.0, 100.0)]) is False
+    assert hg.ways._draw_web(s, []) is False
+    assert len(s.M["lanes"]) == before
+
+
 def test_bridge_collinear_breaks_closes_a_hole_and_leaves_an_honest_one() -> None:
     """One street drawn as two gets the missing piece drawn. A break with something genuinely in the
     way keeps it - the route cannot be made, so the interruption stands."""
