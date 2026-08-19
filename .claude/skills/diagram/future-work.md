@@ -2455,3 +2455,46 @@ before today - all four had real behaviour, none had a test, and all four looked
 regeneration is in this state. `pipeline/regen.py` prints CACHED / REGENERATED per map, so a cheap probe
 is to run the gate twice in a row on an unchanged tree and diff the two coverage tables - anything that
 appears in the second run's missing list is cache-covered rather than tested.
+
+## OPEN 2026-08-19, HANDED TO THE WATERFIELDS OWNER: the FLOODED paddy tint has collapsed to zero pool-wide
+
+Found by settlement-review on Sawada, confirmed across all four scripted hamlets. SVG fill census on the
+shipped renders: **sawada 0 FLOODED against 813 rice fills, inashiro 0/627, kashikawa 1/806, mizuguchi
+1/512**. `flooded_plots` is ABSENT from sawada's and inashiro's manifests entirely, so
+`flooded_plots_read_as_basins` has no input and cannot fire - the "a check that never runs looks exactly
+like a check that passes" shape, reached because the feature it guards vanished rather than because
+anyone waived it. Sawada's own notes record the opposite state as recently as 2026-08-16: "4 basin-shaped
+flooded strips survive (SVG fill census: 4 painted, 4 recorded, 1:1)". Nothing in the review log records
+the drop.
+
+It matters most on the map it is missing from: 818 basins over ~60% of Sawada's sheet are now one flat
+green, and the uniform green is deliberate (`RICE_GREENS` holds the same green three times - "rice at ONE
+stage"), so the FLOODED tint on the low plots by the drain is the ONLY in-field water texture the
+doctrine allows a paddy. On the map named 沢田, "marsh paddy", there is none.
+
+**MEASURED CAUSE - there are TWO demotion passes and the second one is doing the killing.** Counted by
+wrapping the predicates (Sawada, seed 6):
+
+    carve.py pass : 41 candidates   -> 25 demoted `pointed_ring`, 4 `tapers_to_a_point`, ~12 survive
+    seams.py pass : 1,329 candidates -> 68 `pointed_ring`, 0 `tapers_to_a_point`, **0 survive**
+                    => ~1,261 killed by the three clauses that exist ONLY in this pass
+
+`carve.py:361` applies pointed+taper; `seams.py:990-996` then re-applies **those same two plus three
+more** to the final polygons - `_psol < _TINT_MIN_SOLIDITY` (0.85), `_at_outfall`, `_asp >
+_TINT_MAX_ASPECT` (4.0). So the second pass judges the survivors of the first by a superset of the same
+tests, and the effective survival rate is zero. **A 95% kill rate on those three clauses is the number to
+start from.**
+
+**WHY THIS IS NOT FIXED HERE.** Each clause was added for a real defect (the pond-like triangle, the
+arrowhead, the channel-shaped sliver), so the fix is not to delete one - and choosing which to relax
+needs to know why 0.85 and why 4.0, which is `waterfields/` knowledge belonging to the session that owns
+it and was editing `banks.py`/`seams.py` the same day. Same boundary as the lane-topology handover
+earlier: diagnosis and measurement here, the judgment call theirs.
+
+**THE DURABLE HALF, also not yet done and worth more than the tint**: there is no gate that fires when a
+paddy map with `wet_plots` populated paints ZERO flooded basins. That absence is why a documented feature
+went 4 -> 0 with nothing noticing, and it is the exact defect family this whole day has been about - an
+absent key is indistinguishable from a satisfied check. The rule wants writing WITH the fix, because
+adding it today would simply fail all four maps. Suggested shape: on `generated_by` + hamlet/village +
+`wet_plots` non-empty, require `flooded_plots` to be present and non-empty, or an explicit meta key
+recording that the ladder rejected every candidate and why.
