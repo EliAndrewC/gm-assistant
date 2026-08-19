@@ -178,12 +178,23 @@ class PublicFixturesMixin:
             # docstring states for a line subject ("swapping them" is named there as the trap).
             _t = linear_tilt(rot)
             _chw = max(10.0, len(label) * 8 * 0.28)
-            _cands = [
-                (x, y + hh + 11),  # below - the historical default, tried first so an unblocked board does not move
-                (x, y - hh - 11),  # above
-                (x + hw + _chw + 8, y),  # east, clear of the glyph
-                (x - hw - _chw - 8, y),  # west
-            ]
+            # FOUR DIRECTIONS, WALKED OUTWARD - and the outward part is what these boards need. Note
+            # which boards arrive here: `linear_tilt` CLAMPS past 45 degrees, so a board at rot 51.6
+            # returns tilt 0.0 and takes THIS branch, not the tilted one. All five seeds that gate
+            # 0617 catches are in that group, which is why work on the tilted ladder never touched
+            # them (I recorded them as "tilted" from their rot and had to correct it - rot is not
+            # tilt past the clamp).
+            #
+            # Four seats at one fixed distance cannot clear a board standing in a lane crotch, and
+            # measured on those seeds the BEST achievable clearance over a wide search is 36-51 ft:
+            # good ground exists, the search simply was not reaching it. Six distances out to 60 px,
+            # the way `clear_label_seat` rings outward for verge-hugging features - and for the same
+            # stated reason, that such a feature sits at the busiest node so its surroundings are the
+            # most crowded on the map. The default seat is first, so an unblocked board does not move.
+            _cands = [(x, y + hh + 11 + _d) for _d in (0, 12, 24, 36, 48, 60)]
+            _cands += [(x, y - hh - 11 - _d) for _d in (0, 12, 24, 36, 48, 60)]
+            _cands += [(x + hw + _chw + 8 + _d, y) for _d in (0, 12, 24, 36, 48, 60)]
+            _cands += [(x - hw - _chw - 8 - _d, y) for _d in (0, 12, 24, 36, 48, 60)]
 
             def _box_clearance(_q: Pt, _chw: float = _chw) -> float:
                 """Least distance from the caption's BOX to any drawn way's edge (negative = on it)."""
