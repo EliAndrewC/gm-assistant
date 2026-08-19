@@ -1657,22 +1657,45 @@ knob AND make the borrow-coverage term binding within whichever form is rolled.
 Round 2 confirmed five defects and refuted one; all five are fixed at their point of change, and the
 rulings the GM asked me to make are recorded there too. What is left:
 
-### The belt POLYGON pinches on cohort seed 10 - a placement fix, not a check fix
+### CORRECTED - cohort seed 10's belt hole is a SUN CORRIDOR, not a polygon pinch
 
-`village_windbreak_is_continuous` (0613, new) fires on exactly one of 48 seeds: seed 10 carries a
-40 ft bare run across the wind at (1266, 1793). **Diagnosed, and it is not the case the belt re-seat
-handles**: nothing blocks that column - the nearest structure is 53 ft away and the nearest lane
-49 ft - so no clump was refused and there is nothing to re-seat around. The grid points simply fall
-OUTSIDE the belt polygon there, which means `belt_polygon` itself pinches.
+**The earlier entry here was wrong about the mechanism and would have sent the next session to the
+wrong file.** It said `belt_polygon`'s near-face sampling pinches. It does not: the band is built as
+a constant-depth ribbon (near face at u+36, far at u+146, so 110 px everywhere), and the clumps in
+the gap were being FILTERED OUT, not left outside a narrow polygon.
 
-**Why deferred**: the fix belongs in `belt_polygon`'s near-face sampling (it samples the windward
-fringe in 8 columns and interpolates; a cluster whose fringe steps sharply between two columns can
-produce a waist), and changing how the belt outline is derived re-rolls the belt on every map -
-which is a placement change wanting its own measured pass, not a tail-end edit to a session that has
-already moved a great deal. **Sketch**: after sampling the near face, enforce a minimum band depth
-by pushing any column whose depth falls under one clump diameter out to that depth; the belt is
-documented as "a band of constant depth" already, so this makes the code match its own docstring.
-The check now exists to catch it, which is the part that was missing.
+**Measured cause.** `village_grove` keeps clumps out of the ~24 px strip SOUTH of every threshing
+yard and garden, so a tree cannot shade the drying ground. On seed 10 a yard sits just north of the
+belt line and its sun corridor runs straight through the wall. Instrumenting the fill and printing
+the rejecting predicate for every grid point in the gap gave `SUN` for almost all of them and
+`corridor` for one. **And the hole matters**: the gap spans across-wind 1739-1779 and there is a
+farmhouse at across-wind 1751 - directly downwind of it. The wall is breached at one of the few
+places it is actually sheltering someone.
+
+**THREE FIXES ATTEMPTED, all recorded so nobody repeats them:**
+
+1. *Widen the re-seat radii* (to `step * 2.2` = 44 px, past the corridor's ~25 px half-width). No
+   change at all - and the reason is attempt 2.
+2. *Fold the three ad-hoc nudge blocks into one predicate pair and let the sun corridor re-seat.*
+   This found a REAL defect and is KEPT: the interior test (`edge_dist > clump`) was written for the
+   lane case - a lane that ends at the belt is an edge, one that crosses it is an obstacle - and was
+   being applied to every local blocker. A belt is 110 px deep and a clump is 28, so it left only
+   the middle 54 px eligible, and every sun-corridor clump measured 2-27 px from a face. **The
+   search was never running.** It is now scoped to lanes.
+3. *With the search actually running*, the gap MOVED (1266 -> 1250) and stayed 40 ft. A yard's sun
+   corridor crosses the belt's whole depth, so filling that across-wind range needs a clump at that
+   y but clear of the corridor in x, and every candidate within reach is blocked by something else.
+
+**What is left, and the honest shape of it**: this is a genuine conflict between two rules, not a
+bug in either. The sun corridor protects a yard's drying sun; the belt protects the houses from
+wind; on this composition they want the same ground. **Sketch**: let a re-seated clump sit slightly
+OUTSIDE the belt polygon - the polygon is our own derived construct, not a property of the world,
+and a real planted belt bulges around an obstacle rather than admitting a hole. That is a change to
+what the belt outline MEANS, so it wants its own pass and its own review, which is why it is here
+rather than in the diff.
+
+Cohort effect of what was kept: 35/48 before and after, so no regression and no seed rescued - the
+value is the disabled-search defect, not this seed.
 
 ### The belt and the copse share one crown vocabulary
 
