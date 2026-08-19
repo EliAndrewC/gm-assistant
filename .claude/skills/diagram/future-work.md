@@ -335,6 +335,13 @@ and the rest of the cluster, which is precisely the fabric a path cannot cross. 
 a side that leaves the cluster-ward approach open (sun still deciding first, so no bed loses light):
 **seeds 5 / 8 / 25 measured 10 / 3 / 12 stranded against a 9 / 3 / 12 baseline** - seed 5 slightly worse, the other two unmoved. Reverted.
 
+**ONE HYPOTHESIS TESTED AND REJECTED, recorded so nobody assumes it:** that the cohort's household
+counts come from a TEST-HARNESS formula (`10 + (seed * 7) % 11`) rather than anything researched, so
+the failing seeds might simply ask more households than their ground can seat servably. They do not.
+The three failures sit at 11, 12 and 20 households, and every count from 10 to 20 appears 4-5 times
+across the 48 seeds with no other failure at any of them. The ground is not over-subscribed and the
+harness is not asking for the impossible; two hamlets of 20 households pass while seed 25's fails.
+
 **THE TERMINAL RESULT.** Fifteen attempts across every mechanism the engine offers - four on spacing
 and packing, three on drawing ways (margin runs, bearing scans, a map-wide flood), four on seat-time
 filters (crop line, flood fill, chain, width-aware chain), two on re-rolling with ground forbidden, and
