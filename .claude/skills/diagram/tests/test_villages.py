@@ -98,9 +98,34 @@ GEN_TIME_BUDGETS = {
     # carve. Passing `build_comb` its principled `grain` of 2.0 (see waterfields.py) added a further
     # ~35% on top, measured on Sawada: 14.6s solo at 1.0, 19.8s at 2.0, from the wider ditches and the
     # extra footbridge arithmetic they need. Entries are ~4x the solo measurement, as above.
-    "sawada": 80.0,  # ~20s solo - the biggest cohort map, 19 households
-    "kashikawa": 65.0,  # ~16s solo
-    "inashiro": 50.0,  # ~11s solo
+    #
+    # RECALIBRATED 2026-08-19 against MEASURED solo times, because the entries had drifted into
+    # flakiness rather than protection. The policy above ("~4x the solo measurement") is unchanged;
+    # only the solo figures it multiplies were stale. Measured this day, same numbers in the clone and
+    # in a detached worktree at main's tip - so this is drift as features landed, NOT a regression:
+    #
+    #     kashikawa 32.2s (comment said ~16)   sawada 30.6s (said ~20)
+    #     inashiro  22.4s (said ~11)           mizuguchi 18.9s (had no entry at all)
+    #
+    # Solo times roughly DOUBLED since the entries were written on 2026-08-12, so 4x-of-old had become
+    # ~2x-of-current - and the assertion does not run solo. It runs inside `pytest -n auto`, where CPU
+    # per gen inflates about 2.5x from cache and hyperthread contention: measured in-gate 57.4s against
+    # 22.4s solo for inashiro, 83.1s against 32.2s for kashikawa. A budget below that multiple fails on
+    # a busy box and passes on an idle one, which is a coin toss wearing a guard's clothes. It cost
+    # three false gate failures in one session, each read at first as a possible perf regression.
+    #
+    # THE FAILURE THIS GUARD IS FOR is a pathological gen (the 2026-08-02 Minami bug: re-scanning
+    # static geometry per candidate seat, 45 minutes, nothing flagged). 4x of a true solo time still
+    # catches that easily; 2x of a stale one merely catches whatever else the machine was doing.
+    #
+    # WORTH A LOOK BUT NOT CHASED HERE: why solo doubled in a week. It tracks the features that landed
+    # (the lane web, byres, the woodland scan, cluster shape), so it is probably real work rather than
+    # waste - but nobody has measured which stage owns the growth, and `tools/timings.py` would answer
+    # it.
+    "sawada": 125.0,  # 30.6s solo measured 2026-08-19
+    "kashikawa": 130.0,  # 32.2s solo
+    "inashiro": 90.0,  # 22.4s solo
+    "mizuguchi": 76.0,  # 18.9s solo - had NO entry, so it fell to the shared default and was one busy box away from the same false failure
 }
 
 

@@ -2322,3 +2322,34 @@ the rake it draws"). **Sketch**: re-assert the bundle's yard against the fields 
 nudge - in `farmsteads()` where `_attach_yard(rec["x"], rec["y"], geom["yard"])` is called, the geom
 is final, so the test belongs there and costs one check per homestead rather than one per candidate
 seat. If it refuses, the nudge should be undone rather than the yard dropped.
+
+## DONE 2026-08-19: the gen-time budgets had drifted from protection into a coin toss
+
+`GEN_TIME_BUDGETS` (tests/test_villages.py) exists to catch a pathological gen - the 2026-08-02 Minami
+bug, 45 minutes of re-scanning static geometry per candidate seat, which nothing flagged. Its stated
+policy is "~4x the solo measurement". The solo measurements it multiplied were from 2026-08-12 and had
+since roughly DOUBLED as features landed:
+
+    kashikawa 32.2s measured vs ~16s claimed    sawada 30.6s vs ~20s
+    inashiro  22.4s vs ~11s                     mizuguchi 18.9s, no entry at all
+
+So 4x-of-old had quietly become ~2x-of-current. And the assertion does not run solo: it runs inside
+`pytest -n auto`, where CPU per gen inflates ~2.5x from cache and hyperthread contention (measured
+in-gate 57.4s vs 22.4s solo on inashiro; 83.1s vs 32.2s on kashikawa). A budget below the contention
+multiple **fails on a busy box and passes on an idle one** - it cost three false gate failures in one
+session, each initially read as a possible perf regression, and each costing a full gate cycle to
+disprove.
+
+Recalibrated against measured solo times, same policy multiplier, and `mizuguchi` given the entry it
+never had. Verified on BOTH trees (clone and a detached worktree at main's tip) before touching
+anything, because "raise the limit until it passes" and "fix a miscalibrated guard" are the same
+edit and only the measurement tells them apart. Both trees measured the same, so the drift is not a
+regression from any current work.
+
+**Same family as the rest of this day's findings**: a guard whose INPUT is not the quantity its
+calibration describes. The budget describes solo CPU; the assertion measures parallel-run CPU. It was
+green or red depending on the machine rather than on the code.
+
+**Open, and worth someone's afternoon**: why solo doubled in a week. It tracks the features that
+landed (lane web, byres, woodland scan, cluster shape), so it is probably real work and not waste -
+but nobody has measured which STAGE owns the growth, and `tools/timings.py` answers exactly that.
