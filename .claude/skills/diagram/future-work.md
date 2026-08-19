@@ -333,7 +333,7 @@ rather than where it starts.** The bundle picks its garden side by shading alone
 fixed preference order - so nothing ever asked whether the garden and yard end up BETWEEN the steading
 and the rest of the cluster, which is precisely the fabric a path cannot cross. A tiebreak preferring
 a side that leaves the cluster-ward approach open (sun still deciding first, so no bed loses light):
-**seed 5 went 9 stranded to 10, seed 8 unchanged at 3.** Reverted.
+**seeds 5 / 8 / 25 measured 10 / 3 / 12 stranded against a 9 / 3 / 12 baseline** - seed 5 slightly worse, the other two unmoved. Reverted.
 
 **THE TERMINAL RESULT.** Fifteen attempts across every mechanism the engine offers - four on spacing
 and packing, three on drawing ways (margin runs, bearing scans, a map-wide flood), four on seat-time
