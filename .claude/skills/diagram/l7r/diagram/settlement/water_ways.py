@@ -520,7 +520,25 @@ class WaterWaysMixin:
         # engine knows what a lane actually serves - while the lane keeps the exact draw position it
         # has always had. Kept engine-side rather than on the record so no manifest byte moves.
         self._lane_ink.append(_z)
-        self.M["lane"] = [[x, y] for x, y in pts]
+        # `M["lane"]` IS THE SPINE - the longest ordinary way on the map - not whichever lane was
+        # drawn last. It used to be assigned unconditionally here, so it held the final `lane()` call
+        # of the whole build, and five consumers read it as "the village street": two gate checks
+        # (`segments_03b` structures-vs-street, `segments_04c` grove shading), the kosatsuba's route
+        # list in `structures/fixtures.py`, and `_geom/ways.py`'s corridor runs. A settlement-review
+        # measured what that means in practice (Sawada 2026-08-19): the key held a 45 ft floating
+        # fragment in the NW, so two gate checks were adjudicating against a 45 ft orphan instead of
+        # the 354 ft spine - they ran, they passed, and they were testing the wrong geometry. That is
+        # the "a check that never runs looks exactly like a check that passes" family, one level down
+        # at the INPUT rather than at the rule.
+        #
+        # Longest-wins is monotone, so a mid-build consumer gets the best spine available when it
+        # asks rather than an arbitrary one; the connector is excluded because it is the road OUT,
+        # not the street. Derived from geometry already on the map, never pinned.
+        if not connector:
+            _prev = self.M.get("lane")
+            _prev_len = sum(math.dist(tuple(a), tuple(b)) for a, b in zip(_prev, _prev[1:], strict=False)) if _prev and len(_prev) > 1 else 0.0
+            if sum(math.dist(a, b) for a, b in zip(pts, pts[1:], strict=False)) > _prev_len:
+                self.M["lane"] = [[x, y] for x, y in pts]
         self.corridors.append((pts, clearance))
         self._record_tread(pts, width / 2)
 
