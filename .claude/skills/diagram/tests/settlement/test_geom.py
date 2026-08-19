@@ -26,8 +26,16 @@ def test_way_beds_carries_the_lane_network_lane_runs_does_not():
     # punishment ground came to clip an alley (reported by another session, Tango 2026-07-27).
     M = {"road": [[0, 100], [500, 100]], "alleys": [{"pts": [[0, 300], [500, 300]], "w": 6}], "lane": [[0, 500], [500, 500]], "lanes": [{"pts": [[0, 700], [500, 700]], "w": 8}]}
     beds = settlement.way_beds(M)
-    assert len(beds) == 4 and len(settlement.lane_runs(M)) == 2
-    assert sorted(round(b[0][0][1]) for b in beds) == [100, 300, 500, 700]
+    # THREE, not four: `M["lane"]` is NOT a way of its own. `Settlement.lane()` sets it on every
+    # call, so it holds whichever lane was drawn LAST and is always already present in `M["lanes"]`
+    # - counting it again double-listed one lane at a wrong half-width (4.0 rather than its own
+    # w/2). It is honored ONLY when `lanes` is absent, which is the case for six hand-built
+    # regression fixtures and for nothing the engine generates. See `street_runs`.
+    assert len(beds) == 3 and len(settlement.lane_runs(M)) == 2
+    assert sorted(round(b[0][0][1]) for b in beds) == [100, 300, 700]
+    # ...and with no `lanes`, the legacy key still carries the lane, so a fixture cannot rot silently
+    legacy = {"road": [[0, 100], [500, 100]], "lane": [[0, 500], [500, 500]]}
+    assert sorted(round(b[0][0][1]) for b in settlement.way_beds(legacy)) == [100, 500]
 
 
 def test_seg_closest_degenerate_segment():
