@@ -92,6 +92,65 @@ and that distinction is the feature.
 re-roll of the four live hamlets and a full cohort sweep, plus one `settlement-review` per pool map.
 Its own spec-kit feature.
 
+## 2c. The way-repair passes want ONE design, not three passes patching each other - DEFERRED
+(2026-08-19, feature 125, from two `settlement-review` passes on Sawada and Kashikawa. Deferred under
+Principle XIV's architectural exception; four fixes were BUILT and MEASURED here before deferring, and
+every one is recorded below with what it cost, because each looked obviously right going in.)
+
+**The four defects the reviews found**, none of which a green gate can see:
+
+1. **A hole at a CORNER is invisible to `lanes_do_not_break_mid_run`.** The rule requires BOTH ends to
+   aim at each other, so it catches a straight street with a hole and misses an L with one. Kashikawa:
+   lane 7 arrives at -67.3 deg facing the other cap dead on (-67.4) while lane 6 leaves at +15 deg
+   because it is turning. That 28.1 ft of bare grass is the ONLY thing joining three farmhouses to the
+   connector's component - drop the join tolerance and the map is two networks with houses at 267, 161
+   and 116 ft from the real one.
+2. **The same break gets repaired twice, around a needle of grass.** `_join_orphan_ways` links two
+   components, then `_bridge_collinear_breaks` closes the same break with the straight span the street
+   wants. Sawada ships both: a triangle 110 ft long, 37.7 ft at its widest, ~2,072 sq ft, converging on
+   the cluster's main junction, reading as a street that forks and rejoins around nothing.
+3. **A 4 ft fragment ships on a map whose own constant names it as fixed.** `_WEB_MIN_FT`'s `earns`
+   escape hatch is order-dependent by construction - it asks whether a run brings a house inside reach
+   GIVEN THE NETWORK AT THAT MOMENT - and nothing re-asks once later passes make it redundant.
+4. **A dead band from 0 to 40 ft that neither half owns.** The generator calls anything within
+   `_LANE_JOIN_FT` (30) joined; the check ignores anything under `_LANE_JOIN` (40); the ink joins at 0.
+   Sawada's west alley ships as THREE pieces with holes of 29.2 and 16.7 ft across clear grass. All
+   four of that map's gaps measure 16.7 / 28.0 / 29.2 / 29.6 - every one just under the generator's
+   threshold, which is a consumed tolerance rather than a coincidence.
+
+**What was built, measured, and REVERTED** - the useful half of this entry:
+
+| attempt | what happened |
+|---|---|
+| Extract the `WEB_SHADOW_FT` anti-doubling test and make the bridge pass obey it (defect 2) | Refuses the bridge - but the thing shadowing it IS the redundant link, so the 110 ft hole simply stayed open. Traded a cosmetic defect for a structural one. |
+| Lower the repair floor to `_WAY_HOLE_FT` = 12 ft (defect 4) | Correct in itself and kept in the sketch below, but on its own it closes nothing: the gaps it newly admits are corner gaps, which the both-ends aim test still rejects. |
+| Relax the aim test to "either end aims" (defect 1) | Gives the rule real teeth - it immediately fired on genuine holes in Sawada and Kashikawa - and needs a companion guard, because two ways that already TOUCH then read as a long aiming gap that the touching span itself fills. With the guard it is right, and the generator still could not close what it now reports. |
+| Two cleanup sweeps: drop doubled ways, drop unearned debris (defects 2 and 3) | **Regressed both maps.** The guards asked "is every house still near a lane" while the gate asks "near the CONNECTED network", so the sweep deleted the way joining a sub-network: Kashikawa 0 -> 6 unreached houses, worst 516 ft. Matching the gate's own 40 ft join tolerance fixed that specific hole and the maps still failed. |
+
+Everything above is reverted; the pool is back to four green maps. The reason it is deferred rather
+than pushed through is what the table shows: each fix is individually sound and they interact, because
+three passes (`_join_orphan_ways`, `_bridge_collinear_breaks`, `_serve_stragglers`) each repair the map
+against a model of it that the other two invalidate, and a cleanup afterwards cannot reconstruct which
+way was the detour.
+
+**The sketch.** One repair stage that plans against a single model instead of three passes patching each
+other: build the way graph once (nodes = ends and junctions, edges = drawn treads, joined at ONE declared
+tolerance shared with the gate); ask it what is actually broken - components that should be one, holes
+whose corridor is walkable, runs no house depends on; then emit a repair SET, choosing per break the
+straight span over the detour BEFORE either is drawn, rather than drawing both and trying to tell them
+apart afterwards. The check relaxation (either-end aims, plus the already-touching guard) lands with it,
+because rule and repair have to agree on what a hole is.
+
+**Cost estimate**: a rewrite of the three repair passes into one graph-based stage, its tests, a pool
+re-roll, a cohort sweep and one `settlement-review` per map. Its own spec-kit feature.
+
+**Also found by these reviews and NOT part of the above** (smaller, independent, worth their own fixes):
+`M["lane"]` holds the LAST lane drawn rather than the village street, and five consumers read it as the
+street - two gate checks are adjudicating grove shading and structure-vs-street against a 45 ft orphan on
+Sawada, so they run, pass, and test the wrong geometry; a skeleton arm overruns its last steading by 85 ft
+because `_trim_to_service` only runs on web lanes; and `plot_regularity` is recorded in `meta` as though
+rolled while `water.py` passes the literal `"organic"`, so it can never vary.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any
