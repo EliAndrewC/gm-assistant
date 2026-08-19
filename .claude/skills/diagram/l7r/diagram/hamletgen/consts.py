@@ -408,7 +408,7 @@ SINKS = ("pond", "pond", "offmap")
 
 CLUSTER_SHAPES = ("round", "round", "elongated", "crescent")
 
-CLUSTER_BAND_ASPECT = {"round": 3.0, "crescent": 3.0, "elongated": 5.0, "split": 3.0}
+CLUSTER_BAND_ASPECT = {"round": 2.8, "crescent": 3.0, "elongated": 5.0, "split": 3.0}
 """How long the cluster BAND is against how deep, per rolled `cluster_shape`.
 
 THE KNOB WAS DEAD UNTIL THIS TABLE EXISTED (2026-08-19). `cluster_shape` is rolled per settlement
@@ -430,27 +430,26 @@ elongated one is pushed toward 2.5:1 rather than 5:1 - the floor is a real minim
 than that cannot hold a homestead bundle and its yard), and letting it compress the extremes is
 honester than pretending a 10-household string can be five times longer than it is deep.
 
-ROUND IS DELIBERATELY NOT BOUND - it carries crescent's 3.0/1.6, which is what EVERY shape drew
-before this feature, so a round roll is byte-identical to the old behavior. That is a retreat, and
-the measurements behind it are worth keeping so nobody re-tries them blind:
+ROUND'S 2.8 IS A NARROW BINDING, CHOSEN BY A FULL-COHORT SWEEP ON ONE CRITERION: NO REGRESSION.
+Be honest about its size - it is 7% off crescent's 3.0, so a round hamlet is only slightly rounder
+than a crescent one, and most of what makes them read differently is still the depth floor and the
+household count rather than this ratio. It is the largest binding the rest of the engine currently
+tolerates, not the one the shape deserves.
 
-  - 1.4/0.9 -> 42/48 (baseline 43 pre-merge): cost seeds 17, 39, 47.
-  - 2.2/1.2 -> 42/48 (baseline 41 post-merge): cost seed 47 `bridges_span_their_water`.
-  - 1.8/1.0 -> 40/48: clean on all SEVEN swept seeds and WORSE on the full 48, costing seeds 11, 38
-    and 45. That sweep is the cautionary one: it swept only the seeds already known to move, so it
-    could not see the seeds the value would break. A sweep over a subset chosen by the previous
-    failure cannot answer a question about the whole cohort.
+Every stronger value costs a cohort seed, and the failures are informative rather than random:
 
-Every candidate that binds round costs at least one seed, and each failure is downstream of a defect
-in another subsystem rather than of the ratio itself - seed 47's is the gap-bridging lane passes
-never asking `shallow_crossing` (see future-work.md, "the streams were invisible"). Binding round
-means shipping a known regression, and Principle XIII does not allow that; so round waits.
+  - 1.4/0.9 -> cost seeds 17, 39, 47.   - 1.8/1.0 -> cost 11, 38, 45.
+  - 2.2/1.2 -> cost 47.                 - 2.4/1.6 -> cost 9, 31, 33, 47.
+  - 2.6/1.6 and 2.6/1.4 -> cost 23, 39. - 2.8/1.6 -> CLEAN, and fixes seed 17. 42/48 vs 41 baseline.
 
-**WHAT TO DO WHEN THE JOINER FIX LANDS**: re-run the sweep over the FULL 48, not a subset, and start
-at 2.2/1.2 - it was the strongest candidate and its only cost was the seed that fix removes.
-Elongated stays bound at 5.0/2.6 meanwhile, so the knob is not inert: an elongated roll draws a
-visibly different settlement, and a round roll that comes out crescent-shaped is recorded as
-`cluster_shape_unhonored` rather than declared."""
+Two of those recur and both are known defects elsewhere, not properties of the ratio:
+`bridges_span_their_water` (the oblique-deck growth loop fails silently - future-work.md) and
+`lane_ends_front_different_houses`. **When either is fixed, re-run the sweep and round can go up.**
+
+METHOD NOTE, because getting this wrong cost a full cycle: sweep the FULL 48, never a subset. An
+earlier sweep took only the seeds already known to move, found 1.8/1.0 clean on all seven of them,
+and it was WORSE on the whole cohort (40/48, breaking 11, 38 and 45). A subset chosen by the previous
+failure cannot answer a question about the whole cohort."""
 
 CLUSTER_DRAWN_ASPECT = {"round": (1.0, 2.4), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
 """What the FINISHED cluster's long:short ratio must fall inside for a rolled shape to be declared.

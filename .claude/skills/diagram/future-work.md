@@ -718,6 +718,44 @@ larger channels, not every puddled aze ditch a plank spans. That needs the hamle
 call site; wiring a veto against today's undifferentiated list cannot be made safe. Reverted; nothing
 of it ships.
 
+## OPEN 2026-08-19 (latent, with the measurement): the oblique-deck growth loop fails SILENTLY
+
+Found while chasing cohort seed 47's `bridges_span_their_water`, and it is only latent because the
+round cluster binding that steered a lane onto that crossing was reverted. It will surface again the
+moment round binds, so it is written down rather than left to be rediscovered.
+
+`bridges()` (settlement/city/bridges.py) sizes an oblique deck correctly - `(ww + rw*|cos|)/sin +
+2*LANDING_FT`, which for seed 47 gives exactly the 57.6 px it drew. The formula solves against the ONE
+segment the way cuts, so a bending watercourse can still put a corner in water, and a growth loop
+exists for that: `for _grow in range(14): _try = _span * (1.0 + 0.12*_grow)` ... `break` on success.
+
+**It breaks on success and does nothing on failure.** When all 14 steps fail, `_span` keeps its
+original value and `self.bridge(...)` draws the undersized deck anyway. The pass reports a bridge; the
+gate then fails it. Same family as everything else this feature turned up - the failure path looks
+exactly like the success path from outside.
+
+**And on seed 47 growth CANNOT work, so the loop is the wrong lever there.** The way crosses at 17
+degrees, so the deck lies nearly ALONG the stream; lengthening it drives its ends further down the
+water rather than clear of it. 2.56x is not too small a ceiling, it is the wrong axis.
+
+WHAT THE FIX IS NOT. A peer session measured the two obvious lane-side answers and both are far worse
+than the defect: a blanket `shallow_crossing` veto in the link pass takes the cohort 41/48 -> **26/48**
+(21 seeds failing reach), and a stream-only veto - ditches still plankable, asked in the candidate
+loop so a refusal tries the next route - takes it to **32/48** (14 seeds). The reason is structural: a
+stream is frequently the very thing separating the two halves a link exists to join, so the link must
+cross it and often cannot cross square. **The lane is legitimate; the deck is what is wrong.**
+
+THE TWO CANDIDATE FIXES, neither costed yet:
+1. **Bend the way onto a square crossing.** What a real track does - the road turns to meet the
+   bridge, crosses, and turns back. Lane geometry, and it must be a local bend rather than a veto,
+   since vetoing is what measured 26/48 and 32/48.
+2. **Orient the deck square to the water** and let the way meet it at an angle. Geometrically simple
+   and historically right, but `bridges_align_with_their_way` currently forbids it - that check would
+   need a stated exception for a near-parallel approach, which is a rule change, not a patch.
+
+Whichever is chosen, the growth loop needs a real failure branch: if no step clears the water, that is
+a fact the pass knows and currently discards.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any
