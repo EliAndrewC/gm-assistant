@@ -668,7 +668,23 @@ water. Handed to me as lane topology. This entry is what I learned trying to clo
    obliquely. Demanding a square crossing of every ditch strands the components the pass exists to
    join - which is a worse defect than the one being fixed.
 
-**So the veto has to be scoped to the water that actually needs a real deck** - the streams and the
+**AND SCOPING IT TO STREAMS DOES NOT SAVE IT EITHER - measured: 32/48, with 14 seeds failing
+`farmhouses_reach_a_way` against a baseline of 3.** Reading `M["streams"]` directly (so ditches stay
+plankable and only natural courses are vetoed), asked in the candidate test so a refusal tries the next
+route rather than abandoning the pass, still strands eleven more seeds than the defect costs. The
+reason is structural rather than a matter of degree: **a stream is frequently the very thing separating
+the two halves a link exists to join.** The link must cross it, and where the components lie it often
+cannot cross square.
+
+**So refusing the way is the wrong lever at ANY scope** - blanket 41 -> 26, stream-only 41 -> 32, both
+far worse than the defect. And that reframes the defect: seed 47's way is LEGITIMATE. What failed is
+`bridges_span_their_water` - the DECK for an oblique crossing, which needs
+(width + deck_w x |cos|) / sin plus a landing each side and so lands an abutment in the water. The fix
+belongs in how an oblique crossing is DECKED, or in steering the link to meet the water square where it
+can, and not in whether the link is drawn at all.
+
+**Superseded, and kept because it is what the numbers looked like after only the first measurement: the
+veto has to be scoped to the water that actually needs a real deck** - the streams and the
 larger channels, not every puddled aze ditch a plank spans. That needs the hamlets session's
 `drawn_water_segs` (channels AND streams) to land first, so the two lists can be told apart at the
 call site; wiring a veto against today's undifferentiated list cannot be made safe. Reverted; nothing
