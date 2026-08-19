@@ -2926,3 +2926,47 @@ both ladders (tilted gap to 60; untilted four directions x six distances to 60 p
 on the five seeds - but an auto-sync reverted that edit before it was committed, so **that measurement is
 not reproducible from the current tree and should be re-taken rather than trusted**. The rot values above
 were measured independently and do stand.
+
+## 2026-08-19: the caption seat search, six attempts - what worked, and TWO CLAIMS OF MINE THAT WERE WRONG
+
+Gate 0617 caught caption-on-tread notches on cohort seeds 1, 7, 14, 33, 36. The seat search now clears
+three of them (**38/48 -> 41/48**); seeds 14 and 36 remain, measured at -1.6 and 0.5 ft. Both earlier
+entries in this file about this work contain errors, corrected here rather than edited away, because the
+errors are the useful part.
+
+**WRONG CLAIM 1: "all five failing boards are TILTED".** They are not. `linear_tilt` **CLAMPS** past 45
+degrees rather than folding - its own docstring says so at length and warns it must never be confused with
+`label_tilt`, which folds. So boards at rot 51.6, 128.9 and -83.3 all return tilt **0.0** and take the
+UNTILTED branch. I read `rot`, inferred the branch, and spent two attempts improving a code path those
+seeds never execute. **rot is not tilt past the clamp.**
+
+**WRONG CLAIM 2: "the outward walk is a no-op".** It was measured against a tree an auto-sync had reverted
+mid-experiment, so the measurement was of the old code. Applied properly to the UNTILTED branch it fixes
+three of the five seeds. A measurement taken against an uncommitted edit is worth nothing; commit first,
+then measure - which is now how this session does it.
+
+**WHAT ACTUALLY LANDED, all four verified:**
+
+1. **The scorer reads the lane's tread EDGE**, which is what gate 0617 reads. It read the CENTERLINE -
+   `street_runs` returns polylines with no widths - so it was optimistic by half a lane width (~2.5-3 px)
+   and every "best" seat was best by a measure the rule does not use. The placer-and-check-read-one-source
+   rule, broken in code written to enforce it.
+2. **The untilted search walks outward** (four directions x six distances to 60 px) instead of sampling
+   four fixed points, the way `clear_label_seat` rings out for verge-hugging features and for the same
+   documented reason: such a feature sits at the busiest node, so its surroundings are the most crowded
+   ground on the map.
+3. **`label_above` CONSTRAINS the search instead of replacing it.** Its caller sets it from
+   `label_seat_clear` - a two-seat verdict about STRUCTURES that knows nothing about lanes - so reading it
+   as "place exactly here" skipped the lane search entirely on the boards that set it.
+4. **Structures and ways are ONE search.** Every candidate is filtered by the engine's own
+   `label_seat_clear`/`label_blockers` and then scored on lane clearance, with the flag kept only as the
+   fallback when nothing clears the structures. Honoring the two constraints in separate places is what
+   left seats with 22-61 ft of clearance unused.
+
+**WHAT REMAINS, and it is not understood.** Seeds 14 and 36 still notch after all four changes, and the
+last diagnostic shows both taking the untilted branch with `label_above=True` and reachable seats
+measured at 22-61 ft. My model of the code path is therefore still wrong somewhere, and I stopped rather
+than take a seventh guess - each cycle costs a full cohort run and I could no longer explain the residue.
+**Next step is instrumentation, not another lever**: log the candidate list, the structure filter's
+verdict per seat, and the chosen seat, for seed 14 specifically. The answer is in the difference between
+what the search considers and what I believe it considers.
