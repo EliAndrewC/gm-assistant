@@ -93,6 +93,18 @@ in these settlements *is* the residual gap between two plots - "colonized as sem
 adjoining house" - rather than a corridor set aside in advance. A generator that reserves its lanes
 first is drawing a planned town, not a grown hamlet.
 
+**A THIRD attempt, measured 2026-08-19: the same gap as a SLIDE LIMIT rather than a verdict.** The
+mechanism is `_slide_nuc`, which shoves each bundle at its nearest neighbor in 2 ft steps until the
+bbox rule bites - so the fix that refuses nothing is to stop that slide short of sealing a block,
+leaving the bundle at the last position that was already legal. It looked strictly safer than the hard
+constraint, because it cannot cost a seat. **Cohort: 42/48 against the 43/48 baseline** - it fixed none
+of the three reach seeds and added a `village_windbreak_is_continuous` failure on seed 4. Reverted.
+
+That is three independent spacing attempts (hard 18 ft: 37/48; hard 12 ft: no gain; slide limit 12 ft:
+42/48), none of which moved a single one of the three failing seeds. The conclusion is stronger than
+"the uniform gap is the wrong number": **spacing is the wrong LEVER entirely.** Whatever seals those
+blocks is not a shove-until-collision that a smaller shove would prevent.
+
 **So the candidate that remains is a POST-PACK repair, not a pre-pack reservation**: pack as now, then
 detect a block whose interior has no walkable corridor (the 1.4-1.9 ft pinch measured above is a
 cheap, decisive test) and RE-SEAT the two or three steadings whose shift opens one, rather than
