@@ -996,3 +996,26 @@ def test_cluster_seeding_skips_a_dispersed_settlement():
 
 def test_cluster_seeding_skips_legacy_maps():
     assert "settlement_records_cluster_seeding" not in _seedrec_f(_seedrec_M(gen=None))
+
+
+def test_captions_clear_the_ways_they_stand_on_fires_and_skips_a_malformed_record() -> None:
+    """0617: a caption's 3 px halo must not notch the tread its subject stands on.
+
+    Two assertions, and the SECOND is the one with no map behind it. A label record is a flat list
+    `[x0, y0, x1, y1, z, text]`, and the check guards against a shorter one - no map in the pool or
+    the cohort produces one, so that `continue` is a branch the corpus cannot reach and the coverage
+    gate rightly refused it. The guard is worth keeping rather than deleting: the check reads four
+    positional fields off a record whose shape nothing enforces, so a truncated entry would be an
+    IndexError inside the GATE, which is the worst place to discover it."""
+    lane = {"pts": [(0.0, 100.0), (400.0, 100.0)], "w": 6}
+    meta = {"scale": "hamlet", "ftpx": 1, "W": 1000, "H": 1000, "generated_by": "test"}
+
+    on_the_lane = manifest(meta=meta, lanes=[lane], labels=[[180.0, 96.0, 240.0, 104.0, 20000000, "notice board"]])
+    assert "captions_clear_the_ways_they_stand_on" in check_village.gate(on_the_lane, verbose=False, only={"captions_clear_the_ways_they_stand_on"})
+
+    well_clear = manifest(meta=meta, lanes=[lane], labels=[[180.0, 300.0, 240.0, 308.0, 20000000, "notice board"]])
+    assert "captions_clear_the_ways_they_stand_on" not in check_village.gate(well_clear, verbose=False, only={"captions_clear_the_ways_they_stand_on"})
+
+    # a truncated record is SKIPPED, not crashed on, even though it sits squarely on the lane
+    malformed = manifest(meta=meta, lanes=[lane], labels=[[180.0, 96.0, 240.0, 104.0]])
+    assert "captions_clear_the_ways_they_stand_on" not in check_village.gate(malformed, verbose=False, only={"captions_clear_the_ways_they_stand_on"})

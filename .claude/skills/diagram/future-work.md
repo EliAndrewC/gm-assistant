@@ -2815,26 +2815,35 @@ chosen before the text is laid out. Below is tried first, so an unblocked board 
     sawada     6.9 ft unchanged                kashikawa  0.2 ft unchanged (see below)
     Gate green (3434), cohort 43/48, zero regressions, captions present on all four.
 
-**WHAT REMAINS - and a TILTED board cannot be moved by either obvious lever, which is now proved rather
-than suspected.** Kashikawa's caption sits 0.2 ft off its tread. Both levers were implemented, measured,
-and reverted; both were EXACT no-ops, 0.2 ft before and after:
+**FIXED, AND MY EARLIER CONCLUSION HERE WAS WRONG - corrected rather than quietly replaced.** This entry
+previously said a tilted board "cannot be moved by either obvious lever, which is now proved rather than
+suspected", on the strength of three no-op measurements. That inference was bad: I concluded NO SEAT IS
+BETTER from THE SEATS I TRIED WERE NOT BETTER. Enumerating all ten candidates on Kashikawa shows a good
+one exists.
 
-  - **Flipping `above`** puts the caption on the board's other side - a move of the board's own 5 ft
-    depth. The far side is no further from the lane.
-  - **Sliding LATERALLY along the baseline cannot help AT ALL**, and this is the part worth keeping.
-    `kosatsuba_faces_the_road` requires the board to FACE its road, so its baseline is PARALLEL to the
-    lane by rule. Sliding along a line parallel to the lane holds the perpendicular distance exactly
-    constant. It is not a tuning failure, it is geometrically incapable of changing the number.
+    above=False  gap 11 -> 2.0 ft   gap 16 -> -1.0   gap 21 -> 1.0   gap 28 -> -0.3   gap 36 -> 7.7
+    above=True   gap 11 -> -2.2     gap 16 -> -0.8   gap 21 -> 0.5   gap 28 -> 5.6    gap 36 -> -2.0
 
-Both reverts are complete, including the opt-in `lateral` parameter that was added to
-`tilt_caption_seat` for the second attempt - dead code that changes nothing is worse than absent code,
-because the next reader must assume it is load-bearing. The reasoning is recorded at BOTH sites
-(`fixtures.py`'s tilted branch and `tilt_caption_seat`'s docstring) so a fourth attempt is not made.
+**Clearance is NOT MONOTONIC in the offset**, because a board sited at the traffic optimum has ways on
+more than one side - moving away from one walks toward another. A ladder that stopped at 21 took the first
+rung and left the caption on the tread; the good pocket is at 36. Extending the ladder past the dip moves
+Kashikawa from **0.2 ft to 6.9 ft** (hug 36.8, which the pool already carries - inashiro and mizuguchi sit
+at 41.0 and pass `label_hugs_its_referent`).
 
-**The only lever that can work is the perpendicular `gap`** - pushing the caption further from the board,
-away from the road. That argument is shared by every tilted caption in the engine (theater stages, fire
-towers, punishment spots), so changing it has a real blast radius and belongs WITH the check below rather
-than as a special case for one board.
+What WAS true and remains true: the LATERAL slide is geometrically incapable of helping, because
+`kosatsuba_faces_the_road` makes the baseline parallel to the lane, so sliding along it holds the
+perpendicular distance constant. That lever stays reverted. The `gap` axis is perpendicular to the
+baseline and is the one that works.
+
+    inashiro  notching -> 19.2 ft      mizuguchi -1.9 (overlapping) -> 9.7 ft
+    kashikawa 0.2 -> 6.9 ft            sawada 6.9 ft unchanged
+
+**THE RULE IS NOW ENFORCED**: gate 0617 `captions_clear_the_ways_they_stand_on` fails any caption whose
+recorded BOX comes within 2 ft of a lane's tread edge - the halo follows the box, and 2 ft is the 3 px
+halo plus antialiasing either side. Fixture frozen; it is a CONSTRUCTED break (the caption placed on the
+busiest lane) rather than a replayed original, because the board and lanes have moved across many
+regenerations and the pre-fix geometry is no longer reachable from the manifest - the provenance note
+says so.
 
 **AND THE RULE IS STILL NOT ENFORCED.** Nothing checks that a caption's halo clears a way. 0.2 ft passes
 today and is one re-pack from a defect with nothing that would notice - the same silent-flip shape as the
@@ -2853,3 +2862,34 @@ changed nothing, while the code commits went through - so for two commits the le
 was already done as "not done here". Anchor-based patching of prose fails silently in a way that anchor-
 based patching of code does not, because nothing later imports a paragraph. Verify the grep after editing
 a ledger entry, or edit it by hand.
+
+## OPEN 2026-08-19: gate 0617 finds caption notches on five cohort seeds the seat ladder cannot clear
+
+`captions_clear_the_ways_they_stand_on` shipped with the caption-seat work and fires on cohort seeds
+**1, 7, 14, 33, 36**. The cohort reads 38/48 against 43/48 - and that is a MEASUREMENT changing, not maps
+getting worse. A new check cannot regress a seed in the passed-before/fails-after sense: it was never
+green there because it was never run there. Same handling as `paddy_bunds_do_not_stagger` (0614), which
+ships while firing on seeds 12 and 39.
+
+**They are genuine.** Spot-checked by rebuilding each seed and measuring the caption box against the lane
+tread directly: seed 1 **-0.5 ft** and seed 7 **-1.3 ft**, i.e. the halo is ON the tread. Both boards are
+raked (rot 51.6 and 52.1). The four pool maps all clear comfortably (19.2 / 9.7 / 6.9 / 6.9 ft), so the
+seat ladder works where there is anywhere to go and fails where the board sits in a tight lane crotch.
+
+**ONE DISCREPANCY WORTH CHASING BEFORE FIXING ANYTHING**: seed 14 fires in the gate but my independent
+probe measured its worst caption-to-tread at **+14.5 ft**. Both read the same manifest, so one of them is
+wrong, and it is not safe to tune a seat search against a number that two instruments disagree about.
+The probe tests four corners; the check tests four corners plus the centre and stops at the first lane
+within 2 ft, so the likeliest cause is the check catching a DIFFERENT label than the notice board - the
+title placard or the scalebar, which are also `labels` records. If that is it, the rule is over-broad: a
+title cartouche is allowed to sit wherever the frame has room, and only a FIXTURE's caption owes clearance
+to the way its subject stands on. **Resolve that before touching the ladder.**
+
+**THE PROPER FIX, once the discrepancy is settled**: the kosatsuba hand-rolls its caption seat, while the
+engine already has an outward-walking search for exactly this - `clear_label_seat` in
+`structures/captions.py`, used through `place_caption`, which scores candidates against `label_blockers`
+and walks a standoff ladder. Routing the board's caption through that engine instead of a bespoke
+five-rung ladder is the change that would clear the tight seeds, and it deletes code rather than adding
+it. What has to be handled: the board's caption carries the board's TILT, and `place_caption` takes a
+`rot`, so the tilt survives - but the interaction with `linear_tilt`'s clamp needs checking before the
+swap.

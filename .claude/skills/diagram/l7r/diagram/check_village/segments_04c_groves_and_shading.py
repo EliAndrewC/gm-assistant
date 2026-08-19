@@ -1012,3 +1012,47 @@ def _seg_0616__copse_stands_clear_of_the_belt(*, M: Any = _UNBOUND, check: Any =
             f"stay bare. Add the planted groves' clumps to the copse's keep-out (homestead_parts.village_grove's `occ`)",
         )
     return _kept(locals(), ())
+
+
+def _seg_0617__captions_clear_the_ways_they_stand_on(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0617 (captions_clear_the_ways_they_stand_on) - added 2026-08-19.
+
+    A CAPTION'S HALO MUST NOT NOTCH THE WAY ITS SUBJECT STANDS ON. Captions are drawn with a 3 px
+    background halo (`paint-order="stroke"`), and a kosatsuba is sited ON a verge by construction - so
+    the default seat lands on the lane about as often as not. Measured on Inashiro before the fix: the
+    halo knocked a visible notch out of the map's busiest internal lane, between the words "notice"
+    and "board". The founding-run "caption pierced by its own feature" defect, inverted.
+
+    WHY A RULE AND NOT JUST A BETTER SEAT. The seat logic now ladders through candidate positions, and
+    on three of four maps it finds one with real clearance - but it found 0.2 ft on the fourth and
+    called that a pass, because nothing measured it. A clearance that holds by luck is the shape this
+    engine keeps producing: green today, a defect after the next re-pack, with no test that notices.
+
+    Measured against the RECORDED caption box, not its anchor - the halo follows the box - and against
+    the lane's EDGE, not its centerline. 2 ft of margin: a 3 px halo plus the antialiasing either side,
+    which is the least that guarantees no ink touches the tread."""
+    if M["meta"].get("generated_by") and M["meta"].get("scale") in ("hamlet", "village"):
+        _notched: list[tuple[int, int, int]] = []
+        for _lab in M.get("labels") or []:
+            if len(_lab) < 6:
+                continue
+            _lx0, _ly0, _lx1, _ly1 = (float(_lab[0]), float(_lab[1]), float(_lab[2]), float(_lab[3]))
+            _corners = ((_lx0, _ly0), (_lx1, _ly0), (_lx0, _ly1), (_lx1, _ly1), ((_lx0 + _lx1) / 2, (_ly0 + _ly1) / 2))
+            for _ln in M.get("lanes") or []:
+                _pts = _ln.get("pts") or []
+                _half = float(_ln.get("w") or 3) / 2.0
+                for _i in range(len(_pts) - 1):
+                    if any(seg_dist(_cx, _cy, _pts[_i], _pts[_i + 1]) - _half < 2.0 for _cx, _cy in _corners):
+                        _notched.append((round(_lx0), round(_ly0), round(_half * 2)))
+                        break
+                else:
+                    continue
+                break
+        check(
+            "captions_clear_the_ways_they_stand_on",
+            not _notched,
+            f"{len(_notched)} caption(s) sit within 2 ft of a lane's tread at {_notched[:3]} (x, y, lane width) - the 3 px halo notches the way, "
+            f"and a reader sees a break in the roadway rather than a label beside it. The seat ladders through candidate positions "
+            f"(fixtures.py's kosatsuba); the clearance is not monotonic in the offset, so the ladder has to reach past the first dip",
+        )
+    return _kept(locals(), ())
