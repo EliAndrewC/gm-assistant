@@ -142,6 +142,30 @@ premise long before I re-examined the levers. The failure is in the footpath log
 rather than a physical impossibility: 60-120 ft of clear ground and the pass still leaves the house
 unserved.
 
+**TWO MORE ATTEMPTS AND WHAT THEY ESTABLISHED** (2026-08-19, attempts seven and eight, both reverted):
+
+- **A seat-time reachability test, straight-line form** - refuse a seat whose line back to the
+  cluster's middle crosses crop. **42/48**, adding a `bridges_span_their_water` and a `field_ringed`
+  failure while fixing none of the three seeds. The proxy is wrong in an instructive way: the line from
+  a seat to the cluster's middle can miss the paddy entirely while every route to a WAY still crosses
+  it.
+- **The same test done properly** - one flood fill per map over a 24 ft grid, marking the dry ground
+  walkable from the cluster's middle, then refusing seats outside it. **43/48**, and it did not exclude
+  a single stranded house. **That is the load-bearing result: those houses ARE inside the walkable dry
+  region.** They are not cut off and they are not sealed in. The way network simply never extends round
+  to their margin, and the footpath router's search box never spans the detour that would reach them.
+
+So the defect is not the packer, not the seat generators, not the seat band, and not the ground. It is
+that no way is ever DRAWN on the far margin, and nothing searches far enough to connect one.
+(`_route` also cannot be brute-forced into finding it: it caps its lattice at 90,000 cells, so a
+search box wide enough to go round a field returns empty by construction rather than by geometry -
+worth knowing before anyone tries simply enlarging `pad_mult`.)
+
+**The candidate that fits every measurement**, ledgered jointly with the hamlets session: make the LANE
+SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
+instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
+addresses the geometry rather than a symptom.
+
 **Where a session should start**, given the straggler pass produces 391-1,572 candidate runs per house
 that all meet the network at 0 ft and are all perfectly direct at 1.00, while the best of them comes no
 closer than 132-210 ft to the house it was drawn for: the runs are being CLIPPED at the house end.
