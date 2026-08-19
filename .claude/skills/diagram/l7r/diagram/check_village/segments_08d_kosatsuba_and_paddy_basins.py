@@ -756,3 +756,92 @@ def _seg_0608__paddy_basins_are_worth_their_bund(*, M: Any = _UNBOUND, check: An
 # one-way door - a fixture cannot be re-captured without losing the geometry it exists to pin - so
 # the guard moved to `test_every_scripted_comb_fan_records_its_design_cell` in tests/test_villages.py,
 # which reads the SHIPPED pool maps and is proven to fire by deleting the key from a loaded copy.
+
+
+def _seg_0614__paddy_bunds_do_not_stagger(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 614 (paddy_bunds_do_not_stagger) - hand-added 2026-08-19 past the legacy range
+    (609 through 613 were taken by peer sessions the same day; the number is only a label, and the
+    execution position it buys at the tail of the derived order is as good as any)
+    (see _seg_0595 for the numbering convention). No `_PLACEMENTS` entry: it reads only `M`, `check`
+    and `fields`, so the tail of the derived order is as good a seat as any."""
+    # A WALL MAY BE NUDGED ONCE BY THE FITTING; IT DOES NOT BUILD A FLIGHT OF STEPS (GM 2026-08-18,
+    # on Inashiro: "the earthen wall is kind of going in a southward direction, and then instead of
+    # just continuing on and meeting at the four way intersection ... it just goes sharply to the
+    # left before going down, thus making these extremely irregular shapes. This really, really
+    # looks like a rendering error"). It was one: `close_seams` made it and the carve does not -
+    # snapshotting the pass's input and output gives 0 steps on Inashiro's 543 carved rings and 26
+    # on the 634 it hands back. `research/fields.md` "A bund runs on, or it turns for a reason"
+    # carries the aze economics, the mechanism (`_plant` cut a pocket at a pitch where NEITHER
+    # adjacent row breaks) and the three-part fix.
+    #
+    # WHY THE RULE IS "MORE THAN ONE ON A RING" AND NOT "ANY AT ALL", which is the one thing to
+    # understand before retuning it. The shape the GM reported is a STAIRCASE - a wall that steps,
+    # steps again, and steps again - and that is what a weld pitch out of register with the fabric
+    # produces: on the pre-fix pool, 26 plot rings across the four scripted hamlets carried two or
+    # more steps apiece, six of them on Inashiro's east flank alone. A SINGLE step is a different
+    # animal: it is one awkward corner where a scrap of ground had exactly one home, the repair pass
+    # could not move the wall without breaking another rule (a neighbour split in two, a bund pushed
+    # into a delivery ditch, a basin drawn to a needle - see `_unjog`), and the map reads as an
+    # ordinary piecemeal parcel. Seven of those survive across the four maps and are ledgered in
+    # `future-work.md` with the guard that refuses each; `python3 -m l7r.diagram.tools.jogs` lists
+    # them, and that tool holds the ABSOLUTE rule so the residue stays visible and measured. This
+    # check is the ratchet that keeps the staircase from coming back.
+    #
+    # THE FOUR NUMBERS, none of them tuned to pass. OFFSET 3 ft is the floor
+    # `paddy_plot_seams_shared` already reasons to from `AZE_FT`: two bunds this close draw as one
+    # line. RUN 8 ft is well under `MIN_PLOT_SIDE`, so it excludes nothing real. LINK 25 ft - above
+    # that the sideways hop is a LIMB and an L-shaped parcel is the honest odd shape the research
+    # describes. And the hop must turn HARD at both ends, 55 deg or more, or a gently CURVING bund
+    # sampled into segments fires all along it: Kuwabata's long curved parcels reported 57 steps on
+    # 43 rings without that clause and 0 with it, Enokida 106 on 188.
+    #
+    # HEADINGS ARE COMPARED OVER THE FULL CIRCLE, not modulo 180 deg: the resumed run must head the
+    # SAME WAY, not merely lie on a parallel line. Modulo 180 a plain thin rectangle - long side,
+    # short end, long side coming back - is indistinguishable from a step, and every narrow basin
+    # the fabric legitimately carries fires on its own end wall (78 hits against 28 on Inashiro).
+    if M["meta"].get("generated_by"):
+        _jg_ftpx = float(M["meta"].get("ftpx", 1.0) or 1.0)
+        _jg_run = 8.0 / _jg_ftpx
+        _jg_link = 25.0 / _jg_ftpx
+        _jg_off = 3.0 / _jg_ftpx
+        _jg_bad: list[tuple[int, int, int]] = []
+        for _jg_fld in fields:
+            for _jg_r in _jg_fld.get("plot_rings") or []:
+                if len(_jg_r) < 5:
+                    continue
+                _jg_ring = dedup_ring([(float(_jg_q[0]), float(_jg_q[1])) for _jg_q in _jg_r], 0.5)
+                _jg_n = len(_jg_ring)
+                if _jg_n < 5:
+                    continue
+                _jg_steps = 0
+                for _jg_i in range(_jg_n):
+                    _jg_a = _jg_ring[_jg_i]
+                    _jg_b = _jg_ring[(_jg_i + 1) % _jg_n]
+                    _jg_c = _jg_ring[(_jg_i + 2) % _jg_n]
+                    _jg_d = _jg_ring[(_jg_i + 3) % _jg_n]
+                    _jg_e1 = (_jg_b[0] - _jg_a[0], _jg_b[1] - _jg_a[1])
+                    _jg_e2 = (_jg_c[0] - _jg_b[0], _jg_c[1] - _jg_b[1])
+                    _jg_e3 = (_jg_d[0] - _jg_c[0], _jg_d[1] - _jg_c[1])
+                    _jg_l1 = math.hypot(_jg_e1[0], _jg_e1[1])
+                    _jg_l2 = math.hypot(_jg_e2[0], _jg_e2[1])
+                    _jg_l3 = math.hypot(_jg_e3[0], _jg_e3[1])
+                    if _jg_l1 < _jg_run or _jg_l3 < _jg_run or not (0.0 < _jg_l2 <= _jg_link):
+                        continue
+                    _jg_h1 = math.degrees(math.atan2(_jg_e1[1], _jg_e1[0]))
+                    _jg_h2 = math.degrees(math.atan2(_jg_e2[1], _jg_e2[0]))
+                    _jg_h3 = math.degrees(math.atan2(_jg_e3[1], _jg_e3[0]))
+                    if abs((_jg_h3 - _jg_h1 + 180.0) % 360.0 - 180.0) > 20.0:
+                        continue
+                    if abs((_jg_h2 - _jg_h1 + 180.0) % 360.0 - 180.0) < 55.0 or abs((_jg_h3 - _jg_h2 + 180.0) % 360.0 - 180.0) < 55.0:
+                        continue
+                    if abs(-(_jg_e1[1] / _jg_l1) * _jg_e2[0] + (_jg_e1[0] / _jg_l1) * _jg_e2[1]) >= _jg_off:
+                        _jg_steps += 1
+                if _jg_steps > 1:
+                    _jg_bad.append((round(sum(_jg_q[0] for _jg_q in _jg_ring) / _jg_n), round(sum(_jg_q[1] for _jg_q in _jg_ring) / _jg_n), _jg_steps))
+        _jg_bad.sort(key=lambda _jg_t: -_jg_t[2])
+        check(
+            "paddy_bunds_do_not_stagger",
+            not _jg_bad,
+            f"{len(_jg_bad)} paddy basin(s) whose bund steps sideways more than once at {_jg_bad[:4]} (x, y, steps) - an aze is puddled mud re-plastered every spring and its bill is its length, so a wall runs on, or it turns for a reason that is drawn on the map; a flight of steps is a weld pitch out of register with the fabric, not a parcel boundary. Fix it in close_seams (_seam_cuts cuts a pocket where the fabric already breaks; _unjog repairs what survives), not by raising the 3 ft floor",
+        )
+    return _kept(locals(), ())
