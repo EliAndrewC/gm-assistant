@@ -295,6 +295,34 @@ now, then find the houses no way can reach and RE-SEAT those two or three - whic
 remove a placed bundle and re-place it, something the engine cannot currently do. That is the feature,
 and it is bigger than any of the thirteen attempts here.
 
+**FOURTEEN AND FIFTEEN: re-roll the map with the unservable ground forbidden - the last mechanism,
+and the most informative failure of the fifteen.** The engine cannot remove a placed bundle, but
+`generate` already gates in-process, so a map that strands a farmhouse can simply be BUILT AGAIN with
+that ground refused by the seat loops (`unreached_houses` mirrors the gate's own reach and its 40 ft
+notion of connected, so the retry forbids exactly what the rule condemns).
+
+It works, partially, and that is what makes it worth recording:
+
+- **One round re-seats every household and takes seed 5's stranded count from 9 to 2.** Not zero, so
+  `farmhouses_reach_a_way` stays red - and a retry scored on CHECKS FAILED therefore discards its own
+  progress, which is a trap worth naming.
+- **Scored on houses stranded instead, and iterated up to four rounds with the forbidden ground
+  accumulating** (a steading moved off one pocket must not be seated back onto an older one):
+  **41/48, the same three seeds.** It converges toward a floor it never reaches. Seed 8 went 3 -> 4 on
+  one round and seed 25 stayed at 12.
+
+**THE TERMINAL RESULT.** Fifteen attempts across every mechanism the engine offers - four on spacing
+and packing, three on drawing ways (margin runs, bearing scans, a map-wide flood), four on seat-time
+filters (crop line, flood fill, chain, width-aware chain), two on re-rolling with ground forbidden, and
+two on vetoing a crossing - and not one moved seeds 5, 8 or 25. Taken together with the measurement
+that five of the eight stranded houses have NO walkable cell within 110 ft at any footpath clearance,
+the conclusion is not "we have not found the trick yet". It is that **on these seeds the field shape,
+the cluster band and the household count together admit no arrangement in which every household is
+servable under the current rules.** Something upstream has to give: fewer households on that ground, a
+band that does not wrap onto an unservable margin, or a field whose far side is not cut off. All three
+are generator-design decisions, not lane or placement bugs, and all three are the GM's call rather than
+a fix to slip in.
+
 **The candidate that fitted every measurement until it was built**, ledgered jointly with the hamlets session: make the LANE
 SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
 instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
