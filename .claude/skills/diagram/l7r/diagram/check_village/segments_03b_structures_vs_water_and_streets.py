@@ -3,6 +3,7 @@
 import math
 from typing import Any
 
+from l7r.diagram.settlement import street_runs
 from l7r.diagram.waterfields import hem_on_paddy
 
 from .common_01_geometry import (
@@ -769,7 +770,9 @@ def _seg_0227__businesses_front_streets(
 
 def _seg_0228__c_2(*, M: Any = _UNBOUND, c: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 228 (c, corr) - body verbatim from the legacy gate() (feature 022)."""
-    corr = ([M["lane"]] if M.get("lane") else []) + [c["poly"] for c in M["channels"]]
+    # EVERY lane, not `M["lane"]` - that key holds the LAST lane drawn (a 45 ft orphan on Sawada),
+    # so this rule was adjudicating structure-vs-street against a fragment. See `street_runs`.
+    corr = street_runs(M) + [c["poly"] for c in M["channels"]]
     return _kept(locals(), ('c', 'corr'))
 
 

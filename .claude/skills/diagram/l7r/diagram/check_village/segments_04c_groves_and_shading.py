@@ -3,7 +3,7 @@
 import math
 from typing import Any
 
-from l7r.diagram.settlement import sat_overlap
+from l7r.diagram.settlement import sat_overlap, street_runs
 
 from .common_01_geometry import (
     _box_hits_poly,
@@ -499,7 +499,9 @@ def _seg_0285_081__groves_where_possible(
             "SE": [((0, 1), 1), ((1, 0), 0)],
         }
         avoid = others + gardens + yards + M.get("manors", []) + M.get("religious", [])
-        corridors = [c for c in [M.get("lane"), M.get("road")] if c]
+        # EVERY lane, not `M["lane"]` - see `street_runs`: that key is the last lane drawn, so grove
+        # shading was being judged against a fragment rather than against the ways.
+        corridors = street_runs(M) + [c for c in [M.get("road")] if c]
         corridors += [(c.get("poly", c) if isinstance(c, dict) else c) for c in M.get("channels", [])]
         corridors += [(s.get("poly", s) if isinstance(s, dict) else s) for s in M.get("streams", [])]
         # a town RAMPART blocks a grove belt exactly like a road: a farm hugging the wall has a
