@@ -2472,24 +2472,42 @@ green, and the uniform green is deliberate (`RICE_GREENS` holds the same green t
 stage"), so the FLOODED tint on the low plots by the drain is the ONLY in-field water texture the
 doctrine allows a paddy. On the map named 沢田, "marsh paddy", there is none.
 
-**MEASURED CAUSE - there are TWO demotion passes and the second one is doing the killing.** Counted by
-wrapping the predicates (Sawada, seed 6):
+**MEASURED CAUSE - and MY FIRST MEASUREMENT OF IT WAS WRONG, corrected here by the waterfields owner
+who re-measured it.** What I published (and pushed) was "1,329 candidates reach the seams pass, ~1,261
+killed by solidity/outfall/aspect". **That 1,329 is not a candidate count.** `pointed_ring` has SEVEN
+call sites inside `seams.py` (732, 759, 783, 846, 897 twice, 991) and only the last is the tint ladder,
+so wrapping the function counted the entire weld/gate/toe machinery. The owner reproduced my exact 1,329
+by patching it the same naive way, which is how the error was caught.
 
-    carve.py pass : 41 candidates   -> 25 demoted `pointed_ring`, 4 `tapers_to_a_point`, ~12 survive
-    seams.py pass : 1,329 candidates -> 68 `pointed_ring`, 0 `tapers_to_a_point`, **0 survive**
-                    => ~1,261 killed by the three clauses that exist ONLY in this pass
+THE REAL NUMBERS (Sawada seed 6, exact spec from its gen file, instrumented on the ladder's own
+exclusive predicate `tapers_to_a_point` - one call site, line 992 - and by wrapping `comb.close_seams`
+rather than `seams.close_seams`, since `comb.py` did `from .seams import close_seams` at import so
+patching the seams attribute silently does nothing):
 
-`carve.py:361` applies pointed+taper; `seams.py:990-996` then re-applies **those same two plus three
-more** to the final polygons - `_psol < _TINT_MIN_SOLIDITY` (0.85), `_at_outfall`, `_asp >
-_TINT_MAX_ASPECT` (4.0). So the second pass judges the survivors of the first by a superset of the same
-tests, and the effective survival rate is zero. **A 95% kill rate on those three clauses is the number to
-start from.**
+    FLOODED entering close_seams:    2  of 706 plots
+    FLOODED leaving close_seams:     0  of 812 plots
+    painted in the SVG:              0
+    plot-shapes the ladder judged:  10        (not 1,329)
+    of those 10: solidity killed 3, aspect killed 1 (one plot both), taper 0, outfall 0
 
-**WHY THIS IS NOT FIXED HERE.** Each clause was added for a real defect (the pond-like triangle, the
-arrowhead, the channel-shaped sliver), so the fix is not to delete one - and choosing which to relax
-needs to know why 0.85 and why 4.0, which is `waterfields/` knowledge belonging to the session that owns
-it and was editing `banks.py`/`seams.py` the same day. Same boundary as the lane-topology handover
-earlier: diagnosis and measurement here, the judgment call theirs.
+**So the carve hands the ladder two blue plots in seven hundred.** The ladder is not massacring
+candidates - there are never more than a handful. Solidity does dominate among the demotions (3 of 4),
+which was my guess, but demotions are not what empties the map.
+
+**THE ACTUAL MECHANISM IS UPSTREAM, in `carve.py:338` and `:356`:**
+
+    abuts = li == nlev - 1                                     # ONE plot per column - the last level
+    fill  = FLOODED if (abuts and R.random() < 0.45) else ...  # then a coin flip on that handful
+
+Eligibility is one plot per column reaching the collector - about five per hamlet - and 45% of five is
+two. A five-clause ladder applied to two plots reaches zero routinely. Sawada's "4 painted, 4 recorded"
+on 2026-08-16 was the same fragile draw landing better, NOT a healthier system.
+
+**DO NOT RELAX SOLIDITY OR ASPECT.** Each is doing its job on a genuine offender, and relaxing 0.85 buys
+back at most three plots on Sawada while re-admitting the pond-like blobs it was added for. The question
+the fix must answer is what blue MEANS: the doctrine in the code says "the closing rank pooling before
+the outfall", which is a RANK, while the implementation tints a 45% random sample of one-plot-per-column.
+Those are different pictures, and the second cannot survive any demotion ladder at all.
 
 **THE DURABLE HALF, also not yet done and worth more than the tint**: there is no gate that fires when a
 paddy map with `wet_plots` populated paints ZERO flooded basins. That absence is why a documented feature
@@ -2497,7 +2515,10 @@ went 4 -> 0 with nothing noticing, and it is the exact defect family this whole 
 absent key is indistinguishable from a satisfied check. The rule wants writing WITH the fix, because
 adding it today would simply fail all four maps. Suggested shape: on `generated_by` + hamlet/village +
 `wet_plots` non-empty, require `flooded_plots` to be present and non-empty, or an explicit meta key
-recording that the ladder rejected every candidate and why.
+recording that the ladder rejected every candidate and why. **AMENDED by the owner, and the amendment is
+the load-bearing part**: assert against the CARVE'S CANDIDATE COUNT as well, because a map can honestly
+have no eligible plot, and a check that cannot tell "no candidates" from "every candidate demoted" will
+be waived the first time it fires on a legitimately dry map.
 
 ## OPEN 2026-08-19: the dry-hem furrow variety falls off a ONE-FOOT CLIFF at 56 ft, and its check goes blind with it
 
@@ -2543,5 +2564,85 @@ check's own `1.25 * mean_side` is the right shape, so uncap it, and give the gen
 plus a margin so it stays the wider of the two. Then re-measure the spread on all four; the two healthy
 maps show what the machinery does when it can see its neighbors.
 
-**Owner**: the generator half is `waterfields/`, whose session was editing `banks.py`/`seams.py` the same
-day; the check half is the shared gate. Sent to them with these numbers.
+**FIXED, AND THE NUMBER IS OVER-CORRECTED - the fix stays in, the value is queued to the GM.** Scaling
+both radii to the plots landed all four maps at 96-104 deg of spread (from 3.15/3.27 on the two collapsed
+ones and ~33 on the two healthy ones). That is strictly better than 3 deg and the two-sided blindness was
+a genuine bug worth fixing regardless - but 3 deg being wrong does not make 102 right, and the waterfields
+owner supplied the prior that says it is not:
+
+  - In an open-field system the strips group into **FURLONGS, and a furlong shares ONE orientation**; the
+    direction changes BETWEEN furlongs, chosen from the lie of the land for drainage. Coherent block,
+    varied blocks - not varied neighbors.
+  - The physical reason is the decisive one: adjacent strips at a large angle **drain into each other**,
+    and a plowman turns at a **shared headland**. Two neighbors 100 deg apart have neither. That is not a
+    stylistic objection, it is what furrows are for.
+  - Our own code already says it. `carve.py:656`: "the furrow direction is the contour heading, varied per
+    plot" - varied AROUND the contour, not maximally separated from the neighbor. With
+    `furrow_spread = 1.1` rad (+/-63 deg), a 96-104 deg spread means the algorithm is pushing neighbors to
+    opposite ends of the permitted band: the band's outer limit doing the work rather than the contour.
+
+So the algorithm's SHAPE is suspect, not only its radius - maximize-separation produces exactly the
+neighbor-vs-neighbor contrast the furlong evidence argues against. The likely target is a modest spread
+around a block-coherent grain, with the larger changes between GROUPS of plots rather than between every
+adjacent pair.
+
+**Neither session is picking the number.** It is a legibility-vs-accuracy trade of the kind this project
+sends to the GM rather than deciding quietly - the same shape as the channel taper that is sub-perceptual
+at true scale, where two multipliers were priced and the GM chose true size. Queued to him beside the
+FLOODED-tint decision, since both are "what should every hamlet look like" questions and they should be
+seen together.
+
+**REVIEWED, AND THE VERDICT IS SHARPER THAN EITHER SESSION'S GUESS: the RANGE is right, the
+DISTRIBUTION is wrong** (settlement-review with a research pass, 2026-08-19). ~102 deg reads as a mosaic
+rather than chaos - the hem never fragments, every parcel's hatch is internally clean, and the two
+already-healthy maps were not damaged (Kashikawa "reads as a genuinely handsome quilt"). So do NOT narrow
+the allowance.
+
+What is wrong is the SHAPE of the angle field. `_dry_fields` maximizes separation - it seats each plot in
+the widest gap its neighbors leave - and the measured signature is a **hole at zero**: Sawada's median
+neighbor delta is 52.1 deg out of a 126 deg fan and NO pair is under 13.9. A real hem's neighbor-delta
+histogram is bimodal, a pile near 0 (same block, same owner, same outfall) with a few big jumps at block
+seams. The sourced record is decisive on the mechanism:
+
+  - a FURLONG is "a group of strips or lands all oriented in the same direction", and "adjacent furlongs
+    often ran at different angles to one another, which is why you sometimes see ridge and furrow
+    changing direction as you cross a field boundary" (Nottingham/Laxton; Evershot; Fieldworthy). The
+    variety lives at BLOCK scale with agreement INSIDE a block.
+  - blocks were "orientated in such a way as to take advantage of the topology of the land and so further
+    assist the drainage" - direction is DERIVED from slope and outfall, not free.
+  - strips were long and narrow "to reduce the number of times the plough-team had to turn", sharing a
+    headland at each end (DigVentures), and were "separated from their neighbours by a double furrow, or
+    ... an unploughed grass balk" (How-to History) - a boundary form that only exists between PARALLEL
+    strips.
+  - the East Asian record does not overturn it: contour ridging is the documented STEEP-SLOPE measure
+    (FAO Nishi-Awa), which `fields.md` already declines to apply on a gentle hem, and fragmented
+    smallholdings make per-parcel choice more available - but shared slope, a shared outfall and a shared
+    parcel shape still push neighbors toward agreement. The East Asian record is SILENT on the angle
+    field specifically.
+
+**AND THE CHECK CODIFIES THE WRONG MODEL.** `dry_plot_furrows_vary` forbids two plots within ~50 px from
+running within ~6 deg - i.e. it forbids the attested arrangement outright, which is precisely why the
+generator has to anti-correlate. Fixing the generator without re-scoping the check would just make the
+gate red on the correct answer.
+
+**THE ANSWER IS A KNOB (Principle XII), not a number.** The record supports BOTH a furlong-block hem (3-6
+adjacent parcels sharing a direction, changing at seams) and a fully fragmented per-parcel hem, and at
+~1,500 ft of hem those give 2-5 direction domains versus 28 - instantly distinguishable at fit zoom, which
+is the different-but-plausible-places goal exactly. Sketch from the reviewer: roll `hem_block_len` from
+the seed (1 = today, 3-6 = furlong-like), assign a direction per BLOCK, seat blocks by maximize-separation,
+let parcels inside a block share it with a small jitter - and re-scope `dry_plot_furrows_vary` to compare
+BLOCKS, or it fires on every block interior.
+
+**ONE CONCRETE DEFECT THE GREEN GATE PERMITS, worth fixing whatever happens to the knob**: a 13.9 deg
+neighbor pair reads as one plot bisected rather than two holdings - Sawada's stacked pair at (740,3097)
+and (742,3028), and Mizuguchi's twin at 11.5 deg. The gate's 6 deg floor is a CONSERVATION threshold, not
+a legibility one, so roughly 6-20 deg is the worst of both worlds: too different to be one block, too
+similar to read as two. Do not simply raise the 6 deg - that punishes the honest near-parallel case. Give
+the GENERATOR a minimum separation (~20 deg) for edge-adjacent parcels, or adopt the block model, where
+near-parallel neighbors become correct and the jump moves to the seam.
+
+**Owner: `waterfields/`, taking BOTH halves.** The furrow angle sits three lines from the tint eligibility
+that session is about to change, so splitting them would be worse than either session holding both. A
+caution recorded with it: a VISUAL reviewer can say whether 102 deg looks tidy - a map where every plot is
+distinguishable does look tidy - but cannot say whether two adjacent plots at that angle could both drain,
+which is the question that decides it.

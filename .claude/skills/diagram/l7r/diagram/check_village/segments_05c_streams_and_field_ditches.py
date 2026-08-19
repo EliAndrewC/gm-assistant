@@ -208,7 +208,15 @@ def _seg_0317__dry_plot_furrows_vary(
             pp = p["poly"]
             _a = abs(sum(pp[i][0] * pp[(i + 1) % len(pp)][1] - pp[(i + 1) % len(pp)][0] * pp[i][1] for i in range(len(pp)))) / 2
             _dv_sides.append(_a**0.5)
-        _dv_rad = min(50.0, 1.25 * (sum(_dv_sides) / len(_dv_sides)))
+        # UNCAPPED (2026-08-19). The 50 ft ceiling made this check VACUOUS: mean plot side on the
+        # scripted hamlets is 81-87 ft, so the formula wants ~102 and the cap forced 50 - below every
+        # map's closest plot spacing (54-59 ft), so it compared ZERO pairs on all four and had been
+        # doing so for as long as the plots have been this size. It went blind in the same moment and
+        # for the same reason as the GENERATOR that feeds it (`carve.py`'s `ADJ2`, also a flat px
+        # radius): the two were calibrated against each other rather than against the plots, so when
+        # the plots outgrew both, neither could catch the other. A check and a generator agreeing
+        # perfectly about a quantity that no longer describes the map.
+        _dv_rad = 1.25 * (sum(_dv_sides) / len(_dv_sides))
         same = []
         for ai in range(len(dry_plots)):
             for bi in range(ai + 1, len(dry_plots)):

@@ -694,9 +694,29 @@ def _dry_fields(
     # between the angles of its already-placed NEIGHBORS, guaranteeing separation (drives dry_plot_furrows_vary).
     HW = furrow_spread
     placed: list[tuple[float, float, float]] = []
-    ADJ2 = (
-        56**2
-    )  # the furrow-variety neighborhood stays UNSCALED: dry_plot_furrows_vary judges adjacency at this px radius on every map, and a generator that varies over a WIDER circle than the check demands is safely conservative
+    # THE FURROW-VARIETY NEIGHBORHOOD SCALES WITH THE PLOTS (2026-08-19). It was a flat 56 px, on the
+    # reasoning - sound in itself - that `dry_plot_furrows_vary` judges adjacency at a fixed px radius
+    # and "a generator that varies over a WIDER circle than the check demands is safely conservative".
+    # 56 was indeed wider than the check's 50. What defeated it is that BOTH were ABSOLUTE radii while
+    # the thing they measure grew: the hem's plots now sit 54-59 px apart, so the map fell off a
+    # ONE-FOOT CLIFF depending on its spacing, and the generator and the check went blind together.
+    #
+    # The degeneration is silent, which is why it survived. This is a maximize-separation algorithm -
+    # it seats each plot's furrows in the WIDEST angular gap between the neighbors it can see - and
+    # with NO neighbor in range `edges` collapses to `[lo, hi]`, the widest gap is the whole
+    # allowance, and every plot gets `(lo+hi)/2` = `theta0`, the contour angle, plus a +/-1.7 deg
+    # jitter. Measured on the shipped pool before this fix:
+    #     kashikawa closest 54.4 ft -> sees neighbors -> 33.98 deg of spread   (healthy)
+    #     mizuguchi closest 55.7 ft -> sees neighbors -> 32.37 deg             (healthy)
+    #     sawada    closest 57.0 ft -> sees NONE      ->  3.27 deg             (collapsed)
+    #     inashiro  closest 58.5 ft -> sees NONE      ->  3.15 deg             (collapsed)
+    # One foot of spacing was the whole distance between a patchwork of family strips and one ruled
+    # hatch across the hem - on maps whose `meta.dry_furrows_vary` declares the patchwork.
+    #
+    # Scaled off the nominal cell (`plot * g`) rather than a constant, so it tracks the plots on THIS
+    # map. 1.6 keeps it comfortably wider than the check's `1.25 * mean_side`, preserving the original
+    # conservative-generator intent - the intent was right, only its units were wrong.
+    ADJ2 = (1.6 * plot * g) ** 2
     prev_crop = R.choice(list(DRY_CROPS))
     # THE BERM IS MEASURED FROM THE CANAL'S BANK, NOT ITS CENTERLINE (settlement-review 2026-08-17).
     # This used to be a flat `8 * g` from the centerline, which silently bundled the canal's own
