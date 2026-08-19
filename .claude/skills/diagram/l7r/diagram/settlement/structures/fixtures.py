@@ -218,8 +218,10 @@ class PublicFixturesMixin:
                 # 21 took the first rung and left the caption on the tread; the good pocket is at 36.
                 # Hug there is 38.5 px, which the pool already carries (inashiro and mizuguchi sit at
                 # 41.0 and pass `label_hugs_its_referent`).
-                _tilted = [tilt_caption_seat(x, y, rot, _t, hw, hh, _g, above=_ab) for _ab in (False, True) for _g in (11, 16, 21, 28, 36)]
-                _lx, _ly = _tilted[5] if label_above else max(_tilted, key=_box_clearance)
+                _tilted = [
+                    tilt_caption_seat(x, y, rot, _t, hw, hh, _g, above=_ab, lateral=_lat) for _ab in (False, True) for _g in (11, 16, 21, 28, 36) for _lat in (0.0, _chw + hw + 6, -(_chw + hw + 6))
+                ]
+                _lx, _ly = _tilted[15] if label_above else max(_tilted, key=_box_clearance)
             else:
                 # THE HALO MUST NOT NOTCH THE WAY THE BOARD STANDS ON (settlement-review on Inashiro,
                 # 2026-08-19). The caption is drawn with a 3 px background halo
