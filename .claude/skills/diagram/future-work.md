@@ -204,6 +204,37 @@ though `frame(project(house))` returns the house itself to within 0-28 ft. So a 
 that follows the MARGIN will not reach them either. Whatever serves these houses has to be oriented by
 the local dry ground rather than by the field edge, and nothing in the engine currently computes that.
 
+**ATTEMPTS TEN AND ELEVEN, and a FOURTH correction to my own measurements.**
+
+- **Ten: a bearing scan.** For a still-unserved house, scan 36 bearings from the door, take the
+  direction whose corridor is genuinely open, lay a run down it. **43/48 - baseline, fixing nothing.**
+- **The correction that explains it.** The "60-120 ft of open ground beside each stranded house" that
+  motivated attempt ten measures clearance to FABRIC ONLY and ignores crop entirely. That open ground
+  is largely the flooded paddy. Fourth instance in one day of the same error: a measurement that
+  cannot tell the failing case from a healthy one. (An erosion test has the mirror flaw - it says the
+  dry ground stays connected at a 20 ft erosion radius, but it counts only crop, so it is answering
+  about mud, not about where a way can run.)
+- **Eleven: ONE map-wide walk instead of a bounded search** - a single BFS over the whole map at 8 ft
+  cells, blocked by crop at `WEB_HARD_GAP` and by fabric at `FOOTPATH_FABRIC_GAP`, seeded from every
+  drawn way, then the gradient walked back from the nearest reachable cell and string-pulled. This is
+  the one design the router structurally cannot express, and the diagnostic behind it is the most
+  encouraging result in the whole entry: **on seed 5, three of four unreachable farmhouses have a
+  genuinely walkable path 248-360 ft long that no bounded search can see.** Built as a lazy last-resort
+  pass (3 cohort seeds in 48 ever build the grid): **41/48, neutral - it fixed none of the three.**
+
+Why eleven did not land, for whoever picks it up: the reachable cells sit 90-100 ft from the house,
+right at the `WEB_REACH_FT` bound, and the run has to survive `_reach(house, run) <= 100` after a
+string-pull at footpath clearance. So the path exists, is found, and is then rejected or trimmed at
+the last step. That is a much smaller gap than anything else in this entry - **the next session should
+start by instrumenting what happens to those found paths between the walk and `_draw_web`**, not by
+inventing a twelfth approach.
+
+**A NOTE ON THE MOVING BASELINE.** Three sessions were writing to this tree while these attempts ran,
+and the cohort moved twice underneath them (a cluster-shape binding, then field bund/seam work). The
+43/48 figures above and the 41/48 ones below are against DIFFERENT tips. Per-seed reach behavior on
+5, 8 and 25 was stable throughout, which is why the attempts remain comparable; nothing else in the
+residue is.
+
 **The candidate that fitted every measurement until it was built**, ledgered jointly with the hamlets session: make the LANE
 SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
 instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
