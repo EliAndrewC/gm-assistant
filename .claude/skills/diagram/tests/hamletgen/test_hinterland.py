@@ -6,6 +6,11 @@ Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen
 import pytest
 
 from l7r.diagram import hamletgen as hg
+
+# REACHED THROUGH THE MODULE, not through the package. `stage_windbreak` and `title_pocket` are
+# internals of this stage; pinning them on hamletgen's star-import surface to satisfy one test would
+# widen the package's public contract for a test's convenience (tests/hamletgen/test_surface.py).
+from l7r.diagram.hamletgen import hinterland
 from l7r.diagram.settlement import Settlement
 
 from ._builders import SQUARE, a_plan
@@ -39,3 +44,25 @@ def test_a_windbreak_column_with_no_house_of_its_own_leans_on_the_whole_fringe()
     belt = hg.belt_polygon(s, plan)
     assert belt, "a gapped cluster still needs a windbreak belt"
     assert len(belt) >= 4
+
+
+def test_a_belt_vertex_in_the_title_pocket_is_pushed_out_of_it() -> None:
+    """`stage_woodland` reserves blank ground for the map's name and keeps the COPPICE out of it, but
+    the belt is computed there and drawn later, so `stage_windbreak` has to dent it around the same
+    pocket - otherwise the hamlet's own title is drawn over its windbreak.
+
+    Held here for the reason the gapped-column test above gives, and it is not hypothetical: this
+    branch was live on the pool until the 2026-08-19 seam-alignment change moved every fan slightly,
+    after which no map's belt happened to cross its title pocket and the gate failed on coverage
+    rather than on behaviour. A dent that no map happens to need is exactly the kind that rots."""
+    plan = a_plan()
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s.M["houses"] = [{"x": x, "y": 700.0, "w": 46.0, "h": 28.0} for x in (500.0, 560.0, 620.0)]
+    tp = hinterland.title_pocket(s, plan)
+    mid = ((tp[0] + tp[2]) / 2, (tp[1] + tp[3]) / 2)
+    plan.belt = [(tp[0] - 80.0, tp[1] - 80.0), mid, (tp[2] + 80.0, tp[3] + 80.0), (tp[0] - 80.0, tp[3] + 80.0)]
+    hinterland.stage_windbreak(s, plan)
+    belt = [g for g in s.M["village_groves"] if g.get("role") == "windbreak"]
+    assert belt, "the windbreak was not recorded"
+    inside = [q for q in belt[0]["poly"] if tp[0] <= q[0] <= tp[2] and tp[1] <= q[1] <= tp[3]]
+    assert not inside, f"belt vertices left standing in the title's pocket: {inside}"

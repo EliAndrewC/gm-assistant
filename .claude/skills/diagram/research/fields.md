@@ -73,7 +73,7 @@ needle basin cannot be leveled or bunded at any sane cost.
 
 ### A bund runs on, or it turns for a reason - it does not step sideways and carry on
 
-**Grounds:** `waterfields/banks.py::jog_steps` (used by `_absorb`); `tools/jogs.py`; **not yet a gate check** - see the departures below
+**Grounds:** `waterfields/banks.py::jog_steps`; `waterfields/seams.py::_seam_cuts`, `_unjog`; `tools/jogs.py`
 
 **Evidence:** follows from the *aze*'s construction and maintenance, above; the *kochi seiri* framing at the head of this section
 
@@ -102,35 +102,44 @@ intersection between the north south earthen walls and the east west earthen wal
 sharply to the left before going down, thus making these extremely irregular shapes. This really,
 really looks like a rendering error"*).* Measured, it was one: snapshotting `close_seams`'s input
 and output gives **0 steps on the 543 carved rings and 26 on the 634 it hands back**, and every
-frozen pre-`close_seams` fixture in `pool/regressions/` scores 0. The mechanism is that a thin
-residual strip between two carved rows gets cut at `_plant`'s own pitch - `plot_across`, 48 ft on a
-hamlet, which is where NEITHER row has a seam - and the pieces then weld alternately into the row
-above and the row below, building a staircase out of what should be one wall.
+frozen pre-`close_seams` fixture in `pool/regressions/` scores 0.
 
-**Generation, so far**: `_absorb` refuses a weld that adds a step to its host, ranked in the same
-ladder that already refuses a needle or a lump, with the least-jogging weld taken ahead of the
-lumpy and needling fallbacks (`jog_steps`). That is a partial answer and is measured as one - the
-four scripted hamlets go 26 -> 23, 37 -> 33, 20 -> 17 and 24 -> 16 steps - because the ladder's
-fallbacks must still put the ground somewhere. **Checking**: `tools/jogs.py` reports every step in a
-recorded manifest.
+**THE MECHANISM, which is a pitch nothing else on the map uses.** A thin residual strip between two
+carved rows is one connected scrap. `_plant` used to grid a pocket from the POCKET'S OWN bounding
+box at `plot_across` - 48 ft on a hamlet - and that is a position at which NEITHER row breaks, so
+every offcut it handed back landed mid-basin on both sides. `_absorb` then welded them alternately
+into the row above and the row below, and the wall between the rows came out a staircase.
 
-*Disclosed departures, and the open one first.* (1) **This is not a gate check yet, deliberately,
-and it should be**: the engine still produces the shape, so a rule in the gate would fail the pool
-on day one. `future-work.md` "Paddy bunds still step sideways" carries the residual counts, the two
-implementation attempts that were tried and reverted with what each one broke, and the sketch; the
-LAST step of that work is moving the rule from the tool into `check_village`, where a
-`paddy_bunds_do_not_jog` firing at a 3 ft offset with 8 ft runs and a 25 ft link is written and
-proven to fire. (2) The rule is DIRECTED - it compares headings over the full circle, not modulo 180
-degrees - because a plain thin rectangle is two parallel runs a short link apart, and modulo 180
-every narrow basin the fabric legitimately carries fires on its own end wall (78 hits against 28 on
-Inashiro). (3) A hop longer than the link cap is not judged at all: past that the offset is a LIMB
-and the parcel is an L, which is exactly the honest odd shape this file describes. (4) The hop must
-turn HARD at both ends - 55 degrees or more - because a gently CURVING bund sampled into segments is
-otherwise a run, a link and a run resuming near-parallel, with a few feet of perpendicular offset
-coming purely from the bend. Kuwabata, whose paddies are drawn as long curved parcels, reported 57
-steps on 43 plot rings without that clause and 0 with it, and Enokida 106 on 188 rings against 0 -
-which is the same trap this section's first departure describes, caught from the other side: a rule
-written on "the wall is not where it was" fires on every bund that legitimately bends.
+**Generation, in three parts, and the first is the one that matters** (counts are steps at the
+rule's own thresholds across the four scripted hamlets, 26/37/20/24 before):
+
+- `_seam_cuts` - **cut a pocket where the fabric already breaks.** A pocket's outline IS the
+  surrounding basins' outline, so its corners are where the rows either side of it end; cutting
+  there means an offcut lines up with the basin it will be welded into. The even spacing still
+  governs and a neighbour's corner only wins within 0.35 of a cell of it, which is a MEASURED
+  ceiling: at 0.40 the cut follows the neighbours far enough to move the fan's envelope, and
+  Kashikawa's dry hem - tiled against that envelope - shifts onto a footbridge.
+- `_absorb`'s **jog guard** - refuse a weld that adds a step to its host, ranked in the same ladder
+  that already refuses a needle or a lump. Alone it takes 26/37/20/24 to 23/33/17/16: it can only
+  CHOOSE a host, and the steps that survive it are the ones where the ground had only one home.
+- `_unjog` - **repair what neither could avoid**, by trading the corner between the two basins that
+  share the wall so the hop becomes a bend, or by flattening a whole tab so the wall runs on
+  straight. Its refusals are the rules it would otherwise break, each measured breaking one; they
+  are listed at the function.
+
+Together: **0 / 1 / 5 / 1 steps**, and - the number that answers the report - **no plot ring on any
+of the four carries more than one step**, against 6 / 9 / 4 / 7 rings that did. The staircase is
+gone; what is left is single, small, isolated corners. `tools/jogs.py` reports them on demand and
+`future-work.md` carries the residue.
+
+*Disclosed departures.* (1) The rule is DIRECTED - it compares headings over the full circle, not
+modulo 180 degrees - because a plain thin rectangle is two parallel runs a short link apart, and
+modulo 180 every narrow basin the fabric legitimately carries fires on its own end wall (78 hits
+against 28 on Inashiro). (2) The hop must turn HARD at both ends, 55 degrees or more, or a gently
+CURVING bund sampled into segments fires all along it - Kuwabata's long curved parcels reported 57
+steps on 43 rings without that clause and 0 with it, Enokida 106 on 188. (3) A hop longer than the
+link cap is not judged at all: past that the offset is a LIMB and the parcel is an L, which is
+exactly the honest odd shape this file describes.
 
 ### A basin never tapers to a point - the fan toe truncates
 
