@@ -144,7 +144,13 @@ def tilt_caption_seat(x: float, y: float, rot: float, tilt: float, half_w: float
     flips to the upper edge). Which local half-extent lies perpendicular to the caption's
     baseline depends on which edge family `label_tilt` folded onto - a rot=150 works reads along
     its LONG side (half_h below the baseline) where a rot=102 yard reads along its SHORT one
-    (half_w) - so both halves are passed and the fold decides."""
+    (half_w) - so both halves are passed and the fold decides.
+
+    A `lateral` slide along the baseline WAS ADDED HERE AND REVERTED (2026-08-19): it is the obvious
+    way to get a caption off a way it is sitting on, and for a kosatsuba it cannot work, because
+    `kosatsuba_faces_the_road` makes the board's baseline PARALLEL to its lane - so sliding along it
+    holds the perpendicular distance exactly constant. Measured no-op, 0.2 ft before and after. The
+    lever that can work is the `gap` argument, which every tilted caption shares."""
     perp = half_h if round((rot - tilt) / 90.0) % 2 == 0 else half_w
     a = math.radians(tilt)
     d = (perp + gap) * (-1.0 if above else 1.0)

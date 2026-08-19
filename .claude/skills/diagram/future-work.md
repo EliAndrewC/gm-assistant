@@ -2815,12 +2815,26 @@ chosen before the text is laid out. Below is tried first, so an unblocked board 
     sawada     6.9 ft unchanged                kashikawa  0.2 ft unchanged (see below)
     Gate green (3434), cohort 43/48, zero regressions, captions present on all four.
 
-**WHAT REMAINS: a TILTED board still takes its caller's side.** Scoring the two tilted seats by clearance
-was tried and MEASURED AS A NO-OP - 0.2 ft before and after - and reverted rather than left as complexity
-that reads as load-bearing. It cannot work: `tilt_caption_seat` offsets ALONG the board's own axis, and on
-Kashikawa that axis is what points at the lane, so both options land together. What would move it is a
-lateral offset in the TILTED frame, perpendicular to the board's axis - a change to `tilt_caption_seat`,
-which every tilted caption in the engine shares, so it wants its own pass.
+**WHAT REMAINS - and a TILTED board cannot be moved by either obvious lever, which is now proved rather
+than suspected.** Kashikawa's caption sits 0.2 ft off its tread. Both levers were implemented, measured,
+and reverted; both were EXACT no-ops, 0.2 ft before and after:
+
+  - **Flipping `above`** puts the caption on the board's other side - a move of the board's own 5 ft
+    depth. The far side is no further from the lane.
+  - **Sliding LATERALLY along the baseline cannot help AT ALL**, and this is the part worth keeping.
+    `kosatsuba_faces_the_road` requires the board to FACE its road, so its baseline is PARALLEL to the
+    lane by rule. Sliding along a line parallel to the lane holds the perpendicular distance exactly
+    constant. It is not a tuning failure, it is geometrically incapable of changing the number.
+
+Both reverts are complete, including the opt-in `lateral` parameter that was added to
+`tilt_caption_seat` for the second attempt - dead code that changes nothing is worse than absent code,
+because the next reader must assume it is load-bearing. The reasoning is recorded at BOTH sites
+(`fixtures.py`'s tilted branch and `tilt_caption_seat`'s docstring) so a fourth attempt is not made.
+
+**The only lever that can work is the perpendicular `gap`** - pushing the caption further from the board,
+away from the road. That argument is shared by every tilted caption in the engine (theater stages, fire
+towers, punishment spots), so changing it has a real blast radius and belongs WITH the check below rather
+than as a special case for one board.
 
 **AND THE RULE IS STILL NOT ENFORCED.** Nothing checks that a caption's halo clears a way. 0.2 ft passes
 today and is one re-pack from a defect with nothing that would notice - the same silent-flip shape as the
