@@ -182,7 +182,26 @@ class PublicFixturesMixin:
             elif _t:
                 _lx, _ly = tilt_caption_seat(x, y, rot, _t, hw, hh, 11, above=label_above)
             else:
-                _lx, _ly = (x, y - hh - 11) if label_above else (x, y + hh + 11)
+                # THE HALO MUST NOT NOTCH THE WAY THE BOARD STANDS ON (settlement-review on Inashiro,
+                # 2026-08-19). The caption is drawn with a 3 px background halo
+                # (`paint-order="stroke"`), and a kosatsuba is sited ON a verge by construction - so
+                # the below-seat lands on the lane about as often as not. Measured: the board at
+                # (1224,1009) with `lanes[1]` passing x~1235 at w=5, and the halo knocked a visible
+                # notch out of the map's busiest internal lane, between the words "notice" and
+                # "board". That is the founding-run "caption pierced by its own feature" defect
+                # inverted - here the caption does the piercing.
+                #
+                # So the side is CHOSEN rather than fixed: whichever of the two bands sits further
+                # from any drawn way. `label_above=True` stays an unconditional override, because its
+                # callers set it for a reason the geometry cannot see (a board just inside a gate,
+                # whose below-label would hang over the gate structure).
+                _above, _below = (x, y - hh - 11), (x, y + hh + 11)
+                if label_above:
+                    _lx, _ly = _above
+                else:
+                    _lx, _ly = max(
+                        (_below, _above), key=lambda q: min((seg_dist(q[0], q[1], _p[_i], _p[_i + 1]) for _r in street_runs(self.M) for _p in (_r,) for _i in range(len(_p) - 1)), default=1e9)
+                    )
             self.label(_lx, _ly, label, 8, italic=True, color="#7A5A30", rot=_t)
         return z
 
