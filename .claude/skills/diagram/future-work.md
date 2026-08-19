@@ -2498,3 +2498,50 @@ absent key is indistinguishable from a satisfied check. The rule wants writing W
 adding it today would simply fail all four maps. Suggested shape: on `generated_by` + hamlet/village +
 `wet_plots` non-empty, require `flooded_plots` to be present and non-empty, or an explicit meta key
 recording that the ladder rejected every candidate and why.
+
+## OPEN 2026-08-19: the dry-hem furrow variety falls off a ONE-FOOT CLIFF at 56 ft, and its check goes blind with it
+
+The furrow-angle machinery in `waterfields/carve.py:834-838` is a maximize-separation algorithm: it
+collects the angles of already-placed plots within `ADJ2` (56 px), takes the WIDEST angular gap between
+them, and seats the new plot's furrows in the middle of it. When it works it works well. **When `nb`
+comes back empty it degenerates silently**: `edges` is just `[lo, hi]`, the widest gap is the whole
+allowance, and every plot gets `(lo+hi)/2` - which is exactly `theta0`, the contour angle - plus a
+`R.uniform(-0.03, 0.03)` jitter worth +/-1.7 degrees.
+
+**ADJ2 is 56 px and the plots are now 54-59 px apart, so which side of the cliff a map lands on is
+luck:**
+
+    kashikawa  closest centers 54.4 ft  -> neighbors seen  -> furrow spread 33.98 deg   healthy
+    mizuguchi  closest centers 55.7 ft  -> neighbors seen  -> furrow spread 32.37 deg   healthy
+    sawada     closest centers 57.0 ft  -> NONE seen       -> furrow spread  3.27 deg   collapsed
+    inashiro   closest centers 58.5 ft  -> NONE seen       -> furrow spread  3.15 deg   collapsed
+
+A one-foot difference in plot spacing is the whole distance between a patchwork of family strips and one
+ruled hatch laid across the hem. `settlements`' own doctrine calls for the patchwork
+(`segments_05c`: "Fragmented dry holdings were a mosaic of family strips, each plowed to its OWN
+orientation"), and `meta.dry_furrows_vary` is declared True on all four - so two of them declare a
+variety they do not draw.
+
+**AND THE CHECK GOES BLIND AT THE SAME MOMENT, FOR THE SAME REASON.**
+`dry_plot_furrows_vary` compares only plot pairs whose CENTERS lie within `min(50.0, 1.25 * mean_side)`.
+Mean side is 81-87 ft on all four, so the formula wants ~102 and the **cap forces 50** - below every
+map's closest spacing. It compares ZERO pairs on all four maps and has been vacuous the whole time.
+
+The generator's own comment explains the pairing and it is sound reasoning: the radius "stays UNSCALED:
+`dry_plot_furrows_vary` judges adjacency at this px radius on every map, and a generator that varies over
+a WIDER circle than the check demands is safely conservative". 56 > 50, so the generator IS the wider of
+the two, exactly as intended. **What defeats it is that BOTH are absolute px radii while the thing they
+measure grew.** The two guards were calibrated against each other rather than against the plots, so when
+the plots outgrew them they went silent together and neither could catch the other.
+
+That is the day's pattern in its purest form: a check and a generator agreeing perfectly with each other
+about a quantity that no longer describes the map.
+
+**FIX DIRECTION, and it must land on BOTH SIDES AT ONCE** (fixing only the check turns the gate red on two
+maps whose generator cannot produce variety): scale both radii to the plots actually on the map - the
+check's own `1.25 * mean_side` is the right shape, so uncap it, and give the generator the same measure
+plus a margin so it stays the wider of the two. Then re-measure the spread on all four; the two healthy
+maps show what the machinery does when it can see its neighbors.
+
+**Owner**: the generator half is `waterfields/`, whose session was editing `banks.py`/`seams.py` the same
+day; the check half is the shared gate. Sent to them with these numbers.
