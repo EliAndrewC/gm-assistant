@@ -930,28 +930,62 @@ Where the regular web still cannot reach a steading, that house gets what an out
 really has: a footpath of its own, routed round the neighboring plots rather than ruled at them,
 stopping at its first contact with the network, and planked where it crosses a ditch.
 
-### 2026-08-18 - the earthen walls that zigzag: diagnosed, half fixed
+### 2026-08-18/19 - the earthen walls that zigzag: diagnosed, and fixed
 
-Recorded here and referenced from the other three hamlet notes, because the defect is engine-wide.
+Recorded here and referenced from the other three hamlet notes, because the defect and the fix are
+engine-wide.
 
 The GM, reading this sheet: *"the earthen wall is kind of going in a southward direction, and then
 instead of just continuing on and meeting at the four way intersection between the north south
 earthen walls and the east west earthen walls, it just goes sharply to the left before going down,
 thus making these extremely irregular shapes. This really, really looks like a rendering error."*
-The most egregious instance is the east flank at map (2283-2474, 1718): four rectangular tabs in a
-row, each about 48 ft wide and 8.5 ft deep, welded alternately into the row above and the row below.
+The worst instance was the east flank at map (2283-2474, 1718): four rectangular tabs in a row, each
+about 48 ft wide and 8.5 ft deep, welded alternately into the row above and the row below.
 
-**It is a rendering error, and the provenance is measured**: snapshotting `close_seams`'s input and
-output gives **0 steps on the 543 carved rings and 26 on the 634 it hands back**. `_plant` grids a
-residual strip at its OWN pitch (`plot_across`, 48 ft), which is where neither adjacent row has a
-seam, and `_absorb` then welds the offcuts to whichever side shares the most bund.
+**It was a rendering error, and the provenance is measured**: snapshotting `close_seams`'s input and
+output gives **0 steps on the 543 carved rings and 26 on the 634 it hands back**. The mechanism is a
+PITCH: `_plant` gridded a pocket from the pocket's own bounding box at `plot_across` (48 ft), which
+is where NEITHER adjacent row breaks, so every offcut landed mid-basin on both sides.
 
-**Landed**: the `jog_steps` predicate, a jog guard in `_absorb`'s ladder (26 -> 23 here; 37 -> 33,
-20 -> 17, 24 -> 16 on the other three), and `python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json`.
-No other check moved and the regeneration is unchanged (21.1 s -> 20.8 s).
+**The fix, in the order it matters** (steps at the rule's thresholds, all four scripted hamlets), measured against the maps as they shipped on 2026-08-18 (a peer session's lane-web work re-rolled all four the same day, so the rows are the effect of THESE changes, not of the day's total):
 
-**Not landed, and it is the bulk of the fix**: the two attempts that would have taken it to zero
-each broke another rule, and both are written up with their measurements, their failing geometry and
-the question to answer first in [`future-work.md`](../../future-work.md) "paddy bunds still step
-sideways". The gate check that belongs on top of that work is written and proven to fire; it is
-backed out with them rather than shipped red.
+| | inashiro | kashikawa | mizuguchi | sawada |
+|---|---|---|---|---|
+| before | 26 | 37 | 20 | 24 |
+| `_absorb` jog guard alone | 23 | 33 | 17 | 16 |
+| + `_unjog` corner trade | 2 | 3 | 4 | 3 |
+| + `_seam_cuts` (the pitch) | **0** | **1** | **5** | **1** |
+
+And the number that answers the report: **no plot ring on any of the four carries more than one
+step**, against 6 / 9 / 4 / 7 rings that did. The staircase is gone. What is left is single, small,
+isolated corners - `python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json` lists them and
+[`future-work.md`](../../future-work.md) carries the residue with its refusal reasons.
+
+**Two levers that did NOT work, both implemented and measured, so they are not pulled again**: a
+nearest-basin partition of each scrap (`_share` - 23 -> 7 on this map, but it strands ground the weld
+ladder cannot place and broke `paddy_plot_seams_shared` on three maps), and dropping a step's
+vertices from every ring that carries them (not partition-preserving: rings 460 and 592 lost 400 px2
+and gained 259, the difference being bare floor). Both are written up in `future-work.md`.
+
+**RIPPLE, measured against main's tip (47727a08) rather than against an older HEAD.** Rebuilding the
+paddy fabric moves almost nothing else on this sheet: byres, wells, lanes, bridges, gardens,
+threshing yards, farm sheds, dry plots and village groves are unchanged in count and seat (the two
+wells shift 1 ft), one house of fifteen moves 39.6 ft and the other fourteen under 5 ft, `tree_crowns`
+goes 8,388 -> 8,442 (+0.6%), and the view tightens 22 ft at the top and 23 at the bottom as the crop
+follows the fabric in.
+
+*That measurement corrects a settlement-review finding rather than confirming it, and the correction
+is worth keeping.* The review (2026-08-19) reported a much larger ripple - all three byres re-sited,
+a well moved 129 ft, `tree_crowns` +32%, lanes 11 -> 10 - and it measured honestly; its baseline was
+simply an older HEAD, and a PEER session's lane-web feature landed in the same window. **When two
+sessions ship into one tier on one day, a ripple measurement has to name the commit it is against or
+it attributes the other session's work to yours.**
+
+**And a process failure of mine, recorded because the fix is a habit rather than a rule.** The map
+was regenerated three times WHILE that review was reading it, and for about two minutes the pool held
+a fixed PNG beside an unfixed manifest - a reviewer sampling then would have measured the defect as
+unfixed while looking at a fixed picture. The root CLAUDE.md already says a baseline belongs in a
+`git worktree add --detach` precisely because "a stash mutates the tree under any review agent
+currently reading it"; the same applies to a REGENERATION. Launch the review after the last regen, or
+review a detached copy.
+

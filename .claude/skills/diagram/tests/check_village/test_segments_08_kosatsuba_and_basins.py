@@ -608,3 +608,75 @@ def test_paddy_basins_are_worth_their_bund_ignores_a_degenerate_ring():
 def test_paddy_basins_are_worth_their_bund_is_off_for_a_legacy_map():
     # no meta.generated_by = a legacy comb map; it inherits the rule at conversion (migration doctrine)
     assert "paddy_basins_are_worth_their_bund" not in f(_worth_M([_box(300, 300, 315, 315)], gen=None))
+
+
+def _stag_M(rings, gen="hamletgen", ftpx=1.0):
+    """A generated comb fan whose plot rings are the thing under test."""
+    return manifest(
+        meta={"scale": "hamlet", "W": 1000, "H": 1000, "ftpx": ftpx, "generated_by": gen},
+        fields=[{**_field("f", 10, 10, 900, 900), "cell": 1488.0, "plot_rings": rings}],
+    )
+
+
+# A wall running north at x=100, hopping 9 ft east, carrying on north, hopping 9 ft east again and
+# carrying on - the staircase the GM reported. One hop on its own is the SINGLE step the rule allows.
+_STAIR = [[100, 0], [100, 60], [109, 60], [109, 120], [118, 120], [118, 300], [300, 300], [300, 0]]
+_ONE_STEP = [[100, 0], [100, 60], [109, 60], [109, 300], [300, 300], [300, 0]]
+_STRAIGHT = [[100, 0], [100, 300], [300, 300], [300, 0]]
+
+
+def test_paddy_bunds_do_not_stagger_fires_on_a_flight_of_steps():
+    assert "paddy_bunds_do_not_stagger" in f(_stag_M([_STAIR]))
+
+
+def test_paddy_bunds_do_not_stagger_allows_a_single_nudge():
+    # ONE step is an awkward corner where a scrap of ground had one home; a FLIGHT of them is a weld
+    # pitch out of register with the fabric. The absolute rule lives in tools/jogs.py.
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([_ONE_STEP]))
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([_STRAIGHT]))
+
+
+def test_paddy_bunds_do_not_stagger_passes_steps_too_small_to_see():
+    # 2 ft is under the 3 ft floor `paddy_plot_seams_shared` reasons to from AZE_FT: two bunds this
+    # close draw as one line.
+    tiny = [[100, 0], [100, 60], [102, 60], [102, 120], [104, 120], [104, 300], [300, 300], [300, 0]]
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([tiny]))
+
+
+def test_paddy_bunds_do_not_stagger_passes_long_limbs():
+    # a 40 ft hop is not a step in a wall, it is a LIMB - the honest odd shape reclamation leaves
+    limbs = [[100, 0], [100, 60], [140, 60], [140, 120], [180, 120], [180, 300], [400, 300], [400, 0]]
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([limbs]))
+
+
+def test_paddy_bunds_do_not_stagger_passes_a_gently_curving_bund():
+    # THE CLAUSE THIS HOLDS: a curve sampled into segments is a run, a link and a run resuming
+    # near-parallel, with a few feet of offset coming purely from the bend. Kuwabata's long curved
+    # parcels reported 57 steps on 43 rings without the corner test and 0 with it.
+    curve = [[0, 0]] + [[30 * k, 7 * k + 1.5 * k * k] for k in range(1, 9)] + [[240, 500], [0, 500]]
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([curve]))
+
+
+def test_paddy_bunds_do_not_stagger_passes_a_narrow_basin_on_its_own_end_wall():
+    # THE REASON HEADINGS ARE COMPARED OVER THE FULL CIRCLE. A thin rectangle is two long parallel
+    # runs a short link apart, which modulo 180 deg is indistinguishable from a step.
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([[[100, 100], [100, 112], [400, 112], [400, 100]]]))
+
+
+def test_paddy_bunds_do_not_stagger_reads_the_step_in_feet_at_city_scale():
+    # The thresholds are stated in FEET and divided by ftpx, so the same drawn shape is judged the
+    # same way at every tier: at ftpx 3 a 1 px hop is 3 real ft and on the floor, 0.6 px is under it.
+    big = [[100, 0], [100, 20], [101, 20], [101, 40], [102, 40], [102, 100], [200, 100], [200, 0]]
+    small = [[100, 0], [100, 20], [100.6, 20], [100.6, 40], [101.2, 40], [101.2, 100], [200, 100], [200, 0]]
+    assert "paddy_bunds_do_not_stagger" in f(_stag_M([big], ftpx=3.0))
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([small], ftpx=3.0))
+
+
+def test_paddy_bunds_do_not_stagger_ignores_a_quad():
+    # a four-vertex ring has no room for a run, a hop and the run resuming
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([[[100, 100], [100, 200], [200, 205], [200, 100]]]))
+
+
+def test_paddy_bunds_do_not_stagger_is_off_for_a_legacy_map():
+    # no meta.generated_by = a legacy comb map; it inherits the rule at conversion (migration doctrine)
+    assert "paddy_bunds_do_not_stagger" not in f(_stag_M([_STAIR], gen=None))

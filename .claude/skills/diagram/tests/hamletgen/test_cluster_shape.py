@@ -21,7 +21,7 @@ def test_the_gates_drawn_aspect_table_matches_the_generators() -> None:
     without it the failure is silent in the worst direction: the generator would decline to declare a
     shape the gate would have accepted, or - far worse - declare one the gate would reject, and the
     disagreement would surface as a mystery gate failure on some seed nobody was looking at."""
-    src = inspect.getsource(seg04c._seg_0614__cluster_shape_matches_the_drawing)
+    src = inspect.getsource(seg04c._seg_0615__cluster_shape_matches_the_drawing)
     m = re.search(r"_asp = (\{.*?\})\n", src, re.S)
     assert m, "the gate's drawn-aspect table moved or was renamed - re-pin it, do not delete this test"
     assert eval(m.group(1)) == hg.consts.CLUSTER_DRAWN_ASPECT, "the gate's drawn-aspect table has drifted from hamletgen.consts.CLUSTER_DRAWN_ASPECT; change both or neither"

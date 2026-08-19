@@ -903,8 +903,8 @@ def _seg_0613__village_windbreak_is_continuous(*, M: Any = _UNBOUND, check: Any 
     return _kept(locals(), ())
 
 
-def _seg_0614__cluster_shape_matches_the_drawing(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 0614 (cluster_shape_matches_the_drawing) - added 2026-08-19.
+def _seg_0615__cluster_shape_matches_the_drawing(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0615 (cluster_shape_matches_the_drawing) - added 2026-08-19.
 
     A DECLARED KNOB MUST DESCRIBE THE SHEET. `cluster_shape` is rolled per settlement and printed in
     every cohort-audit header, and until this rule it was honored on NO map: it fed only the cloud

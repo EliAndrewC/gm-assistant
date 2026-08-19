@@ -9,14 +9,17 @@ really, really looks like a rendering error." It is one: `close_seams` makes it,
 634 it hands back), and `research/fields.md` "A bund runs on, or it turns for a reason" carries the
 research and the mechanism.
 
-WHY A TOOL RATHER THAN A GATE CHECK, and this is the honest part. The rule wants to be a gate check
-and belongs there the moment it can be: the engine still leaves 21-45 of these per scripted hamlet
-after the weld guard (`waterfields/banks.py::jog_steps` in `_absorb`'s ladder), and a check the pool
-cannot pass is a check that cannot ship. Adding it to the gate is the LAST step of the placement
-fix, not the first - see `future-work.md` "Paddy bunds still step sideways" for the measurements,
-the two implementation dead ends and the sketch. Until then this runs on demand, at the PLACER's thresholds
-(`_JOG_OFF_FT` / `_JOG_RUN_FT` / `_JOG_LINK_FT`, one notch stricter than the gate's intended 3 ft /
-8 ft / 25 ft on every axis), so what it lists is a superset of what the check will fail on.
+WHY A TOOL AS WELL AS A GATE CHECK. `paddy_bunds_do_not_stagger` holds the shape the GM actually
+reported - a wall that steps, steps again and steps again - and it is at zero on all four scripted
+hamlets, against 6/9/4/7 basins carrying a flight of them before the fix. What it deliberately does
+not fail is a SINGLE step, and this tool is stricter than the gate on all three thresholds (run 6 ft
+against 8, link 30 against 25, offset 2 ft against 3), so it reports MORE than the gate does and is
+meant to: 16 single steps across the four maps at this line against 7 at the gate's. Each is an
+awkward corner where a scrap of ground had exactly one home and the repair pass could not move the
+wall without breaking another rule. Quote the two counts with their thresholds or they read as a
+contradiction - this docstring said "seven" and meant the gate's number until a settlement-review
+measured it (2026-08-19) - `future-work.md` "paddy bunds that step sideways" lists what
+refuses each and what it would take to reach zero.
 
     python3 -m l7r.diagram.tools.jogs pool/hamlets/inashiro.json
     python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json --top 20

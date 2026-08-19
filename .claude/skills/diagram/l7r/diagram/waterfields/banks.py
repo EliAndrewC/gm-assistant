@@ -388,6 +388,17 @@ _WELD_MIN_SOLIDITY = 0.85
 # a blue plot has to READ as a leveled basin; the same 0.85 demotes it to rice green, and the check
 # runs after the absorb pass because that is what reshaped it.
 _TINT_MIN_SOLIDITY = 0.85
+# AND A BLUE PLOT MUST BE SHAPED LIKE A BASIN, NOT LIKE A CHANNEL (settlement-review, Inashiro
+# 2026-08-19). The three tests above all ask about a POINT - the apex, the truncated end, the lobe -
+# and a long parallel-sided WEDGE passes every one of them: Inashiro shipped two tinted plots at
+# 114 x 18.9 ft and 139 x 24.8 ft, aspects 6.0 and 5.6, sharpest corners 28.5 and 27.9 deg, solidity
+# fine. Each reads at fit zoom as a blue-gray dagger of water tapering toward the collector, which is
+# the exact misreading `pointed_ring`'s own docstring says the tint rules exist to prevent - and
+# neither shape is wrong, only its COLOUR: the fan toe does truncate, and a hem strip that narrow is
+# honest ground. So the fourth clause measures proportion rather than taper. 4.0 is far above
+# anything a leveled basin runs at (the median plot on a hamlet fan is ~37 x 38 ft, aspect ~1, and
+# the whole map's worst is 7.2), so it demotes the two wedges and touches no basin that reads as one.
+_TINT_MAX_ASPECT = 4.0
 
 
 # A CHEVRON IS POINTED **AND** NOTCHED - neither measure alone can see one, and that is the whole
@@ -597,11 +608,12 @@ def tapers_to_a_point(poly: Poly, end: float, min_deg: float, arm: float) -> boo
 # and a 25 ft link, so a weld is refused here at 2 ft with 6 ft runs and a 30 ft link. Same
 # measurement, stricter threshold - never a second measurement bolted alongside it.
 #
-# THE RULE IS NOT IN THE GATE YET, and that is the open half of this work rather than a decision:
-# the engine still leaves 16-33 steps on each scripted hamlet, so a gate check would fail the pool
-# on day one. `tools/jogs.py` reports them on demand meanwhile, and `future-work.md` "paddy bunds
-# still step sideways" carries the residual counts, the two reverted implementation attempts with
-# what each broke, and the sketch - of which moving this rule into `check_village` is the last step.
+# THE GATE HOLDS THE STAIRCASE, THIS HOLDS THE STEP. `paddy_bunds_do_not_stagger` fails a basin whose
+# bund steps sideways MORE THAN ONCE - the shape the GM reported, and at zero on every scripted hamlet
+# since `_seam_cuts` and `_unjog` landed. A single step is left to `tools/jogs.py`, which runs this
+# predicate at the thresholds above - stricter than the gate's on all three, so it reports 16 across
+# the four maps where the gate reports 7 - each refused by a guard
+# protecting another rule (see `_unjog`), and `future-work.md` carries them.
 _JOG_OFF_FT = 2.0
 _JOG_RUN_FT = 6.0
 _JOG_LINK_FT = 30.0
