@@ -63,6 +63,7 @@ from ._geom import seg_dist as seg_dist
 from ._geom import seg_in_ellipse_core as seg_in_ellipse_core
 from ._geom import seg_intersect as seg_intersect
 from ._geom import segments_cross as segments_cross
+from ._geom import street_runs as street_runs
 from ._geom import stroke_quads as stroke_quads
 from ._geom import tilt_caption_seat as tilt_caption_seat
 from ._geom import torii_halfbox as torii_halfbox
