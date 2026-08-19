@@ -377,6 +377,30 @@ def test_draw_web_refuses_a_run_with_only_one_point() -> None:
     assert len(s.M["lanes"]) == before
 
 
+def test_a_web_lane_snaps_its_end_onto_the_way_it_almost_meets() -> None:
+    """A run that stops a few feet short of the way it aims at renders as a gap, whatever the gate
+    thinks of it - acceptance tolerances are not ink tolerances. So an end within `_LANE_JOIN_FT` is
+    extended onto the way it meets, but ONLY if the ground between is clear: adding those few feet
+    blind put lane ink across houses and garden beds on every cohort seed the moment snapping went
+    in. This pins both halves - the snap, and the refusal to snap through a steading."""
+    s = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 400.0)]])
+    before = len(s.M["lanes"])
+    # SAMPLED like a real run: the shadow clause caps the longest UNBROKEN shadowed stretch at a
+    # bundle pitch, and with only two vertices the sample step IS the whole run, so a two-point run
+    # trips it on its joining end alone.
+    run = [(200.0 - 182.0 * i / 10.0, 200.0) for i in range(11)]
+    assert hg.ways._lay_web_lane(s, run, [], [], []) is True
+    assert len(s.M["lanes"]) == before + 1
+    drawn = [(round(x), round(y)) for x, y in s.M["lanes"][-1]["pts"]]
+    assert (0, 200) in drawn, drawn
+    # ...and the same run refused the snap when a steading stands in the gap
+    s2 = _StubSettlement(lanes=[[(0.0, 0.0), (0.0, 400.0)]])
+    wall = [(2.0, 180.0), (16.0, 180.0), (16.0, 220.0), (2.0, 220.0)]
+    hg.ways._lay_web_lane(s2, run, [], [wall], [])
+    if len(s2.M["lanes"]) > 1:
+        assert (0, 200) not in [(round(x), round(y)) for x, y in s2.M["lanes"][-1]["pts"]]
+
+
 def test_bridge_collinear_breaks_closes_a_hole_and_leaves_an_honest_one() -> None:
     """One street drawn as two gets the missing piece drawn. A break with something genuinely in the
     way keeps it - the route cannot be made, so the interruption stands."""
