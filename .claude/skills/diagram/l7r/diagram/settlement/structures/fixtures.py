@@ -197,19 +197,25 @@ class PublicFixturesMixin:
             if label_xy:
                 _lx, _ly = label_xy
             elif _t:
-                # A TILTED BOARD STILL TAKES ITS CALLER'S SIDE, and scoring the two tilted seats by
-                # clearance was TRIED AND MEASURED AS A NO-OP (2026-08-19) - recorded so nobody pulls
-                # the same lever again. Kashikawa's caption sits 0.2 ft off its lane, and picking the
-                # better of `above=False` / `above=True` leaves it at 0.2: both tilted seats land in
-                # the same neighborhood, because `tilt_caption_seat` offsets ALONG the board's own
-                # axis and that axis is what points at the lane. The untilted path is different and
-                # the lateral candidates there DO earn their place (inashiro 8.7 -> 19.2 ft,
-                # mizuguchi -1.9 -> 9.7).
+                # A TILTED KOSATSUBA CANNOT BE MOVED OFF ITS LANE BY EITHER OBVIOUS LEVER, and the
+                # geometry says why - recorded so nobody spends a third attempt on it (2026-08-19).
+                # Kashikawa's caption sits 0.2 ft off its tread. Both levers were tried and BOTH
+                # measured as exact no-ops, 0.2 ft before and after:
                 #
-                # What would actually move a tilted caption is a lateral offset in the TILTED frame -
-                # perpendicular to the board's axis rather than along it. That is a change to
-                # `tilt_caption_seat` itself, which every tilted caption in the engine shares, so it
-                # wants its own pass rather than a special case here.
+                #   - flipping `above` moves the caption to the board's other side, i.e. by the board's
+                #     own 5 ft depth. Not enough, and the far side is no further from the lane.
+                #   - sliding LATERALLY along the baseline cannot help AT ALL, and this is the part
+                #     worth keeping: `kosatsuba_faces_the_road` requires the board to FACE its road, so
+                #     its baseline is PARALLEL to the lane by rule. Sliding along a line parallel to
+                #     the lane holds the perpendicular distance exactly constant. The lever is
+                #     geometrically incapable of moving the number.
+                #
+                # The only lever that can work is the perpendicular GAP - pushing the caption further
+                # from the board, away from the road - which is `tilt_caption_seat`'s `gap` argument
+                # and is shared by every tilted caption in the engine. That is a real change with a
+                # real blast radius, and it is worth doing only together with the check that makes the
+                # rule enforceable (see future-work: nothing currently tests a caption's halo against a
+                # way, which is why 0.2 ft passes).
                 _lx, _ly = tilt_caption_seat(x, y, rot, _t, hw, hh, 11, above=label_above)
             else:
                 # THE HALO MUST NOT NOTCH THE WAY THE BOARD STANDS ON (settlement-review on Inashiro,
