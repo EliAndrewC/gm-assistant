@@ -197,26 +197,29 @@ class PublicFixturesMixin:
             if label_xy:
                 _lx, _ly = label_xy
             elif _t:
-                # A TILTED KOSATSUBA CANNOT BE MOVED OFF ITS LANE BY EITHER OBVIOUS LEVER, and the
-                # geometry says why - recorded so nobody spends a third attempt on it (2026-08-19).
-                # Kashikawa's caption sits 0.2 ft off its tread. Both levers were tried and BOTH
-                # measured as exact no-ops, 0.2 ft before and after:
+                # A TILTED BOARD PUSHES ITS CAPTION FURTHER OFF, because that is the ONE axis that can
+                # move it (2026-08-19, third attempt and the first that works). Two levers were tried
+                # and measured as EXACT no-ops first, and the reason is worth keeping:
                 #
-                #   - flipping `above` moves the caption to the board's other side, i.e. by the board's
-                #     own 5 ft depth. Not enough, and the far side is no further from the lane.
-                #   - sliding LATERALLY along the baseline cannot help AT ALL, and this is the part
-                #     worth keeping: `kosatsuba_faces_the_road` requires the board to FACE its road, so
-                #     its baseline is PARALLEL to the lane by rule. Sliding along a line parallel to
-                #     the lane holds the perpendicular distance exactly constant. The lever is
-                #     geometrically incapable of moving the number.
+                #   - flipping `above` moves the caption by the board's own 5 ft depth. Not enough.
+                #   - sliding LATERALLY along the baseline cannot help AT ALL: `kosatsuba_faces_the_road`
+                #     requires the board to FACE its road, so its baseline is PARALLEL to the lane by
+                #     rule, and sliding along a parallel line holds the perpendicular distance exactly
+                #     constant. Geometrically incapable, not merely mistuned.
                 #
-                # The only lever that can work is the perpendicular GAP - pushing the caption further
-                # from the board, away from the road - which is `tilt_caption_seat`'s `gap` argument
-                # and is shared by every tilted caption in the engine. That is a real change with a
-                # real blast radius, and it is worth doing only together with the check that makes the
-                # rule enforceable (see future-work: nothing currently tests a caption's halo against a
-                # way, which is why 0.2 ft passes).
-                _lx, _ly = tilt_caption_seat(x, y, rot, _t, hw, hh, 11, above=label_above)
+                # `gap` is perpendicular to that baseline, so it is the axis that points AWAY from the
+                # lane. The ladder stops well inside `LABEL_AIR_CAP` (3 x font size = 24 px at 8 pt),
+                # which is what `label_hugs_its_referent` allows before it calls a caption adrift - so a
+                # board can buy clearance without losing its subject.
+                # THE LADDER MUST REACH PAST THE DIP. Clearance is NOT monotonic in `gap`, because a
+                # board sited at the traffic optimum has ways on more than one side - moving away from
+                # one lane walks toward another. Enumerated on Kashikawa (12 lanes, board in the lane
+                # crotch): 2.0, -1.0, 1.0, -0.3, 7.7 ft at gaps 11/16/21/28/36. A ladder that stopped at
+                # 21 took the first rung and left the caption on the tread; the good pocket is at 36.
+                # Hug there is 38.5 px, which the pool already carries (inashiro and mizuguchi sit at
+                # 41.0 and pass `label_hugs_its_referent`).
+                _tilted = [tilt_caption_seat(x, y, rot, _t, hw, hh, _g, above=_ab) for _ab in (False, True) for _g in (11, 16, 21, 28, 36)]
+                _lx, _ly = _tilted[5] if label_above else max(_tilted, key=_box_clearance)
             else:
                 # THE HALO MUST NOT NOTCH THE WAY THE BOARD STANDS ON (settlement-review on Inashiro,
                 # 2026-08-19). The caption is drawn with a 3 px background halo
