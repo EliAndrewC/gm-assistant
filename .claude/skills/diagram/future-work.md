@@ -311,6 +311,23 @@ It works, partially, and that is what makes it worth recording:
   **41/48, the same three seeds.** It converges toward a floor it never reaches. Seed 8 went 3 -> 4 on
   one round and seed 25 stayed at 12.
 
+**SIXTEEN: the band aspect, now that it is a LIVE knob** (the hamlets session bound
+`CLUSTER_BAND_ASPECT` per shape on 2026-08-19, which is what makes this different from attempt six -
+that one moved the crescent BOW in `cluster_seeds`, dead code on every one of these maps). All three
+failing seeds are crescent, so the band is the one upstream lever left that does not need a GM ruling.
+Measured on seeds 5 / 8 / 25, houses stranded:
+
+| crescent aspect | seed 5 | seed 8 | seed 25 |
+|---|---|---|---|
+| 3.0 (shipped) | 9 | 3 | 12 |
+| 2.6 | 9 | 7 | 11 |
+| 2.2 | 4 | 6 | 11 |
+
+**No value reaches zero on any seed**, and what helps one hurts another - 2.2 more than halves seed 5
+and doubles seed 8. This tests directly the "a band that does not wrap onto an unservable margin"
+option listed below as a remaining possibility, and closes it: reshaping the band redistributes which
+houses are stranded without making the ground servable.
+
 **THE TERMINAL RESULT.** Fifteen attempts across every mechanism the engine offers - four on spacing
 and packing, three on drawing ways (margin runs, bearing scans, a map-wide flood), four on seat-time
 filters (crop line, flood fill, chain, width-aware chain), two on re-rolling with ground forbidden, and
