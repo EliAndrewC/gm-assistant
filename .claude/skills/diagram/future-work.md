@@ -182,7 +182,29 @@ from the geometry it already has - the field margin, which `_margin_frame` alrea
 round - and then let clipping decide what survives, exactly as `stage_ways` does for the skeleton
 today. Any design that says "search for a route to the stranded house" runs into the wall above.
 
-**The candidate that fits every measurement**, ledgered jointly with the hamlets session: make the LANE
+**AND THE LEDGERED CANDIDATE WAS BUILT AND MEASURED TOO - it does not work as stated.** A
+`_serve_far_margin` pass was implemented exactly as the entry proposes: for a house still unserved,
+lay a SHORT run at its own frame position (arc +/- one bundle pitch at its own stand), placed from
+geometry rather than searched for, then let the join and bridge passes connect the island.
+
+- Run BEFORE the repair passes it is a disaster - **17/48**, with 23 seeds failing
+  `lanes_reach_something`, because it fires for houses the bridges and footpaths were about to serve
+  and every speculative run is a tread fronting nothing. (An ordering error, and the same lesson
+  feature 123 already paid for: a repair pass must run after the things it repairs.)
+- Run AFTER every repair, firing only for houses still unserved, it is **43/48 - exactly baseline,
+  fixing nothing**, because no run survives clipping to be laid.
+
+Then the decisive measurement: at the stranded houses' own arcs, a margin line of +/- one bundle pitch
+yields **no clear run at ANY stand offset (0, +40, +70, -40 ft) and at either clearance** (the web's
+7 ft or the footpath's 4 ft). Nothing is drawable along the margin there at all.
+
+Put beside the 60-120 ft of open ground measured around those same houses, that says the open ground is
+**not aligned with the margin** - the frame's arc direction at those points heads into the paddy, even
+though `frame(project(house))` returns the house itself to within 0-28 ft. So a shape-aware skeleton
+that follows the MARGIN will not reach them either. Whatever serves these houses has to be oriented by
+the local dry ground rather than by the field edge, and nothing in the engine currently computes that.
+
+**The candidate that fitted every measurement until it was built**, ledgered jointly with the hamlets session: make the LANE
 SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
 instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
 addresses the geometry rather than a symptom.
