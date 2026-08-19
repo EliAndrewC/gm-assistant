@@ -161,6 +161,27 @@ that no way is ever DRAWN on the far margin, and nothing searches far enough to 
 search box wide enough to go round a field returns empty by construction rather than by geometry -
 worth knowing before anyone tries simply enlarging `pad_mult`.)
 
+**THE ROUTER CANNOT ANSWER THIS QUESTION AT ALL, and that is a design constraint on the fix rather
+than a fact about the ground.** I tried to settle "is there a lane-width corridor round the field?" by
+running `_route` at every combination of resolution and box size. Every one returns none - and the two
+ends fail for OPPOSITE reasons, which is what makes the tool unusable here rather than the answer no:
+
+- **Fine cells cannot span the detour.** `_route` caps its lattice at 90,000 cells, so a box wide
+  enough to reach round a field returns empty by construction. pad_mult 8 and 20 are refused before
+  any geometry is examined.
+- **Coarse cells cannot fit the gap.** The planning clearance is `gap + cell * 0.71`, so a 40 ft cell
+  demands a **64 ft corridor** for a footpath that needs 11. At that size it would refuse a village
+  street.
+
+There is no setting where both hold, so the router can neither confirm nor deny a way round. (The
+flood fill says the dry GROUND is connected; the router says nothing, because it also counts fabric
+and cannot be run at a scale where its own clearance is honest.)
+
+**So the fix may not ask the router where the way goes.** A shape-aware skeleton has to PLACE the way
+from the geometry it already has - the field margin, which `_margin_frame` already follows all the way
+round - and then let clipping decide what survives, exactly as `stage_ways` does for the skeleton
+today. Any design that says "search for a route to the stranded house" runs into the wall above.
+
 **The candidate that fits every measurement**, ledgered jointly with the hamlets session: make the LANE
 SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
 instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
