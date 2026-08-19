@@ -74,7 +74,7 @@ LANE_CLEARANCE = 40.0
 # specs/123-lane-web-and-cluster-shape/research.md R2.
 CLUSTER_SPAN_FACTOR = 1.6
 
-CLUSTER_ROW_SPAN = {"round": 1.6, "crescent": 1.6, "elongated": 2.6, "split": 1.6}
+CLUSTER_ROW_SPAN = {"round": 1.2, "crescent": 1.6, "elongated": 2.6, "split": 1.6}
 """How far the FRONT ROW wraps along the field outline, per rolled `cluster_shape`, as a multiple of
 the seat band's own half-length.
 
@@ -408,7 +408,7 @@ SINKS = ("pond", "pond", "offmap")
 
 CLUSTER_SHAPES = ("round", "round", "elongated", "crescent")
 
-CLUSTER_BAND_ASPECT = {"round": 2.8, "crescent": 3.0, "elongated": 5.0, "split": 3.0}
+CLUSTER_BAND_ASPECT = {"round": 2.2, "crescent": 3.0, "elongated": 5.0, "split": 3.0}
 """How long the cluster BAND is against how deep, per rolled `cluster_shape`.
 
 THE KNOB WAS DEAD UNTIL THIS TABLE EXISTED (2026-08-19). `cluster_shape` is rolled per settlement
@@ -430,26 +430,35 @@ elongated one is pushed toward 2.5:1 rather than 5:1 - the floor is a real minim
 than that cannot hold a homestead bundle and its yard), and letting it compress the extremes is
 honester than pretending a 10-household string can be five times longer than it is deep.
 
-ROUND'S 2.8 IS A NARROW BINDING, CHOSEN BY A FULL-COHORT SWEEP ON ONE CRITERION: NO REGRESSION.
-Be honest about its size - it is 7% off crescent's 3.0, so a round hamlet is only slightly rounder
-than a crescent one, and most of what makes them read differently is still the depth floor and the
-household count rather than this ratio. It is the largest binding the rest of the engine currently
-tolerates, not the one the shape deserves.
+ROUND BINDS AT 2.2/1.2, AND THE NUMBER THAT MATTERS IS THE ONE IT DRAWS: a mean drawn aspect of 1.62
+across the cohort's round rolls, against 3.18 for a crescent map. Those are different pictures, which
+is the whole point of the knob (constitution Principle XII - two supportable forms become a knob, and
+these maps exist for players who must tell one settlement from another at a glance).
 
-Every stronger value costs a cohort seed, and the failures are informative rather than random:
+**Getting here needed a defect fixed elsewhere first, and that is the lesson worth keeping.** 2.2/1.2
+was tried and rejected earlier the same day because it cost cohort seed 47
+`bridges_span_their_water` - so round was shipped at 2.8, a 7% difference from crescent that barely
+read as anything. Seed 47 turned out not to be about the cluster at all: `bridges()` grew an oblique
+deck along the WAY, which at a near-parallel crossing drives its ends further ALONG the water, and its
+growth loop broke on success while doing nothing on failure - so it silently drew an undersized deck.
+With the deck skewed toward square instead (inside the 8 deg `bridges_align_with_their_way` already
+allows), seed 47 passes and 2.2 is not merely clean but BETTER: 43/48 against 42, fixing seed 31.
 
-  - 1.4/0.9 -> cost seeds 17, 39, 47.   - 1.8/1.0 -> cost 11, 38, 45.
-  - 2.2/1.2 -> cost 47.                 - 2.4/1.6 -> cost 9, 31, 33, 47.
-  - 2.6/1.6 and 2.6/1.4 -> cost 23, 39. - 2.8/1.6 -> CLEAN, and fixes seed 17. 42/48 vs 41 baseline.
+So: a knob capped by a defect in another subsystem looks exactly like a knob whose value is wrong.
+Before settling for a weak binding, check what the failures actually ARE - all of these were
+`bridges_span_their_water` or `lane_ends_front_different_houses`, neither of which is about cluster
+proportion.
 
-Two of those recur and both are known defects elsewhere, not properties of the ratio:
-`bridges_span_their_water` (the oblique-deck growth loop fails silently - future-work.md) and
-`lane_ends_front_different_houses`. **When either is fixed, re-run the sweep and round can go up.**
+The full 48-seed sweep, taken AFTER the deck fix:
 
-METHOD NOTE, because getting this wrong cost a full cycle: sweep the FULL 48, never a subset. An
-earlier sweep took only the seeds already known to move, found 1.8/1.0 clean on all seven of them,
-and it was WORSE on the whole cohort (40/48, breaking 11, 38 and 45). A subset chosen by the previous
-failure cannot answer a question about the whole cohort."""
+  - 2.8/1.6 -> 42/48, mean drawn 1.83, clean (the value shipped in c6e7b35a)
+  - 2.6/1.6 -> 40/48, costs seeds 17, 23        - 2.4/1.6 -> 39/48, costs 9, 31, 33, 47
+  - **2.2/1.2 -> 43/48, mean drawn 1.62, CLEAN, fixes seed 31** <- shipped
+  - 1.8/1.0 -> 40/48, costs 11, 38, 45
+
+`lane_ends_front_different_houses` (0611) is now the binding constraint on going further, and it is
+not ours. METHOD, because getting it wrong cost a cycle: sweep the FULL 48, never a subset - the
+1.8/1.0 row was once measured as clean on all seven seeds that a previous failure had pointed at."""
 
 CLUSTER_DRAWN_ASPECT = {"round": (1.0, 2.4), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
 """What the FINISHED cluster's long:short ratio must fall inside for a rolled shape to be declared.
