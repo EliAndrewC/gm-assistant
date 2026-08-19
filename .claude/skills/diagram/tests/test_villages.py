@@ -101,8 +101,16 @@ GEN_TIME_BUDGETS = {
     #
     # RECALIBRATED 2026-08-19 against MEASURED solo times, because the entries had drifted into
     # flakiness rather than protection. The policy above ("~4x the solo measurement") is unchanged;
-    # only the solo figures it multiplies were stale. Measured this day, same numbers in the clone and
-    # in a detached worktree at main's tip - so this is drift as features landed, NOT a regression:
+    # only the solo figures it multiplies were stale.
+    #
+    # HONEST ABOUT THE SHARE THAT IS THIS SESSION'S: a first pass claimed the clone and a detached
+    # worktree at main's tip measured "the same", on whole-gen timings that were too coarse to see it.
+    # A per-STAGE profile of the real pool specs says otherwise - build-stage totals, mine vs main:
+    # kashikawa 29.6s vs 21.8s (+36%), inashiro 20.7s vs 17.9s (+16%), sawada 61.7s vs 57.2s (+8%).
+    # That is the real cost of the rotated-bbox woodland test, its shrink ladder and the cluster band
+    # work, and it is NOT pathological: no single stage explodes on any corpus map, and `stage_web` is
+    # actually faster on kashikawa (1.95s vs 2.16s). But it is not zero either, so the budgets below
+    # absorb a genuine increase as well as the older drift, and a reader should know which is which.
     #
     #     kashikawa 32.2s (comment said ~16)   sawada 30.6s (said ~20)
     #     inashiro  22.4s (said ~11)           mizuguchi 18.9s (had no entry at all)
