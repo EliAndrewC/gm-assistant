@@ -64,6 +64,7 @@ from .banks import (
     _GATE_MIN_APEX,
     _GATE_MIN_AREA,
     _TINT_END_FT,
+    _TINT_MAX_ASPECT,
     _TINT_MIN_APEX,
     _TINT_MIN_SOLIDITY,
     _TOE_MIN_APEX,
@@ -977,7 +978,20 @@ def close_seams(
         _pcx = sum(_q[0] for _q in p["poly"]) / len(p["poly"])
         _pcy = sum(_q[1] for _q in p["poly"]) / len(p["poly"])
         _at_outfall = bool(dpts) and math.hypot(_pcx - dpts[-1][0], _pcy - dpts[-1][1]) < 1.5 * plot_across
+        # AND A FIFTH CLAUSE, WHICH MEASURES PROPORTION - the blind spot the four above share. Apex,
+        # end width, solidity and siting all pass a long parallel-sided WEDGE, and a wedge in blue
+        # reads as a channel of water rather than as a basin holding it (see `_TINT_MAX_ASPECT`).
+        _mrr = _pg.minimum_rotated_rectangle if isinstance(_pg, Polygon) and not _pg.is_empty else None
+        _asp = 1.0
+        if isinstance(_mrr, Polygon):
+            _sides = [math.dist(_q, _r) for _q, _r in zip(list(_mrr.exterior.coords)[:-1], list(_mrr.exterior.coords)[1:], strict=True)]
+            if len(_sides) >= 2 and min(_sides[0], _sides[1]) > 0.0:
+                _asp = max(_sides[0], _sides[1]) / min(_sides[0], _sides[1])
         if p.get("fill") == FLOODED and (
-            pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX) or tapers_to_a_point(p["poly"], _t_end, _TINT_MIN_APEX, 4 * _t_end) or _psol < _TINT_MIN_SOLIDITY or _at_outfall
+            pointed_ring(dedup_ring(p["poly"], 1.0), _TINT_MIN_APEX)
+            or tapers_to_a_point(p["poly"], _t_end, _TINT_MIN_APEX, 4 * _t_end)
+            or _psol < _TINT_MIN_SOLIDITY
+            or _at_outfall
+            or _asp > _TINT_MAX_ASPECT
         ):
             p["fill"] = RICE_GREENS[(int(abs(p["poly"][0][0]) * 7) + int(abs(p["poly"][0][1]) * 3)) % len(RICE_GREENS)]

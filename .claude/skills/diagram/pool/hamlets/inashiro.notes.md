@@ -947,7 +947,7 @@ output gives **0 steps on the 543 carved rings and 26 on the 634 it hands back**
 PITCH: `_plant` gridded a pocket from the pocket's own bounding box at `plot_across` (48 ft), which
 is where NEITHER adjacent row breaks, so every offcut landed mid-basin on both sides.
 
-**The fix, in the order it matters** (steps at the rule's thresholds, all four scripted hamlets):
+**The fix, in the order it matters** (steps at the rule's thresholds, all four scripted hamlets), measured against the maps as they shipped on 2026-08-18 (a peer session's lane-web work re-rolled all four the same day, so the rows are the effect of THESE changes, not of the day's total):
 
 | | inashiro | kashikawa | mizuguchi | sawada |
 |---|---|---|---|---|
@@ -966,3 +966,26 @@ nearest-basin partition of each scrap (`_share` - 23 -> 7 on this map, but it st
 ladder cannot place and broke `paddy_plot_seams_shared` on three maps), and dropping a step's
 vertices from every ring that carries them (not partition-preserving: rings 460 and 592 lost 400 px2
 and gained 259, the difference being bare floor). Both are written up in `future-work.md`.
+
+**RIPPLE, measured against main's tip (47727a08) rather than against an older HEAD.** Rebuilding the
+paddy fabric moves almost nothing else on this sheet: byres, wells, lanes, bridges, gardens,
+threshing yards, farm sheds, dry plots and village groves are unchanged in count and seat (the two
+wells shift 1 ft), one house of fifteen moves 39.6 ft and the other fourteen under 5 ft, `tree_crowns`
+goes 8,388 -> 8,442 (+0.6%), and the view tightens 22 ft at the top and 23 at the bottom as the crop
+follows the fabric in.
+
+*That measurement corrects a settlement-review finding rather than confirming it, and the correction
+is worth keeping.* The review (2026-08-19) reported a much larger ripple - all three byres re-sited,
+a well moved 129 ft, `tree_crowns` +32%, lanes 11 -> 10 - and it measured honestly; its baseline was
+simply an older HEAD, and a PEER session's lane-web feature landed in the same window. **When two
+sessions ship into one tier on one day, a ripple measurement has to name the commit it is against or
+it attributes the other session's work to yours.**
+
+**And a process failure of mine, recorded because the fix is a habit rather than a rule.** The map
+was regenerated three times WHILE that review was reading it, and for about two minutes the pool held
+a fixed PNG beside an unfixed manifest - a reviewer sampling then would have measured the defect as
+unfixed while looking at a fixed picture. The root CLAUDE.md already says a baseline belongs in a
+`git worktree add --detach` precisely because "a stash mutates the tree under any review agent
+currently reading it"; the same applies to a REGENERATION. Launch the review after the last regen, or
+review a detached copy.
+

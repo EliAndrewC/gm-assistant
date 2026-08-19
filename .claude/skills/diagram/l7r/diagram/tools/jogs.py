@@ -12,10 +12,13 @@ research and the mechanism.
 WHY A TOOL AS WELL AS A GATE CHECK. `paddy_bunds_do_not_stagger` holds the shape the GM actually
 reported - a wall that steps, steps again and steps again - and it is at zero on all four scripted
 hamlets, against 6/9/4/7 basins carrying a flight of them before the fix. What it deliberately does
-not fail is a SINGLE step: seven of those survive across the four maps, each one an awkward corner
-where a scrap of ground had exactly one home and the repair pass could not move the wall without
-breaking another rule. This tool holds that stricter, absolute rule, so the residue stays visible
-and measured rather than forgotten - `future-work.md` "paddy bunds that step sideways" lists what
+not fail is a SINGLE step, and this tool is stricter than the gate on all three thresholds (run 6 ft
+against 8, link 30 against 25, offset 2 ft against 3), so it reports MORE than the gate does and is
+meant to: 16 single steps across the four maps at this line against 7 at the gate's. Each is an
+awkward corner where a scrap of ground had exactly one home and the repair pass could not move the
+wall without breaking another rule. Quote the two counts with their thresholds or they read as a
+contradiction - this docstring said "seven" and meant the gate's number until a settlement-review
+measured it (2026-08-19) - `future-work.md` "paddy bunds that step sideways" lists what
 refuses each and what it would take to reach zero.
 
     python3 -m l7r.diagram.tools.jogs pool/hamlets/inashiro.json

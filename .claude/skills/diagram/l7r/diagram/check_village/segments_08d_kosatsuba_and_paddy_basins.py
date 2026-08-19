@@ -758,8 +758,10 @@ def _seg_0608__paddy_basins_are_worth_their_bund(*, M: Any = _UNBOUND, check: An
 # which reads the SHIPPED pool maps and is proven to fire by deleting the key from a loaded copy.
 
 
-def _seg_0609__paddy_bunds_do_not_stagger(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
-    """Gate segment 609 (paddy_bunds_do_not_stagger) - hand-added 2026-08-19 past the legacy range
+def _seg_0614__paddy_bunds_do_not_stagger(*, M: Any = _UNBOUND, check: Any = _UNBOUND, fields: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 614 (paddy_bunds_do_not_stagger) - hand-added 2026-08-19 past the legacy range
+    (609 through 613 were taken by peer sessions the same day; the number is only a label, and the
+    execution position it buys at the tail of the derived order is as good as any)
     (see _seg_0595 for the numbering convention). No `_PLACEMENTS` entry: it reads only `M`, `check`
     and `fields`, so the tail of the derived order is as good a seat as any."""
     # A WALL MAY BE NUDGED ONCE BY THE FITTING; IT DOES NOT BUILD A FLIGHT OF STEPS (GM 2026-08-18,
