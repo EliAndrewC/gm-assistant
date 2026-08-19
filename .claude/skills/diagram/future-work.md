@@ -2876,14 +2876,16 @@ tread directly: seed 1 **-0.5 ft** and seed 7 **-1.3 ft**, i.e. the halo is ON t
 raked (rot 51.6 and 52.1). The four pool maps all clear comfortably (19.2 / 9.7 / 6.9 / 6.9 ft), so the
 seat ladder works where there is anywhere to go and fails where the board sits in a tight lane crotch.
 
-**ONE DISCREPANCY WORTH CHASING BEFORE FIXING ANYTHING**: seed 14 fires in the gate but my independent
-probe measured its worst caption-to-tread at **+14.5 ft**. Both read the same manifest, so one of them is
-wrong, and it is not safe to tune a seat search against a number that two instruments disagree about.
-The probe tests four corners; the check tests four corners plus the centre and stops at the first lane
-within 2 ft, so the likeliest cause is the check catching a DIFFERENT label than the notice board - the
-title placard or the scalebar, which are also `labels` records. If that is it, the rule is over-broad: a
-title cartouche is allowed to sit wherever the frame has room, and only a FIXTURE's caption owes clearance
-to the way its subject stands on. **Resolve that before touching the ladder.**
+**A DISCREPANCY, CHASED AND RESOLVED - and it was my probe that was wrong, not the rule.** Seed 14 fired
+in the gate while an independent probe of mine measured its worst caption-to-tread at +14.5 ft. Two
+instruments on one manifest disagreeing is not something to tune around, so I re-measured per LABEL: seed
+14's notice-board caption is at **-1.6 ft**, squarely on the tread. The check is right and correctly
+scoped - it fires on the FIXTURE's caption, not on the title placard or scalebar, which was the failure
+mode I was worried about. All five seeds are genuine notches (seed 1 -0.5, seed 7 -1.3, seed 14 -1.6).
+
+That is the tenth measurement of mine to mislead in one session, and the tenth caught only by taking a
+second one. It is worth stating the rule that keeps working: when a check and a probe disagree, re-measure
+the QUANTITY THE CHECK NAMES, per record, before believing either.
 
 **THE PROPER FIX, once the discrepancy is settled**: the kosatsuba hand-rolls its caption seat, while the
 engine already has an outward-walking search for exactly this - `clear_label_seat` in
