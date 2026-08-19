@@ -151,6 +151,47 @@ Sawada, so they run, pass, and test the wrong geometry; a skeleton arm overruns 
 because `_trim_to_service` only runs on web lanes; and `plot_regularity` is recorded in `meta` as though
 rolled while `water.py` passes the literal `"organic"`, so it can never vary.
 
+## 2d. "How far past its last steading may a way run?" - a RESEARCH question, not a bug
+(2026-08-19, from the same two reviews. Recorded here rather than fixed because the ladder in
+constitution Principle XII puts research BEFORE a number, and this is a calibration with no obviously
+correct value - unlike `M["lane"]`, which was a plain correctness bug and was fixed in the same pass.)
+
+**The measurement.** `trim_lane_stubs` pulls back any internal lane end that reaches nothing, where
+"reaching" a farmhouse means within `house_reach = 90 ft` OF ITS CENTER. Two arms survive that test
+and still read as blunt treads dying in grass:
+
+- Sawada `lanes[2]`, NW terminus (1335.0, 2077.3): the main street stops **85 ft past its last
+  steading** (house center 1417, 2054) and ~30 ft short of the paddy bund it is aimed at, 103 ft from
+  any other way.
+- Kashikawa `lanes[2]`, end (2346.6, 2569.8): **81.7 ft from the house center but 55 ft from its
+  wall**, and lying 75.7 ft to one side of that house, level with its threshing yard rather than
+  facing the dooryard. Nearest other way 119 ft.
+
+**Why it is not a one-line fix.** The obvious move - measure to the drawn CORNERS the way feature 121
+made `houses_clear_of_lanes` do - pushes the wrong way on its own: the wall is nearer than the center,
+so at an unchanged 90 ft MORE ends would count as serving and FEWER would be trimmed. Fixing this
+means measuring to the footprint AND re-deriving the threshold, i.e. answering "how far beyond the
+last house does a village lane actually run before it becomes a field track?" That is a question about
+how these places were built, so it gets a research pass first, and if the record supports two forms
+(a lane that stops at the last dooryard, and one that runs on to the field edge) it becomes a KNOB
+rolled per settlement rather than a number someone picked.
+
+Note the gate already carries this mechanism in a comment beside `_BREAK_GAP_FT` - "an end 83 ft from
+a house CENTRE counts as fronting it, even when that is 55 ft from the wall, i.e. out past the
+dooryard". Kashikawa is that comment realized in ink. The comment predicted the defect and nothing
+acted on it, which is its own small lesson.
+
+## 2e. `plot_regularity` is recorded as though rolled and is a literal
+(2026-08-19, from the Kashikawa review.) `meta.plot_regularity` reads like a rolled knob and the comb
+path passes the literal `"organic"` (`hamletgen/water.py`), so it can never vary. Alongside it, all
+four scripted hamlets record `plot_size: medium` (a 2-in-4 weight, so 4/4 is about a 6% draw),
+`field_archetype: valley_paddy` (documented - polder is opt-in) and `cluster_seeding: frontage`
+(derived, not rolled). None of that is wrong; what is wrong is that a reader meets four `meta` lines
+that look like evidence of variance the pool is not actually spending. Under the two-supportable-forms
+rule these are candidate knobs - regular versus irregular plot layout is exactly the kind of thing the
+record may well attest both ways - so the fix is a research pass per field, not a quiet default. Until
+then, do not read those `meta` lines as proof the maps differ along those axes.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any
