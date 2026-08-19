@@ -2805,9 +2805,37 @@ by its own feature" defect inverted - here the caption does the piercing.
 FIX DIRECTION (reviewer's): seat the caption on the side away from the way - this board has ~40 ft of
 clean dooryard to the west - or draw captions before the lane fill so the lane wins.
 
-**Why it is not done here, and it is a soft reason rather than a hard one**: the seat is currently
-`label_above` (a caller flag, set for boards inside a gate) plus a tilt case, so making it lane-aware
-changes caption seats on EVERY map and runs into the label checks. That is a cascade risk of the kind
-this session hit twice - the kura rate fix was correct and exposed a rake-blind packing defect that forced
-a revert. Small, self-contained, and worth doing FIRST in a fresh session rather than eleventh in a long
-one.
+**MOSTLY FIXED 2026-08-19 - lateral seats, scored on the caption's own BOX.** Candidates are now below /
+above / east / west, and the score is the clearance of the whole TEXT BOX rather than of its anchor,
+because the halo is what notches the lane and the halo follows the box. Half-width is estimated from the
+string (8 pt italic at ~0.28 em/char predicts 26.9 px against a measured 26.4) since the seat must be
+chosen before the text is laid out. Below is tried first, so an unblocked board does not move.
+
+    inashiro  was notching -> 19.2 ft clear    mizuguchi -1.9 ft OVERLAPPING -> 9.7 ft clear
+    sawada     6.9 ft unchanged                kashikawa  0.2 ft unchanged (see below)
+    Gate green (3434), cohort 43/48, zero regressions, captions present on all four.
+
+**WHAT REMAINS: a TILTED board still takes its caller's side.** Scoring the two tilted seats by clearance
+was tried and MEASURED AS A NO-OP - 0.2 ft before and after - and reverted rather than left as complexity
+that reads as load-bearing. It cannot work: `tilt_caption_seat` offsets ALONG the board's own axis, and on
+Kashikawa that axis is what points at the lane, so both options land together. What would move it is a
+lateral offset in the TILTED frame, perpendicular to the board's axis - a change to `tilt_caption_seat`,
+which every tilted caption in the engine shares, so it wants its own pass.
+
+**AND THE RULE IS STILL NOT ENFORCED.** Nothing checks that a caption's halo clears a way. 0.2 ft passes
+today and is one re-pack from a defect with nothing that would notice - the same silent-flip shape as the
+56 px furrow radius against 54-59 px plot spacing. Write the check WITH the tilted-frame fix; adding it
+now would fail Kashikawa.
+
+**A NEAR-MISS WORTH KEEPING.** While adding the lateral seats I put `self.label(...)` one indent level too
+deep, inside the final `else:`, so any board on the TILTED branch drew its glyph and silently lost its
+caption - Kashikawa shipped a 12 x 5 ft mark that nothing on the sheet identifies, with every check green.
+It surfaced only because the clearance probe reported caption COUNT alongside distance and returned a
+sentinel rather than a number; reading that sentinel as "infinitely clear" would have shipped it. The line
+carries a comment now, because an indent level is exactly what a later refactor re-breaks.
+
+**And a process note on this entry itself**: two scripted attempts to update it reported success and
+changed nothing, while the code commits went through - so for two commits the ledger described work that
+was already done as "not done here". Anchor-based patching of prose fails silently in a way that anchor-
+based patching of code does not, because nothing later imports a paragraph. Verify the grep after editing
+a ledger entry, or edit it by hand.
