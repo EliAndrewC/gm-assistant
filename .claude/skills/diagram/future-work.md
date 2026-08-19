@@ -78,6 +78,22 @@ Whatever a post-pack repair does, seeds 5, 8 and 25 are its test bed and the oth
 regression bed - and any fix that does not distinguish the crescent's inner arm from the rest of the
 cluster is spending disruption across 48 maps to fix 3.
 
+**A FIFTH attempt, and a CORRECTION to my own reasoning above.** Having found that the stranded
+houses sit at `out` -50..-147 while served houses sit at `out` >= +32, I filtered those seats out of
+`front_row`. Cohort: 43/48, the same five seeds. Then I measured what I should have measured first:
+**90 of 128 front-row seats offered on seed 8 are at out < 0.** The split I had treated as a signal
+has a base rate of 70% - I compared the stranded houses against the SERVED ones and never asked what
+fraction of all offered seats look like that. The inference was unsound and the number is not evidence
+of anything on its own. (What the filter does do is work: with it, front_row offers 0 of 97 negative
+seats and all 11 households still place - so this is a wrong conclusion, not a broken edit.)
+
+What the fifth attempt DID establish is worth more than what it disproved: with those seats removed
+from `front_row`, the same households are seated in the same region by the CLOUD pass, and the same
+three seeds fail with houses at the same distances. **So no seat GENERATOR is the culprit.** The seat
+BAND itself extends over ground the way network cannot serve, and every generator that draws from the
+band inherits it. That is why five attempts aimed at spacing, at the slide, and at one generator have
+each moved exactly nothing.
+
 **What it IS.** The homestead packer's only inter-bundle rule is that two bundle bboxes must not
 overlap, with two PIXELS of tolerance (`_bundle_side_fits`, the closing `all(...)`). So a run of
 steadings packs into a solid mass. Measured on the stranded houses: the widest escape corridor across
