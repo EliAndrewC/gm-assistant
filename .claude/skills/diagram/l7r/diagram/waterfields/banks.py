@@ -532,11 +532,11 @@ def tapers_to_a_point(poly: Poly, end: float, min_deg: float, arm: float) -> boo
 # and a 25 ft link, so a weld is refused here at 2 ft with 6 ft runs and a 30 ft link. Same
 # measurement, stricter threshold - never a second measurement bolted alongside it.
 #
-# THE RULE IS NOT IN THE GATE YET, and that is the open half of this work rather than a decision:
-# the engine still leaves 16-33 steps on each scripted hamlet, so a gate check would fail the pool
-# on day one. `tools/jogs.py` reports them on demand meanwhile, and `future-work.md` "paddy bunds
-# still step sideways" carries the residual counts, the two reverted implementation attempts with
-# what each broke, and the sketch - of which moving this rule into `check_village` is the last step.
+# THE GATE HOLDS THE STAIRCASE, THIS HOLDS THE STEP. `paddy_bunds_do_not_stagger` fails a basin whose
+# bund steps sideways MORE THAN ONCE - the shape the GM reported, and at zero on every scripted hamlet
+# since `_seam_cuts` and `_unjog` landed. A single step is left to `tools/jogs.py`, which runs this
+# predicate at the thresholds above: seven survive across the four maps, each refused by a guard
+# protecting another rule (see `_unjog`), and `future-work.md` carries them.
 _JOG_OFF_FT = 2.0
 _JOG_RUN_FT = 6.0
 _JOG_LINK_FT = 30.0
