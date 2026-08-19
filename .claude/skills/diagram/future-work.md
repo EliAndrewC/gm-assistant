@@ -270,6 +270,31 @@ seating house N, is it still reachable given houses 1..N-1 - and a full BFS per 
 too expensive (hundreds of candidates per map, a six-figure cell count each). Finding a cheap
 incremental reachability test, or a placement order that cannot strand, is the feature.
 
+**THIRTEEN: the incremental seat test the twelve pointed to - and the reason a seat-time filter
+cannot work at all.** The design was sound on paper: a whole-cluster reachability test cannot be asked
+while houses are placed one at a time, but if every seat can walk to one ALREADY STANDING then the
+cluster is connected by induction, and the per-candidate cost is one line rather than a flood fill.
+Both forms were measured:
+
+- **Line form (does the walk to the nearest standing steading avoid the crop): 41/48, same seeds.**
+- **Width form** (the samples must CLEAR the crop by two footpath clearances plus a tread, since a
+  line with no width threads a one-foot gap between basins that nobody can walk): **41/48, same
+  seeds, plus a `houses_clear_of_lanes` failure of its own.**
+
+**And the null result explains itself.** The chain test counts CROP, and these houses ARE crop-connected
+to a neighbor - they sit beside other steadings. What leaves no corridor is the FABRIC: the neighbors'
+yards and gardens fill the gaps. But a fabric-aware chain test cannot work either, and not for want of
+tuning: every seat is adjacent to its neighbor's own yard by construction, so counting fabric refuses
+almost every seat on every map.
+
+**That is the real shape of the problem, and it rules out the whole seat-time family**: whether a way
+can reach a steading depends on the FINAL fabric, and no test asked while the fabric is still being
+laid can know it. Ignore fabric and the filter is too permissive (measured, three times); include it
+and it is too strict (by construction). So the remaining design is a POST-placement repair - place as
+now, then find the houses no way can reach and RE-SEAT those two or three - which needs the ability to
+remove a placed bundle and re-place it, something the engine cannot currently do. That is the feature,
+and it is bigger than any of the thirteen attempts here.
+
 **The candidate that fitted every measurement until it was built**, ledgered jointly with the hamlets session: make the LANE
 SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
 instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
