@@ -120,6 +120,42 @@ BAND itself extends over ground the way network cannot serve, and every generato
 band inherits it. That is why five attempts aimed at spacing, at the slide, and at one generator have
 each moved exactly nothing.
 
+**RETRACTED A SECOND TIME, AND THIS ONE INVALIDATES THE WHOLE ENTRY BELOW: THERE IS PLENTY OF ROOM.**
+The "1.4-1.9 ft corridor" measurement that this entry is built on, and that justified all six fix
+attempts, is an artifact of how I measured it. I walked outward from each house CENTER and took the
+clearance to ALL fabric - which includes the steading's OWN house, yard and garden. Every farmhouse on
+every map is surrounded by its own bundle by construction, so that measurement returns a ~1.5 ft pinch
+for a house standing alone in an empty field. It says nothing about whether a way can reach it.
+
+Re-measured with the steading's own bundle excluded, which is what the straggler pass itself does:
+
+| house | corridor, all fabric | corridor, own bundle excluded |
+|---|---|---|
+| seed 5 (1262, 848) | 1.4 ft | **119.6 ft** |
+| seed 5 (1130, 839) | 1.7 ft | **68.1 ft** |
+| seed 8 (1612, 646) | 1.9 ft | **63.5 ft** |
+| seed 8 (1584, 742) | 1.8 ft | **69.7 ft** |
+
+A footpath needs about 11. **So the ground is wide open and this is not a packing defect at all** - which
+is why every spacing lever moved nothing, and the six null results should have made me re-examine the
+premise long before I re-examined the levers. The failure is in the footpath logic, and it is a bug
+rather than a physical impossibility: 60-120 ft of clear ground and the pass still leaves the house
+unserved.
+
+**Where a session should start**, given the straggler pass produces 391-1,572 candidate runs per house
+that all meet the network at 0 ft and are all perfectly direct at 1.00, while the best of them comes no
+closer than 132-210 ft to the house it was drawn for: the runs are being CLIPPED at the house end.
+`clear_runs` clips the drawn tread against `others`, which includes the steading's OWN yard and garden,
+while the door search and the router use `passable`, which excludes them. That asymmetry is deliberate
+and documented - the yard is private ground the household crosses on foot - but it means the tread can
+only begin outside the steading's own bundle, and something is pushing that start far further out than
+a yard's width. Measure where the surviving run actually starts and what clipped the stretch before it.
+
+**Everything below this line was written under the wrong premise.** It is kept because the six attempts
+and their numbers are still true as records of what does NOT change these maps, and because the
+reasoning error is the most useful thing in the entry: I measured a quantity that could not distinguish
+a sealed block from an ordinary farmstead, and then built six experiments on it.
+
 **What it IS.** The homestead packer's only inter-bundle rule is that two bundle bboxes must not
 overlap, with two PIXELS of tolerance (`_bundle_side_fits`, the closing `all(...)`). So a run of
 steadings packs into a solid mass. Measured on the stranded houses: the widest escape corridor across
