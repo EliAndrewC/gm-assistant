@@ -2377,14 +2377,41 @@ cost - build-stage totals mine vs main's tip: kashikawa 29.6s vs 21.8s (+36%), i
 drift. It is not pathological - no stage explodes on a corpus map, and `stage_web` is faster on
 kashikawa (1.95s vs 2.16s) - but "unchanged" was the wrong word and the number belongs here.
 
-**And one spec-sensitivity finding worth keeping, off-corpus**: on an arbitrary hand-made spec (seed 7,
-20 households, default fall and sink - NOT a pool map and NOT a cohort seed, whose household counts are
-`10 + (seed*7) % 11`), `stage_web` took **20.9s against main's 0.26s, an 80x blowup**, while the same
-tree's pool specs are flat. Something about that cluster geometry multiplies the web's candidate work.
-Nothing in the corpus hits it, so it is not a live defect - but a stage that can vary 80x on an input
-one seed away from the test bed is worth understanding before the village tier reuses it. Reproduce
-with the per-stage profiler in this session's scratch, or re-derive it: walk `hamletgen.driver.STAGES`
-timing `resource.getrusage().ru_utime` around each call.
+**DIAGNOSED TO ROOT CAUSE 2026-08-19, and it belongs to the web's candidate GENERATION, not to any
+slow predicate.** On an arbitrary spec - `HamletSpec(seed=7, households=20)`, default fall and sink,
+which is NOT a pool map and NOT a cohort seed (their household counts are `10 + (seed*7) % 11`) -
+`stage_web` costs 21.3s against main's 0.26s. Counted rather than profiled, because two profilers
+failed silently first (a filter that matched no rows, then a cProfile run that timed out with no
+output):
+
+                        clear_runs calls    runs returned    lanes laid    time
+        main's tip                   366              177             3     0.26s
+        this session             118,128           43,438             2    21.31s
+                                  (323x)           (245x)
+
+**So it is not that each scan got slower - the CANDIDATE SET exploded 323x.** Both trees roll
+`shape=round` here; mine binds round at 2.2/1.2 where main used the flat 3.0/1.6, and a compact cluster
+of 20 households packs far more inter-steading gaps. The web's cut generation is super-linear in those
+gaps, so tightening the cluster multiplies the candidate lines rather than adding to them. 118,128
+scans to lay 3 lanes is the shape this skill's CLAUDE.md names - "a per-candidate scan of geometry that
+does not change during the scan" - but the multiplier is upstream of the scan, in how many candidates
+exist.
+
+**NOT A LIVE DEFECT, and the corpus numbers are the reason**: pool specs are flat (kashikawa 1.95s mine
+vs 2.16s main; inashiro 0.31s both), and all 48 cohort seeds pass with no time budget complaining.
+Nothing shipped is slow because of this.
+
+**WHY IT IS RECORDED RATHER THAN FIXED, and who owns it.** A hoist or an index - the fix this session
+was scoped to make, since it changes no output - would make each of the 118,128 calls cheaper and leave
+the 323x intact. Cutting the call count means changing WHICH runs the web generates, which is lane
+semantics and belongs to the session that owns `stage_web`. That boundary was agreed explicitly rather
+than assumed. **The reason to care anyway**: the village tier is about to inherit this stage, and a
+stage that varies 323x on an input one seed from the test bed will not stay off-corpus forever - a
+village is a compacter settlement than a hamlet by definition.
+
+**Reproduce in seconds** (do not reach for a profiler): wrap `ways.clear_runs` and `ways._lay_web_lane`
+with counting shims, walk `hamletgen.driver.STAGES` to `stage_web`, and time that one call with
+`resource.getrusage().ru_utime`. The crude counter answered in seconds what two profilers could not.
 
 **Same family as the rest of this day's findings**: a guard whose INPUT is not the quantity its
 calibration describes. The budget describes solo CPU; the assertion measures parallel-run CPU. It was
@@ -2393,3 +2420,31 @@ green or red depending on the machine rather than on the code.
 **Open, and worth someone's afternoon**: why solo doubled in a week. It tracks the features that
 landed (lane web, byres, woodland scan, cluster shape), so it is probably real work and not waste -
 but nobody has measured which STAGE owns the growth, and `tools/timings.py` answers exactly that.
+
+## DONE 2026-08-19: coverage that depends on whether the GEN CACHE was warm
+
+A gate run failed on coverage - `hamletgen/ways.py` 881-888, the snap arm of `_lay_web_lane` - against
+a tree whose Python was **byte-identical to the gate that had just passed**. Only markdown and two
+docstrings had changed since.
+
+The mechanism: that branch has no unit test and was covered only by REGENERATING a pool map inside
+`test_villages.py`. A gate run that follows a `consts.py` value change invalidates the gen cache, so the
+maps really are rebuilt and the line executes. A gate run on an otherwise unchanged tree serves those
+maps from the cache, the generator never runs, and the line is uncovered. **Same code, same seeds,
+coverage green or red depending on whether a cache happened to be warm** - and it presents as a
+mystery regression, which is how twenty minutes went on diffing a tree against itself.
+
+Fixed the way the other two of these were fixed today: the branch now has a direct unit test
+(`test_a_web_lane_end_already_near_the_network_is_SNAPPED_onto_it`), so its coverage no longer depends
+on cache state.
+
+**This is the same defect family as the rest of the day, aimed at the test bed instead of the engine**:
+the coverage number's INPUT is not the quantity it is taken to describe. It is read as "is this branch
+tested" and it actually measures "did this branch execute during this run", which for cache-served work
+is a different question. Three branches in `ways.py` and one in `hinterland.py` were in that state
+before today - all four had real behaviour, none had a test, and all four looked tested.
+
+**Worth a sweep by whoever next has an afternoon**: any branch whose only coverage comes from a pool
+regeneration is in this state. `pipeline/regen.py` prints CACHED / REGENERATED per map, so a cheap probe
+is to run the gate twice in a row on an unchanged tree and diff the two coverage tables - anything that
+appears in the second run's missing list is cache-covered rather than tested.
