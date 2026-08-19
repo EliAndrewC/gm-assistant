@@ -235,6 +235,41 @@ and the cohort moved twice underneath them (a cluster-shape binding, then field 
 5, 8 and 25 was stable throughout, which is why the attempts remain comparable; nothing else in the
 residue is.
 
+**TWELVE: the walk with its selection bug fixed - and the result that ENDS this line of attack.**
+Attempt eleven chose the reachable cell nearest the NETWORK; it should choose the one nearest the
+HOUSE, or the path lands where the network already is and fails its own reach test. Fixed, plus a
+second input bug of the same family (the pass was handed `walls`, every fabric polygon, where a
+footpath's obstacle set excludes grazing commons and tree belts). **41/48 both times - no reach seed
+moved, and it introduced a `fields_clear_of_road` failure of its own.**
+
+**WHY NO WAY-DRAWING PASS CAN EVER FIX THESE THREE SEEDS.** The gate fails a SEED if any one of its
+houses is unserved, and the instrumented walk splits the eight stranded houses cleanly:
+
+| seed | stranded houses | have a walkable path | have NONE |
+|---|---|---|---|
+| 5 | 4 | 3 (reach 32, 51, 78 ft against a 100 ft bound) | **1** |
+| 8 | 2 | 0 | **2** |
+| 25 | 2 | 0 | **2** |
+
+**Five of the eight have no walkable cell within 110 ft at any clearance a footpath needs.** No path
+exists to be drawn, so no pass that draws paths - the web, the bridges, the joiners, the stragglers, a
+margin pass, a bearing scan, a map-wide walk - can serve them. And because one unserved house fails
+the whole seed, serving seed 5's three changes the cohort by nothing. That is why twelve attempts
+produced twelve null results: they were all the same kind of answer to a question that is not about
+drawing ways.
+
+**SO THE FIX IS AT SEAT TIME, and my two attempts at that were both testing the wrong thing.** Attempt
+seven (line to the cluster crosses crop) and attempt eight (flood fill over dry ground) BOTH counted
+only crop. The houses that cannot be reached are blocked by FABRIC - other steadings - not by water,
+which is why a crop-only test cleared every one of them. A seat-time test has to ask what this walk
+asks: is there a corridor at footpath clearance, counting the steadings already placed?
+
+That is harder than it sounds and is the real content of the remaining work: fabric does not exist yet
+when seats are chosen, since houses are placed one at a time. So the test must be INCREMENTAL - when
+seating house N, is it still reachable given houses 1..N-1 - and a full BFS per candidate seat is far
+too expensive (hundreds of candidates per map, a six-figure cell count each). Finding a cheap
+incremental reachability test, or a placement order that cannot strand, is the feature.
+
 **The candidate that fitted every measurement until it was built**, ledgered jointly with the hamlets session: make the LANE
 SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
 instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
