@@ -517,6 +517,39 @@ both worlds. Same family as the `cluster_shape` census (a knob honored on 1 of 4
 failing) and as `CLUSTER_DRAWN_ASPECT` (a guard comparing the drawn aspect against a mechanism
 parameter): a measurement that cannot distinguish the healthy case from the broken one.
 
+## DONE 2026-08-19: the streams were invisible to every way-vs-water test
+
+`shallow_crossing` exists in `hamletgen/ways.py`, is correct, and is wired into `path_violations`
+with a 42-degree limit. It had never once seen a stream. The water lists the way code builds are
+`plan.watercourses` (the planned irrigation net) and `drawn_channels` (the drawn one); `M["streams"]`
+- the feed brook and any natural course - was in neither, so a lane could cross a brook at any angle
+with nothing objecting. On cohort seed 47 a way crosses a 7 px stream at **17 degrees**, which is a
+lane running nearly PARALLEL to the water rather than over it, and `bridges_span_their_water` failed
+the 57.6 px deck it produced - with the guard written for exactly that case sitting one list away.
+
+FIXED by `drawn_water_segs(s)`, which returns channels AND streams, replacing the inline
+`drawn_channels` comprehension in the web-lane path and feeding a new `waters=` argument to
+`connector_track` (which took `plan` but not `s`, and so could not have seen the streams even in
+principle). `trades.py` already read both records together - this is that pattern applied where the
+ways are laid.
+
+**The same defect family as everything else this feature turned up, and that is now four in one
+day:** a guard keyed on the wrong input, measuring something other than what it protects.
+`cluster_shape` fed a pass that never ran; the first honesty guard compared a drawn aspect against a
+mechanism parameter; the woodland scan vetted a square while the gate measured a rotated bbox; the
+way code's shallow-crossing guard never received the streams. In every case the check was GREEN and
+the thing it existed to catch was happening.
+
+**WHAT THIS DOES NOT FIX, and who owns it.** Seed 47 still fails. The offending way is a WEB lane
+laid by one of the gap-bridging passes (`_join_orphan_ways` / `_bridge_collinear_breaks`), whose job
+is to span a break - so it spans, and the stream list does not stop it because those passes are not
+asking the shallow-crossing question at all. Wiring them into it is a lane-topology change in
+`hamletgen/ways.py`, which the Diagram architecture session owns and was actively editing; doing it
+from here would have been two sessions in one subsystem. **Handed over rather than half-done.** The
+measurement to start from: seed 47, lane 2, `web: True`, w=6, 3 points, segment 0 running
+(2473,382)->(2522,160) at bearing -77.4 against a stream bearing ~86 - a 17 degree crossing, deck
+(2503,245) span 57.6 on ~7 px of water.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any

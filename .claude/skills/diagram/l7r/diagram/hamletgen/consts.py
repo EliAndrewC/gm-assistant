@@ -74,7 +74,7 @@ LANE_CLEARANCE = 40.0
 # specs/123-lane-web-and-cluster-shape/research.md R2.
 CLUSTER_SPAN_FACTOR = 1.6
 
-CLUSTER_ROW_SPAN = {"round": 1.2, "crescent": 1.6, "elongated": 2.6, "split": 1.6}
+CLUSTER_ROW_SPAN = {"round": 1.6, "crescent": 1.6, "elongated": 2.6, "split": 1.6}
 """How far the FRONT ROW wraps along the field outline, per rolled `cluster_shape`, as a multiple of
 the seat band's own half-length.
 
@@ -408,7 +408,7 @@ SINKS = ("pond", "pond", "offmap")
 
 CLUSTER_SHAPES = ("round", "round", "elongated", "crescent")
 
-CLUSTER_BAND_ASPECT = {"round": 2.2, "crescent": 3.0, "elongated": 5.0, "split": 3.0}
+CLUSTER_BAND_ASPECT = {"round": 3.0, "crescent": 3.0, "elongated": 5.0, "split": 3.0}
 """How long the cluster BAND is against how deep, per rolled `cluster_shape`.
 
 THE KNOB WAS DEAD UNTIL THIS TABLE EXISTED (2026-08-19). `cluster_shape` is rolled per settlement
@@ -425,10 +425,32 @@ ratio moves and no settlement gains or loses room by its shape. The 3.0 that was
 kept as the crescent/split value, so a crescent map is byte-identical to what it drew before and the
 change is visible only where it should be.
 
-Depth floors at 112 px, so a small round hamlet reads at ~1.4:1 and a small elongated one is pushed
-toward 2.5:1 rather than 5:1 - the floor is a real minimum (a band shallower than that cannot hold a
-homestead bundle and its yard), and letting it compress the extremes is honester than pretending a
-10-household string can be five times longer than it is deep."""
+Depth floors at 112 px, so a small round hamlet reads well under its band figure and a small
+elongated one is pushed toward 2.5:1 rather than 5:1 - the floor is a real minimum (a band shallower
+than that cannot hold a homestead bundle and its yard), and letting it compress the extremes is
+honester than pretending a 10-household string can be five times longer than it is deep.
+
+ROUND IS DELIBERATELY NOT BOUND - it carries crescent's 3.0/1.6, which is what EVERY shape drew
+before this feature, so a round roll is byte-identical to the old behavior. That is a retreat, and
+the measurements behind it are worth keeping so nobody re-tries them blind:
+
+  - 1.4/0.9 -> 42/48 (baseline 43 pre-merge): cost seeds 17, 39, 47.
+  - 2.2/1.2 -> 42/48 (baseline 41 post-merge): cost seed 47 `bridges_span_their_water`.
+  - 1.8/1.0 -> 40/48: clean on all SEVEN swept seeds and WORSE on the full 48, costing seeds 11, 38
+    and 45. That sweep is the cautionary one: it swept only the seeds already known to move, so it
+    could not see the seeds the value would break. A sweep over a subset chosen by the previous
+    failure cannot answer a question about the whole cohort.
+
+Every candidate that binds round costs at least one seed, and each failure is downstream of a defect
+in another subsystem rather than of the ratio itself - seed 47's is the gap-bridging lane passes
+never asking `shallow_crossing` (see future-work.md, "the streams were invisible"). Binding round
+means shipping a known regression, and Principle XIII does not allow that; so round waits.
+
+**WHAT TO DO WHEN THE JOINER FIX LANDS**: re-run the sweep over the FULL 48, not a subset, and start
+at 2.2/1.2 - it was the strongest candidate and its only cost was the seed that fix removes.
+Elongated stays bound at 5.0/2.6 meanwhile, so the knob is not inert: an elongated roll draws a
+visibly different settlement, and a round roll that comes out crescent-shaped is recorded as
+`cluster_shape_unhonored` rather than declared."""
 
 CLUSTER_DRAWN_ASPECT = {"round": (1.0, 2.4), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
 """What the FINISHED cluster's long:short ratio must fall inside for a rolled shape to be declared.
