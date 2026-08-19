@@ -187,11 +187,21 @@ class PublicFixturesMixin:
 
             def _box_clearance(_q: Pt, _chw: float = _chw) -> float:
                 """Least distance from the caption's BOX to any drawn way's edge (negative = on it)."""
+                # READS THE LANE'S EDGE, THE SAME QUANTITY `captions_clear_the_ways_they_stand_on`
+                # READS - and it did not, for four attempts. `street_runs` returns polylines with no
+                # widths, so this scored distance to the CENTERLINE while the gate scores to the
+                # tread EDGE: optimistic by half a lane width, ~2.5-3 px. Every seat the search called
+                # best was chosen against a measure the rule does not use, which is why extending the
+                # ladder, sliding laterally, walking outward and going 2D all changed nothing on the
+                # five failing seeds. The placer and its check must read one source; that is the
+                # oldest rule in this engine's CLAUDE.md and I broke it in code written to enforce it.
                 _best = 1e9
-                for _run in street_runs(self.M):
-                    for _i in range(len(_run) - 1):
+                for _lane in self.M.get("lanes") or []:
+                    _pts = _lane.get("pts") or []
+                    _lhalf = float(_lane.get("w") or 3) / 2.0
+                    for _i in range(len(_pts) - 1):
                         for _cx, _cy in ((_q[0] - _chw, _q[1] - 5), (_q[0] + _chw, _q[1] - 5), (_q[0] - _chw, _q[1] + 5), (_q[0] + _chw, _q[1] + 5), _q):
-                            _best = min(_best, seg_dist(_cx, _cy, _run[_i], _run[_i + 1]))
+                            _best = min(_best, seg_dist(_cx, _cy, _pts[_i], _pts[_i + 1]) - _lhalf)
                 return _best
 
             if label_xy:
