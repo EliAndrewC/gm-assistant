@@ -2646,3 +2646,65 @@ that session is about to change, so splitting them would be worse than either se
 caution recorded with it: a VISUAL reviewer can say whether 102 deg looks tidy - a map where every plot is
 distinguishable does look tidy - but cannot say whether two adjacent plots at that angle could both drain,
 which is the question that decides it.
+
+## OPEN 2026-08-19: the kura roll under-delivers 2.2x, the fix WORKS, and it exposes a packing defect that blocks it
+
+Two findings, and the second is why the first is not shipped. Both measured; the fix is written out below
+so the next session re-applies rather than re-derives it.
+
+**FINDING 1 - the kura (farm shed) rate is 13.6% against a documented ~30%.** Counted on the shipped
+pool: 9 for 66 farmhouses - inashiro 3/15 (20.0%), sawada 5/19 (26.3%), kashikawa 1/20 (5.0%), and
+**mizuguchi 0 of 12**. A twenty-household hamlet in which nobody stores grain. Two compounding causes:
+
+  1. **ALIASING.** The roll is `self._hjit(x, y, 3.0) < 0.30` and `_hjit` is the GLSL
+     `fract(sin(dot) * 43758.5453)` hash. It is sampled along a front row that steps down a field margin
+     at near-uniform pitch - the textbook worst case, because the argument advances by a near-constant
+     number of cycles per step so successive samples drift instead of decorrelating. Measured at ~105 ft
+     along a cluster's own axis it returns mean 0.628 and 18% under 0.30, not 0.5 and 30%.
+  2. **THE ROLL IS UNAUDITABLE**, which is why a 2.2x shortfall sat in the pool with every check green.
+     It is evaluated at the CANDIDATE coordinate and `_place_bundle` then MOVES the bundle, so the
+     position that decided is not the position recorded. Nothing in the artifact can reproduce it.
+
+**THE FIX, verified and then reverted.** Add an avalanche integer hash and key the roll on the household
+COUNT (which `settlements/homesteads.md` already names as the alternative, and which makes the decision
+reproducible from the manifest):
+
+    @staticmethod
+    def _nth_roll(n: int, salt: int) -> float:
+        v = (int(n) * 2654435761 + int(salt) * 40503) & 0xFFFFFFFF
+        v ^= v >> 15
+        v = (v * 2246822519) & 0xFFFFFFFF
+        v ^= v >> 13
+        v = (v * 3266489917) & 0xFFFFFFFF
+        v ^= v >> 16
+        return (v & 0xFFFFFFFF) / 4294967296.0
+
+    # at houses.py's kura line, replacing the _hjit call:
+    _shed = kind == "plain" and (role == "headman" or self._nth_roll(len(self.M.get("houses") or []), 3) < 0.30)
+
+Measured: the hash returns mean 0.4989 and 29.65% under 0.30 over 2,000 draws (against 0.628/18%), and
+the pool goes to **23/66 = 34.8%** - inashiro 40.0, kashikawa 30.0, mizuguchi 41.7 (from zero), sawada
+31.6. Slightly over 30 because `headman` keeps an unconditional kura, which is a role rather than a roll.
+**Do NOT replace `_hjit` generally** - it is correct for a per-feature ATTRIBUTE (house aspect, garden
+size) where neighbors differing is the point and the samples are scattered. It is wrong for a per-household
+RATE.
+
+**FINDING 2, and the blocker: a RAKED house corner bulges into a NEIGHBOR'S GARDEN, and the packer cannot
+see it.** With the kura rate corrected, Kashikawa fails `features_do_not_overlap` and
+`gardens_clear_of_structures` at (2309,2814). Measured: the garden (15.2 x 24.2, owned by the house at
+(2271.3,2785.8)) sits 2.1 ft clear IN Y of the neighbor house at (2329.6,2842.0) on axis-aligned rects -
+so the boxes do NOT overlap - but the gate reads `rect_corners` WITH the rake, and +/-5 deg on a 57.6 ft
+house swings a corner ~2.5 ft. The 2.1 ft margin is eaten.
+
+`rolling/fit.py` states the scope honestly: the tread test is "THE HOUSE ONLY ... The yard, garden and
+grove are drawn axis-aligned, so for them the rect already IS the drawn footprint", and bundle separation
+is by whole-bundle BBOX, which (its own comment, line 172) "knows nothing about either house's rake".
+There is a rake-aware rule for house-to-HOUSE (`FARMHOUSE_EAVE_GAP_FT`, added when a re-pack left two
+roofs 2.0 ft apart) and none for house-to-neighbor's-GARDEN. **This is the same placer-vs-check mismatch
+the whole day has been about** - the placer measures unraked rects, the gate measures drawn ones - and it
+was simply latent until tighter packing found it.
+
+**Why the kura fix is reverted rather than shipped**: Principle XIII, and the honest fix for finding 2 is
+a rake-aware garden clearance in the bundle fit, which `fit.py` warns "would re-pack every nucleated map"
+- too wide to land and verify in the same sitting. Re-apply the patch above WITH that clearance, and
+expect the whole pool to move.
