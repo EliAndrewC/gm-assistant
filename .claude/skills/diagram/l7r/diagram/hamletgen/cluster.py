@@ -12,7 +12,7 @@ from typing import Any
 from l7r.diagram.settlement import point_in_poly, seg_closest, seg_dist, seg_intersect
 from l7r.diagram.sitegen.geom import centroid, unit
 
-from .consts import BUNDLE_PITCH, Poly, Pt
+from .consts import BUNDLE_PITCH, CLUSTER_BAND_ASPECT, Poly, Pt
 from .plan import SitePlan
 
 # ---- STAGE 4: seating the settlement, and its ways ----------------------------------------------
@@ -89,7 +89,11 @@ def seat_cluster(plan: SitePlan, dry_plots: Sequence[Poly] = (), drain: Poly | N
     # every one refused, `open_seat` finding nothing anywhere in the cluster - and the map fails
     # `settlement_has_wells` for a reason that looks nothing like its cause. Sizing the band from
     # the bundle leaves the courtyards a well can stand in.
-    dep = max(112.0, min(math.sqrt(plan.spec.households * (BUNDLE_PITCH**2) / (3.0 * math.pi)), 300.0))
+    # THE ROLLED SHAPE BINDS HERE, and until 2026-08-19 it bound nowhere - see
+    # `CLUSTER_BAND_ASPECT` for the census that showed the knob was dead. Area is held, so a
+    # round hamlet is a compact blob and an elongated one a long string of the same ground.
+    _asp = CLUSTER_BAND_ASPECT.get(plan.cluster_shape or "crescent", 3.0)
+    dep = max(112.0, min(math.sqrt(plan.spec.households * (BUNDLE_PITCH**2) / (_asp * math.pi)), 300.0))
     lat = max(240.0, min(plan.spec.households * (BUNDLE_PITCH**2) / (math.pi * dep), 1100.0))
 
     best: tuple[float, Pt, Pt] | None = None

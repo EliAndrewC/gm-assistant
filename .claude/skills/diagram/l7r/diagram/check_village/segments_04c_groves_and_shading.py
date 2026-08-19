@@ -901,3 +901,49 @@ def _seg_0613__village_windbreak_is_continuous(*, M: Any = _UNBOUND, check: Any 
             f"whatever blocked it rather than losing the column",
         )
     return _kept(locals(), ())
+
+
+def _seg_0614__cluster_shape_matches_the_drawing(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0614 (cluster_shape_matches_the_drawing) - added 2026-08-19.
+
+    A DECLARED KNOB MUST DESCRIBE THE SHEET. `cluster_shape` is rolled per settlement and printed in
+    every cohort-audit header, and until this rule it was honored on NO map: it fed only the cloud
+    seeding pass, which never runs because the front rows and lane frontage seat every household.
+    Round, elongated and crescent all drew the same 3:1 band, and a peer session spent an attempt
+    blaming the knob for a placement failure it could not have caused, because nothing read it.
+
+    It binds at the cluster band and the front row's reach now - but NOT above the lane skeleton,
+    which on a large hamlet seats most of the cluster and spreads it whatever the band says. So the
+    generator declares the shape only where the drawing has it and records
+    `cluster_shape_unhonored` where the skeleton overrode it. This holds that honest: a stamped
+    shape whose drawn aspect contradicts it is a lie `TWIN_AXES` would read and act on, and a map
+    that declares NEITHER key has silently dropped the record altogether."""
+    if M["meta"].get("generated_by") and M["meta"].get("scale") in ("hamlet", "village") and M.get("houses"):
+        _cs = M["meta"].get("cluster_shape")
+        _cu = M["meta"].get("cluster_shape_unhonored")
+        # The DRAWN aspect band per shape - the observable, not the generator's band parameter.
+        # Mirrors `hamletgen.consts.CLUSTER_DRAWN_ASPECT`, which carries the reasoning and the
+        # measurements; the gate may not import the generator, so `tests/hamletgen/test_cluster_shape.py`
+        # pins the two copies equal. Comparing against the BAND parameter instead is the bug this
+        # replaced - see that docstring.
+        _asp = {"round": (1.0, 2.4), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
+        check(
+            "cluster_shape_matches_the_drawing",
+            bool(_cs or _cu),
+            "the map records neither `cluster_shape` nor `cluster_shape_unhonored` - the rolled shape has to leave a trace either way, "
+            "or a knob that never binds looks exactly like one that always does",
+        )
+        if _cs:
+            _xs = [h["x"] for h in M["houses"]]
+            _ys = [h["y"] for h in M["houses"]]
+            _w, _h = max(_xs) - min(_xs), max(_ys) - min(_ys)
+            _dr = max(_w, _h) / max(1.0, min(_w, _h))
+            _lo, _hi = _asp.get(str(_cs), (1.9, 4.2))
+            check(
+                "cluster_shape_matches_the_drawing",
+                _lo <= _dr <= _hi,
+                f"the map declares cluster_shape={_cs!r}, which wants a drawn cluster between {_lo:.1f}:1 and {_hi:.1f}:1, and draws "
+                f"{_dr:.1f}:1 - a declared knob that the sheet does not carry is worse than an undeclared one, because TWIN_AXES reads it. "
+                f"Record `cluster_shape_unhonored` instead when the lane skeleton overrides the band",
+            )
+    return _kept(locals(), ())
