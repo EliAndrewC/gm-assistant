@@ -2708,3 +2708,59 @@ was simply latent until tighter packing found it.
 a rake-aware garden clearance in the bundle fit, which `fit.py` warns "would re-pack every nucleated map"
 - too wide to land and verify in the same sitting. Re-apply the patch above WITH that clearance, and
 expect the whole pool to move.
+
+## OPEN 2026-08-19: every lane junction draws a cap bead, and one back lane halves its width mid-run
+
+Settlement-review on Inashiro, and the GM has named this class before ("really looks like a rendering
+error"). Two defects at the same junctions.
+
+**THE BEAD.** `water_ways.lane()` emits each lane as TWO consecutive records - a soft worn-earth shoulder
+(`width + 2.5`, opacity 0.4, `stroke-linecap="round"`) and then the packed-earth tread (`width`, opacity
+0.9) - both into the same `add` stream. So the records interleave PER LANE: A-shoulder, A-tread,
+B-shoulder, B-tread. Where B meets A, **B's round-capped shoulder is painted over A's finished tread**,
+and the reader sees a circular seam across the roadway. Measured on Inashiro at (1185.0,785.0) where
+`lanes[3]` meets `lanes[4]`, and again at (1249,801), (1270,1183), (1279,1312).
+
+**THE WIDTH STEP.** Compounding it at the same node: `lanes[3]` is `w=6` (drawn 8.5/6.0) and `lanes[4]` is
+`w=3` (drawn 5.5/3.0), so one continuous ~230 ft back-lane run **halves its width where nothing happens**.
+`ways.py:695` gives a link the width of the way it JOINS and leaves its far neighbour at 3.
+
+**TWO CANDIDATE FIXES, PRICED, NEITHER TAKEN TONIGHT:**
+
+1. **Paint all lane SHOULDERS before all lane TREADS.** Removes the bead completely and moves no geometry,
+   which is what makes it attractive. But it needs a deferred flush - shoulders at `lane()` time, treads
+   collected and emitted later - and lane z-order is part of the DRAW ORDER contract in the skill's
+   CLAUDE.md. That doc's own rule is that an ordering change wants every dependent path read in ONE
+   batched pass before it is attempted, because the failure mode is discovering the order one gate
+   failure at a time. Several features deliberately layer between or above lanes (the kido bar, crossing
+   decks, the notice board's caption), so this is a read-everything-first change, not a one-liner.
+2. **Draw each connected chain as ONE stroked path.** Removes the bead AND the width step together, since
+   a chain has one width, and is the more honest model - a web of lanes IS a network, not a pile of
+   independent strokes. Bigger: it needs the chains computed (the connected components the joiners
+   already build) and every per-record consumer checked, since `M["lanes"]` records would change shape.
+
+**Not attempted at the end of a long session on a documented contract.** Deferred with the measurement per
+Principle XIV's architectural clause. The bead is cosmetic but it is the GM-named "looks like a rendering
+error" class, so it should not sit indefinitely.
+
+## OPEN 2026-08-19 (waterfields): the paddy area floor cannot see WIDTH, so the NE margin frays into needles
+
+Settlement-review on Kashikawa. `paddy_basins_are_worth_their_bund` gates basin AREA, and the defect is
+WIDTH. The basin at **(2273,1985) is 5.9 ft wide by 53 ft long** - 8.9:1, 312 sq ft, **0.21 of the design
+cell against a 0.20 floor, so legal by 0.01** - and it is narrower than the two bund strokes that bound
+it, so it draws as a doubled line rather than as a basin. Not alone: **9 basins under 12 ft wide and 30
+under 16 ft** (median width 29.1), concentrated at x 2070-2300, y 1550-2110 where the comb meets the drain
+hem. At 3x that wedge reads as lattice damage - needles, a 4-5 way bund starburst near (2054,1516), and
+slivers whose two long sides overlap into what looks like a bund dead-ending mid-basin.
+
+This is the GM's original complaint ("looks like a rendering artifact rather than something from our
+historical research") surviving the fix aimed at it, because the fix measured the wrong quantity: a
+scrap's AREA can clear the floor while its WIDTH makes it undrawable. Same family as everything else in
+this file.
+
+FIX DIRECTION (from the reviewer): add a minimum working width - `area / longest side` - to the toe pass
+AND to the gate, derived rather than picked; a basin must be wide enough to stand in and puddle, which
+puts it somewhere in the 12-16 ft band. `research/fields.md` "Minimum basin SIZE" already holds the
+reasoning frame, including the point that the alternative to a scrap is making its neighbour bigger.
+**Owner: `waterfields/`** - same subsystem as the FLOODED tint and `hem_block_len`, and the toe pass is
+where all three meet.
