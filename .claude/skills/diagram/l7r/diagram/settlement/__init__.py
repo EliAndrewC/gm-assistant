@@ -63,6 +63,7 @@ from ._geom import seg_dist as seg_dist
 from ._geom import seg_in_ellipse_core as seg_in_ellipse_core
 from ._geom import seg_intersect as seg_intersect
 from ._geom import segments_cross as segments_cross
+from ._geom import street_runs as street_runs
 from ._geom import stroke_quads as stroke_quads
 from ._geom import tilt_caption_seat as tilt_caption_seat
 from ._geom import torii_halfbox as torii_halfbox
@@ -106,3 +107,5 @@ from ._knobs import wall_tower_spacing_px as wall_tower_spacing_px
 from ._knobs import web_cuts as web_cuts
 from .core import Settlement as Settlement
 from .land import surface_water_dist as surface_water_dist
+from .shrines_wells import COURTYARD_REACH as COURTYARD_REACH
+from .shrines_wells import courtyard_annex_span as courtyard_annex_span

@@ -715,3 +715,20 @@ def test_a_dense_row_still_leaves_the_mouth_of_a_crossing_street_clear():
     s.frontage(spine, ["merchant"] * 30, width=6, spacing=20, setback=4, both=False, dense=True)
     at_mouth = [b for b in s.M["buildings"] if b["kind"] == "merchant" and abs(b["y"] - 500) < 16]
     assert not at_mouth, f"the row built across the crossing street's mouth: {[(b['x'], b['y']) for b in at_mouth]}"
+
+
+def test_the_lane_key_is_the_spine_not_the_last_way_drawn():
+    """`M["lane"]` is read by five consumers as "the village street" - two gate checks among them -
+    so it has to BE the street. It was assigned on every `lane()` call, i.e. it held whichever way
+    happened to be drawn last: a settlement-review measured Sawada shipping a 45 ft floating fragment
+    in that key while the spine ran 354 ft, so `structures_clear_of_streets` and the grove-shading
+    rule were adjudicating against a 45 ft orphan. They ran, they passed, and they tested the wrong
+    geometry - the input was wrong, not the rule."""
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(name="H", scale="hamlet")
+    s.lane([(100.0, 100.0), (900.0, 100.0)])  # the spine, 800 ft
+    s.lane([(400.0, 120.0), (400.0, 180.0)])  # a 60 ft back lane, drawn after it
+    assert s.M["lane"] == [[100.0, 100.0], [900.0, 100.0]]
+    # ...and the road OUT is not the street, however long it runs
+    s.lane([(900.0, 100.0), (1900.0, 900.0)], connector=True)
+    assert s.M["lane"] == [[100.0, 100.0], [900.0, 100.0]]

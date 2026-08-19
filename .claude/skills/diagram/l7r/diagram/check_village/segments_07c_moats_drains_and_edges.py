@@ -508,7 +508,7 @@ def _seg_0493___house_pts(*, h: Any = _UNBOUND) -> dict[str, Any]:
         # measured a rect the map does not draw, and disagreed with the placer's own tread test:
         # a seat `_house_on_a_tread` had cleared came back from the gate as a house on a lane.
         # ONE MEASUREMENT, NOT SEVERAL - the duplicate is why the two could drift apart at all.
-        # GAP VERDICT family: real rotated corners. The centre stays in the list because a lane
+        # GAP VERDICT family: real rotated corners. The center stays in the list because a lane
         # narrower than a house would otherwise thread between its corners.
         return [*rect_corners({**h, "rot": h.get("rot", 0.0)}), (h["x"], h["y"])]
 
@@ -859,8 +859,146 @@ _LANE_JOIN = 40.0
 # engine's `_FRAY_DEG`, restated here because the gate does not import the generator it gates.
 _FAN_FRAY_DEG = 20.0
 
+# Treads this close have physically met, whatever angle they meet at.
+_FAN_TOUCH_FT = 6.0
+
 _FAN_SPREAD_FT = 60.0
 _FAN_BEARING_DEG = 25.0
+
+
+# ONE WAY DRAWN AS TWO. Two non-connector ends that point AT each other across a short gap are not
+# two arms - they are one street with a hole in the middle of the built-up frontage, and both read as
+# rounded caps dying in bare grass. `lanes_reach_something` passes them because it tests each end
+# independently and an end 83 ft from a house CENTRE counts as fronting it, even when that is 55 ft
+# from the wall, i.e. out past the dooryard.
+#
+# THE GAP HAS TO BE EMPTY for this to be a defect, and that is the whole distinction: two ends with a
+# wellhead or a garden bed between them are honestly interrupted - the way stops because something is
+# there. The check cannot see the generator's obstacle sets, so it approximates "empty" with the
+# manifest's own solid features; anything it can see in the gap earns the break.
+_BREAK_GAP_FT = 150.0
+_BREAK_ANGLE_DEG = 15.0
+
+
+def _seg_0612__lanes_do_not_break_mid_run(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0612 (lanes_do_not_break_mid_run) - added 2026-08-18, feature 125."""
+    _br_ways = [[(float(x), float(y)) for x, y in (_br_l.get("pts") or [])] for _br_l in (M.get("lanes") or [])]
+    _br_solid = []
+    _br_small = []
+    for _br_key in ("houses", "farm_sheds", "byres"):
+        for _br_r in M.get(_br_key) or []:
+            _br_small.append(rect_corners(_br_r))
+    _br_solid.extend(_br_small)
+    for _br_key in ("threshing_yards", "gardens"):
+        for _br_r in M.get(_br_key) or []:
+            if _br_r.get("poly"):
+                _br_bed = [(float(_a), float(_b)) for _a, _b in _br_r["poly"]]
+                _br_solid.append(_br_bed)
+                _br_small.append(_br_bed)
+    # TREE COVER AND OPEN COMMONS DO NOT BLOCK A LANE, and listing them here is what made this
+    # check silent on the break it was written for: the motivating gap lies inside a homestead
+    # grove, so all three corridors read as blocked and the hole was excused. A cart track runs
+    # through a copse perfectly well, and a yashikirin grove is PLANTED AROUND the way rather than
+    # across it - the trees arrive after the lane, not before. Marsh stays: wet ground genuinely
+    # stops a lane, which is why it is the one member of that group kept.
+    for _br_key in ("marshes",):
+        _br_solid.extend([(float(_a), float(_b)) for _a, _b in _br_r["poly"]] for _br_r in (M.get(_br_key) or []) if _br_r.get("poly"))
+    # ...and the GROUND, not only the built things. A break with the paddy, a ditch or a stream in it
+    # is honest - a lane cannot be drawn there, so the way stops and resumes on the far side, and the
+    # generator is right to leave it. Leaving crop and water out of this list made the check fire on
+    # exactly the gaps its own fix is forbidden to close, which is a check demanding the impossible.
+    for _br_p in M.get("dry_plots") or []:
+        if _br_p.get("poly"):
+            _br_solid.append([(float(_a), float(_b)) for _a, _b in _br_p["poly"]])
+    for _br_f in M.get("fields") or []:
+        if _br_f.get("outline"):
+            _br_solid.append([(float(_a), float(_b)) for _a, _b in _br_f["outline"]])
+    for _br_key in ("field_ditches", "channels", "streams"):
+        for _br_c in M.get(_br_key) or []:
+            if _br_c.get("poly"):
+                _br_solid.append([(float(_a), float(_b)) for _a, _b in _br_c["poly"]])
+    for _br_w in M.get("wells") or []:
+        _br_rad = max(float(_br_w.get("r", 8.0)), float(_br_w.get("vr", 0.0)))
+        _br_ring = [(float(_br_w["x"]) + _br_rad * math.cos(math.pi * _k / 4), float(_br_w["y"]) + _br_rad * math.sin(math.pi * _k / 4)) for _k in range(8)]
+        _br_solid.append(_br_ring)
+        _br_small.append(_br_ring)
+    _br_bad = []
+    for _br_i, _br_li in enumerate(M.get("lanes") or []):
+        if _br_li.get("connector") or len(_br_ways[_br_i]) < 2:
+            continue
+        for _br_j, _br_lj in enumerate(M.get("lanes") or []):
+            if _br_j <= _br_i or _br_lj.get("connector") or len(_br_ways[_br_j]) < 2:
+                continue
+            for _br_ta, _br_pa in ((_br_ways[_br_i][0], _br_ways[_br_i][1]), (_br_ways[_br_i][-1], _br_ways[_br_i][-2])):
+                for _br_tb, _br_pb in ((_br_ways[_br_j][0], _br_ways[_br_j][1]), (_br_ways[_br_j][-1], _br_ways[_br_j][-2])):
+                    _br_gap = math.dist(_br_ta, _br_tb)
+                    if not (_LANE_JOIN < _br_gap <= _BREAK_GAP_FT):
+                        continue
+
+                    # EACH END MUST AIM AT THE OTHER. Comparing the two outward headings for
+                    # SIMILARITY tests the wrong thing - two ends facing across a gap have opposite
+                    # outward headings - so it selected parallel arms and missed the collinear break
+                    # this rule is named for.
+                    def _aim(_p: Any, _tip: Any, _to: Any) -> float:
+                        _o = math.degrees(math.atan2(_tip[1] - _p[1], _tip[0] - _p[0]))
+                        _m = math.degrees(math.atan2(_to[1] - _tip[1], _to[0] - _tip[0]))
+                        return abs((_o - _m + 180.0) % 360.0 - 180.0)
+
+                    if _aim(_br_pa, _br_ta, _br_tb) > _BREAK_ANGLE_DEG or _aim(_br_pb, _br_tb, _br_ta) > _BREAK_ANGLE_DEG:
+                        continue  # two arms, not one way
+                    # SOMETHING IN THE GAP, NOT MERELY NEAR IT. Testing "is any vertex of any solid
+                    # within 14 ft of the gap line" is far too loose once the FIELD is in the list:
+                    # these lanes run along the field margin, so almost every gap has the paddy's
+                    # outline nearby and every break was excused as honest - the motivating fixture
+                    # stopped firing, which is how this was caught. The gap is honest only if
+                    # something actually occupies it, so the line is SAMPLED and each sample tested
+                    # for being inside an area or up against a small solid.
+                    # HONEST MEANS NO LANE COULD PASS, not that something is standing in the way.
+                    # A wellhead in the middle of a 110 ft hole does not justify the hole - a lane
+                    # goes ROUND a wellhead. So three parallel corridors are tested, the straight
+                    # line and one either side of it, and the break is excused only if ALL of them
+                    # are blocked. With only the straight line tested, the motivating fixture stopped
+                    # firing because a single wellhead sat on it, and the check lost its teeth on the
+                    # very defect it was written for.
+                    _br_ux, _br_uy = (_br_tb[0] - _br_ta[0]) / max(_br_gap, 1e-6), (_br_tb[1] - _br_ta[1]) / max(_br_gap, 1e-6)
+                    _br_open = False
+                    for _br_off in (0.0, 22.0, -22.0):
+                        _br_pts = [
+                            (
+                                _br_ta[0] + (_br_tb[0] - _br_ta[0]) * _k / 12.0 - _br_uy * _br_off,
+                                _br_ta[1] + (_br_tb[1] - _br_ta[1]) * _k / 12.0 + _br_ux * _br_off,
+                            )
+                            for _k in range(1, 12)
+                        ]
+                        if any(point_in_poly(_br_s[0], _br_s[1], list(_br_o)) for _br_s in _br_pts for _br_o in _br_solid):
+                            continue
+                        if any(min(seg_dist(_br_s[0], _br_s[1], _br_o[_br_m], _br_o[(_br_m + 1) % len(_br_o)]) for _br_m in range(len(_br_o))) <= 10.0 for _br_s in _br_pts for _br_o in _br_small):
+                            continue
+                        _br_open = True
+                        break
+                    if not _br_open:
+                        continue  # every corridor is blocked; the interruption is honest
+                    # ...AND THE GAP MUST NOT ALREADY BE SPANNED. A third way running from one end to
+                    # the other has closed the break, and the two ends are joined THROUGH it - which
+                    # is exactly what the generator draws when it heals one. Without this clause the
+                    # check fires on the very repair that fixes it.
+                    if any(
+                        _br_k not in (_br_i, _br_j)
+                        and len(_br_o2) >= 2
+                        and min(seg_dist(_br_ta[0], _br_ta[1], _a2, _b2) for _a2, _b2 in zip(_br_o2, _br_o2[1:], strict=False)) <= _LANE_JOIN
+                        and min(seg_dist(_br_tb[0], _br_tb[1], _a2, _b2) for _a2, _b2 in zip(_br_o2, _br_o2[1:], strict=False)) <= _LANE_JOIN
+                        for _br_k, _br_o2 in enumerate(_br_ways)
+                    ):
+                        continue
+                    _br_bad.append((round(_br_ta[0]), round(_br_ta[1]), round(_br_gap)))
+    check(
+        "lanes_do_not_break_mid_run",
+        not _br_bad,
+        f"{len(_br_bad)} lane(s) stop and resume across empty ground, at {_br_bad[:4]} (x, y, gap ft) - "
+        f"two ends pointing at each other across nothing are ONE way drawn as two, and both of them read as a rounded cap dying in bare grass. "
+        f"An interruption with a wellhead or a garden bed in it is honest and is not flagged; an interruption with nothing in it is a hole",
+    )
+    return _kept(locals(), ())
 
 
 def _seg_0611__lane_ends_front_different_houses(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
@@ -896,7 +1034,12 @@ def _seg_0611__lane_ends_front_different_houses(*, M: Any = _UNBOUND, check: Any
                     % 180.0
                     - 90.0
                 )
-                if _fd_ang >= _FAN_FRAY_DEG:
+                # A TOUCH IS A JUNCTION AT ANY ANGLE. The fray rule is about a way running ALONGSIDE
+                # another at a distance; where the two treads actually MEET, they are joined however
+                # shallow the angle - which is what a bridged break looks like, and what a street
+                # continuing into the next street looks like. Without this the bridge drawn to close
+                # a hole in a spine reads as two fresh tines, and closing a gap makes the map fail.
+                if _fd_ang >= _FAN_FRAY_DEG or seg_dist(_fd_tip[0], _fd_tip[1], _fd_seg[0], _fd_seg[1]) <= _FAN_TOUCH_FT:
                     _fd_met = True
                     break
             if _fd_met:

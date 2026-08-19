@@ -45,7 +45,7 @@ LAND = '#EFE3C2'
 PADDY_SHADES = ['#A7C49C', '#9FBE93', '#AECBA1', '#9BBA8F', '#B4CCA6']  # rice mid-growth (green)
 FLOODED_SHADES = ['#93B0A2', '#8AAB9A', '#9DBAAB', '#88A99A', '#9AB6A8']  # just-transplanted paddy (water+shoots, blue-green)
 RIPE_SHADES = ['#CBBB74', '#C4B36A', '#D1C180']  # ripening rice (golden) - a few plots
-# CROWN FILLS - every colour the engine paints a RECORDED tree crown with. `tools/scatter_audit.py`
+# CROWN FILLS - every color the engine paints a RECORDED tree crown with. `tools/scatter_audit.py`
 # imports this rather than carrying its own copy.
 #
 # THE LIST IS THE AUTHORITY AND IT IS CHECKED, because a hand-written "exhaustive" list is a claim

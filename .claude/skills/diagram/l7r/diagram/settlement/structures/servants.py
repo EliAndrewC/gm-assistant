@@ -43,7 +43,7 @@ class ServantRangesMixin:
         """Would a footprint at `quad` stand in some building's DOORWAY?
 
         Mirrors `city_house_doors_unblocked`'s own geometry sample for sample - the door face
-        centre, three lateral offsets, three depths - because placement and its check must read the
+        center, three lateral offsets, three depths - because placement and its check must read the
         same geometry, not merely the same data (skill CLAUDE.md). A rear service range is the seat
         that needs this: the ground behind a house is often the roji the row BEHIND it faces."""
         dc = 7.0 / self.ftpx  # DOOR_CLEAR_FT, the check's own constant

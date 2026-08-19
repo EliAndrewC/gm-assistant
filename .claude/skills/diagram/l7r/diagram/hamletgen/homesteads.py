@@ -10,7 +10,7 @@ import random
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from l7r.diagram.settlement import Settlement, seg_dist, surface_water_dist
+from l7r.diagram.settlement import Settlement, point_in_poly, seg_dist, surface_water_dist
 from l7r.diagram.sitegen.geom import centroid, unit
 
 from .consts import BUNDLE_PITCH, CLUSTER_SPAN_FACTOR, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
@@ -395,6 +395,29 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
     ccx, ccy = sum(xs) / len(xs), sum(ys) / len(ys)
     want = well_target(plan.spec.households)
     placed: list[Pt] = []
+    # A WELLHEAD MAY NOT STAND IN THE SHELTER BELT (settlement-review, Inashiro 2026-08-18). The
+    # belt is drawn later, but `village_grove` SKIPS any clump whose canopy would reach a wellhead
+    # (`wells_clear_of_trees` - a well lost under the grove reads wrong), so a well seated inside
+    # the belt's footprint silently deletes the clumps around it. Measured on Inashiro after the
+    # tie-break change moved a well to (1098,1387), inside the belt's own footprint: the 40 ft band
+    # at y1360-1400 went from 8 clumps to 1, and the belt acquired its first zero-canopy latitude in
+    # a 930 ft run - a hole straight through the WINDWARD side, which is the entire point of a
+    # windbreak. Nothing caught it: the belt's continuity is not gated, and the well checks are all
+    # about the well.
+    #
+    # The belt is DERIVED from the houses, which already stand, so the prospective footprint can be
+    # asked for now - the same expression `stage_woodland` will call, so the two cannot disagree.
+    # This is a PREFERENCE and not a veto, per this function's standing rule that a settlement with
+    # a badly-placed well beats one with no well: it sorts belt seats last, so one is taken only
+    # when nothing outside the belt serves at all. It also happens to push wells toward the
+    # dooryards, which is where the idiom 井戸端会議 puts them.
+    from .hinterland import belt_polygon  # local: hinterland is a later stage, module-level would invert the pipeline's reading order
+
+    _belt = belt_polygon(s, plan)
+
+    def _in_belt(c: tuple[float, float, float]) -> int:
+        return 1 if _belt and point_in_poly(c[1], c[2], _belt) else 0
+
     # THE MINIMAX SERVES THE HOUSES THAT NEED A WELL (known-open ledger 2026-08-16): the
     # worst-served objective used to count every house, including those
     # `settlement_dwellings_watered` already treats as watered by a nearby stream / channel /
@@ -420,7 +443,7 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
     # which is the right shape for a nucleus and leaves a two-farm satellite with no well of its own
     # - and then the coverage pass cannot rescue it either, because the ground among two farms is
     # their own courtyards. Seed 18 stranded exactly that: a pair 500 px off the cluster, 760 and
-    # 777 px from the nearest well, with all 118 legal-neighbourhood probes around them refused.
+    # 777 px from the nearest well, with all 118 legal-neighborhood probes around them refused.
     # Two households sharing a draw-well is an ordinary thing; three is not a threshold nature knows.
     for third, nearest, want_near in ((190.0, 105.0, 3), (300.0, 110.0, 3), (520.0, 112.0, 3), (520.0, 112.0, 2)):
         if len(placed) >= want:
@@ -452,7 +475,7 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
         # LATER well takes the legal seat FARTHEST from the wells already standing, ties toward the
         # center - i.e. it serves the households the placed wells do not, which is why a real hamlet
         # digs a second well at all.
-        pool = sorted(seats)
+        pool = sorted(seats, key=lambda c: (_in_belt(c), c[0]))  # the FIRST well is central too, but never in the belt if anywhere else will do
         while pool and len(placed) < want:
             if placed:
                 # ...by MINIMAX NEED, in ~3-grid-step buckets, centrality breaking ties inside a
@@ -537,7 +560,35 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                     """How far past the crop's predicted box this seat (drawn radius included) reaches."""
                     return max(0.0, bx0 - (c[1] - _WELL_DRAWN_R), (c[1] + _WELL_DRAWN_R) - bx1, by0 - (c[2] - _WELL_DRAWN_R), (c[2] + _WELL_DRAWN_R) - by1)
 
-                pool.sort(key=lambda c: ((_worst_after(c) + _extent_added(c)) // 66.0, _extent_added(c), c[0]))
+                # ...AND THE LAST TIE-BREAK IS THE NEIGHBORHOOD, NOT THE CENTROID (settlement-review,
+                # Sawada 2026-08-18). Once the minimax bucket and the frame term are equal, the
+                # remaining sort was `c[0]` - the seat's distance to the cluster CENTROID, computed
+                # when the pool was built. On a ONE-lobed cluster that reads as "the most central
+                # seat wins" and is fine. On a TWO-lobed one the centroid is the empty ground
+                # BETWEEN the lobes, so the tie-break actively prefers the gap: Sawada's second well
+                # moved off a seat serving 11 households within 300 ft onto one serving 5, and the
+                # worst walk went 364 -> 493 ft. Same family as the `_extent_added` fix above and as
+                # the standing rule against letting an aggregate stand in for the distributed thing
+                # a verdict is about - a centroid is not a place anybody lives.
+                #
+                # The measure that IS the question: how tightly is this seat surrounded by
+                # homesteads - the distance to the `want_near`-th nearest house, which is exactly
+                # the rung's own "is this in a neighborhood" test, reused rather than restated.
+                # Distance to the SINGLE nearest house was the ledger's sketch and is rejected: it
+                # is minimized by hugging one outlying farmhouse, which is the same mistake in the
+                # other direction. Every seat in the pool already passed the rung, so this only
+                # orders seats that are all legally "among the dwellings".
+                def _neighborhood(c: tuple[float, float, float], wn: int = want_near) -> float:
+                    return sorted(math.hypot(c[1] - h["x"], c[2] - h["y"]) for h in houses)[wn - 1]
+
+                # THE BELT TERM SITS BEHIND COVERAGE, not in front of it. Ranked first it is a
+                # filter, and it behaved like every other filter this function has tried: Mizuguchi's
+                # second well moved off a seat inside the belt and its worst walk went 203 -> 264 ft,
+                # on a map whose belt hole turned out not to be well-caused at all, so the trade
+                # bought nothing. Behind the minimax bucket it can only decide between seats that
+                # serve the households equally well - which is all "do not stand in the windbreak"
+                # was ever entitled to decide.
+                pool.sort(key=lambda c: ((_worst_after(c) + _extent_added(c)) // 66.0, _in_belt(c), _extent_added(c), _worst_after(c), _neighborhood(c)))
             _, x, y = pool.pop(0)
             if any(math.hypot(x - px, y - py) < 170.0 for px, py in placed):
                 continue  # `wells_not_clustered`: shared wells serve separate courtyards
@@ -587,7 +638,7 @@ def place_wells(s: Settlement, plan: SitePlan, houses: Sequence[Mapping[str, Any
                     # the grid above is laid over the cloud rather than a box grown around it.  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
                     continue  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household
                 if not any(math.hypot(cand[0] - hh2["x"], cand[1] - hh2["y"]) <= 95.0 for hh2 in houses):  # pragma: no cover - the rescue's among-the-dwellings floor
-                    continue  # pragma: no cover - centre distance <= 95 is strictly inside the check's 95 px EDGE gap
+                    continue  # pragma: no cover - center distance <= 95 is strictly inside the check's 95 px EDGE gap
                 if any(
                     math.hypot(cand[0] - px, cand[1] - py) < 110.0 for px, py in placed
                 ):  # pragma: no cover - the well ring-probe rescue; the bundle-pitch fix left the courtyards open enough that no cohort map strands a household

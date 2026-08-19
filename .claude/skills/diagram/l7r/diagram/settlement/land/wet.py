@@ -214,8 +214,28 @@ def surface_water_dist(M: Any, x: float, y: float) -> float:
     the objective and the check read two definitions of "needs a well"). Wells are deliberately
     NOT included: the caller asking "does this house need a well" must not have the answer
     pre-empted by the wells it is deciding to dig."""
+    # AN IRRIGATION DITCH IS NOT DOMESTIC WATER (ruled 2026-08-18; settlement-review, Sawada, found
+    # the mechanism and did the research pass). This used to count `channels` too, and that made the
+    # answer depend on WHICH MANIFEST KEY a watercourse happened to be recorded under rather than on
+    # what kind of water it is: on a comb-field map `channels` holds one short intake stub while the
+    # thirteen real watercourses live in `drawn_channels`, so Sawada counted 13 of 19 houses as
+    # watered by a stub, and Mizuguchi's well objective had **zero** clients - it was optimizing
+    # nothing at all, silently. Had `drawn_channels` been the key read instead, every house on every
+    # comb map would have been "watered" and no hamlet would ever have dug a well.
+    #
+    # The research says the exclusion is right and only the mechanism was accidental: domestic water
+    # came from a well or a spring, while ditch water served washing at a dedicated *kawado* stand -
+    # a field ditch is seasonal, silty and fouled by the paddies it feeds, and nobody drank from it.
+    # So the predicate now names the water it means. A STREAM is a living watercourse a household
+    # draws from; a MOAT and a CANAL are the town/city equivalents, permanent and open; a POND is a
+    # tameike. An irrigation channel is field infrastructure, whichever key it is recorded under.
+    #
+    # Measured cost, and it is the point rather than a side effect: the houses that actually need a
+    # well go 5 -> 8 on Inashiro, 3 -> 9 on Kashikawa, 0 -> 5 on Mizuguchi and 6 -> 9 on Sawada, so
+    # the minimax objective and the coverage pass finally have the clients the doctrine says they
+    # have. The GM may reverse this; it is recorded in `future-work.md`.
     d = 1e9
-    for ln in [c["poly"] for c in M.get("channels", [])] + [st["poly"] for st in M.get("streams", [])] + ([M["moat"]] if M.get("moat") else []):
+    for ln in [c["poly"] for c in M.get("canals", []) if c.get("poly")] + [st["poly"] for st in M.get("streams", [])] + ([M["moat"]] if M.get("moat") else []):
         for i in range(len(ln) - 1):
             d = min(d, seg_dist(x, y, ln[i], ln[i + 1]))
     pond = M.get("pond")

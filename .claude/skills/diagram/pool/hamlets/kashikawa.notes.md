@@ -145,6 +145,63 @@ is kept for provenance rather than deleted, because the failure mode being guard
 future session quoting "not to be reopened as a bug" at a genuinely stranded farmstead on some later
 roll. If one appears, rule it fresh.
 
+## 2026-08-18 - where the ox sleeps, and a well objective that measured the wrong houses
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+- **`byre_form` is a knob now.** The doctrine had been quietly self-contradictory: the *doma* rule
+  says the draft ox is stalled under the farmhouse roof, while the byre placer drew a detached shed
+  on the shared ground. Both are attested - a household that OWNS its team houses it in its own
+  homestead (the *magariya* 曲家, whose short arm IS the stable; the animal range of the north-China
+  *sanheyuan*), while a team that is SHARED or hired stands where the borrowing household can reach
+  it - so per Principle XII it becomes a per-settlement roll rather than a ruling.
+- **and the overlap registry had been describing code that no longer existed** - its `byres` entry
+  claimed the byre "abuts its own farmhouse (draft_byres places it against the wall)", which the
+  placer stopped doing long ago. Now corrected and GATED rather than asserted in prose.
+- **the well tie-break's last key is the objective itself, not a proxy.** The primary key buckets
+  coverage-plus-frame into 66 px steps, and inside a bucket the order was distance to the cluster
+  CENTROID - the empty ground between the lobes of a two-lobed cluster. It is now `_worst_after` at
+  full resolution, with the neighborhood measure breaking exact ties.
+
+RIPPLE ON THIS MAP (re-measured 2026-08-18 after the round-2 review): 4 byres at the placer's
+target of 4, form `detached_commons`, owned by the houses ranking [3, 4, 10, 11] by footprint of
+20 - the owner ranking was reading a `wealth` field that is 1.0 on every scripted house, so it had
+collapsed to smallest-x and was handing oxen to the west edge. The shelter belt carries 207 clumps
+with a minimum canopy depth of 28.0 ft measured ACROSS the wind, which is the measure that means
+anything on a diagonal belt; the per-latitude framing an earlier entry used flags healthy belts
+and misses thin windows. Worst walk among the 3 houses that actually need a well: 152 ft.
+
+## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Two ledgered defects that turned out to be one, with a worse one underneath.
+
+- **the commons are off the lattice, and no two are the same size.** `open_ground_patches` samples a
+  uniform 90 ft lattice, scores every seat by ONE monotone function (near the cluster, leaning
+  upslope) and takes the best seat outside a FIXED separation radius - three ingredients that do not
+  merely tend toward an even chain, they produce one by construction. Mizuguchi shipped the proof:
+  three IDENTICAL 250 ft squares stepping (+270,-270) twice, reading as three stamps of one wood on
+  a ruled diagonal; Inashiro had the same chain the other way. The accepted seat is now nudged up to
+  half a step off the lattice and its size rolled +/-15%, both from the map's own position hash
+  (so a map is unchanged by regeneration and two maps differ from each other), and every nudge is
+  re-asked through the same qualification test - it can only move a legal seat to another legal one.
+- **a hamlet at the top of the band had no wood at all.** Kashikawa - the map NAMED 樫川, "oak
+  river" - seated ZERO parcels out of 231-286 candidate seats, at every rung of the shrink ladder
+  and both set-back profiles, with the best achievable clearance NEGATIVE (the square overlapped a
+  paddy). The shrink ladder and the relaxed set-backs were each added FOR Kashikawa in earlier
+  rounds and neither could ever have worked, because the binding constraint was not the set-back:
+  the scan demanded the whole square inside the predicted crop window plus a further 16 ft, while
+  its own gate check asks that **70% of the parcel's bbox** be inside the view and says outright
+  that a parcel clipping at the edge "reads as 'more wood that way' and is fine". The scan mirrored
+  the check's formula but not its WINDOW. It now judges a seat by area the way the check does.
+  Being stricter than your own gate is not the safe direction - it cost two of four hamlets their
+  woodland outright.
+
+RIPPLE ON THIS MAP: The oak river has oaks: 0 -> 2 parcels, 117, 125 ft. They are small because 20
+households genuinely commit this land, and both now clear the 120 ft legibility floor that stops
+the variance machinery compounding its way into a copse.
+
 ## 2026-08-18 - the six-defect pass
 
 WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
@@ -173,12 +230,12 @@ order they matter to a reader of these maps:
 - **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
   gate reads the same raked corners the placer does.
 
-RIPPLE ON THIS MAP: the notice board's caption was 90 degrees out and is fixed - `kosatsuba` used
-`label_tilt`, which FOLDS mod 90 because a building has two edge families, where a board has ONE
-meaningful axis (its face). It now uses `linear_tilt` and reads level beside a 49.3-degree board,
-matching neither lane, so nothing on the sheet can steal it. Byres went from occupying 14% of the
-settlement's length to spanning it. Every farmhouse is now within ~97 ft of a way by centre.
-Review: PASS.
+RIPPLE ON THIS MAP (re-measured 2026-08-18): woodland is [(125, 29)] - each pair is (ft across,
+crowns) - stocked at 540-554 sq ft per crown, which is the stated density rather than an artifact
+of how much of a parcel lies near a keep-out. Crown count used to be the number of THROWS at a
+parcel, and `_sparse` rejected a share of them, so small parcels came out both smaller AND
+thinner; it is a target now. Parcels under the 120 ft legibility floor are DROPPED rather than
+drawn small.
 
 OPEN, wanting a one-line ruling rather than a fix: the maximin spread put a byre 38 ft from a
 communal wellhead (the other three are 168-317 ft from any well). Nothing governs it - `homesteads.md`
@@ -285,7 +342,7 @@ check found some, which no rule could see before.
 by fraction OR by one unbroken bundle pitch - is refused, and so is one that would run the length of
 the shelter belt rather than crossing it.
 
-*A house is served with margin, not to the millimetre.* The footpath pass triggers at nine tenths of
+*A house is served with margin, not to the millimeter.* The footpath pass triggers at nine tenths of
 the reach, so no house passes by inches and none gets a path drawn to cure a rounding error.
 
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead

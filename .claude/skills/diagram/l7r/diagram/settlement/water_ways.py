@@ -83,7 +83,7 @@ def _pull_back(pts: list[Pt], reaches: Any, step: float = 8.0, keep_frac: float 
             break
         out = trial
         # STOP AT THE LAST THING SERVED, not at the predicate's EDGE. Returning the first point that
-        # reaches anything leaves the tread ending on the 90 ft radius of a farmhouse centre - i.e.
+        # reaches anything leaves the tread ending on the 90 ft radius of a farmhouse center - i.e.
         # ~60 ft clear of that homestead's own footprint, petering out in grass (both the Kashikawa
         # and Sawada reviews raised it independently). Walking on while it STILL reaches, and keeping
         # the shortest such point, ends the lane at the homestead instead - and where the end also
@@ -520,7 +520,25 @@ class WaterWaysMixin:
         # engine knows what a lane actually serves - while the lane keeps the exact draw position it
         # has always had. Kept engine-side rather than on the record so no manifest byte moves.
         self._lane_ink.append(_z)
-        self.M["lane"] = [[x, y] for x, y in pts]
+        # `M["lane"]` IS THE SPINE - the longest ordinary way on the map - not whichever lane was
+        # drawn last. It used to be assigned unconditionally here, so it held the final `lane()` call
+        # of the whole build, and five consumers read it as "the village street": two gate checks
+        # (`segments_03b` structures-vs-street, `segments_04c` grove shading), the kosatsuba's route
+        # list in `structures/fixtures.py`, and `_geom/ways.py`'s corridor runs. A settlement-review
+        # measured what that means in practice (Sawada 2026-08-19): the key held a 45 ft floating
+        # fragment in the NW, so two gate checks were adjudicating against a 45 ft orphan instead of
+        # the 354 ft spine - they ran, they passed, and they were testing the wrong geometry. That is
+        # the "a check that never runs looks exactly like a check that passes" family, one level down
+        # at the INPUT rather than at the rule.
+        #
+        # Longest-wins is monotone, so a mid-build consumer gets the best spine available when it
+        # asks rather than an arbitrary one; the connector is excluded because it is the road OUT,
+        # not the street. Derived from geometry already on the map, never pinned.
+        if not connector:
+            _prev = self.M.get("lane")
+            _prev_len = sum(math.dist(tuple(a), tuple(b)) for a, b in zip(_prev, _prev[1:], strict=False)) if _prev and len(_prev) > 1 else 0.0
+            if sum(math.dist(a, b) for a, b in zip(pts, pts[1:], strict=False)) > _prev_len:
+                self.M["lane"] = [[x, y] for x, y in pts]
         self.corridors.append((pts, clearance))
         self._record_tread(pts, width / 2)
 
@@ -753,7 +771,7 @@ class WaterWaysMixin:
         #     furniture. Perpendicular crossings were fine either way (the box sits along the lane,
         #     off the fence line); it is the OBLIQUE crossings that cut the box, and two of the
         #     pool's fourteen gates were cut. Tested with SAT against the stroked fence, not by
-        #     corner distances: a line through the CENTRE of a 15x16 box leaves every corner ~8px
+        #     corner distances: a line through the CENTER of a 15x16 box leaves every corner ~8px
         #     clear, so the corner test the lane beds use would have reported it clear.
         y0 = 12.0 if guard_side >= 0 else -28.0
         verge = max(self.px(12), 4.0)

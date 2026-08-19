@@ -126,7 +126,7 @@ points, both learned the hard way:
   untrimmed tread was drawn straight through a shopfront. The longest clear run is kept, and the
   path is emitted only if enough survives to read as a path rather than a stub.
 - **Clearance scales with `step`**, because `_near_corridor` tests a building's CENTER: at a flat
-  margin a house sat 15px off the tread and put its footprint through it. (The centre-vs-footprint
+  margin a house sat 15px off the tread and put its footprint through it. (The center-vs-footprint
   family again - see the skill's `CLAUDE.md`.)
 
 Expect a footpath to shift the packing: it costs a little capacity, which moves caste counts and

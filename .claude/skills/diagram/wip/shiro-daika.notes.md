@@ -383,7 +383,7 @@ RESEARCH instead, and overturned the existing draw: see research/cities/capitals
 
 **One engine defect the checks found rather than the eye:** the gate guard/inspection caption was
 pushed inward by a fixed radial offset that ignored the label's own 134px width, so on an east or
-west gate the box straddled the rampart however far its centre went - and the adaptive fix then
+west gate the box straddled the rampart however far its center went - and the adaptive fix then
 read `M["wall"]` before `city_wall` records it, so the clash test passed at step 0. The caption
 LADDER also never knew about the rampart at all; it does now.
 

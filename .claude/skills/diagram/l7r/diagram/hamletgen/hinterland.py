@@ -31,6 +31,26 @@ def stage_hinterland(s: Settlement, plan: SitePlan) -> None:
 CROP_MARGIN = 48.0  # the one crop margin, shared by stage_frame's crop_to_content call and the
 # predicted-kept-window math in open_ground_patches - two hardcoded 48s would drift
 
+_COMMONS_REACH = 1.49
+"""How much further a rotated parcel reaches than the equal-AREA square, worst case.
+
+`open_ground_patches` rolls an aspect up to 2.2:1 while holding area, so the long half-axis grows by
+sqrt(2.2) = 1.483 and the short one shrinks to match. Every keep-out test is done at this reach, so
+a parcel that rotates cannot end up nearer a crop, a lane or the marsh than the square it replaced -
+rotating a footprint must never buy ground the square could not have had."""
+
+_COMMONS_FLOOR_FT = 120.0
+"""The smallest square a woodland COMMONS may be drawn as, in feet.
+
+Not a historical minimum - `research/fields.md` is clear that coppice lots were "whatever odd corner
+the village spared", and there is no attested floor. This is a LEGIBILITY floor, and it exists
+because the size-variance machinery above can compound its way under one: a per-map ladder scale
+times a per-parcel band multiplier took Kashikawa to 103 ft. The number is our own recorded
+judgment - when the first (shrink-only) size roll produced a 116 ft parcel on Mizuguchi the reading
+was "a copse, not a commons", which is what made the roll two-sided - so 120 ft is just above the
+size we have already said does not read. A settlement whose ground genuinely cannot hold one draws
+FEWER parcels rather than smaller ones."""
+
 
 def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float = 250.0) -> list[Poly]:
     """Find `count` patches of ground still open enough for a managed woodland - by SCANNING.
@@ -123,7 +143,25 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
     _fx1, _fy1 = min(plan.W, max(_cx) + CROP_MARGIN), min(plan.H, max(_cy) + CROP_MARGIN)
 
     chosen: list[Poly] = []
-    centers: list[Pt] = []
+    centers: list[tuple[float, float, float]] = []  # (x, y, this parcel's OWN exclusion radius - see the stride roll)
+    # THE LADDER ITSELF IS ROLLED PER MAP (settlement-review x2, 2026-08-18). The shrink ladder's
+    # rungs were the same four numbers on every map, so every tight composition fell to the SAME
+    # bottom rung and produced the same wood: Kashikawa shipped a 121.7 ft stand with 18 crowns and
+    # Sawada a 127.2 ft stand with 19 - two different hamlets, effectively one wood, and the
+    # per-parcel size roll could not separate them because it only spans +/-15% of a rung they
+    # SHARED. Scaling the whole ladder by a per-map factor moves the rungs themselves apart, so two
+    # tight maps land on different sizes before the per-parcel roll even runs.
+    _ladder = 0.90 + 0.20 * s._hjit(plan.W, plan.H, 76.0)
+    # ...AND THE PARCEL SIZES ARE STRATIFIED, one per band, rather than drawn independently. A
+    # continuous roll clusters near its own middle, which is exactly the reading being fixed:
+    # Mizuguchi's four came out 292 / 294 / 290 / 269 ft - three of them inside 1.4% of each other,
+    # perceptually one wood drawn three times, from a roll that was already +/-18% wide. Independent
+    # draws will keep doing that (with four samples a near-tie somewhere is the NORMAL outcome, not
+    # bad luck), so each accepted parcel instead TAKES a band and removes it from the pool: with
+    # four parcels the multipliers are 0.865 / 0.955 / 1.045 / 1.135 and no two woods can land
+    # within 9% of each other. Which parcel gets which band is still rolled from its own position,
+    # so the sizes are not ordered by seating order.
+    _bands = list(range(max(2, count)))
     # SHRINK BEFORE GIVING UP (settlement-review round 2, 2026-08-16): with the kept window and
     # the marsh both closed to it, a tight composition can offer no full-size seat at all - the
     # first dry pass seated ZERO parcels on Kashikawa, the map NAMED for its oaks. A smaller
@@ -147,27 +185,84 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
     for _sb_normal, _sb_sunny in ((80.0, 180.0), (40.0, 100.0)):
         if len(chosen) >= count:
             break
-        for size_try in (size, size * 0.8, size * 0.64, size * 0.5):
+        for size_try in (size * _ladder, size * 0.8 * _ladder, size * 0.64 * _ladder, size * 0.5 * _ladder):
             if len(chosen) >= count:
                 break
+            # A RUNG UNDER THE LEGIBILITY FLOOR IS NOT OFFERED AT ALL. The first cut clamped each
+            # candidate up to the floor and then dropped the parcel when the clamped size did not
+            # fit, which needed a fall-through nobody could reach in a test; skipping the rung says
+            # the same thing in one line and leaves `half_used = half` unconditionally safe, because
+            # every rung that survives to the accept block is already above the floor. Either way a
+            # settlement whose ground cannot hold a legible commons draws FEWER, never smaller.
+            if size_try < _COMMONS_FLOOR_FT:
+                continue
             half = size_try / 2.0
             _sb_pad = 0.415 * half if _sb_normal < 80.0 else 0.0  # the diagonal slack (see above); the generous profile keeps its historical thresholds exactly
             _sb_n, _sb_s = _sb_normal + _sb_pad, _sb_sunny + _sb_pad
-            sx0, sy0 = max(cbx0, _fx0 + half + 16.0), max(cby0, _fy0 + half + 16.0)
-            sx1, sy1 = min(cbx1, _fx1 - half - 16.0), min(cby1, _fy1 - half - 16.0)
+            # MIRROR THE CHECK'S WINDOW, NOT JUST ITS FORMULA (2026-08-18). The kept-window
+            # confinement above and `woodland_commons_within_the_frame` are meant to be the same
+            # rule, and they were not: the check asks for **70% of the parcel's bbox** inside the
+            # view and says in as many words that a parcel clipping at the edge "reads as 'more wood
+            # that way' and is fine", while the scan demanded the whole square inside the window
+            # plus a further 16 px. Being stricter than your own gate sounds safe and is not - it
+            # cost two of the four hamlets their woodland outright. Measured before the fix: at
+            # EVERY rung of the shrink ladder and BOTH set-back profiles, Kashikawa - the map named
+            # 樫川, "oak river" - had ZERO qualifying seats out of a 231-286 point lattice and Sawada
+            # exactly one, with the crop clause alone refusing 93-97% and the best achievable
+            # clearance NEGATIVE (the square overlapped a paddy). Neither the shrink ladder nor the
+            # set-back relaxation, both added FOR Kashikawa, could ever have worked: the binding
+            # constraint was never the set-back, it was that a 20-household hamlet's field fills its
+            # own frame and the scan would not let a wood touch the edge of it.
+            #
+            # So the seat is judged the way the check judges it, by AREA. The center may now sit up
+            # to 0.6*half outside the kept window and the exact bbox-overlap fraction is tested in
+            # `_ok` - which is what makes the both-axes corner case safe, where a per-axis box test
+            # would pass two 0.4*half overhangs at 0.64 inside and ship a check failure. The floor
+            # is 0.8 rather than the check's 0.7 because this window is a PREDICTION of the crop:
+            # the margin absorbs the features that may still grow it.
+            sx0, sy0 = max(cbx0 + 16.0, _fx0 - 0.6 * half), max(cby0 + 16.0, _fy0 - 0.6 * half)
+            sx1, sy1 = min(cbx1 - 16.0, _fx1 + 0.6 * half), min(cby1 - 16.0, _fy1 + 0.6 * half)
+
+            # THE QUALIFICATION IS ONE PREDICATE, so a seat can be re-asked after it is nudged. It
+            # used to be an inline `if` that only the lattice scan could evaluate, which is why the
+            # jitter below could not exist: there was no way to check that a moved seat was still
+            # legal. Same shape as every other "placement and its check read one source" fix here.
+            def _ok(
+                x: float,
+                y: float,
+                half: float = half,
+                n: float = _sb_n,
+                sn: float = _sb_s,
+                sx0: float = sx0,
+                sy0: float = sy0,
+                sx1: float = sx1,
+                sy1: float = sy1,
+            ) -> bool:
+                # ONE guard clause, deliberately: the window bounds and the kept-window AREA are the
+                # same question asked of a seat that may have been MOVED since the scan offered it
+                # (the jitter and the size roll both re-ask). Split into two statements the bounds
+                # half is unreachable in the corpus - no pool map or cohort seed happens to jitter a
+                # seat past the edge - and an untested line in a predicate whose whole job is
+                # re-asking is exactly what rots.
+                if (
+                    not (max(half + 40.0, sx0) <= x <= min(plan.W - half - 40.0, sx1) and max(half + 40.0, sy0) <= y <= min(plan.H - half - 40.0, sy1))
+                    or (max(0.0, min(x + half, _fx1) - max(x - half, _fx0)) * max(0.0, min(y + half, _fy1) - max(y - half, _fy0))) < 0.8 * (2.0 * half) ** 2
+                ):
+                    return False  # off the window, or under the check's own 70%-of-bbox rule (0.8 here, for prediction slack)
+                return (
+                    _clear_gap((x, y), half, crops, dy, n, sn) is not None
+                    and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
+                    and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
+                    and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
+                    and not _wet(x, y, half)
+                )
+
             scored: list[tuple[float, float, float]] = []
             y = max(half + 40.0, sy0)
             while y <= min(plan.H - half - 40.0, sy1):
                 x = max(half + 40.0, sx0)
                 while x <= min(plan.W - half - 40.0, sx1):
-                    gap = _clear_gap((x, y), half, crops, dy, _sb_n, _sb_s)
-                    if (
-                        gap is not None
-                        and not any(math.hypot(x - kx, y - ky) < kr + half for kx, ky, kr in keep)
-                        and not any(rx0 - half < x < rx1 + half and ry0 - half < y < ry1 + half for rx0, ry0, rx1, ry1 in keep_rects)
-                        and not any(_near_line((x, y), half, pts, pad) for pts, pad in lanes + streams)
-                        and not _wet(x, y, half)
-                    ):
+                    if _ok(x, y):
                         # PREFER THE NEAREST QUALIFYING GROUND, leaning upslope. The first version of this
                         # maximized distance from the crop instead, which sounds right and is wrong twice
                         # over: it drove every patch to the canvas's far upslope margin, where the dedupe
@@ -180,13 +275,162 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
                         scored.append((-math.hypot(x - ccx, y - ccy) + 0.35 * upslope, x, y))
                     x += step
                 y += step
+            # THE COPPICE IS A HILLSIDE WOOD, SO A DOWN-SLOPE-DOMINANT SEAT LOSES TO A CROSS-SLOPE ONE
+            # (settlement-review, Kashikawa 2026-08-18 round 2, and its research pass settled the
+            # ruling this ledger item was waiting for). Three project files say woodland goes on the
+            # higher, farther ground - `settlements/vegetation.md`, `research/fields.md` and this
+            # function's own scorer comment - and Kashikawa drew both its stands downslope, one of them
+            # 886 ft down and 75 ft off the reed marsh: a coppice walking onto the wet toe of the fan.
+            # The scorer's additive `+0.35 * upslope` never binds, because a 90 px step toward the
+            # cluster outbids 257 px of height.
+            #
+            # THE RULING, and why it is neither of the two options I ledgered. Raising the weight until
+            # it binds returns this map to ZERO parcels - the defect closed that morning - and a knob
+            # was not available either: the reviewer's research pass found satoyama DEFINED as the
+            # foothill border zone with its coppice on the hillsides, and the China-first analog (the
+            # fengshui back-hill wood) upslope as well, so a downslope commons is not a co-equal
+            # attested form and "correct the prose instead" would mean rewriting doctrine to match a
+            # placement artifact. What the record does support is weaker than "uphill of the houses":
+            # the wood is ON THE HILLSIDE, i.e. at or above the settlement's own contour. So the test
+            # is the along/cross RATIO, not the height. Decomposed on Kashikawa, that refuses the
+            # down-dominant parcel (886 ft down against 276 cross) and keeps the cross-dominant one
+            # (505 down against 1562 cross, effectively a contour seat) - one parcel, not zero.
+            #
+            # A PREFERENCE, not a filter, per this scan's standing habit: if no cross-slope seat
+            # qualifies at all, the down-slope ones are still offered rather than leaving a map
+            # woodless. The GM can reverse this ruling; it is recorded in `future-work.md`.
+            _cross_seats = [t for t in scored if abs((t[1] - ccx) * -dy + (t[2] - ccy) * dx) >= ((t[1] - ccx) * dx + (t[2] - ccy) * dy)]
+            if _cross_seats:
+                scored = _cross_seats
             for _, x, y in sorted(scored, reverse=True):
                 if len(chosen) >= count:
                     break
-                if any(math.hypot(x - cx0, y - cy0) < size * 1.5 for cx0, cy0 in centers):
+                if any(math.hypot(x - cx0, y - cy0) < _ex0 for cx0, cy0, _ex0 in centers):
                     continue
-                chosen.append([(x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half)])
-                centers.append((x, y))
+                # OFF THE LATTICE, AND NOT ALL ONE SIZE (settlement-review, Mizuguchi 2026-08-18).
+                # The scan samples a uniform 90 px lattice, scores every seat by one monotone
+                # function (near the cluster, leaning upslope) and then takes the best remaining seat
+                # outside a FIXED separation radius. Those three together do not merely tend to
+                # produce an even chain - they produce one by construction, and Mizuguchi shipped the
+                # proof: three identical 250 x 250 ft squares at (456,967), (726,697), (996,427),
+                # offsets of exactly (+270,-270) and (+270,-270), reading as three stamps of one wood
+                # marching up a ruled diagonal. The fourth parcel, seated off the ladder at a
+                # different size, reads fine and is the control.
+                #
+                # So the LATTICE is a sampling artifact and must not survive into the output. The
+                # accepted seat is nudged up to half a step off it and the parcel's size rolled down
+                # by up to a fifth, both from `_hjit` - positional, so a map is unchanged by
+                # regeneration and two maps differ from each other. Every nudge is re-asked through
+                # `_ok`, and a nudge that would not qualify is simply not taken: this can only move a
+                # legal seat to another legal seat, never widen what the scan admits.
+                # VARY THE STRIDE, NOT JUST THE SEAT (settlement-review x2, 2026-08-18 - the FIRST
+                # version of this fix did not work and this is why). Jittering the accepted seat off
+                # the lattice killed the identical-STAMP reading, and left the CHAIN: Mizuguchi still
+                # stepped 379.7 ft then 361.9 ft up one axis with the middle parcel 3.1% off the
+                # straight line, and Inashiro independently stepped 366 / 371 / 392 ft. Measured, and
+                # the cause is not the lattice at all - it is that a MONOTONE score plus a FIXED
+                # `size * 1.5` exclusion radius means each parcel is by construction the nearest
+                # qualifying seat just outside the last one's circle, so the stride is pinned at
+                # ~375 ft however the seats are dithered. A +/-45 px jitter is +/-12% of that stride:
+                # far too small to break a rhythm it does not touch. So each parcel now carries its
+                # OWN exclusion radius, rolled 1.15x-2.50x its size from its own position, and the
+                # spacing varies because the generative rule varies rather than because the output
+                # is dithered.
+                jx = x + (s._hjit(x, y, 71.0) - 0.5) * step
+                jy = y + (s._hjit(x, y, 72.0) - 0.5) * step
+                # ...and the size roll is wider than it was, for the reason recorded at `_ladder`:
+                # +/-15% of a shared rung left two maps' stands 1.8% apart. This is a DEGREE on a
+                # continuum (calibrated liberty), not a knob - `settlements/vegetation.md` already
+                # says coppice lots were "whatever odd corner the village spared", so a narrow roll
+                # was narrower than our own doctrine.
+                # TRY THE MIRRORED SIZE BEFORE FALLING BACK TO THE RUNG. Widening the roll upward
+                # made it WORSE at first, in a way only the artifact showed: a grown parcel often
+                # fails `_ok` (it is asking for ground the rung already fitted snugly), the ladder
+                # fell straight back to `half`, and Mizuguchi shipped three parcels at 292 / 294 /
+                # 290 ft - the exact rung, three times, more identical than before the roll existed.
+                # Reflecting the factor about 1.0 gives a distinctly SMALLER parcel to try before
+                # surrendering to the rung, so a refused growth becomes variety instead of a twin.
+                _bi = min(int(s._hjit(x, y, 73.0) * len(_bands)), len(_bands) - 1) if _bands else 0
+                _f = 0.82 + 0.36 * (((_bands[_bi] if _bands else 0) + 0.5) / max(2, count))
+                # The band first; then one distinctly SMALLER try, because a grown parcel is asking
+                # for ground the rung only just fitted and the plain fallback to `half` is what
+                # produced the near-identical trio above.
+                # ...BUT NEVER BELOW A COMMONS' OWN FLOOR. The band multipliers compound with the
+                # per-map ladder, and at the ladder's bottom rung that took Kashikawa's smaller
+                # parcel to 103 ft - under the ~116 ft that THIS change already judged "a copse, not
+                # a commons" when it made the size roll two-sided. A floor is the honest guard: a
+                # parcel too small to read as a managed wood should not be drawn smaller to satisfy
+                # a variance rule. If the floor does not fit, the rung fallback still applies, so
+                # this can only ever make a parcel larger or leave it alone.
+                half_used = half  # the rung: the scan already tested this seat at REACH, so the rotated parcel fits
+                # the reach a rotated parcel needs is its circumscribing half - a 2.2:1 parcel of the
+                # same AREA reaches sqrt(2.2) further along its long axis than the square did, so the
+                # candidate is tested at that reach and the rotation cannot buy ground.
+                for _cand in (max(half * _f, _COMMONS_FLOOR_FT / 2.0), max(half * 0.84, _COMMONS_FLOOR_FT / 2.0)):
+                    if _ok(jx, jy, _cand):
+                        x, y, half_used = jx, jy, _cand
+                        break
+                    if _ok(x, y, _cand):
+                        half_used = _cand
+                        break
+                # THE FLOOR WAS NOT A FLOOR (settlement-review, Kashikawa 2026-08-18 round 2). Both
+                # candidates are clamped to `_COMMONS_FLOOR_FT`, but when neither fitted, control fell
+                # through to `half_used = half` - the UNCLAMPED rung - and Kashikawa shipped a 116.6 ft
+                # parcel, under the floor, at the very size this file's own docstring calls "a copse,
+                # not a commons". The comment above claimed the clamp "can only ever make a parcel
+                # larger or leave it alone" and the fall-through did the one thing it forbade.
+                #
+                # The rung is now only taken if the rung itself clears the floor; otherwise the parcel
+                # is DROPPED, which is what `_COMMONS_FLOOR_FT`'s docstring says should happen - "a
+                # settlement whose ground genuinely cannot hold one draws FEWER parcels rather than
+                # smaller ones". The band is returned to the pool by not popping it until acceptance,
+                # so a dropped parcel does not silently consume a size band the next one could use.
+                if _bands:
+                    _bands.pop(_bi)
+                # ...AND IT IS NOT A SQUARE (settlement-review x2, 2026-08-18 round 2). Every woodland
+                # parcel the engine had ever drawn was `rot: 0` with `w == h` - 12 of 12 across the
+                # four hamlets - and the reviewers' point was that the size work made this MORE
+                # conspicuous, not less: four identical squares read as one repeated stamp, but four
+                # differently-sized perfect squares read as a lattice with a size knob bolted on,
+                # because the varying dimension proves the constant one was a choice.
+                #
+                # The record is decisive rather than two-sided, so this is calibrated liberty and not
+                # a knob between forms: *iriai* commons boundaries were customary and described by
+                # ridge, stream and path, and satoyama coppice sits on the slope break - there is no
+                # attested rectilinear woodlot. Aspect and bearing therefore roll per parcel from its
+                # own position, AREA HELD (hw*hh is unchanged, so every size rule above still means
+                # what it says), and the bearing is taken off the fall line because a hillside wood
+                # runs with the contour rather than with the page.
+                #
+                # The keep-out tests keep using the CIRCUMSCRIBING half, so a rotated parcel clears
+                # everything a square of the same reach would have: rotating a footprint must not be
+                # able to buy ground the square could not have had.
+                # THE ASPECT ADAPTS TO THE ROOM, it does not demand it. Testing every seat at the
+                # worst-case circumscribing reach was the first cut and it was far too strict: it
+                # left Kashikawa - the oak map - woodless again, undoing the morning's fix, because
+                # that map's ground is genuinely tight and a 1.49x reach requirement refuses nearly
+                # all of it. So the rolled aspect is a TARGET, stepped down to whatever this seat
+                # actually supports, with the square as the floor. A roomy seat gets a long wood, a
+                # tight one still gets its square, and no map loses a parcel to the shape roll.
+                # The ladder steps DOWN from the rolled target toward the square. The first cut wrote
+                # the rungs as literals (target, 1.6, 1.3) and so could step UP - a seat that rolled
+                # 1.2 was then offered 1.6, a LONGER parcel than the roll asked for - and it needed a
+                # guard clause to stop that, which was itself unreachable. Scaling the rolled excess
+                # says what was meant in one expression: at the last rung the excess is 45% of the
+                # roll, and if even that will not fit the square always does, because the seat was
+                # accepted at exactly this half.
+                _excess = 1.2 * s._hjit(x, y, 77.0)
+                _asp = 1.0
+                for _step in (1.0, 0.72, 0.45, 0.0):
+                    _try = 1.0 + _excess * _step
+                    if _ok(x, y, half_used * math.sqrt(_try)):
+                        _asp = _try
+                        break
+                _hw, _hh = half_used * math.sqrt(_asp), half_used / math.sqrt(_asp)
+                _bear = math.radians(math.degrees(math.atan2(dy, dx)) + 90.0 + 40.0 * (s._hjit(x, y, 78.0) - 0.5))
+                _bc, _bs = math.cos(_bear), math.sin(_bear)  # not `_cb` - that name is the crop-boxes list above
+                chosen.append([(x + ex * _hw * _bc - ey * _hh * _bs, y + ex * _hw * _bs + ey * _hh * _bc) for ex, ey in ((-1, -1), (1, -1), (1, 1), (-1, 1))])
+                centers.append((x, y, size * (1.15 + 1.35 * s._hjit(x, y, 74.0))))
     return chosen
 
 
@@ -293,7 +537,7 @@ def stage_windbreak(s: Settlement, plan: SitePlan) -> None:
     if not plan.belt:  # pragma: no cover - stage_woodland always computes it first
         return
     # ...DENTED AROUND THE TITLE'S POCKET. `stage_woodland` reserves blank ground for the map's name
-    # (`title_pocket`) and keeps the woods out of it, but the BELT is drawn later and honours
+    # (`title_pocket`) and keeps the woods out of it, but the BELT is drawn later and honors
     # nothing - `village_grove` takes only a polygon, with no keep-out list - so on a tightly framed
     # map the belt simply covered the reservation and `title()` had nowhere clear to sit (seed 8's
     # polder, 3 of 4 falls). Pushing the belt's vertices out of that rectangle costs the band a

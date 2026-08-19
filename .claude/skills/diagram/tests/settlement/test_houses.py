@@ -453,13 +453,13 @@ def test_a_house_is_refused_a_seat_whose_DRAWN_corner_lands_on_a_lane():
 
     `_near_corridor` measures a candidate's CENTRE against a way's soft clearance, so a homestead
     whose drawn steading is wider than the placer assumed could stand a legal distance off by its
-    centre and still put a corner on the road - which `houses_clear_of_lanes` reports as a house in
-    the lane. The tread is now tested against the FOOTPRINT, so the same centre is legal for a
+    center and still put a corner on the road - which `houses_clear_of_lanes` reports as a house in
+    the lane. The tread is now tested against the FOOTPRINT, so the same center is legal for a
     narrow building and refused for a wide one. Both halves are asserted: a test that refuses
     everything decides nothing."""
     s = Settlement(1400, 1400, seed=3)
     s.meta(name="Tread", scale="hamlet", ftpx=1, toscale=True, households=12)
     s.lane([[200.0, 700.0], [1200.0, 700.0]], width=16, clearance=22)
-    cx, cy = 700.0, 734.0  # 34 px off the centreline: clear of the 22 px clearance by its centre
+    cx, cy = 700.0, 734.0  # 34 px off the centerline: clear of the 22 px clearance by its center
     assert s._fits(cx, cy, 46.0, 28.0), "the base footprint stands clear of the lane and must be allowed"
     assert not s._fits(cx, cy, 62.0, 56.0), "the DRAWN footprint puts a corner on the tread and must be refused"

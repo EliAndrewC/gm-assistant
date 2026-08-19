@@ -82,11 +82,13 @@ un-gated" convention, that is the expected shape for a rule's first outing; it i
 rather than waived.
 
 **The five are cohort_audit seeds 5, 9, 12, 13 and 24** (`python3 -m l7r.diagram.tools.cohort_audit
---count 24`). They are NAMED BUT NOT DIAGNOSED, and the distinction is the point: a first attempt to
-diagnose them rebuilt the maps with `cohort()`'s household formula, which is NOT the one
-`cohort_audit` uses, so it measured different maps and reported one of the five as having zero
-unserved houses. **Do not trust that reading, and do not repeat it** - take the households from
-`cohort_audit` itself, or diagnose from the manifests it writes rather than by rebuilding.
+--count 24`). A first attempt to diagnose them was invalid and its
+conclusion should not be trusted: it stopped at `build()` rather than `generate()` and measured each
+house to the nearest drawn polyline rather than to the connected component the check uses, so it
+reported one of the five as having zero unserved houses when the sweep said nine. (It was first
+blamed on differing household counts between `cohort()` and `cohort_audit`; that was also wrong -
+the two formulas are identical.) **Reproduce with `generate()` on the same spec and gate the
+finished manifest.**
 
 Both knob forms occur across the cohort (11 `alleys` / 13 `back_lane` on 24 seeds), and they read as
 different kinds of place - which is the whole reason the form is a knob rather than a pick.

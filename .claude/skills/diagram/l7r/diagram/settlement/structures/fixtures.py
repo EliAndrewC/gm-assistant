@@ -12,6 +12,7 @@ from .._geom import (
     linear_tilt,
     point_in_poly,
     seg_dist,
+    street_runs,
     tilt_caption_seat,
     way_beds,
 )
@@ -258,8 +259,8 @@ class PublicFixturesMixin:
         routes.extend(([(p[0], p[1]) for p in r["pts"]], 18.0) for r in (self.M.get("roads") or [])[1:])
         routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [] if st.get("main"))
         if not routes:
-            if self.M.get("lane"):
-                routes.append(([(p[0], p[1]) for p in self.M["lane"]], 8.0))
+            for _st in street_runs(self.M):  # every lane; `M["lane"]` is only the last one drawn
+                routes.append((_st, 8.0))
             # A SERVICE LANE IS NOT A PLACE TO POST THE STATE'S NOTICE. The fallback takes the whole
             # network when no way declares itself main, which a hamlet never does - so when the lane
             # web arrived it put ~1,000 ft of 3 ft footpaths into the candidate list on equal footing

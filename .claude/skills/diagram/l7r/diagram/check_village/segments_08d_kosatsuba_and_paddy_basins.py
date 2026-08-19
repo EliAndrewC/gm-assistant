@@ -349,7 +349,7 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
     # TWO FAULTS, one rule, both measured on the pre-fix pool (2026-08-17):
     #   SEAM   - a run of bund with another plot's bund a short way off across DRY floor: two walls
     #            where one belongs. Inashiro 52 plots, kashikawa 57, mizuguchi 64, sawada 81.
-    #   NESTED - a whole bund ring drawn INSIDE a neighbouring basin, so it reads as a free-standing
+    #   NESTED - a whole bund ring drawn INSIDE a neighboring basin, so it reads as a free-standing
     #            rectangle of wall in the middle of somebody's paddy while that basin's own wall
     #            still runs all the way round it. This was the GM's original report - six of them on
     #            Inashiro, 70-73% of each ring inside one carved basin and 0% of it shared with
@@ -363,10 +363,10 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
     #            `test_paddy_seams_fires_on_a_bund_ring_drawn_inside_a_basin`.
     #
     # A SHALLOW LAP IS NOT A FAULT and this rule does not report one. A plot drawn over part of its
-    # neighbour paints out the stretch of bund it covers, so the pair still reads as one shared
+    # neighbor paints out the stretch of bund it covers, so the pair still reads as one shared
     # wall; on the fixed Inashiro the deepest such lap covers 41% of a ring and the map reads
     # clean. Only near-containment inverts that, which is why the second clause counts the share of
-    # ONE ring lying inside ONE neighbour rather than measuring a depth.
+    # ONE ring lying inside ONE neighbor rather than measuring a depth.
     #
     # THE TOLERANCE IS NOT GUESSED. Sampling every plot boundary on the pre-fix Inashiro and
     # measuring the gap to the nearest OTHER plot gives 23,897 samples at exactly 0.0 px and a
@@ -419,8 +419,8 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
             for _ps_i, _ps_ring in enumerate(_ps_rings):
                 _ps_len = _ps_best = 0.0
                 _ps_spot = (0.0, 0.0)
-                _ps_host: dict[int, int] = {}  # samples of THIS ring sitting inside each neighbour
-                _ps_touch = 0  # ...and samples of it lying ON some neighbour's wall (a shared aze)
+                _ps_host: dict[int, int] = {}  # samples of THIS ring sitting inside each neighbor
+                _ps_touch = 0  # ...and samples of it lying ON some neighbor's wall (a shared aze)
                 _ps_tot = 0
                 for _ps_e in range(len(_ps_ring)):
                     _ps_a, _ps_b = _ps_ring[_ps_e], _ps_ring[(_ps_e + 1) % len(_ps_ring)]
@@ -436,12 +436,12 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
                             if _ps_j == _ps_i or not (_ps_box[_ps_j][0] <= _ps_x <= _ps_box[_ps_j][2] and _ps_box[_ps_j][1] <= _ps_y <= _ps_box[_ps_j][3]):
                                 continue
                             _ps_o = _ps_rings[_ps_j]
-                            # distance to the neighbour's BOUNDARY either way - `poly_dist` returns
+                            # distance to the neighbor's BOUNDARY either way - `poly_dist` returns
                             # 0 for an interior point, which is exactly the depth this needs
                             _ps_d = min(seg_dist(_ps_x, _ps_y, _ps_o[_ps_m], _ps_o[(_ps_m + 1) % len(_ps_o)]) for _ps_m in range(len(_ps_o)))
                             _ps_on = _ps_on or _ps_d <= _ps_share
                             if point_in_poly(_ps_x, _ps_y, _ps_o):
-                                _ps_in = max(_ps_in, _ps_d)  # depth INSIDE the neighbour's basin
+                                _ps_in = max(_ps_in, _ps_d)  # depth INSIDE the neighbor's basin
                                 _ps_gap = 0.0
                                 if _ps_d > _ps_share:
                                     _ps_host[_ps_j] = _ps_host.get(_ps_j, 0) + 1
@@ -457,9 +457,9 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
                                 if math.hypot(_ps_qx - _ps_x, _ps_qy - _ps_y) < _ps_cd:
                                     _ps_cd, _ps_cx, _ps_cy = math.hypot(_ps_qx - _ps_x, _ps_qy - _ps_y), _ps_qx, _ps_qy
                             # FACING, not merely near: at a T-junction the far end of a bund runs
-                            # AWAY from the neighbour it corners on, so its nearest-neighbour
+                            # AWAY from the neighbor it corners on, so its nearest-neighbor
                             # distance grows along the edge with nothing wrong. A doubled bund is
-                            # two roughly PARALLEL walls, so the crossing to the neighbour is near
+                            # two roughly PARALLEL walls, so the crossing to the neighbor is near
                             # NORMAL to this edge; 0.5 admits anything within 60 deg of normal.
                             if _ps_cd > 1e-9 and _ps_el > 1e-9 and abs((_ps_cx - _ps_x) * (_ps_b[0] - _ps_a[0]) + (_ps_cy - _ps_y) * (_ps_b[1] - _ps_a[1])) / (_ps_cd * _ps_el) > 0.5:
                                 _ps_len = 0.0
@@ -469,7 +469,7 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
                             # ground between them; where the ground between belongs to a basin there
                             # is no second wall to remove. This is not pedantry - the fan toe carries
                             # long re-entrant closing-rank plots, and a sample on such a plot's own
-                            # boundary can have a far-off neighbour across its OWN basin. Testing the
+                            # boundary can have a far-off neighbor across its OWN basin. Testing the
                             # midpoint against every ring (this plot included) is what tells the two
                             # apart, and it is the same question `paddy_fan_gapless` asks of the fan.
                             if any(point_in_poly(_ps_mx, _ps_my, _ps_rings[_ps_c]) for _ps_c in _ps_idx.near(_ps_mx, _ps_my)):
@@ -488,7 +488,7 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
                         _ps_len = 0.0
                 if _ps_best >= _ps_run:
                     _ps_seams.append((round(_ps_spot[0]), round(_ps_spot[1]), round(_ps_best)))
-                # NESTED, not merely lapping. A plot drawn OVER part of its neighbour paints out
+                # NESTED, not merely lapping. A plot drawn OVER part of its neighbor paints out
                 # the stretch of bund it covers, so the pair still reads as one shared wall wherever
                 # the lap runs along their common edge - measured on the fixed Inashiro, the deepest
                 # such lap covers 41% of a ring and the map reads clean. What does NOT is a ring
@@ -497,7 +497,7 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
                 # paddy - the GM's report exactly.
                 #
                 # TWO CONDITIONS, because the depth alone does not separate them. A ring that is
-                # 60% inside a neighbour and 40% welded to the basins around it is an odd-shaped
+                # 60% inside a neighbor and 40% welded to the basins around it is an odd-shaped
                 # parcel, not a floating box; a 24-seed cohort produced two of those and they read
                 # fine. What makes the box a box is that it shares NO wall with anybody - so the
                 # second condition is that almost none of the ring lies ON another plot's bund.
@@ -511,7 +511,7 @@ def _seg_0603__paddy_plot_seams_shared(*, M: Any = _UNBOUND, check: Any = _UNBOU
         check(
             "paddy_plot_seams_shared",
             not _ps_seams and not _ps_laps,
-            f"{len(_ps_seams)} paddy plot(s) run a bund alongside a neighbour's across dry floor {[list(_ps_s) for _ps_s in _ps_seams[:4]]} (x, y, run px) and {len(_ps_laps)} draw their whole bund ring inside a neighbouring basin {[list(_ps_l) for _ps_l in _ps_laps[:4]]} (x, y, % of the ring inside it) - two adjacent basins share ONE aze, so a plot's boundary either coincides with its neighbour's, abuts water, or is the edge of the planted block; the wedge filler must fit each bare pocket to the bunds that already bound it instead of seating a shrunken rectangle inside it",
+            f"{len(_ps_seams)} paddy plot(s) run a bund alongside a neighbor's across dry floor {[list(_ps_s) for _ps_s in _ps_seams[:4]]} (x, y, run px) and {len(_ps_laps)} draw their whole bund ring inside a neighboring basin {[list(_ps_l) for _ps_l in _ps_laps[:4]]} (x, y, % of the ring inside it) - two adjacent basins share ONE aze, so a plot's boundary either coincides with its neighbor's, abuts water, or is the edge of the planted block; the wedge filler must fit each bare pocket to the bunds that already bound it instead of seating a shrunken rectangle inside it",
         )
     return _kept(locals(), ())
 
@@ -597,13 +597,13 @@ def _seg_0605__paddy_plot_rings_overcount_stays_marginal(*, M: Any = _UNBOUND, c
     # live worst of 2.49% - the two populations OVERLAP, so a map-wide lap fraction cannot separate
     # that defect from ordinary fabric, and a ceiling tuned to catch it would fail a cohort seed
     # that passes today. The defect it looks like is `paddy_plot_seams_shared`'s business (a whole
-    # ring drawn inside a neighbour), and that rule does discriminate it. So this one is a DRIFT
+    # ring drawn inside a neighbor), and that rule does discriminate it. So this one is a DRIFT
     # ceiling, and its teeth are the synthetic break in
     # `test_paddy_ring_overcount_fires_when_a_ring_is_painted_over_its_neighbour` rather than a
     # frozen fixture - the honest home for a rule whose defect has never yet been shipped.
     #
-    # THE MEASUREMENT IS AN UPPER BOUND, deliberately. Each pair is clipped against the NEIGHBOUR's
-    # convex hull (`clip_to_convex`), which over-states a concave neighbour's share, and every
+    # THE MEASUREMENT IS AN UPPER BOUND, deliberately. Each pair is clipped against the NEIGHBOR's
+    # convex hull (`clip_to_convex`), which over-states a concave neighbor's share, and every
     # pairwise lap is summed, which double-counts ground three rings share - both errors push the
     # figure UP, so passing this ceiling is a real verdict while a marginal failure may be
     # generous. That buys a hand-rolled measurement: the true figure is a polygon UNION, and
@@ -639,7 +639,7 @@ def _seg_0605__paddy_plot_rings_overcount_stays_marginal(*, M: Any = _UNBOUND, c
             check(
                 "paddy_plot_rings_overcount_stays_marginal",
                 _pr_pct <= _pr_ceiling,
-                f"recorded plot rings lap by {_pr_pct:.2f}% of the fabric they describe (ceiling {_pr_ceiling}%), worst pairs at {[list(_pr_w) for _pr_w in _pr_worst[:4]]} (x, y, lapped sq px) - `plot_rings` is a PAINT-ORDER STACK and a shallow lap is correct ink, but past this line the stack stops being a fair proxy for the fabric and any acreage summed off it is wrong by more than the figure's own precision; fix the CARVE that is laying whole basins over their neighbours (close_seams / the toe pass), not the record",
+                f"recorded plot rings lap by {_pr_pct:.2f}% of the fabric they describe (ceiling {_pr_ceiling}%), worst pairs at {[list(_pr_w) for _pr_w in _pr_worst[:4]]} (x, y, lapped sq px) - `plot_rings` is a PAINT-ORDER STACK and a shallow lap is correct ink, but past this line the stack stops being a fair proxy for the fabric and any acreage summed off it is wrong by more than the figure's own precision; fix the CARVE that is laying whole basins over their neighbors (close_seams / the toe pass), not the record",
             )
     return _kept(locals(), ())
 

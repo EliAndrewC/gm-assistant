@@ -264,7 +264,7 @@ short.
 
 Settlement-review of the range pass (2026-08-03) returned **ship** and drove four engine fixes,
 all applied before this manifest: the range glyph now scales its corner radius, stroke and ridge
-off its THIN dimension (at 5 px depth the fixed values made it a pill - "a rail or kerb"); the
+off its THIN dimension (at 5 px depth the fixed values made it a pill - "a rail or curb"); the
 length floor rose from 2.3x to 3.0x depth, so the shortest range is 45 ft rather than 35; both
 flanks are tried at full frontage before any shortened seat, since a short stub on a rotated house
 reads as a tool; and a seat is refused if anything touches it more closely than its own host (one

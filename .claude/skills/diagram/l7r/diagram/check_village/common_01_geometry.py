@@ -377,7 +377,15 @@ _LABEL_EXEMPT = {
     "districts": "a declared district is a REGION overlay like a quarter - it draws nothing, so there is nothing under it for a caption to bury",
     "precincts": "a reservation region, never drawn - the halls inside it are the drawn features",
     "borders": "a jurisdictional line has no footprint to protect - there is nothing under it to be buried by a caption, and its own caption is drawn in the top layer so no ground feature can paint over it",
-    "byres": "a draft-ox byre is an ANNEX abutting its own farmhouse (draft_byres places it against the wall), so it shares the house's ground and any caption cleared for the house is cleared for it",
+    # CORRECTED 2026-08-18: this said "an ANNEX abutting its own farmhouse (draft_byres places it
+    # against the wall)", which the placer had not done for a long time - it spirals a DETACHED shed
+    # out past the homestead and spreads the set by minimax across the whole cluster. A registry
+    # comment that describes code which no longer exists is worse than none: it is the reason the
+    # form was never questioned. Since the `byre_form` knob both forms are real, so the entry states
+    # the property that holds in EITHER - the byre stands in the homestead ground among the houses,
+    # near enough that a caption cleared for the house is cleared for it - and the form-specific
+    # geometry is gated by `byres_stand_in_their_declared_form` instead of asserted here.
+    "byres": "a draft-ox byre stands in the homestead ground - its owner's own yard in the courtyard form, the shared courtyards between houses in the detached form - so it shares that ground and any caption cleared for the house is cleared for it",
 }
 
 _LABEL_CLASSIFIED = set(_LABEL_GROUP) | set(_LABEL_BY_KIND) | set(_LABEL_EXEMPT)

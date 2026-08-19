@@ -200,7 +200,7 @@ class PackingMixin:
                     # and emit only if enough of it survives to read as a path rather than a stub.
                     # Clearance is scaled to the STEP because `_near_corridor` tests a building's CENTER:
                     # at a flat 15 a house sat 15px off the tread and put its footprint through it (the
-                    # centre-vs-footprint family again - see the skill CLAUDE.md).
+                    # center-vs-footprint family again - see the skill CLAUDE.md).
                     _clr = max(20.0, step * 0.62)
                     _run: list[float] = []
                     _best: list[float] = []

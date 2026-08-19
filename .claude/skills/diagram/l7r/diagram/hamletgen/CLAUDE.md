@@ -69,22 +69,27 @@ Sub-stage helpers extracted from a long stage are named for what they do (`_seat
 float-operation order. The generator is seeded and deterministic, so any reordering shifts every
 downstream coordinate.
 
-## The two cohorts are DIFFERENT COHORTS, and both have bitten
+## REPRODUCE A COHORT FAILURE WITH THE ENTRY POINT THAT PRODUCED IT
 
-`hamletgen.cohort(count, first_seed=...)` and `tools/cohort_audit.py` roll different maps, and a
-session that checks the wrong one gets a green it has not earned.
+Two ways to get a green you have not earned, both of which have bitten inside one feature.
 
 - **The in-gate ratchet rolls seeds 41-44**, not 1-4: `tests/hamletgen/test_driver.py`'s
   `test_a_rolled_cohort_passes_the_whole_gate` calls `cohort(4, first_seed=41, jobs=1)`. Feature 123
   was validated against 1-4 for most of its life, passed 4/4 there, and failed in the gate - which
   reads as a mysterious gate failure rather than as checking the wrong maps.
-- **`cohort_audit` uses its own household counts**, not `cohort()`'s `10 + (seed * 7) % 11`. A
-  diagnostic that rebuilds an audit seed with the wrong formula measures a different map: the first
-  attempt at feature 123's sweep residue reported one failing seed as having zero unserved houses.
+- **`build()` is not `generate()`, and "nearest lane" is not "nearest lane IN THE NETWORK".** The
+  sweep gates the FINISHED manifest and several checks measure against the connected component
+  containing the connector; a hand-rolled diagnostic that stops at `build()` and measures distance to
+  any drawn polyline answers a different question. That is how one of feature 123's failing seeds got
+  reported as having zero unserved houses when the sweep said nine.
 
-**So: reproduce a cohort failure with the SAME entry point that produced it.** If the gate found it,
-call `cohort(..., first_seed=41)`; if `cohort_audit` found it, read the manifest `cohort_audit`
-wrote, or take the spec from it - do not rebuild from a remembered formula.
+  (An earlier version of this note blamed differing HOUSEHOLD COUNTS between `cohort()` and
+  `cohort_audit`. That was wrong - both are `10 + (seed * 7) % 11`, identical - and it is recorded
+  here rather than silently deleted, because a plausible wrong cause is what stops anyone looking for
+  the real one.)
+
+**So: reproduce with the same entry point.** If the gate found it, call `cohort(..., first_seed=41)`;
+if `cohort_audit` found it, call `generate()` on the same spec and gate the finished manifest.
 
 ## Verifying a change
 

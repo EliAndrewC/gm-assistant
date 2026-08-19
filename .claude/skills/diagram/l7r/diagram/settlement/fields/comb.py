@@ -392,7 +392,7 @@ class CombMixin:
             #
             # THIS IS A PAINT-ORDER STACK, NOT A PARTITION - DISSOLVE BEFORE YOU MEASURE ANYTHING
             # (GM decision 2026-08-17). Rings LAP: a filler painted later covers part of its
-            # neighbour, which is exactly why the pair reads as the one shared aze a real fan has,
+            # neighbor, which is exactly why the pair reads as the one shared aze a real fan has,
             # and the stack is the honest record of the INK. It is NOT an area record. Summing
             # these areas double-counts the lapped ground (0.4-2.5% of the fabric, measured over
             # the scripted hamlets and a 48-seed cohort), and treating two rings as adjacent
