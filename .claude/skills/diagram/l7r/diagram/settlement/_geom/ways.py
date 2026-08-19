@@ -16,7 +16,7 @@ from .primitives import seg_dist
 
 # STANDALONE plank-footbridge geometry, shared by channel_footbridges() (placement) and the
 # footbridges_reach_useful_ground check in check_village.py (which duplicates these three values -
-# keep them in sync). A dobashi footplank spans an ~8 ft ditch with a short landing each bank; it
+# keep them in sync). An itabashi footplank spans an ~8 ft ditch with a short landing each bank; it
 # exists so field-workers can cross to the FIELD, so both banks must reach ground worth crossing to.
 PLANK_ABUTMENT = 6.0  # deck = local ditch width + this SHORT abutment (GM 2026-07-22: was 15, far too long for a footplank)
 PLANK_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
@@ -26,7 +26,7 @@ LANDING_FT = 10.0  # a CARRIED deck runs this many REAL feet of deck onto dry gr
 # undercutting the bank) must never reach the bearing and because the seat itself needs
 # bearing length - so a modest timber bridge lands ~5-15 ft of deck past the water on each
 # side; 10 ft is mid-band. REAL feet (convert by self.ftpx when drawing), unlike
-# PLANK_ABUTMENT above, which is px and deliberately short: a dobashi footplank simply rests
+# PLANK_ABUTMENT above, which is px and deliberately short: an itabashi footplank simply rests
 # its ends on the bank (GM 2026-07-22), so footplanks do NOT take this landing.
 PLANK_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the VILLAGE (a place worth crossing to)
 
