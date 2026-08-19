@@ -204,6 +204,72 @@ though `frame(project(house))` returns the house itself to within 0-28 ft. So a 
 that follows the MARGIN will not reach them either. Whatever serves these houses has to be oriented by
 the local dry ground rather than by the field edge, and nothing in the engine currently computes that.
 
+**ATTEMPTS TEN AND ELEVEN, and a FOURTH correction to my own measurements.**
+
+- **Ten: a bearing scan.** For a still-unserved house, scan 36 bearings from the door, take the
+  direction whose corridor is genuinely open, lay a run down it. **43/48 - baseline, fixing nothing.**
+- **The correction that explains it.** The "60-120 ft of open ground beside each stranded house" that
+  motivated attempt ten measures clearance to FABRIC ONLY and ignores crop entirely. That open ground
+  is largely the flooded paddy. Fourth instance in one day of the same error: a measurement that
+  cannot tell the failing case from a healthy one. (An erosion test has the mirror flaw - it says the
+  dry ground stays connected at a 20 ft erosion radius, but it counts only crop, so it is answering
+  about mud, not about where a way can run.)
+- **Eleven: ONE map-wide walk instead of a bounded search** - a single BFS over the whole map at 8 ft
+  cells, blocked by crop at `WEB_HARD_GAP` and by fabric at `FOOTPATH_FABRIC_GAP`, seeded from every
+  drawn way, then the gradient walked back from the nearest reachable cell and string-pulled. This is
+  the one design the router structurally cannot express, and the diagnostic behind it is the most
+  encouraging result in the whole entry: **on seed 5, three of four unreachable farmhouses have a
+  genuinely walkable path 248-360 ft long that no bounded search can see.** Built as a lazy last-resort
+  pass (3 cohort seeds in 48 ever build the grid): **41/48, neutral - it fixed none of the three.**
+
+Why eleven did not land, for whoever picks it up: the reachable cells sit 90-100 ft from the house,
+right at the `WEB_REACH_FT` bound, and the run has to survive `_reach(house, run) <= 100` after a
+string-pull at footpath clearance. So the path exists, is found, and is then rejected or trimmed at
+the last step. That is a much smaller gap than anything else in this entry - **the next session should
+start by instrumenting what happens to those found paths between the walk and `_draw_web`**, not by
+inventing a twelfth approach.
+
+**A NOTE ON THE MOVING BASELINE.** Three sessions were writing to this tree while these attempts ran,
+and the cohort moved twice underneath them (a cluster-shape binding, then field bund/seam work). The
+43/48 figures above and the 41/48 ones below are against DIFFERENT tips. Per-seed reach behavior on
+5, 8 and 25 was stable throughout, which is why the attempts remain comparable; nothing else in the
+residue is.
+
+**TWELVE: the walk with its selection bug fixed - and the result that ENDS this line of attack.**
+Attempt eleven chose the reachable cell nearest the NETWORK; it should choose the one nearest the
+HOUSE, or the path lands where the network already is and fails its own reach test. Fixed, plus a
+second input bug of the same family (the pass was handed `walls`, every fabric polygon, where a
+footpath's obstacle set excludes grazing commons and tree belts). **41/48 both times - no reach seed
+moved, and it introduced a `fields_clear_of_road` failure of its own.**
+
+**WHY NO WAY-DRAWING PASS CAN EVER FIX THESE THREE SEEDS.** The gate fails a SEED if any one of its
+houses is unserved, and the instrumented walk splits the eight stranded houses cleanly:
+
+| seed | stranded houses | have a walkable path | have NONE |
+|---|---|---|---|
+| 5 | 4 | 3 (reach 32, 51, 78 ft against a 100 ft bound) | **1** |
+| 8 | 2 | 0 | **2** |
+| 25 | 2 | 0 | **2** |
+
+**Five of the eight have no walkable cell within 110 ft at any clearance a footpath needs.** No path
+exists to be drawn, so no pass that draws paths - the web, the bridges, the joiners, the stragglers, a
+margin pass, a bearing scan, a map-wide walk - can serve them. And because one unserved house fails
+the whole seed, serving seed 5's three changes the cohort by nothing. That is why twelve attempts
+produced twelve null results: they were all the same kind of answer to a question that is not about
+drawing ways.
+
+**SO THE FIX IS AT SEAT TIME, and my two attempts at that were both testing the wrong thing.** Attempt
+seven (line to the cluster crosses crop) and attempt eight (flood fill over dry ground) BOTH counted
+only crop. The houses that cannot be reached are blocked by FABRIC - other steadings - not by water,
+which is why a crop-only test cleared every one of them. A seat-time test has to ask what this walk
+asks: is there a corridor at footpath clearance, counting the steadings already placed?
+
+That is harder than it sounds and is the real content of the remaining work: fabric does not exist yet
+when seats are chosen, since houses are placed one at a time. So the test must be INCREMENTAL - when
+seating house N, is it still reachable given houses 1..N-1 - and a full BFS per candidate seat is far
+too expensive (hundreds of candidates per map, a six-figure cell count each). Finding a cheap
+incremental reachability test, or a placement order that cannot strand, is the feature.
+
 **The candidate that fitted every measurement until it was built**, ledgered jointly with the hamlets session: make the LANE
 SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
 instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
@@ -421,11 +487,18 @@ consumed in `seat_cluster`) and the front row's wrap along it (`CLUSTER_ROW_SPAN
 `front_row`). Area is held constant, so only the ratio moves; crescent keeps the old hardcoded 3.0 and
 is byte-identical to what it drew before.
 
+**AS SHIPPED, ONLY ELONGATED BINDS.** Round is reverted to crescent's 3.0/1.6 because every value that
+bound it cost a cohort seed (1.4/0.9 -> seeds 17/39/47; 2.2/1.2 -> 47; 1.8/1.0 -> 11/38/45), and each
+of those is downstream of a defect in another subsystem rather than of the ratio. The numbers and the
+re-sweep instruction live in the `CLUSTER_BAND_ASPECT` docstring. What ships regardless is the
+HONESTY: the declaration is validated against the drawing, so a knob that does not bind can no longer
+look like one that does.
+
 **It does not bind above the lane skeleton, and that is recorded rather than hidden.** On a large
 hamlet the skeleton seats most of the cluster and spreads it whatever the band says - Kashikawa's 20
 households draw 1.0:1 while the roll said `elongated`. So the generator stamps `cluster_shape` only
 when the drawn aspect is within tolerance of the declared one, stamps `cluster_shape_unhonored`
-otherwise, and always records `cluster_aspect_drawn`. Gate `cluster_shape_matches_the_drawing` (0614)
+otherwise, and always records `cluster_aspect_drawn`. Gate `cluster_shape_matches_the_drawing` (0615 - 0614 collided with a THIRD session's `paddy_bunds_do_not_stagger`; git merged both files cleanly and the tree simply would not import, which only the derived registry knew)
 holds both halves: a stamped shape whose drawing contradicts it fails, and a map recording NEITHER key
 fails - because a knob that never binds has to stay distinguishable from one that always does, which
 is the whole lesson of this entry and 2e.
@@ -549,6 +622,32 @@ from here would have been two sessions in one subsystem. **Handed over rather th
 measurement to start from: seed 47, lane 2, `web: True`, w=6, 3 points, segment 0 running
 (2473,382)->(2522,160) at bearing -77.4 against a stream bearing ~86 - a 17 degree crossing, deck
 (2503,245) span 57.6 on ~7 px of water.
+## 2f. The shallow-crossing veto must be STREAM-scoped, not water-scoped (measured)
+(2026-08-19. The hamlets session found that `shallow_crossing` is wired into `path_violations` but not
+into `_join_orphan_ways`, which goes straight to `_draw_web`; cohort seed 47 shipped a way meeting a
+stream at 17 degrees, surfacing as `bridges_span_their_water` failing a 57.6 px deck over 7 px of
+water. Handed to me as lane topology. This entry is what I learned trying to close it.)
+
+**Two things are settled and worth having before anyone tries again:**
+
+1. **Only the LINK pass needs the veto.** `_bridge_collinear_breaks` hands its `water` to `_route`,
+   which refuses to cross a watercourse at ANY angle - so a bridge never crosses water and a veto
+   there is unreachable code. `_join_orphan_ways` deliberately passes an EMPTY water list ("a link may
+   go the long way round, and may be planked"; `stage_crossings` decks it afterwards), which is why it
+   is the pass that can lay a way down the length of a brook.
+2. **A BLANKET veto is far too costly: 41/48 -> 26/48, with 21 seeds failing `farmhouses_reach_a_way`.**
+   Placement makes no difference - refusing the chosen link and returning abandons the pass over one
+   bad candidate, and moving the test into the candidate loop so it tries the next route measures
+   exactly the same. The cause is the water list: `plan.watercourses + drawn_water` is the whole
+   irrigation net, and a link joining two halves of a hamlet crosses field ditches constantly, often
+   obliquely. Demanding a square crossing of every ditch strands the components the pass exists to
+   join - which is a worse defect than the one being fixed.
+
+**So the veto has to be scoped to the water that actually needs a real deck** - the streams and the
+larger channels, not every puddled aze ditch a plank spans. That needs the hamlets session's
+`drawn_water_segs` (channels AND streams) to land first, so the two lists can be told apart at the
+call site; wiring a veto against today's undifferentiated list cannot be made safe. Reverted; nothing
+of it ships.
 
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
