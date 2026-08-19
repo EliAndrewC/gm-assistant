@@ -903,6 +903,34 @@ def _seg_0613__village_windbreak_is_continuous(*, M: Any = _UNBOUND, check: Any 
     return _kept(locals(), ())
 
 
+def _cluster_aspect(xs: Any, ys: Any) -> float:
+    """The house cloud's long:short ratio on ITS OWN principal axis - the mirror of
+    `hamletgen.homesteads.cluster_aspect`.
+
+    Duplicated because the gate may not import the generator (`hamletgen` imports `check_village`, not
+    the reverse), and pinned to it by `tests/hamletgen/test_cluster_shape.py`, which evaluates BOTH on
+    the same point sets rather than comparing source text.
+
+    A page-axis bbox ratio was the first cut here and it was wrong in both directions across the
+    shipped pool - it tends to 1.0 for a band on a diagonal, so it recorded Kashikawa's visibly 3.8:1
+    ribbon as 1.22 and denied its honest `elongated`, while honoring Sawada's `round` on a cluster
+    drawing 3.02:1. See the generator's docstring for the measurements."""
+    _n = len(xs)
+    if _n < 2:
+        return 1.0
+    _mx, _my = sum(xs) / _n, sum(ys) / _n
+    _sxx = sum((x - _mx) ** 2 for x in xs) / _n
+    _syy = sum((y - _my) ** 2 for y in ys) / _n
+    _sxy = sum((x - _mx) * (y - _my) for x, y in zip(xs, ys, strict=True)) / _n
+    _th = 0.5 * math.atan2(2.0 * _sxy, _sxx - _syy)
+    _c, _s = math.cos(_th), math.sin(_th)
+    _along = [x * _c + y * _s for x, y in zip(xs, ys, strict=True)]
+    _across = [-x * _s + y * _c for x, y in zip(xs, ys, strict=True)]
+    _du = max(_along) - min(_along)
+    _dv = max(_across) - min(_across)
+    return float(max(_du, _dv) / max(1.0, min(_du, _dv)))
+
+
 def _seg_0615__cluster_shape_matches_the_drawing(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 0615 (cluster_shape_matches_the_drawing) - added 2026-08-19.
 
@@ -926,7 +954,7 @@ def _seg_0615__cluster_shape_matches_the_drawing(*, M: Any = _UNBOUND, check: An
         # measurements; the gate may not import the generator, so `tests/hamletgen/test_cluster_shape.py`
         # pins the two copies equal. Comparing against the BAND parameter instead is the bug this
         # replaced - see that docstring.
-        _asp = {"round": (1.0, 2.4), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
+        _asp = {"round": (1.0, 2.0), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
         check(
             "cluster_shape_matches_the_drawing",
             bool(_cs or _cu),
@@ -936,8 +964,7 @@ def _seg_0615__cluster_shape_matches_the_drawing(*, M: Any = _UNBOUND, check: An
         if _cs:
             _xs = [h["x"] for h in M["houses"]]
             _ys = [h["y"] for h in M["houses"]]
-            _w, _h = max(_xs) - min(_xs), max(_ys) - min(_ys)
-            _dr = max(_w, _h) / max(1.0, min(_w, _h))
+            _dr = _cluster_aspect(_xs, _ys)
             _lo, _hi = _asp.get(str(_cs), (1.9, 4.2))
             check(
                 "cluster_shape_matches_the_drawing",
