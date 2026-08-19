@@ -147,6 +147,34 @@ def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0) ->
     return sorted(out, key=lambda q: math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]))
 
 
+def cluster_aspect(xs: list[float], ys: list[float]) -> float:
+    """The house cloud's long:short ratio measured on ITS OWN principal axis - rotation-invariant.
+
+    The observable `CLUSTER_DRAWN_ASPECT` is stated in, and the quantity a reader gets by laying a
+    ruler along the cluster rather than along the page. A page-axis bbox ratio is not that quantity:
+    it tends to 1.0 for any band on a diagonal, and is maximally blind at 45 degrees.
+
+    Principal axis by second moments (a 2x2 covariance eigenvector, closed form via atan2), then the
+    EXTENT along and across it. Extent rather than the eigenvalue ratio on purpose - a ruler measures
+    the cloud's span, not its variance, and the two differ for an uneven rank (Sawada 3.02 by extent,
+    2.72 by PCA sd). Mirrored in the gate; `tests/hamletgen/test_cluster_shape.py` pins the two equal
+    by evaluating both on the same point sets, not by comparing source."""
+    _n = len(xs)
+    if _n < 2:
+        return 1.0
+    _mx, _my = sum(xs) / _n, sum(ys) / _n
+    _sxx = sum((x - _mx) ** 2 for x in xs) / _n
+    _syy = sum((y - _my) ** 2 for y in ys) / _n
+    _sxy = sum((x - _mx) * (y - _my) for x, y in zip(xs, ys, strict=True)) / _n
+    _th = 0.5 * math.atan2(2.0 * _sxy, _sxx - _syy)
+    _c, _s = math.cos(_th), math.sin(_th)
+    _along = [x * _c + y * _s for x, y in zip(xs, ys, strict=True)]
+    _across = [-x * _s + y * _c for x, y in zip(xs, ys, strict=True)]
+    _du = max(_along) - min(_along)
+    _dv = max(_across) - min(_across)
+    return max(_du, _dv) / max(1.0, min(_du, _dv))
+
+
 def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     """Seat every declared household, and KNOW whether it worked.
 
@@ -353,10 +381,25 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # overrode it, `cluster_shape_unhonored` records the roll that did not take, because a knob
     # that silently fails to bind is what this whole defect was. `cluster_shape_matches_the_drawing`
     # gates it.
+    # MEASURED ON THE CLUSTER'S OWN AXIS, NOT THE PAGE'S (2026-08-19, and this is the second time
+    # this one guard has been caught measuring the wrong quantity). The first cut took
+    # `max(dx,dy)/min(dx,dy)` over the axis-aligned bbox of house centers - and that ratio collapses
+    # toward 1.0 for a band on a diagonal no matter how string-like the cluster is, because it is a
+    # function of the field margin's COMPASS BEARING rather than of the cluster's proportion. It is
+    # maximally blind at exactly 45 degrees.
+    #
+    # Three independent settlement-review passes caught it on the same day, with numbers, and it
+    # failed in BOTH directions across the shipped pool - axis-aligned vs own-axis:
+    #     Kashikawa 1.22 vs 3.83  (rolled `elongated`, DREW 3.8:1, and was recorded unhonored)
+    #     Sawada    1.25 vs 3.02  (declared `round`, drew a string - falsely HONORED)
+    #     Mizuguchi 2.36 vs 2.77  (declared `round` over its own ceiling on the honest measure)
+    #     Inashiro  3.18 vs 3.59  (band near vertical, so the two roughly agree)
+    # So it denied an honored knob on one map and honored a contradicted one on another, and
+    # `TWIN_AXES` reads this field. The `CLUSTER_DRAWN_ASPECT` docstring promises a quantity that can
+    # be "read off a finished map with a ruler" - and a reader lays the ruler ALONG the cluster.
     _cxs = [h["x"] for h in s.M.get("houses", [])] or [0.0]
     _cys = [h["y"] for h in s.M.get("houses", [])] or [0.0]
-    _cw, _ch = max(_cxs) - min(_cxs), max(_cys) - min(_cys)
-    _drawn = max(_cw, _ch) / max(1.0, min(_cw, _ch))
+    _drawn = cluster_aspect(_cxs, _cys)
     _lo, _hi = CLUSTER_DRAWN_ASPECT.get(plan.cluster_shape or "crescent", (1.9, 4.2))
     if _lo <= _drawn <= _hi:
         s.M["meta"]["cluster_shape"] = plan.cluster_shape

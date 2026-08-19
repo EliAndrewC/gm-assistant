@@ -430,49 +430,33 @@ elongated one is pushed toward 2.5:1 rather than 5:1 - the floor is a real minim
 than that cannot hold a homestead bundle and its yard), and letting it compress the extremes is
 honester than pretending a 10-household string can be five times longer than it is deep.
 
-ROUND BINDS AT 2.2/1.2, AND THE NUMBER THAT MATTERS IS THE ONE IT DRAWS: a mean drawn aspect of 1.62
-across the cohort's round rolls, against 3.18 for a crescent map. Those are different pictures, which
-is the whole point of the knob (constitution Principle XII - two supportable forms become a knob, and
-these maps exist for players who must tell one settlement from another at a glance).
+ROUND'S BAND IS 2.2/1.2, AND WHAT IT BUYS IS HONESTY RATHER THAN ROUNDNESS. Say the limit plainly: on
+the rotation-aware measure, round rolls draw a MEAN 2.48 aspect against a 2.0 ceiling, so `round` is
+declared on 5 of 21 cohort rolls and recorded `cluster_shape_unhonored` on the rest. The knob does not
+make a round hamlet round; it reports truthfully that most of them are not.
 
-**Getting here needed a defect fixed elsewhere first, and that is the lesson worth keeping.** 2.2/1.2
-was tried and rejected earlier the same day because it cost cohort seed 47
-`bridges_span_their_water` - so round was shipped at 2.8, a 7% difference from crescent that barely
-read as anything. Seed 47 turned out not to be about the cluster at all: `bridges()` grew an oblique
-deck along the WAY, which at a near-parallel crossing drives its ends further ALONG the water, and its
-growth loop broke on success while doing nothing on failure - so it silently drew an undersized deck.
-With the deck skewed toward square instead (inside the 8 deg `bridges_align_with_their_way` already
-allows), seed 47 passes and 2.2 is not merely clean but BETTER: 43/48 against 42, fixing seed 31.
+That is a smaller claim than an earlier version of this docstring made, and the earlier one was wrong
+for an instructive reason: it rested on the AXIS-ALIGNED aspect, which cannot see a diagonal band (see
+`cluster_aspect`). Measured on the honest metric across the full 48, the trade is:
 
-So: a knob capped by a defect in another subsystem looks exactly like a knob whose value is wrong.
-Before settling for a weak binding, check what the failures actually ARE - all of these were
-`bridges_span_their_water` or `lane_ends_front_different_houses`, neither of which is about cluster
-proportion.
+    2.2/1.2 -> 43/48, ZERO regressions, round honored  5/21, mean 2.48   <- shipped
+    1.5/0.9 -> 42/48, ONE regression (seed 34), honored 12/21, mean 1.86
+    1.2/0.8 -> 38/48, four regressions,          honored 20/21, mean 1.50
 
-The full 48-seed sweep, taken AFTER the deck fix:
+**THE WALL IS `lane_ends_front_different_houses` (0611), AND IT IS CORRECT.** The session that owns it
+ruled on this exact question: two lane ends within 60 ft pointing within 25 degrees are a fork serving
+one steading, so a cluster tight enough to produce that is too tight. Do not weaken 0611 to buy a
+rounder cluster; Principle XIII forbids shipping the regression anyway.
 
-  - 2.8/1.6 -> 42/48, mean drawn 1.83, clean (the value shipped in c6e7b35a)
-  - 2.6/1.6 -> 40/48, costs seeds 17, 23        - 2.4/1.6 -> 39/48, costs 9, 31, 33, 47
-  - **2.2/1.2 -> 43/48, mean drawn 1.62, CLEAN, fixes seed 31** <- shipped
-  - 1.8/1.0 -> 40/48, costs 11, 38, 45
+WHAT THIS MEANS ARCHITECTURALLY, and it is the finding worth more than the number: at hamlet scale the
+LANE SKELETON AND FRONTAGE dominate cluster shape, and the band aspect is a weak lever pulling against
+them. The front rows and `lane_frontage` seat every household on 47 of 48 seeds, along a margin whose
+bearing the field chose - so the cluster's proportion is mostly a consequence of the field edge, not of
+this table. A genuinely round hamlet needs the SKELETON to be shape-aware (a T laid compactly rather
+than spread), which is untried for SHAPE - note that it was tried and falsified for REACH, which is a
+different question. That, not a smaller number here, is the next real lever."""
 
-`lane_ends_front_different_houses` (0611) is the binding constraint on going further, and **it has
-been RULED CORRECT rather than left as a cap to lift** (the session that owns it, 2026-08-19, on the
-three failing seeds this sweep produced). Its rule is that a farmhouse discharges ONE lane end's
-obligation; two ends within 60 ft pointing within 25 degrees the same way are a fork serving one
-steading, and the second is redundant ink. Three ends was merely what the motivating review found - a
-PAIR is the same defect at its minimum count. Every failure here was one pair at 8-16 degrees, which is
-a tight fork rather than two honest ends colliding.
-
-So read 2.2 as a WALL FOUND, not a compromise: at 2.2 the web puts one end on each frontage, and past
-it the cluster is tight enough to put two. Compressing until a rule fires and then stopping is the rule
-working. **Do not weaken 0611 to let 2.4 through.** The one thing that would reopen it: a failing pair
-at 20-25 degrees rather than 8-16 - that is the shape a mis-attributed pair would take, where two ends
-serving DIFFERENT houses get charged to the same one. Send that seed to whoever owns 0611; anything
-tighter than 20 degrees is the cluster, not the check. METHOD, because getting it wrong cost a cycle: sweep the FULL 48, never a subset - the
-1.8/1.0 row was once measured as clean on all seven seeds that a previous failure had pointed at."""
-
-CLUSTER_DRAWN_ASPECT = {"round": (1.0, 2.4), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
+CLUSTER_DRAWN_ASPECT = {"round": (1.0, 2.0), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
 """What the FINISHED cluster's long:short ratio must fall inside for a rolled shape to be declared.
 
 THIS IS NOT `CLUSTER_BAND_ASPECT`, AND CONFLATING THE TWO WAS A BUG (caught 2026-08-19, in the sweep
@@ -488,6 +472,18 @@ tolerance and was declared honored on what was effectively a rounding accident. 
 project's most-repeated defect wearing yet another hat: A CHECK AND THE THING IT CHECKS MEASURING
 DIFFERENT QUANTITIES. So the guard now tests the observable against these ranges, which are stated in
 the observable's own units and can be read off a finished map with a ruler.
+
+ROUND'S CEILING IS 2.0, AND IT COMES FROM THE HAND-AUTHORED MAPS rather than from taste. Those 19 are
+frozen exhibits drawn by eye before any of this machinery existed, so they are the only visual ground
+truth the project has for what a word means. Measured on the rotation-aware aspect, the ones a reviewer
+reads as a round clump sit at **1.24 / 1.29 / 1.38 / 1.80** (moritono, honda, ikegami, shimizu) and the
+ones read as a string sit at **2.42 / 3.52 / 3.72 / 4.26** (tanada, kuwabata, enokida, yatsuda). The gap
+between 1.80 and 2.42 is where the word changes, so 2.0 sits in it.
+
+The first cut of this table said 2.4, which was calibrated against the AXIS-ALIGNED measure and is
+inside the string band on the honest one - so it would have honored `round` on clusters that plainly
+read as ribbons. The ceiling and the measure had to be fixed together; fixing either alone leaves the
+rule wrong.
 
 The ranges are wide on purpose. They are not a target the generator aims at; they are the band inside
 which a reader looking at the sheet would agree with the word. `round` tops out at 2.4 because past

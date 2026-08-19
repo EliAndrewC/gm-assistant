@@ -57,7 +57,12 @@ def test_the_cluster_seeds_cloud_still_seats_a_hamlet_when_the_rows_offer_nothin
     s = hg.build(plan)
     assert plan.placed > 0, "with both row passes silent, every farmstead must come from the cloud"
     assert s.M["meta"]["cluster_seeding"] == "cloud"
-    assert s.M["meta"]["cluster_shape"] == plan.cluster_shape, "the cloud records the rolled shape it honored"
+    # THE INVARIANT IS A TRACE EITHER WAY, not an unconditional stamp (updated 2026-08-19). The
+    # declaration is validated against the DRAWN aspect now, so a cloud-seated cluster whose drawing
+    # does not match its roll is correctly recorded `cluster_shape_unhonored` instead - which is the
+    # whole point of the guard. Asserting the honored key unconditionally would re-assert the very
+    # thing the honesty rule exists to deny.
+    assert plan.cluster_shape in (s.M["meta"].get("cluster_shape"), s.M["meta"].get("cluster_shape_unhonored")), "the cloud must record the rolled shape either as honored or as unhonored"
 
 
 def test_a_house_beside_open_water_needs_no_rescue_well() -> None:

@@ -989,3 +989,49 @@ unfixed while looking at a fixed picture. The root CLAUDE.md already says a base
 currently reading it"; the same applies to a REGENERATION. Launch the review after the last regen, or
 review a detached copy.
 
+
+## 2026-08-19: the cluster-shape delta, and what the review round found in the ink beside it
+
+**What changed on this map.** Five engine items landed, and for Inashiro specifically the first one is a
+no-op by design: `cluster_shape` now BINDS (it was rolled per settlement, printed in every cohort-audit
+header, and honored on 1 of 48 seeds, because it fed only a cloud-seeding pass that never runs), but
+crescent keeps the old hardcoded 3.0 band, so this map's houses moved **0.00 ft** across the binding
+commit and only `meta` grew - `cluster_shape: crescent`, `cluster_aspect_drawn: 3.18`. The other four:
+woodland parcels are now vetted on their true ROTATED bbox rather than an axis-aligned square (the gate
+measures the rotated one, so a parcel could be approved and drawn two-thirds off-frame); byres carry a
+rolled FORM, and this map rolled `detached_commons`; the windbreak belt must be continuous across the
+wind; and an oblique bridge deck may skew up to 7 deg toward square when a deck along the way cannot
+clear the water.
+
+**Verified rather than assumed** (settlement-review, this date): the belt is ONE unbroken run - 227
+clumps, y-coverage 609-1536 as a single segment, max bare gap **0.0 ft** against a 30 ft allowance. All
+three woodland parcels are on the sheet (100% / 100% / 83.2% of bbox in view), on dry ground (>700 ft
+from either marsh), and visibly stocked (91 / 128 / 30 crowns). All six decks sit at 89.5-90.0 deg to
+their local channel. The 2026-08-16 marsh-seated crownless parcel failure is absent in every form.
+
+**THE RIPPLE - three defects the review found in ink this delta moved past, none of them caused by it:**
+
+1. **The copse is drawn INSIDE the windbreak.** `village_groves[1]` (role `copse`, 11 clumps) is
+   documented as the greenery filling the OPEN gaps among the houses, and `settlements/vegetation.md`
+   says outright that the copse, not the belt, fills the inner gaps. Measured clump-to-nearest-belt-clump
+   distance: 9, 8, 6, 4, 6, 4, 11, 9, 26, 30, 83 ft - **10 of 11 inside the belt's own 14 ft canopy**.
+   The copse spans x 1096-1188 while the houses span 1108-1331, so every clump landed on the belt's
+   ground at the cluster's west edge and the courtyards east of the first rank get nothing. A whole
+   feature is invisible.
+2. **Every lane junction draws a cap bead, and the back lane steps width mid-run.** Each lane is stroked
+   outline then filled, so a second record's round cap outline paints over the first record's fill - a
+   circular seam across the roadway at (1185,785), (1249,801), (1270,1183), (1279,1312). Compounding it,
+   `lanes[3]` is w=6 and `lanes[4]` is w=3, so one continuous ~230 ft back-lane run halves its width at
+   that same junction (`ways.py:695`, a link inherits the width of the way it joins and leaves its far
+   neighbour at 3).
+3. **The notice-board caption erases the lane it stands on.** The caption is centered on the glyph with a
+   3 px background halo, and `lanes[1]` passes x~1235 at y=1009 with w=5 - so the halo knocks a visible
+   notch out of the map's busiest internal lane, between "notice" and "board".
+
+**And two calibration questions worth recording rather than silently fixing**: the woodland bearing
+jitter is `fall + 90 +/- 20 deg`, and this map's fall is cardinal, so the maximum achievable rotation is
+20 deg - the roll gave 0.1 / 5.9 / 11.1, and the first parcel is drawn effectively axis-aligned, which is
+the "perfect rectangle" read earlier rounds objected to. Separately all three parcels came out at aspect
+1.32 / 1.38 / 1.34 - a 4% spread from a range of 1.0-2.2, because the ladder collapses the roll toward
+its floor. Neither is a form question: *iriai* boundaries followed ridge, stream and path, so nothing
+rectilinear is attested and this is calibration.
