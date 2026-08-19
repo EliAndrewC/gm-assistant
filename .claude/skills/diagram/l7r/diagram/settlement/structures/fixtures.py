@@ -177,9 +177,39 @@ class PublicFixturesMixin:
             # than folds and goes level past 45 degrees, which is the rule this file's own labels.md
             # docstring states for a line subject ("swapping them" is named there as the trap).
             _t = linear_tilt(rot)
+            _chw = max(10.0, len(label) * 8 * 0.28)
+            _cands = [
+                (x, y + hh + 11),  # below - the historical default, tried first so an unblocked board does not move
+                (x, y - hh - 11),  # above
+                (x + hw + _chw + 8, y),  # east, clear of the glyph
+                (x - hw - _chw - 8, y),  # west
+            ]
+
+            def _box_clearance(_q: Pt, _chw: float = _chw) -> float:
+                """Least distance from the caption's BOX to any drawn way's edge (negative = on it)."""
+                _best = 1e9
+                for _run in street_runs(self.M):
+                    for _i in range(len(_run) - 1):
+                        for _cx, _cy in ((_q[0] - _chw, _q[1] - 5), (_q[0] + _chw, _q[1] - 5), (_q[0] - _chw, _q[1] + 5), (_q[0] + _chw, _q[1] + 5), _q):
+                            _best = min(_best, seg_dist(_cx, _cy, _run[_i], _run[_i + 1]))
+                return _best
+
             if label_xy:
                 _lx, _ly = label_xy
             elif _t:
+                # A TILTED BOARD STILL TAKES ITS CALLER'S SIDE, and scoring the two tilted seats by
+                # clearance was TRIED AND MEASURED AS A NO-OP (2026-08-19) - recorded so nobody pulls
+                # the same lever again. Kashikawa's caption sits 0.2 ft off its lane, and picking the
+                # better of `above=False` / `above=True` leaves it at 0.2: both tilted seats land in
+                # the same neighborhood, because `tilt_caption_seat` offsets ALONG the board's own
+                # axis and that axis is what points at the lane. The untilted path is different and
+                # the lateral candidates there DO earn their place (inashiro 8.7 -> 19.2 ft,
+                # mizuguchi -1.9 -> 9.7).
+                #
+                # What would actually move a tilted caption is a lateral offset in the TILTED frame -
+                # perpendicular to the board's axis rather than along it. That is a change to
+                # `tilt_caption_seat` itself, which every tilted caption in the engine shares, so it
+                # wants its own pass rather than a special case here.
                 _lx, _ly = tilt_caption_seat(x, y, rot, _t, hw, hh, 11, above=label_above)
             else:
                 # THE HALO MUST NOT NOTCH THE WAY THE BOARD STANDS ON (settlement-review on Inashiro,
@@ -195,13 +225,27 @@ class PublicFixturesMixin:
                 # from any drawn way. `label_above=True` stays an unconditional override, because its
                 # callers set it for a reason the geometry cannot see (a board just inside a gate,
                 # whose below-label would hang over the gate structure).
-                _above, _below = (x, y - hh - 11), (x, y + hh + 11)
+                # CANDIDATE SEATS, SCORED ON THE CAPTION'S OWN BOX. Choosing between above and below
+                # was the first cut and it is not enough: it cannot help where BOTH bands sit on a way,
+                # which is Mizuguchi (caption box overlapping the tread by 1.9 ft even after picking the
+                # better side). So the lateral seats are candidates too, and the score is the clearance
+                # of the whole TEXT BOX rather than of its anchor point - the halo is what notches the
+                # lane, and the halo follows the box.
+                #
+                # Half-width is estimated from the string rather than measured, because the seat has to
+                # be chosen BEFORE `self.label` lays the text out. 8 pt italic runs ~0.28 em per
+                # character: "notice board" estimates 26.9 px against a measured 26.4 on the shipped
+                # sheet, which is close enough to rank seats by.
                 if label_above:
-                    _lx, _ly = _above
+                    _lx, _ly = (x, y - hh - 11)
                 else:
-                    _lx, _ly = max(
-                        (_below, _above), key=lambda q: min((seg_dist(q[0], q[1], _p[_i], _p[_i + 1]) for _r in street_runs(self.M) for _p in (_r,) for _i in range(len(_p) - 1)), default=1e9)
-                    )
+                    _lx, _ly = max(_cands, key=_box_clearance)
+            # OUTSIDE the branch chain - all three seats (hand, tilted, chosen) draw their caption here.
+            # It sat one level deeper for one revision and a TILTED board silently lost its label
+            # entirely: Kashikawa's rot=145.7 takes the `elif _t` branch, never reached the call, and
+            # shipped a 12 x 5 ft glyph that nothing on the sheet identifies. Caught only because the
+            # clearance probe returned its "no caption found" sentinel instead of a distance - a
+            # measurement that could not tell "infinitely clear" from "not there".
             self.label(_lx, _ly, label, 8, italic=True, color="#7A5A30", rot=_t)
         return z
 
