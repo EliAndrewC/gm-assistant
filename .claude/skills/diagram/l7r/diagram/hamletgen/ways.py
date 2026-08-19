@@ -297,7 +297,7 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     walls = [poly for poly, _, _ in fabric]
     # The shelter belts, separately: a web lane may CROSS one but may not run its length.
     belts = [[(float(a), float(b)) for a, b in g["poly"]] for g in s.M.get("village_groves", []) if g.get("poly")]
-    drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
+    drawn_water = drawn_water_segs(s)  # channels AND streams - see the helper for why the streams were missing
     cands: list[Poly] = []
     for line in lines:
         # FINER SAMPLING AND A WIDER FABRIC MARGIN THAN THE DEFAULTS. A web lane runs among the
@@ -1243,7 +1243,7 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         toe = s.toe_band()
         drawn_wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
         gate_pt = push_out_of(plan.envelope, to_screen((float(layout["gateway"][0]), float(layout["gateway"][1]))), SPUR_SETBACK)
-        track = connector_track(plan, gate_pt, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet)
+        track = connector_track(plan, gate_pt, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet, waters=drawn_water_segs(s))
         s.lane(route_around(plan.envelope, track, SPUR_SETBACK), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
         return
 
@@ -1299,7 +1299,7 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     # back in `stage_sink`, before this, and a cohort sweep found ways ending in it on two maps.
     toe = s.toe_band()
     drawn_wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
-    track = connector_track(plan, gate, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet)
+    track = connector_track(plan, gate, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet, waters=drawn_water_segs(s))
     s.lane(route_around(plan.envelope, track, SPUR_SETBACK), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
 
 
@@ -1510,7 +1510,7 @@ def polyline_len(pts: Poly) -> float:
     return sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
 
 
-def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach: float = 4000.0, wet: Sequence[Poly] = ()) -> Poly:
+def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach: float = 4000.0, wet: Sequence[Poly] = (), waters: Sequence[tuple[Pt, Pt]] = ()) -> Poly:
     """The track from the settlement's gateway to the map edge, steered clear of the crop.
 
     Bearings are tried outward from "away from the field, leaning downslope" - the direction a real
@@ -1533,7 +1533,9 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
     # is narrow and square, not where it fans into a reservoir.
     pond = plan.sink_pond
     brook = [(plan.sink_brook[i], plan.sink_brook[i + 1]) for i in range(len(plan.sink_brook) - 1)]
-    waters = plan.watercourses
+    # The planned net PLUS whatever water is actually drawn - the caller passes the streams, which
+    # `plan.watercourses` does not carry and which nothing here used to test against.
+    waters = [*plan.watercourses, *waters]
     # A FINE sweep, nearest bearing first. Sixteen coarse tries were enough when the only obstacle
     # was the field; with the pond and the drain brook added, a whole quadrant can be closed and a
     # coarse sweep steps straight over the gap between them - which drops through to the fallback,
@@ -1599,6 +1601,48 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
     # crossing instead of by everything.
     assert best is not None
     return best[1]
+
+
+def stream_segs(s: Settlement) -> list[tuple[Pt, Pt]]:
+    """Just the STREAMS - the water a way needs a real deck to cross, as opposed to a plank.
+
+    SPLIT OUT FROM `drawn_water_segs` BECAUSE THE DISTINCTION IS LOAD-BEARING, and it was measured
+    the hard way. A peer session wired a blanket `shallow_crossing` veto into the link pass against
+    the undifferentiated list (`plan.watercourses` plus every drawn channel) and the cohort went
+    **41/48 -> 26/48, with 21 seeds failing `farmhouses_reach_a_way`**. The cause was the LIST, not
+    the placement: a link joining two halves of a hamlet crosses field ditches constantly and often
+    obliquely, and an aze ditch is a stride across - demanding a square crossing of every one strands
+    the very components the pass exists to join. A far bigger defect than the oblique stream crossing
+    the veto was written for.
+
+    So the rule a way must respect is not "never cross water at a slant", it is "never cross water
+    that needs a DECK at a slant", and this is that subset. `drawn_water_segs` still returns
+    everything, for callers that want to avoid or bridge any water at all.
+
+    Consumer note: `_join_orphan_ways` is the pass that needs this - it deliberately passes an EMPTY
+    water list today ("a link may go the long way round, and may be planked"), which is exactly why
+    it is the pass that can lay a way down the length of a brook (cohort seed 47).
+    `_bridge_collinear_breaks` does NOT: it hands its water to `_route`, which already refuses to
+    cross a watercourse at any angle, so a veto there would be unreachable code."""
+    return [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for st in s.M.get("streams", []) if st.get("poly") for a, b in zip(st["poly"], st["poly"][1:], strict=False)]
+
+
+def drawn_water_segs(s: Settlement) -> list[tuple[Pt, Pt]]:
+    """Every DRAWN watercourse on the map, as segments - channels AND streams.
+
+    THE STREAMS WERE MISSING FROM EVERY WAY-VS-WATER TEST, and that is the whole reason this helper
+    exists rather than the inline `drawn_channels` comprehension it replaces. `drawn_channels` holds
+    the irrigation net; `M["streams"]` holds the feed brook and any natural course, and nothing in
+    this module ever looked at it. So `shallow_crossing` - which exists, is correct, and is wired
+    into `path_violations` - simply never saw the brook: on cohort seed 47 a connector crossed a
+    7 px stream at 17 degrees, and `bridges_span_their_water` failed the deck it produced, with the
+    guard that was written for exactly that case sitting one list away.
+
+    Same family as this engine's recurring defect - a guard keyed on the wrong input measures
+    something other than what it protects. `trades.py` already reads both records together; this is
+    that pattern, applied where the ways are laid."""
+    segs = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
+    return segs + stream_segs(s)  # ONE definition of what a stream is, shared with the deck-needing subset
 
 
 def path_violations(path: Poly, avoid: Sequence[Poly], pond: tuple[float, float, float, float] | None, brook: Sequence[tuple[Pt, Pt]], waters: Sequence[tuple[Pt, Pt]] = ()) -> int:
