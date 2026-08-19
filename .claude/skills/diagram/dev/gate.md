@@ -210,6 +210,56 @@ check has no live map holding it honest. Drop the manifest as it stood BEFORE th
 `tanning_yard_on_the_outcast_side_fires_on_the_pre_waiver_tango.json`) so a refactor that neuters
 the check is still loud.
 
+**A fixture whose defect the generator has since LEARNED TO HEAL is built by removing the repair -
+and the provenance says so.** `lanes_do_not_break_mid_run` (feature 125) was written for a 110 ft
+hole a `settlement-review` found in Sawada, and by the time the check existed the generator closed
+that hole two independent ways: `_bridge_collinear_breaks` spans it, and `_join_orphan_ways` draws a
+link even with the bridge pass disabled. So a straight re-roll of seed 6 could not be the fixture -
+it is a green map - and the manifest frozen under that name was in fact a REPAIRED one, which is why
+the check sat silently passing on its own motivating defect while looking fully covered. The fixture
+is now that re-roll with the single link way deleted, and its `_regression` block records both the
+deletion and the two healers, because a fixture nobody can explain is a fixture the next session will
+regenerate wrong. **Check the fixture actually FIRES the moment you freeze it** - `pytest
+tests/test_regressions.py` is the whole cost, and a frozen fixture that does not fire reads as
+coverage and provides none.
+
+**RE-ASSERT A FROZEN FIXTURE WHENEVER THE GENERATOR CHANGES, not only when the check does** (the
+hamlets session's generalization of the case above, 2026-08-18, and it is the sharper form of the
+rule). The fixture that rotted here was CORRECT on the day it was frozen; what invalidated it was a
+change to `ways.py` weeks later teaching the generator to heal that hole, and nothing in the check
+moved at all. So "verify it fires when you freeze it" is not enough on its own - a freeze is only
+proof about the engine that existed that day. `pytest tests/test_regressions.py` replays the whole
+corpus in about 14 seconds and is the cheapest guard in the tree; run it after an engine change, not
+merely after a check change.
+
+**The shape both sessions kept hitting: an EXCUSE clause keyed on PRESENCE cannot fire on ABSENCE.**
+Four instances in one day between two sessions - this check excusing a hole whenever anything stood
+in it; `village_windbreak_is_continuous` scoring a total gap as nothing because it skipped empty
+columns; and two more of the same family. The tell is always identical and always available: the
+check PASSES on the very artifact it was written for. That is precisely what a negative fixture
+exists to make impossible, which is why a rotted fixture and an excuse clause are so dangerous
+together - each one hides the other.
+
+**THE PLACER AND THE CHECK DISAGREEING IS A CATEGORY, NOT A BUG** (both sessions, 2026-08-18; five
+instances in one day). The excuse-clause shape above is one half of it; the other half is a placer
+that mirrors its check imperfectly. Seed 31's `harvest_yards_clear_of_paddies` is the cleanest
+specimen: the CHECK tests the yard's rect CORNERS against each paddy's recorded `outline`, while
+`_yard_fits` tested the yard's CENTRE with a circle against `field_polys`, which holds the SMOOTHED
+ENVELOPE - two different sources AND two different geometries, so a yard cleared the envelope by its
+circle and still put a corner inside a drawn basin. The woodland scan the same day mirrored its
+check's FORMULA but not its WINDOW. **The tell is that both halves look correct read alone**, which
+is why the only thing that finds these is reading placer and check side by side and asking which
+SOURCE and which GEOMETRY each one uses. The existing rule - "placement and its check must read the
+SAME manifest source" - is necessary and, on this evidence, not sufficient: same source, different
+geometry fails just as quietly.
+
+**And the honesty clause of a "there is a hole here" check must list only what genuinely STOPS a way.**
+The same check excused its own defect a second time after that, because tree cover was in its
+blocking list: the gap lay inside a homestead grove, so every corridor read as blocked. Crop, water,
+marsh and anything built stop a lane; a grove or an open common does not - a track runs through a
+copse, and a *yashikirin* belt is planted around the way rather than across it. Listing ground COVER
+alongside real obstacles is the easy way to write a check that can never fail.
+
 ## An unmet ASK is a defect, and the gate now says so
 
 `_shortfall` has recorded requested-vs-landed per placement run since 2026-08-05, and recording

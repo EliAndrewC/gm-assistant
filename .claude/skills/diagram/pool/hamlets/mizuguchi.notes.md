@@ -131,6 +131,58 @@ plus a footpath). The pre-rule manifest is frozen in
 more than it looks, because this map has since re-rolled twice and the motivating pair no longer
 exists anywhere but that fixture.
 
+## 2026-08-18 - where the ox sleeps, and a well objective that measured the wrong houses
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+- **`byre_form` is a knob now** - `courtyard` (the ox in its owner's own homestead: the *magariya*
+  曲家 whose short arm IS the stable, the north-China *sanheyuan* animal range) or
+  `detached_commons` (a shared shed on the ground between homesteads, the old behavior and still the
+  default), rolled per settlement per Principle XII. The *doma* rule and the byre placer had been
+  quietly contradicting each other; both forms are attested, so neither is the correction.
+- **and the overlap registry had been describing code that no longer existed** - its `byres` entry
+  claimed the byre "abuts its own farmhouse (draft_byres places it against the wall)", which the
+  placer stopped doing long ago. Now corrected and GATED rather than asserted in prose.
+- **the well tie-break's last key is the objective itself, not a proxy** - `_worst_after` at full
+  resolution inside the 66 px bucket, instead of distance to the cluster centroid.
+
+RIPPLE ON THIS MAP (re-measured 2026-08-18 after the round-2 review): 3 byres at the placer's
+target of 3, form `courtyard`, owned by the houses ranking [1, 2, 3] by footprint of 12 - the
+owner ranking was reading a `wealth` field that is 1.0 on every scripted house, so it had
+collapsed to smallest-x and was handing oxen to the west edge. The shelter belt carries 134 clumps
+with a minimum canopy depth of 28.0 ft measured ACROSS the wind, which is the measure that means
+anything on a diagonal belt; the per-latitude framing an earlier entry used flags healthy belts
+and misses thin windows. Worst walk among the 0 houses that actually need a well: 0 ft.
+
+## 2026-08-18 - the woodland commons: off the lattice, and two hamlets that had none
+
+WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
+
+Two ledgered defects that turned out to be one, with a worse one underneath.
+
+- **the commons are off the lattice, and no two are the same size.** `open_ground_patches` samples a
+  uniform 90 ft lattice, scores every seat by ONE monotone function (near the cluster, leaning
+  upslope) and takes the best seat outside a FIXED separation radius - three ingredients that do not
+  merely tend toward an even chain, they produce one by construction. THIS MAP shipped the proof:
+  three IDENTICAL 250 ft squares stepping (+270,-270) twice, reading as three stamps of one wood on
+  a ruled diagonal; Inashiro had the same chain the other way. The accepted seat is now nudged up to
+  half a step off the lattice and its size rolled +/-15%, both from the map's own position hash
+  (so a map is unchanged by regeneration and two maps differ from each other), and every nudge is
+  re-asked through the same qualification test - it can only move a legal seat to another legal one.
+- **a hamlet at the top of the band had no wood at all.** Kashikawa - the map NAMED 樫川, "oak
+  river" - seated ZERO parcels out of 231-286 candidate seats, at every rung of the shrink ladder
+  and both set-back profiles. The scan demanded the whole square inside the predicted crop window
+  plus a further 16 ft, while its own gate check asks that **70% of the parcel's bbox** be inside
+  the view and says outright that a parcel clipping at the edge "reads as 'more wood that way' and
+  is fine". The scan mirrored the check's formula but not its WINDOW, and now judges a seat by area
+  the way the check does.
+
+RIPPLE ON THIS MAP: This is the motivating sheet. The three IDENTICAL 250 ft squares stepping
+(+270,-270) twice are gone: four parcels at 219, 242, 265, 288 ft with strides of 304, 373, 671,
+1465 ft. The first fix only dithered the seats and left the ~375 ft stride intact; the stride is
+now rolled per parcel, and the sizes are drawn from distinct bands so no two woods can land within
+9% of each other.
+
 ## 2026-08-18 - the six-defect pass
 
 WHAT CHANGED, ACROSS ALL FOUR SCRIPTED HAMLETS (2026-08-18)
@@ -159,11 +211,12 @@ order they matter to a reader of these maps:
 - **the SVG emits the rake it placed** (`.1f` / `.2f`, not whole pixels and whole degrees), and the
   gate reads the same raked corners the placer does.
 
-RIPPLE ON THIS MAP: lane 2 shortened; byres re-sited and their SERVICE improved - mean house-to-
-nearest-byre 126 -> 109 ft, median 143 -> 101, households within 150 ft 8/12 -> 10/12, worst walk
-235 -> 165. (An intermediate version of the byre fix made those numbers WORSE: it maximised spread
-among the byres rather than service to the houses, which a review caught. The borrow-coverage term
-is what fixed it.) Houses and the cluster's four depth bands are untouched. Review: PASS.
+RIPPLE ON THIS MAP (re-measured 2026-08-18): woodland is [(120, 26), (242, 108), (265, 129), (288,
+153)] - each pair is (ft across, crowns) - stocked at 540-554 sq ft per crown, which is the stated
+density rather than an artifact of how much of a parcel lies near a keep-out. Crown count used to
+be the number of THROWS at a parcel, and `_sparse` rejected a share of them, so small parcels came
+out both smaller AND thinner; it is a target now. Parcels under the 120 ft legibility floor are
+DROPPED rather than drawn small.
 
 THE CROWN-PARSE DEFECT WAS FOUND HERE and is worth remembering: `scatter_audit` reported
 "crown checked, 0 violations" while seeing 63% of this map's crowns, because `CROWN_FILLS` claimed
@@ -298,7 +351,7 @@ check found some, which no rule could see before.
 by fraction OR by one unbroken bundle pitch - is refused, and so is one that would run the length of
 the shelter belt rather than crossing it.
 
-*A house is served with margin, not to the millimetre.* The footpath pass triggers at nine tenths of
+*A house is served with margin, not to the millimeter.* The footpath pass triggers at nine tenths of
 the reach, so no house passes by inches and none gets a path drawn to cure a rounding error.
 
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead

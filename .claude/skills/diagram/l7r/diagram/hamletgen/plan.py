@@ -191,7 +191,7 @@ def plan_site(spec: HamletSpec) -> SitePlan:
     # bbox): it is what the archetype IS. A wei-tian polder is a SURVEYED orthogonal module diked
     # out of standing water, and the survey runs with the cardinal directions; the organic comb fan,
     # which follows its own water down whatever slope it finds, is the one that sits on a diagonal.
-    # A GM who pins `down_deg` is still honoured - the pin is a fact about that place.
+    # A GM who pins `down_deg` is still honored - the pin is a fact about that place.
     _archetype = spec.field_archetype or str(_roll(spec.seed, "field_archetype", ROLLED_ARCHETYPES))
     _falls = CARDINAL_BEARINGS if _archetype == "polder_grid" else FALL_BEARINGS
     down_deg = spec.down_deg if spec.down_deg is not None else float(_roll(spec.seed, "down_deg", _falls))

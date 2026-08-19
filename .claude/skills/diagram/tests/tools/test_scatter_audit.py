@@ -55,7 +55,7 @@ def test_parse_counts_one_base_per_blade_line_three_per_tuft():
 def test_parse_reeds_pine_trunks_and_crowns_but_not_companion_ink():
     """...and the CROWN fill is taken from the engine's own `CROWN_FILLS`, never written out here.
 
-    This test used to hardcode `#7C9856` - a colour the engine had stopped painting - which is
+    This test used to hardcode `#7C9856` - a color the engine had stopped painting - which is
     exactly why the drift survived: the parser carried a stale copy of the palette and the test
     carried the SAME stale copy, so the two agreed with each other and disagreed with the map. The
     audit reported `crown=0 ... violations: 0` on maps recording thousands of crowns and this test
@@ -208,7 +208,7 @@ def test_main_missing_ftpx_exits_two(tmp_path, capsys):
 
 
 def test_crown_fills_covers_every_recorded_crown():
-    """`CROWN_FILLS` claims to be every colour the engine paints a RECORDED crown with. That claim
+    """`CROWN_FILLS` claims to be every color the engine paints a RECORDED crown with. That claim
     has rotted twice in one day - first the audit's own stale copy (0% coverage), then a
     replacement that missed every woodland-commons canopy (63%) while its comment asserted the old
     fills were unpainted. So the claim is TESTED against real ink rather than trusted: roll a map
@@ -248,7 +248,7 @@ def test_crown_fills_covers_every_recorded_crown():
         #   - an on-canvas test fails too, because a local offset is small (+-25 px) and so still
         #     lands inside a 2000 px canvas. Off-canvas is what it LOOKS like, not what it IS.
         # What a mis-parsed crown cannot do is land near a recorded ANCHOR - a stand crown or a clump
-        # centre - because its coordinates are an offset, not a position. Measured on the four
+        # center - because its coordinates are an offset, not a position. Measured on the four
         # scripted hamlets: 0 orphans with the transform resolved, 1,503-2,387 without.
         _flat = json.loads(Path(stem + ".json").read_text()).get("tree_crowns") or []
         anchors = [(_flat[i], _flat[i + 1]) for i in range(0, len(_flat), 3)]

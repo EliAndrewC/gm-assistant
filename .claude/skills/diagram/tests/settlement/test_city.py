@@ -130,7 +130,7 @@ def test_city_wall_gateposts_orient_to_the_wall_tangent():
     assert all(abs(abs(p["rot"]) - 90) < 25 for p in posts)  # tangent ~vertical, not the old rot 0
     # the two posts straddle the gate along the tangent (N and S of it), not E and W
     # > 10, not the old > 40: the throat is TO SCALE since 2026-07-27 (30 ft clear + a 15 ft pier a
-    # side = 15 px between post centres at 1 px = 3 ft), where it used to open a 210 ft gap. The
+    # side = 15 px between post centers at 1 px = 3 ft), where it used to open a 210 ft gap. The
     # assertion here is about ORIENTATION - N and S of the opening, not E and W - so it must not
     # re-encode the old spacing as its threshold.
     assert abs(posts[0]["y"] - posts[1]["y"]) > 10 and abs(posts[0]["x"] - posts[1]["x"]) < 30
@@ -657,7 +657,7 @@ def test_farmland_ring_upslope_keeps_households_out_of_the_wet_toe():
 
 
 def test_ring_upslope_refuses_a_seat_below_the_drain():
-    """The drain test measures to the drain LINE, not the field's centre: a seat can be upslope of
+    """The drain test measures to the drain LINE, not the field's center: a seat can be upslope of
     the middle and still below the collector where it bends, and that ground is the wet toe."""
     s = settlement.Settlement(1200, 1200, seed=2)
     s.meta(scale="capital", ftpx=3)

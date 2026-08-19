@@ -157,7 +157,7 @@ vague debt.
    the house the placer TESTS, not the one it DRAWS.** `_near_corridor` measures a candidate's
    CENTRE against the corridor, and the placer passed the 46x28 ft base rect while wealth variation
    renders up to ~1.33x that - so at the authored clearance of 32 a well-off farmhouse's drawn
-   corner ended 2.4 px from a track's centerline while its centre stood a legal 34 px off.
+   corner ended 2.4 px from a track's centerline while its center stood a legal 34 px off.
    - **Fixed at `_fits`:** a lane now registers its DRAWN TREAD beside its soft corridor, and
      `_fits` tests the candidate's whole footprint against it, with the same 2 px hair
      `houses_clear_of_lanes` allows and the same `skip` semantics `_near_corridor` uses (a frontage
@@ -323,14 +323,14 @@ through an acute hairpin. A person authoring one map meets perhaps two of those.
 
 ## The sun corridor, and the migration it starts (2026-08-13)
 
-The GM asked whether a threshing yard would sit directly north of a neighbour's farmhouse, or
+The GM asked whether a threshing yard would sit directly north of a neighbor's farmhouse, or
 whether that house's shadow would take its light. It would: thatch is pitched 45 degrees or steeper,
 so a 46 x 28 ft minka's ridge stands ~20 ft up, and at 38N in the threshing month that is 21 ft of
 shadow at noon and 39 ft by 9am. The full derivation and sources are in
 [`research/homesteads.md`](research/homesteads.md), "The threshing yard's sun".
 
 **Every hand-authored nucleated map in the pool breaks it** - Ueda 45 of 85 yards shaded at noon,
-Hoshigaoka 31 of 70, Ubame 21 of 36, the hamlets 3-10 each, with neighbours' walls commonly 2-8 ft
+Hoshigaoka 31 of 70, Ubame 21 of 36, the hamlets 3-10 each, with neighbors' walls commonly 2-8 ft
 off a yard's edge. The GM's decision was NOT to re-pack them by hand: the rule binds the SCRIPTED
 path, and each legacy map inherits it when it is converted. `hamletgen` calls `s.sun_corridor(39)`;
 `yards_unshaded_by_neighbors` is gated on `meta.generated_by`, which only a generator sets. **This is
@@ -340,7 +340,7 @@ skill's [`CLAUDE.md`](CLAUDE.md)** under "MIGRATION: new rules land in the SCRIP
 **Result on the scripted maps: 0 shaded yards, from 3-6 each before, with every household still
 seated.** Two implementation notes worth keeping:
 
-- The placer must read the neighbours' yards off the PLACED BUNDLES' `geom`, not off
+- The placer must read the neighbors' yards off the PLACED BUNDLES' `geom`, not off
   `M["threshing_yards"]` - yards are not drawn until `farmsteads()` flushes, long after the last
   house is seated, so the manifest list is empty while placement runs and the first version cleared
   only about half the shadows.
@@ -358,7 +358,7 @@ held-out one, and every cure was a different lesson:
   100. Asking the band for less than a row needs does not tighten the cluster - it spills the
   overflow OUTSIDE the band, which is how seed 18 grew a two-farm satellite 500 px off the nucleus
   (777 px from water against a 760 px reach, every legal well seat around it taken by its own two
-  courtyards) and seed 11 lapped a garden onto a neighbour. Raising the pitch to 100 fixed both at
+  courtyards) and seed 11 lapped a garden onto a neighbor. Raising the pitch to 100 fixed both at
   once. Chasing either symptom - the well, the garden - would have fixed neither.
 - **Seed 8 was a knife edge, and a margin was the WRONG cure.** A plank's bank sample sat 54.97 px
   from the nearest house at placement and 55.02 at the check, against a 55 px village reach: the
@@ -406,7 +406,7 @@ rather than copied from Enokida, and each was the same lesson the valley path ta
   half its extent along each axis works at any bearing, recomputed per bisection candidate.
 - **The header reservoir is seated at the dike's own inlet sluice.** Two earlier tries measured only
   in the fall frame: one blended the high corner with the centroid and put the reservoir inside the
-  crop, the next centred it across the block's head and left the inlet channel dangling short of the
+  crop, the next centered it across the block's head and left the inlet channel dangling short of the
   envelope. `build_polder` says where the dike is cut for water; the pond is what that sluice draws
   from, so the sluice is the anchor both ends agree on.
 - **The dike is gapped wherever a channel actually crosses it**, not only at the two sluices the net
@@ -519,7 +519,7 @@ green sweep. The valley tier is 24/24 and 12/12 again.
 **WHAT IS STILL BROKEN: 3 of 32, all `title_clear_of_features`, all on one seed** (seed 8 at 11
 households, three of four falls). The map's title lands on the WINDBREAK BELT. `stage_woodland`
 reserves blank ground for the name (`title_pocket`) and keeps the woods out of it, but the belt is
-drawn later by `village_grove`, which takes only a polygon and honours no keep-out list - so on a
+drawn later by `village_grove`, which takes only a polygon and honors no keep-out list - so on a
 tightly framed map the belt covers the reservation and `title()` has nowhere clear to sit. The fix
 in progress was to dent the belt's vertices out of the pocket; it was not applied. A cleaner
 alternative worth considering first: give `village_grove` a keep-out list, since this is the second

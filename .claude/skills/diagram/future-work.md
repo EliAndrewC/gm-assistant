@@ -27,6 +27,362 @@ choose gates on the hull, then place gate programs and re-arrange locally; ring/
 wrap an irregular hull rather than an ellipse. This is a full feature with its own spec, not
 a mid-feature pivot. Candidate: the next city-tier map.
 
+## 2b. The packer must RESERVE ways, not merely avoid collisions - DEFERRED WITH MEASUREMENT
+(2026-08-18, feature 125. Deferred under constitution Principle XIV's named exception - it is a
+stage-reordering / new-reservation-stage change - and this entry is the deliverable that deferral
+owes: the measurement, the mechanism, the sketch, and the alternatives already priced and declined.)
+
+**The symptom.** `farmhouses_reach_a_way` fails on cohort seeds 5, 8 and 25 - 2, 2 and 4 farmhouses
+standing 172-237 ft from any way. It is the entire non-peer residue of the 48-seed sweep (43/48).
+
+**What it is NOT**, each ruled out by measurement rather than by argument:
+
+- Not a CONNECTIVITY split. The main component equals the full lane set on all three seeds
+  (`lanes 7 main 7`, `10/10`, `8/8`), unlike seeds 39 and 9 earlier in the same feature, which were
+  component splits and were fixed as such.
+- Not the straggler pass giving up early. It produced 391-1,572 candidate runs PER stranded house.
+- Not the acceptance criteria being too strict. Of those thousands of runs, every single one met the
+  network (`net = 0 ft`, bound 30) and every single one was perfectly direct (`1.00`, bound 2.0).
+  What failed was reach: the best run came within 132, 167, 173 and 210 ft of the house it was drawn
+  for, against a 100 ft bound. The runs are fine; they are just nowhere near the house.
+- Not the router's lattice resolution, though the arithmetic is seductive. `_route` inflates its
+  planning clearance to `gap + cell * 0.71` so a free cell means every point in it is clear - 11.1 ft
+  at the default 10 ft cell, i.e. it demands a 22 ft corridor for a footpath, while `MIN_WEB_GAP` is
+  18. Measured end to end at a 5 ft cell (7.6 ft clearance): **the unserved count did not move**, and
+  seed 5's build went 159.9s -> 672.3s, a 4.2x. Reverted; the dead end is recorded at the call site
+  in `hamletgen/ways.py` so nobody pulls that lever twice.
+
+**RETRACTED: IT IS NOT A CRESCENT DEFECT.** I reported the correlation below as the strongest result
+of the day and it is confounded. `plan.cluster_shape` feeds exactly one thing - `cluster_seeds`, the
+CLOUD pass - and the cloud runs only for households the front rows do not seat. Measured on eight
+crescent seeds including all three failures: **every one seeds by `frontage`, the cloud never runs,
+and `meta.cluster_shape` is stamped on none of them.** A knob that is never read cannot cause a
+failure. A sixth fix attempt confirmed it from the other side: softening the crescent bow from 0.50 to
+0.30 changed nothing at all, because the code path is dead on these maps.
+
+The arithmetic was never strong either, which is the lesson worth keeping. Three failures landing
+inside seventeen crescents out of forty-eight seeds is p ~ 0.04 - suggestive, not decisive - and I
+treated it as decisive because it arrived after four failed attempts and I wanted a lead. The base
+rate check I ran on `out < 0` (90 of 128 seats) is the one I should also have run here: ask what
+fraction of the population looks like the signal BEFORE calling it one.
+
+**A real defect fell out of the retraction, though.** `cluster_shape` is rolled per settlement, is
+reported in the cohort audit's header for every seed, and on the evidence above is honored on NONE of
+them - the front rows plus lane frontage seat every household, so round, elongated, crescent and split
+all draw the same cluster. `homesteads.py` already carries a known-open note about the shape leaving no
+trace when the cloud does not run (Kashikawa, 2026-08-16); what is new is that this looks like the
+NORMAL case rather than an edge one. It belongs with `plot_regularity` in 2e: four `meta` lines that
+read as variance the pool is not spending. Worth a census across all 48 seeds before anything is
+built on the shape knob.
+
+**The observation below stands as an observation only** - the three failing seeds happen to be
+crescent-rolled, and that fact is now known to be a coincidence of the seed roll rather than a cause:
+
+**IT IS A CRESCENT DEFECT, and that is the sharpest thing known about it** (measured 2026-08-19,
+and it took three failed spacing fixes to go looking). Across all 48 cohort seeds:
+
+| cluster shape | seeds | reach failures |
+|---|---|---|
+| crescent | 17 | **3** (seeds 5, 8, 25) |
+| round | 21 | 0 |
+| elongated | 10 | 0 |
+
+**0 of 31 non-crescent seeds fail.** Every stranded house also sits on the same side of the seat band:
+`out` between -50 and -147 against served houses at `out` >= +32, i.e. on the far side of the anchor,
+in the arm the crescent wraps around.
+
+And the web's coordinate frame is NOT the problem, which rules out the obvious follow-up: projected
+onto the margin frame the stranded houses land at **stand 46-57 inside a 42-273 stand range**, and at
+arcs inside the frame's own 521-1052 span. The back-lane cuts and their extents therefore RUN ACROSS
+these houses - the line is drawn over them and then clipped out by the fabric it cannot pass, which is
+the same 1.4-1.9 ft corridor measured below. (An earlier crescent fix widened the frame ALONG the arc
+for exactly this class of failure - `ways.py` records it, worst house 431 ft - so widening it again is
+not the answer; the frame already reaches.)
+
+So the shape of the real defect is: **a crescent's inner arm packs against itself, and only there.**
+Whatever a post-pack repair does, seeds 5, 8 and 25 are its test bed and the other 45 seeds are its
+regression bed - and any fix that does not distinguish the crescent's inner arm from the rest of the
+cluster is spending disruption across 48 maps to fix 3.
+
+**A FIFTH attempt, and a CORRECTION to my own reasoning above.** Having found that the stranded
+houses sit at `out` -50..-147 while served houses sit at `out` >= +32, I filtered those seats out of
+`front_row`. Cohort: 43/48, the same five seeds. Then I measured what I should have measured first:
+**90 of 128 front-row seats offered on seed 8 are at out < 0.** The split I had treated as a signal
+has a base rate of 70% - I compared the stranded houses against the SERVED ones and never asked what
+fraction of all offered seats look like that. The inference was unsound and the number is not evidence
+of anything on its own. (What the filter does do is work: with it, front_row offers 0 of 97 negative
+seats and all 11 households still place - so this is a wrong conclusion, not a broken edit.)
+
+What the fifth attempt DID establish is worth more than what it disproved: with those seats removed
+from `front_row`, the same households are seated in the same region by the CLOUD pass, and the same
+three seeds fail with houses at the same distances. **So no seat GENERATOR is the culprit.** The seat
+BAND itself extends over ground the way network cannot serve, and every generator that draws from the
+band inherits it. That is why five attempts aimed at spacing, at the slide, and at one generator have
+each moved exactly nothing.
+
+**RETRACTED A SECOND TIME, AND THIS ONE INVALIDATES THE WHOLE ENTRY BELOW: THERE IS PLENTY OF ROOM.**
+The "1.4-1.9 ft corridor" measurement that this entry is built on, and that justified all six fix
+attempts, is an artifact of how I measured it. I walked outward from each house CENTER and took the
+clearance to ALL fabric - which includes the steading's OWN house, yard and garden. Every farmhouse on
+every map is surrounded by its own bundle by construction, so that measurement returns a ~1.5 ft pinch
+for a house standing alone in an empty field. It says nothing about whether a way can reach it.
+
+Re-measured with the steading's own bundle excluded, which is what the straggler pass itself does:
+
+| house | corridor, all fabric | corridor, own bundle excluded |
+|---|---|---|
+| seed 5 (1262, 848) | 1.4 ft | **119.6 ft** |
+| seed 5 (1130, 839) | 1.7 ft | **68.1 ft** |
+| seed 8 (1612, 646) | 1.9 ft | **63.5 ft** |
+| seed 8 (1584, 742) | 1.8 ft | **69.7 ft** |
+
+A footpath needs about 11. **So the ground is wide open and this is not a packing defect at all** - which
+is why every spacing lever moved nothing, and the six null results should have made me re-examine the
+premise long before I re-examined the levers. The failure is in the footpath logic, and it is a bug
+rather than a physical impossibility: 60-120 ft of clear ground and the pass still leaves the house
+unserved.
+
+**TWO MORE ATTEMPTS AND WHAT THEY ESTABLISHED** (2026-08-19, attempts seven and eight, both reverted):
+
+- **A seat-time reachability test, straight-line form** - refuse a seat whose line back to the
+  cluster's middle crosses crop. **42/48**, adding a `bridges_span_their_water` and a `field_ringed`
+  failure while fixing none of the three seeds. The proxy is wrong in an instructive way: the line from
+  a seat to the cluster's middle can miss the paddy entirely while every route to a WAY still crosses
+  it.
+- **The same test done properly** - one flood fill per map over a 24 ft grid, marking the dry ground
+  walkable from the cluster's middle, then refusing seats outside it. **43/48**, and it did not exclude
+  a single stranded house. **That is the load-bearing result: those houses ARE inside the walkable dry
+  region.** They are not cut off and they are not sealed in. The way network simply never extends round
+  to their margin, and the footpath router's search box never spans the detour that would reach them.
+
+So the defect is not the packer, not the seat generators, not the seat band, and not the ground. It is
+that no way is ever DRAWN on the far margin, and nothing searches far enough to connect one.
+(`_route` also cannot be brute-forced into finding it: it caps its lattice at 90,000 cells, so a
+search box wide enough to go round a field returns empty by construction rather than by geometry -
+worth knowing before anyone tries simply enlarging `pad_mult`.)
+
+**THE ROUTER CANNOT ANSWER THIS QUESTION AT ALL, and that is a design constraint on the fix rather
+than a fact about the ground.** I tried to settle "is there a lane-width corridor round the field?" by
+running `_route` at every combination of resolution and box size. Every one returns none - and the two
+ends fail for OPPOSITE reasons, which is what makes the tool unusable here rather than the answer no:
+
+- **Fine cells cannot span the detour.** `_route` caps its lattice at 90,000 cells, so a box wide
+  enough to reach round a field returns empty by construction. pad_mult 8 and 20 are refused before
+  any geometry is examined.
+- **Coarse cells cannot fit the gap.** The planning clearance is `gap + cell * 0.71`, so a 40 ft cell
+  demands a **64 ft corridor** for a footpath that needs 11. At that size it would refuse a village
+  street.
+
+There is no setting where both hold, so the router can neither confirm nor deny a way round. (The
+flood fill says the dry GROUND is connected; the router says nothing, because it also counts fabric
+and cannot be run at a scale where its own clearance is honest.)
+
+**So the fix may not ask the router where the way goes.** A shape-aware skeleton has to PLACE the way
+from the geometry it already has - the field margin, which `_margin_frame` already follows all the way
+round - and then let clipping decide what survives, exactly as `stage_ways` does for the skeleton
+today. Any design that says "search for a route to the stranded house" runs into the wall above.
+
+**The candidate that fits every measurement**, ledgered jointly with the hamlets session: make the LANE
+SKELETON shape-aware, so that a cluster wrapping a field gets a way on the margin it wraps onto,
+instead of a skeleton laid independently of the band. It is the first idea in eight attempts that
+addresses the geometry rather than a symptom.
+
+**Where a session should start**, given the straggler pass produces 391-1,572 candidate runs per house
+that all meet the network at 0 ft and are all perfectly direct at 1.00, while the best of them comes no
+closer than 132-210 ft to the house it was drawn for: the runs are being CLIPPED at the house end.
+`clear_runs` clips the drawn tread against `others`, which includes the steading's OWN yard and garden,
+while the door search and the router use `passable`, which excludes them. That asymmetry is deliberate
+and documented - the yard is private ground the household crosses on foot - but it means the tread can
+only begin outside the steading's own bundle, and something is pushing that start far further out than
+a yard's width. Measure where the surviving run actually starts and what clipped the stretch before it.
+
+**Everything below this line was written under the wrong premise.** It is kept because the six attempts
+and their numbers are still true as records of what does NOT change these maps, and because the
+reasoning error is the most useful thing in the entry: I measured a quantity that could not distinguish
+a sealed block from an ordinary farmstead, and then built six experiments on it.
+
+**What it IS.** The homestead packer's only inter-bundle rule is that two bundle bboxes must not
+overlap, with two PIXELS of tolerance (`_bundle_side_fits`, the closing `all(...)`). So a run of
+steadings packs into a solid mass. Measured on the stranded houses: the widest escape corridor across
+**all 72 bearings** pinches to **1.4-1.9 ft**, and the straight line to the nearest way pinches to
+**0.1-1.1 ft**. A footpath needs about 11 (two `FOOTPATH_FABRIC_GAP` clearances plus its tread). These
+houses are not far from a way by accident of layout: **no way can be drawn to them at all**, which is
+exactly why the straggler pass generates thousands of impeccable runs that are all in the wrong place.
+There IS clear ground 10 ft from each front door - it simply goes nowhere.
+
+**The alternative already priced and DECLINED: a uniform minimum gap between steadings.** The obvious
+fix is to make the packer keep `n` feet between neighboring bundles' solid parts (groves excluded, so
+they still merge into one windbreak, and a footpath crosses grove and commons freely anyway). It was
+built, opted into by the scripted tier the way `sun_corridor` is, and measured on the full cohort:
+
+| | passes | reach | windbreak | other |
+|---|---|---|---|---|
+| baseline (no gap) | **43/48** | 3 | 1 | harvest 1 |
+| 18 ft gap (`MIN_WEB_GAP`) | **37/48** | **3 - the same three seeds** | 5 | harvest 1, bridges 1, lane-ends 1 |
+
+It fixed **nothing** and cost **six** new failures. A 12 ft gap was measured too and is no better
+(seed-level 1/3/2 against a 2/2/2 baseline, which is rotation, not improvement - the rule re-packs the
+map, so the houses are not the same houses and only the cohort rate means anything). The lesson is
+that inflating every gap uniformly does not put a way where one is needed: it loosens the whole
+cluster, moves the pinch somewhere else, and breaks the belt and the bridges on the way past.
+
+**THE OBVIOUS SKETCH IS ALREADY MEASURED AND ALREADY FAILED - read this before proposing it again.**
+The natural fix is "reserve corridors across the cluster before the homesteads pack, and let the
+packer treat them as keep-clear the way it treats a paddy". That is feature 123's FIRST attempt, and
+`stage_web`'s own docstring carries the numbers: given a normal corridor it pushed the houses outward
+and the four hamlets' long axes grew **51%, 58%, 15% and 97%** - sprawl no check measures - and given
+a narrow one **the houses collided with it instead**. The web was moved to run AFTER the houses for
+exactly this reason. I wrote the reservation sketch into this entry on 2026-08-18 without having read
+that docstring, and it is wrong; it is corrected here rather than deleted, because a plausible fix
+that has already been measured as failing is precisely the thing a later session will otherwise spend
+a day rediscovering.
+
+It also carries the better ARGUMENT against reservation, which is not a measurement at all: an alley
+in these settlements *is* the residual gap between two plots - "colonized as semi private space by the
+adjoining house" - rather than a corridor set aside in advance. A generator that reserves its lanes
+first is drawing a planned town, not a grown hamlet.
+
+**A THIRD attempt, measured 2026-08-19: the same gap as a SLIDE LIMIT rather than a verdict.** The
+mechanism is `_slide_nuc`, which shoves each bundle at its nearest neighbor in 2 ft steps until the
+bbox rule bites - so the fix that refuses nothing is to stop that slide short of sealing a block,
+leaving the bundle at the last position that was already legal. It looked strictly safer than the hard
+constraint, because it cannot cost a seat. **Cohort: 42/48 against the 43/48 baseline** - it fixed none
+of the three reach seeds and added a `village_windbreak_is_continuous` failure on seed 4. Reverted.
+
+**A FOURTH attempt, aimed by the crescent finding: the same slide limit confined to the INNER ARM.**
+This is the one the evidence pointed at - every stranded house sits at out -50..-147, so the limit was
+applied only on that side of the seat band, leaving the other 45 maps untouched. **Cohort: 43/48, the
+same five seeds as the baseline.** The confinement did its job - the map-wide version's seed-4
+windbreak casualty is gone, so it costs nothing - and it still fixed nothing.
+
+That is four independent spacing attempts (hard 18 ft: 37/48; hard 12 ft: no gain; slide limit 12 ft:
+42/48; inner-arm slide limit 12 ft: 43/48 and neutral), none of which moved a single one of the three
+failing seeds. The conclusion is stronger than
+"the uniform gap is the wrong number": **spacing is the wrong LEVER entirely.** Whatever seals those
+blocks is not a shove-until-collision that a smaller shove would prevent - the fourth attempt stopped
+the shove precisely where the defect lives and the same three houses came out unreachable, which means
+they were never packed tight BY THE SLIDE. Something seats them there in the first place, and the next
+session should start at the seed positions the nucleated placer offers on a crescent's inner arm
+(`front_row` / `_place_bundle_nucleated`'s offset search), not at the compaction that follows.
+
+**So the candidate that remains is a POST-PACK repair, not a pre-pack reservation**: pack as now, then
+detect a block whose interior has no walkable corridor (the 1.4-1.9 ft pinch measured above is a
+cheap, decisive test) and RE-SEAT the two or three steadings whose shift opens one, rather than
+inflating every gap on the map. That keeps the compactness the current order buys, spends the
+disruption only where a block is genuinely sealed, and leaves the alley as residual ground everywhere
+else. Unmeasured, and it is a placement-engine change, which is what makes this a feature rather than
+a fix.
+
+**One number worth having before that work starts**: how wide is a real one of these alleys? Ours
+needs about 11 ft for a footpath (two `FOOTPATH_FABRIC_GAP` clearances plus a 3 ft tread) and about
+20 ft for a web lane, while the vernacular record describes lanes a person wide. If the true figure is
+nearer 4-6 ft than 11, part of this defect is our own clearances rather than the packing, and that is
+a research question with a cheap answer.
+
+**Cost estimate**: a new pre-homestead stage, a keep-clear registry entry, the `STAGES` tuple, a
+re-roll of the four live hamlets and a full cohort sweep, plus one `settlement-review` per pool map.
+Its own spec-kit feature.
+
+## 2c. The way-repair passes want ONE design, not three passes patching each other - DEFERRED
+(2026-08-19, feature 125, from two `settlement-review` passes on Sawada and Kashikawa. Deferred under
+Principle XIV's architectural exception; four fixes were BUILT and MEASURED here before deferring, and
+every one is recorded below with what it cost, because each looked obviously right going in.)
+
+**The four defects the reviews found**, none of which a green gate can see:
+
+1. **A hole at a CORNER is invisible to `lanes_do_not_break_mid_run`.** The rule requires BOTH ends to
+   aim at each other, so it catches a straight street with a hole and misses an L with one. Kashikawa:
+   lane 7 arrives at -67.3 deg facing the other cap dead on (-67.4) while lane 6 leaves at +15 deg
+   because it is turning. That 28.1 ft of bare grass is the ONLY thing joining three farmhouses to the
+   connector's component - drop the join tolerance and the map is two networks with houses at 267, 161
+   and 116 ft from the real one.
+2. **The same break gets repaired twice, around a needle of grass.** `_join_orphan_ways` links two
+   components, then `_bridge_collinear_breaks` closes the same break with the straight span the street
+   wants. Sawada ships both: a triangle 110 ft long, 37.7 ft at its widest, ~2,072 sq ft, converging on
+   the cluster's main junction, reading as a street that forks and rejoins around nothing.
+3. **A 4 ft fragment ships on a map whose own constant names it as fixed.** `_WEB_MIN_FT`'s `earns`
+   escape hatch is order-dependent by construction - it asks whether a run brings a house inside reach
+   GIVEN THE NETWORK AT THAT MOMENT - and nothing re-asks once later passes make it redundant.
+4. **A dead band from 0 to 40 ft that neither half owns.** The generator calls anything within
+   `_LANE_JOIN_FT` (30) joined; the check ignores anything under `_LANE_JOIN` (40); the ink joins at 0.
+   Sawada's west alley ships as THREE pieces with holes of 29.2 and 16.7 ft across clear grass. All
+   four of that map's gaps measure 16.7 / 28.0 / 29.2 / 29.6 - every one just under the generator's
+   threshold, which is a consumed tolerance rather than a coincidence.
+
+**What was built, measured, and REVERTED** - the useful half of this entry:
+
+| attempt | what happened |
+|---|---|
+| Extract the `WEB_SHADOW_FT` anti-doubling test and make the bridge pass obey it (defect 2) | Refuses the bridge - but the thing shadowing it IS the redundant link, so the 110 ft hole simply stayed open. Traded a cosmetic defect for a structural one. |
+| Lower the repair floor to `_WAY_HOLE_FT` = 12 ft (defect 4) | Correct in itself and kept in the sketch below, but on its own it closes nothing: the gaps it newly admits are corner gaps, which the both-ends aim test still rejects. |
+| Relax the aim test to "either end aims" (defect 1) | Gives the rule real teeth - it immediately fired on genuine holes in Sawada and Kashikawa - and needs a companion guard, because two ways that already TOUCH then read as a long aiming gap that the touching span itself fills. With the guard it is right, and the generator still could not close what it now reports. |
+| Two cleanup sweeps: drop doubled ways, drop unearned debris (defects 2 and 3) | **Regressed both maps.** The guards asked "is every house still near a lane" while the gate asks "near the CONNECTED network", so the sweep deleted the way joining a sub-network: Kashikawa 0 -> 6 unreached houses, worst 516 ft. Matching the gate's own 40 ft join tolerance fixed that specific hole and the maps still failed. |
+
+Everything above is reverted; the pool is back to four green maps. The reason it is deferred rather
+than pushed through is what the table shows: each fix is individually sound and they interact, because
+three passes (`_join_orphan_ways`, `_bridge_collinear_breaks`, `_serve_stragglers`) each repair the map
+against a model of it that the other two invalidate, and a cleanup afterwards cannot reconstruct which
+way was the detour.
+
+**The sketch.** One repair stage that plans against a single model instead of three passes patching each
+other: build the way graph once (nodes = ends and junctions, edges = drawn treads, joined at ONE declared
+tolerance shared with the gate); ask it what is actually broken - components that should be one, holes
+whose corridor is walkable, runs no house depends on; then emit a repair SET, choosing per break the
+straight span over the detour BEFORE either is drawn, rather than drawing both and trying to tell them
+apart afterwards. The check relaxation (either-end aims, plus the already-touching guard) lands with it,
+because rule and repair have to agree on what a hole is.
+
+**Cost estimate**: a rewrite of the three repair passes into one graph-based stage, its tests, a pool
+re-roll, a cohort sweep and one `settlement-review` per map. Its own spec-kit feature.
+
+**Also found by these reviews and NOT part of the above** (smaller, independent, worth their own fixes):
+`M["lane"]` holds the LAST lane drawn rather than the village street, and five consumers read it as the
+street - two gate checks are adjudicating grove shading and structure-vs-street against a 45 ft orphan on
+Sawada, so they run, pass, and test the wrong geometry; a skeleton arm overruns its last steading by 85 ft
+because `_trim_to_service` only runs on web lanes; and `plot_regularity` is recorded in `meta` as though
+rolled while `water.py` passes the literal `"organic"`, so it can never vary.
+
+## 2d. "How far past its last steading may a way run?" - a RESEARCH question, not a bug
+(2026-08-19, from the same two reviews. Recorded here rather than fixed because the ladder in
+constitution Principle XII puts research BEFORE a number, and this is a calibration with no obviously
+correct value - unlike `M["lane"]`, which was a plain correctness bug and was fixed in the same pass.)
+
+**The measurement.** `trim_lane_stubs` pulls back any internal lane end that reaches nothing, where
+"reaching" a farmhouse means within `house_reach = 90 ft` OF ITS CENTER. Two arms survive that test
+and still read as blunt treads dying in grass:
+
+- Sawada `lanes[2]`, NW terminus (1335.0, 2077.3): the main street stops **85 ft past its last
+  steading** (house center 1417, 2054) and ~30 ft short of the paddy bund it is aimed at, 103 ft from
+  any other way.
+- Kashikawa `lanes[2]`, end (2346.6, 2569.8): **81.7 ft from the house center but 55 ft from its
+  wall**, and lying 75.7 ft to one side of that house, level with its threshing yard rather than
+  facing the dooryard. Nearest other way 119 ft.
+
+**Why it is not a one-line fix.** The obvious move - measure to the drawn CORNERS the way feature 121
+made `houses_clear_of_lanes` do - pushes the wrong way on its own: the wall is nearer than the center,
+so at an unchanged 90 ft MORE ends would count as serving and FEWER would be trimmed. Fixing this
+means measuring to the footprint AND re-deriving the threshold, i.e. answering "how far beyond the
+last house does a village lane actually run before it becomes a field track?" That is a question about
+how these places were built, so it gets a research pass first, and if the record supports two forms
+(a lane that stops at the last dooryard, and one that runs on to the field edge) it becomes a KNOB
+rolled per settlement rather than a number someone picked.
+
+Note the gate already carries this mechanism in a comment beside `_BREAK_GAP_FT` - "an end 83 ft from
+a house CENTRE counts as fronting it, even when that is 55 ft from the wall, i.e. out past the
+dooryard". Kashikawa is that comment realized in ink. The comment predicted the defect and nothing
+acted on it, which is its own small lesson.
+
+## 2e. `plot_regularity` is recorded as though rolled and is a literal
+(2026-08-19, from the Kashikawa review.) `meta.plot_regularity` reads like a rolled knob and the comb
+path passes the literal `"organic"` (`hamletgen/water.py`), so it can never vary. Alongside it, all
+four scripted hamlets record `plot_size: medium` (a 2-in-4 weight, so 4/4 is about a 6% draw),
+`field_archetype: valley_paddy` (documented - polder is opt-in) and `cluster_seeding: frontage`
+(derived, not rolled). None of that is wrong; what is wrong is that a reader meets four `meta` lines
+that look like evidence of variance the pool is not actually spending. Under the two-supportable-forms
+rule these are candidate knobs - regular versus irregular plot layout is exactly the kind of thing the
+record may well attest both ways - so the fix is a research pass per field, not a quiet default. Until
+then, do not read those `meta` lines as proof the maps differ along those axes.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any
@@ -408,21 +764,78 @@ each is here with the number that establishes it, per Principle XIV's deferral b
   on that sheet are 27.4 / 27.6 / 30.4 deg on basins of 0.55-0.72 cell. A minimum tip angle of
   ~25-30 deg would catch the family without re-imposing the grid the four-sides rule was declined
   for. **Not** the declined rule - a 5-sided basin with an 8 ft shortest side is fine.
-- **The woodland commons sit on an exact lattice.** Mizuguchi's three parcels are identical 250 x 250
-  ft squares at (456,967), (726,697), (996,427) - offsets of exactly (+270,-270) each - so they read
-  as three stamps of one wood marching up a ruled diagonal. `open_ground_patches` scans a uniform
-  lattice with a monotone score and a mutual-separation term, which produces an equal-step chain by
-  construction. The fourth parcel, off the ladder, reads fine and is the control. **Fix sketch**:
-  jitter the accepted seat off the lattice by up to half a step from the map's own seed, and roll
-  `size` per parcel instead of stepping a shared ladder.
-- **Sawada lost a woodland parcel this roll**, 2 -> 1: a 200 ft, 54-crown stand at (230, 3040) did
-  not re-seat, leaving one 125 ft, 15-crown parcel as the map's only wood. The view narrowed and
-  `dry_plots` went 25 -> 26, so the shrink ladder or the frame/marsh keep-out is the likely refuser.
-- **`byre_form` should be a KNOB, not a fixed behavior** (Principle XII's two-supportable-answers
-  rule). Both forms are attested - the ox under the farmhouse roof in the wealthier
-  magariya/sanheyuan pattern, and a detached shed on common ground where a team is shared - and the
-  current behavior is only the second. Rolling between `courtyard` and `detached_commons` per
-  settlement would also be one of the cheapest visible differences between two same-region hamlets.
+- **DONE 2026-08-18: the woodland commons sat on an exact lattice - and two hamlets had no woodland
+  at all.** Ledgered as two items; one measurement pass showed they were one defect wearing two
+  faces, plus a second, worse one underneath.
+
+  *The lattice.* Mizuguchi's three parcels were identical 250 x 250 ft squares at (456,967),
+  (726,697), (996,427) - offsets of exactly (+270,-270) each - reading as three stamps of one wood
+  marching up a ruled diagonal; Inashiro had the same chain at (+270,+270). Not a tendency but a
+  construction: `open_ground_patches` samples a uniform 90 px lattice, scores every seat by ONE
+  monotone function (near the cluster, leaning upslope) and takes the best remaining seat outside a
+  FIXED separation radius, so each pick lands just past the previous one's exclusion circle in the
+  direction the score rises. Fixed as sketched - the accepted seat is nudged up to half a step off
+  the lattice and the parcel's size rolled +/-15%, both from `_hjit` (positional, so a map is
+  unchanged by regeneration and two maps differ from each other), and every nudge is re-asked
+  through the qualification predicate, so it can only move a legal seat to another legal seat.
+
+  *The size roll must vary BOTH ways.* First cut rolled `1.0 - 0.2*hjit` - shrink only - which
+  compounded with the existing shrink ladder and produced a 116 ft "commons" on Mizuguchi, a copse
+  rather than a commons. `0.85 + 0.3*hjit` instead; growth is safe because the predicate re-asks.
+
+  *What was underneath.* Kashikawa - the map NAMED 樫川, "oak river" - shipped **zero** woodland
+  parcels, and had at HEAD too; Sawada one. Census over the scan lattice, every rung of the shrink
+  ladder and both set-back profiles: Kashikawa **0 qualifying seats out of 231-286**, Sawada 1, with
+  the crop clause alone refusing 93-97% and the best achievable clearance NEGATIVE (the square
+  overlapped a paddy). So neither the shrink ladder nor the set-back relaxation - both added FOR
+  Kashikawa, in two separate rounds - could ever have worked: the binding constraint was never the
+  set-back. Two hypotheses tested and killed before the right one: that the scan's `crops` list
+  reading `plan.envelope` diverged from the check's paddy outlines (it does not - seat counts match
+  exactly, 16/16, 29/29, 35/35, 47/47 on Mizuguchi), and that the frame should give (it may not -
+  `crop_to_content`'s docstring carries the GM's ruling that the frame stays tight to real content
+  and commons clip like the marsh).
+
+  The actual divergence: **the scan mirrored the check's formula but not its WINDOW.**
+  `woodland_commons_within_the_frame` asks for 70% of the parcel's bbox inside the view and says in
+  as many words that a parcel clipping at the edge "reads as 'more wood that way' and is fine"; the
+  scan demanded the whole square inside the kept window plus a further 16 px. Being stricter than
+  your own gate is not the safe direction - it cost two of four hamlets their woodland. The seat is
+  now judged by AREA the way the check judges it (center may sit 0.6*half outside, exact bbox
+  fraction >= 0.8 - the check's 0.7 plus slack, since this window is a PREDICTION of the crop). The
+  exact fraction, not a per-axis box: two 0.4*half overhangs pass a box test at 0.64 inside and ship
+  a check failure. **Kashikawa 0 -> 2 parcels, Sawada 1 -> 1** (Sawada's ground is genuinely that
+  tight; its earlier 2 -> 1 loss is closed as "the land is committed", not re-opened), Inashiro and
+  Mizuguchi 4 -> 4 at varied sizes and off the lattice. All four maps gate green.
+- **DONE 2026-08-18: `byre_form` is a KNOB** (Principle XII's two-supportable-answers rule). Both
+  forms are attested - the ox under the farmhouse roof in the wealthier magariya (曲家) /
+  sanheyuan pattern, and a detached shed on common ground where a team is shared - and the engine
+  had only the second, silently and everywhere. Registered in `_knobs.py` and rolled per settlement
+  from the map's own seed; `draft_byres` branches on it. `courtyard` follows the WEALTH (owners
+  straight down the wealth ranking, no minimax spread, no inter-byre separation, the spiral held to
+  the owner's own yard); `detached_commons` follows the SHARING and is byte-identical to the old
+  behavior, which is why it stays the default. Rolled results: Sawada `courtyard` (byres a tight
+  50-51 ft from their owner), Inashiro and Kashikawa `detached_commons` (53-102 ft, unchanged) - a
+  visible difference between two same-region hamlets, which is the point.
+
+  **A second defect was found doing it and is fixed in the same work** (Principle XIV). The overlap
+  registry's entry for `byres` read *"a draft-ox byre is an ANNEX abutting its own farmhouse
+  (draft_byres places it against the wall)"* - a description of code that had not existed for a long
+  time, since the placer spirals a DETACHED shed out past the homestead and spreads the set by
+  minimax across the cluster. Nothing noticed because nothing measured it, and the stale comment is
+  very likely why the form was never questioned in the first place. The entry now states the
+  property that holds under EITHER form, and the form-specific geometry is gated rather than
+  asserted in prose.
+
+  Gated by `_seg_0609__byres_stand_in_their_declared_form`, two checks: `byre_form_declared` (a map
+  that draws byres and names no form leaves the geometry half permanently skipped - the
+  `if meta.get(...)` failure mode) and `courtyard_byres_annex_their_homestead`. The span the check
+  measures is `courtyard_annex_span`, the SAME expression the placer's spiral uses, exported from
+  `byres.py` so the two cannot drift. Teeth proven by sabotage rather than by coverage: the
+  declaration stripped FIRES, a byre dragged 260 ft off FIRES (124 ft against a ~44 ft span), a 25 ft
+  nudge correctly does NOT. Both frozen into `pool/regressions/`. `detached_commons` deliberately has
+  no geometry check - "the shed is on the shared ground" is not a claim about any one homestead, so
+  mislabeling a courtyard map as detached passes, and that is recorded at the check rather than left
+  to be discovered.
 
 ### RESOLVED 2026-08-18 (was BLOCKING): cohort seed 5's drain, and the well tie-break's cost
 
@@ -434,14 +847,35 @@ defect was found while chasing it and IS fixed: the obliqueness ceiling was meas
 ditch's HEAD width, meaningless on a collector that starts as a thread and earns its section at the
 outfall; it now measures against `max(w, w_tail)`, the same section `worth_planking` uses.
 
-**Still open from the same round**: the well tie-break prices crop extent against the worst-served
-walk at 1:1 px, and on Sawada that traded a well from a seat with 11 households within 300 ft to one
-with 5, taking the worst walk 364 -> 493 ft. Inashiro shows the same shape (median walk 159 -> 194
-ft, both wells ~100 ft from any door). The idiom 井戸端会議 - "well-side conference" - says a
-communal well is a dooryard social node, so the direction is wrong even though the rule is right in
-principle; the likely cause is that the final tie-break is distance to the cluster CENTROID, which on
-a two-lobed cluster prefers the empty middle. **Fix sketch**: break the tie on distance to the
-nearest house instead of to the centroid.
+**DONE 2026-08-18, and the ledgered MEASUREMENT was wrong** - worth more than the fix. The entry
+read: the tie-break traded a Sawada well from a seat with 11 households within 300 ft to one with 5,
+worst walk 364 -> 493 ft, with the same shape on Inashiro. Both numbers counted **every** house.
+`place_wells`'s objective deliberately does not: `settlement_dwellings_watered` treats a house within
+~760 ft of a stream, channel or pond as watered, so those houses drop out of the minimax (the
+GM-settled "no redundant well beside a living stream"), and the comment directly above the objective
+warns in as many words against the objective and the check reading two definitions of "needs a well".
+Re-measured with the check's own predicate: Sawada's 493 ft house is **308 ft from the stream**, 13
+of its 19 houses are surface-watered, and the worst walk among houses that actually need a well is
+**122 ft**. Inashiro the same shape - 430 ft house, 304 ft from water, worst NEEDY walk 180 ft. There
+was no coverage defect on either map. Filed as a lesson: a metric that ignores a documented exclusion
+will manufacture a defect, and this one survived a review round and a ledger entry before anyone
+re-derived it.
+
+The tie-break WAS nonetheless mis-ordered, and the sketch was also wrong. Distance to the cluster
+CENTROID is a poor last key - on a two-lobed cluster the centroid is the empty ground between the
+lobes, so it prefers the gap - but replacing it with distance to the nearest house (the sketch) is
+the same mistake inverted: minimized by hugging one outlying farmhouse. Measured, that swap improved
+Kashikawa (worst 386 -> 304 ft) and **worsened Mizuguchi** (203 -> 234 ft), which is a regression on
+a shipped map, and left Sawada byte-identical - the tie-break was never what decided Sawada's wells.
+
+The real arbitrariness was upstream: the primary key buckets `_worst_after + _extent_added` into 66 px
+steps so the frame term can outrank small coverage differences, and INSIDE a bucket the ordering was
+whatever the last key said. So the third key is now `_worst_after` itself - the actual objective, at
+full resolution - with the neighborhood measure (distance to the `want_near`-th nearest house, the
+rung's own "is this in a neighborhood" test) only breaking exact ties. The bucket keeps doing its job;
+it simply no longer hands the choice inside it to a proxy. Measured across the four hamlets:
+Kashikawa worst 386 -> 304 ft, Inashiro mean 212 -> 210 ft, Mizuguchi and Sawada byte-identical to
+HEAD. **No map worse on any of the three metrics.**
 
 ### DONE 2026-08-17: `_outside_cloud` now tests the CROP's box, not a box of house centers
 
@@ -1171,6 +1605,136 @@ and `lanes_reach_something`'s house threshold stops being a number nobody has ju
 
 </details>
 
+## OPEN, from the 2026-08-18 settlement-review round (four maps, four independent agents)
+
+The round is worth its own heading because of what it caught: **every defect below and every one
+fixed that day was invisible to a green gate and a 48-seed cohort at baseline.** The worst of them -
+the `courtyard` byre form seating nothing at all on Mizuguchi, 3 byres -> 0 - passed 189 checks, all
+48 seeds, AND a check written in the same commit specifically to catch it, because that check was
+guarded on `M.get("byres")` and an empty list skipped it. Four reviewers found it independently.
+Fixed items are recorded at their point of change; these are the ones deliberately NOT fixed.
+
+### A. Every woodland commons is an axis-aligned SQUARE - 12 of 12 across the four hamlets
+
+`rot: 0`, `w == h`, on every parcel the engine has ever drawn (Inashiro 254/232/258/149, Mizuguchi
+219/242/265/288, Kashikawa 117/125, Sawada 136). The 2026-08-18 work fixed WHERE they sit and HOW BIG
+they are; the SHAPE is untouched, and the reviewer's point is that the chain was the artifact a
+MANIFEST reader saw while the square is the one a SHEET reader sees - the crown scatter only partly
+disguises it, and a parcel's top and left edges read as ruled lines at fit zoom.
+
+**THE DEFERRAL GOT COSTLIER, not cheaper** (round-2 review, Inashiro): four IDENTICAL squares read as
+one repeated stamp, but four DIFFERENTLY-SIZED perfect squares read as a lattice with a size knob
+bolted on - because the varying dimension proves the constant one was a choice. The size-variance
+work made the shape more conspicuous, so this should be picked up sooner rather than later.
+
+**Why deferred**: this is a new generative dimension, not a tuning change - `open_ground_patches`
+builds an axis-aligned quad by construction and every keep-out test downstream assumes that box.
+**Research first, and it looks decisive**: *iriai* boundaries were customary and described by ridge,
+stream and path, and satoyama coppice sits on the slope break above the paddy - so "no fixed shape"
+is very likely the answer, which per Principle XII makes this a KNOB (roll an aspect ratio and a
+bearing per parcel) rather than a number. **Sketch**: roll `aspect` in ~1.0-2.2 and `bearing` off the
+fall line per parcel from `_hjit`; emit the rotated quad; `_ok` already tests a center plus a half
+extent, so give it the rotated half-extents. Do NOT square-to-rectangle uniformly - the point is that
+two hamlets differ.
+
+### B. Kashikawa's woodland sits DOWNSLOPE, against doctrine stated in three places
+
+Measured against the cluster centroid with the map's own fall vector: parcel 1 is 505 ft downslope,
+parcel 2 is 887 ft downslope and stands 75 ft from the reed marsh. `settlements/vegetation.md` says
+woodland goes "on the higher / farther ground", `research/fields.md` says "satoyama crowns the hills
+above", and `hinterland.py`'s own comment says "the back slope behind the houses". The scorer is
+`-hypot(dist_to_cluster) + 0.35 * upslope`, so a 90 px step toward the cluster outbids 257 px of
+height and the upslope term never binds.
+
+**Why this needs a RULING and not a tweak**: raising the weight until it binds returns Kashikawa to
+ZERO parcels - its only in-frame upslope ground is a shallow SW triangle already taken by the
+connector lane, the SW homesteads and the belt rect - which is the exact defect closed this morning.
+The two honest options are (a) raise the weight AND add an explicit, commented "no upslope seat
+qualified, taking the best cross-slope seat" fallback so the downslope outcome is a recorded decision
+rather than an accident, or (b) keep the scorer and correct the prose, including this map's own kanji
+paragraph, which currently claims the sheet draws the high-ground oaks. **Both files must not go on
+saying opposite things.**
+
+### C. `surface_water_dist` reads `channels`, but a comb map's watercourses live in `drawn_channels`
+
+The predicate behind the well objective's exclusion set reads `M["channels"] + M["streams"]`. On
+Sawada `channels` holds ONE 160 ft intake stub while the 13 real watercourses are in
+`drawn_channels`; every house is within 63-361 ft of one of those. So which houses count as "needing
+a well" is decided by **which manifest container a watercourse happens to be recorded in**, not by
+what kind of water it is. If `drawn_channels` counted, 19 of 19 Sawada houses would be watered and
+the objective would have no clients at all.
+
+**The exclusion is probably RIGHT and the mechanism is definitely wrong.** Research points to a real
+distinction - domestic water from a well or spring, ditch water for washing at a dedicated *kawado*
+stand - which would make excluding irrigation ditches correct. But then the intake stub should be
+excluded too, and the reason should be written down instead of being an accident of manifest shape.
+**Sketch**: decide the predicate on the water's KIND, not its container; document the ruling at
+`surface_water_dist`; expect the needy set to grow on comb maps and re-measure the cohort.
+
+### D. DONE / HANDED OVER 2026-08-18 - the two lane-topology defects
+
+Both were re-measured after the peer session's lane-web feature merged, and both moved:
+
+- **Kashikawa's 223 ft duplicate lane is GONE**, verified by the round-2 review. The peer's
+  `trim_lane_stubs` pulled lane 1 back from 354 ft to 146 ft, and lane 2 now starts 16.3 ft along
+  lane 1's own centerline with 0.3 ft of perpendicular offset - one continuous ~377 ft way with a
+  small overlap at the joint, not two parallel ways. A pairwise shadow test over all 10 lanes found
+  no remaining pair above 35% except short cross-links meeting their parent at 69-85 degrees, which
+  read as links. Nothing to fix.
+- **Sawada's 110 ft spine hole is CLOSED, and what replaced it is milder but still wrong.** Lane 2's
+  end is now the exact start of web lane 6, which runs 104 ft to a point lying ON lane 4, whose far
+  end passes 1.29 ft from lane 0's start - genuinely connected. But travelling the spine you arrive
+  at 46.7 deg, turn ~90 deg back up at -43 deg for 40 ft of alley, then leave at 25.4 deg, with a
+  33 ft stub off the apex: it draws as an arrowhead, not the `Y` the manifest declares. **Owned by
+  the peer session** (`ways.py` / `water_ways.py` are theirs, and their check 0612
+  `lanes_do_not_break_mid_run` is red-first against the pre-fix version of exactly this). Re-scoped
+  for them as: a skeleton arm may not be joined to another by a right-angle jog through a web alley.
+
+Keeping the entry rather than deleting it, because the OLD numbers were quoted to the peer and to a
+reviewer, and a future session searching for "the 110 ft hole" needs to find that it is closed.
+
+### E. RE-DESCRIBED 2026-08-18 - belt continuity is ungated, and a bare LATITUDE is the wrong measure
+
+The original entry said Mizuguchi (y=1896) and Sawada (y=2321) carry "zero-canopy latitudes". Two
+round-2 reviewers independently showed that framing is wrong, and both did the measurement I did not:
+
+- **A bare latitude is not a hole in a wind wall.** Wind crossing y=1896 still meets canopy north and
+  south of it. Measured the right way - bare COLUMN along the wind axis - Mizuguchi's belt is
+  continuous: 26 ft bare in total, one notch at x 765-791, on 717 ft of belt, inside the pool's own
+  documented baseline. A per-latitude rule would flag that healthy belt.
+- **Sawada's gap is where the road goes.** The notch spans y 2317-2376 at x 1924-2023, and the
+  connector track leaves at (1951,2318) on a 38 deg bearing straight through it. A wind wall with a
+  gate-gap for the cart track is what a real one has. The open question is not the gap; it is that
+  *nothing makes that coincidence stable*.
+- **What IS worth gating, and what the real defect looked like**: Inashiro's belt was measured at 17.1
+  ft minimum canopy after my fix and **4.8 ft** after the peer's lane web landed, with a 45 ft band at
+  y 660-720 down to ONE clump. That is a genuine breach, and no check saw it.
+
+**Sketch, corrected**: `village_windbreak_is_continuous` measuring canopy DEPTH per column ACROSS the
+wind, not coverage per latitude - a latitude rule flags healthy diagonal belts and misses thin
+windows. Gate key **0613** (0612 went to the peer). Red-first against Inashiro's y 660-720 band.
+Claimed by this session, explicitly, after offering it to the peer and being told to take it.
+
+### F. Woodland is stocked like parkland, not like a wood
+
+Sawada's parcel: 19 crowns over 127 x 127 ft = 1 crown per 852 sq ft, against the copse's ~1 per 287.
+`woodland_commons_visibly_stocked` tests `crowns >= 5`, a COUNT, so it cannot see density. A coppice
+is a thicket cut on rotation. **Sketch**: raise stand density inside a woodland parcel and make the
+check area-scaled rather than a flat floor; watch `woodland_clear_of_grove` and
+`structures_clear_of_trees` for fallout.
+
+### G. Two glyph-vocabulary collisions (cosmetic, both flagged twice)
+
+The byre and the notice board are both a small tan box with a dark bar at fit zoom, and there are
+several byres to one board; the board's caption disambiguates it, nothing disambiguates a byre. And
+the windbreak belt and the copse share one crown vocabulary - on Sawada their centroids are 23 ft
+apart and half the copse's clumps touch the belt's, so the manifest declares two features and the
+sheet shows one wood. A planted belt was typically one tall species in a row against mixed broadleaf
+coppice, so the fix is a different crown vocabulary for the belt, which would also make its
+(excellent, 906 x 199 ft, aspect 4.5) form legible.
+
+## OPEN 2026-08-18: paddy bunds still step sideways - the placement half of the GM's report
+
 ## MOSTLY DONE 2026-08-19: paddy bunds that step sideways - the staircase is gone, 7 corners remain
 
 **The report (GM 2026-08-18, on Inashiro).** *"The earthen wall is kind of going in a southward
@@ -1281,3 +1845,96 @@ knob AND make the borrow-coverage term binding within whichever form is rolled.
   is gated); it is a legibility consequence of the grove scatter, and it belongs with the byre-siting
   work above rather than with the groves.
 
+
+## OPEN after the 2026-08-18 round-2 reviews (everything else from that round is FIXED)
+
+Round 2 confirmed five defects and refuted one; all five are fixed at their point of change, and the
+rulings the GM asked me to make are recorded there too. What is left:
+
+### CORRECTED - cohort seed 10's belt hole is a SUN CORRIDOR, not a polygon pinch
+
+**The earlier entry here was wrong about the mechanism and would have sent the next session to the
+wrong file.** It said `belt_polygon`'s near-face sampling pinches. It does not: the band is built as
+a constant-depth ribbon (near face at u+36, far at u+146, so 110 px everywhere), and the clumps in
+the gap were being FILTERED OUT, not left outside a narrow polygon.
+
+**Measured cause.** `village_grove` keeps clumps out of the ~24 px strip SOUTH of every threshing
+yard and garden, so a tree cannot shade the drying ground. On seed 10 a yard sits just north of the
+belt line and its sun corridor runs straight through the wall. Instrumenting the fill and printing
+the rejecting predicate for every grid point in the gap gave `SUN` for almost all of them and
+`corridor` for one. **And the hole matters**: the gap spans across-wind 1739-1779 and there is a
+farmhouse at across-wind 1751 - directly downwind of it. The wall is breached at one of the few
+places it is actually sheltering someone.
+
+**THREE FIXES ATTEMPTED, all recorded so nobody repeats them:**
+
+1. *Widen the re-seat radii* (to `step * 2.2` = 44 px, past the corridor's ~25 px half-width). No
+   change at all - and the reason is attempt 2.
+2. *Fold the three ad-hoc nudge blocks into one predicate pair and let the sun corridor re-seat.*
+   This found a REAL defect and is KEPT: the interior test (`edge_dist > clump`) was written for the
+   lane case - a lane that ends at the belt is an edge, one that crosses it is an obstacle - and was
+   being applied to every local blocker. A belt is 110 px deep and a clump is 28, so it left only
+   the middle 54 px eligible, and every sun-corridor clump measured 2-27 px from a face. **The
+   search was never running.** It is now scoped to lanes.
+3. *With the search actually running*, the gap MOVED (1266 -> 1250) and stayed 40 ft. A yard's sun
+   corridor crosses the belt's whole depth, so filling that across-wind range needs a clump at that
+   y but clear of the corridor in x, and every candidate within reach is blocked by something else.
+
+**What is left, and the honest shape of it**: this is a genuine conflict between two rules, not a
+bug in either. The sun corridor protects a yard's drying sun; the belt protects the houses from
+wind; on this composition they want the same ground. **Sketch**: let a re-seated clump sit slightly
+OUTSIDE the belt polygon - the polygon is our own derived construct, not a property of the world,
+and a real planted belt bulges around an obstacle rather than admitting a hole. That is a change to
+what the belt outline MEANS, so it wants its own pass and its own review, which is why it is here
+rather than in the diff.
+
+Cohort effect of what was kept: 35/48 before and after, so no regression and no seed rescued - the
+value is the disabled-search defect, not this seed.
+
+### The belt and the copse share one crown vocabulary
+
+Sawada's two grove records sit 23 ft apart with half the copse's clumps touching the belt's, so the
+manifest declares two features and the sheet shows one wood. A planted *yashikirin* windbreak was
+typically one tall species in a row against mixed broadleaf coppice, so the honest fix is a
+different crown treatment for the belt - darker, taller, ranked - rather than a separation distance.
+That would also make the belt's form legible: Sawada's measures 906 x 199 ft at aspect 4.5, which is
+a textbook belt that currently does not read as one.
+
+**Why deferred**: it changes how every grove on every map is drawn, at every tier, which is a
+visual-doctrine pass rather than a defect fix. Ledgered with the measurement so it is not rediscovered.
+
+### The grazing commons are a tiling, not a landscape
+
+Every hamlet's `commons` records partition the whole frame remainder into four rectangles plus a
+leftover. Nothing on the sheet is wrong - the scatter reads as continuous rough grazing and carries
+no boundary ink - but the RECORD is bookkeeping rather than places, and nothing distinguishes
+hill-foot rough grazing from the beaten ground by the houses. Raised by two reviewers independently,
+both as a note rather than an error. Worth knowing before any rule starts reading `commons` as
+though each entry were a distinct place.
+
+### Seed 31's threshing yard laps a paddy - and TWO fixes for it FAILED, recorded so nobody re-tries them
+
+`harvest_yards_clear_of_paddies` has failed on cohort seed 31 since before the 2026-08-18 work
+began (it is in that session's first baseline, so it is pre-existing rather than a regression). The
+yard at (2040, 1898), 32 x 22, puts a corner at (2024, 1908) inside a drawn basin.
+
+**Fix attempt 1 - `_yard_fits` in `homestead_parts.py`: DEAD CODE on this path.** The reasoning was
+right (the check tests the yard's CORNERS against each paddy's recorded `outline`, while that
+function tested the yard's CENTRE with a circle against `field_polys`, the smoothed ENVELOPE - two
+sources and two geometries). The measurement that killed it: **`_yard_fits` is called ZERO times on
+a hamlet roll**. Hamlets seat homesteads through the bundle solver, not through that function.
+
+**Fix attempt 2 - the same test in `rolling/fit.py::_bundle_common_fits`: correct path, still no
+effect, and reverted.** That predicate IS the one hamlets use (6,104 calls on seed 31, with the
+paddy outline available on every one of them). But the rect it tests is not the rect that ships:
+probing yards within 30 ft of the target showed the tested rect as **(2055.4, 1921.7, 33.9, 27.8)**
+against a recorded **(2040, 1898, 32, 22)**. `farmsteads()` runs a south-nudge relaxation AFTER the
+fit, so the bundle moves and its yard is drawn from the moved geometry. Reverted rather than kept,
+because it cannot catch what it aims at and it costs a per-paddy-outline test inside a hot loop.
+
+**So the defect is the familiar one a layer further in**: the placer tests a RESERVATION and the
+engine draws something else, which is exactly what feature 121 fixed for houses ("the placer tests
+the rake it draws"). **Sketch**: re-assert the bundle's yard against the fields AFTER the relaxation
+nudge - in `farmsteads()` where `_attach_yard(rec["x"], rec["y"], geom["yard"])` is called, the geom
+is final, so the test belongs there and costs one check per homestead rather than one per candidate
+seat. If it refuses, the nudge should be undone rather than the yard dropped.

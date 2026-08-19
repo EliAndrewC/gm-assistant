@@ -515,7 +515,7 @@ def test_paddy_seams_passes_ground_too_wide_to_be_a_doubled_bund():
 
 def test_paddy_seams_passes_a_bund_running_away_from_a_corner_neighbour():
     # at a T-junction the far end of a wall recedes from the basin it corners on, with nothing
-    # wrong: the crossing to that neighbour runs ALONG this wall, not across it
+    # wrong: the crossing to that neighbor runs ALONG this wall, not across it
     assert "paddy_plot_seams_shared" not in _seam_f(_seam_M([_box(10, 10, 110, 110), _box(110, 10, 210, 110), _box(10, 110, 210, 210)]))
 
 
@@ -555,7 +555,7 @@ def test_paddy_ring_overcount_fires_when_a_ring_is_painted_over_its_neighbour():
 
 
 def test_paddy_ring_overcount_passes_a_shallow_lap():
-    # a filler lapping a couple of feet onto its neighbour is correct ink - the later plot simply
+    # a filler lapping a couple of feet onto its neighbor is correct ink - the later plot simply
     # paints out the stretch of bund it covers, and the pair reads as one shared aze
     assert "paddy_plot_rings_overcount_stays_marginal" not in _lap_f(_seam_M([_box(10, 10, 110, 110), _box(108, 10, 208, 110)]))
 

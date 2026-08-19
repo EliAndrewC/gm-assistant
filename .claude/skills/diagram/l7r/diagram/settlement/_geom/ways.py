@@ -1,4 +1,4 @@
-"""The travelled ways as they are recorded on a manifest, the gate that bars one, and the
+"""The traveled ways as they are recorded on a manifest, the gate that bars one, and the
 constants a crossing is built to.
 
 'What could someone walk or cart along here' - deliberately not walls, fences or watercourses.
@@ -11,7 +11,7 @@ Split from settlement/_geom.py by feature 117 - see settlement/_geom/CLAUDE.md f
 import math
 from typing import Any
 
-from .base import Manifest, Poly
+from .base import Manifest, Poly, Pt
 from .primitives import seg_dist
 
 # STANDALONE plank-footbridge geometry, shared by channel_footbridges() (placement) and the
@@ -31,7 +31,7 @@ LANDING_FT = 10.0  # a CARRIED deck runs this many REAL feet of deck onto dry gr
 PLANK_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the VILLAGE (a place worth crossing to)
 
 
-# ---- the travelled ways, and the gate that bars one ------------------------------------------
+# ---- the traveled ways, and the gate that bars one ------------------------------------------
 # A kido is a gate ACROSS A WAY, so what it squares to is the way, not the fence it hangs in (GM
 # 2026-07-26). These helpers are the single definition of "a road runs through here", shared by
 # s.ward/s.kido (which place the gate) and check_village (which grades it), so placer and checker
@@ -43,7 +43,7 @@ LANE_CROSSES_MIN_DEG = (
 
 
 def lane_runs(M: Manifest) -> list[tuple[Poly, float]]:
-    """Every travelled way on the map as (polyline, bed half-width): the major/Imperial roads, the
+    """Every traveled way on the map as (polyline, bed half-width): the major/Imperial roads, the
     town streets, the gravel alleys, and the city ring road. Deliberately NOT walls, fences or
     watercourses - this answers "what could someone walk or cart along here"."""
     runs: list[tuple[Poly, float]] = []
@@ -77,15 +77,37 @@ def way_beds(M: Manifest) -> list[tuple[Poly, float]]:
     the overlap matrix forbids SOLID x WAY - so this closes the PLACEMENT half of the same rule.
     """
     runs = lane_runs(M)
-    if M.get("lane"):
-        runs.append(([(float(p[0]), float(p[1])) for p in M["lane"]], 4.0))
+    if M.get("lane") and not M.get("lanes"):
+        runs.append(([(float(p[0]), float(p[1])) for p in M["lane"]], 4.0))  # hand-built fixtures only; a generated map has `lanes`, appended below
     for ln in M.get("lanes") or []:
         runs.append(([(float(p[0]), float(p[1])) for p in ln["pts"]], float(ln.get("w", 8)) / 2))
     return runs
 
 
+def street_runs(M: Manifest) -> list[list[Pt]]:
+    """EVERY drawn village lane, as polylines - what a consumer means when it says "the street".
+
+    `M["lane"]` is NOT the street. `Settlement.lane()` sets it on every call, so it holds whichever
+    lane happened to be drawn LAST, and five consumers were reading it as though it named the
+    village's main way. Measured on Sawada: `M["lane"]` is a 45 ft fragment while `M["lanes"]` holds
+    fifteen lanes including the 4,004 ft connector - so two gate checks were adjudicating grove
+    shading and structure-vs-street against a 45 ft orphan. They ran, they passed, and they tested
+    the wrong geometry, which is the worst of the three outcomes. Found by a peer session's
+    settlement-review round, 2026-08-19.
+
+    The fallback matters: six frozen regression fixtures are hand-built manifests carrying `lane`
+    and no `lanes`, and a fixture that stops firing because the code stopped reading its key is a
+    fixture that has silently rotted. So `lanes` wins where it exists and `lane` is honored where it
+    is all there is."""
+    lanes = [[(float(p[0]), float(p[1])) for p in ln["pts"]] for ln in (M.get("lanes") or []) if ln.get("pts")]
+    if lanes:
+        return lanes
+    one = M.get("lane")
+    return [[(float(p[0]), float(p[1])) for p in one]] if one else []
+
+
 def lane_through_gate(M: Manifest, x: float, y: float, fence_deg: float) -> tuple[float, float] | None:
-    """The travelled way a ward gate seated at (x, y) BARS, as (tangent degrees, bed half-width), or
+    """The traveled way a ward gate seated at (x, y) BARS, as (tangent degrees, bed half-width), or
     None if the gate stands in open fence with no lane through it. `fence_deg` is the local fence
     tangent, used only to reject a lane running ALONGSIDE the fence (which the gate does not bar).
     The nearest true crossing wins where several lanes are close."""

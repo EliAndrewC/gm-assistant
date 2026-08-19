@@ -897,3 +897,58 @@ def test_lane_ends_front_different_houses_exempts_an_end_that_MET_a_way():
 def test_lane_ends_front_different_houses_is_silent_without_lanes_or_houses():
     assert "lane_ends_front_different_houses" not in f(_lane_map([], []))
     assert "lane_ends_front_different_houses" not in f(_lane_map([{"pts": [[500, 500]], "w": 5, "connector": False}], []))
+
+
+# ---- one way drawn as two --------------------------------------------------------------------
+def test_lanes_do_not_break_mid_run_fires_on_a_hole_in_a_street():
+    """Two ends pointing AT each other across empty ground are one street with a hole in it, and both
+    read as a rounded cap dying in bare grass. `lanes_reach_something` passes them because it tests
+    each end independently, and an end 83 ft from a house CENTRE counts as fronting it even when that
+    is 55 ft from the wall - out past the dooryard."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 500], [700, 500]], "w": 5, "connector": False},
+            {"pts": [[810, 500], [1010, 500]], "w": 5, "connector": False},
+        ],
+        [{"x": 600, "y": 560, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lanes_do_not_break_mid_run" in f(M)
+
+
+def test_lanes_do_not_break_mid_run_allows_a_break_with_something_IN_it():
+    """An interruption with a wellhead in it is honest - the way stops because something is there."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 500], [700, 500]], "w": 5, "connector": False},
+            {"pts": [[810, 500], [1010, 500]], "w": 5, "connector": False},
+        ],
+        [{"x": 600, "y": 560, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    M["wells"] = [{"x": 755, "y": 500, "r": 9, "vr": 14}]
+    assert "lanes_do_not_break_mid_run" not in f(M)
+
+
+def test_lanes_do_not_break_mid_run_allows_a_gap_a_third_way_already_spans():
+    """Closing a break leaves the two original ends where they were, joined THROUGH the new lane.
+    Without this the check fires on the very repair that fixes it."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 500], [700, 500]], "w": 5, "connector": False},
+            {"pts": [[810, 500], [1010, 500]], "w": 5, "connector": False},
+            {"pts": [[700, 500], [810, 500]], "w": 5, "connector": False},
+        ],
+        [{"x": 600, "y": 560, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lanes_do_not_break_mid_run" not in f(M)
+
+
+def test_lanes_do_not_break_mid_run_ignores_ends_that_do_not_point_at_each_other():
+    """Two arms leaving a cluster in different directions are two arms, however near their tips."""
+    M = _lane_map(
+        [
+            {"pts": [[500, 500], [700, 500]], "w": 5, "connector": False},
+            {"pts": [[790, 620], [790, 820]], "w": 5, "connector": False},
+        ],
+        [{"x": 600, "y": 560, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "lanes_do_not_break_mid_run" not in f(M)

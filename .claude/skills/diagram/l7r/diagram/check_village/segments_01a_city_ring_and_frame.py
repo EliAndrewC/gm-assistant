@@ -344,7 +344,7 @@ def _seg_0020__waterworks_captions_stand_at_their_point(*, _ww_bad: Any = _UNBOU
 # every genuine drift sits far below it. A run that MEANS "place up to N" declares itself with
 # fill=True and is never recorded here at all, so the check governs authored counts only.
 # A SMALL ask is not judged by a percentage. A four-house monk terrace that seats two is one
-# seat of rounding in a pocket, and chasing it just oscillates: trim to two, the neighbour's
+# seat of rounding in a pocket, and chasing it just oscillates: trim to two, the neighbor's
 # trim frees a hair, it seats three, and round it goes. Under eight the rule is simply that
 # SOMETHING landed - a run that draws nothing at all is a real hole in the map either way.
 

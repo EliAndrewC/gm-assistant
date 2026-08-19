@@ -443,7 +443,7 @@ class WallsMixin:
             k = max(0, math.ceil(gap / max_spacing) - 1)  # mural towers to insert so each sub-gap <= max_spacing
             for j in range(1, k + 1):
                 _seat_mural(a0 + gap * j / (k + 1))
-        # COVERAGE REMEDIATION: a slide off a kido can leave a NEIGHBOURING gap just over range; sweep the
+        # COVERAGE REMEDIATION: a slide off a kido can leave a NEIGHBORING gap just over range; sweep the
         # curtain and drop an extra mural into the middle of any run of points still short of the tier's
         # coverage. This is what turns "spacing <= range" into "coverage >= min everywhere" even after slides.
         _rng_ft, _mincov = WALL_DEFENSE.get(tier, WALL_DEFENSE["garrison"])
@@ -512,7 +512,7 @@ class WallsMixin:
         # more. Sizes in FEET through px(), so a town at 1 px = 1 ft is unaffected.
         gate_clear, pier_ft = 30.0, 15.0  # clear opening; masonry pier across (matches the pier footprint below)
         gate_gap = self.px(gate_clear) / 2 + self.px(pier_ft)  # HALF the wall opening: the clear throat plus one pier each side
-        pier_off = self.px(gate_clear) / 2 + self.px(pier_ft) / 2  # pier centre, inner face landing on the jamb
+        pier_off = self.px(gate_clear) / 2 + self.px(pier_ft) / 2  # pier center, inner face landing on the jamb
         # A cargo canal is wider than a road - Minami's is 36 ft - and a Suzhou-pattern shuimen sets its
         # arch INTO the wall with a pier to either side, so the opening is the canal plus ~12 ft a side.
         dd = self._gapped_ring(ring, gates, gate_gap, water_gates=water_gates, water_gap=self.px(60.0) / 2)

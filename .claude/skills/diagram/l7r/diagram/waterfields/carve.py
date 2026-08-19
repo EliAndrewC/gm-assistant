@@ -365,7 +365,7 @@ def _sector_closing_rank(
                 # by POSITION. The load-bearing half is the ABSENT DRAW - indexing rather than
                 # calling R leaves the RNG stream unmoved, so demoting one plot cannot re-roll every
                 # plot after it. (The index buys no variety today: `RICE_GREENS` currently holds the
-                # same colour three times. Keep the indexing anyway - it is what makes the demotion
+                # same color three times. Keep the indexing anyway - it is what makes the demotion
                 # free, and it is already correct if the palette ever gains real shades.);
                 # `low` is untouched - the tint is only the picture (feature 010). The quad is
                 # DEDUPED first: the recorder merges sub-1 px collapsed edges before the ring is
