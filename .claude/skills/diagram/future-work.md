@@ -77,16 +77,35 @@ map, so the houses are not the same houses and only the cohort rate means anythi
 that inflating every gap uniformly does not put a way where one is needed: it loosens the whole
 cluster, moves the pinch somewhere else, and breaks the belt and the bridges on the way past.
 
-**The sketch.** The packer needs to know where the ways will be, instead of being made loose enough
-that a way might fit anywhere. Reserve a small number of corridors ACROSS the cluster before the
-homesteads pack - derived from the cluster polygon and the skeleton lanes, `MIN_WEB_GAP` wide - and
-have the packer treat them as keep-clear, the way it already treats a paddy. `stage_web` then lays
-its lanes down corridors that are guaranteed to exist rather than hunting for clear runs among
-whatever the packer happened to leave. This is feature 123's own lesson applied one level up: a stage
-that RESERVES ground belongs before `stage_homesteads`, and a stage that FILLS ground left over
-belongs after it. The web was moved after the houses because laying it first grew the four pool
-clusters' long axes 15-97%; a thin reservation is not the same thing as laying the whole web first,
-and that distinction is the feature.
+**THE OBVIOUS SKETCH IS ALREADY MEASURED AND ALREADY FAILED - read this before proposing it again.**
+The natural fix is "reserve corridors across the cluster before the homesteads pack, and let the
+packer treat them as keep-clear the way it treats a paddy". That is feature 123's FIRST attempt, and
+`stage_web`'s own docstring carries the numbers: given a normal corridor it pushed the houses outward
+and the four hamlets' long axes grew **51%, 58%, 15% and 97%** - sprawl no check measures - and given
+a narrow one **the houses collided with it instead**. The web was moved to run AFTER the houses for
+exactly this reason. I wrote the reservation sketch into this entry on 2026-08-18 without having read
+that docstring, and it is wrong; it is corrected here rather than deleted, because a plausible fix
+that has already been measured as failing is precisely the thing a later session will otherwise spend
+a day rediscovering.
+
+It also carries the better ARGUMENT against reservation, which is not a measurement at all: an alley
+in these settlements *is* the residual gap between two plots - "colonized as semi private space by the
+adjoining house" - rather than a corridor set aside in advance. A generator that reserves its lanes
+first is drawing a planned town, not a grown hamlet.
+
+**So the candidate that remains is a POST-PACK repair, not a pre-pack reservation**: pack as now, then
+detect a block whose interior has no walkable corridor (the 1.4-1.9 ft pinch measured above is a
+cheap, decisive test) and RE-SEAT the two or three steadings whose shift opens one, rather than
+inflating every gap on the map. That keeps the compactness the current order buys, spends the
+disruption only where a block is genuinely sealed, and leaves the alley as residual ground everywhere
+else. Unmeasured, and it is a placement-engine change, which is what makes this a feature rather than
+a fix.
+
+**One number worth having before that work starts**: how wide is a real one of these alleys? Ours
+needs about 11 ft for a footpath (two `FOOTPATH_FABRIC_GAP` clearances plus a 3 ft tread) and about
+20 ft for a web lane, while the vernacular record describes lanes a person wide. If the true figure is
+nearer 4-6 ft than 11, part of this defect is our own clearances rather than the packing, and that is
+a research question with a cheap answer.
 
 **Cost estimate**: a new pre-homestead stage, a keep-clear registry entry, the `STAGES` tuple, a
 re-roll of the four live hamlets and a full cohort sweep, plus one `settlement-review` per pool map.
@@ -150,6 +169,47 @@ street - two gate checks are adjudicating grove shading and structure-vs-street 
 Sawada, so they run, pass, and test the wrong geometry; a skeleton arm overruns its last steading by 85 ft
 because `_trim_to_service` only runs on web lanes; and `plot_regularity` is recorded in `meta` as though
 rolled while `water.py` passes the literal `"organic"`, so it can never vary.
+
+## 2d. "How far past its last steading may a way run?" - a RESEARCH question, not a bug
+(2026-08-19, from the same two reviews. Recorded here rather than fixed because the ladder in
+constitution Principle XII puts research BEFORE a number, and this is a calibration with no obviously
+correct value - unlike `M["lane"]`, which was a plain correctness bug and was fixed in the same pass.)
+
+**The measurement.** `trim_lane_stubs` pulls back any internal lane end that reaches nothing, where
+"reaching" a farmhouse means within `house_reach = 90 ft` OF ITS CENTER. Two arms survive that test
+and still read as blunt treads dying in grass:
+
+- Sawada `lanes[2]`, NW terminus (1335.0, 2077.3): the main street stops **85 ft past its last
+  steading** (house center 1417, 2054) and ~30 ft short of the paddy bund it is aimed at, 103 ft from
+  any other way.
+- Kashikawa `lanes[2]`, end (2346.6, 2569.8): **81.7 ft from the house center but 55 ft from its
+  wall**, and lying 75.7 ft to one side of that house, level with its threshing yard rather than
+  facing the dooryard. Nearest other way 119 ft.
+
+**Why it is not a one-line fix.** The obvious move - measure to the drawn CORNERS the way feature 121
+made `houses_clear_of_lanes` do - pushes the wrong way on its own: the wall is nearer than the center,
+so at an unchanged 90 ft MORE ends would count as serving and FEWER would be trimmed. Fixing this
+means measuring to the footprint AND re-deriving the threshold, i.e. answering "how far beyond the
+last house does a village lane actually run before it becomes a field track?" That is a question about
+how these places were built, so it gets a research pass first, and if the record supports two forms
+(a lane that stops at the last dooryard, and one that runs on to the field edge) it becomes a KNOB
+rolled per settlement rather than a number someone picked.
+
+Note the gate already carries this mechanism in a comment beside `_BREAK_GAP_FT` - "an end 83 ft from
+a house CENTRE counts as fronting it, even when that is 55 ft from the wall, i.e. out past the
+dooryard". Kashikawa is that comment realized in ink. The comment predicted the defect and nothing
+acted on it, which is its own small lesson.
+
+## 2e. `plot_regularity` is recorded as though rolled and is a literal
+(2026-08-19, from the Kashikawa review.) `meta.plot_regularity` reads like a rolled knob and the comb
+path passes the literal `"organic"` (`hamletgen/water.py`), so it can never vary. Alongside it, all
+four scripted hamlets record `plot_size: medium` (a 2-in-4 weight, so 4/4 is about a 6% draw),
+`field_archetype: valley_paddy` (documented - polder is opt-in) and `cluster_seeding: frontage`
+(derived, not rolled). None of that is wrong; what is wrong is that a reader meets four `meta` lines
+that look like evidence of variance the pool is not actually spending. Under the two-supportable-forms
+rule these are candidate knobs - regular versus irregular plot layout is exactly the kind of thing the
+record may well attest both ways - so the fix is a research pass per field, not a quiet default. Until
+then, do not read those `meta` lines as proof the maps differ along those axes.
 
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
