@@ -177,7 +177,7 @@ class BridgesMixin:
         gets one roughly every `spacing` px, evenly spaced along it. Each plank crosses PERPENDICULAR to the
         ditch, spanning its local width plus a short abutment. Call AFTER the field ditches are recorded. Bridges
         draw on the TOP layer (over the water). Records via `bridge()` into M['bridges'] (tagged 'foot'); returns
-        the count. DECK WIDTH (1 px = 2 ft): a dobashi footplank is a single-file crossing (~3-4 ft), so
+        the count. DECK WIDTH (1 px = 2 ft): an itabashi footplank is a single-file crossing (~3-4 ft), so
         `plank_w=2.0` (~4 ft, GM 2026-07-22: was 2.5) - kept just wide enough to read and NARROWER than a cart
         lane (~5-6 px); the wider `bridges()` carried-way deck matches the lane it carries, but a footplank does not.
         USEFULNESS: a plank is placed only where BOTH banks reach ground someone walks to - cultivated field,
