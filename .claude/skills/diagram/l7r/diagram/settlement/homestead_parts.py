@@ -475,6 +475,81 @@ class HomesteadPartsMixin:
         water_lines += [(c_["poly"], c_.get("w", 2.5) / 2) for c_ in self.M.get("channels", [])]
         if self.M.get("moat"):
             water_lines.append((self.M["moat"], self.M.get("moat_width", 22) / 2))
+
+        def _hard_blocked(qx: float, qy: float) -> bool:
+            """Reasons a clump may not stand here that MOVING IT A FEW FEET DOES NOT CHANGE - the crop,
+            open water, the dike bank. These are the edges a belt is supposed to stop at, so a clump
+            refused for one of them is simply dropped; it never re-seats."""
+            return (
+                any(point_in_poly(qx, qy, f) or edge_dist(qx, qy, f) < 12 + cr for f in self.field_polys)
+                or any(point_in_poly(qx, qy, d) or edge_dist(qx, qy, d) < 12 for d in self.dry_polys)
+                or any(point_in_poly(qx, qy, dk["outline"]) for dk in self.M.get("dikes", []))
+                or any(seg_dist(qx, qy, wl[k], wl[k + 1]) < whw + cr for wl, whw in water_lines for k in range(len(wl) - 1))
+            )
+
+        def _lane_blocked(qx: float, qy: float) -> bool:
+            """A LANE only. Kept apart from the other local obstacles because the interior test below
+            exists for exactly this case and for no other: a lane that ENDS at the belt is an edge the
+            belt stops at, while one that RUNS THROUGH it is an obstacle to plant around, and
+            interior-vs-rim is what separates them."""
+            return any(seg_dist(qx, qy, lp[k], lp[k + 1]) < buf for lp, buf in corr for k in range(len(lp) - 1))
+
+        def _local_blocked(qx: float, qy: float) -> bool:
+            """LOCAL obstacles standing in the belt's line - a house, a yard, a wellhead's wide keep-out,
+            a lane, a threshing yard's southern sun corridor, a garden's eastern light lane. A real
+            planted belt is planted AROUND these, so an interior clump refused by one re-seats."""
+            return (
+                any((qx - ox) ** 2 + (qy - oy) ** 2 < rr * rr for ox, oy, rr in occ)
+                or any(abs(qx - sx) < shw and se - cr - 2 < qy < se + 24 + cr for sx, se, shw in sun)
+                or any(ex - cr - 2 < qx < ex + 24 + cr and abs(qy - ey) < ehh for ex, ey, ehh in east)
+            )
+
+        def _reseat(qx: float, qy: float, placed: list[Any], require_interior: bool) -> tuple[float, float] | None:
+            """A DENSE belt flows around a local obstacle instead of losing the column.
+
+            Which obstacles, and why this is not "re-seat around everything": a clump refused by the
+            CROP, by open WATER or by a lane it merely abuts is refused for a reason that moving it a
+            few feet does not change, and those are the edges where a belt is supposed to stop. What
+            it DOES flow around is a local keep-out standing IN its line - a house, a yard, a
+            wellhead (whose keep-out is the widest of the lot), a lane that CROSSES rather than
+            abuts, and a threshing yard's southern sun corridor.
+
+            The sun corridor is the case that motivated folding these three ad-hoc nudges into one
+            helper (cohort seed 10, 2026-08-19). A yard's no-tree strip ran straight through the
+            belt and left a 40 ft hole with a farmhouse directly downwind of it - the wall breached
+            at the one place it was sheltering someone. It is not a crop edge and not a page edge;
+            it is a local obstacle, and a real planted belt is planted around it. NOTE the earlier
+            ledger entry blamed a pinch in `belt_polygon`; that was wrong - the band is a
+            constant-depth ribbon, and the clumps were being filtered out, not left outside.
+
+            Interior-only: a clump blocked near the polygon's own rim is at the belt's edge, where
+            stopping is correct."""
+            # INTERIOR ONLY FOR A LANE, and this cost seed 10 a round. The rule reads "a clump blocked
+            # near the polygon's own rim is at the belt's edge, where stopping is correct" - true of a
+            # lane, false of everything else. A belt is 110 px deep and a clump is 28, so demanding
+            # `edge_dist > clump` leaves only the middle 54 px eligible: measured on seed 10, every
+            # sun-corridor clump sat 2-27 px from a face and the search never ran. A yard's sun
+            # corridor crosses the whole depth of the belt; where in that depth a given clump sits
+            # says nothing about whether the belt should plant around it.
+            if not dense or (require_interior and edge_dist(qx, qy, poly) <= clump):
+                return None
+            # THE RADII REACH PAST THE WIDEST LOCAL OBSTACLE, which is the sun corridor: a yard's
+            # no-tree strip is ~25 px half-width across and ~31 px deep, so a search capped at
+            # step*1.4 = 28 px could not clear one and seed 10 kept its hole. step*2.2 = 44 px can.
+            for _nr in (step * 0.6, step * 1.0, step * 1.4, step * 1.8, step * 2.2):
+                for _na in range(0, 360, 45):
+                    ax, ay = qx + _nr * math.cos(math.radians(_na)), qy + _nr * math.sin(math.radians(_na))
+                    if not point_in_poly(ax, ay, poly):
+                        continue
+                    if within is not None and (ax + clump * 0.9 < within[0] or ax - clump * 0.9 > within[2] or ay + clump * 0.9 < within[1] or ay - clump * 0.9 > within[3]):
+                        continue
+                    if _hard_blocked(ax, ay) or _local_blocked(ax, ay) or _lane_blocked(ax, ay):
+                        continue
+                    if any((ax - qx2) ** 2 + (ay - qy2) ** 2 < (step * 0.55) ** 2 for qx2, qy2 in placed):
+                        continue
+                    return (ax, ay)
+            return None
+
         nx, ny = max(1, round((x1 - x0) / step)), max(1, round((y1 - y0) / step))
         clumps: list[Any] = []
         for iy in range(ny + 1):
@@ -525,96 +600,20 @@ class HomesteadPartsMixin:
                 # a belt is supposed to stop. The nudge re-asks every other test, and keeps its
                 # distance from the clumps already down so a re-seat cannot just pile up on its
                 # neighbor.
-                if any((jx - ox) ** 2 + (jy - oy) ** 2 < rr * rr for ox, oy, rr in occ):
-                    if not dense:
-                        continue
-                    _alt = None
-                    for _nrad in (step * 0.6, step * 1.0):
-                        for _nang in range(0, 360, 45):
-                            _px = jx + _nrad * math.cos(math.radians(_nang))
-                            _py = jy + _nrad * math.sin(math.radians(_nang))
-                            if not point_in_poly(_px, _py, poly):
-                                continue
-                            if within is not None and (_px + clump * 0.9 < within[0] or _px - clump * 0.9 > within[2] or _py + clump * 0.9 < within[1] or _py - clump * 0.9 > within[3]):
-                                continue
-                            if any((_px - ox) ** 2 + (_py - oy) ** 2 < rr * rr for ox, oy, rr in occ):
-                                continue
-                            if any((_px - qx) ** 2 + (_py - qy) ** 2 < (step * 0.55) ** 2 for qx, qy in clumps):
-                                continue
-                            _alt = (_px, _py)
-                            break
-                        if _alt is not None:
-                            break
+                # ONE rejection chain, three nudge blocks folded into it (2026-08-19). A HARD blocker
+                # (crop, water, dike) drops the clump - those are edges a belt stops at. A LOCAL one
+                # (a house, a yard, a wellhead, a lane, a sun corridor) gets a short re-seat search,
+                # because a planted belt is planted AROUND a shed rather than abandoned at it. Three
+                # separate causes have now punched holes in a wind wall here - a wellhead inside the
+                # belt, a peer session's lane crossing it, and a threshing yard's sun corridor - and
+                # each was fixed with its own ad-hoc nudge until the third made the pattern obvious.
+                if _hard_blocked(jx, jy):
+                    continue
+                if _local_blocked(jx, jy) or _lane_blocked(jx, jy):
+                    _alt = _reseat(jx, jy, clumps, require_interior=not _local_blocked(jx, jy))
                     if _alt is None:
                         continue
                     jx, jy = _alt
-                # THE KEEP-OUT IS FROM THE CROWNS, NOT THE CLUMP CENTER. 12 px held the center off the
-                # field, but a clump scatters its canopy about a radius past that center, so a legal
-                # center still threw crowns onto the crop margin - five of them on Mizuguchi, 0.7-5.5
-                # ft inside the 6 ft margin band (settlement-review 2026-08-18, found only once
-                # `scatter_audit` stopped reading crowns at their LOCAL coordinates). Placer and audit
-                # were measuring two different things: centers here, crown bases there. `+ cr` makes
-                # this the same question the audit asks.
-                if any(point_in_poly(jx, jy, f) or edge_dist(jx, jy, f) < 12 + cr for f in self.field_polys):
-                    continue
-                if any(point_in_poly(jx, jy, d) or edge_dist(jx, jy, d) < 12 for d in self.dry_polys):
-                    continue  # the hem strips are barley: trees do not grow in the crop (groves_clear_of_dry_plots)
-                if any(point_in_poly(jx, jy, dk["outline"]) for dk in self.M.get("dikes", [])):
-                    continue  # no windbreak clump ON the perimeter dike bank - it carries only its own soil-binding trees (structures_clear_of_dike)
-                if any(seg_dist(jx, jy, wl[k], wl[k + 1]) < whw + cr for wl, whw in water_lines for k in range(len(wl) - 1)):
-                    continue  # no canopy stands over open water (canopy_clear_of_watercourses)
-                if any(seg_dist(jx, jy, lp[k], lp[k + 1]) < buf for lp, buf in corr for k in range(len(lp) - 1)):
-                    # A LANE THAT CROSSES THE BELT IS NOT AN EDGE THE BELT STOPS AT (settlement-review,
-                    # Inashiro 2026-08-18 round 2). The structure re-seat above deliberately declines to
-                    # re-seat a clump a LANE blocked, on the reasoning that a lane is an edge a belt
-                    # should stop at. That premise holds for a lane that ENDS at the belt and fails for
-                    # one that runs THROUGH it - and the peer session's lane web promptly drew two of
-                    # the latter. Measured on Inashiro: web lanes 3 and 10 terminate inside the belt
-                    # corridor, 12 clumps were deleted and none re-seated, and the 40 ft band at
-                    # y 660-720 went from six clumps to ONE - belt-wide minimum canopy 17.1 ft -> 4.8
-                    # ft, thinner than the wellhead hole this whole fix was written to close, on the
-                    # windward side. A 3 ft footpath was taking out ~45 ft of wind wall.
-                    #
-                    # INTERIOR is what separates the two cases, and it is cheap: a lane abutting the
-                    # belt blocks clumps at its BOUNDARY, a lane crossing it blocks clumps in the
-                    # MIDDLE. So a blocked clump more than one clump-width inside the polygon re-seats
-                    # like a structure-blocked one; a blocked clump near the rim still just stops. The
-                    # gap a crossing leaves is then sized to the way (a 3 ft path plus its clearance),
-                    # which is a gateway; 45 ft is a hole with a footpath in it.
-                    if not dense or edge_dist(jx, jy, poly) <= clump:
-                        continue
-                    _lalt = None
-                    for _lrad in (step * 0.6, step * 1.0, step * 1.4):
-                        for _lang in range(0, 360, 45):
-                            _lx = jx + _lrad * math.cos(math.radians(_lang))
-                            _ly = jy + _lrad * math.sin(math.radians(_lang))
-                            if not point_in_poly(_lx, _ly, poly):
-                                continue
-                            if within is not None and (_lx + clump * 0.9 < within[0] or _lx - clump * 0.9 > within[2] or _ly + clump * 0.9 < within[1] or _ly - clump * 0.9 > within[3]):
-                                continue
-                            if any((_lx - ox) ** 2 + (_ly - oy) ** 2 < rr * rr for ox, oy, rr in occ):
-                                continue
-                            if any(seg_dist(_lx, _ly, lp[k], lp[k + 1]) < buf for lp, buf in corr for k in range(len(lp) - 1)):
-                                continue
-                            if any(point_in_poly(_lx, _ly, f) or edge_dist(_lx, _ly, f) < 12 + cr for f in self.field_polys):
-                                continue
-                            if any(point_in_poly(_lx, _ly, d) or edge_dist(_lx, _ly, d) < 12 for d in self.dry_polys):
-                                continue
-                            if any(seg_dist(_lx, _ly, wl[k], wl[k + 1]) < whw + cr for wl, whw in water_lines for k in range(len(wl) - 1)):
-                                continue
-                            if any((_lx - qx) ** 2 + (_ly - qy) ** 2 < (step * 0.55) ** 2 for qx, qy in clumps):
-                                continue
-                            _lalt = (_lx, _ly)
-                            break
-                        if _lalt is not None:
-                            break
-                    if _lalt is None:
-                        continue
-                    jx, jy = _lalt
-                if any(abs(jx - sx) < shw and se - cr - 2 < jy < se + 24 + cr for sx, se, shw in sun):
-                    continue
-                if any(ex - cr - 2 < jx < ex + 24 + cr and abs(jy - ey) < ehh for ex, ey, ehh in east):
-                    continue
                 self._draw_grove(jx, jy, clump, clump, face=(0, -1), mix=mix)
                 clumps.append([round(jx, 1), round(jy, 1)])
         if clumps:
