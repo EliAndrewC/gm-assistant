@@ -126,10 +126,21 @@ leaving the bundle at the last position that was already legal. It looked strict
 constraint, because it cannot cost a seat. **Cohort: 42/48 against the 43/48 baseline** - it fixed none
 of the three reach seeds and added a `village_windbreak_is_continuous` failure on seed 4. Reverted.
 
-That is three independent spacing attempts (hard 18 ft: 37/48; hard 12 ft: no gain; slide limit 12 ft:
-42/48), none of which moved a single one of the three failing seeds. The conclusion is stronger than
+**A FOURTH attempt, aimed by the crescent finding: the same slide limit confined to the INNER ARM.**
+This is the one the evidence pointed at - every stranded house sits at out -50..-147, so the limit was
+applied only on that side of the seat band, leaving the other 45 maps untouched. **Cohort: 43/48, the
+same five seeds as the baseline.** The confinement did its job - the map-wide version's seed-4
+windbreak casualty is gone, so it costs nothing - and it still fixed nothing.
+
+That is four independent spacing attempts (hard 18 ft: 37/48; hard 12 ft: no gain; slide limit 12 ft:
+42/48; inner-arm slide limit 12 ft: 43/48 and neutral), none of which moved a single one of the three
+failing seeds. The conclusion is stronger than
 "the uniform gap is the wrong number": **spacing is the wrong LEVER entirely.** Whatever seals those
-blocks is not a shove-until-collision that a smaller shove would prevent.
+blocks is not a shove-until-collision that a smaller shove would prevent - the fourth attempt stopped
+the shove precisely where the defect lives and the same three houses came out unreachable, which means
+they were never packed tight BY THE SLIDE. Something seats them there in the first place, and the next
+session should start at the seed positions the nucleated placer offers on a crescent's inner arm
+(`front_row` / `_place_bundle_nucleated`'s offset search), not at the compaction that follows.
 
 **So the candidate that remains is a POST-PACK repair, not a pre-pack reservation**: pack as now, then
 detect a block whose interior has no walkable corridor (the 1.4-1.9 ft pinch measured above is a
