@@ -2360,8 +2360,24 @@ disprove.
 Recalibrated against measured solo times, same policy multiplier, and `mizuguchi` given the entry it
 never had. Verified on BOTH trees (clone and a detached worktree at main's tip) before touching
 anything, because "raise the limit until it passes" and "fix a miscalibrated guard" are the same
-edit and only the measurement tells them apart. Both trees measured the same, so the drift is not a
-regression from any current work.
+edit and only the measurement tells them apart.
+
+**CORRECTION, made the same day**: the first version of this entry said both trees "measured the
+same", so the drift was none of this session's doing. That rested on whole-gen timings, which are too
+coarse to see one stage move. A per-STAGE profile of the real pool specs shows this session DOES add
+cost - build-stage totals mine vs main's tip: kashikawa 29.6s vs 21.8s (+36%), inashiro 20.7s vs 17.9s
+(+16%), sawada 61.7s vs 57.2s (+8%). So the budgets absorb a genuine increase as well as the older
+drift. It is not pathological - no stage explodes on a corpus map, and `stage_web` is faster on
+kashikawa (1.95s vs 2.16s) - but "unchanged" was the wrong word and the number belongs here.
+
+**And one spec-sensitivity finding worth keeping, off-corpus**: on an arbitrary hand-made spec (seed 7,
+20 households, default fall and sink - NOT a pool map and NOT a cohort seed, whose household counts are
+`10 + (seed*7) % 11`), `stage_web` took **20.9s against main's 0.26s, an 80x blowup**, while the same
+tree's pool specs are flat. Something about that cluster geometry multiplies the web's candidate work.
+Nothing in the corpus hits it, so it is not a live defect - but a stage that can vary 80x on an input
+one seed away from the test bed is worth understanding before the village tier reuses it. Reproduce
+with the per-stage profiler in this session's scratch, or re-derive it: walk `hamletgen.driver.STAGES`
+timing `resource.getrusage().ru_utime` around each call.
 
 **Same family as the rest of this day's findings**: a guard whose INPUT is not the quantity its
 calibration describes. The budget describes solo CPU; the assertion measures parallel-run CPU. It was
