@@ -2709,6 +2709,34 @@ a rake-aware garden clearance in the bundle fit, which `fit.py` warns "would re-
 - too wide to land and verify in the same sitting. Re-apply the patch above WITH that clearance, and
 expect the whole pool to move.
 
+## OBSERVATION 2026-08-19: two DIFFERENT failure shapes, and conflating them costs the second lesson
+
+Across two sessions this day produced five retractions and roughly a dozen engine defects. It is tempting
+to write them up as one pattern. They are TWO, and the waterfields session corrected me when I collapsed
+them - the correction is the useful part, so it is recorded rather than smoothed away.
+
+**SHAPE 1 - the instrument cannot discriminate.** A measurement whose INPUT cannot contain the failure it
+names. `cluster_shape` fed a pass that never ran (honored on 1 of 48 seeds). The honesty guard compared a
+drawn aspect against a mechanism parameter, then compared it on the PAGE's axes so a diagonal band read as
+1.22 instead of 3.83. The woodland scan vetted a square while the gate measured a rotated bbox. The
+way-vs-water tests never received `M["streams"]`. `dry_plot_furrows_vary` compared zero pairs. The paddy
+floor gates AREA while the defect is WIDTH. The gen-time budgets described solo CPU while measuring
+parallel-run CPU. Four branches were "covered" only by a warm gen cache. And my own count of 1,329 tint
+candidates was seven call sites of a shared predicate.
+**Remedy: a second measurement that has to disagree** - a detached-worktree baseline, a control assertion
+that the setup produces the thing being tested, an independent reviewer looking at the drawing.
+
+**SHAPE 2 - the instrument is fine and the ATTRIBUTION is wrong.** The waterfields session measured a real
+ripple correctly and assigned it to the wrong cause, because the baseline was an older HEAD and a peer's
+lane-web feature had landed inside the window. The number was right; the story about what produced it was
+not.
+**Remedy is different and does not follow from the first: NAME THE COMMIT a measurement is taken against.**
+No amount of instrument-sharpening prevents this one - a session doing shape-1 discipline perfectly still
+gets it wrong this way, which is exactly what happened.
+
+Keep them apart in any future write-up. "Check your instruments" does not cover shape 2, and a session
+that has internalised only shape 1 will still misattribute a correct number.
+
 ## OPEN 2026-08-19: every lane junction draws a cap bead, and one back lane halves its width mid-run
 
 Settlement-review on Inashiro, and the GM has named this class before ("really looks like a rendering
@@ -2764,3 +2792,22 @@ puts it somewhere in the 12-16 ft band. `research/fields.md` "Minimum basin SIZE
 reasoning frame, including the point that the alternative to a scrap is making its neighbour bigger.
 **Owner: `waterfields/`** - same subsystem as the FLOODED tint and `hem_block_len`, and the toe pass is
 where all three meet.
+
+## OPEN 2026-08-19 (small, unclaimed): the notice-board caption's halo notches the lane it stands on
+
+Settlement-review on Inashiro. The kosatsuba caption is seated directly above or below the glyph
+(`fixtures.py`: `(x, y - hh - 11)` or `(x, y + hh + 11)`) and drawn with a 3 px background halo
+(`paint-order="stroke" stroke="#EFE3C2"`). On Inashiro the board sits at (1224,1009) and `lanes[1]` passes
+x~1235 at that y with w=5, so the halo knocks a visible notch out of the map's busiest internal lane,
+between the words "notice" and "board". Verified in the ink at 9x. It is the founding-run "caption pierced
+by its own feature" defect inverted - here the caption does the piercing.
+
+FIX DIRECTION (reviewer's): seat the caption on the side away from the way - this board has ~40 ft of
+clean dooryard to the west - or draw captions before the lane fill so the lane wins.
+
+**Why it is not done here, and it is a soft reason rather than a hard one**: the seat is currently
+`label_above` (a caller flag, set for boards inside a gate) plus a tilt case, so making it lane-aware
+changes caption seats on EVERY map and runs into the label checks. That is a cascade risk of the kind
+this session hit twice - the kura rate fix was correct and exposed a rake-blind packing defect that forced
+a revert. Small, self-contained, and worth doing FIRST in a fresh session rather than eleventh in a long
+one.
