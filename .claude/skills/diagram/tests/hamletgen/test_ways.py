@@ -446,3 +446,26 @@ def test_a_web_lane_that_arrives_early_keeps_the_long_half() -> None:
     assert hg.ways._lay_web_lane(s, run, [], [], [], houses=[(160.0, 230.0)]) is True
     drawn = s.M["lanes"][-1]["pts"]
     assert [tuple(q) for q in drawn] == run[1:], "the 20 ft head is dropped, the 140 ft body is kept"
+
+
+def test_a_web_lane_end_already_near_the_network_is_SNAPPED_onto_it() -> None:
+    """The third arm of `_lay_web_lane`'s junction logic, and the only one with no test of its own: an
+    end already inside `_LANE_JOIN_FT` is not linked and not refused - it is EXTENDED onto the way it
+    meets, so the junction reads as a touch rather than a 12 ft gap. The snap is conditional on the
+    ground between being walkable, because adding those few feet blind once put lane ink across houses
+    and garden beds.
+
+    Held here because its coverage was CACHE-DEPENDENT rather than absent (found 2026-08-19). The
+    branch is exercised by regenerating a pool map, so a gate run that follows a `consts.py` change
+    regenerates and covers it, while a gate run on an unchanged tree serves those maps from the gen
+    cache and never executes the line. Same code, same seeds, coverage green or red depending on
+    whether a cache happened to be warm - which is the flakiest kind of pass there is, and reads as a
+    mystery regression when it flips."""
+    lane = [(0.0, 0.0), (0.0, 400.0)]
+    house = (160.0, 230.0)
+    s = _StubSettlement(lanes=[lane], houses=[house])
+    run = [(20.0, 200.0), (60.0, 200.0), (110.0, 200.0), (160.0, 200.0)]
+    assert hg.ways._lay_web_lane(s, run, [], [], [], houses=[house]) is True
+    drawn = [tuple(q) for q in s.M["lanes"][-1]["pts"]]
+    assert drawn[0] == (0.0, 200.0), f"the near end should be snapped onto the lane, got {drawn[:2]}"
+    assert drawn[1:] == run, "the rest of the run is unchanged - snapping adds a point, it does not re-route"

@@ -456,8 +456,20 @@ The full 48-seed sweep, taken AFTER the deck fix:
   - **2.2/1.2 -> 43/48, mean drawn 1.62, CLEAN, fixes seed 31** <- shipped
   - 1.8/1.0 -> 40/48, costs 11, 38, 45
 
-`lane_ends_front_different_houses` (0611) is now the binding constraint on going further, and it is
-not ours. METHOD, because getting it wrong cost a cycle: sweep the FULL 48, never a subset - the
+`lane_ends_front_different_houses` (0611) is the binding constraint on going further, and **it has
+been RULED CORRECT rather than left as a cap to lift** (the session that owns it, 2026-08-19, on the
+three failing seeds this sweep produced). Its rule is that a farmhouse discharges ONE lane end's
+obligation; two ends within 60 ft pointing within 25 degrees the same way are a fork serving one
+steading, and the second is redundant ink. Three ends was merely what the motivating review found - a
+PAIR is the same defect at its minimum count. Every failure here was one pair at 8-16 degrees, which is
+a tight fork rather than two honest ends colliding.
+
+So read 2.2 as a WALL FOUND, not a compromise: at 2.2 the web puts one end on each frontage, and past
+it the cluster is tight enough to put two. Compressing until a rule fires and then stopping is the rule
+working. **Do not weaken 0611 to let 2.4 through.** The one thing that would reopen it: a failing pair
+at 20-25 degrees rather than 8-16 - that is the shape a mis-attributed pair would take, where two ends
+serving DIFFERENT houses get charged to the same one. Send that seed to whoever owns 0611; anything
+tighter than 20 degrees is the cluster, not the check. METHOD, because getting it wrong cost a cycle: sweep the FULL 48, never a subset - the
 1.8/1.0 row was once measured as clean on all seven seeds that a previous failure had pointed at."""
 
 CLUSTER_DRAWN_ASPECT = {"round": (1.0, 2.4), "crescent": (1.9, 4.2), "elongated": (2.8, 12.0), "split": (1.9, 4.2)}
