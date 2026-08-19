@@ -52,6 +52,32 @@ standing 172-237 ft from any way. It is the entire non-peer residue of the 48-se
   seed 5's build went 159.9s -> 672.3s, a 4.2x. Reverted; the dead end is recorded at the call site
   in `hamletgen/ways.py` so nobody pulls that lever twice.
 
+**RETRACTED: IT IS NOT A CRESCENT DEFECT.** I reported the correlation below as the strongest result
+of the day and it is confounded. `plan.cluster_shape` feeds exactly one thing - `cluster_seeds`, the
+CLOUD pass - and the cloud runs only for households the front rows do not seat. Measured on eight
+crescent seeds including all three failures: **every one seeds by `frontage`, the cloud never runs,
+and `meta.cluster_shape` is stamped on none of them.** A knob that is never read cannot cause a
+failure. A sixth fix attempt confirmed it from the other side: softening the crescent bow from 0.50 to
+0.30 changed nothing at all, because the code path is dead on these maps.
+
+The arithmetic was never strong either, which is the lesson worth keeping. Three failures landing
+inside seventeen crescents out of forty-eight seeds is p ~ 0.04 - suggestive, not decisive - and I
+treated it as decisive because it arrived after four failed attempts and I wanted a lead. The base
+rate check I ran on `out < 0` (90 of 128 seats) is the one I should also have run here: ask what
+fraction of the population looks like the signal BEFORE calling it one.
+
+**A real defect fell out of the retraction, though.** `cluster_shape` is rolled per settlement, is
+reported in the cohort audit's header for every seed, and on the evidence above is honored on NONE of
+them - the front rows plus lane frontage seat every household, so round, elongated, crescent and split
+all draw the same cluster. `homesteads.py` already carries a known-open note about the shape leaving no
+trace when the cloud does not run (Kashikawa, 2026-08-16); what is new is that this looks like the
+NORMAL case rather than an edge one. It belongs with `plot_regularity` in 2e: four `meta` lines that
+read as variance the pool is not spending. Worth a census across all 48 seeds before anything is
+built on the shape knob.
+
+**The observation below stands as an observation only** - the three failing seeds happen to be
+crescent-rolled, and that fact is now known to be a coincidence of the seed roll rather than a cause:
+
 **IT IS A CRESCENT DEFECT, and that is the sharpest thing known about it** (measured 2026-08-19,
 and it took three failed spacing fixes to go looking). Across all 48 cohort seeds:
 
