@@ -52,6 +52,32 @@ standing 172-237 ft from any way. It is the entire non-peer residue of the 48-se
   seed 5's build went 159.9s -> 672.3s, a 4.2x. Reverted; the dead end is recorded at the call site
   in `hamletgen/ways.py` so nobody pulls that lever twice.
 
+**IT IS A CRESCENT DEFECT, and that is the sharpest thing known about it** (measured 2026-08-19,
+and it took three failed spacing fixes to go looking). Across all 48 cohort seeds:
+
+| cluster shape | seeds | reach failures |
+|---|---|---|
+| crescent | 17 | **3** (seeds 5, 8, 25) |
+| round | 21 | 0 |
+| elongated | 10 | 0 |
+
+**0 of 31 non-crescent seeds fail.** Every stranded house also sits on the same side of the seat band:
+`out` between -50 and -147 against served houses at `out` >= +32, i.e. on the far side of the anchor,
+in the arm the crescent wraps around.
+
+And the web's coordinate frame is NOT the problem, which rules out the obvious follow-up: projected
+onto the margin frame the stranded houses land at **stand 46-57 inside a 42-273 stand range**, and at
+arcs inside the frame's own 521-1052 span. The back-lane cuts and their extents therefore RUN ACROSS
+these houses - the line is drawn over them and then clipped out by the fabric it cannot pass, which is
+the same 1.4-1.9 ft corridor measured below. (An earlier crescent fix widened the frame ALONG the arc
+for exactly this class of failure - `ways.py` records it, worst house 431 ft - so widening it again is
+not the answer; the frame already reaches.)
+
+So the shape of the real defect is: **a crescent's inner arm packs against itself, and only there.**
+Whatever a post-pack repair does, seeds 5, 8 and 25 are its test bed and the other 45 seeds are its
+regression bed - and any fix that does not distinguish the crescent's inner arm from the rest of the
+cluster is spending disruption across 48 maps to fix 3.
+
 **What it IS.** The homestead packer's only inter-bundle rule is that two bundle bboxes must not
 overlap, with two PIXELS of tolerance (`_bundle_side_fits`, the closing `all(...)`). So a run of
 steadings packs into a solid mass. Measured on the stranded houses: the widest escape corridor across
