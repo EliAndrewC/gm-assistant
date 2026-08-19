@@ -471,6 +471,33 @@ rule these are candidate knobs - regular versus irregular plot layout is exactly
 record may well attest both ways - so the fix is a research pass per field, not a quiet default. Until
 then, do not read those `meta` lines as proof the maps differ along those axes.
 
+## 2f. The shallow-crossing veto must be STREAM-scoped, not water-scoped (measured)
+(2026-08-19. The hamlets session found that `shallow_crossing` is wired into `path_violations` but not
+into `_join_orphan_ways`, which goes straight to `_draw_web`; cohort seed 47 shipped a way meeting a
+stream at 17 degrees, surfacing as `bridges_span_their_water` failing a 57.6 px deck over 7 px of
+water. Handed to me as lane topology. This entry is what I learned trying to close it.)
+
+**Two things are settled and worth having before anyone tries again:**
+
+1. **Only the LINK pass needs the veto.** `_bridge_collinear_breaks` hands its `water` to `_route`,
+   which refuses to cross a watercourse at ANY angle - so a bridge never crosses water and a veto
+   there is unreachable code. `_join_orphan_ways` deliberately passes an EMPTY water list ("a link may
+   go the long way round, and may be planked"; `stage_crossings` decks it afterwards), which is why it
+   is the pass that can lay a way down the length of a brook.
+2. **A BLANKET veto is far too costly: 41/48 -> 26/48, with 21 seeds failing `farmhouses_reach_a_way`.**
+   Placement makes no difference - refusing the chosen link and returning abandons the pass over one
+   bad candidate, and moving the test into the candidate loop so it tries the next route measures
+   exactly the same. The cause is the water list: `plan.watercourses + drawn_water` is the whole
+   irrigation net, and a link joining two halves of a hamlet crosses field ditches constantly, often
+   obliquely. Demanding a square crossing of every ditch strands the components the pass exists to
+   join - which is a worse defect than the one being fixed.
+
+**So the veto has to be scoped to the water that actually needs a real deck** - the streams and the
+larger channels, not every puddled aze ditch a plank spans. That needs the hamlets session's
+`drawn_water_segs` (channels AND streams) to land first, so the two lists can be told apart at the
+call site; wiring a veto against today's undifferentiated list cannot be made safe. Reverted; nothing
+of it ships.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any
