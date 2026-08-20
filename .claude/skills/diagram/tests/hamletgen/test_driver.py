@@ -4,6 +4,7 @@ Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen
 """
 
 import os
+import re
 
 from l7r.diagram import check_village
 from l7r.diagram import hamletgen as hg
@@ -235,7 +236,7 @@ def test_a_map_that_strands_a_farmhouse_is_re_rolled_with_that_ground_forbidden(
     assert (1397.0, 890.0) in seen[1]
 
 
-def test_a_re_roll_that_does_not_help_is_not_kept(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+def test_a_re_roll_that_does_not_help_is_not_kept(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
     """The retry is self-limiting: a re-roll is kept only if the gate's verdict is no longer than the
     one it replaces. Without that a map could be re-rolled into a WORSE state and shipped, which is
     the opposite of the point."""
@@ -249,7 +250,15 @@ def test_a_re_roll_that_does_not_help_is_not_kept(monkeypatch) -> None:  # type:
         return ["farmhouses_reach_a_way"] if len(rolls) == 1 else ["farmhouses_reach_a_way", "another_rule"]
 
     monkeypatch.setattr(check_village, "gate", fake_gate)
-    rep = hg.generate(hg.HamletSpec(name="NoHelp", seed=4, households=10), out_base=None, render=False)
+    # WITH AN OUT PATH, because rejecting a re-roll leaves THAT roll's files on disk - the keeper has
+    # to be re-emitted, and it cannot be done by finishing the kept Settlement a second time (that
+    # splices the water block twice and its `</g>` closes the <svg> root early; see `_roll`). So the
+    # rejected-re-roll path only exists when there is somewhere to write.
+    out = str(tmp_path / "nohelp")
+    rep = hg.generate(hg.HamletSpec(name="NoHelp", seed=4, households=10), out_base=out, render=False)
     assert rep.failures == ["farmhouses_reach_a_way"]  # the FIRST roll's verdict is kept, not the worse one
-    assert len(rolls) == 2  # and it stopped rather than burning its four rounds
+    assert len(rolls) == 3  # roll, rejected re-roll, then the keeper re-emitted
     assert rep.fail_lines and "farmhouses_reach_a_way" in rep.fail_lines[0]
+    svg = (tmp_path / "nohelp.svg").read_text()
+    assert svg.count("<svg") == 1 and svg.count("</svg>") == 1  # finished exactly once...
+    assert len(re.findall(r"<g[\s>]", svg)) == svg.count("</g>")  # ...so its groups balance

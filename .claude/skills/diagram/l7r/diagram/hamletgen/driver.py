@@ -126,14 +126,24 @@ def generate(spec: HamletSpec, out_base: str | None = None, render: bool = True)
 
     plan = plan_site(spec)
 
-    def _roll(avoid: Sequence[tuple[float, float]]) -> tuple[Settlement, list[str], list[tuple[float, float]], list[str]]:
+    def _roll(avoid: Sequence[tuple[float, float]], out: str | None = None) -> tuple[Settlement, list[str], list[tuple[float, float]], list[str]]:
         """Build, finish and gate once. Returns the settlement, the gate's verdict, and the seats the
         GATE ITSELF names as unreached - read off its message, never recomputed. A hand-rolled
         reach measure was tried and was wrong on five of six seeds (see future-work 2b): it
         over-counted and never read zero, so anything steered by it was steered by noise."""
+        # FINISH EACH ROLL EXACTLY ONCE, to its final destination when there is one. `finish` MUTATES:
+        # it splices the shared water block into the stream, so calling it twice on one Settlement
+        # emits that block twice and the second copy's `</g>` closes the <svg> root early. Not
+        # theoretical - it shipped a kashikawa.svg with 436 group opens against 437 closes, which
+        # resvg refuses outright ("expected 'svg' tag, not 'g'"), so render-sync could not draw the
+        # map at all. Introduced when this retry loop began finishing a copy to gate it and then
+        # finishing the same object again for real.
         s2 = build(plan, avoid=avoid)
-        with tempfile.TemporaryDirectory() as tmp:
-            s2.finish(os.path.join(tmp, "scratch"), render=False)
+        if out is not None:
+            s2.finish(out, render=render)
+        else:
+            with tempfile.TemporaryDirectory() as tmp:
+                s2.finish(os.path.join(tmp, "scratch"), render=False)
         buf = io.StringIO()
         with redirect_stdout(buf):
             red = sorted(gate(s2.M))
@@ -153,22 +163,28 @@ def generate(spec: HamletSpec, out_base: str | None = None, render: bool = True)
     # The gate is the oracle at every step, per this package's own doctrine, and the retry is
     # self-limiting: it runs only for a map that already failed, and it keeps a re-roll only if the
     # verdict is strictly shorter.
-    s, failures, seats, lines = _roll(())
+    _s, failures, seats, lines = _roll((), out_base)
     avoid: list[tuple[float, float]] = []
+    kept: list[tuple[float, float]] = []  # the avoid list that produced the map we are keeping
+    stale = False  # ...and whether the files on disk came from a later roll we then rejected
     for _ in range(4):
         if "farmhouses_reach_a_way" not in failures or not seats:
             break
         avoid = avoid + seats
-        s2, f2, seats2, lines2 = _roll(avoid)
+        _s2, f2, seats2, lines2 = _roll(avoid, out_base)
         if len(f2) <= len(failures):
-            s, failures, seats, lines = s2, f2, seats2, lines2
+            failures, seats, lines, kept = f2, seats2, lines2, list(avoid)
         else:
+            stale = True
             break
-    if out_base is not None:
-        s.finish(out_base, render=render)
-    else:
-        with tempfile.TemporaryDirectory() as tmp:
-            s.finish(os.path.join(tmp, "scratch"), render=False)
+    if stale and out_base is not None:
+        # Generation is deterministic, so re-rolling the keeper's avoid list reproduces it exactly -
+        # and it is the only way to put the KEPT map back on disk without finishing a Settlement
+        # twice, which corrupts the SVG (see `_roll`).
+        # RE-EMIT ONLY - the verdict is already known. Generation is deterministic, so this rebuild
+        # is the same map with the same failures; taking the re-gate's answer instead would let a
+        # second opinion overwrite the one that was actually chosen.
+        _roll(kept, out_base)
     return Report(plan=plan, failures=failures, path=out_base, fail_lines=lines)
 
 
