@@ -166,6 +166,15 @@ class PlacerMixin:
             self._nearest_placed_point,  # then pack ALONG it (never off it),
             keep_field=True,
         )  # so the cluster glues to the paddy
+        # THE AVOID TEST APPLIES TO WHERE THE BUNDLE ENDS UP, not to the seat it started from. The
+        # slides move it: a seat well clear of forbidden ground slides straight back onto it, and a
+        # re-roll that forbids that ground then seats the same house in the same spot round after
+        # round. Measured on cohort seed 5 - the retry converged 2 unreached houses -> 1 and then
+        # stalled at (1130, 858) for three consecutive rounds, re-seating the identical point each
+        # time while that point was in the avoid list.
+        _avoid = getattr(self, "_avoid_seats", None)
+        if _avoid and any(math.hypot(cx - _ax, cy - _ay) <= 50.0 for _ax, _ay in _avoid):
+            return None
         best: Any = None
         for rank, side in enumerate(self._NUC_SIDES):
             geom = self._bundle_geom(cx, cy, hw, hh, side, shed)

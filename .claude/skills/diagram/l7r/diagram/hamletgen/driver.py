@@ -9,7 +9,7 @@ import argparse
 import concurrent.futures
 import os
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from l7r.diagram.settlement import Settlement
 from l7r.diagram.sitegen.jobs import default_jobs as default_jobs  # noqa: PLC0414 - explicit re-export so `hamletgen.default_jobs` still resolves under --strict
@@ -74,6 +74,10 @@ class Report:
     plan: SitePlan
     failures: list[str]
     path: str | None = None
+    # The gate's own FAIL lines for this map. Carried so a caller wanting the DETAIL does not have to
+    # re-gate (or, worse, re-build) to get it - `cohort_audit` did exactly that by calling `build`
+    # instead of `generate`, which silently measured a different code path than the one that ships.
+    fail_lines: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -89,9 +93,13 @@ class Report:
         )
 
 
-def build(plan: SitePlan) -> Settlement:
-    """Run every stage, in order, against a fresh `Settlement`."""
+def build(plan: SitePlan, avoid: Sequence[tuple[float, float]] = ()) -> Settlement:
+    """Run every stage, in order, against a fresh `Settlement`.
+
+    `avoid` is ground a previous roll proved unservable - the seat loops refuse a seat near any of
+    these points. See `generate`, which re-rolls a map whose finished manifest stranded a farmhouse."""
     s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s._avoid_seats = list(avoid)  # type: ignore[attr-defined]
     for stage in STAGES:
         stage(s, plan)
     return s
@@ -109,18 +117,59 @@ def generate(spec: HamletSpec, out_base: str | None = None, render: bool = True)
 
     The gate then runs IN-PROCESS on that finished manifest, which is what makes it cheap to roll a
     dozen hamlets and ask how many of them are actually correct."""
+    import io
+    import re
     import tempfile
+    from contextlib import redirect_stdout
 
     from l7r.diagram.check_village import gate
 
     plan = plan_site(spec)
-    s = build(plan)
+
+    def _roll(avoid: Sequence[tuple[float, float]]) -> tuple[Settlement, list[str], list[tuple[float, float]]]:
+        """Build, finish and gate once. Returns the settlement, the gate's verdict, and the seats the
+        GATE ITSELF names as unreached - read off its message, never recomputed. A hand-rolled
+        reach measure was tried and was wrong on five of six seeds (see future-work 2b): it
+        over-counted and never read zero, so anything steered by it was steered by noise."""
+        s2 = build(plan, avoid=avoid)
+        with tempfile.TemporaryDirectory() as tmp:
+            s2.finish(os.path.join(tmp, "scratch"), render=False)
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            red = sorted(gate(s2.M))
+        seats = []
+        for line in buf.getvalue().splitlines():
+            if "FAIL" in line and "farmhouses_reach_a_way" in line:
+                seats = [(float(a), float(b)) for a, b, _c in re.findall(r"\((\d+), (\d+), (\d+)\)", line)]
+        return s2, red, seats, [ln.strip()[:400] for ln in buf.getvalue().splitlines() if ln.startswith("FAIL")]
+
+    # A MAP THAT STRANDS A FARMHOUSE IS RE-ROLLED WITH THAT GROUND FORBIDDEN. The seats a hamlet
+    # offers are not all equally servable, and which ones are cannot be known until the ways are
+    # drawn - three separate seat-time tests were built and all three failed, because reachability
+    # depends on fabric that does not exist when seats are chosen. What CAN be done is to observe it
+    # on the finished map and not seat there next time. Measured on cohort seed 5: two unreached
+    # houses, then one, then none - it converges in two rounds.
+    #
+    # The gate is the oracle at every step, per this package's own doctrine, and the retry is
+    # self-limiting: it runs only for a map that already failed, and it keeps a re-roll only if the
+    # verdict is strictly shorter.
+    s, failures, seats, lines = _roll(())
+    avoid: list[tuple[float, float]] = []
+    for _ in range(4):
+        if "farmhouses_reach_a_way" not in failures or not seats:
+            break
+        avoid = avoid + seats
+        s2, f2, seats2, lines2 = _roll(avoid)
+        if len(f2) <= len(failures):
+            s, failures, seats, lines = s2, f2, seats2, lines2
+        else:
+            break
     if out_base is not None:
         s.finish(out_base, render=render)
     else:
         with tempfile.TemporaryDirectory() as tmp:
             s.finish(os.path.join(tmp, "scratch"), render=False)
-    return Report(plan=plan, failures=sorted(gate(s.M)), path=out_base)
+    return Report(plan=plan, failures=failures, path=out_base, fail_lines=lines)
 
 
 def cohort(count: int, first_seed: int = 1, households: int | None = None, jobs: int | None = None) -> list[Report]:

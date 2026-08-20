@@ -43,21 +43,19 @@ def roll_one(spec: tuple[int, int]) -> tuple[str, list[str], list[str]]:
     Runs in a worker process. Safe to fan out because a map is a pure function of its spec - the
     seed fixes every draw (see "RANDOMNESS IS POSITIONAL OR SCOPED" in this skill's CLAUDE.md), so
     parallelism can only change the wall clock, never a verdict."""
-    import tempfile
-
-    from l7r.diagram.check_village import gate
-
     seed, households = spec
-    plan = hg.plan_site(hg.HamletSpec(name=f"Audit-{seed:02d}", seed=seed, households=households))
-    settlement = hg.build(plan)
-    with tempfile.TemporaryDirectory() as tmp:
-        settlement.finish(os.path.join(tmp, "scratch"), render=False)
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        failures = sorted(gate(settlement.M))
+    hspec = hg.HamletSpec(name=f"Audit-{seed:02d}", seed=seed, households=households)
+    # THROUGH `generate`, NOT `build` - the audit must measure the path that SHIPS. It called `build`
+    # directly, which skips everything `generate` does around the stages: it finishes into a scratch
+    # directory, gates in-process, and re-rolls a map whose finished manifest strands a farmhouse. So
+    # a fix living in `generate` was invisible to the cohort - measured on seed 5, which passes
+    # through `generate` and failed in the audit. A harness that exercises a different code path than
+    # production reports on a map nobody will ever see.
+    with contextlib.redirect_stdout(io.StringIO()):
+        report = hg.generate(hspec, out_base=None, render=False)
+    plan = report.plan
     header = f"--- Audit-{seed:02d}  seed={seed} households={households} fall={int(plan.down_deg)} sink={plan.water_sink} shape={plan.cluster_shape} lanes={plan.lane_skeleton}"
-    fail_lines = [line.strip()[:400] for line in buf.getvalue().splitlines() if line.startswith("FAIL")]
-    return header, failures, fail_lines
+    return header, report.failures, report.fail_lines
 
 
 def audit(count: int, first_seed: int, only: str | None = None, jobs: int | None = None) -> int:
