@@ -48,6 +48,33 @@ it waives is seed 37's caption, described below.
 the cohort was re-run at push time and the number is in the push commit. If you are reading this later,
 trust the cohort over this paragraph.
 
+## SEED 37 IS STILL RED AFTER THE BOX-EDGES FIX - and that is itself a finding
+
+Measured after pulling `d2225c44` and re-rolling all four pool hamlets from the merged engine:
+**cohort 44/48**, and `captions_clear_the_ways_they_stand_on` still fails on seed 37.
+
+The hamlets session's own reasoning was that a SECOND failure would mean the cause is neither of the
+two things they fixed - not the corner sampling (a caption spanning a concave bend having all five
+sample points clear while its middle edge crosses the arc) and not the box asymmetry (the sampled box
+being symmetric +/-5 about the anchor while a caption runs from ascent 0.80 above to descender 0.25
+below). So both of those are now ruled out by measurement, which is worth as much as a fix.
+
+**Two hypotheses I did not get to test**, offered as questions since it is their code:
+
+1. **Is it even the same caption?** If the board moved between runs, this may be a different board
+   failing for a different reason, and "still red" would be misleading. Confirm the COORDINATE, not
+   the seed. (Seed 37 is `shape=crescent lanes=T`, 16 households, fall 45, sink offmap. Before the
+   fix it failed at (368, 1928) with a 5 ft lane.)
+2. **Does the measure handle a tread curving around a caption on MORE THAN ONE side?** The edges fix
+   answers a tread crossing one edge of the box. On a T skeleton whose arms now both follow the
+   margin, a caption can sit in the crotch with tread on two sides - and then the
+   least-distance-to-any-edge answer is CORRECT while the seat is simply bad, which puts it back in
+   `place_kosatsuba`'s ranking rather than in the clearance measure.
+
+Also note **seed 24 now fails `village_groves_visibly_stocked`**, the hamlets session's new gate 0618.
+That is a new check finding a new instance rather than a regression, but it was not in the cohort they
+last quoted and belongs on someone's list.
+
 ## THE REGRESSION THIS WAS PUSHED WITH
 
 `captions_clear_the_ways_they_stand_on` fails on **cohort seed 37** at (368, 1928). It passes on the
