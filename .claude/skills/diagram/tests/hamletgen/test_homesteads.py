@@ -91,3 +91,19 @@ def test_lane_frontage_seats_the_hamlet_when_the_field_row_offers_nothing(monkey
     s = hg.build(plan)
     assert plan.placed > 0, "with the field row silent, the farmsteads must come off the lanes"
     assert s.M["meta"]["cluster_seeding"] == "frontage", "the lane pass alone still counts as frontage seeding"
+
+
+def test_a_seat_on_forbidden_ground_is_refused() -> None:
+    """`generate` re-rolls a stranding map with the offending ground passed as `avoid`; the seat loops
+    honour it through `_seat_allowed`. Half a bundle pitch is the radius - enough to clear the pocket,
+    not so much that the retry merely nudges the same steading along it."""
+
+    class _S:
+        pass
+
+    s = _S()
+    assert hg.homesteads._seat_allowed(s, 100.0, 100.0) is True  # nothing forbidden yet
+    s._avoid_seats = [(100.0, 100.0)]
+    assert hg.homesteads._seat_allowed(s, 100.0, 100.0) is False  # dead on the forbidden seat
+    assert hg.homesteads._seat_allowed(s, 140.0, 100.0) is False  # inside half a bundle pitch
+    assert hg.homesteads._seat_allowed(s, 400.0, 400.0) is True  # well clear
