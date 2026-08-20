@@ -7,16 +7,23 @@ import math
 from typing import TYPE_CHECKING, Any
 
 from .._geom import (
+    LABEL_AIR_CAP,
     Pt,
+    box_gap,
     label_tilt,
     linear_tilt,
     point_in_poly,
+    poly_gap,
     seg_dist,
     street_runs,
     tilt_caption_seat,
     way_beds,
 )
 from .._knobs import KOSATSUBA_MARKER_MIN_PX, PUNISHMENT_SPOT_FT
+
+# The lane clearance a notice-board caption must MEET before nearness decides the seat. See the long
+# note beside `_pick` in `kosatsuba` for why this satisfices rather than maximizes, and why 5 ft.
+CAPTION_LANE_TARGET_FT = 3.0
 
 if TYPE_CHECKING:
     from ..core import Settlement
@@ -191,12 +198,29 @@ class PublicFixturesMixin:
             # the way `clear_label_seat` rings outward for verge-hugging features - and for the same
             # stated reason, that such a feature sits at the busiest node so its surroundings are the
             # most crowded on the map. The default seat is first, so an unblocked board does not move.
+            # DENSE ANNULUS, NOT FOUR RAYS. The four axis-aligned rays below are kept exactly as they
+            # were - the FIRST entry is still the historical default seat, so an unblocked board does
+            # not move - but four rays cannot serve two constraints at once. Measured: with `ref=` now
+            # binding `label_hugs_its_referent` to this family, the 24 px hug cap admits only the first
+            # rung or two of each ray, i.e. ~8 legal seats on 4 axes, and a board in a lane crotch can
+            # have every one of them on a tread. That collision cost 43/48 -> 39/48 (caption-on-tread
+            # back on seeds 1, 7, 14; a new hug failure on seed 46).
+            #
+            # The answer is not to relax either rule - both are right - but to give the lane score real
+            # choice among seats that ALL hug. So: twelve bearings at 30-degree steps, at four short
+            # standoffs, offset from the board's own half-extents so the caption box clears the glyph.
+            # The diagonals are the point: they sample ground the four axes cannot reach while staying
+            # well inside the cap, which is exactly the annulus a hugging caption is allowed to use.
+            import math as _m
+
             _cands = [(x, y + hh + 11 + _d) for _d in (0, 12, 24, 36, 48, 60)]
             _cands += [(x, y - hh - 11 - _d) for _d in (0, 12, 24, 36, 48, 60)]
             _cands += [(x + hw + _chw + 8 + _d, y) for _d in (0, 12, 24, 36, 48, 60)]
             _cands += [(x - hw - _chw - 8 - _d, y) for _d in (0, 12, 24, 36, 48, 60)]
+            # the diagonals, inside the cap (skipping the four bearings the rays above already cover)
+            _cands += [(x + (hw + _chw + 8 + _d) * _m.cos(_m.radians(_a)), y + (hh + 11 + _d) * _m.sin(_m.radians(_a))) for _a in (30, 60, 120, 150, 210, 240, 300, 330) for _d in (0, 8, 16)]
 
-            def _box_clearance(_q: Pt, _chw: float = _chw) -> float:
+            def _box_clearance(_q: Pt, _chw: float = _chw) -> float:  # noqa: D401 - see caption_lane_clearance
                 """Least distance from the caption's BOX to any drawn way's edge (negative = on it)."""
                 # READS THE LANE'S EDGE, THE SAME QUANTITY `captions_clear_the_ways_they_stand_on`
                 # READS - and it did not, for four attempts. `street_runs` returns polylines with no
@@ -214,6 +238,69 @@ class PublicFixturesMixin:
                         for _cx, _cy in ((_q[0] - _chw, _q[1] - 5), (_q[0] + _chw, _q[1] - 5), (_q[0] - _chw, _q[1] + 5), (_q[0] + _chw, _q[1] + 5), _q):
                             _best = min(_best, seg_dist(_cx, _cy, _pts[_i], _pts[_i + 1]) - _lhalf)
                 return _best
+
+            # SATISFICE, DO NOT MAXIMIZE - the defect that shipped the first version of this search
+            # (settlement-review, Inashiro, 2026-08-20). `max(..., key=_box_clearance)` has no cap and
+            # no hug term, and clearance rises monotonically along the outward ladder, so the LAST rung
+            # always won. Enumerated on Inashiro: the chosen seat bought 30.4 ft of lane clearance at
+            # 60 px of drift with a copse clump through the text, while the d=0 seat offered 19.3 ft
+            # clear at 8 px from the board and crossed nothing. Gate 0617 asks for 2 ft. The search did
+            # not fail to find good ground - it found it, scored it, and threw it away, which is the
+            # same shape as the `label_above` bug it was written to replace.
+            #
+            # So: take every seat that CLEARS the bar, then among those take the one NEAREST the board.
+            # Clearance is a constraint to be met, not a quantity to be maximized; distance to the
+            # subject is the thing actually worth minimizing, because that is what makes a caption read
+            # as belonging to its feature. Only when nothing clears the bar does the best-available seat
+            # win, which is the old behavior and the right fallback.
+            #
+            # WHY 3 FT, AND WHY NOT 5. Gate 0617 requires 2 ft against the tread edge; this keeps 1 ft
+            # of margin and no more. It was 5 ft first, on a headroom argument made without looking at
+            # what seats a real board is actually offered, and that number REJECTED GATE-LEGAL SEATS:
+            # instrumented on cohort seed 14, the two best seats available sit at hug 0.0 with 4.8 and
+            # 3.3 ft of clearance - both fine by the rule - and a 5 ft target threw both away and fell
+            # through to the fallback. A satisficing bar set above what the ground offers is just a
+            # maximizer with extra steps.
+            _lane_target = self.px(CAPTION_LANE_TARGET_FT)
+
+            # THE HUG CAP BOUNDS THE SEARCH, IT DOES NOT MERELY JUDGE IT AFTERWARDS. Satisficing on
+            # clearance alone still shipped Sawada adrift at 5.0x font: no seat there clears the lane
+            # target, so the fallback took the globally-best clearance and walked straight past
+            # `label_hugs_its_referent`. That is the SAME unbounded-maximize flaw one level down - a
+            # seat outside the cap is a gate failure whatever its clearance, so it is not a candidate
+            # at all. Ordering the two rules this way makes them cooperate: hug is the CONSTRAINT,
+            # lane clearance the OBJECTIVE inside it, nearness the tie-break when the objective is met.
+            _hug_cap = LABEL_AIR_CAP * 8.0  # 8 pt caption; segment 262's own lab_size for this family
+            _board_box = (x - hw, y - hh, x + hw, y + hh)
+
+            def _hug(_q: Pt) -> float:
+                # MEASURED THE WAY SEGMENT 262 MEASURES IT, which for a TILTED caption is the rotated
+                # QUAD and not an axis-aligned box. Getting this wrong cost cohort seed 46 a
+                # `label_hugs_its_referent` failure: at a -37 degree tilt the axis-aligned box
+                # overstates the gap badly, so every seat looked illegal, the legal pool came out
+                # empty, and the fallback took a distant seat that then failed the real check. The
+                # placer and its check must read ONE measure - this engine's oldest rule, and the
+                # second time I have broken it inside this one function.
+                _lb = (_q[0] - _chw, _q[1] - 5.0, _q[0] + _chw, _q[1] + 5.0)
+                if not _t:
+                    return box_gap(_lb, _board_box)
+                _cx, _cy = _q[0], _q[1]
+                _ca, _sa = math.cos(math.radians(_t)), math.sin(math.radians(_t))
+                _quad = [
+                    (_cx + (_px - _cx) * _ca - (_py - _cy) * _sa, _cy + (_px - _cx) * _sa + (_py - _cy) * _ca) for _px, _py in ((_lb[0], _lb[1]), (_lb[2], _lb[1]), (_lb[2], _lb[3]), (_lb[0], _lb[3]))
+                ]
+                return poly_gap(_quad, [(_board_box[0], _board_box[1]), (_board_box[2], _board_box[1]), (_board_box[2], _board_box[3]), (_board_box[0], _board_box[3])])
+
+            def _pick(_seats: list[Pt]) -> Pt:
+                _legal = [_q for _q in _seats if _hug(_q) <= _hug_cap] or _seats
+                _clear = [_q for _q in _legal if _box_clearance(_q) >= _lane_target]
+                if _clear:
+                    # (distance, then ORDER) - the order term is what keeps an unblocked board on its
+                    # historical seat when a diagonal ties with it, so adding the annulus above churns
+                    # no manifest that was already correct.
+                    _ix = {id(_q): _i for _i, _q in enumerate(_seats)}
+                    return min(_clear, key=lambda _q: (round((_q[0] - x) ** 2 + (_q[1] - y) ** 2, 3), _ix[id(_q)]))
+                return max(_legal, key=_box_clearance)
 
             if label_xy:
                 _lx, _ly = label_xy
@@ -237,12 +324,16 @@ class PublicFixturesMixin:
                 # one lane walks toward another. Enumerated on Kashikawa (12 lanes, board in the lane
                 # crotch): 2.0, -1.0, 1.0, -0.3, 7.7 ft at gaps 11/16/21/28/36. A ladder that stopped at
                 # 21 took the first rung and left the caption on the tread; the good pocket is at 36.
-                # Hug there is 38.5 px, which the pool already carries (inashiro and mizuguchi sit at
-                # 41.0 and pass `label_hugs_its_referent`).
+                # Hug there is 38.5 px. THE PARENTHETICAL THAT USED TO SIT HERE WAS FALSE IN BOTH
+                # HALVES - it said inashiro and mizuguchi "sit at 41.0 and pass
+                # `label_hugs_its_referent`". They sat at 68.5, and they did not pass it: the check
+                # SKIPS any record whose element [6] is null, and no kosatsuba caption carried a
+                # referent until `ref=` was added below. An unmeasured number quoted as a passing
+                # measurement - exactly what a standing comment must never do.
                 _tilted = [
                     tilt_caption_seat(x, y, rot, _t, hw, hh, _g, above=_ab, lateral=_lat) for _ab in (False, True) for _g in (11, 16, 21, 28, 36) for _lat in (0.0, _chw + hw + 6, -(_chw + hw + 6))
                 ]
-                _lx, _ly = _tilted[15] if label_above else max(_tilted, key=_box_clearance)
+                _lx, _ly = _tilted[15] if label_above else _pick(_tilted)
             else:
                 # THE HALO MUST NOT NOTCH THE WAY THE BOARD STANDS ON (settlement-review on Inashiro,
                 # 2026-08-19). The caption is drawn with a 3 px background halo
@@ -268,17 +359,46 @@ class PublicFixturesMixin:
                 # be chosen BEFORE `self.label` lays the text out. 8 pt italic runs ~0.28 em per
                 # character: "notice board" estimates 26.9 px against a measured 26.4 on the shipped
                 # sheet, which is close enough to rank seats by.
-                if label_above:
-                    _lx, _ly = (x, y - hh - 11)
+                # ONE SEARCH, BOTH CONSTRAINTS. A caption must clear STRUCTURES and WAYS, and honoring
+                # them in separate places is what left two cohort seeds notched. `label_above` is a
+                # two-seat STRUCTURE verdict from the caller (`label_seat_clear` on below, then above);
+                # it knows nothing about lanes. Taking a fixed seat on it skipped the lane search
+                # entirely - instrumented on seed 14, three of the twenty-four candidates clear the
+                # structures and the best of those has 7.8 ft of lane clearance, while the seat the
+                # flag forced had -1.2 ft. The good seat was found and then discarded.
+                #
+                # So every candidate is filtered by the engine's own structure probe and scored on lane
+                # clearance. That subsumes the flag - the structural question is asked directly of every
+                # seat instead of being inherited as a verdict about two of them - and the flag is kept
+                # only for the case where nothing clears the structures at all, where its answer is the
+                # best information available.
+                _boxes = self.label_blockers("kosatsuba")
+                _tw_lab = self.label_caption_hw(label, 8.0)
+                # `label_above` stays a HARD constraint when a caller sets it: it is that caller's
+                # knowledge, not a hint, and `test_kosatsuba_records_a_blocking_struct` pins it. It
+                # narrows the pool rather than naming a point, so the lane score still chooses within
+                # the allowed side.
+                _pool = [_q for _q in _cands if _q[1] < y] if label_above else _cands
+                _ok = [_q for _q in _pool if self.label_seat_clear(_q[0], _q[1], _tw_lab, 8.0, _boxes)]
+                if _ok:
+                    _lx, _ly = _pick(_ok)
                 else:
-                    _lx, _ly = max(_cands, key=_box_clearance)
+                    _lx, _ly = (x, y - hh - 11) if label_above else (x, y + hh + 11)
             # OUTSIDE the branch chain - all three seats (hand, tilted, chosen) draw their caption here.
             # It sat one level deeper for one revision and a TILTED board silently lost its label
             # entirely: Kashikawa's rot=145.7 takes the `elif _t` branch, never reached the call, and
             # shipped a 12 x 5 ft glyph that nothing on the sheet identifies. Caught only because the
             # clearance probe returned its "no caption found" sentinel instead of a distance - a
             # measurement that could not tell "infinitely clear" from "not there".
-            self.label(_lx, _ly, label, 8, italic=True, color="#7A5A30", rot=_t)
+            # `ref=` IS WHAT PUTS THIS CAPTION FAMILY UNDER `label_hugs_its_referent` AT ALL, and its
+            # absence hid a 68.5 px drift on three pool hamlets (settlement-review, Inashiro,
+            # 2026-08-20). Segment 262 opens `if len(L) < 7 or not L[6]: continue`, so a record with no
+            # referent box is SKIPPED - and every kosatsuba caption ever drawn had element [6] null,
+            # because this call never passed one. The rule was not lenient here, it was absent, and a
+            # comment a few lines up asserted these maps "pass `label_hugs_its_referent`" when nothing
+            # had ever measured them. Textbook "a check that never RUNS looks exactly like a check that
+            # passes" (this skill's CLAUDE.md), found by a reviewer rather than by the gate.
+            self.label(_lx, _ly, label, 8, italic=True, color="#7A5A30", rot=_t, ref=(x - hw, y - hh, x + hw, y + hh))
         return z
 
     def fixture_clear_of_water(self: Settlement, x: float, y: float, half: float) -> bool:  # type: ignore[misc]
@@ -307,6 +427,24 @@ class PublicFixturesMixin:
                     if seg_dist(x, y, (pts[i][0], pts[i][1]), (pts[i + 1][0], pts[i + 1][1])) < need:
                         return False
         return True
+
+    def caption_lane_clearance(self: Settlement, qx: float, qy: float, chw: float) -> float:  # type: ignore[misc]
+        """Least distance from a caption's BOX to any lane's tread EDGE (negative = standing on it).
+
+        Shared deliberately by the notice board's seat search and by `place_kosatsuba`'s siting
+        preference, so the two cannot drift: the siter must rank a board position by the same measure
+        the seat search will later optimize, and gate 0617 reads. Every time this quantity has been
+        re-derived at a second call site in this file it has come back subtly different - the
+        centerline instead of the edge, an axis-aligned box instead of the rotated quad - so it is a
+        method now rather than a third closure."""
+        _best = 1e9
+        for _lane in self.M.get("lanes") or []:
+            _pts = _lane.get("pts") or []
+            _lhalf = float(_lane.get("w") or 3) / 2.0
+            for _i in range(len(_pts) - 1):
+                for _cx, _cy in ((qx - chw, qy - 5), (qx + chw, qy - 5), (qx - chw, qy + 5), (qx + chw, qy + 5), (qx, qy)):
+                    _best = min(_best, seg_dist(_cx, _cy, _pts[_i], _pts[_i + 1]) - _lhalf)
+        return _best
 
     def place_kosatsuba(self: Settlement, label: str = "notice board") -> Pt | None:  # type: ignore[misc]
         """AUTO-SITE the settlement kosatsuba on a lane/road verge at the busiest clear node -
@@ -425,8 +563,55 @@ class PublicFixturesMixin:
         # that already stand on the traffic. A board with nowhere to put its caption is still placed,
         # so labels_clear_of_other_buildings reports it rather than the siter hiding it.
         floor = 0.6 * max(c[0] for c in cands)
-        _b, _s, x, y, rot, lab = max((c for c in cands if c[0] >= floor), key=lambda c: (c[5] is not None, c[1]))
-        self.kosatsuba(x, y, rot, label=label, label_above=bool(lab))
+
+        # A BOARD POSITION IS ONLY AS GOOD AS THE CAPTION IT CAN CARRY (cohort seed 14, 2026-08-20).
+        # `lab` above asks only whether the two DEFAULT seats clear STRUCTURES. It never asks about
+        # lanes - so the siter happily chose a board that is hemmed: instrumented on seed 14, all
+        # eleven structure-clear seats of the forty-eight sit west and south where the lanes run
+        # (best clearance 1.0 ft against a 2 ft bar) while every seat with real clearance - 14.3,
+        # 14.2, 8.6, 5.8 ft - is blocked by a building. No seat search can fix that, because the
+        # board is in the wrong PLACE to be captioned, and nine attempts inside the search is what it
+        # cost to see that.
+        #
+        # So feasibility joins the ranking, ahead of the old structure-only term. The probe is the
+        # NEAR RING (four axes and four diagonals at zero standoff) rather than the full
+        # forty-eight, and that is sound because the full candidate set is a SUPERSET of the ring:
+        # near-ring-feasible implies search-feasible, which is exactly the one-way guarantee a
+        # PREFERENCE needs. It is 8 probes per board position against the 2 already spent, and it
+        # cannot promise a seat where the ring finds none - it only stops the siter preferring a
+        # position that demonstrably has one over a position that demonstrably does not.
+        def _sitable(_x: float, _y: float, _hw: float, _hh: float) -> bool:
+            _chw2 = max(10.0, len(label) * 8 * 0.28) if label else 0.0
+            if not label:
+                return True
+            # THE RING MUST BE A SUBSET OF WHAT THE SEARCH ACTUALLY TRIES, or the one-way guarantee
+            # above is worthless. The first cut used 45-degree diagonals (0.7, 0.7) while the seat
+            # search's annulus runs 30/60/120/150/210/240/300/330 - so a board could be ranked
+            # sitable on a seat the search never offers, and seed 14 did not move. These are exactly
+            # the twelve zero-standoff members of `_cands`: four axes plus those eight bearings.
+            _ring = [(0.0, 1.0), (0.0, -1.0), (1.0, 0.0), (-1.0, 0.0)]
+            _ring += [(math.cos(math.radians(_a)), math.sin(math.radians(_a))) for _a in (30, 60, 120, 150, 210, 240, 300, 330)]
+            for _dx, _dy in _ring:
+                _qx = _x + (_hw + _chw2 + 8.0) * _dx
+                _qy = _y + (_hh + 11.0) * _dy
+                if self.label_seat_clear(_qx, _qy, tw_lab, 8.0, kb_boxes) and self.caption_lane_clearance(_qx, _qy, _chw2) >= CAPTION_LANE_TARGET_FT:
+                    return True
+            return False
+
+        _b, _s, x, y, rot, lab = max((c for c in cands if c[0] >= floor), key=lambda c: (_sitable(c[2], c[3], w / 2, h / 2), c[5] is not None, c[1]))
+        # `lab` NO LONGER DECIDES THE CAPTION'S SIDE, and that was the last thing keeping two cohort
+        # seeds notched. It is computed above by testing `label_seat_clear` at the DEFAULT distance
+        # only - `y +/- h/2 + 11` - so it reports "below is blocked" for a board whose below seat is
+        # blocked at 11 px and perfectly clear at 35. Passing that verdict on as `label_above` forced
+        # the caption to the far side and skipped the lane search entirely; instrumented on seed 14,
+        # the seat it forced had -1.2 ft of lane clearance while an outward below seat had 7.8.
+        #
+        # `kosatsuba` now asks the structure question itself, of every candidate in its outward walk,
+        # so the narrow precomputed verdict is strictly worse information. `lab` is still used ABOVE,
+        # to prefer a BOARD POSITION where some caption seat exists at all - that is a different
+        # question and a good one. The parameter stays on `kosatsuba` for external callers who know
+        # something the manifest does not (the gate-adjacent case its docstring describes).
+        self.kosatsuba(x, y, rot, label=label)
         return (x, y)
 
     def place_punishment_spot(self: Settlement, label: str | None = "punishment ground", label_xy: Pt | None = None) -> Pt | None:  # type: ignore[misc]

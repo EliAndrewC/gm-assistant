@@ -3068,12 +3068,12 @@ on the five seeds - but an auto-sync reverted that edit before it was committed,
 not reproducible from the current tree and should be re-taken rather than trusted**. The rot values above
 were measured independently and do stand.
 
-## 2026-08-19: the caption seat search, six attempts - what worked, and TWO CLAIMS OF MINE THAT WERE WRONG
+## 2026-08-19: the caption seat search, seven attempts - what worked, and THREE CLAIMS OF MINE THAT WERE WRONG
 
-Gate 0617 caught caption-on-tread notches on cohort seeds 1, 7, 14, 33, 36. The seat search now clears
-three of them (**38/48 -> 41/48**); seeds 14 and 36 remain, measured at -1.6 and 0.5 ft. Both earlier
-entries in this file about this work contain errors, corrected here rather than edited away, because the
-errors are the useful part.
+Gate 0617 caught caption-on-tread notches on cohort seeds 1, 7, 14, 33, 36. **All five are now clear
+(38/48 -> 43/48, zero new failures).** Getting there took seven attempts, and the reason it took seven -
+two of them measuring code that was never applied - is the useful part. Three claims of mine in this
+section were wrong; they are corrected below rather than edited away, in the order I made them.
 
 **WRONG CLAIM 1: "all five failing boards are TILTED".** They are not. `linear_tilt` **CLAMPS** past 45
 degrees rather than folding - its own docstring says so at length and warns it must never be confused with
@@ -3086,7 +3086,8 @@ mid-experiment, so the measurement was of the old code. Applied properly to the 
 three of the five seeds. A measurement taken against an uncommitted edit is worth nothing; commit first,
 then measure - which is now how this session does it.
 
-**WHAT ACTUALLY LANDED, all four verified:**
+**WHAT ACTUALLY LANDED - and read WRONG CLAIM 3 below before trusting items 3 and 4 of this list.**
+They are described here as verified. Two of them were not in the tree when that was written.
 
 1. **The scorer reads the lane's tread EDGE**, which is what gate 0617 reads. It read the CENTERLINE -
    `street_runs` returns polylines with no widths - so it was optimistic by half a lane width (~2.5-3 px)
@@ -3104,10 +3105,162 @@ then measure - which is now how this session does it.
    fallback when nothing clears the structures. Honoring the two constraints in separate places is what
    left seats with 22-61 ft of clearance unused.
 
-**WHAT REMAINS, and it is not understood.** Seeds 14 and 36 still notch after all four changes, and the
-last diagnostic shows both taking the untilted branch with `label_above=True` and reachable seats
-measured at 22-61 ft. My model of the code path is therefore still wrong somewhere, and I stopped rather
-than take a seventh guess - each cycle costs a full cohort run and I could no longer explain the residue.
-**Next step is instrumentation, not another lever**: log the candidate list, the structure filter's
-verdict per seat, and the chosen seat, for seed 14 specifically. The answer is in the difference between
-what the search considers and what I believe it considers.
+**WRONG CLAIM 3, and it is the one that cost the most: TWO OF THE FOUR "VERIFIED" CHANGES WERE NEVER IN
+THE TREE.** Items 3 and 4 above were written up as landed and verified. They were not. `git log` shows
+`136e0398` -> `9805d654` with neither commit in between, and the working file still read
+`_lx, _ly = max(_cands, key=_box_clearance)` - the unconstrained line both items claim to have replaced.
+Both patch scripts printed success and the `git commit` appeared to run. So the cohort runs that produced
+"seeds 14 and 36 still notch after all four changes" were measuring **two changes, not four**, and the
+conclusion drawn from them - that the design did not work and my model of the code path must be wrong -
+was false. The design was right; the code was absent.
+
+This is the same family as WRONG CLAIM 2 one section up (a measurement against a reverted tree), which
+means the lesson did not take the first time. It has now: **after an edit, confirm the string is in the
+file, the commit exists, AND the diffstat names the file.** All three. A script's success message and a
+clean `git commit` are each, separately, worth nothing.
+
+**WHAT THE INSTRUMENTATION FOUND (one run, and it was decisive).** The previous entry's next step was
+right - stop pulling levers, log the actual candidate list. For seed 14: 24 candidates, 3 clearing the
+structure filter, the best of those with **7.8 ft** of lane clearance - and the caption drawn at a seat
+with **-1.2 ft**. The good seat was being found and then discarded. That is item 3's diagnosis exactly,
+which is what pointed at the code being missing rather than the model being wrong.
+
+**THE ROOT CAUSE IS UPSTREAM OF EVERYTHING ABOVE.** `place_kosatsuba` computes `lab` by testing
+`label_seat_clear` at the DEFAULT distance only - `y +/- h/2 + 11` - and passes that verdict on as
+`label_above`. So a board whose below-seat is blocked at 11 px and perfectly clear at 35 px gets flagged
+"above", and the flag then forced the caption to the far side. The premise the flag encodes ("below is
+unusable") is a narrower claim than the one it is read as. The fix is not to weaken the flag but to stop
+computing it from a question that cannot see the answer: **`kosatsuba` now asks the structure question
+itself, of every candidate in its outward walk, and `place_kosatsuba` no longer passes `label_above` at
+all.** `lab` is still used, one line up, to prefer a BOARD POSITION where some caption seat exists -
+a different question, and a good one.
+
+**`label_above` STAYS A HARD CONSTRAINT for anyone who sets it.** The first version of this fix made the
+flag advisory, and `test_kosatsuba_records_a_blocking_struct` caught it immediately (507.1 > 500) - the
+test calls `kosatsuba` directly and pins the flag's contract, which exists for the gate-adjacent case its
+docstring describes, where the caller knows something the manifest does not. That test was right and the
+change was too broad: an external caller's knowledge is not a hint. So the flag now NARROWS the candidate
+pool rather than naming a point, and the lane score still chooses within the allowed side.
+
+**RESULT: 43/48, all five caption notches cleared, zero new failures against baseline.** Seeds 14 and 36
+are FIXED - the entry above saying they "remain" and are "not understood" was measuring absent code.
+
+## 2026-08-20: the notice-board caption, ATTEMPTS 8-13 - and the one that was never in the seat search
+
+Continues the seven-attempt entry above. What follows cost six more attempts and the whole of it was
+spent in the wrong place, so the shape of the mistake is the deliverable.
+
+**THE FINDING THAT STARTED IT (settlement-review, Inashiro).** `label_hugs_its_referent` was never
+measured on a notice-board caption in the history of this engine. Segment 262 opens
+`if len(L) < 7 or not L[6]: continue`, and `kosatsuba()` never passed `ref=`, so element [6] was null
+on every board caption ever drawn. The rule was not lenient - it was ABSENT - and a comment in
+`fixtures.py` asserted that two named maps "sit at 41.0 and pass `label_hugs_its_referent`" when
+nothing had ever measured them. Adding `ref=` immediately showed 68.5 px of drift on three pool maps
+against a 24 px cap. Textbook "a check that never RUNS looks exactly like a check that passes", and
+it took an outside reviewer rather than the gate.
+
+**THEN FOUR ATTEMPTS THAT WERE ALL THE SAME MISTAKE.** Cohort readings, in order: 43 (baseline) ->
+39 -> 41 -> 42 -> 42 -> 43+. Each attempt fixed a real defect and each left the total short:
+
+1. **Maximizing an unbounded quantity.** `max(_ok, key=_box_clearance)` with clearance rising
+   monotonically along the outward ladder, so the LAST rung always won - 60 px of drift and a copse
+   clump through the text, to buy 11 ft of surplus over a 2 ft bar. Fixed by satisficing.
+2. **A satisficing bar above what the ground offers.** Target set to 5 ft "for headroom", never
+   checked against real seats. Seed 14's two best seats are hug 0.0 at 4.8 and 3.3 ft - both legal -
+   and the 5 ft bar threw both away and fell through to the fallback. *A satisficing bar above what
+   the ground offers is just a maximizer with extra steps.* Now 3.0 (the gate's 2 plus 1).
+3. **A hug measure that disagreed with the gate's.** Mine was an axis-aligned box; segment 262 uses
+   the rotated QUAD. At -37 degrees the box overstates the gap, so on seed 46 every seat looked
+   illegal, the legal pool emptied, and the fallback took a distant seat that failed the real check.
+4. **A ring asserted to be a subset instead of constructed as one** - see below.
+
+**THE ACTUAL DEFECT WAS NOT IN THE SEAT SEARCH, AND EIGHT ATTEMPTS WERE.** Read off the engine's own
+candidate evaluation (an env-gated dump inside `kosatsuba`, not a reconstruction): seed 14's board has
+48 candidate seats, **11 clear structures and every one of them sits west or south where the lanes
+run** - best clearance 1.0 ft against a 2 ft bar - while every seat with real room (14.3, 14.2, 8.6,
+5.8 ft) is blocked by a building. The board is in the wrong PLACE to be captioned. No seat search can
+fix that. `place_kosatsuba` now ranks board positions by whether the caption is SITABLE - structures
+AND lanes - ahead of the old structures-only `lab` term, which only ever tested the two default seats.
+
+**THREE MIRRORS, ALL PLAUSIBLE, ALL WRONG** - the reason it took so long to see:
+
+| mirror | how it lied |
+|---|---|
+| envelope-turn metric | snapped to the nearest VERTEX, so a square anchored mid-edge read 180 degrees where the truth is 0 |
+| seat enumerator v1 | omitted the STRUCTURE filter entirely, so it reported ten usable seats where the engine had none |
+| seat enumerator v2 | reconstructed coordinates from the RECORDED 12x5, but the drawn `hw/hh` differ, so only 5 of 48 candidates matched and "not offered" was indistinguishable from "my coordinates are wrong" |
+
+Each looked right and each pointed somewhere wrong. The env-gated dump answered it in ONE run.
+**When a reconstruction and the engine disagree, stop reconstructing** - print from inside.
+
+**THE STRUCTURAL FIX, which matters more than the bug.** The lane measure is now a METHOD,
+`Settlement.caption_lane_clearance`, shared by the seat search and the siting preference. That single
+quantity had been re-derived three times in this one function and came back different every time:
+the lane CENTERLINE instead of the tread EDGE (four attempts lost to it), an axis-aligned box instead
+of the rotated quad, and a near ring at 45 degrees instead of the annulus's own bearings. A rule that
+says "the placer and its check must read one source" does not hold by being written down; it holds
+when there is only one source to read.
+
+## 2026-08-20: THE INSTRUMENT-DISCRIMINATION FAMILY - five instances, three sessions, one day
+
+Named by the Inashiro session, and recorded here because it is now clearly the dominant failure mode
+across this whole effort - more costly than any individual bug any of the three sessions fixed. **The
+failure is never in the measuring. It is in the step immediately after, where an accurately-observed
+narrow fact is promoted into a broad claim it does not establish.** Every instance passed review at the
+time because the underlying number was correct.
+
+| # | the true observation | the unsupported promotion | what it cost |
+|---|---|---|---|
+| 1 | 7 call sites of `pointed_ring` | "1,329 tint candidates" | a wrong ledger entry, caught by a peer; real figures 2 of 706 entering, 10 shapes judged |
+| 2 | a cohort run measured 41/48 | "the unified seat search does not help" | two attempts spent looking for geometric causes; the code was never in the tree |
+| 3 | three of 48 seeds are crescent-rolled and fail | "it is a crescent defect" | p ~ 0.04 treated as decisive; a sixth fix attempt against dead code |
+| 4 | 60-120 ft of clearance to FABRIC beside each stranded house | "the ground is wide open" | attempt ten; the open ground was flooded paddy, which the measurement did not count |
+| 5 | "not in my tree, I have not touched `waterfields/` all session" | "those items are unclaimed" | three sessions nearly rewrote `carve.py` twice |
+
+Instance 5 is the one worth dwelling on, because it is the only one that is not a measurement at all -
+it is a **coordination** instance, which shows the family is about inference rather than instruments.
+A peer's report about its own working directory is a true statement with a narrow scope; "unclaimed" is
+a statement about three sessions. I had better evidence to hand (my own earlier message assigning those
+items) and overrode it with the weaker source. Also note instance 4's mirror, recorded in 2b: an
+erosion test that says the dry ground stays connected, but counts only crop - so it answers about mud,
+not about where a way can run.
+
+**THE REMEDIES, both cheap, and each would have caught a different subset:**
+
+1. **Name the commit a measurement was taken against.** Catches 2 (and the architecture session's own
+   retraction, which baselined against a HEAD older than the lane-web feature). A measurement whose
+   tip is not stated is not a measurement yet.
+2. **Ask what fraction of the POPULATION looks like the signal, before calling it one.** Catches 3 and
+   4. The base rate is the check, and it is one line.
+3. **For coordination specifically: "not in my tree" and "unclaimed" are different sentences.** A peer
+   cannot see the other peers. Only the session that ASSIGNED an item knows who owns it, so ownership
+   questions go to the assignment record, never to a third party's working directory.
+
+**A SIXTH INSTANCE, AND IT IS A DIFFERENT KIND OF CLAIM: the SET RELATION.** The five above are all
+"measured the wrong quantity". This one is "asserted a relation instead of constructing it", and it
+belongs in the same family because it fails the same way - the reasoning is valid, the object it is
+about is not what you think it is.
+
+Ranking board positions by caption feasibility, I probed a NEAR RING of 8 seats rather than all 48,
+and justified it: the full candidate set is a SUPERSET of the ring, so ring-feasible implies
+search-feasible, which is the one-way guarantee a PREFERENCE needs. The argument is sound. **My ring
+was not a subset** - it used 45-degree diagonals while the search's annulus runs
+30/60/120/150/210/240/300/330 - so a board could be ranked sitable on a seat the search never offers.
+Seed 14 did not move, and the cohort read 42/48 twice running for two entirely different reasons.
+Rebuilt as exactly the twelve zero-standoff members of the real candidate list, seed 14 passes.
+
+So the discipline has two halves, pointed at two kinds of claim:
+
+- **Measure what the RULE measures** - not a near-enough quantity wearing the same name.
+- **CONSTRUCT the subset; do not assert it.** Where an optimization rests on set containment, build
+  the smaller set FROM the larger one in code, so the relation cannot quietly stop being true when
+  someone edits the larger one.
+
+**And one that generalizes past this project: validate an instrument on inputs whose answer you already
+know, BEFORE you point it at the unknown.** The `seat_cluster` edge-turn metric written the same day
+snapped to the nearest envelope vertex, so a square anchored mid-edge reported 180 degrees where the
+truth is 0 - it would have reported a corner on every map in the cohort and "confirmed" the hypothesis
+it was built to test. Three known shapes (square mid-edge 0, square spanning a corner 90, square
+half-lap 180) caught it in one run. **An instrument that cannot fail its own sanity case is not
+evidence, and a hypothesis confirmed by an untested instrument is worse than no result** - it ends the
+investigation.
