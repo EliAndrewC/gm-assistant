@@ -1189,7 +1189,14 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     # from the middle, and the cluster stretches to meet them. Reaching the outlying houses is the
     # LANE WEB's job, and the web is laid after they exist - see `stage_web`.
     layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, seat["lat"], seat["dep"])
-    _raw_arms = [[to_screen((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
+    # THE SKELETON FOLLOWS THE MARGIN'S CURVE, not merely its direction - see future-work 2b-i.
+    _sk_frame = _margin_frame(plan, max(seat["lat"] * CLUSTER_SPAN_FACTOR, seat["lat"] + BUNDLE_PITCH))
+    _sk_arc0, _sk_stand0 = _sk_frame.project((cx, cy))
+
+    def _on_margin(p: Pt) -> Pt:
+        return _sk_frame(_sk_arc0 + p[0], _sk_stand0 - p[1])
+
+    _raw_arms = [[_on_margin((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
 
     _kept_arms: list[tuple[Poly, Poly]] = []
     for _ai, lane_pts in enumerate(layout["lanes"]):
