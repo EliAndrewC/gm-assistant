@@ -1014,6 +1014,46 @@ def _seg_0616__copse_stands_clear_of_the_belt(*, M: Any = _UNBOUND, check: Any =
     return _kept(locals(), ())
 
 
+def _seg_0618__village_groves_visibly_stocked(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """A DECLARED GROVE MUST ACTUALLY HOLD TREES - added 2026-08-20 (settlement-review, Inashiro).
+
+    Every other grove rule asks where the clumps are relative to something ELSE: clear of the belt, of
+    the paddies, of the structures, of the lanes. Not one asks whether the feature the record declares
+    was drawn at all. So Inashiro shipped `village_groves[1]` - role copse, w 255.0, h 740.9 - holding
+    exactly ONE clump, and the whole battery stayed green. A 255 x 741 ft grove with one tree in it.
+
+    THE CAUSE WAS THE PREVIOUS CHECK. 0616's keep-out reserves the belt's canopy against the copse;
+    Inashiro's windbreak has 227 clumps along the cluster's west fringe, the copse is seated after it
+    over the same house cloud, and a blocked clump in a SPARSE grove used to be dropped rather than
+    relocated - so the copse went 11 -> 1. 0616 went green and nothing measured what survived. This is
+    the companion rule that would have caught it, and it is the general form: fixing where a feature
+    may not go says nothing about whether any of it remains.
+
+    THE FLOOR, measured across the four scripted hamlets as clumps per 100k sq px of recorded
+    footprint: inashiro copse 0.53 (the defect), mizuguchi 4.24, sawada 3.90, kashikawa 4.43, and a
+    dense belt ~110. Set at 1.5 - 2.6x below the healthiest scatter and 2.8x above the defect. It is a
+    floor on VISIBILITY, not a density target: how many gaps a cluster leaves for its copse is the
+    map's business, and `settlements/vegetation.md` only requires that the copse fill them."""
+    if M["meta"].get("generated_by") and M["meta"].get("scale") in ("hamlet", "village"):
+        _bare: list[str] = []
+        for _g in M.get("village_groves", []):
+            _area = float(_g.get("w") or 0.0) * float(_g.get("h") or 0.0)
+            if _area <= 0:
+                continue
+            _n = len(_g.get("clumps") or [])
+            _dens = _n * 1e5 / _area
+            if _dens < 1.5:
+                _bare.append(f"{_g.get('role') or 'grove'} {float(_g.get('w') or 0):.0f}x{float(_g.get('h') or 0):.0f}px holds {_n} clump(s) ({_dens:.2f}/100k)")
+        check(
+            "village_groves_visibly_stocked",
+            not _bare,
+            f"{len(_bare)} recorded grove(s) hold almost no trees: {_bare[:3]} (floor 1.5 clumps per 100k sq px) - the map DECLARES a feature it does not "
+            f"draw, so the dooryards it should have greened stay bare while every other grove rule reads green. Let the sparse scatter re-seat around "
+            f"local obstacles instead of dropping the clump (homestead_parts._reseat)",
+        )
+    return _kept(locals(), ())
+
+
 def _seg_0617__captions_clear_the_ways_they_stand_on(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 0617 (captions_clear_the_ways_they_stand_on) - added 2026-08-19.
 
