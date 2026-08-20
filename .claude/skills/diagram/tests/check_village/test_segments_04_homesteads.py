@@ -1019,3 +1019,32 @@ def test_captions_clear_the_ways_they_stand_on_fires_and_skips_a_malformed_recor
     # a truncated record is SKIPPED, not crashed on, even though it sits squarely on the lane
     malformed = manifest(meta=meta, lanes=[lane], labels=[[180.0, 96.0, 240.0, 104.0]])
     assert "captions_clear_the_ways_they_stand_on" not in check_village.gate(malformed, verbose=False, only={"captions_clear_the_ways_they_stand_on"})
+
+
+def test_village_groves_visibly_stocked_fires_on_a_grove_that_was_never_drawn():
+    """A DECLARED GROVE MUST HOLD TREES (gate 0618, settlement-review on Inashiro 2026-08-20).
+
+    The motivating artifact: `village_groves[1]`, role copse, 255 x 741 px, holding exactly ONE
+    clump - a grove the manifest declares and the sheet does not show. Every other grove rule asks
+    where the clumps are relative to something ELSE (the belt, the paddies, the structures, the
+    lanes), so a feature collapsing to nothing passed all of them.
+
+    The three cases below are the floor's whole contract: the defect fires, a healthy scatter at the
+    lowest density ever measured on a shipped map passes, and a zero-area record is skipped rather
+    than dividing by zero."""
+    meta = {"scale": "hamlet", "ftpx": 1, "W": 1000, "H": 1000, "generated_by": "test"}
+    only = {"village_groves_visibly_stocked"}
+
+    # 1 clump in 255x741 px = 0.53 per 100k - the Inashiro defect, to its own numbers
+    starved = manifest(meta=meta, village_groves=[{"role": "copse", "w": 255.0, "h": 740.9, "r": 11.0, "clumps": [[500.0, 500.0]]}])
+    assert "village_groves_visibly_stocked" in check_village.gate(starved, verbose=False, only=only)
+
+    # 14 clumps in 538x667 = 3.90 per 100k - Sawada before the fix, the LOWEST healthy scatter
+    # measured on any shipped map. The floor must clear it, or it is dictating density rather than
+    # catching absence.
+    healthy = manifest(meta=meta, village_groves=[{"role": "copse", "w": 538.0, "h": 667.0, "r": 11.0, "clumps": [[float(i) * 10, 500.0] for i in range(14)]}])
+    assert "village_groves_visibly_stocked" not in check_village.gate(healthy, verbose=False, only=only)
+
+    # a zero-area record is SKIPPED, not divided by (coverage: the `_area <= 0` branch)
+    degenerate = manifest(meta=meta, village_groves=[{"role": "copse", "w": 0.0, "h": 0.0, "r": 11.0, "clumps": []}])
+    assert "village_groves_visibly_stocked" not in check_village.gate(degenerate, verbose=False, only=only)
