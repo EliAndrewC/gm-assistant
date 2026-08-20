@@ -283,7 +283,12 @@ class PublicFixturesMixin:
                 # best information available.
                 _boxes = self.label_blockers("kosatsuba")
                 _tw_lab = self.label_caption_hw(label, 8.0)
-                _ok = [_q for _q in _cands if self.label_seat_clear(_q[0], _q[1], _tw_lab, 8.0, _boxes)]
+                # `label_above` stays a HARD constraint when a caller sets it: it is that caller's
+                # knowledge, not a hint, and `test_kosatsuba_records_a_blocking_struct` pins it. It
+                # narrows the pool rather than naming a point, so the lane score still chooses within
+                # the allowed side.
+                _pool = [_q for _q in _cands if _q[1] < y] if label_above else _cands
+                _ok = [_q for _q in _pool if self.label_seat_clear(_q[0], _q[1], _tw_lab, 8.0, _boxes)]
                 if _ok:
                     _lx, _ly = max(_ok, key=_box_clearance)
                 else:
@@ -442,7 +447,19 @@ class PublicFixturesMixin:
         # so labels_clear_of_other_buildings reports it rather than the siter hiding it.
         floor = 0.6 * max(c[0] for c in cands)
         _b, _s, x, y, rot, lab = max((c for c in cands if c[0] >= floor), key=lambda c: (c[5] is not None, c[1]))
-        self.kosatsuba(x, y, rot, label=label, label_above=bool(lab))
+        # `lab` NO LONGER DECIDES THE CAPTION'S SIDE, and that was the last thing keeping two cohort
+        # seeds notched. It is computed above by testing `label_seat_clear` at the DEFAULT distance
+        # only - `y +/- h/2 + 11` - so it reports "below is blocked" for a board whose below seat is
+        # blocked at 11 px and perfectly clear at 35. Passing that verdict on as `label_above` forced
+        # the caption to the far side and skipped the lane search entirely; instrumented on seed 14,
+        # the seat it forced had -1.2 ft of lane clearance while an outward below seat had 7.8.
+        #
+        # `kosatsuba` now asks the structure question itself, of every candidate in its outward walk,
+        # so the narrow precomputed verdict is strictly worse information. `lab` is still used ABOVE,
+        # to prefer a BOARD POSITION where some caption seat exists at all - that is a different
+        # question and a good one. The parameter stays on `kosatsuba` for external callers who know
+        # something the manifest does not (the gate-adjacent case its docstring describes).
+        self.kosatsuba(x, y, rot, label=label)
         return (x, y)
 
     def place_punishment_spot(self: Settlement, label: str | None = "punishment ground", label_xy: Pt | None = None) -> Pt | None:  # type: ignore[misc]
