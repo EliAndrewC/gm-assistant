@@ -342,6 +342,32 @@ The three failures sit at 11, 12 and 20 households, and every count from 10 to 2
 across the 48 seeds with no other failure at any of them. The ground is not over-subscribed and the
 harness is not asking for the impossible; two hamlets of 20 households pass while seed 25's fails.
 
+**THE ORDERING LEAD, and it is the GM's, not mine (2026-08-20).** Asked why the map could not simply
+be made larger, and whether the real issue was placement ORDER. Both halves land:
+
+- **The map is NOT size-limited.** `canvas_for` errs deliberately large and `crop_to_content` throws
+  the unused canvas away. "Fewer households" was never about running out of room, and my having
+  offered it as an option came from my conclusion rather than from the code.
+- **`STAGES` lays the field BEFORE the ways and the houses.** The settlement takes whatever margin the
+  field leaves it - so where that margin turns, the cluster turns with it.
+
+Measured, field-edge turn across the cluster band: **seed 5 = 111.4 deg, seed 25 = 112.9 deg**, against
+**0.2-10.5 deg on eight passing seeds**. Two of the three failing seeds seat their cluster on a CORNER
+of the field; every passing seed measured sits on a nearly straight margin. (Seed 8 is 1.2 deg and does
+not fit, so this is a mechanism for two of three, not a single cause.)
+
+That reframes the entry below. "The ground admits no servable arrangement" is too strong and is
+withdrawn: the ground is chosen by an earlier stage that does not know a settlement is coming. The
+honest statement is that GIVEN the field as laid, the placement produces stranded houses and none of
+seventeen searches found a servable arrangement - and my own re-roll attempt taking seed 5 from 9
+stranded to 2 was evidence against impossibility that I reported as impossibility anyway. Fifth
+over-claim of the session, same shape as the other four.
+
+**Where a session should start on this**: `seat_cluster` chooses the cluster anchor by scoring outline
+segments, with no term for how much the edge TURNS across the band it is about to occupy. Adding one -
+prefer a straight margin, refuse a corner - is a bounded change in `cluster.py` and is aimed at the
+two seeds the measurement explains. It is untried.
+
 **THE TERMINAL RESULT.** Fifteen attempts across every mechanism the engine offers - four on spacing
 and packing, three on drawing ways (margin runs, bearing scans, a map-wide flood), four on seat-time
 filters (crop line, flood fill, chain, width-aware chain), two on re-rolling with ground forbidden, and

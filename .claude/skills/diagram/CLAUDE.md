@@ -75,7 +75,7 @@ those before you argue with a rule.
 | doc | load it when |
 |---|---|
 | [`dev/loop.md`](dev/loop.md) | You are about to run the gate or a pool sweep, you want the diagram timing numbers, or you are deciding how much to re-run after a change |
-| [`dev/placement.md`](dev/placement.md) | You are adding a map feature, or changing where anything is placed or drawn. Carries the DRAW ORDER map, CENTER vs FOOTPRINT, and the KEEP-CLEAR CONTRACT |
+| [`dev/placement.md`](dev/placement.md) | You are adding a map feature, or changing where anything is placed or drawn. Carries the DRAW ORDER map (including the scripted `STAGES` table), CENTER vs FOOTPRINT, and the KEEP-CLEAR CONTRACT. Its companion `dev/placement-stages/hamlet-placement.html` SHOWS the order - Inashiro plated after each of the thirteen stages |
 | [`dev/gate.md`](dev/gate.md) | You are adding or changing a check, writing a check test, or waiving a rule for one map |
 | [`dev/diagnostics.md`](dev/diagnostics.md) | A map came out wrong and you need to know WHY - `open_seat`, `why_placed`, `site_justice`, `crop_map`, and how a probe lies to you |
 | [`dev/performance.md`](dev/performance.md) | A gen or a check got slow (or "hangs"), or a `GEN_TIME_BUDGETS` entry tripped |
