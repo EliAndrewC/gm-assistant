@@ -175,6 +175,19 @@ def cluster_aspect(xs: list[float], ys: list[float]) -> float:
     return max(_du, _dv) / max(1.0, min(_du, _dv))
 
 
+def _seat_allowed(s: Settlement, x: float, y: float) -> bool:
+    """Is this ground allowed to take a steading on this roll?
+
+    Empty on a first roll. `generate` re-rolls a map whose finished manifest stranded a farmhouse and
+    passes the ground those houses stood on - which the previous roll PROVED no way can reach - so the
+    retry seats elsewhere. Half a bundle pitch is the radius: enough to clear the pocket, not so much
+    that the retry merely nudges the same steading along it."""
+    avoid = getattr(s, "_avoid_seats", None)
+    if not avoid:
+        return True
+    return all(math.hypot(x - ax, y - ay) > BUNDLE_PITCH / 2 for ax, ay in avoid)
+
+
 def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     """Seat every declared household, and KNOW whether it worked.
 
@@ -296,7 +309,12 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
         for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
             if placed >= front_cap:
                 break
-            if (_row_seats < _FIELD_RING_FLOOR or _lane_dist(s, fx, fy) <= _FRONT_ROW_LANE_CAP) and math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and s.try_place(fx, fy, "plain"):
+            if (
+                (_row_seats < _FIELD_RING_FLOOR or _lane_dist(s, fx, fy) <= _FRONT_ROW_LANE_CAP)
+                and math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3
+                and _seat_allowed(s, fx, fy)
+                and s.try_place(fx, fy, "plain")
+            ):
                 placed += 1
                 _row_seats += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
@@ -324,7 +342,7 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     for lx, ly in lane_frontage(s, seat):
         if placed >= plan.spec.households:
             break
-        if in_band((lx, ly)) and s.try_place(lx, ly, "plain"):
+        if in_band((lx, ly)) and _seat_allowed(s, lx, ly) and s.try_place(lx, ly, "plain"):
             placed += 1
     _cloud_placed = 0
     for attempt in range(4):
@@ -345,7 +363,8 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
             # which is also how a farming hamlet really sits - the houses crowd the fields they work
             # and thin out behind.
             ly = -wdep + (ly + wdep) * 0.75
-            if s.try_place(seat["cx"] + ax * lx + ox * ly, seat["cy"] + ay * lx + oy * ly, "plain"):
+            _sx4, _sy4 = seat["cx"] + ax * lx + ox * ly, seat["cy"] + ay * lx + oy * ly
+            if _seat_allowed(s, _sx4, _sy4) and s.try_place(_sx4, _sy4, "plain"):
                 placed += 1
                 _cloud_placed += 1
     # THE SHAPE IS RECORDED ONLY IF THE CLOUD ACTUALLY SHAPED THE CLUSTER (2026-08-17).
