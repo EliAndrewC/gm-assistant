@@ -342,6 +342,99 @@ The three failures sit at 11, 12 and 20 households, and every count from 10 to 2
 across the 48 seeds with no other failure at any of them. The ground is not over-subscribed and the
 harness is not asking for the impossible; two hamlets of 20 households pass while seed 25's fails.
 
+**READ THIS BEFORE TRUSTING ANY "N STRANDED" NUMBER IN THIS ENTRY. The proxy those numbers come from
+is WRONG, and it steered three of the attempts** (found by the hamlets session, 2026-08-20, from a
+single line in one of my status messages). I measured "houses stranded" with a hand-rolled helper that
+re-implements `farmhouses_reach_a_way` - union-find over lanes at a 40 ft join, then distance to the
+connector's component. Validated against the gate at last, on six seeds:
+
+| seed | my proxy | the gate |
+|---|---|---|
+| 5 | 6 | reach RED - agrees |
+| 8 | 3 | **reach PASSES** |
+| 25 | 8 | **reach PASSES** |
+| 2 | 4 | **reach PASSES** |
+| 13 | 5 | **reach PASSES** |
+| 40 | 8 | **reach PASSES** |
+
+**It over-counts on five of six, and never reads zero even on a clean map.** So:
+
+- **Attempt 16's band-aspect table is void.** Its whole conclusion was "no value reaches zero on any
+  seed" - and the instrument cannot read zero. That lever is NOT ruled out; it is unmeasured.
+- **Attempts 14 and 15 scored a retry loop on it**, deliberately switching from checks-failed to
+  houses-stranded. The loop's accept/reject decisions were driven by a number that does not track the
+  rule, so "converges to a floor it never reaches" is unsupported.
+- **Attempt 17's verdict (10/3/12 against 9/3/12) is a one-house difference** on an instrument with
+  this much drift, which is noise.
+
+The tally "seventeen attempts, none moved it" is therefore softer than it reads: fourteen stand,
+three rest on a broken instrument. This is the project's own rule about diagnostics - *a diagnostic
+OBSERVES, it never restates* (`tools/CLAUDE.md`) - broken by me, in the way that doc predicts: I
+re-derived a rule instead of calling it, and it drifted. **The remedy is one line: assert the proxy
+agrees with `gate` on a handful of seeds before quoting it.**
+
+**A SECOND `trim_lane_stubs()` AFTER THE REPAIR PASSES IS CATASTROPHIC - measured 43/48 -> 9/48, with
+37 seeds failing `farmhouses_reach_a_way`.** It looks obviously right (the trim runs BEFORE the
+repairs, so nothing cleans up after them, and a repair-laid link that ends up reaching nothing keeps
+its full length). It is not: the trim's own rule is "this end reaches no way within 40 ft and no
+farmhouse within 90", and a freshly drawn LINK routinely has an end just outside that - it is the join
+itself. Trimming after the repairs therefore eats the connections the repairs exist to make. If a
+repair-laid tread needs cleaning up, it needs a targeted pull-back that knows the lane is a join, not
+the blanket trim.
+
+## 2b-i. THE SKELETON MUST FOLLOW THE MARGIN - a working partial, 2 of 3 seeds, NOT shipped
+(2026-08-20. This is the closest anything has come to the reach residue in eighteen attempts, and it
+came out of the GM's question about placement ORDER. It is written up in full because it WORKS and is
+held back only by two failures it exposes elsewhere - Principle XIII, no new regressions.)
+
+**THE DEFECT.** `stage_ways` builds the cluster's internal lanes with `skeleton_layout` (a spine, a T,
+a Y, a cross - straight lines in a local frame) and maps them to screen with `to_screen`, which is a
+LINEAR map through the seat band's fixed `along`/`out` axes. So the skeleton follows the margin's
+DIRECTION but not its CURVATURE: on a cluster seated where the field edge bends, the "spine along the
+margin" is a straight chord across a bent band, it leaves the margin, and the far arm of the band gets
+no lane at all. That is where the unreachable farmhouses stand. `_margin_frame` exists for precisely
+this and says so in its own docstring - *"the margin CURVES, so anything meant to run parallel to the
+field has to be built on the edge itself rather than ruled straight across it"* - and the lane WEB
+already obeys it. The skeleton never did.
+
+**THE CHANGE** (three lines, in `stage_ways`, replacing the `_raw_arms` construction):
+
+    _sk_frame = _margin_frame(plan, max(seat["lat"] * CLUSTER_SPAN_FACTOR, seat["lat"] + BUNDLE_PITCH))
+    _sk_arc0, _sk_stand0 = _sk_frame.project((cx, cy))
+
+    def _on_margin(p):          # local +x runs along the band, local +y toward the field
+        return _sk_frame(_sk_arc0 + p[0], _sk_stand0 - p[1])
+
+    _raw_arms = [[_on_margin((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
+
+`_margin_frame` takes `near=()` by default, so it can be built at stage 4 before any house exists.
+
+**WHAT IT DOES.** Cohort 43/48, same total as baseline, but the composition moves:
+
+- **seed 8: reach RED -> PASSES.**
+- **seed 25: reach RED -> PASSES.**
+- seed 5: still red (2 houses, worst 287 ft).
+- NEW: seed 14 `captions_clear_the_ways_they_stand_on` (a caption 5 ft from a lane tread), seed 26
+  `lanes_reach_something` (a 171 ft web lane whose far end stands 59 ft from any way, 156 ft from any
+  house).
+
+**WHY IT IS NOT SHIPPED.** Two new failures is a regression whatever else the change fixes. Both look
+like consequences of arms now curving rather than deep problems, and both resisted the obvious cures:
+
+- A second `trim_lane_stubs()` after the repair passes: **43/48 -> 9/48**, 37 seeds losing reach,
+  because the trim's rule ("this end reaches no way within 40 ft") eats the freshly drawn LINKS that
+  are the joins themselves.
+- Guarding the straggler end-trim so it cannot undo its own acceptance (real bug, kept in spirit but
+  it is not seed 26's cause): no change to the residue.
+- Trimming a web lane's FAR end to service inside `_lay_web_lane` (its acceptance requires only ONE
+  end to join, so the other is free to stop anywhere): no change to the residue.
+
+**WHERE TO PICK IT UP.** Seed 26's lane is drawn by `_lay_web_lane` from `stage_web` - traced, not
+inferred - so it is laid BEFORE `trim_lane_stubs` and the trim should already be catching it; find out
+why it does not. Seed 14's caption is the kosatsuba, whose seat ladder now scores against curved
+treads. Fix those two and this lands, and it is worth landing: it is the only change in eighteen
+attempts that has moved a reach seed at all, let alone two.
+
 **THE ORDERING LEAD, and it is the GM's, not mine (2026-08-20).** Asked why the map could not simply
 be made larger, and whether the real issue was placement ORDER. Both halves land:
 
