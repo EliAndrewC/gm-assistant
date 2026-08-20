@@ -5,9 +5,9 @@
 
 ## The state in one line
 
-Every reach seed passes; the work is committed in the clone and **deliberately not pushed**, because
-one caption seed is red and the fix for it belongs to another session and had not landed when this
-session stopped.
+Every reach seed passes, and all of it is **in main** (`38cb0c7`) at the GM's explicit instruction to
+push even half-finished so the next session works from a common baseline. One caption seed is red and
+its fix belongs to another session - that is the named regression the push waives, described below.
 
 ## What is DONE and committed (clone only, not in main)
 
@@ -47,6 +47,27 @@ it waives is seed 37's caption, described below.
 **The hamlets session's box-edges fix has since LANDED (`d2225c44`)**, so seed 37 may already be clear;
 the cohort was re-run at push time and the number is in the push commit. If you are reading this later,
 trust the cohort over this paragraph.
+
+## THE LAST THING THAT LANDED: the re-roll was emitting invalid SVG
+
+Read this before you touch `generate` in `hamletgen/driver.py`.
+
+`finish()` MUTATES - it splices the shared water block into the record stream. The retry loop added
+in this session finished a candidate settlement into a scratch directory in order to GATE it, then
+let `generate` finish the SAME object again for real. Kashikawa came out with 436 group opens against
+437 closes: the extra close ended the `<svg>` root early, `resvg` refused the file outright, and
+render-sync could not draw the map at all.
+
+Each roll now finishes exactly ONCE, straight to its final destination when it has one. A keeper that
+was displaced by a rejected re-roll is put back by REBUILDING it - generation is deterministic, so
+that reproduces it exactly - and that re-emit writes files only, keeping the verdict already chosen,
+because taking the re-gate's answer would let a second opinion overwrite the selected one.
+
+**The gate was green through all of this.** A malformed SVG passes every check that reads the
+MANIFEST, and nothing in the suite looked at the emitted file until this was found by render-sync
+failing at push time. `tests/hamletgen/test_driver.py` now asserts the emitted SVG has exactly one
+`<svg>` root and balanced groups, so this specific shape cannot come back silently - but the general
+hole is worth remembering: **the manifest is not the artifact.**
 
 ## SEED 37 IS STILL RED AFTER THE BOX-EDGES FIX - and that is itself a finding
 
