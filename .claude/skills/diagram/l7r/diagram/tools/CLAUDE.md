@@ -27,6 +27,7 @@ Not `python3 tools/why_placed.py`. A package module run as a loose script puts `
 | How long does this loop actually take, and where does the time go? | `timings` |
 | Does a paddy bund step sideways and carry on parallel to itself anywhere on this map? | `jogs` |
 | Rebuild the frozen negative-fixture corpus in `pool/regressions/` | `make_regressions` |
+| What does the map look like after each placement stage, and why is that stage there? | `placement_stages` |
 
 Each module's own docstring carries the WHY it exists, usually with the incident that produced it.
 Read that before extending one. The skill's [`../CLAUDE.md`](../../../CLAUDE.md) carries the operational

@@ -26,6 +26,46 @@ it, but stops an urban building only when its CENTER lands inside - so a wide bu
 its roof over blocked ground. If a feature must keep whole footprints out, `placed`/`grove_rects`
 (distance-based) is the registry that does it; `block_polys` alone is not enough.
 
+**SEE IT BEFORE YOU READ IT.** `dev/placement-stages/hamlet-placement.html` is Inashiro rolled one
+stage at a time, with a plate of the map after each of the thirteen stages and a note on why that
+stage sits where it does. Regenerate it with `python3 -m l7r.diagram.tools.placement_stages` whenever
+`STAGES` changes - it is generated, never hand-edited, and its per-stage prose is keyed by function
+name so a renamed or new stage shows up as missing rather than silently inheriting its neighbour's.
+The page is the picture; this document is the rulebook.
+
+**THE SCRIPTED ORDER IS `STAGES` IN `hamletgen/driver.py`, and it is the authority for a scripted
+tier.** The phase list below describes the HAND-AUTHORED gens (Moritono is its clean example) and
+remains true of them; it is a phase model, not a stage list, and it does not match the scripted
+sequence one-to-one. Where the two disagree, `STAGES` wins for anything under `hamletgen/`:
+
+| # | stage | what it puts on the map |
+|---|---|---|
+| 1 | `stage_water_frame` | intake, head race, the fall line |
+| 2 | `stage_field` | the paddy, solved for a real acreage |
+| 3 | `stage_sink` | tail drain, pond or off-map outfall |
+| 4 | `stage_ways` | the skeleton and the connector - the ground-RESERVING ways |
+| 5 | `stage_homesteads` | the farmhouses |
+| 6 | `stage_appurtenances` | yards, gardens, byres, wells, sheds |
+| 7 | `stage_web` | the lane web - the ground-FILLING ways |
+| 8 | `stage_notice` | the kosatsuba, which stands ON a way and so waits for the web |
+| 9 | `stage_hinterland` | scrub and rough grazing |
+| 10 | `stage_woodland` | woodland commons |
+| 11 | `stage_windbreak` | the shelter belt |
+| 12 | `stage_crossings` | planks and decks over every way that crosses water |
+| 13 | `stage_frame` | crop to content, title, scalebar |
+
+**Two places the phase model below is actively WRONG for a scripted hamlet**, found by auditing it
+against `STAGES` on 2026-08-20 rather than by a failure - which is the point of writing it down:
+
+- It puts `place_kosatsuba()` in phase 4 with the other structures. In the scripted tier the notice
+  board is stage 8, AFTER the web, and it has to be: the board stands on a way, so it cannot be
+  sited until the ways are final. It is the clearest case on the map of a feature whose position is
+  defined by something drawn later than itself.
+- It has one "ground cover" phase and one "communal vegetation" phase. The scripted tier splits
+  those into three ordered stages - hinterland, then woodland, then windbreak - and the order among
+  them matters (woodland after hinterland so the coppice sits in real open ground rather than ground
+  the scrub was about to take).
+
 **The order a Mode B gen runs in** (Moritono is the clean example):
 
 1. **terrain + water** - fields, channels, streams, pond, marsh
