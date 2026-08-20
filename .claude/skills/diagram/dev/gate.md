@@ -260,6 +260,48 @@ marsh and anything built stop a lane; a grove or an open common does not - a tra
 copse, and a *yashikirin* belt is planted around the way rather than across it. Listing ground COVER
 alongside real obstacles is the easy way to write a check that can never fail.
 
+## MEASURE WHAT THE RULE MEASURES - the failure family that cost three sessions a day
+
+On 2026-08-19/20 three sessions working on hamlet maps produced, between them, **nine** separate
+defects with one shape. Not one was a wrong calculation. Every one was a correct measurement of a
+DIFFERENT QUANTITY than the rule it was serving. They are collected here because the family is
+invisible from inside any single instance - each looks like an ordinary bug until you see the row it
+belongs to.
+
+| the rule measures | what the code measured | what it cost |
+|---|---|---|
+| a caption's gap to the lane's TREAD EDGE | the distance to its CENTERLINE | captions seated on the roadway |
+| a tilted caption as a ROTATED QUAD | an axis-aligned bounding box | every seat looked illegal; the fallback took a worse one |
+| a yard's clearance as a BOX GAP | centre-to-centre distance | a yard cleared the envelope and put a corner in a basin |
+| a woodland parcel's ROTATED bbox | an axis-aligned square | parcels vetted as fitting, then failing off-frame |
+| `farmhouses_reach_a_way` | a hand-rolled reach proxy | over-counted on 5 of 6 seeds, NEVER read zero - and it was wired into a retry loop's accept/reject, so it steered code, not just prose |
+| the field edge's ACCUMULATED turn | net bearing change (which cancels) | 0.2 deg reported for a 63-vertex fan; a "finding" built on it, then retracted |
+| the SHIPPED path (`generate`) | the stage runner (`build`) | the cohort audit could not see a fix that lived in `generate` at all |
+| the seat search's real candidate ANNULUS | a probe ring at 45 deg diagonals | "ring-feasible implies search-feasible" - a valid argument over a set that was not a subset |
+| whether a lane end REACHES something | whether it reaches something AFTER a trim that removed the reaching stretch | a tread accepted for arriving, then drawn not arriving |
+
+**The two disciplines that would have caught all nine:**
+
+- **MEASURE WHAT THE RULE MEASURES.** If a check reads `poly_gap(label_quad(...))`, the placer reads
+  that, not a box. If the gate joins ways at 40 ft, a cleanup that reasons about connectivity joins at
+  40 ft. Where possible do not mirror the rule at all - CALL it. `tools/CLAUDE.md` has said this for
+  months ("a diagnostic OBSERVES, it never restates") and the biggest instance above is that rule
+  broken by someone who had read it.
+- **CONSTRUCT THE SUBSET, DO NOT ASSERT IT.** The set-relation variant. An argument of the form "my
+  probe is a subset of the real candidates, so a hit implies a real hit" is only as good as the
+  construction of the probe. Build it FROM the real set, or you have proved something about a
+  different set.
+
+**How each was actually caught, because it is the same move every time:** compare against the oracle,
+or against a case with a known answer. The reach proxy fell to running it beside `gate()` on six
+seeds. The turn metric fell to running it on three squares whose answers were 0/180/90. The audit path
+fell to noticing a seed passed through `generate` and still failed the audit. **None of them fell to
+being read more carefully** - several had been read many times by the person who wrote them.
+
+**So: before a number decides anything, spend one run proving the instrument.** It is the cheapest
+step in the loop and it is the one everybody skips, including the three of us, repeatedly, on the same
+day, after writing this rule down for each other.
+
 ## An unmet ASK is a defect, and the gate now says so
 
 `_shortfall` has recorded requested-vs-landed per placement run since 2026-08-05, and recording
