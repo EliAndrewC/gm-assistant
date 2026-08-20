@@ -90,7 +90,15 @@ def _pull_back(pts: list[Pt], reaches: Any, step: float = 8.0, keep_frac: float 
         # ran alongside a sibling arm, it shortens that parallel run by the same amount.
         if reaches(cand):
             best = list(trial)
-    return best if best is not None else out
+    # NO REACHING END FOUND MEANS LEAVE THE LANE ALONE, not "return the floor-truncated one". `out`
+    # at this point is the run cut back as far as the guard allowed, and its end reaches nothing by
+    # construction - so returning it MANUFACTURES the exact defect `lanes_reach_something` exists to
+    # catch: a tread stopping in bare grass. Measured on cohort seed 26, where an end that reached a
+    # way at 31 ft and a house at 46 ft was pulled back (the fan rule: the house was a rival's to
+    # claim) to a point 59 ft from any way and 156 ft from any house. The docstring already says a
+    # lane serving nothing is "a siting problem, not something to delete"; shortening it to an
+    # arbitrary floor is the same mistake as deleting it, only harder to see.
+    return best if best is not None else list(pts)
 
 
 class WaterWaysMixin:
