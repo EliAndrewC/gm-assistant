@@ -1190,10 +1190,14 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     # LANE WEB's job, and the web is laid after they exist - see `stage_web`.
     layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, seat["lat"], seat["dep"])
     # THE SKELETON FOLLOWS THE MARGIN'S CURVE, not merely its direction - see future-work 2b-i.
+    # `to_screen` is a LINEAR map through the seat band's fixed axes, so a spine comes out as a
+    # straight chord; on a margin that bends, the chord leaves the margin and the far arm of the band
+    # gets no lane at all. `_margin_frame` is built for exactly this and its docstring says so.
     _sk_frame = _margin_frame(plan, max(seat["lat"] * CLUSTER_SPAN_FACTOR, seat["lat"] + BUNDLE_PITCH))
     _sk_arc0, _sk_stand0 = _sk_frame.project((cx, cy))
 
     def _on_margin(p: Pt) -> Pt:
+        # local +x runs along the band, local +y toward the field (so OUT of the frame is -y)
         return _sk_frame(_sk_arc0 + p[0], _sk_stand0 - p[1])
 
     _raw_arms = [[_on_margin((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
