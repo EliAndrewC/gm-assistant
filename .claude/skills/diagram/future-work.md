@@ -3123,6 +3123,112 @@ pool rather than naming a point, and the lane score still chooses within the all
 **RESULT: 43/48, all five caption notches cleared, zero new failures against baseline.** Seeds 14 and 36
 are FIXED - the entry above saying they "remain" and are "not understood" was measuring absent code.
 
+## 2026-08-20: WHERE THE HAMLET WORK STANDS - read this first when resuming
+
+A stopping point, not a finish. Three sessions worked the hamlet maps together on 2026-08-19/20
+(this one, "Diagram architecture", "Hamlet (Inashiro)"). What is done, what is open, and who has it.
+
+**COHORT: 43/48 on this tree**, and the composition is the thing to check first on resuming - the
+total alone has been misleading all day, because different changes traded different seeds.
+
+    Audit-05  farmhouses_reach_a_way      architecture session - CLEARED on their unpushed tree
+    Audit-08  farmhouses_reach_a_way      architecture session - CLEARED on their unpushed tree
+    Audit-25  farmhouses_reach_a_way      architecture session - CLEARED on their unpushed tree
+    Audit-12  paddy_bunds_do_not_stagger  Inashiro session, gate 0614, batched with their toe work
+    Audit-39  paddy_bunds_do_not_stagger  Inashiro session, same batch
+
+**SHIPPED TO MAIN FROM HERE** (each with its own entry below):
+
+- `cluster_shape` honored and honesty-gated (0615), rotation-invariant PCA aspect. THE ORIGINAL ASK.
+- copse out of the windbreak belt (0616); captions clear of their ways (0617).
+- oblique deck skew; woodland rotated-bbox; streams in the way-vs-water tests; the furrow-variety
+  cliff; gen-time budget recalibration; eight untested branches.
+- the notice board's caption: `ref=` (the hug rule had NEVER measured this family), satisficing
+  inside a hug bound, hug read as the gate reads it, and board siting that prefers a position whose
+  caption can actually be seated.
+
+**IN THIS CLONE, GATED AND COMMITTED BUT WORTH RE-READING BEFORE BUILDING ON:**
+
+- gate 0618 `village_groves_visibly_stocked` + the narrowed sparse-grove re-seat (the copse collapse).
+- `caption_lane_clearance` measuring the tread against the whole caption box. **UNVERIFIABLE HERE** -
+  see its entry; only the architecture session's curved treads can prove it.
+
+**OPEN, AND WHO HAS IT:**
+
+| item | owner | state |
+|---|---|---|
+| seeds 12/39 paddy bunds (0614) | Inashiro | claimed, batched with FLOODED tint + `hem_block_len` knob + paddy width floor, held for a GM ruling that will move that code |
+| skeleton follows the margin, `_pull_back`, re-roll on strand, `cohort_audit` calling `generate` | architecture | 45/48 measured, held pending seed 37 |
+| seed 37 caption on a CURVED tread | here (fix written), architecture (verification) | see below |
+| Inashiro back-lane width step; lane junction cap beads | here | previously diagnosed, still on the sheet, not started |
+| `seat_cluster` edge-turn penalty | here | DECLINED on measurement - metric validated, no consumer. Do not build it without re-reading why |
+
+**THE ONE THING THAT WOULD CHANGE HOW YOU READ EVERY NUMBER ABOVE.** The architecture session found
+that `cohort_audit` was calling `build`, not `generate` - so the shared test bed was exercising a
+different code path from every shipped map, and a fix living in `generate` was invisible to it. Their
+fix is in their unpushed tree. **Every cohort figure quoted by any of the three sessions before that
+lands was answering a slightly different question than we believed**, this entry's 43/48 included.
+
+## 2026-08-20: the copse that collapsed to one tree - and why the obvious fix was wrong
+
+**THE DEFECT** (settlement-review, Inashiro): `village_groves[1]`, role copse, w 255.0 h 740.9,
+holding ONE clump. A 255 x 741 ft grove with one tree in it, and the whole gate green.
+
+**THE CAUSE WAS MINE, from earlier the same day.** Gate 0616's keep-out reserves an already-planted
+stand's canopy against the copse. Inashiro's windbreak has 227 clumps along the cluster's west fringe;
+the copse is seated after it over the same house cloud; and a blocked clump in a SPARSE grove was
+DROPPED rather than relocated (`if not dense ... return None` in `_reseat`). So the copse went 11 -> 1.
+I verified 0616 went green and never measured what SURVIVED - the separation was the thing I was
+looking at. `homesteads.py:248` already recorded the same lever costing Mizuguchi 11 -> 4, and I did
+not read it as a warning about the lever I was pulling.
+
+**WHY NO EXISTING CHECK COULD SEE IT.** Every grove rule asks where the clumps are relative to
+something ELSE - clear of the belt, the paddies, the structures, the lanes, the sun corridors. Not one
+asked whether the declared feature was DRAWN. That is a category gap, not an oversight: *fixing where a
+feature may not go says nothing about whether any of it remains*. Gate 0618 is the general form.
+
+**THE FIRST FIX WORKED AND WAS WRONG.** Letting ANY blocked sparse clump re-seat cleared the defect -
+Inashiro 1 -> 55 - and overshot: densities 10-15 per 100k against a historical 3.9-4.4, which turns a
+dooryard scatter into a stand and defeats what the `dense` flag is FOR. A scatter is supposed to leave
+gaps, and a clump refused because a house is there has found one.
+
+What is NOT a gap is ground another stand's canopy occupies - a blocker that did not exist until 0616
+added it. So exactly that class re-seats and every other refusal still drops. Pool copses:
+inashiro 1 -> 6, sawada 14 -> 22, kashikawa 40 -> 70, mizuguchi 8 -> 13; densities 3.18-7.74 against a
+1.5 floor. Note the keep-out had been silently deleting clumps on ALL FOUR maps; Inashiro is only where
+it went far enough to be visible.
+
+**The floor (1.5 clumps per 100k sq px) is a VISIBILITY floor, not a density target.** Measured:
+0.53 (the defect), 3.90/4.24/4.43 (healthy scatters, pre-fix), ~110 (a dense belt). How many gaps a
+cluster leaves for its copse is the map's business.
+
+## 2026-08-20: the caption clearance on a CURVED tread - a fix this session CANNOT verify
+
+`caption_lane_clearance` sampled the caption box's four corners plus its center against each lane
+SEGMENT. Exact against a straight tread; on a CONCAVE bend a caption can have all five samples clear
+while the middle of its top or bottom EDGE crosses the arc. Predicted here when the architecture
+session's skeleton work gave lanes curvature, then observed by them on cohort seed 37.
+
+Now measured as segment-to-RECTANGLE: zero if the tread enters the box, else the least distance
+between the tread and any of the box's four edges.
+
+**A SECOND DISCREPANCY FOUND WHILE IN THERE, possibly the likelier culprit.** The sampled box was
+symmetric, +/-5 about the ANCHOR - but a caption's record runs from ascent (0.80 x size) ABOVE the
+anchor to descender (0.25 x size) below. The measured box under-reached the true top by 1.4 px and
+over-reached the bottom by 3. Noise on a straight tread; on a tread curving ABOVE a caption it is the
+deciding margin.
+
+**THIS SESSION CANNOT PROVE THE FIX AND DID NOT CLAIM TO.** Seed 37 passes here and always did - the
+triggering geometry exists only on curved treads, which are in the architecture session's unpushed
+tree. The cohort here can show nothing broke; it cannot show anything was fixed. What IS established
+is a soundness argument: the new measure is strictly more conservative than the old, so it cannot
+newly ACCEPT a seat the old one refused. **If seed 37 still fails, the cause is neither of the two
+above** - do not assume the aim was wrong, get fresh coordinates.
+
+**Gate 0617 was deliberately left on corner sampling.** It CAUGHT seed 37, so it is not blind, and
+placer-stricter-than-check is the safe asymmetry. Tightening the gate too is a real behavior change
+owing its own justification and its own cohort, not a ride-along.
+
 ## 2026-08-20: the notice-board caption, ATTEMPTS 8-13 - and the one that was never in the seat search
 
 Continues the seven-attempt entry above. What follows cost six more attempts and the whole of it was

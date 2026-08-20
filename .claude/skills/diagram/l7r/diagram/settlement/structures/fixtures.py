@@ -15,6 +15,7 @@ from .._geom import (
     point_in_poly,
     poly_gap,
     seg_dist,
+    segments_cross,
     street_runs,
     tilt_caption_seat,
     way_beds,
@@ -428,7 +429,7 @@ class PublicFixturesMixin:
                         return False
         return True
 
-    def caption_lane_clearance(self: Settlement, qx: float, qy: float, chw: float) -> float:  # type: ignore[misc]
+    def caption_lane_clearance(self: Settlement, qx: float, qy: float, chw: float, size: float = 8.0) -> float:  # type: ignore[misc]
         """Least distance from a caption's BOX to any lane's tread EDGE (negative = standing on it).
 
         Shared deliberately by the notice board's seat search and by `place_kosatsuba`'s siting
@@ -437,13 +438,36 @@ class PublicFixturesMixin:
         re-derived at a second call site in this file it has come back subtly different - the
         centerline instead of the edge, an axis-aligned box instead of the rotated quad - so it is a
         method now rather than a third closure."""
+        # THE WHOLE BOX, NOT FIVE POINTS ON IT. Sampling four corners plus the center is exact against
+        # a STRAIGHT tread and quietly wrong against a curved one: a caption spanning a CONCAVE bend
+        # can have all five samples clear while the middle of its top or bottom EDGE crosses the arc.
+        # Predicted here when the lane skeleton gained curvature, then observed - cohort seed 37 on the
+        # architecture session's tree, a caption 2 ft from a tread that this method had scored clear.
+        # So the measure is now segment-to-RECTANGLE: zero if the tread enters the box at all, else the
+        # least distance between the tread and any of the box's four edges.
+        #
+        # AND THE BOX IS THE ONE THE TEXT ACTUALLY OCCUPIES. The old +/-5 was symmetric about the
+        # ANCHOR, but a caption's record runs from ascent (0.8 x size) ABOVE the anchor to descender
+        # (0.25 x size) below - so the old box under-reached the top by 1.4 px and over-reached the
+        # bottom by 3. Two different boxes for one caption is how this family of bug keeps arriving.
+        _y0, _y1 = qy - 0.80 * size, qy + 0.25 * size
+        _x0, _x1 = qx - chw, qx + chw
+        _edges = (((_x0, _y0), (_x1, _y0)), ((_x1, _y0), (_x1, _y1)), ((_x1, _y1), (_x0, _y1)), ((_x0, _y1), (_x0, _y0)))
         _best = 1e9
         for _lane in self.M.get("lanes") or []:
             _pts = _lane.get("pts") or []
             _lhalf = float(_lane.get("w") or 3) / 2.0
             for _i in range(len(_pts) - 1):
-                for _cx, _cy in ((qx - chw, qy - 5), (qx + chw, qy - 5), (qx - chw, qy + 5), (qx + chw, qy + 5), (qx, qy)):
-                    _best = min(_best, seg_dist(_cx, _cy, _pts[_i], _pts[_i + 1]) - _lhalf)
+                _a, _b = _pts[_i], _pts[_i + 1]
+                if (_x0 <= _a[0] <= _x1 and _y0 <= _a[1] <= _y1) or (_x0 <= _b[0] <= _x1 and _y0 <= _b[1] <= _y1):
+                    return -_lhalf  # the tread's own centerline is inside the caption box
+                _d = 1e9
+                for _p, _q in _edges:
+                    if segments_cross(_a, _b, _p, _q):
+                        _d = 0.0
+                        break
+                    _d = min(_d, seg_dist(_p[0], _p[1], _a, _b), seg_dist(_q[0], _q[1], _a, _b), seg_dist(_a[0], _a[1], _p, _q), seg_dist(_b[0], _b[1], _p, _q))
+                _best = min(_best, _d - _lhalf)
         return _best
 
     def place_kosatsuba(self: Settlement, label: str = "notice board") -> Pt | None:  # type: ignore[misc]
