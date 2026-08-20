@@ -476,7 +476,11 @@ class HomesteadPartsMixin:
         # is why the keep-out is built from the RECORDED clumps rather than the grove's bbox - a belt's
         # bbox is a long rectangle whose corners are open ground the copse may legitimately use.
         # (the radius lives on the GROVE record, not the clump - a clump is a bare [x, y] pair)
-        occ += [(cl[0], cl[1], float(g.get("r") or 0.0) + clump * 0.90) for g in self.M.get("village_groves", []) for cl in (g.get("clumps") or [])]
+        # Kept in its OWN list, not folded into `occ`, because `_reseat` has to tell this blocker
+        # apart from the others - see the note there. (the radius lives on the GROVE record, not the
+        # clump - a clump is a bare [x, y] pair)
+        occ_grove = [(cl[0], cl[1], float(g.get("r") or 0.0) + clump * 0.90) for g in self.M.get("village_groves", []) for cl in (g.get("clumps") or [])]
+        occ += occ_grove
         corr = self._corridor_buffers(clump * 0.45 + 4)  # ... and keep trees OFF the lanes / streets / road
         cr = clump / 2
         # ... and OUT of the SOUTHERN sun-corridor of every threshing yard + garden (a tree just south of them
@@ -546,7 +550,38 @@ class HomesteadPartsMixin:
             # sun-corridor clump sat 2-27 px from a face and the search never ran. A yard's sun
             # corridor crosses the whole depth of the belt; where in that depth a given clump sits
             # says nothing about whether the belt should plant around it.
-            if not dense or (require_interior and edge_dist(qx, qy, poly) <= clump):
+            # A SPARSE GROVE RE-SEATS TOO (settlement-review, Inashiro 2026-08-20). This used to read
+            # `if not dense or (...)`, so only a belt flowed around an obstacle and a scatter's blocked
+            # clump was dropped. That guard was written FOR the belt - the docstring above says so, "a
+            # DENSE belt flows around a local obstacle instead of losing the column" - and the sparse
+            # case was never considered. It is also backwards for what a copse is: the copse fills the
+            # open gaps among the houses, so a clump refused because a house is there should try the
+            # next gap. Finding the next gap IS the job; dropping the clump is the one response that
+            # defeats the feature.
+            #
+            # Measured cost of the old behavior: Inashiro's copse collapsed to ONE clump inside a
+            # declared 255 x 741 ft footprint once gate 0616 reserved ground around the belt's 227
+            # clumps, and Mizuguchi's went 11 -> 4 earlier for the same reason (homesteads.py:248).
+            # `village_groves_visibly_stocked` now fails a grove in that state.
+            #
+            # ONLY local obstacles reach here. `_hard_blocked` (crop, open water, the dike bank) still
+            # drops the clump outright and must - those are the edges a stand is supposed to stop at,
+            # and moving a few feet does not change them.
+            # A SPARSE GROVE RE-SEATS ONLY WHEN ANOTHER STAND DISPLACED IT, and the narrowness is the
+            # point. Blanket `not dense` re-seating was tried first and OVERSHOT badly: Inashiro's
+            # copse went 1 -> 55 clumps and density across the four hamlets jumped to 10-15 per 100k
+            # against a historical 3.9-4.4, which turns a dooryard scatter into a stand and defeats
+            # the `dense` flag's whole purpose. A scatter is SUPPOSED to leave gaps; a clump refused
+            # because a house is there has found one of them.
+            #
+            # What is NOT a gap is ground another grove's canopy is standing on. That blocker did not
+            # exist until gate 0616's keep-out added it, and it deletes clumps for a reason that has
+            # nothing to do with the settlement's own texture - measured, it cost Inashiro 10 of its
+            # 11 copse clumps. So exactly that class relocates, and every other refusal still drops.
+            # This repairs the harm the keep-out did without redesigning the scatter.
+            if not dense and not any((qx - ox) ** 2 + (qy - oy) ** 2 < rr * rr for ox, oy, rr in occ_grove):
+                return None
+            if require_interior and edge_dist(qx, qy, poly) <= clump:
                 return None
             # THE RADII REACH PAST THE WIDEST LOCAL OBSTACLE, which is the sun corridor: a yard's
             # no-tree strip is ~25 px half-width across and ~31 px deep, so a search capped at
