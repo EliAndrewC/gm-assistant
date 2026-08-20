@@ -37,7 +37,18 @@ Four changes, and the GM's question about placement ORDER produced all of them:
 
 Tests cover the re-roll loop, the "a re-roll that does not help is not kept" guard, and the seat gate.
 
-## WHY IT IS NOT PUSHED
+## STATUS: PUSHED, at the GM's explicit instruction
+
+The GM asked for this to go to main even if half-finished, so the next session works from a common
+baseline rather than from a clone nobody else can see. That is the one sanctioned exit from Principle
+XIII's no-regressions rule - an explicit waiver for a specific, named regression - and the regression
+it waives is seed 37's caption, described below.
+
+**The hamlets session's box-edges fix has since LANDED (`d2225c44`)**, so seed 37 may already be clear;
+the cohort was re-run at push time and the number is in the push commit. If you are reading this later,
+trust the cohort over this paragraph.
+
+## THE REGRESSION THIS WAS PUSHED WITH
 
 `captions_clear_the_ways_they_stand_on` fails on **cohort seed 37** at (368, 1928). It passes on the
 hamlets session's tree and fails only here, because this branch's treads are CURVED and theirs are
