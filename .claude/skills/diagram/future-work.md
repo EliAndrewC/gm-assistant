@@ -928,6 +928,21 @@ THE TWO CANDIDATE FIXES, neither costed yet:
 Whichever is chosen, the growth loop needs a real failure branch: if no step clears the water, that is
 a fact the pass knows and currently discards.
 
+## 2g. The render cache serves a PNG made from a DIFFERENT SVG (recurs; five times on 2026-08-19/20)
+`test_every_live_pool_png_matches_its_own_svg_viewbox` fails whenever a change moves a map's geometry:
+the gen re-renders the SVG while the PNG comes back from the render cache, so the pair disagree on
+aspect (kashikawa, 2600x3962 against the 3864 its own viewBox implies). Deleting the PNG and running
+`regen --no-cache` fixes that pair - and the next `make done` re-breaks it, because the gate regenerates
+too and the cache serves the same stale PNG again.
+
+It bit five times in two days across three sessions, always after someone moved geometry, and each time
+it was fixed by hand rather than diagnosed. **It is a cache-key defect, not a map defect**: the PNG's
+entry is being treated as valid for an SVG it was not rendered from. Start at `pipeline/render_cache.py`
+and ask what the PNG half of an entry is keyed on, and whether the SVG's own bytes are in that key -
+`dev/cache.md` already records that an entry has "TWO independently-perishable halves" and that the
+artifact half staying valid says nothing about the other half. This looks like the same shape one level
+down: the SVG half is refreshed, the PNG half is not, and nothing notices until a test compares them.
+
 ## 3. Author-loop pace: log of what ran long (keep appending)
 - 021 resize re-lay (2026-08-10): ~4h of migrate-grind. Root cause: literalness (see #1),
   plus one avoidable class - bulk text-shifters that touched non-coordinate numbers. Any

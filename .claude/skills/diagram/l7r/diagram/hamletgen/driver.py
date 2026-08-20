@@ -126,7 +126,7 @@ def generate(spec: HamletSpec, out_base: str | None = None, render: bool = True)
 
     plan = plan_site(spec)
 
-    def _roll(avoid: Sequence[tuple[float, float]]) -> tuple[Settlement, list[str], list[tuple[float, float]]]:
+    def _roll(avoid: Sequence[tuple[float, float]]) -> tuple[Settlement, list[str], list[tuple[float, float]], list[str]]:
         """Build, finish and gate once. Returns the settlement, the gate's verdict, and the seats the
         GATE ITSELF names as unreached - read off its message, never recomputed. A hand-rolled
         reach measure was tried and was wrong on five of six seeds (see future-work 2b): it

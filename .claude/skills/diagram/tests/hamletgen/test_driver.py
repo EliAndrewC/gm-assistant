@@ -5,6 +5,7 @@ Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen
 
 import os
 
+from l7r.diagram import check_village
 from l7r.diagram import hamletgen as hg
 
 from ._builders import a_plan
@@ -194,3 +195,61 @@ def test_the_fan_out_agrees_with_the_serial_path() -> None:
     assert parallel.line() == serial.line()
     assert parallel.failures == serial.failures
     assert parallel.path is None  # a cohort member is gated, then thrown away
+
+
+def test_a_map_that_strands_a_farmhouse_is_re_rolled_with_that_ground_forbidden(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """`generate` re-rolls a map whose FINISHED manifest strands a farmhouse, forbidding the ground
+    those houses stood on. Three seat-time tests were built before this and all three failed, because
+    whether a way can reach a steading depends on fabric that does not exist when seats are chosen;
+    observing it on the finished map does not have that problem.
+
+    The gate is the oracle at every step - the seats are read off its own FAIL line rather than
+    recomputed, because a hand-rolled reach measure was tried and over-counted on five of six seeds.
+    So this drives the loop by faking the ORACLE, not by faking geometry."""
+    calls: list[int] = []
+
+    def fake_gate(M, verbose=True, only=None):  # type: ignore[no-untyped-def]
+        calls.append(1)
+        if len(calls) == 1:  # the first roll strands two houses; the gate names them
+            print("FAIL farmhouses_reach_a_way  -> 2 farmhouse(s) at [(1262, 848, 211), (1397, 890, 287)] - omission")
+            return ["farmhouses_reach_a_way"]
+        return []
+
+    # PATCH THE SOURCE MODULE, not `hg.driver`: `generate` imports `gate` INSIDE the function, so
+    # the name is re-fetched from `check_village` on every call and a package-level patch is
+    # invisible to it.
+    monkeypatch.setattr(check_village, "gate", fake_gate)
+    seen: list[list[tuple[float, float]]] = []
+    real_build = hg.driver.build
+
+    def spy_build(plan, avoid=()):  # type: ignore[no-untyped-def]
+        seen.append(list(avoid))
+        return real_build(plan, avoid=avoid)
+
+    monkeypatch.setattr(hg.driver, "build", spy_build)
+    rep = hg.generate(hg.HamletSpec(name="Retry", seed=4, households=10), out_base=None, render=False)
+    assert rep.failures == []  # the re-roll's verdict is the one reported
+    assert len(seen) == 2  # one roll, then exactly one re-roll
+    assert seen[0] == []  # the first roll forbids nothing
+    assert (1262.0, 848.0) in seen[1]  # the re-roll forbids what the GATE named
+    assert (1397.0, 890.0) in seen[1]
+
+
+def test_a_re_roll_that_does_not_help_is_not_kept(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The retry is self-limiting: a re-roll is kept only if the gate's verdict is no longer than the
+    one it replaces. Without that a map could be re-rolled into a WORSE state and shipped, which is
+    the opposite of the point."""
+
+    rolls: list[int] = []
+
+    def fake_gate(M, verbose=True, only=None):  # type: ignore[no-untyped-def]
+        rolls.append(1)
+        print("FAIL farmhouses_reach_a_way  -> 1 farmhouse(s) at [(100, 100, 200)] - omission")
+        # the RE-ROLL comes back worse than the roll it would replace
+        return ["farmhouses_reach_a_way"] if len(rolls) == 1 else ["farmhouses_reach_a_way", "another_rule"]
+
+    monkeypatch.setattr(check_village, "gate", fake_gate)
+    rep = hg.generate(hg.HamletSpec(name="NoHelp", seed=4, households=10), out_base=None, render=False)
+    assert rep.failures == ["farmhouses_reach_a_way"]  # the FIRST roll's verdict is kept, not the worse one
+    assert len(rolls) == 2  # and it stopped rather than burning its four rounds
+    assert rep.fail_lines and "farmhouses_reach_a_way" in rep.fail_lines[0]
