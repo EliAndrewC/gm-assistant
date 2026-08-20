@@ -2287,7 +2287,8 @@ stricter line, which is what `tools/jogs.py` runs (run 6 ft, link 30 ft, offset 
 **2 / 2 / 9 / 3 = 16**, the largest 16.0 ft at Mizuguchi (1571.7, 897.6). The table above is the gate
 column. `python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json` prints the placer column.
 
-Every one is a SINGLE step on a single ring - no map carries a flight of them. Traced, they are
+Every one is a SINGLE step on a single ring - no POOL map carries a flight of them, though the 48-seed
+cohort does; see "LIVE RESIDUE ON THE COHORT" at the end of this section. Traced, they are
 refused by guards that each protect a rule `_unjog` would otherwise break, so none is a matter of
 loosening a number:
 
@@ -2304,8 +2305,25 @@ loosening a number:
 unit tests, and a frozen pre-fix Inashiro fixture; it is held out of `check_village` only because
 those 7 would fail the pool on day one. Landing it means either driving the 7 to zero by the routes
 above, or - the honest alternative - writing the rule as the STAIRCASE rule the GM actually
-reported: no plot ring may carry more than one step, which is at zero today and would have fired on
-26 rings across the four maps before this work.
+reported: no plot ring may carry more than one step, which is at zero on the POOL today and would have
+fired on 26 rings across the four maps before this work.
+
+**LIVE RESIDUE ON THE COHORT (2026-08-19, unfixed, owned by the waterfields session).** That rule
+landed as gate **0614 `paddy_bunds_do_not_stagger`**, and it is at zero on the four pool maps - but the
+48-seed cohort carries two failures. Recorded here because a peer session found them and reported them
+in a message, and a number that lives only in a chat message is not a measurement:
+
+    Audit-12   1 basin, bund steps sideways 4 times, at (1316, 939)
+    Audit-39   1 basin, bund steps sideways 2 times, at (1305, 2081)
+
+Both are **pre-existing rather than regressions** - a baseline comparison in a detached worktree showed
+zero new failures - and both are independent of the three `farmhouses_reach_a_way` seeds (5, 8, 25);
+full cohort 43/48. **Audit-12 matters more than its count suggests**: FOUR steps on one ring is a longer
+staircase than anything the pool ever showed, so it is a better specimen of the GM's original defect
+than the map the fix was built against, and it should be the case any retry is measured on. The fix
+site is the one the check's own failure message names - `close_seams` / `_seam_cuts`, where the weld
+pitch goes out of register with the fabric. Do NOT reach for the threshold: "more than one step on a
+ring" is the deliberate line, and retuning it is the one dial that guts the check.
 
 ### Two dead ends, both implemented, measured and reverted
 
@@ -2639,6 +2657,19 @@ the load-bearing part**: assert against the CARVE'S CANDIDATE COUNT as well, bec
 have no eligible plot, and a check that cannot tell "no candidates" from "every candidate demoted" will
 be waived the first time it fires on a legitimately dry map.
 
+**THE OWNER'S RECOMMENDED ANSWER, and the one item on this page that genuinely IS a GM ruling**
+(2026-08-19): tint the **CLOSING RANK as a coherent group** - which is what the code's own doctrine
+already claims blue means - and change none of the five demotion clauses. Note why this one goes to the
+GM when the furrow question two sections down does NOT: Principle XII's knob rung covers two attested
+FORMS of the same thing, and this is not that. It is a question about what a feature MEANS, and the
+record cannot answer it because the record never had our palette. So it is genuinely a ruling, it is
+queued, and nothing should be built on a guess about it.
+
+**AND IT GATES THREE OTHER ITEMS, so do not fix them one at a time.** The tint eligibility, the
+`hem_block_len` knob, the paddy WIDTH floor and the 0614 cohort residue all land in the same toe pass,
+and the waterfields session has batched them deliberately as ONE feature. Fixing any one alone means
+rewriting that pass again for the next - which is the specific waste this note exists to prevent.
+
 ## OPEN 2026-08-19: the dry-hem furrow variety falls off a ONE-FOOT CLIFF at 56 ft, and its check goes blind with it
 
 The furrow-angle machinery in `waterfields/carve.py:834-838` is a maximize-separation algorithm: it
@@ -2705,11 +2736,16 @@ neighbor-vs-neighbor contrast the furlong evidence argues against. The likely ta
 around a block-coherent grain, with the larger changes between GROUPS of plots rather than between every
 adjacent pair.
 
-**Neither session is picking the number.** It is a legibility-vs-accuracy trade of the kind this project
-sends to the GM rather than deciding quietly - the same shape as the channel taper that is sub-perceptual
-at true scale, where two multipliers were priced and the GM chose true size. Queued to him beside the
-FLOODED-tint decision, since both are "what should every hamlet look like" questions and they should be
-seen together.
+**SUPERSEDED 2026-08-19 - do not act on this paragraph.** It read: *"Neither session is picking the
+number. It is a legibility-vs-accuracy trade of the kind this project sends to the GM rather than
+deciding quietly ... Queued to him beside the FLOODED-tint decision."* It was withdrawn from the GM's
+queue the same evening, and the error is kept because it misreads Principle XII rather than the
+evidence. The ladder is: research it -> decisive means implement what it says -> **two supportable
+forms means roll a KNOB per settlement** -> only a SILENT record earns a GM ruling. The waterfields
+owner jumped to the fourth rung because the NUMBER felt like a judgment call - and it only felt that
+way because they were trying to pick ONE spread for every hamlet, which is precisely what that rung
+exists to prevent. The record here is neither silent nor decisive-for-one-form, so this is the knob
+rung. See "THE ANSWER IS A KNOB" below, which is the live disposition.
 
 **REVIEWED, AND THE VERDICT IS SHARPER THAN EITHER SESSION'S GUESS: the RANGE is right, the
 DISTRIBUTION is wrong** (settlement-review with a research pass, 2026-08-19). ~102 deg reads as a mosaic
