@@ -435,6 +435,28 @@ why it does not. Seed 14's caption is the kosatsuba, whose seat ladder now score
 treads. Fix those two and this lands, and it is worth landing: it is the only change in eighteen
 attempts that has moved a reach seed at all, let alone two.
 
+**SEED 5 AFTER THE SKELETON FIX - down to ONE house, and it is a placement question, not a ways one.**
+With the margin-following skeleton and the `_pull_back` fix in, seeds 8, 25 and 26 clear and seed 5 is
+the only reach failure left. Its two remaining houses, measured with the map-wide walk at 8 ft cells
+and footpath clearance:
+
+- **(1397, 890)** - REACHABLE. A walkable path 248 ft long exists from a point 100 ft off the house.
+- **(1262, 848)** - NO walkable cell within 100 ft connects to the network, at any clearance a
+  footpath needs.
+
+The gate fails a SEED if any one house is unserved, so serving the reachable one changes nothing.
+**Seed 5 is blocked on a single farmhouse standing where no way can reach it** - which is a question
+about where that steading was seated, not about how ways are drawn, and the seating is decided by
+stages that run before any way exists. That is the GM's ordering point in its narrowest possible form:
+one house, one seed, and the decision that produced it was taken three stages earlier.
+
+Note what this is NOT: it is not the "the ground admits no servable arrangement" claim withdrawn above.
+The ground here is fine and the other eleven houses are served; ONE seat is bad. Whether the fix is a
+seat-time test (all four attempts at that failed, see above), a post-placement re-seat (the engine
+cannot remove a placed bundle), or an anchor-scoring term (the hamlets session has that instrument
+validated and ledgered) is the open question - but it is now a question about one seat rather than
+about the whole map.
+
 **THE ORDERING LEAD, and it is the GM's, not mine (2026-08-20).** Asked why the map could not simply
 be made larger, and whether the real issue was placement ORDER. Both halves land:
 
