@@ -157,7 +157,7 @@ Two process rules worth having in front of you at all times:
 
 ## Development Workflow
 
-This project uses spec-driven development governed by [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (currently v1.10.0, 14 principles, 7 NON-NEGOTIABLE). The constitution is the higher-level authority; this CLAUDE.md operationalizes it.
+This project uses spec-driven development governed by [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (currently v1.11.0, 15 principles, 8 NON-NEGOTIABLE). The constitution is the higher-level authority; this CLAUDE.md operationalizes it.
 
 **When to use spec-kit:**
 
@@ -171,11 +171,22 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   feature, run specify -> plan -> tasks -> implement straight through without pausing for GM
   approval between stages, answer each stage's own questions yourself, and record every resolved
   decision in the artifact where it arose.
-- **Stop-and-ask calculus** (GM 2026-08-15): interrupt the run ONLY when a wrong guess would be
-  expensive to unwind - an hour-plus of implementation that might be thrown away buys a question
-  first. When a choice is cheap to adjust after the fact, make the call, finish the task, report
-  what was chosen, and offer the adjustment. Asking beats redoing; redoing beats blocking on
-  trivia.
+- **Stop-and-ask calculus** (GM 2026-08-15, narrowed 2026-08-23): interrupt the run ONLY when a
+  wrong guess would be expensive to unwind - an hour-plus of implementation that might be thrown
+  away buys a question first. When a choice is cheap to adjust after the fact, make the call, finish
+  the task, report what was chosen, and offer the adjustment. Asking beats redoing; redoing beats
+  blocking on trivia. **This covers AMBIGUITY about what is wanted, and nothing else.** Difficulty
+  in delivering something already known to be wanted is governed by constitution **Principle XV
+  (Keep Going)**, and there the answer is to keep working.
+- **THE GM STARTS WORK AND LEAVES** (GM 2026-08-23, constitution XV, NON-NEGOTIABLE). Stopping to
+  ask "which of these should I do?" does not cost seconds of their attention - it costs the whole
+  span until they return, and they come back to find the work where they left it. When a path
+  forward exists, TAKE it; if one avenue is blocked, work the parts that are not. The only reason to
+  stop is a genuine belief the thing cannot be done at all. If the options list contains "fix it and
+  make it work", that is the answer and it does not need confirming. Two limits: this is never a
+  licence to exceed ordinary authorized work, and persistence means continuing to make PROGRESS, not
+  continuing to make CHANGES - when stuck, the next step is a MEASUREMENT, not another speculative
+  edit.
 - **One constitution for the whole repo, deliberately** (GM 2026-08-15): spec-kit's Constitution
   Check reads a single file, and the domain separation the project needs already exists in layers -
   the constitution carries universal principles; each domain's operational doctrine lives in its
@@ -193,6 +204,11 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   messaging peer sessions: a busy session replies late or never, while main serializes with zero
   cooperation. Full protocol (and what peer messaging IS for) in
   [`docs/session-clones.md`](docs/session-clones.md).
+
+**FIXING IT IS THE EXIT.** Principle XIII's three ways out are not a menu (GM 2026-08-23): FIX is
+the expected outcome, REVERT requires a WRITTEN impossibility investigation rather than a
+preference, and a waiver is the GM's to grant after a fix has genuinely been attempted. A session
+that has found a path forward takes it.
 
 **NO KNOWN REGRESSIONS - and nothing merges to main carrying one** (constitution Principle XIII, NON-NEGOTIABLE, GM 2026-08-17: *"never count our work as being done when there are known regressions. Nothing should EVER be merged back into main if even one single new regression was added."*). Two separate bars, and work routinely clears the first and fails the second:
 
