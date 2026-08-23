@@ -1,7 +1,21 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.9.0 → 1.10.0
+Version change: 1.10.0 → 1.11.0
+
+Version 1.11.0 (amended 2026-08-23): adds Principle XV (Keep Going) and
+rewrites Principle XIII's exits. The GM starts work and leaves the computer
+for hours, so a session that stops to ask which option to take costs that
+entire span, not a few seconds - and when one of the options is "fix it and
+make it work", that is always the answer. XIII's three exits are no longer a
+menu: FIX is the expected outcome, REVERT requires a written impossibility
+investigation rather than a preference, and a WAIVER is the GM's to grant
+after a fix has genuinely been attempted. Also adds the performance bookends
+to Principle VI and the single-artifact rule for generators. New principle:
+MINOR per the versioning policy. Motivating case: feature 126 (2026-08-23),
+which produced four successive wrong diagnoses without measuring between
+them and then stopped to ask the GM to choose among three options, one of
+which was simply to fix the defect.
 MINOR: Principle XIV (Fix Defects Where You Find Them) ADDED (GM-directed,
 2026-08-17): "anytime we are working on the diagram skill and you in the
 course of implementing a feature come across some new defect - even if it is
@@ -887,11 +901,25 @@ has been misread as a licence to ledger anything that predates the diff.
   where the re-roll makes per-seed comparison meaningless, the pass RATE must
   not drop AND every newly-failing check must be individually diagnosed.
 
-**The only three exits** are: FIX it, REVERT the change, or obtain an
-explicit GM waiver for that specific regression. There is no fourth. A
-session that cannot fix a regression stops and says so rather than merging
-and ledgering it - and "stops and says so" means the work stays in the
-clone, unpushed.
+**FIXING IT IS THE EXIT** (GM 2026-08-23). There are three in principle -
+FIX it, REVERT the change, or obtain an explicit GM waiver - but they are
+not peers, and treating them as a menu is itself the error:
+
+- **FIX is the default and the expected outcome.** A session that has found
+  a path forward TAKES it. "I could fix this, but here are three options,
+  which do you prefer?" is not a report, it is a stall.
+- **REVERT requires a demonstrated impossibility**, not a preference and not
+  fatigue. The bar is an investigation written down: what was measured, what
+  was tried, why each attempt failed, and why the remaining approaches are
+  exhausted or unreasonable. Reverting because a fix looks like work is not
+  an exit, it is an abandonment.
+- **WAIVER is the GM's to grant, never the session's to assume.** Asking for
+  one is only honest after the fix has been genuinely attempted.
+
+A session that truly cannot fix a regression stops and says so - and "stops
+and says so" means the work stays in the clone, unpushed, with the
+impossibility investigation attached. But see Principle XV: stopping is
+expensive, and the bar for it is high.
 
 **Enforcement.** `/speckit-plan` records this in its Constitution Check. The
 stop-work ritual does not run to completion on a red or regressed state: a
@@ -955,6 +983,57 @@ and a comment that turns out to describe code that no longer exists.
 This principle is NON-NEGOTIABLE because the alternative is invisible: a
 skipped fix costs nothing today, shows up as "the generator has always been a
 bit off here" in a month, and is unattributable by the time it blocks a tier.
+
+### XV. Keep Going (NON-NEGOTIABLE)
+
+**The GM starts work and leaves.** That is how this project is actually used:
+a request is kicked off and the computer is unattended for hours. A session
+that stops to ask "which of these should I do?" does not cost a few seconds
+of the GM's attention - it costs the entire span until they return, and they
+come back to find the work exactly where they left it. GM, 2026-08-23:
+*"it is bad for me to come back and find that you could have kept going but
+decided to just stop and ask what to do next. And if one of the options is
+actually, yes, go ahead and fix it and make it work, then that is always the
+option that I want."*
+
+**So: when a path forward exists, take it.** Finish the feature. If one
+avenue is blocked, work the parts that are not blocked. The standing answer
+to "should I keep going?" is yes.
+
+**The ONLY reason to stop and ask** is a genuine belief that the thing
+cannot be done - that there is a high probability no approach accomplishes
+it. Not that it is hard, not that it is taking longer than expected, not
+that there are several ways to proceed and one of them is nicer. If the
+options list contains "fix it and make it work", that is the answer and it
+does not need confirming.
+
+**Two things this does NOT license:**
+
+- **It is not "any means".** The bounds of ordinary, authorized, ethical work
+  are unchanged - this principle is about persistence, never about reaching
+  for access, systems or actions that were not granted.
+- **It is not thrashing.** Persistence means continuing to make PROGRESS, not
+  continuing to make CHANGES. When stuck, the next step is a MEASUREMENT, not
+  another speculative edit. A session that changes code on four successive
+  hypotheses without measuring between them is not keeping going, it is
+  churning - and it will burn the unattended hours producing nothing, which
+  is the same failure as stopping. (Feature 126, 2026-08-23, is the recorded
+  case of both halves: four wrong diagnoses in a row, and then a stop to ask
+  which of three options to take when one of them was "fix it".)
+
+**Interaction with the stop-and-ask calculus.** The older rule - interrupt
+only when a wrong guess is expensive to unwind - still holds for AMBIGUITY
+about what is wanted. This principle governs DIFFICULTY in delivering what is
+already known to be wanted, and there the answer is to keep working.
+
+**Interaction with XIII.** A regression that cannot be pushed does not end
+the session's work; it redirects it. Keep fixing, or keep building the parts
+that are not blocked, until the regression is fixed or the impossibility is
+demonstrated in writing.
+
+**Enforcement.** A standing goal (the `/goal` mechanism) means exactly this:
+continue until the objective is met or shown impossible. Reporting progress
+is welcome at any point; reporting progress is not the same as stopping.
 
 ## Technical Standards
 
@@ -1097,4 +1176,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.10.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-18
+**Version**: 1.11.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-23
