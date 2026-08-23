@@ -177,6 +177,14 @@ def _homestead_polys(s: Settlement) -> list[tuple[Poly, Pt | None, str]]:
                 out.append(([(float(a), float(b)) for a, b in rec["poly"]], owner, key))
             if rec.get("w"):
                 out.append((rot_rect(float(rec["x"]), float(rec["y"]), float(rec["w"]), float(rec["h"]), float(rec.get("rot", 0.0))), owner, key))
+    # PER-HOUSE GROVES ARE FABRIC TOO (feature 126). A yashikirin belongs to its farmstead and is
+    # planted with it, so a lane may no more be drawn through one than through the house - which is
+    # what `groves_clear_of_lanes` says. It was missing from this list because it could not matter
+    # while the lanes were laid FIRST and the groves grew around them; with the lanes drawn last,
+    # every non-nucleated map cut treads through its own shelter belts.
+    for rec in s.M.get("groves", []):
+        if rec.get("poly"):
+            out.append(([(float(a2), float(b2)) for a2, b2 in rec["poly"]], None, "groves"))
     for key in ("village_groves", "commons"):
         out.extend(([(float(a), float(b)) for a, b in rec["poly"]], None, key) for rec in s.M.get(key, []) if rec.get("poly"))
     for w in s.M.get("wells", []):
@@ -271,7 +279,21 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
         # verge. This is the same `WEB_FABRIC_GAP` the lane web already threads by, so the skeleton
         # and the web now agree about how close a lane may pass a wall.
         arm = clip_to_clear(raw_arms[ai], [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
-        arm = clip_to_clear(arm, fabric, WEB_FABRIC_GAP) if len(arm) >= 2 else arm
+        # ROUTE ROUND THE FABRIC, DO NOT CLIP THROUGH IT (feature 126, after review).
+        #
+        # Clipping was the first version and it deletes the form. An arm that crosses a packed
+        # cluster meets a steading, gets cut, and what survives is whichever end happened to fall in
+        # open ground - so a declared `Y` shipped ONE arm of three on Sawada and Mizuguchi, a `T`
+        # shipped two arms that never meet on Kashikawa, and Inashiro's spine covered the middle
+        # third of a crescent with 60% of its planned run trimmed away. Three independent
+        # settlement-reviews found the same thing from three different maps.
+        #
+        # A trodden way does not stop at a wall, it goes ROUND it, and `_route` is the same Dijkstra
+        # the lane web already uses for exactly this. The clip stays as the fallback: where no route
+        # exists the honest outcome is still a shortened arm rather than a lane through a house.
+        if len(arm) >= 2:
+            routed = _route(arm[0], arm[-1], [list(plan.envelope), *crops, *fabric, *([toe_now] if toe_now else []), *wet_now], [], list(plan.watercourses) + drawn_water)
+            arm = routed if len(routed) >= 2 else clip_to_clear(arm, fabric, WEB_FABRIC_GAP)
         arm = s.trim_off_marsh(arm)
         if len(arm) >= 2:
             if _arm_crossing_accidental(arm, raw_arms[ai], kept):
@@ -445,6 +467,19 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # had a 78 ft hole in a street, because the hole did not exist yet when it looked.
     _bridge_collinear_breaks(s, hard, walls, list(plan.watercourses) + drawn_water)
     _join_orphan_ways(s, hard, walls, list(plan.watercourses) + drawn_water)
+    # ...AND SWEEP THE DEBRIS, LAST OF ALL. `_WEB_MIN_FT` is applied when a run is proposed, but the
+    # end-trim runs AFTER that and pulls a run back to its last serving point - so a lane that was
+    # 60 ft when it passed the floor can be 4 ft by the time it is drawn. Mizuguchi shipped a 4.2 ft
+    # tread with rounded caps standing 3.3 ft off a farmhouse wall, and Kashikawa 17, 25 and 29 ft
+    # marks; at 1 px = 1 ft those read as dropped sticks, which is exactly what the floor's own
+    # comment says it exists to prevent ("a 4 ft mark fronts nobody and reads as a speck of clipping
+    # debris"). A floor that is only checked before the thing that shortens the run is not a floor.
+    #
+    # The connector and the field spur are exempt: they are not web lanes and their length is
+    # whatever the journey needs.
+    _debris = [i for i, ln in enumerate(s.M.get("lanes", [])) if not ln.get("connector") and len(ln.get("pts") or []) >= 2 and polyline_len([(float(x), float(y)) for x, y in ln["pts"]]) < _WEB_MIN_FT]
+    for i in reversed(_debris):
+        s.M["lanes"].pop(i)
     s.M["meta"]["lane_web"] = plan.lane_web
 
 
@@ -475,6 +510,13 @@ _LINK_DIRECTNESS = 4.0
 # 20 ft fragments, left behind when the end-trim pulled a path back to its last serving point. A
 # 4 ft mark fronts nobody and reads as a speck of clipping debris. 30 ft is under half a door path.
 _WEB_MIN_FT = 30.0
+
+_TREAD_TOUCH_FT = 6.0
+"""The gap below which two treads are already ONE piece of ink and there is nothing to bridge.
+
+A lane's drawn tread is a few feet wide, so anything under about this reads as a join on the sheet.
+It is deliberately NOT `_LANE_JOIN_FT`: that is the gate's REACH tolerance ("is this house served"),
+and using a reach figure as an ink-continuity figure is what let 21-29 ft holes ship as connected."""
 
 _BREAK_SPAN_FT = 150.0
 _BREAK_BEARING_DEG = 15.0
@@ -705,8 +747,31 @@ def _bridge_collinear_breaks(s: Settlement, hard: list[Poly], walls: Sequence[Po
                 for ta, pra in ((ways[i][0], ways[i][1]), (ways[i][-1], ways[i][-2])):
                     for tb, prb in ((ways[j][0], ways[j][1]), (ways[j][-1], ways[j][-2])):
                         gap = math.dist(ta, tb)
-                        if not (_LANE_JOIN_FT < gap <= _BREAK_SPAN_FT):
+                        # SHORT GAPS ARE THE ONES THAT MATTER, and they used to be excluded outright.
+                        #
+                        # The lower bound was `_LANE_JOIN_FT` (30), on the reasoning that anything
+                        # closer than the gate's join tolerance is already "connected". It is not
+                        # connected in INK: at 1 px = 1 ft a 29 ft hole is 29 px of bare grass
+                        # between two ~4 px treads, which reads as two dropped sticks, and the gate
+                        # is silent precisely BECAUSE its own tolerance erases it. Feature 126 made
+                        # this visible - deriving the lanes from the houses produces more short
+                        # breaks - and three settlement-reviews found it independently on three
+                        # maps: Inashiro went from one ink component at HEAD to four, with six
+                        # houses 105-243 ft from the connected network behind holes of 28.4, 28.7
+                        # and 29.4 ft.
+                        #
+                        # The floor is now the tread's own width: below that there is nothing to
+                        # bridge, because the two treads already touch.
+                        if not (_TREAD_TOUCH_FT < gap <= _BREAK_SPAN_FT):
                             continue
+                        # ...and a SHORT gap does not have to be collinear. The bearing test exists
+                        # to tell "one way with a hole in it" from "two arms that happen to end near
+                        # each other", and over 150 ft that distinction is real. Over 25 ft it is
+                        # not: a back lane following a curved field margin breaks at 37 deg of
+                        # aim-off and is still one lane. So the test applies from `_LANE_JOIN_FT` up,
+                        # and a shorter hole is closed on proximity alone.
+                        if gap > _LANE_JOIN_FT and (_aim_off(pra, ta, tb) > _BREAK_BEARING_DEG or _aim_off(prb, tb, ta) > _BREAK_BEARING_DEG):
+                            continue  # two arms, not one way
                         # POINTING AT EACH OTHER MEANS EACH END'S OUTWARD DIRECTION AIMS AT THE
                         # OTHER END - not that the two outward bearings are similar. Two ends facing
                         # across a gap have OPPOSITE outward bearings (one runs east, the other runs
@@ -714,8 +779,7 @@ def _bridge_collinear_breaks(s: Settlement, hard: list[Poly], walls: Sequence[Po
                         # thing entirely: it selects pairs pointing the SAME way, which is two
                         # parallel arms, and misses the collinear break it was written for. Caught by
                         # a unit test built from the textbook case rather than from a map.
-                        if _aim_off(pra, ta, tb) > _BREAK_BEARING_DEG or _aim_off(prb, tb, ta) > _BREAK_BEARING_DEG:
-                            continue  # two arms, not one way
+
                         # ...unless a third way already spans it. Closing a break leaves the two
                         # original ends where they were, joined THROUGH the new lane - so without
                         # this the pass re-bridges the same pair every round and burns its budget on
@@ -770,7 +834,18 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
             for i, w in enumerate(ways):
                 if i in main or len(w) < 2:
                     continue
-                if any(_net_reach(w, list(zip(ways[j], ways[j][1:], strict=False))) <= _LANE_JOIN_FT for j in main if len(ways[j]) >= 2):
+                # MEMBERSHIP IS DECIDED BY TOUCH, NOT BY REACH - and getting that wrong is why this
+                # pass could not see the very gaps it exists to close. `_LANE_JOIN_FT` (30) is the
+                # gate's REACH tolerance: "is this house served by that way". Used here it says a
+                # tread lying 25 ft from the network is already part of it, so the fragment is never
+                # classified an orphan and no link is ever routed - while the sheet shows 25 px of
+                # bare grass between two 4 px treads.
+                #
+                # Measured on Inashiro (feature 126, three settlement-reviews found it
+                # independently): one ink component at HEAD became four, with six houses 105-243 ft
+                # from the CONNECTED network behind holes of 28.4, 28.7 and 29.4 ft - every one of
+                # them under 30 and therefore invisible to this loop.
+                if any(_net_reach(w, list(zip(ways[j], ways[j][1:], strict=False))) <= _TREAD_TOUCH_FT for j in main if len(ways[j]) >= 2):
                     main.add(i)
                     grew = True
         orphans = [i for i in range(len(ways)) if i not in main and len(ways[i]) >= 2]
@@ -800,6 +875,21 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
             # standing on the lane (cohort seed 11). Only the true single-file footpath gets the
             # footpath clearance; a street, a bridge and a link are all drawn wider than one.
             _try = _route(cand[1], cand[2], hard, walls, [], gap=WEB_FABRIC_GAP, pad_mult=2.0, cell=14.0)
+            # ...AND IF THE OPEN CLEARANCE FINDS NO ROUTE, TRY SQUEEZING PAST THE WALL.
+            #
+            # The two halves of a settlement are worth an alley that a fresh lane would not be. On
+            # Inashiro two web lanes of 57 and 70 ft sat 28.4 and 28.7 ft from the network and could
+            # not be linked at all, because a steading's corner falls inside `WEB_FABRIC_GAP` of
+            # every joining line - so the map shipped three separate networks where HEAD had one.
+            #
+            # A tighter link is not a worse lane, it is the RIGHT lane: the sources describe exactly
+            # this way as "colonized as semi-private space by the adjoining house", barely more than
+            # the gap between two walls (research/homesteads.md). What must not happen is a tread
+            # drawn ON a wall, and that is a separate guarantee - `_house_on_a_tread` and
+            # `houses_clear_of_lanes` both measure the drawn footprint against the drawn tread, and
+            # neither is relaxed here. This only lets the ROUTE plan closer.
+            if not _try:
+                _try = _route(cand[1], cand[2], hard, walls, [], gap=WEB_FABRIC_GAP * 0.45, pad_mult=1.0, cell=8.0)
             if _try and polyline_len(_try) <= _LINK_DIRECTNESS * max(cand[0], 1.0):
                 link, best = _try, cand
                 break

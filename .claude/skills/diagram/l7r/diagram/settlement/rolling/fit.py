@@ -275,6 +275,15 @@ class BundleFitMixin:
             return False
         if "grove_n" in geom and any(self._rect_blocked(geom[k], fields=grove_off_field) for k in ("grove_n", "grove_w")):
             return False
+        # A GROVE MAY NOT BE PLANTED ON A WAY EITHER (feature 126). `_rect_blocked` tests keep-out
+        # polygons; it says nothing about a lane's drawn TREAD, which is why the house has its own
+        # `_house_on_a_tread` test. The grove needed the same one and never had it, because until
+        # the settlement form became a rolled knob only DISPERSED maps grew per-house groves and the
+        # scripted tier never rolled one. With the knob live, every linear and dispersed hamlet
+        # planted yashikirin across the connector and the field spur - both of which are drawn
+        # BEFORE the houses - and `groves_clear_of_lanes` reported it correctly.
+        if "grove_n" in geom and any(self._house_on_a_tread(geom[k]) for k in ("grove_n", "grove_w")):
+            return False
         if not self._sun_corridor_ok(geom):
             return False
         return not self._yard_sun_conflict(geom)

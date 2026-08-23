@@ -87,10 +87,22 @@ def test_lane_frontage_seats_the_hamlet_when_the_field_row_offers_nothing(monkey
     from l7r.diagram.hamletgen import homesteads as HS
 
     monkeypatch.setattr(HS, "front_row", lambda plan, count, standoff=46.0: [])
-    plan = hg.plan_site(hg.HamletSpec(name="LaneOnly", seed=5, households=10))
+    # THE FRONTAGE PASS IS LINEAR-ONLY SINCE FEATURE 126. The internal lanes it used to walk are
+    # drawn two stages later now, so for a nucleated or dispersed hamlet this pass has nothing to
+    # offer and is skipped; for a LINEAR one it fronts the connector, which is the one way that
+    # genuinely predates the houses. The form is pinned on the spec so the test exercises the pass
+    # it is named for rather than whatever the seed happens to roll.
+    plan = hg.plan_site(hg.HamletSpec(name="LaneOnly", seed=5, households=10, settlement_form="linear"))
     s = hg.build(plan)
-    assert plan.placed > 0, "with the field row silent, the farmsteads must come off the lanes"
-    assert s.M["meta"]["cluster_seeding"] == "frontage", "the lane pass alone still counts as frontage seeding"
+    assert plan.placed > 0, "with the field row silent, the farmsteads must still be seated"
+    # ASSERT THE PASS, NOT THE AGGREGATE (feature 126). This used to read
+    # `meta["cluster_seeding"] == "frontage"`, inferring the pass ran from a summary field that
+    # records which pass seated the MAJORITY. Since the frontage pass became linear-only and points
+    # at the connector, it seats a real but minority share, so the summary now says "cloud" while
+    # the pass is working perfectly - the assertion had stopped measuring what its own name claims.
+    # Testing the offer directly is both narrower and truer.
+    seats = HS.lane_frontage(s, plan.seat, connector=True)
+    assert seats, "a linear hamlet must be offered seats along the connector it fronts"
 
 
 def test_a_seat_on_forbidden_ground_is_refused() -> None:

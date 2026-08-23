@@ -534,7 +534,50 @@ LANE_WEBS = ("alleys", "back_lane")
 # is individually inside the norms; it is the FREQUENCY that is flattened, which is the liberty a
 # DEGREE-along-a-continuum may take. Weighting to true frequency would make two of the three forms
 # vanishingly rare, untested by the cohort, and pointless to have built.
-SETTLEMENT_FORMS = ("nucleated", "nucleated", "nucleated", "nucleated", "nucleated", "dispersed", "dispersed", "dispersed", "linear", "linear")
+# HOW FAR A NON-NUCLEATED FARMHOUSE MAY STAND FROM ITS FIELD, in px.
+#
+# MIRRORS THE GATE, deliberately and by the same number. `all_houses_field_adjacent` (segment 0232)
+# has two branches: a NUCLEATED cluster is allowed `ADJ + 2 * span` - the cluster's own diameter of
+# slack, because a nucleus legitimately has a back rank - while every other form gets a flat `ADJ`
+# of 165 px with no allowance at all. That asymmetry is right, and it is the research rather than
+# the checker talking: a Tonami farmstead stands in the MIDDLE of its own holding, and a row
+# village's fields lie directly behind each house, so neither form has a back rank to excuse.
+#
+# The placer needs the same figure because it is the placer that decides. Left to the cloud pass,
+# dispersed and linear maps put houses a median 164 and 208 px out (against the baseline's 144 and
+# 145) and failed the check - which was the generator being wrong about the form, not the check
+# being wrong about the map.
+FIELD_ADJ_PX = 165.0
+
+# ROLLED TO NUCLEATED ONLY, FOR NOW - and the weights above are what to restore, not to re-derive.
+#
+# Feature 126 built everything the other two forms need: the research (research/homesteads.md), the
+# knob, the form-conditional access checks, the corrected field-adjacency branch, and per-form
+# seating. What it did NOT build is a per-house GROVE that behaves. That path had never been
+# exercised by the scripted tier - it was written for hand-authored dispersed maps - and switching
+# it on surfaces four latent defects at once, measured on the in-gate ratchet seeds:
+#
+#   seed 42 (linear):    groves_clear_of_lanes, groves_on_windward_side, gardens_unshaded_from_east
+#   seed 43 (dispersed): groves_clear_of_structures, structures_clear_of_trees (groves over byres),
+#                        gardens_unshaded_from_east, and 12 of 14 households seated
+#
+# MECHANISM, as far as it was traced: a yashikirin is part of the BUNDLE and is planted at seat
+# time, but it is tested only by `_rect_blocked` (keep-out polygons). It is not tested against lane
+# treads, against byres seated later in `stage_appurtenances`, or for the garden's morning sun. Two
+# fixes were tried and MEASURED NOT TO HELP, so do not repeat them: adding `groves` to the lane
+# fabric in `_homestead_polys`, and giving the grove rects the house's own `_house_on_a_tread` test.
+# Both are kept because they are correct in themselves; neither moved the ratchet.
+#
+# SKETCH for the follow-up: the grove needs the same treatment the HOUSE already has - a
+# footprint-level fit test covering treads, later-seated fixtures and the east-sun rule - which
+# probably means groves stop being seated with the bundle and become a deferred pass after the
+# appurtenances, in the same way canopies are already deferred to the flush.
+#
+# Until then the generator emits only the form it can draw correctly. This is a WEIGHTS change and
+# nothing else: every other part of the knob is live and tested, so restoring the line below is the
+# whole of turning the other forms back on.
+SETTLEMENT_FORMS = ("nucleated",)
+_SETTLEMENT_FORMS_WHEN_GROVES_WORK = ("nucleated", "nucleated", "nucleated", "nucleated", "nucleated", "dispersed", "dispersed", "dispersed", "linear", "linear")
 
 PLOT_SIZES = ("small_irregular", "medium", "medium", "large_block")
 GRAIN_DRIFTS = (-8, -4, 0, 0, 4, 8)
