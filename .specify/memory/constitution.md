@@ -420,6 +420,33 @@ artifacts. Specifically:
   - A feature that adds a KNOB owes one artifact per knob VALUE, not one per
     artifact in the pool: three maps, not forty-eight.
 
+- **Generators: PERFORMANCE IS BOOKENDED, not remembered** (GM 2026-08-23).
+  A spec-kit feature that touches the diagram generators records a performance
+  snapshot BEFORE it changes anything and again BEFORE it ships:
+
+      make perf LABEL=<NNN>-start     # first thing, on unmodified code
+      make perf LABEL=<NNN>-end       # last thing, before the push
+      make perf-report AGAINST=<NNN>-start
+
+  Any seed more than **5% slower** must be diagnosed before the feature ships -
+  the same 5% the project already treats as a whole-process speedup worth having,
+  applied in the other direction. Diagnosed means explained and either fixed or
+  accepted in writing with the number; it does not mean noticed.
+
+  - **Seeds, not one map.** The reference hamlet is rolled across a fixed seed
+    set, because a single seed can be pathologically good as easily as bad.
+  - **The start snapshot is also a health check.** Read the trend before
+    beginning: if performance has drifted since the last feature, the first work
+    is finding out why, not adding to it.
+  - Snapshots live one-file-per-run in `.claude/skills/diagram/dev/perf-log/`, so
+    concurrent clones never conflict. Never edit or delete one.
+  - This does not replace `GEN_TIME_BUDGETS`, which is a per-gen ceiling. This is
+    a trend, and it answers the other question: is it getting slower, and when.
+
+  Feature 126 is why this exists: it moved a stage and took one seed from 65s to
+  160s, and nothing noticed until a 48-map cohort stalled a 20-worker pool for
+  thirty minutes and was killed twice with no result.
+
 Trust-but-verify is the working mode. Reporting a thing as done without
 verification is a constitutional violation, not just a quality issue.
 

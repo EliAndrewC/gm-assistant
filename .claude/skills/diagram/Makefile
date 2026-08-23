@@ -4,7 +4,7 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test guard
+.PHONY: done lint format typecheck test guard perf perf-report
 
 # Runs EVERY phase and reports all failures together (GM 2026-07-25). It used to be
 # `done: lint format typecheck test`, which make stops at the first failure - so a lint slip hid a
@@ -20,6 +20,19 @@ done:
 	if [ -n "$$fail" ]; then printf '\n\033[1mGATE FAILED:%s\033[0m (every phase ran - fix them together, then re-run once)\n' "$$fail"; exit 1; fi; \
 	root=$$(git rev-parse --show-toplevel 2>/dev/null) && [ -n "$$root" ] && python3 "$$root/scripts/gate-stamp.py" --write diagram || true; \
 	printf '\n\033[1mgate green\033[0m\n'
+
+# THE REFERENCE-HAMLET PERFORMANCE BOOKENDS (constitution VI, GM 2026-08-23).
+#
+# Deliberately NOT part of `done`. A hamlet takes 30-160s and the reference set is four seeds, so
+# folding this into the gate would roughly double a cycle that already runs ~5 minutes - and this
+# project's own measurements say iteration latency is the dominant cost of a feature. So the sweep
+# is explicit and the CONSTITUTION carries the obligation to run it, at the start of a diagram
+# feature and again before it ships.
+perf:
+	@python3 -m l7r.diagram.tools.perf_snapshot --record --label "$(or $(LABEL),adhoc)"
+
+perf-report:
+	@python3 -m l7r.diagram.tools.perf_snapshot --report $(if $(AGAINST),--against $(AGAINST),)
 
 # Refuse to run from the MAIN /gm-assistant tree (CLAUDE.md "Session clones": main is the
 # integration point, never a workspace - work runs in .clones/<session-name>). Every target

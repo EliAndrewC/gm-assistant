@@ -1,0 +1,119 @@
+{
+  "clone": "base125",
+  "commit": "8ec2a91",
+  "cpus": 22,
+  "label": "126-start",
+  "machine": "x86_64",
+  "median_seconds": 50.5,
+  "note": "taken in the detached baseline worktree at 8ec2a91, before any feature-126 edit",
+  "reference": {
+    "down_deg": 90,
+    "households": 15,
+    "name": "Inashiro",
+    "water_sink": "pond"
+  },
+  "rows": [
+    {
+      "asked": 15,
+      "form": "n/a",
+      "houses": 15,
+      "seconds": 25.0,
+      "seed": 4,
+      "shape": "crescent",
+      "stages": {
+        "appurtenances": 0.94,
+        "crossings": 0.27,
+        "field": 3.52,
+        "frame": 0.02,
+        "hinterland": 3.02,
+        "homesteads": 0.51,
+        "notice": 9.05,
+        "sink": 0.01,
+        "water_frame": 0.0,
+        "ways": 6.73,
+        "web": 0.31,
+        "windbreak": 0.32,
+        "woodland": 0.25
+      }
+    },
+    {
+      "asked": 15,
+      "form": "n/a",
+      "houses": 15,
+      "seconds": 135.6,
+      "seed": 25,
+      "shape": "crescent",
+      "stages": {
+        "appurtenances": 0.88,
+        "crossings": 0.16,
+        "field": 4.5,
+        "frame": 0.0,
+        "hinterland": 2.99,
+        "homesteads": 1.5,
+        "notice": 7.31,
+        "sink": 0.01,
+        "water_frame": 0.0,
+        "ways": 6.43,
+        "web": 111.51,
+        "windbreak": 0.06,
+        "woodland": 0.21
+      }
+    },
+    {
+      "asked": 15,
+      "form": "n/a",
+      "houses": 15,
+      "seconds": 43.3,
+      "seed": 39,
+      "shape": "round",
+      "stages": {
+        "appurtenances": 0.54,
+        "crossings": 0.32,
+        "field": 2.73,
+        "frame": 0.0,
+        "hinterland": 3.16,
+        "homesteads": 0.6,
+        "notice": 14.26,
+        "sink": 0.01,
+        "water_frame": 0.0,
+        "ways": 6.96,
+        "web": 14.39,
+        "windbreak": 0.22,
+        "woodland": 0.08
+      }
+    },
+    {
+      "asked": 15,
+      "form": "n/a",
+      "houses": 15,
+      "seconds": 57.6,
+      "seed": 47,
+      "shape": "round",
+      "stages": {
+        "appurtenances": 1.06,
+        "crossings": 0.23,
+        "field": 26.08,
+        "frame": 0.0,
+        "hinterland": 2.95,
+        "homesteads": 0.28,
+        "notice": 12.56,
+        "sink": 0.0,
+        "water_frame": 0.0,
+        "ways": 10.74,
+        "web": 3.34,
+        "windbreak": 0.21,
+        "woodland": 0.15
+      }
+    }
+  ],
+  "seeds": [
+    4,
+    25,
+    39,
+    47
+  ],
+  "subject": "fix(diagram): stage 1 draws NOTHING - stop presenting that as a blank plate",
+  "total_seconds": 261.5,
+  "utc": "20260823T135437Z",
+  "worst_seconds": 135.6
+}

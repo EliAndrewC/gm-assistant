@@ -41,6 +41,21 @@ result: the first ran 30 minutes with 19 of 20 workers idle while one seed near-
 - Whether the access rules become form-conditional or waived - form-conditional (R5).
 - The settled stage sequence (R6).
 
+## Performance bookends (constitution VI - added mid-feature 2026-08-23 BECAUSE this feature regressed)
+
+| | label | total | median | worst | notes |
+|---|---|---|---|---|---|
+| before | `126-start` | see `dev/perf-log/` | | | taken retroactively from the untouched worktree at `8ec2a91` |
+| after | `126-end` | | | | before the push |
+
+**This feature is the reason the rule exists.** Moving the skeleton after the houses took seed 25
+from 65s to 160s, and nothing surfaced it: two 48-map cohorts were launched, ran 30 and 15 minutes
+with 19 of 20 workers idle behind one stalled seed, and were killed without producing a result.
+A four-seed reference sweep would have shown it in about three minutes, before any cohort ran.
+
+Known going in, to be resolved at the `126-end` bookend: seed 25 is ~2.5x the baseline while seed
+39 is ~2.8x FASTER. A net that is favourable on average still owes an explanation for the outlier.
+
 ## Constitution Check
 
 | Principle | Status | Note |
