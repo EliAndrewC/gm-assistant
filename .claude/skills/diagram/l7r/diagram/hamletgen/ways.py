@@ -875,21 +875,15 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
             # standing on the lane (cohort seed 11). Only the true single-file footpath gets the
             # footpath clearance; a street, a bridge and a link are all drawn wider than one.
             _try = _route(cand[1], cand[2], hard, walls, [], gap=WEB_FABRIC_GAP, pad_mult=2.0, cell=14.0)
-            # ...AND IF THE OPEN CLEARANCE FINDS NO ROUTE, TRY SQUEEZING PAST THE WALL.
-            #
-            # The two halves of a settlement are worth an alley that a fresh lane would not be. On
-            # Inashiro two web lanes of 57 and 70 ft sat 28.4 and 28.7 ft from the network and could
-            # not be linked at all, because a steading's corner falls inside `WEB_FABRIC_GAP` of
-            # every joining line - so the map shipped three separate networks where HEAD had one.
-            #
-            # A tighter link is not a worse lane, it is the RIGHT lane: the sources describe exactly
-            # this way as "colonized as semi-private space by the adjoining house", barely more than
-            # the gap between two walls (research/homesteads.md). What must not happen is a tread
-            # drawn ON a wall, and that is a separate guarantee - `_house_on_a_tread` and
-            # `houses_clear_of_lanes` both measure the drawn footprint against the drawn tread, and
-            # neither is relaxed here. This only lets the ROUTE plan closer.
-            if not _try:
-                _try = _route(cand[1], cand[2], hard, walls, [], gap=WEB_FABRIC_GAP * 0.45, pad_mult=1.0, cell=8.0)
+            # A TIGHT-SQUEEZE FALLBACK WAS TRIED HERE AND REVERTED (feature 126). When an orphan
+            # could not be linked at the open clearance, a second attempt planned at 45% of
+            # `WEB_FABRIC_GAP`, on the reasoning that the sources describe this very lane as
+            # "colonized as semi-private space by the adjoining house". It was wrong twice over:
+            # measured, it changed no connectivity number at all (the orphans it was aimed at are
+            # separated by the PADDY, not by a wall, so no clearance helps), and it put treads on
+            # houses - `make map` came back with features_do_not_overlap and houses_clear_of_lanes
+            # on the reference hamlet. Do not re-add it: an orphan across a field is honestly
+            # unlinkable, and the fix for those houses is the straggler pass, not a narrower lane.
             if _try and polyline_len(_try) <= _LINK_DIRECTNESS * max(cand[0], 1.0):
                 link, best = _try, cand
                 break
@@ -910,9 +904,37 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
     return made  # pragma: no cover - six links is far more than any hamlet needs
 
 
-def _net_segs(s: Settlement) -> list[tuple[Pt, Pt]]:
-    """Every drawn way on the map right now, as segments."""
-    return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for ln in s.M.get("lanes", []) for p, q in zip(ln["pts"], ln["pts"][1:], strict=False)]
+def _net_segs(s: Settlement, connected_only: bool = False) -> list[tuple[Pt, Pt]]:
+    """Every drawn way on the map right now, as segments.
+
+    `connected_only` restricts the result to the component the CONNECTOR is on, which is what
+    "reached" actually means. Without it a house standing 20 ft from an orphan island counts as
+    served while the network it must actually walk to is 107 ft away - and the straggler pass then
+    declines to draw the footpath that would connect it. Measured on Inashiro (feature 126): four
+    houses 107-200 ft from the connected network, each of them "served" by a fragment that goes
+    nowhere. The gate says the same thing in its own words - "THE NETWORK, NOT ANY LINE ON THE
+    GROUND ... a house served only by an isolated stub is not served" - so this makes the generator
+    measure what the checker measures."""
+    lanes = [ln for ln in s.M.get("lanes", []) if len(ln.get("pts") or []) >= 2]
+    if not connected_only or not lanes:
+        return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for ln in lanes for p, q in zip(ln["pts"], ln["pts"][1:], strict=False)]
+    pts = [[(float(x), float(y)) for x, y in ln["pts"]] for ln in lanes]
+
+    def _gap(i: int, j: int) -> float:
+        return min(seg_dist(q[0], q[1], a2, b2) for q in pts[i] for a2, b2 in zip(pts[j], pts[j][1:], strict=False))
+
+    seed = next((i for i, ln in enumerate(lanes) if ln.get("connector")), 0)
+    comp = {seed}
+    grew = True
+    while grew:
+        grew = False
+        for i in range(len(pts)):
+            if i in comp:
+                continue
+            if any(min(_gap(i, j), _gap(j, i)) <= _TREAD_TOUCH_FT for j in comp):
+                comp.add(i)
+                grew = True
+    return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for i in comp for p, q in zip(pts[i], pts[i][1:], strict=False)]
 
 
 def _draw_web(s: Settlement, pts: Poly, width: int = 3, houses: Sequence[Pt] = ()) -> bool:
@@ -1129,7 +1151,7 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
             # stranded and got a second path of its own - Kashikawa's 29 ft lane 12, drawn for a
             # house that a previous lane had already taken from 100.7 ft to 38.9, and which the new
             # lane then left at 70.5. A way exists because feet use it.
-            segs = _net_segs(s)
+            segs = _net_segs(s, connected_only=True)
             # SERVE WITH MARGIN, NOT TO THE MILLIMETRE. Triggering at exactly the reach means a
             # house at 99.7 ft is not a straggler and gets nothing, while one at 100.3 has a whole
             # path drawn for four inches of violation - the same bug at both ends. A review caught
@@ -1325,6 +1347,21 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                     # The path's own start can have been clipped away from the door, so it gets the
                     # same end-trim every web lane gets - a footpath that begins in bare grass is a
                     # dangling tread whatever drew it.
+                    # LAND ON THE WAY IT WAS AIMED AT. `_route` plans to within its own clearance
+                    # of the goal (`gap + cell*0.71`), so a footpath routed to a point ON the
+                    # network finishes 10-25 ft short of it - and `_trim_to_service` keeps that end
+                    # because 40 ft counts as "serving". The result is a rescue path that rescues
+                    # nobody: measured on Inashiro, drawing them took the ink from 3 components to
+                    # 4 while two houses stayed 107 and 125 ft from anything they could walk to.
+                    # Extending the last vertex onto the target costs a few feet of tread and is the
+                    # difference between a path and a gesture.
+                    # ...but only if the last few feet are CLEAR. Appending the target blindly puts
+                    # the tread wherever the straight line goes, and on the reference hamlet that
+                    # was through a farmhouse: `make map` came back with features_do_not_overlap and
+                    # houses_clear_of_lanes. The extension is the same kind of link as any other and
+                    # gets the same test.
+                    if math.dist(path[-1], tgt) <= _LANE_JOIN_FT and _clear_link(path[-1], (float(tgt[0]), float(tgt[1])), others, [], water):
+                        path = [*path, (float(tgt[0]), float(tgt[1]))]
                     path = _trim_to_service(path, segs, [(float(q["x"]), float(q["y"])) for q in s.M.get("houses", [])])
                     _draw_web(s, path, 3, houses=[c])
                     added += 1

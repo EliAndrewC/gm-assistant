@@ -4,7 +4,7 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test guard perf perf-report
+.PHONY: done lint format typecheck test guard perf perf-report maps
 
 # Runs EVERY phase and reports all failures together (GM 2026-07-25). It used to be
 # `done: lint format typecheck test`, which make stops at the first failure - so a lint slip hid a
@@ -28,6 +28,24 @@ done:
 # project's own measurements say iteration latency is the dominant cost of a feature. So the sweep
 # is explicit and the CONSTITUTION carries the obligation to run it, at the start of a diagram
 # feature and again before it ships.
+# ---- ONE COMMAND, WHICH PICKS ITS OWN SCOPE (constitution VI) --------------------------------
+#
+# `make maps` reads how the LAST run went and decides:
+#
+#     last run PASSED -> the whole tier, reporting every failure together
+#     last run FAILED -> the REFERENCE map alone, stopping at the first problem;
+#                        only if it passes does it go on to the rest
+#     no last run     -> treated as FAILED
+#
+# There is deliberately no second command. The rule this replaces ("prove it on the reference
+# settlement first, then sweep") was correct, was written into the constitution, and was violated by
+# its own author six hours later - five 10-12 minute four-map cycles chasing a defect the reference
+# hamlet answered in 67 seconds. A choice is a thing that gets chosen wrong under pressure.
+#
+# `SCOPE=reference` / `SCOPE=all` says what you mean when you know better.
+maps:
+	@python3 -m l7r.diagram.tools.mapcheck
+
 perf:
 	@python3 -m l7r.diagram.tools.perf_snapshot --record --label "$(or $(LABEL),adhoc)"
 

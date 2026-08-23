@@ -37,9 +37,14 @@
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 **Single-artifact target** (REQUIRED for any generator change, constitution VI): [the ONE named
-artifact this is proven on before any sweep - e.g. `pool/hamlets/inashiro.gen.py`. State its rebuild
-time. The cohort/pool sweep runs ONCE, after this artifact fully works, never as the iteration loop.
-If the feature adds a knob, name one artifact per knob VALUE.]
+artifact this is proven on before any sweep - e.g. `pool/hamlets/inashiro.gen.py`. State its
+rebuild time. `make maps` enforces the order itself: after a failure it runs the reference map alone
+and stops at the first problem, and only widens to the tier once that map is clean. If the feature adds a knob, name one artifact per knob
+VALUE.]
+
+**Every step is two steps.** Each phase below must separate "working on the reference settlement"
+from "working across the pool". The second is its own task with its own verification - if a phase
+lists only the first, it is not finished being planned.
 
 ## Performance bookends (REQUIRED for any diagram-generator change, constitution VI)
 

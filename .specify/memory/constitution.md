@@ -1,7 +1,32 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.10.0 → 1.11.0
+Version change: 1.12.0 → 1.12.1
+
+Version 1.12.1 (amended 2026-08-23): replaces the two-command reference-first
+workflow with ONE self-scoping command. `make maps` reads how the last run went -
+passed means the whole tier with every failure reported, failed means the
+reference map alone stopping at the first problem, and only widening once it is
+clean. One piece of state drives both scope and verbosity. The two-command
+version lasted about an hour before its own author reached for the expensive one
+by habit, which is the argument: a choice is a thing that gets chosen wrong under
+pressure. Applies to every settlement tier, not just hamlets. Amendment: PATCH -
+it strengthens the enforcement of an existing principle without changing it.
+
+Version 1.12.0 (amended 2026-08-23): makes the reference-settlement rule
+STRUCTURAL rather than advisory. Every step of a generator feature is now two
+steps - working on the reference settlement, then working across the pool - and
+both are tasks with their own verification. The tooling defaults to the cheap
+thing on purpose (`make map` is the reference hamlet alone; the pool sweep is
+`make full-hamlet-sweep`, named to be hard to type by accident), because a wide
+sweep that is cheap to invoke is what lets a session drift onto it unnoticed.
+`make done` remains the backstop, which is what makes narrow defaults safe: the
+gate re-checks the whole pool, so forgetting the sweep costs time, never
+correctness. Amendment: MINOR. Motivating measurement: feature 126 spent five
+10-12 minute four-map cycles chasing one connectivity defect that the reference
+hamlet answered in 67 seconds - and the slow loop was itself the cause, because
+waiting ten minutes for an answer is what tempts a session into guessing another
+fix instead of measuring again.
 
 Version 1.11.0 (amended 2026-08-23): adds Principle XV (Keep Going) and
 rewrites Principle XIII's exits. The GM starts work and leaves the computer
@@ -429,6 +454,49 @@ artifacts. Specifically:
   experiments instead of nothing.
   - The canonical hamlet is **Inashiro**, unless the feature names a better one
     and says why.
+  - **EVERY STEP OF A FEATURE IS TWO STEPS** (GM 2026-08-23): get it working on
+    the reference settlement, THEN get it working everywhere. A plan or task list
+    that says only "make X work" is incomplete - it must say "make X work on the
+    reference settlement" and, separately, "make X work across the pool". The
+    second half is a distinct task with its own verification, not a footnote to
+    the first.
+  - **THERE IS ONE COMMAND, AND IT PICKS ITS OWN SCOPE** (GM 2026-08-23).
+    `make maps` reads how the LAST run went and decides:
+
+        last run PASSED -> the whole tier, reporting EVERY failure together
+        last run FAILED -> the REFERENCE map alone, stopping at the FIRST
+                           problem; only if it passes does it go on to the rest
+        no last run     -> treated as FAILED
+
+    **One piece of state drives both the scope and the verbosity**, and for the
+    same reason: a failed previous run means you are mid-fix and want the fastest
+    signal, so the run is narrow and stops early; a passed previous run means you
+    are verifying breadth, so it is wide and collects everything - which is what
+    `make done` already does. `SCOPE=reference` / `SCOPE=all` says what you mean
+    when you know better; an adaptive default is right, but a tool that cannot be
+    told the truth gets worked around instead of used.
+
+    **There is deliberately NO second command.** An earlier version of this rule
+    offered `make map` and `make full-hamlet-sweep` and relied on the session
+    choosing correctly. A choice is a thing that gets chosen wrong under
+    pressure: the reference-first rule was written into this constitution and
+    violated by its own author six hours later, at a cost of five 10-12 minute
+    four-map cycles chasing a defect the reference hamlet answered in 67 seconds.
+    *"Just remembering to do the right thing always is much worse than having
+    good tooling."*
+
+    **Sequential is cheaper than it looks.** A reference run that passes costs
+    about a minute before the wide run starts; a reference run that FAILS saves
+    the wide run entirely. The apparent loss of parallelism is bought back many
+    times over across a feature.
+
+    **This is the general pattern for every settlement tier**, not a hamlet
+    special case - `mapcheck.py` is a tier table, and villages, towns and cities
+    each get a row and a named reference map as they gain live scripted gens.
+  - **`make done` IS THE BACKSTOP, and it is why narrow defaults are safe.** The
+    gate re-checks the whole pool, so a session that forgets the sweep entirely
+    still cannot ship a map it broke. Cheap defaults trade no correctness - only
+    the moment you find out.
   - The final sweep stays MANDATORY whenever shared code changed - this clause
     changes WHEN it runs, never WHETHER.
   - A feature that adds a KNOB owes one artifact per knob VALUE, not one per
@@ -1176,4 +1244,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.11.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-23
+**Version**: 1.12.1 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-23

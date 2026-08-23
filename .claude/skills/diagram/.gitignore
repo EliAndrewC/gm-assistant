@@ -1,3 +1,4 @@
 .gencache/
 # pytest-cov/xdist parallel-mode data files; transient, merged by `coverage combine`
 .coverage.*
+.mapcheck.json

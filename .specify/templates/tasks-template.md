@@ -45,6 +45,19 @@ description: "Task list template for feature implementation"
   ============================================================================
 -->
 
+## Reference-settlement rule (generator features - constitution VI)
+
+**Every implementation phase splits in two, and both halves are tasks:**
+
+1. `[US_] Make <the change> work on the REFERENCE settlement` - `make maps` does this on its own
+   after any failure, running the reference map alone (~1 min) and stopping at the first problem.
+2. `[US_] Extend <the change> across the pool` - once the reference map is clean, the same `make
+   maps` goes on to the whole tier and reports every failure together. One command; it chooses.
+
+A phase that lists only step 1 is unfinished; a phase that starts at step 2 is the mistake this rule
+exists to prevent. `make done` re-checks the whole pool regardless, so forgetting step 2 costs time,
+never correctness.
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: Project initialization and basic structure
