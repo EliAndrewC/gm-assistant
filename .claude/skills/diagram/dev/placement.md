@@ -43,16 +43,37 @@ sequence one-to-one. Where the two disagree, `STAGES` wins for anything under `h
 | 1 | `stage_water_frame` | **nothing - it draws no ink at all.** Settles the drainage bearing and the land's fall and writes twelve values to `meta`; every later stage reads them |
 | 2 | `stage_field` | the water skeleton AND the paddy - `build_comb` returns canals and plots from one call, so intake, head race and field ditches arrive here, not in stage 1 |
 | 3 | `stage_sink` | tail drain, pond or off-map outfall |
-| 4 | `stage_ways` | the skeleton and the connector - the ground-RESERVING ways |
+| 4 | `stage_ways` | the CONNECTOR and the field spur only - the EXOGENOUS ways, which genuinely predate the settlement. The internal skeleton moved to stage 7 in feature 126 |
 | 5 | `stage_homesteads` | the farmhouses |
 | 6 | `stage_appurtenances` | yards, gardens, byres, wells, sheds |
-| 7 | `stage_web` | the lane web - the ground-FILLING ways |
+| 7 | `stage_web` | ALL the endogenous ways - the internal skeleton AND the lane web, both derived from where the houses actually landed. No-op for a dispersed hamlet, which has no internal network |
 | 8 | `stage_notice` | the kosatsuba, which stands ON a way and so waits for the web |
 | 9 | `stage_hinterland` | scrub and rough grazing |
 | 10 | `stage_woodland` | woodland commons |
 | 11 | `stage_windbreak` | the shelter belt |
 | 12 | `stage_crossings` | planks and decks over every way that crosses water |
 | 13 | `stage_frame` | crop to content, title, scalebar |
+
+**WAYS ARE SPLIT BY PROVENANCE, NOT BY TIMING** (feature 126, 2026-08-23). The GM asked whether
+laying lanes before houses reflects how lanes form, and it does not - a lane between farmsteads is
+trodden by the households already living there. So the question a new way must answer is not "does
+this reserve ground or fill it" but **"did this way exist before the settlement did?"**
+
+- **Exogenous** - the connector to the off-map road, the field spur. These predate the houses and
+  are laid before them; houses may legitimately front them, which is what the LINEAR form is.
+- **Endogenous** - the internal skeleton, the lane web. These are worn by the settlement, so they
+  are derived from where the houses actually went.
+
+The older reserve-vs-fill rule was a good approximation and got the WEB right for the right reason,
+but it kept the skeleton first, and the skeleton was sized on the seat band while the houses spread
+wider than the band - which is why it could not be guaranteed to reach them, and is the root of the
+`farmhouses_reach_a_way` defect that survived seventeen attempts.
+
+**A recorded dead end that no longer applies**: feature 123 tried sizing the skeleton over the
+ground the houses take and reverted it, because longer arms offered more frontage seats and the
+cluster stretched to meet them. That was a FEEDBACK loop, and it existed only because the skeleton
+was laid before the houses and its arms generated seats. Laid afterwards there are no seats to
+generate, so the loop is severed rather than re-entered.
 
 **STAGE 1 DRAWS NOTHING, and both this table and the walk-through page used to claim otherwise.**
 Corrected 2026-08-23, after the GM reported the walk-through's first plate as blank: it was blank

@@ -194,6 +194,61 @@ def _homestead_polys(s: Settlement) -> list[tuple[Poly, Pt | None, str]]:
     return out
 
 
+def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Sequence[float], stands: Sequence[float]) -> list[tuple[Poly, Poly]]:
+    """The cluster's internal SKELETON, laid AFTER the houses and fitted to where they went.
+
+    THIS USED TO RUN BEFORE THE HOUSES, and moving it is feature 126's whole point. The GM asked
+    whether pre-laying lanes reflects how they form, and it does not: a lane between farmsteads is
+    trodden by households already living there. The project had reached that conclusion once already
+    for the lane WEB - "an alley IS the residual gap between two plots ... not a corridor set aside
+    in advance" - and this is the half that was still laid first.
+
+    It was also measurably wrong. The skeleton was sized on the SEAT BAND while the houses spread
+    wider than the band, so it could not be guaranteed to reach them; that mismatch is the root of
+    the `farmhouses_reach_a_way` defect that survived seventeen recorded attempts. Fitted to the
+    houses' own arc extent instead, the question does not arise - the arms span the settlement that
+    actually exists rather than the one the band predicted.
+
+    The frame, arcs and stands are the caller's, already measured off the placed houses, so the
+    skeleton and the web share one coordinate domain and cannot disagree about where the cluster is.
+    Returns the kept arms, for the web to treat as existing network."""
+    if len(arcs) < 2:
+        return []
+    arc0 = (min(arcs) + max(arcs)) / 2.0
+    stand0 = sum(stands) / len(stands)
+    # SIZED FROM THE HOUSES, not from `seat["lat"]`/`seat["dep"]`. Half-extents, because
+    # `skeleton_layout` takes half-widths, and floored at one bundle pitch so a tight cluster still
+    # gets a spine with somewhere to run.
+    lat = max((max(arcs) - min(arcs)) / 2.0, BUNDLE_PITCH * 0.5)
+    dep = max((max(stands) - min(stands)) / 2.0, BUNDLE_PITCH * 0.5)
+    layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, lat, dep)
+
+    def _on_margin(p: Pt) -> Pt:
+        # local +x runs along the band, local +y toward the field (so OUT of the frame is -y)
+        q = frame(arc0 + p[0], stand0 - p[1])
+        return (float(q[0]), float(q[1]))
+
+    raw_arms = [[_on_margin((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
+    crops = crop_polys(s)
+    toe_now = s.toe_band() or None
+    wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
+    drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
+    kept: list[tuple[Poly, Poly]] = []
+    for ai in range(len(raw_arms)):
+        # Clipped exactly as before the move: off the crop, off the wet toe and every drawn marsh,
+        # and off the water - an internal arm serves the houses and has no business crossing a ditch
+        # (the spur and the connector are the ways that LEAVE, and they meet water squarely).
+        arm = clip_to_clear(raw_arms[ai], [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
+        arm = s.trim_off_marsh(arm)
+        if len(arm) >= 2:
+            if _arm_crossing_accidental(arm, raw_arms[ai], kept):
+                continue  # pragma: no cover - no rolled map currently trips the drop; the decision logic is unit-tested via _arm_crossing_accidental
+            kept.append((arm, raw_arms[ai]))
+            s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)
+    s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
+    return kept
+
+
 def stage_web(s: Settlement, plan: SitePlan) -> None:
     """STAGE 5b: the LANE WEB - the lanes that make every farmhouse reachable.
 
@@ -226,6 +281,15 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     houses = [h for h in s.M.get("houses", []) if h.get("role") != "headman" or True]
     if len(houses) < 2 or not plan.envelope:
         return  # pragma: no cover - every hamlet seats several houses
+    # A DISPERSED HAMLET HAS NO INTERNAL LANE NETWORK AT ALL, and that is the form, not a shortfall.
+    # Tonami's farmsteads stand in the middle of their own holdings; what joins them to the world is
+    # the connector out to the road, which `stage_track` has already drawn, and what joins them to
+    # each other is the field baulks they walk on. Drawing a web here would erase the one thing that
+    # makes the form legible at a glance. The two access checks are conditioned on the form to
+    # match - see `research/homesteads.md`, "Does a hamlet have to be NUCLEATED at all?".
+    if plan.settlement_form == "dispersed":
+        s.M["meta"]["lane_skeleton"] = "none"
+        return
     # THE FRAME SPANS THE HOUSES, MEASURED - not a multiple of the seat band. `CLUSTER_SPAN_FACTOR`
     # describes the row `front_row` offers seats along, and for a round or elongated cluster it is a
     # fair proxy for where the houses end up. For a CRESCENT it is not: the cluster wraps around the
@@ -240,6 +304,12 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     proj = [frame.project((float(h["x"]), float(h["y"]))) for h in houses]
     arcs = [a for a, _ in proj]
     stands = [d for _, d in proj]
+    # THE SKELETON GOES IN FIRST, in this same house-fitted frame (feature 126). It used to be laid
+    # two stages earlier, before any house existed; now it is derived from where they actually went.
+    # It runs before the web cuts so the web sees it as existing network to thread around and join,
+    # which is what `_net_segs` reads.
+    _lay_skeleton(s, plan, frame, arcs, stands)
+
     pad = 30.0  # a lane runs a little past the last steading it serves, not up to its wall
 
     # A WEB LANE SPANS THE HOUSES IT SERVES, AND NO MORE. Spanning the whole cluster's extent
@@ -1181,59 +1251,22 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         return (cx + ax * p[0] + ox * p[1], cy + ay * p[0] + oy * p[1])
 
     toe_now = s.toe_band() or None
-    # ...and every marsh ALREADY DRAWN - on a polder the header reservoir's reed fringe is laid in
-    # `stage_polder`, before the ways, and a lane arm ran straight through it.
-    wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
-    # The skeleton is laid over the SEAT BAND, unchanged. Sizing it over the wider ground the houses
-    # take was tried (feature 123) and reverted: longer arms give the placer more frontage seats far
-    # from the middle, and the cluster stretches to meet them. Reaching the outlying houses is the
-    # LANE WEB's job, and the web is laid after they exist - see `stage_web`.
+    # THE SKELETON IS NO LONGER LAID HERE (feature 126). Its arms are drawn in `stage_lanes`,
+    # after the houses exist, and are fitted to where the houses actually went. What survives in
+    # this stage is the LAYOUT OBJECT ALONE, and only for its `gateway` - the downslope exit the
+    # connector starts from. `skeleton_layout` is a pure function of (rolled knob, seat band), so
+    # computing the gateway needs no houses and the connector's origin is unchanged by the move.
+    #
+    # THE RECORDED DEAD END ABOVE DOES NOT APPLY ANY MORE, and a reader who finds it in the git
+    # history should know why. Feature 123 tried sizing the skeleton over the ground the houses
+    # take and reverted it: longer arms offered the placer more frontage seats far from the
+    # middle, and the cluster stretched to meet them. That was a FEEDBACK loop, and it existed
+    # only because the skeleton was laid BEFORE the houses and its arms generated seats. Laid
+    # afterwards there are no seats to generate, so the loop is severed rather than re-entered.
     layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, seat["lat"], seat["dep"])
-    # THE SKELETON FOLLOWS THE MARGIN'S CURVE, not merely its direction - see future-work 2b-i.
-    # `to_screen` is a LINEAR map through the seat band's fixed axes, so a spine comes out as a
-    # straight chord; on a margin that bends, the chord leaves the margin and the far arm of the band
-    # gets no lane at all. `_margin_frame` is built for exactly this and its docstring says so.
-    _sk_frame = _margin_frame(plan, max(seat["lat"] * CLUSTER_SPAN_FACTOR, seat["lat"] + BUNDLE_PITCH))
-    _sk_arc0, _sk_stand0 = _sk_frame.project((cx, cy))
-
-    def _on_margin(p: Pt) -> Pt:
-        # local +x runs along the band, local +y toward the field (so OUT of the frame is -y)
-        return _sk_frame(_sk_arc0 + p[0], _sk_stand0 - p[1])
-
-    _raw_arms = [[_on_margin((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
-
+    # The spur no longer forks into the skeleton's arms, because they do not exist yet. It forks
+    # into nothing and simply runs to the field; `stage_lanes` joins the network up afterwards.
     _kept_arms: list[tuple[Poly, Poly]] = []
-    for _ai, lane_pts in enumerate(layout["lanes"]):
-        # ...pulled back out of any hem plot the arm would otherwise reach into. The skeleton is
-        # sized from the household count, so on a cluster seated tight against the hem a `cross`
-        # crossbar can overrun into the barley - and a lane may touch a plot's edge but never cross
-        # its interior. Shortening the arm is the honest fix: the lane simply ends where the crop
-        # starts, which is what a village lane does.
-        # The arms are clipped at WATER as well as at crop. A cluster's internal lanes serve the
-        # houses; they have no business crossing a ditch, and a lane that does gets a deck from
-        # `s.bridges()` sized for the angle it happens to meet the water at - which on a slant comes
-        # up short (`bridges_span_their_water`). The spur and the connector are the ways that leave,
-        # and they are routed to meet water squarely; an arm just stops at the bank.
-        # ...clipped against the DRAWN water lines as well as the recorded ones: `field_channel`
-        # fillets its polyline before drawing it, and a bridge is decked on what was drawn.
-        drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
-        # ...and the WET TOE is clipped against like any other ground a lane may not cross, not just
-        # trimmed at the ends: `trim_off_marsh` walks an END back, which is the right move for a way
-        # that pokes into the reeds, but an arm whose MIDDLE runs through them needs the truncation
-        # its own docstring points at. An arm ends where the marsh begins - that is what a lane does.
-        # ...and the WET field too, not only the dry plots. `crop_polys` returns `dry_plots`, so a
-        # lane arm was never clipped against the paddy itself - invisible on a valley map, where the
-        # cluster sits on a margin and the arms point away from the fan, and immediate on a POLDER,
-        # where the block lies right beside the village and an arm reached into the rice. The
-        # connector has always listed the envelope; the arms simply never did.
-        arm = clip_to_clear([to_screen((p[0], p[1])) for p in lane_pts], [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
-        arm = s.trim_off_marsh(arm)  # ...and off the pond's reed fringe, which is already drawn by now
-        if len(arm) >= 2:
-            if _arm_crossing_accidental(arm, _raw_arms[_ai], _kept_arms):
-                continue  # pragma: no cover - no rolled map currently trips the drop; the decision logic is unit-tested via _arm_crossing_accidental
-            _kept_arms.append((arm, _raw_arms[_ai]))
-            s.lane(arm, width=5, clearance=LANE_CLEARANCE, worn=True)
-    s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
 
     # the SPUR to the field: from the middle of the cluster to the nearest envelope point THE TRACK
     # CAN ACTUALLY REACH. Nearest-by-distance alone routes the path straight over the dry hem when

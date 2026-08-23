@@ -500,5 +500,29 @@ LANE_SKELETONS = ("spine", "T", "Y", "cross")
 # equally, so an even roll is the honest one, and the two read differently enough at a glance
 # (a laid-out double row vs. a grown spine-and-alleys) to be worth a full half of the cohort each.
 LANE_WEBS = ("alleys", "back_lane")
+# THE SETTLEMENT FORM - which KIND of settlement this is, not merely what shape its cluster takes.
+# Three forms, and the roll is DELIBERATELY flatter than real-world frequency would be. Read that
+# sentence twice before re-weighting this tuple, because the departure is the decision.
+#
+# What the research supports (research/homesteads.md, "Does a hamlet have to be NUCLEATED at all?"):
+#   - nucleated  - the default across wet-rice East Asia, because paddy is too valuable to build on,
+#                  so households cluster on whatever ground will not grow rice. The access rule
+#                  (`farmhouses_reach_a_way`) is decisive for THIS form and no other.
+#   - dispersed  - the Tonami plain's 7,000 farmhouses over 220 km2, each in its own kainyo grove.
+#                  Arises where an alluvial fan drains too well for paddy, so water control is
+#                  per-holding and the farmer lives on the holding. Our comb field IS such a fan.
+#   - linear     - the row village: farmsteads either side of a through-track, each holding behind
+#                  its own house. Weakest-attested of the three in the English-language record, so
+#                  it draws least - but not so rarely that the cohort stops exercising it.
+#
+# THE DEPARTURE, recorded per the project's calibrated-liberty rule: in the real world nucleated
+# would dominate far more heavily than 50% - Tonami is famous precisely BECAUSE dispersal is
+# regionally unusual. These maps exist to be told apart at a glance ("settlements which are within
+# historical norms while being as different from one another as is justifiable"), and each form here
+# is individually inside the norms; it is the FREQUENCY that is flattened, which is the liberty a
+# DEGREE-along-a-continuum may take. Weighting to true frequency would make two of the three forms
+# vanishingly rare, untested by the cohort, and pointless to have built.
+SETTLEMENT_FORMS = ("nucleated", "nucleated", "nucleated", "nucleated", "nucleated", "dispersed", "dispersed", "dispersed", "linear", "linear")
+
 PLOT_SIZES = ("small_irregular", "medium", "medium", "large_block")
 GRAIN_DRIFTS = (-8, -4, 0, 0, 4, 8)

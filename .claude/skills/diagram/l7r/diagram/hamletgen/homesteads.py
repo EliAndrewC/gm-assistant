@@ -235,7 +235,23 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # blanket, a copse over the full house bbox left the map no blank ground, and a stray farm past
     # the last well tripped `settlement_dwellings_watered`. Fixing the seats fixes all of it at the
     # source, which is why the percentile guards elsewhere are belt-and-braces rather than the cure.
-    bound = 1.15 * math.hypot(lat, dep)
+    # HOW FAR FROM THE SEAT CENTER A HOMESTEAD MAY STAND, and it depends on the FORM (feature 126).
+    #
+    # A nucleated cluster is the tight case this number was calibrated for and keeps 1.15. The other
+    # two forms are not looser versions of it, they are different settlements, and their farmsteads
+    # are physically BIGGER: a non-nucleated bundle carries its own grove and yard (see
+    # `_place_bundle`, which branches on `_nucleated`), so the same bound seats fewer of them. Left
+    # at 1.15 the generator simply dropped households - Inashiro rolled linear and seated 13 of 15,
+    # which is a silent shortfall rather than an error.
+    #
+    # The multipliers are calibrated to seat the households the spec asks for, which is the only
+    # honest target: a hamlet of 15 has 15 farmhouses in it, and a bound that cannot fit them is
+    # wrong about the settlement rather than about the map.
+    #   dispersed - the Tonami case: each farmstead sits in the middle of its OWN holding, so the
+    #               settlement's extent is the extent of the land it farms, not of a cluster band.
+    #   linear    - strung along the connector, so it grows LONG rather than wide; the bound is a
+    #               radius, so a smaller widening buys the length the form needs.
+    bound = {"dispersed": 2.2, "linear": 1.8}.get(plan.settlement_form, 1.15) * math.hypot(lat, dep)
 
     def in_band(q: Pt) -> bool:
         return math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]) <= bound
