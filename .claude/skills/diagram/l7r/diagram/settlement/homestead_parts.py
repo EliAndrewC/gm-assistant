@@ -667,6 +667,29 @@ class HomesteadPartsMixin:
                 self._draw_grove(jx, jy, clump, clump, face=(0, -1), mix=mix)
                 clumps.append([round(jx, 1), round(jy, 1)])
         if clumps:
+            # A COPSE IS RECORDED AT THE SIZE IT WAS DRAWN, not at the size it was asked for.
+            #
+            # The copse's requested footprint is the bounding box of the whole house cloud, and the
+            # clumps inside it are skipped wherever they would land on a house, yard, garden or
+            # crop - so the DECLARED area and the PLANTED area are two different things, and the
+            # gap between them widens whenever the cluster spreads. Feature 126 spread it (houses
+            # are no longer seated against pre-laid lanes), and `village_groves_visibly_stocked`
+            # started firing: "copse 307x443px holds 1 clump (0.73/100k), floor 1.5". The trees had
+            # not gone anywhere; the box around them had grown.
+            #
+            # The check is right and the record was wrong - a map that declares a feature it did not
+            # draw is the defect, which is the same rule `M["lane"]` breaks when it keeps an untrimmed
+            # spine. So a COPSE reports the extent of its own clumps. The WINDBREAK deliberately does
+            # not: its position IS its meaning (`village_windbreak_on_windward_side` judges the
+            # recorded center) and shrinking it to the leaves would walk that center off the windward
+            # side - a defect this file already records having caused on cohort seeds 19 and 28.
+            if role == "copse":
+                _cxs = [cl[0] for cl in clumps]
+                _cys = [cl[1] for cl in clumps]
+                _pad = clump / 2 + 4.0
+                x0, x1 = min(_cxs) - _pad, max(_cxs) + _pad
+                y0, y1 = min(_cys) - _pad, max(_cys) + _pad
+                poly = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
             self.M["village_groves"].append(
                 {
                     "x": round((x0 + x1) / 2, 1),
