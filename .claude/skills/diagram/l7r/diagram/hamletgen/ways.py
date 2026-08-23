@@ -215,6 +215,7 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
     if len(arcs) < 2:
         return []
     arc0 = (min(arcs) + max(arcs)) / 2.0
+
     stand0 = sum(stands) / len(stands)
     # SIZED FROM THE HOUSES, not from `seat["lat"]`/`seat["dep"]`. Half-extents, because
     # `skeleton_layout` takes half-widths, and floored at one bundle pitch so a tight cluster still
@@ -224,11 +225,11 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
     layout = skeleton_layout(plan.lane_skeleton, 0.0, 0.0, lat, dep)
 
     def _on_margin(p: Pt) -> Pt:
-        # local +x runs along the band, local +y toward the field (so OUT of the frame is -y)
+        # local +x runs along the band, local +y toward the field (so OUT of the frame is -y).
         q = frame(arc0 + p[0], stand0 - p[1])
         return (float(q[0]), float(q[1]))
 
-    raw_arms = [[_on_margin((p[0], p[1])) for p in lane_pts] for lane_pts in layout["lanes"]]
+    raw_arms = [[_on_margin((float(p[0]), float(p[1]))) for p in lane_pts] for lane_pts in layout["lanes"]]
     crops = crop_polys(s)
     toe_now = s.toe_band() or None
     wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]

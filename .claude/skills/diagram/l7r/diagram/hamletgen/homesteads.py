@@ -106,17 +106,15 @@ fit, and fixing that fixed the count. Measured afterwards on Sawada, the dispers
 time lost, nothing bought. A wider search bound only permits sprawl the feature exists to prevent,
 so the honest value is no override at all."""
 
-_FIELD_RING_FLOOR = 5
-"""How many front-row seats are taken before `_FRONT_ROW_LANE_CAP` starts applying. It is
-`field_ringed`'s own floor - five farmhouses within 165 px of the field outline - because that is a
-GATE check while lane frontage is a form rule with none, so the cap must never be the reason a map
-ships with four."""
-
-_FRONT_ROW_LANE_CAP = 150.0
-"""How far a FRONT-ROW seat may stand from a drawn lane before the row is offered it only as a
-fallback. `field_ringed`'s own band is 165 px; a seat inside 150 of a track and 165 of the field
-outline is both fronted and on its paddy, which is what the front row is for. See the ladder in
-`stage_homesteads` for the defect this cures and why it relaxes rather than filters."""
+# `_FIELD_RING_FLOOR` and `_FRONT_ROW_LANE_CAP` lived here and are GONE (feature 126). They were the
+# two halves of a rule that judged a front-row seat by its distance to a drawn lane, and they existed
+# only because the lanes were drawn BEFORE the houses. Now that the internal lanes are worn
+# afterwards, a seat has no lane to be near and the rule had nothing left to mean.
+#
+# DO NOT REINTRODUCE A DISTANCE-TO-LANE TEST IN THIS STAGE. That is the inversion the whole feature
+# removes: a farmhouse is sited by the field it works and the ground it can stand on. Two earlier
+# attempts to TUNE this cap are recorded in the git history as dead ends; a third would be worse than
+# either, because the thing it measures is no longer on the map when it runs.
 
 
 def _lane_dist(s: Settlement, x: float, y: float) -> float:
@@ -134,7 +132,7 @@ def _lane_dist(s: Settlement, x: float, y: float) -> float:
     return best
 
 
-def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0) -> list[Pt]:
+def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0, connector: bool = False) -> list[Pt]:
     """Candidate seats along BOTH verges of every internal lane, just outside its no-build corridor.
 
     Ordered from the cluster's center outward, so the lanes fill from their busy end. The connector
@@ -144,7 +142,9 @@ def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0) ->
     out: list[Pt] = []
     off = LANE_FRONTAGE_STANDOFF
     for lane in s.M.get("lanes", []):
-        if lane.get("connector") or lane.get("web"):
+        # `connector=True` INVERTS the skip: the caller wants the road itself, because it is siting a
+        # linear hamlet along it. Everything else is unchanged.
+        if lane.get("web") or (bool(lane.get("connector")) is not connector):
             continue
         pts = lane["pts"]
         for i in range(len(pts) - 1):
@@ -331,26 +331,23 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # move inward; it loses its seats to the cloud, which sits further from the tracks still. The
     # row's reach past the band was never the defect - its blindness to the tracks was.
     #
-    # THE FIRST `_FIELD_RING_FLOOR` SEATS ARE EXEMPT, because the ring comes first and it is a GATE
-    # check where frontage is a form rule with none. Capping every seat took cohort seeds 22 and 47
-    # from passing to `field_ringed` 3-of-5 and 4-of-5. This is the same concern the rank cap's floor
-    # of 6 answers from its own side; both are needed, because that floor bounds the COUNT while this
-    # exemption is about WHICH seats may fill it.
-    _row_seats = 0
     for standoff in (46.0, 56.0, 66.0, 78.0, 92.0, 110.0, 130.0, 150.0):
         if placed >= front_cap:
             break
         for fx, fy in front_row(plan, min(plan.spec.households, 12), standoff=standoff):
             if placed >= front_cap:
                 break
-            if (
-                (_row_seats < _FIELD_RING_FLOOR or _lane_dist(s, fx, fy) <= _FRONT_ROW_LANE_CAP)
-                and math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3
-                and _seat_allowed(s, fx, fy)
-                and s.try_place(fx, fy, "plain")
-            ):
+            # NO LANE TEST HERE ANY MORE (feature 126). This used to read
+            # `_row_seats < _FIELD_RING_FLOOR or _lane_dist(...) <= _FRONT_ROW_LANE_CAP`, which
+            # judged a front-row seat by how near it fell to a drawn lane. The internal lanes are
+            # now laid AFTER this stage, so at this moment the only ways on the map are the
+            # connector and the field spur - and the cap was therefore demoting good seats for
+            # being far from a track that has nothing to do with them. Worse, it made the
+            # settlement's shape depend on a way that has not been decided yet, which is the exact
+            # inversion this feature exists to remove: a farmhouse is sited by the FIELD it works
+            # and the ground it can stand on, and the lane is worn afterwards between the houses.
+            if math.hypot(fx - seat["cx"], fy - seat["cy"]) <= bound * 1.3 and _seat_allowed(s, fx, fy) and s.try_place(fx, fy, "plain"):
                 placed += 1
-                _row_seats += 1
     # ...then rows FLANKING the lanes, before any shape fill. A lane exists to be fronted, and a
     # cluster seeded only by its shape leaves them running across empty middle: the review of the
     # first draft measured a median house-to-lane distance of 94 ft against Ikegami's 55, with one
@@ -373,11 +370,25 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # 10. The ribbon's tighter fronting was an artifact of the defect, not a baseline worth keeping -
     # but ~98 is the figure an early review criticized against Ikegami's 55, and this loop is where
     # a future tightening belongs, since it is the pass now doing the seating.
-    for lx, ly in lane_frontage(s, seat):
-        if placed >= plan.spec.households:
-            break
-        if in_band((lx, ly)) and _seat_allowed(s, lx, ly) and s.try_place(lx, ly, "plain"):
-            placed += 1
+    # ONLY A LINEAR HAMLET FRONTS A WAY AT SEAT TIME, and the way it fronts is the CONNECTOR.
+    #
+    # This pass used to run for every map, offering seats along the verges of the internal lanes.
+    # Those lanes no longer exist when this runs, so for a nucleated or dispersed hamlet the pass
+    # now returns nothing and is pure cost - the front row and the cloud do the seating.
+    #
+    # For the LINEAR form it is the whole point. A row village IS a settlement strung along a
+    # through-route: the road came first, the farmsteads front it, each holding lies behind its own
+    # house. That is the one form in which siting a house against a way is historically right, and
+    # the connector is the only way on the map that genuinely predates the houses. `lane_frontage`
+    # skipped the connector precisely because fronting it "would string the hamlet along the road
+    # instead of nucleating it (that is the `linear` settlement form, a different archetype)" - so
+    # this is that archetype, asking for exactly what that comment described.
+    if plan.settlement_form == "linear":
+        for lx, ly in lane_frontage(s, seat, connector=True):
+            if placed >= plan.spec.households:
+                break
+            if in_band((lx, ly)) and _seat_allowed(s, lx, ly) and s.try_place(lx, ly, "plain"):
+                placed += 1
     _cloud_placed = 0
     for attempt in range(4):
         if placed >= plan.spec.households:
@@ -471,12 +482,12 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # which stopped meaning anything the moment the shape was always declared.
     s.M["meta"]["cluster_seeding"] = "cloud" if _cloud_placed * 2 >= max(1, plan.spec.households) else "frontage"
     plan.placed = s.farmsteads()
-    # ...and NOW the lanes can be told what they actually serve. They were laid first because a lane
-    # is a no-build corridor the homesteads front, so at lay time nothing knew where the houses would
-    # land, and an arm that met neither crop nor water ran the whole cluster band into open ground.
-    # Trimming only ever shortens, so it cannot invalidate a seat already taken. See
-    # `Settlement.trim_lane_stubs` for the measurement that prompted it.
-    s.trim_lane_stubs()
+    # THE TRIM MOVED OUT OF THIS STAGE (feature 126). It existed because the skeleton was laid
+    # before the houses, so its arms had to be shortened afterwards once there was something to
+    # measure them against. The arms are now laid after the houses and fitted to them, so there is
+    # nothing here to trim: at this moment the only ways drawn are the connector and the field spur,
+    # and trimming those against house positions is meaningless. `stage_web` trims once the lanes it
+    # trims actually exist.
 
 
 # ---- STAGE 6: what stands among the houses ------------------------------------------------------
