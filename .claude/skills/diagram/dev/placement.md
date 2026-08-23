@@ -40,8 +40,8 @@ sequence one-to-one. Where the two disagree, `STAGES` wins for anything under `h
 
 | # | stage | what it puts on the map |
 |---|---|---|
-| 1 | `stage_water_frame` | intake, head race, the fall line |
-| 2 | `stage_field` | the paddy, solved for a real acreage |
+| 1 | `stage_water_frame` | **nothing - it draws no ink at all.** Settles the drainage bearing and the land's fall and writes twelve values to `meta`; every later stage reads them |
+| 2 | `stage_field` | the water skeleton AND the paddy - `build_comb` returns canals and plots from one call, so intake, head race and field ditches arrive here, not in stage 1 |
 | 3 | `stage_sink` | tail drain, pond or off-map outfall |
 | 4 | `stage_ways` | the skeleton and the connector - the ground-RESERVING ways |
 | 5 | `stage_homesteads` | the farmhouses |
@@ -53,6 +53,15 @@ sequence one-to-one. Where the two disagree, `STAGES` wins for anything under `h
 | 11 | `stage_windbreak` | the shelter belt |
 | 12 | `stage_crossings` | planks and decks over every way that crosses water |
 | 13 | `stage_frame` | crop to content, title, scalebar |
+
+**STAGE 1 DRAWS NOTHING, and both this table and the walk-through page used to claim otherwise.**
+Corrected 2026-08-23, after the GM reported the walk-through's first plate as blank: it was blank
+because `stage_water_frame` emits zero SVG records: it sets `meta` and pins knobs, and that is all.
+The water a reader expects to see there is drawn one stage later. Worth carrying beyond this one
+row - **a stage's name is not evidence of what it draws.** The cheap check is a record-count delta
+across `out`/`top`/`walls`/`toplabels` around the call, which is now what `placement_stages.py` uses
+to decide whether a stage gets a plate or a no-ink card, so a stage that draws nothing announces
+itself on the page instead of rendering an empty square that reads as a broken image.
 
 **Two places the phase model below is actively WRONG for a scripted hamlet**, found by auditing it
 against `STAGES` on 2026-08-20 rather than by a failure - which is the point of writing it down:

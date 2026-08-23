@@ -45,18 +45,22 @@ from l7r.diagram.settlement import Settlement  # noqa: E402
 # rather than silently inheriting its neighbour's - which is the failure mode a hand-kept list has.
 NOTES: dict[str, tuple[str, str]] = {
     "stage_water_frame": (
-        "The water skeleton",
-        "Everything downstream is derived from this, so it is first. The intake, the head race and the "
-        "line the land falls along decide where the field can lie, which decides where the dry margin "
-        "is, which is the only ground a settlement can stand on. Nothing here is placed against "
-        "anything - there is nothing yet to avoid.",
+        "The bearing and the fall",
+        "THIS STAGE DRAWS NOTHING, and that is the whole point of it. The generator's first act is to "
+        "settle two numbers - which way the water runs, and which way the land falls - and write them "
+        "into the map's metadata. Which end of the fan is the head, which margin the cluster may stand "
+        "on, which way the drain runs, where the marsh is allowed to be: every one of those is decided "
+        "downstream of these values, and none of it is ink yet. The water SKELETON is drawn in the next "
+        "stage, by the same call that lays the paddy.",
     ),
     "stage_field": (
-        "The paddy",
+        "The water skeleton and the paddy",
         "The field is SOLVED for a real acreage rather than drawn to a pixel size, and it is laid before "
         "any built thing exists. That is the ordering decision with the longest reach on the whole map: "
         "the settlement afterwards takes whatever margin the field leaves it. Where that margin curves, "
-        "the cluster has to curve with it.",
+        "the cluster has to curve with it. This is also where WATER first becomes ink - the intake, the "
+        "head race and the field ditches arrive in the same call that lays the plots, which is why there "
+        "is no plate showing water alone. See the closing note.",
     ),
     "stage_sink": (
         "Where the runoff goes",
@@ -120,6 +124,20 @@ NOTES: dict[str, tuple[str, str]] = {
 }
 
 
+def _ink(s: Settlement) -> int:
+    """How many SVG records the settlement has emitted so far, across all four layers.
+
+    This is the test for "did that stage DRAW anything", and it is deliberately a count of records
+    rather than a look at the rendered pixels: a stage can legitimately emit ink that happens to be
+    invisible at plate scale, and that is not the case being detected here."""
+    return sum(len(getattr(s, name, [])) for name in ("out", "top", "walls", "toplabels"))
+
+
+def _decisions(s: Settlement) -> dict[str, object]:
+    """The map's metadata as it stands - what a no-ink stage has to show for itself."""
+    return dict(s.M["meta"])
+
+
 def _plate(snap: Settlement, out_dir: str, stem: str, width: int) -> tuple[str, int, int]:
     """Finish a COPY of the part-built settlement and scale its render down to a page plate."""
     from PIL import Image
@@ -154,16 +172,41 @@ def build_page(out_dir: str, width: int, spec: HamletSpec) -> str:
     plan = plan_site(spec)
     s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
     rows = []
+    # THE BASELINE IS TAKEN BEFORE STAGE 1, not from an empty dict: `Settlement.__init__` already
+    # puts the canvas W/H into `meta`, and starting empty made stage 1's card claim credit for two
+    # values the constructor set. A no-ink card must show what THAT stage decided and nothing else.
+    known: dict[str, object] = _decisions(s)
     for i, stage in enumerate(STAGES, 1):
+        before = _ink(s)
         with redirect_stdout(io.StringIO()):
             stage(s, plan)
+        drew = _ink(s) - before
         title, why = NOTES.get(stage.__name__, ("(no note yet)", "This stage has no entry in `NOTES` - add one."))
-        # A COPY IS FINISHED, NOT THE LIVE SETTLEMENT: `finish` flushes deferred canopies, seats
-        # captions and crops, all of which mutate. Snapshotting the real one would change the map the
-        # next stage sees, and the page would document a build nobody runs.
-        img, iw, ih = _plate(copy.deepcopy(s), out_dir, f"{i:02d}-{stage.__name__}", width)
-        rows.append((i, stage.__name__, title, why, img, iw, ih))
-        print(f"  {i:>2}. {stage.__name__:<22} -> {img}")
+        stem = f"{i:02d}-{stage.__name__}"
+        now = _decisions(s)
+        # A STAGE THAT LAYS NO INK GETS A CARD, NOT A PLATE (GM, 2026-08-23: *"the water skeleton,
+        # which is the first picture, appears to be blank"*). `stage_water_frame` emits zero SVG
+        # records - it settles the drainage bearing and the land's fall and writes them to `meta` -
+        # so its plate was a plain cream square, which is indistinguishable from a broken render and
+        # was reasonably read as one. The honest page shows what such a stage DECIDED instead. This
+        # is generic rather than a special case for stage 1: any future metadata-only stage gets the
+        # same treatment automatically, and a stage that stops drawing announces itself here rather
+        # than turning quietly blank.
+        if drew:
+            # A COPY IS FINISHED, NOT THE LIVE SETTLEMENT: `finish` flushes deferred canopies, seats
+            # captions and crops, all of which mutate. Snapshotting the real one would change the map
+            # the next stage sees, and the page would document a build nobody runs.
+            img, iw, ih = _plate(copy.deepcopy(s), out_dir, stem, width)
+            decided: list[tuple[str, str]] = []
+        else:
+            img, iw, ih = None, 0, 0
+            decided = [(k, str(v)) for k, v in now.items() if known.get(k) != v]
+            stale = os.path.join(out_dir, stem + ".png")
+            if os.path.isfile(stale):
+                os.remove(stale)  # a stage that used to draw and no longer does leaves no orphan plate
+        known = now
+        rows.append((i, stage.__name__, title, why, img, iw, ih, decided))
+        print(f"  {i:>2}. {stage.__name__:<22} -> {img or f'(no ink - {len(decided)} values decided)'}")
 
     parts = [
         "<title>Hamlet placement order</title>",
@@ -185,6 +228,16 @@ def build_page(out_dir: str, width: int, spec: HamletSpec) -> str:
         ".fn{font:.85rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim)}",
         ".why{color:var(--ink);max-width:72ch;margin:.2rem 0 .9rem}",
         "img{display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:3px;background:#fff}",
+        ".noink{border:1px dashed var(--rule);border-radius:3px;padding:1rem 1.15rem;background:transparent}",
+        ".noink .cap{font:700 .8rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;",
+        "text-transform:uppercase;color:var(--dim);margin-bottom:.7rem}",
+        ".kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.3rem 1.5rem;margin:0}",
+        ".kv div{display:flex;gap:.6rem;justify-content:space-between;border-bottom:1px dotted var(--rule);",
+        "padding:.15rem 0;font:.87rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}",
+        ".kv .k{color:var(--dim)}.kv .v{color:var(--ink);font-weight:700;text-align:right}",
+        ".closing{border-top:1px solid var(--rule);margin-top:2.4rem;padding-top:1.3rem;color:var(--ink);max-width:72ch}",
+        ".closing h2{font-size:1.05rem;margin:0 0 .5rem}",
+        ".closing p{margin:0 0 .7rem}",
         "</style>",
         '<div class="wrap">',
         "<h1>Hamlet placement order</h1>",
@@ -193,14 +246,44 @@ def build_page(out_dir: str, width: int, spec: HamletSpec) -> str:
         "<code>dev/placement.md</code> for the rules; this is what they look like. Generated by "
         "<code>python3 -m l7r.diagram.tools.placement_stages</code> - re-run it when <code>STAGES</code> changes.</p>",
     ]
-    for i, fn, title, why, img, iw, ih in rows:
+    for i, fn, title, why, img, iw, ih, decided in rows:
         parts += [
             '<section class="stage">',
             f'<div class="hd"><span class="n">{i:02d}</span><span class="t">{escape(title)}</span><span class="fn">{escape(fn)}</span></div>',
             f'<p class="why">{escape(why)}</p>',
-            f'<img src="{escape(img)}" width="{iw}" height="{ih}" alt="{escape(title)}" loading="lazy">',
-            "</section>",
         ]
+        if img:
+            parts.append(f'<img src="{escape(img)}" width="{iw}" height="{ih}" alt="{escape(title)}" loading="lazy">')
+        else:
+            parts += [
+                '<div class="noink">',
+                '<div class="cap">This stage places no ink &mdash; it decides these</div>',
+                '<div class="kv">',
+                *(f'<div><span class="k">{escape(k)}</span><span class="v">{escape(v)}</span></div>' for k, v in decided),
+                "</div></div>",
+            ]
+        parts.append("</section>")
+    # RECORDING AN ACCEPTED LIMITATION, per the project rule - what was accepted, what it costs, and
+    # which alternatives were priced and declined. Without this the missing water-only plate reads as
+    # an oversight and the next session "fixes" it by splitting a pipeline stage.
+    parts += [
+        '<div class="closing">',
+        "<h2>Why there is no water-only plate</h2>",
+        "<p>The original ask was to see the map <em>&ldquo;when it is only the water, and then when we "
+        "have added only the rice paddy fields&rdquo;</em>. There is no such moment to photograph: "
+        "<code>build_comb</code> is a single pure call that returns the canals and the plots together, "
+        "and <code>stage_field</code> draws both. Plate 02 is therefore the earliest state in which "
+        "water exists at all.</p>",
+        "<p>Two ways to manufacture the plate were priced and declined. Splitting "
+        "<code>stage_field</code> into a channels pass and a plots pass would change "
+        "<code>STAGES</code>, which is the generator's design rather than a convenience &mdash; "
+        "reordering it to suit a documentation page is the tail wagging the dog. Having this tool "
+        "draw the channels itself would make a diagnostic that re-derives engine internals, which "
+        "<code>tools/CLAUDE.md</code> forbids for a measured reason: such a tool drifts from the "
+        "engine and then reports the wrong thing with total confidence.</p>",
+        "<p>So plate 02 shows water and paddy together, deliberately.</p>",
+        "</div>",
+    ]
     parts.append("</div>")
     page = os.path.join(out_dir, "hamlet-placement.html")
     with open(page, "w") as fh:
