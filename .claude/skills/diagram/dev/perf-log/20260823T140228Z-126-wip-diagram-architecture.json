@@ -1,0 +1,118 @@
+{
+  "clone": "diagram-architecture",
+  "commit": "595d1dd",
+  "cpus": 22,
+  "label": "126-wip",
+  "machine": "x86_64",
+  "median_seconds": 45.6,
+  "reference": {
+    "down_deg": 90,
+    "households": 15,
+    "name": "Inashiro",
+    "water_sink": "pond"
+  },
+  "rows": [
+    {
+      "asked": 15,
+      "form": "linear",
+      "houses": 15,
+      "seconds": 24.1,
+      "seed": 4,
+      "shape": "crescent",
+      "stages": {
+        "appurtenances": 0.04,
+        "crossings": 0.27,
+        "field": 3.53,
+        "frame": 0.02,
+        "hinterland": 3.01,
+        "homesteads": 0.34,
+        "notice": 8.84,
+        "sink": 0.01,
+        "water_frame": 0.0,
+        "ways": 6.7,
+        "web": 0.69,
+        "windbreak": 0.35,
+        "woodland": 0.27
+      }
+    },
+    {
+      "asked": 15,
+      "form": "nucleated",
+      "houses": 15,
+      "seconds": 320.2,
+      "seed": 25,
+      "shape": "crescent",
+      "stages": {
+        "appurtenances": 0.89,
+        "crossings": 0.14,
+        "field": 4.47,
+        "frame": 0.0,
+        "hinterland": 2.97,
+        "homesteads": 0.89,
+        "notice": 7.58,
+        "sink": 0.01,
+        "water_frame": 0.0,
+        "ways": 6.46,
+        "web": 296.64,
+        "windbreak": 0.08,
+        "woodland": 0.12
+      }
+    },
+    {
+      "asked": 15,
+      "form": "nucleated",
+      "houses": 15,
+      "seconds": 31.3,
+      "seed": 39,
+      "shape": "round",
+      "stages": {
+        "appurtenances": 0.65,
+        "crossings": 0.32,
+        "field": 2.64,
+        "frame": 0.0,
+        "hinterland": 3.15,
+        "homesteads": 0.41,
+        "notice": 11.58,
+        "sink": 0.01,
+        "water_frame": 0.0,
+        "ways": 6.81,
+        "web": 5.29,
+        "windbreak": 0.38,
+        "woodland": 0.07
+      }
+    },
+    {
+      "asked": 15,
+      "form": "nucleated",
+      "houses": 15,
+      "seconds": 60.0,
+      "seed": 47,
+      "shape": "round",
+      "stages": {
+        "appurtenances": 1.2,
+        "crossings": 0.22,
+        "field": 26.0,
+        "frame": 0.0,
+        "hinterland": 2.92,
+        "homesteads": 0.29,
+        "notice": 14.54,
+        "sink": 0.0,
+        "water_frame": 0.0,
+        "ways": 10.85,
+        "web": 3.61,
+        "windbreak": 0.23,
+        "woodland": 0.14
+      }
+    }
+  ],
+  "seeds": [
+    4,
+    25,
+    39,
+    47
+  ],
+  "subject": "fix(126): a farmhouse is not sited by a lane that does not exist yet",
+  "total_seconds": 435.6,
+  "utc": "20260823T140228Z",
+  "worst_seconds": 320.2
+}

@@ -231,6 +231,8 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
 
     raw_arms = [[_on_margin((float(p[0]), float(p[1]))) for p in lane_pts] for lane_pts in layout["lanes"]]
     crops = crop_polys(s)
+    # what is already standing: houses, yards, gardens, sheds - the arm must go round all of it
+    fabric = [poly for poly, _owner, _kind in _homestead_polys(s)]
     toe_now = s.toe_band() or None
     wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
     drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
@@ -239,7 +241,17 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
         # Clipped exactly as before the move: off the crop, off the wet toe and every drawn marsh,
         # and off the water - an internal arm serves the houses and has no business crossing a ditch
         # (the spur and the connector are the ways that LEAVE, and they meet water squarely).
-        arm = clip_to_clear(raw_arms[ai], [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
+        # THE OBLIGATION INVERTED WITH THE ORDER, and this is the half that was missing (feature
+        # 126). While the skeleton was laid FIRST, a lane was a no-build corridor and the HOUSES
+        # avoided it. Laid last, nothing was stopping the arm from being drawn straight through a
+        # farmstead - and nothing was: the in-gate ratchet went to 0 of 4, failing
+        # `houses_clear_of_lanes`, `houses_off_corridors` and `features_do_not_overlap` on seeds
+        # 41, 42 and 44. Reordering the stages is not enough on its own; every rule that pointed one
+        # way across that boundary has to be turned around to match.
+        #
+        # `_homestead_polys` is the same fabric the web threads between (see `stage_web`), so the
+        # skeleton and the web now agree about what is already standing.
+        arm = clip_to_clear(raw_arms[ai], [list(plan.envelope), *crops, *fabric, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
         arm = s.trim_off_marsh(arm)
         if len(arm) >= 2:
             if _arm_crossing_accidental(arm, raw_arms[ai], kept):

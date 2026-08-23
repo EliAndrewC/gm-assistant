@@ -14,6 +14,7 @@ and ledgered, none introduced here: seeds 12 and 39 `paddy_bunds_do_not_stagger`
 
 ## Phase 1: Setup and measurement
 
+- [ ] T000 Record the opening bookend on UNMODIFIED code: `make perf LABEL=126-start` (done retroactively from the detached worktree, since the rule postdates the feature), and read the existing trend for drift
 - [ ] T001 Confirm the baseline gate in `scratchpad/base125` finished green and record its verdict in this file, so the comparison at the end has a recorded number rather than a remembered one
 - [ ] T002 Finish the frontage-removal measurement (how many households still seat when `lane_frontage` returns nothing, on the four live specs) and record the result in [research.md](research.md) as R1a - this is the feature's single largest risk and it must be a number before US1 begins
 - [ ] T003 [P] Record each cohort seed's current `cluster_seeding` and `cluster_shape` to `scratchpad/base_forms.json`, so the post-change cohort can be compared WITHIN a form rather than only in aggregate
@@ -93,8 +94,9 @@ old uniform pitch.
 - [ ] T036 Run `settlement-review` on each regenerated map, with **at least one map per form** in the reviewed set (Principle I - the author is not a reviewer of their own visual output)
 - [ ] T037 Fix every defect the reviews surface, in this feature, per Principle XIV - including defects outside this feature's delta
 - [ ] T038 Run the full cohort and compare against the 44/48 baseline: pass rate must not drop, and every newly-failing check must be individually diagnosed. Compare WITHIN a form where the seed's form is unchanged
-- [ ] T039 `make done` green, backgrounded, not polled
-- [ ] T040 Stop-work ritual: commit in the clone, then `scripts/sync-with-main.sh done`
+- [ ] T039 Record the closing bookend: `make perf LABEL=126-end`, then `make perf-report AGAINST=126-start`, and diagnose IN WRITING every seed more than 5% slower - especially seed 25, which is known to be ~2.5x the baseline
+- [ ] T040 `make done` green, backgrounded, not polled
+- [ ] T041 Stop-work ritual: commit in the clone, then `scripts/sync-with-main.sh done`
 
 ---
 
