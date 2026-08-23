@@ -251,7 +251,27 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
         #
         # `_homestead_polys` is the same fabric the web threads between (see `stage_web`), so the
         # skeleton and the web now agree about what is already standing.
-        arm = clip_to_clear(raw_arms[ai], [list(plan.envelope), *crops, *fabric, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
+        # TWO CLEARANCES, BECAUSE THEY ARE TWO DIFFERENT RULES.
+        #
+        # Crop, water and marsh want the full 20 px: a track keeps clear of standing rice and does
+        # not skim a ditch. The FABRIC does not, and holding it to the same figure is what made the
+        # first version of this pathological. A 20 px margin demands a 40 px clear corridor between
+        # two steadings, which a packed cluster does not have - so instead of threading the gap the
+        # arm was clipped away entirely, the cluster went unserved, and `_serve_stragglers` spent its
+        # four passes routing rescue footpaths that mostly failed and were retried. Measured on
+        # THIS DID NOT FIX THE SEED-25 COST, and the honest note matters more than the tidy one:
+        # measured before and after, `stage_web` stayed at ~299 s with `_route` called 817 times
+        # either way. So the arms were NOT being clipped out of existence by the fabric margin, and
+        # whatever drives the straggler routing lies elsewhere. The split is kept because it is
+        # right on its own terms, not because it bought anything.
+        #
+        # FABRIC_GAP is what these lanes actually are. The sources describe the lateral ones as
+        # "colonized as semi-private space by the adjoining house" and barely more than the gap
+        # between two walls - so the arm needs its own half-width and a little air, not a highway
+        # verge. This is the same `WEB_FABRIC_GAP` the lane web already threads by, so the skeleton
+        # and the web now agree about how close a lane may pass a wall.
+        arm = clip_to_clear(raw_arms[ai], [list(plan.envelope), *crops, *([toe_now] if toe_now else []), *wet_now], 20.0, lines=list(plan.watercourses) + drawn_water)
+        arm = clip_to_clear(arm, fabric, WEB_FABRIC_GAP) if len(arm) >= 2 else arm
         arm = s.trim_off_marsh(arm)
         if len(arm) >= 2:
             if _arm_crossing_accidental(arm, raw_arms[ai], kept):
@@ -990,6 +1010,22 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
     Drawn from the HOUSE outward, deliberately. Clipping truncates at the first blockage from the
     start, so starting at the door means the path keeps whatever length it can win from the house's
     side - and it is the house's end that has to be reached for the path to be worth anything."""
+    # A HOUSE THAT EXHAUSTED EVERY TARGET WILL EXHAUST THE SAME ONES AGAIN (feature 126).
+    #
+    # This loop makes four passes, and each unserved house tries up to 60 targets. A house nothing
+    # can reach therefore costs up to 240 routing calls, every one a failure, and it pays that bill
+    # again on every pass. Measured on seed 25: three unreachable houses, `_route` called 817 times
+    # for 278 s; the baseline's single unreachable house cost 388 calls and 103 s. The failures were
+    # nearly the whole bill.
+    #
+    # This is the engine's SECOND documented performance shape - "the same scan run again over
+    # ground that has not changed" (dev/performance.md) - and it takes the same cure as `SeatMemo`:
+    # remember the refusal, and ASSERT the invariant rather than assume it. The memo keys on the
+    # exact target list, so a house is skipped only when the candidate ways it would try are
+    # identical to the ones it already failed against. Draw a lane anywhere near it and its targets
+    # change, the key misses, and it is retried in full. That failure direction is the whole design:
+    # a wrong memo costs the SPEEDUP, never a path.
+    _exhausted: dict[int, tuple[tuple[float, float], ...]] = {}
     for _pass in range(4):
         lanes = [[(float(x), float(y)) for x, y in ln["pts"]] for ln in s.M.get("lanes", [])]
         segs = [(a, b) for ln in lanes for a, b in zip(ln, ln[1:], strict=False)]
@@ -1045,6 +1081,10 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
             # go where there is room, so the candidates are tried nearest-first and the first one
             # that has room wins.
             targets = sorted((seg_closest(c[0], c[1], a, b) for a, b in segs), key=lambda q: math.dist(c, q))
+            _served = False
+            _key = tuple((round(float(t[0]), 1), round(float(t[1]), 1)) for t in targets[:60])
+            if _exhausted.get(id(h)) == _key:
+                continue  # same house, same candidate ways, same obstacles - a replay of a pass that already failed
             for tgt in targets[:60]:
                 # The radius is generous on purpose. A steading the web could not reach is by
                 # definition one whose nearest way is already beyond the reach, so a search bounded
@@ -1198,7 +1238,10 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                     path = _trim_to_service(path, segs, [(float(q["x"]), float(q["y"])) for q in s.M.get("houses", [])])
                     _draw_web(s, path, 3, houses=[c])
                     added += 1
+                    _served = True
                     break
+            if not _served:
+                _exhausted[id(h)] = _key
         if not added:
             return
 
