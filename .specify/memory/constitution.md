@@ -405,6 +405,21 @@ artifacts. Specifically:
   run a verification query) before relaying the result to the user.
   "The agent said it was done" is not sufficient.
 
+- **Generators: ONE ARTIFACT UNTIL IT WORKS, then the sweep** (GM 2026-08-23).
+  A change to a generator is proven on a SINGLE named artifact first. The full
+  cohort / pool sweep runs once, AFTER that artifact is fully working - never as
+  the loop you iterate inside. Feature 126 is the case that produced this clause:
+  a 48-map cohort was launched while the approach was still being tried out, one
+  seed near-hung, and thirty minutes bought no result at all. A single hamlet
+  rebuilds in well under a minute, so the same thirty minutes is thirty
+  experiments instead of nothing.
+  - The canonical hamlet is **Inashiro**, unless the feature names a better one
+    and says why.
+  - The final sweep stays MANDATORY whenever shared code changed - this clause
+    changes WHEN it runs, never WHETHER.
+  - A feature that adds a KNOB owes one artifact per knob VALUE, not one per
+    artifact in the pool: three maps, not forty-eight.
+
 Trust-but-verify is the working mode. Reporting a thing as done without
 verification is a constitutional violation, not just a quality issue.
 

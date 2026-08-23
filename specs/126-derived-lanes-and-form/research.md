@@ -234,3 +234,43 @@ also clone-side - like for like, with the same artifacts present.
 accept that these two artifact-dependent guards cannot run there. Worth carrying into the project's
 baseline guidance rather than rediscovering; a session that reads two failures on unmodified code and
 believes them will either "fix" a non-defect or conclude HEAD is broken.
+
+---
+
+## R8 - US3 WAS ALREADY IMPLEMENTED, and R4 was written from a stale comment
+
+**A correction to this document, recorded rather than quietly edited, because the wrong version was
+the basis for a whole user story.**
+
+R4 derived a directional shadow corridor and proposed replacing the uniform `BUNDLE_PITCH`
+separation with it. That proposal rested on the constant's own comment - *"THE HONEST WAY TO GET
+MORE DENSITY HERE is what real yashiki lots did: STAGGER east-west rather than space rows further
+apart. The placer is free to; nothing asks it to yet."* Reading the placer rather than the comment
+shows the comment is out of date. Three separate mechanisms already do the work:
+
+1. **`_sun_corridor_ok` (`settlement/rolling/fit.py`)** keeps `SUN_CORRIDOR_FT = 39.0` of open
+   ground SOUTH of every threshing yard, and tests **both directions** - this house may not shade a
+   yard already placed, and this yard may not be shaded by a house already standing. It carries the
+   same 45-degree kayabuki / ~20 ft ridge / 38N / 10th-month derivation R4 recovered independently,
+   and `stage_homesteads` opts into it unconditionally. The gate check
+   `yards_unshaded_by_neighbors` enforces it on the finished manifest.
+2. **`_yard_sun_conflict`** additionally stops a GROVE sitting in a neighbor's yard corridor, and
+   `_garden_shaded` stops a farmhouse shading a neighbor's dooryard garden.
+3. **Feature 121** already retired the circumscribed-circle separation in favour of real rotated
+   footprints, so pairwise spacing is footprint-based, not radius-based. `_house_too_near_a_neighbor`
+   is an EAVE-DRIP rule (two thatched roofs must shed separately), not a sun rule, and it is already
+   only a couple of feet.
+
+**So `BUNDLE_PITCH` is already what R4 said it should become**: a ROW-PLANNING constant, not an
+omnidirectional pairwise separation. Nothing pays 100 ft east-west; the row is planned at that pitch
+because a row needs house depth plus yard plus the 39 ft of sun, and the pairwise tests are
+independent of it.
+
+**Decision: make NO code change for US3.** Implementing the R4 corridor would be a second
+implementation of a rule the checker already owns, which is precisely the failure the project warns
+about - *"a tool that re-derives a rule will eventually disagree with the checker and then tell you
+the wrong thing with total confidence."* SC-005 (no drying yard shaded by a neighboring farmhouse)
+is already satisfied and already gated; SC-006 (a pair closer than the uniform pitch) is satisfied by
+construction, because the uniform pitch never governed the pair.
+
+**What SHOULD change is the stale comment**, so the next reader is not sent down this path again.

@@ -270,7 +270,19 @@ POLDER_CELL_FT = 110.0
 # density win. (research/homesteads.md, "The threshing yard's sun"; specs/121 research.md D2.)
 #
 # THE HONEST WAY TO GET MORE DENSITY HERE is what real yashiki lots did: STAGGER east-west rather
-# than space rows further apart. The placer is free to; nothing asks it to yet.
+# than space rows further apart.
+#
+# THAT IS NOW DONE, and this comment used to end "the placer is free to; nothing asks it to yet",
+# which was stale and cost feature 126 a user story before anyone read the placer instead of the
+# comment. Three mechanisms already deliver it, and re-deriving a fourth would be a second
+# implementation of a rule the checker owns:
+#   - `_sun_corridor_ok` keeps SUN_CORRIDOR_FT (39) of open ground SOUTH of every threshing yard,
+#     in BOTH directions between neighbors, and `yards_unshaded_by_neighbors` gates it;
+#   - `_yard_sun_conflict` and `_garden_shaded` extend the same rule to groves and dooryard gardens;
+#   - feature 121 retired the circumscribed-circle spacing for real rotated footprints, and
+#     `_house_too_near_a_neighbor` is an eave-drip rule of a couple of feet, not a sun rule.
+# So THIS number is a ROW-PLANNING pitch and nothing else: nothing pays 100 ft east-west. See
+# specs/126-derived-lanes-and-form/research.md R8.
 #
 # RAISED 92 -> 100 when the SUN CORRIDOR landed (2026-08-13). The pitch was calibrated before the
 # rule existed, and a row now needs house depth (28) + yard (~26) + 39 ft of sun + the gaps between
