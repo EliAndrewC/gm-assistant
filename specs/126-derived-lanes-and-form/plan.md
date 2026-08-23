@@ -21,6 +21,13 @@ close east-west where no shadow falls.
 **Primary paths**: `.claude/skills/diagram/l7r/diagram/hamletgen/` (driver, ways, homesteads, water,
 consts, hinterland), `settlement/_knobs.py`, `settlement/rolling/`, `check_village/segments_07c`.
 **Test bed**: the 48-seed cohort (`tools/cohort_audit.py`), plus the four live scripted pool hamlets.
+**Single-artifact target** (constitution VI, added mid-feature 2026-08-23 BECAUSE this feature
+violated it): **Inashiro** for the ordering change; plus one seed per rolled form once the form knob
+exists, since a single map cannot exercise a knob - seed 7 (nucleated), seed 6 (dispersed), seed 4
+(linear, which is what Inashiro itself now rolls). ~30-60s per map. The 48-seed cohort runs ONCE, at
+the end. It was instead used as the iteration loop twice here, and both runs were killed without a
+result: the first ran 30 minutes with 19 of 20 workers idle while one seed near-hung.
+
 **Baseline**: taken on unmodified `HEAD` (8ec2a91) in a detached worktree at `scratchpad/base125` -
 48-seed cohort plus a full `make done`. Required by Principle XIII before any comparison is claimed.
 
@@ -69,12 +76,15 @@ Everything else keeps its position. Stage count stays 13.
 | shelter grove | one village grove | **per farmstead** (*kainyo*) | one village grove |
 | access rules 0607/0610 | apply | **do not apply** | apply |
 
-### The shadow corridor
+### The shadow corridor - SUPERSEDED, see research.md R8
 
-Replaces the uniform `BUNDLE_PITCH` separation test with a bearing-dependent one: full reach
-(~39 ft of shadow from a ~20 ft ridge) through the northern arc, footprint-plus-working-room east and
-west, interpolated between. `BUNDLE_PITCH` itself survives as the row-planning constant; what changes
-is the pairwise separation test.
+This section proposed replacing the uniform `BUNDLE_PITCH` separation with a bearing-dependent
+shadow test. **It is withdrawn: the rule already exists.** `_sun_corridor_ok` keeps 39 ft of open
+ground south of every threshing yard, bidirectionally between neighbors, gated by
+`yards_unshaded_by_neighbors`; feature 121 already replaced circle-spacing with real rotated
+footprints; and `BUNDLE_PITCH` is already only a row-planning constant. The proposal was written
+from a stale comment on that constant, which has been corrected. No code change - implementing one
+would be a second implementation of a rule the checker owns.
 
 ## Risk register
 

@@ -94,6 +94,18 @@ _WELL_DRAWN_R = 12.0
 It is the `vr` the glyph draws (not the `r` clearance radius), because the frame follows the ink -
 `crop_not_held_open_by_one_feature` quotes a well's extent as 16 px across."""
 
+FORM_BOUND: dict[str, float] = {}
+"""Per-FORM override of how far from the seat center a homestead may stand, as a multiple of the
+seat band's diagonal. EMPTY, deliberately - every form uses the 1.15 default.
+
+A FAILED FIX, recorded so it is not tried again (feature 126). Dispersed and linear maps were given
+2.2 and 1.8 here to cure Inashiro seating 13 of its 15 households. It did not cure it: the cause was
+`_nucleated` being set from the FORM, which gave a linear map grove-wrapped bundles too large to
+fit, and fixing that fixed the count. Measured afterwards on Sawada, the dispersed pool map:
+19/19 households in 53.4s at the uniform 1.15, against 19/19 in 53.7s at 2.2 - no seats gained, no
+time lost, nothing bought. A wider search bound only permits sprawl the feature exists to prevent,
+so the honest value is no override at all."""
+
 _FIELD_RING_FLOOR = 5
 """How many front-row seats are taken before `_FRONT_ROW_LANE_CAP` starts applying. It is
 `field_ringed`'s own floor - five farmhouses within 165 px of the field outline - because that is a
@@ -244,14 +256,20 @@ def stage_homesteads(s: Settlement, plan: SitePlan) -> None:
     # at 1.15 the generator simply dropped households - Inashiro rolled linear and seated 13 of 15,
     # which is a silent shortfall rather than an error.
     #
-    # The multipliers are calibrated to seat the households the spec asks for, which is the only
-    # honest target: a hamlet of 15 has 15 farmhouses in it, and a bound that cannot fit them is
-    # wrong about the settlement rather than about the map.
+    # THIS WAS NOT WHAT FIXED THE SHORTFALL, and saying so here saves the next reader from crediting
+    # it. Inashiro's 13-of-15 was caused by `_nucleated` being set from the FORM, which gave a linear
+    # map grove-wrapped bundles too large to fit; the fix was to set `_nucleated` from whether the
+    # form is dispersed (see `stage_water_frame`). Widening the bound alone changed nothing.
+    #
+    # It is kept because it is DESCRIPTIVE rather than corrective: a dispersed settlement genuinely
+    # occupies more ground than a nucleated one - that is what the form IS - and holding it to a
+    # nucleated cluster's radius would misrepresent it. The multipliers are not measured optima, and
+    # they should not be quoted as if they were; they are the extents the two forms plausibly want.
     #   dispersed - the Tonami case: each farmstead sits in the middle of its OWN holding, so the
     #               settlement's extent is the extent of the land it farms, not of a cluster band.
     #   linear    - strung along the connector, so it grows LONG rather than wide; the bound is a
     #               radius, so a smaller widening buys the length the form needs.
-    bound = {"dispersed": 2.2, "linear": 1.8}.get(plan.settlement_form, 1.15) * math.hypot(lat, dep)
+    bound = FORM_BOUND.get(plan.settlement_form, 1.15) * math.hypot(lat, dep)
 
     def in_band(q: Pt) -> bool:
         return math.hypot(q[0] - seat["cx"], q[1] - seat["cy"]) <= bound

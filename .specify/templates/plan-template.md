@@ -36,6 +36,11 @@
 
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
+**Single-artifact target** (REQUIRED for any generator change, constitution VI): [the ONE named
+artifact this is proven on before any sweep - e.g. `pool/hamlets/inashiro.gen.py`. State its rebuild
+time. The cohort/pool sweep runs ONCE, after this artifact fully works, never as the iteration loop.
+If the feature adds a knob, name one artifact per knob VALUE.]
+
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
