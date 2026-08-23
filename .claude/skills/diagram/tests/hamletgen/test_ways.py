@@ -9,7 +9,7 @@ import pytest
 
 from l7r.diagram import hamletgen as hg
 from l7r.diagram.hamletgen.ways import _margin_frame, _reach
-from l7r.diagram.settlement import point_in_poly
+from l7r.diagram.settlement import Settlement, point_in_poly
 
 from ._builders import SQUARE, a_plan
 
@@ -510,8 +510,12 @@ def test_the_form_roll_is_deterministic_and_covers_all_three_forms() -> None:
         again = hg.plan_site(hg.HamletSpec(name=f"Roll-{seed}", seed=seed, households=12))
         assert plan.settlement_form == again.settlement_form, f"seed {seed} rolled two different forms"
         forms[plan.settlement_form] = forms.get(plan.settlement_form, 0) + 1
-    assert set(forms) == {"nucleated", "dispersed", "linear"}, forms
-    assert max(forms.values()) <= 48 * 0.7, f"one form dominates the cohort: {forms}"
+    # PINNED TO NUCLEATED for now - the knob is live and every other part of it is tested, but the
+    # per-house grove path the other two forms need has four unfixed defects (see SETTLEMENT_FORMS
+    # in hamletgen/consts.py for the measurements and the sketch). This asserts the CURRENT contract
+    # rather than the intended one, so that turning the forms back on fails here loudly and the test
+    # is updated deliberately instead of drifting.
+    assert set(forms) == {"nucleated"}, f"forms are pinned to nucleated; got {forms}"
 
 
 def test_an_explicit_form_on_the_spec_beats_the_roll() -> None:
@@ -527,7 +531,7 @@ def test_a_dispersed_hamlet_draws_no_internal_lanes() -> None:
     connector, and what joins it to its neighbors is the field baulk. Drawing a web here would erase
     the one thing that makes the form legible at a glance."""
     plan = a_plan(settlement_form="dispersed")
-    s = hg.Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
     s.M["houses"] = [{"x": 100.0, "y": 100.0}, {"x": 200.0, "y": 120.0}]
     hg.ways.stage_web(s, plan)
     assert not s.M.get("lanes"), "a dispersed hamlet must have no internal lane network"
@@ -545,7 +549,7 @@ def test_only_the_dispersed_form_short_circuits_stage_web() -> None:
     cohort, where they do."""
     plan = a_plan(settlement_form="nucleated")
     assert plan.settlement_form == "nucleated"
-    s = hg.Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
     s.M["houses"] = [{"x": 100.0, "y": 100.0}, {"x": 200.0, "y": 120.0}]
     with pytest.raises(KeyError):
         hg.ways.stage_web(s, plan)

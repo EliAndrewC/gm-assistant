@@ -341,6 +341,18 @@ def store(gen: str, deps: dict[str, Any], *, gen_cpu_s: float | None = None, cov
     _skip_render = bool(os.environ.get("DIAGRAM_SKIP_RENDER"))
     for out in _outputs(gen):
         if _skip_render and out.endswith(".png"):
+            # EVICT, DO NOT SKIP. `continue` alone leaves any PNG already sitting in the entry
+            # directory in place, and the meta.json written below then blesses that stale image as
+            # THIS key's output - so a later hit restores the previous roll's picture beside a
+            # current manifest. The 2026-08-17 fix closed the mirror image of this (load() deletes a
+            # standing pool PNG the entry LACKS) and could not help when the entry HAS the wrong one.
+            #
+            # Four settlement-reviews on 2026-08-23 each independently found the shipped PNG was the
+            # pre-feature-126 roll, on all four scripted hamlets, and reviewed the wrong image before
+            # noticing. That is the second time this class of bug has cost review rounds.
+            stale = os.path.join(entry, os.path.basename(out))
+            if os.path.isfile(stale):
+                os.remove(stale)
             continue
         if os.path.isfile(out):
             place(Path(out).read_bytes(), os.path.join(entry, os.path.basename(out)))

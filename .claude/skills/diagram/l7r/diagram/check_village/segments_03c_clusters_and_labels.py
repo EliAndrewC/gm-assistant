@@ -99,6 +99,16 @@ def _seg_0232__cluster_abuts_fields(
                     f"nucleated village cluster fills only {cov:.0%} of the footprint it spans (want >=25%): the houses are strung thin over a hollow hull (an over-wide cluster stranding houses far from the fields), not a compact village fabric",
                 )
         else:
+            # A FLAT ADJ, WITH NO SPAN ALLOWANCE - and it stays that way. Feature 126 relaxed this
+            # to `ADJ + 2 * span`, arguing that the NUCLEATED branch above is the more generous of
+            # the two and that a scattered settlement legitimately spreads further from its fields.
+            # The regression corpus refuted it within one gate run:
+            # `all_houses_field_adjacent_dispersed_fires_on_a_remote_house.json` stopped tripping,
+            # and that is a frozen map which MUST fail. The flat rule is doing real work here.
+            #
+            # If the dispersed and linear forms are switched back on (see `SETTLEMENT_FORMS` in
+            # hamletgen/consts.py, currently pinned to nucleated), this branch is worth revisiting -
+            # but WITH that fixture kept red, not by widening the bound until the new maps pass.
             far = [h for h, d in dists if d > ADJ]
             check("all_houses_field_adjacent", not far, f"{len(far)} house(s) >{ADJ}px from any field")
 

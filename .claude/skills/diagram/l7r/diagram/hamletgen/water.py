@@ -58,13 +58,18 @@ def stage_water_frame(s: Settlement, plan: SitePlan) -> None:
     # garden + south yard, no per-house grove; see `_place_bundle`, which branches on it). The two
     # were the same thing only while every hamlet was nucleated.
     #
-    # It is FALSE for dispersed alone, and the research is what decides that: the Tonami farmstead
-    # sits in the middle of its own holding wrapped in its own kainyo grove, which is exactly the
-    # loose bundle. A ROW village is not that - its farmsteads front the street with the holding
-    # behind, adjacent to their neighbors, so their bundles stay compact like a nucleated cluster's.
-    # Setting this from the form directly gave linear maps grove-wrapped bundles that would not fit:
-    # Inashiro seated 13 of the 15 households its spec asked for, silently.
-    s._nucleated = plan.settlement_form != "dispersed"
+    # TRUE FOR NUCLEATED ALONE. This flag drives the bundle SHAPE, and the bundle CARRIES the
+    # homestead grove, so it also decides whether a farm gets its own yashikirin or shelters behind
+    # one village belt. The two cannot be split without splitting `_place_bundle`.
+    #
+    # It was briefly `!= "dispersed"`, reasoning that a row village's farmsteads front the street
+    # adjacent to their neighbors and so stay compact. That is true of the BUNDLE and false of the
+    # GROVE, and one flag cannot say both: linear maps drew a single village belt while
+    # `meta["nucleated"]` declared them non-nucleated, and `groves_where_possible` correctly
+    # reported four farms with clear windward room and no grove. A generator that DECLARES one thing
+    # and DRAWS another is the failure this whole feature exists to remove, so the flag follows the
+    # declaration and every non-nucleated farm gets its own grove.
+    s._nucleated = plan.settlement_form == "nucleated"
     for knob, value in plan.spec.pins.items():
         s.pin_knob(knob, value)
 

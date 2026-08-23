@@ -46,6 +46,8 @@ padding:.15rem 0;font:.87rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
 <div><span class="k">water_flow</span><span class="v">90</span></div>
 <div><span class="k">down_deg</span><span class="v">90</span></div>
 <div><span class="k">windward</span><span class="v">N</span></div>
+<div><span class="k">settlement_form</span><span class="v">nucleated</span></div>
+<div><span class="k">settlement_form_asked</span><span class="v">nucleated</span></div>
 <div><span class="k">nucleated</span><span class="v">True</span></div>
 <div><span class="k">field_footbridges</span><span class="v">True</span></div>
 <div><span class="k">water_kind</span><span class="v">stream</span></div>
@@ -62,9 +64,9 @@ padding:.15rem 0;font:.87rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
 <img src="03-stage_sink.png" width="1100" height="1100" alt="Where the runoff goes" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">04</span><span class="t">The skeleton and the connector</span><span class="fn">stage_ways</span></div>
-<p class="why">The ground-RESERVING half of the ways. These lanes are laid BEFORE the houses precisely so the homesteads front them: a lane is a no-build corridor the steadings line up along. This is the half of the road network that behaves like terrain.</p>
-<img src="04-stage_ways.png" width="1100" height="1100" alt="The skeleton and the connector" loading="lazy">
+<div class="hd"><span class="n">04</span><span class="t">The ways that were already there</span><span class="fn">stage_ways</span></div>
+<p class="why">Only the EXOGENOUS ways: the connector out to the off-map road, and the spur to the field. These are laid before the houses because they genuinely predate the settlement - the road to the county town was there first, and a hamlet that grows beside it may legitimately front it. Everything INTERNAL used to be laid here too, and is not any more: a lane between two farmsteads is trodden by the households already living there, so it cannot be drawn before they exist. The question this stage asks is not whether a way reserves ground, but whether it was there before the settlement was.</p>
+<img src="04-stage_ways.png" width="1100" height="1100" alt="The ways that were already there" loading="lazy">
 </section>
 <section class="stage">
 <div class="hd"><span class="n">05</span><span class="t">The farmhouses</span><span class="fn">stage_homesteads</span></div>
@@ -77,9 +79,9 @@ padding:.15rem 0;font:.87rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
 <img src="06-stage_appurtenances.png" width="1100" height="1100" alt="Yards, gardens, byres, wells, sheds" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">07</span><span class="t">The lane web</span><span class="fn">stage_web</span></div>
-<p class="why">The ground-FILLING half of the ways, and the one stage that deliberately runs after the structures it serves. Laid first it competed for ground with the very houses it exists to reach: measured, the four pool clusters&#x27; long axes grew 15-97% and no check measures sprawl. Laid here it threads the room the cluster actually left. It also runs after the byres and wells, not merely after the houses - between the two, its corridor reserved courtyard ground and exiled fixtures up to 210 ft.</p>
-<img src="07-stage_web.png" width="1100" height="1100" alt="The lane web" loading="lazy">
+<div class="hd"><span class="n">07</span><span class="t">The lanes the settlement wore</span><span class="fn">stage_web</span></div>
+<p class="why">Every ENDOGENOUS way - the cluster&#x27;s spine and the web of alleys off it - drawn now because only now is there a settlement to derive them from. Both are fitted to where the houses actually landed rather than to where the seat band predicted they would land, which is the distinction that matters: the spine used to be sized on the band while the houses spread wider than it, so it could not be guaranteed to reach them. Laid first, these lanes competed for ground with the very houses they exist to serve - measured, the four pool clusters&#x27; long axes grew 15-97%, sprawl no check measures. They also run after the byres and wells, not merely after the houses; between the two, their corridors reserved courtyard ground and exiled fixtures up to 210 ft. A DISPERSED hamlet draws nothing here at all, because it has no internal network - its farmsteads stand in their own holdings and the connector is the only way on the map.</p>
+<img src="07-stage_web.png" width="1100" height="1100" alt="The lanes the settlement wore" loading="lazy">
 </section>
 <section class="stage">
 <div class="hd"><span class="n">08</span><span class="t">The notice board</span><span class="fn">stage_notice</span></div>
@@ -109,7 +111,7 @@ padding:.15rem 0;font:.87rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
 <section class="stage">
 <div class="hd"><span class="n">13</span><span class="t">Crop, title, scalebar</span><span class="fn">stage_frame</span></div>
 <p class="why">The canvas is deliberately generous and is cropped to content only now. Erring large is cheap - unused canvas is thrown away - while erring small silently mis-shapes the field.</p>
-<img src="13-stage_frame.png" width="1100" height="1129" alt="Crop, title, scalebar" loading="lazy">
+<img src="13-stage_frame.png" width="1100" height="1130" alt="Crop, title, scalebar" loading="lazy">
 </section>
 <div class="closing">
 <h2>Why there is no water-only plate</h2>
