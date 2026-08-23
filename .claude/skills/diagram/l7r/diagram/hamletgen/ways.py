@@ -467,19 +467,6 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # had a 78 ft hole in a street, because the hole did not exist yet when it looked.
     _bridge_collinear_breaks(s, hard, walls, list(plan.watercourses) + drawn_water)
     _join_orphan_ways(s, hard, walls, list(plan.watercourses) + drawn_water)
-    # ...AND SWEEP THE DEBRIS, LAST OF ALL. `_WEB_MIN_FT` is applied when a run is proposed, but the
-    # end-trim runs AFTER that and pulls a run back to its last serving point - so a lane that was
-    # 60 ft when it passed the floor can be 4 ft by the time it is drawn. Mizuguchi shipped a 4.2 ft
-    # tread with rounded caps standing 3.3 ft off a farmhouse wall, and Kashikawa 17, 25 and 29 ft
-    # marks; at 1 px = 1 ft those read as dropped sticks, which is exactly what the floor's own
-    # comment says it exists to prevent ("a 4 ft mark fronts nobody and reads as a speck of clipping
-    # debris"). A floor that is only checked before the thing that shortens the run is not a floor.
-    #
-    # The connector and the field spur are exempt: they are not web lanes and their length is
-    # whatever the journey needs.
-    _debris = [i for i, ln in enumerate(s.M.get("lanes", [])) if not ln.get("connector") and len(ln.get("pts") or []) >= 2 and polyline_len([(float(x), float(y)) for x, y in ln["pts"]]) < _WEB_MIN_FT]
-    for i in reversed(_debris):
-        s.M["lanes"].pop(i)
     s.M["meta"]["lane_web"] = plan.lane_web
 
 
@@ -762,7 +749,7 @@ def _bridge_collinear_breaks(s: Settlement, hard: list[Poly], walls: Sequence[Po
                         #
                         # The floor is now the tread's own width: below that there is nothing to
                         # bridge, because the two treads already touch.
-                        if not (_TREAD_TOUCH_FT < gap <= _BREAK_SPAN_FT):
+                        if not (_LANE_JOIN_FT < gap <= _BREAK_SPAN_FT):
                             continue
                         # ...and a SHORT gap does not have to be collinear. The bearing test exists
                         # to tell "one way with a hole in it" from "two arms that happen to end near
@@ -770,7 +757,7 @@ def _bridge_collinear_breaks(s: Settlement, hard: list[Poly], walls: Sequence[Po
                         # not: a back lane following a curved field margin breaks at 37 deg of
                         # aim-off and is still one lane. So the test applies from `_LANE_JOIN_FT` up,
                         # and a shorter hole is closed on proximity alone.
-                        if gap > _LANE_JOIN_FT and (_aim_off(pra, ta, tb) > _BREAK_BEARING_DEG or _aim_off(prb, tb, ta) > _BREAK_BEARING_DEG):
+                        if _aim_off(pra, ta, tb) > _BREAK_BEARING_DEG or _aim_off(prb, tb, ta) > _BREAK_BEARING_DEG:
                             continue  # two arms, not one way
                         # POINTING AT EACH OTHER MEANS EACH END'S OUTWARD DIRECTION AIMS AT THE
                         # OTHER END - not that the two outward bearings are similar. Two ends facing
@@ -834,18 +821,7 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
             for i, w in enumerate(ways):
                 if i in main or len(w) < 2:
                     continue
-                # MEMBERSHIP IS DECIDED BY TOUCH, NOT BY REACH - and getting that wrong is why this
-                # pass could not see the very gaps it exists to close. `_LANE_JOIN_FT` (30) is the
-                # gate's REACH tolerance: "is this house served by that way". Used here it says a
-                # tread lying 25 ft from the network is already part of it, so the fragment is never
-                # classified an orphan and no link is ever routed - while the sheet shows 25 px of
-                # bare grass between two 4 px treads.
-                #
-                # Measured on Inashiro (feature 126, three settlement-reviews found it
-                # independently): one ink component at HEAD became four, with six houses 105-243 ft
-                # from the CONNECTED network behind holes of 28.4, 28.7 and 29.4 ft - every one of
-                # them under 30 and therefore invisible to this loop.
-                if any(_net_reach(w, list(zip(ways[j], ways[j][1:], strict=False))) <= _TREAD_TOUCH_FT for j in main if len(ways[j]) >= 2):
+                if any(_net_reach(w, list(zip(ways[j], ways[j][1:], strict=False))) <= _LANE_JOIN_FT for j in main if len(ways[j]) >= 2):
                     main.add(i)
                     grew = True
         orphans = [i for i in range(len(ways)) if i not in main and len(ways[i]) >= 2]
@@ -1151,7 +1127,7 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
             # stranded and got a second path of its own - Kashikawa's 29 ft lane 12, drawn for a
             # house that a previous lane had already taken from 100.7 ft to 38.9, and which the new
             # lane then left at 70.5. A way exists because feet use it.
-            segs = _net_segs(s, connected_only=True)
+            segs = _net_segs(s)
             # SERVE WITH MARGIN, NOT TO THE MILLIMETRE. Triggering at exactly the reach means a
             # house at 99.7 ft is not a straggler and gets nothing, while one at 100.3 has a whole
             # path drawn for four inches of violation - the same bug at both ends. A review caught
@@ -1347,21 +1323,6 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
                     # The path's own start can have been clipped away from the door, so it gets the
                     # same end-trim every web lane gets - a footpath that begins in bare grass is a
                     # dangling tread whatever drew it.
-                    # LAND ON THE WAY IT WAS AIMED AT. `_route` plans to within its own clearance
-                    # of the goal (`gap + cell*0.71`), so a footpath routed to a point ON the
-                    # network finishes 10-25 ft short of it - and `_trim_to_service` keeps that end
-                    # because 40 ft counts as "serving". The result is a rescue path that rescues
-                    # nobody: measured on Inashiro, drawing them took the ink from 3 components to
-                    # 4 while two houses stayed 107 and 125 ft from anything they could walk to.
-                    # Extending the last vertex onto the target costs a few feet of tread and is the
-                    # difference between a path and a gesture.
-                    # ...but only if the last few feet are CLEAR. Appending the target blindly puts
-                    # the tread wherever the straight line goes, and on the reference hamlet that
-                    # was through a farmhouse: `make map` came back with features_do_not_overlap and
-                    # houses_clear_of_lanes. The extension is the same kind of link as any other and
-                    # gets the same test.
-                    if math.dist(path[-1], tgt) <= _LANE_JOIN_FT and _clear_link(path[-1], (float(tgt[0]), float(tgt[1])), others, [], water):
-                        path = [*path, (float(tgt[0]), float(tgt[1]))]
                     path = _trim_to_service(path, segs, [(float(q["x"]), float(q["y"])) for q in s.M.get("houses", [])])
                     _draw_web(s, path, 3, houses=[c])
                     added += 1

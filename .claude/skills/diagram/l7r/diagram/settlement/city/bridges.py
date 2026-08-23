@@ -207,6 +207,19 @@ class BridgesMixin:
                                             break
                                     if _seated:
                                         break
+                            # ONE DECK PER CROSSING PLACE. Two ways that cross the same ditch a few
+                            # feet apart each ask for a bridge, and the two decks are then drawn on
+                            # top of one another - `features_do_not_overlap` reports it as
+                            # ('bridges','bridges'), which is what feature 126 shipped on four cohort
+                            # seeds once the lane work started drawing orphan links and rescue paths
+                            # alongside existing ways.
+                            #
+                            # A real crossing is a PLACE, not a per-way entitlement: two tracks
+                            # converging on the same plank use the plank. The radius is half the deck
+                            # it would build, so decks that would physically overlap collapse into
+                            # the one already there and decks that stand clear are untouched.
+                            if any(math.dist((p[0], p[1]), (float(b2["x"]), float(b2["y"]))) < _span * 0.5 for b2 in self.M.get("bridges", [])):
+                                continue
                             self.bridge(p[0], p[1], _rot_used, _span, rw)
                             n += 1
         return n

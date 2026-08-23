@@ -17,8 +17,8 @@ Version 1.12.0 (amended 2026-08-23): makes the reference-settlement rule
 STRUCTURAL rather than advisory. Every step of a generator feature is now two
 steps - working on the reference settlement, then working across the pool - and
 both are tasks with their own verification. The tooling defaults to the cheap
-thing on purpose (`make map` is the reference hamlet alone; the pool sweep is
-`make full-hamlet-sweep`, named to be hard to type by accident), because a wide
+thing on purpose (SUPERSEDED BY 1.12.1 - that version's two commands, `make
+map` and `make full-hamlet-sweep`, are gone; use `make maps`), because a wide
 sweep that is cheap to invoke is what lets a session drift onto it unnoticed.
 `make done` remains the backstop, which is what makes narrow defaults safe: the
 gate re-checks the whole pool, so forgetting the sweep costs time, never

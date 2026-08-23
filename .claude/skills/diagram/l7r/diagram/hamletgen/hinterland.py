@@ -682,8 +682,21 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
     ccx, ccy = sum(h["x"] for h in houses) / len(houses), sum(h["y"] for h in houses) / len(houses)
     uv = [(((h["x"] - ccx) * wx + (h["y"] - ccy) * wy), ((h["x"] - ccx) * px + (h["y"] - ccy) * py)) for h in houses]
     v_lo, v_hi = min(v for _u, v in uv), max(v for _u, v in uv)
-    COLS = 7
     half = (v_hi - v_lo) / 2 + 90.0  # a shoulder past the outermost house at each end
+    # SAMPLE THE FRINGE BY LENGTH, NOT BY A FIXED COUNT. `COLS` was 7 whatever the belt measured, so
+    # the profile's resolution fell as the cluster spread: the columns move apart, the polygon
+    # pinches between them, and the drawn canopy carries bare runs that
+    # `village_windbreak_is_continuous` reports as gaps. Feature 126 spread the cluster (houses are
+    # no longer seated against pre-laid lanes) and the check fired on four cohort seeds whose belts
+    # were otherwise blameless - measured on seed 33: 113 clumps, not one polygon vertex in crop and
+    # not one house inside the band, so nothing was blocking the trees; the band shape itself was
+    # coarse.
+    #
+    # One column per ~90 px of belt keeps the profile as fine as it was on the clusters this was
+    # tuned against, and the floor of 7 keeps every previously-passing short belt sampled exactly as
+    # before. This is the same rule `front_row` already records for its own seats: resolution
+    # follows the thing being sampled, never the count of what is being placed.
+    COLS = max(7, min(24, int(2 * half / 90.0)))
     v_mid = (v_lo + v_hi) / 2
     rng = random.Random((plan.spec.seed * 7919) & 0xFFFFFFFF)
 
