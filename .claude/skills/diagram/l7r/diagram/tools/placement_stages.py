@@ -69,10 +69,14 @@ NOTES: dict[str, tuple[str, str]] = {
         "so it must exist before any of them are seated.",
     ),
     "stage_ways": (
-        "The skeleton and the connector",
-        "The ground-RESERVING half of the ways. These lanes are laid BEFORE the houses precisely so the "
-        "homesteads front them: a lane is a no-build corridor the steadings line up along. This is the "
-        "half of the road network that behaves like terrain.",
+        "The ways that were already there",
+        "Only the EXOGENOUS ways: the connector out to the off-map road, and the spur to the field. These "
+        "are laid before the houses because they genuinely predate the settlement - the road to the county "
+        "town was there first, and a hamlet that grows beside it may legitimately front it. Everything "
+        "INTERNAL used to be laid here too, and is not any more: a lane between two farmsteads is trodden "
+        "by the households already living there, so it cannot be drawn before they exist. The question "
+        "this stage asks is not whether a way reserves ground, but whether it was there before the "
+        "settlement was.",
     ),
     "stage_homesteads": (
         "The farmhouses",
@@ -85,13 +89,17 @@ NOTES: dict[str, tuple[str, str]] = {
         "yard south of its own farmhouse, a byre off the frontage, a well between steadings.",
     ),
     "stage_web": (
-        "The lane web",
-        "The ground-FILLING half of the ways, and the one stage that deliberately runs after the "
-        "structures it serves. Laid first it competed for ground with the very houses it exists to "
-        "reach: measured, the four pool clusters' long axes grew 15-97% and no check measures sprawl. "
-        "Laid here it threads the room the cluster actually left. It also runs after the byres and "
-        "wells, not merely after the houses - between the two, its corridor reserved courtyard ground "
-        "and exiled fixtures up to 210 ft.",
+        "The lanes the settlement wore",
+        "Every ENDOGENOUS way - the cluster's spine and the web of alleys off it - drawn now because only "
+        "now is there a settlement to derive them from. Both are fitted to where the houses actually "
+        "landed rather than to where the seat band predicted they would land, which is the distinction "
+        "that matters: the spine used to be sized on the band while the houses spread wider than it, so "
+        "it could not be guaranteed to reach them. Laid first, these lanes competed for ground with the "
+        "very houses they exist to serve - measured, the four pool clusters' long axes grew 15-97%, sprawl "
+        "no check measures. They also run after the byres and wells, not merely after the houses; between "
+        "the two, their corridors reserved courtyard ground and exiled fixtures up to 210 ft. A DISPERSED "
+        "hamlet draws nothing here at all, because it has no internal network - its farmsteads stand in "
+        "their own holdings and the connector is the only way on the map.",
     ),
     "stage_notice": (
         "The notice board",

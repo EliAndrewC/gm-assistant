@@ -1080,7 +1080,20 @@ def _seg_0610__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUN
     each lane serves something, this one asks whether each house is served. A map can pass the first
     with every lane busy and still strand a third of its houses, which is exactly what the four pool
     hamlets did."""
-    if M["meta"].get("generated_by"):
+    # FORM-CONDITIONAL, NOT WAIVED (feature 126). This rule's own justification is about one
+    # form - "every house in the NUCLEATED village is accessible via the interconnected system of
+    # narrow lanes and alleys" - but it was applied to every scripted map, because every scripted
+    # map was nucleated. A DISPERSED hamlet has no internal network by definition (Tonami's
+    # farmsteads stand in their own holdings), so this rule is not about it.
+    #
+    # A waiver would have been the wrong tool and the distinction matters: a waiver says "this map
+    # breaks a rule that is true of it, and we accept that". A dispersed hamlet does not break
+    # this rule - the rule does not apply. Filing every dispersed map as an accepted exception
+    # would grow the waiver list with a form we chose deliberately, which is precisely the
+    # "documented regression" the constitution refuses. Conditioning is not weakening: for a
+    # nucleated map, which is still the commonest roll, nothing changes.
+    # Defaults to nucleated so a hand-authored map with no declared form keeps its old treatment.
+    if M["meta"].get("generated_by") and M["meta"].get("settlement_form", "nucleated") != "dispersed":
         _fw_ways = [[(float(x), float(y)) for x, y in (_fw_ln.get("pts") or [])] for _fw_ln in (M.get("lanes") or [])]
         # THE NETWORK, NOT ANY LINE ON THE GROUND. "Every house in the nucleated village is
         # accessible via the INTERCONNECTED system of narrow lanes and alleys" - so a house served
@@ -1134,7 +1147,20 @@ def _seg_0610__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUN
 
 def _seg_0607__lanes_reach_something(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 0607 (lanes_reach_something) - added 2026-08-17, see the note above."""
-    if M["meta"].get("generated_by"):
+    # FORM-CONDITIONAL, NOT WAIVED (feature 126). This rule's own justification is about one
+    # form - "every house in the NUCLEATED village is accessible via the interconnected system of
+    # narrow lanes and alleys" - but it was applied to every scripted map, because every scripted
+    # map was nucleated. A DISPERSED hamlet has no internal network by definition (Tonami's
+    # farmsteads stand in their own holdings), so this rule is not about it.
+    #
+    # A waiver would have been the wrong tool and the distinction matters: a waiver says "this map
+    # breaks a rule that is true of it, and we accept that". A dispersed hamlet does not break
+    # this rule - the rule does not apply. Filing every dispersed map as an accepted exception
+    # would grow the waiver list with a form we chose deliberately, which is precisely the
+    # "documented regression" the constitution refuses. Conditioning is not weakening: for a
+    # nucleated map, which is still the commonest roll, nothing changes.
+    # Defaults to nucleated so a hand-authored map with no declared form keeps its old treatment.
+    if M["meta"].get("generated_by") and M["meta"].get("settlement_form", "nucleated") != "dispersed":
         _lr_lanes = M.get("lanes") or []
         _lr_houses = M.get("houses") or []
         _lr_dangling = []

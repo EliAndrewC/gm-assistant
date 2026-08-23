@@ -27,6 +27,7 @@ from .consts import (
     PLOT_SIZES,
     REF_HOUSEHOLDS,
     ROLLED_ARCHETYPES,
+    SETTLEMENT_FORMS,
     SINKS,
     SQ_FT_PER_ACRE,
     WIND_TURNS,
@@ -63,6 +64,7 @@ class HamletSpec:
     cluster_shape: str | None = None
     lane_skeleton: str | None = None
     lane_web: str | None = None
+    settlement_form: str | None = None
     field_archetype: str | None = None
     plot_size: str | None = None
     grain_drift: int | None = None
@@ -100,6 +102,11 @@ class SitePlan:
     cluster_shape: str
     lane_skeleton: str
     lane_web: str
+    # WHICH KIND OF SETTLEMENT THIS IS - nucleated, dispersed or linear. Read by seating (which
+    # passes offer seats), by the lane derivation (whether an internal network exists at all), by
+    # the grove choice (one village belt or a kainyo per farmstead), and by the two access checks.
+    # `settlement_form_asked` preserves the ROLL when a site cannot take that form; see `stage_track`.
+    settlement_form: str
     field_archetype: str
     plot_size: str
     grain_drift: int
@@ -213,6 +220,7 @@ def plan_site(spec: HamletSpec) -> SitePlan:
         cluster_shape=spec.cluster_shape or str(_roll(spec.seed, "cluster_shape", CLUSTER_SHAPES)),
         lane_skeleton=spec.lane_skeleton or str(_roll(spec.seed, "lane_skeleton", LANE_SKELETONS)),
         lane_web=spec.lane_web or str(_roll(spec.seed, "lane_web", LANE_WEBS)),
+        settlement_form=spec.settlement_form or str(_roll(spec.seed, "settlement_form", SETTLEMENT_FORMS)),
         field_archetype=_archetype,
         plot_size=spec.plot_size or str(_roll(spec.seed, "plot_size", PLOT_SIZES)),
         grain_drift=spec.grain_drift if spec.grain_drift is not None else int(_roll(spec.seed, "grain_drift", GRAIN_DRIFTS)),

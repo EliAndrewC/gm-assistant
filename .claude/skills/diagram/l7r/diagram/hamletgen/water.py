@@ -40,11 +40,31 @@ def stage_water_frame(s: Settlement, plan: SitePlan) -> None:
         water_flow=plan.water_flow,
         down_deg=plan.down_deg,
         windward=plan.windward,
-        nucleated=True,
+        # THE FORM IS ROLLED, NOT ASSUMED (feature 126). This tier hardcoded `nucleated=True` from
+        # the day it was written, which meant every hamlet the generator has ever produced was the
+        # same KIND of settlement. The research supports three (research/homesteads.md, "Does a
+        # hamlet have to be NUCLEATED at all?"), so per Principle XII the form is a seeded knob.
+        #
+        # `nucleated` is DERIVED from `settlement_form` rather than set beside it. They were two
+        # independent facts that happened to agree; making one a function of the other means they
+        # cannot drift, and every existing consumer of `nucleated` keeps working unchanged.
+        settlement_form=plan.settlement_form,
+        settlement_form_asked=plan.settlement_form,
+        nucleated=plan.settlement_form == "nucleated",
         field_footbridges=True,
         water_kind="stream",
     )
-    s._nucleated = True
+    # `_nucleated` IS NOT THE FORM - it is the engine's flag for a COMPACT BUNDLE (house + lee
+    # garden + south yard, no per-house grove; see `_place_bundle`, which branches on it). The two
+    # were the same thing only while every hamlet was nucleated.
+    #
+    # It is FALSE for dispersed alone, and the research is what decides that: the Tonami farmstead
+    # sits in the middle of its own holding wrapped in its own kainyo grove, which is exactly the
+    # loose bundle. A ROW village is not that - its farmsteads front the street with the holding
+    # behind, adjacent to their neighbors, so their bundles stay compact like a nucleated cluster's.
+    # Setting this from the form directly gave linear maps grove-wrapped bundles that would not fit:
+    # Inashiro seated 13 of the 15 households its spec asked for, silently.
+    s._nucleated = plan.settlement_form != "dispersed"
     for knob, value in plan.spec.pins.items():
         s.pin_knob(knob, value)
 

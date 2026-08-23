@@ -493,3 +493,59 @@ def test_a_web_lane_end_already_near_the_network_is_SNAPPED_onto_it() -> None:
     drawn = [tuple(q) for q in s.M["lanes"][-1]["pts"]]
     assert drawn[0] == (0.0, 200.0), f"the near end should be snapped onto the lane, got {drawn[:2]}"
     assert drawn[1:] == run, "the rest of the run is unchanged - snapping adds a point, it does not re-route"
+
+
+# ---- feature 126: ways split by provenance, and the settlement form ------------------------------
+
+
+def test_the_form_roll_is_deterministic_and_covers_all_three_forms() -> None:
+    """A seed must always produce the same form, and the cohort must actually exercise each one.
+
+    The second half matters as much as the first: a form weighted so rarely that no cohort seed
+    rolls it is a form nothing tests, and the whole point of the knob is that players can tell two
+    settlements apart."""
+    forms = {}
+    for seed in range(48):
+        plan = hg.plan_site(hg.HamletSpec(name=f"Roll-{seed}", seed=seed, households=12))
+        again = hg.plan_site(hg.HamletSpec(name=f"Roll-{seed}", seed=seed, households=12))
+        assert plan.settlement_form == again.settlement_form, f"seed {seed} rolled two different forms"
+        forms[plan.settlement_form] = forms.get(plan.settlement_form, 0) + 1
+    assert set(forms) == {"nucleated", "dispersed", "linear"}, forms
+    assert max(forms.values()) <= 48 * 0.7, f"one form dominates the cohort: {forms}"
+
+
+def test_an_explicit_form_on_the_spec_beats_the_roll() -> None:
+    """A pool gen pins the form the way it pins every other knob."""
+    plan = hg.plan_site(hg.HamletSpec(name="Pinned", seed=3, households=12, settlement_form="dispersed"))
+    assert plan.settlement_form == "dispersed"
+
+
+def test_a_dispersed_hamlet_draws_no_internal_lanes() -> None:
+    """The dispersed form's defining feature, pinned so a later change cannot quietly restore the web.
+
+    A Tonami farmstead stands in the middle of its own holding; what joins it to the world is the
+    connector, and what joins it to its neighbors is the field baulk. Drawing a web here would erase
+    the one thing that makes the form legible at a glance."""
+    plan = a_plan(settlement_form="dispersed")
+    s = hg.Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s.M["houses"] = [{"x": 100.0, "y": 100.0}, {"x": 200.0, "y": 120.0}]
+    hg.ways.stage_web(s, plan)
+    assert not s.M.get("lanes"), "a dispersed hamlet must have no internal lane network"
+    assert s.M["meta"]["lane_skeleton"] == "none"
+
+
+def test_only_the_dispersed_form_short_circuits_stage_web() -> None:
+    """The converse of the test above, and it needs to exist: a dispersed map with no lanes would
+    also pass if `stage_web` had simply stopped drawing lanes for EVERYONE.
+
+    The discriminator is that a nucleated map runs on past the guard into the seat-dependent code,
+    so on this deliberately seatless fixture it raises where the dispersed map returned cleanly.
+    That is an indirect assertion, and it is used here because building a real seat means running
+    the whole pre-house pipeline; the direct evidence that nucleated maps still get lanes is the
+    cohort, where they do."""
+    plan = a_plan(settlement_form="nucleated")
+    assert plan.settlement_form == "nucleated"
+    s = hg.Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s.M["houses"] = [{"x": 100.0, "y": 100.0}, {"x": 200.0, "y": 120.0}]
+    with pytest.raises(KeyError):
+        hg.ways.stage_web(s, plan)
