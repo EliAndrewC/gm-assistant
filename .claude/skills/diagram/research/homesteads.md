@@ -153,3 +153,73 @@ morphology literature; the back-lane framework from planned-village morphology (
 [`SOURCES.md`](SOURCES.md)); rear-access in Manchu villages from Ushijima, "Spatial composition and
 premise arrangement of traditional Manchu village in Northeast China", *Japan Architectural Review*
 (2020).
+
+## Does a hamlet have to be NUCLEATED at all? (researched 2026-08-23)
+
+**Answer: no. Three forms are supportable, so the form becomes a seeded knob (Principle XII), and
+the access rule above is true of exactly one of them.**
+
+The entry above settled that a house *in a nucleated cluster* is reached by a way. It did not ask
+whether a hamlet must be nucleated - the generator simply assumed it, and hardcoded it. The GM
+challenged the assumption from the other end on 2026-08-23, asking whether lanes should be laid
+before houses at all when in life they are trodden by the households already living there. That
+question turns out to be the same question: a settlement whose lanes are pre-laid can only be one
+whose houses front lanes.
+
+### DISPERSED (散村 *sankyoson*) - decisive, and our terrain is its terrain
+
+The Tonami Plain in Toyama is the canonical Japanese case: **over 7,000 farmhouses scattered across
+roughly 220 km²** on an alluvial fan built by the Shogawa and Oyabe rivers, a pattern more than 500
+years old.
+
+**The mechanism is irrigation, and it is the mechanism our own maps model.** Farmers built their
+houses *in the middle of their own cultivated fields* in order to manage water for those fields
+directly. An alluvial fan drains well - which is a PROBLEM for wet paddy, not a benefit - so water
+control is per-holding and unremitting, and living on your holding is how it is done. The
+farmhouses scattered **naturally** rather than by any plan. Edo-period land grants to those who had
+reclaimed the land then entrenched the pattern.
+
+**Each house sits in its own grove.** The regional term for the homestead woodland is *kainyo*; it
+shelters the house from winter seasonal winds and snowstorms, and from summer sun. Note this
+alongside the *yashikirin* entry above - both terms are real, *kainyo* is the Tonami one for exactly
+this feature, and the two describe the same thing at different regional scales.
+
+**Why this matters to the generator**: our comb field IS an alluvial fan, and the engine already
+branches on per-house versus single shelter belts (`hinterland.py`: *"A nucleated settlement shelters
+behind ONE grove rather than per-house belts"*). The dispersed form's most visible signature is
+therefore already implemented as the road not taken.
+
+**Consequence for the access rule**: a dispersed hamlet has no interconnected lane network to be
+reached by. The rule in the entry above is a rule about nucleated settlements and must say so.
+
+### LINEAR (路村 / row village) - supportable, but the weakest of the three
+
+Settlements strung along a linear feature - a road, a riverbank, a valley floor - are a standard
+morphological category. The German *Reihendorf* is the best-documented type: one or two rows of
+farmsteads either side of a village street, **each holding's farmland adjacent to its dwelling**,
+which saves travel and transport effort. That functional argument transfers directly to a rice
+hamlet strung along a track between its paddies.
+
+**Recorded limitation, so nobody re-runs this pass expecting more**: the English-language record for
+the specific term 路村 was thin, and the strongest documentation of the row form is European. The
+functional logic is not culturally specific, and elongated road- and river-following forms ARE
+attested in the Chinese village-morphology literature (settlements in mountainous southwest Zhejiang
+"tend to expand in the direction of rivers and roads"). But this is weaker ground than the dispersed
+case, and the roll weights should reflect that rather than pretending to three equally-attested
+forms.
+
+**Consequence**: linear is the one form in which the road genuinely comes first, and therefore the
+one form whose houses legitimately front a pre-existing way - the connector, which is exogenous.
+
+### What this changed in the generator
+
+Feature 126. Ways split by PROVENANCE rather than timing: the connector and field spur predate the
+settlement and are laid first; the internal skeleton is derived from the placed houses. The form is
+rolled per map. The access checks state the form they apply to.
+
+**Sources:** Tonami dispersed settlement, *kainyo* homestead woodlands, and the irrigation mechanism
+from [Visit Toyama, "What is dispersed settlement?"](https://visit-toyama-japan.com/en/travel-inspiration/sankyoson)
+and [Plenus Rice Library, Toyama](https://www.plenus.co.jp/kome-academy/en/kome_library/culture/culture01_toyama.html);
+the row-village form from [Reihendorf](https://en.wikipedia.org/wiki/Reihendorf); river- and
+road-following expansion in Chinese traditional villages from ["Spatial Morphological Characteristics
+and Evolution of Traditional Villages in the Mountainous Area of Southwest Zhejiang"](https://doi.org/10.3390/ijgi12080317).
