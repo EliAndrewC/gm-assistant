@@ -202,3 +202,35 @@ reorder forces a genuine behavior change rather than a move.
 both derive from the same house coordinates, and `web_cuts` is already a pure 1-D solver that serves
 two lane forms off one implementation. Keeping them apart would mean two stages solving the same
 problem from the same input, in sequence, which is how the reach mismatch arose in the first place.
+
+---
+
+## R7 - The mandated baseline procedure does not work in a bare worktree (found 2026-08-23)
+
+**Recorded because it cost a gate cycle and will cost the next session one too.**
+
+Principle XIII requires the pre-change baseline be taken on unmodified code in a **detached
+worktree**, never by stashing. Done exactly as written, `make done` in that worktree fails two tests
+that are green in the clone:
+
+```
+AssertionError: no live scripted map had both a .svg and a .png - the guard checked nothing
+    tests/pipeline/test_render_cache.py:278
+AssertionError: no live scripted map had both a .svg and a .json - the guard checked nothing
+    tests/tools/test_scatter_audit.py:271
+```
+
+**Neither is a code failure.** Rendered artifacts are gitignored, so a freshly-created worktree
+contains no `.png` or `.json` for any pool map. Both tests are written to refuse to pass VACUOUSLY -
+they assert that they actually checked something - which is good test design and exactly why they
+fire here. The worktree simply has nothing for them to check.
+
+**Consequence for this feature's baseline**: the cohort number (44/48) is valid from the worktree,
+because `cohort_audit` generates what it measures. The GATE baseline is taken from the clone's own
+green `make done` on the same commit (`8ec2a91`), which is sound because the comparison at the end is
+also clone-side - like for like, with the same artifacts present.
+
+**Consequence for the procedure**: a worktree baseline must either regenerate the pool first, or
+accept that these two artifact-dependent guards cannot run there. Worth carrying into the project's
+baseline guidance rather than rediscovering; a session that reads two failures on unmodified code and
+believes them will either "fix" a non-defect or conclude HEAD is broken.
