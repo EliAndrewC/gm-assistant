@@ -45,7 +45,7 @@ and this session's own CodeBuild smoke tests:
 |---|---|---|
 | the local gate | "`make done` ~5 min" | **`make done` ~5.5 min** on the laptop, REFERENCE scope: Inashiro seed 4, lint/types, `hooks-test`, and every test that does not roll another map. **This is the run this feature offloads.** |
 | the cheap check | "`make quick` ~4 min" | **`make quick` ~33 s**, with a 60 s self-enforced budget; `make reference` ~26 s; `make test-file FILE=...` for one whole file. **These stay local, always.** |
-| "the 25-minute run" | assumed to be the normal gate | it is `make cohort` (48 seeds) - gated, reference-first, and NOT part of any `make done`. **Out of scope** (see Scope Boundaries). |
+| "the 25-minute run" | assumed to be the normal gate | it is `make cohort` (48 seeds) - gated, reference-first, and NOT part of any `make done`. **In scope on the fourth request** as `ci-check TARGET=cohort` - the run that benefits most from 36 cores. |
 | the full pre-push sweep | did not exist as a separate thing | **`make done FULL=1`** ~6 min on the laptop: adds every live pool map, the seeds 41-44 ratchet, both coverage floors, and `perf-gate`. It PROMPTS with a cancel-by-default question and REFUSES to run without a terminal. **In scope on the GM's second request**: the prompt stays local; the dispatch happens after the operator declines the escape hatch; the build accepts the non-interactive run only because the tree it tests carries the logged reason (FR-024..FR-027). |
 | what the push already checks | flock'd pull+push, render-sync | that, plus **`gate-stamp`** (a green `make done` must have run against byte-identical Python), **`review-gate`** (a spec carries a FAITHFUL verdict; a re-rolled map has its notes touched), duplicate-def screening. All local, all cheap, all kept. |
 | performance | not tracked | **bookended per feature** (`make perf LABEL=NNN-start` / `-end`, `perf-report`), enforced by `perf-gate` inside `FULL=1` only. Snapshots are **only comparable on the same machine**; with `FULL=1` on CodeBuild, the bookends move there too - a consistent machine class, which the laptop never was (FR-028, FR-029). The laptop-era snapshots stay as history and are never compared against build-machine ones. |
@@ -453,12 +453,19 @@ AWS call, and a refusal names the condition
   append-only logs, and pool `.notes.md` files are NOT engine code, even inside the skill. This list
   governs DISPATCH only; it MUST NOT narrow what the existing `gate-stamp` guard hashes.
 - **FR-009**: A remote run MUST NOT start for a delta touching only files outside the diagram skill.
-- **FR-010**: Only the lengthy runs - `make done` in reference scope, and `make done FULL=1` - MAY
-  run remotely. `quick`, `reference`, `test-file`, `durations`, `maps`, and every read-only
+- **FR-010**: Only lengthy runs MAY run remotely: `make done` in reference scope, `make done FULL=1`,
+  and - fourth request, *"That's exactly the kind of thing that we want to run on AWS"* - every
+  other registered EXPENSIVE operation (`cohort`, `cache-audit`, `regressions`, ...) through the
+  iteration check (`ci-check TARGET=<operation>`), with its report returned as a build artifact. `quick`, `reference`, `test-file`, `durations`, `maps`, and every read-only
   diagnostic MUST stay local.
-- **FR-011**: The merge route MUST NOT dispatch while an active spec-kit feature has open tasks.
-  "Active feature" is the one spec-kit already tracks. (What "complete" means for work with no
-  active feature is the session's reading, flagged in Assumptions.)
+- **FR-011**: On the GATED route a spec-kit feature is REQUIRED (fourth request: *"Anything
+  involving the diagram skill is sufficiently complicated to require a spec kid feature"*). The
+  merge MUST name it (the feature spec-kit already tracks), and tooling MUST confirm it is complete
+  - no open task in its `tasks.md`, a FAITHFUL verdict in its `spec.md` - before anything is
+  dispatched. An incomplete or unnamed feature exits early with an error, starts nothing, and the
+  work stays in the clone (and its mailbox branch, if one exists). There is no "not part of a
+  feature" declaration on the gated route. The DIRECT route (no diagram engine code) needs no
+  feature: *"Changes made to other parts of this repository are not that complicated."*
 - **FR-012**: A dispatch MUST be refused when the most recent recorded verification is a failed gate
   (remote or local), and MUST be permitted when it is a green local target (`quick`, `test-file`,
   `reference`, or a local `make done`) that ran after the last source edit. A source edit resets the
@@ -593,10 +600,8 @@ and the *"reconstituted"* numbers are the build-machine bookends.
 
 **Out of scope, stated so it is not reopened by accident**:
 
-- `make cohort`, `cache-audit`, and every other prompted target beyond `make done FULL=1` stay local.
-  The GM's second request named *"the full sweep"*; the mechanism it specifies (prompt locally,
-  ship the answer in the tree, dispatch) generalizes to any prompted target for the cost of a
-  registry row, and extending it is a later, explicit decision.
+- (withdrawn on the fourth request: `cohort` and the other expensive operations are IN scope via
+  `ci-check TARGET=<operation>`, FR-010.)
 - Running Claude Code sessions on AWS. The GM chose to keep sessions local.
 - Any change to what the gate CHECKS. This feature changes where it runs and when.
 - The webapp's `make done`. It has never been slow enough to matter.
@@ -658,15 +663,9 @@ and the *"reconstituted"* numbers are the build-machine bookends.
 
 ## Assumptions
 
-- **FR-011 for work with no active feature is the session's reading, flagged for the reviewer.** The
-  GM's condition is that a feature be *"actually complete and shippable"* before its merge costs
-  money. Spec-kit tracks completeness for spec-kit features (`tasks.md`). Tweak-and-iteration work in
-  the diagram skill - CLAUDE.md's "fixing one bug, regenerating one item" - has no task list, and the
-  GM did not say what "complete" means for it. This spec reads it as: with no active feature there is
-  nothing for the completeness check to inspect, so it passes, and the other conditions (our own
-  engine code, a green local check, no failed gate since) still bind. The alternative, if the
-  reviewer or the GM prefers it: an affirmative declaration at the prompt for untracked work, logged
-  like every other answer. Cheap to switch.
+- **FR-011's former "no active feature" reading is WITHDRAWN** - the GM ruled (fourth request) that
+  diagram work always has a spec-kit feature, so the gated route requires one and confirms it
+  complete; CLAUDE.md's "tweaks do not need spec-kit" gains a diagram-skill exception (FR-032).
 - **FR-012's third case is the session's reading, flagged for the reviewer.** The GM stated two
   cases: a failed `make done` most recently means refuse; a green local test most recently means
   dispatch. The case where a source edit happened AFTER the green local test is not stated. This spec
@@ -698,7 +697,15 @@ and the *"reconstituted"* numbers are the build-machine bookends.
 
 ## Review history
 
-### Second amendment (GM's third request, 2026-08-24) - rounds start again at 1
+### Third amendment (GM's fourth request, 2026-08-24) - REVIEW PENDING
+
+Changed: FR-010 (every registered expensive operation may run remotely through the iteration
+check; `cohort` back in); FR-011 (gated route REQUIRES a named, complete spec-kit feature; the
+"no active feature" reading withdrawn and its Assumption replaced); Scope Boundaries and the
+baseline row for cohort. Held for fidelity review until the GM decides on splitting the diagram
+skill into its own repository, which would reshape the route/delta sections of this spec.
+
+### Second amendment (GM's third request, 2026-08-24)
 
 Added: Decisions 11-12, User Story 8, FR-033..FR-037, SC-011..SC-012, a baseline row recording
 that `FULL=1` does not check the reference map first today; FR-015 and FR-024 reopened so the
