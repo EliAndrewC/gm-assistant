@@ -31,12 +31,12 @@ habitual in the first place.
 
 - [ ] T001 Take the regression baseline on UNMODIFIED code in a detached worktree (`git worktree add --detach /tmp/base127 HEAD`), run the gate there, and record its verdict in this file under Baseline below - a remembered baseline is not a baseline (Principle XIII)
 - [ ] T002 Record `make reference` wall-clock on unmodified code in the Baseline section below, for SC-002's before/after comparison
-- [ ] T003 [P] Enumerate every CLI entry point under `.claude/skills/diagram/l7r/diagram/` (`find l7r -name __main__.py`, plus modules with a `__main__` guard) and every existing `Makefile` target, into `specs/127-gated-make-commands/contracts/operations.md` as the draft operation registry with a `cost` column per [data-model.md](data-model.md)
+- [x] T003 [P] Enumerate every CLI entry point under `.claude/skills/diagram/l7r/diagram/` (`find l7r -name __main__.py`, plus modules with a `__main__` guard) and every existing `Makefile` target, into `specs/127-gated-make-commands/contracts/operations.md` as the draft operation registry with a `cost` column per [data-model.md](data-model.md)
 
 ## Phase 2: Foundational (blocks every user story)
 
-- [ ] T004 Create `.claude/skills/diagram/l7r/diagram/_invocation.py` with `assert_via_make(operation, target)`: walk `/proc/<pid>/stat` PPid to PID 1, accept a `make`/`gmake` ancestor whose `/proc/<pid>/cwd` is inside the repo and whose `/proc/<pid>/cmdline` carries no `-f`/`--file`/`--makefile` naming a path outside it (research R1, R2)
-- [ ] T005 Cache the verdict at module level so the `/proc` walk happens ONCE per process, with a comment at the point of use stating that `assert_via_make` is called at the TOP of an operation and never in a loop or a library helper (research R4 - this engine's whole performance history is the per-candidate-scan-of-static-geometry shape, and a careless placement recreates it)
+- [x] T004 Create `.claude/skills/diagram/l7r/diagram/_invocation.py` with `assert_via_make(operation, target)`: walk `/proc/<pid>/stat` PPid to PID 1, accept a `make`/`gmake` ancestor whose `/proc/<pid>/cwd` is inside the repo and whose `/proc/<pid>/cmdline` carries no `-f`/`--file`/`--makefile` naming a path outside it (research R1, R2)
+- [x] T005 Cache the verdict at module level so the `/proc` walk happens ONCE per process, with a comment at the point of use stating that `assert_via_make` is called at the TOP of an operation and never in a loop or a library helper (research R4 - this engine's whole performance history is the per-candidate-scan-of-static-geometry shape, and a careless placement recreates it)
 - [ ] T006 Build the operation registry in `.claude/skills/diagram/l7r/diagram/_invocation.py` from T003, with `module`/`target`/`cost` per [data-model.md](data-model.md) - enumerated, never inferred from module paths (`tools/` holds both a 25-minute cohort and a manifest read)
 - [ ] T007 Write the guard test that every discoverable entry point has a registry row, so an entry point added later without one fails the gate rather than shipping ungated (constitution X clause 14: derive the surface, guard the property)
 
@@ -52,9 +52,9 @@ habitual in the first place.
 - [ ] T012 [US1] **STAYS QUIET**: extend `scripts/test-make-only-hooks.sh` asserting ordinary `make <target>` calls, reads of source files, and `scripts/` invocations are NOT blocked
 - [ ] T013 [US1] Call `assert_via_make` at the top of each expensive operation, including the in-process entry points, so importing the engine and calling it directly is refused on the same terms (FR-008)
 - [ ] T014 [US1] Add `assert_via_make` to `.claude/skills/diagram/tests/conftest.py` so the suite itself refuses when run outside make
-- [ ] T015 [US1] **FIRES**: create `.claude/skills/diagram/tests/test_invocation.py` covering no-make-in-ancestry, foreign `cwd`, foreign `-f`, and the in-process call
-- [ ] T016 [US1] **STAYS QUIET**: extend `test_invocation.py` covering make-direct, make→`sh -c`, nested `$(MAKE)`, and a multiprocessing child three levels down (research R1's four measured shapes)
-- [ ] T017 [US1] **STAYS QUIET**: assert in `test_invocation.py` that the `/proc` walk happens once across repeated calls, so a refactor that drops the cache is caught rather than silently slow (research R4)
+- [x] T015 [US1] **FIRES**: create `.claude/skills/diagram/tests/test_invocation.py` covering no-make-in-ancestry, foreign `cwd`, foreign `-f`, and the in-process call
+- [x] T016 [US1] **STAYS QUIET**: extend `test_invocation.py` covering make-direct, make→`sh -c`, nested `$(MAKE)`, and a multiprocessing child three levels down (research R1's four measured shapes)
+- [x] T017 [US1] **STAYS QUIET**: assert in `test_invocation.py` that the `/proc` walk happens once across repeated calls, so a refactor that drops the cache is caught rather than silently slow (research R4)
 - [ ] T018 [US1] Add a make target for every operation in the registry so each refusal has somewhere to point (FR-001, *"we want make commands for everything"*)
 - [ ] T019 [US1] Verify [quickstart.md](quickstart.md) §1 by hand and record the actual refusal text in this file
 
