@@ -232,12 +232,28 @@ class PublicFixturesMixin:
                 # five failing seeds. The placer and its check must read one source; that is the
                 # oldest rule in this engine's CLAUDE.md and I broke it in code written to enforce it.
                 _best = 1e9
+                _box = ((_q[0] - _chw, _q[1] - 5), (_q[0] + _chw, _q[1] - 5), (_q[0] - _chw, _q[1] + 5), (_q[0] + _chw, _q[1] + 5), _q)
                 for _lane in self.M.get("lanes") or []:
                     _pts = _lane.get("pts") or []
                     _lhalf = float(_lane.get("w") or 3) / 2.0
                     for _i in range(len(_pts) - 1):
-                        for _cx, _cy in ((_q[0] - _chw, _q[1] - 5), (_q[0] + _chw, _q[1] - 5), (_q[0] - _chw, _q[1] + 5), (_q[0] + _chw, _q[1] + 5), _q):
+                        for _cx, _cy in _box:
                             _best = min(_best, seg_dist(_cx, _cy, _pts[_i], _pts[_i + 1]) - _lhalf)
+                # ...AND THE WELLHEAD, which this measured against nothing at all until a review found
+                # the caption drawn ON one (Mizuguchi, 2026-08-24: "notice board" overlapping well #1
+                # by 14.5 x 8.4 ft, its white halo biting a notch out of the blue disc). The objective
+                # was written for lanes because a board stands on a verge, and the verge is exactly
+                # where a village well also stands - the two features are drawn to the same node by the
+                # same reasoning, so scoring one and not the other was never going to hold.
+                #
+                # It is a real problem rather than a cosmetic one: the board is a 12x5 ft bar that
+                # reads only by its caption, so a caption sitting on the loudest glyph nearby NAMES
+                # THE WRONG FEATURE. A reader sees the words over the well.
+                for _wl in self.M.get("wells") or []:
+                    _wr = float(_wl.get("vr") or _wl.get("r") or 0.0)
+                    _wx, _wy = float(_wl["x"]), float(_wl["y"])
+                    for _cx, _cy in _box:
+                        _best = min(_best, math.hypot(_cx - _wx, _cy - _wy) - _wr)
                 return _best
 
             # SATISFICE, DO NOT MAXIMIZE - the defect that shipped the first version of this search

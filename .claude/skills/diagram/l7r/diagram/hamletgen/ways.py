@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import heapq
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import cast
 
 from l7r.diagram.settlement import Settlement, edge_dist, point_in_poly, rot_rect, seg_closest, seg_dist, seg_intersect, segments_cross, skeleton_layout, web_cuts
@@ -556,8 +556,13 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # laid before the houses, and running it here eats the footpaths the straggler pass just drew -
     # measured once at 43/48 -> 9/48.
     _final_houses = [(float(h["x"]), float(h["y"])) for h in s.M.get("houses", [])]
-    for _ln in list(s.M.get("lanes", [])):
-        if _ln.get("connector") or len(_ln.get("pts") or []) < 2:
+    _W, _H = float(s.M["meta"].get("W", s.W)), float(s.M["meta"].get("H", s.H))
+
+    def _inside(q: Pt) -> bool:
+        return 0.0 <= q[0] <= _W and 0.0 <= q[1] <= _H
+
+    for _i, _ln in enumerate(list(s.M.get("lanes", []))):
+        if len(_ln.get("pts") or []) < 2:
             continue
         _pts = [(float(x), float(y)) for x, y in _ln["pts"]]
         _others = [
@@ -566,9 +571,12 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
             if _o is not _ln and len(_o.get("pts") or []) >= 2
             for sg in zip([(float(x), float(y)) for x, y in _o["pts"]], [(float(x), float(y)) for x, y in _o["pts"]][1:], strict=False)
         ]
-        _kept = _trim_to_service(_pts, _others, _final_houses)
-        if len(_kept) >= 2 and polyline_len(_kept) >= _WEB_MIN_FT and len(_kept) < len(_pts):
+        _kept = _pull_back_to_service(_pts, _others, _final_houses, _inside) if _ln.get("connector") else _trim_to_service(_pts, _others, _final_houses, [list(plan.envelope)])
+        if len(_kept) >= 2 and polyline_len(_kept) >= _WEB_MIN_FT and _kept != _pts:
             _ln["pts"] = [[round(x, 1), round(y, 1)] for x, y in _kept]
+            # AND THE INK WITH IT - see `Settlement.reink_lane`. Shortening the record alone left the
+            # drawn lane longer than the checked one, which is the quietest kind of wrong there is.
+            s.reink_lane(_i)
     s.M["meta"]["lane_web"] = plan.lane_web
 
 
@@ -1025,7 +1033,7 @@ def _draw_web(s: Settlement, pts: Poly, width: int = 3, houses: Sequence[Pt] = (
     return True
 
 
-def _trim_to_service(run: Poly, segs: Sequence[tuple[Pt, Pt]], houses: Sequence[Pt]) -> Poly:
+def _trim_to_service(run: Poly, segs: Sequence[tuple[Pt, Pt]], houses: Sequence[Pt], fields: Sequence[Poly] = ()) -> Poly:
     """Pull a run's ends back to the last point that actually serves something.
 
     `lanes_reach_something` asks of every internal lane end that it reach another way within 40 ft or
@@ -1035,14 +1043,102 @@ def _trim_to_service(run: Poly, segs: Sequence[tuple[Pt, Pt]], houses: Sequence[
     which is the right rule for a skeleton arm and would delete the door paths this feature exists to
     draw."""
 
+    # ARRIVING AT THE FIELD IS SERVICE. A field spur exists to reach the crop, and it is the one way
+    # on the map whose whole purpose is served by something that is neither a house nor another lane.
+    # Without this the trim cut Mizuguchi's spur 32 ft short of the paddy - it removed the only part
+    # of the lane that did the job the lane was drawn for, and did so on the grounds that nothing was
+    # there. The setback matches `SPUR_SETBACK`: a path stops AT the bund, and the last few feet are
+    # the baulk, so "touching the envelope" means within that, not inside it.
     def serves(q: Pt) -> bool:
-        return (any(seg_dist(q[0], q[1], a, b) <= 40.0 for a, b in segs) if segs else False) or any(math.dist(q, h) <= 90.0 for h in houses)
+        if any(seg_dist(q[0], q[1], a, b) <= 40.0 for a, b in segs) if segs else False:
+            return True
+        if any(math.dist(q, h) <= 90.0 for h in houses):
+            return True
+        return any(edge_dist(q[0], q[1], f) <= SPUR_SETBACK + 4.0 for f in fields)
 
     out = list(run)
     while len(out) > 2 and not serves(out[-1]):
         out.pop()
     while len(out) > 2 and not serves(out[0]):
         out.pop(0)
+    return out
+
+
+def _nearest_seg(q: Pt, segs: Sequence[tuple[Pt, Pt]]) -> tuple[float, tuple[Pt, Pt] | None]:
+    """The distance from `q` to the way network, and WHICH segment of it - the two are one answer.
+
+    Returned together on purpose: a caller that finds the distance and then re-derives the segment is
+    two expressions that can disagree, which is the skill's standing rule about a diagnostic that
+    restates what it observed."""
+    best, at = float("inf"), None
+    for a, b in segs:
+        d = seg_dist(q[0], q[1], a, b)
+        if d < best:
+            best, at = d, (a, b)
+    return best, at
+
+
+def _pull_back_to_service(run: Poly, segs: Sequence[tuple[Pt, Pt]], houses: Sequence[Pt], inside: Callable[[Pt], bool]) -> Poly:
+    """Pull a CONNECTOR's inside-the-canvas end back to where it last meets the settlement.
+
+    A connector is exempt from `_trim_to_service` because it legitimately runs off the frame - and
+    that exemption, applied to both its ends, is what let feature 128 ship a blind stub. With the
+    track drawn after the houses, `_thread_the_fabric` clips its inner end at the fabric; the web is
+    laid later still, so at clip time there is no junction to stop at and the tread simply ends in
+    open ground. Measured by review across the live tier: overshoot past the innermost junction was
+    0.0 ft on all four hamlets before this feature, and afterwards 191.5 ft on Mizuguchi and 252.8 ft
+    on Sawada. The gate cannot see it - `lanes_reach_something` is the rule for exactly this and it
+    skips anything flagged `connector`, because a connector's end is normally off-canvas.
+
+    So: only an end INSIDE the canvas is pulled back, and only as far as the first point that reaches
+    the network. The off-canvas end is never touched, because reaching the frame is the connector's
+    other job (`connector_lane_runs_off_edge`). An end that finds nothing to reach is LEFT ALONE
+    rather than deleted - a hamlet whose track genuinely joins nothing is a real map to look at, not
+    a map to silently shorten, and Kashikawa is currently that map."""
+
+    # A CONNECTOR ARRIVES AT THE WAYS, NOT MERELY NEAR A HOUSE, which is the one place its rule is
+    # stricter than `lanes_reach_something`'s. That check accepts a farmhouse within 90 ft, and it is
+    # right to for an internal lane - a house FRONTS the lane it stands on. A road from the next
+    # valley does not front anything: it meets the village's lanes, and the houses meet those. Left
+    # with the house clause in, Mizuguchi's tread stopped 85.5 ft from a house center - inside the
+    # 90 ft bar, so nothing trimmed - and 164 ft past the lane it should have joined, which is
+    # exactly the picture the review objected to: a track petering out in the grass.
+    def serves(q: Pt) -> bool:
+        return any(seg_dist(q[0], q[1], a, b) <= _LANE_JOIN_FT for a, b in segs)
+
+    out = list(run)
+    for _end in (0, -1):
+        pts = out if _end == 0 else out[::-1]
+        # An end that ALREADY reaches is still walked, not skipped: reaching within the join bar and
+        # TOUCHING are different pictures, and Kashikawa's tread stopped 6 ft short of the lane it
+        # met - inside every check's tolerance and visibly a gap at 1 px = 1 ft.
+        if not inside(pts[0]):
+            continue
+        # WALK ON TO THE CLOSEST APPROACH, THEN TOUCH. Cutting at the FIRST point inside the join bar
+        # leaves the tread stopping `_LANE_JOIN_FT` short of the way it is joining - measured at 27.3
+        # ft on Mizuguchi and 28.6 on Sawada, which at 1 px = 1 ft is a plainly visible hole. The bar
+        # is what makes a junction FINDABLE; it is not where the ink should end. So keep sampling
+        # while the distance is still falling, then snap the surviving end onto the nearest segment,
+        # which is the same "a junction is contact" rule `_lay_web_lane` applies to a web lane.
+        cut: Pt | None = None
+        best = float("inf")
+        seg_at: tuple[Pt, Pt] | None = None
+        k_at = 0
+        for k in range(len(pts) - 1):
+            a, b = pts[k], pts[k + 1]
+            steps = max(1, int(math.dist(a, b) / 4.0))
+            for j in range(steps + 1):
+                q = (a[0] + (b[0] - a[0]) * j / steps, a[1] + (b[1] - a[1]) * j / steps)
+                d, sg = _nearest_seg(q, segs)
+                if d < best:
+                    best, cut, seg_at, k_at = d, q, sg, k
+                elif cut is not None and best <= _LANE_JOIN_FT:
+                    break  # past the closest approach and already joined - stop here
+            if cut is not None and best <= _LANE_JOIN_FT and best < _nearest_seg(pts[k + 1], segs)[0]:
+                break
+        if cut is not None and seg_at is not None and best <= _LANE_JOIN_FT:
+            cut = seg_closest(cut[0], cut[1], seg_at[0], seg_at[1])
+            out = [cut, *pts[k_at + 1 :]] if _end == 0 else [*pts[k_at + 1 :][::-1], cut]
     return out
 
 
@@ -2132,6 +2228,19 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
         # the hem, which is what that call exists for. A farmstead cannot be nudged either, and it is
         # somebody's house, so it sits directly under wet and above the crop.
         steaded = _fabric_hits(path, fabric, TRACK_FABRIC_GAP)
+        # PRUNE BEFORE THE EXPENSIVE HALF. `violations` tests every crop polygon on the map and is by
+        # far the costliest term here; `soaked` and `steaded` are cheap by comparison. The rank is
+        # lexicographic, so a candidate already behind on the first two terms cannot win no matter
+        # what the third says - which means it never needs computing.
+        #
+        # This is not an optimization looking for a problem. Adding the fabric term COST time by
+        # itself: a bearing that used to score a clean zero and return on the first try now often
+        # scores a steading, so the sweep runs all 41 candidates instead of stopping at one, and the
+        # measured bill was +25% on the reference seed. Pruning gives it back without changing a
+        # single verdict - the skipped candidates are exactly the ones whose full tuple is already
+        # known to be larger.
+        if best is not None and (soaked, steaded) > best[0][:2]:
+            continue
         violations = path_violations(path, avoid or [plan.envelope], pond, brook, waters)
         if soaked == 0 and steaded == 0 and violations == 0:
             return path
