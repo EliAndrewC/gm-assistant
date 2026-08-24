@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-24
 
-**Status**: REVISED after the GM's 2026-08-24 band ruling AND their per-measurement thresholds. Band scope is CLOSED; **storage is the only open GM question.** (Was FAITHFUL at round 3 against the earlier request.) NOT implemented, at the GM's explicit instruction (*"Do not start
+**Status**: SPECIFIED and COMPLETE - no open questions. Bands, per-measurement thresholds and storage all ruled on by the GM 2026-08-24. **BLOCKED ON A PREREQUISITE**: the AWS CodeBuild work lands first (GM's sequencing). NOT implemented. (Was FAITHFUL at round 3 against the earlier request.) NOT implemented, at the GM's explicit instruction (*"Do not start
 work on the spec"*). The measurements below were taken before implementation precisely so they would
 be in hand when it begins.
 
@@ -19,6 +19,31 @@ A performance increase must be **explained and independently confirmed** at any 
 higher bar against deeper data** above 5%, and **personally signed off by the GM before it reaches
 main** above 10% - and none of it may be something the session that caused the slowdown can grant
 itself.
+
+## Sequencing: the AWS CodeBuild work lands FIRST
+
+**GM, 2026-08-24**: *"I think I'll implement the AWS codebuild work in advance of the perf work."*
+
+This feature is therefore built ON TOP OF the CodeBuild merge gate
+([`specs/128-codebuild-merge-gate/`](../128-codebuild-merge-gate/), a peer session's feature), not
+beside it. Three consequences an implementer must not discover late:
+
+1. **THE NOISE FLOOR MEASURED IN THIS SPEC MAY NOT SURVIVE THE MOVE.** The 1.7% per-seed / 0.7% total
+   figures below are a property of THIS container on THIS host. If perf measurement runs on CodeBuild,
+   the floor must be **re-measured there before the bands are wired**, by the same method: three runs,
+   one unchanged commit. The GM's four thresholds are theirs and are not up for revision by a session -
+   but a floor that comes back materially different is a REPORT TO THE GM with the number, because
+   they set those thresholds against a floor of 0.7%/1.7%.
+2. **The second repository is a better fit under CodeBuild than it was without it, which is why the GM
+   chose it.** A remote runner produces artifacts on a machine that is not the one that needs them; a
+   gitignore cannot bridge that and a second remote can.
+3. **Where the bands are ENFORCED may move.** Band 3's enforcement point is the push
+   (`sync-with-main.sh`), and a merge gate running remotely may become the more natural place for it.
+   Do not assume the local wiring survives; check what the CodeBuild feature actually lands before
+   choosing where these checks live.
+
+**Nothing in this spec should be implemented before that feature is in main.** Its measurements and
+its band design remain valid; its integration points are provisional.
 
 ## The bands
 
@@ -394,11 +419,11 @@ binding and logging - which would let a session self-issue the very check the ru
   (constitution XVIII).
 - **FR-011**: Committed derived evidence MUST be bounded at kilobytes per audit event. (The earlier
   wording, "MUST NOT bloat the repository", could not be tested.)
-- **FR-011a** (RECOMMENDATION, pending the GM's storage ruling - not a MUST): raw profile artifacts
-  are gitignored rather than committed. The GM named three candidates - committing them, committing
-  ZIPPED versions, or a second repository - and stating this as a requirement would foreclose the
-  zipped option by fiat in a document that elsewhere calls the storage question the GM's to answer.
-  See "The storage decision".
+- **FR-011a**: Raw profile artifacts MUST be stored in a **SEPARATE REPOSITORY**, not in this one -
+  the GM's ruling of 2026-08-24. This repository keeps only the derived evidence bounded by FR-011.
+- **FR-011b**: The derived evidence committed HERE MUST stand on its own. A missing, stale or
+  unreachable profile archive MUST degrade the audit trail, never break it - because two repositories
+  are two things that can drift, and the finding is what a later reader needs, not the binary.
 - **FR-012**: If a function-level profiler is adopted, its true overhead on the real `make perf`
   workload MUST be measured and recorded before the route is fixed. The figures in this document were
   measured on the check battery and on geometry helpers, which is not what `make perf` times.
@@ -406,35 +431,47 @@ binding and logging - which would let a session self-issue the very check the ru
   the EXISTING per-stage timings cannot answer for the audit. A new profiling subsystem is justified
   only against that gap.
 
-## The storage decision
+## The storage decision - SETTLED: a second repository
 
-The GM raised repository growth directly and leaned toward a second repository: *"maybe we have a
-second repository of these. that we push to? ... that one seems like it might be good. because I'm
-sensitive to how big this repository can get."*
+**The GM ruled on 2026-08-24: option 3, a second repository for profile logs**, *"in anticipation of
+our expected codebuild work that will be coming up soon."* No longer open.
 
-**OPEN GM DECISION - not settled by this spec.** The GM leaned toward a second repository and asked
-what the author thought; the author's recommendation is below, but the GM raised it, is available to
-rule on it, and this document does not get to close a question they opened.
+**This overrules the author's recommendation, and it does so on the author's own stated condition.**
+The recommendation was option 4 - gitignore the raw profiles, commit only the derived evidence - with
+one condition named for when it would stop holding: *"if raw profiles ever need sharing across
+machines - say the CodeBuild runner produces them remotely - then option 3 becomes worth it."* The GM
+invoked that condition. This is recorded because the reasoning matters more than the verdict: a
+gitignore keeps artifacts on the machine that made them, and the whole point of a remote runner is
+that the machine that made them is not the machine that needs them.
 
-**The author's recommendation: NOT a second repository.** The reasoning, which is directly responsive
-to the GM's stated concern - repository growth - rather than merely asserting the numbers are small:
-**gitignoring the raw profiles removes the growth entirely**, because nothing large is ever committed
-in the first place. What remains committed is kilobyte-scale derived evidence. The supporting detail:
+The four options as they stood, kept so a later reader knows what was weighed:
 
-- **The artifacts are small.** A `.prof` for a real run is on the order of hundreds of KB raw and tens
-  of KB gzipped; a speedscope JSON is comparable. An audit event needs before+after across the seed
-  set - on the order of 100 KB gzipped, on the rare occasions it happens.
-- **Raw profiles are transient.** A raw profile from six months ago, against code that no longer
-  exists, is nearly useless. The durable artifact is the DERIVED evidence - "this stage went from 4%
-  to 19% of the build because X" - which stays true and is a few KB.
-- **So: gitignore the raw profiles, commit the derived evidence table** the audit cites. The project
-  already has this exact pattern: renders are gitignored and render-synced into main.
-- **A second repository costs** authentication, another clone in the container, another sync step in
-  the stop-work ritual, and a new way for two repositories to drift. That is a lot of moving parts for
-  a problem measured in kilobytes.
+1. **Commit raw profiles here** - simplest; the repository grows with binary artifacts forever.
+2. **Commit zipped versions here** - the same shape, roughly 5-10x smaller.
+3. **A second repository** - **CHOSEN.** This repository's size stays fixed, and artifacts produced on
+   a remote runner have somewhere to live that is reachable from anywhere.
+4. **Gitignore raw, commit derived evidence only** - the author's recommendation; removes growth
+   entirely rather than shrinking it, but keeps raw profiles on whichever machine produced them, which
+   is the property that fails under a remote runner.
 
-**It becomes worth revisiting** if raw profiles ever need to be shared across machines - and even
-then, the render-sync pattern is the cheaper precedent to copy.
+**What still holds from the analysis behind option 4**, because choosing 3 does not make these false:
+
+- **The DERIVED evidence still belongs in THIS repository.** The audit cites a before/after stage
+  delta and a top-function table; those are kilobytes, they are what a future reader actually needs,
+  and they should sit next to the feature that caused them rather than in a separate repository nobody
+  clones. FR-011's kilobyte bound is unchanged.
+- **Raw profiles still rot.** A `.prof` from six months ago against code that no longer exists tells
+  almost nothing. The second repository is therefore an ARCHIVE and a transport, not a reference - and
+  it should be prunable without anyone losing the findings, precisely because the findings live here.
+
+**Costs accepted with the choice, stated so nobody rediscovers them as surprises**: authentication for
+a second remote; another clone or fetch inside the container; another step in the stop-work ritual; and
+a new way for two repositories to drift. The drift risk is the one to design against - the derived
+evidence in this repository must be readable on its own, so that a missing or stale profile archive
+degrades the audit trail rather than breaking it.
+
+**The GM creates the repository.** Remotes are the GM's - they own the GitHub side of this project -
+so the second repository is a GM-facing setup step, not something a session provisions.
 
 ### Scope Boundaries
 
@@ -446,8 +483,9 @@ constitution amendment.
 **Out of scope**, so the reviewer can hold the author to it:
 
 - **Making anything faster.** This feature measures and adjudicates; it does not optimize.
-- **The CodeBuild merge gate** (a peer session's `specs/128-codebuild-merge-gate`). If remote runs
-  change where perf is measured, that is a later integration, not this feature.
+- **Building the CodeBuild merge gate** (a peer session's `specs/128-codebuild-merge-gate`). It is now
+  a **PREREQUISITE** of this feature rather than a parallel concern - the GM is implementing it first -
+  so this spec consumes it and does not build it. See "Sequencing" above for what that changes.
 - **Extending any of this beyond the diagram generators.** The bookends are a generator rule.
 - **The spec-number collision** between the two `specs/128-*` directories. Noted, deliberately not
   resolved here.
@@ -467,13 +505,18 @@ constitution amendment.
 - **SC-005**: The profiler's overhead on the real `make perf` workload is measured and recorded, and
   the chosen route is justified against that number.
 - **SC-006**: Deleting any guard this feature adds turns at least one test red, naming it.
-- **SC-007**: The repository grows by kilobytes, not megabytes, per audit event.
+- **SC-007**: THIS repository grows by kilobytes, not megabytes, per audit event; raw profiles are not
+  in it at all.
+- **SC-008a**: The derived evidence in this repository is readable and useful with the profile
+  archive entirely absent.
 - **SC-008**: The identity question is answered in writing, with the answer recorded whichever way it
   went.
 
 ## Assumptions
 
 - The reference seed set stays [4, 25, 39, 47] unless the noise floor says otherwise.
+- The CodeBuild merge gate is in main before this work starts, and the noise floor has been
+  re-measured wherever perf ends up running.
 - `dev/perf-log/` stays one-file-per-run, so concurrent clones never conflict.
 - The sign-off thresholds - 10% total and 20% per seed, set by the GM 2026-08-24 - are **SIGN-OFF
   TRIGGERS, not ceilings** - they
@@ -617,3 +660,26 @@ constitution amendment.
   on the total - a ratio of 2.4. The GM's 2:1 ratio therefore makes the per-seed bands marginally the
   more sensitive relative to their own noise, which is the conservative direction. They set the
   numbers; the measurement agrees with them.
+
+- **The GM's storage ruling and the sequencing, 2026-08-24** - the last open question closed, and the
+  feature acquired a prerequisite.
+
+  **Storage: option 3, a second repository**, *"in anticipation of our expected codebuild work"*. This
+  overrules the author's recommendation of option 4 (gitignore raw, commit derived evidence only) - and
+  does so on the author's OWN stated condition, which was that option 3 becomes worth it if raw
+  profiles ever need sharing across machines. A remote runner makes the machine that produces the
+  artifact different from the machine that needs it, which is exactly the case a gitignore cannot
+  serve. The reasoning is recorded because it is more durable than the verdict.
+
+  What survived the overrule: the DERIVED evidence still lives in this repository (FR-011), because
+  kilobyte findings next to the feature that caused them are what a later reader needs, and raw
+  profiles rot. The second repository is an archive and a transport, not a reference - FR-011b requires
+  the evidence here to stand on its own so drift between two repositories degrades the trail rather
+  than breaking it.
+
+  **Sequencing: the AWS CodeBuild work lands FIRST.** This is now a prerequisite, and the new
+  "Sequencing" section names the three things it changes: the measured noise floor may not survive the
+  move to a remote runner and must be re-measured there (the GM set four thresholds against a 0.7% /
+  1.7% floor, so a materially different one is a report to them); the second repository fits better
+  under a remote runner, which is why it was chosen; and band 3's enforcement point may move, since a
+  remote merge gate could be a more natural home for it than the local push.

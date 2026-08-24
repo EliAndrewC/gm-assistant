@@ -95,6 +95,21 @@ measurements at BOTH escalation bands.
 escalation band now has a number for each measurement, and the per-seed number is twice the total's.
 The any-increase band is untouched by this message and continues to apply to either measurement.
 
+## 2026-08-24, THE STORAGE RULING, and the sequencing
+
+Answering the spec's last open question. The author had recommended option 4 (gitignore raw profiles,
+commit only the derived evidence) while naming one condition that would change that recommendation:
+*"if raw profiles ever need sharing across machines - say the CodeBuild runner produces them remotely -
+then option 3 becomes worth it."* The GM invoked exactly that condition.
+
+> Yeah, I think I want option 3 in anticipation of our expected codebuild work that will be coming up
+> soon.  So please incorporate that into the plan.  I think I'll implement the AWS codebuild work in
+> advance of the perf work, so you can indicate that in the plan too.
+
+**Two instructions, and the second one is a SEQUENCING instruction that changes this feature's
+starting assumptions**: the AWS CodeBuild work lands FIRST, and this feature is built afterwards, on
+top of it.
+
 ## THE AUTHOR'S CLAIMS - not the GM's words, and the reviewer must ATTACK them
 
 The following are the SESSION'S assertions, made in conversation and carried into the spec. They are
