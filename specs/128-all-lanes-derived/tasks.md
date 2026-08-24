@@ -74,7 +74,12 @@
 - [x] T020 Update the `dev/placement.md` DRAW ORDER map if it names the old stages
 - [x] T021 Run `ruff` + `mypy --strict` + the full gate once, backgrounded. Green: 3,462 passed,
       12 guard suites, ruff and mypy --strict clean across 146 source files
-- [ ] T022 `make done FULL=1`, which takes the `128-end` bookend and blocks on a >5% regression
+- [x] T022 Take the `128-end` bookend and clear the perf gate. Run as `make perf-gate` on its own
+      rather than inside `make done FULL=1`, because the GM has said plainly that the full sweep is
+      not wanted for this scope; `perf-gate` takes the bookend and runs the comparison without it.
+      Result: TOTAL -29.9%, three seeds individually over 5% and each diagnosed in writing in
+      [`perf.md`](perf.md). The 5%-blocks-a-merge rule was replaced by the GM this session with two
+      bands (diagnose at 5% per seed, block at 10% total) - constitution VI, v1.16.0
 - [x] T023 Audit `dev/bypass-log/` for entries added during this feature and say in writing whether
       each was justified. **Feature 128 logged NO bypasses at all.** The eight entries in the
       directory break down as: one smoke test of the audit mechanism; four from feature 126 (three of

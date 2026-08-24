@@ -312,7 +312,7 @@ Package-specific timings and skill-specific lessons live in that skill's dev-loo
 | everything runs through `make` | [`scripts/make-only-hooks.sh`](scripts/make-only-hooks.sh) + `l7r/diagram/_invocation.py` |
 | guard files are not edited casually | [`scripts/guard-file-hooks.sh`](scripts/guard-file-hooks.sh) |
 | a spec is reviewed before implementation (XVI); a Mode B map before it ships | [`scripts/review-gate.sh`](scripts/review-gate.sh), run by `sync-with-main.sh` at PUSH time |
-| both perf bookends exist, and a regression blocks the merge (VI) | `make perf-gate`, a phase of `make done FULL=1` |
+| both perf bookends exist; a seed >5% slower must be DIAGNOSED and a total >10% BLOCKS as a regression (VI) | `make perf-gate`, a phase of `make done FULL=1`; the two bands are in `tools/perf_snapshot.py` with `tests/tools/test_perf_snapshot.py` proving each fires |
 | no `-k` subset before the gate; no branches; no polling; batching | the pre-existing `gate`/`no-branch`/`no-poll`/`batching` hooks |
 
 **Deliberately NOT enforced**, because a guard that fires on correct work teaches a session to bypass

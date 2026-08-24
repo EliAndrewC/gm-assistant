@@ -572,10 +572,37 @@ artifacts. Specifically:
       make perf LABEL=<NNN>-end       # last thing, before the push
       make perf-report AGAINST=<NNN>-start
 
-  Any seed more than **5% slower** must be diagnosed before the feature ships -
-  the same 5% the project already treats as a whole-process speedup worth having,
-  applied in the other direction. Diagnosed means explained and either fixed or
-  accepted in writing with the number; it does not mean noticed.
+  **TWO BANDS, and they are different numbers on purpose** (GM 2026-08-24: *"it
+  is okay if things can get a few percentage points slower, though we probably
+  need some kind of maximum threshold"*).
+
+  - **Any seed more than 5% slower must be DIAGNOSED** - the same 5% the project
+    already treats as a whole-process speedup worth having, applied in the other
+    direction. Diagnosed means explained and either fixed or accepted in writing
+    with the number; it does not mean noticed. A single seed never blocks a merge
+    on its own.
+  - **The TOTAL across the seed set is capped at 10%.** Over it, the slowdown is a
+    Principle XIII regression with the usual three exits: fix it, revert it, or
+    get an explicit GM waiver for that number.
+
+  One figure cannot be both the point where you start thinking and the point where
+  you must stop, and until 2026-08-24 it was doing both jobs badly - too strict at
+  the bottom, where 5% on one seed is inside the noise of a loaded machine, and
+  absent at the top, where a seed could double and the rule was satisfied by
+  writing down that it doubled.
+
+  **Why the AGGREGATE is what gets capped in this engine.** A feature that reorders
+  stages changes what every seed is DOING - the maps are genuinely different
+  afterwards - so one seed's before-and-after is not the same work measured twice,
+  while the total still answers the question the bookends exist for. The known cost,
+  accepted rather than overlooked: one pathological seed can hide inside a good
+  average. It still prints and still owes a written diagnosis. A 50% per-seed
+  ceiling was priced alongside the cap and declined, as the second axis to tune
+  rather than the first; 25% was priced as the cap and the GM chose 10%, told that
+  it will fire on ordinary work.
+
+  Calibration: feature 126, the incident that created these bookends, was +51%
+  total and +146% on its worst seed. It fails the cap five times over.
 
   - **Seeds, not one map.** The reference hamlet is rolled across a fixed seed
     set, because a single seed can be pathologically good as easily as bad.
@@ -1451,4 +1478,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.15.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-24
+**Version**: 1.16.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-24
