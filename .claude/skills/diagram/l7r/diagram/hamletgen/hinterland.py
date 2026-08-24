@@ -696,7 +696,12 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
     # tuned against, and the floor of 7 keeps every previously-passing short belt sampled exactly as
     # before. This is the same rule `front_row` already records for its own seats: resolution
     # follows the thing being sampled, never the count of what is being placed.
-    COLS = max(7, min(24, int(2 * half / 90.0)))
+    # ONE COLUMN PER ~45 px, MEASURED. 90 px was tried first and closed only one of the four
+    # windbreak seeds; 45 closes three (33, 37, and 27 down to a pre-existing caption issue HEAD
+    # shares). The profile is what the drawn band follows, so its resolution IS the belt's minimum
+    # feature size - too coarse and the band pinches between columns, and the check reports the
+    # pinch as a bare run across the wind even though clumps sit a few feet away in plane distance.
+    COLS = max(7, min(40, int(2 * half / 45.0)))
     v_mid = (v_lo + v_hi) / 2
     rng = random.Random((plan.spec.seed * 7919) & 0xFFFFFFFF)
 
