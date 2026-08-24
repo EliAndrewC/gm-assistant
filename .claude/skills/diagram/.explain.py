@@ -26,6 +26,33 @@ s = hg.build(plan)
 with tempfile.TemporaryDirectory() as d:
     s.finish(os.path.join(d, "x"), render=False)
 
+# DOES THE SPUR ACTUALLY REACH THE FIELD? The gate could not answer this until feature 128 taught
+# `lanes_reach_something` about fields, and a settlement-review found the spur dead-ending in the
+# windbreak 104 degrees off its own target while every check passed.
+import math as _m  # noqa: E402
+
+_env = [(float(a), float(b)) for a, b in ((s.M.get("fields") or [{}])[0].get("outline") or [])]
+
+
+def _to_field(pt):
+    if len(_env) < 2:
+        return float("inf")
+    best = float("inf")
+    for j in range(len(_env)):
+        a, b = _env[j], _env[(j + 1) % len(_env)]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L2 = dx * dx + dy * dy or 1.0
+        u = max(0.0, min(1.0, ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dy) / L2))
+        best = min(best, _m.hypot(pt[0] - (a[0] + u * dx), pt[1] - (a[1] + u * dy)))
+    return best
+
+
+for _ln in s.M.get("lanes") or []:
+    if _ln.get("connector") or _ln.get("web"):
+        continue
+    _p = _ln["pts"]
+    print(f"  spur/skeleton: start {_to_field(_p[0]):6.0f} ft from the field -> tip {_to_field(_p[-1]):6.0f} ft")
+
 bad = cv.gate(s.M, verbose=False)
 print()
 print(f"\033[1mseed {_seed}:\033[0m", "CLEAN" if not bad else "FAILING")
