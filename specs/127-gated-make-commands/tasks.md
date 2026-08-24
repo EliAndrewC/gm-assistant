@@ -79,10 +79,10 @@ habitual in the first place.
 **Goal**: The guards guard themselves.
 **Independent test**: [quickstart.md](quickstart.md) §5 and §6.
 
-- [ ] T030 [US3] Create `scripts/guard-file-hooks.sh` (PreToolUse on `Edit|Write|NotebookEdit`) intercepting edits to `Makefile`, `scripts/*-hooks.sh`, and `.claude/settings.json`, requiring a stated reason (FR-013)
-- [ ] T031 [US3] Wire `guard-file-hooks.sh` into `.claude/settings.json`
-- [ ] T032 [US3] **FIRES**: create `scripts/test-guard-file-hooks.sh` asserting an edit to each guard file is intercepted
-- [ ] T033 [US3] **STAYS QUIET**: assert in `scripts/test-guard-file-hooks.sh` that an edit to `.claude/agents/*.md` is NOT intercepted - removed from the guard list at fidelity round 1 as unrequested, and because it would obstruct the project's own procedure for improving review subagents
+- [x] T030 [US3] Create `scripts/guard-file-hooks.sh` (PreToolUse on `Edit|Write|NotebookEdit`) intercepting edits to `Makefile`, `scripts/*-hooks.sh`, and `.claude/settings.json`, requiring a stated reason (FR-013)
+- [x] T031 [US3] Wire `guard-file-hooks.sh` into `.claude/settings.json`
+- [x] T032 [US3] **FIRES**: create `scripts/test-guard-file-hooks.sh` asserting an edit to each guard file is intercepted
+- [x] T033 [US3] **STAYS QUIET**: assert in `scripts/test-guard-file-hooks.sh` that an edit to `.claude/agents/*.md` is NOT intercepted - removed from the guard list at fidelity round 1 as unrequested, and because it would obstruct the project's own procedure for improving review subagents
 - [ ] T034 [US3] **THE DECORATION CHECK (SC-003)**: in a scratch copy, delete each guard in turn and confirm at least one test goes red naming it. A guard whose test still passes when the guard is gone is decoration, and this task is the only thing that distinguishes the two. Record the result per guard in this file
 
 ## Phase 6: Polish & Cross-Cutting
