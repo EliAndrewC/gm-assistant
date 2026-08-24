@@ -1465,6 +1465,43 @@ def _cluster_gateway(s: Settlement, seat: Mapping[str, object], fallback: Pt) ->
     return (cx + ax * along_mid + ox * edge, cy + ay * along_mid + oy * edge)
 
 
+def _cluster_edge_toward(s: Settlement, target: Pt, fallback: Pt) -> Pt:
+    """The point on the placed cluster's edge that FACES `target`.
+
+    NOT `_cluster_gateway`, and confusing the two cost the reference map its field access. That helper
+    pushes outward along `seat["out"]` - the downslope exit, which is where a track LEAVES for the
+    wider world and by construction points AWAY from the field. Feature 128 re-originated both tracks
+    from the placed houses and reused it for the spur as well, so the spur began on the far side of
+    the settlement from its own destination, ran 104 degrees off the field bearing, and dead-ended in
+    the shelter belt RECEDING from the paddy: 281 ft from the field envelope at its tip against 248 ft
+    at its start. Found by `settlement-review`; the gate could not see it, because
+    `lanes_reach_something` is satisfied by an end lying near a house and a way dying in the trees
+    still fronts one.
+
+    A spur goes TO somewhere. Its origin therefore belongs on the side of the cluster that faces the
+    somewhere - measured from the placed houses like everything else in this feature, not from the
+    seat band.
+    """
+    hs = s.M.get("houses") or []
+    if not hs:
+        return fallback
+    xs = [float(h["x"]) for h in hs]
+    ys = [float(h["y"]) for h in hs]
+    cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
+    ux, uy = target[0] - cx, target[1] - cy
+    n = math.hypot(ux, uy) or 1.0
+    ux, uy = ux / n, uy / n
+    reach = max(((x - cx) * ux + (y - cy) * uy for x, y in zip(xs, ys, strict=False)), default=0.0)
+    fabric = [poly for poly, _owner, _kind in _homestead_polys(s)]
+    edge = reach + TRACK_FABRIC_GAP + 8.0
+    for _ in range(24):
+        gx, gy = cx + ux * edge, cy + uy * edge
+        if all(edge_dist(gx, gy, poly) >= TRACK_FABRIC_GAP for poly in fabric):
+            return (gx, gy)
+        edge += 6.0
+    return (cx + ux * edge, cy + uy * edge)
+
+
 def _thread_the_fabric(s: Settlement, plan: SitePlan, run: Poly, gap: float = TRACK_FABRIC_GAP) -> Poly:
     """Route a track around the steadings that are already standing, and clip what will be drawn.
 
@@ -1692,7 +1729,7 @@ def stage_track(s: Settlement, plan: SitePlan) -> None:
     #
     # `_cluster_gateway` measures the placed cloud's reach along the seat axes and puts the origin
     # just outside it. The band point is kept only as the no-houses fallback.
-    start = _cluster_gateway(s, seat, to_screen((0.0, 0.0)))
+    _band_start = to_screen((0.0, 0.0))
     cen = centroid(plan.envelope)
     brook_segs = [(plan.sink_brook[i], plan.sink_brook[i + 1]) for i in range(len(plan.sink_brook) - 1)]
 
@@ -1715,7 +1752,17 @@ def stage_track(s: Settlement, plan: SitePlan) -> None:
         if nx * (target[0] - cen[0]) + ny * (target[1] - cen[1]) < 0:
             nx, ny = -nx, -ny
         edge = (target[0] + nx * SPUR_SETBACK, target[1] + ny * SPUR_SETBACK)
-        return [start, ((cx + edge[0]) / 2 + ax * 14, (cy + edge[1]) / 2 + ay * 14), edge]
+        # THE WHOLE PATH IS IN ONE FRAME, which the first cut of feature 128 broke. It moved the
+        # START to the placed houses and left the bow point on the PREDICTED band's `cx, cy, ax, ay`,
+        # so the two ends of the same three-point path described different settlements. Combined with
+        # a start taken from the outward gateway - the direction a track LEAVES by, which faces away
+        # from the field - the spur ran 104 degrees off its own target and died in the windbreak.
+        #
+        # Now: the origin faces THIS target, and the bow is the midpoint of the actual run with a
+        # small lateral swing so the path reads as walked rather than ruled.
+        _s = _cluster_edge_toward(s, target, _band_start)
+        _mx, _my = (_s[0] + edge[0]) / 2, (_s[1] + edge[1]) / 2
+        return [_s, (_mx + ax * 14, _my + ay * 14), edge]
 
     # ...and again the candidate is the DRAWN path, bow and all - see `path_is_clear`.
     spur = min(

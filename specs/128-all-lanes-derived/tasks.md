@@ -53,7 +53,7 @@
 
 - [ ] T015 Roll the other three live pool hamlets and gate each (the second half of "every step is
       two steps")
-- [ ] T016 Run `settlement-review` on the reference hamlet before it ships
+- [x] T016 Run `settlement-review` on the reference hamlet before it ships
 - [x] T017 Regenerate the walk-through page and EDIT ITS CAPTIONS to match the new order. The
       captions are the deliverable: plate 05 said the opposite of what the code did for five days,
       and that is what made this feature necessary

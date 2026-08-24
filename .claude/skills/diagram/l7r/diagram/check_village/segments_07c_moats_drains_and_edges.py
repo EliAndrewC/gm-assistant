@@ -842,6 +842,13 @@ _WEB_REACH = 100.0
 # the other.
 _LANE_JOIN = 40.0
 
+# HOW CLOSE AN END HAS TO GET TO THE CROP to count as reaching the field. `SPUR_SETBACK` holds a spur
+# tip deliberately outside the paddy - a path stops at the edge rather than running into standing
+# rice - so the bar has to clear that setback with room, or the very design the generator implements
+# reads as a dangling end. Same figure as the way-reach bar, for the same reason: it is the distance
+# at which two things on this map read as meeting.
+_LANE_FIELD_REACH = 40.0
+
 
 # TWO LANE ENDS MAY NOT FRONT THE SAME FARMHOUSE FROM THE SAME SIDE.
 #
@@ -1221,7 +1228,21 @@ def _seg_0607__lanes_reach_something(*, M: Any = _UNBOUND, check: Any = _UNBOUND
                         continue
                     _lr_way = min(_lr_way, min(seg_dist(_lr_end[0], _lr_end[1], _lr_a, _lr_b) for _lr_a, _lr_b in zip(_lr_op, _lr_op[1:], strict=False)))
                 _lr_house = min((math.hypot(_lr_end[0] - _lr_h["x"], _lr_end[1] - _lr_h["y"]) for _lr_h in _lr_houses), default=1e9)
-                if _lr_way > _LANE_WAY_REACH and _lr_house > _LANE_HOUSE_REACH:
+                # AND A WAY THAT REACHES THE FIELD IS SERVING SOMETHING. This message has always said
+                # "reaches no field" and the code never asked - the field spur passed only because its
+                # tip happened to fall near a house, so a spur that arrived and a spur that died in
+                # the trees scored the same. Feature 128 made that visible: with the spur's origin
+                # corrected to face the field, it stopped SPUR_SETBACK short of the crop as designed
+                # and this check called it dangling.
+                #
+                # A field is the reason the settlement is here. An end at the crop edge is the most
+                # served a way can be.
+                _lr_field = 1e9
+                for _lr_f in M.get("fields") or []:
+                    _lr_out = [(float(a), float(b)) for a, b in (_lr_f.get("outline") or [])]
+                    if len(_lr_out) >= 2:
+                        _lr_field = min(_lr_field, min(seg_dist(_lr_end[0], _lr_end[1], _lr_out[_lr_j], _lr_out[(_lr_j + 1) % len(_lr_out)]) for _lr_j in range(len(_lr_out))))
+                if _lr_way > _LANE_WAY_REACH and _lr_house > _LANE_HOUSE_REACH and _lr_field > _LANE_FIELD_REACH:
                     _lr_dangling.append((round(_lr_end[0]), round(_lr_end[1])))
         check(
             "lanes_reach_something",
