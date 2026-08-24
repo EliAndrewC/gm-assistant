@@ -29,8 +29,8 @@ habitual in the first place.
 
 ## Phase 1: Setup
 
-- [ ] T001 Take the regression baseline on UNMODIFIED code in a detached worktree (`git worktree add --detach /tmp/base127 HEAD`), run the gate there, and record its verdict in this file under Baseline below - a remembered baseline is not a baseline (Principle XIII)
-- [ ] T002 Record `make reference` wall-clock on unmodified code in the Baseline section below, for SC-002's before/after comparison
+- [x] T001 Take the regression baseline on UNMODIFIED code in a detached worktree (`git worktree add --detach /tmp/base127 HEAD`), run the gate there, and record its verdict in this file under Baseline below - a remembered baseline is not a baseline (Principle XIII)
+- [x] T002 Record `make reference` wall-clock on unmodified code in the Baseline section below, for SC-002's before/after comparison
 - [x] T003 [P] Enumerate every CLI entry point under `.claude/skills/diagram/l7r/diagram/` (`find l7r -name __main__.py`, plus modules with a `__main__` guard) and every existing `Makefile` target, into `specs/127-gated-make-commands/contracts/operations.md` as the draft operation registry with a `cost` column per [data-model.md](data-model.md)
 
 ## Phase 2: Foundational (blocks every user story)
@@ -45,11 +45,11 @@ habitual in the first place.
 **Goal**: Every route in the threat model refuses or prompts.
 **Independent test**: Attempt each route from [quickstart.md](quickstart.md) §1; each refuses and names its make target.
 
-- [ ] T008 [US1] Create `scripts/make-only-hooks.sh` (PreToolUse on Bash) blocking bare `python3 -m l7r.diagram.<entry point>`, bare `pytest`, `make -f`/`--file`/`--makefile`, and inline `REF_WHY=`/`REF_OK=` overrides - following the structure and voice of the five existing `scripts/*-hooks.sh`
-- [ ] T009 [US1] Make every refusal message name the make target that does the same job (FR-006), per the project's tips-live-in-error-output rule - a refusal that does not say what to run instead is a bug
-- [ ] T010 [US1] Wire `make-only-hooks.sh` into `.claude/settings.json` as a `PreToolUse` hook with matcher `Bash`
-- [ ] T011 [US1] **FIRES**: create `scripts/test-make-only-hooks.sh` asserting each blocked shape IS blocked - one case per threat-model row
-- [ ] T012 [US1] **STAYS QUIET**: extend `scripts/test-make-only-hooks.sh` asserting ordinary `make <target>` calls, reads of source files, and `scripts/` invocations are NOT blocked
+- [x] T008 [US1] Create `scripts/make-only-hooks.sh` (PreToolUse on Bash) blocking bare `python3 -m l7r.diagram.<entry point>`, bare `pytest`, `make -f`/`--file`/`--makefile`, and inline `REF_WHY=`/`REF_OK=` overrides - following the structure and voice of the five existing `scripts/*-hooks.sh`
+- [x] T009 [US1] Make every refusal message name the make target that does the same job (FR-006), per the project's tips-live-in-error-output rule - a refusal that does not say what to run instead is a bug
+- [x] T010 [US1] Wire `make-only-hooks.sh` into `.claude/settings.json` as a `PreToolUse` hook with matcher `Bash`
+- [x] T011 [US1] **FIRES**: create `scripts/test-make-only-hooks.sh` asserting each blocked shape IS blocked - one case per threat-model row
+- [x] T012 [US1] **STAYS QUIET**: extend `scripts/test-make-only-hooks.sh` asserting ordinary `make <target>` calls, reads of source files, and `scripts/` invocations are NOT blocked
 - [ ] T013 [US1] Call `assert_via_make` at the top of each expensive operation, including the in-process entry points, so importing the engine and calling it directly is refused on the same terms (FR-008)
 - [ ] T014 [US1] Add `assert_via_make` to `.claude/skills/diagram/tests/conftest.py` so the suite itself refuses when run outside make
 - [x] T015 [US1] **FIRES**: create `.claude/skills/diagram/tests/test_invocation.py` covering no-make-in-ancestry, foreign `cwd`, foreign `-f`, and the in-process call
@@ -123,5 +123,23 @@ geometry and fixes no failing seed.
 
 | | value | taken |
 |---|---|---|
-| gate verdict on unmodified HEAD | | |
-| `make reference` wall-clock | | |
+| gate verdict, detached worktree `/tmp/base127` | **2 failed, 3420 passed** - both failures SPURIOUS, see below | 2026-08-24 |
+| gate verdict, effective baseline (the clone) | **green** - 3450 passed, both coverage floors met | 2026-08-24 |
+| `make reference` wall-clock | **26 s** | 2026-08-24 |
+
+**THE DETACHED-WORKTREE BASELINE IS NOT VALID FOR EVERY TEST, and this cost a false alarm.**
+Principle XIII mandates taking the baseline in a detached worktree rather than by stashing, and that
+is right - but a fresh worktree does not carry the GITIGNORED render artifacts. It had 20 PNGs
+against the clone's 28, so two tests failed there that pass in the clone:
+
+- `tests/pipeline/test_render_cache.py::test_every_live_pool_png_matches_its_own_svg_viewbox`
+- `tests/tools/test_scatter_audit.py::test_crown_fills_covers_every_recorded_crown`
+
+Both verified passing in the clone on unmodified code. They are worktree artifacts, NOT pre-existing
+failures, and treating them as either a regression or a ledgered failure would have been wrong.
+**Effective baseline: the clone's own green run.** Recorded rather than remembered, per XIII.
+
+**Also recorded because it happened again**: the background gate was launched as
+`( make done > log; echo "rc=$?" >> log )`, so the completion notification reported exit 0 while the
+gate had FAILED - the subshell exits with `echo`'s status, not make's. There is a standing memory
+about this exact wrapper and it was repeated anyway. Read the log, never the notification's code.

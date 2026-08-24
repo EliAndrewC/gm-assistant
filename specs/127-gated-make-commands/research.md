@@ -102,3 +102,29 @@ costs zero time on a refusal, and it can see command SHAPES that no in-process c
 
 **Alternatives considered**: implementing everything in Python (cannot see a command before it runs,
 and cannot guard `pytest`, which is not our code).
+
+
+---
+
+## R6 - A detached-worktree baseline is invalid for tests that read gitignored artifacts
+
+**Decision**: take the baseline in the worktree as Principle XIII requires, but VERIFY any failure
+there against the clone before calling it pre-existing.
+
+**Measured** 2026-08-24: the worktree gate reported 2 failed / 3420 passed. Both failures
+(`test_every_live_pool_png_matches_its_own_svg_viewbox`,
+`test_crown_fills_covers_every_recorded_crown`) pass in the clone on the same commit. The worktree
+held 20 pool PNGs; the clone holds 28. Renders are gitignored, so `git worktree add` does not bring
+them and the tests that read them fail for a reason that has nothing to do with the code.
+
+**Rationale**: this cuts both ways and the dangerous direction is the quiet one. A spurious baseline
+FAILURE is loud and gets investigated. A spurious baseline failure that later "passes" would read as
+a fix nobody made - and worse, a test that only passes in the worktree would hide a real regression.
+
+**Consequence**: a worktree baseline is a starting point, not a verdict. Every failure it reports is
+checked against the clone before being called pre-existing.
+
+**This probably belongs in the constitution rather than in one feature's research file**, since
+Principle XIII mandates the worktree procedure for every feature and says nothing about this. Flagged
+for the GM rather than edited in, because amending the constitution was not part of this feature's
+request.
