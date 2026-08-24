@@ -101,4 +101,8 @@ Still open from that review, and NOT fixed:
   500 ft doctrine but is gated to town/city scale, so nothing enforces it at hamlet scale - the
   argument for these three (map-edge steadings, field ditches 116-315 ft off) is sound but it is an
   argument, not a check. Whether a dispersed hamlet's ring farms are expected to have a well at all
-  is a GM ruling that would generalize to every dispersed map.
+  was NOT a GM ruling - it was a research question, and it is
+  ANSWERED (2026-08-24, `research/homesteads.md`): a dispersed farmstead carries its own well,
+  because a shared well with a reach radius presupposes a centre to be near and dispersal is the
+  absence of one. The 500 ft rule is not unenforced at hamlet scale; it is the wrong rule for this
+  form. The well rule should be FORM-conditional rather than scale-conditional.

@@ -223,3 +223,38 @@ and [Plenus Rice Library, Toyama](https://www.plenus.co.jp/kome-academy/en/kome_
 the row-village form from [Reihendorf](https://en.wikipedia.org/wiki/Reihendorf); river- and
 road-following expansion in Chinese traditional villages from ["Spatial Morphological Characteristics
 and Evolution of Traditional Villages in the Mountainous Area of Southwest Zhejiang"](https://doi.org/10.3390/ijgi12080317).
+
+
+## Does a DISPERSED hamlet's outlying farm have its own well? Yes - and the question was never the GM's
+
+**Asked** in `pool/hamlets/akagahara.notes.md` as *"a GM ruling that would generalize to every
+dispersed map"*, after three east-row farms measured 501 / 622 / 741 ft from a well while
+`farm_wells_within_reach` (the 500 ft doctrine) is gated to town/city scale so nothing enforced it.
+**Researched 2026-08-24 instead of asked** - Principle XII puts the search pass ahead of the GM, and
+this is squarely a how-did-people-actually-live question.
+
+**The finding.** On the Tonami Plain in Toyama - the canonical Japanese dispersed settlement, ~7,000
+farmhouses over ~220 km2 - farmers *"used to build their houses in the middle of their cultivated
+rice fields so that they could easily manage the water for their own rice fields"*. The dispersal is
+not incidental to water; water is the REASON for it. Each house also carries its own *kainyo*
+homestead grove, so the farmstead is a self-contained unit by construction. The plain is an alluvial
+fan, where shallow groundwater is a mixture of river water and precipitation - a high, easily-reached
+water table, which is what makes a per-farmstead well cheap.
+
+**The answer, and why it needed no ruling.** A shared well with a reach radius is a NUCLEATED
+settlement's arrangement: it presupposes a centre to be near. A dispersed farmstead has no centre to
+share with - that is what dispersed MEANS - so it carries its own water. The 500 ft reach rule is not
+"unenforced at hamlet scale"; it is the wrong rule for this form.
+
+**The consequence for the generator**: the well rule is FORM-CONDITIONAL, not scale-conditional. A
+nucleated hamlet shares wells within reach; a dispersed one gives each farmstead its own. That is the
+same shape as feature 126's handling of `farmhouses_reach_a_way`, which was made conditional on
+`meta.settlement_form` rather than waived - and for the same reason: a rule that is true of one form
+and false of another is not a rule with an exception, it is two rules.
+
+**Not implemented here.** `settlement_form` is currently pinned to `nucleated`, so no map draws the
+dispersed case today. This is recorded so that whoever unpins it implements the right rule rather
+than re-deriving it or re-asking.
+
+Sources: [Visit Toyama on sanson dispersed settlement](https://visit-toyama-japan.com/en/travel-inspiration/sankyoson),
+[Sho River alluvial fan groundwater study](https://www.mdpi.com/2076-3263/11/8/352).

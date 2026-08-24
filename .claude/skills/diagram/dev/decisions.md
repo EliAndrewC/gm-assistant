@@ -47,6 +47,24 @@ open-decision author knew - the commons scatter's `wat_b` grid was the landing s
 drawn-channels margin test was the one to extend, streams/marsh were the exclusions.
 `research/vegetation.md` "Scrub stays off open water" carries the retro-fitted worked example.
 
+## Do not put a question to the GM that your OWN DOCUMENTATION already answers
+
+**GM 2026-08-24**: *"you should do things the way that our documentation says you should do them
+unless there is a specific reason not to."*
+
+Said while declining to rule on the paddy-tint question, because the code's own doctrine already
+stated what the colour meant. A session had read its documentation, found it clear, and queued a
+ruling anyway - which costs the GM a decision they had effectively already made and stalls the work
+until they make it twice.
+
+The check is one line before you write the question: **does something we have already written answer
+this?** If it does, follow it and say in the commit that you did. A specific reason to depart is a
+real thing and it happens - the documentation can be stale, or wrong, or written before a constraint
+existed - but then the departure is the thing to raise, with the reason, not the original question.
+
+This sits directly above the older rule below and is the same family: the rungs of the ladder are
+OUR DOCS -> the historical record -> a knob -> and only then the GM.
+
 ## Do not put a question to the GM that history can answer - and two answers means a KNOB
 
 **GM 2026-08-18**, after three questions were escalated as "rulings wanted" and two of them turned
