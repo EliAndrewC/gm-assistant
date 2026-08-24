@@ -63,7 +63,9 @@ LANE_CLEARANCE = 40.0
 
 # HOW FAR ALONG THE FIELD OUTLINE THE CLUSTER ACTUALLY REACHES, as a multiple of the seat band's own
 # lateral half-extent. ONE definition, read by `front_row` (which samples outline vertices out to
-# this reach) and by `stage_ways` (which sizes the lane skeleton over it).
+# this reach) and by `stage_seat` (which sizes the seat band). The lane skeleton is no longer sized
+# over it at all - feature 128 moved every lane after the houses, so the skeleton is fitted to where
+# they actually landed rather than to this predicted band.
 #
 # It is one definition because the two being separate numbers WAS the defect. `front_row` had 1.6
 # inline and the skeleton was sized on the bare `lat`, so the lanes huddled in the middle of a
@@ -131,6 +133,24 @@ WEB_CLEARANCE = 28.0
 # thread, and a house sat 296 ft from any way with no route found at all. The two are now derived
 # from each other and cannot contradict again.
 WEB_FABRIC_GAP = 7.0
+
+# HOW FAR A TRACK KEEPS OFF A STEADING, as opposed to how far the WEB does (feature 128).
+#
+# `WEB_FABRIC_GAP` is 7 px because an alley IS the residual gap between two plots - it threads
+# between them and is barely wider than the space it occupies. A connector or a field spur is a
+# different animal: it runs PAST the settlement rather than through it, and it has no business
+# hugging a wall.
+#
+# 16 px is derived, not chosen. The gate counts a house-on-corridor hit at
+# `seg_dist(house_center, lane) < 14` (`houses_off_corridors`), and a clip measures to the FOOTPRINT
+# rather than the center - so a 7 px clip left the center 14-17 px out and 3 of the reference
+# hamlet's 15 houses failed. 16 px to the footprint puts the center comfortably past 14 with the
+# margin coming from the house's own half-extent.
+#
+# NOT LARGER, and feature 126 recorded why: it clipped its skeleton arms at 20 px, which demands a
+# 40 px clear corridor between two steadings that a packed cluster does not have, so arms were
+# clipped out of existence entirely. A track only needs to reach the cluster's edge, not thread it.
+TRACK_FABRIC_GAP = 16.0
 
 # A FOOTPATH IS NOT A LANE, and it may squeeze where a lane may not. This is the clearance for the
 # path from an outlying steading's door to the nearest way - the thing the sources describe as
