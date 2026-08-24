@@ -281,4 +281,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":  # pragma: no cover
+    from l7r.diagram._invocation import guard
+
+    # REFUSE unless invoked through this project's make (feature 127). At the TOP of the
+    # entry point, never in a loop - the determination reads /proc and is cached per process.
+    guard("l7r.diagram.pipeline.pool_index")
     raise SystemExit(main())

@@ -51,6 +51,19 @@ _MAKEFILE_FLAGS = ("-f", "--file", "--makefile")
 # call; dropped into a placer loop it would recreate that shape exactly, and cost far more than
 # anything it guards. `tests/test_invocation.py` asserts the walk happens once, so a later refactor
 # that removes this cache is caught rather than being silently slow.
+
+# COMPUTED LAZILY AND CACHED - and an eager version was tried and reverted, worth recording because
+# the reasoning for it was wrong in an instructive way.
+#
+# When the whole pool stopped hitting its cache, the first theory was order-dependence: `gencache`
+# keys an entry on which engine FUNCTIONS executed, and a lazy verdict runs `_compute` on the FIRST
+# generate() of a process and no later one. Plausible, and false - `load` compares against the
+# STORED dep list, so a recording that saw slightly different functions still hits.
+#
+# The real cause was the FILES half of the key: `spy_open` recorded the /proc entries this module
+# reads, and `/proc/<pid>/stat` changes content on EVERY read. Fixed in gencache, where it belongs -
+# anything reading kernel state would have hit it. Eager evaluation bought nothing and made every
+# import of this module do /proc work whether or not anything asked, so it went back.
 _verdict: tuple[bool, str] | None = None
 
 
@@ -171,6 +184,53 @@ def _reason() -> str:
     return _verdict[1]
 
 
+# THE OPERATION REGISTRY: module -> (make target, cost).
+#
+# ENUMERATED, NEVER INFERRED. The 20 entry points do not divide by name, path or package: `tools/`
+# holds both a 25-minute cohort and a manifest read, and `why_placed` LOOKS like a diagnostic while
+# calling `runpy.run_path` on a gen - it re-runs the generator. Any heuristic over module paths
+# misclassifies in both directions, and a misclassified cheap operation that starts prompting is how
+# a session learns the override is routine.
+#
+# `cost` decides PROMPTING only. REFUSAL applies to every row.
+OPERATIONS: dict[str, tuple[str, str]] = {
+    "l7r.diagram.hamletgen": ("hamlet", "expensive"),
+    "l7r.diagram.pipeline.regen": ("map", "expensive"),
+    "l7r.diagram.pipeline.render_cache": ("render-sync", "expensive"),
+    "l7r.diagram.pipeline.pool_index": ("pool-index", "expensive"),
+    "l7r.diagram.tools.cohort_audit": ("cohort", "expensive"),
+    "l7r.diagram.tools.mapcheck": ("tripwire", "expensive"),
+    "l7r.diagram.tools.perf_snapshot": ("perf", "expensive"),
+    "l7r.diagram.tools.cache_audit": ("cache-audit", "expensive"),
+    "l7r.diagram.tools.make_regressions": ("regressions", "expensive"),
+    "l7r.diagram.tools.placement_stages": ("placement-stages", "expensive"),
+    "l7r.diagram.tools.why_placed": ("why-placed", "expensive"),
+    "l7r.diagram.compound": ("compound", "expensive"),
+    "l7r.diagram.check_village": ("gate-manifest", "cheap"),
+    "l7r.diagram.citybudget": ("citybudget", "cheap"),
+    "l7r.diagram.tools.site_justice": ("site-justice", "cheap"),
+    "l7r.diagram.tools.crop_map": ("crop", "cheap"),
+    "l7r.diagram.tools.jogs": ("jogs", "cheap"),
+    "l7r.diagram.tools.pack_audit": ("pack-audit", "cheap"),
+    "l7r.diagram.tools.scatter_audit": ("scatter-audit", "cheap"),
+    "l7r.diagram.tools.timings": ("timings", "cheap"),
+}
+
+
+def target_for(module: str) -> str:
+    """The make target that runs this module, for a refusal message.
+
+    Falls back to `help` rather than raising: a guard that crashes is worse than one that points
+    somewhere slightly wrong, and `make help` lists every operation."""
+    row = OPERATIONS.get(module)
+    return row[0] if row else "help"
+
+
+def guard(module: str) -> None:
+    """Refuse unless invoked through this project's make. Call at the TOP of an entry point."""
+    assert_via_make(module, target_for(module))
+
+
 def assert_via_make(operation: str, target: str) -> None:
     """Refuse unless this process is running under this project's make.
 
@@ -190,8 +250,11 @@ def assert_via_make(operation: str, target: str) -> None:
         f"\n\033[1mREFUSED: {operation} was not run through make.\033[0m\n\n"
         f"  {_reason()}.\n\n"
         f"  Run this instead:  \033[1mmake {target}\033[0m\n\n"
-        "Every operation in this project goes through a make target, so that the expensive ones can\n"
-        "ask whether the cheap one would do first. `make reference` (~60 s, one seed of the reference\n"
-        "hamlet) answers most questions; `make done` is ~5.5 minutes and is NOT the quick check.\n\n"
+        "Every operation in this project goes through a make target, so the expensive ones can ask\n"
+        "whether the cheap one would do first. Measured, not estimated:\n\n"
+        "    make quick        ~33 s    lint, types, every test that does not roll a map\n"
+        "    make reference    ~26 s    one seed of the reference hamlet\n"
+        "    make help                  every operation, with what it does\n"
+        "    make done         ~5.5 min the full gate - NOT the quick check\n\n"
     )
     raise SystemExit(2)

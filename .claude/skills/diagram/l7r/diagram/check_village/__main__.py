@@ -1,6 +1,11 @@
 """CLI entry: python3 -m l7r.diagram.check_village <manifest.json> [--capacity [--capacity-map]]."""
 
 if __name__ == "__main__":
+    from l7r.diagram._invocation import guard
+
+    # REFUSE unless invoked through this project's make (feature 127). At the TOP of the
+    # entry point, never in a loop - the determination reads /proc and is cached per process.
+    guard("l7r.diagram.check_village")
     import os
     import sys
 

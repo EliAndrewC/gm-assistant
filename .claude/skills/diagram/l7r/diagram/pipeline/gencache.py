@@ -74,6 +74,31 @@ FORMAT_VERSION = "1"  # bump to invalidate every entry when this file's key sche
 # The cache itself never participates in generating a map, so its own source is not an input; every
 # other .py here is (tests excluded - they cannot affect a gen either, and including them would
 # invalidate the whole pool on every test edit).
+# `_invocation.py` STAYS AN ENGINE FILE, and the attempt to exclude it is recorded because it looks
+# obviously right and is obviously wrong. It is a GUARD - it decides whether an operation may RUN and
+# cannot change a pixel - so excluding it from the cache key seemed principled. But `run_and_record`
+# records executed functions from COVERAGE, which sees every module regardless of this list, while
+# `compute_key` can only hash files that ARE in it. Excluding the module therefore produced a
+# dependency the key computation could not resolve, and every unchanged pool map missed its cache.
+#
+# The rule the two sides share: this set is for modules that never appear in a gen's coverage at all
+# (the cache driver itself, the regen driver). A module that DOES execute during a gen must stay
+# hashable, whatever it does.
+# KERNEL STATE IS NOT A DEPENDENCY, and recording it silently destroys every cache key.
+#
+# `spy_open` records the files a gen READS so a change to any of them invalidates the entry. That is
+# right for data files and catastrophic for /proc: `/proc/<pid>/stat` carries the process's CPU
+# times, so its CONTENT CHANGES ON EVERY READ, and its path carries a PID that differs per process.
+# A gen that touches one can therefore never hit its own cache again - `compute_key` returned a
+# different value on two consecutive calls with identical inputs.
+#
+# Found 2026-08-24 (feature 127) when the invocation guard began reading /proc to decide whether it
+# was running under make, which made the whole pool stop hitting. The guard was the trigger; this was
+# always the defect, and it would fire for anything reading /proc, /sys or /dev - a CPU-count probe,
+# a memory check, a container detector. The fix belongs here rather than in the guard, because the
+# next thing to read kernel state will not remember this.
+_KERNEL_FS = ("/proc/", "/sys/", "/dev/")
+
 _NOT_ENGINE = {"gencache.py", "regen.py"}
 OUTPUT_SUFFIXES = (".json", ".svg", ".png")
 GATE_BYPASS = "GATE_NO_CACHE"  # =1 forces the gate to regenerate everything (feature 026)
@@ -217,7 +242,7 @@ def run_and_record(gen: str) -> dict[str, Any]:
     def spy_open(file: Any, mode: str = "r", *a: Any, **k: Any) -> Any:
         try:
             path = os.path.abspath(file)
-            if "r" in mode and "w" not in mode and "a" not in mode and not path.endswith(OUTPUT_SUFFIXES) and os.path.isfile(path):
+            if "r" in mode and "w" not in mode and "a" not in mode and not path.endswith(OUTPUT_SUFFIXES) and os.path.isfile(path) and not path.startswith(_KERNEL_FS):
                 files.add(path)
         except TypeError:  # pragma: no cover - defensive: open() on a file descriptor
             pass
