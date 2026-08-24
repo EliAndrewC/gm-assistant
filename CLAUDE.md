@@ -261,6 +261,14 @@ that has found a path forward takes it.
 - **Docs-only diffs skip the gate.** If everything changed since the last green gate is markdown, do not re-run `make done`.
 - **Before the gate, run the WHOLE affected test file - never a `-k` subset.** A filter selects the tests you were thinking about; a change breaks the ones you were not. **ENFORCED** by [`scripts/gate-hooks.sh`](scripts/gate-hooks.sh) - if the only local test run since your last `.py` edit used `-k`, it blocks `make done` once. (Escape: `GATE_OK` in the command, with a reason. Cost of getting this wrong, once: a 3.9-minute gate cycle lost to a test in the same file the filter did not select.)
 - **Foreground-regenerate ONLY the motivating map - never a pre-gate pool sweep.** The gate verifies the pool itself, and render-sync regenerates main's renders from main's own tip, so a clone-side `pipeline/regen.py pool/*/*.gen.py` before `make done` is pure waste (38s measured 2026-08-16; evidence in [`docs/iteration-loop.md`](docs/iteration-loop.md)).
+- **EVERYTHING RUNS THROUGH `make`, and it is enforced rather than requested** (feature 127). A bare
+  interpreter reaching an engine entry point, a bare pytest, a make driven by a foreign makefile, or
+  an inline override supplied to skip a prompt is refused BEFORE it runs by
+  `scripts/make-only-hooks.sh`; the engine refuses in-process calls too. In the diagram skill the
+  ladder is `make quick` (~33 s), `make reference` (~26 s), `make done` (~5.5 min, NOT the quick one),
+  `make done FULL=1` (prompts, cancels by default, logs a reason). Every refusal names the target that
+  does the job, because a guard that blocks a legitimate question without giving the route is a guard
+  that gets worked around.
 - **Never re-run what the gate just ran, and never run pytest without `-n auto`.** Serial pytest is ~7x slower here; a green `make done` is already the proof. (Cost of getting this wrong, once: 13.2 minutes, 19% of a feature.)
 - **`make done` reports ALL failures together.** Fix everything it lists, then re-run once. On a coverage failure it also prints the lines you changed that no test reaches.
 - **Background the final gate - and NEVER poll it.** Act on the completion notification. **ENFORCED** by [`scripts/no-poll-hooks.sh`](scripts/no-poll-hooks.sh), which blocks `pgrep -f`, sleep-loops, and the `command sleep` bypass. (A wait on genuinely EXTERNAL state passes by putting `POLL_OK` in the command with a note saying what it waits for.)

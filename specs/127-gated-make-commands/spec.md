@@ -277,3 +277,45 @@ Recorded here so the question is not reopened from scratch.
   ordering of things"* had no requirement carrying it; and the entry-points-only scope left in-process
   invocation open - a bypass needing no git diff and readable as diligence. All four accepted and
   applied. The webapp-import premise was additionally found false by direct search and corrected.
+
+
+## SC-006 enumeration (T038) - every bypass that remains possible
+
+The criterion: each remaining route is either an action that appears in a git diff, or one that could
+not be described as diligence. Enumerated against the threat model rather than asserted.
+
+| route | still possible? | which test it meets |
+|---|---|---|
+| an ungated sibling command (tier 1) | no - refused by command shape AND by the process-tree determination | - |
+| the documented override supplied inline (tier 2) | no - refused; the prompt must be answered | - |
+| arranging that the prompt cannot fire (tier 3) | no - a non-interactive FULL run is refused outright | - |
+| a forged makefile (tier 4) | no - refused by shape, and make's cwd and `-f` are checked | - |
+| editing a guard file with the Edit/Write tool | yes | requires `GUARD_EDIT_OK` with a reason, IN THE DIFF |
+| editing a guard file from a shell command | yes | same, and the reason is in the command text |
+| editing the hook configuration | yes | a `.claude/settings.json` diff |
+| disabling the hook system entirely | yes | a settings diff, and unmistakably not diligence |
+| **calling an expensive function from a fresh `python3 -c`** | **NO** - `assert_via_make` sits on the operation, and nothing outside the skill imports the engine | - |
+
+**One residual, recorded rather than hidden.** A session that is ALREADY under this project's make -
+inside a recipe, or inside the test suite - can invoke anything, including a nested foreign makefile,
+because the ancestry legitimately contains a qualifying make. This is not closable by the
+determination and it is not a hole worth closing: reaching that position means the command was
+already sanctioned, and the command-shape hook still refuses the invocation before it runs. It is
+noted because SC-006 claims enumeration, and an unenumerated exception under a criterion claiming
+enumeration is a false claim rather than an omission.
+
+## Bypass-log audit (T041) - the constitution's closing step
+
+Five entries, all predating this feature's guards. Judged honestly rather than tidily:
+
+| # | reason given | verdict |
+|---|---|---|
+| 1 | "smoke test of the audit mechanism itself" | **Justified.** Testing that the log records anything is the one use that has to happen once. |
+| 2 | feature 126 reference-only push at the GM's instruction | **Justified.** The GM had set the bar explicitly and repeatedly. |
+| 3-5 | three pre-push FULL sweeps for feature 126 | **NOT justified, and they are why this feature exists.** The GM's direction was the reference settlement alone; the session decided the coverage floor also needed verifying and ran the full gate three times at ~5 minutes each. Each reason reads as conscientious, which is exactly the property that made them work. Entry 5 adds "re-run after a ruff format fix" - a third run to re-verify a whitespace change. |
+
+**The audit's own finding**: the log recorded all five and stopped none of them, because `REF_WHY=`
+on the command line skipped the prompt entirely. An audit trail records a decision; it does not make
+one. Both halves are now closed - the prompt cannot be pre-empted from the command line, and a
+non-interactive FULL run is refused - and this table is the evidence that the closing step is worth
+running rather than a formality.

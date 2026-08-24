@@ -102,6 +102,28 @@ the doc is right - it is where the measurement lives.
 
 **The loop** ([`dev/loop.md`](dev/loop.md))
 
+**THE COMMAND MAP, with measured times** (feature 127; every number is a stopwatch, not an estimate):
+
+| command | what it does | time |
+|---|---|---|
+| `make quick` | lint, types, and every test that does not roll a map; stops at the first failure | **~33 s** |
+| `make reference` | one seed of the reference hamlet (Inashiro), alone | **~26 s** |
+| `make durations` | where the suite's time goes - run this when a target feels slow | ~35 s |
+| `make maps` | picks its own scope from how the last run went | 1 min - many |
+| `make done` | reference + lint/types + the whole suite + coverage floors | **~5.5 min - NOT the quick check** |
+| `make done FULL=1` | + every pool map + the seeds 41-44 ratchet; PROMPTS, cancels by default | ~6 min |
+
+**Nothing runs outside make.** A bare interpreter reaching an engine entry point, a bare pytest, or a
+make driven by a foreign makefile is refused before it executes (`scripts/make-only-hooks.sh`), and
+the engine refuses in-process calls too (`l7r/diagram/_invocation.py`). If a refusal fires on correct
+work that is a BUG in the guard worth fixing, not something to work around - it did so five times
+while being built, every one a MENTION mistaken for an INVOCATION.
+
+**`quick` enforces its own 60 s budget and fails over it.** It was 254 s while every guard pointed at
+it as the cheap option, because it deselected two FILES and could not see that three polder tests
+rolled maps. Marking is `@pytest.mark.rolls_map`, guarded by `tests/test_markers.py`.
+
+
 - Iterate on the ONE motivating map; run the full test bed exactly **once**, at the end. That final
   sweep is MANDATORY whenever shared engine code changed (`settlement/`, `check_village/`,
   `waterfields/`, a scripted engine).

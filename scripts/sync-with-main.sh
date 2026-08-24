@@ -135,7 +135,11 @@ render_sync() {
   # regen-in-main. No tip-guard is needed - regenerating whatever tip main currently holds is
   # correct, and a second runner finds every stamp fresh and skips (the cache makes redundant
   # regens ~free, which is what retires the old TIP-GUARD/last-writer-wins hazard entirely).
-  (cd "$MAIN/$SKILL_DIR" && flock "$LOCK" env GM_ASSISTANT_ALLOW_MAIN=1 python3 -m "$RENDER_CACHE_MOD" --pool "$MAIN/$POOL" --main-repo "$MAIN")
+  # THROUGH THE MAKE TARGET, not a bare interpreter (feature 127, FR-009). This was the last
+  # operation in the repo invoked outside make, and it was exempted in an early draft of the spec on
+  # the grounds that render-sync is a LEGITIMATE caller. The fidelity review rejected that: legitimate
+  # WORK does not imply a legitimate INVOCATION ROUTE, and compliance cost exactly this line.
+  (cd "$MAIN/$SKILL_DIR" && flock "$LOCK" env GM_ASSISTANT_ALLOW_MAIN=1 make --no-print-directory render-sync ARGS="--pool $MAIN/$POOL --main-repo $MAIN")
   # A generator writes its TRACKED .json (and a Mode A its tracked .svg) alongside the gitignored
   # renders; a deterministic gen reproduces those byte-identically, so main stays clean. If any
   # tracked pool file is left dirty, a generator is nondeterministic - surface it loudly (it would

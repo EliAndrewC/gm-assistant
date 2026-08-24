@@ -3,3 +3,6 @@
 {"utc": "2026-08-24T13:14:00Z", "target": "bypass-audit", "commit": "05e4a30", "why": "pre-push full sweep for feature 126: the reference-scope gate cannot enforce the 100% coverage floor (deselected tests take their coverage with them), so the floors and the pool maps are verified once here before pushing to main"}
 {"utc": "2026-08-24T13:26:47Z", "target": "bypass-audit", "commit": "05e4a30", "why": "pre-push full sweep for feature 126: the reference scope cannot enforce the coverage floors (deselected tests take their coverage with them), so the floors, the pool maps and the seeds 41-44 ratchet are verified once here before pushing"}
 {"utc": "2026-08-24T13:31:31Z", "target": "bypass-audit", "commit": "05e4a30", "why": "pre-push full sweep for feature 126: reference scope cannot enforce the coverage floors, so floors + pool maps + the seeds 41-44 ratchet are verified once here before pushing (re-run after a ruff format fix)"}
+{"utc": "2026-08-24T17:15:29Z", "target": "bypass-audit", "commit": "eaad4f3", "outcome": "cancelled", "why": "(no reason given - backed out at the prompt)"}
+{"utc": "2026-08-24T17:15:29Z", "target": "bypass-audit", "commit": "eaad4f3", "outcome": "refused", "why": "probe"}
+{"utc": "2026-08-24T17:15:30Z", "target": "bypass-audit", "commit": "eaad4f3", "outcome": "permitted", "why": "a genuine reason for the full set"}
