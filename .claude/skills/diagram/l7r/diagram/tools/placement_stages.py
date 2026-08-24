@@ -80,7 +80,7 @@ NOTES: dict[str, tuple[str, str]] = {
     ),
     "stage_homesteads": (
         "The farmhouses",
-        "Each bundle is seated against the field edge and packed toward its neighbours. It runs after the skeleton (so houses front lanes) and before everything that fills leftover ground.",
+        "Each bundle is seated against the field edge and packed toward its neighbors, and this stage runs BEFORE the settlement lays any lane of its own - which is the point of the order. The houses answer to the field, the water and each other; the spine and the alleys are derived at stage 07 from where they actually landed. The one way already standing is the connector, which genuinely predates the settlement, so a hamlet strung along a road may legitimately front it.",
     ),
     "stage_appurtenances": (
         "Yards, gardens, byres, wells, sheds",
