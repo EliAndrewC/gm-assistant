@@ -299,6 +299,34 @@ Package-specific timings and skill-specific lessons live in that skill's dev-loo
   Note what this is and is not for: actually WRITING in main is already caught three ways (`webapp/mainguard.py`, the Makefile's `guard`, `settlement._assert_not_main_tree`). This rule prevents the quieter failure those guards cannot see - a read-only diagnostic that confidently reports the wrong tree, which is worse than an error because it looks like an answer.
   **A hook was priced and DECLINED (GM 2026-08-17: "I can't think of a better enforcement mechanism either").** A `PreToolUse` hook is this project's usual answer to a recurring mistake, and it does not fit this one. A hook precise enough to catch the motivating case would have to demand `git -C` on EVERY git call - it fired on a command with one legitimate `cd` and no second path, so nothing structural marked it as wrong - and a hook that fires on nearly every correct command trains sessions to pattern-match past it, which degrades the guards that matter. The narrow alternative (fire only when ONE command contains both a `cd` to a non-clone path AND `.clones/`) is near-zero noise but would have caught neither instance, since neither named two trees. So this rule is deliberately unenforced and rests on habit; the cost is that it will be broken again. **Reopen only with a mechanism that would catch a single-`cd` command whose section header names the other tree** - that is the shape to beat, and neither candidate above does.
 
+**WHAT IS ENFORCED, AND WHERE** (audit 2026-08-24). Twelve guards, each with a test companion that
+`make hooks-test` runs as a gate phase - a guard without one turns the gate red (constitution XVIII).
+
+| rule | mechanism |
+|---|---|
+| never `git push --force` | [`scripts/repo-safety-hooks.sh`](scripts/repo-safety-hooks.sh) - no escape; "never" stops meaning never the moment one exists |
+| no git writes to `/host-l7r-repo` | same script; EDITS there stay legal, the intake workflow needs them |
+| the GM's SOURCE blocks are not editable (V) | [`scripts/source-block-hooks.sh`](scripts/source-block-hooks.sh) - checks containment against the file on disk |
+| hyphens only; American spellings | [`scripts/house-style-hooks.sh`](scripts/house-style-hooks.sh) - exempts the GM's writing and the files that must quote the rule |
+| a README is the GM's to write (XVII) | [`scripts/readme-hooks.sh`](scripts/readme-hooks.sh) |
+| everything runs through `make` | [`scripts/make-only-hooks.sh`](scripts/make-only-hooks.sh) + `l7r/diagram/_invocation.py` |
+| guard files are not edited casually | [`scripts/guard-file-hooks.sh`](scripts/guard-file-hooks.sh) |
+| a spec is reviewed before implementation (XVI); a Mode B map before it ships | [`scripts/review-gate.sh`](scripts/review-gate.sh), run by `sync-with-main.sh` at PUSH time |
+| both perf bookends exist, and a regression blocks the merge (VI) | `make perf-gate`, a phase of `make done FULL=1` |
+| no `-k` subset before the gate; no branches; no polling; batching | the pre-existing `gate`/`no-branch`/`no-poll`/`batching` hooks |
+
+**Deliberately NOT enforced**, because a guard that fires on correct work teaches a session to bypass
+every guard: the caste sense of "people" (correct in narrative and vow voice), gender-neutral
+office-holders (named characters keep their pronouns), Principle XI's kanji triangle, and the
+behavioral principles XII/XIV/XV. File size past ~1,000 lines is REPORTED by `make audit`, never
+gated - the rule prompts a question rather than forbidding a size.
+
+**When you add a guard**, three properties, each learned by getting it wrong: match INVOCATIONS not
+mentions (seven false positives in one feature - a grep, a commit message, a docstring, a fixture
+argument, a redirect, a test harness, and a hook that blocked its own repair); check the ESCAPE FIRST
+or the guard cannot be repaired through the channel it guards; and prove it FIRES by deleting it and
+watching a test go red.
+
 **Review subagents are pre-authorized (GM 2026-07-27).** Claude Code's default system prompt tells a session not to call the Agent tool unless the user asked - a sensible default that nonetheless sits ABOVE this file in the instruction hierarchy, so it silently outranked the mandate to run `settlement-review` before shipping a Mode B map, and three city maps went out unreviewed with nothing warning. The fix is [`container-scripts/append-system-prompt.md`](container-scripts/append-system-prompt.md), loaded via `--append-system-prompt` by the `claude()` wrapper that `setup-dev-env.sh` installs into `~/.bashrc`: it lands AFTER that line with the same authority and grants standing authorization for the four review agents only. **If a review agent ever gets skipped again, check `type claude` first** - the wrapper is per-container and dies with a rebuild. Broad fan-out, `Workflow`, and deep research still need an explicit request.
 
 **Container.** Launch with [`scripts/launch-container.sh`](scripts/launch-container.sh) from the repo root. On every fresh container run `container-scripts/setup-dev-env.sh` once (`--check` re-verifies in ~3s - run it the moment something that used to work fails with "command not found" / "No module named" / "resvg not found"). **INSTALL WHAT YOU NEED** - passwordless sudo exists precisely so a session can `apt-get install` or pip-install without asking; never reject a design *because* a dependency is not currently installed. Ports/mounts, the Python 3.14 pin, the two lockfiles and the server-binding logic are in [`docs/container.md`](docs/container.md).

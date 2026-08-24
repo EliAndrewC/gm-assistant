@@ -1,0 +1,7 @@
+{
+  "utc": "2026-08-24T17:15:29Z",
+  "target": "bypass-audit",
+  "commit": "eaad4f3",
+  "outcome": "cancelled",
+  "why": "(no reason given - backed out at the prompt)"
+}

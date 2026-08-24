@@ -175,10 +175,25 @@ def report(against: str | None) -> int:
             return 1
     elif len(snaps) >= 2:
         base = snaps[-2]
-    if base is None or base is snaps[-1]:
+    # `base is snaps[-1]` USED TO RETURN HERE, silently. That is the retroactive-baseline case - a
+    # `-start` taken after the `-end`, in a detached worktree - and bailing made the report print a
+    # trend table and no comparison, with no message saying why. The newest-that-is-not-the-baseline
+    # selection below handles it properly instead.
+    if base is None:
         return 0
 
-    cur = snaps[-1]
+    # THE CURRENT SNAPSHOT IS THE NEWEST ONE THAT IS NOT THE BASELINE.
+    #
+    # It used to be `snaps[-1]` flat, which silently compares a baseline against ITSELF whenever the
+    # baseline is the newest file - and that is not a corner case, it is what a RETROACTIVE `-start`
+    # looks like. Feature 127 took its end bookend first and its start afterwards in a detached
+    # worktree, so the start sorted last, and the report printed the trend table and then simply no
+    # comparison at all. No error, no zero rows, nothing: the exact "looks like it works" failure
+    # this project keeps meeting.
+    cur = next((s for s in reversed(snaps) if s is not base), None)
+    if cur is None:
+        print(f"\nonly one snapshot exists ({against!r}) - nothing to compare it against")
+        return 0
     print(f"\n{cur['label']} vs {base['label']}:")
     bad = 0
     by_seed = {int(r["seed"]): r for r in base["rows"]}  # type: ignore[index,call-overload]
@@ -195,6 +210,18 @@ def report(against: str | None) -> int:
         print(f"  seed {int(r['seed']):>3}  {was:>6.1f}s -> {now:>6.1f}s  {pct:+6.1f}%{flag}")  # type: ignore[index,call-overload]
     if bad:
         print(f"\n{bad} seed(s) more than 5% slower - diagnose before shipping (constitution VI).")
+        # NONZERO, so this can GATE a merge rather than merely mention a problem (GM 2026-08-24:
+        # "the gate for something merging into main actually will block a significant performance
+        # degradation").
+        #
+        # It used to return 0 - printing "diagnose before shipping" and then letting the shipping
+        # happen. That is the same shape as every other failure this feature found: a record that
+        # notices and does not act. Feature 127 shipped its own push before this report had even
+        # been read, which is the case in point.
+        #
+        # The threshold is the project's own 5%, the figure it already uses for when a whole-process
+        # SPEEDUP is worth having, applied in the other direction.
+        return 1
     return 0
 
 

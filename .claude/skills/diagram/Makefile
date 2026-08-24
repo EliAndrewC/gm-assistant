@@ -4,7 +4,7 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations test-file audit \
+.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations test-file audit perf-gate hooks-test \
 	 map cohort tripwire hamlet cache-audit regressions placement-stages pool-index compound render-sync \
 	 gate-manifest why-placed site-justice crop jogs pack-audit scatter-audit timings citybudget help
 
@@ -34,7 +34,7 @@
 done:
 	@$(if $(FULL),$(MAKE) --no-print-directory bypass-audit REF_WHY="$(REF_WHY)",$(MAKE) --no-print-directory reference)
 	@T0=$$(date +%s); fail=""; \
-	for phase in lint format typecheck $(if $(FULL),test-full,test); do \
+	for phase in lint format typecheck hooks-test $(if $(FULL),test-full perf-gate,test); do \
 	  printf '\n\033[1m== %s ==\033[0m\n' "$$phase"; \
 	  $(MAKE) --no-print-directory $$phase || fail="$$fail $$phase"; \
 	done; \
@@ -239,20 +239,89 @@ timings:        ## where the generation loop's time goes
 citybudget:     ## the city/capital space-budget planner
 	$(RUN).citybudget $(ARGS)
 
+# BOTH BOOKENDS ARE ENFORCED HERE, not requested (constitution VI, GM 2026-08-24: "are we now
+# actually requiring at the tool level that -start was run at the beginning of a session and -end was
+# run before shipping?"). Until today the answer was no, and the cost is on the record: feature 126
+# took a `-start`, never took a `-end`, and shipped a +51% generation slowdown that nobody saw for a
+# day. `perf-report` even printed "diagnose before shipping" - and exited 0.
+#
+# So this refuses to let a feature ship without its opening bookend, and takes the closing one
+# itself. You cannot forget the second, and you cannot skip the first without the gate saying so.
+#
+# THE `-start` MAY BE TAKEN RETROACTIVELY, in a detached worktree at the pre-feature commit - that
+# is the same tree the Principle XIII regression baseline uses, and it is measuring the same thing.
+# What is NOT allowed is shipping with no baseline at all, because then "did this get slower" has no
+# answer and the next session inherits the question.
+# EVERY GUARD'S TEST COMPANION ACTUALLY RUNS (standing rule, GM 2026-08-24).
+#
+# The 2026-08-24 enforcement audit found EIGHT hook scripts, EIGHT test companions, and nothing that
+# executed any of them. They were decoration by this project's own definition - the one T034 uses:
+# a guard whose test does not fail when the guard is removed is not implemented, and a test nothing
+# runs cannot fail at all.
+#
+# Cheap enough to sit in every `make done`: the whole set is seconds, because a hook test feeds JSON
+# to a script and reads an exit code. Nothing here rolls a map.
+hooks-test:     ## run every scripts/test-*-hooks.sh, and prove each guard still has a companion
+	@root=$$(git rev-parse --show-toplevel); fail=""; n=0; \
+	for h in $$root/scripts/*-hooks.sh $$root/scripts/review-gate.sh; do \
+	  b=$$(basename $$h); case $$b in test-*) continue ;; esac; \
+	  if [ ! -f "$$root/scripts/test-$$b" ]; then \
+	    printf '\n\033[1mGUARD WITHOUT A TEST: %s has no scripts/test-%s\033[0m\n' "$$b" "$$b"; \
+	    printf 'A guard ships with its companion. Without one, nothing can tell whether it still\n'; \
+	    printf 'fires - or whether it fires on correct work, which is the more expensive failure.\n\n'; \
+	    fail="$$fail $$b"; continue; \
+	  fi; \
+	  n=$$((n+1)); \
+	  "$$root/scripts/test-$$b" >/tmp/ht.$$$$ 2>&1 || { printf '\n\033[1mHOOK TESTS FAILED: %s\033[0m\n' "$$b"; sed 's/^/  /' /tmp/ht.$$$$; fail="$$fail $$b"; }; \
+	  rm -f /tmp/ht.$$$$; \
+	done; \
+	if [ -n "$$fail" ]; then printf '\n\033[1mhooks-test FAILED:%s\033[0m\n\n' "$$fail"; exit 1; fi; \
+	printf 'hooks-test: %s guard suites green\n' "$$n"
+
+perf-gate:      ## require the feature's -start bookend, take -end, and FAIL on a regression
+	@f="$(or $(FEATURE),$(SPECIFY_FEATURE))"; \
+	if [ -z "$$f" ] && [ -f ../../../.specify/feature.json ]; then \
+	  f=$$(python3 -c "import json;print(json.load(open('../../../.specify/feature.json'))['feature_directory'].split('/')[-1])" 2>/dev/null); \
+	fi; \
+	n=$$(printf '%s' "$$f" | grep -oE '^[0-9]+' || true); \
+	if [ -z "$$n" ]; then \
+	  printf '\n\033[1mPERF GATE: cannot tell which feature this is.\033[0m\n'; \
+	  printf 'Set SPECIFY_FEATURE=NNN-slug (spec-kit work) or FEATURE=NNN, so the bookends can be paired.\n\n'; \
+	  exit 1; \
+	fi; \
+	if ! ls dev/perf-log/*"$$n"-start*.json >/dev/null 2>&1; then \
+	  printf '\n\033[1mPERF GATE: no %s-start bookend exists, so a regression cannot be measured.\033[0m\n\n' "$$n"; \
+	  printf 'Constitution VI wants it taken on UNMODIFIED code, before the first edit. Retroactively is\n'; \
+	  printf 'fine and is what the regression baseline already does - take it in a detached worktree at\n'; \
+	  printf 'the pre-feature commit:\n\n'; \
+	  printf '  git worktree add --detach /tmp/base%s <pre-feature-commit>\n' "$$n"; \
+	  printf '  ( cd /tmp/base%s/.claude/skills/diagram && make perf LABEL=%s-start )\n' "$$n" "$$n"; \
+	  printf '  cp /tmp/base%s/.claude/skills/diagram/dev/perf-log/*%s-start*.json dev/perf-log/\n\n' "$$n" "$$n"; \
+	  printf 'What is NOT allowed is shipping with no baseline: "did this get slower" then has no answer,\n'; \
+	  printf 'and feature 126 shipped a +51%% slowdown exactly that way.\n\n'; \
+	  exit 1; \
+	fi; \
+	$(MAKE) --no-print-directory perf LABEL="$$n-end" >/dev/null; \
+	$(MAKE) --no-print-directory perf-report AGAINST="$$n-start"
+
 audit:          ## how the gate has actually been used - every run, and every bypass
-	@printf '\n\033[1mGate runs\033[0m (dev/run-log.jsonl)\n'
-	@python3 -c "import json,os,collections; \
-rows=[json.loads(l) for l in open('dev/run-log.jsonl')] if os.path.isfile('dev/run-log.jsonl') else []; \
-print('  (none yet)') if not rows else None; \
-[print(f\"  {r['utc']}  {r['scope']:<9} {r['seconds']:>4}s  {r['result']:<24} {r['commit']}\") for r in rows[-25:]]; \
+	@python3 -c "import json,glob,collections,os; \
+rows=sorted((json.load(open(f)) for f in glob.glob('dev/run-log/*.json')),key=lambda r:r.get('utc','')); \
+print(chr(10)+'\033[1mGate runs\033[0m (dev/run-log/)'); \
+[print(f\"  {r['utc']}  {r['scope']:<9} {r['seconds']:>4}s  {r['result']:<22} {r['commit']}\") for r in rows[-25:]] or print('  (none yet)'); \
 c=collections.Counter(r['scope'] for r in rows); \
-print(f\"\n  {len(rows)} runs: \" + ', '.join(f'{k}={v}' for k,v in sorted(c.items()))) if rows else None"
-	@printf '\n\033[1mBypasses\033[0m (dev/bypass-log.jsonl) - a FULL run is only justified at the END of a feature\n'
-	@python3 -c "import json,os; \
-rows=[json.loads(l) for l in open('dev/bypass-log.jsonl')] if os.path.isfile('dev/bypass-log.jsonl') else []; \
-print('  (none yet)') if not rows else None; \
-[print(f\"  {r['utc']}  {r.get('outcome','?'):<10} {r['why'][:78]}\") for r in rows[-15:]]"
-	@printf '\n'
+print(f\"  {len(rows)} runs: \"+', '.join(f'{k}={v}' for k,v in sorted(c.items()))) if rows else None; \
+b=sorted((json.load(open(f)) for f in glob.glob('dev/bypass-log/*.json')),key=lambda r:r.get('utc','')); \
+print(chr(10)+'\033[1mBypasses\033[0m (dev/bypass-log/) - a FULL run is only justified at the END of a feature'); \
+[print(f\"  {r['utc']}  {r.get('outcome','?'):<10} {r['why'][:76]}\") for r in b[-15:]] or print('  (none yet)'); \
+print()"
+	@printf '\033[1mFiles past the ~1,000-line bar\033[0m (constitution X clause 13 - a QUESTION, not a limit)\n'
+	@find l7r tests -name '*.py' -exec wc -l {} + 2>/dev/null | awk '$$1>1000 && $$2!="total"{printf "  %5d  %s\n",$$1,$$2}' | sort -rn | head -12
+	@printf '  Each asks: should this become a package of subfiles with its own CLAUDE.md index? An\n'
+	@printf '  ordered-data REGISTRY may stay large with an inline justification - the only carve-out,\n'
+	@printf '  and it protects rows stating real DECISIONS, never a roster derived from code elsewhere.\n'
+	@printf '  Reported rather than gated on purpose: five files already exceed it and the rule prompts\n'
+	@printf '  a question rather than forbidding a size.\n\n'
 
 help:           ## list every target with its one-line purpose
 	@printf '\n\033[1mOperations\033[0m - everything runs through one of these.\n\n'
@@ -285,13 +354,17 @@ help:           ## list every target with its one-line purpose
 #
 # `make audit` reads it back. Elapsed time is recorded too, so a target that has quietly got slower
 # shows up in the history rather than in someone's memory.
-LOGRUN = python3 -c "import json,subprocess,sys,time; \
+LOGRUN = python3 -c "import json,os,subprocess,sys,time; \
   h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True).stdout.strip(); \
-  open('dev/run-log.jsonl','a').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':sys.argv[1],'scope':sys.argv[2],'seconds':int(sys.argv[3]),'result':sys.argv[4],'commit':h})+chr(10))"
+  ts=time.strftime('%Y%m%dT%H%M%S',time.gmtime())+'%06d'%(time.time_ns()//1000%1000000); \
+  os.makedirs('dev/run-log',exist_ok=True); \
+  open(f'dev/run-log/{ts}-{os.getpid()}.json','w').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':sys.argv[1],'scope':sys.argv[2],'seconds':int(sys.argv[3]),'result':sys.argv[4],'commit':h},indent=2)+chr(10))"
 
-LOGBYPASS = python3 -c "import json,subprocess,sys,time; \
+LOGBYPASS = python3 -c "import json,os,subprocess,sys,time; \
   h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True).stdout.strip(); \
-  open('dev/bypass-log.jsonl','a').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':'$(MAKECMDGOALS)','commit':h,'outcome':sys.argv[1],'why':sys.argv[2]})+chr(10))"
+  ts=time.strftime('%Y%m%dT%H%M%S',time.gmtime())+'%06d'%(time.time_ns()//1000%1000000); \
+  os.makedirs('dev/bypass-log',exist_ok=True); \
+  open(f'dev/bypass-log/{ts}-{os.getpid()}.json','w').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':'$(MAKECMDGOALS)','commit':h,'outcome':sys.argv[1],'why':sys.argv[2]},indent=2)+chr(10))"
 
 QUICK_BUDGET = 60
 
