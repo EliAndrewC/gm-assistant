@@ -268,3 +268,27 @@ Appended verbatim, later the same day. Nothing above was changed.
 > also update our plan to incorporate this notion of how and when the AWS resources are created. and
 > we need that to include whatever coordination between multiple Claude code sessions needs to be
 > done."
+
+---
+
+## Fourth request, 2026-08-24 - after reviewing the summary table
+
+Appended verbatim. Nothing above was changed.
+
+> "Why is the twenty five minute make cohort run out of scope? That's exactly the kind of thing that
+> we want to run on AWS, isn't it? Also, if the feature is not complete, then I don't think we want
+> to do a merge only. Do we? wouldn't we just want to maintain that in the Local clone or in the
+> remote branch? I don't think we want things to land on Maine if the feature is incomplete. When
+> would we ever want that? I mean, we might want to merge things into main if they are not being
+> done through a SpecKit feature. But if there is a SpecKit feature, then I think our tooling should
+> require that when we merge something in, we either declare it to not be part of a feature, or we
+> say what the feature is, and then an automated tooling check confirms that the feature is indeed
+> complete. And then we do not run on AWS for this merge and just exit early with an error if the
+> feature is not complete. Further, I think that we probably want to require that Anything
+> involving the diagram skill is sufficiently complicated to require a spec kid feature. Changes
+> made to other parts of this repository are not that complicated, but the diagram skill
+> specifically is. Which now that I think about it might suggest that we should split the diagram
+> skill out into its own repository. What do you think about that? It has grown into a project into
+> its own right, and the fact that we are now having to do so much work in order to just
+> distinguish the diagram skill from other parts of the repository with completely different rules
+> suggests to me that it should become its own repo. How does that strike you?"
