@@ -1035,3 +1035,47 @@ the "perfect rectangle" read earlier rounds objected to. Separately all three pa
 1.32 / 1.38 / 1.34 - a 4% spread from a range of 1.0-2.2, because the ladder collapses the roll toward
 its floor. Neither is a form question: *iriai* boundaries followed ridge, stream and path, so nothing
 rectilinear is attested and this is calibration.
+
+## 2026-08-24, features 126 and 128: the houses now stand before any lane is drawn
+
+Recorded late, and that is itself the lesson - two features changed this map's layout order and
+neither wrote a line here until a reviewer asked where the entry was. **A pool map's notes file is
+part of the delta, not a courtesy.**
+
+**What changed.** `stage_ways` used to run before `stage_homesteads`, so the connector and the field
+spur had already registered no-build corridors before a single house was seated. It is now split:
+`stage_seat` decides where the cluster sits and draws NOTHING, and `stage_track` draws the connector
+and the spur after the houses exist. At the moment the houses are seated the manifest holds **0
+lanes and 0 lane corridors**, against 2 and 2 before.
+
+**What it did to this map, measured on seed 4:**
+
+| | before | after |
+|---|---|---|
+| cluster long axis | 603 ft | **462 ft** |
+| cluster aspect | 2.88 | **2.31** |
+| lanes | 10 | 9 |
+| internal lane length | 980 ft | 774 ft |
+| median house-to-lane | 39 ft | 49 ft |
+| unjoined lane islands | 3 | **4** |
+| crown entries | - | -23% |
+| kosatsuba displacement | - | +117 ft |
+
+The first two are the point of the feature: freed of the corridors, the houses pull into a rounder
+cluster instead of stringing out along a way that was there first. All 15 houses still place.
+
+**The cost, honestly.** The web breaks up more - 4 unjoined fragments against 3 - because with the
+steadings standing first there is less continuous room for it. That is recorded with its mechanism
+and both halves of its fix in
+[`../../future-work/farming-communities.md`](../../future-work/farming-communities.md); it is a
+placer change of its own size rather than something to slip into this delta.
+
+**Two things this map taught that generalize:**
+
+- **A route that STARTS inside the fabric cannot be routed out of it.** Both tracks began at points
+  derived from the PREDICTED seat band, and with the houses placed first those points sit inside the
+  house cloud. `_cluster_gateway` measures the placed cloud instead.
+- **The spur leaves from the side facing its target, not from the cluster's outward face.** Reusing
+  the connector's gateway pointed this map's spur AWAY from the field it serves: 248 ft at the start
+  receding to 281 ft at the tip. `_cluster_edge_toward` fixed it to 46 -> 13 ft. Found by
+  `settlement-review` on a roll already reported clean, which is the whole argument for the reviewer.

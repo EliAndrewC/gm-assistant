@@ -708,7 +708,14 @@ def _route(start: Pt, goal: Pt, hard: list[Poly], walls: Sequence[Poly], water: 
     x0, x1 = min(start[0], goal[0]) - pad, max(start[0], goal[0]) + pad
     y0, y1 = min(start[1], goal[1]) - pad, max(start[1], goal[1]) + pad
     nx, ny = int((x1 - x0) / cell) + 1, int((y1 - y0) / cell) + 1
-    if nx * ny > 90000:  # pragma: no cover - the pad is bounded, so the grid is too
+    # AND IT DOES FIRE, on every connector - the older note here said the pad was bounded so the
+    # grid was too, which is true only of the short links this router was written for. A connector
+    # reaches the map frame, so its span is the canvas width; at `pad_mult` 0.75 the search box is
+    # 2.5 canvases across and the lattice is hundreds of thousands of cells. The router therefore
+    # declines EVERY connector, which is precisely why `_thread_the_fabric` cannot rescue a track
+    # aimed through the cluster and why the bearing has to be chosen clear of the steadings up in
+    # `connector_track`. Knowing that this returns [] rather than a detour is load-bearing.
+    if nx * ny > 90000:
         return []
 
     def to_pt(ix: int, iy: int) -> Pt:
@@ -1567,19 +1574,44 @@ def _thread_the_fabric(s: Settlement, plan: SitePlan, run: Poly, gap: float = TR
     return out if len(out) >= 2 else run
 
 
-def _crosses_fabric(run: Poly, fabric: list[Poly], gap: float) -> bool:
+def _fabric_hits(run: Poly, fabric: Sequence[Poly], gap: float) -> int:
+    """HOW MANY steadings this run would foul - a count, so a sweep with no clean option can rank.
+
+    PROXIMITY, NOT CROSSING, and the distinction is the whole reason this exists. `path_violations`
+    asks `crosses_poly`, which is the right question for a crop: a track either enters the paddy or
+    it does not. It is the wrong question for a farmstead, because the lane is DRAWN WITH A WIDTH and
+    the overlap matrix sizes every lane at 6 ft whatever its own record says - so a centerline that
+    passes a garden without crossing it still puts the tread through the vegetables. Mizuguchi's
+    connector crossed nothing at all and was 0.2 px from a garden rect; every bearing in the sweep
+    scored a clean zero, and the ranking this was added to make had nothing to rank."""
+    return sum(1 for poly in fabric if _crosses_fabric(run, [poly], gap))
+
+
+def _crosses_fabric(run: Poly, fabric: Sequence[Poly], gap: float) -> bool:
     """Does this polyline pass within `gap` of anything already standing?
 
     The clip is not self-verifying: `clip_to_clear` shortens a run at the first obstruction, and a
     run that re-enters the fabric further along comes back shorter and still crossing. Checking the
     RESULT is what turns "we tried" into "it is clear", and it is the difference between the caller
-    knowing to take a detour and the caller believing it is done."""
+    knowing to take a detour and the caller believing it is done.
+
+    IT MUST MEASURE FROM BOTH SHAPES, and the first version measured from only one. Testing crossings
+    plus `edge_dist` at the RUN'S OWN VERTICES is blind to the commonest case there is: a steading
+    standing beside the MIDDLE of a long segment, close enough to be overlapped but not close enough
+    to any vertex to be seen. A connector crosses a hamlet in three or four points, so its segments
+    run 700 px and more, and everything the cluster owns sits nearer their midpoints than their ends.
+    Inashiro hid it - its offending steadings happened to straddle the line, so `segments_cross`
+    caught them - and Mizuguchi did not: the connector shipped 0.2 px from a garden and 14.6 px from
+    a farmhouse while this returned False at a gap of 0.5. So the poly's own vertices are measured
+    against each segment as well, which is the half that closes it."""
     for poly in fabric:
         for k in range(len(run) - 1):
             a, b = run[k], run[k + 1]
             for j in range(len(poly)):
                 c, d = poly[j], poly[(j + 1) % len(poly)]
                 if segments_cross(a, b, c, d):
+                    return True
+                if seg_dist(c[0], c[1], a, b) < gap:
                     return True
             if edge_dist(a[0], a[1], poly) < gap or edge_dist(b[0], b[1], poly) < gap:
                 return True
@@ -1671,6 +1703,10 @@ def stage_track(s: Settlement, plan: SitePlan) -> None:
     cx, cy = seat["cx"], seat["cy"]
 
     crops = crop_polys(s)
+    # The steadings, read ONCE for the whole stage: the bearing sweep ranks against them and
+    # `_thread_the_fabric` re-reads them for the clip. They cannot change during this stage -
+    # nothing here draws a homestead - so a second walk would only be a second chance to disagree.
+    fabric = [poly for poly, _owner, _kind in _homestead_polys(s)]
 
     def to_screen(p: Pt) -> Pt:
         """Seat frame (along the margin, away from the field) -> screen."""
@@ -1714,7 +1750,7 @@ def stage_track(s: Settlement, plan: SitePlan) -> None:
         drawn_wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
         _band_gate = to_screen((float(layout["gateway"][0]), float(layout["gateway"][1])))
         gate_pt = push_out_of(plan.envelope, _cluster_gateway(s, seat, _band_gate), SPUR_SETBACK)
-        track = connector_track(plan, gate_pt, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet, waters=drawn_water_segs(s))
+        track = connector_track(plan, gate_pt, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet, waters=drawn_water_segs(s), fabric=fabric)
         s.lane(_thread_the_fabric(s, plan, route_around(plan.envelope, track, SPUR_SETBACK)), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
         return
 
@@ -1792,7 +1828,7 @@ def stage_track(s: Settlement, plan: SitePlan) -> None:
     # back in `stage_sink`, before this, and a cohort sweep found ways ending in it on two maps.
     toe = s.toe_band()
     drawn_wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
-    track = connector_track(plan, gate, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet, waters=drawn_water_segs(s))
+    track = connector_track(plan, gate, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet, waters=drawn_water_segs(s), fabric=fabric)
     s.lane(_thread_the_fabric(s, plan, route_around(plan.envelope, track, SPUR_SETBACK)), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
 
 
@@ -2003,7 +2039,7 @@ def polyline_len(pts: Poly) -> float:
     return sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
 
 
-def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach: float = 4000.0, wet: Sequence[Poly] = (), waters: Sequence[tuple[Pt, Pt]] = ()) -> Poly:
+def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach: float = 4000.0, wet: Sequence[Poly] = (), waters: Sequence[tuple[Pt, Pt]] = (), fabric: Sequence[Poly] = ()) -> Poly:
     """The track from the settlement's gateway to the map edge, steered clear of the crop.
 
     Bearings are tried outward from "away from the field, leaning downslope" - the direction a real
@@ -2055,7 +2091,7 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
         return out
 
     wet_grown = [_inflated(w) for w in wet if len(w) >= 3]
-    best: tuple[tuple[int, int], Poly] | None = None
+    best: tuple[tuple[int, int, int], Poly] | None = None
     for swing in sorted((9.0 * k for k in range(-20, 21)), key=abs):
         theta = math.radians(base + swing)
         # THE CANDIDATE IS THE PATH THAT WILL BE DRAWN, not the straight line to its endpoint. A
@@ -2079,11 +2115,28 @@ def connector_track(plan: SitePlan, start: Pt, avoid: Sequence[Poly] = (), reach
         # road does; whatever crop it then clips is bent round afterwards by `route_around`, which
         # the marsh has no equivalent of because a track through a marsh cannot be nudged dry.
         soaked = sum(path_violations(path, [w], None, ()) for w in wet_grown)  # the WET POLYGON only - pond and brook are scored once, below
+        # THE STEADINGS ARE SCORED TOO, and they have to be scored HERE (feature 128). With the
+        # houses standing before any track is drawn, the sweep's ideal bearing can point straight back
+        # through the cluster - and nothing downstream can rescue that. `_thread_the_fabric` routes
+        # and clips, but `_route` gives up on a span this long (its lattice exceeds the cell cap and
+        # it returns [] for any connector reaching the frame), and a clip can only SHORTEN a run, so a
+        # through-road laid across the hamlet stays laid across the hamlet.
+        #
+        # Measured on Mizuguchi: the gateway sat at the cluster's west face against the map edge, every
+        # westward bearing was blocked, and the sweep swung a full 180 deg and left EAST - back over
+        # the settlement, 0.2 px from a garden and 14.6 px from a farmhouse.
+        #
+        # It ranks between wet and crop, and that ordering is a judgment about what a track can and
+        # cannot be nudged out of afterwards. A marsh cannot (a road through a swamp is not a road), so
+        # wet still outranks everything. A crop clip CAN - `route_around` bends the drawn track round
+        # the hem, which is what that call exists for. A farmstead cannot be nudged either, and it is
+        # somebody's house, so it sits directly under wet and above the crop.
+        steaded = _fabric_hits(path, fabric, TRACK_FABRIC_GAP)
         violations = path_violations(path, avoid or [plan.envelope], pond, brook, waters)
-        if soaked == 0 and violations == 0:
+        if soaked == 0 and steaded == 0 and violations == 0:
             return path
-        if best is None or (soaked, violations) < best[0]:
-            best = ((soaked, violations), path)
+        if best is None or (soaked, steaded, violations) < best[0]:
+            best = ((soaked, steaded, violations), path)
     # NO CLEAN BEARING: take the LEAST-BAD one rather than a fixed escape route.
     #
     # This used to return `start` plus a ray straight away from the field, and that fallback is what

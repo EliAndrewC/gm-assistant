@@ -395,3 +395,33 @@ put the crow's foot straight back. **The scar was a width problem, not a trim pr
 link now inherits the width of the way it joins, because a link exists to make two lanes one and
 should look like the lane it completes. The junction floor survives for CROSSINGS, where a way ties
 in at a real angle and pins the trim.
+
+## 2026-08-24, feature 128: this map is why the connector's bearing now knows the houses are there
+
+**The failure.** With the lanes moved after the houses (feature 128), Mizuguchi's re-roll turned red
+on `features_do_not_overlap` and `houses_clear_of_lanes`: the connector ran 0.2 px from a garden and
+its threshing yard, and 14.6 px from a farmhouse. The committed pre-128 manifest passed every check,
+so this was a regression and not an inherited fault.
+
+**Why it happened here and not on the reference map.** The gateway sat on the cluster's west face,
+hard against the map edge, so every westward bearing was blocked. The sweep swung a full 180 degrees
+and left EAST - straight back across the settlement it had just come out of.
+
+**Three separate things had to be true for that to ship**, and each is worth knowing on its own:
+
+1. **`_crosses_fabric` measured from one shape only.** Crossings, plus `edge_dist` at the run's own
+   vertices. A connector crosses a hamlet in three or four points, so its segments are hundreds of
+   pixels long and everything the cluster owns lies nearer their MIDPOINTS than their ends. It
+   returned False here at a gap of 0.5 px. It now measures the poly's vertices against each segment
+   as well.
+2. **`_route` declines every connector.** Its lattice is capped at 90,000 cells and a connector's
+   span is the canvas width, so it returns `[]` - and a clip can only SHORTEN a run. Nothing
+   downstream of the bearing choice could have rescued this.
+3. **The sweep asked the wrong question.** `path_violations` tests `crosses_poly`, which is right for
+   a paddy - a track is in the crop or it is not - and wrong for a farmstead, because the lane is
+   drawn with a width and the overlap matrix sizes every lane at 6 ft. Nothing crossed anything here;
+   every bearing scored a clean zero and the ranking had nothing to rank. `_fabric_hits` scores
+   PROXIMITY instead.
+
+**The ordering that came out of it**: wet ground, then steadings, then crops. A marsh cannot be
+nudged and neither can somebody's house; a crop clip can, and `route_around` is the call that does it.

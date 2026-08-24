@@ -35,7 +35,7 @@ padding:.15rem 0;font:.87rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
 <div class="hd"><span class="n">01</span><span class="t">The bearing and the fall</span><span class="fn">stage_water_frame</span></div>
 <p class="why">THIS STAGE DRAWS NOTHING, and that is the whole point of it. The generator&#x27;s first act is to settle two numbers - which way the water runs, and which way the land falls - and write them into the map&#x27;s metadata. Which end of the fan is the head, which margin the cluster may stand on, which way the drain runs, where the marsh is allowed to be: every one of those is decided downstream of these values, and none of it is ink yet. The water SKELETON is drawn in the next stage, by the same call that lays the paddy.</p>
 <div class="noink">
-<div class="cap">This stage places no ink &mdash; it decides these</div>
+<div class="cap">This stage places no ink - it decides these</div>
 <div class="kv">
 <div><span class="k">generated_by</span><span class="v">hamletgen</span></div>
 <div><span class="k">name</span><span class="v">Inashiro</span></div>
@@ -64,59 +64,69 @@ padding:.15rem 0;font:.87rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
 <img src="03-stage_sink.png" width="1100" height="1100" alt="Where the runoff goes" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">04</span><span class="t">The ways that were already there</span><span class="fn">stage_ways</span></div>
-<p class="why">Only the EXOGENOUS ways: the connector out to the off-map road, and the spur to the field. These are laid before the houses because they genuinely predate the settlement - the road to the county town was there first, and a hamlet that grows beside it may legitimately front it. Everything INTERNAL used to be laid here too, and is not any more: a lane between two farmsteads is trodden by the households already living there, so it cannot be drawn before they exist. The question this stage asks is not whether a way reserves ground, but whether it was there before the settlement was.</p>
-<img src="04-stage_ways.png" width="1100" height="1100" alt="The ways that were already there" loading="lazy">
+<div class="hd"><span class="n">04</span><span class="t">Where the settlement will sit</span><span class="fn">stage_seat</span></div>
+<p class="why">The seat band: which stretch of the field margin the cluster will occupy, with its back to the high ground and its face to the water. NOTHING IS DRAWN HERE - this stage decides a place and reserves no ground at all, which is why it can run before the houses without constraining them. It used to be the front half of a stage that also drew the connector and the field spur, and separating the two is what let every lane move after the farmhouses.</p>
+<div class="noink">
+<div class="cap">This stage places no ink - it decides these</div>
+<div class="kv">
+<div><span class="k">windward</span><span class="v">W</span></div>
+<div><span class="k">lane_skeleton</span><span class="v">spine</span></div>
+</div></div>
 </section>
 <section class="stage">
 <div class="hd"><span class="n">05</span><span class="t">The farmhouses</span><span class="fn">stage_homesteads</span></div>
-<p class="why">Each bundle is seated against the field edge and packed toward its neighbors, and this stage runs BEFORE the settlement lays any lane of its own - which is the point of the order. The houses answer to the field, the water and each other; the spine and the alleys are derived at stage 07 from where they actually landed. The one way already standing is the connector, which genuinely predates the settlement, so a hamlet strung along a road may legitimately front it.</p>
+<p class="why">Each bundle is seated against the field edge and packed toward its neighbors - and at this moment there is NOT ONE LANE ANYWHERE ON THE MAP. That is the whole feature: the houses answer to the field, the water and each other, and nothing else has taken ground before them. Every way on the finished map - the connector, the field spur, the cluster&#x27;s spine and the alleys - is laid after this plate and positioned from where these houses actually landed.</p>
 <img src="05-stage_homesteads.png" width="1100" height="1100" alt="The farmhouses" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">06</span><span class="t">Yards, gardens, byres, wells, sheds</span><span class="fn">stage_appurtenances</span></div>
+<div class="hd"><span class="n">06</span><span class="t">The connector and the field spur</span><span class="fn">stage_track</span></div>
+<p class="why">The track out to the off-map road, and the path to the fields - drawn NOW, after the farmhouses, because a lane drawn earlier takes ground the houses then cannot have. That is true whatever the lane represents: a road may well predate a settlement in the world, but this generator does not inherit a road, it DRAWS one, and drawing it first reserves a no-build corridor the placer then refuses seats against. Both tracks now start from the settlement as it actually stands rather than from where it was predicted to go.</p>
+<img src="06-stage_track.png" width="1100" height="1100" alt="The connector and the field spur" loading="lazy">
+</section>
+<section class="stage">
+<div class="hd"><span class="n">07</span><span class="t">Yards, gardens, byres, wells, sheds</span><span class="fn">stage_appurtenances</span></div>
 <p class="why">The rest of each steading, plus the shared fixtures. Kept as its own stage after the houses because several of them are sited RELATIVE to a house that must already exist - a threshing yard south of its own farmhouse, a byre off the frontage, a well between steadings.</p>
-<img src="06-stage_appurtenances.png" width="1100" height="1100" alt="Yards, gardens, byres, wells, sheds" loading="lazy">
+<img src="07-stage_appurtenances.png" width="1100" height="1100" alt="Yards, gardens, byres, wells, sheds" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">07</span><span class="t">The lanes the settlement wore</span><span class="fn">stage_web</span></div>
+<div class="hd"><span class="n">08</span><span class="t">The lanes the settlement wore</span><span class="fn">stage_web</span></div>
 <p class="why">Every ENDOGENOUS way - the cluster&#x27;s spine and the web of alleys off it - drawn now because only now is there a settlement to derive them from. Both are fitted to where the houses actually landed rather than to where the seat band predicted they would land, which is the distinction that matters: the spine used to be sized on the band while the houses spread wider than it, so it could not be guaranteed to reach them. Laid first, these lanes competed for ground with the very houses they exist to serve - measured, the four pool clusters&#x27; long axes grew 15-97%, sprawl no check measures. They also run after the byres and wells, not merely after the houses; between the two, their corridors reserved courtyard ground and exiled fixtures up to 210 ft. A DISPERSED hamlet draws nothing here at all, because it has no internal network - its farmsteads stand in their own holdings and the connector is the only way on the map.</p>
-<img src="07-stage_web.png" width="1100" height="1100" alt="The lanes the settlement wore" loading="lazy">
+<img src="08-stage_web.png" width="1100" height="1100" alt="The lanes the settlement wore" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">08</span><span class="t">The notice board</span><span class="fn">stage_notice</span></div>
+<div class="hd"><span class="n">09</span><span class="t">The notice board</span><span class="fn">stage_notice</span></div>
 <p class="why">The kosatsuba stands ON a way, so it cannot be placed until the ways are final - which is after the web, not with the other structures. This is the clearest case on the map of a feature whose position is defined by something drawn later than itself.</p>
-<img src="08-stage_notice.png" width="1100" height="1100" alt="The notice board" loading="lazy">
+<img src="09-stage_notice.png" width="1100" height="1100" alt="The notice board" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">09</span><span class="t">Scrub and rough grazing</span><span class="fn">stage_hinterland</span></div>
+<div class="hd"><span class="n">10</span><span class="t">Scrub and rough grazing</span><span class="fn">stage_hinterland</span></div>
 <p class="why">Ground cover fills what is left, so it runs after everything it must avoid. It reads the drawn features as obstacles rather than reserving anything from them.</p>
-<img src="09-stage_hinterland.png" width="1100" height="1100" alt="Scrub and rough grazing" loading="lazy">
+<img src="10-stage_hinterland.png" width="1100" height="1100" alt="Scrub and rough grazing" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">10</span><span class="t">The woodland commons</span><span class="fn">stage_woodland</span></div>
+<div class="hd"><span class="n">11</span><span class="t">The woodland commons</span><span class="fn">stage_woodland</span></div>
 <p class="why">Managed coppice on ground nothing else wanted. After the hinterland so it sits in real open ground rather than in ground the scrub was about to take.</p>
-<img src="10-stage_woodland.png" width="1100" height="1100" alt="The woodland commons" loading="lazy">
+<img src="11-stage_woodland.png" width="1100" height="1100" alt="The woodland commons" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">11</span><span class="t">The shelter belt</span><span class="fn">stage_windbreak</span></div>
+<div class="hd"><span class="n">12</span><span class="t">The shelter belt</span><span class="fn">stage_windbreak</span></div>
 <p class="why">Sited from the wind and the cluster it shelters, so it needs the cluster finished. Its canopy is deferred to the flush at the end - drawn here it would be painted over by nothing, but its crowns must be filtered against every structure, and not all of them exist yet.</p>
-<img src="11-stage_windbreak.png" width="1100" height="1100" alt="The shelter belt" loading="lazy">
+<img src="12-stage_windbreak.png" width="1100" height="1100" alt="The shelter belt" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">12</span><span class="t">Planks and decks</span><span class="fn">stage_crossings</span></div>
+<div class="hd"><span class="n">13</span><span class="t">Planks and decks</span><span class="fn">stage_crossings</span></div>
 <p class="why">Every way that crosses water gets its deck HERE, which is why the earlier way stages are free to cross a ditch: the crossing is legal because this stage will deck it.</p>
-<img src="12-stage_crossings.png" width="1100" height="1100" alt="Planks and decks" loading="lazy">
+<img src="13-stage_crossings.png" width="1100" height="1100" alt="Planks and decks" loading="lazy">
 </section>
 <section class="stage">
-<div class="hd"><span class="n">13</span><span class="t">Crop, title, scalebar</span><span class="fn">stage_frame</span></div>
+<div class="hd"><span class="n">14</span><span class="t">Crop, title, scalebar</span><span class="fn">stage_frame</span></div>
 <p class="why">The canvas is deliberately generous and is cropped to content only now. Erring large is cheap - unused canvas is thrown away - while erring small silently mis-shapes the field.</p>
-<img src="13-stage_frame.png" width="1100" height="1130" alt="Crop, title, scalebar" loading="lazy">
+<img src="14-stage_frame.png" width="1100" height="1134" alt="Crop, title, scalebar" loading="lazy">
 </section>
 <div class="closing">
 <h2>Why there is no water-only plate</h2>
 <p>The original ask was to see the map <em>&ldquo;when it is only the water, and then when we have added only the rice paddy fields&rdquo;</em>. There is no such moment to photograph: <code>build_comb</code> is a single pure call that returns the canals and the plots together, and <code>stage_field</code> draws both. Plate 02 is therefore the earliest state in which water exists at all.</p>
-<p>Two ways to manufacture the plate were priced and declined. Splitting <code>stage_field</code> into a channels pass and a plots pass would change <code>STAGES</code>, which is the generator's design rather than a convenience &mdash; reordering it to suit a documentation page is the tail wagging the dog. Having this tool draw the channels itself would make a diagnostic that re-derives engine internals, which <code>tools/CLAUDE.md</code> forbids for a measured reason: such a tool drifts from the engine and then reports the wrong thing with total confidence.</p>
+<p>Two ways to manufacture the plate were priced and declined. Splitting <code>stage_field</code> into a channels pass and a plots pass would change <code>STAGES</code>, which is the generator's design rather than a convenience - reordering it to suit a documentation page is the tail wagging the dog. Having this tool draw the channels itself would make a diagnostic that re-derives engine internals, which <code>tools/CLAUDE.md</code> forbids for a measured reason: such a tool drifts from the engine and then reports the wrong thing with total confidence.</p>
 <p>So plate 02 shows water and paddy together, deliberately.</p>
 </div>
 </div>
