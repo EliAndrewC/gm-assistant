@@ -128,3 +128,32 @@ still lands docs for free.
 
 | guard | companion | deleted-guard test went red? |
 |---|---|---|
+
+---
+
+## Amendment phases (GM's second request, 2026-08-24)
+
+## Phase 9: User Story 6 - The full sweep on CodeBuild
+
+- [ ] T055 [US6] `bypass-audit`: add the build-side door (plan, design note 6) - when `CODEBUILD_BUILD_ID` is set, accept the full scope ONLY if a `permitted` entry in `dev/bypass-log/` has target `done FULL`, `commit` an ancestor of HEAD and not of `origin/main`; otherwise refuse with a message naming the missing entry. The local non-interactive refusal is untouched (FR-026)
+- [ ] T056 [US6] **FIRES**: build-side door refuses with no entry, with a `cancelled` entry, with an entry whose commit is on main, and with `REF_WHY` in the environment alone (extend `scripts/test-*` or `tests/ci/test_bypass_door.py`, driven by a temp repo)
+- [ ] T057 [US6] **STAYS QUIET**: a committed `permitted` entry authored by this work opens the full scope; locally the interactive prompt behaves exactly as before (re-run 127's existing bypass tests unchanged)
+- [ ] T058 [US6] `ci-merge` accepts `FULL=1` (the merge action only - `ci-check` stays reference scope, FR-015): run the local prompt FIRST; on `permitted`, commit the entry (`chore: authorize FULL sweep - <reason>`), then dispatch with `MAKE_TARGET="done FULL=1"`; on `cancelled`/refused, dispatch nothing
+- [ ] T059 [US6] **FIRES**: `ci-merge FULL=1` with no terminal is refused locally, no build (fixture client sees nothing); cancelling at the prompt: no build; `ci-check FULL=1` is refused as not a thing
+- [ ] T060 [US6] Buildspecs run `make $MAKE_TARGET`; on FULL upload `dev/perf-log/*` as artifacts; the dispatcher downloads them into the clone
+- [ ] T061 [US6] Verified record gains `scope`; FR-027's rule in `decision.py` (a reference record does not satisfy a FULL merge; a FULL record satisfies either) with a test each way
+- [ ] T063 [US6] 💵 (~$1) First FULL run, through the MERGE project on this feature's own final push (there is no check-project FULL - FR-015 - so the two-step rule is met by T024/T035 having proven the buildspec in reference scope first): prompt answered, entry committed, every pool map + ratchet + floors + `perf-gate` with BOTH bookends taken in-build, snapshots came back; wall-clock in `timings.md`. Replaces T054's plain push as the feature's first production use
+- [ ] T064 [US6] `perf_snapshot.py`: `host` and `image` fields (plan, design note 7); `perf-gate` pairs on `(host, image)` and refuses a cross-machine pair naming both
+- [ ] T065 [US6] **FIRES**: `perf-gate` with a laptop `-start` and a build `-end` refuses; **STAYS QUIET**: two build snapshots on the same image pair
+- [ ] T066 [US6] Inside the FULL buildspec, `perf-gate` takes BOTH bookends itself: `-start` in a detached worktree at the pre-merge `origin/main`, `-end` on the merge (plan, design note 7) - no standalone remote bookend run exists (FR-028); the first build-machine pair is produced by T063 and is the "reconstituted" number
+
+## Phase 10: User Story 7 - Sync at the tooling level
+
+- [ ] T067 [US7] `sync-with-main.sh sync_in()`: fetch GitHub -> `flock` mirror `--ff-only` (die with the message on failure) -> render-sync in the mirror -> clone merge (clean clone only); the mirror steps run even for a dirty clone (plan, design note 8)
+- [ ] T068 [US7] **FIRES**: a hand commit in a temp "mirror" makes sync-in stop with "mirror cannot fast-forward" (in `scripts/test-sync-with-main.sh`, temp repos via `CLONE_MAIN`)
+- [ ] T069 [US7] **STAYS QUIET**: with nothing changed, sync-in's wall-clock is within noise of today's; with a GitHub-side commit, the mirror, its renders and the clone all reflect it after one prompt (SC-009 - verify by commit hash and a render's content hash)
+- [ ] T070 [US7] `clone-sync-hooks.sh` `prompt` mode: on a DIRTY clone run `sync-with-main.sh sync-in --mirror-only` instead of exiting early; on a clean clone the full sync-in (R13, FR-030). **FIRES**: a dirty-clone turn still advances the mirror (extend `scripts/test-clone-sync-hooks.sh`); **STAYS QUIET**: the clone itself is not touched
+- [ ] T071 [US7] CLAUDE.md "Session clones" rewritten for the post-feature flow (FR-032): GitHub `main` is main; `/gm-assistant` is a mirror nobody pushes to; `origin` = GitHub; sync-in is the whole flow and the hook runs it; two routes; `FULL=1` remote with the local prompt; the GM's laptop pushes flow in like anything else. `docs/session-clones.md` in full. Remove the retired local-main instructions rather than annotating them. (Supersedes T049's scope.)
+- [ ] T072 [US7] Memory notes updated: `project-session-clone-workflow`, `feedback-user-handles-git`, `project-aws-codebuild-ci`
+
+- [ ] T073 Principle XIV: `bypass-audit` prints `logged to dev/bypass-log.jsonl` but `LOGBYPASS` writes `dev/bypass-log/<ts>-<pid>.json` - fix the message (found by the amendment's fidelity reviewer; FR-025 makes that message load-bearing)
