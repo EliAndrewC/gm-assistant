@@ -45,6 +45,17 @@ import sys
 import time
 from contextlib import redirect_stdout
 
+# THE CAP ON THE AGGREGATE, above which a slowdown stops being a thing to explain and becomes a
+# Principle XIII regression (fix, revert, or an explicit GM waiver). The GM set it at 10% on
+# 2026-08-24, choosing "tight" over a 25% option with the trade-off stated back: this WILL fire on
+# ordinary work, and that is the intent - performance is meant to be argued for, not absorbed.
+#
+# Deliberately a DIFFERENT number from the 5% per-seed diagnose trigger. One figure cannot be both
+# the point where you start thinking and the point where you must stop, and until now it was doing
+# both jobs badly: too strict at the bottom (5% on one seed is inside the noise of a loaded machine)
+# and absent at the top (a seed could double and the rule was satisfied by writing that down).
+TOTAL_SLOWDOWN_CAP_PCT = 10.0
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 if SKILL not in sys.path:
@@ -196,31 +207,46 @@ def report(against: str | None) -> int:
         return 0
     print(f"\n{cur['label']} vs {base['label']}:")
     bad = 0
+    was_total = now_total = 0.0
     by_seed = {int(r["seed"]): r for r in base["rows"]}  # type: ignore[index,call-overload]
     for r in cur["rows"]:  # type: ignore[union-attr]
         b = by_seed.get(int(r["seed"]))  # type: ignore[index,call-overload]
         if not b:
             continue
         was, now = float(b["seconds"]), float(r["seconds"])  # type: ignore[index,arg-type]
+        was_total, now_total = was_total + was, now_total + now
         pct = (now - was) / was * 100.0 if was else 0.0
         # 5% IS THE PROJECT'S OWN THRESHOLD for a whole-process speedup mattering; the same figure is
         # used here in the other direction, so a slowdown is called out at the size a speedup counts.
         flag = "  <-- SLOWER" if pct > 5.0 else ("  faster" if pct < -5.0 else "")
         bad += 1 if pct > 5.0 else 0
         print(f"  seed {int(r['seed']):>3}  {was:>6.1f}s -> {now:>6.1f}s  {pct:+6.1f}%{flag}")  # type: ignore[index,call-overload]
+    total_pct = (now_total - was_total) / was_total * 100.0 if was_total else 0.0
+    print(f"\n  TOTAL     {was_total:>6.1f}s -> {now_total:>6.1f}s  {total_pct:+6.1f}%")
     if bad:
-        print(f"\n{bad} seed(s) more than 5% slower - diagnose before shipping (constitution VI).")
-        # NONZERO, so this can GATE a merge rather than merely mention a problem (GM 2026-08-24:
-        # "the gate for something merging into main actually will block a significant performance
-        # degradation").
-        #
-        # It used to return 0 - printing "diagnose before shipping" and then letting the shipping
-        # happen. That is the same shape as every other failure this feature found: a record that
-        # notices and does not act. Feature 127 shipped its own push before this report had even
-        # been read, which is the case in point.
-        #
-        # The threshold is the project's own 5%, the figure it already uses for when a whole-process
-        # SPEEDUP is worth having, applied in the other direction.
+        print(f"\n{bad} seed(s) more than 5% slower - DIAGNOSE each in writing (constitution VI).")
+        print("Diagnosed means explained and either fixed or accepted with the number, not noticed.")
+    # TWO BANDS, AND ONLY THE AGGREGATE BLOCKS (GM 2026-08-24: "it is okay if things can get a few
+    # percentage points slower, though we probably need some kind of maximum threshold").
+    #
+    # Per-seed 5% is the DIAGNOSE trigger and never blocks by itself. The TOTAL across the seed set
+    # is the cap, and over it this is a Principle XIII regression with the usual three exits.
+    #
+    # WHY THE AGGREGATE IS THE RIGHT THING TO CAP IN THIS ENGINE. A feature that reorders stages
+    # changes what every seed is DOING - the maps are genuinely different afterwards - so one seed's
+    # before-and-after is not the same work measured twice, while the total still answers the
+    # question the bookends exist for: did the generator get slower.
+    #
+    # Calibration: feature 126, the incident that created these bookends, was +51% total (261.5s ->
+    # 394.3s) and +146% on its worst seed. It fails this cap five times over.
+    #
+    # THE KNOWN COST, accepted rather than overlooked: one pathological seed can hide inside a good
+    # average. The per-seed line still prints and still owes a written diagnosis, so a seed that
+    # doubles is visible - it just does not stop the merge alone. A 50% per-seed ceiling was priced
+    # alongside this and declined, as the second axis to tune rather than the first.
+    if total_pct > TOTAL_SLOWDOWN_CAP_PCT:
+        print(f"\nTOTAL is {total_pct:+.1f}%, over the {TOTAL_SLOWDOWN_CAP_PCT:.0f}% cap - that is a REGRESSION")
+        print("(constitution XIII): fix it, revert it, or get an explicit GM waiver for this number.")
         return 1
     return 0
 
