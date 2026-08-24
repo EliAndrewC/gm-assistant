@@ -29,7 +29,7 @@
 - [x] T006 Update `STAGES` in `l7r/diagram/hamletgen/driver.py` to `... sink, seat, homesteads,
       appurtenances, track, web, ...` AND its comment block in the same edit - that comment is
       declared to be the DRAW ORDER map's authority, so the two move together
-- [ ] T007 Assert `stage_seat` draws nothing: a test that no lane and no corridor exists when it
+- [x] T007 Assert `stage_seat` draws nothing: a test that no lane and no corridor exists when it
       returns
 
 ## Phase 3: Derive from the houses (US2)
@@ -38,23 +38,23 @@
       `skeleton_layout(...seat["lat"], seat["dep"])` - feature 126's unfinished T009
 - [x] T009 [US2] Re-origin the field spur from the placed cluster rather than the band's center point
       `to_screen((0, 0))`
-- [ ] T010 [US2] Assert `skeleton_layout` is not called before `stage_homesteads` - by test, not by
+- [x] T010 [US2] Assert `skeleton_layout` is not called before `stage_homesteads` - by test, not by
       reading, because this is the exact call 126 left behind
 
 ## Phase 4: Prove it (US1)
 
-- [ ] T011 [US1] **FIRES**: add a `check_village` segment asserting no house center lies in a lane
+- [x] T011 [US1] **FIRES**: add a `check_village` segment asserting no house center lies in a lane
       corridor or on a tread, and prove it fires by feeding it a manifest that violates it
-- [ ] T012 [US1] **STAYS QUIET**: the same check passes on the reference hamlet
-- [ ] T013 [US1] Roll the reference hamlet and confirm the whole gate is green (SC-003)
-- [ ] T014 [US1] Re-measure T003's numbers and record the difference in this file
+- [x] T012 [US1] **STAYS QUIET**: the same check passes on the reference hamlet
+- [x] T013 [US1] Roll the reference hamlet and confirm the whole gate is green (SC-003)
+- [x] T014 [US1] Re-measure T003's numbers and record the difference in this file
 
 ## Phase 5: The pool, and the page
 
 - [ ] T015 Roll the other three live pool hamlets and gate each (the second half of "every step is
       two steps")
 - [ ] T016 Run `settlement-review` on the reference hamlet before it ships
-- [ ] T017 Regenerate the walk-through page and EDIT ITS CAPTIONS to match the new order. The
+- [x] T017 Regenerate the walk-through page and EDIT ITS CAPTIONS to match the new order. The
       captions are the deliverable: plate 05 said the opposite of what the code did for five days,
       and that is what made this feature necessary
 - [ ] T018 Read the regenerated page as the GM would, and confirm no plate before the farmhouses
@@ -62,8 +62,8 @@
 
 ## Phase 6: Close
 
-- [ ] T019 Mark feature 126's FR-003 superseded in `specs/126-derived-lanes-and-form/spec.md`
-- [ ] T020 Update the `dev/placement.md` DRAW ORDER map if it names the old stages
+- [x] T019 Mark feature 126's FR-003 superseded in `specs/126-derived-lanes-and-form/spec.md`
+- [x] T020 Update the `dev/placement.md` DRAW ORDER map if it names the old stages
 - [ ] T021 Run `ruff` + `mypy --strict` + the full gate once, backgrounded
 - [ ] T022 `make done FULL=1`, which takes the `128-end` bookend and blocks on a >5% regression
 - [ ] T023 Audit `dev/bypass-log/` for entries added during this feature and say in writing whether

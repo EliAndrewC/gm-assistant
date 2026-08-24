@@ -1485,10 +1485,53 @@ def _thread_the_fabric(s: Settlement, plan: SitePlan, run: Poly, gap: float = TR
     toe_now = s.toe_band() or None
     wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
     drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
-    routed = _route(run[0], run[-1], [list(plan.envelope), *crops, *fabric, *([toe_now] if toe_now else []), *wet_now], [], list(plan.watercourses) + drawn_water)
-    out = routed if len(routed) >= 2 else run
-    out = clip_to_clear(out, fabric, gap)
+    obstacles = [list(plan.envelope), *crops, *fabric, *([toe_now] if toe_now else []), *wet_now]
+    lines = list(plan.watercourses) + drawn_water
+    routed = _route(run[0], run[-1], obstacles, [], lines)
+    out = clip_to_clear(routed if len(routed) >= 2 else run, fabric, gap)
+    if len(out) >= 2 and not _crosses_fabric(out, fabric, gap):
+        return out
+
+    # THE FALLBACK MUST NOT BE THE OFFENDING RUN, which is what the first version did: when routing
+    # and clipping both failed it returned the original path, silently re-drawing the lane straight
+    # through the steadings it was supposed to avoid. That is worse than failing - the map ships
+    # looking finished and the gate is what discovers it, if anything does.
+    #
+    # So take a wider berth instead. A track that cannot thread the cluster goes AROUND it, which is
+    # what a real one does: the detour is the answer, not the straight line. Each attempt swings the
+    # midpoint further out along the cluster's outward normal.
+    if len(run) >= 2:
+        mx, my = (run[0][0] + run[-1][0]) / 2, (run[0][1] + run[-1][1]) / 2
+        cx = sum(float(h["x"]) for h in s.M.get("houses", [])) / max(1, len(s.M.get("houses", [])))
+        cy = sum(float(h["y"]) for h in s.M.get("houses", [])) / max(1, len(s.M.get("houses", [])))
+        ux, uy = mx - cx, my - cy
+        n = math.hypot(ux, uy) or 1.0
+        ux, uy = ux / n, uy / n
+        for step in (40.0, 80.0, 140.0, 220.0):
+            detour = [run[0], (mx + ux * step, my + uy * step), run[-1]]
+            cand = clip_to_clear(detour, fabric, gap)
+            if len(cand) >= 2 and not _crosses_fabric(cand, fabric, gap):
+                return cand
     return out if len(out) >= 2 else run
+
+
+def _crosses_fabric(run: Poly, fabric: list[Poly], gap: float) -> bool:
+    """Does this polyline pass within `gap` of anything already standing?
+
+    The clip is not self-verifying: `clip_to_clear` shortens a run at the first obstruction, and a
+    run that re-enters the fabric further along comes back shorter and still crossing. Checking the
+    RESULT is what turns "we tried" into "it is clear", and it is the difference between the caller
+    knowing to take a detour and the caller believing it is done."""
+    for poly in fabric:
+        for k in range(len(run) - 1):
+            a, b = run[k], run[k + 1]
+            for j in range(len(poly)):
+                c, d = poly[j], poly[(j + 1) % len(poly)]
+                if segments_cross(a, b, c, d):
+                    return True
+            if edge_dist(a[0], a[1], poly) < gap or edge_dist(b[0], b[1], poly) < gap:
+                return True
+    return False
 
 
 def stage_seat(s: Settlement, plan: SitePlan) -> None:

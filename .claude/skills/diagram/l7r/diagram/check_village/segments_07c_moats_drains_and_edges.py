@@ -1067,6 +1067,49 @@ def _seg_0611__lane_ends_front_different_houses(*, M: Any = _UNBOUND, check: Any
     return _kept(locals(), ())
 
 
+def _seg_0619__no_farmhouse_stands_on_a_lane(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
+    """Gate segment 0619 - added 2026-08-24, feature 128. The converse of 0610.
+
+    NUMBERED 0619 BECAUSE 0612 THROUGH 0618 WERE ALREADY TAKEN by peer sessions while this was being
+    written - the derivation caught it as a duplicate key rather than silently reordering the gate,
+    which is what that loud failure is for. The number is a LABEL; the execution position comes from
+    it, and running here beside 0607 and 0610 keeps the three way-service rules together.
+
+    0610 asks that every farmhouse REACH a way. This asks that none of them be STANDING ON one, which
+    sounds like the same thing said twice and is not: a map can serve every house and still have laid
+    a lane through one.
+
+    WHY IT EXISTS, and it is a regression guard rather than a discovery. Feature 128 moved every lane
+    after the houses, so under the shipped order this passes by construction - which is exactly the
+    point. Feature 126 tried the same reorder for the skeleton alone, left the connector and the spur
+    reserving ground before any house was seated, and NOTHING MEASURED IT. The GM found it by reading
+    the walk-through page five days later. This check is what makes that impossible to repeat: it
+    fails the moment anything reintroduces a lane ahead of `stage_homesteads`.
+
+    THE THRESHOLD IS THE ONE THE REST OF THE GATE USES. `houses_off_corridors` counts a hit at
+    `seg_dist(house_center, corridor) < 14`, and this measures the same 14 px against the drawn lane
+    polylines rather than the corridor registry - so a lane that was drawn but never registered a
+    corridor is caught too, which is the shape a future refactor is most likely to produce.
+    """
+    houses = M.get("houses") or []
+    on_a_lane = []
+    for h in houses:
+        hx, hy = float(h["x"]), float(h["y"])
+        for ln in M.get("lanes") or []:
+            pts = ln.get("pts") or []
+            if any(seg_dist(hx, hy, pts[k], pts[k + 1]) < 14 for k in range(len(pts) - 1)):
+                on_a_lane.append((round(hx), round(hy)))
+                break
+    check(
+        "no_farmhouse_stands_on_a_lane",
+        not on_a_lane,
+        f"{len(on_a_lane)} farmhouse(s) within 14 px of a lane centerline: {on_a_lane[:4]} - a lane was "
+        "drawn over ground a house already held, which means some way is being laid before "
+        "stage_homesteads again (feature 128 put every lane after the houses)",
+    )
+    return _kept(locals(), ("on_a_lane",))
+
+
 def _seg_0610__farmhouses_reach_a_way(*, M: Any = _UNBOUND, check: Any = _UNBOUND) -> dict[str, Any]:
     """Gate segment 0610 (farmhouses_reach_a_way) - added 2026-08-18, feature 123.
 

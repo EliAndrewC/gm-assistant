@@ -952,3 +952,30 @@ def test_lanes_do_not_break_mid_run_ignores_ends_that_do_not_point_at_each_other
         [{"x": 600, "y": 560, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
     )
     assert "lanes_do_not_break_mid_run" not in f(M)
+
+
+def test_no_farmhouse_stands_on_a_lane_fires_on_a_house_the_lane_runs_over():
+    """FIRES. The converse of `farmhouses_reach_a_way`, and NOT the same rule said twice: a map can
+    serve every house and still have drawn a lane through one of them.
+
+    This is a REGRESSION guard rather than a discovery. Under feature 128's order every lane is laid
+    after the houses, so it passes by construction - which is the point. Feature 126 attempted the
+    same reorder for the skeleton alone, left the connector and the spur reserving ground before any
+    house was seated, and nothing measured it; the GM found it by reading the walk-through page five
+    days later. This fails the moment a way is laid ahead of `stage_homesteads` again."""
+    M = _lane_map(
+        [{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}],
+        [{"x": 505, "y": 700, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "no_farmhouse_stands_on_a_lane" in f(M), "the house center is 5 px from the lane, well inside the 14 px bar"
+
+
+def test_no_farmhouse_stands_on_a_lane_passes_when_the_lane_runs_past_them():
+    """STAYS QUIET. A lane beside the houses is the normal, correct arrangement - the whole point of
+    laying lanes after the houses is that they run past rather than through. A check that fired here
+    would condemn every hamlet the generator makes."""
+    M = _lane_map(
+        [{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}],
+        [{"x": 560, "y": 700, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    )
+    assert "no_farmhouse_stands_on_a_lane" not in f(M), "60 px clear of the tread is a house beside a lane, not on it"

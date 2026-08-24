@@ -68,19 +68,30 @@ NOTES: dict[str, tuple[str, str]] = {
         "ground cover because the pond is a HARD feature - houses, lanes and trees all have to avoid it, "
         "so it must exist before any of them are seated.",
     ),
-    "stage_ways": (
-        "The ways that were already there",
-        "Only the EXOGENOUS ways: the connector out to the off-map road, and the spur to the field. These "
-        "are laid before the houses because they genuinely predate the settlement - the road to the county "
-        "town was there first, and a hamlet that grows beside it may legitimately front it. Everything "
-        "INTERNAL used to be laid here too, and is not any more: a lane between two farmsteads is trodden "
-        "by the households already living there, so it cannot be drawn before they exist. The question "
-        "this stage asks is not whether a way reserves ground, but whether it was there before the "
-        "settlement was.",
+    "stage_seat": (
+        "Where the settlement will sit",
+        "The seat band: which stretch of the field margin the cluster will occupy, with its back to the "
+        "high ground and its face to the water. NOTHING IS DRAWN HERE - this stage decides a place and "
+        "reserves no ground at all, which is why it can run before the houses without constraining them. "
+        "It used to be the front half of a stage that also drew the connector and the field spur, and "
+        "separating the two is what let every lane move after the farmhouses.",
+    ),
+    "stage_track": (
+        "The connector and the field spur",
+        "The track out to the off-map road, and the path to the fields - drawn NOW, after the farmhouses, "
+        "because a lane drawn earlier takes ground the houses then cannot have. That is true whatever the "
+        "lane represents: a road may well predate a settlement in the world, but this generator does not "
+        "inherit a road, it DRAWS one, and drawing it first reserves a no-build corridor the placer then "
+        "refuses seats against. Both tracks now start from the settlement as it actually stands rather "
+        "than from where it was predicted to go.",
     ),
     "stage_homesteads": (
         "The farmhouses",
-        "Each bundle is seated against the field edge and packed toward its neighbors, and this stage runs BEFORE the settlement lays any lane of its own - which is the point of the order. The houses answer to the field, the water and each other; the spine and the alleys are derived at stage 07 from where they actually landed. The one way already standing is the connector, which genuinely predates the settlement, so a hamlet strung along a road may legitimately front it.",
+        "Each bundle is seated against the field edge and packed toward its neighbors - and at this "
+        "moment there is NOT ONE LANE ANYWHERE ON THE MAP. That is the whole feature: the houses answer "
+        "to the field, the water and each other, and nothing else has taken ground before them. Every "
+        "way on the finished map - the connector, the field spur, the cluster's spine and the alleys - "
+        "is laid after this plate and positioned from where these houses actually landed.",
     ),
     "stage_appurtenances": (
         "Yards, gardens, byres, wells, sheds",
