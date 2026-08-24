@@ -87,7 +87,9 @@
       the coverage floors, because deselected tests take their coverage with them); and three stamped
       17:15:29-30Z which are the guard's own test companion exercising cancelled / refused /
       permitted, not real runs. Nothing here needed a reason it did not have
-- [ ] T024 Tick every completed task above and confirm none is left unticked that was in fact done
+- [x] T024 Tick every completed task above and confirm none is left unticked that was in fact done.
+      All 24 ticked. The list was maintained AS the work went rather than at the end, which is the
+      obligation feature 126 broke by leaving 42 tasks and zero ticks
 
 ## Dependencies
 
