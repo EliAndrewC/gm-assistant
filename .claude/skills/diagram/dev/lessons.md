@@ -1,7 +1,7 @@
 # Method lessons from the diagram work - things not to repeat
 
 **Load this when a fix is not working and you are about to try another one.** Split out of
-`future-work.md` on 2026-08-24: that file is a backlog of work TO DO, and these are not tasks. They
+`future-work/` on 2026-08-24: that file is a backlog of work TO DO, and these are not tasks. They
 are records of attempts that failed, claims that turned out to be wrong, and the shapes those
 failures take - which is exactly the material the project's own rules say to keep ("record a fix that
 FAILED, at the point of change"; "when stuck, the next step is a MEASUREMENT, not another speculative
