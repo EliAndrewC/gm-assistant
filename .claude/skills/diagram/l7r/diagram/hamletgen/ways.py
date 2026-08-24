@@ -306,6 +306,30 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
             # The clip is cheap and it is a GUARANTEE rather than a hope: whatever the router
             # produced, what gets drawn keeps its distance from everything already built.
             arm = clip_to_clear(arm, fabric, WEB_FABRIC_GAP)
+            # ...AND WHAT SURVIVES THE CLIP MUST STILL SERVE SOMETHING.
+            #
+            # The clip above cures a lane drawn over a steading by CUTTING it, and nothing then asks
+            # whether the remainder is still a way. Both failure modes appeared at once across the
+            # cohort, opposite symptoms of the same cut: seed 47 kept stubs whose ends reached
+            # nothing (`lanes_reach_something`), and seed 8 lost so much arm that seven farmhouses
+            # stood over 100 ft from any way, worst 260 (`farmhouses_reach_a_way`).
+            #
+            # `_trim_to_service` pulls the ends back to the last point that reaches a way or a house,
+            # and `_WEB_MIN_FT` drops what is left if it is no longer a way at all - the same pair of
+            # rules every web lane already passes through. An arm that serves nobody is not a
+            # shortened arm, it is debris, and the houses it would have served are the straggler
+            # pass's business.
+            #
+            # SERVICE IS JUDGED AGAINST THE HOUSES, NOT AGAINST THE WAYS. `_lay_skeleton` runs BEFORE
+            # the web cuts, on purpose - the web reads the skeleton as existing network to thread
+            # around - so at this moment `_net_segs` holds only the connector and the field spur.
+            # Judging an arm against that says "reaches nothing" about an arm running down the middle
+            # of the cluster, because the lanes that would justify it are three passes away. The
+            # houses it was derived from are already on the map, and they are what an arm exists for.
+            if len(arm) >= 2:
+                arm = _trim_to_service(arm, [], [(float(h["x"]), float(h["y"])) for h in s.M.get("houses", [])])
+            if len(arm) >= 2 and polyline_len(arm) < _WEB_MIN_FT:
+                arm = []
         arm = s.trim_off_marsh(arm)
         if len(arm) >= 2:
             if _arm_crossing_accidental(arm, raw_arms[ai], kept):

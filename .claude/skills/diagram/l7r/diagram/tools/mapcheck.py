@@ -58,6 +58,24 @@ STATE = os.path.join(SKILL, ".mapcheck.json")
 # scripted maps, give it a row here and pick the reference deliberately rather than alphabetically.
 TIERS: dict[str, str] = {"hamlets": "inashiro"}
 
+# THE TRIPWIRE SEEDS - a cheap answer to "is anything broken?", between the reference map and the
+# full cohort. Chosen by MEASUREMENT, not by taste (GM 2026-08-24 asked whether one seed would do):
+# across the three broken cohort runs of feature 126, each of these failed in 3 of 3, so any one of
+# them would have reported the breakage in about a minute instead of twenty-five.
+#
+# WHY A SINGLE SEED IS NOT ENOUGH, and this is the part that surprised me. Seeds do NOT fail
+# together: those runs had 16-18 bad seeds spread over 9-10 check families, and the best single seed
+# showed only TWO of them. One seed says "something is wrong" reliably and says almost nothing about
+# WHAT - so it is a detector, never a substitute for the cohort.
+#
+# WHY THE REFERENCE MAP CANNOT BE THE DETECTOR: Inashiro's own seed 4 was CLEAN in all three broken
+# runs - it caught 0 of 3. That is the trap this tier closes, and it is not hypothetical: on
+# 2026-08-23 `make map` came back clean while eighteen cohort seeds were failing, and the clean
+# reference map was read as a healthy tree. A good fix TARGET is not automatically a good DETECTOR.
+#
+# Five seeds rather than one, because they cost seconds each and a detector that misses is worthless.
+TRIPWIRE_SEEDS = (27, 33, 37, 41, 47)
+
 
 def _live_gens(tier: str) -> list[str]:
     """Every gen in the tier that is not frozen, reference first."""
@@ -109,6 +127,23 @@ def _run(gens: list[str], stop_early: bool) -> tuple[bool, list[str]]:
     return (not failed), failed
 
 
+def _tripwire() -> list[str]:
+    """Roll the tripwire seeds and gate them. Returns the names that failed.
+
+    Cheap enough to run every time the reference map passes, and it answers the one question the
+    reference map cannot: is the TIER broken, even though the map I have been fixing is fine."""
+    from l7r.diagram import hamletgen as hg
+
+    bad: list[str] = []
+    for seed in TRIPWIRE_SEEDS:
+        rep = hg.generate(hg.HamletSpec(name=f"Tripwire-{seed}", seed=seed, households=10 + (seed * 7) % 11), out_base=None, render=False)
+        mark = "ok" if rep.ok else ", ".join(rep.failures[:3])
+        print(f"  tripwire seed {seed:>2}: {mark}", flush=True)
+        if not rep.ok:
+            bad.append(f"seed{seed}")
+    return bad
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scope", choices=("auto", "reference", "all"), default=os.environ.get("SCOPE", "auto"))
@@ -138,7 +173,14 @@ def main(argv: list[str] | None = None) -> int:
         # accepted: a reference run that passes costs ~1 min before the wide one starts, and a
         # reference run that FAILS saves the wide one entirely.
         if a.scope != "reference" and recovering and len(gens) > 1:
-            print("\n\033[1mreference map is clean\033[0m - going on to the rest of the tier\n")
+            print("\n\033[1mreference map is clean\033[0m - checking the tripwire seeds\n")
+            tw = _tripwire()
+            if tw:
+                print(f"\n\033[1mtripwire FAILED\033[0m on {', '.join(tw)} - the reference map is clean but the tier is not.")
+                print("Run the full cohort to see the whole failure set: python3 -m l7r.diagram.tools.cohort_audit --count 48")
+                all_failed += tw
+                break
+            print("\n\033[1mtripwire clean\033[0m - going on to the rest of the tier\n")
             ok2, failed2 = _run(gens[1:], stop_early=False)
             all_failed += failed2
             if not ok2:
