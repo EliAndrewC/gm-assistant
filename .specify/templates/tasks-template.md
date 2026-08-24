@@ -58,6 +58,12 @@ A phase that lists only step 1 is unfinished; a phase that starts at step 2 is t
 exists to prevent. `make done` re-checks the whole pool regardless, so forgetting step 2 costs time,
 never correctness.
 
+## Closing audit (generator features - constitution VI)
+
+- [ ] `[POLISH] Audit dev/bypass-log.jsonl` - read every entry added during this feature and state
+  here whether each bypass of the reference gate was justified in retrospect. An empty list is the
+  expected and best outcome; write "no bypasses" and move on.
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: Project initialization and basic structure
