@@ -735,7 +735,20 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
             near = [u for u, vv in uv if abs(vv - v) <= width]
             if not near:  # a column with no house of its own leans on the whole cluster's fringe
                 near = [max(u for u, _v in uv) - 40.0]
-            cols.append((v, max(max(near), u_floor)))
+            # THE COLUMN CLEARS THE WINDWARD-MOST HOUSE IN ITS OWN NEIGHBOURHOOD, not merely the
+            # ones directly in front of it. `near` is the houses within half a column of this v, so
+            # a steading sitting just outside that window - which a SPREAD cluster produces
+            # constantly - is not counted, the band is laid across it, and `village_grove` then
+            # correctly skips every clump that would fall on its house, yard, garden and shed. The
+            # belt ends up with a hole exactly one homestead wide.
+            #
+            # Measured on cohort seeds 33 and 37: the biggest hole in each belt has a whole
+            # steading inside it (house 57 ft from the hole centre, threshing yard 38-41, gardens
+            # 10-46), and the holes are 78 and 84 ft - about one homestead across. Widening the
+            # window to a full column each side is what makes the band clear the fabric it is
+            # meant to shelter rather than straddle it.
+            _wide = [u for u, vv in uv if abs(vv - v) <= width * 2.0]
+            cols.append((v, max(max(near), max(_wide) if _wide else max(near), u_floor)))
         return cols
 
     # ~110 px deep - a real wind wall, not a hedge. The 24 px stand-off is set by
