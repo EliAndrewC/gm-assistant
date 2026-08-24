@@ -58,6 +58,27 @@ exempts this file for exactly that reason.
 > can take those measurements prior to actually beginning the work and then already have that
 > information built into the spec itself.
 
+## 2026-08-24, THE RULING THAT SUPERSEDES THE BANDS ABOVE
+
+Given in answer to the spec's two routed questions. It settles the ceiling question AND revises all
+three bands, so it outranks the band design in the earlier request.
+
+> Yes it is correct that there is no ceiling for allowing it to go forward so longer as the subagent
+> reviewer agrees... but I think on refelction I want the three thesholds to be:
+> - any increase: explanation, with a subagent reviewer confirming
+> - >5%: more advanced analysis and higher level of justification required
+> - >10%: I must personally sign off on this before it is committed back to main
+
+**Two things changed from the earlier request, and the spec must follow the LATER words:**
+
+1. **A subagent is now involved at ANY increase**, not only above 5%. The earlier request put the
+   subagent check at the 5% trigger; this puts a confirming reviewer on every increase, and makes 5%
+   the point where the ANALYSIS and the JUSTIFICATION BAR escalate rather than the point where review
+   begins.
+2. **The 10% row is now the GM's own instruction**, not the author's retained caution - and it is
+   sharper than what it replaces: personal sign-off, and specifically **before it is committed back to
+   main**, which names the push as the enforcement point rather than the gate.
+
 ## THE AUTHOR'S CLAIMS - not the GM's words, and the reviewer must ATTACK them
 
 The following are the SESSION'S assertions, made in conversation and carried into the spec. They are
