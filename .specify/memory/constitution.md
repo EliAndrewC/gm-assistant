@@ -1,7 +1,17 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.12.1 → 1.13.0
+Version change: 1.13.0 → 1.13.1
+
+Version 1.13.1 (amended 2026-08-24): Principle XIII gains one clause - a detached
+worktree baseline is a starting point, not a verdict, and each failure it reports is
+checked against the clone before being called pre-existing. A fresh worktree does not
+carry GITIGNORED artifacts, so tests that read them fail there for reasons unrelated to
+the code. Measured during feature 127: the worktree gate reported 2 failures that both
+passed in the clone at the same commit, the worktree holding 20 pool PNGs against the
+clone's 28. Amendment: PATCH - it strengthens the accuracy of an existing procedure
+without changing what the principle requires, the same call made for 1.12.1.
+
 
 Version 1.13.0 (amended 2026-08-24): adds Principle XVI (Build What Was Asked;
 Fidelity Is Not Self-Adjudicated). The default is the literal request, exceptions
@@ -978,6 +988,21 @@ fails, a measured rate that went down. It is defined against a **measured**
 baseline, never a remembered one: take the baseline on unmodified code (a
 detached worktree, not a stash) before judging your own numbers.
 
+**A WORKTREE BASELINE IS A STARTING POINT, NOT A VERDICT** (added 2026-08-24,
+measured during feature 127). A detached worktree is still the right way to take a
+baseline - a stash mutates the tree under any review agent reading it - but a fresh
+worktree does NOT carry gitignored artifacts. On 2026-08-24 the worktree gate reported
+2 failed / 3420 passed; both failures passed in the clone on the same commit, because
+the worktree held 20 pool PNGs against the clone's 28 and renders are gitignored. So
+**every failure a worktree baseline reports is checked against the clone before it is
+called pre-existing.**
+
+This cuts both ways and the quiet direction is the dangerous one. A spurious baseline
+failure is loud and gets investigated. But the same gap can make a test pass ONLY in
+the worktree, and then a real regression is invisible from the moment the baseline is
+taken. Neither reading is available without the second check, and neither error
+announces itself.
+
 **Pre-existing failures are NOT regressions** and do not block your merge.
 The distinction is exactly "did this pass before my change", which is why the
 baseline is mandatory rather than advisory. **But "not a regression" is not
@@ -1343,4 +1368,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.13.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-24
+**Version**: 1.13.1 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-24
