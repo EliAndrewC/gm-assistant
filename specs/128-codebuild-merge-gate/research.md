@@ -175,3 +175,46 @@ hook finds this session's clone and, if its tree is clean, runs `sync-with-main.
 FR-030 needs no new hook - `sync_in()` grows three steps (fetch, mirror `--ff-only` under the lock,
 render-sync in the mirror) ahead of the clone merge. The mirror steps run even when the clone is
 dirty; only the clone merge is skipped for mid-task work.
+
+## R14 - "Pre-warming AWS resources" means starting a parked build (third request)
+
+**Verified** 2026-08-24 (this session's smoke builds): on-demand CodeBuild has no resource that
+can be created ahead of a build - `start_build` IS provisioning, and the `PROVISIONING` phase (7 s
+on the stock image) is the first billed phase. A QUEUED build (waiting for a project slot) is not
+billed. `stop_build` on a queued build costs nothing; on a started one, the partial minute.
+
+**Decision**: the dispatcher starts the build as soon as lint passes and the build's first step
+parks - polls `s3://<bucket>/go/<build-id>` every 2 s for up to 120 s - while the dispatcher runs
+the reference settlement(s) locally. Local failure -> `stop_build(<our id>)` and no `go` object;
+local success -> put `go/<build-id>` = `go`. The 120 s ceiling (FR-036) bounds a dead dispatcher's
+cost at ~$0.16. The go object is written with the session's key (it has `PutObject` on the bucket
+outside `verified/`, R8), and the build deletes it when it reads it.
+
+**Declined**: a SQS/SSM signal (a second service for a one-bit message); env vars (fixed at start,
+cannot carry a later decision); starting the build only after the reference check (the GM's
+five-arrow pattern exists precisely to overlap the two).
+
+**What it buys**: provisioning + image pull + clone (~20-40 s with the custom image, unmeasured)
+overlapped with `make reference` (~26 s). What it costs on a local failure: ≤ 1 build-minute.
+Whether the overlap is worth the parking machinery is SC-011's measurement to decide; if the saving
+is under ~10 s the parking step is dropped and the sequence stays lint -> reference -> start.
+
+**Cross-session coordination**: none needed on the AWS side - a build id is private to the
+dispatcher that got it from `start_build`, and `stop_build` takes an id. A parked MERGE build holds
+the merge project's single slot for at most the local reference time (~26 s), during which another
+session's merge queues unbilled. The ritual lock stays the only shared local state.
+
+## R15 - `make done FULL=1` does not check the reference map first today (defect; third request)
+
+**Verified** in `.claude/skills/diagram/Makefile` line 36:
+`@$(if $(FULL),$(MAKE) bypass-audit REF_WHY="$(REF_WHY)",$(MAKE) reference)` - with `FULL` set,
+`bypass-audit` runs IN PLACE OF `reference`, and the phases that follow (`lint format typecheck
+hooks-test test-full perf-gate`) contain no reference step; the reference map is only ever rolled
+inside `test-full`'s pool sweep, where a red map is one failure among many rather than a stop. The
+prompt's text lists "the reference map is itself under surgery and expected to fail" among the
+legitimate reasons, so the prompt was written as the reference BYPASS. The GM's understanding
+("there is no way to short circuit that") holds for reference scope and not for FULL.
+
+**Decision (FR-034)**: `done FULL=1` = `bypass-audit` (authorizes the expense) THEN `reference`
+(unless `REF_OK`, which logs its own reason as it does for every other target) THEN the phases.
+Two separate bypasses for two separate things. Applies locally and in the build identically.

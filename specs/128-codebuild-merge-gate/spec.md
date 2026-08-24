@@ -6,7 +6,9 @@
 
 **Status**: APPROVED by `spec-fidelity` (round 3, verdict FAITHFUL); **AMENDED the same day on the
 GM's second request** (the full sweep goes to CodeBuild too; the sync flow is tooling, not memory) -
-amendment APPROVED at its own round 3 (FAITHFUL), see Review history. **This feature is SPECIFIED AND PLANNED ONLY.**
+amendment APPROVED at its own round 3 (FAITHFUL); **AMENDED AGAIN on the GM's third request**
+(FULL during iteration; local checks first with the build pre-warmed in parallel; the FULL prompt
+no longer stands in for the reference check) - third-request amendment APPROVED at round 1 (FAITHFUL), see Review history. **This feature is SPECIFIED AND PLANNED ONLY.**
 The GM's instruction is explicit: *"you can write the SpecKit feature, you cannot actually automate
 it yet"*. Implementation waits for a separate go.
 
@@ -47,7 +49,8 @@ and this session's own CodeBuild smoke tests:
 | the full pre-push sweep | did not exist as a separate thing | **`make done FULL=1`** ~6 min on the laptop: adds every live pool map, the seeds 41-44 ratchet, both coverage floors, and `perf-gate`. It PROMPTS with a cancel-by-default question and REFUSES to run without a terminal. **In scope on the GM's second request**: the prompt stays local; the dispatch happens after the operator declines the escape hatch; the build accepts the non-interactive run only because the tree it tests carries the logged reason (FR-024..FR-027). |
 | what the push already checks | flock'd pull+push, render-sync | that, plus **`gate-stamp`** (a green `make done` must have run against byte-identical Python), **`review-gate`** (a spec carries a FAITHFUL verdict; a re-rolled map has its notes touched), duplicate-def screening. All local, all cheap, all kept. |
 | performance | not tracked | **bookended per feature** (`make perf LABEL=NNN-start` / `-end`, `perf-report`), enforced by `perf-gate` inside `FULL=1` only. Snapshots are **only comparable on the same machine**; with `FULL=1` on CodeBuild, the bookends move there too - a consistent machine class, which the laptop never was (FR-028, FR-029). The laptop-era snapshots stay as history and are never compared against build-machine ones. |
-| CodeBuild startup | "30-60 s" estimated | **20 s wall, 7 s provisioning**, measured on the stock image. With a custom image from ECR: unmeasured, expected 20-40 s. |
+| CodeBuild startup | "30-60 s" estimated | **20 s wall, 7 s provisioning**, measured on the stock image. With a custom image from ECR: unmeasured, expected 20-40 s. **There are no separate "resources" to create**: on-demand CodeBuild provisions when a build STARTS, and bills from then. The only way to pre-warm is to start the build and park it (FR-035). |
+| does `FULL=1` check the reference map first? | assumed yes ("no way to short circuit that") | **NO - a defect this feature fixes.** the `done:` target runs `bypass-audit` INSTEAD of `reference` when `FULL` is set (its first recipe line), so a FULL run goes prompt -> lint -> types -> hooks-test -> the whole suite with no reference-first stop. The prompt's own text lists "the reference map is under surgery" as a reason to continue, so it was built as the reference BYPASS rather than as a gate ahead of it. Reference scope does stop on a red map. FR-034 separates the two. |
 | `make done` remotely | "25 min becomes 6-9 min" estimated | **UNMEASURED.** The local 5.5 min is dominated by `pytest -n auto` over 22 laptop threads that throttle; on 36 unthrottled cores it should fall, but the serial floor (one reference hamlet ~26 s, provisioning ~20 s, source transfer) does not. **Measuring it is a task of this feature, and the number goes in `timings.md`, never in prose.** |
 | cost per run | "~$0.60" for a 25-min job | at $0.08/min, a 5.5-minute run is **~$0.45**; if it lands at 3 minutes, **~$0.25**. Cost controls: $10/day and $75/month budgets emailing at every 20%; $100/month hard stop that denies further builds; a live alarm at 125 build-minutes per rolling day; a live email at every 20% of the monthly budget. |
 
@@ -86,6 +89,15 @@ so the fidelity reviewer can check each against `gm-request.md`, and so the plan
 10. **Syncing GitHub main into the mirror and into every clone is the tooling's job** (second
     request): *"This should definitely happen at the tooling level, not at the 'remember to do it'
     level."*
+11. **The full sweep is ALSO an iteration tool** (third request): *"there is a use case for running
+    full test suites when we iterate ... okay, I have now made a change that I want to test on a
+    wider variety of stuff."* The second-request reading "FULL is merge-only" is withdrawn.
+12. **Inexpensive local checks ALWAYS run before anything touches AWS, and the build is warmed in
+    parallel with the reference check** (third request): *"we always want to do inexpensive local
+    checks first before we even do anything with AWS ... run really cheap tests, like linting ...
+    while the AWS code build resources are being created, we run our local reference tests ... if
+    the local reference tests fail, we immediately shut down ... if the local reference tests
+    succeed, then we submit."* The general pattern for every remote target.
 
 **The delegated decision - where main lives - and how it is resolved.** The GM thought aloud: *"the
 local clones push to remote GitHub branches rather than... pushing back to Maine locally. I don't
@@ -325,6 +337,39 @@ does not hold.
 
 ---
 
+### User Story 8 - Every remote run is preceded by local checks, with the build warmed in parallel (Priority: P1)
+
+Any remote target - reference-scope or FULL, merge or iteration - runs the same local ladder first:
+lint in seconds; then, with the build already started and parked, the reference settlement(s)
+locally; the build is released only when they pass and stopped the moment one fails.
+
+**Why this priority**: The GM's third request, and its reason: *"there's no point in doing the
+expensive AWS dispatch if we are not going to run the local tests."*
+
+**Independent Test**: [quickstart](quickstart.md) §9.
+
+**Acceptance Scenarios**:
+
+1. **Given** a dispatch whose lint fails, **When** it runs, **Then** it stops in seconds and no
+   build is started - nothing about AWS has happened.
+2. **Given** lint passes, **When** the dispatch continues, **Then** a build is started on the right
+   project and parks at its first step waiting for a go/abort signal, while the reference
+   settlement(s) run locally.
+3. **Given** a reference settlement fails locally, **When** that is known, **Then** the parked build
+   is stopped immediately (a queued build stops for free; a started one costs its partial minute)
+   and the dispatch reports the failure.
+4. **Given** every reference settlement passes, **When** that is known, **Then** the build is
+   released and proceeds to the merge and the gate.
+5. **Given** the dispatcher dies with a build parked, **When** the park timeout elapses, **Then** the
+   build aborts itself - a parked build can never wait indefinitely on a session that is gone.
+6. **Given** another session's build is parked or running, **When** this session stops a build,
+   **Then** it can only stop the build it started - build ids are per dispatcher, nothing is shared.
+7. **Given** a `FULL=1` dispatch, **When** the local ladder runs, **Then** the reference check is
+   NOT skipped by the prompt: prompt (authorizes the expense), lint, reference, release. `REF_OK`
+   remains a separate, logged bypass of the reference step, as it is for every other target.
+
+---
+
 ### Edge Cases
 
 - **The FULL prompt's answer travels in the tree.** The build cannot ask a question, so it must be
@@ -425,10 +470,11 @@ AWS call, and a refusal names the condition
 
 **The iteration check**
 
-- **FR-015**: There MUST be a way to run the lengthy suite remotely mid-feature. It MUST merge the
-  latest main into the work first, bail immediately on a conflict, and otherwise run the same
-  reference-scope gate the merge route runs. It MUST satisfy every condition of FR-007 to FR-012
-  except FR-011.
+- **FR-015**: There MUST be a way to run the lengthy suite remotely mid-feature, in either scope
+  (reference by default, `FULL=1` with the local prompt - third request). It MUST merge the latest
+  main into the work first, bail immediately on a conflict, and otherwise run the same gate the
+  merge route runs in that scope. It MUST satisfy every condition of FR-007 to FR-012 except
+  FR-011.
 - **FR-016**: A green remote run MUST record the exact resulting tree as verified, together with the
   build that verified it. Only the build MAY write such a record; a session MUST be unable to. The
   record is keyed by the TREE rather than the commit hash the GM named, deliberately: two merges of
@@ -467,8 +513,8 @@ AWS call, and a refusal names the condition
 
 **The full sweep on CodeBuild** (second request)
 
-- **FR-024**: The merge action MUST accept `FULL=1` (the iteration check stays reference scope,
-  FR-015). The prompt - the
+- **FR-024**: The merge action AND the iteration check MUST accept `FULL=1` (third request; FR-015
+  is amended accordingly). The prompt - the
   explanation, the default of cancel, the written reason, the log entry, the refusal when no
   terminal is attached - runs LOCALLY, unchanged, before any dispatch.
 - **FR-025**: A `permitted` answer MUST be committed and shipped in the tree the build tests. The
@@ -504,10 +550,37 @@ AWS call, and a refusal names the condition
   `main` as the integration point, the mirror, the two routes, `FULL=1` remote - and MUST NOT
   retain the retired local-main-as-integration-point instructions.
 
+**Local checks first, build warmed in parallel** (third request) - the general pattern for EVERY
+remote target
+
+- **FR-033**: Every dispatch MUST run the cheap local checks (lint, format, types - seconds) before
+  anything touches AWS, and MUST stop there, having started nothing, if they fail.
+- **FR-034**: Every dispatch - and every local `make done FULL=1` - MUST run the reference
+  settlement(s) first and MUST NOT release the build (or start the suite) until every one of them
+  passes. For `FULL=1` this step is NOT skipped by the prompt: the
+  prompt authorizes the expense, the reference check still runs. `REF_OK` remains the one, separate,
+  logged way to skip the reference step, exactly as for every other expensive target. (This fixes
+  the current behavior, where `done FULL=1` runs `bypass-audit` in place of `reference`.) As
+  reference settlements are added for further tiers, this step runs all of them; running them in
+  parallel is permitted.
+- **FR-035**: Once the cheap checks pass, the dispatch MUST start the build immediately and the
+  build MUST park at its first step, waiting for a go/abort signal, so that provisioning and source
+  fetch overlap the local reference check. On a local failure the dispatch MUST stop its own build
+  at once; on success it MUST release it. Whether the parked start actually saves time is measured
+  (SC-011), not assumed.
+- **FR-036**: A parked build MUST abort itself after a bounded wait (order of two minutes) if no
+  signal arrives, so a dead dispatcher can cost at most that.
+- **FR-037**: A dispatcher MUST only ever stop the build it started. Nothing shared exists between
+  sessions on the AWS side: each build is its own; the merge project's single slot serializes merges
+  and a parked merge build holds it for at most the local reference time - or FR-036's park timeout
+  if its dispatcher dies, during which another session's merge queues unbilled. The only
+  cross-session coordination remains the local ritual lock, unchanged.
+
 ### Scope Boundaries
 
 **In scope**: `make done` in reference scope AND `make done FULL=1` as the merge gate on CodeBuild,
-the FULL prompt kept local; the iteration check in reference scope; the dispatch conditions; the two
+the FULL prompt kept local; the iteration check in either scope; the local-checks-first-with-
+parked-build pattern for every dispatch; the dispatch conditions; the two
 routes to main and the mirror; the tooling-level sync flow; the verified-tree record; the
 performance bookends on CodeBuild with per-machine identity; the audit and cost visibility; the
 build image and its rebuild target; a measured remote baseline for both scopes.
@@ -575,6 +648,13 @@ and the *"reconstituted"* numbers are the build-machine bookends.
   by hand.
 - **SC-010**: Every `perf-gate` verdict pairs two build-machine snapshots from one FULL run, and
   `perf-report` names the machine on every row. No remote run exists whose only job is a bookend.
+- **SC-011**: A dispatch whose lint fails starts zero builds; one whose reference check fails
+  starts one build and stops it within seconds of the failure; the parked start's saving (wall
+  time to the gate's first test, parked vs not) is measured and recorded in `timings.md`, and the
+  cost of an aborted parked build is recorded beside it.
+- **SC-012**: `make done FULL=1`, local or remote, refuses to run the suite when the reference
+  settlement is red and `REF_OK` is not set - demonstrated by a test that turns the reference map
+  red and runs it.
 
 ## Assumptions
 
@@ -618,14 +698,28 @@ and the *"reconstituted"* numbers are the build-machine bookends.
 
 ## Review history
 
-### Amendment (GM's second request, 2026-08-24) - rounds start again at 1
+### Second amendment (GM's third request, 2026-08-24) - rounds start again at 1
+
+Added: Decisions 11-12, User Story 8, FR-033..FR-037, SC-011..SC-012, a baseline row recording
+that `FULL=1` does not check the reference map first today; FR-015 and FR-024 reopened so the
+iteration check accepts `FULL=1` (the second amendment's round-2 cut is withdrawn on the GM's own
+words); FR-010 unchanged (still the two lengthy runs, now on both paths).
+
+- **Second-amendment round 1** - `FAITHFUL`, with three in-passing corrections applied (FR-037 now
+  names the park timeout as the worst case a dead dispatcher holds the merge slot; the baseline row
+  cites the `done:` target rather than a line number; FR-034's MUST binds a local `FULL=1` too).
+  The reviewer verified the Makefile claim itself and judged the parked-build realization faithful
+  because the spec discloses where it falls short of the GM's premise (a started build costs its
+  partial minute; the saving is measured by SC-011, not assumed).
+
+### First amendment (GM's second request, 2026-08-24)
 
 Added: Decisions 9-10, User Stories 6-7, FR-024..FR-032, SC-008..SC-010, three entities, two
 assumptions; the performance deferral withdrawn and delivered by FR-028/FR-029; `FULL=1` moved from
 out of scope to in scope with the local prompt kept; cohort and the other prompted targets remain
 out of scope by name.
 
-- **Amendment round 1** - `CHANGES REQUIRED` (2 findings). (1) FR-028 / US6 #6 / SC-010 had
+- **First-amendment round 1** - `CHANGES REQUIRED` (2 findings). (1) FR-028 / US6 #6 / SC-010 had
   created a THIRD paid dispatch - a standalone remote `-start` bookend at feature start - that
   contradicted FR-010 and the GM's *"only doing this for actual make done actions that are merging
   stuff back into main"*, and would have had to drive through FR-011 and FR-012 to run at all.
@@ -636,12 +730,12 @@ out of scope by name.
   every turn; only the clone merge keeps the mid-task skip. US7 gained the dirty-clone scenario;
   SC-009 restated. The reviewer's aside - `bypass-audit` prints a stale `bypass-log.jsonl` path in
   a message this feature makes load-bearing - is a Principle XIV fix, added as a task.
-- **Amendment round 2** - `CHANGES REQUIRED` (2 findings, both one edit). (1) FR-024 had extended
+- **First-amendment round 2** - `CHANGES REQUIRED` (2 findings, both one edit). (1) FR-024 had extended
   `FULL=1` to the iteration check - unrequested, a new mid-feature paid path, and contradicting
   FR-015 - cut back to the merge action alone. (2) The mirror Assumption still said "every
   sync-in ... nothing new has to be remembered", the premise round 1 removed; restated to say the
   hook is modified and the mirror steps are unconditional.
-- **Amendment round 3** - `FAITHFUL`. Both edits verified; no residue; every FR citation resolves;
+- **First-amendment round 3** - `FAITHFUL`. Both edits verified; no residue; every FR citation resolves;
   each clause of the second request mapped to a requirement and each amendment requirement back to
   a clause of one of the two requests.
 

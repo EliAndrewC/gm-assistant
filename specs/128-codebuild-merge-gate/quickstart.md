@@ -79,3 +79,14 @@ Push a docs commit to GitHub `main` from your laptop. Send any message to a sess
 `git -C /gm-assistant log -1`, the clone's `git log -1`, and the mirror's `pool/index.html` mtime
 all reflect it. Commit by hand in `/gm-assistant` (don't - but for the test): the next turn's
 sync-in stops with "mirror cannot fast-forward".
+
+## 9. Local checks first, build parked (second amendment)
+
+- Introduce a lint error; `make ci-check`: stops in seconds, CodeBuild console shows NO new build.
+- Fix lint; break the reference map (e.g. a waiver removed); `make ci-check`: a build appears and
+  sits in `wait-go`; within seconds of `make reference` failing locally it is STOPPED; the run-log
+  entry records `aborted-local-reference` and the partial cost.
+- Fix the map; `make ci-check`: the build parks, the local reference passes, `go/<id>` appears
+  briefly in the bucket, the build proceeds. `timings.md` gets the parked-vs-unparked comparison.
+- `make done FULL=1` locally with a red reference map and no `REF_OK`: prompt answered, then
+  STOPS at the reference step (SC-012). With `REF_OK=1`: a second logged reason, then the suite.

@@ -24,7 +24,13 @@ identity. And sync-in becomes the whole flow - fetch GitHub main, fast-forward t
 render-sync there, merge into the clone - run by the prompt hook that already runs sync-in every
 turn, so nothing is remembered.
 
-Nothing about what the gate CHECKS changes. No map geometry changes. No failing seed is addressed.
+**Amended a second time on the GM's third request:** FULL is available during iteration too
+(`ci-check FULL=1`), every dispatch runs lint locally, then starts the build PARKED at a go/abort
+wait while the reference settlement(s) run locally, and releases or stops it by the result - and
+`done FULL=1` now runs the reference check after its prompt instead of in place of it (R15).
+
+Nothing about what the gate CHECKS changes, except that the reference-first stop now also applies
+to FULL. No map geometry changes. No failing seed is addressed.
 
 ## Technical Context
 
@@ -222,6 +228,16 @@ way it already reaches render-sync: `make --no-print-directory ci-merge`.
    on a dirty clone, instead runs `sync-in --mirror-only` on a dirty clone and full `sync-in` on a
    clean one. The mirror is nobody's workspace, so refreshing it mid-task loses nothing; the clone
    merge keeps its skip because mid-task work is sacred.
+9. **Every dispatch is lint -> start-and-park -> reference -> go/stop** (R14, FR-033..FR-037,
+   third request). The parked build polls `go/<build-id>` in the CI bucket for ≤ 120 s; the
+   dispatcher writes it after `make reference` passes locally, or calls `stop_build` on its own id
+   the moment a reference map fails. Nothing is shared between sessions on AWS; a parked merge build
+   holds the single merge slot ≤ 26 s. SC-011 measures whether parking earns its keep; if not, the
+   step is dropped and the sequence is lint -> reference -> start.
+10. **`done FULL=1` runs the reference check** (R15, FR-034): `bypass-audit` then `reference` then
+   the phases, locally and in the build alike. Today the prompt REPLACES the reference step - the
+   defect the GM's third request surfaced ("no way to short circuit that" was true only of
+   reference scope).
 
 ## Complexity Tracking
 
