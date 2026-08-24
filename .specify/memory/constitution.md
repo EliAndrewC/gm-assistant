@@ -1,7 +1,24 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.13.0 → 1.13.1
+Version change: 1.14.0 → 1.15.0
+
+Version 1.15.0 (amended 2026-08-24): adds Principle XVIII - a guard ships with its test companion and
+that companion RUNS in the gate. Motivating measurement: the enforcement audit found eight hook
+scripts, eight test companions, and nothing executing any of them. Also records the two-directions
+rule (fire, and stay quiet), the mention-is-not-an-invocation failure that produced seven false
+positives in one feature, and the escape-checked-first rule without which a guard cannot be repaired
+through the channel it guards. Enforced by `make hooks-test` as a gate phase. New principle: MINOR.
+
+
+Version 1.14.0 (amended 2026-08-24): adds Principle XVII - a session never creates or edits a
+README. The reason is mechanical rather than stylistic: a README is not loaded into context, a
+directory CLAUDE.md is, so knowledge parked in a README is found only by luck. Motivating case: the
+"an append-only log must be a DIRECTORY, because concurrent clones conflict" rule lived in
+dev/perf-log/README.md; a session read and quoted it during an audit, then created a single-file
+run-log.jsonl hours later. Three such READMEs became CLAUDE.md files in the same change, and
+scripts/readme-hooks.sh enforces it. New principle: MINOR.
+
 
 Version 1.13.1 (amended 2026-08-24): Principle XIII gains one clause - a detached
 worktree baseline is a starting point, not a verdict, and each failure it reports is
@@ -1227,6 +1244,72 @@ a request is genuinely unclear, the older calculus applies. Where a request is c
 and you want to depart from it, this principle applies, and the answer is to build
 what was asked.
 
+### XVIII. A Guard Ships With Its Test, And That Test Runs (NON-NEGOTIABLE)
+
+**Every guard - a hook, a gate check, a refusal of any kind - ships in the same change as a test
+companion, and that companion runs in the gate.** GM 2026-08-24.
+
+**Both halves, because each has failed on its own.**
+
+*A guard without a test is not implemented.* This project already knows that from the other
+direction: `T034`'s rule is that a guard whose test does not fail when the guard is DELETED is
+decoration. A guard with no test at all cannot be checked either way.
+
+*A test nothing runs cannot fail.* The 2026-08-24 enforcement audit found **eight hook scripts, eight
+test companions, and nothing that executed any of them.** The convention of writing them was healthy;
+the convention of running them did not exist. They had been passing, or not, unobserved.
+
+**What the test must cover - two directions, always:**
+
+- It **FIRES** on the case the guard exists to catch.
+- It **STAYS QUIET** on correct work, and this half is the one that protects the project. A guard
+  that fires on legitimate work teaches a session that the escape hatch is part of the routine, which
+  is precisely the habit these guards exist to break. Feature 127's own guards did this **seven
+  times** - on a grep, a commit message, a docstring, a fixture argument, a redirect, a test harness,
+  and once on a hook that could not edit its own repair. Every one of those is now a regression case.
+
+**The recurring failure has a name: a MENTION IS NOT AN INVOCATION.** Matching a name anywhere in a
+command, a path, or a body will eventually match prose that talks ABOUT the thing. Anchor to a real
+command position, require the operator adjacent to its target, walk an AST for calls rather than
+grepping source - and put the case that fooled you into the table.
+
+**And the escape is checked FIRST.** A guard whose escape is evaluated after its tests cannot be
+repaired through the channel it guards: every command carrying the fix contains the offending text.
+That happened, and it cost a session three blocked attempts at its own bugfix.
+
+**Enforcement**: `make hooks-test` runs every `scripts/test-*-hooks.sh` and fails if any guard has no
+companion. It is a phase of `make done`, so a guard added without a test turns the gate red.
+
+### XVII. A README Is Written By A Human, For A Human (NON-NEGOTIABLE)
+
+**Never create or edit a README.** GM 2026-08-24: *"you personally should literally never touch a
+readme file because a readme file is something that should be written by a human for a human."*
+
+**The mechanical reason, which is the important one.** A README is NOT loaded into a session's
+context. A directory `CLAUDE.md` is, automatically, whenever work happens in that directory. So
+anything a session must KNOW in order to act correctly is invisible in a README - it will be found
+only by a session that happens to look, which is to say by luck.
+
+That is not theoretical. `dev/perf-log/README.md` carried the rule that an append-only shared log
+must be a DIRECTORY, because concurrent clones conflict on every push. A session read that file
+during an unrelated audit, quoted from it, and hours later created a single-file `run-log.jsonl` -
+breaking a rule it had read the same day. Had the file been a `CLAUDE.md`, it would have been in
+context at the moment the decision was made.
+
+**Where knowledge goes instead:**
+
+- **`CLAUDE.md` in the directory it governs** - auto-loaded exactly when relevant, which is the
+  whole reason this project splits documentation by directory rather than piling it into one file.
+- **A topic doc referenced from a CLAUDE.md**, when it is long enough that loading it always would
+  be waste. That is the established `docs/` and `dev/` pattern.
+
+**What a README is still for**: a human arriving at the repository, or at a published subproject,
+who wants an orientation. The GM writes those. If a README is factually wrong, say so and offer the
+correction rather than making it.
+
+**Enforcement**: `scripts/readme-hooks.sh` intercepts a Write or Edit to any `README*`, and any
+shell command that writes one. It carries no silent escape - a genuine exception is the GM's to make.
+
 ## Technical Standards
 
 **Languages and runtimes**
@@ -1368,4 +1451,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.13.1 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-24
+**Version**: 1.15.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-24

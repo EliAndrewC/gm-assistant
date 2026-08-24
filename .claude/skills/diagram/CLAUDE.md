@@ -81,6 +81,7 @@ those before you argue with a rule.
 | [`dev/performance.md`](dev/performance.md) | A gen or a check got slow (or "hangs"), or a `GEN_TIME_BUDGETS` entry tripped |
 | [`dev/cache.md`](dev/cache.md) | The cache is behaving oddly, you changed how generation is DRIVEN, or a coverage floor breached for no reason you can see |
 | [`dev/pool.md`](dev/pool.md) | You are about to touch a pool map, convert one to scripted generation, or work on `hamletgen/` |
+| [`dev/perf-log/`](dev/perf-log/CLAUDE.md), [`dev/run-log/`](dev/run-log/CLAUDE.md), [`dev/bypass-log/`](dev/bypass-log/CLAUDE.md) | You are about to add an entry to one of the append-only histories, or wonder why they are DIRECTORIES rather than files |
 | [`dev/lessons.md`](dev/lessons.md) | A fix is not working and you are about to try another one - dead ends already walked, claims that turned out wrong, and the SHAPES those failures take |
 | [`dev/decisions.md`](dev/decisions.md) | You are about to build on a property of the engine nobody decided, or you are leaving a decision open for a later session |
 | [`dev/reviews.md`](dev/reviews.md) | You are about to launch `settlement-review`, `building-review` or `backstory-review` |

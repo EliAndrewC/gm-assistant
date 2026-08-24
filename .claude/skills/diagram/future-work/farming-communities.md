@@ -7,6 +7,37 @@ tax-free plots, not a different kind of place, and its defects are the same defe
 This is where hamlet work goes - the paddy fabric, the lane web, homesteads and their groves, wells
 and byres, woodland and windbreaks, the notice board, and the cohort seeds that surface all of it.
 
+## OPEN 2026-08-24, WITH THE MEASUREMENT: feature 126 cost ~50% of generation speed, undiagnosed
+
+Found while taking feature 127's closing bookend. It is not 127's - that measured neutral against a
+retroactive pre-127 baseline (total 394.3 s -> 390.9 s, every seed inside noise). It is 126's, and it
+is in main.
+
+| snapshot | total | median | worst | seed 25 |
+|---|---|---|---|---|
+| `126-start` (8ec2a91, before the lane work) | 261.5 s | 50.5 s | 135.6 s | 135.6 s |
+| pre-127 (= 126 as shipped) | **394.3 s** | **73.3 s** | **223.7 s** | **223.7 s** |
+| `127-end` | 390.9 s | 68.7 s | 229.6 s | 229.6 s |
+
+**+51% total, +45% median, and seed 25 went 135.6 s -> 223.7 s (+65%).**
+
+**HOW IT SHIPPED UNNOTICED, which matters more than the number.** Constitution VI requires a
+`<NNN>-start` bookend before the first edit and a `<NNN>-end` before shipping, and 126 took the start
+and never took the end. Nothing failed, because until 2026-08-24 `perf-report` printed *"diagnose
+before shipping"* and **exited 0** - a report that noticed and did not act. Both halves are now
+closed: the report exits nonzero, and `make done FULL=1` runs the bookend as a gate phase.
+
+**The likely mechanism, unverified and stated as a hypothesis rather than a finding**: 126 moved the
+lane skeleton after the houses, which put it through `_route` (Dijkstra) around the placed fabric
+instead of clipping a template. The straggler-rescue passes rerun that search. Seed 25 being the
+worst case fits - it is the seed whose cluster the derivation has most trouble serving.
+
+**Where to start**: `make durations MARK=rolls_map` and the per-stage numbers in `dev/perf-log/`,
+which break a build down by stage. Note the separate and larger prize sitting next to this one: the
+`notice` stage is ~36% of a build siting ONE signboard, via a per-candidate rescan of static geometry
+(`place_kosatsuba`); `boxed_segs`/`boxed_seg_hit` is the existing fix and the verdict would be
+byte-identical. Neither is a map-correctness defect; both are pure iteration cost.
+
 ## 2b. The packer must RESERVE ways, not merely avoid collisions - DEFERRED WITH MEASUREMENT
 (2026-08-18, feature 125. Deferred under constitution Principle XIV's named exception - it is a
 stage-reordering / new-reservation-stage change - and this entry is the deliverable that deferral

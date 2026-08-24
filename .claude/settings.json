@@ -83,6 +83,42 @@
             "command": "/gm-assistant/scripts/guard-file-hooks.sh pretool"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/gm-assistant/scripts/readme-hooks.sh pretool"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/gm-assistant/scripts/repo-safety-hooks.sh pretool"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/gm-assistant/scripts/house-style-hooks.sh pretool"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/gm-assistant/scripts/source-block-hooks.sh pretool"
+          }
+        ]
       }
     ],
     "PostToolUse": [

@@ -97,6 +97,11 @@ push_cmd() {
   # got "! [rejected] main -> main (non-fast-forward)" while `git rev-list --count origin/main..HEAD`
   # reported it 4 ahead and 0 behind - every diagnostic says fast-forward and the error names a ref
   # you never touched. `HEAD:main` pushes what you actually committed.
+  # THE MANDATED REVIEWS ARE CHECKED BEFORE THE PUSH, not after (feature 127 audit, 2026-08-24).
+  # A spec ships with a fidelity verdict; a re-rolled Mode B map ships with its review logged. Both
+  # were constitutional and unenforced, and both had already been skipped in practice. Checked here
+  # because this is the moment work becomes everyone else's problem.
+  "$(dirname "$0")/review-gate.sh" || exit 1
   flock "$LOCK" sh -c 'git pull --no-rebase origin main && git push origin HEAD:main'
   theirs=$(git diff --name-only "$before"..HEAD | sort -u)
   date > "$ROOT/.git/sync-with-main.stamp"  # post-push the clone is at main's tip = synced by definition

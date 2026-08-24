@@ -1,5 +1,13 @@
 # `perf-log/` - how long the generator took, over time
 
+> **This was a README until 2026-08-24, and the rename is not cosmetic.** A README is not loaded into
+> a session's context; a directory `CLAUDE.md` is, automatically, whenever work happens here. The
+> "why a directory and not one log file" rule below was written in this file, read by a session
+> during an unrelated audit, and then broken by that same session hours later when it created a
+> single-file `run-log.jsonl`. Had this been a CLAUDE.md the rule would have been in context at the
+> moment it mattered. **A README is written by a human for a human; anything a session must KNOW
+> belongs in a CLAUDE.md or a doc a CLAUDE.md points at.**
+
 One JSON file per snapshot. **Never edit these; never delete one to make a trend look better.**
 
     make perf                 # record a snapshot (label it: make perf LABEL=126-start)

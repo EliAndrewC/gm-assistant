@@ -1,0 +1,6 @@
+{
+  "utc": "2026-08-24T13:14:00Z",
+  "target": "bypass-audit",
+  "commit": "05e4a30",
+  "why": "pre-push full sweep for feature 126: the reference-scope gate cannot enforce the 100% coverage floor (deselected tests take their coverage with them), so the floors and the pool maps are verified once here before pushing to main"
+}

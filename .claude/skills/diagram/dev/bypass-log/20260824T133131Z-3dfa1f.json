@@ -1,0 +1,6 @@
+{
+  "utc": "2026-08-24T13:31:31Z",
+  "target": "bypass-audit",
+  "commit": "05e4a30",
+  "why": "pre-push full sweep for feature 126: reference scope cannot enforce the coverage floors, so floors + pool maps + the seeds 41-44 ratchet are verified once here before pushing (re-run after a ruff format fix)"
+}
