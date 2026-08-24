@@ -4,7 +4,7 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations test-file audit perf-gate hooks-test \
+.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations test-file audit perf-gate hooks-test explain \
 	 map cohort tripwire hamlet cache-audit regressions placement-stages pool-index compound render-sync \
 	 gate-manifest why-placed site-justice crop jogs pack-audit scatter-audit timings citybudget help
 
@@ -382,6 +382,24 @@ QUICK_BUDGET = 60
 # around - the same gap `make durations` filled for "why is this slow".
 test-file:      ## run ONE test file, whole              FILE=tests/pipeline/test_gencache.py
 	@python3 -m pytest -n auto -q --no-cov $(FILE)
+
+# WHY EVERY CHECK FAILED ON THE REFERENCE MAP, in detail rather than by name.
+#
+# `make reference` prints the failing check NAMES, which is the right amount when you want a verdict.
+# It is not enough when the reference map is the thing you are operating on - and at that moment
+# every other target refuses to run, because they all check the reference map first and it is red.
+# The REF_OK escape exists for exactly that case and is itself refused by the command-shape hook, so
+# a session mid-surgery had NO route to the detail at all.
+#
+# Third time in one feature that a guard blocked a legitimate question without providing an
+# alternative (after `make durations` and `make test-file`), and the answer is the same each time:
+# supply the route. A gate that blocks a question you are entitled to ask is a gate that gets
+# bypassed.
+#
+# Deliberately NOT reference-first: it IS the reference map, and gating it behind itself is the
+# circularity this target exists to break.
+explain:        ## why the reference map is failing - every check, with its message
+	@python3 .explain.py
 
 durations:
 	@python3 -m pytest -n auto -q --no-cov $(if $(MARK),-m "$(MARK)",-m "not rolls_map" --deselect tests/test_villages.py) --durations=$(or $(N),12) 2>&1 | grep -E "^[0-9.]+s (call|setup)|passed|failed" | head -$$(( $(or $(N),12) + 2 ))

@@ -1,0 +1,88 @@
+# Tasks: Farmhouses Before Lanes
+
+**Spec**: [spec.md](spec.md) (FAITHFUL, round 2) | **Plan**: [plan.md](plan.md)
+
+> [!IMPORTANT]
+> **TICK THESE AS THEY PASS VERIFICATION, not when the code is written.**
+>
+> Feature 126's list was left at 42 tasks and zero ticks, including finished ones, and the next
+> session could not tell what remained. A list nobody marks off is worse than no list, because it
+> looks like a record.
+
+## Phase 1: Setup
+
+- [x] T001 Take the `128-start` perf bookend on unmodified code, before the first edit
+- [x] T002 Record the regression baseline: the green gate at the pre-128 commit (3453 passed, both
+      coverage floors met, 12 guard suites green)
+- [x] T003 Record the pre-change measurement the whole feature is judged on: how many houses does the
+      reference hamlet currently place, and how many candidate seats are refused by a lane corridor
+      or tread. Without this, "it got better" has nothing to compare to
+
+## Phase 2: The split (blocks everything)
+
+- [x] T004 Split `stage_ways` in `l7r/diagram/hamletgen/ways.py` into `stage_seat` (drain lookup,
+      `plan.watercourses`, `seat_cluster`, windward reconciliation - and NO call to `s.lane`) and
+      `stage_track` (the connector and the field spur)
+- [x] T005 Cover BOTH branches in `stage_track`: the polder connector at the early return, and the
+      valley connector and spur. A fix to the valley path alone leaves polder hamlets reserving
+      ground and the reference hamlet will not catch it
+- [x] T006 Update `STAGES` in `l7r/diagram/hamletgen/driver.py` to `... sink, seat, homesteads,
+      appurtenances, track, web, ...` AND its comment block in the same edit - that comment is
+      declared to be the DRAW ORDER map's authority, so the two move together
+- [ ] T007 Assert `stage_seat` draws nothing: a test that no lane and no corridor exists when it
+      returns
+
+## Phase 3: Derive from the houses (US2)
+
+- [x] T008 [US2] Re-origin the connector from the PLACED houses rather than
+      `skeleton_layout(...seat["lat"], seat["dep"])` - feature 126's unfinished T009
+- [x] T009 [US2] Re-origin the field spur from the placed cluster rather than the band's center point
+      `to_screen((0, 0))`
+- [ ] T010 [US2] Assert `skeleton_layout` is not called before `stage_homesteads` - by test, not by
+      reading, because this is the exact call 126 left behind
+
+## Phase 4: Prove it (US1)
+
+- [ ] T011 [US1] **FIRES**: add a `check_village` segment asserting no house center lies in a lane
+      corridor or on a tread, and prove it fires by feeding it a manifest that violates it
+- [ ] T012 [US1] **STAYS QUIET**: the same check passes on the reference hamlet
+- [ ] T013 [US1] Roll the reference hamlet and confirm the whole gate is green (SC-003)
+- [ ] T014 [US1] Re-measure T003's numbers and record the difference in this file
+
+## Phase 5: The pool, and the page
+
+- [ ] T015 Roll the other three live pool hamlets and gate each (the second half of "every step is
+      two steps")
+- [ ] T016 Run `settlement-review` on the reference hamlet before it ships
+- [ ] T017 Regenerate the walk-through page and EDIT ITS CAPTIONS to match the new order. The
+      captions are the deliverable: plate 05 said the opposite of what the code did for five days,
+      and that is what made this feature necessary
+- [ ] T018 Read the regenerated page as the GM would, and confirm no plate before the farmhouses
+      shows a lane
+
+## Phase 6: Close
+
+- [ ] T019 Mark feature 126's FR-003 superseded in `specs/126-derived-lanes-and-form/spec.md`
+- [ ] T020 Update the `dev/placement.md` DRAW ORDER map if it names the old stages
+- [ ] T021 Run `ruff` + `mypy --strict` + the full gate once, backgrounded
+- [ ] T022 `make done FULL=1`, which takes the `128-end` bookend and blocks on a >5% regression
+- [ ] T023 Audit `dev/bypass-log/` for entries added during this feature and say in writing whether
+      each was justified
+- [ ] T024 Tick every completed task above and confirm none is left unticked that was in fact done
+
+## Dependencies
+
+Phase 2 blocks everything. Phases 3 and 4 are independent of each other. Phase 5 needs 2-4 done.
+
+## Baseline
+
+| | value |
+|---|---|
+| `128-start` | total 394.3 s, median 73.3 s (2026-08-24, pre-edit) |
+| gate at pre-128 commit | green, 3453 passed |
+| lanes present when `stage_homesteads` runs | **2** (the connector and the field spur) |
+| lane corridors present then | **2** of 25 - the other 23 are field and water keep-outs, which are legitimate and not this feature's business |
+| houses placed | 15 of 15 |
+
+**The target after the change**: 0 lanes and 0 lane corridors at `stage_homesteads`, still 15 houses.
+Measured per stage by walking `STAGES` and counting `s.M["lanes"]` and `s.corridors` after each.

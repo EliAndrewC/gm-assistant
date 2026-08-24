@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import heapq
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import cast
 
-from l7r.diagram.settlement import Settlement, point_in_poly, rot_rect, seg_closest, seg_dist, seg_intersect, segments_cross, skeleton_layout, web_cuts
+from l7r.diagram.settlement import Settlement, edge_dist, point_in_poly, rot_rect, seg_closest, seg_dist, seg_intersect, segments_cross, skeleton_layout, web_cuts
 from l7r.diagram.sitegen.geom import centroid, crop_polys, crosses_disc, crosses_poly, pull_clear, unit
 
 from .cluster import _arm_crossing_accidental, _fork_spur, seat_cluster
@@ -20,6 +21,7 @@ from .consts import (
     LANE_CLEARANCE,
     MIN_WEB_GAP,
     SPUR_SETBACK,
+    TRACK_FABRIC_GAP,
     WEB_CLEARANCE,
     WEB_FABRIC_GAP,
     WEB_HARD_GAP,
@@ -349,7 +351,8 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     the seat band while the houses spread wider - and before this stage a third of the pool's
     farmhouses stood more than 100 ft from any way, with a whole block of Sawada touched by nothing.
 
-    WHY IT RUNS AFTER THE HOUSES, which is the opposite of every other lane on the map. `stage_ways`
+    WHY IT RUNS AFTER THE HOUSES - which is now true of EVERY lane, not just this one (feature 128).
+    Until then the web was the exception and the rest were laid first. `stage_seat`
     lays its lanes first precisely so the homesteads FRONT them, and the first attempt at this
     feature followed that rule and laid the web first too. It does not work, and the reason is worth
     keeping: a lane laid before the houses has to reserve its ground from a cluster that has not been
@@ -1398,19 +1401,110 @@ def _serve_stragglers(s: Settlement, plan: SitePlan, hard: list[Poly], fabric: l
             return
 
 
-def stage_ways(s: Settlement, plan: SitePlan) -> None:
-    """The lanes, laid BEFORE the houses because a lane is a no-build corridor the homesteads front.
+def _cluster_gateway(s: Settlement, seat: Mapping[str, object], fallback: Pt) -> Pt:
+    """Where a track leaves the settlement - measured from the PLACED houses, not the predicted band.
 
-    Three kinds, and each is derived from something already on the map:
-      - the cluster's internal SKELETON (`skeleton_layout`, rolled), laid in the seat frame so it
-        runs along the margin whatever direction the margin faces;
-      - a SPUR from the skeleton to the nearest point of the field, because the reason these houses
-        are here is the field and there must be a way to walk to it;
-      - the CONNECTOR, the trodden track that leaves for the wider world. It starts at the
-        skeleton's own gateway (the downslope exit the layout defines) and runs to the map edge, its
-        bearing swung away from the crop until it clears - a track goes around a paddy, not through
-        it. `connector_lane_runs_off_edge` requires it to actually reach the frame; the reason it
-        must is that a path stopping mid-landscape reads as a dead end."""
+    FR-002, and feature 126's unfinished task T009. Until now the gateway came from
+    `skeleton_layout(plan.lane_skeleton, 0, 0, seat["lat"], seat["dep"])` - a pure function of the
+    rolled knob and the SEAT BAND, which is where the cluster was PREDICTED to go. The houses land
+    where they land, and the two disagree; that mismatch is the recorded root of the
+    `farmhouses_reach_a_way` defect that survived seventeen attempts.
+
+    It also had a concrete cost the moment the track moved after the houses: a band-derived gateway
+    can sit INSIDE the house cloud, and a track starting there has to leave through the settlement.
+    One house on the reference hamlet ended up within 14 px of the connector's centerline - the
+    threshold `houses_off_corridors` measures - and no amount of routing around the fabric fixed it,
+    because the route's own start was in the middle of it.
+
+    So: take the cloud's own extent along the seat axes and put the gateway on its DOWNSLOPE edge,
+    clear of the last house. The fallback is the old band point, for the case where no house has been
+    placed yet - which cannot happen in the shipped order, but a helper that assumes its caller is
+    the failure mode this file has met repeatedly.
+    """
+    hs = s.M.get("houses") or []
+    if not hs:
+        return fallback
+    ax, ay = cast(Pt, seat["along"])
+    ox, oy = cast(Pt, seat["out"])
+    xs = [float(h["x"]) for h in hs]
+    ys = [float(h["y"]) for h in hs]
+    cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
+    # how far the cloud actually reaches, along each seat axis
+    out_reach = max((x - cx) * ox + (y - cy) * oy for x, y in zip(xs, ys, strict=False))
+    along_mid = sum((x - cx) * ax + (y - cy) * ay for x, y in zip(xs, ys, strict=False)) / len(xs)
+    # THE CLOUD IS NOT ONLY THE HOUSES. Wells, byres, sheds and yards are seated in
+    # `stage_appurtenances`, which runs BEFORE the track, and some of them stand outside the house
+    # extent. A gateway measured from houses alone landed 3.6 px from a well on the reference hamlet
+    # and the connector drew straight over it - `features_do_not_overlap`, wells x lanes.
+    #
+    # So walk outward until the gateway clears every standing thing by the track's own gap. Stepping
+    # rather than solving: the fabric is an arbitrary set of polygons, the step is cheap, and a
+    # bounded walk cannot fail to terminate the way a solve can.
+    fabric = [poly for poly, _owner, _kind in _homestead_polys(s)]
+    edge = out_reach + TRACK_FABRIC_GAP + 8.0
+    for _ in range(24):
+        gx, gy = cx + ax * along_mid + ox * edge, cy + ay * along_mid + oy * edge
+        if all(edge_dist(gx, gy, poly) >= TRACK_FABRIC_GAP for poly in fabric):
+            return (gx, gy)
+        edge += 6.0
+    return (cx + ax * along_mid + ox * edge, cy + ay * along_mid + oy * edge)
+
+
+def _thread_the_fabric(s: Settlement, plan: SitePlan, run: Poly, gap: float = TRACK_FABRIC_GAP) -> Poly:
+    """Route a track around the steadings that are already standing, and clip what will be drawn.
+
+    THE OBLIGATION INVERTS WITH THE ORDER, and this is the half a reorder alone does not supply.
+    While a lane was laid FIRST it was a no-build corridor and the HOUSES avoided it. Laid last,
+    nothing stops the track being drawn straight through a farmstead - and nothing did: moving the
+    connector and spur after the houses turned the reference hamlet red on
+    `features_do_not_overlap`, `houses_clear_of_lanes` and `houses_off_corridors` in one go.
+
+    Feature 126 learned exactly this when it moved the skeleton (see `_lay_skeleton`), and the lesson
+    generalizes: reordering the stages is not enough on its own, because every rule that pointed one
+    way across that boundary has to be turned around to match.
+
+    THE GAP IS NOT THE WEB'S GAP, and the difference is measured rather than chosen. The web threads
+    BETWEEN plots and is barely more than the space between two walls, so `WEB_FABRIC_GAP` is 7 px.
+    A track clipped at 7 px from a footprint still leaves the house CENTER inside the 14 px the gate
+    measures (`houses_off_corridors` counts a hit at `seg_dist(center, lane) < 14`), and it did: 3 of
+    15 houses on the reference hamlet. A connector or a spur also has no business hugging a wall - it
+    runs past the settlement, not through its gaps.
+
+    ROUTE, then CLIP, and both are needed. `_route` threads the gap - a trodden way goes ROUND a wall
+    rather than stopping at it - and the clip is the fallback for where no route exists, because the
+    honest outcome there is a shortened track rather than a lane through somebody's house. The clip
+    also catches the case the router cannot: a route is a PLAN, and a plan can start inside a wall
+    when its endpoint came from a template.
+    """
+    if len(run) < 2:
+        return run
+    fabric = [poly for poly, _owner, _kind in _homestead_polys(s)]
+    if not fabric:
+        return run
+    crops = crop_polys(s)
+    toe_now = s.toe_band() or None
+    wet_now = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
+    drawn_water = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for rec in s.M.get("drawn_channels", []) for a, b in zip(rec["pts"], rec["pts"][1:], strict=False)]
+    routed = _route(run[0], run[-1], [list(plan.envelope), *crops, *fabric, *([toe_now] if toe_now else []), *wet_now], [], list(plan.watercourses) + drawn_water)
+    out = routed if len(routed) >= 2 else run
+    out = clip_to_clear(out, fabric, gap)
+    return out if len(out) >= 2 else run
+
+
+def stage_seat(s: Settlement, plan: SitePlan) -> None:
+    """Decide WHERE the settlement sits. Draws nothing at all.
+
+    THIS IS THE HALF THAT HAS TO RUN FIRST, and separating it is the whole of feature 128. The old
+    `stage_ways` did two unrelated jobs in one pass: it SEATED the cluster - `seat_cluster` sets
+    `plan.seat`, which `stage_homesteads` reads on its first lines - and it DREW the connector and
+    the field spur. Because the seating is a hard dependency of the houses, the stage could not
+    simply be moved after them, and feature 126 worked around that by moving only the skeleton. That
+    is how the connector and spur were left reserving ground before a single house existed.
+
+    Split, the dependency and the drawing go to opposite sides of the houses. Nothing here calls
+    `s.lane`, and `tests/hamletgen/test_ways.py` asserts it: no lane and no corridor may exist when
+    this returns.
+    """
     drain = None
     for ditch in s.M.get("field_ditches", []):
         if ditch.get("role") == "drain" and len(ditch["poly"]) >= 2:
@@ -1448,6 +1542,35 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     if plan.wind[0] * seat["out"][0] + plan.wind[1] * seat["out"][1] < 0.34:  # more than ~70 deg apart
         plan.windward = min(WIND_VECTORS, key=lambda q: -(WIND_VECTORS[q][0] * seat["out"][0] + WIND_VECTORS[q][1] * seat["out"][1]))
         s.M["meta"]["windward"] = plan.windward
+    s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
+
+
+def stage_track(s: Settlement, plan: SitePlan) -> None:
+    """The connector out to the road and the spur to the field - drawn AFTER the houses.
+
+    THE GM, stating the whole feature (2026-08-24): *"We are reordering the procedural layout of the
+    hamlet generation so that farmhouses are rendered after the fields and water, but before any
+    village lanes. That is what the feature is. Full stop."*
+
+    ANY. There is no exogenous class and no connector exception. A road can predate a settlement in
+    the world, but this generator does not import one - it DRAWS one, and a lane drawn before the
+    houses registers a no-build corridor (`settlement/water_ways.py:514`) that `_fits` then refuses
+    seats against (`settlement/houses.py:309-311`). It takes ground the houses cannot have, which is
+    exactly what the GM reported: *"the lanes being there was the thing that was making it difficult
+    to lay out the farmhouses."*
+
+    That reasoning - ground reservation - is the one that carries, and it is deliberately NOT an
+    argument about provenance. An earlier draft justified moving the spur by claiming a field path
+    cannot predate the households who walk it; the fidelity review showed that is not universally
+    true (land assarted from an older settlement, a bund track along an existing paddy, a hamlet
+    founded against a through-path) and that resting on provenance produced a false asymmetry between
+    the spur and the connector. Ground reservation is true of every lane whatever it represents.
+
+    **Both branches.** The polder path returns early with its own connector; a fix applied only to
+    the valley path would leave polder hamlets reserving ground, and the reference hamlet is a valley
+    map so it would not notice.
+    """
+    seat = plan.seat
     ax, ay = seat["along"]
     ox, oy = seat["out"]
     cx, cy = seat["cx"], seat["cy"]
@@ -1494,12 +1617,24 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
         s.M["meta"]["lane_skeleton"] = plan.lane_skeleton
         toe = s.toe_band()
         drawn_wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
-        gate_pt = push_out_of(plan.envelope, to_screen((float(layout["gateway"][0]), float(layout["gateway"][1]))), SPUR_SETBACK)
+        _band_gate = to_screen((float(layout["gateway"][0]), float(layout["gateway"][1])))
+        gate_pt = push_out_of(plan.envelope, _cluster_gateway(s, seat, _band_gate), SPUR_SETBACK)
         track = connector_track(plan, gate_pt, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet, waters=drawn_water_segs(s))
-        s.lane(route_around(plan.envelope, track, SPUR_SETBACK), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
+        s.lane(_thread_the_fabric(s, plan, route_around(plan.envelope, track, SPUR_SETBACK)), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
         return
 
-    start = to_screen((0.0, 0.0))
+    # THE SPUR STARTS AT THE CLUSTER'S EDGE, NOT AT THE BAND'S CENTER (FR-002, feature 128).
+    #
+    # `to_screen((0, 0))` is the middle of the PREDICTED seat band, and with the spur now drawn after
+    # the houses that point sits inside the house cloud - so the path began among the steadings and
+    # had to leave through them. One house on the reference hamlet finished within 14 px of the
+    # spur's centerline, which is exactly what `houses_off_corridors` counts, and no amount of
+    # routing around the fabric could fix it because the route's own START was in the middle of what
+    # it was supposed to avoid.
+    #
+    # `_cluster_gateway` measures the placed cloud's reach along the seat axes and puts the origin
+    # just outside it. The band point is kept only as the no-houses fallback.
+    start = _cluster_gateway(s, seat, to_screen((0.0, 0.0)))
     cen = centroid(plan.envelope)
     brook_segs = [(plan.sink_brook[i], plan.sink_brook[i + 1]) for i in range(len(plan.sink_brook) - 1)]
 
@@ -1532,14 +1667,15 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     _spur_pts = s.trim_off_marsh(clip_to_clear(spur, [*crops, *([toe_now] if toe_now else [])], 12.0))
     _spur_pts = _fork_spur(_spur_pts, _kept_arms)
     if len(_spur_pts) >= 2 and sum(math.dist(_spur_pts[k], _spur_pts[k + 1]) for k in range(len(_spur_pts) - 1)) > 20.0:
-        s.lane(_spur_pts, width=5, clearance=LANE_CLEARANCE, worn=True)
+        s.lane(_thread_the_fabric(s, plan, _spur_pts), width=5, clearance=LANE_CLEARANCE, worn=True)
 
     # the CONNECTOR, out to the frame
     # ...and the gate the connector starts FROM must itself be out of the crop. The skeleton's
     # gateway is a point in the seat frame, so on a cluster that sits against a concave stretch of
     # the fan it can land INSIDE the field envelope - and the connector then starts in the rice and
     # crosses the outline twice on its way out (Inashiro, GM 2026-08-12).
-    gate = push_out_of(plan.envelope, to_screen((float(layout["gateway"][0]), float(layout["gateway"][1]))), SPUR_SETBACK)
+    _band_gate = to_screen((float(layout["gateway"][0]), float(layout["gateway"][1])))
+    gate = push_out_of(plan.envelope, _cluster_gateway(s, seat, _band_gate), SPUR_SETBACK)
     # THE TRACK LEAVES CLEAR OF THE WET TOE (GM 2026-08-12: "there's supposed to be a rule that
     # paths don't pass through marshland"). The marsh is not drawn until `stage_hinterland`, long
     # after this, so the router asks the ENGINE where it will be - `toe_band` is the same derivation
@@ -1552,7 +1688,7 @@ def stage_ways(s: Settlement, plan: SitePlan) -> None:
     toe = s.toe_band()
     drawn_wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
     track = connector_track(plan, gate, avoid=[list(plan.envelope), *crops], wet=([toe] if toe else []) + drawn_wet, waters=drawn_water_segs(s))
-    s.lane(route_around(plan.envelope, track, SPUR_SETBACK), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
+    s.lane(_thread_the_fabric(s, plan, route_around(plan.envelope, track, SPUR_SETBACK)), width=6, clearance=LANE_CLEARANCE, worn=True, connector=True)
 
 
 def push_out_of(poly: Poly, p: Pt, margin: float) -> Pt:

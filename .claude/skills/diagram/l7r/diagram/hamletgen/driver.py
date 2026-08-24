@@ -26,7 +26,7 @@ from .homesteads import stage_appurtenances, stage_homesteads
 from .plan import HamletSpec, SitePlan, plan_site
 from .sink import stage_sink
 from .water import stage_field, stage_water_frame
-from .ways import stage_ways, stage_web
+from .ways import stage_seat, stage_track, stage_web
 
 # THE PIPELINE. Read top to bottom: this is the generator.
 #
@@ -42,12 +42,38 @@ from .ways import stage_ways, stage_web
 # code already declares; this one does not - the SEQUENCE is a decision no amount of introspection
 # could recover, which is exactly the ordered-data case the clause carves out. Adding a stage means
 # deciding where in this list it goes.
+# THE ORDER, IN THE GM'S WORDS (2026-08-24, feature 128): "We are reordering the procedural layout of
+# the hamlet generation so that farmhouses are rendered after the fields and water, but before any
+# village lanes. That is what the feature is. Full stop."
+#
+#     water, fields, drainage  ->  FARMHOUSES  ->  every lane, without exception
+#
+# ANY lane. There is no exogenous class and no connector exception. A lane drawn before the houses
+# registers a no-build corridor that `_fits` refuses seats against, so it takes ground the houses
+# cannot have - which is the defect, whatever the lane represents. Provenance is not the axis.
+#
+# WHY THE TRACK SITS BETWEEN THE HOUSES AND THE APPURTENANCES, rather than after both. The GM's rule
+# is about FARMHOUSES - "farmhouses are rendered after the fields and water, but before any village
+# lanes" - and a well, byre or shed is not a farmhouse. Placed after the appurtenances the track had
+# to thread a fabric that already held every wellhead, and on the reference hamlet the connector came
+# out 3.6 px from one (`features_do_not_overlap`, wells x lanes). Placed before them, the well is sunk
+# where the track already runs - which is also the truer order: a track is worn by people walking, and
+# a well is dug where they already walk past it.
+#
+# The WEB still runs last of everything, for the reason recorded below: it FILLS leftover ground
+# rather than reserving any.
+#
+# `stage_seat` and `stage_track` are the two halves of what used to be `stage_ways`. It did two
+# unrelated jobs: it SEATED the cluster (`plan.seat`, a hard dependency of `stage_homesteads`) and it
+# DREW the connector and spur. Because of the first, the stage could not simply be moved after the
+# houses - which is why feature 126 moved only the skeleton and left the other two where they were.
 STAGES = (
     stage_water_frame,
     stage_field,
     stage_sink,
-    stage_ways,
-    stage_homesteads,
+    stage_seat,  # decides WHERE the settlement sits. Draws nothing.
+    stage_homesteads,  # the farmhouses, seated with no lane anywhere on the map
+    stage_track,  # the connector and the field spur, derived from the placed houses
     stage_appurtenances,
     # THE WEB RUNS LAST OF THE BUILT THINGS, after the byres, sheds and wells - not just after the
     # houses. It FILLS leftover ground, so everything that RESERVES ground has to be seated first;
