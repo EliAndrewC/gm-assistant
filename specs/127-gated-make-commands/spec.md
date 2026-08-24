@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-24
 
-**Status**: Draft - round 3, revised after two `spec-fidelity` rounds (see [Review history](#review-history))
+**Status**: APPROVED by `spec-fidelity` (round 3, verdict FAITHFUL) - ready to implement
 
 **Input**: The GM's request is recorded verbatim in [`gm-request.md`](gm-request.md). **That file is the
 authority for this specification.** It was written before this spec existed, and it must not be edited.
@@ -194,6 +194,10 @@ scratch copy and confirm a test fails.
 
 **Prompted** (expensive): scripted generation, pool regeneration, the test suites and coverage gate,
 cohort runs, performance snapshots, cache audits, regression-corpus rebuilds.
+
+"Pool regeneration" here means the CLONE-SIDE sweep. Render-sync also regenerates pool renders, but
+its target is refusal-only per FR-009a and never prompts - stated explicitly because the two would
+otherwise look like the same entry in this list, and a later reader would have to guess which governs.
 
 **Refused-if-not-via-make, but never prompted** (cheap, read-only): the per-map diagnostics that read a
 recorded manifest or rendered artifact rather than producing one.
