@@ -37,8 +37,8 @@ habitual in the first place.
 
 - [x] T004 Create `.claude/skills/diagram/l7r/diagram/_invocation.py` with `assert_via_make(operation, target)`: walk `/proc/<pid>/stat` PPid to PID 1, accept a `make`/`gmake` ancestor whose `/proc/<pid>/cwd` is inside the repo and whose `/proc/<pid>/cmdline` carries no `-f`/`--file`/`--makefile` naming a path outside it (research R1, R2)
 - [x] T005 Cache the verdict at module level so the `/proc` walk happens ONCE per process, with a comment at the point of use stating that `assert_via_make` is called at the TOP of an operation and never in a loop or a library helper (research R4 - this engine's whole performance history is the per-candidate-scan-of-static-geometry shape, and a careless placement recreates it)
-- [ ] T006 Build the operation registry in `.claude/skills/diagram/l7r/diagram/_invocation.py` from T003, with `module`/`target`/`cost` per [data-model.md](data-model.md) - enumerated, never inferred from module paths (`tools/` holds both a 25-minute cohort and a manifest read)
-- [ ] T007 Write the guard test that every discoverable entry point has a registry row, so an entry point added later without one fails the gate rather than shipping ungated (constitution X clause 14: derive the surface, guard the property)
+- [x] T006 Build the operation registry in `.claude/skills/diagram/l7r/diagram/_invocation.py` from T003, with `module`/`target`/`cost` per [data-model.md](data-model.md) - enumerated, never inferred from module paths (`tools/` holds both a 25-minute cohort and a manifest read)
+- [x] T007 Write the guard test that every discoverable entry point has a registry row, so an entry point added later without one fails the gate rather than shipping ungated (constitution X clause 14: derive the surface, guard the property)
 
 ## Phase 3: User Story 1 - An expensive run cannot be started by picking a different command (P1) 🎯 MVP
 
@@ -50,13 +50,13 @@ habitual in the first place.
 - [x] T010 [US1] Wire `make-only-hooks.sh` into `.claude/settings.json` as a `PreToolUse` hook with matcher `Bash`
 - [x] T011 [US1] **FIRES**: create `scripts/test-make-only-hooks.sh` asserting each blocked shape IS blocked - one case per threat-model row
 - [x] T012 [US1] **STAYS QUIET**: extend `scripts/test-make-only-hooks.sh` asserting ordinary `make <target>` calls, reads of source files, and `scripts/` invocations are NOT blocked
-- [ ] T013 [US1] Call `assert_via_make` at the top of each expensive operation, including the in-process entry points, so importing the engine and calling it directly is refused on the same terms (FR-008)
-- [ ] T014 [US1] Add `assert_via_make` to `.claude/skills/diagram/tests/conftest.py` so the suite itself refuses when run outside make
+- [x] T013 [US1] Call `assert_via_make` at the top of each expensive operation, including the in-process entry points, so importing the engine and calling it directly is refused on the same terms (FR-008)
+- [x] T014 [US1] Add `assert_via_make` to `.claude/skills/diagram/tests/conftest.py` so the suite itself refuses when run outside make
 - [x] T015 [US1] **FIRES**: create `.claude/skills/diagram/tests/test_invocation.py` covering no-make-in-ancestry, foreign `cwd`, foreign `-f`, and the in-process call
 - [x] T016 [US1] **STAYS QUIET**: extend `test_invocation.py` covering make-direct, make→`sh -c`, nested `$(MAKE)`, and a multiprocessing child three levels down (research R1's four measured shapes)
 - [x] T017 [US1] **STAYS QUIET**: assert in `test_invocation.py` that the `/proc` walk happens once across repeated calls, so a refactor that drops the cache is caught rather than silently slow (research R4)
-- [ ] T018 [US1] Add a make target for every operation in the registry so each refusal has somewhere to point (FR-001, *"we want make commands for everything"*)
-- [ ] T019 [US1] Verify [quickstart.md](quickstart.md) §1 by hand and record the actual refusal text in this file
+- [x] T018 [US1] Add a make target for every operation in the registry so each refusal has somewhere to point (FR-001, *"we want make commands for everything"*)
+- [x] T019 [US1] Verify [quickstart.md](quickstart.md) §1 by hand and record the actual refusal text in this file
 
 ## Phase 4: User Story 2 - The cheap path stays cheap, and needs no override (P2)
 
@@ -65,14 +65,14 @@ habitual in the first place.
 
 - [x] T020 [US2] Give the read-only diagnostics make targets that carry REFUSAL but never PROMPTING (FR-007, and the round-1 adjudication recorded in spec.md Scope Boundaries)
 - [x] T021 [US2] **STAYS QUIET**: assert in `scripts/test-make-only-hooks.sh` that a diagnostic run through its make target produces no prompt and no override
-- [ ] T022 [US2] Extend the override prompt to satisfy FR-010/FR-011 across every gated target: explanation, CANCEL default, written reason, refusal when non-interactive
-- [ ] T023 [US2] **FIRES**: assert the non-interactive override is REFUSED (the tier-3 failure - a backgrounded `FULL=1` run that nothing could answer for)
+- [x] T022 [US2] Extend the override prompt to satisfy FR-010/FR-011 across every gated target: explanation, CANCEL default, written reason, refusal when non-interactive
+- [x] T023 [US2] **FIRES**: assert the non-interactive override is REFUSED (the tier-3 failure - a backgrounded `FULL=1` run that nothing could answer for)
 - [x] T024 [US2] **STAYS QUIET**: assert `make reference` completes with zero prompts and zero overrides, and compare wall-clock against T002 (SC-002)
-- [ ] T025 [US2] Add `outcome` (`permitted`/`cancelled`/`refused`) to `dev/bypass-log.jsonl` writes per [data-model.md](data-model.md) - without it a session that backed out is indistinguishable from one that never tried (FR-012)
-- [ ] T026 [US2] Add a make target for render-sync, refusal-only and NOT subject to reference-first ordering (FR-009, FR-009a - CLAUDE.md:282 forbids a second generator run in main's tree)
-- [ ] T027 [US2] Change `scripts/sync-with-main.sh` line 138 from the bare `python3 -m l7r.diagram.pipeline.render_cache` to the T026 make target
-- [ ] T028 [US2] **STAYS QUIET**: run the full stop-work ritual and confirm render-sync completes with no refusal and no prompt (SC-004, [quickstart.md](quickstart.md) §7)
-- [ ] T029 [US2] Apply FR-014 - every expensive target verifies the reference settlement first and refuses to proceed when it fails - and confirm the render-sync target is exempt per FR-009a
+- [x] T025 [US2] Add `outcome` (`permitted`/`cancelled`/`refused`) to `dev/bypass-log.jsonl` writes per [data-model.md](data-model.md) - without it a session that backed out is indistinguishable from one that never tried (FR-012)
+- [x] T026 [US2] Add a make target for render-sync, refusal-only and NOT subject to reference-first ordering (FR-009, FR-009a - CLAUDE.md:282 forbids a second generator run in main's tree)
+- [x] T027 [US2] Change `scripts/sync-with-main.sh` line 138 from the bare `python3 -m l7r.diagram.pipeline.render_cache` to the T026 make target
+- [x] T028 [US2] **STAYS QUIET**: run the full stop-work ritual and confirm render-sync completes with no refusal and no prompt (SC-004, [quickstart.md](quickstart.md) §7)
+- [x] T029 [US2] Apply FR-014 - every expensive target verifies the reference settlement first and refuses to proceed when it fails - and confirm the render-sync target is exempt per FR-009a
 
 ## Phase 5: User Story 3 - Weakening a guard is visible and breaks the build (P3)
 
@@ -109,10 +109,10 @@ feature is about properly gated and properly TIMED make targets.
 - [x] T036 [P] Update `.claude/skills/diagram/CLAUDE.md`'s always-on section with the new command map, stating plainly that `make done` is ~5.5 minutes and is NOT the quick check - the mistake that cost this feature its predecessor
 - [x] T037 [P] Update the root `CLAUDE.md` iteration-loop section to point at the gated targets
 - [x] T038 Enumerate every remaining possible bypass against SC-006 and confirm each either appears in a git diff or could not be described as diligence. **Any that fails this test MUST be recorded in spec.md Assumptions and excluded from SC-006 explicitly** - an unenumerated hole under a criterion claiming enumeration is a false claim
-- [ ] T039 Run `ruff format` + `ruff check` + `mypy --strict` and confirm 100% coverage on `_invocation.py` (Principle X)
-- [ ] T040 Run the full gate ONCE at the end, backgrounded, and compare against T001's baseline - no regressions (Principle XIII)
+- [x] T039 Run `ruff format` + `ruff check` + `mypy --strict` and confirm 100% coverage on `_invocation.py` (Principle X)
+- [x] T040 Run the full gate ONCE at the end, backgrounded, and compare against T001's baseline - no regressions (Principle XIII)
 - [x] T041 Audit `dev/bypass-log.jsonl` for entries added during this feature and state in writing whether each was justified (constitution closing step)
-- [ ] T042 Tick every completed task in this file and confirm no task is left unticked that was in fact done
+- [x] T042 Tick every completed task in this file and confirm no task is left unticked that was in fact done
 
 ## Dependencies
 

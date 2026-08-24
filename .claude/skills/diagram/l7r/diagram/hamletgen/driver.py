@@ -11,6 +11,11 @@ import os
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
+# IMPORTED AT MODULE LEVEL, not inside generate(). A local import would run the guard's own
+# module-init on the FIRST generate() of a process and not on later ones, and gencache keys a
+# map on which engine functions EXECUTED - so the dependency set became call-order dependent
+# and unchanged pool maps stopped hitting the cache. Caught by the pre-push gate, feature 127.
+from l7r.diagram._invocation import guard
 from l7r.diagram.settlement import Settlement
 from l7r.diagram.sitegen.jobs import default_jobs as default_jobs  # noqa: PLC0414 - explicit re-export so `hamletgen.default_jobs` still resolves under --strict
 
@@ -117,6 +122,11 @@ def generate(spec: HamletSpec, out_base: str | None = None, render: bool = True)
 
     The gate then runs IN-PROCESS on that finished manifest, which is what makes it cheap to roll a
     dozen hamlets and ask how many of them are actually correct."""
+    # FR-008: an expensive operation refuses IN-PROCESS too, not only at the CLI. Without this,
+    # `python3 -c "from ... import generate; generate(...)"` walks past every command-shape guard - a
+    # bypass that needs no git diff and reads perfectly as diligence.
+    guard("l7r.diagram.hamletgen")
+
     import io
     import re
     import tempfile

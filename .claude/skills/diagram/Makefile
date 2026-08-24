@@ -4,7 +4,7 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations \
+.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations test-file audit \
 	 map cohort tripwire hamlet cache-audit regressions placement-stages pool-index compound render-sync \
 	 gate-manifest why-placed site-justice crop jogs pack-audit scatter-audit timings citybudget help
 
@@ -33,13 +33,14 @@
 # read the entries added during the feature and say, in writing, whether each was justified.
 done:
 	@$(if $(FULL),$(MAKE) --no-print-directory bypass-audit REF_WHY="$(REF_WHY)",$(MAKE) --no-print-directory reference)
-	@fail=""; \
+	@T0=$$(date +%s); fail=""; \
 	for phase in lint format typecheck $(if $(FULL),test-full,test); do \
 	  printf '\n\033[1m== %s ==\033[0m\n' "$$phase"; \
 	  $(MAKE) --no-print-directory $$phase || fail="$$fail $$phase"; \
 	done; \
-	if [ -n "$$fail" ]; then printf '\n\033[1mGATE FAILED:%s\033[0m (every phase ran - fix them together, then re-run once)\n' "$$fail"; exit 1; fi; \
+	if [ -n "$$fail" ]; then $(LOGRUN) done "$(if $(FULL),full,reference)" "$$(( $$(date +%s) - $$T0 ))" "failed:$$fail"; printf '\n\033[1mGATE FAILED:%s\033[0m (every phase ran - fix them together, then re-run once)\n' "$$fail"; exit 1; fi; \
 	root=$$(git rev-parse --show-toplevel 2>/dev/null) && [ -n "$$root" ] && python3 "$$root/scripts/gate-stamp.py" --write diagram || true; \
+	$(LOGRUN) done "$(if $(FULL),full,reference)" "$$(( $$(date +%s) - $$T0 ))" green; \
 	$(if $(FULL),printf '\n\033[1mgate green (FULL - every pool map re-gated, seeds 41-44 rolled)\033[0m\n',printf '\n\033[1mgate green\033[0m (reference settlement + non-map tests; `make done FULL=1` also rolls the other pool maps)\n')
 
 # THE REFERENCE-HAMLET PERFORMANCE BOOKENDS (constitution VI, GM 2026-08-23).
@@ -238,6 +239,21 @@ timings:        ## where the generation loop's time goes
 citybudget:     ## the city/capital space-budget planner
 	$(RUN).citybudget $(ARGS)
 
+audit:          ## how the gate has actually been used - every run, and every bypass
+	@printf '\n\033[1mGate runs\033[0m (dev/run-log.jsonl)\n'
+	@python3 -c "import json,os,collections; \
+rows=[json.loads(l) for l in open('dev/run-log.jsonl')] if os.path.isfile('dev/run-log.jsonl') else []; \
+print('  (none yet)') if not rows else None; \
+[print(f\"  {r['utc']}  {r['scope']:<9} {r['seconds']:>4}s  {r['result']:<24} {r['commit']}\") for r in rows[-25:]]; \
+c=collections.Counter(r['scope'] for r in rows); \
+print(f\"\n  {len(rows)} runs: \" + ', '.join(f'{k}={v}' for k,v in sorted(c.items()))) if rows else None"
+	@printf '\n\033[1mBypasses\033[0m (dev/bypass-log.jsonl) - a FULL run is only justified at the END of a feature\n'
+	@python3 -c "import json,os; \
+rows=[json.loads(l) for l in open('dev/bypass-log.jsonl')] if os.path.isfile('dev/bypass-log.jsonl') else []; \
+print('  (none yet)') if not rows else None; \
+[print(f\"  {r['utc']}  {r.get('outcome','?'):<10} {r['why'][:78]}\") for r in rows[-15:]]"
+	@printf '\n'
+
 help:           ## list every target with its one-line purpose
 	@printf '\n\033[1mOperations\033[0m - everything runs through one of these.\n\n'
 	@grep -hE '^[a-z][a-z0-9-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | sort | awk -F'\t' '{printf "  \033[1m%-18s\033[0m %s\n", $$1, $$2}'
@@ -256,6 +272,23 @@ help:           ## list every target with its one-line purpose
 # mid-recipe it is a literal character and the shell tries to run `@python3`, so the first version
 # logged nothing at all while every other part of the prompt behaved correctly - a silent failure in
 # the one component whose entire job is to leave a record.
+# EVERY GATE RUN IS LOGGED, not only the bypassed ones (GM 2026-08-24): *"if there exists a make done
+# that can be run in order to run the full tests, do we still have the ability to audit that it is
+# only being run when we have fully completed a feature? ... not just confirming that in the moment,
+# but also being able to audit after the fact."*
+#
+# The honest answer was no. `dev/bypass-log.jsonl` recorded FULL=1 attempts and nothing else, so
+# there was no way to ask afterwards how often the 5-minute gate ran or whether each run was near a
+# push. That matters here more than most places: the measured cost of getting this wrong, over three
+# days, is hours - and the pattern that cost them was a session running the long gate repeatedly
+# while believing each run was justified.
+#
+# `make audit` reads it back. Elapsed time is recorded too, so a target that has quietly got slower
+# shows up in the history rather than in someone's memory.
+LOGRUN = python3 -c "import json,subprocess,sys,time; \
+  h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True).stdout.strip(); \
+  open('dev/run-log.jsonl','a').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':sys.argv[1],'scope':sys.argv[2],'seconds':int(sys.argv[3]),'result':sys.argv[4],'commit':h})+chr(10))"
+
 LOGBYPASS = python3 -c "import json,subprocess,sys,time; \
   h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True).stdout.strip(); \
   open('dev/bypass-log.jsonl','a').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':'$(MAKECMDGOALS)','commit':h,'outcome':sys.argv[1],'why':sys.argv[2]})+chr(10))"
@@ -268,6 +301,15 @@ QUICK_BUDGET = 60
 # A gate that blocks a legitimate question without providing the route is a gate that gets bypassed.
 #
 # N=<count> for a longer list; MARK=rolls_map to profile the map-rolling tests instead.
+# ONE TEST FILE, WHOLE. Deliberately takes a FILE and not a `-k` expression: the project's own rule
+# is to run the whole affected file, because a filter selects the tests you were thinking about and a
+# change breaks the ones you were not (scripts/gate-hooks.sh enforces the same thing against the
+# gate). Exists because gating bare pytest left "re-run the file I just changed" with no route, and a
+# guard that blocks a legitimate action without offering the alternative is one that gets worked
+# around - the same gap `make durations` filled for "why is this slow".
+test-file:      ## run ONE test file, whole              FILE=tests/pipeline/test_gencache.py
+	@python3 -m pytest -n auto -q --no-cov $(FILE)
+
 durations:
 	@python3 -m pytest -n auto -q --no-cov $(if $(MARK),-m "$(MARK)",-m "not rolls_map" --deselect tests/test_villages.py) --durations=$(or $(N),12) 2>&1 | grep -E "^[0-9.]+s (call|setup)|passed|failed" | head -$$(( $(or $(N),12) + 2 ))
 
