@@ -138,3 +138,40 @@ The compute type is chosen AFTER T-measure, by the number, and recorded in `timi
 dependency in `container-scripts/setup-dev-env.sh` and is pinned in the diagram skill's
 `requirements` per Principle X. The build image needs no boto3: the build talks to S3 through the
 AWS CLI that CodeBuild's environment already carries.
+
+## R11 - The FULL prompt's answer ships in the tree (amendment)
+
+**Verified**: `bypass-audit` writes `dev/bypass-log/<ts>-<pid>.json` with `target` (`$(MAKECMDGOALS)`),
+`commit`, `outcome`, `why`; the directory is TRACKED. So a `permitted` entry is a file git carries,
+and `git merge-base --is-ancestor <entry.commit> HEAD` is a one-line test that the entry authorized
+THIS work. The build checks: an entry exists, `outcome == permitted`, target is the full sweep,
+its commit is an ancestor of HEAD and NOT of `origin/main` (an entry inherited from main authorizes
+nothing). Absent that, the build refuses the full scope - it never reads `REF_WHY` from its
+environment, which is the door the 127 audit found had been walked through three times.
+
+**Declined**: passing the reason as a build environment variable (`REF_WHY`). It is exactly the
+tier-2 override with extra steps, and the build could not tell an answered prompt from a typed flag.
+
+**Also declined**: a signed token. Overkill - the threat model is a session mistaking a shortcut for
+diligence, not an adversary; a tracked-file diff is the bar 127 set and it holds here.
+
+## R12 - Machine identity for performance snapshots (amendment)
+
+**Verified**: `perf_snapshot.py` records `cpus` and `platform.machine()` already, so the 22-thread
+laptop and a 36-vCPU build are distinguishable today by accident, not by design. Adds `host` and
+`image`; CodeBuild exposes `CODEBUILD_BUILD_IMAGE` and the compute type is known to the dispatcher.
+`perf-gate` pairs on `(host, image)` and refuses otherwise. Snapshots produced in a build come back as
+build ARTIFACTS (S3, the bucket already exists) that the dispatcher downloads into `dev/perf-log/`.
+
+**Consequence**: NO standalone remote bookend run (amendment fidelity round 1 - it would have been a
+third paid dispatch outside FR-010). The FULL build takes both bookends itself: `-start` in a
+detached worktree at the pre-merge `origin/main` (the retroactive procedure `perf-gate`'s own
+message prints), `-end` on the merge. One extra `perf` (~2-4 min) inside a run already paid for.
+
+## R13 - Sync-in already runs every turn; it just does too little (amendment)
+
+**Verified** (`scripts/clone-sync-hooks.sh` `prompt` mode, lines 177-224): on every user prompt the
+hook finds this session's clone and, if its tree is clean, runs `sync-with-main.sh sync-in`. So
+FR-030 needs no new hook - `sync_in()` grows three steps (fetch, mirror `--ff-only` under the lock,
+render-sync in the mirror) ahead of the clone merge. The mirror steps run even when the clone is
+dirty; only the clone merge is skipped for mid-task work.

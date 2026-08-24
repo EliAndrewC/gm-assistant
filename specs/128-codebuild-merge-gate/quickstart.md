@@ -58,3 +58,24 @@ mailbox; the clone fast-forwards to it; `/gm-assistant` fast-forwards to it; ren
 - A hand-written `verified/<tree>.json` uploaded with the session's key -> `AccessDenied`.
 - `git push --force origin main` from anywhere -> refused by the hook locally, and by the ruleset if
   it ever reached GitHub.
+
+## 7. The full sweep on CodeBuild (amendment; one FULL build ≈ $0.50-1.00 until measured)
+
+```
+scripts/sync-with-main.sh done FULL=1        (the merge action only - the iteration check stays reference scope)
+```
+
+- Press Enter at the prompt: "Cancelled - good call", `cancelled` logged, NO build.
+- Give a reason: a commit `chore: authorize FULL sweep - <reason>` appears, the mailbox is pushed,
+  the build log shows `bypass-audit: permitted entry <file> authorizes FULL`, every pool map and
+  the ratchet run, `perf-gate` runs, snapshots land in `dev/perf-log/` with `host: codebuild:...`.
+- Backgrounded (`... > log 2>&1 &`): refused locally by the existing guard; NO build.
+- Hand-push a mailbox WITHOUT the entry and start a FULL build from the console: the build refuses
+  the full scope and fails - `verified/` gets no FULL record.
+
+## 8. Sync at the tooling level (amendment; free)
+
+Push a docs commit to GitHub `main` from your laptop. Send any message to a session. Then:
+`git -C /gm-assistant log -1`, the clone's `git log -1`, and the mirror's `pool/index.html` mtime
+all reflect it. Commit by hand in `/gm-assistant` (don't - but for the test): the next turn's
+sync-in stops with "mirror cannot fast-forward".
