@@ -34,6 +34,7 @@ def test_a_fan_that_folds_back_on_itself_is_recognized() -> None:
     assert hg.net_bends_acutely(hairpin)
 
 
+@pytest.mark.rolls_map
 def test_a_polder_inlets_mouth_is_pulled_INSIDE_the_crop() -> None:
     """THE RATCHET for `draw_comb_field`'s constructed inlet end (2026-08-15).
 
@@ -60,6 +61,7 @@ def test_a_polder_inlets_mouth_is_pulled_INSIDE_the_crop() -> None:
         assert gap >= 10.0, f"the mouth is {gap:.1f} px from the outline; the rule wants 10 so the field paints over it"
 
 
+@pytest.mark.rolls_map
 def test_a_polder_reservoir_backs_off_until_its_rim_clears_the_crop() -> None:
     """The seat is measured from the ring canal's HEAD, so anything that moves that head moves the
     reservoir - trimming the ring's doubling-back stub did exactly that and slid the pond onto the
@@ -81,6 +83,7 @@ def test_a_polder_reservoir_backs_off_until_its_rim_clears_the_crop() -> None:
     assert pond[0] * dx + pond[1] * dy < min(p[0] * dx + p[1] * dy for p in plan.envelope), "the source sits above what it waters"
 
 
+@pytest.mark.rolls_map
 def test_a_polder_hamlet_draws_its_grid_dike_and_reservoir() -> None:
     """THE SECOND FIELD ARCHETYPE (GM 2026-08-13), pinned at what it currently guarantees.
 

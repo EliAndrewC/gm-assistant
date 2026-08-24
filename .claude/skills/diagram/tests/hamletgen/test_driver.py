@@ -6,6 +6,8 @@ Split from test_hamletgen.py by feature 111; test bodies verbatim. See hamletgen
 import os
 import re
 
+import pytest
+
 from l7r.diagram import check_village
 from l7r.diagram import hamletgen as hg
 
@@ -19,6 +21,7 @@ def test_the_report_line_names_the_map_and_its_verdict() -> None:
     assert not bad.ok and "FAIL" in bad.line() and "a_check" in bad.line()
 
 
+@pytest.mark.rolls_map
 def test_a_rolled_cohort_passes_the_whole_gate() -> None:
     """The experiment's actual claim, in miniature, and a RATCHET on it.
 
@@ -54,6 +57,7 @@ def test_a_rolled_cohort_passes_the_whole_gate() -> None:
     assert len(passed) >= 4, f"only {len(passed)}/4 rolled hamlets pass the whole gate: " + "; ".join(f"{r.plan.spec.name}: {r.failures}" for r in reports if not r.ok)
 
 
+@pytest.mark.rolls_map
 def test_the_cli_reports_a_single_hamlet(tmp_path, capsys) -> None:  # type: ignore[no-untyped-def]
     out = str(tmp_path / "cli")
     # the RETURN CODE reports the gate's verdict on this particular seed, which is not what this
@@ -64,6 +68,7 @@ def test_the_cli_reports_a_single_hamlet(tmp_path, capsys) -> None:  # type: ign
     assert "Clitest" in capsys.readouterr().out
 
 
+@pytest.mark.rolls_map
 def test_the_cli_batch_mode_returns_nonzero_when_a_member_fails(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
     """The batch exit code is the experiment's pass/fail signal, so it has to be real."""
     monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: [hg.Report(plan=a_plan(), failures=["boom"])])
@@ -71,6 +76,7 @@ def test_the_cli_batch_mode_returns_nonzero_when_a_member_fails(monkeypatch, cap
     assert "0/1 passed" in capsys.readouterr().out
 
 
+@pytest.mark.rolls_map
 def test_the_cli_batch_mode_returns_zero_when_every_member_passes(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: [hg.Report(plan=a_plan(), failures=[])])
     assert hg.main(["--batch", "1"]) == 0
@@ -130,6 +136,7 @@ def _as_pinned() -> list[hg.Report]:
     ]
 
 
+@pytest.mark.rolls_map
 def test_the_canonical_cohort_is_judged_against_the_pin_not_the_rate(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
     """`--batch 24` from seed 1 exits ZERO on its known failures - the steady state is success, and
     only a change from it is a failure. Before the pin this exact run exited 1, which meant the
@@ -139,6 +146,7 @@ def test_the_canonical_cohort_is_judged_against_the_pin_not_the_rate(monkeypatch
     assert "NO NEW REGRESSIONS" in capsys.readouterr().out
 
 
+@pytest.mark.rolls_map
 def test_the_canonical_cohort_fails_on_a_seed_the_pin_does_not_cover(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
     extra = hg.Report(plan=hg.plan_site(hg.HamletSpec(name="T", seed=999, households=12, down_deg=90.0, windward="N")), failures=["something_new"])
     monkeypatch.setattr(hg.driver, "cohort", lambda n, first_seed=1, jobs=None: [*_as_pinned(), extra])
@@ -146,6 +154,7 @@ def test_the_canonical_cohort_fails_on_a_seed_the_pin_does_not_cover(monkeypatch
     assert "REGRESSION seed 999" in capsys.readouterr().out
 
 
+@pytest.mark.rolls_map
 def test_a_non_canonical_range_says_it_has_no_pin(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
     """A held-out or ad-hoc range must NOT be judged against the fitted cohort's baseline, and must
     say so rather than implying it was checked."""
@@ -154,12 +163,14 @@ def test_a_non_canonical_range_says_it_has_no_pin(monkeypatch, capsys) -> None: 
     assert "no pinned baseline for this range" in capsys.readouterr().out
 
 
+@pytest.mark.rolls_map
 def test_the_cli_returns_nonzero_for_a_failing_single_map(monkeypatch, capsys) -> None:
     monkeypatch.setattr(hg.driver, "generate", lambda spec, out_base=None, render=True: hg.Report(plan=a_plan(), failures=["boom"]))
     assert hg.main(["--name", "X"]) == 1
     assert "boom" in capsys.readouterr().out
 
 
+@pytest.mark.rolls_map
 def test_cohort_derives_each_spec_and_can_be_forced_serial(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """`jobs=1` is the path an in-gate caller wants (a pytest worker that spawns its own pool
     competes with the other 21), and the spec derivation is the same on either path: consecutive
@@ -180,6 +191,7 @@ def test_cohort_derives_each_spec_and_can_be_forced_serial(monkeypatch) -> None:
     assert [s.households for s in seen] == [14, 14]
 
 
+@pytest.mark.rolls_map
 def test_the_fan_out_agrees_with_the_serial_path() -> None:
     """The fan-out's entire safety claim, pinned: a map is a pure function of its spec, so rolling
     it in a worker must produce exactly the report rolling it here does. This is also the only test
@@ -198,6 +210,7 @@ def test_the_fan_out_agrees_with_the_serial_path() -> None:
     assert parallel.path is None  # a cohort member is gated, then thrown away
 
 
+@pytest.mark.rolls_map
 def test_a_map_that_strands_a_farmhouse_is_re_rolled_with_that_ground_forbidden(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """`generate` re-rolls a map whose FINISHED manifest strands a farmhouse, forbidding the ground
     those houses stood on. Three seat-time tests were built before this and all three failed, because
@@ -236,6 +249,7 @@ def test_a_map_that_strands_a_farmhouse_is_re_rolled_with_that_ground_forbidden(
     assert (1397.0, 890.0) in seen[1]
 
 
+@pytest.mark.rolls_map
 def test_a_re_roll_that_does_not_help_is_not_kept(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
     """The retry is self-limiting: a re-roll is kept only if the gate's verdict is no longer than the
     one it replaces. Without that a map could be re-rolled into a WORSE state and shipped, which is

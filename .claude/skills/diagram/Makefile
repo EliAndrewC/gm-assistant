@@ -4,7 +4,7 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick
+.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations
 
 # Runs EVERY phase and reports all failures together (GM 2026-07-25). It used to be
 # `done: lint format typecheck test`, which make stops at the first failure - so a lint slip hid a
@@ -125,11 +125,51 @@ done:
 # live pool map; the ratchet rolls seeds 41-44), which is right for a pre-push gate and wrong for a
 # loop. Measured on feature 126: `make done` is ~5 minutes and I ran it repeatedly over a tree I
 # already knew was broken.
+# QUICK ROLLS NO MAPS AT ALL, and that is the whole contract. It used to run `make reference` first
+# (~26 s of map generation) which contradicted its own promise and, with the marker fix below, was
+# most of what remained of its cost. FR-014's reference-first ordering binds EXPENSIVE targets - the
+# ones that would waste minutes on a tree the 60-second check would have condemned. `quick` rolls
+# nothing, so there is nothing for a broken reference map to waste; run `make reference` when you
+# want the map checked, which is a separate question from "did I break the code".
+#
+# MEASURED 2026-08-24: 254 s -> 94 s (marker deselect) -> this. The 254 s version was being pointed
+# at by every guard in this feature as the cheap option.
+# QUICK ENFORCES ITS OWN BUDGET, because the whole point of this feature is that the target the
+# guards point at is actually fast. It was 254 s while every blocked command was being sent to it as
+# the cheap option, and nothing said so - a target gets slower one unmarked test at a time and no
+# check exists for "this is still quick" unless you write one.
+#
+# TIMED WITH `date +%s`, NOT `$$SECONDS`: make's default shell is sh, where SECONDS is unset, so the
+# first version computed an empty elapsed time and never fired - it passed a 1-second budget on a
+# 31-second run. Caught by testing the guard rather than trusting it, which is the same check that
+# T034 applies to every other guard in this feature.
+#
+# 60 s against a measured ~33 s leaves room for a slower machine and for the suite to grow, and still
+# fires long before anyone would call it slow. RAISE IT ONLY WITH A MEASUREMENT, and prefer marking
+# the slow test instead: the budget is the alarm, not the fix.
+QUICK_BUDGET = 60
+
+# WHERE THE SUITE'S TIME GOES. Exists because the question could not be asked any other way once
+# bare pytest was gated: a session needing to know why a target is slow had no route to the answer
+# except the override, which is precisely the shape that trains a session to reach for overrides.
+# A gate that blocks a legitimate question without providing the route is a gate that gets bypassed.
+#
+# N=<count> for a longer list; MARK=rolls_map to profile the map-rolling tests instead.
+durations:
+	@python3 -m pytest -n auto -q --no-cov $(if $(MARK),-m "$(MARK)",-m "not rolls_map" --deselect tests/test_villages.py) --durations=$(or $(N),12) 2>&1 | grep -E "^[0-9.]+s (call|setup)|passed|failed" | head -$$(( $(or $(N),12) + 2 ))
+
 quick:
-	@$(MAKE) --no-print-directory reference
 	@python3 -m ruff check l7r/ tests/ && python3 -m ruff format --check l7r/ tests/ && python3 -m mypy
-	@python3 -m pytest -n auto -q --no-cov -x --deselect tests/test_villages.py --deselect tests/hamletgen/test_driver.py
-	@printf '\n\033[1mquick: clean\033[0m - the map-rolling tests are NOT included; `make done` before pushing.\n'
+	@start=$$(date +%s); python3 -m pytest -n auto -q --no-cov -x -m "not rolls_map" --deselect tests/test_villages.py; ec=$$?; \
+	  el=$$(( $$(date +%s) - start )); \
+	  if [ $$ec -ne 0 ]; then exit $$ec; fi; \
+	  if [ $$el -gt $(QUICK_BUDGET) ]; then \
+	    printf '\n\033[1mquick took %ss, over its %ss budget.\033[0m\n' "$$el" "$(QUICK_BUDGET)"; \
+	    printf 'Something slow is running that should not be. Find it:  \033[1mmake durations\033[0m\n'; \
+	    printf 'A test near the top of that list without @pytest.mark.rolls_map is the cause.\n\n'; \
+	    exit 1; \
+	  fi
+	@printf '\n\033[1mquick: clean\033[0m - the %s map-rolling tests were NOT run; `make done` before pushing.\n' "$$(python3 -m pytest -q --no-cov --collect-only -m rolls_map 2>/dev/null | tail -1 | grep -oE '^[0-9]+' || echo 'slow')" 
 
 bypass-audit:
 	@why="$(REF_WHY)"; \

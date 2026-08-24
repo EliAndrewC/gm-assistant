@@ -29,6 +29,15 @@ import sys
 _POS = r"(?:^|[\n;|]|&&|\|\|)\s*(?:timeout\s+\S+\s+|env\s+|[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*"
 _PY = r"(?:\S*/)?python3?"
 
+# a guard file, as the TARGET of a write - the filename adjacent to the operator that writes it
+_GUARD = r"[\w./-]*(?:Makefile|[\w-]*-hooks\.sh|settings\.json)"
+_GUARD_WRITE = (
+    rf">>?\s*{_GUARD}(?:\s|$)",                    # cat > Makefile ; echo x >> scripts/a-hooks.sh
+    rf"sed\s+-i\b[^;|&]*?{_GUARD}(?:\s|$)",        # sed -i 's/a/b/' scripts/a-hooks.sh
+    rf"tee\s+(?:-a\s+)?{_GUARD}(?:\s|$)",          # tee Makefile
+    rf"{_GUARD}[\"\']\s*\)?\s*\)?\s*\.write_text",  # Path("...Makefile").write_text(
+)
+
 
 def _strip_heredocs(cmd: str) -> str:
     """A heredoc body is the payload of a command, never a command. Removed before matching."""
@@ -38,6 +47,36 @@ def _strip_heredocs(cmd: str) -> str:
 def classify(cmd: str) -> str:
     if not cmd or "GUARD_EDIT_OK" in cmd:
         return "ok"
+    raw = cmd
+    c = _strip_heredocs(cmd)
+
+    def at(pat: str) -> bool:
+        return re.search(_POS + pat, c) is not None
+
+    if at(r"make\s+(?:-\S+\s+)*(?:-f|--file|--makefile)(?:[=\s]|$)"):
+        return "foreign-makefile"
+    if at(rf"{_PY}\s+(?:-\S+\s+)*-m\s+l7r\.diagram\.") or at(rf"{_PY}\s+\S*l7r/diagram/(?:pipeline/regen|hamletgen/__main__)\.py"):
+        return "engine-entry-point"
+    if at(rf"(?:{_PY}\s+(?:-\S+\s+)*-m\s+)?pytest\b"):
+        return "bare-pytest"
+    # AN OVERRIDE COUNTS WHEREVER IT SITS ON THE COMMAND. `REF_WHY=x make done` puts it in front;
+    # `make done FULL=1 REF_WHY=x` passes it as a make argument. Both skip the prompt, so both are
+    # tier 2 - the first cut only matched the leading form and the suite caught it immediately.
+    if re.search(r"\b(?:REF_WHY|REF_OK|GATE_OK)=", c) and (at(r"make\b") or re.search(_POS + r"(?:REF_WHY|REF_OK|GATE_OK)=", c)):
+        return "inline-override"
+    # GUARD-WRITE READS THE RAW COMMAND, NOT THE STRIPPED ONE, and this is the one place that is
+    # right: everywhere else a heredoc body is prose to ignore, but here it is the payload that does
+    # the writing - `python3 - <<PY ... write_text("...Makefile") ... PY` is exactly the route that
+    # slipped past layer 3 all day.
+    #
+    # THE GUARD FILE MUST BE THE TARGET OF THE WRITE, not merely present somewhere. The first cut
+    # asked "does a guard filename appear AND does a write appear", which blocked a command creating
+    # an ordinary test file whose DOCSTRING mentioned a hook by name. Third time this feature has
+    # made the mention-versus-invocation mistake - a grep, a commit message, and now a docstring -
+    # which is worth stating plainly: proximity is the signal, presence never is.
+    if any(re.search(pat, raw) for pat in _GUARD_WRITE):
+        return "guard-write"
+    return "ok"
     raw = cmd
     c = _strip_heredocs(cmd)
 
