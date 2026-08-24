@@ -521,7 +521,7 @@ def _seg_0604__paddy_plots_are_workable_basins(*, M: Any = _UNBOUND, check: Any 
     range (see _seg_0595 for the numbering convention). No `_PLACEMENTS` entry: it reads only `M`,
     `check` and `fields`, so the tail of the derived order is as good a seat as any."""
     # A PADDY BASIN CANNOT TAPER TO A POINT (GM ruling 2026-08-17, on the fan-toe SUNBURST that
-    # future-work.md had been carrying as an open question: "I would like for us to be rendering
+    # the backlog had been carrying as an open question (now future-work/closed.md): "I would like for us to be rendering
     # things that are realistic ... if this is a thing that needs to be fixed, then I would like it
     # to be fixed"). At two places on Inashiro eight to ten bunds 130-254 ft long converge on a
     # ~10 ft stretch of the collector bank at apex angles of 7.5 / 9.5 / 9.8 / 10.6 / 13.5 / 14.3
@@ -573,7 +573,7 @@ def _seg_0605__paddy_plot_rings_overcount_stays_marginal(*, M: Any = _UNBOUND, c
     `M`, `check` and `fields`. New-style: temps stay function-local, writes=()."""
     # `plot_rings` IS A PAINT-ORDER STACK, NOT A PARTITION - and this rule is what keeps that
     # ACCEPTED limitation from drifting into a lie (GM ruling 2026-08-17; the decision, the two
-    # priced alternatives and why each was declined are in future-work.md, "`plot_rings` is a
+    # priced alternatives and why each was declined are in future-work/closed.md, "`plot_rings` is a
     # paint-order STACK"). Each paddy is one <polygon> carrying fill AND stroke, emitted in index
     # order, so a later basin paints out the stretch of bund it laps and the pair reads as the
     # single shared wall a real fan has. The record is therefore honest about the INK and is NOT a
@@ -783,7 +783,7 @@ def _seg_0614__paddy_bunds_do_not_stagger(*, M: Any = _UNBOUND, check: Any = _UN
     # could not move the wall without breaking another rule (a neighbour split in two, a bund pushed
     # into a delivery ditch, a basin drawn to a needle - see `_unjog`), and the map reads as an
     # ordinary piecemeal parcel. Seven of those survive across the four maps and are ledgered in
-    # `future-work.md` with the guard that refuses each; `python3 -m l7r.diagram.tools.jogs` lists
+    # `future-work/` with the guard that refuses each; `python3 -m l7r.diagram.tools.jogs` lists
     # them, and that tool holds the ABSOLUTE rule so the residue stays visible and measured. This
     # check is the ratchet that keeps the staircase from coming back.
     #

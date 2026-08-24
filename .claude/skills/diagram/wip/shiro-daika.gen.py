@@ -95,8 +95,8 @@ s.meta(
     # is reworked. The rampart gates, the samurai ward's own seal and the castle stand as they were.
     ward_gates=False,
     waivers={
-        "population_consistent_with_housing": "First-pass fabric at the settled wall: every band drew, but realized machi density leaves the census ~130 households short of 12,360/5; the GM (2026-08-10) deferred interior fullness to the fabric-first regeneration (future-work.md #2/#5) rather than grind the packs further this pass.",
-        "city_no_large_empty_space": "The ~1.5-acre pockets that remain rotate to a new spot on every reflow because the first-pass packs under-fill the settled wall by ~8%; the stable cores are all claimed (the drill grounds, the moat firebreak, the rampart approach, the S-gate column ground) and the rotating residue is the same deferred-fullness gap (GM 2026-08-10, future-work.md #5).",
+        "population_consistent_with_housing": "First-pass fabric at the settled wall: every band drew, but realized machi density leaves the census ~130 households short of 12,360/5; the GM (2026-08-10) deferred interior fullness to the fabric-first regeneration (future-work/ #2/#5) rather than grind the packs further this pass.",
+        "city_no_large_empty_space": "The ~1.5-acre pockets that remain rotate to a new spot on every reflow because the first-pass packs under-fill the settled wall by ~8%; the stable cores are all claimed (the drill grounds, the moat firebreak, the rampart approach, the S-gate column ground) and the rotating residue is the same deferred-fullness gap (GM 2026-08-10, future-work/ #5).",
     },
     crop_outlier_ok="Outside the rampart the map carries only the gate furniture, the wharf works, the towpath and the aqueduct until feature 021 fills the interior; sparse outliers at this stage are the build order showing through, not a siting error.",
 )

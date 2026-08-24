@@ -233,7 +233,7 @@ def surface_water_dist(M: Any, x: float, y: float) -> float:
     # Measured cost, and it is the point rather than a side effect: the houses that actually need a
     # well go 5 -> 8 on Inashiro, 3 -> 9 on Kashikawa, 0 -> 5 on Mizuguchi and 6 -> 9 on Sawada, so
     # the minimax objective and the coverage pass finally have the clients the doctrine says they
-    # have. The GM may reverse this; it is recorded in `future-work.md`.
+    # have. The GM may reverse this; it is recorded in `future-work/`.
     d = 1e9
     for ln in [c["poly"] for c in M.get("canals", []) if c.get("poly")] + [st["poly"] for st in M.get("streams", [])] + ([M["moat"]] if M.get("moat") else []):
         for i in range(len(ln) - 1):

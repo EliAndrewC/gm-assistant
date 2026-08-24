@@ -1,4 +1,4 @@
-# Future work: cities (towns, provincial cities, capitals)
+# Future work: provincial cities and capitals
 
 **Everything to do with an urban settlement**: walls and gates, wards and quarters, streets and
 storefronts, the castle and its moat, ministries and precincts.
@@ -6,16 +6,14 @@ storefronts, the castle and its moat, ministries and precincts.
 Provincial cities and capitals share one file because they are largely scaled versions of one
 another (GM 2026-08-24).
 
-**TOWNS ARE FILED HERE, and that is a judgment call worth flagging.** The GM's split named farming
-communities and cities; towns sit between. They are filed here because their open defects are urban
-in kind - storefronts, streets, inns, kiln glyphs - even though a town's population is still mostly
-farmers. Move them if that reads wrong.
+**Towns have their own file** ([`towns.md`](towns.md)), split out on the GM's direction the same day:
+a town has enough that is specific to it - storefronts, inns, caravans, the theater, a farmers
+plurality the larger tiers do not have - that folding it in here would bury it.
 
 **Much of this file predates scripted generation.** Only hamlet `valley_paddy` is SHIPPED; village,
 town, city and capital are all NOT STARTED ([`../migration-plan.md`](../migration-plan.md)). Entries
 here that assume a NEXT hand-authored map are annotated: the task is dead, the insight is an input to
 the tier's conversion.
-
 ## 1. Parametric feature bundles (gate wards, rim bands) - HIGH VALUE
 
 > **PREMISE RETIRED (audit 2026-08-24).** This entry assumes a NEXT hand-authored map: its fix
@@ -123,30 +121,3 @@ follow-ups, either of which closes it:
 - Profile it. A capital map costing more than 3x the entire 28-map pool is itself a finding - the
   "one performance bug this engine keeps growing" section of `CLAUDE.md` describes the shape it is
   most likely to be.
-
-## OPEN: two `s.kiln` glyph defects (settlement-review on Ubame, 2026-08-17)
-
-Both found on Ubame's new potters' kiln works and both deliberately NOT fixed there: they are
-defects in `settlement/trades.py::kiln`, not in that map, and a shared-glyph change made under a
-one-off content edit lands on Tango, Minami, Nagahara and `wip/shiro-daika` as well. The three
-pool cities are frozen and would keep their committed ink either way, which is exactly why the
-fix wants its own pass with its own sweep rather than riding along.
-
-1. **The smoke wisp ignores the map's declared wind.** The plume is authored in the glyph's LOCAL
-   frame (`q 2 -3.5 0.5 -7`, toward local -y), so it rotates with the kiln. On Ubame, at
-   `rot=351.9`, that puts it at world bearing NNW - blowing INTO the declared `windward="NW"`, and
-   pointing at the magistrate's manor. The SITING is right (the works is downwind of every
-   dwelling) and only the ink contradicts it, which is the worst version: a reader who trusts the
-   drawing reads the nuisance axis backwards. **Fix sketch**: derive the wisp's bearing from
-   `meta["windward"]` in world coordinates and counter-rotate it out of the glyph's group, the way
-   `_trade_record`'s `lab_off` already counter-rotates a caption. Then the plume becomes free
-   evidence for the reader instead of a contradiction. Every settlement that draws smoke has the
-   same latent bug; the kiln is just where a map finally rotated far enough to expose it.
-2. **The two-cottage case is mirrored, with the well centered above it.** `cxs_ = {2: (-f(22),
-   f(22))}` puts the pair symmetrically about the works' axis, and the private well's saturated
-   blue disc sits centered above them - a bright centered mark over a symmetric pair, which is the
-   composition the mirror rule warns about. It does not resolve into a face (one disc, not two),
-   but at fit zoom the well becomes the loudest thing in the works and the eye lands on its least
-   important object. **Fix sketch**: offset the 2-cottage case the way the 3-cottage case already
-   is asymmetric in effect, or move the private well off the axis. Cheap, but it changes every
-   two-cottage works, so it belongs with item 1 in one pass.

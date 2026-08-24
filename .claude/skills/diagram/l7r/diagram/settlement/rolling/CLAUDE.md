@@ -86,7 +86,7 @@ what the composed-surface guard's second assertion exists to keep true
   happens inside a callee (`lane`, `try_place`, `farmsteads`, `place_wells`, `village_grove`,
   `hinterland`, `bridges`), so **the sequence of those calls IS the output.** That is what made the
   stage decomposition safe, and it is the property to re-check before moving a stage boundary
-  again. (Measured 2026-08-17, feature 118; `future-work.md` had predicted the opposite, which is
+  again. (Measured 2026-08-17, feature 118; `future-work/` had predicted the opposite, which is
   why the rule is to measure rather than reason.)
 
 ## Monkeypatching a module-level name

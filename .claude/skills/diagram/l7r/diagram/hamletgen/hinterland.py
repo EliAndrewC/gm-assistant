@@ -40,7 +40,7 @@ CROP_MARGIN = 48.0  # the one crop margin, shared by stage_frame's crop_to_conte
 # `_crop_boxes` calls of a build AND equal to the final `meta.view`, because everything that sets the
 # frame is placed before the woodland scan runs. The neighbouring square test's 0.8 exists for drift
 # that measurement says does not happen; carrying 0.8 over to the rotated bbox cost seed 33 its
-# woodland outright. See future-work.md, "the woodland scan vetted a SQUARE".
+# woodland outright. See future-work/, "the woodland scan vetted a SQUARE".
 WOODLAND_BBOX_FLOOR = 0.72
 
 _COMMONS_REACH = 1.49
@@ -310,7 +310,7 @@ def open_ground_patches(s: Settlement, plan: SitePlan, count: int, size: float =
             #
             # A PREFERENCE, not a filter, per this scan's standing habit: if no cross-slope seat
             # qualifies at all, the down-slope ones are still offered rather than leaving a map
-            # woodless. The GM can reverse this ruling; it is recorded in `future-work.md`.
+            # woodless. The GM can reverse this ruling; it is recorded in `future-work/`.
             _cross_seats = [t for t in scored if abs((t[1] - ccx) * -dy + (t[2] - ccy) * dx) >= ((t[1] - ccx) * dx + (t[2] - ccy) * dy)]
             if _cross_seats:
                 scored = _cross_seats

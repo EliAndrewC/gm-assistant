@@ -404,7 +404,7 @@ class CombMixin:
             # `bund_beans_on_bunds`, which is built ON the burial, and put polygon booleans on the
             # gate's path. The ceiling that keeps the lap small enough for this note to stay true
             # is `paddy_plot_rings_overcount_stays_marginal`; the full decision, with both declined
-            # alternatives, is in future-work.md.
+            # alternatives, is in future-work/.
             "plot_rings": [[[round(vx, 1), round(vy, 1)] for vx, vy in p["poly"]] for p in net["plots"]],
             "bund_beans": [[round(bx, 1), round(by, 1)] for bx, by in net["bund_beans"]],
         }

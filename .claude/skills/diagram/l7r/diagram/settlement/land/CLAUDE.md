@@ -62,7 +62,7 @@ because of where feature 025's knife fell. Packaging them as a 27-line submodule
 preserved the accident.
 
 Two relocations were priced and DECLINED, recorded so the question is not reopened from scratch:
-`pasture` moving IN from `structures/` (proposed in `future-work.md`, sound, but a cross-package
+`pasture` moving IN from `structures/` (proposed in `future-work/`, sound, but a cross-package
 move does not belong in a split whose safety argument is that nothing moves but text), and
 `surface_water_dist` moving OUT to `_geom/` (arguably a better home, but 17 lines of no clause 13
 benefit and a second monkeypatch-path change in one feature). Full reasoning in

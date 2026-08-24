@@ -613,7 +613,7 @@ def tapers_to_a_point(poly: Poly, end: float, min_deg: float, arm: float) -> boo
 # since `_seam_cuts` and `_unjog` landed. A single step is left to `tools/jogs.py`, which runs this
 # predicate at the thresholds above - stricter than the gate's on all three, so it reports 16 across
 # the four maps where the gate reports 7 - each refused by a guard
-# protecting another rule (see `_unjog`), and `future-work.md` carries them.
+# protecting another rule (see `_unjog`), and `future-work/` carries them.
 _JOG_OFF_FT = 2.0
 _JOG_RUN_FT = 6.0
 _JOG_LINK_FT = 30.0

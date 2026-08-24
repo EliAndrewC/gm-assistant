@@ -902,7 +902,7 @@ budget design - they count in the census and belong to no in-wall rank district.
 
 What the review is RIGHT about is the drawn FORM: the first pass seats those samurai as tight
 rowpack blocks (machi-form fabric), where a country seat is a detached compound with ground. The
-re-forming is deferred with the rest of the fabric work - logged in `future-work.md` (#2) as part
+re-forming is deferred with the rest of the fabric work - logged in [`future-work/cross-cutting.md`](../../future-work/cross-cutting.md) (item 2) as part
 of the fabric-first regeneration, which should draw approach-road country seats as spaced walled
 compounds, not rows.
 

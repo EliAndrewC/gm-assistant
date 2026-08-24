@@ -112,6 +112,11 @@ done:
 # which is the whole lesson. An audit trail records a decision; it does not make one.
 # ---- THE MIDDLE TIER, AND THE ONE THAT STOPS AT THE FIRST FAILURE ---------------------------
 #
+# MEASURED 2026-08-24: `quick` is ~4 MINUTES, not "seconds" as this comment and the hook's
+# refusal text both claimed. The label was written from intent rather than a stopwatch. It is
+# still the right target for an iteration loop - it stops at the first failure - but it is not
+# cheap, and a tip that misstates a cost teaches a session to distrust the tips.
+#
 # `make quick` is what an iteration loop uses once the reference map is clean: lint, types, and
 # every test that does NOT roll a map, with pytest's `-x` so it STOPS at the first failure. Seconds,
 # not minutes, and it answers "is what I just wrote coherent" rather than "is this safe to ship".

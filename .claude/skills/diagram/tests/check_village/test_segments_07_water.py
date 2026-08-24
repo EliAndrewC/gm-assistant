@@ -823,7 +823,7 @@ def test_farmhouses_reach_a_way_fires_on_a_house_the_web_does_not_touch():
 def test_farmhouses_reach_a_way_passes_when_every_house_is_within_a_bundle_pitch():
     """The threshold is one BUNDLE_PITCH - the ground a single homestead occupies, which is the
     distance at which a lane passes your own plot or your neighbor's. Derived rather than chosen:
-    the number it replaced was flagged in future-work.md as one nobody had justified."""
+    the number it replaced was flagged in future-work/ as one nobody had justified."""
     M = _lane_map(
         [{"pts": [[500, 500], [500, 900]], "w": 5, "connector": False}],
         [{"x": 560, "y": 600, "w": 46, "h": 28, "rot": 0, "kind": "plain"}, {"x": 440, "y": 800, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],

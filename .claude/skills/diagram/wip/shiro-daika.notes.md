@@ -216,13 +216,13 @@ N-market/flop caption cuts + review errors (kosatsuba/punishment/execution + cap
 check gap, bell-drum tower, precinct walls, cistern kind/glyph, mirror precincts), perf
 T024, captions T025, T026 pool move + full sweep, T028 XII, T029 record-the-why docs
 (the THREE wall derivations + the slack law + extramural ruling), T030 ritual. Keep
-appending pain points to future-work.md per the GM's standing instruction.
+appending pain points to future-work/ per the GM's standing instruction.
 
 ## FIRST PASS SHIPPED GREEN (2026-08-10, session diagram-city)
 
 Gate: **0 FAIL** with three DOCUMENTED waivers, all one phenomenon - the first-pass fabric
 under-fills the settled wall (~8% packed shortfall, ~130 census households, rotating ~1.5 ac
-pockets) - which the GM deferred on 2026-08-10 to the fabric-first feature (future-work.md #2/#5).
+pockets) - which the GM deferred on 2026-08-10 to the fabric-first feature (future-work/ #2/#5).
 Pre-waiver failing state frozen as
 `pool/regressions/capital_fullness_deferral_fires_on_the_first_pass_shiro_daika.json` (fires all 3).
 

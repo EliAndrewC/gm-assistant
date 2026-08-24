@@ -51,15 +51,30 @@ def _probe_cmd() -> str:
     return f'{sys.executable} -c "{_PROBE.format(skill=str(SKILL))}"'
 
 
-def test_a_bare_interpreter_is_refused() -> None:
-    """FIRES: the plain case - no make anywhere in the ancestry."""
+def test_a_child_spawned_under_make_INHERITS_make() -> None:
+    """STAYS QUIET - and this test replaced one that was subtly, instructively wrong.
+
+    The original asserted that spawning `python3 -c ...` gives a process with no make in its
+    ancestry, and it PASSED when the file was run directly. Under `make quick` it failed, because a
+    subprocess of a make-run process still has make above it. That is not a bug in the guard; it is
+    the guard being right, and it is the same inheritance that makes pytest-xdist workers and
+    `cohort()`'s pool children legitimate.
+
+    So the honest version is this: the property under test is INHERITANCE, and it is the property the
+    whole design depends on. The old test could only pass when the suite was run the wrong way, which
+    makes it worse than no test - it was a green light for running pytest outside make.
+
+    THE NO-MAKE CASE IS UNTESTABLE END-TO-END FROM INSIDE A MAKE-RUN SUITE, by construction. It is
+    covered at unit level instead, where the ancestry is supplied rather than inherited - see
+    `test_compute_reports_a_foreign_make_differently_from_no_make`."""
     out = subprocess.run(
         [sys.executable, "-c", _PROBE.format(skill=str(SKILL))],
         capture_output=True,
         text=True,
         check=False,
     )
-    assert out.stdout.strip() == "False"
+    expected = "True" if inv.via_make() else "False"
+    assert out.stdout.strip() == expected, "a child must inherit this process's verdict, whichever it is"
 
 
 def test_make_in_this_repo_is_accepted(tmp_path: Path) -> None:

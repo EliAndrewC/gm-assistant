@@ -18,7 +18,7 @@ meant to: 16 single steps across the four maps at this line against 7 at the gat
 awkward corner where a scrap of ground had exactly one home and the repair pass could not move the
 wall without breaking another rule. Quote the two counts with their thresholds or they read as a
 contradiction - this docstring said "seven" and meant the gate's number until a settlement-review
-measured it (2026-08-19) - `future-work.md` "paddy bunds that step sideways" lists what
+measured it (2026-08-19) - `future-work/` "paddy bunds that step sideways" lists what
 refuses each and what it would take to reach zero.
 
     python3 -m l7r.diagram.tools.jogs pool/hamlets/inashiro.json
