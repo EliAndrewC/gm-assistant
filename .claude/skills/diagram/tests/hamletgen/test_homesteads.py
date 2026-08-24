@@ -119,3 +119,31 @@ def test_a_seat_on_forbidden_ground_is_refused() -> None:
     assert hg.homesteads._seat_allowed(s, 100.0, 100.0) is False  # dead on the forbidden seat
     assert hg.homesteads._seat_allowed(s, 140.0, 100.0) is False  # inside half a bundle pitch
     assert hg.homesteads._seat_allowed(s, 400.0, 400.0) is True  # well clear
+
+
+def test_the_linear_frontage_pass_stops_once_the_households_are_housed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The connector offers more verge than the hamlet needs, and the pass must stop taking it.
+
+    `lane_frontage` returns every seat the connector can carry, which is routinely more than there
+    are farmsteads to put on them. Without the household check the pass keeps seating while the
+    offers last, and the map ends up with more houses than the spec asked for - at which point the
+    acreage checks are reading a hamlet nobody rolled.
+
+    THE COUNT IS LOWERED AFTER PLANNING, on purpose. `HamletSpec` refuses anything under ten as an
+    outlying farmstead rather than a hamlet, so a one-household spec cannot be constructed - but the
+    guard under test is about the COUNT alone, and everything else the plan derives (canvas, acreage,
+    connector) should stay a real hamlet's or the pass is being exercised on a site that could not
+    exist. So the site is planned as a ten-household hamlet and only the target is cut, which is the
+    smallest change that puts the guard on the critical path: the first offer is taken, and the
+    second is refused by the count rather than by the verge running out.
+
+    `front_row` is silenced for the same reason as the test above - so the frontage pass is what
+    seats the hamlet, rather than whatever the field row happens to leave it."""
+    from l7r.diagram.hamletgen import homesteads as HS
+
+    monkeypatch.setattr(HS, "front_row", lambda plan, count, standoff=46.0: [])
+    plan = hg.plan_site(hg.HamletSpec(name="OneHouse", seed=5, households=10, settlement_form="linear"))
+    object.__setattr__(plan.spec, "households", 1)  # frozen, and `replace` would re-run the band validator
+    s = hg.build(plan)
+    assert len(s.M["houses"]) == 1, "a one-household target gets one farmstead, however much verge is on offer"
+    assert len(HS.lane_frontage(s, plan.seat, connector=True)) > 1, "the guard is only under test when more seats were offered than taken"
