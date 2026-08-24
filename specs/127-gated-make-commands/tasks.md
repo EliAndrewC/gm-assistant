@@ -63,11 +63,11 @@ habitual in the first place.
 **Goal**: Correct work never prompts.
 **Independent test**: [quickstart.md](quickstart.md) §2 and §3 - `make reference` and the diagnostics run clean; the prompt defaults to CANCEL.
 
-- [ ] T020 [US2] Give the read-only diagnostics make targets that carry REFUSAL but never PROMPTING (FR-007, and the round-1 adjudication recorded in spec.md Scope Boundaries)
-- [ ] T021 [US2] **STAYS QUIET**: assert in `scripts/test-make-only-hooks.sh` that a diagnostic run through its make target produces no prompt and no override
+- [x] T020 [US2] Give the read-only diagnostics make targets that carry REFUSAL but never PROMPTING (FR-007, and the round-1 adjudication recorded in spec.md Scope Boundaries)
+- [x] T021 [US2] **STAYS QUIET**: assert in `scripts/test-make-only-hooks.sh` that a diagnostic run through its make target produces no prompt and no override
 - [ ] T022 [US2] Extend the override prompt to satisfy FR-010/FR-011 across every gated target: explanation, CANCEL default, written reason, refusal when non-interactive
 - [ ] T023 [US2] **FIRES**: assert the non-interactive override is REFUSED (the tier-3 failure - a backgrounded `FULL=1` run that nothing could answer for)
-- [ ] T024 [US2] **STAYS QUIET**: assert `make reference` completes with zero prompts and zero overrides, and compare wall-clock against T002 (SC-002)
+- [x] T024 [US2] **STAYS QUIET**: assert `make reference` completes with zero prompts and zero overrides, and compare wall-clock against T002 (SC-002)
 - [ ] T025 [US2] Add `outcome` (`permitted`/`cancelled`/`refused`) to `dev/bypass-log.jsonl` writes per [data-model.md](data-model.md) - without it a session that backed out is indistinguishable from one that never tried (FR-012)
 - [ ] T026 [US2] Add a make target for render-sync, refusal-only and NOT subject to reference-first ordering (FR-009, FR-009a - CLAUDE.md:282 forbids a second generator run in main's tree)
 - [ ] T027 [US2] Change `scripts/sync-with-main.sh` line 138 from the bare `python3 -m l7r.diagram.pipeline.render_cache` to the T026 make target
@@ -84,6 +84,24 @@ habitual in the first place.
 - [x] T032 [US3] **FIRES**: create `scripts/test-guard-file-hooks.sh` asserting an edit to each guard file is intercepted
 - [x] T033 [US3] **STAYS QUIET**: assert in `scripts/test-guard-file-hooks.sh` that an edit to `.claude/agents/*.md` is NOT intercepted - removed from the guard list at fidelity round 1 as unrequested, and because it would obstruct the project's own procedure for improving review subagents
 - [x] T034 [US3] **THE DECORATION CHECK (SC-003)**: in a scratch copy, delete each guard in turn and confirm at least one test goes red naming it. A guard whose test still passes when the guard is gone is decoration, and this task is the only thing that distinguishes the two. Record the result per guard in this file
+
+## ADDED MID-FEATURE: make `quick` actually quick (GM 2026-08-24)
+
+The GM, on learning `quick` measured 254 s: *"that is really bad, and that is basically making it so
+that our guards and gates are driving us towards the quick make target but then the quick make target
+isn't even quick, which kind of defeats the purpose of the whole thing."* Correct, and in scope - this
+feature is about properly gated and properly TIMED make targets.
+
+- [x] T043 Mark every map-rolling test with `@pytest.mark.rolls_map` and switch `quick` from a file
+      deselect to the marker - the file list claimed in its own output that map-rolling tests were
+      excluded while the three polder tests ran every time
+- [x] T044 Add `tests/test_markers.py` so the marker cannot rot, matching AST CALLS rather than text
+- [x] T045 Remove the reference-map roll from `quick` - its contract is "no maps"
+- [x] T046 Add `make durations`, an operation with no target, so "why is this slow" has a route that
+      is not the override
+- [x] T047 Give `quick` a time BUDGET that fails the target, so drift alarms instead of accumulating
+
+**254 s -> 33 s.**
 
 ## Phase 6: Polish & Cross-Cutting
 

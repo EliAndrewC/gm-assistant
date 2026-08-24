@@ -212,6 +212,7 @@ def test_ring_decrements_the_big_count_when_a_placement_fails():
     assert not s.M["houses"]  # nothing could be placed
 
 
+@pytest.mark.rolls_map
 def test_roll_village_is_deterministic_and_seed_varies_the_combination():
     # US2 (SC-004): the same seed rolls the SAME combination (byte-identical), a different seed rolls a
     # DIFFERENT one, and a rolled map is populated with no hand-placed coordinates.
@@ -247,6 +248,7 @@ def test_waterfront_seeds_line_both_banks_of_a_canal():
     assert "settlement_form" not in s2.M["meta"]
 
 
+@pytest.mark.rolls_map
 def test_roll_village_stream_fed_with_a_pinned_water_source():
     # exercises the STREAM water path (a brook entering from a canvas edge) and a PINNED water_source_position
     # (edge_N is a legal stream source for a south-falling field). Covers the stream branches in roll_village +
@@ -259,6 +261,7 @@ def test_roll_village_stream_fed_with_a_pinned_water_source():
     assert s.M["houses"] and any(st for st in s.M["streams"])  # a stream source was drawn
 
 
+@pytest.mark.rolls_map
 def test_roll_village_honors_a_pinned_knob():
     # a pinned knob overrides the roll (US3 determinism surface, exercised through the roll entrypoint)
     s = Settlement(W=2000, H=2600, seed=7)
@@ -269,6 +272,7 @@ def test_roll_village_honors_a_pinned_knob():
     assert k["cluster_shape"] == "elongated" and k["lane_skeleton"] == "spine"
 
 
+@pytest.mark.rolls_map
 def test_pinned_knob_is_byte_identical_across_regens_and_rejects_incompatible_pins():
     # US3 (SC-006): a pinned knob is honored identically every regen; a pin outside the value space or one
     # that violates the geography typing rule is a LOUD error, never silently drawn.

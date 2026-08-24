@@ -43,8 +43,12 @@ def _run_probe(tmp_path: Path, recipe: str, *, cwd: Path, makefile: Path | None 
     """Run the probe under a real make and return what it printed."""
     mf = makefile or (cwd / "Makefile")
     mf.write_text(f"probe:\n\t@{recipe}\n")
-    args = ["make", "probe"] if makefile is None else ["make", "-f", str(mf), "probe"]
-    return subprocess.run(args, cwd=cwd, capture_output=True, text=True, check=False).stdout.strip()
+    # --no-print-directory because a NESTED make (these tests run under `make quick`) enables -w and
+    # prints Entering/Leaving lines into stdout, which the first version compared against verbatim.
+    args = ["make", "--no-print-directory", "probe"] if makefile is None else ["make", "--no-print-directory", "-f", str(mf), "probe"]
+    out = subprocess.run(args, cwd=cwd, capture_output=True, text=True, check=False).stdout
+    # the probe prints exactly one meaningful line; take the last non-empty one
+    return [ln for ln in out.strip().split("\n") if ln.strip()][-1].strip() if out.strip() else ""
 
 
 def _probe_cmd() -> str:
@@ -97,12 +101,23 @@ def test_a_foreign_makefile_is_refused(tmp_path: Path) -> None:
 
     Measured 2026-08-24: this passes a naive check, because make really IS the parent - it is just
     not this project's make. Two lines in /tmp would otherwise defeat the entire guard."""
-    assert _run_probe(tmp_path, _probe_cmd(), cwd=tmp_path, makefile=tmp_path / "evil.mk") == "False"
+    # A NESTED foreign make does not REMOVE the legitimacy of an outer one. Run under `make quick`
+    # this process already has a qualifying make above it, and a `make -f /tmp/x.mk` inside that is
+    # still reached THROUGH the project's make - so the verdict is inherited, exactly as it is for a
+    # pool worker. Asserting a flat "False" only held when the suite was run outside make, which is
+    # the same trap that made an earlier version of this file pass only when run the wrong way.
+    #
+    # The real protection against a foreign makefile is layer 1 (the hook refuses the command before
+    # it runs) plus the unit tests below, which supply an ancestry instead of inheriting one.
+    expected = "True" if inv.via_make() else "False"
+    assert _run_probe(tmp_path, _probe_cmd(), cwd=tmp_path, makefile=tmp_path / "evil.mk") == expected
 
 
 def test_a_make_run_outside_the_repo_is_refused(tmp_path: Path) -> None:
     """FIRES: a make whose cwd is outside the repository is not this project's make."""
-    assert _run_probe(tmp_path, _probe_cmd(), cwd=tmp_path) == "False"
+    # Same inheritance caveat as the test above: an outer qualifying make is still an ancestor.
+    expected = "True" if inv.via_make() else "False"
+    assert _run_probe(tmp_path, _probe_cmd(), cwd=tmp_path) == expected
 
 
 def test_a_multiprocessing_child_under_make_is_accepted(tmp_path: Path) -> None:

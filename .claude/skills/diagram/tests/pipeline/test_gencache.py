@@ -327,6 +327,7 @@ def test_engine_files_prunes_the_tests_tree(tmp_path, monkeypatch):
     assert [os.path.basename(f) for f in gencache.engine_files()] == ["real.py"]
 
 
+@pytest.mark.rolls_map
 def test_gate_miss_scratch_files_stay_out_of_the_engine_tree(tmp_path, monkeypatch, clean_gatehit):
     """The other layer of the same defense: the miss subprocess's driver/record/raw-coverage files
     must live OUTSIDE the skill dir, where no key computation can ever see them."""
@@ -378,6 +379,7 @@ def test_a_foreign_parallel_coverage_file_reaches_the_report(tmp_path):
     assert d.returncode == 0, f"the foreign data file's lines must reach the combined report:\n{d.stdout}{d.stderr}"
 
 
+@pytest.mark.rolls_map
 def test_the_gate_reuses_a_verified_hit(tmp_path, monkeypatch, clean_gatehit):
     """026 guarantee 1: on a verified hit NO generation executes in any process - and a hit is
     only verified when the entry carries the coverage data a previous gate miss stored."""
@@ -397,6 +399,7 @@ def test_the_gate_reuses_a_verified_hit(tmp_path, monkeypatch, clean_gatehit):
     assert gencache.gate_obtain(str(gen)) == (str(out), "HIT", None)
 
 
+@pytest.mark.rolls_map
 def test_a_hit_still_runs_current_checks(tmp_path, monkeypatch, clean_gatehit):
     """026 guarantee 5: checking is never cached - the gate's caller judges whatever manifest the
     cache serves with the CURRENT battery, so a bad cached manifest cannot ride a hit through. The
@@ -418,6 +421,7 @@ def test_a_hit_still_runs_current_checks(tmp_path, monkeypatch, clean_gatehit):
     assert rc != 0, "the current check battery must judge a served manifest - a hit is not a verdict"
 
 
+@pytest.mark.rolls_map
 def test_an_entry_without_coverage_data_is_a_gate_miss(tmp_path, monkeypatch, clean_gatehit):
     """026 guarantee 4: an iteration-path entry (regen.py stores no coverage) cannot satisfy the
     gate - the coverage floors would starve. The gate refreshes it instead, adding the coverage
@@ -435,6 +439,7 @@ def test_an_entry_without_coverage_data_is_a_gate_miss(tmp_path, monkeypatch, cl
     assert how2 == "HIT"
 
 
+@pytest.mark.rolls_map
 def test_gate_miss_stores_coverage_the_next_hit_replays(tmp_path, monkeypatch, clean_gatehit):
     """026 guarantees 1+2 composed: the coverage a miss stores is byte-for-byte the file a later
     hit drops into the run's combine."""
@@ -451,6 +456,7 @@ def test_gate_miss_stores_coverage_the_next_hit_replays(tmp_path, monkeypatch, c
     assert Path(new.pop()).read_bytes() == stored
 
 
+@pytest.mark.rolls_map
 def test_a_hit_is_refused_when_its_stored_coverage_names_a_file_that_is_gone(tmp_path, monkeypatch, clean_gatehit):
     """A stored coverage file that measures a DELETED module makes the entry unusable, so it is a
     miss - the cache's own "any doubt at all regenerates" rule, applied to the coverage half.
@@ -483,6 +489,7 @@ def test_a_hit_is_refused_when_its_stored_coverage_names_a_file_that_is_gone(tmp
     assert how == "REGENERATED", "an entry whose coverage measures a vanished file must regenerate, not replay"
 
 
+@pytest.mark.rolls_map
 def test_gate_bypass_forces_regeneration(tmp_path, monkeypatch, clean_gatehit):
     """026 guarantee 3 - and the test OWNS the environment (the DIAGRAM_ALLOW_SLOW_GENS lesson,
     2026-08-03): delenv first, so an inherited bypass cannot silence the half that proves hits
@@ -499,6 +506,7 @@ def test_gate_bypass_forces_regeneration(tmp_path, monkeypatch, clean_gatehit):
     assert (how, cpu is not None) == ("REGENERATED", True), "the bypass must force regeneration"
 
 
+@pytest.mark.rolls_map  # regenerates a REAL scripted hamlet: 58 s, the suite's single largest test
 def test_the_real_pool_round_trips_through_the_cache():
     """The end-to-end proof on a REAL map: regenerate, cache, wipe, restore, and demand the bytes
     match. Uses the cheapest SCRIPTED hamlet - the hand-authored pool is FROZEN

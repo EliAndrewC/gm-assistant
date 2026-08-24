@@ -85,6 +85,7 @@ def test_the_run_to_the_frame_is_measured_on_every_axis(down_deg, start, expect)
 # ---- end to end ---------------------------------------------------------------------------------
 
 
+@pytest.mark.rolls_map
 def test_a_pond_the_canvas_cannot_hold_falls_back_to_draining_OFF_MAP(monkeypatch: pytest.MonkeyPatch) -> None:
     """A CLAMPED pond is no pond, and the map must say so rather than draw one on the rice.
 

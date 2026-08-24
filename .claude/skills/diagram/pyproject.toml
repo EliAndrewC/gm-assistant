@@ -75,6 +75,17 @@ files = ["l7r/diagram/settlement", "l7r/diagram/check_village", "l7r/diagram/wat
 # the repo root, every .clones/ checkout: pytest does not read .gitignore).
 testpaths = ["tests"]
 addopts = "--cov --cov-report=term"
+# `rolls_map` marks a test that GENERATES a settlement - the thing that costs 25-110 s each and sets
+# the whole suite's wall clock. `make quick` deselects them; `make done` runs everything.
+#
+# WHY A MARKER AND NOT A DESELECT LIST (feature 127): `quick` used to name two FILES and claim in its
+# own output that "the map-rolling tests are NOT included". That was false - the three polder tests
+# in test_water.py roll maps and cost 110 s, 86 s and 63 s, and they ran every time. A file list
+# cannot track which tests roll maps; a marker travels with the test, and tests/test_markers.py
+# fails if a map-rolling test is missing one.
+markers = [
+    "rolls_map: generates a settlement; slow (25-110 s). Deselected by `make quick`, run by `make done`.",
+]
 
 [tool.coverage.run]
 # MODULE names, not directories, deliberately: `tools` and `pipeline` also hold modules that are

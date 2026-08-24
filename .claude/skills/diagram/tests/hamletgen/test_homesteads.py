@@ -40,6 +40,7 @@ def test_a_tiny_hamlet_still_keeps_one_well() -> None:
     assert hg.well_target(1) == 1
 
 
+@pytest.mark.rolls_map
 def test_the_cluster_seeds_cloud_still_seats_a_hamlet_when_the_rows_offer_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
     """The front row + lane frontage seat every household on all four scripted hamlets, so the
     `cluster_seeds` CLOUD - the fallback behind them - runs on no real map. It got quieter still on
@@ -78,6 +79,7 @@ def test_a_house_beside_open_water_needs_no_rescue_well() -> None:
     assert hg.place_wells(s, plan, houses) == 1, "the watered house is skipped by the rescue, so only the first well is sited"  # type: ignore[arg-type]
 
 
+@pytest.mark.rolls_map
 def test_lane_frontage_seats_the_hamlet_when_the_field_row_offers_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
     """The lane-frontage pass seats the BACK RANK on a real map, but only the households past one
     rank's worth of the band - so on a small hamlet it can place very few, and for part of one day
@@ -121,6 +123,7 @@ def test_a_seat_on_forbidden_ground_is_refused() -> None:
     assert hg.homesteads._seat_allowed(s, 400.0, 400.0) is True  # well clear
 
 
+@pytest.mark.rolls_map
 def test_the_linear_frontage_pass_stops_once_the_households_are_housed(monkeypatch: pytest.MonkeyPatch) -> None:
     """The connector offers more verge than the hamlet needs, and the pass must stop taking it.
 
