@@ -79,6 +79,22 @@ three bands, so it outranks the band design in the earlier request.
    sharper than what it replaces: personal sign-off, and specifically **before it is committed back to
    main**, which names the push as the enforcement point rather than the gate.
 
+## 2026-08-24, THE PER-MEASUREMENT THRESHOLDS - answering the spec's routed question
+
+The spec routed one question to the GM: whether the >10% sign-off was total-only, noting that a single
+seed above 10% would otherwise never reach them. This is the answer, and it sets a threshold for BOTH
+measurements at BOTH escalation bands.
+
+> Hmm, good point about per-seed vs total.  Let's say >10% of total-only requires my sign-off and also
+> >20% of a single seed also requires my sign-off.  Similarly, >5% of total requires a subagent check
+> to sign off, and >10% of a single seed requires a subagent check to sign off.
+>
+> Don't implement anything, but please incorporate this into the plan.
+
+**This CLOSES the open question about band scope.** There is no longer a total-only band: every
+escalation band now has a number for each measurement, and the per-seed number is twice the total's.
+The any-increase band is untouched by this message and continues to apply to either measurement.
+
 ## THE AUTHOR'S CLAIMS - not the GM's words, and the reviewer must ATTACK them
 
 The following are the SESSION'S assertions, made in conversation and carried into the spec. They are
