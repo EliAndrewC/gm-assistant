@@ -51,14 +51,22 @@
 
 ## Phase 5: The pool, and the page
 
-- [ ] T015 Roll the other three live pool hamlets and gate each (the second half of "every step is
-      two steps")
+- [x] T015 Roll the other three live pool hamlets and gate each (the second half of "every step is
+      two steps"). **This is the task that earned its keep.** Kashikawa and Sawada came out clean;
+      MIZUGUCHI REGRESSED - connector 0.2 ft from a garden and 14.6 ft from a farmhouse, on two checks
+      its committed manifest passed. Three faults behind it, all fixed and written up in
+      `pool/hamlets/mizuguchi.notes.md`. The reference hamlet alone would never have shown it
 - [x] T016 Run `settlement-review` on the reference hamlet before it ships
 - [x] T017 Regenerate the walk-through page and EDIT ITS CAPTIONS to match the new order. The
       captions are the deliverable: plate 05 said the opposite of what the code did for five days,
       and that is what made this feature necessary
-- [ ] T018 Read the regenerated page as the GM would, and confirm no plate before the farmhouses
-      shows a lane
+- [x] T018 Read the regenerated page as the GM would, and confirm no plate before the farmhouses
+      shows a lane. Plate 05 (`stage_homesteads`) shows the fifteen steadings standing on open ground
+      with no way among them; plate 06 (`stage_track`) lays the connector down the cluster's WEST side
+      and the spur into the field's near corner. Also found by reading it: the page on disk was still
+      the pre-128 one (`04-stage_ways.png` before the houses - what the GM read), and a renumber had
+      orphaned seven plates in a committed directory. The generator now prunes every plate it did not
+      write, so a reorder cannot leave a picture of the old order lying next to the new one
 
 ## Phase 6: Close
 
@@ -66,8 +74,13 @@
 - [x] T020 Update the `dev/placement.md` DRAW ORDER map if it names the old stages
 - [ ] T021 Run `ruff` + `mypy --strict` + the full gate once, backgrounded
 - [ ] T022 `make done FULL=1`, which takes the `128-end` bookend and blocks on a >5% regression
-- [ ] T023 Audit `dev/bypass-log/` for entries added during this feature and say in writing whether
-      each was justified
+- [x] T023 Audit `dev/bypass-log/` for entries added during this feature and say in writing whether
+      each was justified. **Feature 128 logged NO bypasses at all.** The eight entries in the
+      directory break down as: one smoke test of the audit mechanism; four from feature 126 (three of
+      them the same pre-push full sweep re-run, justified - the reference-scope gate cannot enforce
+      the coverage floors, because deselected tests take their coverage with them); and three stamped
+      17:15:29-30Z which are the guard's own test companion exercising cancelled / refused /
+      permitted, not real runs. Nothing here needed a reason it did not have
 - [ ] T024 Tick every completed task above and confirm none is left unticked that was in fact done
 
 ## Dependencies

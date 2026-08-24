@@ -38,12 +38,29 @@ no-build corridor the placer then refuses seats against, whatever the lane repre
   derived from the predicted seat band; with houses placed first, those points sit inside the cloud.
   `_cluster_gateway` measures the placed cloud instead. This was 126's unfinished T009 and it was
   load-bearing, not polish.
+- **The bearing has to know the houses are there.** Routing and clipping cannot rescue a connector
+  aimed through the cluster: `_route` declines every connector outright (its lattice exceeds the
+  90,000-cell cap at canvas span) and a clip can only SHORTEN a run. So `connector_track`'s sweep
+  ranks bearings against the steadings - wet ground, then steadings, then crops. Mizuguchi is the
+  map that proved it; the write-up is in its notes file.
+- **Proximity, not crossing, is the question about a farmstead.** `path_violations` asks
+  `crosses_poly`, which is right for a paddy and wrong for a house, because a lane is DRAWN WITH A
+  WIDTH and the overlap matrix sizes every lane at 6 ft. Mizuguchi's connector crossed nothing at
+  all and still overlapped a garden.
+- **A gap test must measure from BOTH shapes.** `_crosses_fabric` measured `edge_dist` at the run's
+  own vertices, which is blind to anything beside the middle of a long segment - and a connector's
+  segments are hundreds of pixels long.
 - **`stage_track` sits BEFORE `stage_appurtenances`**, not after. A well is not a farmhouse, and
   threading a fabric that already held every wellhead put a connector 3.6 px from one. A well is dug
   where people already walk.
 
 ## Still open
 
+- **The lane web breaks into islands.** Four of Inashiro's fragments touch nothing, at 28.1-28.5 ft
+  against `WEB_CLEARANCE = 28.0` - each web lane REGISTERS that clearance as its corridor, so the
+  next one routes exactly one clearance short of the way it meant to join. `_LANE_JOIN = 40.0` sits
+  above it, so the gate welds them into a "component" the ink does not contain. Both halves of the
+  fix, and the measurements, are in `future-work/farming-communities.md`.
 - **The cohort.** Seeds 8, 18, 23, 42, 47 fail, plus 12 and 39 which predate all of this. The GM's
   standing limit is the reference hamlet at one seed, so the cohort has not been the bar - but it is
   the obvious next question.
