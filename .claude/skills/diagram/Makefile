@@ -4,22 +4,41 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test guard perf perf-report maps
+.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick
 
 # Runs EVERY phase and reports all failures together (GM 2026-07-25). It used to be
 # `done: lint format typecheck test`, which make stops at the first failure - so a lint slip hid a
 # type error hid a coverage hole, and each hidden failure cost another full round trip to discover.
 # Phases stay in cheap-to-expensive order so the fast ones report first, but none of them short-
 # circuits the rest. Exit is non-zero if any phase failed, so this is exactly as strict as before.
+# ---- ONE COMMAND, AND IT IS THE CHEAP ONE BY DEFAULT (GM 2026-08-24) -------------------------
+#
+# `make done` runs the REFERENCE settlement and everything that does not roll another map. That is
+# the gate for the normal case, and it is what a reference-only push is verified with.
+#
+# `make done FULL=1` additionally rolls every live pool map, re-gates each, and runs the seeds 41-44
+# ratchet - and it will not do so silently: it PROMPTS for a written justification and appends it to
+# dev/bypass-log.jsonl with the date, target and commit. There is no second command to reach for.
+#
+# WHY THERE IS ONLY ONE (GM 2026-08-24): *"I don't know if I like the idea of there being both a
+# make done and a make done reference because that just gives you a way to run the wrong version."*
+# That is not hypothetical - during feature 126 three separate guards were added and each was walked
+# around by using a command the guard did not cover: `cohort_audit` while `make maps` was gated, then
+# `make done` and `make test` while both of those were. A choice between a fast path and a slow path
+# is a choice that gets made wrong under pressure, so the choice is gone.
+#
+# The constitution requires every diagram feature to AUDIT dev/bypass-log.jsonl as a closing step -
+# read the entries added during the feature and say, in writing, whether each was justified.
 done:
+	@$(if $(FULL),$(MAKE) --no-print-directory bypass-audit REF_WHY="$(REF_WHY)",$(MAKE) --no-print-directory reference)
 	@fail=""; \
-	for phase in lint format typecheck test; do \
+	for phase in lint format typecheck $(if $(FULL),test-full,test); do \
 	  printf '\n\033[1m== %s ==\033[0m\n' "$$phase"; \
 	  $(MAKE) --no-print-directory $$phase || fail="$$fail $$phase"; \
 	done; \
 	if [ -n "$$fail" ]; then printf '\n\033[1mGATE FAILED:%s\033[0m (every phase ran - fix them together, then re-run once)\n' "$$fail"; exit 1; fi; \
 	root=$$(git rev-parse --show-toplevel 2>/dev/null) && [ -n "$$root" ] && python3 "$$root/scripts/gate-stamp.py" --write diagram || true; \
-	printf '\n\033[1mgate green\033[0m\n'
+	$(if $(FULL),printf '\n\033[1mgate green (FULL - every pool map re-gated, seeds 41-44 rolled)\033[0m\n',printf '\n\033[1mgate green\033[0m (reference settlement + non-map tests; `make done FULL=1` also rolls the other pool maps)\n')
 
 # THE REFERENCE-HAMLET PERFORMANCE BOOKENDS (constitution VI, GM 2026-08-23).
 #
@@ -43,6 +62,94 @@ done:
 # hamlet answered in 67 seconds. A choice is a thing that gets chosen wrong under pressure.
 #
 # `SCOPE=reference` / `SCOPE=all` says what you mean when you know better.
+# ---- THE REFERENCE SETTLEMENT GATES EVERYTHING EXPENSIVE (constitution VI) -------------------
+#
+# `make reference` rolls ONE seed of ONE map - Inashiro - and nothing else. It is the cheapest
+# question in the project (~60 s) and every expensive target now asks it FIRST:
+#
+#     make test   -> reference, then the suite
+#     make done   -> reference, then lint/format/typecheck/test/coverage
+#     make maps   -> reference, then (only if clean) the rest of the tier
+#
+# If the reference settlement is red, those targets STOP THERE. Not a warning, not a slow path -
+# they refuse to run the expensive work at all.
+#
+# WHY (GM 2026-08-24): "our goal here is to start small, get something working, and then expand on
+# it ... the very fact that you are capable of running more than that means that our tooling is
+# supporting more expensive testing than what I have explicitly said should be permitted."
+#
+# The measured cost of not having this, in ONE feature: six 20-25 minute cohorts, most launched over
+# a tree already known to be broken, plus repeated four-map ratchet runs to diagnose a single failing
+# seed. The rule existed in the constitution the whole time and was violated by its own author within
+# hours, twice. A guard that lives only in documentation is not a guard, and a guard on one command
+# out of four is not a guard either.
+#
+# ESCAPE HATCH: REF_OK=1 on the command line, for the case where the reference map is legitimately
+# expected to fail (you are mid-surgery on it, or bisecting). Deliberately awkward, and it says so.
+# ---- BYPASSING THE REFERENCE GATE COSTS A WRITTEN JUSTIFICATION ------------------------------
+#
+# REF_OK=1 does not simply let the expensive targets run. It demands WHY, in prose, and appends it
+# to dev/bypass-log.jsonl with the date, the target and the git HEAD - so a later reader can ask
+# whether the reason was any good. That log is the point: a flag you can type is a speed bump, a
+# reason someone will READ is a decision you have to defend.
+#
+# WHY THIS EXISTS (GM 2026-08-24): *"how often I keep saying over and over again to just run the
+# quick tests, and then you keep finding ways to run the long tests ... we need to make it either
+# literally impossible or so obvious that you should not be doing it that you simply won't."*
+# Measured, in one feature: six 20-25 minute cohorts, most over a tree already known to be broken,
+# plus repeated four-map ratchet runs to diagnose one seed. Three separate guards were added during
+# that feature and each was walked around by using a command the guard did not cover.
+#
+# LEGITIMATE reasons look like: the reference map is the thing under surgery and is expected to
+# fail; you are bisecting and need the suite's verdict on a knowingly-red tree; a check that only
+# fires on a non-reference map is the subject. "I want to see everything" is not one.
+#
+# Non-interactive callers (CI, a hook) must pass REF_WHY="..." - there is no silent bypass.
+# ---- THE MIDDLE TIER, AND THE ONE THAT STOPS AT THE FIRST FAILURE ---------------------------
+#
+# `make quick` is what an iteration loop uses once the reference map is clean: lint, types, and
+# every test that does NOT roll a map, with pytest's `-x` so it STOPS at the first failure. Seconds,
+# not minutes, and it answers "is what I just wrote coherent" rather than "is this safe to ship".
+#
+# The full suite rolls a dozen-plus maps (test_village_passes_gate regenerates and re-gates every
+# live pool map; the ratchet rolls seeds 41-44), which is right for a pre-push gate and wrong for a
+# loop. Measured on feature 126: `make done` is ~5 minutes and I ran it repeatedly over a tree I
+# already knew was broken.
+quick:
+	@$(MAKE) --no-print-directory reference
+	@python3 -m ruff check l7r/ tests/ && python3 -m ruff format --check l7r/ tests/ && python3 -m mypy
+	@python3 -m pytest -n auto -q --no-cov -x --deselect tests/test_villages.py --deselect tests/hamletgen/test_driver.py
+	@printf '\n\033[1mquick: clean\033[0m - the map-rolling tests are NOT included; `make done` before pushing.\n'
+
+bypass-audit:
+	@why="$(REF_WHY)"; \
+	if [ -z "$$why" ]; then \
+	  printf '\n\033[1mAbout to run the FULL test set.\033[0m\n\n'; \
+	  printf 'The reference settlement rebuilds in ~60 s. The full set additionally rolls every\n'; \
+	  printf 'live pool map, re-gates each, and rolls seeds 41-44 - minutes, not seconds.\n\n'; \
+	  printf '\033[1mMost of the time the right answer here is to back out.\033[0m Press Enter to CANCEL\n'; \
+	  printf 'and run the reference-scope gate instead - that is the default and it is usually right.\n\n'; \
+	  printf 'Legitimate reasons to continue: the reference map is itself under surgery and expected\n'; \
+	  printf 'to fail; you are bisecting a knowingly-red tree; the subject is a check that only fires\n'; \
+	  printf 'on a non-reference map; you are about to push and need the full pre-push verdict.\n'; \
+	  printf 'Not legitimate: wanting to see everything, impatience, or "while I am here".\n\n'; \
+	  printf 'Reason to continue (Enter cancels): '; \
+	  read why || true; \
+	fi; \
+	if [ -z "$$why" ]; then \
+	  printf '\n\033[1mCancelled - good call.\033[0m Nothing expensive ran.\n'; \
+	  printf 'Run `make done` on its own for the reference-scope gate.\n\n'; \
+	  exit 1; \
+	fi; \
+	mkdir -p dev; \
+	python3 -c "import json,sys,time,subprocess; \
+	h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True).stdout.strip(); \
+	open('dev/bypass-log.jsonl','a').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':'$(MAKECMDGOALS)','commit':h,'why':sys.argv[1]})+chr(10))" "$$why"; \
+	printf '\nlogged to dev/bypass-log.jsonl - proceeding\n\n'
+
+reference:
+	@python3 -c "import sys; sys.path.insert(0, '.'); 	from l7r.diagram import hamletgen as hg; 	r = hg.generate(hg.HamletSpec(name='Inashiro', seed=4, households=15, down_deg=90, water_sink='pond'), out_base=None, render=False); 	print('\033[1mreference settlement (Inashiro, seed 4): ' + ('CLEAN\033[0m' if r.ok else 'FAILING\033[0m -> ' + ', '.join(r.failures))); 	sys.exit(0 if r.ok else 1)" || { 	  printf '\n\033[1mSTOPPING HERE.\033[0m The reference settlement is red, so nothing more expensive runs.\n'; 	  printf 'Fix Inashiro first - it rebuilds in about a minute. Everything else is 4x to 25x that,\n'; 	  printf 'and none of it can tell you anything useful while the one map you iterate on is broken.\n'; 	  printf '(REF_OK=1 overrides, when the reference map is expected to fail.)\n\n'; exit 1; }
+
 maps:
 	@python3 -m l7r.diagram.tools.mapcheck
 
@@ -97,8 +204,17 @@ SETTLEMENT_COV_FLOOR = 94
 # and miss-subprocess recordings, feature 026) that pytest-cov's own end-of-session combine may or
 # may not have consumed already - the explicit combine is deterministic either way, and a no-op
 # when there is nothing left to merge.
+# The tests that roll a map other than the reference one. `test` deselects them; `test-full` does not.
+DESELECT = --deselect tests/test_villages.py --deselect tests/hamletgen/test_driver.py
+
+test-full: DESELECT =
+test-full: test
+
+# `test` is the REFERENCE-SCOPE suite: everything except the tests that roll a map other than the
+# reference one. `test-full` is the whole thing and is reached only through `make done FULL=1`, which
+# demands a logged justification first.
 test:
-	@if python3 -c "import xdist" >/dev/null 2>&1; then python3 -m pytest -n auto; else python3 -m pytest; fi; ec=$$?; \
+	@if python3 -c "import xdist" >/dev/null 2>&1; then python3 -m pytest -n auto $(DESELECT); else python3 -m pytest $(DESELECT); fi; ec=$$?; \
 	if [ $$ec -ne 0 ]; then python3 ../../../scripts/uncovered-in-diff.py || true; exit $$ec; fi; \
 	python3 -m coverage combine --append >/dev/null 2>&1 || true; \
 	python3 -m coverage report -m --omit='*/settlement/*' --fail-under=100 || { echo "COVERAGE: a module other than settlement.py is under 100% - the table above names it and its missing lines"; exit 1; }; \

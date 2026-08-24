@@ -520,6 +520,37 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # had a 78 ft hole in a street, because the hole did not exist yet when it looked.
     _bridge_collinear_breaks(s, hard_built, walls, list(plan.watercourses) + drawn_water)
     _join_orphan_ways(s, hard_built, walls, list(plan.watercourses) + drawn_water)
+    # ...AND TRIM AGAINST THE FINAL NETWORK, ONCE, LAST.
+    #
+    # Every lane is trimmed to service when it is drawn, against the ways and houses that exist AT
+    # THAT MOMENT - and then later passes draw more lanes, join orphans and bridge breaks, none of
+    # which revisits an earlier lane's ends. So a web lane trimmed correctly at draw time can finish
+    # with an end reaching nothing: the ratchet's Cohort-42 shipped a 146 ft web lane whose end stood
+    # 80 ft from the nearest house, just past the 40 ft way / 90 ft house thresholds
+    # `lanes_reach_something` measures.
+    #
+    # Trimming ONLY at the end would be wrong the other way - `_lay_web_lane` needs its ends settled
+    # before the join is computed from them ("TRIM FIRST, JOIN SECOND", above) - so this is a final
+    # pass rather than a replacement, and it only ever SHORTENS. A lane reduced below the debris
+    # floor is dropped, because a way that serves nothing is not a short way, it is not a way.
+    #
+    # NOT `trim_lane_stubs`: that is a different, harsher rule (71 ft floor) meant for a skeleton arm
+    # laid before the houses, and running it here eats the footpaths the straggler pass just drew -
+    # measured once at 43/48 -> 9/48.
+    _final_houses = [(float(h["x"]), float(h["y"])) for h in s.M.get("houses", [])]
+    for _ln in list(s.M.get("lanes", [])):
+        if _ln.get("connector") or len(_ln.get("pts") or []) < 2:
+            continue
+        _pts = [(float(x), float(y)) for x, y in _ln["pts"]]
+        _others = [
+            sg
+            for _o in s.M.get("lanes", [])
+            if _o is not _ln and len(_o.get("pts") or []) >= 2
+            for sg in zip([(float(x), float(y)) for x, y in _o["pts"]], [(float(x), float(y)) for x, y in _o["pts"]][1:], strict=False)
+        ]
+        _kept = _trim_to_service(_pts, _others, _final_houses)
+        if len(_kept) >= 2 and polyline_len(_kept) >= _WEB_MIN_FT and len(_kept) < len(_pts):
+            _ln["pts"] = [[round(x, 1), round(y, 1)] for x, y in _kept]
     s.M["meta"]["lane_web"] = plan.lane_web
 
 
@@ -933,37 +964,17 @@ def _join_orphan_ways(s: Settlement, hard: list[Poly], walls: Sequence[Poly], wa
     return made  # pragma: no cover - six links is far more than any hamlet needs
 
 
-def _net_segs(s: Settlement, connected_only: bool = False) -> list[tuple[Pt, Pt]]:
+def _net_segs(s: Settlement) -> list[tuple[Pt, Pt]]:
     """Every drawn way on the map right now, as segments.
 
-    `connected_only` restricts the result to the component the CONNECTOR is on, which is what
-    "reached" actually means. Without it a house standing 20 ft from an orphan island counts as
-    served while the network it must actually walk to is 107 ft away - and the straggler pass then
-    declines to draw the footpath that would connect it. Measured on Inashiro (feature 126): four
-    houses 107-200 ft from the connected network, each of them "served" by a fragment that goes
-    nowhere. The gate says the same thing in its own words - "THE NETWORK, NOT ANY LINE ON THE
-    GROUND ... a house served only by an isolated stub is not served" - so this makes the generator
-    measure what the checker measures."""
-    lanes = [ln for ln in s.M.get("lanes", []) if len(ln.get("pts") or []) >= 2]
-    if not connected_only or not lanes:
-        return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for ln in lanes for p, q in zip(ln["pts"], ln["pts"][1:], strict=False)]
-    pts = [[(float(x), float(y)) for x, y in ln["pts"]] for ln in lanes]
-
-    def _gap(i: int, j: int) -> float:
-        return min(seg_dist(q[0], q[1], a2, b2) for q in pts[i] for a2, b2 in zip(pts[j], pts[j][1:], strict=False))
-
-    seed = next((i for i, ln in enumerate(lanes) if ln.get("connector")), 0)
-    comp = {seed}
-    grew = True
-    while grew:
-        grew = False
-        for i in range(len(pts)):
-            if i in comp:
-                continue
-            if any(min(_gap(i, j), _gap(j, i)) <= _TREAD_TOUCH_FT for j in comp):
-                comp.add(i)
-                grew = True
-    return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for i in comp for p, q in zip(pts[i], pts[i][1:], strict=False)]
+    A CONNECTED-COMPONENT MODE was added here and reverted with the rest of the connectivity work.
+    It restricted the result to the component the connector is on, which is what "reached" really
+    means and what the gate says in its own words ("THE NETWORK, NOT ANY LINE ON THE GROUND ... a
+    house served only by an isolated stub is not served"). It was RIGHT about its defect - seed 9's
+    `farmhouses_reach_a_way` comes back without it - and wrong about its blast radius: with it and
+    its four companions in place the cohort went 44 -> 31, and reverting all five moved it to 30.
+    Worth re-attempting deliberately one day, not by accident."""
+    return [((float(p[0]), float(p[1])), (float(q[0]), float(q[1]))) for ln in s.M.get("lanes", []) for p, q in zip(ln["pts"], ln["pts"][1:], strict=False)]
 
 
 def _draw_web(s: Settlement, pts: Poly, width: int = 3, houses: Sequence[Pt] = ()) -> bool:

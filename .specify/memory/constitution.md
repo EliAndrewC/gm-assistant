@@ -493,6 +493,27 @@ artifacts. Specifically:
     **This is the general pattern for every settlement tier**, not a hamlet
     special case - `mapcheck.py` is a tier table, and villages, towns and cities
     each get a row and a named reference map as they gain live scripted gens.
+  - **BYPASSING THE GATE COSTS A WRITTEN, AUDITED JUSTIFICATION** (GM 2026-08-24).
+    `REF_OK=1` does not merely permit the expensive run: it demands a reason in
+    prose and appends it to `dev/bypass-log.jsonl` with the date, target and
+    commit. A flag you can type is a speed bump; a reason someone will READ is a
+    decision you have to defend.
+
+    **Every diagram feature MUST audit that log as a closing step** - read the
+    entries added during the feature and state, in the feature's own artifacts,
+    whether each bypass was justified in retrospect. Legitimate reasons: the
+    reference map is itself under surgery; bisecting a knowingly-red tree; the
+    subject is a check that only fires on a non-reference map. Not legitimate:
+    wanting to see everything, or impatience.
+
+    The rule exists because three separate guards were added during feature 126
+    and each was walked around by reaching for a command the guard did not cover
+    - `cohort_audit` when `make maps` was gated, `make done` and `make test` when
+    both of those were. The measured cost inside that one feature: six 20-25
+    minute cohorts, most launched over a tree already known to be broken. A guard
+    on one command out of four is not a guard, and a guard with no audit trail
+    cannot tell you it is being evaded.
+
   - **`make done` IS THE BACKSTOP, and it is why narrow defaults are safe.** The
     gate re-checks the whole pool, so a session that forgets the sweep entirely
     still cannot ship a map it broke. Cheap defaults trade no correctness - only

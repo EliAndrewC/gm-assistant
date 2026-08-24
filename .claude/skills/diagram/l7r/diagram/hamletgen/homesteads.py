@@ -10,7 +10,7 @@ import random
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from l7r.diagram.settlement import Settlement, point_in_poly, seg_dist, surface_water_dist
+from l7r.diagram.settlement import Settlement, point_in_poly, surface_water_dist
 from l7r.diagram.sitegen.geom import centroid, unit
 
 from .consts import BUNDLE_PITCH, CLUSTER_DRAWN_ASPECT, CLUSTER_ROW_SPAN, CLUSTER_SPAN_FACTOR, LANE_FRONTAGE_STANDOFF, SUN_CORRIDOR_FT, Pt
@@ -115,21 +115,6 @@ so the honest value is no override at all."""
 # removes: a farmhouse is sited by the field it works and the ground it can stand on. Two earlier
 # attempts to TUNE this cap are recorded in the git history as dead ends; a third would be worse than
 # either, because the thing it measures is no longer on the map when it runs.
-
-
-def _lane_dist(s: Settlement, x: float, y: float) -> float:
-    """Distance from a point to the nearest drawn lane centerline (inf when the map draws none).
-
-    The CONNECTOR counts: it is the track the hamlet's traffic actually leaves by, and a farmstead
-    fronting it is fronting a way. Reads `M["lanes"]`, which is what the map draws and what the
-    frontage pass and `place_kosatsuba` both measure against - one source, per the same-source
-    doctrine."""
-    best = math.inf
-    for lane in s.M.get("lanes", []):
-        pts = lane.get("pts") or []
-        for i in range(len(pts) - 1):
-            best = min(best, seg_dist(x, y, pts[i], pts[i + 1]))
-    return best
 
 
 def lane_frontage(s: Settlement, seat: Mapping[str, Any], step: float = 86.0, connector: bool = False) -> list[Pt]:

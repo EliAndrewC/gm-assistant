@@ -553,3 +553,48 @@ def test_only_the_dispersed_form_short_circuits_stage_web() -> None:
     s.M["houses"] = [{"x": 100.0, "y": 100.0}, {"x": 200.0, "y": 120.0}]
     with pytest.raises(KeyError):
         hg.ways.stage_web(s, plan)
+
+
+# ---- feature 126: the defensive branches in the derived-lane machinery -------------------------
+
+
+def test_a_dispersed_hamlet_records_that_it_has_no_skeleton() -> None:
+    """The dispersed form draws no internal network, and says so in `meta` rather than leaving the
+    knob reading as though a skeleton were drawn."""
+    plan = a_plan(settlement_form="dispersed")
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s.M["houses"] = [{"x": 100.0, "y": 100.0}, {"x": 200.0, "y": 120.0}]
+    hg.ways.stage_web(s, plan)
+    assert s.M["meta"]["lane_skeleton"] == "none"
+    assert not s.M.get("lanes")
+
+
+def test_the_skeleton_needs_two_house_projections() -> None:
+    """`_lay_skeleton` is handed the arcs the caller measured off the placed houses. With fewer than
+    two there is no extent to fit an arm to, and it draws nothing rather than guessing one."""
+    plan = a_plan()
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    # The frame is never consulted on this path - the arc count is checked first - so a sentinel is
+    # honest here and keeps the test off `_margin_frame`, which needs a seated cluster to exist.
+    assert hg.ways._lay_skeleton(s, plan, None, [], []) == []  # type: ignore[arg-type]
+    assert hg.ways._lay_skeleton(s, plan, None, [10.0], [5.0]) == []  # type: ignore[arg-type]
+
+
+def test_homestead_polys_carries_the_per_house_groves() -> None:
+    """A yashikirin belongs to its farmstead, so a lane may no more be drawn through one than
+    through the house. It was missing from the fabric list while the lanes were laid first."""
+    plan = a_plan()
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s.M["groves"] = [{"poly": [[10.0, 10.0], [40.0, 10.0], [40.0, 40.0], [10.0, 40.0]]}]
+    kinds = [kind for _poly, _owner, kind in hg.ways._homestead_polys(s)]
+    assert "groves" in kinds
+
+
+def test_join_orphan_ways_needs_two_ways_to_join() -> None:
+    """With one way or none there is no orphan to link, and the pass says so immediately rather than
+    walking an empty component search."""
+    plan = a_plan()
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    assert hg.ways._join_orphan_ways(s, [], [], []) == 0
+    s.M["lanes"] = [{"pts": [[0.0, 0.0], [50.0, 0.0]]}]
+    assert hg.ways._join_orphan_ways(s, [], [], []) == 0
