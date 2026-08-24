@@ -598,3 +598,30 @@ def test_join_orphan_ways_needs_two_ways_to_join() -> None:
     assert hg.ways._join_orphan_ways(s, [], [], []) == 0
     s.M["lanes"] = [{"pts": [[0.0, 0.0], [50.0, 0.0]]}]
     assert hg.ways._join_orphan_ways(s, [], [], []) == 0
+
+
+def test_an_arm_clipped_down_to_a_stub_is_debris_and_is_not_drawn() -> None:
+    """A skeleton arm that survives clipping as a few pixels is not a short lane, it is debris.
+
+    The arms are the layout template mapped onto the margin frame, so what reaches the drawing call
+    is whatever is left after the crop, the water and the standing fabric have each taken their bite.
+    Nothing in that chain has an opinion about whether the remainder is still a WAY - `clip_to_clear`
+    stops where the ground stops being walkable, and `_trim_to_service` pulls the ends back to what
+    they serve but never below two points. So a run of half a pixel arrives at `s.lane` looking
+    exactly like a legitimate short arm, and gets ink.
+
+    Driven through a frame that collapses the template rather than through a rolled map, because no
+    pool map or cohort seed produces the case - the whole 3,448-test suite leaves this branch
+    unexecuted - and a test that cannot be provoked deterministically is not a test. The houses sit
+    clear of the collapsed arm on purpose: parked on top of it the fabric clip removes the run one
+    step earlier, which passes for the wrong reason."""
+    plan = a_plan(lane_skeleton="spine")
+    s = Settlement(W=plan.W, H=plan.H, seed=plan.spec.seed)
+    s.M["houses"] = [{"x": 200.0, "y": 270.0, "w": 20.0, "h": 14.0}, {"x": 230.0, "y": 270.0, "w": 20.0, "h": 14.0}]
+
+    # every (arc, standoff) lands within half a pixel of the same spot, well clear of SQUARE
+    def flat(arc: float, standoff: float) -> tuple[float, float]:
+        return (200.0 + arc * 0.005, 200.0 - standoff * 0.005)
+
+    assert hg.ways._lay_skeleton(s, plan, flat, [0.0, 20.0], [0.0, 10.0]) == []  # type: ignore[arg-type]
+    assert not s.M.get("lanes"), "a half-pixel arm must not be inked"

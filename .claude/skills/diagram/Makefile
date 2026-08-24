@@ -208,14 +208,41 @@ SETTLEMENT_COV_FLOOR = 94
 DESELECT = --deselect tests/test_villages.py --deselect tests/hamletgen/test_driver.py
 
 test-full: DESELECT =
+test-full: COV_FLOORS = 1
 test-full: test
 
-# `test` is the REFERENCE-SCOPE suite: everything except the tests that roll a map other than the
-# reference one. `test-full` is the whole thing and is reached only through `make done FULL=1`, which
-# demands a logged justification first.
+# A DESELECTED TEST TAKES ITS COVERAGE WITH IT, so the reference scope CANNOT hold the 100% floor
+# (measured 2026-08-24, the first green-path run of this restructure). Deselecting
+# tests/test_villages.py and tests/hamletgen/test_driver.py drops `hamletgen/driver.py` to 52% and
+# the whole tree to 99% - on code nothing changed. Enforcing a global floor against a deliberately
+# partial suite reports a hole that is not there, and it does it on EVERY run, which is the fastest
+# way to teach a session to read a red gate as normal.
+#
+# So the floors belong to the scope that can actually meet them, and the two scopes verify different
+# things ON PURPOSE:
+#
+#   make done          - did *I* break anything? Every test that does not roll another map, plus
+#                        `uncovered-in-diff.py`, which names any line in the working diff that no
+#                        test reaches. That is the question a working session keeps asking.
+#   make done FULL=1   - is the TREE whole? Adds the pool maps and the seeds 41-44 ratchet, and
+#                        enforces both coverage floors. This is the pre-push sweep, and the
+#                        constitution's mandatory once-at-the-end full run (Principle VI).
+#
+# WHAT THIS COSTS, said plainly: a coverage hole in code the reference scope does not execute
+# survives until the FULL run. It is not silent - the diff check still catches uncovered lines you
+# wrote, which is where holes actually come from - but the global invariant is a FULL-run guarantee
+# now, not a per-run one. That is the price of having a cheap gate at all, and it was paid
+# deliberately rather than by leaving a floor in place that could never be met.
+COV_FLOORS =
+
 test:
 	@if python3 -c "import xdist" >/dev/null 2>&1; then python3 -m pytest -n auto $(DESELECT); else python3 -m pytest $(DESELECT); fi; ec=$$?; \
 	if [ $$ec -ne 0 ]; then python3 ../../../scripts/uncovered-in-diff.py || true; exit $$ec; fi; \
 	python3 -m coverage combine --append >/dev/null 2>&1 || true; \
+	if [ -z "$(COV_FLOORS)" ]; then \
+	  printf '\033[1mcoverage floors: deferred to `make done FULL=1`\033[0m (a deselected test takes its coverage with it - see the Makefile comment)\n'; \
+	  python3 ../../../scripts/uncovered-in-diff.py || true; \
+	  exit 0; \
+	fi; \
 	python3 -m coverage report -m --omit='*/settlement/*' --fail-under=100 || { echo "COVERAGE: a module other than settlement.py is under 100% - the table above names it and its missing lines"; exit 1; }; \
 	python3 -m coverage report --include='*/settlement/*' --fail-under=$(SETTLEMENT_COV_FLOOR) || { echo "COVERAGE: settlement/ (package combined) fell below its $(SETTLEMENT_COV_FLOOR)% ratchet floor (see the comment above SETTLEMENT_COV_FLOOR in this Makefile; 'python3 -m coverage report -m --include=*/settlement/*' shows the missing lines)"; exit 1; }
