@@ -124,10 +124,10 @@ a fix nobody made - and worse, a test that only passes in the worktree would hid
 **Consequence**: a worktree baseline is a starting point, not a verdict. Every failure it reports is
 checked against the clone before being called pre-existing.
 
-**This probably belongs in the constitution rather than in one feature's research file**, since
-Principle XIII mandates the worktree procedure for every feature and says nothing about this. Flagged
-for the GM rather than edited in, because amending the constitution was not part of this feature's
-request.
+**RESOLVED - now in the constitution** (GM approved 2026-08-24). Principle XIII gains the clause
+directly, since it mandates the worktree procedure for every feature and said nothing about this;
+the root CLAUDE.md's operational version carries it too, so the two cannot drift. Constitution
+1.13.0 -> 1.13.1, PATCH.
 
 
 ---
