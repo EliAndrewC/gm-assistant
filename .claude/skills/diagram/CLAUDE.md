@@ -85,6 +85,11 @@ those before you argue with a rule.
 | [`dev/decisions.md`](dev/decisions.md) | You are about to build on a property of the engine nobody decided, or you are leaving a decision open for a later session |
 | [`dev/reviews.md`](dev/reviews.md) | You are about to launch `settlement-review`, `building-review` or `backstory-review` |
 
+[`future-work/`](future-work/CLAUDE.md) is the deferred-engineering backlog, split by map type on
+2026-08-24 - load `farming-communities.md` for hamlet/village work, `cities.md` for towns and above,
+`compounds.md` for Mode A plans, `cross-cutting.md` for anything spanning tiers. Its own CLAUDE.md
+carries the rules that keep it from rotting back into one 3,453-line file.
+
 Two more docs that were already separate: [`migration-plan.md`](migration-plan.md) (the standing
 plan for converting the pool to scripted generation - **read it before drawing or scripting a
 settlement map, and update its status table when a conversion lands**) and

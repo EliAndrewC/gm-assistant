@@ -1,63 +1,11 @@
-# /diagram - deferred engineering (things we intend to pick up)
+# Future work: farming communities (hamlets and villages)
 
-Load this file when planning the next diagram feature, or when the GM asks "what were we going to
-fix about the process?" Update it WHENEVER map work runs long - each entry should name the pain, the
-evidence, and the sketch of the fix.
+**Everything to do with a settlement whose reason for existing is its fields.** Hamlets and villages
+share one file deliberately (GM 2026-08-24): a village is a hamlet with a headman, a shrine and
+tax-free plots, not a different kind of place, and its defects are the same defects.
 
-**THIS FILE IS OPEN WORK ONLY.** Audited 2026-08-24 at the GM's direction: it had reached 3,453
-lines, of which about a third was closed history and another slice was retrospective method-writing.
-Both are worth keeping and neither belongs in a backlog - a reader looking for what to do next should
-not have to sift a changelog to find it, and two settled questions had in fact drifted back to
-reading as OPEN and were queued to the GM a second time.
-
-Where the content went:
-
-- **Closed items** are a one-line ledger at the bottom of this file. The narrative is in git and in
-  the code the fix landed in; the ledger exists so a later session can tell that a question was
-  ANSWERED rather than forgotten, which is the failure the audit found twice.
-- **Method lessons** - dead ends, wrong claims, the shapes of failures - moved to
-  [`dev/lessons.md`](dev/lessons.md). Those are things not to repeat, not things to do.
-- The 2026-08-20 "where the hamlet work stands" resume note is deleted: superseded by
-  [`dev/RESUME-HERE.md`](dev/RESUME-HERE.md), and its cohort number was four days stale.
-
-**Keep it that way.** When you close an item here, move it to the ledger in the same commit that
-closes it. An entry that stays open after the work is done is worse than no entry: it costs the GM a
-decision they already made.
-
-## 1. Parametric feature bundles (gate wards, rim bands) - HIGH VALUE
-
-> **PREMISE RETIRED (audit 2026-08-24).** This entry assumes a NEXT hand-authored map: its fix
-> sketch says "extract the helper the next time a gate bundle is authored or moved". There will not
-> be one. The 19 hand-authored maps are FROZEN (never regenerated, never re-gated), and
-> [`migration-plan.md`](migration-plan.md) makes conversion - not retrofit - the answer for every
-> tier above hamlet. So the TASK as written is dead.
->
-> The INSIGHT is not, and is why this is annotated rather than deleted: "a layout change should be a
-> parameter change, not hundreds of re-typed coordinates" is precisely what a scripted city generator
-> has to get right, and this entry records what it cost when it was got wrong. Read it as an input to
-> the city-tier conversion, not as a job queued against the current pool.
-
-The 021 wall resize (2026-08-10) invalidated ~hundreds of hand-typed coordinates and cost
-hours of migrate-regen-check cycles. The pieces that were FORMULA-DRIVEN from the wall
-parameters (rim temples, moat, ring road, wall towers) migrated instantly and for free; every
-literal coordinate had to be re-typed one check-failure at a time - and a careless bulk
-shifter corrupted list multipliers (`* -144`) and took extra rounds to repair.
-**Fix sketch**: a `gate_ward(gate, ...)` helper that lays a whole guan-xiang bundle (market
-frontage, flophouse, inn+stables+yard, its lanes, its district poly) RELATIVE to whichever
-gate it is handed; a sibling for ring-adjacent band fills. A layout change then becomes a
-parameter change. Extract the helper the NEXT time a gate bundle is authored or moved.
-
-## 2. Fabric-first generation (the GM's ordering question, 2026-08-10) - RESEARCH DIRECTION
-Today's order is shell-first: wall/roads/water, then fabric fitted inside, with the wall
-PRE-SIZED from a budget density constant. The constant was wrong once (Tango's 690 vs the
-capital's as-built 1,367) and the failure mode was structural: fabric could not fit, overflow
-silently went extramural. A fabric-first order - grow streets/quarters/temples roughly
-radially, THEN wrap wall/moat/ring around the built hull - makes wall-sizing correct BY
-CONSTRUCTION. Known hard parts (the GM named them): gate-anchored programs (guard houses,
-inspection stations, caravan clusters) need the gates, so it becomes two-pass - grow fabric,
-choose gates on the hull, then place gate programs and re-arrange locally; ring/moat must
-wrap an irregular hull rather than an ellipse. This is a full feature with its own spec, not
-a mid-feature pivot. Candidate: the next city-tier map.
+This is where hamlet work goes - the paddy fabric, the lane web, homesteads and their groves, wells
+and byres, woodland and windbreaks, the notice board, and the cohort seeds that surface all of it.
 
 ## 2b. The packer must RESERVE ways, not merely avoid collisions - DEFERRED WITH MEASUREMENT
 (2026-08-18, feature 125. Deferred under constitution Principle XIV's named exception - it is a
@@ -809,66 +757,6 @@ THE TWO CANDIDATE FIXES, neither costed yet:
 Whichever is chosen, the growth loop needs a real failure branch: if no step clears the water, that is
 a fact the pass knows and currently discards.
 
-## 2g. The render cache serves a PNG made from a DIFFERENT SVG (recurs; five times on 2026-08-19/20)
-`test_every_live_pool_png_matches_its_own_svg_viewbox` fails whenever a change moves a map's geometry:
-the gen re-renders the SVG while the PNG comes back from the render cache, so the pair disagree on
-aspect (kashikawa, 2600x3962 against the 3864 its own viewBox implies). Deleting the PNG and running
-`regen --no-cache` fixes that pair - and the next `make done` re-breaks it, because the gate regenerates
-too and the cache serves the same stale PNG again.
-
-It bit five times in two days across three sessions, always after someone moved geometry, and each time
-it was fixed by hand rather than diagnosed. **It is a cache-key defect, not a map defect**: the PNG's
-entry is being treated as valid for an SVG it was not rendered from. Start at `pipeline/render_cache.py`
-and ask what the PNG half of an entry is keyed on, and whether the SVG's own bytes are in that key -
-`dev/cache.md` already records that an entry has "TWO independently-perishable halves" and that the
-artifact half staying valid says nothing about the other half. This looks like the same shape one level
-down: the SVG half is refreshed, the PNG half is not, and nothing notices until a test compares them.
-
-## 4. WALL SIZE SETTLES FIRST, against a slack threshold (GM process rule, 2026-08-10)
-
-> **STILL OPEN, but read the era (audit 2026-08-24):** this is a PROCESS RULE for hand-authoring a capital, and the capital tier is NOT STARTED (migration-plan.md). It binds whoever hand-authors the next capital - if anyone does - and should be folded into the city/capital generator's design rather than left as a rule someone must remember.
-
-Measured at the moment the GM called it from the render: 41% of the walled interior was
-claimed-open commons, and hours of fine adjustments (junction snaps, well boxes, kido
-reserves) had been tuned against a wall that was about to be wrong. The rule: **an interior
-slack check (claimed-open + unclaimed <= ~15% of interior) is an EARLY reconciliation gate**
-- run it, and re-derive the wall, BEFORE any fine iteration. Fine adjustments are downstream
-of the wall; the wall must never be adjusted after them. Implement as
-`capital_interior_slack_in_band` beside the packed-split check, and write the ordering into
-the capital-build sequence in `settlements/capitals.md`. (This is also the strongest single
-argument for the fabric-first ordering in #2: a wall wrapped around a grown fabric has the
-right slack by construction.)
-
-## 5. Interior fullness DEFERRED on Shiro Daika (GM 2026-08-10, end of the resize day)
-
-> **STILL OPEN, but read the era (audit 2026-08-24):** this is scoped to `wip/shiro-daika.gen.py`, which is a hand-authored capital sitting OUTSIDE the pool and outside the gate. It is real deferred work, but it is deferred against an artifact nothing currently regenerates or checks.
-
-After the third wall derivation the slack check passes (<=15% claimed-open) but the render
-still reads empty to the GM's eye: bare-rendered commons, the model's 20% circulation, and a
-fabric that packs naturally denser than the model prices. Options weighed: a third shrink
-(hour-plus migration each, diminishing returns), raising population (rejected - 12,360 is
-budgets.md-anchored research), or defer. DEFERRED by GM choice: ship the green map as the
-first pass; **wall-to-fabric fullness is the headline requirement of the fabric-first
-feature (#2)**. Cosmetic option noted: a faint ground tint for kept commons (between blank
-and scrub). When fabric-first is specced, start from this map's slack profile as the
-motivating example.
-
-### 2026-08-10 addendum: the first pass SHIPPED against #5
-
-Shiro Daika went out green with three waivers (packed_inwall ~1,930/2,100, census ~130 short,
-rotating ~1.5 ac pockets) - the deferred-fullness gap made concrete. Fixture:
-`pool/regressions/capital_fullness_deferral_fires_on_the_first_pass_shiro_daika.json`. Two fresh
-data points for the fabric-first design:
-
-- Realized machi density is bounded by the SERVICE fabric, not the packer: streets + kido
-  reserves + well courts + hand roji took ~8% of C_PACKED at the settled wall. A fabric-first
-  pass must budget service ground per district (wells per ~20 households, roji per 95 px reach)
-  BEFORE deriving the wall, or the same gap reappears.
-- The endgame grind was dominated by cross-coupled reflows: every well/claim/alley edit re-rolls
-  neighboring packs, so single-defect fixes rotate the defect population instead of shrinking it
-  (three "dead cores" moved five times). Fabric-first should place service features and packs in
-  one deterministic order per district, so a local edit stays local.
-
 ## Review residue from the supply-bank hem re-roll (settlement-review, 2026-08-15)
 
 Three judgment items the four DELTA reviews surfaced that are real but were deliberately logged
@@ -938,30 +826,6 @@ wells, the board's clump keep-out, the lane-crossing guards).
   shrink rung and the oak map went woodless - so the scan gained a last-resort SET-BACK
   profile (40/100 px, still 2.9x/1.4x above the gate's own 14/69 floors) that runs only when
   the generous 80/180 profile seats nothing.
-
-## Fold settlement/city/civic.py into castle_civic.py (feature 113, 2026-08-16)
-
-Left deliberately undone by the `settlement/city/` package split, with the reasoning recorded so
-the next session does not have to re-derive it.
-
-`governor_mansion` is the only member of `settlement/city/civic.py`. It calls `self.manor(...)` and
-re-keys the record out of `M["manors"]` - it is a STRUCTURE reusing the manor glyph, not city
-infrastructure, so it belongs with the castle, the ministries and the dojos in
-`settlement/castle_civic.py` rather than beside walls and moats. The size works: 903 + 21 = 924
-lines, still under the clause-13 bar.
-
-**Why 113 did not just do it.** Feature 113's whole value proposition was "provably nothing moved"
-- a pure move verified by byte-identity. Relocating a method to a DIFFERENT mixin widens the
-composed-surface guard across two mixins at exactly the moment the guard is meant to be pinning one,
-and makes the stage something other than a pure move (112 research R5 on why that property is worth
-protecting). Isolating the orphan in its own module was the cheap way to keep the index honest now
-and make the relocation a one-file change later.
-
-**What the move costs**: shift the method, drop `CityCivicMixin` from the `CityMixin` bases in
-`settlement/city/__init__.py`, move `governor_mansion` out of `_CITY_SURFACE` in
-`tests/settlement/test_city.py` and into whatever guard `castle_civic.py` carries, delete the
-`civic.py` row from `settlement/city/CLAUDE.md`. Verify with the same byte-identity sweep - the
-drawing must not change. `specs/113-city-package/quickstart.md` has the harness.
 
 ## Review residue from the shared-bund re-roll (settlement-review + cohort, 2026-08-17)
 
@@ -1133,118 +997,6 @@ and none works.
 
 *Original entry, kept for the measurements:*
 
-### Three members that are in `settlement/structures/` only because of where feature 025 cut
-
-Feature 114 split `settlement/structures.py` into a package and, in doing so, isolated the members
-that do not belong to the structures subsystem at all - so each of these is now a one-file change
-plus one row of `settlement/structures/CLAUDE.md`. None was moved by 114 itself, deliberately: a
-cross-mixin relocation would have made that feature's byte-identity oracle answer two questions at
-once, so a dirty diff could not have distinguished "the composition is wrong" from "moving `road`
-changed something".
-
-- **`road` -> `water_ways.py`.** It is a way, and `water_ways.py` is already the ways module (lanes,
-  streets, alleys, kido). It sits in `structures/ground.py` today.
-- **`pasture` -> `land/cover.py`.** It is a land surface, and `cover.py` already holds the commons
-  and the hinterland layout (marsh and the toe band sit next door in `land/wet.py`). Same module
-  today. Destination updated by feature 120, which split `land.py` into a package; the move itself
-  was explicitly left out of that feature's scope, because a cross-package relocation does not
-  belong in a split whose whole safety argument is that nothing moves but text.
-- **`structures/captions.py` -> `castle_civic.py`, but this one is an OPEN QUESTION, not a pending
-  move.** `castle_civic.py` holds `place_caption` (the draw-time seat ladder) while `captions.py`
-  holds the probes underneath it - so folding them gives one caption subsystem, but three of the
-  five probes are consumed by siters that live in `structures/fixtures.py`. The implementation
-  sketch, the thing that holds it (the composed-surface guard, which fails naming the five names if
-  they move out without the frozenset being updated in the same commit) and the one deliberate
-  exclusion (`_under_a_caption`) are all in `settlement/structures/CLAUDE.md` under "Three
-  placements you will want to fix".
-
-The two straight moves are cheap and safe on their own: every consumer reaches these members through
-`self.` on the composed `Settlement`, so no call site changes - the move is the member's text, its
-row in the two indexes, and the name migrating between the two mixins' surface frozensets.
-
-## Feature 115's leftovers (civic_grounds/)
-
-Same shape as feature 114's above: pending PARENT-level relocations that were deliberately not
-folded into the split, because moving a member between parent-level mixins would have made the
-byte-identity oracle answer two questions at once.
-
-- **`_ward_fence_cap` -> `water_ways.py`.** It is a ward-fence predicate and `water_ways.py` is
-  already the wards/fences module. It sits in `civic_grounds/funerary.py` today because `mausoleum`
-  is its caller inside the package being cut (the placement-follows-the-caller rule). Its other
-  consumer, `structures/compounds.py`, reaches it through the composed `Settlement` and is unaffected
-  either way.
-- **`precinct_interior` -> `shrines_wells/`.** It draws a sovereign temple precinct's INTERIOR
-  program (abbot's residence, order administration, library, two dormitories, kitchen/refectory), so
-  it is religious ground; `civic_grounds/civic.py` holds it as the institutional-works member.
-  Feature 116 has since made `shrines_wells` a package, so the destination is now a specific file -
-  `shrines_wells/shrines.py` is the closest fit. Note it calls `self.cemetery`, which stays in
-  `civic_grounds/funerary.py`; that cross-package `self.` call is already normal and needs no import.
-
-Both are cheap: every consumer reaches these through `self.`, so the move is the member's text, its
-row in the two indexes, and the name migrating between the two mixins' surface frozensets.
-
-## `wip/shiro-daika.gen.py`'s cost is UNKNOWN and unbounded
-
-Feature 112 recorded it as "over 6 minutes"; feature 115 discovered that figure is an **aborted
-lower bound** - 112 stopped the map at six minutes without output and never learned the real number.
-115 got it to **10m35s of CPU at 100%, still with no output**, and stopped it for the same reason.
-Nobody has ever let this map finish.
-
-That matters beyond curiosity: `precinct_interior`'s only consumer in the entire tree is this map,
-so any future refactor touching it has no artifact-level oracle available at a known price. Two
-follow-ups, either of which closes it:
-
-- Run it to completion once, unattended, and record the actual cost here.
-- Profile it. A capital map costing more than 3x the entire 28-map pool is itself a finding - the
-  "one performance bug this engine keeps growing" section of `CLAUDE.md` describes the shape it is
-  most likely to be.
-
-## The gate's 15 over-150-line segment functions (found by feature 122, deliberately NOT fixed there)
-
-This file records "the largest function in the engine is now `_bundle_geom` at 81 lines, so nothing
-is over the ~150-line bar features 112/115 converged on and there is no standing clause-12
-candidate". That is true, and it is scoped to the ENGINE. **The GATE was never measured**, and it
-has fifteen segment functions over the bar:
-
-| lines | segment | file |
-|---|---|---|
-| 293 | `_seg_0555_007__execution_ground_outside_the_settlement` | `segments_09a_justice_grounds_and_land_fall.py` |
-| 273 | `_seg_0324__field_ditches_terminate` | `segments_05c_streams_and_field_ditches.py` |
-| 255 | `_seg_0581__polder_dike_is_earthwork` | `segments_11b_polder_dikes_and_waivers.py` |
-| 248 | `_seg_0571__torii_count_canonical` | `segments_11a_taxfree_terraces_and_dikeponds.py` |
-| 228 | `_seg_0580__dikepond_is_ponds_in_a_block` | `segments_11a_taxfree_terraces_and_dikeponds.py` |
-| 227 | `_seg_0563_072__city_neighborhoods_have_wells` | `segments_10b_city_civic_and_commerce.py` |
-| 221 | `_seg_0556__walled_town_has_wall` | `segments_09a_justice_grounds_and_land_fall.py` |
-| 208 | `_seg_0033__hard_features_within_frame` | `segments_01a_city_ring_and_frame.py` |
-| 199 | `_seg_0104__city_wall_tower_coverage` | `segments_02a_capital_budget_and_ministries.py` |
-| 196 | `_seg_0563_325__city_moat_feeder_matches_width` | `segments_10g_city_streets_and_docks.py` |
-| 195 | `_seg_0275__labels_clear_of_other_buildings` | `segments_04a_margins_lanes_and_wells.py` |
-| 185 | `_seg_0603__paddy_plot_seams_shared` | `segments_08d_kosatsuba_and_paddy_basins.py` |
-| 183 | `_seg_0127__city_fan_heads_quilted` | `segments_02c_walls_gates_and_housing.py` |
-| 153 | `_seg_0563_335__city_streets_connected` | `segments_10h_city_torii_and_estate_grounds.py` |
-| 151 | `_seg_0108__merchant_estate_wall_clear_of_water` | `segments_02b_capital_ways_and_burial.py` |
-
-**Why 122 left them, which is the part worth keeping.** 122's whole safety argument is that it moved
-whole functions and changed no character inside one - which let it prove itself with a byte-identity
-oracle over 24,354 content lines plus an identical 1,377-row `GATE_SEGMENTS`. Decomposing a check
-BODY is the opposite kind of edit: it changes text inside a function, so neither oracle can hold it,
-and folding the two together would have meant a 24,000-line diff whose correctness rested on reading
-rather than on a check. Doing them in one feature would have bought nothing and cost the proof.
-
-**The bar these should be measured against is NOT the engine's.** A segment is a check, and a check
-that is long because it walks a lot of geometry to reach one verdict is not the same defect as a
-draw method doing eight things. Before decomposing any of these, ask which it is:
-`_seg_0571__torii_count_canonical` at 248 lines is likely one long enumeration (the numerology has
-cases), while `_seg_0555_007__execution_ground_outside_the_settlement` at 293 is the check with six
-interacting rules that `dev/diagnostics.md` describes needing `site_justice.py` to adjudicate, and
-that one probably does decompose into named predicates.
-
-**Pre-flight, both cheap, both mandated by the 115/118 lesson** (recorded in `dev/pool.md`, where
-each of them changed the plan once): measure the RNG surface - free here, since a check draws
-nothing - and count the closures. Then decompose behind the same registry contract, with one trap
-worth stating out loud: the numeric key in the NAME is the execution position, so a helper extracted
-out of a segment must NOT be named `_seg_*`, or the registry will try to run it as a segment.
-
 ### The density that is actually available, and it is not the pitch
 
 Recorded here because feature 121 declined the obvious move and the reasoning should not be lost.
@@ -1255,61 +1007,6 @@ houses in each other's drying shadow. The honest way to pack a nucleus tighter i
 costs no sunlight at all. The placer is free to; nothing asks it to yet. That belongs to the village
 tier's own work. (`research/homesteads.md` "The threshing yard's sun";
 `specs/121-placer-drawn-footprint/research.md` D2.)
-
-## OPEN: two `s.kiln` glyph defects (settlement-review on Ubame, 2026-08-17)
-
-Both found on Ubame's new potters' kiln works and both deliberately NOT fixed there: they are
-defects in `settlement/trades.py::kiln`, not in that map, and a shared-glyph change made under a
-one-off content edit lands on Tango, Minami, Nagahara and `wip/shiro-daika` as well. The three
-pool cities are frozen and would keep their committed ink either way, which is exactly why the
-fix wants its own pass with its own sweep rather than riding along.
-
-1. **The smoke wisp ignores the map's declared wind.** The plume is authored in the glyph's LOCAL
-   frame (`q 2 -3.5 0.5 -7`, toward local -y), so it rotates with the kiln. On Ubame, at
-   `rot=351.9`, that puts it at world bearing NNW - blowing INTO the declared `windward="NW"`, and
-   pointing at the magistrate's manor. The SITING is right (the works is downwind of every
-   dwelling) and only the ink contradicts it, which is the worst version: a reader who trusts the
-   drawing reads the nuisance axis backwards. **Fix sketch**: derive the wisp's bearing from
-   `meta["windward"]` in world coordinates and counter-rotate it out of the glyph's group, the way
-   `_trade_record`'s `lab_off` already counter-rotates a caption. Then the plume becomes free
-   evidence for the reader instead of a contradiction. Every settlement that draws smoke has the
-   same latent bug; the kiln is just where a map finally rotated far enough to expose it.
-2. **The two-cottage case is mirrored, with the well centered above it.** `cxs_ = {2: (-f(22),
-   f(22))}` puts the pair symmetrically about the works' axis, and the private well's saturated
-   blue disc sits centered above them - a bright centered mark over a symmetric pair, which is the
-   composition the mirror rule warns about. It does not resolve into a face (one disc, not two),
-   but at fit zoom the well becomes the loudest thing in the works and the eye lands on its least
-   important object. **Fix sketch**: offset the 2-cottage case the way the 3-cottage case already
-   is asymmetric in effect, or move the private well off the axis. Cheap, but it changes every
-   two-cottage works, so it belongs with item 1 in one pass.
-
-### 8. `TWIN_AXES` believes a declared knob over the drawn shape
-
-The cap pushed the surplus households into the cloud pass, so Sawada's `cluster_seeding` flipped
-`frontage` -> `cloud` and `meta.cluster_shape: "round"` is now emitted for the first time. The drawn
-cluster is **808 x 235 ft, 3.48:1**. That would be harmless bookkeeping except `check_village/driver.py`'s
-`TWIN_AXES` reads *"the declared knob if present, else the cluster-bbox aspect"* - so the
-twin-distinctness axis now reports **round** on the strength of a rolled knob, where before the cap
-it fell through to the MEASUREMENT and would have said elongated.
-
-This is the derive-don't-pin rule inverted: a declaration is being trusted over the geometry it is
-supposed to describe, and the flip was a side effect of a placer change that never touched the twin
-detector. **Sketch**: prefer the measurement when both exist (a knob says what was ASKED for, the
-bbox says what was DRAWN, and the twin detector's question is about what a reader sees) - or make
-the cloud record what it actually produced.
-
-**RULED BY THE GM 2026-08-24: the twin detector measures WHAT WAS DRAWN, not what was asked for.**
-The GM's reasoning, which generalizes past this one axis: *"the thing that we are detecting when we
-are doing automated checks is we should be running the automated checks against what is actually
-being rendered, not just checking to see whether what was asked for was valid and then doing
-something else and then not checking whether what we did matches our specifications."*
-
-A knob records an INTENTION. A check that reads the knob is asking whether we meant well, and it
-passes cleanly on a map that drew something else entirely - which is the failure mode this project
-has hit repeatedly under a different name (`cluster_shape` was rolled, printed in every cohort header,
-and read by nothing for months). So: prefer the measurement wherever both exist. **Not implemented
-yet** - recorded here as DECIDED-AND-PENDING per the same 2026-08-24 direction that a code change
-should not be started mid-feature.
 
 ## OPEN, from the 2026-08-18 settlement-review round (four maps, four independent agents)
 
@@ -2155,47 +1852,3 @@ when there is only one source to read.
 
 
 ---
-
-# CLOSED - the ledger
-
-One line each. The full narrative is in git history and, where it matters, at the point of change in
-the code. **This section is not a to-do list; nothing here is waiting on anyone.** It exists so a
-later session can distinguish "settled" from "forgotten" without reading a diff.
-
-- DONE 2026-08-19: `cluster_shape` was the same defect as 2e, one tier worse - it WAS rolled and read by nothing
-- DONE 2026-08-19: the woodland scan vetted a SQUARE while the gate measured a ROTATED BBOX
-- DONE 2026-08-19: the streams were invisible to every way-vs-water test
-- DONE: azemame record hygiene - water-buried beads (2026-08-15, same day)
-- DONE 2026-08-16: pocket ponds carry ink-on-water of their own (settlement-review, 2026-08-15)
-- DONE 2026-08-16 (the known-opens session, same day): four ledger items closed
-- DONE 2026-08-17: cohort seed 2's four drainage failures - ONE defect, and the ledger's sketch was right
-- DECIDED 2026-08-17: `plot_rings` STAYS a paint-order stack - documented, with a lap ceiling
-- DONE 2026-08-17: the fan-toe SUNBURST - RULED and fixed
-- DONE 2026-08-17: the paddy size floor, and the well fix it had to wait behind
-- RESOLVED 2026-08-18 (was BLOCKING): cohort seed 5's drain, and the well tie-break's cost
-- DONE 2026-08-17: `_outside_cloud` now tests the CROP's box, not a box of house centers
-- DONE 2026-08-17: cohort seeds 9 and 11 - and the "genuine conflict" was two bugs
-- RULED 2026-08-17: the fan-toe SUNBURST (was: "needs a GM ruling before anyone re-cuts it")
-- DONE (feature 118): `rolling.py::roll_village` - and the measurement worth keeping
-- DONE 2026-08-17 (same day): two farmhouses could MERGE - now ruled and gated
-- RULED 2026-08-17 (same day): Kashikawa's hamlet-of-one
-- How both of the above were closed (2026-08-17)
-- MOSTLY DONE 2026-08-18: three found by the 2026-08-17 review round (see the status on each)
-- 1. RETRACTED - the flooded tint census does NOT reproduce; keep only the test sketch
-- 2. DONE 2026-08-18 - a lane dead-ends 90 ft past its own junction (Sawada)
-- 3. RESOLVED BY MEASUREMENT 2026-08-18 - the "adaptive" garden side IS adapting
-- 4. DONE 2026-08-18 - `scatter_audit` reported `crown=0` on a map recording 2,665 crowns
-- 5. DONE 2026-08-18 - the shared byres end-loaded onto one flank of the cluster
-- 6. DONE 2026-08-18 - the kura flag is stable against regeneration but NOT against re-packing
-- Corrections to items 1 and 3 above (2026-08-17, same day)
-- ONE DONE, ONE OPEN: two more from the Sawada re-review (2026-08-17)
-- 7. DONE 2026-08-18 - the title placard printed over a woodland commons parcel
-- THE THREE QUESTIONS - ALL RESOLVED (2026-08-18)
-- A. RESOLVED BY RESEARCH - a byre belongs beside a wellhead. Nothing to change.
-- B. RULED BY THE GM - KEEP THE KNOB, and make the drawing match it.
-- C. RESOLVED BY RESEARCH - the back rank IS served, and the FORM of the service is a knob.
-- D. DONE / HANDED OVER 2026-08-18 - the two lane-topology defects
-- MOSTLY DONE 2026-08-19: paddy bunds that step sideways - the staircase is gone, 7 corners remain
-- CORRECTED - cohort seed 10's belt hole is a SUN CORRIDOR, not a polygon pinch
-- DONE 2026-08-19: the gen-time budgets had drifted from protection into a coin toss
-- DONE 2026-08-19: coverage that depends on whether the GEN CACHE was warm
