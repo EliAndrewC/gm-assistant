@@ -93,13 +93,52 @@ def audit(count: int, first_seed: int, only: str | None = None, jobs: int | None
     return 0 if failing == 0 else 1
 
 
+def _reference_ok() -> list[str]:
+    """Roll the REFERENCE settlement and return its failures - empty when it is clean.
+
+    One map, about a minute. It is the cheapest question in the loop and it gates the most expensive
+    answer, which is the whole point of the tier ladder (constitution VI)."""
+    rep = hg.generate(hg.HamletSpec(name="Inashiro", seed=4, households=15, down_deg=90, water_sink="pond"), out_base=None, render=False)
+    for f in rep.failures:
+        print(f"  reference: {f}", flush=True)
+    return list(rep.failures)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--count", type=int, default=12)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--only", default=None, help="report only failures of this check")
     ap.add_argument("--jobs", type=int, default=None, help="worker processes (default: cpus - 2, capped at --count)")
+    ap.add_argument("--anyway", action="store_true", help="run even if the reference settlement is failing (say why in the same breath)")
     args = ap.parse_args(list(argv) if argv is not None else None)
+
+    # THE REFERENCE SETTLEMENT IS A GATE, NOT A SUGGESTION (GM 2026-08-24).
+    #
+    # A cohort is 20-25 minutes. The reference hamlet is 60 SECONDS and answers the only question
+    # worth asking while it is red: is the thing I just changed even coherent? Running the sweep
+    # first is how a session spends two hours re-discovering that its tree is broken - which is
+    # exactly what happened during feature 126: SIX cohorts in one sitting, most of them launched
+    # when the failures were already known.
+    #
+    # `make maps` already gated on this. It did not help, because this module has its own entry
+    # point and that is the one a session reaches for when it wants the seed list. A guard on one
+    # door is not a guard. So the check lives HERE, in the expensive thing itself, where it cannot
+    # be walked around by picking a different command.
+    #
+    # `--anyway` exists because a rule with no escape hatch gets worked around rather than used -
+    # but it is deliberately awkward to type and it prints why it was wrong to need it.
+    if not args.anyway:
+        print("checking the reference settlement first (60 s) - the cohort is 20-25 min\n", flush=True)
+        ref = _reference_ok()
+        if ref:
+            print(f"\n\033[1mREFERENCE SETTLEMENT IS FAILING\033[0m: {', '.join(ref)}")
+            print("\nThe cohort is not run. Fix the reference map first - it rebuilds in about a minute,")
+            print("and a sweep launched over a broken tree costs 25 and tells you what you already know.")
+            print("Then: python3 -m l7r.diagram.tools.cohort_audit --count 48")
+            print("(--anyway overrides, when you genuinely need the seed list from a red tree.)")
+            return 2
+        print("\033[1mreference settlement clean\033[0m - running the cohort\n", flush=True)
     return audit(args.count, args.seed, args.only, args.jobs)
 
 
