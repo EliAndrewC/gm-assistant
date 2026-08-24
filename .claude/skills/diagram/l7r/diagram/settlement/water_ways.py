@@ -561,6 +561,25 @@ class WaterWaysMixin:
             z1 = self.add(f'<path d="{dd}" fill="none" stroke="#6B4F2A" stroke-width="1.4" stroke-dasharray="8,8" opacity="0.7"/>')
         return (z0, z1)
 
+    def reink_lane(self: Settlement, i: int) -> None:  # type: ignore[misc]
+        """Rewrite lane `i`'s DRAWN path from its record, so the two cannot disagree.
+
+        THE RECORD AND THE INK ARE TWO COPIES OF ONE FACT, and any pass that shortens a lane owns
+        both of them. `trim_lane_stubs` always did; the trim-to-service pass at the end of
+        `hamletgen.stage_web` did not, and shortened the record alone - so Mizuguchi's field spur was
+        DRAWN with a four-point path that hooked into the paddy and RECORDED as the two-point run
+        without it. The 32 ft that touched the crop existed on the paper and nowhere else, which
+        means `features_do_not_overlap`, `houses_clear_of_lanes` and every crop-margin rule were
+        adjudicating a shorter lane than the one the reader sees. That is the skill's standing
+        "invisible to every matrix check in both directions" hazard, arrived at from the other side.
+
+        Extracted here rather than copied so there is one way to do it and the next shortening pass
+        cannot get it half right."""
+        pts = self.M["lanes"][i]["pts"]
+        dd = "M" + " L".join(f"{x},{y}" for x, y in pts)
+        for z in self._lane_ink[i]:
+            self.out[z] = re.sub(r'd="M[^"]*"', f'd="{dd}"', self.out[z], count=1)
+
     def trim_lane_stubs(self: Settlement, way_reach: float = 40.0, house_reach: float = 90.0, fan_spread: float = 60.0, fan_bearing: float = 25.0) -> int:  # type: ignore[misc]
         """Pull back any internal lane end that REACHES NOTHING. Returns how many ends were trimmed.
 
@@ -707,10 +726,7 @@ class WaterWaysMixin:
             if [list(p) for p in pts] == ln["pts"]:
                 continue
             ln["pts"] = [[round(x, 1), round(y, 1)] for x, y in pts]
-            z0, z1 = self._lane_ink[i]
-            dd = 'M' + ' L'.join(f'{x},{y}' for x, y in ln["pts"])
-            for z in (z0, z1):
-                self.out[z] = re.sub(r'd="M[^"]*"', f'd="{dd}"', self.out[z], count=1)
+            self.reink_lane(i)
         if _drop:  # rebuild record and ink together so their indices stay aligned
             self.M["lanes"] = [ln for k, ln in enumerate(lanes) if k not in _drop]
             self._lane_ink = [z for k, z in enumerate(self._lane_ink) if k not in _drop]

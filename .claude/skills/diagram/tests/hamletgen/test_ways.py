@@ -8,8 +8,8 @@ import math
 import pytest
 
 from l7r.diagram import hamletgen as hg
-from l7r.diagram.hamletgen.ways import _crosses_fabric, _fabric_hits, _margin_frame, _reach, _route
-from l7r.diagram.settlement import Settlement, point_in_poly
+from l7r.diagram.hamletgen.ways import _crosses_fabric, _fabric_hits, _margin_frame, _nearest_seg, _pull_back_to_service, _reach, _route, _trim_to_service
+from l7r.diagram.settlement import Settlement, point_in_poly, seg_dist
 
 from ._builders import SQUARE, a_plan
 
@@ -660,3 +660,41 @@ def test_the_router_declines_a_span_too_wide_for_its_lattice() -> None:
     opposite - that the pad was bounded so the grid could never overflow - and a reader who believed
     it would look for the reason a connector is not detoured in the wrong place entirely."""
     assert _route((0.0, 0.0), (4000.0, 0.0), [], [], []) == []
+
+
+def test_nearest_seg_returns_the_distance_AND_the_segment_it_belongs_to() -> None:
+    """One expression, one answer - a caller must not re-derive which segment was nearest."""
+    segs = [((0.0, 0.0), (100.0, 0.0)), ((0.0, 200.0), (100.0, 200.0))]
+    d, sg = _nearest_seg((50.0, 10.0), segs)
+    assert round(d, 6) == 10.0
+    assert sg == segs[0]
+    assert _nearest_seg((0.0, 0.0), []) == (float("inf"), None)
+
+
+def test_a_connector_end_inside_the_canvas_is_pulled_back_ONTO_the_way_it_joins() -> None:
+    """The blind stub feature 128 shipped, and the two halves of not shipping it again.
+
+    The run starts deep inside the settlement, passes a lane, and continues off the frame. The inner
+    end must come back to TOUCH that lane - not merely to within the join bar, which is what left
+    Mizuguchi 27 ft short - and the off-canvas end must not be touched at all, because reaching the
+    frame is the connector's other job."""
+    run = [(500.0, 100.0), (100.0, 100.0), (-400.0, 100.0)]
+    segs = [((300.0, 0.0), (300.0, 200.0))]
+    out = _pull_back_to_service(run, segs, [], lambda q: 0.0 <= q[0] <= 1000.0 and 0.0 <= q[1] <= 1000.0)
+    assert out[-1] == (-400.0, 100.0), "the off-canvas end must survive untouched"
+    assert round(seg_dist(out[0][0], out[0][1], *segs[0]), 6) == 0.0, "the inner end must TOUCH the way"
+
+
+def test_a_connector_that_joins_NOTHING_is_left_alone_rather_than_deleted() -> None:
+    """A hamlet whose track genuinely meets no lane is a real map to look at, not one to shorten."""
+    run = [(500.0, 100.0), (-400.0, 100.0)]
+    out = _pull_back_to_service(run, [((0.0, 5000.0), (100.0, 5000.0))], [], lambda q: 0.0 <= q[0] <= 1000.0)
+    assert out == run
+
+
+def test_trim_to_service_counts_ARRIVING_AT_THE_FIELD_as_service() -> None:
+    """The spur's whole purpose is the crop, which is neither a house nor another lane."""
+    field = [(400.0, 0.0), (600.0, 0.0), (600.0, 200.0), (400.0, 200.0)]
+    run = [(0.0, 100.0), (200.0, 100.0), (395.0, 100.0)]
+    assert _trim_to_service(run, [], [(0.0, 100.0)], [field]) == run
+    assert len(_trim_to_service(run, [], [(0.0, 100.0)], [])) == 2

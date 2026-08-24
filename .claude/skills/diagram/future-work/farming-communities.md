@@ -51,6 +51,51 @@ opinion about which band it is in.
 **Do the research pass before implementing.** If the record is decisive, implement what it says; if
 it supports both forms, that is the knob.
 
+## OPEN 2026-08-24: the copse collapses when the cluster packs tight, and its check CANNOT see it
+
+Found by `settlement-review` on Mizuguchi after feature 128, then measured across the live tier and
+found worse than the reviewer saw. Deferred here rather than fixed in that feature because setting the
+floor is a RESEARCH question (Principle XII) and the placement change is its own piece of work.
+
+**THE MEASUREMENT**, `village_groves[role="copse"]` on the four live hamlets as shipped:
+
+| map | clumps | recorded extent |
+|---|---|---|
+| inashiro | **1** | 30 x 30 ft |
+| mizuguchi | **3** | 335 x 107 ft |
+| sawada | 15 | 371 x 245 ft |
+| kashikawa | 11 | 343 x 340 ft |
+
+Mizuguchi is a 335 ft "copse" drawn as three saplings 300 ft apart. Inashiro's is one clump. Pre-128
+Mizuguchi held 12 over 550 x 287 ft.
+
+**THE MECHANISM.** The copse fills the OPEN gaps among the houses (`settlements/vegetation.md`), and
+it is seated after the windbreak, whose canopy is a keep-out. Feature 128 packed the clusters tighter -
+that is the whole point of it, Inashiro's long axis went 603 -> 462 ft - so there is less gap ground,
+and a blocked clump in a sparse grove is dropped rather than relocated. The delta did not introduce
+this (the same collapse is logged 2026-08-17, 11 -> 4) but it made it reliable.
+
+**WHY `village_groves_visibly_stocked` (segment 0618) CANNOT CATCH IT, which is the part worth having.**
+The check scores clumps per 100k sq px of RECORDED footprint against a floor of 1.5. That metric is
+**self-normalizing**: the recorded extent is the bbox of the clumps that survived, so when clumps are
+dropped the extent shrinks with them and the density does not move. Inashiro's one-clump copse scores
+**111/100k** - seventy times the floor, the densest grove on the map - because 1 clump in 30 x 30 ft is
+arithmetically dense. **A density check on a self-measured extent can never detect a collapse.** It was
+written (2026-08-20) against exactly this defect and it is structurally incapable of seeing it.
+
+**TWO CANDIDATE FIXES, and the choice needs the research pass first:**
+
+1. **An absolute floor on clump COUNT for a declared copse**, not a density. Needs a number, and the
+   number is a research question - what a *yashikirin*-adjacent village copse actually was. Do NOT
+   pick one by eye.
+2. **Do not record a feature you did not draw.** If fewer than the floor survive, drop the copse record
+   entirely rather than shipping a claim the ink does not support. This is honest without needing the
+   number to be exactly right, and it is the cheaper half.
+
+Both are probably wanted: (2) stops the false claim, (1) is what makes the generator try harder. The
+generator-side question - relocate a blocked clump instead of dropping it - is the actual repair and
+is the largest part.
+
 ## OPEN 2026-08-24, WITH THE MEASUREMENT: the field SPUR can be forced onto a house on tight clusters
 
 Feature 128 moved every lane after the farmhouses. The reference hamlet is clean and so is the
