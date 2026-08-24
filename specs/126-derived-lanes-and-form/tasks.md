@@ -1,5 +1,25 @@
 # Tasks: Derived lanes, and settlement form as a rolled knob
 
+> [!WARNING]
+> **THIS FILE IS NOT A PROGRESS RECORD. Do not trust its checkboxes.**
+>
+> It carries 42 tasks and 0 ticks, including tasks that were fully completed - it was never
+> maintained during implementation, which breaks the discipline the whole spec-kit flow rests on.
+>
+> Verified by inspection on 2026-08-24, these were **NOT** done: **T008** (rename `stage_ways` ->
+> `stage_track`), **T010** (rename `stage_web` -> `stage_lanes`), **T009** (re-origin the connector
+> from the seat band rather than the skeleton gateway - substantive, and the task file itself calls
+> it the one place the reorder forces a real behavior change), and **T006 / FR-004** (the
+> `provenance` field on lane records).
+>
+> **`.claude/skills/diagram/dev/RESUME-HERE.md` is the authoritative state.** Read it first.
+>
+> Also read FR-003 sceptically: it requires the connector *and the field spur* to stay ahead of the
+> houses. That carve-out was written by the implementing session, not asked for by the GM, and the
+> spur half of it does not survive scrutiny - a path to a hamlet's own paddy cannot predate the
+> hamlet.
+
+
 **Feature**: 126-derived-lanes-and-form
 **Plan**: [plan.md](plan.md) | **Research**: [research.md](research.md) | **Model**: [data-model.md](data-model.md)
 
