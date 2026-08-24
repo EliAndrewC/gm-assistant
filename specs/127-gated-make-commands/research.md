@@ -128,3 +128,24 @@ checked against the clone before being called pre-existing.
 Principle XIII mandates the worktree procedure for every feature and says nothing about this. Flagged
 for the GM rather than edited in, because amending the constitution was not part of this feature's
 request.
+
+
+---
+
+## R7 - A mutation test must assert its own mutation applied
+
+**Decision**: every guard-removal check replaces text through an anchored operation that fails loudly
+when the anchor is missing, never through a regex that can silently match nothing.
+
+**Measured** 2026-08-24, during T034: a `sed -E` mutation of `guard-file-hooks.sh` did not match
+(the real line has one space before `;;`, the pattern assumed two). The file was therefore unchanged,
+the test suite passed 17/17, and the honest-looking conclusion was "removing this guard changes
+nothing, so the guard is decoration". A `diff` against the original disproved it; re-run with a real
+mutation, the same suite fails 7 of 17.
+
+**Rationale**: the failure is silent and its output is indistinguishable from a real finding. Worse,
+it is wrong in the expensive direction - it argues for DELETING a guard that works.
+
+**Alternatives considered**: eyeballing the mutated file (does not scale and is what was skipped);
+`diff`-then-run (works, and is what caught it, but relies on remembering to look). The anchored
+replace is the version that cannot be forgotten, because it raises instead of proceeding.

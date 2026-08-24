@@ -83,7 +83,7 @@ habitual in the first place.
 - [x] T031 [US3] Wire `guard-file-hooks.sh` into `.claude/settings.json`
 - [x] T032 [US3] **FIRES**: create `scripts/test-guard-file-hooks.sh` asserting an edit to each guard file is intercepted
 - [x] T033 [US3] **STAYS QUIET**: assert in `scripts/test-guard-file-hooks.sh` that an edit to `.claude/agents/*.md` is NOT intercepted - removed from the guard list at fidelity round 1 as unrequested, and because it would obstruct the project's own procedure for improving review subagents
-- [ ] T034 [US3] **THE DECORATION CHECK (SC-003)**: in a scratch copy, delete each guard in turn and confirm at least one test goes red naming it. A guard whose test still passes when the guard is gone is decoration, and this task is the only thing that distinguishes the two. Record the result per guard in this file
+- [x] T034 [US3] **THE DECORATION CHECK (SC-003)**: in a scratch copy, delete each guard in turn and confirm at least one test goes red naming it. A guard whose test still passes when the guard is gone is decoration, and this task is the only thing that distinguishes the two. Record the result per guard in this file
 
 ## Phase 6: Polish & Cross-Cutting
 
@@ -116,6 +116,29 @@ observed. US2 makes it safe to live with, and US3 closes the tiers above those o
 
 **Scope limit, unchanged**: a working reference hamlet at a single seed. This feature touches no map
 geometry and fixes no failing seed.
+
+## T034 result: the decoration check (SC-003)
+
+Each guard removed in a scratch copy; each must turn at least one test red.
+
+| guard | mutation | result |
+|---|---|---|
+| `scripts/make-only-hooks.sh` | every match pattern disabled | **15 of 26 failed** |
+| `scripts/guard-file-hooks.sh` | the guard-file matcher disabled | **7 of 17 failed** |
+| `l7r/diagram/_invocation.py` | `_compute` forced to accept everything | **7 of 25 failed** |
+
+All three have teeth.
+
+**AND THE CHECK ITSELF NEARLY FAILED THE SAME WAY IT EXISTS TO CATCH.** The first attempt at the
+`guard-file-hooks.sh` mutation used a `sed` whose pattern did not match (one space versus two before
+`;;`), so the file was unmodified and the run reported **17 passed, 0 failed** - which reads exactly
+like "this guard is decoration". A `diff` against the original is what caught it.
+
+So the rule this task teaches is one level up from the task: **a mutation test must assert that its
+mutation applied.** Every mutation above now goes through a Python replace with
+`assert s.count(old) == 1` and aborts rather than reporting a result it cannot stand behind. A
+silently-unapplied mutation produces a false PASS on the guard and a false FAIL on the check, and
+both readings are wrong in the direction that costs you the guard.
 
 ## Baseline
 
