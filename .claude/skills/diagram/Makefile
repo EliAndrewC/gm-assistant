@@ -104,7 +104,12 @@ done:
 # fail; you are bisecting and need the suite's verdict on a knowingly-red tree; a check that only
 # fires on a non-reference map is the subject. "I want to see everything" is not one.
 #
-# Non-interactive callers (CI, a hook) must pass REF_WHY="..." - there is no silent bypass.
+# REF_WHY="..." supplies the reason without the prompt - but ONLY with a terminal attached. A
+# non-interactive FULL run with REF_WHY set is REFUSED outright (see bypass-audit), because that
+# combination is precisely how feature 126 ran the full gate three times against a standing
+# instruction to run only the reference settlement: the prompt defaults to NO, and a backgrounded
+# run cannot be asked to reconsider. Every one of those bypasses was logged, and none was stopped -
+# which is the whole lesson. An audit trail records a decision; it does not make one.
 # ---- THE MIDDLE TIER, AND THE ONE THAT STOPS AT THE FIRST FAILURE ---------------------------
 #
 # `make quick` is what an iteration loop uses once the reference map is clean: lint, types, and
@@ -123,6 +128,17 @@ quick:
 
 bypass-audit:
 	@why="$(REF_WHY)"; \
+	if [ -n "$$why" ] && [ ! -t 0 ]; then \
+	  printf "\n\033[1mREFUSED: a FULL run with REF_WHY set, with nothing attached to answer for it.\033[0m\n\n"; \
+	  printf "The prompt below exists because its default answer is NO. Passing REF_WHY on the\n"; \
+	  printf "command line skips it, and a backgrounded run cannot be asked to reconsider - which is\n"; \
+	  printf "exactly how feature 126 ran the full gate THREE times against a standing instruction to\n"; \
+	  printf "run only the reference settlement. Every bypass was logged and none was stopped.\n\n"; \
+	  printf "  \033[1mmake reference\033[0m   Inashiro seed 4 alone, ~60 s - almost always what you want\n"; \
+	  printf "  \033[1mmake done\033[0m        reference + lint/types + 3,420 tests, ~5.5 min (NOT the quick one)\n\n"; \
+	  printf "If you truly need the FULL set, run it in the FOREGROUND and answer the prompt.\n\n"; \
+	  exit 1; \
+	fi; \
 	if [ -z "$$why" ]; then \
 	  printf '\n\033[1mAbout to run the FULL test set.\033[0m\n\n'; \
 	  printf 'The reference settlement rebuilds in ~60 s. The full set additionally rolls every\n'; \
