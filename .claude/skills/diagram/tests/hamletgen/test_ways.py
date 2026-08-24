@@ -8,7 +8,7 @@ import math
 import pytest
 
 from l7r.diagram import hamletgen as hg
-from l7r.diagram.hamletgen.ways import _margin_frame, _reach
+from l7r.diagram.hamletgen.ways import _crosses_fabric, _fabric_hits, _margin_frame, _reach, _route
 from l7r.diagram.settlement import Settlement, point_in_poly
 
 from ._builders import SQUARE, a_plan
@@ -625,3 +625,38 @@ def test_an_arm_clipped_down_to_a_stub_is_debris_and_is_not_drawn() -> None:
 
     assert hg.ways._lay_skeleton(s, plan, flat, [0.0, 20.0], [0.0, 10.0]) == []  # type: ignore[arg-type]
     assert not s.M.get("lanes"), "a half-pixel arm must not be inked"
+
+
+def test_crosses_fabric_sees_a_steading_beside_the_MIDDLE_of_a_long_run() -> None:
+    """The half of the detector feature 128 shipped without, and the shape it costs.
+
+    A connector crosses a hamlet in three or four points, so its segments run hundreds of pixels; the
+    original test measured `edge_dist` at the run's own VERTICES and asked `segments_cross`, which
+    between them cannot see a farmstead standing beside a segment's midpoint without straddling it.
+    Mizuguchi shipped its connector 0.2 px from a garden while this returned False at a gap of 0.5.
+
+    The run below never enters the box and neither endpoint is near it, which is exactly the case."""
+    run = [(0.0, 0.0), (1000.0, 0.0)]
+    box = [(490.0, 10.0), (510.0, 10.0), (510.0, 30.0), (490.0, 30.0)]
+    assert _crosses_fabric(run, [box], 16.0) is True
+    assert _crosses_fabric(run, [box], 4.0) is False  # 10 px away: outside a 4 px gap, honestly
+
+
+def test_fabric_hits_counts_steadings_rather_than_answering_yes_or_no() -> None:
+    """A sweep with no clean bearing still has to rank, so the score is a COUNT, not a boolean."""
+    run = [(0.0, 0.0), (1000.0, 0.0)]
+    near_a = [(190.0, 4.0), (210.0, 4.0), (210.0, 24.0), (190.0, 24.0)]
+    near_b = [(690.0, 4.0), (710.0, 4.0), (710.0, 24.0), (690.0, 24.0)]
+    far = [(490.0, 400.0), (510.0, 400.0), (510.0, 420.0), (490.0, 420.0)]
+    assert _fabric_hits(run, [near_a, near_b, far], 16.0) == 2
+    assert _fabric_hits(run, [far], 16.0) == 0
+    assert _fabric_hits(run, (), 16.0) == 0
+
+
+def test_the_router_declines_a_span_too_wide_for_its_lattice() -> None:
+    """A connector's span is the whole canvas, and the router says so by returning nothing.
+
+    This is pinned rather than left to a `no cover` pragma because the OLD pragma asserted the
+    opposite - that the pad was bounded so the grid could never overflow - and a reader who believed
+    it would look for the reason a connector is not detoured in the wrong place entirely."""
+    assert _route((0.0, 0.0), (4000.0, 0.0), [], [], []) == []

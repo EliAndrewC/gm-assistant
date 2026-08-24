@@ -550,7 +550,7 @@ def _seg_0496__houses_clear_of_lanes(*, check: Any = _UNBOUND, lane_hits: Any = 
     check(
         "houses_clear_of_lanes",
         not lane_hits,
-        f"farmhouse(s) sit ON a village lane at {lane_hits[:5]} - a lane is a no-build corridor; houses FRONT it, never overlap the tread (lay lanes BEFORE the houses so they pack around it)",
+        f"farmhouse(s) sit ON a village lane at {lane_hits[:5]} - a lane is a no-build corridor; houses FRONT it, never overlap the tread (the houses are seated FIRST now, so the fix is at the way: route it round the standing steadings)",
     )
     return _kept(locals(), ())
 

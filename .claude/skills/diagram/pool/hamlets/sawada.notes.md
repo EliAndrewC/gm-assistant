@@ -401,3 +401,11 @@ the reach, so no house passes by inches and none gets a path drawn to cure a rou
 Where the regular web still cannot reach a steading, that house gets what an outlying farmstead
 really has: a footpath of its own, routed round the neighboring plots rather than ruled at them,
 stopping at its first contact with the network, and planked where it crosses a ditch.
+
+## 2026-08-24, feature 128: re-rolled under the new stage order, verdict unchanged
+
+The lanes now go down after the houses (`stage_seat` -> `stage_homesteads` -> `stage_track`), and the
+connector's bearing sweep ranks candidate bearings against the standing steadings. This map's
+geometry moved with the reorder and it gates CLEAN, as it did before. Recorded so the manifest change
+in this commit is not an unexplained diff - the substantive write-up is on
+[`mizuguchi.notes.md`](mizuguchi.notes.md), which is the map that failed and forced the fix.

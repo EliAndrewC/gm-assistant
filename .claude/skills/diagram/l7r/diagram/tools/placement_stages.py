@@ -227,6 +227,19 @@ def build_page(out_dir: str, width: int, spec: HamletSpec) -> str:
         rows.append((i, stage.__name__, title, why, img, iw, ih, decided))
         print(f"  {i:>2}. {stage.__name__:<22} -> {img or f'(no ink - {len(decided)} values decided)'}")
 
+    # PRUNE EVERY PLATE THIS RUN DID NOT WRITE. The per-stage removal above only catches a stage that
+    # kept its index and stopped drawing; it cannot see a RENAME or a RENUMBER, which is what actually
+    # happens when `STAGES` is reordered. Feature 128 split `stage_ways` into `stage_seat` and
+    # `stage_track` and moved the houses ahead of both, and every plate from 06 down shifted by one -
+    # leaving seven orphans in a COMMITTED directory, `04-stage_ways.png` among them. An orphan here is
+    # worse than clutter: the page is how the GM reads the build order, and a leftover plate showing
+    # lanes before houses is a picture of the very thing the feature removed.
+    keep = {r[4] for r in rows if r[4]} | {"hamlet-placement.html"}
+    for name in sorted(os.listdir(out_dir)):
+        if name not in keep and name.endswith(".png"):
+            os.remove(os.path.join(out_dir, name))
+            print(f"  pruned stale plate {name}")
+
     parts = [
         "<title>Hamlet placement order</title>",
         "<style>",
@@ -276,7 +289,7 @@ def build_page(out_dir: str, width: int, spec: HamletSpec) -> str:
         else:
             parts += [
                 '<div class="noink">',
-                '<div class="cap">This stage places no ink &mdash; it decides these</div>',
+                '<div class="cap">This stage places no ink - it decides these</div>',
                 '<div class="kv">',
                 *(f'<div><span class="k">{escape(k)}</span><span class="v">{escape(v)}</span></div>' for k, v in decided),
                 "</div></div>",
@@ -295,7 +308,7 @@ def build_page(out_dir: str, width: int, spec: HamletSpec) -> str:
         "water exists at all.</p>",
         "<p>Two ways to manufacture the plate were priced and declined. Splitting "
         "<code>stage_field</code> into a channels pass and a plots pass would change "
-        "<code>STAGES</code>, which is the generator's design rather than a convenience &mdash; "
+        "<code>STAGES</code>, which is the generator's design rather than a convenience - "
         "reordering it to suit a documentation page is the tail wagging the dog. Having this tool "
         "draw the channels itself would make a diagnostic that re-derives engine internals, which "
         "<code>tools/CLAUDE.md</code> forbids for a measured reason: such a tool drifts from the "

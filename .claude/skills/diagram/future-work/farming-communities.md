@@ -7,6 +7,50 @@ tax-free plots, not a different kind of place, and its defects are the same defe
 This is where hamlet work goes - the paddy fabric, the lane web, homesteads and their groves, wells
 and byres, woodland and windbreaks, the notice board, and the cohort seeds that surface all of it.
 
+## OPEN 2026-08-24, MEASURED BY REVIEW: the web stops exactly one clearance short of the lane it should join
+
+Found by `settlement-review` on Inashiro after feature 128. **Pre-existing in kind, measurably worse
+after the reorder**, and deferred here rather than fixed because it is a placer change of its own
+size and the reviewer is explicit that no half of it works alone.
+
+**THE MEASUREMENT**: four of Inashiro's eight non-connector lanes touch nothing. Their
+nearest-neighbor distances are **28.5, 28.1, 28.1 and 28.5 ft** against `WEB_CLEARANCE = 28.0`
+(`hamletgen/consts.py:104`). At 1 ft/px with a 3 px tread those gaps are plainly visible - the web
+reads as loose dashes lying near each other in a dooryard, meeting nothing.
+
+**THE MECHANISM**: `WEB_CLEARANCE` is what each web lane REGISTERS as its corridor when drawn, so
+every later run routes 28 ft clear of every earlier one - including the one it is trying to join. A
+link that should T into a lane stops one clearance short, every time, by construction.
+
+**WHY NOTHING CAUGHT IT**: `_LANE_JOIN = 40.0` in `segments_07c` sits ABOVE the very clearance that
+guarantees the gap, so `farmhouses_reach_a_way` welds all nine lanes into one "component" the ink does
+not contain. The check believes a network the reader cannot see.
+
+**DELTA ATTRIBUTION, honestly**: pre-128 had 3 such islands (28.4 / 28.4 / 28.7 ft); now 4. Internal
+lane length fell 980 -> 774 ft, lanes 10 -> 9, median house-to-lane 39 -> 49 ft. With the houses
+standing first the web has less continuous room and breaks up more. **The reorder did not create this
+and did make it worse.**
+
+**THE SKETCH, and both halves are required**: exempt the TERMINAL segment of a link from the clearance
+of the way it is joining - a junction is contact, not a violation - and then drop `_LANE_JOIN` below
+`WEB_CLEARANCE` so the check can ever see a gap again. Fixing only the constant turns four maps red
+without connecting anything.
+
+## QUESTIONABLE 2026-08-24: is a detached byre on the inner commons or the outer fringe? (a knob, probably)
+
+`byre_form` rolls `detached_commons`, grounded in a shared or hired team standing "where the borrowing
+household can reach it". On Inashiro two of three landed OUTSIDE the cluster - one 109 ft from the
+nearest house among the shelter-belt canopy, one 89 ft south of the last house alone in grass.
+
+The reviewer's read, which is a research question rather than a GM ruling: both bands are plausibly
+attested - fodder and litter come from the fringe, the borrowing households are inside - which under
+Principle XII makes it a **placement-band knob** (inner commons vs fringe, rolled per settlement)
+rather than a defect. Today it is neither: all three byres are placed by one maximin spread with no
+opinion about which band it is in.
+
+**Do the research pass before implementing.** If the record is decisive, implement what it says; if
+it supports both forms, that is the knob.
+
 ## OPEN 2026-08-24, WITH THE MEASUREMENT: the field SPUR can be forced onto a house on tight clusters
 
 Feature 128 moved every lane after the farmhouses. The reference hamlet is clean and so is the
