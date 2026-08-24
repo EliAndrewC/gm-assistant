@@ -179,6 +179,15 @@ moment the map's regen + gate is green, BEFORE your own visual pass. **A finding
 is still yours to fix** (constitution Principle XIV) - a reviewer pointed at a delta reliably turns
 up unrelated defects, and that is it working.
 
+**Build what was asked** (constitution Principle XVI, NON-NEGOTIABLE) - and in this engine the
+temptation is specific: almost every ordering or placement rule has a case where an exception looks
+justified, because the geometry really is full of special cases. It is still not yours to approve.
+Feature 126 was asked for as "farmhouses before lanes" and specified as farmhouses before lanes
+EXCEPT the connector and the field spur; both of those register no-build corridors, so both kept
+constraining the placement the feature existed to free. An exception goes to an independent Opus 5
+subagent with the GM's request verbatim, and a finished `spec.md` gets the same treatment before
+implementation starts. Three rounds, then escalate.
+
 **Fix defects where you find them** (constitution Principle XIV, NON-NEGOTIABLE) - this engine is
 where the rule bites hardest, because its reviewers and diagnostics surface defects constantly and
 almost none of them belong to the feature in hand. Fix them in the work at hand; defer ONLY an

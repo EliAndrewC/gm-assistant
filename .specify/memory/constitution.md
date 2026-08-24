@@ -1,7 +1,21 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.12.0 → 1.12.1
+Version change: 1.12.1 → 1.13.0
+
+Version 1.13.0 (amended 2026-08-24): adds Principle XVI (Build What Was Asked;
+Fidelity Is Not Self-Adjudicated). The default is the literal request, exceptions
+are presumed wrong, and neither an exception nor a finished specification is
+graded by the session that produced it - both go to an independent Opus 5
+subagent, the spec reviewer receiving the GM's request VERBATIM rather than the
+plan. Three review rounds, then escalate to the GM. New principle: MINOR.
+Motivating case: feature 126, asked for as "farmhouses before lanes", was
+specified as farmhouses before lanes EXCEPT the connector and the field spur -
+an unrequested carve-out written by the implementing session and then implemented
+faithfully, so the feature under-delivered while every instruction was followed.
+This extends Principle I's author-is-not-reviewer rule from outputs to the
+specification itself, which was the last artifact a session both wrote and graded.
+
 
 Version 1.12.1 (amended 2026-08-23): replaces the two-command reference-first
 workflow with ONE self-scoping command. `make maps` reads how the last run went -
@@ -1124,6 +1138,62 @@ demonstrated in writing.
 continue until the objective is met or shown impossible. Reporting progress
 is welcome at any point; reporting progress is not the same as stopping.
 
+### XVI. Build What Was Asked; Fidelity Is Not Self-Adjudicated (NON-NEGOTIABLE)
+
+**The default is the literal thing.** When the GM asks for X, build X - not "X
+except where Y". Being able to construct a persuasive argument for an exception is
+not evidence that the exception is wanted; it is the ordinary result of having
+thought about the problem, and such an argument will be available every time.
+
+**An exception is never approved by the session that wants it.** If you believe one
+is genuinely necessary, it goes to an independent subagent (Opus 5), whose question
+is exactly: *is this a real exception, or is this a session carving out a case
+contrary to what it was told?* Hand it the GM's request VERBATIM. If it agrees the
+exception is valid, proceed - and raise it with the GM AFTER the implementation
+works, not before, because the GM's preferred mode is to start long work and return
+to something finished. If it disagrees, build the literal thing.
+
+**Every spec-kit specification is reviewed against the GM's own words before
+implementation begins.** The reviewer is an independent subagent and its input is
+the GM's REQUEST AS WRITTEN - not the plan, not a paraphrase. A spec checked against
+its own plan is being tested for self-consistency, which a wrong spec passes
+comfortably. The question is: does this specification implement what was actually
+asked, and does it add anything that was not?
+
+**Three rounds, then escalate.** Adjust, re-review, at most three times. If the
+third review still returns changes, STOP and put it to the GM. Three failures to
+express a request as a specification is a persistent misunderstanding, and a fourth
+attempt by the same session will not locate it.
+
+**Why this exists** (GM 2026-08-24). Feature 126 was "put the farmhouses down before
+the lanes". The specification that came out of it said farmhouses before lanes
+EXCEPT the connector and the field spur - a carve-out the GM never asked for,
+written by the implementing session on a provenance argument, and placed at FR-003
+where only a full reading would find it. The implementation then followed its spec
+faithfully. Both of those ways register no-build corridors, so both went on
+constraining precisely the placement the feature existed to free: the feature
+under-delivered, and no instruction was ever disobeyed. Note also that the
+provenance argument was only half-sound - a road to the county town can predate a
+hamlet, but the path from a hamlet to its own paddy cannot, and nothing in the
+process was positioned to notice.
+
+**This is the QA separation every engineering organization runs on**, and this
+constitution already believes it. Principle I holds that the author of a design is
+not a reliable reviewer of it, which is why `frontend-review`, `building-review`,
+`settlement-review` and `backstory-review` exist. Every one of those guards an
+OUTPUT. This extends the same rule one step earlier, to the specification - the one
+artifact still being written and graded by the same session.
+
+**Interaction with XV (Keep Going).** This is not licence to stop. The reviews run
+inside the work, the session keeps building while it acts on them, and escalation
+happens only after the third round. Asking the GM to choose among options remains
+the thing XV forbids.
+
+**Interaction with the stop-and-ask calculus.** An exception is not ambiguity. Where
+a request is genuinely unclear, the older calculus applies. Where a request is clear
+and you want to depart from it, this principle applies, and the answer is to build
+what was asked.
+
 ## Technical Standards
 
 **Languages and runtimes**
@@ -1265,4 +1335,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.12.1 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-23
+**Version**: 1.13.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-24
