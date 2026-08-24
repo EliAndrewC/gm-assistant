@@ -63,6 +63,20 @@ check "an unrelated python one-liner"          ok "python3 -c 'print(1)'"
 check "make running pytest internally"         ok "make test  # runs pytest under the hood"
 
 echo
+echo "2b. TIER 5 VIA BASH - a guard file written by shell rather than the Edit tool"
+check "heredoc python writing the Makefile"   blocked "python3 - <<PY
+import pathlib; pathlib.Path('.claude/skills/diagram/Makefile').write_text(x)
+PY"
+check "sed -i on a hook script"               blocked "sed -i 's/foo/bar/' scripts/gate-hooks.sh"
+check "redirect over settings.json"           blocked "cat > .claude/settings.json"
+check "append to a hook script"               blocked "echo x >> scripts/no-poll-hooks.sh"
+check "the escape, with a reason"             ok      "sed -i 's/a/b/' scripts/gate-hooks.sh  # GUARD_EDIT_OK: it fired on correct work"
+check "READING a guard file is not writing"   ok      "grep -n done .claude/skills/diagram/Makefile"
+check "writing a NON-guard file"              ok      "python3 - <<PY
+import pathlib; pathlib.Path('notes.md').write_text(x)
+PY"
+
+echo
 echo "3. THE REFUSAL IS USEFUL (FR-006) - it must name the target, not just say no"
 names_a_target "a blocked cohort names a target"  "python3 -m l7r.diagram.tools.cohort_audit"
 names_a_target "a blocked pytest names a target"  "pytest -q"

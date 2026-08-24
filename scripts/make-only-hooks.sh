@@ -57,6 +57,17 @@ except Exception: print("")')
 
 [ -z "$CMD" ] && exit 0
 
+# THE ESCAPE IS CHECKED FIRST, AND THAT ORDERING IS LOAD-BEARING (found the hard way, 2026-08-24).
+#
+# It used to be checked only inside the guard-file branch, several tests down. So when this hook
+# false-positived - and it did, twice in one hour, once on a `grep` and once on a `git commit` whose
+# MESSAGE quoted the very pattern being matched - there was no way to repair it: every command
+# carrying the fix necessarily contained the offending text, and the hook refused them all.
+#
+# A guard that cannot be fixed through the channel it guards is not strict, it is stuck. The escape
+# belongs before every test, and using it is recorded in the command text where the GM reads it.
+case "$CMD" in *GUARD_EDIT_OK*) exit 0 ;; esac
+
 block() { # reason, then the make target to use instead
   printf 'BLOCKED: %s\n\n' "$1" >&2
   printf 'Run this instead:  %s\n\n' "$2" >&2
@@ -65,7 +76,7 @@ Every operation in this project goes through a make target, so the expensive one
 the cheap one would do first. The scale, so the choice is informed rather than habitual:
 
     make reference    ~26 s    one seed of the reference hamlet - answers most questions
-    make quick        seconds  lint, types, and every test that does not roll a map
+    make quick        ~4 min   lint, types, and every test that does not roll a map, stopping at the first
     make done         ~5.5 min reference + lint/types + 3,420 tests - NOT the quick check
     make done FULL=1  ~6 min   + every pool map + the seeds 41-44 ratchet; prompts, cancels by default
 
@@ -112,6 +123,32 @@ case "$CMD" in
     case "$CMD" in
       *make\ *) : ;;
       *) block "pytest run directly rather than through make. The suite is ~4.5 minutes and its coverage floors only hold under the make targets that set them up." "make quick   (seconds)  or  make done   (~5.5 min)" ;;
+    esac
+    ;;
+esac
+
+# ---------------------------------------------------------------------------------------------
+# tier 5 VIA BASH: writing a guard file with a shell command rather than the Edit tool.
+#
+# FOUND BY DOING IT, 2026-08-24. `guard-file-hooks.sh` matches PreToolUse on Edit|Write|NotebookEdit,
+# so it never sees `python3 - <<PY ... write_text(...)`, `sed -i`, or `cat > file`. Every guard-file
+# edit made while BUILDING this feature went through a bash heredoc, and layer 3 stayed silent for
+# all of them. A guard on one tool out of two is not a guard - it is the "ungated sibling command"
+# shape from tier 1, one level up, and this feature exists because that shape keeps working.
+#
+# Same escape as layer 3: GUARD_EDIT_OK in the command with a reason.
+# ---------------------------------------------------------------------------------------------
+case "$CMD" in
+  *GUARD_EDIT_OK*) : ;;
+  *)
+    case "$CMD" in
+      *Makefile*|*-hooks.sh*|*settings.json*)
+        case "$CMD" in
+          *">"*|*"sed -i"*|*write_text*|*"tee "*|*">>"*)
+            block "a GUARD FILE written from a shell command. Layer 3 only sees the Edit and Write tools, so this route slips past it - which makes it the same ungated-sibling shape this whole feature exists to close." "the Edit tool, or add GUARD_EDIT_OK with a reason"
+            ;;
+        esac
+        ;;
     esac
     ;;
 esac

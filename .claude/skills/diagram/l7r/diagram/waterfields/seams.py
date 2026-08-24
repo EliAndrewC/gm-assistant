@@ -496,7 +496,7 @@ def _seam_cuts(lo: float, hi: float, want: float, marks: list[float]) -> list[fl
     neighbours far enough to move the fan's envelope, and Kashikawa's dry hem - which tiles against
     that envelope - shifts onto a footbridge and trips `features_do_not_overlap`. Steps across the
     four scripted hamlets go 2/2/9/3 at 0.35 and 1/2/8/1 at 0.40, so the last four cost a regression
-    in another subsystem and are not taken (see `future-work.md`). Where the neighbours break nowhere near the right place the grid falls back to the even
+    in another subsystem and are not taken (see `future-work/`). Where the neighbours break nowhere near the right place the grid falls back to the even
     spacing it always used, which is the honest answer: there is no seam there to line up with."""
     span = hi - lo
     if span <= 1.5 * want or want <= 0.0:

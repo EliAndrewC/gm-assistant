@@ -179,7 +179,7 @@ MIN_WEB_GAP = 2.0 * WEB_FABRIC_GAP + 4.0  # 18 ft: both neighbors' clearance, pl
 #
 # Grounding: research/homesteads.md, "Is every farmhouse reached by a lane, and in what FORM?" - the
 # record is decisive that a house in a nucleated cluster IS reached by a way. The previous 90 ft in
-# `lanes_reach_something` was flagged in future-work.md as a number nobody had justified; this one is
+# `lanes_reach_something` was flagged in future-work/ as a number nobody had justified; this one is
 # derived from a researched constant instead of chosen to make today's maps pass.
 WEB_REACH_FT = 100.0  # == BUNDLE_PITCH; asserted in tests rather than imported, since BUNDLE_PITCH is defined below
 

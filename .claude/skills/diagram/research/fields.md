@@ -130,7 +130,7 @@ rule's own thresholds across the four scripted hamlets, 26/37/20/24 before):
 Together: **0 / 1 / 5 / 1 steps**, and - the number that answers the report - **no plot ring on any
 of the four carries more than one step**, against 6 / 9 / 4 / 7 rings that did. The staircase is
 gone; what is left is single, small, isolated corners. `tools/jogs.py` reports them on demand and
-`future-work.md` carries the residue.
+[`future-work/farming-communities.md`](../future-work/farming-communities.md) carries the residue.
 
 *Disclosed departures.* (1) The rule is DIRECTED - it compares headings over the full circle, not
 modulo 180 degrees - because a plain thin rectangle is two parallel runs a short link apart, and
@@ -143,7 +143,8 @@ exactly the honest odd shape this file describes.
 
 ### A basin never tapers to a point - the fan toe truncates
 
-*GM ruling 2026-08-17, closing the fan-toe SUNBURST that `future-work.md` had carried as an open
+*GM ruling 2026-08-17, closing the fan-toe SUNBURST that the backlog (now
+[`future-work/closed.md`](../future-work/closed.md)) had carried as an open
 question. The question was posed honestly - "a real cascade fan does narrow to its outfall, and the
 honest question is whether this narrows too tidily" - and the GM's standard was simply realism.*
 

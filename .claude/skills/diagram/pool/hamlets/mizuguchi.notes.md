@@ -22,7 +22,7 @@ outcome, because concrete claims here went stale twice (the 2026-08-15 review ca
 **Known open**: shares Inashiro's two - the bare comb floor on the fan's shoulders (inherited from
 `build_comb`), and a windward quarter derived from the slope rather than declared regionally. Also:
 a hamlet NAMED for its sluice draws no sluice glyph at the intake (the brook necks into the
-head-race) - a pipeline note, logged in `future-work.md`.
+head-race) - a pipeline note, logged in `future-work/`.
 
 - 2026-08-15 (supply-bank hem re-roll): bunds hem onto the supply channels' banks; the map
   re-rolled downstream and gained a second well. `settlement-review` (DELTA) passed the
@@ -282,7 +282,7 @@ this map is where the cost showed: it deleted 40 clumps to remove 3 invisible on
 **Still open here**, both raised by review and neither reachable by the area floor: the dart-shaped
 ring at (1021-1084, 968-1012), 0.69 of a cell, which wants a tip-angle companion rule rather than the
 declined four-sides rule; and the three woodland commons sitting on an exact (+270, -270) lattice,
-which read as three stamps of one wood. Both are in `future-work.md`.
+which read as three stamps of one wood. Both are in `future-work/`.
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
 outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
@@ -293,7 +293,7 @@ outside the settlement". The GM's call was to take that fix as its OWN piece of 
 the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
 are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
 Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
-its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work/`).
 
 ### 2026-08-18 - the windbreak frame fix, corrected: CLIPPING IS THE DOCTRINE
 

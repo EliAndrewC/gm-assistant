@@ -155,7 +155,7 @@ the provenance at all.** A probe that derives its number and its explanation sep
 eventually pair a true number with a false explanation, and that is worse than no probe - it is a
 wrong answer wearing the costume of a measurement. (Cost here: two wrong conclusions, one of which
 became a documented "genuine geometric conflict" that did not exist. The actual causes were a unit
-error and a measure-a-different-ring mismatch - see `future-work.md`, "cohort seeds 9 and 11".)
+error and a measure-a-different-ring mismatch - see `future-work/`, "cohort seeds 9 and 11".)
 
 ## A dirty tracked manifest with no code change behind it: suspect the MEASUREMENT, not the generator
 

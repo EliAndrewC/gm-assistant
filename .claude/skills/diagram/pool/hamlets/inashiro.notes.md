@@ -78,7 +78,7 @@ pipeline's, and it is the same order a person follows:
 
 - 2026-08-15 (bead recolor + water-honesty review): known residue - the pocket pond at (2144, 1724)
   has the margin-drain stroke and some hinterland tufts painting over its fill. Logged in
-  future-work.md ("Pocket ponds carry ink-on-water of their own"); not part of the bead delta.
+  future-work/ ("Pocket ponds carry ink-on-water of their own"); not part of the bead delta.
 
 - 2026-08-16 (the fork draws both arms): the GM noticed the head-race turns southeast along the
   northeast margin but never SPLITS toward the west side the way other maps' channels do, and asked
@@ -176,7 +176,7 @@ raggedness preserved, Mizuguchi's re-seated cluster coherent (wells, lanes, kosa
   pixel; three dry woodland parcels (250/250/160 ft) on the merged roll (the count is roll-derived and has moved since - see the later entries); the pocket pond re-seated to (2092, 1671)
   with no ink-on-water residue (the 2026-08-15 logged item cleared with the re-roll). Review log:
   full DELTA caught the two marsh-seated parcels (one 100% wet with zero crowns) that drove the
-  marsh keep-out; follow-up pass on the re-seat. Reviewer note logged in future-work.md: stand
+  marsh keep-out; follow-up pass on the re-seat. Reviewer note logged in future-work/: stand
   crowns are ink-only, so no manifest check can count a coppice canopy.
 
 - 2026-08-16 (second known-opens round - flooded-sliver demotion, well/check alignment,
@@ -580,7 +580,7 @@ CAUGHT two things this session had not: (a) a **pre-existing self-intersecting c
 carve/hem path still emits and `dedup_ring`'s 1.0 ft eps does not collapse at 4.5 ft; (b) the farm
 shed drift above. It also noted the paint-order lap halved again (4,441 -> 2,660 sq ft) as a side
 effect. The bow-tie is logged, not fixed - it predates this change and belongs with the carve work
-that cohort seeds 9 and 11 also point at (`future-work.md`).
+that cohort seeds 9 and 11 also point at (`future-work/`).
 
 ### 2026-08-17 addendum - the cohort regression closed, and it was not a conflict
 
@@ -671,7 +671,7 @@ ft end while converging at 18.5 deg, marginally MORE sharply than the demoted #4
 end); the only thing separating them is how deep the toe cut. That is the intended reading:
 `research/fields.md` says a basin never tapers to a point and the fan toe TRUNCATES, and 10.4 ft less
 two aze still leaves ~7.4 ft of standing water - a workable basin, which is what it reads as at fit
-zoom. Revisit only if a roll produces a 5-8 ft end that reads as a point; see future-work.md for the
+zoom. Revisit only if a roll produces a 5-8 ft end that reads as a point; see future-work/ for the
 sketch, since the convergence measure now exists and switching is a one-line change.
 
 ## 2026-08-18 - where the ox sleeps, and a well objective that measured the wrong houses
@@ -829,7 +829,7 @@ outside the settlement". The GM's call was to take that fix as its OWN piece of 
 the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
 are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
 Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
-its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work/`).
 
 ### The second well moved 48 px, and the frame reason does NOT apply here
 
@@ -865,7 +865,7 @@ house y=868.8) and the south group (first house y=1215.6): a seat in that empty 
 i.e. interior, identically to a courtyard seat. Harmless here because the `near[0] <= ~105 px` rung
 binds first, and deliberately consistent with the rescue pass's own test - but on a genuinely
 two-lobed cluster the tie-break would prefer inter-lobe emptiness over a courtyard just outside the
-box. Also in `future-work.md`.
+box. Also in `future-work/`.
 
 ### 2026-08-18 - the windbreak frame fix, corrected: CLIPPING IS THE DOCTRINE
 
@@ -959,13 +959,13 @@ is where NEITHER adjacent row breaks, so every offcut landed mid-basin on both s
 And the number that answers the report: **no plot ring on any of the four carries more than one
 step**, against 6 / 9 / 4 / 7 rings that did. The staircase is gone. What is left is single, small,
 isolated corners - `python3 -m l7r.diagram.tools.jogs pool/hamlets/*.json` lists them and
-[`future-work.md`](../../future-work.md) carries the residue with its refusal reasons.
+[`future-work/`](../../future-work/) carries the residue with its refusal reasons.
 
 **Two levers that did NOT work, both implemented and measured, so they are not pulled again**: a
 nearest-basin partition of each scrap (`_share` - 23 -> 7 on this map, but it strands ground the weld
 ladder cannot place and broke `paddy_plot_seams_shared` on three maps), and dropping a step's
 vertices from every ring that carries them (not partition-preserving: rings 460 and 592 lost 400 px2
-and gained 259, the difference being bare floor). Both are written up in `future-work.md`.
+and gained 259, the difference being bare floor). Both are written up in `future-work/`.
 
 **RIPPLE, measured against main's tip (47727a08) rather than against an older HEAD.** Rebuilding the
 paddy fabric moves almost nothing else on this sheet: byres, wells, lanes, bridges, gardens,

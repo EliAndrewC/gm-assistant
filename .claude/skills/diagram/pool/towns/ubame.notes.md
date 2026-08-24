@@ -249,7 +249,7 @@ and the magistracy gate axis, which became "Standing it in plain sight" above ra
 **Two findings were referred to the ENGINE rather than fixed here**, because both are `s.kiln`
 defects that this map merely became the first to exhibit, and fixing them under a one-off content
 edit would put a shared glyph change on four other sheets' account. Both are logged in
-[`../../future-work.md`](../../future-work.md):
+[`../../future-work/`](../../future-work/):
 
 - the kiln's **smoke wisp is drawn in the glyph's local frame**, so on this sheet it trails NNW into
   a declared NW wind - the siting is right and the ink contradicts it;

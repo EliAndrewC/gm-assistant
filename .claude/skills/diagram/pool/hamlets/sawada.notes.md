@@ -168,7 +168,7 @@ promises the nucleated garden goes on "an ADAPTIVE sunny side (chosen by the pla
 shading), so it packs into a real nucleus and the gardens VARY instead of all sitting east between
 houses." The adaptive choice is choosing the same side nearly every time, so all 19 homesteads read
 as one stamp repeated. That is a genuine gap between the code's stated intent and its behavior, and
-it is logged in `future-work.md` rather than ruled here.
+it is logged in `future-work/` rather than ruled here.
 
 ## 2026-08-18 - where the ox sleeps, and a well objective that measured the wrong houses
 
@@ -326,7 +326,7 @@ median **118 -> 91 ft**.
 
 **Still open**, raised by review and left with its measurement: the woodland commons went 2 -> 1
 parcels this roll (a 54-crown stand at (230, 3040) did not re-seat), and the SE pocket's two
-households still sit 240-292 ft from any internal lane. Both in `future-work.md`.
+households still sit 240-292 ft from any internal lane. Both in `future-work/`.
 **The regression it caused, and how it was cleared.** The rule shifts the drawn plot count, which
 rotates the shared placement stream, and on rolled cohort seed 41 the rotated roll seated a well
 outside the house cloud and tripped `crop_not_held_open_by_one_feature` - seeds 1-48 went 45/48 ->
@@ -337,7 +337,7 @@ outside the settlement". The GM's call was to take that fix as its OWN piece of 
 the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
 are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
 Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
-its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work/`).
 
 ### 2026-08-18 - the windbreak frame fix, corrected: CLIPPING IS THE DOCTRINE
 

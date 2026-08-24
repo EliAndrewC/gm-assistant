@@ -48,7 +48,7 @@ beyond the frame.
   (measured from the manifest), and `settlement_dwellings_watered` counts surface water within
   ~760 ft as watering, so a well there would be redundant infrastructure beside a living stream.
   The minimax well objective still counts those houses (a known, harmless inefficiency - logged
-  in future-work.md); their real water is the stream, the period-correct arrangement.
+  in future-work/); their real water is the stream, the period-correct arrangement.
 
 
 - 2026-08-16 (known-opens round - floor trim, woodland re-seat, seeding trace; this map
@@ -284,7 +284,7 @@ outside the settlement". The GM's call was to take that fix as its OWN piece of 
 the floor on top, which is why `e0fb2417` precedes this entry in history. With both in, seeds 1-48
 are back to **45/48 with residue identical to baseline** - seed 41 passes and nothing else moved.
 Cohort seed 62 still fails the same check and always did: its northern lobe has no interior seat in
-its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work.md`).
+its minimax bucket at all, so a tie-break cannot reach it (ledgered in `future-work/`).
 
 ### 2026-08-18 - the windbreak frame fix, corrected: CLIPPING IS THE DOCTRINE
 

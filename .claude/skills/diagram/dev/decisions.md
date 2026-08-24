@@ -102,7 +102,7 @@ non-negotiable ("every house in the nucleated village is accessible via the inte
 narrow lanes and alleys"), while the *form* of that access is genuinely two-shaped - accretive
 alleys off the spine, or a planned back lane behind the plots. So one axis became a requirement and
 the other became a knob. Full record in
-[`../research/homesteads.md`](../research/homesteads.md) and `future-work.md` section C.
+[`../research/homesteads.md`](../research/homesteads.md) and `future-work/` section C.
 
 A corollary worth stating separately, from the same day's ruling on the twin detector: **when a knob
 and the geometry disagree, that is a placer bug, not an axis-selection question.** Keep reading the
