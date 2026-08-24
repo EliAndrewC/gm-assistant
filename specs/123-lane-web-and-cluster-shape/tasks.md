@@ -201,7 +201,10 @@ drawing a lane to cure a rounding error.
 
 ## Not done, and deliberately
 
-- [ ] **US3 / GM ruling B - honor the rolled `cluster_shape`.** Untouched. `stage_homesteads` still
-      seats by rows and frontage and records `meta.cluster_seeding`, which states in writing that
-      the rolled knob went unhonored. This is the PRE-EXISTING state the ruling calls out, not
-      something this feature introduced, and it is a placer change of its own size. Its own feature.
+- [x] **US3 / GM ruling B - honor the rolled `cluster_shape`. DONE 2026-08-19, in its own pass.**
+      Deferred by THIS feature as a placer change of its own size, then fixed three days later by
+      binding the shape where the shape is actually decided: the seat band (`CLUSTER_BAND_ASPECT`,
+      read in `seat_cluster`) and the front row's wrap along it (`CLUSTER_ROW_SPAN`, read in
+      `front_row`). Area is held constant so only the ratio moves. Ticked here on 2026-08-24 during
+      a sweep for items still flagged to the GM - it had sat for five days reading as OPEN, which is
+      how a settled ruling gets put to the GM a second time.
