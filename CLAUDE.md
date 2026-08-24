@@ -187,6 +187,26 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   licence to exceed ordinary authorized work, and persistence means continuing to make PROGRESS, not
   continuing to make CHANGES - when stuck, the next step is a MEASUREMENT, not another speculative
   edit.
+- **DO THE LITERAL THING; AN EXCEPTION IS NOT YOURS TO APPROVE** (GM 2026-08-24,
+  constitution Principle XVI, NON-NEGOTIABLE). Asked for X, build X - never "X except
+  where Y". This is the exact tension the project's own answer to spec-kit creates:
+  sessions are told to answer their own questions rather than stop constantly, and the
+  failure mode of that instruction is a session quietly resolving a question the GM
+  had already answered. **The resolution is that exceptions are presumed wrong.** If
+  one still looks necessary, an independent Opus 5 subagent decides - given the GM's
+  request VERBATIM - and the honest question to put to it is "am I carving out a case
+  contrary to what I was told?". If it agrees, carry on and raise it with the GM once
+  the implementation WORKS; the GM starts long work and comes back to a finished
+  thing, so a mid-flight question costs them the whole span.
+- **A SPEC IS REVIEWED AGAINST THE GM'S OWN WORDS, BY SOMEONE ELSE** (same principle).
+  Before implementation, hand the finished `spec.md` and the GM's request AS WRITTEN to
+  an independent subagent: does this specify what was asked, and does it add anything
+  that was not? Not the plan - a spec graded against its own plan is being checked for
+  self-consistency, which a wrong spec passes. Adjust and re-review up to **three**
+  times; if the third round still returns changes, STOP and escalate, because three
+  failures means a persistent misunderstanding a fourth attempt will not find. The
+  motivating case is feature 126's FR-003, which said "farmhouses before lanes EXCEPT
+  the connector and the field spur" when the GM had said "farmhouses before lanes".
 - **One constitution for the whole repo, deliberately** (GM 2026-08-15): spec-kit's Constitution
   Check reads a single file, and the domain separation the project needs already exists in layers -
   the constitution carries universal principles; each domain's operational doctrine lives in its
