@@ -220,3 +220,51 @@ plan. Nothing above was changed.
 > and then presumably also into our Clone main branches. This should definitely happen at the
 > tooling level, not at the "remember to do it" level. Is that part of your Speckit plan? If not,
 > then we should update the spec kit plan to account for this."
+
+---
+
+## Third request, 2026-08-24 - after the amendment landed
+
+Appended verbatim, later the same day. Nothing above was changed.
+
+> "Now when you say that full is merge only, is that actually what we want? because there is a use
+> case for running full test suites when we iterate. It's just that we've put a lot of work in to
+> make it impossible to have the full tests run if the simple tests fail. So, like, the current
+> behavior, I believe, is that we first run our tests on the reference hamlet, which takes about
+> thirty seconds, and we do not attempt to run more tests than that unless that passes. And there is
+> no way to short circuit that. Is that correct? because even with those restrictions in place, it
+> is still useful for us to be able to say during iteration, okay, I have now made a change that I
+> want to test on a wider variety of stuff, and therefore, we would kick off the make target that
+> runs the full tests. It's just that we would be running the reference tests before we dispatch
+> anything to AWS. and more generally before we kick off full tests. This should probably also be
+> true for something like make done. like we would want to run some sort of local tests, linting,
+> for example. before we even decide whether to dispatch to AWS because there's no point in doing
+> the expensive AWS dispatch. if we are not going to run the local tests. However, as a time saving
+> measure, now that I think about it, because dispatching to AWS means that we have to create new
+> AWS code build resources, which you said can take between thirty and sixty seconds, then that
+> probably means that we Want to do something like the following:
+> -> run really cheap tests, like linting, which executed almost immediately
+> -> once linting passes, initiate the creation of AWS resources needed to accept an AWS CodeBuild queue
+> -> while the AWS code build resources are being created, we run our local reference tests.
+> -> if the local reference tests fail, we immediately shut down the AWS resources, which we were in
+> the process of spinning up since we will not need them in order to run the full suite of tests
+> -> if the local reference tests succeed, then we submit our full test suite to the AWS code build queue
+> How does that sound? If that makes sense to you, then I think we should make that the general
+> pattern for probably literally all of the places where we would run AWS code build tests because
+> we always want to do inexpensive local checks first before we even do anything with AWS. And then
+> if those local inexpensive checks succeed, then we can think it is likely that we will need the
+> remote AWS resources so we can begin spending them up. Since you said they take about thirty to
+> sixty seconds to prepare, and then that is about the amount of time that we will use to run our
+> slightly longer set of local checks on our reference settlement - or settlements, once we move
+> beyond hamlets, since we will probably still run reference tests for e.g. a single hamlet and a
+> single village and a single provincial city in parallel - And then by the time that is complete,
+> then we can submit the full longer suite of tests to the AWS code build queue if all of those
+> reference tests succeeded. And then if any of them failed, then we don't bother, and we just heard
+> on the AWS resources immediately. Of course, we will need to be careful about not tearing down AWS
+> resources, which a different Claude code session needs. I believe our plan already distinguishes
+> between needing a single queue for merging into main while maintaining the ability to run
+> multiple simultaneous sets of longer tests for the local iteration case. Is that correct? If not,
+> then we definitely need to update our plan to incorporate that. And then either way, we should
+> also update our plan to incorporate this notion of how and when the AWS resources are created. and
+> we need that to include whatever coordination between multiple Claude code sessions needs to be
+> done."

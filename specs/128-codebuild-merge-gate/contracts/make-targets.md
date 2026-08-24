@@ -93,3 +93,24 @@ render_sync                                                          (in the mir
 ```
 
 `perf-gate` pairs `-start`/`-end` on `(host, image)` and refuses a cross-machine pair by name.
+
+## Second amendment: the dispatch sequence (every remote target), and FULL on both paths
+
+`ci-merge` / `ci-check`, in either scope, run this sequence (FR-033..FR-037):
+
+```
+0. [FULL only] bypass-audit prompt, locally; cancel -> stop.          (existing)
+1. conditions (route, feature-complete for merge, state, verified?)   (FR-007..FR-013; free)
+2. lint + format + typecheck locally                                  (~5 s; fail -> stop, NO build)
+3. start_build(project, sourceVersion=mailbox) -> build_id            (build parks at step "wait-go")
+4. make reference locally (all tiers' reference maps, parallel OK)    (~26 s today)
+5a. any red -> stop_build(build_id); state <- failed-gate; report     (queued: free; started: partial minute)
+5b. all green -> put s3://bucket/go/<build_id>; stream log; exit with build status
+```
+
+`buildspec/*.yml` gain a first phase `wait-go`: poll `go/<build-id>` every 2 s for ≤ 120 s; absent
+-> `exit 1` "aborted: no go signal"; present -> delete it and continue. Then, for FULL: `make done
+FULL=1` where `done` now runs `bypass-audit` (build-side door, R11) THEN `reference` THEN the phases.
+
+`ci-check FULL=1` is back (third request): same sequence, check project, no push to main, FULL
+verified record written on green.
