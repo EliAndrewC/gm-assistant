@@ -87,7 +87,7 @@ habitual in the first place.
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T035 Record the threat model and which layer closes each tier in `scripts/make-only-hooks.sh`'s header comment (FR-017), so a later session can tell whether a proposed change reopens a known route
+- [x] T035 Record the threat model and which layer closes each tier in `scripts/make-only-hooks.sh`'s header comment (FR-017), so a later session can tell whether a proposed change reopens a known route
 - [ ] T036 [P] Update `.claude/skills/diagram/CLAUDE.md`'s always-on section with the new command map, stating plainly that `make done` is ~5.5 minutes and is NOT the quick check - the mistake that cost this feature its predecessor
 - [ ] T037 [P] Update the root `CLAUDE.md` iteration-loop section to point at the gated targets
 - [ ] T038 Enumerate every remaining possible bypass against SC-006 and confirm each either appears in a git diff or could not be described as diligence. **Any that fails this test MUST be recorded in spec.md Assumptions and excluded from SC-006 explicitly** - an unenumerated hole under a criterion claiming enumeration is a false claim
