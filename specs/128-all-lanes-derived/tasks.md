@@ -72,7 +72,8 @@
 
 - [x] T019 Mark feature 126's FR-003 superseded in `specs/126-derived-lanes-and-form/spec.md`
 - [x] T020 Update the `dev/placement.md` DRAW ORDER map if it names the old stages
-- [ ] T021 Run `ruff` + `mypy --strict` + the full gate once, backgrounded
+- [x] T021 Run `ruff` + `mypy --strict` + the full gate once, backgrounded. Green: 3,462 passed,
+      12 guard suites, ruff and mypy --strict clean across 146 source files
 - [ ] T022 `make done FULL=1`, which takes the `128-end` bookend and blocks on a >5% regression
 - [x] T023 Audit `dev/bypass-log/` for entries added during this feature and say in writing whether
       each was justified. **Feature 128 logged NO bypasses at all.** The eight entries in the

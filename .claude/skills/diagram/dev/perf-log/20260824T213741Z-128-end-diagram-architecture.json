@@ -1,0 +1,122 @@
+{
+  "clone": "diagram-architecture",
+  "commit": "811ad8f",
+  "cpus": 22,
+  "label": "128-end",
+  "machine": "x86_64",
+  "median_seconds": 76.0,
+  "reference": {
+    "down_deg": 90,
+    "households": 15,
+    "name": "Inashiro",
+    "water_sink": "pond"
+  },
+  "rows": [
+    {
+      "asked": 15,
+      "form": "nucleated",
+      "houses": 15,
+      "seconds": 26.8,
+      "seed": 4,
+      "shape": "crescent",
+      "stages": {
+        "appurtenances": 0.12,
+        "crossings": 0.27,
+        "field": 3.51,
+        "frame": 0.01,
+        "hinterland": 3.01,
+        "homesteads": 0.45,
+        "notice": 6.31,
+        "seat": 0.03,
+        "sink": 0.01,
+        "track": 4.42,
+        "water_frame": 0.0,
+        "web": 8.37,
+        "windbreak": 0.19,
+        "woodland": 0.14
+      }
+    },
+    {
+      "asked": 15,
+      "form": "nucleated",
+      "houses": 15,
+      "seconds": 80.6,
+      "seed": 25,
+      "shape": "crescent",
+      "stages": {
+        "appurtenances": 0.5,
+        "crossings": 0.16,
+        "field": 4.51,
+        "frame": 0.0,
+        "hinterland": 2.99,
+        "homesteads": 0.91,
+        "notice": 5.43,
+        "seat": 0.04,
+        "sink": 0.01,
+        "track": 3.24,
+        "water_frame": 0.0,
+        "web": 62.57,
+        "windbreak": 0.06,
+        "woodland": 0.2
+      }
+    },
+    {
+      "asked": 15,
+      "form": "nucleated",
+      "houses": 15,
+      "seconds": 71.5,
+      "seed": 39,
+      "shape": "round",
+      "stages": {
+        "appurtenances": 0.7,
+        "crossings": 0.32,
+        "field": 2.66,
+        "frame": 0.0,
+        "hinterland": 3.15,
+        "homesteads": 0.39,
+        "notice": 10.02,
+        "seat": 0.04,
+        "sink": 0.01,
+        "track": 7.63,
+        "water_frame": 0.0,
+        "web": 46.24,
+        "windbreak": 0.22,
+        "woodland": 0.08
+      }
+    },
+    {
+      "asked": 15,
+      "form": "nucleated",
+      "houses": 15,
+      "seconds": 89.3,
+      "seed": 47,
+      "shape": "round",
+      "stages": {
+        "appurtenances": 0.84,
+        "crossings": 0.22,
+        "field": 26.08,
+        "frame": 0.0,
+        "hinterland": 2.92,
+        "homesteads": 0.27,
+        "notice": 8.21,
+        "seat": 0.04,
+        "sink": 0.0,
+        "track": 13.55,
+        "water_frame": 0.0,
+        "web": 36.87,
+        "windbreak": 0.14,
+        "woodland": 0.13
+      }
+    }
+  ],
+  "seeds": [
+    4,
+    25,
+    39,
+    47
+  ],
+  "subject": "fix(diagram): four defects settlement-review found that the green gate could not",
+  "total_seconds": 268.2,
+  "utc": "20260824T213741Z",
+  "worst_seconds": 89.3
+}
