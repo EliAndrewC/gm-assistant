@@ -7,6 +7,37 @@ tax-free plots, not a different kind of place, and its defects are the same defe
 This is where hamlet work goes - the paddy fabric, the lane web, homesteads and their groves, wells
 and byres, woodland and windbreaks, the notice board, and the cohort seeds that surface all of it.
 
+## OPEN 2026-08-24, WITH THE MEASUREMENT: the field SPUR can be forced onto a house on tight clusters
+
+Feature 128 moved every lane after the farmhouses. The reference hamlet is clean and so is the
+property the feature is about - zero houses within 14 px of any lane centerline, against a baseline
+of two lanes and two corridors present before a single house was placed. **Cohort/tripwire seed 27
+regressed**, and it is recorded here rather than fixed because the GM's standing scope for this work
+is the reference hamlet at one seed.
+
+**THE MEASUREMENT**: seed 27 fails `features_do_not_overlap` (houses x lanes at 319,1789 and lanes x
+gardens at 464,2022), `houses_off_corridors` (1 hit), `houses_clear_of_lanes`, and feature 128's own
+new check `no_farmhouse_stands_on_a_lane` - which is the check working: it exists to catch exactly
+this and it did.
+
+**THE MECHANISM**: the SPUR, not a skeleton arm. `_thread_the_fabric` routes a track round the
+standing steadings, clips what it draws, and - when both fail - tries a widening detour. On that
+cluster all three fail, and the final fallback returns the original run, which lies on a house. That
+fallback is the honest end of the current design: the spur has to reach the field, so it cannot
+simply be dropped the way a debris arm is.
+
+**THE SKETCH**: give the spur the same treatment `_lay_skeleton` gives an arm it cannot place - drop
+it - and let the straggler pass supply field access instead, OR let the spur choose a different field
+target when the nearest one cannot be reached cleanly. `spur_path` already ranks candidate envelope
+vertices by distance and takes the first whose straight run clears the hem; extending that ranking to
+also require a fabric-clear route is the smaller change and probably the right one.
+
+**A DEAD END, so nobody re-tries it**: splitting `_lay_skeleton`'s clip so houses get
+`TRACK_FABRIC_GAP` and everything else keeps `WEB_FABRIC_GAP` is defensible on its own terms - the
+7 px clip measures to the footprint while the gate measures 14 px to the center - and it changed
+NOTHING on seed 27, because the offending lane is the spur. Implemented, measured, reverted; the
+reasoning is at the point of change in `_lay_skeleton`.
+
 ## OPEN 2026-08-24, WITH THE MEASUREMENT: feature 126 cost ~50% of generation speed, undiagnosed
 
 Found while taking feature 127's closing bookend. It is not 127's - that measured neutral against a
