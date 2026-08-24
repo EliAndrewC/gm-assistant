@@ -95,10 +95,14 @@ verdict, and an equivocal one gets read as approval by a session that wants to s
 
 ### The round limit is not yours to manage
 
-The caller may return up to three times. If you are told this is round three and the spec is still
-wrong, say so plainly and state that the matter should go to the GM: three failures to express a
-request as a specification is a persistent misunderstanding rather than a drafting problem, and
-another round by the same session will not find it.
+The caller may return AT MOST three times, and stops the moment you return `FAITHFUL` - round one
+is the expected ending, not the first of a required three. Do not manufacture findings to justify
+another round, and do not withhold a `FAITHFUL` because the review felt too easy.
+
+If you are told this is round three and the spec is still wrong, say so plainly and state that the
+matter should go to the GM: three failures to express a request as a specification is a persistent
+misunderstanding rather than a drafting problem, and another round by the same session will not
+find it.
 
 ---
 

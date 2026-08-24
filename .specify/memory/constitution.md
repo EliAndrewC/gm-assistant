@@ -1160,10 +1160,18 @@ its own plan is being tested for self-consistency, which a wrong spec passes
 comfortably. The question is: does this specification implement what was actually
 asked, and does it add anything that was not?
 
-**Three rounds, then escalate.** Adjust, re-review, at most three times. If the
-third review still returns changes, STOP and put it to the GM. Three failures to
-express a request as a specification is a persistent misunderstanding, and a fourth
-attempt by the same session will not locate it.
+**AT MOST three rounds, and stop at the first clean verdict.** A `FAITHFUL` verdict
+on round one ends the review - there is no quota to fill and re-reviewing a spec the
+reviewer has already passed buys nothing. A `CHANGES REQUIRED` verdict means: revise,
+re-review. If the THIRD review still returns changes, STOP and put it to the GM.
+Three failures to express a request as a specification is a persistent
+misunderstanding, and a fourth attempt by the same session will not locate it.
+
+**A scope-expansion finding is an ordinary finding.** "This spec does more than was
+asked" goes through the same revise-and-re-review loop as anything else; it is not a
+special case and it does not short-circuit the rounds. It becomes a stop only the way
+every other finding does - by surviving three of them (GM 2026-08-24, declining the
+tighter rule the implementing session proposed).
 
 **Why this exists** (GM 2026-08-24). Feature 126 was "put the farmhouses down before
 the lanes". The specification that came out of it said farmhouses before lanes
