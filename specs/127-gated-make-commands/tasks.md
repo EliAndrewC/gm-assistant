@@ -106,12 +106,12 @@ feature is about properly gated and properly TIMED make targets.
 ## Phase 6: Polish & Cross-Cutting
 
 - [x] T035 Record the threat model and which layer closes each tier in `scripts/make-only-hooks.sh`'s header comment (FR-017), so a later session can tell whether a proposed change reopens a known route
-- [ ] T036 [P] Update `.claude/skills/diagram/CLAUDE.md`'s always-on section with the new command map, stating plainly that `make done` is ~5.5 minutes and is NOT the quick check - the mistake that cost this feature its predecessor
-- [ ] T037 [P] Update the root `CLAUDE.md` iteration-loop section to point at the gated targets
-- [ ] T038 Enumerate every remaining possible bypass against SC-006 and confirm each either appears in a git diff or could not be described as diligence. **Any that fails this test MUST be recorded in spec.md Assumptions and excluded from SC-006 explicitly** - an unenumerated hole under a criterion claiming enumeration is a false claim
+- [x] T036 [P] Update `.claude/skills/diagram/CLAUDE.md`'s always-on section with the new command map, stating plainly that `make done` is ~5.5 minutes and is NOT the quick check - the mistake that cost this feature its predecessor
+- [x] T037 [P] Update the root `CLAUDE.md` iteration-loop section to point at the gated targets
+- [x] T038 Enumerate every remaining possible bypass against SC-006 and confirm each either appears in a git diff or could not be described as diligence. **Any that fails this test MUST be recorded in spec.md Assumptions and excluded from SC-006 explicitly** - an unenumerated hole under a criterion claiming enumeration is a false claim
 - [ ] T039 Run `ruff format` + `ruff check` + `mypy --strict` and confirm 100% coverage on `_invocation.py` (Principle X)
 - [ ] T040 Run the full gate ONCE at the end, backgrounded, and compare against T001's baseline - no regressions (Principle XIII)
-- [ ] T041 Audit `dev/bypass-log.jsonl` for entries added during this feature and state in writing whether each was justified (constitution closing step)
+- [x] T041 Audit `dev/bypass-log.jsonl` for entries added during this feature and state in writing whether each was justified (constitution closing step)
 - [ ] T042 Tick every completed task in this file and confirm no task is left unticked that was in fact done
 
 ## Dependencies

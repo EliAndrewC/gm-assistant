@@ -4,7 +4,9 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations
+.PHONY: done lint format typecheck test test-full guard perf perf-report maps reference bypass-audit quick durations \
+	 map cohort tripwire hamlet cache-audit regressions placement-stages pool-index compound render-sync \
+	 gate-manifest why-placed site-justice crop jogs pack-audit scatter-audit timings citybudget help
 
 # Runs EVERY phase and reports all failures together (GM 2026-07-25). It used to be
 # `done: lint format typecheck test`, which make stops at the first failure - so a lint slip hid a
@@ -147,6 +149,117 @@ done:
 # 60 s against a measured ~33 s leaves room for a slower machine and for the suite to grow, and still
 # fires long before anyone would call it slow. RAISE IT ONLY WITH A MEASUREMENT, and prefer marking
 # the slow test instead: the budget is the alarm, not the fix.
+# ============================================================================================
+# OPERATIONS - every runnable unit of this project's work has a target (FR-001)
+#
+# "We want make commands for everything" (GM 2026-08-24). Not decoration: `scripts/make-only-hooks.sh`
+# refuses a bare interpreter and NAMES the target instead, so an operation without one is an operation
+# a session cannot legitimately run. That gap was real - gating bare pytest left "why is this slow"
+# with no route but the override, which is precisely how an override becomes routine.
+#
+# EXPENSIVE targets check the reference settlement FIRST and stop if it fails (FR-014): spending
+# minutes on a tree the 26-second check would have condemned is the waste this whole feature is about.
+# CHEAP ones (read a recorded artifact rather than produce one) run immediately - prompting there
+# would push a session toward regenerating a map, which is the opposite of the point.
+#
+# REF_OK=1 skips the reference check, and demands a logged reason like every other bypass here.
+# ============================================================================================
+
+REF_FIRST = @$(if $(REF_OK),$(MAKE) --no-print-directory bypass-audit REF_WHY="$(REF_WHY)",$(MAKE) --no-print-directory reference)
+RUN = @python3 -m l7r.diagram
+
+# --- expensive: they generate ---------------------------------------------------------------
+map:            ## regenerate ONE gen and gate it            GEN=pool/hamlets/inashiro.gen.py
+	$(REF_FIRST)
+	$(RUN).pipeline.regen $(or $(GEN),pool/hamlets/inashiro.gen.py)
+
+cohort:         ## roll N seeds and report every failure      N=48
+	$(REF_FIRST)
+	$(RUN).tools.cohort_audit --count $(or $(N),48)
+
+tripwire:       ## the middle tier: reference map, then the tripwire seeds
+	$(RUN).tools.mapcheck $(if $(SCOPE),--scope $(SCOPE),)
+
+hamlet:         ## generate one hamlet from the CLI           ARGS="--name X --seed 4 ..."
+	$(REF_FIRST)
+	$(RUN).hamletgen $(ARGS)
+
+cache-audit:    ## does using the generation cache change any map?
+	$(REF_FIRST)
+	$(RUN).tools.cache_audit $(ARGS)
+
+regressions:    ## rebuild the frozen negative-fixture corpus
+	$(REF_FIRST)
+	$(RUN).tools.make_regressions $(ARGS)
+
+placement-stages: ## re-plate the stage-by-stage walk-through page
+	$(REF_FIRST)
+	$(RUN).tools.placement_stages $(ARGS)
+
+pool-index:     ## rebuild the pool index
+	$(RUN).pipeline.pool_index $(ARGS)
+
+compound:       ## draw a Mode A compound plan                ARGS=<out.svg>
+	$(RUN).compound $(ARGS)
+
+# RENDER-SYNC IS REFUSAL-ONLY AND NOT SUBJECT TO REFERENCE-FIRST (FR-009a, adjudicated at spec round
+# 3). It runs in MAIN's tree during the stop-work ritual, and CLAUDE.md is explicit that render-sync
+# is the ONLY thing a session runs there - "no generators, no tests". A reference check ahead of it
+# would be a second generator run in main, which that rule forbids. It also re-renders from main's
+# committed tip, which is already gate-verified, so the check would re-prove what the clone proved.
+render-sync:    ## regenerate MAIN's renders (called by sync-with-main.sh; not for hand use)
+	$(RUN).pipeline.render_cache $(ARGS)
+
+# --- cheap: they READ a recorded artifact ----------------------------------------------------
+gate-manifest:  ## run the check battery on an existing manifest   M=pool/hamlets/inashiro.json
+	$(RUN).check_village $(or $(M),pool/hamlets/inashiro.json) $(ARGS)
+
+why-placed:     ## who placed this, and what refused to        GEN=... AT=x,y | REFUSED=x,y
+	$(RUN).tools.why_placed $(GEN) $(if $(AT),--at $(AT),)$(if $(REFUSED),--refused $(REFUSED),)
+
+site-justice:   ## where can this feature legally go?
+	$(RUN).tools.site_justice $(ARGS)
+
+crop:           ## crop a rendered map in manifest coordinates
+	$(RUN).tools.crop_map $(ARGS)
+
+jogs:           ## find bunds that step sideways
+	$(RUN).tools.jogs $(ARGS)
+
+pack-audit:     ## empty space and geometry in a Mode A compound SVG
+	$(RUN).tools.pack_audit $(ARGS)
+
+scatter-audit:  ## is drawn ground cover standing where keep-outs should have stopped it?
+	$(RUN).tools.scatter_audit $(ARGS)
+
+timings:        ## where the generation loop's time goes
+	$(RUN).tools.timings $(ARGS)
+
+citybudget:     ## the city/capital space-budget planner
+	$(RUN).citybudget $(ARGS)
+
+help:           ## list every target with its one-line purpose
+	@printf '\n\033[1mOperations\033[0m - everything runs through one of these.\n\n'
+	@grep -hE '^[a-z][a-z0-9-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | sort | awk -F'\t' '{printf "  \033[1m%-18s\033[0m %s\n", $$1, $$2}'
+	@printf '\nTimes: quick ~33s | reference ~26s | done ~5.5min (NOT the quick one) | done FULL=1 ~6min\n\n'
+
+
+# THE LOG RECORDS WHAT HAPPENED, NOT ONLY WHAT WAS ALLOWED (FR-012). Without `outcome`, a session
+# that read the warning and backed out is indistinguishable from one that never tried - so the log
+# cannot answer the question it exists for. The GM's own use for it: a rising count of `cancelled`
+# is the early signal that the cheap path has stopped being sufficient, at which point the answer is
+# to make the fast path better rather than to keep refusing.
+#
+# The 2026-08-24 audit of the pre-guard entries found 3 of 5 unjustified, and the log had recorded
+# all five and stopped none - an audit trail records a decision, it does not make one.
+# NO LEADING `@`: that is a make RECIPE PREFIX, meaningful only at the start of a line. Expanded
+# mid-recipe it is a literal character and the shell tries to run `@python3`, so the first version
+# logged nothing at all while every other part of the prompt behaved correctly - a silent failure in
+# the one component whose entire job is to leave a record.
+LOGBYPASS = python3 -c "import json,subprocess,sys,time; \
+  h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True).stdout.strip(); \
+  open('dev/bypass-log.jsonl','a').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':'$(MAKECMDGOALS)','commit':h,'outcome':sys.argv[1],'why':sys.argv[2]})+chr(10))"
+
 QUICK_BUDGET = 60
 
 # WHERE THE SUITE'S TIME GOES. Exists because the question could not be asked any other way once
@@ -182,6 +295,7 @@ bypass-audit:
 	  printf "  \033[1mmake reference\033[0m   Inashiro seed 4 alone, ~60 s - almost always what you want\n"; \
 	  printf "  \033[1mmake done\033[0m        reference + lint/types + 3,420 tests, ~5.5 min (NOT the quick one)\n\n"; \
 	  printf "If you truly need the FULL set, run it in the FOREGROUND and answer the prompt.\n\n"; \
+	  $(LOGBYPASS) refused "$$why"; \
 	  exit 1; \
 	fi; \
 	if [ -z "$$why" ]; then \
@@ -198,14 +312,13 @@ bypass-audit:
 	  read why || true; \
 	fi; \
 	if [ -z "$$why" ]; then \
+	  $(LOGBYPASS) cancelled "(no reason given - backed out at the prompt)"; \
 	  printf '\n\033[1mCancelled - good call.\033[0m Nothing expensive ran.\n'; \
 	  printf 'Run `make done` on its own for the reference-scope gate.\n\n'; \
 	  exit 1; \
 	fi; \
 	mkdir -p dev; \
-	python3 -c "import json,sys,time,subprocess; \
-	h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True).stdout.strip(); \
-	open('dev/bypass-log.jsonl','a').write(json.dumps({'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'target':'$(MAKECMDGOALS)','commit':h,'why':sys.argv[1]})+chr(10))" "$$why"; \
+	$(LOGBYPASS) permitted "$$why"; \
 	printf '\nlogged to dev/bypass-log.jsonl - proceeding\n\n'
 
 reference:
