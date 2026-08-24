@@ -293,7 +293,19 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
         # exists the honest outcome is still a shortened arm rather than a lane through a house.
         if len(arm) >= 2:
             routed = _route(arm[0], arm[-1], [list(plan.envelope), *crops, *fabric, *([toe_now] if toe_now else []), *wet_now], [], list(plan.watercourses) + drawn_water)
-            arm = routed if len(routed) >= 2 else clip_to_clear(arm, fabric, WEB_FABRIC_GAP)
+            arm = routed if len(routed) >= 2 else arm
+            # AND CLIP WHAT WILL BE DRAWN, ALWAYS - not only when the router gave up.
+            #
+            # Routing round the fabric is a PLAN, and a plan can start inside a wall: the arm's
+            # endpoints come from the template mapped onto the margin, so an endpoint can land on a
+            # steading, and `_route` from a blocked start returns a path that leaves one. Measured on
+            # cohort seed 7, a 5 px skeleton arm was drawn across a farmhouse and reported twice -
+            # `features_do_not_overlap ('houses','lanes')` and `houses_clear_of_lanes`, the latter
+            # quoting the doctrine this feature retired ("lay lanes BEFORE the houses").
+            #
+            # The clip is cheap and it is a GUARANTEE rather than a hope: whatever the router
+            # produced, what gets drawn keeps its distance from everything already built.
+            arm = clip_to_clear(arm, fabric, WEB_FABRIC_GAP)
         arm = s.trim_off_marsh(arm)
         if len(arm) >= 2:
             if _arm_crossing_accidental(arm, raw_arms[ai], kept):
@@ -419,6 +431,23 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     wet = [[(float(a), float(b)) for a, b in m["poly"]] for m in s.M.get("marshes", []) if m.get("role") != "defense" and m.get("poly")]
     hard = [list(plan.envelope), *crops, *([toe] if toe else []), *wet]
     fabric = _homestead_polys(s)
+    # WHAT A LANE MAY NOT BE DRAWN THROUGH, now that lanes come LAST (feature 126).
+    #
+    # `hard` is ground: the field, the crop, the wet toe. It says nothing about what the settlement
+    # has BUILT, which was fine while the lanes were laid first and the houses packed around them.
+    # With the order inverted, every pass that draws a way has to avoid the fabric itself - and the
+    # repair passes did not, so they routed links straight through steadings:
+    #   seed  7  ('houses', 'lanes')          - a tread over a farmhouse
+    #   seed 19  ('lanes', 'threshing_yards')
+    #   seed 26  ('lanes', 'gardens')
+    # Seed 7's second failure even quotes the old doctrine back - "lay lanes BEFORE the houses" -
+    # which is precisely the assumption this feature removes.
+    #
+    # Ground cover is NOT fabric, for the same reason `_serve_stragglers` excludes it: a footpath may
+    # cross grazing scrub and run along a tree belt, because those are what the ground IS rather than
+    # things built on it. Counting them walls a steading in behind its own commons.
+    _solid = [poly for poly, _own, kind in fabric if kind not in ("commons", "village_groves")]
+    hard_built = [*hard, *_solid]
     walls = [poly for poly, _, _ in fabric]
     # The shelter belts, separately: a web lane may CROSS one but may not run its length.
     belts = [[(float(a), float(b)) for a, b in g["poly"]] for g in s.M.get("village_groves", []) if g.get("poly")]
@@ -449,11 +478,11 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # unreached houses stayed exactly eight. A door path is short on purpose; it is not a stub.
     # ONE NETWORK FIRST, then the houses that it still does not reach. Order matters: a footpath
     # that joins an orphaned component is worth nothing while the component itself is an island.
-    _join_orphan_ways(s, hard, walls, list(plan.watercourses) + drawn_water)
+    _join_orphan_ways(s, hard_built, walls, list(plan.watercourses) + drawn_water)
     # ...and close any break where one way was drawn as two. Before the stragglers: a house beside
     # the hole is served by the bridged street, and drawing it a footpath of its own first would be
     # curing the symptom.
-    _bridge_collinear_breaks(s, hard, walls, list(plan.watercourses) + drawn_water)
+    _bridge_collinear_breaks(s, hard_built, walls, list(plan.watercourses) + drawn_water)
     _serve_stragglers(s, plan, hard, fabric, list(plan.watercourses) + drawn_water)
     # ...AND JOIN ORPHANS AGAIN, LAST. The first pass runs before the bridges and the footpaths, so
     # it can only see the lanes that exist then - on cohort seed 39 that was FOUR of the twelve the
@@ -465,8 +494,8 @@ def stage_web(s: Settlement, plan: SitePlan) -> None:
     # footpath pass draws lanes, and a lane drawn after the bridge pass can leave a hole the bridge
     # pass never saw. On cohort seed 48 the bridge found ZERO candidates and the finished map still
     # had a 78 ft hole in a street, because the hole did not exist yet when it looked.
-    _bridge_collinear_breaks(s, hard, walls, list(plan.watercourses) + drawn_water)
-    _join_orphan_ways(s, hard, walls, list(plan.watercourses) + drawn_water)
+    _bridge_collinear_breaks(s, hard_built, walls, list(plan.watercourses) + drawn_water)
+    _join_orphan_ways(s, hard_built, walls, list(plan.watercourses) + drawn_water)
     s.M["meta"]["lane_web"] = plan.lane_web
 
 
