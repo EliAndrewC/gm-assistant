@@ -38,10 +38,24 @@ except Exception:
 inp = d.get("tool_input", {}) or {}
 path = inp.get("file_path", "") or ""
 body = (inp.get("new_string") or "") + (inp.get("content") or "")
+
+# A BASH HEREDOC IS A WRITE TOO. This hook matched only the Edit/Write tools at first, so
+# `python3 - <<PY ... write_text(prose) ... PY` walked straight past it - and the author did exactly
+# that, minutes after shipping the guard, to write a spec. Same hole layer 3 had, same fix: look at
+# what the command actually writes. Only heredoc BODIES are inspected, because that is where prose
+# travels; a redirect of a single echo is not worth the false positives.
+if not body and d.get("tool_name") == "Bash":
+    cmd = inp.get("command", "") or ""
+    bodies = re.findall(r"<<-?\s*[\x27\x22]?\w+[\x27\x22]?\n(.*?)\n\s*\w+\b", cmd, re.S)
+    body = "\n".join(bodies)
+    # the target matters as much as the text: a heredoc writing the GM own words is exempt below,
+    # so pick up any path the command mentions
+    path = path or " ".join(re.findall(r"[\w./-]+\.(?:md|py|sh|toml|json)", cmd))
 if not body:
     print(""); raise SystemExit
 # the GM own writing, and the files that must quote the rule
-if "/host-l7r-repo" in path or path.endswith("l7r.md"):
+# gm-request.md is a verbatim transcript of the GM speaking - correcting it would defeat its purpose
+if "/host-l7r-repo" in path or path.endswith("l7r.md") or "gm-request.md" in path:
     print(""); raise SystemExit
 if re.search(r"(^|/)(CLAUDE\.md|constitution\.md|l7r-style\.md|house-style-hooks\.sh|test-house-style-hooks\.sh)$", path):
     print(""); raise SystemExit

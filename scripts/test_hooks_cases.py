@@ -69,6 +69,14 @@ HOUSE_STYLE = [
     # the GM's own writing is theirs
     ("the GM's canonical file", edit("/host-l7r-repo/setting/l7r.md", new="the colour of the sky"), "ok"),
     ("a SOURCE block in our file", edit("/r/docs/a.md", new="<!-- SOURCE: GM NOTES - DO NOT MODIFY -->the colour<!-- END SOURCE -->"), "ok"),
+    # A BASH HEREDOC IS A WRITE. The first version matched only the Edit/Write tools, and the author
+    # walked straight past it minutes after shipping the guard by writing a spec with a python
+    # heredoc. Same hole layer 3 had, and the same lesson: guard the ACTION, not one route to it.
+    ("prose written by heredoc", cmd("cat > docs/a.md <<'EOF'\nthe colour is grey\nEOF"), "blocked"),
+    ("clean prose by heredoc", cmd("cat > docs/a.md <<'EOF'\nthe color is gray\nEOF"), "ok"),
+    # gm-request.md is a verbatim transcript of the GM speaking; correcting it defeats its purpose
+    ("the GM's own words, by heredoc", cmd("cat > specs/128-x/gm-request.md <<'EOF'\nthey wrote colour\nEOF"), "ok"),
+    ("merely GREPPING for one", cmd("grep -n colour docs/a.md"), "ok"),
 ]
 
 
