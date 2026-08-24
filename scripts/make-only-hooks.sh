@@ -48,25 +48,13 @@ set -uo pipefail
 MODE="${1:-pretool}"
 [ "$MODE" = pretool ] || exit 0
 
-INPUT=$(cat)
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# The command is arbitrary text with escapes and newlines, so it needs a real JSON parse.
-CMD=$(printf '%s' "$INPUT" | python3 -c 'import json,sys
-try: print(json.load(sys.stdin).get("tool_input",{}).get("command",""))
-except Exception: print("")')
-
-[ -z "$CMD" ] && exit 0
-
-# THE ESCAPE IS CHECKED FIRST, AND THAT ORDERING IS LOAD-BEARING (found the hard way, 2026-08-24).
-#
-# It used to be checked only inside the guard-file branch, several tests down. So when this hook
-# false-positived - and it did, twice in one hour, once on a `grep` and once on a `git commit` whose
-# MESSAGE quoted the very pattern being matched - there was no way to repair it: every command
-# carrying the fix necessarily contained the offending text, and the hook refused them all.
-#
-# A guard that cannot be fixed through the channel it guards is not strict, it is stuck. The escape
-# belongs before every test, and using it is recorded in the command text where the GM reads it.
-case "$CMD" in *GUARD_EDIT_OK*) exit 0 ;; esac
+# DETECTION LIVES IN _hookmatch.py, and the reason is written there: substring matching false-
+# positived on a grep, on a commit message, and on this hook's own test harness, all within an hour.
+# Matching is anchored to real command positions instead. Keeping it in a file also means it can be
+# unit-tested and read without bash quoting in the way.
+VERDICT=$("$HERE/_hookmatch.py" 2>/dev/null || echo ok)
 
 block() { # reason, then the make target to use instead
   printf 'BLOCKED: %s\n\n' "$1" >&2
@@ -76,91 +64,29 @@ Every operation in this project goes through a make target, so the expensive one
 the cheap one would do first. The scale, so the choice is informed rather than habitual:
 
     make reference    ~26 s    one seed of the reference hamlet - answers most questions
-    make quick        ~4 min   lint, types, and every test that does not roll a map, stopping at the first
+    make quick        ~4 min   lint, types, and every test that does not roll a map, stops at first
     make done         ~5.5 min reference + lint/types + 3,420 tests - NOT the quick check
     make done FULL=1  ~6 min   + every pool map + the seeds 41-44 ratchet; prompts, cancels by default
 
-There is no escape hatch on this hook, on purpose. The override lives on the make targets, where it
-is prompted for, defaults to CANCEL, and is written to dev/bypass-log.jsonl for later audit. An
-escape hatch here would just be the documented-override workaround with extra steps.
+If this fired on correct work, that is a BUG in the hook and worth fixing rather than working
+around - put GUARD_EDIT_OK in the command with a reason, and say what it false-positived on.
 
 (scripts/make-only-hooks.sh; GM 2026-08-24, feature 127)
 TAIL
   exit 2
 }
 
-# ---------------------------------------------------------------------------------------------
-# tier 4: a forged makefile. Measured 2026-08-24: `make -f /tmp/evil.mk` passes a bare ancestry
-# check, because make really is the parent - it is just not OUR make. Two lines in /tmp.
-# ---------------------------------------------------------------------------------------------
-case "$CMD" in
-  *"make -f"*|*"make --file"*|*"make --makefile"*|*"make -"[a-zA-Z]*" -f"*)
-    block "a make driven by a named makefile. This project's targets are in its own Makefile, and a foreign one is the documented way to walk past every guard here." "make <target>   (from .claude/skills/diagram)"
-    ;;
-esac
-
-# ---------------------------------------------------------------------------------------------
-# tier 1: a bare interpreter reaching an engine entry point, or a bare pytest.
-# `python3 -m pytest` and `pytest` both; the suite is the 4.5-minute cost and the thing most often
-# reached for directly.
-# ---------------------------------------------------------------------------------------------
-# MATCH AN INVOCATION, NOT A MENTION. The first draft matched the bare path
-# `l7r/diagram/hamletgen` anywhere in the command, which blocked
-# `grep -n 'def stage_ways' l7r/diagram/hamletgen/ways.py` - a read. Its own test caught it
-# immediately, and it is the failure that matters most: a guard that fires on correct work is how a
-# session learns the override is routine, which is the habit this whole feature exists to break. So
-# every pattern below requires an interpreter to actually be running the thing.
-case "$CMD" in
-  *python*" -m l7r.diagram."*|*python*"l7r/diagram/pipeline/regen.py"*|*python*"l7r/diagram/hamletgen/__main__.py"*)
-    block "an engine entry point run outside make." "make <target>   (see 'make help' for the operation registry)"
-    ;;
-esac
-
-case "$CMD" in
-  *pytest*)
-    # `make test` and friends run pytest themselves; only a DIRECT invocation is blocked, and the
-    # marker is that the command does not itself invoke make.
-    case "$CMD" in
-      *make\ *) : ;;
-      *) block "pytest run directly rather than through make. The suite is ~4.5 minutes and its coverage floors only hold under the make targets that set them up." "make quick   (seconds)  or  make done   (~5.5 min)" ;;
-    esac
-    ;;
-esac
-
-# ---------------------------------------------------------------------------------------------
-# tier 5 VIA BASH: writing a guard file with a shell command rather than the Edit tool.
-#
-# FOUND BY DOING IT, 2026-08-24. `guard-file-hooks.sh` matches PreToolUse on Edit|Write|NotebookEdit,
-# so it never sees `python3 - <<PY ... write_text(...)`, `sed -i`, or `cat > file`. Every guard-file
-# edit made while BUILDING this feature went through a bash heredoc, and layer 3 stayed silent for
-# all of them. A guard on one tool out of two is not a guard - it is the "ungated sibling command"
-# shape from tier 1, one level up, and this feature exists because that shape keeps working.
-#
-# Same escape as layer 3: GUARD_EDIT_OK in the command with a reason.
-# ---------------------------------------------------------------------------------------------
-case "$CMD" in
-  *GUARD_EDIT_OK*) : ;;
-  *)
-    case "$CMD" in
-      *Makefile*|*-hooks.sh*|*settings.json*)
-        case "$CMD" in
-          *">"*|*"sed -i"*|*write_text*|*"tee "*|*">>"*)
-            block "a GUARD FILE written from a shell command. Layer 3 only sees the Edit and Write tools, so this route slips past it - which makes it the same ungated-sibling shape this whole feature exists to close." "the Edit tool, or add GUARD_EDIT_OK with a reason"
-            ;;
-        esac
-        ;;
-    esac
-    ;;
-esac
-
-# ---------------------------------------------------------------------------------------------
-# tier 2: the documented override, supplied inline so no prompt ever fires. This is the one that
-# actually happened three times, and it happened because it reads as conscientious.
-# ---------------------------------------------------------------------------------------------
-case "$CMD" in
-  *REF_WHY=*|*REF_OK=*|*GATE_OK=*)
-    block "an override supplied on the command line, which skips the prompt whose default answer is CANCEL. That prompt is the whole mechanism: it exists to be answered, not to be pre-empted." "make <target>   without the override, and answer the prompt if it appears"
-    ;;
+case "$VERDICT" in
+  foreign-makefile)
+    block "a make driven by a named makefile. This project's targets are in its own Makefile, and a foreign one is the documented way to walk past every guard here." "make <target>   (from .claude/skills/diagram)" ;;
+  engine-entry-point)
+    block "an engine entry point run outside make." "make <target>   (see future-work/ and the Makefile for the operation list)" ;;
+  bare-pytest)
+    block "pytest run directly rather than through make. The suite is ~4.5 minutes and its coverage floors only hold under the make targets that set them up." "make quick   (~4 min, stops at the first failure)  or  make done   (~5.5 min)" ;;
+  inline-override)
+    block "an override supplied on the command line, which skips the prompt whose default answer is CANCEL. That prompt is the whole mechanism: it exists to be answered, not pre-empted." "make <target>   without the override, and answer the prompt if it appears" ;;
+  guard-write)
+    block "a GUARD FILE written from a shell command. Layer 3 only sees the Edit and Write tools, so this route slips past it - the same ungated-sibling shape this feature exists to close." "the Edit tool, or add GUARD_EDIT_OK with a reason" ;;
 esac
 
 exit 0
