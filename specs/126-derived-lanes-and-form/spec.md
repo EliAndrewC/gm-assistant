@@ -119,8 +119,26 @@ drying yard is shaded by a neighboring farmhouse at the reference hour.
 
 - **FR-001**: Internal lanes MUST be positioned from the final positions of the houses they serve.
 - **FR-002**: House placement MUST NOT depend on the position of any internal lane.
-- **FR-003**: Ways that genuinely predate the settlement - the connector to the off-map road, and
-  the spur to the field - MUST still be laid before the houses.
+- **FR-003**: ~~Ways that genuinely predate the settlement - the connector to the off-map road, and
+  the spur to the field - MUST still be laid before the houses.~~
+  **SUPERSEDED IN FULL by [feature 128](../128-all-lanes-derived/spec.md) (2026-08-24). DO NOT
+  IMPLEMENT THIS.**
+
+  This requirement was never asked for. The GM's request was "put the houses there first"; the
+  carve-out was written by the implementing session on a provenance argument, and it kept two lanes
+  reserving ground before any house was seated - which is the exact defect the feature existed to
+  remove. The GM found it five days later by reading the walk-through page: *"you are still putting
+  lanes down before the farmhouses."*
+
+  Two things are worth carrying rather than just the reversal:
+
+  - **The provenance argument was the wrong axis entirely.** A road CAN predate a settlement, so an
+    argument for drawing it first is always available - which is why resting on provenance preserved
+    the exception instead of examining it. The reason that decides is ground reservation: a lane
+    drawn before the houses takes ground they cannot then have, whatever the lane represents.
+  - **The rule is now settled and is not reopenable by research** (GM 2026-08-24): *"the spec should
+    absolutely pre decide. that the connector must be drawn after all of the houses. I cannot
+    emphasize enough that that is explicitly what I have repeatedly asked for."*
 - **FR-004**: The generator MUST record, on each map, which ways were exogenous and which were
   derived, so a reader can tell the two apart without reading the code.
 - **FR-005**: Each hamlet's settlement form MUST be rolled from the map's own seed, and MUST be
