@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-24
 
-**Status**: REVISED after the GM's 2026-08-24 band ruling; re-reviewed, 4 findings applied. Two questions routed to the GM (the >10% measurement scope, and storage). (Was FAITHFUL at round 3 against the earlier request.) NOT implemented, at the GM's explicit instruction (*"Do not start
+**Status**: REVISED after the GM's 2026-08-24 band ruling AND their per-measurement thresholds. Band scope is CLOSED; **storage is the only open GM question.** (Was FAITHFUL at round 3 against the earlier request.) NOT implemented, at the GM's explicit instruction (*"Do not start
 work on the spec"*). The measurements below were taken before implementation precisely so they would
 be in hand when it begins.
 
@@ -24,11 +24,23 @@ itself.
 
 Set by the GM on 2026-08-24, in the ruling that supersedes the band design in their earlier request.
 
-| increase | what it takes |
-|---|---|
-| **any increase** | an explanation, **with a `perf-audit` subagent confirming it**. |
-| **> 5%** | more advanced analysis and a higher bar of justification: the subagent must affirmatively find the increase **necessary**, **commensurate** with the functionality gained, and that there is **no good way around it**. |
-| **> 10%** | **the GM signs off personally, before the work is committed back to main.** |
+| band | on the TOTAL | on ANY SINGLE SEED | what it takes |
+|---|---|---|---|
+| **1 - explain** | any increase | any increase | an explanation, **with a `perf-audit` subagent confirming it** |
+| **2 - audit** | **> 5%** | **> 10%** | more advanced analysis and a higher bar: the subagent must affirmatively find the increase **necessary**, **commensurate** with the functionality gained, and that there is **no good way around it** |
+| **3 - GM** | **> 10%** | **> 20%** | **the GM signs off personally, before the work is committed back to main** |
+
+**EVERY BAND HAS A NUMBER FOR EACH MEASUREMENT, and a band fires when EITHER is crossed.** There is no
+total-only band and no seed-only band. An earlier draft had band 3 on the total alone, which meant a
+single seed could rise 30% and never reach the GM; the GM closed that on 2026-08-24 by setting a
+per-seed number at every escalation.
+
+**THE PER-SEED NUMBER IS TWICE THE TOTAL'S, and the measured noise says that is about right.** A
+single seed is a noisier signal than the sum of four: the floor measured for this spec is **1.7% per
+seed against 0.7% on the total, a ratio of 2.4**. The GM's 2:1 ratio sits just inside that, so the
+per-seed bands are very slightly the more sensitive of the two relative to their own noise - which is
+the conservative direction. This is recorded as CORROBORATION of a GM ruling, not as its justification;
+they set the numbers, and the measurement happens to agree.
 
 **THE SUBAGENT IS ON EVERY INCREASE, NOT ONLY THE BIG ONES.** This is the load-bearing change from the
 earlier design and the thing an implementer is most likely to get wrong by carrying the old shape
@@ -48,30 +60,16 @@ ANALYSIS DEEPENS and the JUSTIFICATION BAR RISES rather than the point where rev
    the gate**, because the GM's words are "before it is committed back to main". That makes it a
    `sync-with-main.sh` concern alongside the existing review gate, not a `make done` concern.
 
-**WHICH NUMBER EACH BAND MEASURES.** The **any-increase** and **>5%** bands apply to **any individual
-seed OR the total** - whichever crosses first.
+**WHICH NUMBER EACH BAND MEASURES - SETTLED BY THE GM, no longer an open question.** The matrix above
+is complete: each band carries a number for the total and a number for a single seed, and fires on
+whichever is crossed first. The scope question this spec previously routed to the GM is closed.
 
-The **>10%** band is on the **TOTAL only** - and this is the AUTHOR'S CARRY-FORWARD, not the GM's
-instruction. **OPEN GM QUESTION, alongside storage.** What the record supports is that the GM chose
-the NUMBER 10 (over a priced 25); the total-only scope came from the author's rationale in that
-amendment, and it was reasoned for a band whose consequence was BLOCKING A MERGE. The ruling changed
-that consequence to personal sign-off and says nothing about which number is measured.
-
-**The concrete consequence, so the question is answerable rather than abstract**: a single seed above
-10% would NOT require sign-off. Feature 128 is the worked example - total -29.9%, seed 47 +30.7% - so
-it would owe the escalated audit and never reach the GM. That may be exactly right; it is not
-something the GM said.
-
-Retained as-is rather than flipped, because flipping it would be the mirror error - substituting the
-author's judgment in the other direction.
-
-The per-seed-OR-total scope for bands 1 and 2 is stated here rather than delegated to implementation.
-An earlier draft left it "to be settled against the noise floor", which sounds neutral and is not: the
-measured per-seed noise is higher than the total's, so every re-measurement argues for narrowing the
-band to the total, and the GM's words are *"any increase whatsoever"*. The scope is not
-implementation's to choose. **Note the honest limit of that reasoning**: the GM's instruction was "any
-increase"; that it is measured per seed OR total is the author's inference from those words plus the
-per-seed rule being replaced. Sound, and retained - but an inference.
+The history is worth keeping, because it is the second time this document narrowed something and had
+to be corrected: an earlier draft applied the >0% band to the total alone on the strength of the
+per-seed noise floor (caught by review), and a later one left band 3 total-only as an author
+carry-forward (flagged to the GM rather than fixed, and then answered). **The concrete case that made
+it real**: feature 128 finished at total -29.9% with seed 47 at +30.7%. Under total-only it reached
+nobody. Under the GM's matrix it crosses the 20% per-seed line and requires their personal sign-off.
 
 **A COST THIS DESIGN CARRIES, recorded as an observation and NOT as an argument for narrowing it.**
 The GM's own reasoning is that nearly every feature adds code and therefore time, so the any-increase
@@ -205,8 +203,9 @@ is the GM's instruction, and lines further down reserve any narrowing of it to t
   perfectly good EXPLANATION - but under the GM's ruling an explanation is only half the band, and a
   subagent still confirms it. A sentence on the record does not end the matter. What is not acceptable
   is the increase going unremarked because it fell under a bar.
-- **The 5% ESCALATION trigger is comfortably above the floor** - 3x the worst per-seed spread and 7x
-  the total spread - so the DEEPER audit fires on code, not on weather. The band-1 confirmation will
+- **Both escalation triggers sit comfortably above their own floors** - the 5% total trigger is 7x the
+  0.7% total spread, and the 10% per-seed trigger is 6x the 1.7% per-seed spread - so the DEEPER audit
+  fires on code, not on weather, in either measurement. The band-1 confirmation will
   sometimes fire on weather, and the spec accepts that: see "A COST THIS DESIGN CARRIES".
 
 **An earlier draft of this spec said the per-seed line should be "advisory below about 2%".** That was
@@ -317,9 +316,11 @@ carries a DIFFERENT session id is unknown and is the load-bearing unknown of thi
 - **The audit subagent cannot reach a verdict** (the profiles are inconclusive). It must be able to
   return "cannot determine" and that must NOT read as approval.
 - **A run that is faster overall but slower on a seed.** Feature 128's exact shape - total -29.9%,
-  seed 47 +30.7%. The per-seed bands still apply in full: that seed owes an explanation AND a
-  confirmation, and being over 5% it owes the escalated audit too. Only the >10% GM sign-off is
-  total-only, so feature 128 would NOT have needed the GM. Worth stating explicitly because the superseded constitution line said "a single seed
+  seed 47 +30.7%. Every band is evaluated on BOTH measurements, so the total being down does not
+  excuse the seed: it owes an explanation and a confirmation (band 1), it clears the 10% per-seed line
+  so it owes the escalated audit (band 2), and it clears the 20% per-seed line so it needs the GM's
+  personal sign-off (band 3) - even though the generator got 30% faster overall. **This is the case
+  the GM's per-seed numbers exist for.** Worth stating explicitly because the superseded constitution line said "a single seed
   never blocks a merge on its own", and a reader carrying that across would get this backwards.
 - **The profiler itself perturbs the measurement.** The timing number and the profile must not come
   from the same run unless the profiler's overhead is small enough to be irrelevant - which is the
@@ -333,8 +334,8 @@ carries a DIFFERENT session id is unknown and is the load-bearing unknown of thi
   ships. Neither half alone satisfies the band (GM: *"any increase: explanation, with a subagent
   reviewer confirming"*). The per-seed noise floor may be CITED in an explanation; it is never a
   threshold below which nothing is owed.
-- **FR-002**: An increase above 5% - **on any individual seed OR on the total**, the same scope as
-  FR-001 - MUST require an ESCALATED audit that goes beyond FR-001's confirmation: the subagent
+- **FR-002**: An increase above **5% on the total OR above 10% on any individual seed** MUST require
+  an ESCALATED audit that goes beyond FR-001's confirmation: the subagent
   independently adjudicates rather than confirming the session's account, and MUST NOT be satisfiable
   by the main session's own assertion in the ordinary path. A band-1 confirmation MUST NOT satisfy
   this band.
@@ -374,7 +375,8 @@ binding and logging - which would let a session self-issue the very check the ru
 - **FR-008**: The tooling MUST first determine whether a subagent's shell is distinguishable from the
   main session's, and MUST implement strict enforcement **for review records of BOTH bands** if it is. If it is not, the prompting fallback
   applies and the finding MUST be recorded so it is not re-investigated from scratch.
-- **FR-009**: Above 10% on the total, no audit verdict is sufficient: **the GM signs off personally,
+- **FR-009**: Above **10% on the total OR above 20% on any individual seed**, no audit verdict is
+  sufficient: **the GM signs off personally,
   and does so BEFORE the work is committed back to main.** The enforcement point is therefore the
   PUSH, not the gate - a `sync-with-main.sh` concern alongside the existing review gate, because a
   session can pass `make done` and only then discover it may not push. No longer pending: the GM ruled
@@ -382,7 +384,9 @@ binding and logging - which would let a session self-issue the very check the ru
 - **FR-009a**: The sign-off MUST be recorded in a form that is bound to the same commit and numbers as
   FR-005 requires of a review record, so a sign-off cannot be reused for a later, larger increase.
 - **FR-009b**: `make done` MUST PRINT that a delta will need the GM's personal sign-off before it can
-  be pushed, even though enforcement lives at the push. Costs nothing, and removes the surprise of
+  be pushed, even though enforcement lives at the push. It MUST say WHICH measurement crossed and by
+  how much, because with four numbers in play "you need sign-off" without "seed 47 is +30.7%, over the
+  20% per-seed line" is not actionable. Costs nothing, and removes the surprise of
   passing the gate and only then being refused - the same reason every refusal in this project names
   the target that does the job.
 - **FR-010**: Each guard added by this feature MUST ship with a test companion that proves it FIRES
@@ -452,10 +456,12 @@ constitution amendment.
 
 - **SC-001**: A 1% increase is refused without a written explanation, AND refused when the explanation
   exists but no subagent has confirmed it.
-- **SC-002**: An increase over 5% is refused when only a band-1 confirmation exists - the escalated
-  audit is a distinct artifact and a distinct bar.
-- **SC-002a**: An increase over 10% on the total cannot be PUSHED without the GM's recorded sign-off,
-  and the refusal happens at push time rather than only at gate time.
+- **SC-002**: An increase over 5% total, or over 10% on any one seed, is refused when only a band-1
+  confirmation exists - the escalated audit is a distinct artifact and a distinct bar.
+- **SC-002a**: An increase over 10% total, or over 20% on any one seed, cannot be PUSHED without the
+  GM's recorded sign-off, and the refusal happens at push time rather than only at gate time.
+- **SC-002b**: A run that is FASTER overall but crosses a per-seed line still fires that band. Feature
+  128 (total -29.9%, seed 47 +30.7%) is the regression case for this and MUST demand GM sign-off.
 - **SC-003**: An audit record is refused once the commit or the audited numbers change.
 - **SC-004**: A negative or inconclusive audit does not permit the work to proceed.
 - **SC-005**: The profiler's overhead on the real `make perf` workload is measured and recorded, and
@@ -469,7 +475,8 @@ constitution amendment.
 
 - The reference seed set stays [4, 25, 39, 47] unless the noise floor says otherwise.
 - `dev/perf-log/` stays one-file-per-run, so concurrent clones never conflict.
-- The 10% threshold, set by the GM 2026-08-24, is a **GM SIGN-OFF TRIGGER, not a ceiling** - they
+- The sign-off thresholds - 10% total and 20% per seed, set by the GM 2026-08-24 - are **SIGN-OFF
+  TRIGGERS, not ceilings** - they
   confirmed in the same message that *"there is no ceiling for allowing it to go forward so longer as
   the subagent reviewer agrees"*. "Cap" and "outer bound" are the vocabulary of the constitution rule
   this feature supersedes, where over-10% meant a Principle XIII regression with three exits. That
@@ -589,3 +596,24 @@ constitution amendment.
   Also applied, from the reviewer's non-blocking aside: `make done` now owes a printed warning that a
   delta will need GM sign-off before push (FR-009b), so the gate does not pass work that the push will
   refuse.
+
+- **The GM's per-measurement thresholds, 2026-08-24** - answering the question the previous round
+  routed to them, and closing band scope entirely.
+
+      band          TOTAL          SINGLE SEED
+      explain       any increase   any increase
+      audit         > 5%           > 10%
+      GM sign-off   > 10%          > 20%
+
+  Every band now carries a number for each measurement and fires on whichever is crossed first. There
+  is no total-only band left, which retires the last open scope question in this document.
+
+  **The change is not cosmetic.** Feature 128 - total -29.9%, seed 47 +30.7% - reached nobody under
+  the total-only design and now requires the GM's personal sign-off, despite the generator finishing
+  30% faster overall. That case is pinned as SC-002b.
+
+  **Measured corroboration, offered as such and not as justification**: the per-seed number is twice
+  the total's at both bands, and the noise floor measured for this spec is 1.7% per seed against 0.7%
+  on the total - a ratio of 2.4. The GM's 2:1 ratio therefore makes the per-seed bands marginally the
+  more sensitive relative to their own noise, which is the conservative direction. They set the
+  numbers; the measurement agrees with them.
