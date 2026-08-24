@@ -307,6 +307,21 @@ def _lay_skeleton(s: Settlement, plan: SitePlan, frame: _margin_frame, arcs: Seq
             #
             # The clip is cheap and it is a GUARANTEE rather than a hope: whatever the router
             # produced, what gets drawn keeps its distance from everything already built.
+            # A DEAD END, IMPLEMENTED AND REVERTED (feature 128, 2026-08-24). Do not re-try it
+            # without new evidence.
+            #
+            # THE HYPOTHESIS was sound and the fix did nothing. `WEB_FABRIC_GAP` is 7 px, the clip
+            # measures to the FOOTPRINT, and `houses_clear_of_lanes` measures to the CENTER at 14 -
+            # so an arm can finish 11.6 px from a house center and fail, which is exactly what cohort
+            # seed 27 reported. Splitting the clip (houses at TRACK_FABRIC_GAP, everything else at
+            # WEB_FABRIC_GAP) is the same correction `TRACK_FABRIC_GAP` was introduced to make one
+            # stage over, and it is defensible on its own terms.
+            #
+            # MEASURED: seed 27 failed at the identical coordinates afterwards, because the lane
+            # standing on that house is the SPUR, not a skeleton arm. The attribution said
+            # "skeleton/spur" and the two were not distinguished; assuming the wrong half cost the
+            # attempt. Reverted rather than kept, because a behavior change with no measured benefit
+            # is how a generator accumulates drift nobody can account for.
             arm = clip_to_clear(arm, fabric, WEB_FABRIC_GAP)
             # ...AND WHAT SURVIVES THE CLIP MUST STILL SERVE SOMETHING.
             #

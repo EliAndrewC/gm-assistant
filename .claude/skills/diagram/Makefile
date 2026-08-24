@@ -398,8 +398,8 @@ test-file:      ## run ONE test file, whole              FILE=tests/pipeline/tes
 #
 # Deliberately NOT reference-first: it IS the reference map, and gating it behind itself is the
 # circularity this target exists to break.
-explain:        ## why the reference map is failing - every check, with its message
-	@python3 .explain.py
+explain:        ## why a map is failing - every check with its message.   SEED=27 for a cohort seed
+	@SEED=$(or $(SEED),4) python3 .explain.py
 
 durations:
 	@python3 -m pytest -n auto -q --no-cov $(if $(MARK),-m "$(MARK)",-m "not rolls_map" --deselect tests/test_villages.py) --durations=$(or $(N),12) 2>&1 | grep -E "^[0-9.]+s (call|setup)|passed|failed" | head -$$(( $(or $(N),12) + 2 ))
