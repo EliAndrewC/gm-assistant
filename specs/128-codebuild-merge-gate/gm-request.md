@@ -196,3 +196,27 @@ once this feature lands; until then the session's memory note `project-aws-codeb
 > spec kit feature until this process stabilized somewhat in the other session because I think it
 > would have caused more problems had we tried to do this work in parallel with that refactor of our
 > general make gates."
+
+---
+
+## Second request, 2026-08-24 - after reading the planned feature
+
+Appended verbatim, later the same day, after the GM read the report on the FAITHFUL spec and the
+plan. Nothing above was changed.
+
+> "So while I agree that the full sweep is currently not something that could run on AWS code build,
+> this is exactly the kind of thing that we want to run there. if we need to modify the process
+> around running it. then that's fine. I think that the only reason why it requires a console is
+> because it prompts you to confirm why it is that you are running it and to give you a chance to
+> bail or something like that. And we can still keep that because that part can be run locally, and
+> then the actual dispatch to AWS infrastructure can happen after the operator has decided not to
+> take the escape hatch. Does that make sense? If so, then you should make sure that the spec kit
+> feature plan takes us into account and is updated to include the full sweep as something that is
+> run on AWS."
+
+> "I am definitely okay with GitHub main becoming the integration point. Presumably, this will
+> involve updating our local Claude dot MD to explain how we do things after this is implemented. I
+> also presume that our tooling will do things like pull from GitHub main into both our project main
+> and then presumably also into our Clone main branches. This should definitely happen at the
+> tooling level, not at the "remember to do it" level. Is that part of your Speckit plan? If not,
+> then we should update the spec kit plan to account for this."

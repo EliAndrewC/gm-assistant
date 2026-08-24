@@ -45,7 +45,7 @@ phases:
              git checkout $GIT_SHA   (must equal the tip of $MAILBOX - refuse otherwise)
   pre_build: git merge --no-edit origin/main || { echo "CONFLICT"; exit 1; }
              tree=$(git rev-parse HEAD^{tree})
-  build:     cd .claude/skills/diagram && GM_ASSISTANT_ALLOW_MAIN=  make done      (reference scope; FULL is impossible here - no TTY)
+  build:     cd .claude/skills/diagram && GM_ASSISTANT_ALLOW_MAIN=  make $MAKE_TARGET   (`done`, or `done FULL=1` only when the tree carries the committed permitted entry - R11)
   post_build (only if build succeeded):
              write verified/$tree.json to $CI_BUCKET
              git push origin HEAD:main || { echo "main moved; re-run"; exit 1; }
@@ -73,3 +73,23 @@ __main__.py    argparse: merge | check | status | image; assert_via_make at the 
 
 Registered in `_invocation.OPERATIONS` as `("ci-merge", "expensive")` etc. so a bare
 `python3 -m l7r.diagram.ci` is refused and named.
+
+## Amendment: the full sweep, the bookends, and sync-in
+
+| target | cost | prompts? | what it does |
+|---|---|---|---|
+| `ci-merge FULL=1` (merge action only; `ci-check` stays reference scope, FR-015) | paid (~6+ min) | **yes, locally** - the existing `bypass-audit` prompt, cancel by default, reason logged | On `permitted`: commits the bypass-log entry (`chore: authorize FULL sweep - <reason>`), pushes the mailbox, dispatches with `MAKE_TARGET="done FULL=1"`. The build's `bypass-audit` opens the full scope only to that committed entry (R11). |
+
+`buildspec/merge.yml` / `check.yml` gain: `make $MAKE_TARGET` instead of a fixed `make done`; on a FULL run `perf-gate` takes the `-start` in a worktree at the pre-merge `origin/main` and the `-end` on the merge (no standalone bookend run); on a
+FULL run, upload `dev/perf-log/*` produced in the build as artifacts; the dispatcher downloads them.
+
+`sync-with-main.sh sync-in` becomes:
+
+```
+git fetch origin                                                     (GitHub)
+flock $LOCK git -C /gm-assistant pull --ff-only origin main || die "mirror cannot fast-forward - someone committed in /gm-assistant"
+render_sync                                                          (in the mirror, cache-short-circuited)
+[clean clone only] git pull --no-rebase origin main                  (unchanged)
+```
+
+`perf-gate` pairs `-start`/`-end` on `(host, image)` and refuses a cross-machine pair by name.

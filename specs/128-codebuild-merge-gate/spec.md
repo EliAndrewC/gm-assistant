@@ -4,7 +4,9 @@
 
 **Created**: 2026-08-24
 
-**Status**: APPROVED by `spec-fidelity` (round 3, verdict FAITHFUL). **This feature is SPECIFIED AND PLANNED ONLY.**
+**Status**: APPROVED by `spec-fidelity` (round 3, verdict FAITHFUL); **AMENDED the same day on the
+GM's second request** (the full sweep goes to CodeBuild too; the sync flow is tooling, not memory) -
+amendment APPROVED at its own round 3 (FAITHFUL), see Review history. **This feature is SPECIFIED AND PLANNED ONLY.**
 The GM's instruction is explicit: *"you can write the SpecKit feature, you cannot actually automate
 it yet"*. Implementation waits for a separate go.
 
@@ -42,9 +44,9 @@ and this session's own CodeBuild smoke tests:
 | the local gate | "`make done` ~5 min" | **`make done` ~5.5 min** on the laptop, REFERENCE scope: Inashiro seed 4, lint/types, `hooks-test`, and every test that does not roll another map. **This is the run this feature offloads.** |
 | the cheap check | "`make quick` ~4 min" | **`make quick` ~33 s**, with a 60 s self-enforced budget; `make reference` ~26 s; `make test-file FILE=...` for one whole file. **These stay local, always.** |
 | "the 25-minute run" | assumed to be the normal gate | it is `make cohort` (48 seeds) - gated, reference-first, and NOT part of any `make done`. **Out of scope** (see Scope Boundaries). |
-| the full pre-push sweep | did not exist as a separate thing | **`make done FULL=1`** ~6 min: adds every live pool map, the seeds 41-44 ratchet, both coverage floors, and `perf-gate`. It PROMPTS with a cancel-by-default question and REFUSES to run without a terminal. **Out of scope**: remote runs are non-interactive by construction, so the existing guard already refuses it there, and the GM has said the prerequisite targets are not ready. |
+| the full pre-push sweep | did not exist as a separate thing | **`make done FULL=1`** ~6 min on the laptop: adds every live pool map, the seeds 41-44 ratchet, both coverage floors, and `perf-gate`. It PROMPTS with a cancel-by-default question and REFUSES to run without a terminal. **In scope on the GM's second request**: the prompt stays local; the dispatch happens after the operator declines the escape hatch; the build accepts the non-interactive run only because the tree it tests carries the logged reason (FR-024..FR-027). |
 | what the push already checks | flock'd pull+push, render-sync | that, plus **`gate-stamp`** (a green `make done` must have run against byte-identical Python), **`review-gate`** (a spec carries a FAITHFUL verdict; a re-rolled map has its notes touched), duplicate-def screening. All local, all cheap, all kept. |
-| performance | not tracked | **bookended per feature** (`make perf LABEL=NNN-start` / `-end`, `perf-report`), enforced by `perf-gate` inside `FULL=1` only. Snapshots are laptop measurements and are **only comparable on the same machine** (see the performance deferral in Scope Boundaries). |
+| performance | not tracked | **bookended per feature** (`make perf LABEL=NNN-start` / `-end`, `perf-report`), enforced by `perf-gate` inside `FULL=1` only. Snapshots are **only comparable on the same machine**; with `FULL=1` on CodeBuild, the bookends move there too - a consistent machine class, which the laptop never was (FR-028, FR-029). The laptop-era snapshots stay as history and are never compared against build-machine ones. |
 | CodeBuild startup | "30-60 s" estimated | **20 s wall, 7 s provisioning**, measured on the stock image. With a custom image from ECR: unmeasured, expected 20-40 s. |
 | `make done` remotely | "25 min becomes 6-9 min" estimated | **UNMEASURED.** The local 5.5 min is dominated by `pytest -n auto` over 22 laptop threads that throttle; on 36 unthrottled cores it should fall, but the serial floor (one reference hamlet ~26 s, provisioning ~20 s, source transfer) does not. **Measuring it is a task of this feature, and the number goes in `timings.md`, never in prose.** |
 | cost per run | "~$0.60" for a 25-min job | at $0.08/min, a 5.5-minute run is **~$0.45**; if it lands at 3 minutes, **~$0.25**. Cost controls: $10/day and $75/month budgets emailing at every 20%; $100/month hard stop that denies further builds; a live alarm at 125 build-minutes per rolling day; a live email at every 20% of the monthly budget. |
@@ -74,9 +76,16 @@ so the fidelity reviewer can check each against `gm-request.md`, and so the plan
    quicker version of the tests on AWS. We only want to run the lengthy tests."*
 7. **Nothing runs on AWS for a change outside the diagram skill, or for a docs-only change inside
    it.** *"Our AWS code build integration exists entirely for the sake of our diagram skill."*
-8. **Initial scope is the five-minute `make done` that precedes a push to main, and nothing
-   larger.** *"at least in the initial phase only doing this for actual make done actions that are
-   merging stuff back into main."*
+8. **The remote run is the `make done` that precedes a push to main** - *"at least in the initial
+   phase only doing this for actual make done actions that are merging stuff back into main"* - in
+   whichever SCOPE the operator invoked it: reference scope by default, or the full sweep.
+9. **The full sweep goes to CodeBuild too, with its prompt kept and run locally** (second request):
+   *"this is exactly the kind of thing that we want to run there ... that part can be run locally,
+   and then the actual dispatch to AWS infrastructure can happen after the operator has decided not
+   to take the escape hatch."*
+10. **Syncing GitHub main into the mirror and into every clone is the tooling's job** (second
+    request): *"This should definitely happen at the tooling level, not at the 'remember to do it'
+    level."*
 
 **The delegated decision - where main lives - and how it is resolved.** The GM thought aloud: *"the
 local clones push to remote GitHub branches rather than... pushing back to Maine locally. I don't
@@ -250,8 +259,79 @@ continue to be run locally."*
 
 ---
 
+### User Story 6 - The full sweep runs on CodeBuild, after the operator declines the escape hatch locally (Priority: P1)
+
+At the end of a feature the session runs the merge action with `FULL=1`. The prompt appears in the
+terminal exactly as today - the explanation, the default of cancel, the request for a written
+reason. If the operator cancels, nothing runs anywhere. If they give a reason, it is logged and
+committed, and the full sweep - every pool map, the ratchet, both coverage floors, `perf-gate` -
+runs on CodeBuild against the merge with the latest main; on green the result lands on main.
+
+**Why this priority**: The GM's second request, and the constitution's mandatory once-at-the-end
+full run is the single most expensive thing the laptop does.
+
+**Independent Test**: [quickstart](quickstart.md) §7 - cancel at the prompt: no build; answer it:
+one FULL build; try the same non-interactively: refused locally, and a hand-crafted mailbox without
+a committed reason: refused by the build.
+
+**Acceptance Scenarios**:
+
+1. **Given** the merge action with `FULL=1` in a terminal, **When** the operator presses Enter at the
+   prompt, **Then** the cancellation is logged as today and no build starts.
+2. **Given** the same, **When** the operator gives a reason, **Then** the reason is logged as
+   `permitted`, that log entry is committed and shipped with the work, and one build runs the full
+   sweep on the merge result.
+3. **Given** the merge action with `FULL=1` and no terminal, **When** it runs, **Then** it is refused
+   locally before any dispatch, as the existing guard refuses it today.
+4. **Given** a mailbox commit whose tree carries NO `permitted` entry for this run, **When** the
+   build is asked to run FULL, **Then** the build refuses the full scope and fails - the reason must
+   be in the tree it tests, not in an environment variable the session sets.
+5. **Given** a FULL build that ran `perf-gate`, **When** it finishes, **Then** its performance
+   snapshots return to the clone's `dev/perf-log/`, stamped with the machine that took them, and
+   `perf-gate` compared them only against a baseline from the same machine class.
+6. **Given** a FULL build, **When** `perf-gate` needs the `-start` bookend, **Then** the build takes
+   it ITSELF, in the same run, on the unmodified code (the main it just merged, before the merge) -
+   the retroactive worktree baseline `perf-gate` already documents, done by the build rather than
+   by a session. No separate remote run exists for a bookend.
+
+---
+
+### User Story 7 - GitHub main flows into the mirror and every clone without anyone remembering (Priority: P1)
+
+A landing happens on GitHub `main` - from a build, a direct push, or the GM's own laptop. The next
+time any session does anything, its clone is at that main, `/gm-assistant` is at that main, and the
+renders the GM browses in `/gm-assistant` reflect it. No session ran a command to make that so.
+
+**Why this priority**: The GM's second request, in the GM's words *"tooling level, not ... 'remember
+to do it' level"* - and the project's whole history of guards is that a rule kept only in memory
+does not hold.
+
+**Independent Test**: push a commit to GitHub `main` from outside any session; start a session turn;
+`git -C /gm-assistant log -1` and the clone's `HEAD` both show it, and the mirror's renders match.
+
+**Acceptance Scenarios**:
+
+1. **Given** GitHub `main` has advanced and the clone is CLEAN, **When** a session turn starts,
+   **Then** the prompt hook fetches GitHub `main`, fast-forwards `/gm-assistant` to it under the
+   ritual lock, runs render-sync there, and merges it into the clone - in that order.
+2. **Given** GitHub `main` has advanced and the clone is DIRTY (mid-task), **When** a session turn
+   starts, **Then** the fetch, the mirror fast-forward and render-sync still run; only the clone
+   merge is skipped, with today's "mid-task, sync-in skipped" message. Mid-task work is sacred;
+   the mirror is nobody's workspace and cannot fall behind because a session is busy.
+3. **Given** `/gm-assistant` cannot fast-forward (someone committed there by hand), **When** the
+   mirror step runs, **Then** it stops and says so rather than merging in the mirror.
+4. **Given** nothing has changed, **When** a turn starts, **Then** it costs what sync-in costs today -
+   the fetch, a no-op fast-forward, and render-sync's cache short-circuit.
+
+---
+
 ### Edge Cases
 
+- **The FULL prompt's answer travels in the tree.** The build cannot ask a question, so it must be
+  handed the answer in a form it can trust more than an environment variable: the `permitted`
+  bypass-log entry, committed, with the commit it authorized as an ancestor of the tree under
+  test. Forging one locally is an edit to a tracked file and appears in the diff - the visibility
+  bar feature 127 set for every remaining bypass.
 - **A docs-only push still has to reach main.** The GM's spec-number claim protocol pushes a fresh
   `specs/NNN/` minutes after it is written. That delta has no diagram code, so it goes to main by the
   direct route - a fast-forward push from the clone, with today's local pre-push guards - and costs
@@ -273,15 +353,21 @@ continue to be run locally."*
   first and stops there. The build fails in about a minute, which is the cheapest possible failure;
   but a session should never have got this far, because dispatch requires a green local check since
   the last edit and `make reference` is one of the accepted ones.
-- **`FULL=1` on the remote gate.** Refused by the existing `bypass-audit` guard (no terminal), so the
-  remote gate can never run more than reference scope. Stated so nobody "fixes" it.
+- **`FULL=1` on the remote gate, without the committed reason.** Refused by the build (US6 #4). The
+  existing local guard - a non-interactive FULL with `REF_WHY` on the command line is refused - stays
+  exactly as it is; the build-side acceptance is a SECOND door that opens only to a reason the
+  operator answered at the prompt.
 - **A green local `make done` followed by the merge action.** The local run counts as the green
   local check (FR-012) and satisfies today's `gate-stamp`; the merge action still dispatches, because
   the thing being verified is the merge with the LATEST main, sequentially, which a local run
   cannot be. The redundancy the GM wants removed is the one FR-013 removes: a tree already verified
   REMOTELY is not verified remotely again.
-- **Performance snapshots on the build machine** would be a different machine's numbers. See the
-  deferral in Scope Boundaries.
+- **Performance snapshots are per machine.** The laptop's `dev/perf-log/` history stays; a
+  build-machine snapshot carries its machine identity and is compared only with build-machine
+  snapshots. A `-start` taken on the laptop cannot pair with an `-end` taken on CodeBuild, and
+  `perf-gate` says so rather than reporting a meaningless number. A FULL build therefore takes
+  BOTH bookends itself - the baseline on the pre-merge main, the end on the merge - which costs one
+  extra `perf` inside a run already paid for, and never a run of its own.
 - **The build image is stale relative to `setup-dev-env.sh`.** The gate fails on a missing tool.
   The image is rebuilt by an explicit make target, itself a remote (paid) operation and therefore
   refusal-guarded and logged like every other.
@@ -322,8 +408,9 @@ AWS call, and a refusal names the condition
   append-only logs, and pool `.notes.md` files are NOT engine code, even inside the skill. This list
   governs DISPATCH only; it MUST NOT narrow what the existing `gate-stamp` guard hashes.
 - **FR-009**: A remote run MUST NOT start for a delta touching only files outside the diagram skill.
-- **FR-010**: Only the lengthy run - the reference-scope `make done` - MAY run remotely. `quick`,
-  `reference`, `test-file`, `durations`, `maps`, and every read-only diagnostic MUST stay local.
+- **FR-010**: Only the lengthy runs - `make done` in reference scope, and `make done FULL=1` - MAY
+  run remotely. `quick`, `reference`, `test-file`, `durations`, `maps`, and every read-only
+  diagnostic MUST stay local.
 - **FR-011**: The merge route MUST NOT dispatch while an active spec-kit feature has open tasks.
   "Active feature" is the one spec-kit already tracks. (What "complete" means for work with no
   active feature is the session's reading, flagged in Assumptions.)
@@ -378,33 +465,65 @@ AWS call, and a refusal names the condition
 - **FR-023**: The new make targets are operations under feature 127: reachable only through this
   project's make, refused elsewhere, and named in every refusal that applies to them.
 
+**The full sweep on CodeBuild** (second request)
+
+- **FR-024**: The merge action MUST accept `FULL=1` (the iteration check stays reference scope,
+  FR-015). The prompt - the
+  explanation, the default of cancel, the written reason, the log entry, the refusal when no
+  terminal is attached - runs LOCALLY, unchanged, before any dispatch.
+- **FR-025**: A `permitted` answer MUST be committed and shipped in the tree the build tests. The
+  build MUST run the full scope only when that tree carries a `permitted` entry whose recorded
+  commit is an ancestor of the tree under test and whose target is the full sweep; otherwise it
+  MUST refuse the full scope and fail. The build MUST NOT accept the reason from an environment
+  variable alone.
+- **FR-026**: The existing local refusal of a non-interactive FULL run with `REF_WHY` on the command
+  line MUST remain exactly as it is.
+- **FR-027**: The verified-tree record for a FULL run MUST say so, and a reference-scope record MUST
+  NOT satisfy a FULL merge's short-circuit (a FULL record satisfies either).
+- **FR-028**: The bookends `perf-gate` pairs MUST both be build-machine snapshots produced INSIDE
+  the remote FULL run: the `-end` on the merge result, and the `-start` taken by the same build on
+  the unmodified code (the main it merged, before the merge - the retroactive baseline `perf-gate`
+  already documents). Both MUST return to the clone's `dev/perf-log/` carrying the machine identity
+  that took them. **No bookend may be a separate remote dispatch; FR-010's two permitted remote
+  runs stand unchanged.**
+- **FR-029**: `perf-gate` MUST compare only snapshots from the same machine class, and MUST refuse
+  with a message naming the mismatch when asked to pair a laptop snapshot with a build snapshot.
+  Laptop-era snapshots stay as history.
+
+**Sync at the tooling level** (second request)
+
+- **FR-030**: At the start of EVERY session turn, regardless of the clone's working-tree state, the
+  tooling MUST fetch GitHub `main`, fast-forward `/gm-assistant` to it under the ritual lock
+  (stopping with a message if it cannot), and run render-sync there - so the mirror and the GM's
+  browsed renders never lag GitHub `main` by more than one turn. The clone-side merge keeps today's
+  behavior: it runs on a clean clone and is skipped, with the existing message, on a dirty one. The
+  existing prompt hook is the mechanism and is changed to make the mirror steps unconditional.
+- **FR-031**: The GM's own laptop pushes to GitHub `main` MUST flow through the same path with no
+  special handling.
+- **FR-032**: CLAUDE.md and `docs/session-clones.md` MUST describe the post-feature flow - GitHub
+  `main` as the integration point, the mirror, the two routes, `FULL=1` remote - and MUST NOT
+  retain the retired local-main-as-integration-point instructions.
+
 ### Scope Boundaries
 
-**In scope**: the reference-scope `make done` as the merge gate on CodeBuild; the iteration check;
-the dispatch conditions; the two routes to main and the mirror; the verified-tree record; the audit
-and cost visibility; the build image and its rebuild target; a measured remote baseline for
-`make done`.
+**In scope**: `make done` in reference scope AND `make done FULL=1` as the merge gate on CodeBuild,
+the FULL prompt kept local; the iteration check in reference scope; the dispatch conditions; the two
+routes to main and the mirror; the tooling-level sync flow; the verified-tree record; the
+performance bookends on CodeBuild with per-machine identity; the audit and cost visibility; the
+build image and its rebuild target; a measured remote baseline for both scopes.
 
-**Deferred, with the GM's clause quoted so the deferral is visible.** The GM said: *"we have added
-things like performance checks to see that our performance has not degraded. And that is going to
-need to be integrated into this AWS code. And, also, I guess, the numbers that we have already
-gathered are not quite valid because they are gathered for my laptop, and so they will need to be, I
-guess, reconstituted."* The performance checks are the `perf` bookends and `perf-gate`, and
-`perf-gate` runs only inside `make done FULL=1` - which this feature does not run remotely, on the
-GM's own instruction that the prerequisite targets are not ready. So the integration is NOT
-delivered here. What this feature does carry forward for it: (a) the rule that a snapshot is only
-comparable with a baseline from the same machine, so when `FULL=1` does go remote the build machine
-gets its own `-start` baseline and its snapshots carry their machine identity; (b) the remote
-`make done` wall-clock measured by this feature, which is the first "reconstituted" number. Nothing
-in this feature runs `perf` or `perf-gate` remotely, and nothing forbids the later feature from
-doing so.
+**The performance integration, previously deferred, is now in scope.** The GM's first request said
+*"performance checks ... that is going to need to be integrated into this AWS code"*, and the first
+version of this spec deferred it because `perf-gate` only runs inside `FULL=1`. The second request
+puts `FULL=1` on CodeBuild, which removes the reason for the deferral: FR-028 and FR-029 deliver it,
+and the *"reconstituted"* numbers are the build-machine bookends.
 
 **Out of scope, stated so it is not reopened by accident**:
 
-- `make done FULL=1`, `make cohort`, `cache-audit`, and every other prompted target stay local. The
-  GM: *"you genuinely should not be able to use our make commands to do work in AWS just yet because
-  the prerequisite make targets which would need to be working or not working yet."* The existing
-  refusal of a non-interactive FULL run already enforces this remotely.
+- `make cohort`, `cache-audit`, and every other prompted target beyond `make done FULL=1` stay local.
+  The GM's second request named *"the full sweep"*; the mechanism it specifies (prompt locally,
+  ship the answer in the tree, dispatch) generalizes to any prompted target for the cost of a
+  registry row, and extending it is a later, explicit decision.
 - Running Claude Code sessions on AWS. The GM chose to keep sessions local.
 - Any change to what the gate CHECKS. This feature changes where it runs and when.
 - The webapp's `make done`. It has never been slow enough to matter.
@@ -419,7 +538,11 @@ doing so.
 - **Verification state**: per session - the most recent verification event (green local target /
   failed gate / none since last edit).
 - **Verified-tree record**: written only by a green build; keyed by the exact tree that build
-  produced by merging main; carries the build id and time.
+  produced by merging main; carries the build id, time, and SCOPE (reference or full).
+- **Permitted entry**: the bypass-log entry an operator's answer at the local FULL prompt produces;
+  committed; the build's evidence that the full scope was authorized.
+- **Machine identity**: what a performance snapshot records about where it was taken; the key
+  `perf-gate` pairs bookends by.
 - **Route**: DIRECT or GATED, derived from the delta.
 - **Remote run-log entry**: the local audit record of a remote build.
 
@@ -443,6 +566,15 @@ doing so.
   none of them makes a network call.
 - **SC-007**: Every new guard has a fires/stays-quiet test pair in the gate, and deleting the guard
   turns the gate red.
+- **SC-008**: A `FULL=1` merge produces exactly one build that ran every pool map, the ratchet, both
+  coverage floors and `perf-gate`; cancelling at the prompt produces zero builds; a mailbox without
+  the committed reason produces a build that refused the full scope.
+- **SC-009**: After a push to GitHub `main` from outside any session, one session turn later
+  `/gm-assistant` and its renders reflect it whatever state the clone is in, and a CLEAN clone
+  reflects it too - verified by commit hash and by a render's content hash - with no command run
+  by hand.
+- **SC-010**: Every `perf-gate` verdict pairs two build-machine snapshots from one FULL run, and
+  `perf-report` names the machine on every row. No remote run exists whose only job is a bookend.
 
 ## Assumptions
 
@@ -464,9 +596,13 @@ doing so.
 - **The public repository.** `EliAndrewC/gm-assistant` is public, which is what makes the ruleset on
   `main` available on the GM's plan. Mailbox branches are therefore public too; nothing secret is
   tracked, and `development-secrets.ini` stays gitignored.
-- **The mirror is updated by the session that landed work**, as part of the stop-work ritual, under
-  the same lock render-sync uses today. Another session's stale mirror is harmless: the next sync-in
-  pulls from GitHub, not from the mirror.
+- **The mirror is updated every turn and by every landing**, under the same lock render-sync uses
+  today (FR-030). The existing prompt hook is the mechanism, MODIFIED by this feature so the fetch,
+  mirror fast-forward and render-sync are unconditional; the clone-side merge keeps today's
+  dirty-clone skip.
+- **"Machine identity" for a snapshot** is the compute type plus the image digest for a build, and
+  the hostname plus CPU model for the laptop - enough to tell the two apart and to notice when the
+  build image changes under a comparison. Exact fields are the plan's to choose.
 - **The GM's laptop-side "push main to GitHub" job goes away for this repository.** The memory note
   and CLAUDE.md that describe it are updated by this feature. `/host-l7r-repo` is unaffected.
 - **Bandwidth.** A mailbox push carries only the clone's new commits; the build clones shallowly.
@@ -481,6 +617,35 @@ doing so.
   scope limit - a working reference hamlet at one seed - is unchanged.
 
 ## Review history
+
+### Amendment (GM's second request, 2026-08-24) - rounds start again at 1
+
+Added: Decisions 9-10, User Stories 6-7, FR-024..FR-032, SC-008..SC-010, three entities, two
+assumptions; the performance deferral withdrawn and delivered by FR-028/FR-029; `FULL=1` moved from
+out of scope to in scope with the local prompt kept; cohort and the other prompted targets remain
+out of scope by name.
+
+- **Amendment round 1** - `CHANGES REQUIRED` (2 findings). (1) FR-028 / US6 #6 / SC-010 had
+  created a THIRD paid dispatch - a standalone remote `-start` bookend at feature start - that
+  contradicted FR-010 and the GM's *"only doing this for actual make done actions that are merging
+  stuff back into main"*, and would have had to drive through FR-011 and FR-012 to run at all.
+  Restated: both bookends are taken INSIDE the FULL build (the `-start` on the pre-merge main, the
+  retroactive baseline `perf-gate` already documents); no bookend is a dispatch of its own. (2)
+  FR-030 claimed an every-turn guarantee from a hook that skips sync-in on a dirty clone - most of
+  any working session. Split: the fetch, mirror fast-forward and render-sync are unconditional
+  every turn; only the clone merge keeps the mid-task skip. US7 gained the dirty-clone scenario;
+  SC-009 restated. The reviewer's aside - `bypass-audit` prints a stale `bypass-log.jsonl` path in
+  a message this feature makes load-bearing - is a Principle XIV fix, added as a task.
+- **Amendment round 2** - `CHANGES REQUIRED` (2 findings, both one edit). (1) FR-024 had extended
+  `FULL=1` to the iteration check - unrequested, a new mid-feature paid path, and contradicting
+  FR-015 - cut back to the merge action alone. (2) The mirror Assumption still said "every
+  sync-in ... nothing new has to be remembered", the premise round 1 removed; restated to say the
+  hook is modified and the mirror steps are unconditional.
+- **Amendment round 3** - `FAITHFUL`. Both edits verified; no residue; every FR citation resolves;
+  each clause of the second request mapped to a requirement and each amendment requirement back to
+  a clause of one of the two requests.
+
+### Original spec
 
 - **Round 3** - `FAITHFUL`. Both round-2 edits verified in the text; every FR citation outside the
   Requirements list resolves; the performance deferral's load-bearing fact (`perf-gate` is a `FULL=1`
