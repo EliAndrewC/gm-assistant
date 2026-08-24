@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from .._geom import (
     Pt,
     label_aabb,
+    seg_dist,
 )
 
 if TYPE_CHECKING:
@@ -65,7 +66,29 @@ class CaptionProbesMixin:
         b: tuple[float, float, float, float] = (lx - tw, ly - size * 0.8, lx + tw, ly + size * 0.25)
         if tilt:
             b = label_aabb([*b, 0, "", None, tilt])
-        return not any(b[0] < x1 and x0 < b[2] and b[1] < y1 and y0 < b[3] for x0, y0, x1, y1 in bx)
+        if any(b[0] < x1 and x0 < b[2] and b[1] < y1 and y0 < b[3] for x0, y0, x1, y1 in bx):
+            return False
+        # ...AND CLEAR OF THE WAYS, which `label_blockers` structurally cannot see.
+        #
+        # That helper walks the manifest for records carrying x/y/w/h, and a LANE is a polyline of
+        # `pts` - so no caption has ever been tested against a lane tread by this probe, while
+        # `captions_clear_the_ways_they_stand_on` measures exactly that. The seat probe and the check
+        # were asking different questions, which is the defect this project keeps re-finding under
+        # different names ("MEASURE WHAT THE RULE MEASURES", dev/gate.md).
+        #
+        # It went unnoticed because a caption landed on a tread only when the ways ran unusually
+        # close to the busiest node; feature 126 derives the lanes from the houses, so they thread
+        # the cluster more tightly and it started happening (cohort seeds 34 and 35, both clean at
+        # HEAD). The check's own tolerance is the tread half-width plus its 3 px halo plus 2 ft.
+        for _ln in self.M.get("lanes", []):
+            _pts = _ln.get("pts") or []
+            _half = float(_ln.get("w", 5)) / 2 + 3.0 + 2.0
+            for _k in range(len(_pts) - 1):
+                _a, _b2 = _pts[_k], _pts[_k + 1]
+                _cx, _cy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+                if seg_dist(_cx, _cy, (float(_a[0]), float(_a[1])), (float(_b2[0]), float(_b2[1]))) < _half + max(b[2] - b[0], b[3] - b[1]) / 2:
+                    return False
+        return True
 
     def clear_label_seat(self: Settlement, x: float, y: float, w: float, h: float, label: str, size: float = 9.0, skip_key: str | None = None) -> Pt | None:  # type: ignore[misc]
         """A caption seat for a verge-hugging feature: below, above, then left and right, walking

@@ -696,12 +696,19 @@ def belt_polygon(s: Settlement, plan: SitePlan) -> Poly:
     # tuned against, and the floor of 7 keeps every previously-passing short belt sampled exactly as
     # before. This is the same rule `front_row` already records for its own seats: resolution
     # follows the thing being sampled, never the count of what is being placed.
-    # ONE COLUMN PER ~45 px, MEASURED. 90 px was tried first and closed only one of the four
-    # windbreak seeds; 45 closes three (33, 37, and 27 down to a pre-existing caption issue HEAD
-    # shares). The profile is what the drawn band follows, so its resolution IS the belt's minimum
-    # feature size - too coarse and the band pinches between columns, and the check reports the
-    # pinch as a bare run across the wind even though clumps sit a few feet away in plane distance.
-    COLS = max(7, min(40, int(2 * half / 45.0)))
+    # ONE COLUMN PER ~90 px. The profile is what the drawn band follows, so its resolution is the
+    # belt's minimum feature size: too coarse and the band pinches between columns, and the check
+    # reports the pinch as a bare run across the wind even though clumps sit feet away in plane
+    # distance. The floor of 7 is the value every belt used before feature 126, so a short belt is
+    # sampled exactly as it always was.
+    #
+    # 45 px WAS TRIED AND ROTATED THE FAILURES RATHER THAN FIXING THEM - do not reach for it again
+    # as an obvious next step. Measured across the 48-seed cohort: at 90 px the windbreak failures
+    # were seeds 23/27/33/37; at 45 px they were 22/23/28/39/46. Three closed, four opened, one
+    # persisted, and the total went UP. That is the signature of a knob that moves WHICH map has the
+    # defect instead of removing it, and Principle XIII names rotation explicitly as not an excuse.
+    # Whatever leaves a 141 ft hole in an 833 ft belt (seed 23) is not sampling resolution.
+    COLS = max(7, min(24, int(2 * half / 90.0)))
     v_mid = (v_lo + v_hi) / 2
     rng = random.Random((plan.spec.seed * 7919) & 0xFFFFFFFF)
 
