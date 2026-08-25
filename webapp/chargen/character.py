@@ -2,9 +2,11 @@ import re
 from os.path import join
 from copy import deepcopy
 from random import random, randrange, normalvariate, choice, choices, uniform
+from typing import Sequence
 
 from chargen import config
 from chargen import constants as c
+from chargen import namepool, opcache
 
 
 def rounded(x: int, minval=1, maxval=15) -> int:
@@ -48,18 +50,20 @@ def random_age(xp: int) -> int:
     return randrange(youngest, oldest + 1)
 
 
-def unused_name(gender: str = None) -> tuple[str, str]:
+def unused_name(gender: str = None, avoid: Sequence[str] = ()) -> tuple[str, str]:
     """
-    When randomly generating a name, we want to make sure that we don't pick a
-    name which is already in use in this campaign.  We maintain a global set of
-    existing names and then keep randomly picking a new name until we find one
-    which we haven't already used.
+    Pick a given name from the /name skill pool that is not in use in this
+    campaign (feature 200). "In use" is the union of the names created by this
+    process and the given names in the campaign cache file - read from the file,
+    NOT from a web-server start-up event, so a plain script (the /chargen skill)
+    gets the same exclusions as the webapp. ``avoid`` holds the given names of
+    characters generated in the same SET; the strict set-distinctness rule is
+    applied against them. Raises NamePoolExhausted rather than looping forever.
     """
-    name = None
     gender = gender or choice(['male', 'female'])
-    while not name or name in c.USED_NAMES:
-        name = choice(list(c.NAMES[gender]))
-    return name, c.NAMES[gender][name]
+    used = c.USED_NAMES | opcache.used_given_names()
+    entry = namepool.pick_name(gender, namepool.load_pool(namepool.pool_dir()), used, avoid)
+    return entry.name, entry.explanation
 
 
 def weighted_choice(d: dict) -> str:
@@ -92,9 +96,11 @@ class Character:
     This is the parent class used to generate characters.  It defines
     """
 
-    def __init__(self):
-        self.gender = choice(['male', 'female'])
-        self.personal_name, self.name_meaning = unused_name(self.gender)
+    def __init__(self, gender: str = None, avoid: Sequence[str] = ()):
+        # gender: pin it (no re-roll loop needed); None rolls it. avoid: given
+        # names of the other members of a set generated together (feature 200).
+        self.gender = gender or choice(['male', 'female'])
+        self.personal_name, self.name_meaning = unused_name(self.gender, avoid)
 
         self.xp = self.gen_xp()
         self.age = self.gen_age()
@@ -267,6 +273,8 @@ class Samurai(Character):
         post='',
         ministry='',
         location='',
+        gender=None,
+        avoid=(),
     ):
         self.base_rank = int(base_rank)
         # A samurai's rank is their seniority, not their job: most Rank 8
@@ -319,7 +327,7 @@ class Samurai(Character):
         # gen_tags() (called by Character.__init__) can tag it.
         self.location = self._derive_location()
 
-        Character.__init__(self)
+        Character.__init__(self, gender, avoid)
 
         # Wasp clan Ren lineage samurai are peasantborn
         if self.clan == 'wasp' and self.lineage == 'ren':
@@ -429,9 +437,9 @@ class Samurai(Character):
 
 
 class Peasant(Character):
-    def __init__(self, base_rank=0, **ignored):
+    def __init__(self, base_rank=0, gender=None, avoid=(), **ignored):
         self.rank = int(base_rank)
-        Character.__init__(self)
+        Character.__init__(self, gender, avoid)
         self.recognition = rounded(normalvariate(self.rank + 2, 1))
         self.full_name = self.personal_name
         self.school = ''
@@ -444,7 +452,7 @@ class Peasant(Character):
 
 
 class Monk(Character):
-    def __init__(self, base_rank, order='', seat='', **ignored):
+    def __init__(self, base_rank, order='', seat='', gender=None, avoid=(), **ignored):
         self.rank = int(base_rank)
         # The monk's Order (one of the 7 Fortunes of Good Luck). Unlike the
         # other dropdowns, a blank Order is left blank rather than randomized -
@@ -454,7 +462,7 @@ class Monk(Character):
         # Some ranks pair two roles (rank 4: Senior Monk / Preceptor; rank 5:
         # Adept Monk / Country Monk). `seat` records which one was chosen.
         self.seat = seat
-        Character.__init__(self)
+        Character.__init__(self, gender, avoid)
         self.school = ''
         self.full_name = self.personal_name
         self.recognition = rounded(

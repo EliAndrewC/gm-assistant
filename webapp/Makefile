@@ -76,7 +76,7 @@ test:
 
 cov:
 	@if [ -d l7r ]; then \
-		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov=chargen.opsynth --cov-report=term-missing --cov-fail-under=100; ec=$$?; \
+		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov=chargen.opsynth --cov=chargen.similarity --cov=chargen.namepool --cov-report=term-missing --cov-fail-under=100; ec=$$?; \
 		if [ $$ec -ne 0 ]; then python3 ../scripts/uncovered-in-diff.py || true; fi; exit $$ec; \
 	else \
 		echo "[done] No l7r/ package yet - coverage check skipped"; \

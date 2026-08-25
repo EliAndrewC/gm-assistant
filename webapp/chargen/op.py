@@ -177,6 +177,16 @@ def create_character(
         # Add the personal name to USED_NAMES immediately so we don't reuse it
         personal_name = name.split()[-1]
         c.USED_NAMES.add(personal_name)
+        # Feature 200 (FR-001): reconcile the campaign cache file so the new
+        # character is a used name for every consumer (skill picker, engine,
+        # /synthesize context) without a separate scrape. Fail-soft: a cache
+        # failure never turns a successful creation into a reported failure.
+        try:
+            from chargen import opcache
+
+            opcache.refresh_cache_file()
+        except Exception as e:
+            cherrypy.log(f'Created character but failed to refresh the campaign cache: {e}')
     elif response.status_code == 422:
         raise ValueError(
             'Failed to create character (422). The authenticity_token may '
@@ -691,6 +701,12 @@ def update_used_names():
     """
     while True:
         try:
+            from chargen import opcache
+
+            # Feature 200: the durable record is the cache FILE (the engine reads
+            # used names from it); reconcile it hourly so characters added on the
+            # Obsidian Portal website are picked up too.
+            opcache.refresh_cache_file()
             for name in existing_names():
                 # we only track the personal name (e.g. "Gohei" instead of "Matsu Gohei")
                 c.USED_NAMES.add(name.split()[-1])

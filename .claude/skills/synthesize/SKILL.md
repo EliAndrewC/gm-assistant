@@ -131,6 +131,22 @@ the house conventions from CLAUDE.md.
 
 ## Step 2c - Write the backstory yourself
 
+**First, the name bank (REQUIRED, feature 200 FR-015).** The subject keeps their
+name - `/synthesize` never renames anyone - but the prose will invent a parent,
+a sensei, a rival, a superior. Those names come from ONE scripted call, never
+from your head:
+
+```bash
+cd /gm-assistant/.claude/skills/name && python3 pick_name.py --bank 4 --avoid "[GIVEN_NAME]" > $SCRATCH/synthesize-name-bank.txt 2>&1; cat $SCRATCH/synthesize-name-bank.txt
+```
+
+`[GIVEN_NAME]` is the last word of `[NAME]`. The bank is vetted against the
+whole campaign roster (the cache is refreshed first if older than an hour) and
+is mutually distinct, including from the subject - so there is nothing to grep
+for afterwards. Use only bank names for characters with no OP record; `--bank
+6` if you need more. A WARNING line in the file means the roster was
+incomplete - say so in your report.
+
 Write 1 to 3 short paragraphs of prose. Content rules (these mirror the
 engine's tested instructions - keep honoring them):
 

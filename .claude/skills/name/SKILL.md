@@ -1,7 +1,7 @@
 ---
 name: name
 description: Generate Rokugani personal names with meanings and explanations in varied formats
-argument-hint: [m|f] [p] [N]
+argument-hint: [--refresh] [--avoid A,B] [--bank N] [m|f] [p] [N]
 allowed-tools: Bash Read
 ---
 
@@ -11,16 +11,7 @@ Generate personal names (given names only, not family/house names) for character
 
 Names are pre-generated into a pool and selected via script to ensure they don't collide with existing campaign NPCs.
 
-## First Invocation in a Session
-
-When this skill is first invoked in a session, do TWO things:
-
-1. **Ensure dependencies are installed**: Run `${CLAUDE_SKILL_DIR}/setup.sh` to install pip and Python packages if needed.
-2. **Start the background cache updater**: Use `/loop 1h update name cache` to periodically refresh the campaign name cache from Obsidian Portal. This keeps the similarity filter up to date if the GM adds new NPCs during the session.
-
-Then proceed to serve the name request as described below.
-
-On subsequent invocations in the same session, skip both steps and go straight to serving the request.
+The pool is the SINGLE source of given names in this project (feature 200, 2026-08-25): the `/names` web page and the chargen engine (`webapp/chargen/namepool.py`, used by `/chargen` and the webapp's Generate button) read the same two files. The used-name exclusion list is derived from the campaign-character cache (`webapp/opcache/characters.json` - the same cache the `/synthesize` prompt reads), which is reconciled after every character creation and, by `pick_name.py`, whenever it is more than an hour old. No cookie, no `.env`, no setup step, no background loop: the script does it.
 
 ## How to Serve a Name Request
 
@@ -32,7 +23,9 @@ On subsequent invocations in the same session, skip both steps and go straight t
 
 2. **Display the script's output directly** - no parsing or reformatting needed.
 
-4. **If the script reports a warning** about low pool size, inform the user: "The name pool is running low. Say 'refill names' to generate more."
+3. **Flags** (before or among the shorthand): `--refresh` forces a campaign-cache refresh from Obsidian Portal first (use when the GM says they just added someone on the website); `--avoid A,B` makes every pick set-distinct from those names (a `/synthesize` subject, names already chosen); `--bank N` returns N male + N female names as ONE mutually distinct set, gender-labeled - the name bank a backstory's invented supporting cast is drawn from.
+
+4. **If the script prints a WARNING on stderr** (no campaign cache, an empty roster, or a stale cache it could not refresh), pass it on to the GM verbatim: the names were picked against an incomplete roster.
 
 5. **If the pool is empty**, fall back to generating a name directly (see "How to Generate Directly" below) and warn the user to refill.
 
@@ -40,8 +33,8 @@ On subsequent invocations in the same session, skip both steps and go straight t
 
 When the user says "refill names" or the pool is empty:
 
-1. First run `${CLAUDE_SKILL_DIR}/setup.sh` to ensure dependencies are present.
-2. Load ALL existing names from both `pool-male.jsonl` and `pool-female.jsonl`, plus all names from `campaign-names.txt`. These are the "excluded names" -- every new name must pass the similarity check against ALL of them.
+1. Refresh the roster: `cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py --refresh 1` (the pick itself is disposable; the refresh is the point).
+2. Load ALL existing names from both `pool-male.jsonl` and `pool-female.jsonl`, plus the roster's given names (`python3 -c "import campaign; print(campaign.used_names(refresh=False))"` from the skill dir). These are the "excluded names" -- every new name must pass the similarity check against ALL of them.
 3. Generate names one at a time using the direct generation method below. For each name:
    a. Check it against the full excluded list using `similarity.is_too_similar()`.
    b. If it passes, add it to the appropriate pool file AND add it to the excluded list before generating the next name.
@@ -53,11 +46,7 @@ When the user says "refill names" or the pool is empty:
 
 ## How to Update the Campaign Name Cache
 
-When the user says "update name cache" (or when triggered by /loop):
-
-1. Run: `cd ${CLAUDE_SKILL_DIR} && python3 fetch_campaign_names.py`
-2. This scrapes the current NPC list from Obsidian Portal and saves it to `campaign-names.txt`.
-3. The session cookie may expire periodically -- if the script fails with an authentication error, ask the user for updated cookies from Chrome DevTools.
+You normally never do: `pick_name.py` refreshes the cache via the OAuth API when it is more than an hour old, and every character creation from this project reconciles it immediately. If the GM says "update name cache", run `cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py --refresh 1`. If that prints an OAuth-credentials error, the fix is `webapp/probe_op_oauth.py --full` (see `webapp/development-secrets.ini`), not a browser cookie.
 
 ## How to Generate Directly (Fallback / Pool Refill)
 
@@ -91,7 +80,7 @@ Names are rejected if they are too similar to existing campaign NPC names. "Too 
 - Edit distance of 1 (differ by a single letter change, addition, or removal)
 - One name is a longer version of another (e.g. Chiyo/Chiyoko)
 
-The similarity logic is in `${CLAUDE_SKILL_DIR}/similarity.py`.
+The similarity logic lives in `webapp/chargen/similarity.py` (the one implementation, shared with the chargen engine); `${CLAUDE_SKILL_DIR}/similarity.py` re-exports it.
 
 ### Set Distinctness (GM rule, 2026-07-20)
 
@@ -122,10 +111,12 @@ useful headroom while still catching the genuinely confusable pairs. The change
 is purely a relaxation - it can only turn a conflict into a non-conflict, so
 name sets generated before it remain valid and were deliberately left alone.
 
-`pick_name.py` enforces this automatically for batch picks via
-`similarity.set_conflict()`. When generating names directly (fallback path) or
-generating characters in any other skill or workflow, apply the same rule by
-hand: if a rolled name conflicts with another member of the set, re-roll it.
+`pick_name.py` enforces this automatically for batch picks (and against
+`--avoid` names) via `similarity.set_conflict()`, and the chargen engine
+enforces it through its `avoid=` constructor argument - so `/chargen` and the
+webapp never need a hand re-roll. Only when generating names directly (the
+fallback path) do you apply the rule by hand: if a rolled name conflicts with
+another member of the set, re-roll it.
 
 This rule is deliberately set-scoped, not campaign-wide - applied against the
 whole cast, the first-letter constraint would exhaust the alphabet in two
