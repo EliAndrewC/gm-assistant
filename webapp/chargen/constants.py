@@ -4,7 +4,6 @@ from chargen import config, __here__ as HERE
 
 __all__ = [
     'HERE',
-    'NAMES',
     'USED_NAMES',
     'XP_DIST',
     'TRAITS',
@@ -15,29 +14,13 @@ __all__ = [
 ]
 
 
-NAMES = {}
-"""
-This is how we store gender-organized names and their meanings, e.g.
-    {
-        'male': {
-            'Akio': 'This name represents "bright man" and is often chosen by those who are naturally charismatic or who are expected to become influential leaders.',
-        ...
-        },
-        'female': {...}
-    }
-"""
-for _gender in ['male', 'female']:
-    with open(os.path.join(HERE, f'{_gender}_names.txt')) as f:
-        name_lines = [line.strip() for line in f if line.strip()]
-        NAMES[_gender] = {
-            line.split()[0]: line.split(' - ', 1)[1] if line.split()[1] == '-' else line
-            for line in name_lines
-        }
-
 USED_NAMES = set()
 """
-This is updated with the personal names (e.g. 'Gohei' instead of 'Matsu Gohei')
-of all of the characters already in Obsidian Portal.
+In-process set of personal names (e.g. 'Gohei' instead of 'Matsu Gohei') created
+THIS process. The durable record of used names is the campaign cache
+(``chargen.opcache.used_given_names``); the engine unions the two (feature 200).
+Given names themselves come from the /name skill pool via ``chargen.namepool``
+- the engine's private male_names.txt / female_names.txt were removed.
 """
 
 HOUSE_NAMES = set()

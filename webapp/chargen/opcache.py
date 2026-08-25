@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import time
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
@@ -90,10 +92,79 @@ def load_cache(path: Path = _CACHE_PATH) -> dict[str, JsonObj]:
 
 
 def save_cache(cache: dict[str, JsonObj], path: Path = _CACHE_PATH) -> None:
-    """Write the JSON cache, creating the parent directory if needed."""
+    """Write the JSON cache atomically (temp file + rename), creating the
+    parent directory if needed.
+
+    Atomic because the file now has concurrent readers (feature 200, FR-014):
+    the skill picker and the chargen engine derive the used-name set from it,
+    and a reader that saw a half-written file would get an EMPTY roster - every
+    name would look free. With rename, a reader sees the old file or the new."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, 'w', encoding='utf-8') as f:
+    tmp = path.with_name(path.name + '.tmp')
+    with open(tmp, 'w', encoding='utf-8') as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
+
+
+def cache_age(path: Path = _CACHE_PATH) -> float | None:
+    """Seconds since the cache file was last written; ``None`` if absent."""
+    try:
+        return max(0.0, time.time() - path.stat().st_mtime)
+    except FileNotFoundError:
+        return None
+
+
+def refresh_if_stale(max_age_seconds: float = 3600.0, path: Path = _CACHE_PATH) -> bool:
+    """Reconcile the cache file against Obsidian Portal if it is missing or
+    older than ``max_age_seconds``. Returns True when a refresh was written.
+
+    Fail-soft, and one guard beyond ``refresh_cache_file``: an EMPTY listing
+    is treated as an OP failure (the OAuth helpers return ``[]`` on any error -
+    missing credentials included) and nothing is written - otherwise an outage
+    would wipe the roster, or (measured 2026-08-25 in a clone with no secrets
+    file) write an empty cache that then looks FRESH for an hour, and every
+    name would look unused. The file is deliberately left alone so the next
+    call retries."""
+    from chargen import op
+
+    age = cache_age(path)
+    if age is not None and age < max_age_seconds:
+        return False
+    cache = load_cache(path)
+    list_fn: Callable[[], list[JsonObj]] = op.existing_characters
+    entries = list_fn()
+    if not entries:
+        logger.warning('opcache: empty listing from OP; keeping %d cached entries', len(cache))
+        return False
+    new_cache, stats = refresh(cache, lambda: entries, op.get_character_body)
+    save_cache(new_cache, path)
+    logger.info('opcache: refreshed %s (%s)', path, stats)
+    return True
+
+
+_used_key: tuple[Path, int, int] | None = None
+_used_names: frozenset[str] = frozenset()
+
+
+def used_given_names(path: Path = _CACHE_PATH) -> frozenset[str]:
+    """Given names in use on the campaign roster, derived from the cache
+    (feature 200, FR-002): the last whitespace token of each character's full
+    name (``Bayushi no Daika Bokuden`` -> ``Bokuden``; a mononym is itself).
+    Memoized on the file's identity/mtime/size so the engine can call this per
+    character at no cost."""
+    global _used_key, _used_names
+    try:
+        st = path.stat()
+        key: tuple[Path, int, int] | None = (path, st.st_mtime_ns, st.st_size)
+    except FileNotFoundError:
+        key = None
+    if key is None:
+        return frozenset()
+    if key != _used_key:
+        names = (_s(entry, 'name').split() for entry in load_cache(path).values())
+        _used_names = frozenset(parts[-1] for parts in names if parts)
+        _used_key = key
+    return _used_names
 
 
 def refresh(

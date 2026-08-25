@@ -5,6 +5,7 @@ import json
 import os
 import sys
 
+import campaign
 from similarity import is_too_similar
 
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,11 +19,9 @@ def load_pool(path):
 
 
 def load_campaign_names():
-    path = os.path.join(SKILL_DIR, "campaign-names.txt")
-    if not os.path.exists(path):
-        return []
-    with open(path) as f:
-        return [line.strip() for line in f if line.strip()]
+    """Given names on the campaign roster, from the campaign cache (feature 200).
+    Offline read - the cache is refreshed by pick_name.py / character creation."""
+    return campaign.used_names(refresh=False)
 
 
 def validate():

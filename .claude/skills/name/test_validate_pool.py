@@ -6,6 +6,8 @@ import sys
 
 import pytest
 
+import campaign  # noqa: F401
+
 
 def write_pool(path, entries):
     with open(path, "w") as f:
@@ -23,12 +25,13 @@ def pool_env(tmp_path, monkeypatch):
     """Set up temp pool files and campaign names, patch modules to use them."""
     male_path = tmp_path / "pool-male.jsonl"
     female_path = tmp_path / "pool-female.jsonl"
-    campaign_path = tmp_path / "campaign-names.txt"
+    campaign_path = tmp_path / "characters.json"
 
     # Write empty defaults
     male_path.write_text("")
     female_path.write_text("")
-    campaign_path.write_text("")
+    campaign_path.write_text("{}")
+    monkeypatch.setattr("campaign.CACHE_PATH", campaign_path)
 
     # Patch SKILL_DIR for both validate_pool and fix_pool
     monkeypatch.setattr("validate_pool.SKILL_DIR", str(tmp_path))
@@ -73,7 +76,7 @@ class TestValidatePool:
         tmp_path, male_path, female_path, campaign_path = pool_env
         write_pool(male_path, [{"name": "Satoru", "gender": "male"}])
         write_pool(female_path, [])
-        campaign_path.write_text("Satoru\n")
+        campaign_path.write_text(json.dumps({"1": {"name": "Hantei Satoru"}}))
 
         from validate_pool import validate
 
@@ -106,7 +109,7 @@ class TestFixPool:
             ],
         )
         write_pool(female_path, [])
-        campaign_path.write_text("Satoru\n")
+        campaign_path.write_text(json.dumps({"1": {"name": "Hantei Satoru"}}))
 
         from fix_pool import fix
 

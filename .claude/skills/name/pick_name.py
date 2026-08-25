@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Pick names from the pre-generated pool, filtering out names too similar to campaign names.
+"""Pick names from the pre-generated pool, excluding names too similar to the
+campaign roster (read from the campaign cache; see campaign.py).
 
 Usage:
-    python3 pick_name.py [args...]
+    python3 pick_name.py [--refresh] [--avoid A,B] [--bank N] [args...]
 
     Args can be separate tokens or concatenated shorthand:
       Gender:  male, female, m, f
@@ -13,6 +14,13 @@ Usage:
     Order doesn't matter. If gender is omitted, picks randomly.
     If peasant is not specified, picks from the full pool.
     If count is omitted, picks 1.
+
+    --refresh   force a campaign-cache refresh from Obsidian Portal first
+    --avoid     given names the picks must be set-distinct from (e.g. the
+                subject of a /synthesize run, or names already chosen)
+    --bank N    N male + N female names as ONE mutually distinct set - the
+                name bank a backstory draws its invented supporting cast from
+                (feature 200, FR-015); overrides gender/count
 """
 
 import json
@@ -20,12 +28,12 @@ import os
 import random
 import sys
 
+import campaign
 from similarity import is_too_similar, set_conflict
 
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 MALE_POOL = os.path.join(SKILL_DIR, "pool-male.jsonl")
 FEMALE_POOL = os.path.join(SKILL_DIR, "pool-female.jsonl")
-CAMPAIGN_NAMES = os.path.join(SKILL_DIR, "campaign-names.txt")
 
 
 def load_pool(path):
@@ -35,23 +43,15 @@ def load_pool(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
-def load_campaign_names():
-    if not os.path.exists(CAMPAIGN_NAMES):
-        return []
-    with open(CAMPAIGN_NAMES) as f:
-        return [line.strip() for line in f if line.strip()]
+def pick(gender, count, peasant=False, avoid=(), refresh=None, bank=0, label_gender=False):
+    campaign_names = campaign.used_names(refresh)
 
-
-def pick(gender, count, peasant=False):
-    campaign_names = load_campaign_names()
-
+    # A bank is N of each gender in one set; otherwise `count` of `gender`.
+    slots = ["male"] * bank + ["female"] * bank if bank else [gender] * count
     results = []
-    for _ in range(count):
-        # Determine gender for this name
-        if gender is None:
+    for g in slots:
+        if g is None:
             g = random.choice(["male", "female"])
-        else:
-            g = gender
 
         pool_path = MALE_POOL if g == "male" else FEMALE_POOL
         pool = load_pool(pool_path)
@@ -69,11 +69,11 @@ def pick(gender, count, peasant=False):
             )
             continue
 
-        # Filter out names too similar to campaign names (loose rule) or to
-        # names already picked in this batch (strict set rule: no shared first
-        # letter, no rhymes, no 1-letter differences - names introduced together
-        # must be unmistakable at the table).
-        picked_names = [r["name"] for r in results]
+        # Filter out names too similar to campaign names (loose rule) or in
+        # set-conflict with the avoid list and the names already picked in this
+        # batch (strict set rule: no shared first letter, no rhymes, no 1-letter
+        # differences - names introduced together must be unmistakable).
+        picked_names = list(avoid) + [r["name"] for r in results]
 
         valid = [
             entry
@@ -98,7 +98,8 @@ def pick(gender, count, peasant=False):
     for i, r in enumerate(results):
         if i > 0:
             print("\n---\n")
-        print(f"**{r['name']}** - {r['explanation']}")
+        tag = f" ({r['gender']})" if (bank or label_gender) else ""
+        print(f"**{r['name']}**{tag} - {r['explanation']}")
         if r.get("notes"):
             print(f"\n*Notes: {r['notes']}*")
 
@@ -107,12 +108,26 @@ def parse_args(argv):
     """Parse args supporting both full words and concatenated shorthand.
 
     Examples: male 3, f peasant, pf3, 3mp, x5, female x3 peasant
+    Returns (gender, count, peasant, options) where options holds the
+    --refresh / --avoid / --bank flags.
     """
     gender = None
     count = 1
     peasant = False
+    options = {"refresh": None, "avoid": [], "bank": 0}
 
-    for arg in argv:
+    it = iter(argv)
+    for arg in it:
+        if arg == "--refresh":
+            options["refresh"] = True
+            continue
+        if arg == "--avoid":
+            options["avoid"] = [n for n in next(it, "").split(",") if n.strip()]
+            continue
+        if arg == "--bank":
+            options["bank"] = int(next(it, "0") or 0)
+            continue
+
         # Try full words first
         if arg in ("male", "female"):
             gender = arg
@@ -165,9 +180,16 @@ def parse_args(argv):
             else:
                 i += 1  # skip unknown chars
 
-    return gender, count, peasant
+    return gender, count, peasant, options
 
 
 if __name__ == "__main__":
-    gender, count, peasant = parse_args(sys.argv[1:])
-    pick(gender, count, peasant=peasant)
+    gender, count, peasant, options = parse_args(sys.argv[1:])
+    pick(
+        gender,
+        count,
+        peasant=peasant,
+        avoid=options["avoid"],
+        refresh=options["refresh"],
+        bank=options["bank"],
+    )

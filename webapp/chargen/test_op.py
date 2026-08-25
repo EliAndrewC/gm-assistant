@@ -62,6 +62,35 @@ def _patch_create_character_seams(
     monkeypatch.setattr(op, '_get_browser_session', lambda: session)
     monkeypatch.setattr(op, '_get_campaign_base_url', lambda: 'https://example.test')
     monkeypatch.setattr(op, '_get_authenticity_token', lambda: 'tok')
+    # The post-create cache reconciliation (feature 200) is an OP boundary too.
+    from chargen import opcache
+
+    monkeypatch.setattr(opcache, 'refresh_cache_file', lambda: {'fetched': 1})
+
+
+def test_create_character_reconciles_the_campaign_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    from chargen import opcache
+
+    session = _PostCapturingSession()
+    _patch_create_character_seams(monkeypatch, session)
+    calls: list[str] = []
+    monkeypatch.setattr(opcache, 'refresh_cache_file', lambda: calls.append('refreshed'))
+    op.create_character('Hida Kentaro')  # type: ignore[no-untyped-call]
+    assert calls == ['refreshed']
+
+
+def test_create_character_survives_a_cache_refresh_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    from chargen import opcache
+
+    session = _PostCapturingSession()
+    _patch_create_character_seams(monkeypatch, session)
+
+    def boom() -> None:
+        raise OSError('disk full')
+
+    monkeypatch.setattr(opcache, 'refresh_cache_file', boom)
+    resp = op.create_character('Hida Kentaro')  # type: ignore[no-untyped-call]
+    assert resp.status_code == 200  # creation is still reported as a success
 
 
 def test_create_character_defaults_to_public(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -74,9 +74,10 @@ Constructor kwargs accepted (unnamed ones roll randomly):
   kwarg, but the uniform `LOCATION_TAGS` append in Step 2 covers all types.
 - **order**, **seat** (Monk): the Fortune's Order and, for ranks 4-5, which of
   the paired roles.
-- **gender** is NOT a constructor arg. If the GM pins a gender, generate in a
-  re-roll loop until it matches (Step 2 handles this) - this keeps the name and
-  gendered traits coherent.
+- **gender** (all types): `'male'` / `'female'`; pin only if the GM did. The
+  engine rolls the pinned gender on the first attempt - no re-roll loop.
+- **avoid** (all types): given names of the OTHER characters in a set generated
+  together; the engine applies the set-distinctness rule against them.
 
 If unspecified, base_rank is picked randomly from the type's rank table (Peasant
 -> 0), mirroring the webapp's Generate button.
@@ -130,12 +131,15 @@ NPCs introduced together): the given names within the set must be mutually
 distinct per the GM's set-distinctness rule (2026-07-20; similar names confuse
 players at the table - the Sauron/Saruman problem). Within the set: no two
 names may start with the same letter, no two may rhyme, and no two may be
-within 1 letter of each other. The check lives in
-`.claude/skills/name/similarity.py` (`set_conflict()`); after rolling each
-character, test its given name against the set's earlier names and re-roll the
-character (or re-roll just the name via the engine) until it passes. Family
-names shared by the set (e.g. three Tsuruchi) are expected and exempt - the
-rule is about given names.
+within 1 letter of each other. The engine enforces this itself (feature 200):
+pass the earlier members' given names as `avoid=[...]` and the roll cannot
+conflict with them - no check and no re-roll on your side. Family names shared
+by the set (e.g. three Tsuruchi) are expected and exempt - the rule is about
+given names.
+
+Given names come from the `/name` skill pool, with every name on the campaign
+roster (and anything too similar to one) excluded - read from the campaign
+cache file, which the script refreshes first if it is more than an hour old.
 
 ```bash
 cd /gm-assistant/webapp && python3 - <<'PY'
@@ -145,7 +149,8 @@ from chargen import config, synthesis, opcache, op
 from chargen.character import Character
 TYPE = "[TYPE]"                 # 'Samurai' | 'Monk' | 'Peasant'
 PARAMS = [PARAMS_DICT]          # e.g. {"base_rank": 5, "clan": "crab", "post": "magistrate"}
-GENDER = "[GENDER]"             # '' | 'male' | 'female'
+GENDER = "[GENDER]"             # '' | 'male' | 'female' - '' rolls it
+AVOID = [AVOID_LIST]            # given names of the set's earlier members, e.g. ["Kentaro"]; [] otherwise
 LOCATION_TAGS = [LOCATION_TAGS] # place tags at the posting's scale, e.g.
                                 # ["Shiro Reiji"] or ["Nagahara province"] or
                                 # ["Hoshigaoka village", "Hayakawa county", ...]
@@ -153,10 +158,8 @@ if "base_rank" not in PARAMS:
     ranks = config.get("ranks", {}).get(TYPE, {})
     if ranks:
         PARAMS["base_rank"] = int(choice(list(ranks)))
-for _ in range(500):            # re-roll only to satisfy a pinned gender
-    char = Character.types()[TYPE](**PARAMS)
-    if not GENDER or char.gender == GENDER:
-        break
+opcache.refresh_if_stale()      # roster older than 1h -> reconcile via OAuth (fail-soft)
+char = Character.types()[TYPE](**PARAMS, gender=GENDER or None, avoid=AVOID)
 d = char.to_dict()
 # The engine tags a Samurai's location (sometimes); Monk/Peasant get none. Append
 # the posting's place tags uniformly, de-duped and order-preserving, so every NPC
@@ -195,6 +198,9 @@ Re-roll only when the GM ASKS for one, which they may do at any point after the
 fact - including with new constraints ("make them Crane", "older", "make them a
 woman"), which fold into `PARAMS` / `GENDER` before rerunning Step 2.
 
+For a SET, run Step 2 once per member, feeding each earlier member's
+`d["personal_name"]` into the next member's `AVOID`.
+
 ## Step 3 - Tagline, backstory, and portrait
 
 Once the sheet is locked:
@@ -226,6 +232,19 @@ the rolled age, RANK is peerage not office, low honor = "as good as their
 incentives" not villainy, house style (hyphens only, "domain" not "demesne",
 "humans/inhabitants" for generic demographics, no headings/bullets).
 
+**Name bank for the supporting cast (REQUIRED, feature 200 FR-015).** Before
+writing, run ONE scripted call and use ONLY its names for any character the
+prose invents (a parent, a sensei, a rival, a superior) who has no OP record:
+
+```bash
+cd /gm-assistant/.claude/skills/name && python3 pick_name.py --bank 4 --avoid "[GIVEN_NAME]" > [SCRATCH]/chargen-name-bank.txt 2>&1; cat [SCRATCH]/chargen-name-bank.txt
+```
+
+`[GIVEN_NAME]` is `d["personal_name"]`. The bank is already vetted against the
+campaign roster and mutually distinct (and distinct from the new character), so
+you never invent a name by hand and never grep for a collision afterwards. Use
+as many or as few as the prose needs; `--bank 6` if you need more.
+
 **Link every reference to another OP character** (GM preference). When the prose
 names another character who has an Obsidian Portal record, wrap the first mention
 as an OP internal link `[[:slug|Display]]` - leading colon, the slug from
@@ -247,7 +266,8 @@ canon/style rules as an enumerated sweep, so recurring errors are fixed in-sessi
 instead of landing on the GM again. Launch it (Agent tool, `subagent_type:
 backstory-review`) and pass the paths to `$SCRATCH/chargen-backstory.txt`,
 `$SCRATCH/chargen-formatted.txt`, `$SCRATCH/chargen-character.json`,
-`$SCRATCH/chargen-campaign-context.txt`, `$SCRATCH/chargen-cast-links.json`, and
+`$SCRATCH/chargen-campaign-context.txt`, `$SCRATCH/chargen-cast-links.json`,
+`$SCRATCH/chargen-name-bank.txt`, and
 `$SCRATCH/chargen-tagline.txt`. Apply every FLAG it returns (rewrite the prose in
 `chargen-backstory.txt`, or the tagline in `chargen-tagline.txt`), re-running the
 agent if a fix is substantial, until it comes back `clean` / `tweak-before-GM`

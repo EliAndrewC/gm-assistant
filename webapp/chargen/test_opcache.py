@@ -322,3 +322,86 @@ def test_refresh_cache_file_writes_cache(monkeypatch: pytest.MonkeyPatch, tmp_pa
     stats = opcache.refresh_cache_file(p)
     assert stats['fetched'] == 2
     assert set(opcache.load_cache(p)) == {'1', '2'}
+
+
+# --- feature 200: atomic save, staleness, used given names ---
+
+
+def test_save_cache_is_atomic_and_leaves_no_temp(tmp_path: Path) -> None:
+    p = tmp_path / 'characters.json'
+    opcache.save_cache({'1': {'name': 'Abbot'}}, p)
+    assert opcache.load_cache(p) == {'1': {'name': 'Abbot'}}
+    assert not (tmp_path / 'characters.json.tmp').exists()
+
+
+def test_cache_age_none_when_missing_and_small_when_fresh(tmp_path: Path) -> None:
+    p = tmp_path / 'characters.json'
+    assert opcache.cache_age(p) is None
+    opcache.save_cache({}, p)
+    age = opcache.cache_age(p)
+    assert age is not None
+    assert age < 5
+
+
+def test_refresh_if_stale_skips_a_fresh_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from chargen import op
+
+    p = tmp_path / 'characters.json'
+    opcache.save_cache({'9': {'name': 'Old'}}, p)
+    monkeypatch.setattr(op, 'existing_characters', _list_fn)
+    monkeypatch.setattr(op, 'get_character_body', _body_fn)
+    assert opcache.refresh_if_stale(3600, p) is False
+    assert set(opcache.load_cache(p)) == {'9'}
+
+
+def test_refresh_if_stale_refreshes_missing_and_old_files(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from chargen import op
+
+    p = tmp_path / 'characters.json'
+    monkeypatch.setattr(op, 'existing_characters', _list_fn)
+    monkeypatch.setattr(op, 'get_character_body', _body_fn)
+    assert opcache.refresh_if_stale(3600, p) is True  # missing -> full pull
+    assert set(opcache.load_cache(p)) == {'1', '2'}
+    assert opcache.refresh_if_stale(0, p) is True  # max_age 0 -> always stale
+
+
+def test_refresh_if_stale_keeps_cache_on_empty_listing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """An OP outage returns [] from the fail-soft helpers; that must not wipe
+    the roster (every name would look free)."""
+    from chargen import op
+
+    p = tmp_path / 'characters.json'
+    opcache.save_cache({'9': {'name': 'Old'}}, p)
+    monkeypatch.setattr(op, 'existing_characters', list)
+    monkeypatch.setattr(op, 'get_character_body', _body_fn)
+    assert opcache.refresh_if_stale(0, p) is False
+    assert set(opcache.load_cache(p)) == {'9'}
+    # ...and with NO cache yet, nothing is written either: an empty file would
+    # look fresh for an hour while every name looked unused.
+    missing = tmp_path / 'fresh' / 'characters.json'
+    assert opcache.refresh_if_stale(0, missing) is False
+    assert not missing.exists()
+
+
+def test_used_given_names_last_token_and_memoized(tmp_path: Path) -> None:
+    p = tmp_path / 'characters.json'
+    assert opcache.used_given_names(p) == frozenset()
+    opcache.save_cache(
+        {
+            '1': {'name': 'Bayushi no Daika Bokuden'},
+            '2': {'name': 'Denbei'},
+            '3': {'name': ''},
+            '4': {'tags': []},
+        },
+        p,
+    )
+    assert opcache.used_given_names(p) == {'Bokuden', 'Denbei'}
+    assert opcache.used_given_names(p) is opcache.used_given_names(p)
+    opcache.save_cache({'5': {'name': 'Kitsune Izumi'}}, p)
+    assert opcache.used_given_names(p) == {'Izumi'}

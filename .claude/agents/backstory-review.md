@@ -214,9 +214,12 @@ setting. Rule on each explicitly:
   campaign context. FLAG contradictions (wrong office, wrong relationship, a fact
   the record refutes).
 - **Name / place collisions**: any NEW personal name or place name the prose
-  invents must not silently collide with an existing cast member or place. Grep the
-  campaign context (and setting files if needed) for an invented name before
-  trusting it. FLAG a collision.
+  invents must not silently collide with an existing cast member or place. Since
+  feature 200 every invented PERSONAL name must come from the skill's name-bank
+  file (`*-name-bank.txt` in the scratch dir, produced by `pick_name.py --bank`,
+  already vetted against the roster) - FLAG an invented personal name that is not
+  in the bank, and FLAG a missing bank file. Place names are still checked by
+  grepping the campaign context (and setting files if needed). FLAG a collision.
 - **Kanji triangle** (Constitution XI): any kanji in the prose (a name, a term, a
   temple/relic title) must pass kanji <-> romaji <-> meaning - real characters, a
   plausible reading, a meaning that maps back. FLAG a kanji that fails, unless the
