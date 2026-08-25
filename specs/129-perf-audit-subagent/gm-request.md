@@ -110,6 +110,21 @@ then option 3 becomes worth it."* The GM invoked exactly that condition.
 starting assumptions**: the AWS CodeBuild work lands FIRST, and this feature is built afterwards, on
 top of it.
 
+## 2026-08-25, PER-ENVIRONMENT MEASUREMENT AND PER-ENVIRONMENT BANDS
+
+> In that case, can you update the plan to require capturing new measurements on AWS codebuild for the
+> codebuild portions?  And since we will eventually be running some things locally and some things on
+> AWS then we probably need something like "these thresholds apply to both of those individually" i.e.
+> a 5% / 10% / 20% threshold for just the locally run stuff, and then a 5% / 10% / 20% threshold for
+> the stuff run on AWS codebuild.
+
+**Two instructions:**
+
+1. **New measurements MUST be captured on CodeBuild** for the parts that run there - the noise floor
+   included. The figures in this spec are local-only and do not transfer.
+2. **The band matrix applies to each environment INDEPENDENTLY.** Local work is judged against local
+   history; CodeBuild work against CodeBuild history. Not one blended number.
+
 ## THE AUTHOR'S CLAIMS - not the GM's words, and the reviewer must ATTACK them
 
 The following are the SESSION'S assertions, made in conversation and carried into the spec. They are
