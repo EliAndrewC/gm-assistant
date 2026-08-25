@@ -76,7 +76,7 @@ Reference directories hold organized source material and context. Each directory
 | `/moto` | Generate Moto culture content, Yassa rulings, horse culture, Burning Sands |
 | `/bounty` | Generate bounties, Wasp clan content, minor clan details |
 | `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[m\|f] [p] [N]` - supports shorthand and concatenation (e.g. `pf3`) |
-| `/diagram` | Generate SVG top-down diagrams of L5R locations (manor plans, village layouts, temple plans, etc.) and render to PNG |
+| `/diagram` | **MOVED** to its own repository on 2026-08-25 (feature 131): <https://github.com/EliAndrewC/diagram>, mounted at `/diagram` in its own container. Open a session THERE for any map work; nothing diagram-related is generated from this repository any more |
 | `/dream` | Generate Rokugani dream-omen scenes: randomized d10 dream tables for PCs seeking a fortune's (or other spirit's) will in sleep, grounded in Kitsu Okura's six-doctrine theology of attunement. Strange, open fragments that describe the dream's events and never its meaning; shared no-dream/noise bands, a 10-is-always-significant Coda, and a two-tier (public / gitignored-local) spoiler-safe pool |
 | `/synthesize` | Write a backstory for an existing Obsidian Portal NPC, Claude-native (in-session prose - no external LLM; the webapp button still uses Gemini): reads the OP record + tagline and the campaign-context cast, researches the setting files directly, **uploads with no pre-review gate**, merges into GM-only notes. Args: `<character name> [ - steering]` |
 | `/chargen` | Make a brand-new NPC end-to-end and upload it to Obsidian Portal: roll a skeleton character with the chargen engine (asking only about genuinely-missing essentials), write a Claude-native backstory (the `/synthesize` method, not Gemini) from the rolled attributes, generate and attach an AI portrait, and create the OP record. Public by default; GM-only if the concept says private/hidden. Args: `<free-text character concept>` |
@@ -110,8 +110,6 @@ These were split out of this file so they are not in every session's context. Ea
 | [`docs/iteration-loop.md`](docs/iteration-loop.md) | You want the measured evidence behind a loop rule, or you are about to argue with one. |
 | [`docs/container.md`](docs/container.md) | Launching or rebuilding the container, diagnosing a "command not found" / "No module named" failure, adding a permanent dependency, or bumping Python. |
 | [`docs/spec-kit-and-reviews.md`](docs/spec-kit-and-reviews.md) | Adding a rule to a review subagent (`building-review`, `backstory-review`, `frontend-review`), or wiring spec-kit hooks. |
-
-Skill docs follow the same pattern: [`/.claude/skills/diagram/SKILL.md`](.claude/skills/diagram/SKILL.md) indexes [`settlements/`](.claude/skills/diagram/settlements/) (11 topic files) and [`buildings/`](.claude/skills/diagram/buildings/). **Read a skill's index, then load only the topics the subject calls for.**
 
 ## Note Intake Workflow
 
@@ -277,7 +275,7 @@ that has found a path forward takes it.
 - **Before changing ORDERING or architecture, read every path involved in ONE batched pass and settle the sequence first.** The failure mode is discovering the ordering one gate failure at a time. Where you add ordering-critical code, leave a comment at the point of change - a rule in a document nobody re-reads does not hold.
 - **Do NOT cut the ritual steps** (regression-fixture freeze, overlap-registry classification, record-the-why docs, the stop-work ritual). They cost ~2 minutes per feature and are why the regression rate stays near zero. Savings come from turn structure, never from skipping guardrails.
 
-Package-specific timings and skill-specific lessons live in that skill's dev-loop doc, e.g. [`.claude/skills/diagram/CLAUDE.md`](.claude/skills/diagram/CLAUDE.md) - an index over [`.claude/skills/diagram/dev/`](.claude/skills/diagram/dev/), where the DRAW ORDER map and the KEEP-CLEAR CONTRACT live ([`dev/placement.md`](.claude/skills/diagram/dev/placement.md)).
+The diagram skill's own dev-loop doctrine moved with it to <https://github.com/EliAndrewC/diagram> (feature 131).
 
 **Improving a review subagent** (`building-review`, `backstory-review`, `frontend-review`): do NOT just apply the fix and write the rule in. The current artifacts contain the motivating defect - that is the failing test. Add the **general, category-level rule only**, run the agent against the unfixed artifact, and only once it FIRES do you fix the artifact and record the specific instance as a validated example. Full procedure, plus the harness gotcha that mid-session edits to `.claude/agents/*.md` do not reach agents launched by type, in [`docs/spec-kit-and-reviews.md`](docs/spec-kit-and-reviews.md).
 
@@ -309,10 +307,8 @@ Package-specific timings and skill-specific lessons live in that skill's dev-loo
 | the GM's SOURCE blocks are not editable (V) | [`scripts/source-block-hooks.sh`](scripts/source-block-hooks.sh) - checks containment against the file on disk |
 | hyphens only; American spellings | [`scripts/house-style-hooks.sh`](scripts/house-style-hooks.sh) - exempts the GM's writing and the files that must quote the rule |
 | a README is the GM's to write (XVII) | [`scripts/readme-hooks.sh`](scripts/readme-hooks.sh) |
-| everything runs through `make` | [`scripts/make-only-hooks.sh`](scripts/make-only-hooks.sh) + `l7r/diagram/_invocation.py` |
 | guard files are not edited casually | [`scripts/guard-file-hooks.sh`](scripts/guard-file-hooks.sh) |
 | a spec is reviewed before implementation (XVI); a Mode B map before it ships | [`scripts/review-gate.sh`](scripts/review-gate.sh), run by `sync-with-main.sh` at PUSH time |
-| both perf bookends exist; a seed >5% slower must be DIAGNOSED and a total >10% BLOCKS as a regression (VI) | `make perf-gate`, a phase of `make done FULL=1`; the two bands are in `tools/perf_snapshot.py` with `tests/tools/test_perf_snapshot.py` proving each fires |
 | no `-k` subset before the gate; no branches; no polling; batching | the pre-existing `gate`/`no-branch`/`no-poll`/`batching` hooks |
 
 **Deliberately NOT enforced**, because a guard that fires on correct work teaches a session to bypass
@@ -340,10 +336,8 @@ watching a test go red.
 - `/gm-assistant/webapp/Makefile` - `make done` runs ruff + format check + mypy --strict + pytest + 100% coverage gate
 - `/gm-assistant/webapp/tests/screenshot.py` and `tests/dom_audit.py` - Playwright suite for Principle I verification at GM-100 / GM-200 / tablet / mobile. The screenshot script outputs multi-scroll contact sheets to `/tmp/l7r-shots/sheet-<page>-<viewport>.png`.
 - `/gm-assistant/.claude/agents/frontend-review.md` - independent design-review subagent. Invoke before declaring a UI change done if the same agent implemented AND reviewed.
-- `/gm-assistant/.claude/agents/settlement-review.md` - independent review of **Mode B settlement maps** (hamlets/villages/towns/cities), the counterpart of `building-review`. Scoped to the residue a green `check_village` gate cannot see: glyph legibility, feature FORM vs position, agreement with a Mode A sheet of the same compound, generic annotations, feature-vs-slack, and the twin-detector. Reads `meta.ftpx` for scale - do NOT point `size-audit` at a settlement map, it hardcodes the Mode A 3 px = 1 ft.
 - `/gm-assistant/.claude/agents/backstory-review.md` - independent review of synthesized NPC prose (`/synthesize`, `/chargen`), run automatically by those skills before the GM sees a backstory. Holds a **growing catalog of previously GM-caught mistakes** plus the baseline canon/style rules and sweeps them by enumeration, so recurring errors are fixed in-session. When the GM catches a new category of mistake in generated prose, distil it into a general rule here (follow the Subagent-check TDD procedure).
-- `/gm-assistant/.claude/skills/diagram/migration-plan.md` - **standing project plan** for converting `/diagram` from hand-authored maps to scripted generation (hours per map -> ~15 s, with the same 189-check gate). Says which map types are converted, what order the rest go in, and the bar a conversion clears. Individual conversions are spec-kit features; the plan outlives them. **Read it before drawing or scripting a settlement map, and update its status table when a conversion lands.**
 - `/gm-assistant/.claude/skills/relic/pool/` - exemplar of the pool data convention (Principle III)
 - `/gm-assistant/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` - the 200-name pool consumed by the `/names` section
 
-Spec-kit features (the `specify` -> `plan` -> `tasks` -> `implement` flow) live under `specs/NNN-*/`. There is deliberately **no single "active plan" tracked here** - a hardcoded pointer just goes stale as features come and go. For current status, look at the highest-numbered `specs/` dir, its `tasks.md` checkboxes, and `git log`.
+**Since 2026-08-25 (feature 131) a feature is identified by REPOSITORY + number**: the diagram repository holds 005-131 (its features) and continues from 132; this repository holds 001-004 and 011 and restarts at **200**. Spec-kit features (the `specify` -> `plan` -> `tasks` -> `implement` flow) live under `specs/NNN-*/`. There is deliberately **no single "active plan" tracked here** - a hardcoded pointer just goes stale as features come and go. For current status, look at the highest-numbered `specs/` dir, its `tasks.md` checkboxes, and `git log`.
