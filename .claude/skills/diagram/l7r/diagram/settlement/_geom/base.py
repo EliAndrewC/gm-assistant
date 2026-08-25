@@ -34,7 +34,7 @@ def _is_main_tree(p: str) -> bool:
 
 
 def _assert_not_main_tree(path: str | None = None) -> None:
-    """Refuse to run from the MAIN /gm-assistant checkout. Main is the integration point,
+    """Refuse to run from the MAIN checkout (the tree that holds .clones/). Main is the integration point,
     never a workspace (CLAUDE.md "Session clones"): a generator/gate/test writing into main's
     tree races with another session's mid-ritual push-to-checkout (the 2026-07-20 double-push
     post-mortem). Import-time enforcement here covers every Mode B gen, check_village.py, and

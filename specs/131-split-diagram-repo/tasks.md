@@ -10,16 +10,16 @@
 
 ## Phase 1: Setup and baseline
 
-- [ ] T001 Baseline in gm-assistant: last green `make done` in the diagram skill - record test count, wall-clock, `make hooks-test` suite count, and the commit, under Baseline below (constitution XIII: the new repository must match exactly)
-- [ ] T002 [P] By-hand pass over the 46 keyword-matched specs (research R1): confirm each is a diagram feature; record any that is not (it stays) under Moved set below
-- [ ] T003 [P] Enumerate the reference sweep: `grep -rn 'gm-assistant/.claude/skills/diagram\|/gm-assistant' .claude/settings.json scripts container-scripts docs CLAUDE.md .claude/skills/diagram/Makefile` plus the memory directory; classify each hit LIVE (must change) or HISTORICAL (left alone); record the list under Sweep below
+- [x] T001 Baseline in gm-assistant: last green `make done` in the diagram skill - record test count, wall-clock, `make hooks-test` suite count, and the commit, under Baseline below (constitution XIII: the new repository must match exactly)
+- [x] T002 [P] By-hand pass over the 46 keyword-matched specs (research R1): confirm each is a diagram feature; record any that is not (it stays) under Moved set below
+- [x] T003 [P] Enumerate the reference sweep: `grep -rn 'gm-assistant/.claude/skills/diagram\|/gm-assistant' .claude/settings.json scripts container-scripts docs CLAUDE.md .claude/skills/diagram/Makefile` plus the memory directory; classify each hit LIVE (must change) or HISTORICAL (left alone); record the list under Sweep below
 - [ ] T004 **GM**: confirm no other session holds unpushed diagram work; create the GitHub repository (name per Assumptions, or say otherwise); generate a fine-grained PAT scoped to it (Contents rw); create the `main` ruleset (block force pushes, restrict deletions)
 
 ## Phase 2: Prepare the pieces (all in the clone, nothing pushed)
 
 - [ ] T005 Write the new repository's CLAUDE.md: one project, the diagram loop, the command map, the session-clone rules with the new root, numbering continues from 132, the constitution as it stands - by editing the current one down, not from scratch
 - [ ] T006 Write gm-assistant's post-split CLAUDE.md: diagram loop removed, `/diagram` listed as moved with the URL, the retained hooks table, the spec-number claim protocol unchanged
-- [ ] T007 Derive roots from git where cheap (research R4, plan note 3): `sync-with-main.sh`, `clone-sync-hooks.sh`; the diagram Makefile `guard` target (guard file - `GUARD_EDIT_OK` with the reason; its test companion updated). **FIRES**: the guard still refuses a run from the new repository's main tree; **STAYS QUIET**: a clone under the new root passes
+- [x] T007 Derive roots from git where cheap (research R4, plan note 3): `sync-with-main.sh`, `clone-sync-hooks.sh`; the diagram Makefile `guard` target (guard file - `GUARD_EDIT_OK` with the reason; its test companion updated). **FIRES**: the guard still refuses a run from the new repository's main tree; **STAYS QUIET**: a clone under the new root passes
 - [ ] T008 `webapp/Makefile` gains the `hooks-test` phase (copied from the diagram Makefile) so gm-assistant's retained guards are RUN (FR-002); the four repository-wide guards (`gate-stamp.py`, `review-gate.sh`, `gate-hooks.sh`, `guard-file-hooks.sh`) trimmed to each repository's areas per FR-001's table, companions updated; `.claude/agents/` split per the table. `.claude/settings.json` for the new repository: check in rehearsal whether `$CLAUDE_PROJECT_DIR` resolves in hook commands; if yes use it, else the new absolute root. gm-assistant's `settings.json`: drop ONLY the diagram-only hooks (make-only, guard-file, gate); every COPY-TO-BOTH item in FR-001's table stays in gm-assistant untouched (`.specify/`, `docs/`, `container-scripts/`, `ruff.toml`, the content hooks)
 - [ ] T009 `docs/session-clones.md`, `docs/container.md`, `scripts/launch-container.sh`, `container-scripts/append-system-prompt.md`: the second mount, the new root, the pointer in each direction
 - [ ] T010 Feature 130's spec, plan and tasks: the route/delta section shrinks to "engine code vs docs" (the whole repository is the diagram now); record the change in its Review history as a consequence of 131, not a new request
@@ -57,12 +57,16 @@
 
 | | value |
 |---|---|
-| commit | |
-| `make done` tests / wall-clock | |
-| `make hooks-test` suites | |
+| commit | `4ecdcedd` (clone tip at baseline; main `a3043335` + 129's header) |
+| `make done` tests / wall-clock | **3,464 passed, 2 failed** (`test_every_live_pool_png_matches_its_own_svg_viewbox`, `test_crown_fills_covers_every_recorded_crown` - both the constitution's known gitignored-artifact gap: a fresh clone has no pool renders; NOT regressions), test phase 223.6 s |
+| `make hooks-test` suites | 12 |
 
 ## Moved set (T002) - exceptions to the keyword census
 
+None. All 46 keyword matches are diagram features (119, the `l7r` namespace, is the diagram's - the webapp's guard test stays in `webapp/`). The five that stay: 001, 002, 003, 004, 011. Plus 131 itself moves: 47 directories.
+
 ## Sweep (T003) - LIVE hits
+
+85 `/gm-assistant` references in 24 files at recon; the rehearsal sweep found the ones the recon missed: `settlement/_geom/base.py` (the engine's own main-tree guard), `pipeline/render_cache.py` (`--main-repo` default), `buildings.md` (a link), `setup-dev-env.sh` (prose + the `claude()` wrapper path), `docs/session-clones.md` (two command lines). All derived or repointed in commit `f8b43e95`. HISTORICAL (left alone): every `specs/*` artifact, `dev/*-log/`, test fixtures that use the path as a synthetic string, comments describing the 2026-07 incidents, the constitution's own prose.
 
 ## Rehearsal (T018)
