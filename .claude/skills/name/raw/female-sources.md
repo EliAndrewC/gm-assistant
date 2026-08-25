@@ -1,0 +1,39 @@
+# Sources for female-attested.jsonl
+
+Raw superset of attested pre-modern (Heian through Edo, before 1868) Japanese female given names. One line per source occurrence; nothing deduped, no similarity rules applied, no meanings researched. Only metadata that came free with the source is recorded. Romaji is capitalized, macrons dropped (Cho, Ryu, Yo, Ko, Shu). Kana in image tables was romanized literally (ゑ -> e, を -> o, しやう -> Shiyau etc.), so historical spellings survive as-is for the culling pass.
+
+Collected 2026-08-25. Counts are lines yielded in the JSONL.
+
+| id | URL | what it is | lines | caveats |
+|---|---|---|---|---|
+| `daijirou-late-edo` | https://maybeitisdaijirou.wordpress.com/2015/12/15/most-common-female-names-in-the-late-edo-period-a-follow-up-to-similar-post/ | Top 100 late-Edo commoner women's names with percentages, compiled from 22 registers in Tsunoda Bun'ei, *Nihon no joseimei* (edition 1 table) | 103 | Ties share a rank; 6 Mutsu and 5 Musashi lists dominate. Edition 2A/2B PDFs (with hiragana) not fetched |
+| `daijirou-passenger-lists` | https://maybeitisdaijirou.wordpress.com/2015/07/10/popularity-of-names-for-adults-and-elderly-people-in-japan-born-from-1828-1868/ | The earlier post: top ~50 women's names from FamilySearch emigrant passenger lists, people born 1828-1868, with percentages | 52 | Mostly peasants from Hiroshima/Yamaguchi/Kumamoto; includes Okinawa-born emigrants (skews Kame, Sue) |
+| `issendai-azuchi-momoyama` | https://issendai.com/wp/japanese-names/japanese-womens-names-from-the-azuchi-momoyama-period-1568-1600/ | Issendai's Azuchi-Momoyama (1568-1600) women's list, kanji where given | 111 | Direct curl was blocked by Mod_Security (406); content obtained via the WebFetch tool, so verbatim fidelity is that tool's. No frequencies |
+| `issendai-early-edo` | https://www.issendai.com/names/japanese/edo-era/early-edo-womens-names.html | Issendai's early-Edo (1600-1700) commoner women's names with kana/kanji | 241 | Same 406 caveat; fetched via WebFetch. No counts survived the fetch |
+| `issendai-nanbokucho-court` | https://issendai.com/names/japanese-names/northern-and-southern-courts-period-names/names-of-court-noblewomen/ | Nanboku-cho (1336-1392) court noblewomen: princesses, consorts, court ladies by year, plus a short list of historical references reaching back to Heian | 100 | Readings are as the page gives them (some double readings kept in notes). One kanji was garbled by the fetch (Sachiko). Manju is the childhood name of Tokiyuki and may be male; kept with note |
+| `issendai-nanbokucho-commoner` | https://issendai.com/names/japanese-names/northern-and-southern-courts-period-names/names-of-commoner-women/ | Nanboku-cho commoner/provincial women from documents; -nyo (女), -gozen, -o (王), -yasha forms | 44 | The many "X-no-uji-no-nyo" (clan + woman) entries are not given names and were skipped; two azana kept (Torami, Memmen) |
+| `issendai-geisha-a/h/m/t` | https://issendai.com/names/japanese-names/geisha-names/geisha-names-a-to-f/ (and h-to-k, m-to-s, t-to-z) | Issendai's geisha professional names, 1730s-2010s | 609 | FLAGGED: professional names, not birth names, and the per-name period is NOT given, so many are modern. Period recorded as `unknown`. Cull hard |
+| `kiyose-noshio-1774` | https://www.city.kiyose.lg.jp/siseijouhou/kouhou/shishi/1012758.html | Kiyose city history blog: Noshio village shumon-ninbetsu register, Anei 3 (1774); 125 readable women, 76 distinct names, with counts | 76 | Names are in a table IMAGE (1774f.png); transcribed by reading the image. Frequency recorded as "N of 125" |
+| `kiyose-kamikiyoto-1809` | same page | Kamikiyoto village register, Bunka 6 (1809); 65 women, 53 distinct names, with counts | 53 | Same image transcription caveat (1809f.png) |
+| `nihonjin-sugaura-1564` | https://nihonjin-name.jimdofree.com/女性名と-子/5-江戸以前の庶民名/ | Ifuji Nobuhiko's name-research site: 15 women in the 1564 Sugaura "shussen nikki" (Shiga) | 15 | Page text; source appends 女 to some (dropped). Includes odd forms (Tonari, Tsuitachi) as given |
+| `nihonjin-tochii-1671` | same page | Tochii village (Gifu) shumon-aratamecho, Kanbun 11 (1671), 127 women | 126 | Table image transcription; dense 13-column table, a few cells uncertain |
+| `nihonjin-goromaru-1690` | same page | Goromaru village (Inuyama, Aichi) shumon-aratame, Genroku 3 (1690), 12 women | 12 | Page text also gives the original glyphs (津ま, い巳, 袮々 ...) |
+| `nihonjin-hatcho-1733` | same page | Hatcho village (Okazaki) shumon-aratamecho, Kyoho 18 (1733), 84 women | 81 | Table image transcription; 3 cells unreadable |
+| `nihonjin-nishitomioka-1804` | https://nihonjin-name.jimdofree.com/庶民の女性名/2ひらがなの女性名/ | Nishitomioka village (Isehara, Kanagawa) register, Bunka 1 (1804), 110 women | 109 | Table image transcription |
+| `nihonjin-kano-1825` | same page | Kano village (Wakayama) register, Bunsei 8 (1825), 153 women, with o-/ko-/-no/-he affixes | 143 | Base name recorded, affix noted in `notes`; image transcription, some cells uncertain |
+| `nihonjin-hakkenya-1848` | same page | Hakkenya village (Wakayama) register, Koka 5 (1848), 120 women, with -no/-he/-yo affixes | 120 | Same handling; image transcription |
+| `nihonjin-matsushima-1837` | same page | Matsushima village (Wakayama) register, Tenpo 8 (1837), 233 women | 219 | Densest image; transcription is best-effort and some cells were skipped or may be wrong. Treat as frequency-shaped evidence, not exact |
+| `jawiki-nyogo` | https://ja.wikipedia.org/wiki/女御 | Japanese Wikipedia list of nyogo who did not become empress, Heian to late Edo | 87 | Source gives KANJI ONLY. Romaji readings are collector-supplied (conventional kun or on -shi); the alternate reading is in `notes` where known. Verify before use |
+| `jawiki-chugu` | https://ja.wikipedia.org/wiki/中宮 | Chugu (empress) list, 923-1820 | 44 | Same: kanji only except the last four Edo entries, which carry a source reading (masako/kazuko, fusako, yukiko, yoshiko) |
+| `jawiki-kogo-list` | https://ja.wikipedia.org/wiki/日本の皇后一覧 | List of empresses of Japan; only entries not already in the chugu list, Heian onward | 21 | Readings supplied by the source for a handful (tarashiko, kachiko, koshi, masaruko, tsunako); the rest collector-supplied |
+| `jawiki-ko-jinmei` | https://ja.wikipedia.org/wiki/子_(人名) | Essay on the -ko suffix | 1 | Almost no individual names on the page; only Kachiko cited |
+| `behindthename-edo-tag` | https://www.behindthename.com/names/tag/common_edo_period_names | User tag page | 6 | Weak, user-curated |
+| `sengokudaimyo` | https://sengokudaimyo.com/japanese-names | A.J. Bryant's essay on Japanese names | 7 | Examples only, no list |
+
+## Failed or skipped
+
+- `https://issendai.com/wp/japanese-names/` and `https://www.issendai.com/names/japanese/` index pages: curl returned 406 (Mod_Security). All issendai pages were obtained through WebFetch instead.
+- Issendai has NO Heian, Kamakura, Muromachi (other than Nanboku-cho) or late-Edo women's pages; the site index lists only Nara, Nanboku-cho, Azuchi-Momoyama, early Edo, geisha, courtesans, Buddhist names. The Nara-period female list was skipped (pre-Heian). The courtesan (oiran/tayu) and lower-ranking-prostitute pages were skipped as professional names; fetch them if wanted.
+- `nihonjin-name.jimdofree.com` home page has no lists; the lists live on the sub-pages above and are all IMAGES. The 1871 Meiji-4 Tomioka register (288 women) was skipped as post-1868.
+- Tesseract was not installed, so image tables were transcribed by reading them directly; expect a few percent transcription error in the dense Wakayama tables.
+- Web searches for SCA name articles (Solveig Throndardottir's *Name Construction in Medieval Japan* is print-only) and for academic shumon-aratamecho transcriptions turned up nothing fetchable beyond the sites above.
