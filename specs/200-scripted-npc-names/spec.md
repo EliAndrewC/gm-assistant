@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-25
 
-**Status**: Draft
+**Status**: Reviewed - FAITHFUL (round 2)
 
 **Input**: The GM's request, verbatim (two messages, 2026-08-25, session "GM assistant names"):
 
@@ -67,6 +67,22 @@ The `/name` skill, the `/names` web page, and the chargen engine all read the sa
 
 ---
 
+### User Story 4 - Backstory prose names its supporting cast from the script (Priority: P2)
+
+The GM runs `/synthesize` on an existing NPC, or `/chargen` reaches its backstory step. The prose introduces a parent, a sensei, a rival, a superior. Each of those invented characters gets a given name from the same scripted picker the `/name` skill uses - drawn before the prose is written, already vetted against the campaign roster and against each other and the subject's own name - so the session never invents a name by hand and never greps for a collision afterwards.
+
+**Why this priority**: The GM named `/synthesize` explicitly. Its only naming work is the supporting cast, and today that is a hand-invent-then-grep loop inside a review cycle - the iteration the GM described. The subject's own name is never touched.
+
+**Independent Test**: Follow the documented `/synthesize` procedure; verify the prose's invented names all come from the name bank the script emitted, that the bank is mutually distinct and distinct from the subject's given name, and that the transcript contains no name deliberation.
+
+**Acceptance Scenarios**:
+
+1. **Given** `/synthesize Kitsune Izumi` is invoked, **When** the procedure reaches the prose step, **Then** a single scripted call has already produced a bank of vetted given names (both genders), none used on the roster, none too similar to a used name, none conflicting with each other or with `Izumi` under the set rule, and the prose uses only names from that bank for characters without an Obsidian Portal record.
+2. **Given** `/chargen` reaches its backstory step, **When** supporting characters are named, **Then** the same bank mechanism is used, seeded to avoid the new character's own given name.
+3. **Given** the backstory-review agent checks the prose, **When** it looks for invented-name collisions, **Then** it finds none, because the names were vetted before the prose was written (the review rule stays as a backstop).
+
+---
+
 ### Edge Cases
 
 - The campaign cache file does not exist yet (fresh container): a name request triggers a full pull; if that fails, the pick proceeds with an empty exclusion list and says so.
@@ -94,6 +110,7 @@ The `/name` skill, the `/names` web page, and the chargen engine all read the sa
 - **FR-012**: Pool validation MUST check the pool against the given names in the campaign cache rather than a hand-maintained file.
 - **FR-013**: The pool MUST NOT be grown by this feature. Its contents are unchanged except that no entry is added; entries are not removed either (the two pool names that are currently live NPCs are handled by exclusion, not deletion, so the pool-size question stays open for the GM).
 - **FR-014**: Reading the cache MUST tolerate a concurrent write (a partial file reads as "unavailable", not as an empty roster) and writes MUST be atomic (write-then-rename).
+- **FR-015**: When `/synthesize` or `/chargen` prose invents a personal name for a character with no Obsidian Portal record, that name MUST come from a name bank produced by ONE scripted call to the same picker the `/name` skill uses - same pool, same cache-derived exclusion set, same similarity rule - with the bank mutually distinct under the set rule and distinct from the subject's own given name (the picker accepts an avoid list for this). The two skills MUST contain no instruction to invent a name by hand and check it afterward. The subject's own name is never changed by `/synthesize`.
 
 ### Key Entities
 
@@ -112,12 +129,18 @@ The `/name` skill, the `/names` web page, and the chargen engine all read the sa
 - **SC-004**: The `/name` skill's first-invocation procedure has no cookie, `.env`, or background-loop step; the number of name sources in the repository drops from two to one.
 - **SC-005**: The pool file line counts are unchanged by this feature (103 male / 97 female).
 - **SC-006**: No regressions: every test that passed on the baseline still passes; the webapp gate (lint, format, strict types, tests, 100% coverage on pure-logic packages) is green.
+- **SC-007**: A `/synthesize` or `/chargen` backstory introduces its supporting cast with names from the scripted bank - zero hand-invented names, zero collision greps, zero name deliberation in the transcript.
 
 ## Assumptions
 
 - The Obsidian Portal OAuth path (`existing_characters`, `get_character_body`) remains the authenticated boundary; the feature adds no new external calls, only new call sites.
 - The engine's private lists (574 male / 288 female) hold names the pool does not; dropping them reduces the engine's raw supply from 862 to 200. This is accepted because the GM explicitly deferred pool growth (item 3) and asked for unification (item 2); the trade-off is recorded here and reported to the GM so the pool-size decision is made with it in view.
-- `/synthesize` does not pick names (it works on an existing record) and needs no change beyond sharing the cache; the GM's mention of it is satisfied by the cache being the same one its prompt already uses.
+- `/synthesize` never renames its subject (the record already has a name); its scripted naming (FR-015) covers the supporting cast the prose invents - parents, sensei, rivals, superiors - which today is named by hand and grepped for collisions afterwards.
 - The staleness window of one hour mirrors the retired `/loop 1h` cadence; the picker's force-refresh flag covers the "I just added someone on the website" case.
 - The webapp's deploy bundling already copies the pool files into the build context, so the engine reading the pool needs no new deploy step.
 - "Update a local cache on upload" is satisfied by an incremental reconciliation after creation (one list call plus one body fetch for the new id), which also catches characters added on the website in the same pass.
+
+## Review history
+
+- **Round 1** (2026-08-25, `spec-fidelity` subagent, Mode 2, given both GM messages verbatim): NOT FAITHFUL on one point - the Assumption that `/synthesize` "does not pick names" was false in the part that matters: the prose invents supporting-cast names by hand and greps for collisions afterwards (the `backstory-review` "Name / place collisions" rule exists for exactly this). FR-013 and the 862 -> 200 supply-drop assumption were both judged faithful (a consequence of "single source", not a carve-out). Fix applied: assumption replaced by FR-015, User Story 4, SC-007.
+- **Round 2** (2026-08-25, `spec-fidelity` subagent, Mode 2, both GM messages verbatim): **FAITHFUL**. Nothing missing, nothing unrequested; FR-015 resolves the round-1 finding at the right size (supporting cast only; the subject's name is never changed). Implementation authorized.
