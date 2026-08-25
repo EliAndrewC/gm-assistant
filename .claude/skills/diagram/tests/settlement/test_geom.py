@@ -152,18 +152,28 @@ def test_union_area_empty_and_overlapping_spans():
     assert settlement._union_area([(0, 0, 10, 10), (0, 2, 10, 5)]) == 100.0  # inner rect adds nothing
 
 
-def test_main_tree_guard_blocks_main_allows_clones_and_gm_override(monkeypatch):
+def test_main_tree_guard_blocks_main_allows_clones_and_gm_override(monkeypatch, tmp_path):
+    # MAIN IS THE TREE THAT CONTAINS .clones/ (feature 131): no path is hardcoded, so the fixture is
+    # a checkout with a .clones/ directory, whatever it is called and wherever it is mounted.
     monkeypatch.delenv("GM_ASSISTANT_ALLOW_MAIN", raising=False)
+    main = tmp_path / "anything"
+    (main / ".git").mkdir(parents=True)
+    (main / ".clones" / "x" / ".claude").mkdir(parents=True)
+    (main / ".claude").mkdir()
     # running from the MAIN integration tree aborts with the CLAUDE.md reminder
     with pytest.raises(SystemExit, match="Session clones"):
-        settlement._assert_not_main_tree("/gm-assistant/.claude/skills/diagram/settlement.py")
+        settlement._assert_not_main_tree(str(main / ".claude" / "settlement.py"))
     # a session clone under .clones/ is the sanctioned workspace
-    settlement._assert_not_main_tree("/gm-assistant/.clones/x/.claude/skills/diagram/settlement.py")
-    # any tree outside /gm-assistant (the GM's laptop checkout) is not main
-    settlement._assert_not_main_tree("/home/eli/l7r/gm-assistant/.claude/skills/diagram/settlement.py")
+    settlement._assert_not_main_tree(str(main / ".clones" / "x" / ".claude" / "settlement.py"))
+    # a checkout with no .clones/ (a detached worktree, the GM's laptop clone) is not main
+    other = tmp_path / "worktree"
+    (other / ".git").mkdir(parents=True)
+    settlement._assert_not_main_tree(str(other / "settlement.py"))
+    # a path under no checkout at all is not main
+    settlement._assert_not_main_tree(str(tmp_path / "loose.py"))
     # the GM's deliberate override opens main
     monkeypatch.setenv("GM_ASSISTANT_ALLOW_MAIN", "1")
-    settlement._assert_not_main_tree("/gm-assistant/.claude/skills/diagram/settlement.py")
+    settlement._assert_not_main_tree(str(main / ".claude" / "settlement.py"))
 
 
 def test_fillet_polyline_rounds_a_square_corner_into_a_sweep():

@@ -202,11 +202,14 @@ def regen_pool(
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Regenerate the diagram pool renders, cache-short-circuited.")
     ap.add_argument("--pool", default=os.path.join(SKILL_DIR, "pool"), help="pool directory to regenerate")
-    ap.add_argument("--main-repo", default="/gm-assistant", help="git repo whose .gitignore decides Mode A vs B")
+    ap.add_argument("--main-repo", default=None, help="git repo whose .gitignore decides Mode A vs B (default: the checkout this file is in)")
     ap.add_argument("--skill-dir", default=SKILL_DIR, help="skill dir holding the engine sources (for the fingerprint)")
     ap.add_argument("--jobs", type=int, default=None, help="parallelism (default: cpu count)")
     ap.add_argument("--no-allow-main", action="store_true", help="do not set GM_ASSISTANT_ALLOW_MAIN for the generators")
     args = ap.parse_args(argv)
+    if args.main_repo is None:  # feature 131: no hardcoded /gm-assistant - the checkout this file lives in
+        here = os.path.dirname(os.path.abspath(__file__))
+        args.main_repo = subprocess.run(["git", "-C", here, "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip()
     skipped, ran, frozen = regen_pool(
         args.pool,
         args.main_repo,

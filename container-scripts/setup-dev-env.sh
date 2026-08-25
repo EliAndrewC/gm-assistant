@@ -24,7 +24,7 @@ in_container() { [ -f /run/.containerenv ] || [ -f /.dockerenv ]; }
 
 if ! in_container && [ "${SETUP_ALLOW_HOST:-}" != 1 ]; then
     echo "ERROR: this installs system packages and is meant to run INSIDE the dev container."
-    echo "Start one with scripts/launch-container.sh, then run this from /gm-assistant."
+    echo "Start one with scripts/launch-container.sh, then run this from the repository root."
     echo "(Override on a machine you are sure about: SETUP_ALLOW_HOST=1)"
     exit 1
 fi
@@ -123,7 +123,9 @@ cat >> "$HOME/.bashrc" <<'BASHRC_BLOCK'
 # Appends this repo's standing authorizations to every session's system prompt.
 # Edit the text in container-scripts/append-system-prompt.md - this only loads it.
 claude() {
-    local _asp=/gm-assistant/container-scripts/append-system-prompt.md
+    # THIS repo's copy, wherever the repo is mounted (feature 131): the wrapper is per container,
+    # and each repository's container mounts it at its own workdir.
+    local _asp="$(git rev-parse --show-toplevel 2>/dev/null || pwd)/container-scripts/append-system-prompt.md"
     if [ -r "$_asp" ]; then
         command claude --append-system-prompt "$(cat "$_asp")" "$@"
     else

@@ -33,8 +33,6 @@
 # REGENERATES main's renders in place from main's tip, so nothing flows clone -> main.
 set -euo pipefail
 
-MAIN=${CLONE_MAIN:-/gm-assistant}                                    # CLONE_MAIN: test seam only
-MAPDIR=$MAIN/.clones/.session-clones
 SESSIONS_DIR=${CLONE_SESSIONS_DIR:-${HOME:-/home/agent}/.claude/sessions}  # CLONE_SESSIONS_DIR: test seam only
 MODE=${1:-}
 INPUT=$(cat 2>/dev/null || true)
@@ -50,6 +48,24 @@ try:
 except Exception:
     print('')"
 }
+
+# THE ROOT IS DERIVED FROM THE HOOK'S cwd, NOT HARDCODED (feature 131, 2026-08-25 - GUARD_EDIT_OK:
+# the split needs one script that works in both repositories). The harness hands every hook the
+# session's cwd; its git top level is either main itself or a clone at <main>/.clones/<name>, and
+# main is the part before /.clones/. CLONE_MAIN stays as the test seam; /gm-assistant is the
+# fallback when there is no cwd at all (a hook driven by hand with an empty payload).
+derive_main() {
+  local cwd top
+  cwd=$(field cwd)
+  top=$(git -C "${cwd:-/nonexistent}" rev-parse --show-toplevel 2>/dev/null || true)
+  case "$top" in
+    */.clones/*) printf '%s' "${top%%/.clones/*}" ;;
+    "")          printf '%s' /gm-assistant ;;
+    *)           printf '%s' "$top" ;;
+  esac
+}
+MAIN=${CLONE_MAIN:-$(derive_main)}
+MAPDIR=$MAIN/.clones/.session-clones
 
 canonical_clone() { # canonical_clone <sid> - print .clones/<kebab-name> for a session, or "" if
   # the session_id resolves to no sessions-json entry (unresolvable -> caller falls through). An

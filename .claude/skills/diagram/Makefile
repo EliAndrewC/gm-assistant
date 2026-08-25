@@ -466,19 +466,23 @@ perf:
 perf-report:
 	@python3 -m l7r.diagram.tools.perf_snapshot --report $(if $(AGAINST),--against $(AGAINST),)
 
-# Refuse to run from the MAIN /gm-assistant tree (CLAUDE.md "Session clones": main is the
-# integration point, never a workspace - work runs in .clones/<session-name>). Every target
-# depends on this. GM override for a deliberate main-tree run: GM_ASSISTANT_ALLOW_MAIN=1.
+# Refuse to run from the MAIN tree (CLAUDE.md "Session clones": main is the integration point,
+# never a workspace - work runs in .clones/<session-name>). Every target depends on this. GM
+# override for a deliberate main-tree run: GM_ASSISTANT_ALLOW_MAIN=1.
+# MAIN IS THE TREE THAT CONTAINS `.clones/` (feature 131, 2026-08-25 - GUARD_EDIT_OK: the split
+# needs one Makefile that works at /gm-assistant and at /diagram). A clone or a detached worktree
+# has no .clones/ of its own (it is gitignored), so the rule is: refuse when the git top level of
+# the cwd holds a .clones/ directory and the cwd is not itself inside one. No path is hardcoded.
 guard:
-	@case "$(CURDIR)" in \
-	  /gm-assistant/.clones/*) ;; \
-	  /gm-assistant|/gm-assistant/*) [ "$$GM_ASSISTANT_ALLOW_MAIN" = 1 ] || { \
-	    echo "ERROR: this ran from the MAIN /gm-assistant tree. Main is the integration point, never a workspace."; \
+	@top=$$(git rev-parse --show-toplevel 2>/dev/null); \
+	case "$(CURDIR)" in */.clones/*) exit 0 ;; esac; \
+	if [ -n "$$top" ] && [ -d "$$top/.clones" ] && [ "$$GM_ASSISTANT_ALLOW_MAIN" != 1 ]; then \
+	    echo "ERROR: this ran from the MAIN tree ($$top). Main is the integration point, never a workspace."; \
 	    echo "Check CLAUDE.md, section 'Session clones' (reload CLAUDE.md if it has fallen out of your context"; \
 	    echo "window): create or reuse .clones/<kebab-cased-session-name>, sync it in with 'git pull origin main',"; \
 	    echo "and run this same command from inside that clone. (GM override: GM_ASSISTANT_ALLOW_MAIN=1)"; \
-	    exit 1; };; \
-	esac
+	    exit 1; \
+	fi
 
 lint format typecheck test: | guard
 

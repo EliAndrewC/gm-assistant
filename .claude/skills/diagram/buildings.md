@@ -28,7 +28,7 @@ Mode A's automated gate is a **subagent review**, not a scripted validator (a co
 4. **Green-test**: re-run the tuned agents; the map should pass clean.
 5. **Record the specific example** in the agent definition's "validated examples" note and in the design-notes Review log - a validated example is the negative-fixture equivalent for a judgment-call check (coverage/coincidence does not prove a check has teeth; a recorded red-then-green does).
 
-This is the Mode A instance of the project-wide subagent-check TDD rule in [`/gm-assistant/CLAUDE.md`](../../../CLAUDE.md); it applies to both `building-review` and `size-audit`.
+This is the Mode A instance of the project-wide subagent-check TDD rule in [the repository `CLAUDE.md`](../../../CLAUDE.md); it applies to both `building-review` and `size-audit`.
 
 ## Building vocabulary
 
