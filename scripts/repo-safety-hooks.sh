@@ -73,7 +73,7 @@ person who did it.
 
 There is no legitimate force push in this workflow. What you want instead:
 
-  scripts/sync-with-main.sh done     locked pull-then-push, then render-sync
+  scripts/sync-with-main.sh done     locked pull-then-push
   git pull origin main               if the push was rejected, MERGE and push again
 
 If a push is being refused and merging looks wrong, that is worth raising with the GM rather than

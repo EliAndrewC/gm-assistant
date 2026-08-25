@@ -2,11 +2,11 @@
 
 *Project reference, split out of [`../CLAUDE.md`](../CLAUDE.md) so it is loaded on demand rather than in every session's context. CLAUDE.md keeps the short always-on version of these rules and points here for the full spec.*
 
-**Load this file when:** the GM asks for a new rule that a REVIEW SUBAGENT should enforce (building-review, backstory-review, frontend-review), or you need the spec-kit auto-commit hook details.
+**Load this file when:** the GM asks for a new rule that a REVIEW SUBAGENT should enforce (backstory-review, frontend-review), or you need the spec-kit auto-commit hook details.
 
 ---
 
-**Subagent-check TDD (REQUIRED procedure for improving review subagents)**: when the GM asks for a new rule that a review subagent (e.g. `building-review`) should enforce, do NOT simply apply the fix and write the rule into the agent. The current artifacts contain the motivating defect - that is the failing test. Procedure:
+**Subagent-check TDD (REQUIRED procedure for improving review subagents)**: when the GM asks for a new rule that a review subagent (e.g. `backstory-review`) should enforce, do NOT simply apply the fix and write the rule into the agent. The current artifacts contain the motivating defect - that is the failing test. Procedure:
 
 1. Add only the **general, category-level rule** to the agent definition. Never name the specific instance yet - that would test nothing about whether the check generalizes.
 2. Run the agent against the artifact that contains the known defect, unfixed.

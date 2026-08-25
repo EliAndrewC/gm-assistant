@@ -37,26 +37,12 @@
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 **Single-artifact target** (REQUIRED for any generator change, constitution VI): [the ONE named
-artifact this is proven on before any sweep - e.g. `pool/hamlets/inashiro.gen.py`. State its
-rebuild time. `make maps` enforces the order itself: after a failure it runs the reference map alone
-and stops at the first problem, and only widens to the tier once that map is clean. If the feature adds a knob, name one artifact per knob
-VALUE.]
+artifact this is proven on before any sweep - one page, one pool entry, one test file. If the
+feature adds a knob, name one artifact per knob VALUE.]
 
-**Every step is two steps.** Each phase below must separate "working on the reference settlement"
-from "working across the pool". The second is its own task with its own verification - if a phase
-lists only the first, it is not finished being planned.
-
-## Performance bookends (REQUIRED for any diagram-generator change, constitution VI)
-
-| | label | total | median | worst | notes |
-|---|---|---|---|---|---|
-| before | `<NNN>-start` | | | | taken on UNMODIFIED code, before the first edit |
-| after | `<NNN>-end` | | | | taken before the push |
-
-`make perf LABEL=<NNN>-start` -> work -> `make perf LABEL=<NNN>-end` -> `make perf-report
-AGAINST=<NNN>-start`. Any seed more than 5% slower is diagnosed here, in writing, with the number -
-fixed, or accepted with a reason. Also read the existing trend before starting: if it has drifted
-since the last feature, say so and deal with that first.
+**Every step is two steps.** Each phase below must separate "working on the reference artifact"
+from "working across the pool / the whole suite". The second is its own task with its own
+verification - if a phase lists only the first, it is not finished being planned.
 
 ## Constitution Check
 
@@ -142,9 +128,9 @@ approval before /speckit-tasks may run.
   `specs/027-init-star-imports/` is the exemplar.
 
 - **XII. Historical Grounding Bookends (NON-NEGOTIABLE)**: Does the feature
-  change what a generator ASSERTS ABOUT THE WORLD (any `/diagram` settlement
-  or compound change; any generator that draws or states how a place was
-  farmed, built, or lived in)? If yes, the plan MUST commit to BOTH bookends:
+  change what a generator ASSERTS ABOUT THE WORLD (any generator that draws or
+  states how a place was farmed, built, or lived in - a temple, a calendar
+  event, a legal case, a settlement)? If yes, the plan MUST commit to BOTH bookends:
   - **Opening (Phase 0, in `research.md`)**: for each element added or
     changed, state what the historical reality was (China-first, Japan
     corroborating) in checkable detail, state explicitly whether the proposed
@@ -155,7 +141,7 @@ approval before /speckit-tasks may run.
   - **Closing (final phase, before "done")**: re-examine the RENDERED
     ARTIFACT (the PNG - not the code, not the intent) and confirm each element
     still matches the Phase 0 findings. This is separate from the automated
-    gate: `check_village` proves internal consistency, never historical truth.
+    gate: an automated check proves internal consistency, never historical truth.
     A map can pass every check and still depict something that never existed
     (see the `rape` overlay failure in the constitution's Principle XII).
 

@@ -2,7 +2,7 @@
 
 Main is the integration point, never a workspace (CLAUDE.md "Session clones"):
 a test/gate run writing into main's tree races with another session's
-mid-ritual push-to-checkout (the 2026-07-20 double-push post-mortem). The
+mid-procedure push-to-checkout (the 2026-07-20 double-push post-mortem). The
 rootdir conftest imports this module, so any pytest run in main aborts with
 the reminder below; the Makefile carries the same guard for its targets.
 The GM can deliberately override with GM_ASSISTANT_ALLOW_MAIN=1; a session

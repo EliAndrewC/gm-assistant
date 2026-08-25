@@ -25,7 +25,7 @@ verifies the checker fires, then verifies a clean tree passes - a checker that c
 still bites is exactly the failure mode that motivated it. A run that scans ZERO files also
 fails loudly (wrong root beats silent success).
 
-Invoked by: the diagram Makefile `lint` target, and scripts/sync-with-main.sh before EVERY push -
+Invoked by: scripts/sync-with-main.sh before EVERY push -
 the push guard is the point: the motivating duplicate arrived via a merge, where no gate
 necessarily runs (docs-only pushes skip gates by policy).
 """

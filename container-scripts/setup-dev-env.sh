@@ -5,10 +5,15 @@
 #   container-scripts/setup-dev-env.sh --check  verify only (fast, no network), exit 1 if anything is missing
 #
 # Run this on a fresh container, and any time something that used to work stops working with a
-# "command not found" / "No module named" / "resvg not found" error. A container rebuild does NOT
-# preserve apt or pip state (only the bind-mounted repo and ~/.claude survive), so a rebuilt
-# container looks subtly broken until this has run: the symptom on 2026-07-25 was three diagram
-# tests failing because `resvg` had vanished, which cost a full gate run to diagnose.
+# "command not found" / "No module named" error. A container rebuild does NOT preserve apt or pip
+# state (only the bind-mounted repo and ~/.claude survive), so a rebuilt container looks subtly
+# broken until this has run: the symptom on 2026-07-25 was three tests failing because a system
+# binary had vanished, which cost a full gate run to diagnose.
+#
+# Since feature 131 (2026-08-25) nothing here needs an apt package of its own: `resvg`, the DejaVu
+# italic face and `shapely` all served the diagram skill, which now lives in its own repository
+# with its own copy of this script. The only OS-level install left is what Playwright's
+# `--with-deps` pulls in for Chromium.
 #
 # This lives in container-scripts/, NOT scripts/. scripts/ is for things run OUTSIDE the container
 # (launch-container.sh creates the container; sync-with-main.sh is run by a session but manages the
@@ -32,7 +37,6 @@ fi
 # ---- what "installed" means, as testable facts ------------------------------------------------
 # Each is (label, test command). The SAME list drives --check and the post-install verification, so
 # the script can never report success for something it did not actually establish.
-ITALIC_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf
 check_all() {
     local bad=0
     _t() { # label, test
@@ -43,18 +47,10 @@ check_all() {
             bad=1
         fi
     }
-    # the diagram renderer. resvg is required (no rsvg-convert fallback - see diagram/SKILL.md for
-    # the profile), and the DejaVu ITALIC face matters because resvg does not synthesize oblique:
-    # without it every italic map label silently renders upright.
-    _t "resvg (diagram PNG renderer)"            "command -v resvg"
-    _t "DejaVu Serif italic face"                "[ -f $ITALIC_FONT ]"
     # webapp prod deps (also used by the skills: OP API, portraits, weather, name scraping)
     _t "python: cherrypy jinja2 configobj yaml"  "python3 -c 'import cherrypy, jinja2, configobj, yaml'"
     _t "python: requests + oauthlib + bs4"       "python3 -c 'import requests, requests_oauthlib, bs4'"
     _t "python: pillow numpy cv2 google.genai"   "python3 -c 'import PIL, numpy, cv2, google.genai'"
-    # shapely backs the /diagram seam-closing pass (waterfields/seams.py) - the one place the
-    # field engine needs real polygon booleans, so a missing wheel breaks map generation, not a test
-    _t "python: shapely (diagram field engine)"  "python3 -c 'import shapely'"
     # dev deps - the quality gate itself
     _t "python: pytest + cov + xdist"            "python3 -c 'import pytest, pytest_cov, xdist'"
     _t "python: ruff mypy"                       "python3 -m ruff --version; python3 -m mypy --version"
@@ -81,14 +77,6 @@ fi
 # ---- install ----------------------------------------------------------------------------------
 # Passwordless sudo is available in this container precisely so a session can install what it needs
 # without asking. Never work around a missing dependency - install it.
-echo "==> system packages (apt)"
-if ! command -v resvg >/dev/null 2>&1 || [ ! -f "$ITALIC_FONT" ]; then
-    sudo apt-get update -qq
-    sudo apt-get install -y -qq resvg fonts-dejavu-core fonts-dejavu-extra
-else
-    echo "    already present"
-fi
-
 echo "==> python packages (pip)"
 # --break-system-packages: this container's python is the system python and there is no venv by
 # design (every skill and the webapp share one interpreter).
@@ -139,8 +127,7 @@ echo "    installed - takes effect in NEW shells (or run: source ~/.bashrc)"
 echo "==> verifying"
 if check_all; then
     echo
-    echo "dev environment ready. Next: cd webapp && make done   (or, for the diagram skill,"
-    echo "cd .claude/skills/diagram && make done - both must be run from a .clones/ workspace)"
+    echo "dev environment ready. Next: cd webapp && make done   (from a .clones/ workspace, never main)"
 else
     echo
     echo "ERROR: something is still missing after install - see MISSING lines above"

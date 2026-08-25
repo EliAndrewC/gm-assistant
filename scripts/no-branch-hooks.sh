@@ -14,7 +14,7 @@
 # hand, since documentation alone has never held (the same reasoning as batching-hooks.sh).
 #
 # WHAT TO DO INSTEAD. Nothing, usually - commit on main inside your clone, which is what the
-# stop-work ritual expects. For spec-kit, `export SPECIFY_FEATURE=NNN-slug`: common.sh's
+# stop-work procedure expects. For spec-kit, `export SPECIFY_FEATURE=NNN-slug`: common.sh's
 # get_current_branch() returns that ahead of asking git, so check_feature_branch() in setup-plan.sh
 # and setup-tasks.sh is satisfied without a branch existing.
 #
@@ -55,7 +55,7 @@ esac
 echo "BLOCKED (no-branch): this project does not use feature branches - not even for spec-kit.
 
 Isolation already comes from your session CLONE (.clones/<session-name>); a branch on top of it is a
-second axis of isolation that buys nothing. It also broke the stop-work ritual for a whole session:
+second axis of isolation that buys nothing. It also broke the stop-work procedure for a whole session:
 sync-with-main.sh pushed the local ref NAMED main instead of HEAD, so work committed on a branch was
 rejected as non-fast-forward while every diagnostic reported it strictly ahead.
 

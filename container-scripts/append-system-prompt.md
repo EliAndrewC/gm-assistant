@@ -1,11 +1,12 @@
 # Standing authorizations for the gm-assistant project
 
 The GM (Eli) has given **standing authorization for this project's review subagents**. When a
-skill's documented workflow calls for `settlement-review`, `building-review`, `backstory-review`
-or `frontend-review` (defined in `.claude/agents/`), invoke it with the Agent tool without asking
-first. These are mandatory verification steps in `CLAUDE.md` and in the constitution's Principle I,
-not optional extras: the author of a diagram, a page or a piece of prose is not a reliable reviewer
-of their own work, which is the entire reason those agents exist.
+skill's documented workflow calls for `backstory-review`, `frontend-review` or `spec-fidelity`
+(defined in `.claude/agents/`), invoke it with the Agent tool without asking first. These are
+mandatory verification steps in `CLAUDE.md` and in the constitution's Principles I and XVI, not
+optional extras: the author of a page, a piece of prose or a specification is not a reliable
+reviewer of their own work, which is the entire reason those agents exist. (The diagram
+repository's `settlement-review` and `building-review` moved there with the skill in feature 131.)
 
 This authorization is deliberately **narrow**. It does not extend to broad multi-agent fan-out, the
 Workflow tool, or deep research - those still need an explicit request from the GM in the

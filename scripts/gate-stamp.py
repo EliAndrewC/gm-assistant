@@ -2,7 +2,7 @@
 """Prove that a green gate ran against exactly the Python being pushed.
 
 WHY THIS EXISTS. Constitution Principle XIII says work is not done while a known regression exists
-and nothing merges carrying one, and its enforcement clause says the stop-work ritual "does not run
+and nothing merges carrying one, and its enforcement clause says the stop-work procedure "does not run
 to completion on a red or regressed state". That sentence was ASPIRATIONAL: `sync-with-main.sh`
 refuses a dirty tree and screens for duplicate defs, but it never knew whether a gate had run at
 all, let alone whether it passed. Compliance was a session choosing to comply - which is the exact
@@ -16,9 +16,10 @@ gate for a change spanning areas. It closes the common case: pushing Python no g
 
 WHY PYTHON ONLY, and why per-area. CLAUDE.md's "docs-only diffs skip the gate" is a real rule, so
 hashing everything would block a legitimate markdown edit made after a green gate - and then the
-first thing anyone learned would be how to bypass the guard. Per-area, because the repo has two
-independent gates (the diagram skill and the webapp); a repo-wide hash would let a webapp change be
-blocked by a gate that never covers it, and vice versa.
+first thing anyone learned would be how to bypass the guard. Per-area, because the repo had two
+independent gates when this was written (the diagram skill and the webapp); a repo-wide hash would
+let a webapp change be blocked by a gate that never covers it, and vice versa. Only the webapp area
+remains since feature 131, but the shape costs nothing and a second gated area is one dict entry.
 
 Areas with no gate of their own (specs/, scripts/) are deliberately NOT gated: inventing a
 requirement nobody can satisfy is how a guard gets disabled.

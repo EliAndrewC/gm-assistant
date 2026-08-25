@@ -45,17 +45,17 @@ description: "Task list template for feature implementation"
   ============================================================================
 -->
 
-## Reference-settlement rule (generator features - constitution VI)
+## Reference-artifact rule (generator features - constitution VI)
 
 **Every implementation phase splits in two, and both halves are tasks:**
 
-1. `[US_] Make <the change> work on the REFERENCE settlement` - `make maps` does this on its own
-   after any failure, running the reference map alone (~1 min) and stopping at the first problem.
-2. `[US_] Extend <the change> across the pool` - once the reference map is clean, the same `make
-   maps` goes on to the whole tier and reports every failure together. One command; it chooses.
+1. `[US_] Make <the change> work on the REFERENCE artifact` - one page, one pool entry, one test
+   file; the cheap red/green loop runs here.
+2. `[US_] Extend <the change> across the pool` - once the reference artifact is clean, the whole
+   suite / the whole pool, reporting every failure together.
 
 A phase that lists only step 1 is unfinished; a phase that starts at step 2 is the mistake this rule
-exists to prevent. `make done` re-checks the whole pool regardless, so forgetting step 2 costs time,
+exists to prevent. `make done` re-checks everything regardless, so forgetting step 2 costs time,
 never correctness.
 
 ## Closing audit (generator features - constitution VI)

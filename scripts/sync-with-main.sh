@@ -1,33 +1,31 @@
 #!/usr/bin/env bash
 # sync-with-main.sh - keep a session clone and main in sync: pull main's tip into the clone
-# (sync-in), push the clone's committed work back (push), and refresh main's diagram renders
-# (render-sync). Encodes the stop-work ritual from CLAUDE.md as a script. (Renamed from ritual.sh,
-# GM 2026-07-21: name the purpose, not the culture.)
+# (sync-in) and push the clone's committed work back (push). Encodes the stop-work procedure from
+# CLAUDE.md as a script. (Renamed from ritual.sh, GM 2026-07-21: name the purpose, not the culture; and the word "ritual" left the process vocabulary on 2026-08-25 - rituals belong to Rokugan, merging into main is a procedure.)
 #
 # WHY (GM 2026-07-21): "if you're having to just remember to run the right commands in the right
 # order then that seems error prone" - it was. Incidents that shaped this script, all from sessions
-# hand-typing the ritual: a push raced another session because the flock was skipped; a render
+# hand-typing the procedure: a push raced another session because the flock was skipped; a render
 # rsync ran from the wrong cwd and copied nothing; a cp with 2>/dev/null swallowed its own failure
-# and the GM saw stale maps; a Mode A generator run from the skill dir wrote its cwd-relative
-# outputs to the wrong path, which then got committed. The DOCTRINE lives in CLAUDE.md ("Session
-# clones" / "Stop-work ritual") - this script is that doctrine made mechanical; if the two ever
-# disagree, CLAUDE.md wins and this script has a bug.
+# and the GM saw stale maps. The DOCTRINE lives in CLAUDE.md ("Session clones" / "Stop-work
+# procedure") - this script is that doctrine made mechanical; if the two ever disagree, CLAUDE.md wins
+# and this script has a bug.
 #
-# RENDER MODEL (GM 2026-07-22): renders no longer flow clone -> main by copy. render-sync
-# REGENERATES main's diagram renders in place from main's own committed tip (via l7r/diagram/pipeline/render_cache.py),
-# so a render in main is a pure function of main's code and can never be a stale copy. A content
-# hash stamped into each derived svg makes the regen a cheap no-op when nothing a map depends on
-# changed. This retired the whole copy machinery: no clone-side pre-render, no rsync, no tip-guard,
-# no byte-verify, and sync-in no longer pulls renders into the clone.
+# NO RENDER-SYNC ANY MORE (GM 2026-08-25, the first session after feature 131). The third subcommand
+# used to regenerate main's diagram renders in place after every push - gitignored PNG/SVG the GM
+# browsed in main's tree. Every one of those artifacts left with the diagram skill for
+# https://github.com/EliAndrewC/diagram, and nothing left in this repository derives a gitignored
+# artifact that main has to hold: the webapp's pools are tracked files, the name/weather/dream
+# skills generate into tracked files or into chat. So the stop-work procedure here is push, full stop.
+# `done` survives as the documented name of "the stop-work command" and is now an alias of `push`.
+# The diagram repository keeps its own copy of this script with render-sync in it.
 #
 # Run from anywhere INSIDE a session clone. Subcommands:
 #   sync-in         start-of-work pull from main (near-free; almost always a fast-forward)
 #   push            stop-work: refuse dirty tree, locked pull+push, overlap advisory (exit 3 =
 #                   the pull merged other sessions' edits into files your commits touched -
 #                   rerun the relevant gate NOW and fix forward)
-#   render-sync     locked, cache-short-circuited regen of main's diagram renders IN PLACE from
-#                   main's tip (GM_ASSISTANT_ALLOW_MAIN=1 for that one sanctioned regen-in-main)
-#   done            push, then render-sync (the common full stop-work)
+#   done            alias of push (the stop-work command CLAUDE.md names)
 set -euo pipefail
 
 die() { echo "sync-with-main: $*" >&2; exit 1; }
@@ -41,37 +39,30 @@ ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git check
 if [ -n "${CLONE_MAIN:-}" ]; then MAIN=$CLONE_MAIN
 elif [ "$(basename "$(dirname "$ROOT")")" = ".clones" ]; then MAIN=$(dirname "$(dirname "$ROOT")")
 else MAIN=$ROOT; fi
-LOCK=$MAIN/.clones/.ritual.lock   # keep this NAME: it is the cross-session lock convention in CLAUDE.md - renaming it would stop serializing against other sessions
-POOL=.claude/skills/diagram/pool
-SKILL_DIR=.claude/skills/diagram
-RENDER_CACHE_MOD=l7r.diagram.pipeline.render_cache   # run as a MODULE from SKILL_DIR: it imports its package siblings relatively
+LOCK=$MAIN/.clones/.sync.lock   # keep this NAME: it is the cross-session lock convention in docs/session-clones.md - every session must lock the SAME file or the pull+push stops serializing (renamed from .ritual.lock 2026-08-25; a session on the old script name is briefly unserialized against one on the new - accepted, one-time)
 
 case "$ROOT" in
-  "$MAIN") die "this is MAIN, not a clone - the ritual runs from a session clone (CLAUDE.md 'Session clones')" ;;
+  "$MAIN") die "this is MAIN, not a clone - the procedure runs from a session clone (CLAUDE.md 'Session clones')" ;;
   "$MAIN"/.clones/*) ;;
   *) die "$ROOT is not a session clone under $MAIN/.clones/" ;;
 esac
 # The repository's OWN NAME is a FORBIDDEN clone name (GM 2026-07-22, generalized 2026-08-25): it is
 # the repository, not a session, and being the old unnamed-default is what let two sessions collide
-# in one working tree. 'gm-assistant' stays forbidden everywhere for the same reason. The ritual
+# in one working tree. 'gm-assistant' stays forbidden everywhere for the same reason. The script
 # refuses to run from such a clone so no work can be pushed out of it - rename the session distinctly.
 case "$(basename "$ROOT")" in
-  gm-assistant|"$(basename "$MAIN")") die "'.clones/$(basename "$ROOT")' is a FORBIDDEN clone name - it is the repository, not a session. Ask the GM to /rename this session to something distinct, then run the ritual from .clones/<that-name>. (CLAUDE.md 'Session clones')" ;;
+  gm-assistant|"$(basename "$MAIN")") die "'.clones/$(basename "$ROOT")' is a FORBIDDEN clone name - it is the repository, not a session. Ask the GM to /rename this session to something distinct, then run the procedure from .clones/<that-name>. (CLAUDE.md 'Session clones')" ;;
 esac
 cd "$ROOT"
 
 sync_in() {
   git pull --no-rebase origin main
-  # No render pull-in anymore (GM 2026-07-22): its old rationale was that a clone's stale renders
-  # would flow back into main via render-sync's copy - but render-sync no longer copies anything,
-  # it REGENERATES main in place, so nothing flows clone -> main and the clone never needs main's
-  # renders. A clone regenerates whatever map it iterates on; the GM browses renders in main.
   date > "$ROOT/.git/sync-with-main.stamp"
   echo "sync-with-main: clone synced with main (git)"
 }
 
 push_cmd() {
-  [ -z "$(git status --porcelain)" ] || die "uncommitted changes - commit first (the ritual never writes your commit for you)"
+  [ -z "$(git status --porcelain)" ] || die "uncommitted changes - commit first (the script never writes your commit for you)"
   # DUPLICATE-DEF GUARD (GM 2026-07-24): a cross-session merge gave test_settlement.py two
   # _city() helpers - the later silently shadowed the earlier and broke a seeded test - and ruff
   # F811 cannot see this class (pyflakes only flags UNUSED redefinitions; an early helper is
@@ -81,11 +72,11 @@ push_cmd() {
   python3 "$ROOT/scripts/check-duplicate-defs.py" --selftest >/dev/null || die "check-duplicate-defs selftest failed - the guard itself is broken; fix scripts/check-duplicate-defs.py before pushing"
   python3 "$ROOT/scripts/check-duplicate-defs.py" "$ROOT" || die "duplicate top-level definitions (above) - a later def silently shadows the earlier; fix before pushing"
   # GREEN-GATE GUARD (constitution Principle XIII, GM 2026-08-17). The principle's enforcement
-  # clause says this ritual "does not run to completion on a red or regressed state" - which was
+  # clause says this procedure "does not run to completion on a red or regressed state" - which was
   # ASPIRATIONAL until now: nothing here knew whether a gate had run, so compliance was a session
   # remembering to comply, the very shape the principle abolishes. Python-only and per-area, so a
-  # docs-only push still skips the gate (CLAUDE.md) and a webapp change is not blocked by the
-  # diagram gate. Selftest FIRST, same reason check-duplicate-defs does it: a checker that cannot
+  # docs-only push still skips the gate (CLAUDE.md) and a webapp change is not blocked by
+  # another area's gate. Selftest FIRST, same reason check-duplicate-defs does it: a checker that cannot
   # prove it still bites is the failure mode that motivated it.
   if [ -n "${GATE_STAMP_OK:-}" ]; then
     echo "sync-with-main: green-gate guard BYPASSED - $GATE_STAMP_OK" >&2
@@ -107,10 +98,10 @@ push_cmd() {
   # got "! [rejected] main -> main (non-fast-forward)" while `git rev-list --count origin/main..HEAD`
   # reported it 4 ahead and 0 behind - every diagnostic says fast-forward and the error names a ref
   # you never touched. `HEAD:main` pushes what you actually committed.
-  # THE MANDATED REVIEWS ARE CHECKED BEFORE THE PUSH, not after (feature 127 audit, 2026-08-24).
-  # A spec ships with a fidelity verdict; a re-rolled Mode B map ships with its review logged. Both
-  # were constitutional and unenforced, and both had already been skipped in practice. Checked here
-  # because this is the moment work becomes everyone else's problem.
+  # THE MANDATED REVIEW IS CHECKED BEFORE THE PUSH, not after (feature 127 audit, 2026-08-24).
+  # A spec ships with a fidelity verdict. It was constitutional and unenforced, and had already
+  # been skipped in practice. Checked here because this is the moment work becomes everyone
+  # else's problem.
   "$(dirname "$0")/review-gate.sh" || exit 1
   flock "$LOCK" sh -c 'git pull --no-rebase origin main && git push origin HEAD:main'
   theirs=$(git diff --name-only "$before"..HEAD | sort -u)
@@ -120,61 +111,14 @@ push_cmd() {
     echo "sync-with-main: PUSHED, but the pull auto-merged other sessions' edits into files your commits touched:" >&2
     printf '  %s\n' $overlap >&2
     echo "sync-with-main: rerun the relevant gate NOW and fix forward (CLAUDE.md stop-work step 3)" >&2
-    # ...AND SAY THAT MAIN'S PICTURES ARE NOW STALE. `done` is push-then-render-sync, so this exit
-    # skips render-sync and main keeps whatever renders it had - silently. The GM browses renders in
-    # main, and on 2026-08-12 that cost a round trip: two syncs in a row hit this branch, so a map
-    # whose connector had been re-routed right across the sheet still showed the old route, and the
-    # GM reported the change had not happened. Regenerating from a tip whose gate has not been
-    # re-run would be the wrong cure, so the exit stays - but the tip belongs in the message rather
-    # than in a doc nobody re-reads (project rule: tips live in error output).
-    echo "sync-with-main: NOTE - render-sync did NOT run, so main's diagram renders are now STALE." >&2
-    echo "sync-with-main: once the gate is green again, run:  scripts/sync-with-main.sh render-sync" >&2
     exit 3
   fi
   echo "sync-with-main: pushed clean (no overlap with incoming changes)"
 }
 
-render_sync() {
-  # NO DIAGRAM SKILL, NO RENDER-SYNC (feature 131): gm-assistant no longer holds the skill, and the
-  # diagram repository holds nothing else - one script serves both because this step is conditional.
-  if [ ! -f "$MAIN/$SKILL_DIR/Makefile" ]; then echo "sync-with-main: no $SKILL_DIR/Makefile in $MAIN - render-sync skipped"; return 0; fi
-  # REGENERATE main's diagram renders IN PLACE from main's own tip (GM 2026-07-22, replacing the
-  # old build-in-clone-then-rsync-copy machinery). Renders now become a pure function of main's
-  # committed code - nothing is copied, so nothing can be copied stale (the fragility that copy
-  # approach had: whether a clone had touched a given render was situational, so a stale copy
-  # could linger in main). l7r/diagram/pipeline/render_cache.py runs each generator FROM ITS OWN DIRECTORY (the Mode A
-  # cwd trap) and short-circuits on a content hash stamped into each derived svg: an unconditional
-  # post-push regen is therefore cheap - only maps whose source actually changed re-run, so a push
-  # that touched no map's inputs costs ~0.3s while still self-healing every render from tip.
-  #
-  # Under the ritual LOCK for the whole regen: main is a push-to-checkout target (updateInstead),
-  # so another session's push mid-regen would rewrite the engine under us and mix tips across maps.
-  # GM_ASSISTANT_ALLOW_MAIN=1 stands the engine's main-tree guard down for this ONE sanctioned
-  # regen-in-main. No tip-guard is needed - regenerating whatever tip main currently holds is
-  # correct, and a second runner finds every stamp fresh and skips (the cache makes redundant
-  # regens ~free, which is what retires the old TIP-GUARD/last-writer-wins hazard entirely).
-  # THROUGH THE MAKE TARGET, not a bare interpreter (feature 127, FR-009). This was the last
-  # operation in the repo invoked outside make, and it was exempted in an early draft of the spec on
-  # the grounds that render-sync is a LEGITIMATE caller. The fidelity review rejected that: legitimate
-  # WORK does not imply a legitimate INVOCATION ROUTE, and compliance cost exactly this line.
-  (cd "$MAIN/$SKILL_DIR" && flock "$LOCK" env GM_ASSISTANT_ALLOW_MAIN=1 make --no-print-directory render-sync ARGS="--pool $MAIN/$POOL --main-repo $MAIN")
-  # A generator writes its TRACKED .json (and a Mode A its tracked .svg) alongside the gitignored
-  # renders; a deterministic gen reproduces those byte-identically, so main stays clean. If any
-  # tracked pool file is left dirty, a generator is nondeterministic - surface it loudly (it would
-  # also block the next session's updateInstead push), but do not auto-revert: the GM decides.
-  local dirty
-  dirty=$(git -C "$MAIN" status --porcelain -- "$POOL" | grep -E '^[ MARC]M ' || true)
-  if [ -n "$dirty" ]; then
-    echo "sync-with-main: WARNING - regen left tracked pool files dirty in main (a generator is nondeterministic):" >&2
-    printf '%s\n' "$dirty" >&2
-    echo "sync-with-main: investigate before the next push - main must be clean for updateInstead" >&2
-  fi
-}
-
 case "${1:-}" in
   sync-in)     sync_in ;;
-  push)        push_cmd ;;
-  render-sync) render_sync ;;
-  done)        push_cmd; render_sync ;;
-  *)           die "usage: sync-with-main.sh sync-in | push | render-sync | done" ;;
+  push|done)   push_cmd ;;
+  render-sync) echo "sync-with-main: render-sync no longer exists here - the diagram skill and its renders moved to https://github.com/EliAndrewC/diagram (feature 131); nothing in this repository derives a gitignored artifact into main. Use 'done'." >&2; exit 1 ;;
+  *)           die "usage: sync-with-main.sh sync-in | push | done" ;;
 esac

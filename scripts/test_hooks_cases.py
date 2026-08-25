@@ -44,7 +44,7 @@ REPO_SAFETY = [
     ("force push, with-lease", cmd("git push --force-with-lease origin HEAD:main"), "blocked"),
     ("flag before the verb", cmd("git --force push origin main"), "blocked"),
     ("an ordinary push", cmd("git -C /gm-assistant/.clones/x push origin HEAD:main"), "ok"),
-    ("the stop-work ritual", cmd("./scripts/sync-with-main.sh done"), "ok"),
+    ("the stop-work procedure", cmd("./scripts/sync-with-main.sh done"), "ok"),
     # the seventh mention-versus-invocation case: a message ABOUT the rule
     ("a commit message quoting the rule", cmd('git commit -m "never git push --force here"'), "ok"),
     ("a heredoc message quoting it", cmd("git commit -F - <<MSG\nblocks git push --force\nMSG"), "ok"),
