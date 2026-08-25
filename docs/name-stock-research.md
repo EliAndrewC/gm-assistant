@@ -75,9 +75,15 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
 
 ## Decision record
 
-- The -ko suffix was made a CASTE KNOB, not banned (constitution Principle XII: two supportable
-  answers become a knob). History says court-only; L5R canon names samurai women with -ko freely
-  and the project does not rock the boat on L5R compatibility. Resolution: -ko is a samurai marker
-  with a pre-modern base; peasant women get short kana names.
-- Pool size ruling deferred to the GM (2026-08-25): male can grow freely; female should stop around
-  250 unless the GM accepts a higher constructed fraction.
+- The -ko suffix: SOURCE MATERIAL OVER HISTORY (GM 2026-08-25). History says court-only until
+  1872; L5R canon uses -ko for samurai and peasants alike. The GM's standing rule for such
+  conflicts: decide case by case, defaulting to the game's source material when it does not overly
+  detract from verisimilitude. Here it does not, so -ko is allowed for every caste. A first draft
+  had made it a samurai-only knob; the GM overruled that the same day. Only the BASE is period-checked.
+- Pool growth (GM 2026-08-25): the existing pool is NOT purged; the ratio is repaired by adding
+  names. A majority of each pool must be attested; at most 20% may be invented; the invented budget
+  is spent only on initials with too few attested names (the set-distinctness rule needs a flatter
+  alphabet than Japanese has), never on letters already rich in real names.
+- Next step agreed: pull the attested stock from public sources into raw local lists
+  (`.claude/skills/name/raw/`) with source metadata only - no per-name research until a name is
+  actually promoted into the pool.

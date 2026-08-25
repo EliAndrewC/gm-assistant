@@ -1,0 +1,30 @@
+# raw/ - attested pre-modern Japanese given names (collected 2026-08-25)
+
+Load this directory when expanding the `/name` pool. These files are the SUPERSET of real names
+the pool is grown from under the SKILL.md "Period Sensibility" rule (majority attested, at most
+20% invented, invented budget spent only on thin initials). They are deliberately uncurated: not
+deduplicated across sources, not checked against the pool or the similarity rules, and carrying no
+research beyond what the source gave for free. A name gets researched (meaning, kanji triangle,
+explanation format) only when it is promoted into `pool-*.jsonl`.
+
+| file | what | size |
+|---|---|---|
+| `female-attested.jsonl` | one line per source occurrence; 2,380 lines, 1,149 distinct, 614 distinct once the `issendai-geisha-*` sources are dropped | `name, kana_or_kanji, source, url, rank, frequency, period, notes` |
+| `female-sources.md` | the 23 sources, yields, caveats, failures | |
+| `male-attested.jsonl` | 7,557 lines, 3,568 distinct; `kind` = nanori / tsusho / yomyo / buddhist / commoner | `name, kanji, kind, source, url, rank, frequency, period, notes` |
+| `male-nanori-elements.jsonl` | 255 nanori building blocks with kanji, position, meaning - the combinatorial system that makes the male stock effectively unbounded | `element, kanji, position, meaning, source, url, notes` |
+| `male-sources.md` | the sources, yields, caveats, failures | |
+
+Culling notes the collectors left (details in the two sources files):
+
+- Female: the 609 `issendai-geisha-*` lines are professional names from the 1730s to the 2010s with
+  no per-name period - drop them wholesale or cull hard. Village-register names were transcribed from
+  table images by eye; historical kana spellings are preserved literally (Shiyau, ゑ -> e). Prefixes
+  (o-, 小) and suffixes (-no, -he) were stripped to the base with the affix in `notes`.
+- Male: jawiki lines were parsed from article leads across 12 category sweeps (capped at 1,000 per
+  category); romaji for kanji-only sources (Kiyose, nihonjin-name, jawiki tsusho) was supplied by the
+  collector and is flagged in `notes`. Issendai's merchant table is labeled late Edo by assumption.
+- Both: distinct-name counts per first letter are the input to the invented-name budget. Female
+  non-geisha: K 109, S 88, T 76, M 48, H 45, I 39, N 35, Y 29, A 28, C 24, F 20, R 19, O 15, E 9,
+  G 9, U 8, B 4, J 3, W 3, D 2, Z 1. Male: T 570, S 507, K 493, M 479, N 281, Y 253, H 241, I 90,
+  A 88, J 82, G 80, C 78, U 69, F 64, R 50, Z 36, D 32, B 28, O 18, W 2.
