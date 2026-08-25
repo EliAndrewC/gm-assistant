@@ -1,7 +1,27 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.14.0 → 1.15.0
+Version change: 1.16.0 → 1.17.0
+
+Version 1.17.0 (amended 2026-08-25, GM-directed): the constitution is brought back to the
+repository it governs. Feature 131 moved the /diagram skill - its generators, pool, checks, review
+agents, `make maps` / `make perf` / bypass-log tooling and dev/ directory - to its own repository
+(https://github.com/EliAndrewC/diagram), which carries its own copy of this constitution and
+continues to maintain the diagram-specific doctrine there. Here, the principles are unchanged in
+meaning but their diagram-only MECHANISMS are removed or generalized: Principle VI's reference-
+settlement / `make maps` / bypass-audit / performance-bookend clauses become a generic
+"one artifact, then the sweep" rule; Principle XII names generators in general rather than the
+settlement engine, and its knob clause is stated per artifact; Principles XIV and XVI name the
+three review agents this repository actually has (`backstory-review`, `frontend-review`,
+`spec-fidelity`); Principle X's motivating cases and the historical amendment notes are kept as
+history and marked as belonging to the diagram repository; the Technical Standards / Development
+Workflow sections drop the retired webapp-prototype screenshot procedure in favor of the real
+`webapp/tests/screenshot.py` + `dom_audit.py` suite. Process vocabulary: "ritual" -> "procedure"
+(the GM's ruling of the same day: rituals are for Rokugan, merging into main is technical).
+Amendment: MINOR - sections materially rewritten, no principle removed or redefined.
+
+Templates reviewed: plan-template.md and tasks-template.md were already generalized the same day
+(reference artifact instead of reference settlement; performance bookends removed).
 
 Version 1.15.0 (amended 2026-08-24): adds Principle XVIII - a guard ships with its test companion and
 that companion RUNS in the gate. Motivating measurement: the enforcement audit found eight hook
@@ -341,11 +361,20 @@ Version 1.0.0 history (initial ratification on 2026-05-27):
 # L7R Toolkit Constitution
 
 This constitution governs the L7R toolkit project - a working setup of Claude
-Code skills, generated content pools, and a forthcoming webapp frontend for a
-custom Legend of the Five Rings tabletop RPG setting. It is the highest-level
-guide for how Claude Code agents and human contributors collaborate on this
+Code skills, generated content pools, and the L7R Toolkit webapp for a custom
+Legend of the Five Rings tabletop RPG setting. It is the highest-level guide
+for how Claude Code agents and human contributors collaborate on this
 codebase. All specifications, plans, implementations, and reviews MUST comply
 with the principles below.
+
+The `/diagram` settlement-map skill was part of this repository until feature
+131 (2026-08-25) and shaped much of what follows. It now lives in its own
+repository, <https://github.com/EliAndrewC/diagram>, with its own copy of this
+constitution and its own domain doctrine. Where a principle below cites a
+diagram incident as its motivating case, the case is history and the lesson
+still binds; the diagram-specific MECHANISMS (`make maps`, performance
+bookends, the settlement and building review agents) are documented there,
+not here.
 
 ## Core Principles
 
@@ -485,138 +514,36 @@ artifacts. Specifically:
   run a verification query) before relaying the result to the user.
   "The agent said it was done" is not sufficient.
 
-- **Generators: ONE ARTIFACT UNTIL IT WORKS, then the sweep** (GM 2026-08-23).
-  A change to a generator is proven on a SINGLE named artifact first. The full
-  cohort / pool sweep runs once, AFTER that artifact is fully working - never as
-  the loop you iterate inside. Feature 126 is the case that produced this clause:
-  a 48-map cohort was launched while the approach was still being tried out, one
-  seed near-hung, and thirty minutes bought no result at all. A single hamlet
-  rebuilds in well under a minute, so the same thirty minutes is thirty
-  experiments instead of nothing.
-  - The canonical hamlet is **Inashiro**, unless the feature names a better one
-    and says why.
+- **Generators: ONE ARTIFACT UNTIL IT WORKS, then the sweep** (GM 2026-08-23;
+  generalized 2026-08-25 when the diagram skill left). A change to a generator -
+  a pool skill, a toolkit section, anything that produces many artifacts from
+  shared code - is proven on a SINGLE named artifact first: one pool entry, one
+  page, one test file. The full sweep (the whole pool, the whole suite) runs
+  once, AFTER that artifact is fully working - never as the loop you iterate
+  inside. The clause was paid for in the diagram repository (feature 126: a
+  48-map cohort launched while the approach was still being tried out, one seed
+  near-hung, thirty minutes bought no result twice) and the lesson is not about
+  maps: a slow loop is what tempts a session into guessing another fix instead
+  of measuring again.
   - **EVERY STEP OF A FEATURE IS TWO STEPS** (GM 2026-08-23): get it working on
-    the reference settlement, THEN get it working everywhere. A plan or task list
+    the reference artifact, THEN get it working everywhere. A plan or task list
     that says only "make X work" is incomplete - it must say "make X work on the
-    reference settlement" and, separately, "make X work across the pool". The
+    reference artifact" and, separately, "make X work across the pool". The
     second half is a distinct task with its own verification, not a footnote to
-    the first.
-  - **THERE IS ONE COMMAND, AND IT PICKS ITS OWN SCOPE** (GM 2026-08-23).
-    `make maps` reads how the LAST run went and decides:
-
-        last run PASSED -> the whole tier, reporting EVERY failure together
-        last run FAILED -> the REFERENCE map alone, stopping at the FIRST
-                           problem; only if it passes does it go on to the rest
-        no last run     -> treated as FAILED
-
-    **One piece of state drives both the scope and the verbosity**, and for the
-    same reason: a failed previous run means you are mid-fix and want the fastest
-    signal, so the run is narrow and stops early; a passed previous run means you
-    are verifying breadth, so it is wide and collects everything - which is what
-    `make done` already does. `SCOPE=reference` / `SCOPE=all` says what you mean
-    when you know better; an adaptive default is right, but a tool that cannot be
-    told the truth gets worked around instead of used.
-
-    **There is deliberately NO second command.** An earlier version of this rule
-    offered `make map` and `make full-hamlet-sweep` and relied on the session
-    choosing correctly. A choice is a thing that gets chosen wrong under
-    pressure: the reference-first rule was written into this constitution and
-    violated by its own author six hours later, at a cost of five 10-12 minute
-    four-map cycles chasing a defect the reference hamlet answered in 67 seconds.
-    *"Just remembering to do the right thing always is much worse than having
-    good tooling."*
-
-    **Sequential is cheaper than it looks.** A reference run that passes costs
-    about a minute before the wide run starts; a reference run that FAILS saves
-    the wide run entirely. The apparent loss of parallelism is bought back many
-    times over across a feature.
-
-    **This is the general pattern for every settlement tier**, not a hamlet
-    special case - `mapcheck.py` is a tier table, and villages, towns and cities
-    each get a row and a named reference map as they gain live scripted gens.
-  - **BYPASSING THE GATE COSTS A WRITTEN, AUDITED JUSTIFICATION** (GM 2026-08-24).
-    `REF_OK=1` does not merely permit the expensive run: it demands a reason in
-    prose and appends it to `dev/bypass-log.jsonl` with the date, target and
-    commit. A flag you can type is a speed bump; a reason someone will READ is a
-    decision you have to defend.
-
-    **Every diagram feature MUST audit that log as a closing step** - read the
-    entries added during the feature and state, in the feature's own artifacts,
-    whether each bypass was justified in retrospect. Legitimate reasons: the
-    reference map is itself under surgery; bisecting a knowingly-red tree; the
-    subject is a check that only fires on a non-reference map. Not legitimate:
-    wanting to see everything, or impatience.
-
-    The rule exists because three separate guards were added during feature 126
-    and each was walked around by reaching for a command the guard did not cover
-    - `cohort_audit` when `make maps` was gated, `make done` and `make test` when
-    both of those were. The measured cost inside that one feature: six 20-25
-    minute cohorts, most launched over a tree already known to be broken. A guard
-    on one command out of four is not a guard, and a guard with no audit trail
-    cannot tell you it is being evaded.
-
+    the first. The plan and tasks templates carry this shape.
   - **`make done` IS THE BACKSTOP, and it is why narrow defaults are safe.** The
-    gate re-checks the whole pool, so a session that forgets the sweep entirely
-    still cannot ship a map it broke. Cheap defaults trade no correctness - only
-    the moment you find out.
+    gate re-checks everything, so a session that forgets the sweep entirely still
+    cannot ship what it broke. Cheap defaults trade no correctness - only the
+    moment you find out.
   - The final sweep stays MANDATORY whenever shared code changed - this clause
     changes WHEN it runs, never WHETHER.
   - A feature that adds a KNOB owes one artifact per knob VALUE, not one per
-    artifact in the pool: three maps, not forty-eight.
-
-- **Generators: PERFORMANCE IS BOOKENDED, not remembered** (GM 2026-08-23).
-  A spec-kit feature that touches the diagram generators records a performance
-  snapshot BEFORE it changes anything and again BEFORE it ships:
-
-      make perf LABEL=<NNN>-start     # first thing, on unmodified code
-      make perf LABEL=<NNN>-end       # last thing, before the push
-      make perf-report AGAINST=<NNN>-start
-
-  **TWO BANDS, and they are different numbers on purpose** (GM 2026-08-24: *"it
-  is okay if things can get a few percentage points slower, though we probably
-  need some kind of maximum threshold"*).
-
-  - **Any seed more than 5% slower must be DIAGNOSED** - the same 5% the project
-    already treats as a whole-process speedup worth having, applied in the other
-    direction. Diagnosed means explained and either fixed or accepted in writing
-    with the number; it does not mean noticed. A single seed never blocks a merge
-    on its own.
-  - **The TOTAL across the seed set is capped at 10%.** Over it, the slowdown is a
-    Principle XIII regression with the usual three exits: fix it, revert it, or
-    get an explicit GM waiver for that number.
-
-  One figure cannot be both the point where you start thinking and the point where
-  you must stop, and until 2026-08-24 it was doing both jobs badly - too strict at
-  the bottom, where 5% on one seed is inside the noise of a loaded machine, and
-  absent at the top, where a seed could double and the rule was satisfied by
-  writing down that it doubled.
-
-  **Why the AGGREGATE is what gets capped in this engine.** A feature that reorders
-  stages changes what every seed is DOING - the maps are genuinely different
-  afterwards - so one seed's before-and-after is not the same work measured twice,
-  while the total still answers the question the bookends exist for. The known cost,
-  accepted rather than overlooked: one pathological seed can hide inside a good
-  average. It still prints and still owes a written diagnosis. A 50% per-seed
-  ceiling was priced alongside the cap and declined, as the second axis to tune
-  rather than the first; 25% was priced as the cap and the GM chose 10%, told that
-  it will fire on ordinary work.
-
-  Calibration: feature 126, the incident that created these bookends, was +51%
-  total and +146% on its worst seed. It fails the cap five times over.
-
-  - **Seeds, not one map.** The reference hamlet is rolled across a fixed seed
-    set, because a single seed can be pathologically good as easily as bad.
-  - **The start snapshot is also a health check.** Read the trend before
-    beginning: if performance has drifted since the last feature, the first work
-    is finding out why, not adding to it.
-  - Snapshots live one-file-per-run in `.claude/skills/diagram/dev/perf-log/`, so
-    concurrent clones never conflict. Never edit or delete one.
-  - This does not replace `GEN_TIME_BUDGETS`, which is a per-gen ceiling. This is
-    a trend, and it answers the other question: is it getting slower, and when.
-
-  Feature 126 is why this exists: it moved a stage and took one seed from 65s to
-  160s, and nothing noticed until a 48-map cohort stalled a 20-worker pool for
-  thirty minutes and was killed twice with no result.
+    artifact in the pool.
+  - The self-scoping `make maps` command, the audited bypass log and the
+    performance bookends that once sat here were the diagram engine's
+    enforcement of this clause. They moved with it; this repository's generators
+    are seconds-fast and need no equivalent. If one ever does, the diagram
+    repository's constitution has the worked design and its pricing.
 
 Trust-but-verify is the working mode. Reporting a thing as done without
 verification is a constitutional violation, not just a quality issue.
@@ -761,9 +688,9 @@ any single rule is reason enough to refuse "done" status.
     than felt. Deferred future work, recorded here so it is not lost:
     an automated gate check counting expressions per function, failing
     past the threshold unless the justification annotation is present.
-    Motivating case: `check_village.py`'s `gate()` reached 12,944
-    lines one check at a time, and the cost surfaced as an
-    architecture problem - nothing inside it could be invoked
+    Motivating case (diagram repository): `check_village.py`'s `gate()`
+    reached 12,944 lines one check at a time, and the cost surfaced as
+    an architecture problem - nothing inside it could be invoked
     separately - long before anyone would have chosen that shape.
 
 13. **Files stay at human scale** (added v1.6.0, GM-directed 2026-08-15):
@@ -788,10 +715,10 @@ any single rule is reason enough to refuse "done" status.
     contract) may stay large - with an inline justification at the top
     saying why. The failure mode is the same GROWTH pattern as clause
     12: no single edit crosses the line, so the line must be checked
-    rather than felt. Motivating case: `check_village.py` reached
-    35,603 lines one check at a time and cost a full context window to
-    consult; feature 024 split it into the `check_village/` package,
-    the exemplar of the practice.
+    rather than felt. Motivating case (diagram repository):
+    `check_village.py` reached 35,603 lines one check at a time and
+    cost a full context window to consult; feature 024 split it into
+    the `check_village/` package, the exemplar of the practice.
 
 14. **Rosters that restate code are derived, not maintained** (added
     v1.7.0, GM-directed 2026-08-16): when a file's bulk is a
@@ -818,12 +745,12 @@ any single rule is reason enough to refuse "done" status.
     is data and may stay; rows reproducible from the code they
     reference are duplication and must go - and when one file mixes
     both, derive the derivable facts and keep the decided ones. The
-    question is per-fact, not per-file. Motivating case:
-    `check_village/__init__.py`, 3,148 lines of import rosters plus a
+    question is per-fact, not per-file. Motivating case (diagram
+    repository): `check_village/__init__.py`, 3,148 lines of import rosters plus a
     duplicate `__all__` restating what 18 submodules already
     declared, reduced to 63 derived lines by feature 027 with zero
-    consumer changes - the exemplar; full method in
-    `specs/027-init-star-imports/`.
+    consumer changes - the exemplar; full method in that
+    repository's `specs/027-init-star-imports/`.
 
 ### XI. Japanese Authenticity (NON-NEGOTIABLE)
 
@@ -881,18 +808,21 @@ undermines the whole reading experience for any player who knows Japanese.
 
 ### XII. Historical Grounding Bookends (NON-NEGOTIABLE)
 
-Any feature that changes what a **generator asserts about the world** - the
-`/diagram` settlement and compound engines above all, but equally any future
-generator that draws or states how a place was farmed, built, or lived in -
-MUST be bookended by historical-grounding work: an analysis BEFORE it is
-built, and a verification of the ARTIFACT after.
+Any feature that changes what a **generator asserts about the world** - a
+temple's daily life, a calendar's agricultural events, a legal case's
+procedure, a settlement's layout; any generator that draws or states how a
+place was farmed, built, governed, or lived in - MUST be bookended by
+historical-grounding work: an analysis BEFORE it is built, and a verification
+of the ARTIFACT after.
 
 **Opening gate (Phase 0, before any design).** For every element the feature
 adds or changes, the plan MUST state, in `research.md`:
 
-1. **What the historical reality was** (China-first, Japan corroborating, per
-   the `/diagram` doctrine), in enough detail to be checkable - not "terraces
-   existed" but what determined their placement, extent, and season.
+1. **What the historical reality was** (China-first for geography, farming,
+   settlement and transport - Song/Ming - with Japan as the tiebreaker and the
+   cultural surface staying Japanese; the GM's standing doctrine), in enough
+   detail to be checkable - not "terraces existed" but what determined their
+   placement, extent, and season.
 2. **Whether the proposed design matches it**, explicitly. A design that does
    not match MUST be changed or dropped at this point, not implemented and
    revisited.
@@ -901,14 +831,14 @@ adds or changes, the plan MUST state, in `research.md`:
    a thing right and its *governing variable* wrong.
 
 **Closing gate (final phase, before "done").** The feature MUST re-examine
-the **rendered artifact** - the PNG, not the code and not the intent - and
-confirm each element still matches the Phase 0 findings. This is a separate
-step from the automated gate: `check_village` proves internal consistency,
-never historical truth. A map can pass every check and still depict something
-that never existed.
+the **rendered artifact** - the page, the pool entry as a reader sees it, the
+PNG; not the code and not the intent - and confirm each element still matches
+the Phase 0 findings. This is a separate step from the automated gate: an
+automated check proves internal consistency, never historical truth. An
+artifact can pass every check and still depict something that never existed.
 
-**Why the artifact and not the code (the motivating failure).** The
-`land_use_overlay` knob shipped a `rape` value that recolored a random ~32%
+**Why the artifact and not the code (the motivating failure, from the diagram
+skill while it lived here).** The `land_use_overlay` knob shipped a `rape` value that recolored a random ~32%
 of paddy plots yellow. It passed every automated check, was covered by tests,
 and carried a grounded-sounding docstring citing the real 油菜 winter
 rotation. It was still wrong: rice and rape are the two halves of ONE
@@ -974,13 +904,14 @@ look" into "the evidence is unclear".
 AMENDS the calibrated-liberty clause above, and takes precedence over it where
 the two differ. When research shows a thing was genuinely done more than one
 way, the project does NOT pick the reading it likes and write the other off.
-It makes the variation a **tunable knob with per-settlement variance**, so a
-map can be rolled either way and two maps can honestly differ.
+It makes the variation a **tunable knob with per-artifact variance**, so an
+artifact can be rolled either way and two artifacts can honestly differ.
 
-The reason is a project goal, not a historical one: these maps exist for
-players who must tell one settlement from another at a glance. *"One of our
-goals in this map generation project is to be able to produce settlements which
-are within historical norms while being as different from one another as is
+The reason is a project goal, not a historical one: generated content exists
+for players who must tell one temple, one settlement, one festival from another
+at a glance. The GM's words, said of the map generator: *"One of our goals in
+this map generation project is to be able to produce settlements which are
+within historical norms while being as different from one another as is
 justifiable by our historical research."* Every place where the record permits
 two forms is therefore a place the generator can differ WITHOUT leaving those
 norms - which is exactly the variation worth having, and picking one form
@@ -992,9 +923,8 @@ So the ladder for any such question is:
    is no knob and no ruling (the `rape` rotation was decisive; so was the
    threshing yard's sun).
 2. **If the record supports two or more forms, add the knob**, rolled per
-   settlement like every other knob (`_knobs.py`, seeded from the map's own
-   seed so a value depends only on (seed, knob name)). Record the range and
-   its evidence where the knob lives.
+   artifact from the artifact's own seed so a value depends only on (seed,
+   knob name). Record the range and its evidence where the knob lives.
 3. **Only if the record is silent or self-contradictory** does the GM rule -
    and the ask carries the research that failed to settle it.
 
@@ -1129,8 +1059,9 @@ exception; "this cannot be done without changing the architecture" is.
 
 **Why this outranks the convenience of a tidy diff.** The reason is the GM's,
 and it is about compounding: the value of this project's generators comes from
-being able to expand them - new settlement tiers, new archetypes - on top of a
-foundation whose behavior is known-good. Every defect left in place is a
+being able to expand them - new skills, new toolkit sections, new pools (and in
+the diagram repository, new settlement tiers) - on top of a foundation whose
+behavior is known-good. Every defect left in place is a
 defect the next tier inherits and builds over, and by then it is entangled with
 work that assumed it. Fixing on contact keeps the floor level as the building
 gets taller. It also removes the incentive that makes ledgers rot: a session
@@ -1145,8 +1076,9 @@ found gets fixed rather than ledgered. Where they appear to conflict, XIV
 decides what you do and XIII decides what blocks the push.
 
 **Where the defects actually come from, and so where this bites.** Mostly from
-the review subagents (`settlement-review`, `building-review`, `backstory-review`,
-`frontend-review`), which are pointed at a DELTA and reliably find things
+the review subagents (`backstory-review`, `frontend-review`, `spec-fidelity`;
+in the diagram repository also `settlement-review` and `building-review`),
+which are pointed at a DELTA and reliably find things
 outside it - that is a feature of an independent reviewer, not scope creep by
 it. A finding outside the delta is still yours. The same applies to a defect a
 diagnostic surfaces, a number that looks wrong while measuring something else,
@@ -1256,9 +1188,9 @@ process was positioned to notice.
 
 **This is the QA separation every engineering organization runs on**, and this
 constitution already believes it. Principle I holds that the author of a design is
-not a reliable reviewer of it, which is why `frontend-review`, `building-review`,
-`settlement-review` and `backstory-review` exist. Every one of those guards an
-OUTPUT. This extends the same rule one step earlier, to the specification - the one
+not a reliable reviewer of it, which is why `frontend-review` and `backstory-review`
+exist here (and `settlement-review` and `building-review` in the diagram
+repository). Every one of those guards an OUTPUT. This extends the same rule one step earlier, to the specification - the one
 artifact still being written and graded by the same session.
 
 **Interaction with XV (Keep Going).** This is not licence to stop. The reviews run
@@ -1317,8 +1249,8 @@ context. A directory `CLAUDE.md` is, automatically, whenever work happens in tha
 anything a session must KNOW in order to act correctly is invisible in a README - it will be found
 only by a session that happens to look, which is to say by luck.
 
-That is not theoretical. `dev/perf-log/README.md` carried the rule that an append-only shared log
-must be a DIRECTORY, because concurrent clones conflict on every push. A session read that file
+That is not theoretical. The diagram skill's `dev/perf-log/README.md` carried the rule that an
+append-only shared log must be a DIRECTORY, because concurrent clones conflict on every push. A session read that file
 during an unrelated audit, quoted from it, and hours later created a single-file `run-log.jsonl` -
 breaking a rule it had read the same day. Had the file been a `CLAUDE.md`, it would have been in
 context at the moment the decision was made.
@@ -1328,7 +1260,7 @@ context at the moment the decision was made.
 - **`CLAUDE.md` in the directory it governs** - auto-loaded exactly when relevant, which is the
   whole reason this project splits documentation by directory rather than piling it into one file.
 - **A topic doc referenced from a CLAUDE.md**, when it is long enough that loading it always would
-  be waste. That is the established `docs/` and `dev/` pattern.
+  be waste. That is the established `docs/` pattern (each file opens with a "load this when" line).
 
 **What a README is still for**: a human arriving at the repository, or at a published subproject,
 who wants an orientation. The GM writes those. If a README is factually wrong, say so and offer the
@@ -1374,12 +1306,11 @@ shell command that writes one. It carries no silent escape - a genuine exception
   variant inputs.
 
 **Webapp conventions**
-- Static prototypes live under `/gm-assistant/webapp-prototype/`.
-- The chargen backend (CherryPy + Jinja2) lives under `/gm-assistant/webapp/`.
-- A `relics.js` (or analogous) bundle inlines pool data as
-  `window.<NAME>_BUNDLE` so prototypes work over `file://` without a
-  server. A parallel `relics.json` artifact is produced for future API
-  parity.
+- The L7R Toolkit (CherryPy + Jinja2) lives under `/gm-assistant/webapp/`;
+  new code under `webapp/l7r/`, the legacy chargen app mounted beneath it.
+  (The static `webapp-prototype/` tree that preceded it is gone.)
+- Pool data reaches the toolkit by reading the skills' pool files directly in
+  development and via `make prepare-deploy` snapshots in the Fly image.
 
 **Secrets**
 - `development-secrets.ini` files MUST be gitignored. The corresponding
@@ -1397,19 +1328,19 @@ gate via the *Constitution Check* section of `plan-template.md`.
 
 **Screenshot-as-feedback workflow (mandatory for UI changes)**
 The verification workflow described in Principle I and VI MUST be run
-before any UI change is reported as done. The canonical implementation
-lives at `/gm-assistant/webapp-prototype/relics/screenshot.py` and runs:
+before any UI change is reported as done. The canonical implementation is
+`webapp/tests/screenshot.py` + `webapp/tests/dom_audit.py` (`make ui-verify`
+from `webapp/`, against a running server):
 
-1. Boot the prototype via `python3 -m http.server` on port 8123.
-2. For each of GM-100 (1850×1050), GM-200 (925×525), tablet (800×1100),
-   and mobile (390×844, dsf=2): take a full-page screenshot and an
-   above-the-fold screenshot.
-3. Run a DOM-overflow audit using Playwright's `page.evaluate` over
-   `.card`, `.card__top`, `.card__name`, `.card__entity`,
-   `.card__type`, `.card__kanji`, and any other narrow-target selectors
-   added by the change.
-4. Report dimensions (page height, card height, hero/foot heights) and
-   any overflow / truncation findings to the user.
+1. For each of GM-100 (1850×1050), GM-200 (925×525), tablet (800×1100),
+   and mobile (390×844, dsf=2): capture a multi-scroll contact sheet
+   (0/33/66/100% scroll positions stitched side by side for any page
+   taller than 1.3x the viewport) to `/tmp/l7r-shots/sheet-<page>-<viewport>.png`.
+2. Run the DOM audit over every page x viewport: clipping (overflow,
+   ellipsis, line-clamp) AND layout balance (sibling-height ratio inside
+   flex/grid containers). It MUST report zero issues.
+3. Do the persona-driven review pass at GM-200, and route the sheet to the
+   `frontend-review` subagent when the author is also the reviewer.
 
 **Python "done" checklist (mandatory per Principle X)**
 A Python change is not complete until all of the following pass on the
@@ -1478,4 +1409,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.16.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-24
+**Version**: 1.17.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-25
