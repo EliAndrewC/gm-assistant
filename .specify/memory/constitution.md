@@ -1,361 +1,38 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.16.0 → 1.17.0
+Version change: 1.17.0 -> 1.18.0
 
-Version 1.17.0 (amended 2026-08-25, GM-directed): the constitution is brought back to the
-repository it governs. Feature 131 moved the /diagram skill - its generators, pool, checks, review
-agents, `make maps` / `make perf` / bypass-log tooling and dev/ directory - to its own repository
-(https://github.com/EliAndrewC/diagram), which carries its own copy of this constitution and
-continues to maintain the diagram-specific doctrine there. Here, the principles are unchanged in
-meaning but their diagram-only MECHANISMS are removed or generalized: Principle VI's reference-
-settlement / `make maps` / bypass-audit / performance-bookend clauses become a generic
-"one artifact, then the sweep" rule; Principle XII names generators in general rather than the
-settlement engine, and its knob clause is stated per artifact; Principles XIV and XVI name the
-three review agents this repository actually has (`backstory-review`, `frontend-review`,
-`spec-fidelity`); Principle X's motivating cases and the historical amendment notes are kept as
-history and marked as belonging to the diagram repository; the Technical Standards / Development
-Workflow sections drop the retired webapp-prototype screenshot procedure in favor of the real
-`webapp/tests/screenshot.py` + `dom_audit.py` suite. Process vocabulary: "ritual" -> "procedure"
-(the GM's ruling of the same day: rituals are for Rokugan, merging into main is technical).
-Amendment: MINOR - sections materially rewritten, no principle removed or redefined.
+Version 1.18.0 (amended 2026-08-25, GM-directed): all map-making material removed. The GM: "there's
+no longer any reason to include map making information in the Speckit constitution." Every
+principle keeps its rule; the diagram-era motivating cases, measurements and mechanisms that
+illustrated them are gone from this copy, and each lesson is restated in this repository's own
+terms. The narrative amendment history that used to sit in this header (1.0.0 through 1.17.0) was
+itself mostly diagram incidents and is reduced to the version table below; the full text is in git
+history and in the diagram repository's copy of this constitution
+(https://github.com/EliAndrewC/diagram). Amendment: MINOR - sections materially rewritten, no
+principle removed or redefined.
 
-Templates reviewed: plan-template.md and tasks-template.md were already generalized the same day
-(reference artifact instead of reference settlement; performance bookends removed).
-
-Version 1.15.0 (amended 2026-08-24): adds Principle XVIII - a guard ships with its test companion and
-that companion RUNS in the gate. Motivating measurement: the enforcement audit found eight hook
-scripts, eight test companions, and nothing executing any of them. Also records the two-directions
-rule (fire, and stay quiet), the mention-is-not-an-invocation failure that produced seven false
-positives in one feature, and the escape-checked-first rule without which a guard cannot be repaired
-through the channel it guards. Enforced by `make hooks-test` as a gate phase. New principle: MINOR.
-
-
-Version 1.14.0 (amended 2026-08-24): adds Principle XVII - a session never creates or edits a
-README. The reason is mechanical rather than stylistic: a README is not loaded into context, a
-directory CLAUDE.md is, so knowledge parked in a README is found only by luck. Motivating case: the
-"an append-only log must be a DIRECTORY, because concurrent clones conflict" rule lived in
-dev/perf-log/README.md; a session read and quoted it during an audit, then created a single-file
-run-log.jsonl hours later. Three such READMEs became CLAUDE.md files in the same change, and
-scripts/readme-hooks.sh enforces it. New principle: MINOR.
-
-
-Version 1.13.1 (amended 2026-08-24): Principle XIII gains one clause - a detached
-worktree baseline is a starting point, not a verdict, and each failure it reports is
-checked against the clone before being called pre-existing. A fresh worktree does not
-carry GITIGNORED artifacts, so tests that read them fail there for reasons unrelated to
-the code. Measured during feature 127: the worktree gate reported 2 failures that both
-passed in the clone at the same commit, the worktree holding 20 pool PNGs against the
-clone's 28. Amendment: PATCH - it strengthens the accuracy of an existing procedure
-without changing what the principle requires, the same call made for 1.12.1.
-
-
-Version 1.13.0 (amended 2026-08-24): adds Principle XVI (Build What Was Asked;
-Fidelity Is Not Self-Adjudicated). The default is the literal request, exceptions
-are presumed wrong, and neither an exception nor a finished specification is
-graded by the session that produced it - both go to an independent Opus 5
-subagent, the spec reviewer receiving the GM's request VERBATIM rather than the
-plan. Three review rounds, then escalate to the GM. New principle: MINOR.
-Motivating case: feature 126, asked for as "farmhouses before lanes", was
-specified as farmhouses before lanes EXCEPT the connector and the field spur -
-an unrequested carve-out written by the implementing session and then implemented
-faithfully, so the feature under-delivered while every instruction was followed.
-This extends Principle I's author-is-not-reviewer rule from outputs to the
-specification itself, which was the last artifact a session both wrote and graded.
-
-
-Version 1.12.1 (amended 2026-08-23): replaces the two-command reference-first
-workflow with ONE self-scoping command. `make maps` reads how the last run went -
-passed means the whole tier with every failure reported, failed means the
-reference map alone stopping at the first problem, and only widening once it is
-clean. One piece of state drives both scope and verbosity. The two-command
-version lasted about an hour before its own author reached for the expensive one
-by habit, which is the argument: a choice is a thing that gets chosen wrong under
-pressure. Applies to every settlement tier, not just hamlets. Amendment: PATCH -
-it strengthens the enforcement of an existing principle without changing it.
-
-Version 1.12.0 (amended 2026-08-23): makes the reference-settlement rule
-STRUCTURAL rather than advisory. Every step of a generator feature is now two
-steps - working on the reference settlement, then working across the pool - and
-both are tasks with their own verification. The tooling defaults to the cheap
-thing on purpose (SUPERSEDED BY 1.12.1 - that version's two commands, `make
-map` and `make full-hamlet-sweep`, are gone; use `make maps`), because a wide
-sweep that is cheap to invoke is what lets a session drift onto it unnoticed.
-`make done` remains the backstop, which is what makes narrow defaults safe: the
-gate re-checks the whole pool, so forgetting the sweep costs time, never
-correctness. Amendment: MINOR. Motivating measurement: feature 126 spent five
-10-12 minute four-map cycles chasing one connectivity defect that the reference
-hamlet answered in 67 seconds - and the slow loop was itself the cause, because
-waiting ten minutes for an answer is what tempts a session into guessing another
-fix instead of measuring again.
-
-Version 1.11.0 (amended 2026-08-23): adds Principle XV (Keep Going) and
-rewrites Principle XIII's exits. The GM starts work and leaves the computer
-for hours, so a session that stops to ask which option to take costs that
-entire span, not a few seconds - and when one of the options is "fix it and
-make it work", that is always the answer. XIII's three exits are no longer a
-menu: FIX is the expected outcome, REVERT requires a written impossibility
-investigation rather than a preference, and a WAIVER is the GM's to grant
-after a fix has genuinely been attempted. Also adds the performance bookends
-to Principle VI and the single-artifact rule for generators. New principle:
-MINOR per the versioning policy. Motivating case: feature 126 (2026-08-23),
-which produced four successive wrong diagnoses without measuring between
-them and then stopped to ask the GM to choose among three options, one of
-which was simply to fix the defect.
-MINOR: Principle XIV (Fix Defects Where You Find Them) ADDED (GM-directed,
-2026-08-17): "anytime we are working on the diagram skill and you in the
-course of implementing a feature come across some new defect - even if it is
-a defect that did not have anything to do with what you were working on - I
-would like you to fix it as part of that work ... in general, we should fix
-bugs before writing new code." A defect found during a piece of work is
-fixed in that work; the ONLY exception is one whose fix would be a complete
-overhaul or a giant architectural change, which is deferred with the
-measurement and the sketch. This deliberately NARROWS Principle XIII's
-"ledgered, not fixed under someone else's feature": that clause governs the
-MERGE BAR (a pre-existing failure does not block your push) and no longer
-licenses ledgering a defect you found and could have fixed. New principle:
-MINOR per the versioning policy. Motivating case: the /diagram paddy
-size-floor work (2026-08-17), where three `settlement-review` findings -
-lane frontage regressed past the engine's own recorded 94 ft threshold, the
-three shared byres collapsing onto three farmsteads, and a windbreak clipped
-with 23 clumps drawn wholly off-canvas - had nothing to do with paddy basin
-size, and the GM directed that all three be fixed before the feature landed
-rather than ledgered. The rationale in his words: keep the foundation rock
-solid, then hold that level of functionality as the skill expands into new
-settlement types.
-
-Sections updated:
-  - Core Principles: Principle XIV added; Principle XIII's "ledgered, not
-    fixed" sentence now cross-references XIV so the two do not read as
-    contradicting each other.
-
-Templates requiring review/update:
-  ✅ .specify/templates/plan-template.md - Constitution Check gains a
-                              Principle XIV entry.
-  ✅ CLAUDE.md - "Verification before reporting done" gains the
-                              fix-what-you-find rule.
-  ✅ .claude/skills/diagram/CLAUDE.md - the always-on list gains it, since
-                              /diagram is where it bites hardest.
-  ✅ .claude/skills/diagram/dev/reviews.md - states that a review finding
-                              outside the delta is still yours to fix.
-
-PRIOR (1.7.0 → 1.8.0):
-
-PRIOR (1.8.0 → 1.9.0):
-MINOR: Principle XII (Historical Grounding Bookends) gains two GM-directed
-rules, 2026-08-18. (a) RESEARCH PRECEDES A RULING: a question about how a
-place was actually built, farmed or lived in is answered by a research pass
-BEFORE it reaches the GM, and an ask that does reach them must state what was
-searched and why the finding does not settle it. Binds the review loop above
-all, since a reviewer's "wants a one-line ruling" describes a question, not a
-delegation. (b) TWO SUPPORTABLE ANSWERS BECOME A KNOB, NOT A CHOICE: where
-research shows a thing was genuinely done more than one way, the variation
-becomes a tunable per-settlement knob rather than a pick, because a project
-goal is settlements within historical norms that differ from one another as
-far as the research justifies - players must tell two maps apart at a glance.
-This AMENDS the existing calibrated-liberty clause and takes precedence where
-they differ; liberty survives only for a DEGREE along a continuum, never for a
-choice between distinct FORMS. Motivating cases: the byre-beside-a-well and
-back-rank-access questions, both of which had been queued as GM rulings and
-were answered by a single research pass.
-
-PRIOR (1.7.0 → 1.8.0):
-MINOR: Principle XIII (No Known Regressions) ADDED (GM-directed,
-2026-08-17): "never count our work as being done when there are known
-regressions. Nothing should EVER be merged back into main if even one
-single new regression was added." Two independently-binding halves - work
-is not done while a known regression exists, AND nothing merges to main
-carrying one. A regression is defined against a MEASURED baseline (taken on
-unmodified code, in a detached worktree, never a stash); pre-existing
-failures are explicitly NOT regressions and stay ledgered. The principle
-enumerates what does NOT excuse one - smallness, "it is only a cohort
-seed", having documented it, being net-positive, and the residue having
-"rotated" under a re-roll - and names the only three exits: fix, revert, or
-an explicit GM waiver for that specific regression. New principle: MINOR
-per the versioning policy. Motivating case: the /diagram fan-toe needle fix
-(2026-08-17), which resolved the GM-ruled sunburst on all four shipped
-hamlets and 22 of 24 cohort seeds while regressing seeds 9 and 11 on
-paddy_plot_seams_shared - net-positive, fully diagnosed, ledgered with an
-implementation sketch, and under this principle still NOT mergeable.
-
-Sections updated:
-  - Core Principles: Principle XIII added.
-  - Governance/Compliance: the stop-work procedure may commit in-clone but
-    MUST NOT push a regressed state.
-
-Templates requiring review/update:
-  ✅ .specify/templates/plan-template.md - Constitution Check gains a
-                              Principle XIII entry (baseline measured,
-                              zero new regressions at merge).
-  ✅ CLAUDE.md - "Verification before reporting done" gains the
-                              no-regressions merge gate; the session-clone
-                              stop-work procedure now states the push bar.
-  ✅ .claude/skills/diagram/CLAUDE.md - the cohort-baseline rule now says
-                              a rotated residue is not a defense.
-
-PRIOR (1.6.1 → 1.7.0):
-MINOR: Principle X clause 14 (Rosters That Restate Code Are Derived, Not
-Maintained) added (GM-directed, 2026-08-16). Clause 13 says a large file
-prompts the split question; clause 14 says a roster-shaped file - one whose
-bulk restates declarations the code already carries - takes a different
-fix entirely: census the consumed surface, move the roster's safety
-property into a guard test proven to fire, then DERIVE the surface (star
-imports for re-export __init__s, introspection/generation for derivable
-registry rows) instead of maintaining or splitting the roster. Drawn from
-feature 027 (check_village/__init__.py, 3,148 -> 63 lines, zero consumer
-changes), the named exemplar. New rule: MINOR per the versioning policy.
-
-Sections updated:
-  - Core Principles: Principle X clause 14 added.
-
-Templates requiring review/update:
-  ✅ .specify/templates/plan-template.md - Principle X gate entry extended
-                              with the clause-14 derive-don't-maintain
-                              commitment.
-  ✅ CLAUDE.md - "Files stay at human scale" operational mirror extended
-                              with the clause-14 short form + the 027
-                              exemplar pointer.
-
-Deferred TODOs:
-  - (carried) automated file-length check; clause 12's deferred
-    expression-counting gate check.
-
-PRIOR (1.6.0 → 1.6.1):
-PATCH: Principle X clause 13 (Files Stay at Human Scale) clarified
-(GM-directed, 2026-08-16): unit TEST files are covered exactly as source
-files. The managed cost is context-window tokens, and a test file is loaded
-under the same conditions as source - a session loads test_settlement.py to
-modify one test the same way it loads settlement.py to use one function - so
-nothing about being a test changes the economics, and tests get no
-exemption. The ordered-data justification (a registry whose row order is the
-execution contract) remains the only carve-out. Clarification of existing
-reach, no new rule: PATCH per the versioning policy. Motivating case:
-test_checks.py (11,475 lines) and test_settlement.py (7,123 lines), split by
-feature 025 alongside settlement.py itself.
-
-Sections updated:
-  - Core Principles: Principle X clause 13 wording extended (tests
-    included).
-
-Templates requiring review/update:
-  ✅ .specify/templates/plan-template.md - Principle X gate entry says
-                              "source or test file".
-  ✅ CLAUDE.md - "Files stay at human scale" operational mirror says tests
-                              are covered.
-
-Deferred TODOs:
-  - Automated file-length check (flags source files past the threshold
-    lacking a justification header) - recorded alongside clause 12's
-    deferred expression-counting gate check.
-
-PRIOR (1.4.2 → 1.5.0):
-MINOR: Principle X (Python Discipline) materially expanded - clause 12
-(Functions Stay at Human Scale) added (GM-directed, 2026-08-15). A function
-past a few hundred logical statements is suspect; past ~1,000 it is a defect
-unless an inline annotation justifies why it must remain one body. Measured
-in logic units (statements/expressions), never raw lines, so wrapped strings
-and long call signatures never force a split. The 10-line-function dogma is
-explicitly rejected. Motivating case: check_village.py's gate() reached
-12,944 lines one check at a time, and the cost surfaced as an architecture
-problem (nothing inside it could be invoked separately) before anyone chose
-it.
-
-Sections updated:
-  - Core Principles: Principle X clause 12 added.
-
-Templates requiring review/update:
-  ✅ .specify/templates/plan-template.md - Principle X gate entry now names
-                              the function-scale clause.
-  ✅ CLAUDE.md - spec-kit working-style + single-constitution notes land in
-                              Development Workflow the same day.
-
-Deferred TODOs:
-  - Automated expression-counting gate check (fails past threshold unless
-    the function carries the justification annotation) - recorded in
-    Principle X clause 12 as future work, deliberately not implemented as
-    part of the 2026-08-15 gate-registry feature.
-
-PRIOR (1.4.1 → 1.4.2):
-PATCH: Technical Standards runtime bump - Python 3.13 -> 3.14 (GM, 2026-07-20),
-matching the new standard dev container; the Fly prod image, both lockfiles,
-both pyproject.toml pins (webapp + diagram skill), and CLAUDE.md move together.
-Also drops the stale note that the chargen webapp pinned 3.10 (it no longer
-does). No principle changes.
-
-PRIOR (1.4.0 → 1.4.1):
-PATCH: Principle XII gains a "calibrated liberty" clause (GM, 2026-07-19) -
-where research shows a thing is plausible but the DEGREE is genuinely unclear,
-a favorable reading within the plausible range may be chosen deliberately, on
-condition that the choice and its range are disclosed in research.md and beside
-the rule in code. Conjunctive conditions; does not license inventing a range or
-overriding a finding that is actually clear. Also CORRECTS a factual claim in
-XII's own motivating example: the 桑基魚塘 dike-pond system did NOT replace
-rice across whole districts as the norm - the mixed scatter was normal, and the
-principle's opening gate caught the error on its first outing (feature 010).
-
-PRIOR (1.3.0 → 1.4.0):
-MINOR: Principle XII (Historical Grounding Bookends) ADDED - any feature that
-changes what a generator asserts about the world must open with a historical-
-grounding analysis and close with a verification of the RENDERED ARTIFACT.
-Motivated by the /diagram `rape` land-use overlay, which passed every
-automated check and its tests while depicting two seasons of one crop
-rotation standing simultaneously; only looking at the picture caught it.
-
-PRIOR (1.2.0 → 1.3.0):
-Principle I (Accessibility-First Viewports) materially expanded
-to require scroll-through verification and to forbid column-height
-asymmetry past 2.5× ratio. The added requirements were already implicit
-in the principle's intent but had been missed in practice because no
-artifact captured them - the new dom_audit layout-balance rule + the
-multi-scroll contact sheets in screenshot.py now enforce them.
-
-Principles (12) - Principle XII added; Principle I previously expanded:
-  I.   Accessibility-First Viewports (NON-NEGOTIABLE)        [EXPANDED]
-  II.  Bold, Intentional Design                              [unchanged]
-  III. Pool Data Conventions                                 [unchanged]
-  IV.  One Canonical Home for GM Source                      [unchanged]
-  V.   Protecting the GM's Writing (NON-NEGOTIABLE)          [unchanged]
-  VI.  Verify Before Reporting Done                          [unchanged]
-  VII. De-Localized Generation by Default                    [unchanged]
-  VIII.Direct Voice Over Framing Distance                    [unchanged]
-  IX.  Setting Integration                                   [unchanged]
-  X.   Python Discipline (NON-NEGOTIABLE)                    [unchanged]
-  XI.  Japanese Authenticity (NON-NEGOTIABLE)                [unchanged]
-  XII. Historical Grounding Bookends (NON-NEGOTIABLE)        [ADDED]
-
-Sections updated:
-  - Core Principles: Principle I expanded with layout-balance + scroll-
-    through-review rules.
-  - Development Workflow (operational mirror in CLAUDE.md): contact-sheet
-    artifact + persona-based review now required for UI changes.
-
-Templates requiring review/update:
-  ✅ webapp/tests/screenshot.py - produces multi-scroll contact sheets.
-  ✅ webapp/tests/dom_audit.py - adds layout-balance rule (sibling-height
-                              ratio cap inside flex/grid containers).
-  ✅ /gm-assistant/.claude/agents/frontend-review.md - new independent
-                              reviewer agent (Constitution mirror).
-  ⚠  .specify/templates/plan-template.md - Constitution Check entry
-                              for Principle I should now mention "no
-                              dead-space; contact sheet attached".
-                              Deferred until next /speckit-specify run.
-
-Deferred TODOs: none.
-
-------------------------------------------------------------
-Version 1.2.0 history (amended 2026-05-27):
-  Principle XI (Japanese Authenticity) added covering kanji ↔ romaji ↔
-  meaning alignment.
-
-Version 1.1.0 history (amended 2026-05-27):
-  Principle X (Python Discipline) added; Technical Standards / Workflow
-  expanded with concrete tooling (ruff, mypy, pytest-cov, uv pip compile,
-  configobj, pydantic-settings).
-
-Version 1.0.0 history (initial ratification on 2026-05-27):
-  Introduced Principles I-IX, the Technical Standards / Development
-  Workflow / Governance sections, and the Constitution Check gate in the
-  plan template.
+Version table (what each version added; details in git history):
+  1.0.0  2026-05-27  Principles I-IX, Technical Standards, Development Workflow, Governance
+  1.1.0  2026-05-27  X  Python Discipline
+  1.2.0  2026-05-27  XI Japanese Authenticity
+  1.3.0  2026-07     I expanded: layout balance + multi-scroll contact sheets
+  1.4.0  2026-07     XII Historical Grounding Bookends
+  1.4.1  2026-07-19  XII calibrated-liberty clause
+  1.4.2  2026-07-20  Python 3.13 -> 3.14
+  1.5.0  2026-08-15  X clause 12 (functions at human scale)
+  1.6.0  2026-08-15  X clause 13 (files at human scale); 1.6.1 tests included
+  1.7.0  2026-08-16  X clause 14 (rosters are derived, not maintained)
+  1.8.0  2026-08-17  XIII No Known Regressions
+  1.9.0  2026-08-18  XII research precedes a ruling; two answers become a knob
+  1.10.0 2026-08-17  XIV Fix Defects Where You Find Them
+  1.11.0 2026-08-23  XV Keep Going; XIII's exits are not a menu
+  1.12.x 2026-08-23  VI reference-first rule (mechanism since moved to the diagram repository)
+  1.13.0 2026-08-24  XVI Build What Was Asked; 1.13.1 XIII worktree-baseline clause
+  1.14.0 2026-08-24  XVII A README Is Written By A Human
+  1.15.0 2026-08-24  XVIII A Guard Ships With Its Test
+  1.17.0 2026-08-25  diagram mechanisms generalized after feature 131 (superseded by 1.18.0)
 -->
 
 # L7R Toolkit Constitution
@@ -366,15 +43,6 @@ Legend of the Five Rings tabletop RPG setting. It is the highest-level guide
 for how Claude Code agents and human contributors collaborate on this
 codebase. All specifications, plans, implementations, and reviews MUST comply
 with the principles below.
-
-The `/diagram` settlement-map skill was part of this repository until feature
-131 (2026-08-25) and shaped much of what follows. It now lives in its own
-repository, <https://github.com/EliAndrewC/diagram>, with its own copy of this
-constitution and its own domain doctrine. Where a principle below cites a
-diagram incident as its motivating case, the case is history and the lesson
-still binds; the diagram-specific MECHANISMS (`make maps`, performance
-bookends, the settlement and building review agents) are documented there,
-not here.
 
 ## Core Principles
 
@@ -514,17 +182,13 @@ artifacts. Specifically:
   run a verification query) before relaying the result to the user.
   "The agent said it was done" is not sufficient.
 
-- **Generators: ONE ARTIFACT UNTIL IT WORKS, then the sweep** (GM 2026-08-23;
-  generalized 2026-08-25 when the diagram skill left). A change to a generator -
-  a pool skill, a toolkit section, anything that produces many artifacts from
-  shared code - is proven on a SINGLE named artifact first: one pool entry, one
-  page, one test file. The full sweep (the whole pool, the whole suite) runs
-  once, AFTER that artifact is fully working - never as the loop you iterate
-  inside. The clause was paid for in the diagram repository (feature 126: a
-  48-map cohort launched while the approach was still being tried out, one seed
-  near-hung, thirty minutes bought no result twice) and the lesson is not about
-  maps: a slow loop is what tempts a session into guessing another fix instead
-  of measuring again.
+- **Generators: ONE ARTIFACT UNTIL IT WORKS, then the sweep** (GM 2026-08-23).
+  A change to a generator - a pool skill, a toolkit section, anything that
+  produces many artifacts from shared code - is proven on a SINGLE named
+  artifact first: one pool entry, one page, one test file. The full sweep (the
+  whole pool, the whole suite) runs once, AFTER that artifact is fully working -
+  never as the loop you iterate inside. A slow loop is what tempts a session
+  into guessing another fix instead of measuring again.
   - **EVERY STEP OF A FEATURE IS TWO STEPS** (GM 2026-08-23): get it working on
     the reference artifact, THEN get it working everywhere. A plan or task list
     that says only "make X work" is incomplete - it must say "make X work on the
@@ -539,11 +203,6 @@ artifacts. Specifically:
     changes WHEN it runs, never WHETHER.
   - A feature that adds a KNOB owes one artifact per knob VALUE, not one per
     artifact in the pool.
-  - The self-scoping `make maps` command, the audited bypass log and the
-    performance bookends that once sat here were the diagram engine's
-    enforcement of this clause. They moved with it; this repository's generators
-    are seconds-fast and need no equivalent. If one ever does, the diagram
-    repository's constitution has the worked design and its pricing.
 
 Trust-but-verify is the working mode. Reporting a thing as done without
 verification is a constitutional violation, not just a quality issue.
@@ -688,10 +347,9 @@ any single rule is reason enough to refuse "done" status.
     than felt. Deferred future work, recorded here so it is not lost:
     an automated gate check counting expressions per function, failing
     past the threshold unless the justification annotation is present.
-    Motivating case (diagram repository): `check_village.py`'s `gate()`
-    reached 12,944 lines one check at a time, and the cost surfaced as
-    an architecture problem - nothing inside it could be invoked
-    separately - long before anyone would have chosen that shape.
+    The cost of ignoring this surfaces as an architecture problem -
+    nothing inside the function can be invoked separately - long before
+    anyone would have chosen that shape.
 
 13. **Files stay at human scale** (added v1.6.0, GM-directed 2026-08-15):
     a source file that has grown past roughly 1,000 lines prompts a
@@ -702,8 +360,8 @@ any single rule is reason enough to refuse "done" status.
     context-window tokens for the whole file, and that cost scales with
     text, not logic. Unit TEST files are covered exactly as source files
     (clarified v1.6.1, GM-directed 2026-08-16): a test file is loaded
-    under the same conditions as source - you load test_settlement.py to
-    modify one test the same way you load settlement.py to use one
+    under the same conditions as source - you load test_names.py to
+    modify one test the same way you load names.py to use one
     function - so nothing about being a test changes the economics, and
     tests get no exemption. The target shape is a directory-module whose
     CLAUDE.md indexes the subfiles with a "look here when" line each,
@@ -715,10 +373,9 @@ any single rule is reason enough to refuse "done" status.
     contract) may stay large - with an inline justification at the top
     saying why. The failure mode is the same GROWTH pattern as clause
     12: no single edit crosses the line, so the line must be checked
-    rather than felt. Motivating case (diagram repository):
-    `check_village.py` reached 35,603 lines one check at a time and
-    cost a full context window to consult; feature 024 split it into
-    the `check_village/` package, the exemplar of the practice.
+    rather than felt. A file that has grown to tens of thousands of
+    lines one addition at a time costs a full context window to
+    consult; the package-of-subfiles split is the fix.
 
 14. **Rosters that restate code are derived, not maintained** (added
     v1.7.0, GM-directed 2026-08-16): when a file's bulk is a
@@ -745,12 +402,10 @@ any single rule is reason enough to refuse "done" status.
     is data and may stay; rows reproducible from the code they
     reference are duplication and must go - and when one file mixes
     both, derive the derivable facts and keep the decided ones. The
-    question is per-fact, not per-file. Motivating case (diagram
-    repository): `check_village/__init__.py`, 3,148 lines of import rosters plus a
-    duplicate `__all__` restating what 18 submodules already
-    declared, reduced to 63 derived lines by feature 027 with zero
-    consumer changes - the exemplar; full method in that
-    repository's `specs/027-init-star-imports/`.
+    question is per-fact, not per-file. The typical case is a package
+    `__init__` of several thousand import lines plus a duplicate
+    `__all__` restating what its submodules already declare, which
+    derives down to a few dozen lines with zero consumer changes.
 
 ### XI. Japanese Authenticity (NON-NEGOTIABLE)
 
@@ -810,19 +465,19 @@ undermines the whole reading experience for any player who knows Japanese.
 
 Any feature that changes what a **generator asserts about the world** - a
 temple's daily life, a calendar's agricultural events, a legal case's
-procedure, a settlement's layout; any generator that draws or states how a
-place was farmed, built, governed, or lived in - MUST be bookended by
+procedure, a place's layout; any generator that draws or states how a place
+was farmed, built, governed, or lived in - MUST be bookended by
 historical-grounding work: an analysis BEFORE it is built, and a verification
 of the ARTIFACT after.
 
 **Opening gate (Phase 0, before any design).** For every element the feature
 adds or changes, the plan MUST state, in `research.md`:
 
-1. **What the historical reality was** (China-first for geography, farming,
-   settlement and transport - Song/Ming - with Japan as the tiebreaker and the
-   cultural surface staying Japanese; the GM's standing doctrine), in enough
-   detail to be checkable - not "terraces existed" but what determined their
-   placement, extent, and season.
+1. **What the historical reality was** (China-first for geography, farming
+   and transport - Song/Ming - with Japan as the tiebreaker and the cultural
+   surface staying Japanese; the GM's standing doctrine), in enough detail to
+   be checkable - not "the temple had a festival" but what determined its date,
+   its scale, and who attended.
 2. **Whether the proposed design matches it**, explicitly. A design that does
    not match MUST be changed or dropped at this point, not implemented and
    revisited.
@@ -831,38 +486,21 @@ adds or changes, the plan MUST state, in `research.md`:
    a thing right and its *governing variable* wrong.
 
 **Closing gate (final phase, before "done").** The feature MUST re-examine
-the **rendered artifact** - the page, the pool entry as a reader sees it, the
-PNG; not the code and not the intent - and confirm each element still matches
-the Phase 0 findings. This is a separate step from the automated gate: an
+the **rendered artifact** - the page, the pool entry as a reader sees it; not
+the code and not the intent - and confirm each element still matches the
+Phase 0 findings. This is a separate step from the automated gate: an
 automated check proves internal consistency, never historical truth. An
 artifact can pass every check and still depict something that never existed.
 
-**Why the artifact and not the code (the motivating failure, from the diagram
-skill while it lived here).** The `land_use_overlay` knob shipped a `rape` value that recolored a random ~32%
-of paddy plots yellow. It passed every automated check, was covered by tests,
-and carried a grounded-sounding docstring citing the real 油菜 winter
-rotation. It was still wrong: rice and rape are the two halves of ONE
-rotation in the SAME plot (rice May-Oct; rape sown into the drained stubble
-Oct-Nov, flowering Mar-Apr), so they are never both standing - the map
-depicted two seasons at once. Nothing in the code could reveal that; only
-looking at the picture and asking "what season is this?" could. The same pass
-also showed the second failure mode: the overlay scattered plots at random
-when the real governing variable was topography - deep-water lotus goes on the
-wettest ground, and the 桑基魚塘 dike-ponds were dug out of the low
-flood-prone hollows.
-
-**A correction this principle caught on its own first outing (feature 010),
-worth keeping as a warning.** The original wording here claimed the dike-pond
-system "replaced rice across whole districts rather than dotting among it,"
-and a feature was specified to DELETE the overlay on that basis. Phase 0
-research refuted it: a scatter of dike-ponds among rice was the system's
-NORMAL state (Shunde county was ~4.6% dike-pond in 1581; at Lake Tai mulberry
-sat on the *tang* banks with rice remaining the polder's main crop
-permanently), and the wall-to-wall landscape is the rare end state. The lesson
-is not merely that the claim was wrong - it is that a **confident, plausible,
-kanji-citing sentence written into a governing document was wrong**, and only
-the opening gate caught it. Grounding claims already recorded here are inputs
-to research, never substitutes for it.
+**Why the artifact and not the code.** The failure this guards against is a
+generator that gets the *existence* of a thing right and its *governing
+variable* wrong - two events that really happened, drawn as if they happened
+at once; a feature scattered at random when the record says what actually
+placed it. Nothing in the code reveals that; a test that encodes the same
+misunderstanding passes. Only looking at the artifact and asking "could this
+have existed?" catches it. And a confident, plausible, source-citing sentence
+already written into a governing document can be wrong too: grounding claims
+recorded here are inputs to research, never substitutes for it.
 
 **Calibrated liberty where the record is genuinely unclear (GM, 2026-07-19).**
 The bookends demand honesty about the evidence, NOT paralysis when the
@@ -872,7 +510,7 @@ evidence is thin. Where all three of the following hold:
 2. the **degree** to which it was true is genuinely unclear or
    region-dependent, and
 3. a particular reading within that plausible range **serves the project's
-   goals** (legibility, visual variation, playability),
+   goals** (legibility, variety, playability),
 
 then the favorable reading MAY be chosen deliberately. The conditions are
 conjunctive and the obligation is disclosure: the choice, its plausible range,
@@ -880,8 +518,8 @@ and the fact that we picked from within it for a stated non-historical reason
 MUST be written into `research.md` and alongside the rule in the code. What
 this clause does NOT license is inventing a range that the research does not
 support, or using "the record is unclear" to dodge a finding that is actually
-clear - the `rape` rotation was not a matter of degree, and no amount of
-project convenience makes rice and rape stand in the same field at once.
+clear - a decisive finding is not a matter of degree, and no amount of project
+convenience overrides it.
 
 **RESEARCH PRECEDES A RULING - the GM is the last resort, not the first
 (GM, 2026-08-18).** A question about how a place was actually built, farmed or
@@ -908,20 +546,17 @@ It makes the variation a **tunable knob with per-artifact variance**, so an
 artifact can be rolled either way and two artifacts can honestly differ.
 
 The reason is a project goal, not a historical one: generated content exists
-for players who must tell one temple, one settlement, one festival from another
-at a glance. The GM's words, said of the map generator: *"One of our goals in
-this map generation project is to be able to produce settlements which are
-within historical norms while being as different from one another as is
-justifiable by our historical research."* Every place where the record permits
-two forms is therefore a place the generator can differ WITHOUT leaving those
-norms - which is exactly the variation worth having, and picking one form
-throws it away permanently.
+for players who must tell one temple, one festival, one relic from another at
+a glance. The GM's goal is content that is within historical norms while being
+as different from one instance to the next as the historical research
+justifies. Every place where the record permits two forms is therefore a place
+the generator can differ WITHOUT leaving those norms - which is exactly the
+variation worth having, and picking one form throws it away permanently.
 
 So the ladder for any such question is:
 
 1. **Research it.** If the record is decisive, implement what it says - there
-   is no knob and no ruling (the `rape` rotation was decisive; so was the
-   threshing yard's sun).
+   is no knob and no ruling.
 2. **If the record supports two or more forms, add the knob**, rolled per
    artifact from the artifact's own seed so a value depends only on (seed,
    knob name). Record the range and its evidence where the knob lives.
@@ -957,19 +592,18 @@ exists to make visible.
 
 **What counts as a regression.** Anything that worked before the change and
 does not work after it - a test or check that passed and now fails, a pool
-artifact that was green and now is not, a cohort seed that passed and now
+artifact that was green and now is not, a seeded case that passed and now
 fails, a measured rate that went down. It is defined against a **measured**
 baseline, never a remembered one: take the baseline on unmodified code (a
 detached worktree, not a stash) before judging your own numbers.
 
-**A WORKTREE BASELINE IS A STARTING POINT, NOT A VERDICT** (added 2026-08-24,
-measured during feature 127). A detached worktree is still the right way to take a
-baseline - a stash mutates the tree under any review agent reading it - but a fresh
-worktree does NOT carry gitignored artifacts. On 2026-08-24 the worktree gate reported
-2 failed / 3420 passed; both failures passed in the clone on the same commit, because
-the worktree held 20 pool PNGs against the clone's 28 and renders are gitignored. So
-**every failure a worktree baseline reports is checked against the clone before it is
-called pre-existing.**
+**A WORKTREE BASELINE IS A STARTING POINT, NOT A VERDICT** (added 2026-08-24).
+A detached worktree is still the right way to take a baseline - a stash mutates
+the tree under any review agent reading it - but a fresh worktree does NOT carry
+gitignored artifacts (the `/dream` skill's `pool-local/`, the webapp's `opcache/`
+and `setting/` snapshots), so a test that reads one fails there for reasons that
+have nothing to do with the code. **Every failure a worktree baseline reports is
+checked against the clone before it is called pre-existing.**
 
 This cuts both ways and the quiet direction is the dangerous one. A spurious baseline
 failure is loud and gets investigated. But the same gap can make a test pass ONLY in
@@ -988,16 +622,16 @@ has been misread as a licence to ledger anything that predates the diff.
 
 **What does NOT excuse a regression:**
 
-- It is small, or it is one seed out of twenty-four.
-- It is on a cohort seed, a fixture, or a map nobody ships. Every one of
-  those is a test bed precisely because it stands in for the maps that are
-  not written yet.
+- It is small, or it is one seed out of many.
+- It is on a seeded case, a fixture, or a pool entry nobody ships. Every one
+  of those is a test bed precisely because it stands in for the content that
+  is not written yet.
 - It is *documented*. Writing a regression down is how it gets tracked; it
   is not how it gets permitted. A ledger entry is not a waiver.
 - The change fixes more than it breaks. Net-positive is an argument for
   doing the work, never for merging it broken.
-- **The residue "rotated".** In a seeded cohort a change that alters draw
-  counts re-rolls every map, so failures move rather than persist in place.
+- **The residue "rotated".** In a seeded generator a change that alters draw
+  counts re-rolls every case, so failures move rather than persist in place.
   That is a real effect and it is NOT a defense: where seed-level comparison
   survives, any check that passed on a seed and now fails is a regression;
   where the re-roll makes per-seed comparison meaningless, the pass RATE must
@@ -1026,9 +660,9 @@ expensive, and the bar for it is high.
 **Enforcement.** `/speckit-plan` records this in its Constitution Check. The
 stop-work procedure does not run to completion on a red or regressed state: a
 session may commit inside its own clone (mid-task work is sacred) but MUST
-NOT push to main. Where a domain has a cohort or sweep, its measured
-before/after numbers are the evidence, and they belong in the commit message
-or the feature's notes.
+NOT push to main. Where a domain has a sweep, its measured before/after
+numbers are the evidence, and they belong in the commit message or the
+feature's notes.
 
 This principle is NON-NEGOTIABLE because main is the shared integration
 point: a regression merged there is silently inherited by every other
@@ -1038,11 +672,11 @@ and lost a check" is legible for about a day and invisible forever after.
 
 ### XIV. Fix Defects Where You Find Them (NON-NEGOTIABLE)
 
-GM, 2026-08-17: *"anytime we are working on the diagram skill and you in the
-course of implementing a feature come across some new defect - even if it is a
-defect that did not have anything to do with what you were working on - I would
-like you to fix it as part of that work ... in general, we should fix bugs
-before writing new code."*
+GM, 2026-08-17 (said of one skill, applied to all of them): *"anytime ... you
+in the course of implementing a feature come across some new defect - even if
+it is a defect that did not have anything to do with what you were working on -
+I would like you to fix it as part of that work ... in general, we should fix
+bugs before writing new code."*
 
 **The rule.** A defect discovered in the course of a piece of work is FIXED in
 that piece of work, whether or not it has anything to do with the feature. Not
@@ -1051,7 +685,7 @@ in the same change, with the same verification every other fix gets.
 
 **The one exception** is a defect whose fix would be a complete overhaul or a
 giant architectural change: a stage reordering, a new subsystem, a rewrite of a
-placement engine. Those are deferred - and deferring one is a real deliverable,
+generator's core. Those are deferred - and deferring one is a real deliverable,
 not a shrug: it carries the MEASUREMENT that establishes the defect, the
 mechanism, and the implementation sketch, so the next session starts from
 evidence rather than from a complaint. "This would take a while" is not the
@@ -1059,9 +693,8 @@ exception; "this cannot be done without changing the architecture" is.
 
 **Why this outranks the convenience of a tidy diff.** The reason is the GM's,
 and it is about compounding: the value of this project's generators comes from
-being able to expand them - new skills, new toolkit sections, new pools (and in
-the diagram repository, new settlement tiers) - on top of a foundation whose
-behavior is known-good. Every defect left in place is a
+being able to expand them - new skills, new toolkit sections, new pools - on
+top of a foundation whose behavior is known-good. Every defect left in place is a
 defect the next tier inherits and builds over, and by then it is entangled with
 work that assumed it. Fixing on contact keeps the floor level as the building
 gets taller. It also removes the incentive that makes ledgers rot: a session
@@ -1076,8 +709,7 @@ found gets fixed rather than ledgered. Where they appear to conflict, XIV
 decides what you do and XIII decides what blocks the push.
 
 **Where the defects actually come from, and so where this bites.** Mostly from
-the review subagents (`backstory-review`, `frontend-review`, `spec-fidelity`;
-in the diagram repository also `settlement-review` and `building-review`),
+the review subagents (`backstory-review`, `frontend-review`, `spec-fidelity`),
 which are pointed at a DELTA and reliably find things
 outside it - that is a feature of an independent reviewer, not scope creep by
 it. A finding outside the delta is still yours. The same applies to a defect a
@@ -1086,7 +718,8 @@ and a comment that turns out to describe code that no longer exists.
 
 This principle is NON-NEGOTIABLE because the alternative is invisible: a
 skipped fix costs nothing today, shows up as "the generator has always been a
-bit off here" in a month, and is unattributable by the time it blocks a tier.
+bit off here" in a month, and is unattributable by the time it blocks the next
+feature.
 
 ### XV. Keep Going (NON-NEGOTIABLE)
 
@@ -1121,9 +754,9 @@ does not need confirming.
   another speculative edit. A session that changes code on four successive
   hypotheses without measuring between them is not keeping going, it is
   churning - and it will burn the unattended hours producing nothing, which
-  is the same failure as stopping. (Feature 126, 2026-08-23, is the recorded
-  case of both halves: four wrong diagnoses in a row, and then a stop to ask
-  which of three options to take when one of them was "fix it".)
+  is the same failure as stopping. (The recorded case of both halves, on
+  2026-08-23: four wrong diagnoses in a row, and then a stop to ask which of
+  three options to take when one of them was "fix it".)
 
 **Interaction with the stop-and-ask calculus.** The older rule - interrupt
 only when a wrong guess is expensive to unwind - still holds for AMBIGUITY
@@ -1174,23 +807,20 @@ special case and it does not short-circuit the rounds. It becomes a stop only th
 every other finding does - by surviving three of them (GM 2026-08-24, declining the
 tighter rule the implementing session proposed).
 
-**Why this exists** (GM 2026-08-24). Feature 126 was "put the farmhouses down before
-the lanes". The specification that came out of it said farmhouses before lanes
-EXCEPT the connector and the field spur - a carve-out the GM never asked for,
-written by the implementing session on a provenance argument, and placed at FR-003
-where only a full reading would find it. The implementation then followed its spec
-faithfully. Both of those ways register no-build corridors, so both went on
-constraining precisely the placement the feature existed to free: the feature
-under-delivered, and no instruction was ever disobeyed. Note also that the
-provenance argument was only half-sound - a road to the county town can predate a
-hamlet, but the path from a hamlet to its own paddy cannot, and nothing in the
-process was positioned to notice.
+**Why this exists** (GM 2026-08-24). A feature was asked for as "do A before B".
+The specification that came out of it said A before B EXCEPT in two cases - a
+carve-out the GM never asked for, written by the implementing session on an
+argument it found persuasive, and placed in a mid-list requirement where only a
+full reading would find it. The implementation then followed its spec
+faithfully, the two excepted cases went on constraining precisely what the
+feature existed to free, and the feature under-delivered while no instruction
+was ever disobeyed. The persuasive argument turned out to be only half-sound,
+and nothing in the process was positioned to notice.
 
 **This is the QA separation every engineering organization runs on**, and this
 constitution already believes it. Principle I holds that the author of a design is
 not a reliable reviewer of it, which is why `frontend-review` and `backstory-review`
-exist here (and `settlement-review` and `building-review` in the diagram
-repository). Every one of those guards an OUTPUT. This extends the same rule one step earlier, to the specification - the one
+exist. Every one of those guards an OUTPUT. This extends the same rule one step earlier, to the specification - the one
 artifact still being written and graded by the same session.
 
 **Interaction with XV (Keep Going).** This is not licence to stop. The reviews run
@@ -1216,16 +846,19 @@ decoration. A guard with no test at all cannot be checked either way.
 
 *A test nothing runs cannot fail.* The 2026-08-24 enforcement audit found **eight hook scripts, eight
 test companions, and nothing that executed any of them.** The convention of writing them was healthy;
-the convention of running them did not exist. They had been passing, or not, unobserved.
+the convention of running them did not exist. They had been passing, or not, unobserved. (In this
+repository that stayed true until 2026-08-25, because the target that ran them lived in a Makefile
+that has since moved out; `webapp/Makefile` carries it now.)
 
 **What the test must cover - two directions, always:**
 
 - It **FIRES** on the case the guard exists to catch.
 - It **STAYS QUIET** on correct work, and this half is the one that protects the project. A guard
   that fires on legitimate work teaches a session that the escape hatch is part of the routine, which
-  is precisely the habit these guards exist to break. Feature 127's own guards did this **seven
-  times** - on a grep, a commit message, a docstring, a fixture argument, a redirect, a test harness,
-  and once on a hook that could not edit its own repair. Every one of those is now a regression case.
+  is precisely the habit these guards exist to break. The first guards of this kind did this **seven
+  times** in one feature - on a grep, a commit message, a docstring, a fixture argument, a redirect, a
+  test harness, and once on a hook that could not edit its own repair. Every one of those is now a
+  regression case in `scripts/test_hooks_cases.py`.
 
 **The recurring failure has a name: a MENTION IS NOT AN INVOCATION.** Matching a name anywhere in a
 command, a path, or a body will eventually match prose that talks ABOUT the thing. Anchor to a real
@@ -1249,11 +882,11 @@ context. A directory `CLAUDE.md` is, automatically, whenever work happens in tha
 anything a session must KNOW in order to act correctly is invisible in a README - it will be found
 only by a session that happens to look, which is to say by luck.
 
-That is not theoretical. The diagram skill's `dev/perf-log/README.md` carried the rule that an
-append-only shared log must be a DIRECTORY, because concurrent clones conflict on every push. A session read that file
-during an unrelated audit, quoted from it, and hours later created a single-file `run-log.jsonl` -
-breaking a rule it had read the same day. Had the file been a `CLAUDE.md`, it would have been in
-context at the moment the decision was made.
+That is not theoretical. A README once carried the rule that an append-only shared log must be a
+DIRECTORY, because concurrent clones conflict on every push. A session read that file during an
+unrelated audit, quoted from it, and hours later created a single-file log - breaking a rule it had
+read the same day. Had the file been a `CLAUDE.md`, it would have been in context at the moment
+the decision was made.
 
 **Where knowledge goes instead:**
 
@@ -1409,4 +1042,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.17.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-25
+**Version**: 1.18.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-08-25
