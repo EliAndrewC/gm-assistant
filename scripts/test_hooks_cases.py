@@ -60,8 +60,8 @@ HOUSE_STYLE = [
     ("a British spelling in a spec", edit("/r/specs/x/spec.md", new="the licence is granted"), "blocked"),
     ("another, in prose", edit("/r/docs/a.md", new="the centre of the map"), "blocked"),
     ("demesne", edit("/r/docs/a.md", new="the lord's demesne"), "blocked"),
-    ("an em-dash", edit("/r/docs/a.md", new="a dash — here"), "blocked"),
-    ("an en-dash", edit("/r/docs/a.md", new="a range 1–2"), "blocked"),
+    ("an em-dash", edit("/r/docs/a.md", new="a dash \u2014 here"), "blocked"),
+    ("an en-dash", edit("/r/docs/a.md", new="a range 1\u20132"), "blocked"),
     ("American spellings", edit("/r/docs/a.md", new="the center is gray, the color honors judgment"), "ok"),
     # the files that must QUOTE the forbidden words in order to state the rule
     ("CLAUDE.md stating the rule", edit("/r/CLAUDE.md", new="never write colour or centre"), "ok"),
