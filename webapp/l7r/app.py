@@ -16,10 +16,11 @@ Importing THIS module wires the CherryPy tree - `cherryd --import l7r.app` is ho
 and anything that wants the tree mounted (conftest, the character tests, the opcache refresh)
 imports `l7r.app` rather than `l7r`.
 
-`l7r` itself is a PEP 420 namespace portion with no code in it, shared with the diagram engine's
-`l7r.diagram.*` under `.claude/skills/diagram/l7r/` (feature 119). It must never gain an
-`__init__.py`: that would make it a regular package, terminate the import search, and silently
-hide the other portion. `tests/test_namespace_portion.py` guards this.
+`l7r` itself is a PEP 420 namespace portion with no code in it (feature 119 made it one so the
+diagram engine's `l7r.diagram.*` could share the parent package; that engine has been in its own
+repository since feature 131). It must not gain an `__init__.py` casually - the mypy configuration
+is built around the namespace shape. `tests/test_namespace_portion.py` guards this and says what
+retiring it would take.
 """
 
 from __future__ import annotations

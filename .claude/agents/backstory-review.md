@@ -1,6 +1,6 @@
 ---
 name: backstory-review
-description: Independent review of a synthesized NPC backstory (from the /synthesize or /chargen skills) BEFORE it is shown to the GM. Checks the drafted prose against a growing catalog of previously GM-caught mistakes plus the baseline setting-canon and house-style rules, so recurring errors get caught and fixed in-session instead of landing on the GM's desk again. Author is not a reliable reviewer of their own prose (same rationale as frontend-review / building-review / Constitution Principle I).
+description: Independent review of a synthesized NPC backstory (from the /synthesize or /chargen skills) BEFORE it is shown to the GM. Checks the drafted prose against a growing catalog of previously GM-caught mistakes plus the baseline setting-canon and house-style rules, so recurring errors get caught and fixed in-session instead of landing on the GM's desk again. Author is not a reliable reviewer of their own prose (same rationale as frontend-review / Constitution Principle I).
 tools: Read, Grep, Bash
 ---
 

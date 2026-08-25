@@ -67,7 +67,7 @@ case "$MODE" in
         if [ -f "$STATE" ]; then
           WAS=$(cat "$STATE" 2>/dev/null || true)
           rm -f "$STATE"          # block ONCE - re-issuing the gate goes straight through
-          echo "BLOCKED: the only local test run since your last edit was a \`-k\` SUBSET (${WAS:-pytest -k ...}). A subset selects the tests you were THINKING about; the ones a change breaks are the ones you were not - which is exactly how a session ran \`-k \"kura_side or punishment\"\`, went to the gate, and lost a full 3.9-minute gate cycle to a test in the SAME file it had not selected. Run the WHOLE test file(s) for the modules you touched first - \`python3 -m pytest test_<mod>.py -q -n auto --no-cov\`, ~45s - then run the gate. (.claude/skills/diagram/CLAUDE.md, 'Before the gate, run the WHOLE affected test file'. Override: put GATE_OK in the command with a reason.)" >&2
+          echo "BLOCKED: the only local test run since your last edit was a \`-k\` SUBSET (${WAS:-pytest -k ...}). A subset selects the tests you were THINKING about; the ones a change breaks are the ones you were not - which is exactly how a session ran \`-k \"kura_side or punishment\"\`, went to the gate, and lost a full 3.9-minute gate cycle to a test in the SAME file it had not selected. Run the WHOLE test file(s) for the modules you touched first - \`python3 -m pytest tests/test_<mod>.py -q -n auto --no-cov\` - then run the gate. (CLAUDE.md, 'Before the gate, run the WHOLE affected test file'. Override: put GATE_OK in the command with a reason. GUARD_EDIT_OK 2026-08-25: pointer retargeted after the diagram skill moved out.)" >&2
           exit 2
         fi
         exit 0

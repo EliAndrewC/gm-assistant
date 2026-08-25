@@ -29,8 +29,8 @@
 # (session_id -> PID = the sessions-json filename -> /proc) so a PREVIOUS same-named session's stale
 # claim (e.g. the GM reuses "miscellaneous" across sessions) never blocks a legitimate new one - only
 # a genuinely LIVE concurrent claimant does. HEAD equality, not timestamps, is the freshness test:
-# needs no clock and cannot rot. Renders are no longer synced into the clone at all - render-sync
-# REGENERATES main's renders in place from main's tip, so nothing flows clone -> main.
+# needs no clock and cannot rot. Nothing but git flows between clone and main in either direction
+# (the diagram render-sync that once ran after a push left with the diagram skill, feature 131).
 set -euo pipefail
 
 SESSIONS_DIR=${CLONE_SESSIONS_DIR:-${HOME:-/home/agent}/.claude/sessions}  # CLONE_SESSIONS_DIR: test seam only

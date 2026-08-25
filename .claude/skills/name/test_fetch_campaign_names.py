@@ -1,7 +1,48 @@
 """Tests for fetch_campaign_names.py - HTML parsing only, no HTTP requests."""
 
-from fetch_campaign_names import extract_personal_names, scrape_characters_page
-import requests
+import os
+
+import pytest
+
+import fetch_campaign_names
+from fetch_campaign_names import (
+    extract_personal_names,
+    load_session_cookie,
+    request_headers,
+    scrape_characters_page,
+)
+
+
+class TestCookieIsNotNeededToImport:
+    """The cookie is loaded on demand, not at import (2026-08-25). Importing this module used to
+    `sys.exit(1)` on any machine with no `.env`, so pytest could not even COLLECT this file on a
+    fresh container. The module-level constant that did it is gone; pin its absence."""
+
+    def test_no_module_level_cookie_or_headers(self):
+        assert not hasattr(fetch_campaign_names, "SESSION_COOKIE")
+        assert not hasattr(fetch_campaign_names, "HEADERS")
+
+    def test_missing_cookie_exits_only_when_asked(self, monkeypatch, tmp_path):
+        monkeypatch.delenv("OBSIDIAN_SESSION_COOKIE", raising=False)
+        monkeypatch.setattr(fetch_campaign_names, "ENV_PATH", str(tmp_path / ".env"))
+        with pytest.raises(SystemExit):
+            load_session_cookie()
+
+    def test_cookie_from_env_var_then_dotenv(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("OBSIDIAN_SESSION_COOKIE", "from-env")
+        assert load_session_cookie() == "from-env"
+        monkeypatch.delenv("OBSIDIAN_SESSION_COOKIE")
+        env = tmp_path / ".env"
+        env.write_text("OBSIDIAN_SESSION_COOKIE='from-file'\n")
+        monkeypatch.setattr(fetch_campaign_names, "ENV_PATH", str(env))
+        assert load_session_cookie() == "from-file"
+
+    def test_headers_carry_the_cookie(self):
+        assert request_headers("abc=1")["Cookie"] == "abc=1"
+
+    def test_output_path_is_beside_the_script(self):
+        assert os.path.isabs(fetch_campaign_names.SKILL_DIR)
+        assert os.path.basename(fetch_campaign_names.SKILL_DIR) == "name"
 
 
 class TestExtractPersonalNames:

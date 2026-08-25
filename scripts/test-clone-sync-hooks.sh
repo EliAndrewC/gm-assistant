@@ -10,7 +10,7 @@ set -uo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)
 HOOK=$HERE/clone-sync-hooks.sh
-RITUAL=$HERE/sync-with-main.sh
+SYNC=$HERE/sync-with-main.sh
 TMP=$(mktemp -d)
 # NB: cleanup is done EXPLICITLY at the end, NOT via a `trap ... EXIT` - an EXIT trap also fires in
 # the forked subshells that `&` background jobs and pipelines create, which would rm the fixtures
@@ -113,9 +113,9 @@ OUT=$(printf '{"session_id":"sid-me","tool_input":{"file_path":"%s/.clones/misce
       | CLONE_MAIN="$FMAIN3" CLONE_SESSIONS_DIR="$SESS" "$HOOK" pretool 2>&1); check "canonical clone diverged from main -> sync-in block" 2 $?
 
 # ---- sync-with-main.sh gm-assistant refusal ---------------------------------------------------
-OUT=$(cd "$FMAIN/.clones/gm-assistant" && CLONE_MAIN="$FMAIN" "$RITUAL" sync-in 2>&1); RC=$?
-check "ritual refuses to run from .clones/gm-assistant" 1 "$RC"
-case $OUT in *"FORBIDDEN"*) : ;; *) echo "FAIL  ritual refusal message missing 'FORBIDDEN': $OUT"; FAILED=1 ;; esac
+OUT=$(cd "$FMAIN/.clones/gm-assistant" && CLONE_MAIN="$FMAIN" "$SYNC" sync-in 2>&1); RC=$?
+check "sync-with-main refuses to run from .clones/gm-assistant" 1 "$RC"
+case $OUT in *"FORBIDDEN"*) : ;; *) echo "FAIL  sync-with-main refusal message missing 'FORBIDDEN': $OUT"; FAILED=1 ;; esac
 
 # ---- prompt-mode: the .specify/feature.json re-track guard -------------------------------------
 # The pointer must stay gitignored. common.sh resolves FEATURE_DIR from it at priority 2, ABOVE the

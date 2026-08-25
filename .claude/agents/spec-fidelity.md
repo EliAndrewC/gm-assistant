@@ -1,6 +1,6 @@
 ---
 name: spec-fidelity
-description: Independent adjudication of whether a spec-kit specification implements what the GM actually asked for, and of whether a proposed EXCEPTION is legitimate or is a session quietly departing from its instructions. Use BEFORE implementation begins on any spec-kit feature, and whenever a session is about to write an "except when" into a spec, a plan or a design decision. The author of a specification is not a reliable judge of whether it matches the request (Constitution Principle XVI, same rationale as frontend-review / settlement-review / Principle I).
+description: Independent adjudication of whether a spec-kit specification implements what the GM actually asked for, and of whether a proposed EXCEPTION is legitimate or is a session quietly departing from its instructions. Use BEFORE implementation begins on any spec-kit feature, and whenever a session is about to write an "except when" into a spec, a plan or a design decision. The author of a specification is not a reliable judge of whether it matches the request (Constitution Principle XVI, same rationale as frontend-review / backstory-review / Principle I).
 model: opus
 tools: Read, Grep, Bash
 ---

@@ -2,7 +2,7 @@
 
 *Project reference, split out of [`../CLAUDE.md`](../CLAUDE.md) so it is loaded on demand rather than in every session's context. CLAUDE.md keeps the short always-on version of these rules and points here for the full spec.*
 
-**Load this file when:** launching or rebuilding the dev container, or something that used to work now fails with "command not found" / "No module named" / "resvg not found", or you are adding a permanent dependency or bumping the Python version.
+**Load this file when:** launching or rebuilding the dev container, or something that used to work now fails with "command not found" / "No module named", or you are adding a permanent dependency or bumping the Python version.
 
 ---
 
@@ -10,14 +10,14 @@
 
 A fresh launch also does two things on its way to the shell, both skipped when attaching to a container that already exists. It runs **`claude update` inside the container** (`--no-update` skips it): the `claude` binary lives in the container's own `~/.local/bin`, *not* in the mounted `~/.claude`, so it does not persist across rebuilds and every fresh container would otherwise start on whatever build the image shipped - and `podman pull` cannot help, since the image itself is only rebuilt occasionally. And it **seeds `~/.bash_history` with `claude --dangerously-skip-permissions`**, so the first thing you do in the new container is press Up and Enter. Both steps are best-effort: they warn and continue rather than costing you the shell.
 
-**Fresh-container init (start here on every new container)**: the container is launched via [`scripts/launch-container.sh`](../scripts/launch-container.sh) (see above; [`/gm-assistant/README.md`](../README.md) keeps the legacy hand-written podman command for reference, but that one is the old attached `--rm` design) - it bind-mounts the repo at `/gm-assistant`, the GM's `l7r` repo at `/host-l7r-repo`, and the host's `~/.claude/` + `~/.claude.json` into `/home/agent/` so Claude Code auth, preferences, agents, skills, and per-project memory all persist across container rebuilds. Once you're inside, run **one command** from the repo root:
+**Fresh-container init (start here on every new container)**: the container is launched via [`scripts/launch-container.sh`](../scripts/launch-container.sh) (see above) - it bind-mounts the repo at `/gm-assistant`, the GM's `l7r` repo at `/host-l7r-repo`, and the host's `~/.claude/` + `~/.claude.json` into `/home/agent/` so Claude Code auth, preferences, agents, skills, and per-project memory all persist across container rebuilds. Once you're inside, run **one command** from the repo root:
 
 ```
 container-scripts/setup-dev-env.sh          # install everything missing, then verify
 container-scripts/setup-dev-env.sh --check  # verify only (~3s, no network) - is this container healthy?
 ```
 
-That installs the apt packages (`resvg` + the DejaVu faces the diagram renderer needs), both pip lockfiles, and the Playwright browser **with its OS libraries**, then proves each one works rather than assuming it. Run it on every fresh container, and run `--check` the moment something that used to work fails with "command not found" / "No module named" / "resvg not found" - a container rebuild keeps only the bind-mounted repo and `~/.claude`, so a rebuilt container looks subtly broken until this has run. (Real cost of not having it, 2026-07-25: a rebuilt container had silently lost `resvg`, and the failure surfaced as three mystery test failures a full gate run into a feature. The same session found the documented `playwright install chromium` was incomplete - the browser downloads and reports success, then dies on launch with `libglib-2.0.so.0: cannot open shared object file`; it needs `--with-deps`, which the script now uses.)
+That installs both pip lockfiles and the Playwright browser **with its OS libraries**, then proves each one works rather than assuming it (no apt packages of its own since feature 131 - `resvg`, the DejaVu faces and `shapely` all belonged to the diagram skill and left with it). Run it on every fresh container, and run `--check` the moment something that used to work fails with "command not found" / "No module named" - a container rebuild keeps only the bind-mounted repo and `~/.claude`, so a rebuilt container looks subtly broken until this has run. (Real cost of not having it, 2026-07-25: a rebuilt container had silently lost a system binary, and the failure surfaced as three mystery test failures a full gate run into a feature. The same session found the documented `playwright install chromium` was incomplete - the browser downloads and reports success, then dies on launch with `libglib-2.0.so.0: cannot open shared object file`; it needs `--with-deps`, which the script now uses. Measured again on a fresh container 2026-08-25: the script ran clean end to end and every gate was green afterwards.)
 
 After that, `make done` should pass (ruff + format + mypy --strict + pytest + 100% coverage) and `cherryd --import l7r.app` runs the app at `http://0.0.0.0:8080` (it is `l7r.app`, not `l7r`, since feature 119 made `l7r` a namespace portion with no code in it).
 

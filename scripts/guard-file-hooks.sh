@@ -37,8 +37,11 @@ except Exception:
 
 [ "$NEW" = "True" ] && exit 0
 
+# GUARD_EDIT_OK (2026-08-25, feature 131 follow-up): the diagram skill's Makefile left with the
+# skill; webapp/Makefile is the one that remains - it carries this repository's `guard` target
+# (no gate runs from main) and the `done` gate itself, so it is held to the same standard.
 case "$FILE" in
-  */.claude/skills/diagram/Makefile|*/scripts/*-hooks.sh|*/.claude/settings.json) ;;
+  */webapp/Makefile|*/scripts/*-hooks.sh|*/.claude/settings.json) ;;
   *) exit 0 ;;
 esac
 

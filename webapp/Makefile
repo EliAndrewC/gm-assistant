@@ -71,7 +71,7 @@ types:
 test:
 	@pytest; ec=$$?; \
 	if [ $$ec -eq 5 ]; then \
-		echo "[done] No tests collected — OK for now"; exit 0; \
+		echo "[done] No tests collected - OK for now"; exit 0; \
 	else exit $$ec; fi
 
 cov:
@@ -79,7 +79,7 @@ cov:
 		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov=chargen.opsynth --cov-report=term-missing --cov-fail-under=100; ec=$$?; \
 		if [ $$ec -ne 0 ]; then python3 ../scripts/uncovered-in-diff.py || true; fi; exit $$ec; \
 	else \
-		echo "[done] No l7r/ package yet — coverage check skipped"; \
+		echo "[done] No l7r/ package yet - coverage check skipped"; \
 	fi
 
 serve:
@@ -99,10 +99,10 @@ dom-audit:
 # After this passes, the persona-driven review pass + frontend-review subagent
 # (if author == reviewer) is the remaining step before declaring a UI change done.
 ui-verify: screenshots dom-audit
-	@echo "[ui-verify] contact sheets in /tmp/l7r-shots/sheet-*.png — review at GM-200 with Eli's task in mind."
+	@echo "[ui-verify] contact sheets in /tmp/l7r-shots/sheet-*.png - review at GM-200 with Eli's task in mind."
 
-# Sync pool data from /gm-assistant/.claude/skills into the Docker build context.
-# `skills/` is gitignored — it's a build artifact, not source code.
+# Sync pool data from ../.claude/skills into the Docker build context.
+# `skills/` is gitignored - it's a build artifact, not source code.
 prepare-deploy:
 	@echo "[deploy] syncing pool data into webapp/skills/"
 	@rm -rf skills

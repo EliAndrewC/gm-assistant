@@ -39,24 +39,32 @@ def load_session_cookie():
     sys.exit(1)
 
 
-SESSION_COOKIE = load_session_cookie()
+def request_headers(session_cookie):
+    """Browser-shaped request headers carrying the OP session cookie.
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Cookie": SESSION_COOKIE,
-    "Referer": CAMPAIGN_URL,
-    "sec-fetch-dest": "document",
-    "sec-fetch-mode": "navigate",
-    "sec-fetch-site": "same-origin",
-    "sec-fetch-user": "?1",
-}
+    Built on demand rather than at import time (2026-08-25): the cookie used to be loaded as a
+    module constant, so merely IMPORTING this module - which the test file does - called
+    `sys.exit(1)` on any machine without a `.env`, and pytest died with an INTERNALERROR before
+    collecting a single test. A fresh container has no cookie, so the whole /name suite was red
+    for a reason that had nothing to do with the code under test. The cookie is now read in
+    `__main__`, the one place that actually needs it.
+    """
+    return {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cookie": session_cookie,
+        "Referer": CAMPAIGN_URL,
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-user": "?1",
+    }
 
 
-def scrape_characters_page(session, url):
+def scrape_characters_page(session, url, headers=None):
     """Scrape a single page of characters. Returns (names, next_url)."""
-    resp = session.get(url, headers=HEADERS)
+    resp = session.get(url, headers=headers)
     if resp.status_code != 200:
         print(f"ERROR: Got status {resp.status_code} for {url}", file=sys.stderr)
         with open("/tmp/obsidian-debug.html", "w") as f:
@@ -108,9 +116,10 @@ def scrape_characters_page(session, url):
     return names, next_url
 
 
-def fetch_all_names():
+def fetch_all_names(session_cookie):
     """Fetch all character names, handling pagination."""
     session = requests.Session()
+    headers = request_headers(session_cookie)
     all_names = []
     url = CHARACTERS_URL
     page = 0
@@ -118,7 +127,7 @@ def fetch_all_names():
 
     while url and page < max_pages:
         page += 1
-        names, next_url = scrape_characters_page(session, url)
+        names, next_url = scrape_characters_page(session, url, headers)
         all_names.extend(names)
         url = next_url
 
@@ -138,7 +147,7 @@ def extract_personal_names(full_names):
 
 
 if __name__ == "__main__":
-    full_names = fetch_all_names()
+    full_names = fetch_all_names(load_session_cookie())
 
     if not full_names:
         print(
@@ -149,7 +158,9 @@ if __name__ == "__main__":
     personal_names = extract_personal_names(full_names)
     unique_personal = sorted(set(personal_names))
 
-    output_path = "/gm-assistant/.claude/skills/name/campaign-names.txt"
+    # Beside this script, wherever the repo is checked out - a session clone, /gm-assistant, or a
+    # host checkout - never a hardcoded absolute path (which wrote into MAIN's tree from a clone).
+    output_path = os.path.join(SKILL_DIR, "campaign-names.txt")
     with open(output_path, "w") as f:
         for name in unique_personal:
             f.write(name + "\n")

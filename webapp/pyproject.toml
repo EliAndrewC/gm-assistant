@@ -1,7 +1,7 @@
 [project]
 name = "l7r-toolkit"
 version = "0.1.0"
-description = "L7R Toolkit — character generator, relic catalog, and content tools for a custom L5R tabletop campaign"
+description = "L7R Toolkit - character generator, relic catalog, and content tools for a custom L5R tabletop campaign"
 requires-python = ">=3.14"
 
 [tool.ruff]
@@ -20,7 +20,7 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 # Existing chargen code has the one-time grace period to migrate (Principle X).
 # As we modernize each module, remove it from this ignore list.
 [tool.ruff.lint.per-file-ignores]
-# Chargen legacy modules — grace period.
+# Chargen legacy modules - grace period.
 "chargen/art.py"         = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "chargen/character.py"   = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "chargen/constants.py"   = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
@@ -56,12 +56,12 @@ explicit_package_bases = true
 mypy_path = "."
 
 # Strict mypy on production modules. Legacy chargen modules get the one-time
-# grace period per Principle X — they're ignored (not excluded; ignored means
+# grace period per Principle X - they're ignored (not excluded; ignored means
 # their types don't have to be right, but imports against them are tolerated
 # without poisoning typed callers via `follow_imports = silent` below).
 follow_imports = "silent"
 
-# Legacy chargen modules — grace period (Principle X).
+# Legacy chargen modules - grace period (Principle X).
 [[tool.mypy.overrides]]
 module = [
     "chargen.art",

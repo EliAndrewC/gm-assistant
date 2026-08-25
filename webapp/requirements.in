@@ -14,7 +14,3 @@ pillow
 pyyaml
 requests
 requests-oauthlib
-# Polygon boolean geometry for the /diagram field engine (waterfields/seams.py): the
-# seam-closing pass needs an exact "bare ground = field minus plots minus water"
-# difference, which is the one thing the engine's hand-rolled geometry cannot do.
-shapely
