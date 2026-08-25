@@ -1,8 +1,10 @@
 # Feature Specification: The Merge Gate Runs on AWS CodeBuild, and Only When It Must
 
-**Feature Branch**: none - this project does not use feature branches (`SPECIFY_FEATURE=128-codebuild-merge-gate`)
+**Feature Branch**: none - this project does not use feature branches (`SPECIFY_FEATURE=130-codebuild-merge-gate`)
 
 **Created**: 2026-08-24
+
+**Blocked by**: `131-split-diagram-repo` - implemented AFTER the diagram skill moves to its own repository (GM 2026-08-24: *"we want to do prior to either feature 129 or 130, since those are both better implemented once we have moved to the separate repo"*). This directory moves with the split.
 
 **Status**: APPROVED by `spec-fidelity` (round 3, verdict FAITHFUL); **AMENDED the same day on the
 GM's second request** (the full sweep goes to CodeBuild too; the sync flow is tooling, not memory) -

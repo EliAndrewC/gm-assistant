@@ -25,10 +25,14 @@
 
 ---
 
+## Phase 0: Blocked by 131
+
+- [ ] T000 Verify feature 131 (the diagram repository split) has landed: this directory is in the NEW repository and `make done` is green there. Do not start T001 in gm-assistant.
+
 ## Phase 1: Setup and baseline
 
-- [ ] T001 Take the regression baseline on UNMODIFIED code in a detached worktree (`git worktree add --detach /tmp/base128 HEAD`; `( cd /tmp/base128/.claude/skills/diagram && make done )`), check each worktree failure against the clone before calling it pre-existing (constitution XIII, the 2026-08-24 clause), and record the verdict AND the wall-clock under Baseline below (SC-006's "before")
-- [ ] T002 Record local `make done` wall-clock in `.claude/skills/diagram/timings.md` as a dated block with `--note "128-start, laptop"` (never in prose)
+- [ ] T001 Take the regression baseline on UNMODIFIED code in a detached worktree (`git worktree add --detach /tmp/base130 HEAD`; `( cd /tmp/base130/.claude/skills/diagram && make done )`), check each worktree failure against the clone before calling it pre-existing (constitution XIII, the 2026-08-24 clause), and record the verdict AND the wall-clock under Baseline below (SC-006's "before")
+- [ ] T002 Record local `make done` wall-clock in `.claude/skills/diagram/timings.md` as a dated block with `--note "130-start, laptop"` (never in prose)
 - [ ] T003 [P] Add `boto3` to `container-scripts/setup-dev-env.sh` and pin it in the diagram skill's requirements (research R10); run `setup-dev-env.sh --check`
 - [ ] T004 [P] Record the AWS smoke-build API responses from this session (`start_build`, `batch_get_builds` phases, `get_log_events`, an `AccessDeniedException` shaped like the breaker) as JSON fixtures under `.claude/skills/diagram/tests/ci/fixtures/` - the saved-fixture boundary Principle X requires; `tempadmin` is NOT needed, the `gm-assistant-ci` key can replay them
 - [ ] T005 [P] Write `l7r/diagram/ci/CLAUDE.md`: what each module is for, the ONE rate constant and where it is mirrored (the Lambda's `RATE_PER_MIN`), the five dispatch conditions and the GM's words each rests on, and the threat model (a session that wants the paid run and should not have it - the same shape as feature 127's)
