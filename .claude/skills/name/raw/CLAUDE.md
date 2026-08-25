@@ -28,3 +28,13 @@ Culling notes the collectors left (details in the two sources files):
   non-geisha: K 109, S 88, T 76, M 48, H 45, I 39, N 35, Y 29, A 28, C 24, F 20, R 19, O 15, E 9,
   G 9, U 8, B 4, J 3, W 3, D 2, Z 1. Male: T 570, S 507, K 493, M 479, N 281, Y 253, H 241, I 90,
   A 88, J 82, G 80, C 78, U 69, F 64, R 50, Z 36, D 32, B 28, O 18, W 2.
+
+## Culled lists (2026-08-25)
+
+`female-culled.jsonl` (191) and `male-culled.jsonl` (2,005) are the attested names that survive:
+geisha sources dropped; malformed or historical-kana spellings dropped; names within edit distance 1
+of, or a prefix/extension of, any pool name or campaign-roster name removed (`is_too_similar`, the
+pool-wide rule); then a greedy pass keeping a mutually distinct set under the same rule, ordered so
+names attested by more sources win ties. The prefix clause is the expensive one for women (Kiyo
+blocks Kiyoko, Kiku blocks Kikuno): 398 candidates -> 191 strict, 218 with edit distance alone.
+Each line: `name, sources, attestations, periods, kanji, kinds`. These are still unresearched.

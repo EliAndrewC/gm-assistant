@@ -1,0 +1,191 @@
+{"name": "San", "sources": ["daijirou-late-edo", "issendai-early-edo", "kiyose-kamikiyoto-1809", "kiyose-noshio-1774", "nihonjin-hakkenya-1848", "nihonjin-hatcho-1733", "nihonjin-kano-1825", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804", "nihonjin-tochii-1671"], "attestations": 16, "periods": ["early Edo", "late Edo"], "kanji": "さん", "kinds": []}
+{"name": "Tora", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-azuchi-momoyama", "issendai-early-edo", "kiyose-kamikiyoto-1809", "kiyose-noshio-1774", "nihonjin-hatcho-1733", "nihonjin-nishitomioka-1804", "nihonjin-tochii-1671"], "attestations": 9, "periods": ["Azuchi-Momoyama", "early Edo", "late Edo"], "kanji": "とら, 虎", "kinds": []}
+{"name": "Toyo", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-early-edo", "kiyose-kamikiyoto-1809", "kiyose-noshio-1774", "nihonjin-hakkenya-1848", "nihonjin-kano-1825", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 20, "periods": ["early Edo", "late Edo"], "kanji": "とよ", "kinds": []}
+{"name": "Tsune", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-early-edo", "kiyose-noshio-1774", "nihonjin-hakkenya-1848", "nihonjin-hatcho-1733", "nihonjin-kano-1825", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 20, "periods": ["early Edo", "late Edo"], "kanji": "つね", "kinds": []}
+{"name": "Ishi", "sources": ["daijirou-passenger-lists", "issendai-azuchi-momoyama", "issendai-early-edo", "issendai-nanbokucho-court", "jawiki-chugu", "jawiki-nyogo", "nihonjin-kano-1825", "nihonjin-matsushima-1837", "nihonjin-tochii-1671"], "attestations": 13, "periods": ["Azuchi-Momoyama", "Heian", "Kamakura", "Muromachi", "early Edo", "late Edo"], "kanji": "石", "kinds": []}
+{"name": "Kiyo", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-early-edo", "kiyose-kamikiyoto-1809", "kiyose-noshio-1774", "nihonjin-hatcho-1733", "nihonjin-kano-1825", "nihonjin-nishitomioka-1804"], "attestations": 16, "periods": ["early Edo", "late Edo"], "kanji": "きよ", "kinds": []}
+{"name": "Sayo", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "kiyose-noshio-1774", "nihonjin-hakkenya-1848", "nihonjin-hatcho-1733", "nihonjin-kano-1825", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 13, "periods": ["early Edo", "late Edo"], "kanji": "さよ", "kinds": []}
+{"name": "Kura", "sources": ["daijirou-late-edo", "issendai-early-edo", "kiyose-kamikiyoto-1809", "kiyose-noshio-1774", "nihonjin-hakkenya-1848", "nihonjin-hatcho-1733", "nihonjin-nishitomioka-1804", "nihonjin-tochii-1671"], "attestations": 8, "periods": ["early Edo", "late Edo"], "kanji": "くら", "kinds": []}
+{"name": "Sue", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-early-edo", "kiyose-kamikiyoto-1809", "nihonjin-hakkenya-1848", "nihonjin-hatcho-1733", "nihonjin-matsushima-1837"], "attestations": 9, "periods": ["early Edo", "late Edo"], "kanji": "すへ/すゑ", "kinds": []}
+{"name": "Mume", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-azuchi-momoyama", "issendai-early-edo", "nihonjin-hakkenya-1848", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 8, "periods": ["Azuchi-Momoyama", "early Edo", "late Edo"], "kanji": "梅", "kinds": []}
+{"name": "Yone", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-early-edo", "kiyose-kamikiyoto-1809", "nihonjin-hakkenya-1848", "nihonjin-hatcho-1733", "nihonjin-nishitomioka-1804"], "attestations": 9, "periods": ["early Edo", "late Edo"], "kanji": "よね, 米", "kinds": []}
+{"name": "Toku", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-azuchi-momoyama", "issendai-early-edo", "nihonjin-hatcho-1733", "nihonjin-kano-1825", "nihonjin-matsushima-1837"], "attestations": 9, "periods": ["Azuchi-Momoyama", "early Edo", "late Edo"], "kanji": "徳", "kinds": []}
+{"name": "Mitsu", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-early-edo", "nihonjin-hatcho-1733", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 14, "periods": ["early Edo", "late Edo"], "kanji": "みつ", "kinds": []}
+{"name": "Mine", "sources": ["daijirou-passenger-lists", "issendai-early-edo", "kiyose-kamikiyoto-1809", "nihonjin-hakkenya-1848", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 12, "periods": ["early Edo", "late Edo"], "kanji": "みね", "kinds": []}
+{"name": "Saki", "sources": ["daijirou-late-edo", "issendai-early-edo", "kiyose-kamikiyoto-1809", "kiyose-noshio-1774", "nihonjin-hatcho-1733", "nihonjin-matsushima-1837"], "attestations": 7, "periods": ["early Edo", "late Edo"], "kanji": "さき", "kinds": []}
+{"name": "Tsuma", "sources": ["issendai-azuchi-momoyama", "issendai-early-edo", "kiyose-kamikiyoto-1809", "kiyose-noshio-1774", "nihonjin-goromaru-1690", "nihonjin-nishitomioka-1804"], "attestations": 6, "periods": ["Azuchi-Momoyama", "early Edo", "late Edo"], "kanji": "つま", "kinds": []}
+{"name": "Shimo", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-early-edo", "kiyose-noshio-1774", "nihonjin-tochii-1671"], "attestations": 5, "periods": ["early Edo", "late Edo"], "kanji": "しも", "kinds": []}
+{"name": "Naka", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "issendai-azuchi-momoyama", "issendai-early-edo", "nihonjin-matsushima-1837"], "attestations": 6, "periods": ["Azuchi-Momoyama", "early Edo", "late Edo"], "kanji": "なか", "kinds": []}
+{"name": "Hisa", "sources": ["daijirou-late-edo", "issendai-early-edo", "nihonjin-hakkenya-1848", "nihonjin-kano-1825", "nihonjin-matsushima-1837"], "attestations": 6, "periods": ["early Edo", "late Edo"], "kanji": "ひさ", "kinds": []}
+{"name": "Sono", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "nihonjin-hakkenya-1848", "nihonjin-hatcho-1733", "nihonjin-nishitomioka-1804"], "attestations": 7, "periods": ["early Edo", "late Edo"], "kanji": "その", "kinds": []}
+{"name": "Tama", "sources": ["daijirou-passenger-lists", "issendai-azuchi-momoyama", "issendai-early-edo", "kiyose-noshio-1774", "nihonjin-kano-1825"], "attestations": 5, "periods": ["Azuchi-Momoyama", "early Edo", "late Edo"], "kanji": "玉", "kinds": []}
+{"name": "Fuku", "sources": ["daijirou-late-edo", "issendai-azuchi-momoyama", "issendai-early-edo", "nihonjin-hatcho-1733", "nihonjin-matsushima-1837"], "attestations": 6, "periods": ["Azuchi-Momoyama", "early Edo", "late Edo"], "kanji": "福", "kinds": []}
+{"name": "Miya", "sources": ["issendai-azuchi-momoyama", "issendai-early-edo", "nihonjin-hatcho-1733", "nihonjin-nishitomioka-1804", "nihonjin-tochii-1671"], "attestations": 5, "periods": ["Azuchi-Momoyama", "early Edo", "late Edo"], "kanji": "みや, 宮", "kinds": []}
+{"name": "Shina", "sources": ["issendai-early-edo", "kiyose-kamikiyoto-1809", "nihonjin-hakkenya-1848", "nihonjin-hatcho-1733", "nihonjin-matsushima-1837"], "attestations": 6, "periods": ["early Edo", "late Edo"], "kanji": "しな", "kinds": []}
+{"name": "Tomi", "sources": ["daijirou-late-edo", "daijirou-passenger-lists", "nihonjin-kano-1825", "nihonjin-matsushima-1837"], "attestations": 11, "periods": ["late Edo"], "kanji": "とみへ", "kinds": []}
+{"name": "Asa", "sources": ["issendai-early-edo", "nihonjin-hakkenya-1848", "nihonjin-kano-1825", "nihonjin-matsushima-1837"], "attestations": 9, "periods": ["early Edo", "late Edo"], "kanji": "あさ", "kinds": []}
+{"name": "Kon", "sources": ["kiyose-kamikiyoto-1809", "nihonjin-hakkenya-1848", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 4, "periods": ["late Edo"], "kanji": "こん", "kinds": []}
+{"name": "Kusu", "sources": ["issendai-early-edo", "nihonjin-hakkenya-1848", "nihonjin-kano-1825", "nihonjin-matsushima-1837"], "attestations": 8, "periods": ["early Edo", "late Edo"], "kanji": "くす", "kinds": []}
+{"name": "Sawa", "sources": ["issendai-early-edo", "kiyose-noshio-1774", "nihonjin-hatcho-1733", "nihonjin-nishitomioka-1804"], "attestations": 4, "periods": ["early Edo", "late Edo"], "kanji": "さわ", "kinds": []}
+{"name": "Shiyun", "sources": ["kiyose-noshio-1774", "nihonjin-hatcho-1733", "nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 5, "periods": ["early Edo", "late Edo"], "kanji": "しゆん", "kinds": []}
+{"name": "Masu", "sources": ["daijirou-passenger-lists", "nihonjin-hakkenya-1848", "nihonjin-matsushima-1837"], "attestations": 5, "periods": ["late Edo"], "kanji": "ますの", "kinds": []}
+{"name": "Ise", "sources": ["daijirou-late-edo", "issendai-early-edo", "kiyose-noshio-1774"], "attestations": 3, "periods": ["early Edo", "late Edo"], "kanji": "いせ, 伊勢", "kinds": []}
+{"name": "Some", "sources": ["daijirou-late-edo", "issendai-early-edo", "kiyose-kamikiyoto-1809"], "attestations": 3, "periods": ["early Edo", "late Edo"], "kanji": "そめ", "kinds": []}
+{"name": "Kesa", "sources": ["daijirou-late-edo", "issendai-early-edo", "kiyose-noshio-1774"], "attestations": 3, "periods": ["early Edo", "late Edo"], "kanji": "けさ", "kinds": []}
+{"name": "Ino", "sources": ["issendai-early-edo", "kiyose-kamikiyoto-1809", "nihonjin-matsushima-1837"], "attestations": 3, "periods": ["early Edo", "late Edo"], "kanji": "いの", "kinds": []}
+{"name": "Hime", "sources": ["issendai-early-edo", "issendai-nanbokucho-commoner", "nihonjin-tochii-1671"], "attestations": 3, "periods": ["Muromachi", "early Edo"], "kanji": "ひめ, 姫", "kinds": []}
+{"name": "Koya", "sources": ["issendai-azuchi-momoyama", "issendai-early-edo", "nihonjin-tochii-1671"], "attestations": 4, "periods": ["Azuchi-Momoyama", "early Edo"], "kanji": "こや", "kinds": []}
+{"name": "Nabe", "sources": ["issendai-azuchi-momoyama", "issendai-early-edo", "nihonjin-tochii-1671"], "attestations": 4, "periods": ["Azuchi-Momoyama", "early Edo"], "kanji": "鍋", "kinds": []}
+{"name": "Nene", "sources": ["issendai-azuchi-momoyama", "issendai-early-edo", "nihonjin-goromaru-1690"], "attestations": 3, "periods": ["Azuchi-Momoyama", "early Edo"], "kanji": "ねね, 禰々", "kinds": []}
+{"name": "Tane", "sources": ["issendai-early-edo", "kiyose-noshio-1774", "nihonjin-matsushima-1837"], "attestations": 4, "periods": ["early Edo", "late Edo"], "kanji": "たね", "kinds": []}
+{"name": "Yuwa", "sources": ["issendai-early-edo", "kiyose-kamikiyoto-1809", "kiyose-noshio-1774"], "attestations": 3, "periods": ["early Edo", "late Edo"], "kanji": "ゆわ", "kinds": []}
+{"name": "Fushi", "sources": ["jawiki-nyogo", "kiyose-noshio-1774", "nihonjin-matsushima-1837"], "attestations": 3, "periods": ["Heian", "late Edo"], "kanji": "ふし", "kinds": []}
+{"name": "Koshi", "sources": ["issendai-nanbokucho-court", "jawiki-chugu", "jawiki-kogo-list"], "attestations": 3, "periods": ["Heian", "Muromachi"], "kanji": "幸子", "kinds": []}
+{"name": "Shike", "sources": ["kiyose-kamikiyoto-1809", "kiyose-noshio-1774", "nihonjin-nishitomioka-1804"], "attestations": 3, "periods": ["late Edo"], "kanji": "しけ", "kinds": []}
+{"name": "Nobuko", "sources": ["issendai-nanbokucho-court", "jawiki-chugu", "jawiki-nyogo"], "attestations": 6, "periods": ["Heian", "Muromachi"], "kanji": "信子", "kinds": []}
+{"name": "Shoshi", "sources": ["jawiki-chugu", "jawiki-kogo-list", "jawiki-nyogo"], "attestations": 10, "periods": ["Heian", "Kamakura", "Muromachi"], "kanji": "荘子女王", "kinds": []}
+{"name": "Tsuchi", "sources": ["issendai-early-edo", "nihonjin-kano-1825", "nihonjin-matsushima-1837"], "attestations": 6, "periods": ["early Edo", "late Edo"], "kanji": "つち", "kinds": []}
+{"name": "Toshiko", "sources": ["issendai-nanbokucho-court", "jawiki-kogo-list", "jawiki-nyogo"], "attestations": 3, "periods": ["Heian", "Kamakura", "Muromachi"], "kanji": "祚子", "kinds": []}
+{"name": "Chise", "sources": ["daijirou-passenger-lists", "nihonjin-matsushima-1837"], "attestations": 3, "periods": ["late Edo"], "kanji": "ちせ", "kinds": []}
+{"name": "Koto", "sources": ["daijirou-passenger-lists", "nihonjin-matsushima-1837"], "attestations": 4, "periods": ["late Edo"], "kanji": "こと", "kinds": []}
+{"name": "Etsu", "sources": ["daijirou-late-edo", "nihonjin-nishitomioka-1804"], "attestations": 2, "periods": ["late Edo"], "kanji": "えつ", "kinds": []}
+{"name": "Haya", "sources": ["daijirou-late-edo", "kiyose-noshio-1774"], "attestations": 2, "periods": ["late Edo"], "kanji": "はや", "kinds": []}
+{"name": "Fun", "sources": ["nihonjin-kano-1825", "nihonjin-matsushima-1837"], "attestations": 9, "periods": ["late Edo"], "kanji": "おふん", "kinds": []}
+{"name": "Ima", "sources": ["issendai-azuchi-momoyama", "issendai-early-edo"], "attestations": 2, "periods": ["Azuchi-Momoyama", "early Edo"], "kanji": "いま", "kinds": []}
+{"name": "Maa", "sources": ["issendai-azuchi-momoyama", "nihonjin-tochii-1671"], "attestations": 2, "periods": ["Azuchi-Momoyama", "early Edo"], "kanji": "まあ", "kinds": []}
+{"name": "Rie", "sources": ["nihonjin-matsushima-1837", "nihonjin-nishitomioka-1804"], "attestations": 4, "periods": ["late Edo"], "kanji": "りゑ", "kinds": []}
+{"name": "Ten", "sources": ["issendai-early-edo", "nihonjin-kano-1825"], "attestations": 2, "periods": ["early Edo", "late Edo"], "kanji": "てん", "kinds": []}
+{"name": "Uba", "sources": ["issendai-azuchi-momoyama", "issendai-early-edo"], "attestations": 2, "periods": ["Azuchi-Momoyama", "early Edo"], "kanji": "うば", "kinds": []}
+{"name": "Yae", "sources": ["nihonjin-hakkenya-1848", "nihonjin-matsushima-1837"], "attestations": 2, "periods": ["late Edo"], "kanji": "やゑの", "kinds": []}
+{"name": "Chii", "sources": ["issendai-azuchi-momoyama", "issendai-nanbokucho-court"], "attestations": 2, "periods": ["Azuchi-Momoyama", "Muromachi"], "kanji": "チイ", "kinds": []}
+{"name": "Furi", "sources": ["issendai-early-edo", "nihonjin-tochii-1671"], "attestations": 3, "periods": ["early Edo"], "kanji": "ふり", "kinds": []}
+{"name": "Fute", "sources": ["nihonjin-hakkenya-1848", "nihonjin-nishitomioka-1804"], "attestations": 2, "periods": ["late Edo"], "kanji": "ふて", "kinds": []}
+{"name": "Kinu", "sources": ["issendai-early-edo", "nihonjin-hatcho-1733"], "attestations": 2, "periods": ["early Edo"], "kanji": "きぬ", "kinds": []}
+{"name": "Kuno", "sources": ["nihonjin-kano-1825", "nihonjin-nishitomioka-1804"], "attestations": 2, "periods": ["late Edo"], "kanji": "くの", "kinds": []}
+{"name": "Mate", "sources": ["issendai-early-edo", "kiyose-noshio-1774"], "attestations": 2, "periods": ["early Edo", "late Edo"], "kanji": "まて", "kinds": []}
+{"name": "Saru", "sources": ["issendai-early-edo", "nihonjin-sugaura-1564"], "attestations": 2, "periods": ["Muromachi", "early Edo"], "kanji": "さる, 猿", "kinds": []}
+{"name": "Chima", "sources": ["issendai-azuchi-momoyama", "issendai-early-edo"], "attestations": 2, "periods": ["Azuchi-Momoyama", "early Edo"], "kanji": "ちま", "kinds": []}
+{"name": "Itoko", "sources": ["issendai-azuchi-momoyama", "issendai-nanbokucho-court"], "attestations": 2, "periods": ["Azuchi-Momoyama", "Muromachi"], "kanji": "いと子", "kinds": []}
+{"name": "Onshi", "sources": ["jawiki-chugu", "jawiki-nyogo"], "attestations": 2, "periods": ["Heian"], "kanji": "藤原温子", "kinds": []}
+{"name": "Tsuji", "sources": ["issendai-early-edo", "nihonjin-tochii-1671"], "attestations": 2, "periods": ["early Edo"], "kanji": "つじ", "kinds": []}
+{"name": "Chacha", "sources": ["issendai-azuchi-momoyama", "issendai-nanbokucho-court"], "attestations": 2, "periods": ["Azuchi-Momoyama", "Muromachi"], "kanji": "茶々", "kinds": []}
+{"name": "Genshi", "sources": ["jawiki-chugu", "jawiki-nyogo"], "attestations": 3, "periods": ["Heian"], "kanji": "藤原元子", "kinds": []}
+{"name": "Hanshi", "sources": ["jawiki-kogo-list", "jawiki-nyogo"], "attestations": 2, "periods": ["Heian", "Kamakura"], "kanji": "班子女王", "kinds": []}
+{"name": "Muneko", "sources": ["issendai-nanbokucho-court", "jawiki-kogo-list"], "attestations": 2, "periods": ["Heian", "Muromachi"], "kanji": "宗子", "kinds": []}
+{"name": "Shichi", "sources": ["kiyose-kamikiyoto-1809", "kiyose-noshio-1774"], "attestations": 2, "periods": ["late Edo"], "kanji": "しち", "kinds": []}
+{"name": "Tsunako", "sources": ["jawiki-kogo-list", "jawiki-nyogo"], "attestations": 3, "periods": ["late Edo"], "kanji": "近衛維子", "kinds": []}
+{"name": "Nui", "sources": ["daijirou-late-edo"], "attestations": 1, "periods": ["late Edo"], "kanji": null, "kinds": []}
+{"name": "Shu", "sources": ["daijirou-late-edo"], "attestations": 1, "periods": ["late Edo"], "kanji": null, "kinds": []}
+{"name": "Ago", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": "あ五", "kinds": []}
+{"name": "Bin", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "びん", "kinds": []}
+{"name": "Efu", "sources": ["kiyose-noshio-1774"], "attestations": 1, "periods": ["late Edo"], "kanji": "ゑふ", "kinds": []}
+{"name": "Gou", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Iju", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "伊寿御前", "kinds": []}
+{"name": "Iri", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "いり", "kinds": []}
+{"name": "Kii", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Nme", "sources": ["nihonjin-kano-1825"], "attestations": 2, "periods": ["late Edo"], "kanji": "おんめ", "kinds": []}
+{"name": "Ona", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "おな", "kinds": []}
+{"name": "Tau", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Acha", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": "阿茶", "kinds": []}
+{"name": "Akai", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "あかい", "kinds": []}
+{"name": "Baba", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "ばば", "kinds": []}
+{"name": "Chaa", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": "茶阿", "kinds": []}
+{"name": "Choo", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "長王", "kinds": []}
+{"name": "Goni", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "ゴウニ", "kinds": []}
+{"name": "Gosa", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Hase", "sources": ["nihonjin-nishitomioka-1804"], "attestations": 1, "periods": ["late Edo"], "kanji": "はせ", "kinds": []}
+{"name": "Hiki", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "ひき", "kinds": []}
+{"name": "Hoju", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "法寿", "kinds": []}
+{"name": "Hoso", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "ほそ", "kinds": []}
+{"name": "Kaku", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "かく", "kinds": []}
+{"name": "Kita", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": "北", "kinds": []}
+{"name": "Magi", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "まぎ", "kinds": []}
+{"name": "Mego", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "めご", "kinds": []}
+{"name": "Mimi", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "みみ", "kinds": []}
+{"name": "Miru", "sources": ["nihonjin-hatcho-1733"], "attestations": 1, "periods": ["early Edo"], "kanji": "みる", "kinds": []}
+{"name": "Momo", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "もも", "kinds": []}
+{"name": "Nagu", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "なぐ", "kinds": []}
+{"name": "Neda", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "禰陀女", "kinds": []}
+{"name": "Sahe", "sources": ["nihonjin-kano-1825"], "attestations": 1, "periods": ["late Edo"], "kanji": "小さへ", "kinds": []}
+{"name": "Sugi", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "すぎ", "kinds": []}
+{"name": "Suko", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "すこ", "kinds": []}
+{"name": "Yufu", "sources": ["kiyose-noshio-1774"], "attestations": 1, "periods": ["late Edo"], "kanji": "ゆふ", "kinds": []}
+{"name": "Zuru", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Aguri", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "あぐり", "kinds": []}
+{"name": "Akaka", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Akoko", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Ayaya", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Chibo", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Chiku", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Edako", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "枝子", "kinds": []}
+{"name": "Enoko", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "エノコ", "kinds": []}
+{"name": "Futsu", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "ふつ", "kinds": []}
+{"name": "Hiina", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "ひいな", "kinds": []}
+{"name": "Iyako", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "彌子", "kinds": []}
+{"name": "Kachi", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "かち", "kinds": []}
+{"name": "Kaede", "sources": ["sengokudaimyo"], "attestations": 1, "periods": ["unknown"], "kanji": null, "kinds": []}
+{"name": "Kangi", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "歓喜女", "kinds": []}
+{"name": "Kogou", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": "こ五う", "kinds": []}
+{"name": "Koman", "sources": ["nihonjin-tochii-1671"], "attestations": 1, "periods": ["early Edo"], "kanji": "こまん", "kinds": []}
+{"name": "Kyoho", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "百済王教法", "kinds": []}
+{"name": "Manju", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "萬寿", "kinds": []}
+{"name": "Mashi", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "まし", "kinds": []}
+{"name": "Miiko", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "橘御井子", "kinds": []}
+{"name": "Muyau", "sources": ["nihonjin-tochii-1671"], "attestations": 2, "periods": ["early Edo"], "kanji": "むやう", "kinds": []}
+{"name": "Otoio", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "紀乙魚", "kinds": []}
+{"name": "Otoju", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "乙寿女", "kinds": []}
+{"name": "Rurio", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "るりわう", "kinds": []}
+{"name": "Sechi", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "せち", "kinds": []}
+{"name": "Tochi", "sources": ["nihonjin-matsushima-1837"], "attestations": 1, "periods": ["late Edo"], "kanji": "とち", "kinds": []}
+{"name": "Totsu", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "とつ", "kinds": []}
+{"name": "Tsubo", "sources": ["issendai-early-edo"], "attestations": 1, "periods": ["early Edo"], "kanji": "つぼ", "kinds": []}
+{"name": "Azechi", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Chiyau", "sources": ["nihonjin-tochii-1671"], "attestations": 5, "periods": ["early Edo"], "kanji": "ちやう", "kinds": []}
+{"name": "Furuko", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "藤原古子", "kinds": []}
+{"name": "Gomoji", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": "五もじ", "kinds": []}
+{"name": "Harima", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Hiroko", "sources": ["jawiki-nyogo"], "attestations": 2, "periods": ["Heian"], "kanji": "平寛子", "kinds": []}
+{"name": "Hiyaku", "sources": ["nihonjin-tochii-1671"], "attestations": 1, "periods": ["early Edo"], "kanji": "ひやく", "kinds": []}
+{"name": "Ikushi", "sources": ["jawiki-chugu"], "attestations": 1, "periods": ["Heian"], "kanji": "藤原育子", "kinds": []}
+{"name": "Itoito", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Junshi", "sources": ["jawiki-chugu"], "attestations": 2, "periods": ["Heian", "Muromachi"], "kanji": "藤原遵子", "kinds": []}
+{"name": "Kaishi", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "藤原懐子", "kinds": []}
+{"name": "Kannon", "sources": ["issendai-nanbokucho-commoner"], "attestations": 2, "periods": ["Muromachi"], "kanji": "観音女", "kinds": []}
+{"name": "Kinshi", "sources": ["jawiki-chugu"], "attestations": 2, "periods": ["Heian", "Kamakura"], "kanji": "藤原忻子", "kinds": []}
+{"name": "Kokeko", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "苔子", "kinds": []}
+{"name": "Kuniko", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "國子", "kinds": []}
+{"name": "Memmen", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "免々", "kinds": []}
+{"name": "Motoko", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "資子", "kinds": []}
+{"name": "Satoko", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "里子", "kinds": []}
+{"name": "Shiyaa", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Shiyou", "sources": ["nihonjin-tochii-1671"], "attestations": 1, "periods": ["early Edo"], "kanji": "しよう", "kinds": []}
+{"name": "Sukeko", "sources": ["issendai-nanbokucho-court"], "attestations": 2, "periods": ["Muromachi"], "kanji": "相子", "kinds": []}
+{"name": "Tsuruo", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "鶴王", "kinds": []}
+{"name": "Yuusen", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Azumako", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "東子女王", "kinds": []}
+{"name": "Chikako", "sources": ["issendai-nanbokucho-court"], "attestations": 2, "periods": ["Muromachi"], "kanji": "親子", "kinds": []}
+{"name": "Higashi", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": "東", "kinds": []}
+{"name": "Koboshi", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "小法師女", "kinds": []}
+{"name": "Kotsuru", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Kunishi", "sources": ["jawiki-kogo-list"], "attestations": 1, "periods": ["Kamakura"], "kanji": "邦子内親王", "kinds": []}
+{"name": "Otoyasa", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "乙夜叉女", "kinds": []}
+{"name": "Senyasa", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "千夜叉御前", "kinds": []}
+{"name": "Shiyute", "sources": ["nihonjin-sugaura-1564"], "attestations": 1, "periods": ["Muromachi"], "kanji": "しゆて", "kinds": []}
+{"name": "Yayacha", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": "やや茶", "kinds": []}
+{"name": "Ayamachi", "sources": ["issendai-azuchi-momoyama"], "attestations": 1, "periods": ["Azuchi-Momoyama"], "kanji": null, "kinds": []}
+{"name": "Chiyachi", "sources": ["nihonjin-sugaura-1564"], "attestations": 1, "periods": ["Muromachi"], "kanji": "ちやち", "kinds": []}
+{"name": "Hagoromo", "sources": ["issendai-nanbokucho-court"], "attestations": 1, "periods": ["Muromachi"], "kanji": "羽衣", "kinds": []}
+{"name": "Harahime", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "永原原姫", "kinds": []}
+{"name": "Kameyasa", "sources": ["issendai-nanbokucho-commoner"], "attestations": 2, "periods": ["Muromachi"], "kanji": "亀夜叉女", "kinds": []}
+{"name": "Kichisho", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "吉詳御前", "kinds": []}
+{"name": "Kitsushi", "sources": ["jawiki-chugu"], "attestations": 1, "periods": ["Kamakura"], "kanji": "藤原姞子", "kinds": []}
+{"name": "Masaruko", "sources": ["jawiki-kogo-list"], "attestations": 1, "periods": ["Heian"], "kanji": "藤原多子", "kinds": []}
+{"name": "Takakiko", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "藤原多賀幾子", "kinds": []}
+{"name": "Takeyasa", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "竹夜叉女", "kinds": []}
+{"name": "Atehimeko", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "あてひめこ", "kinds": []}
+{"name": "Hitoshiko", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "平等子", "kinds": []}
+{"name": "Tarashiko", "sources": ["jawiki-kogo-list"], "attestations": 1, "periods": ["Heian"], "kanji": "藤原帯子", "kinds": []}
+{"name": "Tsuitachi", "sources": ["nihonjin-sugaura-1564"], "attestations": 1, "periods": ["Muromachi"], "kanji": "ついたち", "kinds": []}
+{"name": "Neshihoshi", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "ねしほしごぜん", "kinds": []}
+{"name": "Motoyoshiko", "sources": ["jawiki-nyogo"], "attestations": 1, "periods": ["Heian"], "kanji": "藤原元善子", "kinds": []}
+{"name": "Nishiurayasa", "sources": ["issendai-nanbokucho-commoner"], "attestations": 1, "periods": ["Muromachi"], "kanji": "西浦夜叉女", "kinds": []}
