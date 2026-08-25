@@ -4,6 +4,8 @@
 
 **Created**: 2026-08-24
 
+**Blocked by**: `131-split-diagram-repo` - implemented AFTER the diagram skill moves to its own repository (GM 2026-08-24: *"we want to do prior to either feature 129 or 130, since those are both better implemented once we have moved to the separate repo"*). This directory moves with the split.
+
 **Status**: REVISED after the GM's 2026-08-24 band ruling AND their per-measurement thresholds. Band scope is CLOSED; **storage is the only open GM question.** (Was FAITHFUL at round 3 against the earlier request.) NOT implemented, at the GM's explicit instruction (*"Do not start
 work on the spec"*). The measurements below were taken before implementation precisely so they would
 be in hand when it begins.

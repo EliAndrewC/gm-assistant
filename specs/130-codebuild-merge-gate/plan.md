@@ -144,7 +144,7 @@ own FULL merge (T063); that is the *"reconstituted"* number.
 ### Documentation (this feature)
 
 ```
-specs/128-codebuild-merge-gate/
+specs/130-codebuild-merge-gate/
 ├── gm-request.md            # verbatim - the authority
 ├── spec.md                  # APPROVED (FAITHFUL, round 3)
 ├── plan.md                  # this file
