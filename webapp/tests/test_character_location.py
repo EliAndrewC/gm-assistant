@@ -92,6 +92,37 @@ def test_reiji_provincial_lineages(lineage: str, province: str) -> None:
     assert _Samurai(**REIJI, lineage=lineage, base_rank=5).location == province
 
 
+MASAO = {'clan': 'lion', 'family': 'matsu', 'house': 'masao'}
+
+
+def test_masao_has_exactly_two_dynasty_provinces() -> None:
+    """The Masao domain (l7r.md "The Masao Domain") is a post-war border
+    domain: a founding-era dynasty province (Iwakura -> Tobe) plus a conquest
+    reward minted in the Lion/Crane peace (Hayase -> Ehime).  Every other
+    lineage is cosmopolitan and every other province is a stewardship one.
+    """
+    from chargen import config
+
+    provincial = config['provincial_lineages']['masao']
+    assert provincial == {'iwakura': 'Tobe province', 'hayase': 'Ehime province'}
+    assert set(provincial) < set(config['house']['masao'])
+    assert set(provincial.values()) < set(config['locations']['masao']['provinces'])
+    assert sum(config['house']['masao'].values()) == 100
+
+
+@pytest.mark.parametrize(
+    ('lineage', 'province'),
+    [('iwakura', 'Tobe province'), ('hayase', 'Ehime province')],
+)
+def test_masao_provincial_lineages(lineage: str, province: str) -> None:
+    assert _Samurai(**MASAO, lineage=lineage, base_rank=4).location == province
+
+
+def test_masao_cosmopolitan_lineage_defaults_to_blank_then_capital() -> None:
+    assert _Samurai(**MASAO, lineage='tsukuda', base_rank=5).location == ''
+    assert _Samurai(**MASAO, lineage='masao', base_rank=10).location == 'Shiro Masao'
+
+
 def test_reiji_ruling_lineage_is_cosmopolitan() -> None:
     assert _Samurai(**REIJI, lineage='reiji', base_rank=5).location == ''
     assert _Samurai(**REIJI, lineage='reiji', base_rank=10).location == 'Shiro Reiji'
