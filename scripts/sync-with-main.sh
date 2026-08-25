@@ -137,7 +137,7 @@ push_cmd() {
 render_sync() {
   # NO DIAGRAM SKILL, NO RENDER-SYNC (feature 131): gm-assistant no longer holds the skill, and the
   # diagram repository holds nothing else - one script serves both because this step is conditional.
-  if [ ! -d "$MAIN/$SKILL_DIR" ]; then echo "sync-with-main: no $SKILL_DIR in $MAIN - render-sync skipped"; return 0; fi
+  if [ ! -f "$MAIN/$SKILL_DIR/Makefile" ]; then echo "sync-with-main: no $SKILL_DIR/Makefile in $MAIN - render-sync skipped"; return 0; fi
   # REGENERATE main's diagram renders IN PLACE from main's own tip (GM 2026-07-22, replacing the
   # old build-in-clone-then-rsync-copy machinery). Renders now become a pure function of main's
   # committed code - nothing is copied, so nothing can be copied stale (the fragility that copy
