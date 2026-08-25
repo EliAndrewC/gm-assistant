@@ -30,24 +30,34 @@
 #   done            push, then render-sync (the common full stop-work)
 set -euo pipefail
 
-MAIN=${CLONE_MAIN:-/gm-assistant}   # CLONE_MAIN: test seam only; production is always /gm-assistant
+die() { echo "sync-with-main: $*" >&2; exit 1; }
+
+# THE ROOT IS DERIVED, NOT HARDCODED (feature 131, 2026-08-25). A session clone lives at
+# <main>/.clones/<name>, so main is the clone's grandparent - true for gm-assistant at /gm-assistant
+# and for the diagram repository at /diagram, with no per-repo edit. CLONE_MAIN stays as the test
+# seam. Before this the script hardcoded /gm-assistant, which is the kind of reference the split
+# had to sweep; deriving it means the NEXT move is free.
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git checkout"
+if [ -n "${CLONE_MAIN:-}" ]; then MAIN=$CLONE_MAIN
+elif [ "$(basename "$(dirname "$ROOT")")" = ".clones" ]; then MAIN=$(dirname "$(dirname "$ROOT")")
+else MAIN=$ROOT; fi
 LOCK=$MAIN/.clones/.ritual.lock   # keep this NAME: it is the cross-session lock convention in CLAUDE.md - renaming it would stop serializing against other sessions
 POOL=.claude/skills/diagram/pool
 SKILL_DIR=.claude/skills/diagram
 RENDER_CACHE_MOD=l7r.diagram.pipeline.render_cache   # run as a MODULE from SKILL_DIR: it imports its package siblings relatively
 
-die() { echo "sync-with-main: $*" >&2; exit 1; }
-
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git checkout"
 case "$ROOT" in
   "$MAIN") die "this is MAIN, not a clone - the ritual runs from a session clone (CLAUDE.md 'Session clones')" ;;
   "$MAIN"/.clones/*) ;;
   *) die "$ROOT is not a session clone under $MAIN/.clones/" ;;
 esac
-# 'gm-assistant' is a FORBIDDEN clone name (GM 2026-07-22): it is the repository, not a session,
-# and being the old unnamed-default is what let two sessions collide in one working tree. The
-# ritual refuses to run from it so no work can be pushed out of it - rename the session distinctly.
-[ "$(basename "$ROOT")" = "gm-assistant" ] && die "'.clones/gm-assistant' is a FORBIDDEN clone name - 'gm-assistant' is the repository, not a session. Ask the GM to /rename this session to something distinct, then run the ritual from .clones/<that-name>. (CLAUDE.md 'Session clones')"
+# The repository's OWN NAME is a FORBIDDEN clone name (GM 2026-07-22, generalized 2026-08-25): it is
+# the repository, not a session, and being the old unnamed-default is what let two sessions collide
+# in one working tree. 'gm-assistant' stays forbidden everywhere for the same reason. The ritual
+# refuses to run from such a clone so no work can be pushed out of it - rename the session distinctly.
+case "$(basename "$ROOT")" in
+  gm-assistant|"$(basename "$MAIN")") die "'.clones/$(basename "$ROOT")' is a FORBIDDEN clone name - it is the repository, not a session. Ask the GM to /rename this session to something distinct, then run the ritual from .clones/<that-name>. (CLAUDE.md 'Session clones')" ;;
+esac
 cd "$ROOT"
 
 sync_in() {

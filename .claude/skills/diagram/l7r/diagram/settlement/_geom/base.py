@@ -18,6 +18,21 @@ Poly = list[Pt]  # a polyline / polygon as a list of points
 Manifest = dict[str, Any]  # the JSON settlement manifest the generator emits
 
 
+def _is_main_tree(p: str) -> bool:
+    """True when `p` (a real path) sits inside a checkout that holds `.clones/` and is not itself
+    under one - i.e. the integration tree, whichever repository and mount this is."""
+    if "/.clones/" in p:
+        return False
+    d = p if os.path.isdir(p) else os.path.dirname(p)
+    while True:
+        if os.path.exists(os.path.join(d, ".git")):
+            return os.path.isdir(os.path.join(d, ".clones"))
+        parent = os.path.dirname(d)
+        if parent == d:
+            return False
+        d = parent
+
+
 def _assert_not_main_tree(path: str | None = None) -> None:
     """Refuse to run from the MAIN /gm-assistant checkout. Main is the integration point,
     never a workspace (CLAUDE.md "Session clones"): a generator/gate/test writing into main's
@@ -27,11 +42,14 @@ def _assert_not_main_tree(path: str | None = None) -> None:
     the guard: the GM sets it for a deliberate main-tree run, and the stop-work ritual's
     render-sync sets it (scoped to its one locked regen-in-main); a session never sets it by
     hand for anything else."""
+    # MAIN IS THE TREE THAT CONTAINS `.clones/` (feature 131, 2026-08-25). A session clone or a
+    # detached worktree has no .clones/ of its own (it is gitignored), so no path is hardcoded and
+    # the guard holds at /gm-assistant and at /diagram alike. Same rule as webapp/mainguard.py.
     p = os.path.realpath(path if path is not None else __file__)
-    if p.startswith("/gm-assistant/") and "/.clones/" not in p and os.environ.get("GM_ASSISTANT_ALLOW_MAIN") != "1":
+    if _is_main_tree(p) and os.environ.get("GM_ASSISTANT_ALLOW_MAIN") != "1":
         raise SystemExit(
-            "ERROR: this ran from the MAIN /gm-assistant tree. Main is the integration point, never a workspace -\n"
-            "every generator, gate, and test runs inside the session's own clone under /gm-assistant/.clones/.\n"
+            "ERROR: this ran from the MAIN tree. Main is the integration point, never a workspace -\n"
+            "every generator, gate, and test runs inside the session's own clone under <main>/.clones/.\n"
             "Check CLAUDE.md, section 'Session clones' (reload CLAUDE.md if it has fallen out of your context\n"
             "window) for the procedure: create or reuse .clones/<kebab-cased-session-name>, sync it in with\n"
             "'git pull origin main', and run this same command from inside that clone.\n"

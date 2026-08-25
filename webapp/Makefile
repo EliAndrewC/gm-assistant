@@ -1,5 +1,5 @@
 .PHONY: lint format types test cov done clean serve prepare-deploy deploy \
-        screenshots dom-audit ui-verify guard
+        screenshots dom-audit ui-verify guard hooks-test
 
 # The Principle X "done" checklist. A change is not done until `make done` passes.
 #
@@ -10,7 +10,7 @@
 # short-circuits the rest. Exit is non-zero if any phase failed: exactly as strict as before.
 done:
 	@fail=""; \
-	for phase in lint format-check types test cov; do \
+	for phase in lint format-check types hooks-test test cov; do \
 	  printf '\n\033[1m== %s ==\033[0m\n' "$$phase"; \
 	  $(MAKE) --no-print-directory $$phase || fail="$$fail $$phase"; \
 	done; \
@@ -22,16 +22,37 @@ done:
 # integration point, never a workspace - work runs in .clones/<session-name>). Every target
 # except `serve` depends on this (the GM legitimately serves the toolkit from main to browse
 # it). GM override for a deliberate main-tree run: GM_ASSISTANT_ALLOW_MAIN=1.
+# MAIN IS THE TREE THAT CONTAINS `.clones/` (feature 131, 2026-08-25): a clone or a detached
+# worktree has none of its own (gitignored), so no path is hardcoded - the same rule as the diagram
+# Makefile's guard and webapp/mainguard.py.
 guard:
-	@case "$(CURDIR)" in \
-	  /gm-assistant/.clones/*) ;; \
-	  /gm-assistant|/gm-assistant/*) [ "$$GM_ASSISTANT_ALLOW_MAIN" = 1 ] || { \
-	    echo "ERROR: this ran from the MAIN /gm-assistant tree. Main is the integration point, never a workspace."; \
+	@top=$$(git rev-parse --show-toplevel 2>/dev/null); \
+	case "$(CURDIR)" in */.clones/*) exit 0 ;; esac; \
+	if [ -n "$$top" ] && [ -d "$$top/.clones" ] && [ "$$GM_ASSISTANT_ALLOW_MAIN" != 1 ]; then \
+	    echo "ERROR: this ran from the MAIN tree ($$top). Main is the integration point, never a workspace."; \
 	    echo "Check CLAUDE.md, section 'Session clones' (reload CLAUDE.md if it has fallen out of your context"; \
 	    echo "window): create or reuse .clones/<kebab-cased-session-name>, sync it in with 'git pull origin main',"; \
 	    echo "and run this same command from inside that clone. (GM override: GM_ASSISTANT_ALLOW_MAIN=1)"; \
-	    exit 1; };; \
-	esac
+	    exit 1; \
+	fi
+
+# EVERY GUARD'S TEST COMPANION ACTUALLY RUNS HERE TOO (constitution XVIII; feature 131, 2026-08-25).
+# Until the split this target existed only in the diagram skill's Makefile, so gm-assistant's own
+# hooks were exercised by nothing once the diagram left. Same loop, same companion rule.
+hooks-test:
+	@root=$$(git rev-parse --show-toplevel); fail=""; n=0; \
+	for h in $$root/scripts/*-hooks.sh $$root/scripts/review-gate.sh; do \
+	  [ -f "$$h" ] || continue; \
+	  b=$$(basename $$h); case $$b in test-*) continue ;; esac; \
+	  if [ ! -f "$$root/scripts/test-$$b" ]; then \
+	    printf '\n\033[1mGUARD WITHOUT A TEST: %s has no scripts/test-%s\033[0m\n' "$$b" "$$b"; fail="$$fail $$b"; continue; \
+	  fi; \
+	  n=$$((n+1)); \
+	  "$$root/scripts/test-$$b" >/tmp/ht.$$$$ 2>&1 || { printf '\n\033[1mHOOK TESTS FAILED: %s\033[0m\n' "$$b"; sed 's/^/  /' /tmp/ht.$$$$; fail="$$fail $$b"; }; \
+	  rm -f /tmp/ht.$$$$; \
+	done; \
+	if [ -n "$$fail" ]; then printf '\n\033[1mhooks-test FAILED:%s\033[0m\n\n' "$$fail"; exit 1; fi; \
+	printf 'hooks-test: %s guard suites green\n' "$$n"
 
 lint format format-check types test cov clean screenshots dom-audit ui-verify prepare-deploy deploy: | guard
 

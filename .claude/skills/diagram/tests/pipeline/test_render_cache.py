@@ -276,3 +276,19 @@ def test_every_live_pool_png_matches_its_own_svg_viewbox():
         assert abs(round(pw * vh / vw) - ph) <= 2, f"{os.path.basename(png_path)} is {pw}x{ph} but its own SVG renders to {pw}x{round(pw * vh / vw)} - the PNG is not this SVG"
         checked += 1
     assert checked, "no live scripted map had both a .svg and a .png - the guard checked nothing"
+
+
+def test_main_derives_main_repo_from_this_checkout_when_not_given(tmp_path, monkeypatch):
+    # feature 131: the default is the checkout this module lives in, never a hardcoded /gm-assistant
+    seen = {}
+
+    def fake_regen(pool_dir, main_repo, **kw):
+        seen["main_repo"] = main_repo
+        return [], [], []
+
+    monkeypatch.setattr(rc, "regen_pool", fake_regen)
+    monkeypatch.setattr(rc.pool_index, "write_index", lambda pool: os.path.join(pool, "index.html"))
+    assert rc.main(["--pool", str(tmp_path), "--skill-dir", str(tmp_path)]) == 0
+    here = os.path.dirname(os.path.abspath(rc.__file__))
+    expected = subprocess.run(["git", "-C", here, "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip()
+    assert seen["main_repo"] == expected and os.path.isdir(os.path.join(expected, ".git"))
