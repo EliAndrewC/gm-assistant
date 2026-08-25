@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-24
 
-**Status**: SPECIFIED and COMPLETE - no open questions. Bands, per-measurement thresholds and storage all ruled on by the GM 2026-08-24. **BLOCKED ON A PREREQUISITE**: the AWS CodeBuild work lands first (GM's sequencing). NOT implemented. (Was FAITHFUL at round 3 against the earlier request.) NOT implemented, at the GM's explicit instruction (*"Do not start
+**Status**: SPECIFIED and COMPLETE - no open questions. Bands apply PER ENVIRONMENT (local and AWS CodeBuild judged separately). Bands, per-measurement thresholds and storage all ruled on by the GM 2026-08-24. **BLOCKED ON A PREREQUISITE**: the AWS CodeBuild work lands first (GM's sequencing). NOT implemented. (Was FAITHFUL at round 3 against the earlier request.) NOT implemented, at the GM's explicit instruction (*"Do not start
 work on the spec"*). The measurements below were taken before implementation precisely so they would
 be in hand when it begins.
 
@@ -28,16 +28,23 @@ This feature is therefore built ON TOP OF the CodeBuild merge gate
 ([`specs/128-codebuild-merge-gate/`](../128-codebuild-merge-gate/), a peer session's feature), not
 beside it. Three consequences an implementer must not discover late:
 
-1. **THE NOISE FLOOR MEASURED IN THIS SPEC MAY NOT SURVIVE THE MOVE.** The 1.7% per-seed / 0.7% total
-   figures below are a property of THIS container on THIS host. If perf measurement runs on CodeBuild,
-   the floor must be **re-measured there before the bands are wired**, by the same method: three runs,
-   one unchanged commit. The GM's four thresholds are theirs and are not up for revision by a session -
-   but a floor that comes back materially different is a REPORT TO THE GM with the number, because
-   they set those thresholds against a floor of 0.7%/1.7%.
+1. **THE NOISE FLOOR MEASURED IN THIS SPEC IS LOCAL-ONLY AND DOES NOT TRANSFER.** The 1.7% per-seed /
+   0.7% total figures below are a property of THIS container on THIS host. **CodeBuild gets its own
+   measurements** (GM, 2026-08-25) - the same method, three runs on one unchanged commit, taken there
+   before that environment's bands are wired (FR-016). The GM's thresholds are theirs and are not up
+   for revision by a session, but a floor that comes back materially different is a REPORT TO THE GM
+   with the number, because they set those thresholds against 0.7%/1.7% on this machine.
+
+   **Expect it to differ.** A CodeBuild xlarge is 36 vCPU against this container's 22, and a
+   fresh-container run has a cold cache where a local one often does not. Neither the absolute times
+   nor the spread should be assumed to carry across.
 2. **The second repository is a better fit under CodeBuild than it was without it, which is why the GM
    chose it.** A remote runner produces artifacts on a machine that is not the one that needs them; a
    gitignore cannot bridge that and a second remote can.
-3. **Where the bands are ENFORCED may move.** Band 3's enforcement point is the push
+3. **TWO ENVIRONMENTS MEANS TWO OF EVERYTHING MEASURED.** Two noise floors, two baselines per feature,
+   two band matrices evaluated independently, and a hard refusal to compare across them (FR-013 to
+   FR-017). The moment any work runs remotely, "the performance number" stops being a single thing.
+4. **Where the bands are ENFORCED may move.** Band 3's enforcement point is the push
    (`sync-with-main.sh`), and a merge gate running remotely may become the more natural place for it.
    Do not assume the local wiring survives; check what the CodeBuild feature actually lands before
    choosing where these checks live.
@@ -54,6 +61,23 @@ Set by the GM on 2026-08-24, in the ruling that supersedes the band design in th
 | **1 - explain** | any increase | any increase | an explanation, **with a `perf-audit` subagent confirming it** |
 | **2 - audit** | **> 5%** | **> 10%** | more advanced analysis and a higher bar: the subagent must affirmatively find the increase **necessary**, **commensurate** with the functionality gained, and that there is **no good way around it** |
 | **3 - GM** | **> 10%** | **> 20%** | **the GM signs off personally, before the work is committed back to main** |
+
+**AND THE WHOLE MATRIX APPLIES TO EACH ENVIRONMENT INDEPENDENTLY** (GM, 2026-08-25: *"these
+thresholds apply to both of those individually"*). Once some work runs locally and some on AWS
+CodeBuild, there are TWO complete band matrices - one judged on local history, one on CodeBuild
+history - and a feature must satisfy both wherever both apply. There is no blended number, and a
+CodeBuild improvement never offsets a local regression or the reverse.
+
+**THE TRAP THIS EXISTS TO AVOID: never compare a run in one environment against a baseline in
+another.** The two machines are not the same speed - this container reports 22 CPUs, a CodeBuild
+xlarge has 36 - so a cross-environment percentage is not a slow number or a fast number, it is a
+MEANINGLESS one, and it would be arithmetically indistinguishable from a real regression. A local
+`-start` pairs only with a local `-end`; a CodeBuild `-start` only with a CodeBuild `-end`.
+
+**AND THE ENVIRONMENT MUST BE RECORDED EXPLICITLY, not inferred.** Today's snapshots carry `machine:
+'x86_64'` and `cpus: 22`, which are incidental properties rather than an identity: two environments can
+share an architecture, a CPU count can change under the same environment, and neither says where the
+run happened. Inferring the environment from them would work until it silently did not. See FR-013.
 
 **EVERY BAND HAS A NUMBER FOR EACH MEASUREMENT, and a band fires when EITHER is crossed.** There is no
 total-only band and no seed-only band. An earlier draft had band 3 on the total alone, which meant a
@@ -430,6 +454,24 @@ binding and logging - which would let a session self-issue the very check the ru
 - **FR-012a**: Before any new profiler is proposed, the implementation MUST determine in writing what
   the EXISTING per-stage timings cannot answer for the audit. A new profiling subsystem is justified
   only against that gap.
+- **FR-013**: Every performance snapshot MUST record its ENVIRONMENT explicitly (`local`, `codebuild`,
+  ...) as a first-class field. It MUST NOT be inferred from `machine`, `cpus` or any other incidental
+  property - those describe a machine, not where a run happened, and an inference that works today
+  fails silently the day a CPU count changes.
+- **FR-014**: A comparison MUST be refused when the two snapshots come from different environments.
+  Not warned about - REFUSED, with a message saying why. A cross-environment percentage is arithmetically
+  indistinguishable from a regression and there is no safe way to display one.
+- **FR-015**: Every band MUST be evaluated per environment, against that environment's own history, and
+  a feature MUST satisfy every environment in which it runs. A gain in one MUST NOT offset a loss in
+  another.
+- **FR-016**: The NOISE FLOOR MUST be measured separately in each environment before that environment's
+  bands are wired, by the method used for local: three runs, one unchanged commit. The GM set the
+  thresholds against a local floor of 0.7% total and 1.7% per seed; if another environment's floor comes
+  back materially different, that is a REPORT TO THE GM with the number, not a threshold a session
+  re-derives.
+- **FR-017**: Each feature MUST carry a bookend PAIR per environment it is measured in. A missing
+  CodeBuild baseline MUST fail the same way a missing local one already does - by refusing and printing
+  how to take it - rather than by silently checking only what it happens to have.
 
 ## The storage decision - SETTLED: a second repository
 
@@ -509,14 +551,21 @@ constitution amendment.
   in it at all.
 - **SC-008a**: The derived evidence in this repository is readable and useful with the profile
   archive entirely absent.
+- **SC-009**: A local snapshot compared against a CodeBuild snapshot is REFUSED, and the refusal names
+  the mismatch rather than printing a percentage.
+- **SC-010**: A feature that improves on CodeBuild while regressing locally still fires the local
+  bands, and vice versa.
+- **SC-011**: Each environment's noise floor is measured and recorded before its bands are enforced.
 - **SC-008**: The identity question is answered in writing, with the answer recorded whichever way it
   went.
 
 ## Assumptions
 
 - The reference seed set stays [4, 25, 39, 47] unless the noise floor says otherwise.
-- The CodeBuild merge gate is in main before this work starts, and the noise floor has been
-  re-measured wherever perf ends up running.
+- The CodeBuild merge gate is in main before this work starts, and each environment's noise floor has
+  been measured in that environment before its bands are enforced.
+- Which work runs locally and which runs on CodeBuild is decided by that feature, not this one. This
+  spec requires only that whatever runs in an environment is judged against that environment.
 - `dev/perf-log/` stays one-file-per-run, so concurrent clones never conflict.
 - The sign-off thresholds - 10% total and 20% per seed, set by the GM 2026-08-24 - are **SIGN-OFF
   TRIGGERS, not ceilings** - they
@@ -683,3 +732,20 @@ constitution amendment.
   1.7% floor, so a materially different one is a report to them); the second repository fits better
   under a remote runner, which is why it was chosen; and band 3's enforcement point may move, since a
   remote merge gate could be a more natural home for it than the local push.
+
+- **Per-environment measurement and per-environment bands, 2026-08-25** - the GM: *"these thresholds
+  apply to both of those individually"*, plus a requirement to capture new measurements on CodeBuild.
+
+  **The whole band matrix now exists once per environment.** Local work is judged against local
+  history, CodeBuild work against CodeBuild history, a feature satisfies every environment it runs in,
+  and a gain in one never offsets a loss in the other (FR-015).
+
+  **The correctness trap this closed.** Comparing a run in one environment against a baseline in
+  another produces a percentage that is not wrong-looking - it is arithmetically indistinguishable
+  from a real regression, on machines of different sizes (22 CPUs here, 36 on a CodeBuild xlarge). So
+  FR-014 makes it a REFUSAL rather than a warning: there is no safe way to display such a number.
+
+  **And the environment is recorded, not inferred** (FR-013). Snapshots today carry `machine:
+  'x86_64'` and `cpus: 22`, which describe a machine rather than saying where a run happened. Deriving
+  the environment from them would work until a CPU count changed, and then fail silently - which is
+  the failure mode this document has now had to correct four times in other guises.
