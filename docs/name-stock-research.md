@@ -98,3 +98,12 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
   auspicious-kanji + 子 names ruled attested-idiom (11 added); a `samurai` flag added for register
   names attested on warrior-house women; the pool-wide prefix clause kept (relaxing it was measured
   at +5 court names and declined). The male pool's own junk/modern entries remain a separate decision.
+- 2026-08-26 (GM): THREE PROVENANCE CLASSES. `historical` (a real bearer in a source, >= 60% of
+  each pool), `idiom` (built on an attested mechanism - nanori elements, prefix + suffix commoner
+  names, auspicious kanji + 子 - with no record of the specific name; <= 20%; the notes must carry
+  the caveat), `invented` (no attested mechanism; <= 20%). Motivating case: filling the female
+  initials W/Z/B/E/G/J. The literal "male name + -ko" idea was measured and rejected (the unused
+  male names on those letters are birth-order/office names - Gorobeiko is not a name); the
+  element + 子 form of the same idea yielded 10 (Zenko, Zuiko, Jiko, Joko, Jueiko, Giko, Benko,
+  Wakako, Wakiko, Eijuko), restricted to qualities Rokugan treats as gender-neutral (compassion,
+  purity, righteousness, eloquence, longevity, youth) rather than martial virtues.
