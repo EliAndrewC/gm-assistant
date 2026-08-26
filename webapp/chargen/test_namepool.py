@@ -32,6 +32,60 @@ def pool_dir(tmp_path: Path) -> Path:
     return tmp_path
 
 
+CASTE_ENTRIES = [
+    # (name, peasant) - all female; samurai-style and register-style names
+    ('Akiko', False),
+    ('Kiku', True),
+    ('Matsu', True),
+    ('Sen', True),
+]
+
+
+@pytest.fixture
+def caste_pool_dir(tmp_path: Path) -> Path:
+    lines = [
+        json.dumps({'name': n, 'gender': 'female', 'format': 1, 'explanation': 'x', 'peasant': p})
+        for n, p in CASTE_ENTRIES
+    ]
+    (tmp_path / 'pool-female.jsonl').write_text('\n'.join(lines) + '\n')
+    (tmp_path / 'pool-male.jsonl').write_text('')
+    return tmp_path
+
+
+def _picks(pool_dir: Path, n: int = 40, **kw: object) -> set[str]:
+    pool = namepool.load_pool(pool_dir)
+    rng = random.Random(1)
+    return {namepool.pick_name('female', pool, used=(), rng=rng, **kw).name for _ in range(n)}  # type: ignore[arg-type]
+
+
+def test_peasant_draws_only_peasant_flagged_names(caste_pool_dir: Path) -> None:
+    assert _picks(caste_pool_dir, peasant=True) == {'Kiku', 'Matsu', 'Sen'}
+
+
+def test_samurai_prefers_non_peasant_names(caste_pool_dir: Path) -> None:
+    # 40 draws with three peasant names available: an even draw would leak
+    # them almost surely; the preference tier returns Akiko every time.
+    assert _picks(caste_pool_dir, peasant=False) == {'Akiko'}
+
+
+def test_samurai_falls_back_to_whole_pool_when_preferred_tier_exhausted(
+    caste_pool_dir: Path,
+) -> None:
+    pool = namepool.load_pool(caste_pool_dir)
+    got = namepool.pick_name('female', pool, used=('Akiko',), peasant=False)
+    assert got.name in {'Kiku', 'Matsu', 'Sen'}
+
+
+def test_peasant_raises_when_peasant_tier_exhausted(caste_pool_dir: Path) -> None:
+    pool = namepool.load_pool(caste_pool_dir)
+    with pytest.raises(namepool.NamePoolExhausted):
+        namepool.pick_name('female', pool, used=('Kiku', 'Matsu', 'Sen'), peasant=True)
+
+
+def test_no_caste_draws_from_whole_pool(caste_pool_dir: Path) -> None:
+    assert _picks(caste_pool_dir) == {'Akiko', 'Kiku', 'Matsu', 'Sen'}
+
+
 def test_load_pool_splits_by_gender(pool_dir: Path) -> None:
     pool = namepool.load_pool(pool_dir)
     assert [e.name for e in pool['male']] == ['Akira', 'Benjiro', 'Daiki']

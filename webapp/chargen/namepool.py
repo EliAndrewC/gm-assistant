@@ -86,12 +86,39 @@ def pick_name(
     used: Iterable[str],
     avoid: Sequence[str] = (),
     rng: _random.Random | None = None,
+    peasant: bool | None = None,
 ) -> GeneratedName:
     """One random unused, non-conflicting name of ``gender``; raises
-    :class:`NamePoolExhausted` rather than looping when none is left."""
+    :class:`NamePoolExhausted` rather than looping when none is left.
+
+    ``peasant`` is the caste of the character being named (GM 2026-08-26):
+
+    - ``True`` - a peasant draws ONLY from ``peasant``-flagged entries. The
+      flag means "suitable for a commoner" (short kana register names,
+      everyday -emon/-bei/-suke names); the two-kanji samurai formal name
+      (nanori) came with genpuku and a lord, so a farmer called Hidetsuna is
+      wrong in the way a farmer wearing a daisho is wrong.
+    - ``False`` - a samurai PREFERS the non-peasant entries and falls back to
+      the whole pool only when the strict set/roster rules exhaust them. Not
+      an even draw from both: 81% of the female pool is peasant-flagged, so an
+      even draw would name most samurai women after village registers. No
+      sumptuary rule ever reserved given names for the nobility (surnames,
+      dress and swords, yes), so the fallback is historically honest - Kiku
+      could be a samurai's daughter - and the preference is what keeps the
+      samurai-style stock from being spent on peasants.
+    - ``None`` - no caste known: the whole pool.
+    """
     used_set = frozenset(used)
-    valid = candidates(pool.get(gender, ()), used_set, avoid)
-    if not valid:
-        raise NamePoolExhausted(gender, len(pool.get(gender, ())), len(used_set), len(avoid))
-    chooser = rng if rng is not None else _random
-    return chooser.choice(valid)
+    everyone = pool.get(gender, ())
+    if peasant is True:
+        tiers: list[tuple[GeneratedName, ...]] = [tuple(e for e in everyone if e.peasant)]
+    elif peasant is False:
+        tiers = [tuple(e for e in everyone if not e.peasant), everyone]
+    else:
+        tiers = [everyone]
+    for tier in tiers:
+        valid = candidates(tier, used_set, avoid)
+        if valid:
+            chooser = rng if rng is not None else _random
+            return chooser.choice(valid)
+    raise NamePoolExhausted(gender, len(everyone), len(used_set), len(avoid))
