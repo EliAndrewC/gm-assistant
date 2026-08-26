@@ -143,3 +143,14 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
   initial (no format above a sixth of a letter). 221 explanations were rewritten; `audit_formats.py`
   reports violations from now on. Format 8 is rare in the male pool by construction (98%
   historical) and that is accepted.
+- 2026-08-26 evening (GM): independent review of all 834 entries. Male pool audited at last:
+  44 entries retired (not-names such as Busho, Gunshi, Chusei, Isshun, Jobutsu; surnames Akimoto,
+  Watarai, Ogushi, Wakizaka; era names Daigo, Jomei; post-1868 names Noboru, Isao, Tadashi, Makoto,
+  Wataru, Shunichi, Eiichi, Hiroki, Kenshiro, the -hiko set) and REPLACED one-for-one on the same
+  initials from the raw attested lists (GM: substitute, never merely strike). Female: 39 retired -
+  13 comic or object words (Zeni "cash", Ebi "shrimp", Ekubo "dimple", Uneme, Juzu, Ema, Wakamiya)
+  and 26 plant/bird names outside the classic matsu/take/ume/kiku/fuji/hana set, which the skill
+  rule reserves for pen names. Replacements could not be found one-for-one on the thin initials
+  (U, A, B, W, F): the surviving stems block every candidate at one edit, so those letters sit a
+  few short of 10 again; recorded rather than padded with weak names. Explanations may not name
+  real-world Japan (12 leaks fixed; audit_formats.py LEAK check).
