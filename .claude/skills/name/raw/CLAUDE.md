@@ -60,3 +60,20 @@ stems admitted 22 more attested names, plus 2 court names and 4 invented names o
 and 38 male names on the thin initials B/D/E/O/R/W/Z (32 attested, 6 built on the attested
 prefix-plus-suffix commoner pattern, flagged `invented`). Every addition went to the emptiest
 format at the time. Female formats now run 7-10, male 26-27.
+
+## Second collection pass (2026-08-26): temple registers and more shumon-aratame-cho
+
+`female-attested-2.jsonl` (403 lines, 292 distinct; Japanese-language hunt) and
+`female-attested-3.jsonl` (455 lines, 303 distinct; English-language hunt), with their source tables
+in `female-sources-2.md` / `female-sources-3.md`. New sources that yielded: the 112 Mantokuji
+divorce-temple petitioners (Kozuke, late Edo, with counts), an 1837-1865 Umaji (Kameoka) register
+top-19, a Kinshoji (Chichibu) women's confraternity plaque, Kishimoto's list of late-Edo commoner
+names extinct by Meiji (Baka, Bon, Reo, Wiro, Yan...), and ~1,600 Japanese/English Wikipedia
+women-by-era category titles hand-reduced to given names. Dead ends, recorded in the source files:
+ADEAC municipal archives (JS-only viewers), scanned-image register PDFs (Kawabe turned out to be the
+Tochii 1671 register already used), the Hayami/Cornell/Kurosu demography papers (no individual
+names), Throndardottir's SCA book (not online), the Mantokuji article in English (paywalled).
+Result: 155 names new to the corpus, but on the rare initials nearly every one is blocked by the
+loose similarity rule against a pool or roster name (Rin/Rie, Ruri/Furi, Etsu/Etsuji, Ben/Benka,
+Waka/Wakahiko, Ume/Umeko) - 41 promoted, mostly on C/H/K/M/T/Y. No source anywhere yields a
+pre-modern female name in Z; D has three (Dai, Dashi, Den), all blocked by male names.
