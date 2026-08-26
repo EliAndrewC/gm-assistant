@@ -148,7 +148,9 @@ def refresh_if_stale(max_age_seconds: float = 3600.0, path: Path = _CACHE_PATH) 
 #: campaign's overlay on a campaign-agnostic pool: the pool is NEVER depleted
 #: by use (GM 2026-08-26) - a name picked for this campaign stays in the pool
 #: for the next one, and exclusion happens here and in the roster cache.
-EXTRA_USED_PATH = _WEBAPP.parent / '.claude' / 'skills' / 'name' / 'used-names-extra.txt'
+EXTRA_USED_PATH = (
+    _OPCACHE_DIR.parent.parent / '.claude' / 'skills' / 'name' / 'used-names-extra.txt'
+)
 
 _used_key: tuple[tuple[Path, int, int] | None, ...] | None = None
 _used_names: frozenset[str] = frozenset()
