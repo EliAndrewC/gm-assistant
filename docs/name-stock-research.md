@@ -87,3 +87,10 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
 - Next step agreed: pull the attested stock from public sources into raw local lists
   (`.claude/skills/name/raw/`) with source metadata only - no per-name research until a name is
   actually promoted into the pool.
+- Outcome (2026-08-25): male +401 (target 400), female +89 against a target of 200 (96 selected, 7 lost to cross-gender
+  prefix clashes such as Kiyo/Kiyomori and Asa/Asahito). The female shortfall is a data fact, not a choice:
+  the clean attested stock under the pool-wide prefix rule is ~66 names plus O- forms and court
+  names; the rest of the target would have had to be invented, past the 20% budget. Raising it
+  needs either more attested sources (temple registers, more shumon-aratame-cho transcriptions)
+  or a GM decision to relax the prefix clause for women (Kiyo + Kiyoko coexisting), declined
+  earlier the same day.

@@ -38,3 +38,17 @@ pool-wide rule); then a greedy pass keeping a mutually distinct set under the sa
 names attested by more sources win ties. The prefix clause is the expensive one for women (Kiyo
 blocks Kiyoko, Kiku blocks Kikuno): 398 candidates -> 191 strict, 218 with edit distance alone.
 Each line: `name, sources, attestations, periods, kanji, kinds`. These are still unresearched.
+
+## Promotion pass (2026-08-25)
+
+401 male and 89 female entries were promoted into `pool-*.jsonl` from the culled lists (plus 17
+`O-` forms of attested Edo bases, 2 court names, and 14 invented names on thin female initials).
+Every promoted entry's `notes` states its attestation (source type, period, kind) or says it is
+constructed in the pre-modern idiom, plus the kanji triangle; `invented: true` marks the
+constructed ones. The female target of 200 was NOT reached: after hand-removing transcription
+artifacts (Maa, Nme, Ayaya...) and on-yomi court readings from the 191 "mutually distinct"
+survivors, only ~66 clean attested names remained, and the pool-wide prefix clause blocks the
+`-ko` / `O-` / `-no` extensions of every base already present. Reaching 200 would have needed
+~100 invented names, past the 20% budget, so the pool grew to what the rules allow. A further cost surfaced at merge time: the validator applies the prefix rule ACROSS genders, so the two-mora women Tsune and San alone knocked out 18 male nanori (Tsuneharu, Sanemoto...); the male side was topped back up from the culled list, the female side was not (no stock to draw on).
+
+The 18 `TOO SIMILAR TO CAMPAIGN` lines `validate_pool.py` prints are all PRE-EXISTING old entries that collide with names already on the campaign roster (Isao, Noboru, Reiko, Ayame...). They are harmless in use - `pick_name.py` filters against the roster at pick time - and `fix_pool.py` would delete them; the GM asked that the old pool be left alone (2026-08-25), so they stay until the GM says otherwise.
