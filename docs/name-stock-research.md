@@ -107,3 +107,13 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
   element + 子 form of the same idea yielded 10 (Zenko, Zuiko, Jiko, Joko, Jueiko, Giko, Benko,
   Wakako, Wakiko, Eijuko), restricted to qualities Rokugan treats as gender-neutral (compassion,
   purity, righteousness, eloquence, longevity, youth) rather than martial virtues.
+- 2026-08-26 (GM): ratios changed to 60% historical FLOOR / 30% invented cap / 10% idiom cap
+  (from 60/20/20). The GM's premise was that idiom was under-used; it was in fact at 18%, so the
+  stem + 乃/江/代 forms (22 entries) were reclassified from idiom to invented - their mechanism is
+  only weakly attested pre-modern, which is what the GM's own definitions turn on - bringing idiom
+  to 7% and invented to 26%. The cap split is not the binding limit: with 128 historical female
+  names the 60% floor allows at most 213 entries, i.e. 19 more constructed names, and every
+  remaining attested candidate on the rare initials is one edit from a pool or roster name.
+  Relaxing the loose rule across genders and relaxing the -ko prefix clause were both offered and
+  DECLINED by the GM (players confuse similar names regardless of the portrait). Female D stays
+  at zero by design; the >= 10-per-initial target is otherwise met for men and approached for women.
