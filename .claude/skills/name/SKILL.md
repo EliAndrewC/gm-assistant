@@ -88,11 +88,15 @@ Rokugan draws on pre-Meiji Japan (Heian through Edo), so every name in the pool 
 
 **The old pool was audited against this section on 2026-08-26** (GM reversed the 2026-08-25 "leave the old pool alone" ruling): 77 female entries were retired - 40 that were not names at all (Eboshi "hat", Gusoku "armor", Joseki, surnames) and 37 modern-only (Misaki, Erina, Sachiko, Reiko...). Retired entries are in git history (`git log -- .claude/skills/name/pool-female.jsonl`). The male pool was NOT audited - it carries the same categories (Busho, Gunshi, Wakizaka, Noboru, Isao) and is a separate decision.
 
-**The invented-name budget (GM 2026-08-25).** The existing pool is not purged; the ratio is fixed by ADDING names under this rule:
+**Three kinds of name, and the 60 / 20 / 20 ceiling (GM 2026-08-25, refined 2026-08-26).** Every pool entry carries `"provenance"`:
 
-- A **majority of each pool must be real traditional names** - attested in a historical source (the raw lists under `raw/`, `docs/name-stock-research.md`), or, for men, a nanori built from two attested elements, which a reader cannot distinguish from an attested one.
-- **At most 20% of each pool may be invented** (constructed in the historical idiom but recorded nowhere). Track this: an invented entry carries `"invented": true` in its pool record so the ratio can be measured rather than guessed.
-- **Spend the invented budget only on under-represented initials.** Sets of names generated together must differ in first letter (the similarity rule), which needs a flatter spread across the alphabet than any real language has: Japanese has few historical names in Y, Z, W, R, E and a glut in K, M, S, T, H. Invented names go to the thin letters; **never add an invented name to a letter already rife with attested ones**.
+- **`historical`** - a name a real pre-modern person bore, found in a source (the raw lists under `raw/`, `docs/name-stock-research.md`). At least **60%** of each pool.
+- **`idiom`** - built on an attested naming MECHANISM but with no record of the specific name: a nanori from two attested elements, an Edo commoner name from an attested prefix + suffix (Wasuke, Otokichi), a court name from an auspicious kanji + 子 (Zenko, Jiko, Wakako). A reader cannot tell these from historical names, so they are NOT invented - but the `notes` MUST say both that the name is plausible under the attested pattern AND that we have no evidence of this specific name existing. At most **20%**.
+- **`invented`** - constructed in the historical flavor but on no attested mechanism (a two-mora word chosen because Edo women bore such words). At most **20%**. Also carries `"invented": true` for the webapp.
+
+Entries written before the field existed (the pre-2026-08-26 pool) have no `provenance` and count as historical for the ratio; the male pool has not been audited (see below). The existing pool is never purged to fix a ratio; the ratio is fixed by ADDING names, and:
+
+- **Spend the idiom and invented budgets only on under-represented initials.** Sets of names generated together must differ in first letter (the similarity rule), which needs a flatter spread across the alphabet than any real language has: Japanese has few historical names in Y, Z, W, R, E and a glut in K, M, S, T, H. Invented names go to the thin letters; **never add an invented name to a letter already rife with attested ones**.
 
 **Not names at all - refuse regardless of period:** deities (Raijin, Suijin, Ryujin, Bishamon), offices and ranks (Busho, Gunshi, Doshin), common nouns and objects (Chusei "loyalty", Isshun "instant", Eboshi "hat", Gusoku "armor", Enishi "bond"), surnames (Akimoto, Wakizaka, Watarai, Ogushi, Watase, Obana, Fukano), era and posthumous imperial names (Daigo, Jomei), go/art terms (Joseki). A monk's or retired man's assumed name (Bokuden, Jozan, Ugetsu) is fine ONLY when the explanation says that is what it is.
 
