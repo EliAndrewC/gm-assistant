@@ -2015,6 +2015,67 @@ a { color: inherit; }
   overflow-wrap: break-word;
 }
 
+/* Glossary terms in the notes (nanori, tsusho, on-yomi ...): a dotted
+   underline says "this explains itself"; the definition rides in data-tip
+   and appears on hover or keyboard focus. Positioned above the term so it
+   never runs off the bottom of a card. */
+.name-card__notes {
+  position: relative; /* the tooltip's containing block: full notes width, never clipped */
+}
+
+.name-card__notes .term {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  cursor: help;
+  color: var(--ink);
+}
+
+/* The tooltip sits as a full-width band just above the notes block (over the
+   tail of the explanation) rather than above the term itself: a term near the
+   card's right edge would otherwise push its tooltip off the card, and a band
+   inside the notes would cover the very word being defined. */
+.name-card__notes .term:hover::after,
+.name-card__notes .term:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% - 0.2rem);
+  z-index: 5;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--ink-soft);
+  border-left: 4px solid var(--ink-soft);
+  border-radius: 4px;
+  background: #fffdf7;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-style: normal;
+  line-height: 1.45;
+  /* a clearly floating layer, so the covered text below reads as "under a card", not "gone" */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.2);
+  white-space: normal;
+}
+
+.name-card__notes .term:focus-visible {
+  outline: 1px solid var(--ink-soft); /* solid, so the dotted underline stays a distinct cue */
+  outline-offset: 2px;
+}
+
+/* A bearer with a Wikipedia article: a normal link with a small external mark. */
+.name-card__notes a.wiki {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.name-card__notes a.wiki::after {
+  content: '\2197';
+  font-size: 0.7em;
+  margin-left: 0.15em;
+  opacity: 0.6;
+}
+
 .empty-state {
   margin: 3rem auto;
   text-align: center;
