@@ -109,6 +109,9 @@ prepare-deploy:
 	@mkdir -p skills/relic skills/name skills/place-names skills/dream
 	@cp -r ../.claude/skills/relic/pool skills/relic/pool
 	@cp ../.claude/skills/name/pool-male.jsonl ../.claude/skills/name/pool-female.jsonl skills/name/
+	@# GUARD_EDIT_OK: adding a new file to the deploy bundle. used-names-extra.txt lists names in
+	@# use that OP cannot report (a PC with no record); the deployed engine must exclude them too.
+	@cp ../.claude/skills/name/used-names-extra.txt skills/name/
 	@cp ../.claude/skills/place-names/pool.jsonl skills/place-names/pool.jsonl
 	@# Dream scenes: copy the PUBLIC pool ONLY. pool-local/ is gitignored spoiler
 	@# content and must never enter the image (feature 011, FR-007).

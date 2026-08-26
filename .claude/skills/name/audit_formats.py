@@ -39,6 +39,15 @@ NATURE = re.compile(
     re.I,
 )
 ORIGIN = {7, 8, 11, 13, 17, 18, 19, 20}
+#: Real-world Japan must stay in NOTES (attestation); an EXPLANATION is in-setting prose and a
+#: reader who meets "the famous Toyotomi Hidetsugu" in Rokugan is thrown out of it (review
+#: 2026-08-26 found ten such leaks). Family and clan names of Rokugan are fine; these are not.
+LEAK = re.compile(
+    r"\b(Japan(ese)?|Edo|Kyoto|Tokyo|Osaka|Nara|Kamakura|Heian|Meiji|Sengoku|Muromachi|Tokugawa"
+    r"|Toyotomi|Oda Nobunaga|Nobunaga|Hideyoshi|Ieyasu|Minamoto|Taira|Fujiwara|Hojo|Ashikaga|Takeda"
+    r"|Uesugi|Yagyu|Sekigahara|Koya|Mount Fuji|Ise\b|Shinto|Buddh(a|ist|ism)|kabuki|noh\b|haiku|ukiyo-e"
+    r"|samurai era|Kudara|Baekje|China|Chinese|Korea|Shisendo|shogun(ate)?)\b"
+)
 MEANING = {1, 2, 3, 5, 6, 9, 10, 12, 14, 16}
 
 
@@ -80,6 +89,11 @@ def preferred(entry: dict) -> set[int]:
 def audit(rows: list[dict]) -> dict:
     """Pure report over one gender's entries."""
     violations = [(r["name"], r["format"]) for r in rows if r["format"] not in allowed(r)]
+    leaks = []
+    for r in rows:
+        m = LEAK.search(r.get("explanation", ""))
+        if m and m.group().lower() != r["name"].lower():  # a name like Koya is not a leak of Mount Koya
+            leaks.append((r["name"], m.group()))
     by_format = collections.Counter(r["format"] for r in rows)
     by_letter: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
     for r in rows:
@@ -93,6 +107,7 @@ def audit(rows: list[dict]) -> dict:
     on_pref = sum(r["format"] in preferred(r) for r in rows)
     return {
         "violations": violations,
+        "leaks": leaks,
         "by_format": by_format,
         "lopsided": lopsided,
         "on_preferred": on_pref,
@@ -114,9 +129,11 @@ def main() -> int:
         print("  formats:", [rep["by_format"][i] for i in range(1, 21)])
         for name, fmt in rep["violations"]:
             print(f"  VIOLATION: {name} on format {fmt} (allowed {sorted(allowed(next(r for r in rows if r['name'] == name)))})")
+        for name, word in rep["leaks"]:
+            print(f"  LEAK: {name} names real-world '{word}' in its explanation")
         for letter, fmt, top, n in rep["lopsided"]:
             print(f"  LOPSIDED: {letter} has {top} of {n} on format {fmt}")
-        bad += len(rep["violations"])
+        bad += len(rep["violations"]) + len(rep["leaks"])
     return 1 if bad else 0
 
 
