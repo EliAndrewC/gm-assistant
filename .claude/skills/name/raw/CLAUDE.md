@@ -52,3 +52,11 @@ survivors, only ~66 clean attested names remained, and the pool-wide prefix clau
 ~100 invented names, past the 20% budget, so the pool grew to what the rules allow. A further cost surfaced at merge time: the validator applies the prefix rule ACROSS genders, so the two-mora women Tsune and San alone knocked out 18 male nanori (Tsuneharu, Sanemoto...); the male side was topped back up from the culled list, the female side was not (no stock to draw on).
 
 The 18 `TOO SIMILAR TO CAMPAIGN` lines `validate_pool.py` prints are all PRE-EXISTING old entries that collide with names already on the campaign roster (Isao, Noboru, Reiko, Ayame...). They are harmless in use - `pick_name.py` filters against the roster at pick time - and `fix_pool.py` would delete them; the GM asked that the old pool be left alone (2026-08-25), so they stay until the GM says otherwise.
+
+## Balancing pass (2026-08-26)
+
+After the old-pool audit the female formats ran 3-10; a re-cull of the raw lists against the freed
+stems admitted 22 more attested names, plus 2 court names and 4 invented names on thin initials,
+and 38 male names on the thin initials B/D/E/O/R/W/Z (32 attested, 6 built on the attested
+prefix-plus-suffix commoner pattern, flagged `invented`). Every addition went to the emptiest
+format at the time. Female formats now run 7-10, male 26-27.
