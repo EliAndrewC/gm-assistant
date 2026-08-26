@@ -39,6 +39,17 @@ def test_audit_reports_violations_and_lopsided_letters():
     assert rep["by_format"][7] == 9 and rep["n"] == 10
 
 
+def test_real_world_leak_in_explanation_is_reported():
+    rows = [
+        {"name": "Jubei", "format": 7, "notes": "Kanji 十兵衛; the famous bearer is Yagyu Jubei.", "provenance": "historical",
+         "explanation": "Jubei chose their name in honor of the famous Yagyu Jubei, who ..."},
+        {"name": "Kiku", "format": 2, "notes": "Kanji 菊.", "provenance": "historical",
+         "explanation": "Kiku - This name means \"chrysanthemum\". It represents autumn."},
+    ]
+    rep = af.audit(rows)
+    assert rep["leaks"] == [("Jubei", "Yagyu")]
+
+
 def test_main_exits_nonzero_on_violation(tmp_path, monkeypatch, capsys):
     import json
 

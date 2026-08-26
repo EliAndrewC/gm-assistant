@@ -241,6 +241,7 @@ The 20 formats are not interchangeable. Some make a factual claim about the name
 - **Format 15 (natural element)** - only for names that ARE nature words (plants, weather, sea, stone, birds).
 - **Formats 10 and 16 (two elements)** - only for names with two elements; a single-kanji or kana-only name cannot claim a composition.
 - **Preference, not rule:** `invented` names lean to the origin formats (7, 11, 13, 18, 19, 20; 17 for an art form); `historical` names with a clear kanji meaning lean to the meaning formats (1, 2, 3, 5, 6, 9, 12, 14, 16); kana-only historical names lean to 4, 9, 14 and the origin formats.
+- **Real-world Japan stays in the notes.** An explanation is in-setting prose: it may name a Rokugani family, an invented battle or festival, never Toyotomi Hidetsugu, Sekigahara, kabuki or Kyoto (review 2026-08-26 found ten such leaks in pre-audit entries). Attestation - the real bearer, the real register - belongs in `notes`, which the GM reads and players do not. `audit_formats.py` reports leaks.
 - **Balance** is kept two ways: the global count per format stays within a few of `pool size / 20` for each gender, and within each initial no single format dominates (rule of thumb: the top format holds no more than a sixth of that letter, and never more than two where the letter has ten). When adding a name, take the emptiest format its class allows.
 
 ## Generation Preferences (collected 2026-08-25 / 26)
