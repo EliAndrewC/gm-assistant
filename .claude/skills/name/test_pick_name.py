@@ -97,6 +97,7 @@ def write_cache(path, full_names):
 class TestCampaignUsedNames:
     def test_missing_cache_is_empty_and_warns(self, tmp_path, monkeypatch, capsys):
         monkeypatch.setattr("campaign.CACHE_PATH", tmp_path / "none.json")
+        monkeypatch.setattr("campaign.EXTRA_PATH", tmp_path / "no-extra.txt")
         assert campaign.used_names(refresh=False) == []
         assert "EMPTY roster" in capsys.readouterr().err
 
@@ -104,12 +105,14 @@ class TestCampaignUsedNames:
         cache = tmp_path / "characters.json"
         write_cache(cache, ["Matsu no Masao Agetoki", "Haruka", "Hantei Satoru"])
         monkeypatch.setattr("campaign.CACHE_PATH", cache)
+        monkeypatch.setattr("campaign.EXTRA_PATH", tmp_path / "no-extra.txt")
         assert campaign.used_names(refresh=False) == ["Agetoki", "Haruka", "Satoru"]
 
     def test_fresh_cache_is_not_refreshed(self, tmp_path, monkeypatch):
         cache = tmp_path / "characters.json"
         write_cache(cache, ["Haruka"])
         monkeypatch.setattr("campaign.CACHE_PATH", cache)
+        monkeypatch.setattr("campaign.EXTRA_PATH", tmp_path / "no-extra.txt")
         monkeypatch.setattr(
             "campaign.opcache.refresh_if_stale",
             lambda *a, **k: (_ for _ in ()).throw(AssertionError("refreshed")),
@@ -121,6 +124,7 @@ class TestCampaignUsedNames:
         cache = tmp_path / "characters.json"
         write_cache(cache, ["Haruka"])
         monkeypatch.setattr("campaign.CACHE_PATH", cache)
+        monkeypatch.setattr("campaign.EXTRA_PATH", tmp_path / "no-extra.txt")
         monkeypatch.setattr(
             "campaign.opcache.refresh_if_stale",
             lambda *a, **k: (_ for _ in ()).throw(RuntimeError("no creds")),
@@ -134,6 +138,7 @@ class TestCampaignUsedNames:
         cache = tmp_path / "characters.json"
         write_cache(cache, ["Haruka"])
         monkeypatch.setattr("campaign.CACHE_PATH", cache)
+        monkeypatch.setattr("campaign.EXTRA_PATH", tmp_path / "no-extra.txt")
         seen = {}
         monkeypatch.setattr(
             "campaign.opcache.refresh_if_stale",
@@ -203,6 +208,7 @@ class TestPick:
         monkeypatch.setattr("pick_name.MALE_POOL", str(male_pool))
         monkeypatch.setattr("pick_name.FEMALE_POOL", str(female_pool))
         monkeypatch.setattr("campaign.CACHE_PATH", cache)
+        monkeypatch.setattr("campaign.EXTRA_PATH", tmp_path / "no-extra.txt")
         return tmp_path
 
     def _extract_names(self, output):
@@ -254,6 +260,7 @@ class TestPick:
         empty.write_text("")
         monkeypatch.setattr("pick_name.MALE_POOL", str(empty))
         monkeypatch.setattr("campaign.CACHE_PATH", tmp_path / "none.json")
+        monkeypatch.setattr("campaign.EXTRA_PATH", tmp_path / "no-extra.txt")
         monkeypatch.setattr("campaign.opcache.refresh_if_stale", lambda *a, **k: False)
         pick("male", 1)
         # No output for empty pool (error goes to stdout as JSON still)
