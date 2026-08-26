@@ -77,3 +77,16 @@ Result: 155 names new to the corpus, but on the rare initials nearly every one i
 loose similarity rule against a pool or roster name (Rin/Rie, Ruri/Furi, Etsu/Etsuji, Ben/Benka,
 Waka/Wakahiko, Ume/Umeko) - 41 promoted, mostly on C/H/K/M/T/Y. No source anywhere yields a
 pre-modern female name in Z; D has three (Dai, Dashi, Den), all blocked by male names.
+
+## Third collection pass (2026-08-26): targeted at the eight short female initials
+
+`female-attested-5.jsonl` (35 rows; inscriptions, contracts, the Nishinomiya museum document-reading
+blog, an OCR of the Kawabe 1671 register) and `female-attested-4.jsonl` (Meiji registers of Edo-born
+women, Kotobank biographical dictionary, further Wikipedia categories), sources in `female-sources-4.md`
+/ `-5.md`. Yield against the pool: ONE promotable name (Fuchi). Eighteen attested rare-initial names
+were blocked by the loose rule, nearly all by male pool names one edit away (Etsu/Etsuji, Ume/Umehiko,
+Bon/Bonshun, Den/Denkichi, Dai/Daigo, Roku/Rokuro-, Waki/Wakizaka, Rei/Reiji, Raku/Kaku); the
+rest of the "addable" list were pre-Heian royals, nuns' Buddhist names and a geiko name, which are not
+given names for our purposes. The collectors' own list of what is attested-but-blocked is in the
+sources files so nobody re-collects it. Conclusion recorded: the record has been mined; the remaining
+gap is a similarity-rule decision, not a sources problem.
