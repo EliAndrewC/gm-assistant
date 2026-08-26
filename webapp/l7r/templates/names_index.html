@@ -99,7 +99,7 @@
           {% if entry.notes %}
             <details class="name-card__notes">
               <summary>notes on authenticity</summary>
-              <p>{{ entry.notes }}</p>
+              <p>{{ entry.notes|notes_markup }}</p>
             </details>
           {% endif %}
         </li>

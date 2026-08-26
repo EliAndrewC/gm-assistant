@@ -44,6 +44,7 @@ from l7r.names import (
     load_names,
     random_name,
 )
+from l7r.notes_markup import load_wiki_links, render_notes
 from l7r.places import (
     COMMONALITIES,
     PLACE_TYPES,
@@ -187,6 +188,7 @@ class Root:
         dream_scenes: list[DreamScene] | None = None,
         dream_framework_html: str = '',
         env: Environment | None = None,
+        wiki_links: dict[str, str] | None = None,
     ) -> None:
         self._relics = relics
         self._names = names if names is not None else []
@@ -194,6 +196,10 @@ class Root:
         self._dream_scenes = dream_scenes if dream_scenes is not None else []
         self._dream_framework_html = dream_framework_html
         self._env = env if env is not None else build_environment()
+        # /names notes: glossary tooltips + verified Wikipedia links on bearers
+        # (GM 2026-08-26). Bound here so the filter sees this app's link table.
+        links = wiki_links or {}
+        self._env.filters['notes_markup'] = lambda text: render_notes(str(text), links)
         self._relics_by_fortune = _group_relics_by_fortune(relics)
         self._clans_with_relics = _clans_with_relics(relics)
 
@@ -481,6 +487,7 @@ def make_app(
         places=load_places(places_src),
         dream_scenes=load_dream_scenes(dream_src),
         dream_framework_html=_load_dream_framework_html(),
+        wiki_links=load_wiki_links(names_src),
     )
 
 
