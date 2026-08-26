@@ -83,10 +83,17 @@ pre-modern female name in Z; D has three (Dai, Dashi, Den), all blocked by male 
 `female-attested-5.jsonl` (35 rows; inscriptions, contracts, the Nishinomiya museum document-reading
 blog, an OCR of the Kawabe 1671 register) and `female-attested-4.jsonl` (Meiji registers of Edo-born
 women, Kotobank biographical dictionary, further Wikipedia categories), sources in `female-sources-4.md`
-/ `-5.md`. Yield against the pool: ONE promotable name (Fuchi). Eighteen attested rare-initial names
+/ `-5.md`. Yield against the pool: FIVE promotable names (Fuchi from the Nishinomiya documents; Ate, Aguri, Iwashiro, Ikuko from Kotobank / Wikidata). Eighteen attested rare-initial names
 were blocked by the loose rule, nearly all by male pool names one edit away (Etsu/Etsuji, Ume/Umehiko,
 Bon/Bonshun, Den/Denkichi, Dai/Daigo, Roku/Rokuro-, Waki/Wakizaka, Rei/Reiji, Raku/Kaku); the
 rest of the "addable" list were pre-Heian royals, nuns' Buddhist names and a geiko name, which are not
 given names for our purposes. The collectors' own list of what is attested-but-blocked is in the
 sources files so nobody re-collects it. Conclusion recorded: the record has been mined; the remaining
 gap is a similarity-rule decision, not a sources problem.
+The Kotobank / Wikidata pass is the reusable method: a Wikidata SPARQL query for women with a
+ja.wikipedia article and birth before 1868 (3,098 rows), a depth-2 MediaWiki API crawl of 34
+women-by-era categories parsed for 名は / 実名 / 幼名 patterns (this finds the personal name when
+the article title is a 院号), and the full kotobank 日本人名大辞典 keyword index (74,396 headwords)
+filtered to hiragana-titled and 院/局/尼 entries. It found nothing at all on B/D/F/G/J/W/Z beyond
+forms already held; the hiragana-titled Kotobank women are overwhelmingly Meiji-born. Near-misses
+one edit from a pool name (Riya 1677, Isako 1795, Utano 1832) are listed in `female-sources-4.md`.

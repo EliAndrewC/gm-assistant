@@ -125,3 +125,11 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
   our own invented names (Wakaba, Gyoku, Eika, Rurie). Two swaps made (Wakasa for Wakaba, Gyokuran
   for Gyoku); Eiko and Ruri stay out on other blockers (Eizo, Furi). Z does not occur as a
   pre-modern female initial in any source found.
+- 2026-08-26, third pass (GM: "push a little further"): five more source families tried -
+  inscriptions and votive lists (men only, in practice), servant contracts and divorce letters,
+  the Nishinomiya museum document-reading blog, OCR of scanned register PDFs, Meiji registers of
+  Edo-born women, the full Kotobank biographical index and a Wikidata sweep. Five promotable
+  names (Fuchi, Ate, Aguri, Iwashiro, Ikuko); twenty-plus attested rare-initial names blocked by
+  male pool names one edit away. Verdict: the record is mined out for B/G/J/W/Z at the current
+  rules; the sources files carry the attested-but-blocked list so the next session does not repeat
+  the search.
