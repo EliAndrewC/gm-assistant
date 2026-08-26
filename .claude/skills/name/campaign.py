@@ -14,6 +14,9 @@ import similarity  # noqa: F401  - puts webapp/ on sys.path
 from chargen import opcache
 
 CACHE_PATH = opcache._CACHE_PATH
+#: used-names-extra.txt next to the pool: names in use that OP cannot report
+#: (a PC with no OP record). The pool is never depleted by use (GM 2026-08-26).
+EXTRA_PATH = opcache.EXTRA_USED_PATH
 MAX_AGE = 3600.0  # mirrors the retired `/loop 1h update name cache` cadence
 
 
@@ -40,7 +43,7 @@ def used_names(refresh=None):
             f"WARNING: campaign cache is {age / 3600:.1f}h old and could not be refreshed",
             file=sys.stderr,
         )
-    names = sorted(opcache.used_given_names(CACHE_PATH))
+    names = sorted(opcache.used_given_names(CACHE_PATH, EXTRA_PATH))
     if age is not None and not names:
         print("WARNING: campaign cache holds NO characters - every name looks free", file=sys.stderr)
     return names

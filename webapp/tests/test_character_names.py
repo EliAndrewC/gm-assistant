@@ -29,7 +29,9 @@ def roster(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
         {'1': {'name': 'Hida no Reiji Isao'}, '2': {'name': 'Hida no Reiji Chiyoko'}}, p
     )
     monkeypatch.setattr(opcache, '_CACHE_PATH', p)
-    monkeypatch.setattr(opcache.used_given_names, '__defaults__', (p,))
+    monkeypatch.setattr(opcache.used_given_names, '__defaults__', (p, None))
+    # keep the repo's real used-names-extra.txt out of the test roster
+    monkeypatch.setattr(opcache, 'EXTRA_USED_PATH', tmp_path / 'extra.txt')
     return p
 
 

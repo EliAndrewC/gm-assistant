@@ -164,7 +164,7 @@ def _stat_key(path: Path) -> tuple[Path, int, int] | None:
     return (path, st.st_mtime_ns, st.st_size)
 
 
-def used_given_names(path: Path = _CACHE_PATH, extra: Path = EXTRA_USED_PATH) -> frozenset[str]:
+def used_given_names(path: Path = _CACHE_PATH, extra: Path | None = None) -> frozenset[str]:
     """Given names in use in this campaign: the last whitespace token of each
     roster character's full name from the cache (feature 200, FR-002:
     ``Bayushi no Daika Bokuden`` -> ``Bokuden``; a mononym is itself), plus the
@@ -172,6 +172,8 @@ def used_given_names(path: Path = _CACHE_PATH, extra: Path = EXTRA_USED_PATH) ->
     files' identity/mtime/size so the engine can call this per character at no
     cost. A missing cache contributes nothing; a missing extra file likewise."""
     global _used_key, _used_names
+    if extra is None:
+        extra = EXTRA_USED_PATH  # resolved at call time so tests can point it elsewhere
     key = (_stat_key(path), _stat_key(extra))
     if key != _used_key:
         names: set[str] = set()

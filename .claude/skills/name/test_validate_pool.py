@@ -32,6 +32,7 @@ def pool_env(tmp_path, monkeypatch):
     female_path.write_text("")
     campaign_path.write_text("{}")
     monkeypatch.setattr("campaign.CACHE_PATH", campaign_path)
+    monkeypatch.setattr("campaign.EXTRA_PATH", tmp_path / "no-extra.txt")
 
     # Patch SKILL_DIR for both validate_pool and fix_pool
     monkeypatch.setattr("validate_pool.SKILL_DIR", str(tmp_path))
