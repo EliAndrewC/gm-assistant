@@ -45,6 +45,15 @@ GLOSSARY: dict[str, str] = {
     'kun-yomi': 'The native Japanese reading of a kanji, the usual one in given names.',
     'kun reading': 'The native Japanese reading of a kanji, the usual one in given names.',
     'kun-reading': 'The native Japanese reading of a kanji, the usual one in given names.',
+    'kana': 'The Japanese syllabic script (hiragana or katakana); a register written in kana '
+    'records how a name sounded but not which kanji it used.',
+    'hiragana': 'The cursive Japanese syllabary, used for native words and, in Edo registers, '
+    "for most commoner women's names.",
+    'katakana': 'The angular Japanese syllabary, used for foreign words and sometimes for names '
+    'in old documents.',
+    'kanji': 'The Chinese-derived characters; a name written in kanji carries a meaning as well '
+    'as a sound.',
+    'romaji': 'Japanese written in the Latin alphabet, as the names on this page are.',
     'ateji': 'Kanji chosen for their sound rather than their meaning.',
     'rendaku': 'The voicing of a consonant at the start of a second element (kami + kaze = '
     'kamikaze; ume + kae = Umegae).',
