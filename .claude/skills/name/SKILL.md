@@ -29,6 +29,12 @@ The pool is the SINGLE source of given names in this project (feature 200, 2026-
 
 5. **If the pool is empty**, fall back to generating a name directly (see "How to Generate Directly" below) and warn the user to refill.
 
+## The Pool Is Never Depleted by Use (GM 2026-08-26)
+
+Picking a name - by `/name`, by `/chargen`, by the webapp's Generate button - reads the pool and writes NOTHING to it. A name that has gone to Obsidian Portal stays in `pool-*.jsonl`; it is kept out of later picks by exclusion at pick time, from two sources: the campaign-character cache (`webapp/opcache/characters.json`, every OP character's last name token) and `used-names-extra.txt` in this directory, for names OP cannot report (a PC with no OP record, a name promised to someone - one per line, `#` comments allowed). The pool was built for reuse across campaigns; starting a new campaign means a fresh cache and an emptied `used-names-extra.txt`, not a rebuilt pool.
+
+Consequences for maintenance: `validate_pool.py` reports names in use as `IN USE (kept, excluded at pick time)` - information, not an error - and `fix_pool.py` never removes them (it only removes intra-pool near-duplicates). **Never delete a pool entry because it is in use.** The one time it happened (Hidemasa, 2026-08-25, a PC with no OP record) it was reverted and the name went into `used-names-extra.txt` instead.
+
 ## How to Refill the Name Pool
 
 When the user says "refill names" or the pool is empty:

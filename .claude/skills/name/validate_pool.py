@@ -40,12 +40,13 @@ def validate():
             errors.append(f"DUPLICATE in pool: {name}")
         seen.add(name.lower())
 
-    # Check each pool name against campaign names
-    for entry in all_pool:
-        if is_too_similar(entry["name"], campaign_names):
-            errors.append(
-                f"TOO SIMILAR TO CAMPAIGN: {entry['name']} ({entry['gender']})"
-            )
+    # Pool names in use in the campaign are INFORMATIONAL, not errors (GM
+    # 2026-08-26): the pool is never depleted by use. pick_name.py and the
+    # chargen engine exclude them at pick time (roster cache plus
+    # used-names-extra.txt); they stay in the pool for the next campaign.
+    in_use = [e for e in all_pool if is_too_similar(e["name"], campaign_names)]
+    for entry in in_use:
+        print(f"  IN USE (kept, excluded at pick time): {entry['name']} ({entry['gender']})")
 
     # Check each pool name against all OTHER pool names
     for i, entry in enumerate(all_pool):

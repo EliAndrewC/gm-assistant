@@ -1,0 +1,5 @@
+# Given names in use in the CURRENT campaign that Obsidian Portal cannot report
+# (a PC with no OP record, a name promised to someone). One name per line;
+# comments allowed. The pool itself is never depleted by use - clear this file
+# when a new campaign starts. Read by pick_name.py and the chargen engine.
+Hidemasa   # PC, no OP record (was deleted from the pool 2026-08-25; restored 2026-08-26)
