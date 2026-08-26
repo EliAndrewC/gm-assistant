@@ -117,3 +117,11 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
   Relaxing the loose rule across genders and relaxing the -ko prefix clause were both offered and
   DECLINED by the GM (players confuse similar names regardless of the portrait). Female D stays
   at zero by design; the >= 10-per-initial target is otherwise met for men and approached for women.
+- 2026-08-26 research pass for new attested female sources (GM request): two collectors, 858
+  lines, 155 names new to the corpus (details in `raw/CLAUDE.md`, `raw/female-sources-2.md`,
+  `raw/female-sources-3.md`). Finding: the rare initials are NOT short of attested names - Rin,
+  Ruri, Etsu, Ben, Bon, Waka, Ume, Eiko, Ginchiyo, Wakasa, Gyokuran all exist in the record - they
+  are short of names that pass the loose similarity rule, and in four cases the blocker was one of
+  our own invented names (Wakaba, Gyoku, Eika, Rurie). Two swaps made (Wakasa for Wakaba, Gyokuran
+  for Gyoku); Eiko and Ruri stay out on other blockers (Eizo, Furi). Z does not occur as a
+  pre-modern female initial in any source found.
