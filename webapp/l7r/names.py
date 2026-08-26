@@ -44,6 +44,11 @@ class GeneratedName:
     explanation: str
     peasant: bool
     notes: str
+    # True on a peasant-flagged name that is ALSO attested on warrior-house
+    # women (Sen-hime, Hosokawa Tama, Kasuga no Tsubone's Fuku): the samurai
+    # preference tier in ``chargen.namepool.pick_name`` reaches these directly
+    # rather than only through the whole-pool fallback (GM 2026-08-26).
+    samurai: bool = False
 
     @property
     def slug(self) -> str:
@@ -125,6 +130,7 @@ def _load_jsonl(path: Path) -> list[GeneratedName]:
                 explanation=str(entry['explanation']),
                 peasant=bool(entry.get('peasant', False)),
                 notes=str(entry.get('notes', '')),
+                samurai=bool(entry.get('samurai', False)),
             )
         )
     return result

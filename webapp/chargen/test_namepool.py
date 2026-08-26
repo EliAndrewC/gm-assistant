@@ -33,19 +33,29 @@ def pool_dir(tmp_path: Path) -> Path:
 
 
 CASTE_ENTRIES = [
-    # (name, peasant) - all female; samurai-style and register-style names
-    ('Akiko', False),
-    ('Kiku', True),
-    ('Matsu', True),
-    ('Sen', True),
+    # (name, peasant, samurai) - all female; a court name, register names, and
+    # Sen: a register name also attested on a warrior-house woman (Sen-hime)
+    ('Akiko', False, False),
+    ('Kiku', True, False),
+    ('Matsu', True, False),
+    ('Sen', True, True),
 ]
 
 
 @pytest.fixture
 def caste_pool_dir(tmp_path: Path) -> Path:
     lines = [
-        json.dumps({'name': n, 'gender': 'female', 'format': 1, 'explanation': 'x', 'peasant': p})
-        for n, p in CASTE_ENTRIES
+        json.dumps(
+            {
+                'name': n,
+                'gender': 'female',
+                'format': 1,
+                'explanation': 'x',
+                'peasant': p,
+                'samurai': s,
+            }
+        )
+        for n, p, s in CASTE_ENTRIES
     ]
     (tmp_path / 'pool-female.jsonl').write_text('\n'.join(lines) + '\n')
     (tmp_path / 'pool-male.jsonl').write_text('')
@@ -62,18 +72,19 @@ def test_peasant_draws_only_peasant_flagged_names(caste_pool_dir: Path) -> None:
     assert _picks(caste_pool_dir, peasant=True) == {'Kiku', 'Matsu', 'Sen'}
 
 
-def test_samurai_prefers_non_peasant_names(caste_pool_dir: Path) -> None:
-    # 40 draws with three peasant names available: an even draw would leak
-    # them almost surely; the preference tier returns Akiko every time.
-    assert _picks(caste_pool_dir, peasant=False) == {'Akiko'}
+def test_samurai_prefers_court_and_warrior_house_names(caste_pool_dir: Path) -> None:
+    # 40 draws with two plain register names available: an even draw would
+    # leak them almost surely; the preference tier holds the court name and
+    # the warrior-house-attested one only.
+    assert _picks(caste_pool_dir, peasant=False) == {'Akiko', 'Sen'}
 
 
 def test_samurai_falls_back_to_whole_pool_when_preferred_tier_exhausted(
     caste_pool_dir: Path,
 ) -> None:
     pool = namepool.load_pool(caste_pool_dir)
-    got = namepool.pick_name('female', pool, used=('Akiko',), peasant=False)
-    assert got.name in {'Kiku', 'Matsu', 'Sen'}
+    got = namepool.pick_name('female', pool, used=('Akiko', 'Sen'), peasant=False)
+    assert got.name in {'Kiku', 'Matsu'}
 
 
 def test_peasant_raises_when_peasant_tier_exhausted(caste_pool_dir: Path) -> None:

@@ -98,8 +98,11 @@ def pick_name(
       everyday -emon/-bei/-suke names); the two-kanji samurai formal name
       (nanori) came with genpuku and a lord, so a farmer called Hidetsuna is
       wrong in the way a farmer wearing a daisho is wrong.
-    - ``False`` - a samurai PREFERS the non-peasant entries and falls back to
-      the whole pool only when the strict set/roster rules exhaust them. Not
+    - ``False`` - a samurai PREFERS the non-peasant entries (plus the
+      peasant-flagged names carrying ``samurai: true`` - two-mora names
+      attested on warrior-house women such as Sen-hime or Hosokawa Tama) and
+      falls back to the whole pool only when the strict set/roster rules
+      exhaust them. Not
       an even draw from both: 81% of the female pool is peasant-flagged, so an
       even draw would name most samurai women after village registers. No
       sumptuary rule ever reserved given names for the nobility (surnames,
@@ -113,7 +116,7 @@ def pick_name(
     if peasant is True:
         tiers: list[tuple[GeneratedName, ...]] = [tuple(e for e in everyone if e.peasant)]
     elif peasant is False:
-        tiers = [tuple(e for e in everyone if not e.peasant), everyone]
+        tiers = [tuple(e for e in everyone if not e.peasant or e.samurai), everyone]
     else:
         tiers = [everyone]
     for tier in tiers:

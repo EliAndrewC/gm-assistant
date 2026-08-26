@@ -312,7 +312,9 @@ class Root:
         if active_caste == 'peasant':
             filtered = [n for n in filtered if n.peasant]
         elif active_caste == 'samurai':
-            filtered = [n for n in filtered if not n.peasant]
+            # Court-style names plus register names attested on warrior-house
+            # women (the same tier the chargen engine prefers for samurai).
+            filtered = [n for n in filtered if not n.peasant or n.samurai]
 
         filter_qs = _build_names_filter_qs(gender=active_gender, caste=active_caste)
 
