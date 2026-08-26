@@ -26,7 +26,7 @@ def roster(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     """A campaign cache holding one live NPC per gender that is ALSO in the pool."""
     p = tmp_path / 'characters.json'
     opcache.save_cache(
-        {'1': {'name': 'Hida no Reiji Isao'}, '2': {'name': 'Hida no Reiji Chiyoko'}}, p
+        {'1': {'name': 'Hida no Reiji Masahiro'}, '2': {'name': 'Hida no Reiji Chiyoko'}}, p
     )
     monkeypatch.setattr(opcache, '_CACHE_PATH', p)
     monkeypatch.setattr(opcache.used_given_names, '__defaults__', (p, None))
@@ -43,9 +43,9 @@ def test_pinned_gender_is_honored_on_the_first_roll(roster: Path) -> None:
 
 def test_roster_names_are_never_rolled(roster: Path) -> None:
     pool = namepool.load_pool(namepool.pool_dir())
-    assert {'Isao', 'Chiyoko'} <= {e.name for g in pool.values() for e in g}
+    assert {'Masahiro', 'Chiyoko'} <= {e.name for g in pool.values() for e in g}
     rolled = {_Samurai(base_rank=3).personal_name for _ in range(300)}
-    assert not rolled & {'Isao', 'Chiyoko'}
+    assert not rolled & {'Masahiro', 'Chiyoko'}
 
 
 def test_in_process_used_names_are_excluded_too(
