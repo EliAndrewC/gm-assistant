@@ -94,3 +94,7 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
   needs either more attested sources (temple registers, more shumon-aratame-cho transcriptions)
   or a GM decision to relax the prefix clause for women (Kiyo + Kiyoko coexisting), declined
   earlier the same day.
+- 2026-08-26 follow-up (GM): the old female pool audited and 77 entries retired; court-style
+  auspicious-kanji + 子 names ruled attested-idiom (11 added); a `samurai` flag added for register
+  names attested on warrior-house women; the pool-wide prefix clause kept (relaxing it was measured
+  at +5 court names and declined). The male pool's own junk/modern entries remain a separate decision.
