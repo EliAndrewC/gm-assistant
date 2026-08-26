@@ -45,10 +45,10 @@ When the user says "refill names" or the pool is empty:
    a. Check it against the full excluded list using `similarity.is_too_similar()`.
    b. If it passes, add it to the appropriate pool file AND add it to the excluded list before generating the next name.
    c. If it fails, discard it and generate a replacement.
-4. Each name is a JSON object: `{"name": "...", "gender": "male|female", "format": N, "explanation": "..."}`
-5. Continue until each pool has at least 50 names.
-6. After generation, run `cd ${CLAUDE_SKILL_DIR} && python3 validate_pool.py` to confirm zero conflicts.
-7. If validation fails, run `cd ${CLAUDE_SKILL_DIR} && python3 fix_pool.py` and then re-validate.
+4. Each name is a JSON object: `{"name", "gender", "format", "explanation", "notes", "peasant", "invented", "provenance"}` (`samurai: true` optionally, for a peasant-flagged name attested on warrior-house women). `notes` records attestation (or the constructed-name caveat) and the kanji triangle; `provenance` is `historical` / `idiom` / `invented`.
+5. Spend the additions where the pool is thin (see "Target: at least 10 names per initial"), and keep the provenance ratios (60% historical floor, 30% invented cap, 10% idiom cap).
+6. After generation, run `cd ${CLAUDE_SKILL_DIR} && python3 validate_pool.py` (near-duplicates are errors; names in campaign use are reported and kept) and `python3 audit_formats.py` (format-suitability violations and lopsided initials).
+7. If validation reports near-duplicates, run `cd ${CLAUDE_SKILL_DIR} && python3 fix_pool.py` (which only ever removes intra-pool near-duplicates) and re-validate.
 
 ## How to Update the Campaign Name Cache
 
@@ -60,7 +60,7 @@ For EACH name to generate:
 
 1. **Determine gender** (if not specified): Run `shuf -i 0-1 -n 1` via Bash. 0 = male, 1 = female.
 
-2. **Select a format**: Run `shuf -i 1-20 -n 1` via Bash to pick a random format number. When generating multiple names, pick a different format for each.
+2. **Select a format**: take the emptiest format (for that gender, and within that initial) that the name's class allows - see "Matching a Name to Its Explanation Format" below. Never a random draw: format 4 needs a real alternate spelling, 8 a constructed name, 15 a nature word, 10/16 two elements.
 
 3. **Generate the name**: Create a name appropriate to the gender that:
    - Sounds authentically Japanese
@@ -232,9 +232,28 @@ FORMAT #20:
 {NAME} - This name pays tribute to the {LOCAL OR EMPIRE-WIDE CALENDAR EVENT}, an event that emphasizes {QUALITIES OF THE EVENT}. People choose this name to reflect their values for {EXPLANATION OF VALUES}.
 <!-- END SOURCE -->
 
-## Generation Preferences
+## Matching a Name to Its Explanation Format (GM 2026-08-26)
 
-(To be developed through iteration with the GM. This section will capture what the GM likes and dislikes about generated names, and why.)
+The 20 formats are not interchangeable. Some make a factual claim about the name itself; those go only to names for which the claim is true. Others narrate an origin inside Rokugan; those are honest for any name, and they are the natural home for constructed names - a real name's original meaning is often lost and what survives is "named after so-and-so", so an invented name explained by a Rokugani figure, tale, event, place or festival is exactly how such names read in the real world. There is no single right assignment; these are the guidelines the pool follows, checked by `python3 audit_formats.py` (report-only: hard-rule violations, global counts, lopsided initials - run it after any pool change):
+
+- **Format 4 (two different kanji)** - only for a name whose notes record a real alternate spelling, or a kana-only register name (where the kanji is genuinely open). Never invent a second spelling to fit the template.
+- **Format 8 (was a deity)** - only for constructed (`idiom` / `invented`) names, or kana-only register names; a real person's name is not a deity's. It is therefore rare in the mostly-historical male pool, by design.
+- **Format 15 (natural element)** - only for names that ARE nature words (plants, weather, sea, stone, birds).
+- **Formats 10 and 16 (two elements)** - only for names with two elements; a single-kanji or kana-only name cannot claim a composition.
+- **Preference, not rule:** `invented` names lean to the origin formats (7, 11, 13, 18, 19, 20; 17 for an art form); `historical` names with a clear kanji meaning lean to the meaning formats (1, 2, 3, 5, 6, 9, 12, 14, 16); kana-only historical names lean to 4, 9, 14 and the origin formats.
+- **Balance** is kept two ways: the global count per format stays within a few of `pool size / 20` for each gender, and within each initial no single format dominates (rule of thumb: the top format holds no more than a sixth of that letter, and never more than two where the letter has ten). When adding a name, take the emptiest format its class allows.
+
+## Generation Preferences (collected 2026-08-25 / 26)
+
+What the GM decided across the pool-expansion work, in one place; the sections above hold the detail:
+
+- Pre-modern only: no name that entered Japanese use after 1868 (Period Sensibility). The exception is `-ko`, allowed for every caste because L5R canon uses it that way - source material beats history when it does not hurt verisimilitude.
+- Three provenance classes with a 60% historical floor and 30% / 10% caps on invented / idiom; every constructed name's notes carry the caveat that it is unrecorded.
+- Variety of initials matters more than historical letter frequency, because players confuse NPCs by first letter: at least 10 names per initial per gender (female D exempt); constructed names are spent on thin initials, never on crowded ones.
+- The loose similarity rule stays as it is - across genders too (a portrait does not stop players confusing Etsu and Etsuji) - and the `-ko` prefix clause stays pool-wide. Both were priced and declined.
+- Peasants draw only peasant-suitable names; samurai prefer court-style and warrior-house-attested names and fall back to the whole pool; monks draw from everything.
+- The pool is never depleted by use: exclusion at pick time via the roster cache and `used-names-extra.txt`, never deletion.
+- Sets of names generated together must differ in first letter, must not rhyme, and must not be one edit apart (the older set-distinctness rule, unchanged).
 
 ## References
 

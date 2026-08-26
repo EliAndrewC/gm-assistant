@@ -133,3 +133,13 @@ Shizuka, Rin (#23 late Edo), Saki (#31), Sayo, Chiyo, Hatsu, Natsu.
   male pool names one edit away. Verdict: the record is mined out for B/G/J/W/Z at the current
   rules; the sources files carry the attested-but-blocked list so the next session does not repeat
   the search.
+- 2026-08-26 format audit (GM): the 20 explanation formats had been assigned round-robin, so
+  "can be written with two different kanji" landed on names with one spelling and "was a deity" on
+  real people. Ruling: formats that make a factual claim (4, 8, 15, 10/16) are hard-gated on the
+  entry's own notes; origin formats (7, 11, 13, 17-20) are honest for any name and are the
+  PREFERRED home of constructed names (a real name's meaning is often lost; "named after
+  so-and-so" is how such names actually survive); meaning formats are preferred for historical
+  names with a clear kanji. Balance is kept globally (within a few of n/20 per format) and per
+  initial (no format above a sixth of a letter). 221 explanations were rewritten; `audit_formats.py`
+  reports violations from now on. Format 8 is rare in the male pool by construction (98%
+  historical) and that is accepted.
