@@ -50,7 +50,9 @@ def random_age(xp: int) -> int:
     return randrange(youngest, oldest + 1)
 
 
-def unused_name(gender: str = None, avoid: Sequence[str] = ()) -> tuple[str, str]:
+def unused_name(
+    gender: str = None, avoid: Sequence[str] = (), peasant: bool | None = None
+) -> tuple[str, str]:
     """
     Pick a given name from the /name skill pool that is not in use in this
     campaign (feature 200). "In use" is the union of the names created by this
@@ -62,7 +64,9 @@ def unused_name(gender: str = None, avoid: Sequence[str] = ()) -> tuple[str, str
     """
     gender = gender or choice(['male', 'female'])
     used = c.USED_NAMES | opcache.used_given_names()
-    entry = namepool.pick_name(gender, namepool.load_pool(namepool.pool_dir()), used, avoid)
+    entry = namepool.pick_name(
+        gender, namepool.load_pool(namepool.pool_dir()), used, avoid, peasant=peasant
+    )
     return entry.name, entry.explanation
 
 
@@ -96,11 +100,19 @@ class Character:
     This is the parent class used to generate characters.  It defines
     """
 
+    # Which side of the name pool this caste draws from (GM 2026-08-26): True =
+    # peasant-flagged names only, False = prefer the samurai-style names and
+    # fall back to the whole pool, None = the whole pool. Set per subclass; the
+    # reasoning is on ``namepool.pick_name``.
+    PEASANT_NAMES: bool | None = None
+
     def __init__(self, gender: str = None, avoid: Sequence[str] = ()):
         # gender: pin it (no re-roll loop needed); None rolls it. avoid: given
         # names of the other members of a set generated together (feature 200).
         self.gender = gender or choice(['male', 'female'])
-        self.personal_name, self.name_meaning = unused_name(self.gender, avoid)
+        self.personal_name, self.name_meaning = unused_name(
+            self.gender, avoid, peasant=type(self).PEASANT_NAMES
+        )
 
         self.xp = self.gen_xp()
         self.age = self.gen_age()
@@ -262,6 +274,8 @@ class Character:
 
 
 class Samurai(Character):
+    PEASANT_NAMES = False
+
     def __init__(
         self,
         base_rank,
@@ -437,6 +451,8 @@ class Samurai(Character):
 
 
 class Peasant(Character):
+    PEASANT_NAMES = True
+
     def __init__(self, base_rank=0, gender=None, avoid=(), **ignored):
         self.rank = int(base_rank)
         Character.__init__(self, gender, avoid)
@@ -452,6 +468,8 @@ class Peasant(Character):
 
 
 class Monk(Character):
+    # Monks come from every caste and take a Buddhist name on ordination, so
+    # the whole pool applies (PEASANT_NAMES stays None).
     def __init__(self, base_rank, order='', seat='', gender=None, avoid=(), **ignored):
         self.rank = int(base_rank)
         # The monk's Order (one of the 7 Fortunes of Good Luck). Unlike the
