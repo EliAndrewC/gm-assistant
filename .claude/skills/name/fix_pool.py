@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Remove names that conflict with campaign names or with each other across both pools.
+"""Remove names that are near-duplicates of each other across both pools (never names in campaign use - see SKILL.md).
 For each conflicting pair, remove the second one encountered."""
 
 import json
@@ -39,9 +39,17 @@ def fix():
     male_pool = load_pool(male_path)
     female_pool = load_pool(female_path)
 
-    # Process both pools together to catch cross-pool conflicts
-    # Male pool is processed first, then female pool checks against both campaign + accepted male names
-    accepted_names = list(campaign_names)
+    # Process both pools together to catch cross-pool conflicts. The male pool
+    # is processed first, then the female pool checks against accepted male
+    # names. Names that collide with the CAMPAIGN roster are deliberately KEPT
+    # (GM 2026-08-26): the pool is campaign-agnostic and never depleted by use.
+    # A name in play is excluded at pick time (roster cache plus
+    # used-names-extra.txt) and stays available for the next campaign; it is
+    # reported here so the GM can see it, never removed.
+    for entry in male_pool + female_pool:
+        if is_too_similar(entry["name"], campaign_names):
+            print(f"IN USE (kept): {entry['name']}")
+    accepted_names = []
     final_male = []
     final_female = []
 

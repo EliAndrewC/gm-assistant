@@ -142,27 +142,48 @@ def refresh_if_stale(max_age_seconds: float = 3600.0, path: Path = _CACHE_PATH) 
     return True
 
 
-_used_key: tuple[Path, int, int] | None = None
+#: Names in use that Obsidian Portal cannot tell us about (a PC with no OP
+#: record, a name the GM has promised to someone). One name per line, ``#``
+#: comments allowed. Tracked in git, next to the pool, because it is the
+#: campaign's overlay on a campaign-agnostic pool: the pool is NEVER depleted
+#: by use (GM 2026-08-26) - a name picked for this campaign stays in the pool
+#: for the next one, and exclusion happens here and in the roster cache.
+EXTRA_USED_PATH = _WEBAPP.parent / '.claude' / 'skills' / 'name' / 'used-names-extra.txt'
+
+_used_key: tuple[tuple[Path, int, int] | None, ...] | None = None
 _used_names: frozenset[str] = frozenset()
 
 
-def used_given_names(path: Path = _CACHE_PATH) -> frozenset[str]:
-    """Given names in use on the campaign roster, derived from the cache
-    (feature 200, FR-002): the last whitespace token of each character's full
-    name (``Bayushi no Daika Bokuden`` -> ``Bokuden``; a mononym is itself).
-    Memoized on the file's identity/mtime/size so the engine can call this per
-    character at no cost."""
-    global _used_key, _used_names
+def _stat_key(path: Path) -> tuple[Path, int, int] | None:
     try:
         st = path.stat()
-        key: tuple[Path, int, int] | None = (path, st.st_mtime_ns, st.st_size)
     except FileNotFoundError:
-        key = None
-    if key is None:
-        return frozenset()
+        return None
+    return (path, st.st_mtime_ns, st.st_size)
+
+
+def used_given_names(path: Path = _CACHE_PATH, extra: Path = EXTRA_USED_PATH) -> frozenset[str]:
+    """Given names in use in this campaign: the last whitespace token of each
+    roster character's full name from the cache (feature 200, FR-002:
+    ``Bayushi no Daika Bokuden`` -> ``Bokuden``; a mononym is itself), plus the
+    names listed in ``extra`` (see :data:`EXTRA_USED_PATH`). Memoized on both
+    files' identity/mtime/size so the engine can call this per character at no
+    cost. A missing cache contributes nothing; a missing extra file likewise."""
+    global _used_key, _used_names
+    key = (_stat_key(path), _stat_key(extra))
     if key != _used_key:
-        names = (_s(entry, 'name').split() for entry in load_cache(path).values())
-        _used_names = frozenset(parts[-1] for parts in names if parts)
+        names: set[str] = set()
+        if key[0] is not None:
+            for entry in load_cache(path).values():
+                parts = _s(entry, 'name').split()
+                if parts:
+                    names.add(parts[-1])
+        if key[1] is not None:
+            for line in extra.read_text(encoding='utf-8').splitlines():
+                word = line.split('#', 1)[0].strip()
+                if word:
+                    names.add(word)
+        _used_names = frozenset(names)
         _used_key = key
     return _used_names
 

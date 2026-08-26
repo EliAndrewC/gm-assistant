@@ -80,10 +80,12 @@ class TestValidatePool:
 
         from validate_pool import validate
 
-        with pytest.raises(SystemExit):
-            validate()
+        # GM 2026-08-26: a name in use is reported, never an error - the pool
+        # is not depleted by use; exclusion happens at pick time.
+        validate()
         output = capsys.readouterr().out
-        assert "TOO SIMILAR TO CAMPAIGN" in output
+        assert "IN USE (kept, excluded at pick time): Satoru" in output
+        assert "ERRORS FOUND" not in output
 
     def test_cross_pool_similarity_detected(self, pool_env, capsys):
         tmp_path, male_path, female_path, campaign_path = pool_env
@@ -99,7 +101,9 @@ class TestValidatePool:
 
 
 class TestFixPool:
-    def test_removes_campaign_conflicts(self, pool_env, capsys):
+    def test_keeps_campaign_conflicts(self, pool_env, capsys):
+        # GM 2026-08-26: a name in use stays in the pool (excluded at pick
+        # time); fix_pool reports it and must NOT delete it.
         tmp_path, male_path, female_path, campaign_path = pool_env
         write_pool(
             male_path,
@@ -115,10 +119,9 @@ class TestFixPool:
 
         fix()
 
-        remaining = read_pool(male_path)
-        names = [e["name"] for e in remaining]
-        assert "Satoru" not in names
-        assert "Takeshi" in names
+        names = [e["name"] for e in read_pool(male_path)]
+        assert names == ["Satoru", "Takeshi"]
+        assert "IN USE (kept): Satoru" in capsys.readouterr().out
 
     def test_removes_cross_pool_conflicts(self, pool_env, capsys):
         tmp_path, male_path, female_path, campaign_path = pool_env

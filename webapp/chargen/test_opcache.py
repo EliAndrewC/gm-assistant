@@ -391,7 +391,8 @@ def test_refresh_if_stale_keeps_cache_on_empty_listing(
 
 def test_used_given_names_last_token_and_memoized(tmp_path: Path) -> None:
     p = tmp_path / 'characters.json'
-    assert opcache.used_given_names(p) == frozenset()
+    x = tmp_path / 'extra.txt'
+    assert opcache.used_given_names(p, x) == frozenset()
     opcache.save_cache(
         {
             '1': {'name': 'Bayushi no Daika Bokuden'},
@@ -401,7 +402,20 @@ def test_used_given_names_last_token_and_memoized(tmp_path: Path) -> None:
         },
         p,
     )
-    assert opcache.used_given_names(p) == {'Bokuden', 'Denbei'}
-    assert opcache.used_given_names(p) is opcache.used_given_names(p)
+    assert opcache.used_given_names(p, x) == {'Bokuden', 'Denbei'}
+    assert opcache.used_given_names(p, x) is opcache.used_given_names(p, x)
     opcache.save_cache({'5': {'name': 'Kitsune Izumi'}}, p)
-    assert opcache.used_given_names(p) == {'Izumi'}
+    assert opcache.used_given_names(p, x) == {'Izumi'}
+
+
+def test_used_given_names_includes_extra_file(tmp_path: Path) -> None:
+    """Names OP cannot report (a PC with no record) live in used-names-extra.txt
+    and are excluded exactly like roster names; comments and blanks ignored."""
+    p = tmp_path / 'characters.json'
+    x = tmp_path / 'extra.txt'
+    opcache.save_cache({'1': {'name': 'Kitsune Izumi'}}, p)
+    x.write_text('# PCs without OP records\nHidemasa  # the PC\n\n  Tora\n', encoding='utf-8')
+    assert opcache.used_given_names(p, x) == {'Izumi', 'Hidemasa', 'Tora'}
+    x.write_text('Hidemasa\n', encoding='utf-8')
+    assert opcache.used_given_names(p, x) == {'Izumi', 'Hidemasa'}
+    assert opcache.EXTRA_USED_PATH.name == 'used-names-extra.txt'
