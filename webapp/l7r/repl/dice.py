@@ -181,8 +181,9 @@ def dist(roll: int, keep: int, reroll: bool = True) -> Dist:
 
 class _Prob:
     """``prob(6, 3)`` -> mean; ``prob(6, 3, 20)`` -> P(total >= 20);
-    ``prob(6, 3, table=True)`` prints the CDF. The old dict-style indexing
-    ``prob[True][6, 3]`` and ``prob[True][6, 3, 20]`` still works (note the
+    ``prob(6, 3, table=True)`` prints the CDF. Dict-style indexing:
+    ``prob[6, 3]`` / ``prob[6, 3, 20]`` (rerolls on), ``prob[False][6, 3]``
+    for flat dice, and the old ``prob[True][6, 3]`` still works (note the
     old Monte Carlo table counted ``> tn``; this one counts ``>= tn``, which
     is the actual L5R rule)."""
 
@@ -196,8 +197,12 @@ class _Prob:
             return d
         return d.at_least(tn)
 
-    def __getitem__(self, reroll: bool) -> _Indexed:
-        return _Indexed(reroll)
+    def __getitem__(self, key: bool | tuple[int, ...]) -> _Indexed | Dist | float:
+        # prob[6, 3] and prob[6, 3, 20] mean rerolls on (GM 2026-08-27);
+        # prob[False][6, 3] is the flat form; prob[True][...] still works.
+        if isinstance(key, bool):
+            return _Indexed(key)
+        return _Indexed(True)[key]
 
 
 class _Indexed:
