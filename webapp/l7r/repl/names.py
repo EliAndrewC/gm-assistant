@@ -153,3 +153,23 @@ def place(scale: str | None = None, quiet: bool = False) -> Pick:
     if not quiet:
         print(pick.describe())
     return pick
+
+
+def province_name(quiet: bool = False) -> Pick:
+    """``place('province')``."""
+    return place('province', quiet)
+
+
+def town_name(quiet: bool = False) -> Pick:
+    """``place('town')``."""
+    return place('town', quiet)
+
+
+def village_name(quiet: bool = False) -> Pick:
+    """``place('village')``."""
+    return place('village', quiet)
+
+
+def hamlet_name(quiet: bool = False) -> Pick:
+    """``place('hamlet')``."""
+    return place('hamlet', quiet)
