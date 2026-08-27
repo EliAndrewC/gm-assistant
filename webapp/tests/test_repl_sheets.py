@@ -4,9 +4,8 @@ page is a saved fixture; nothing here reaches the network."""
 import json
 from pathlib import Path
 
-import requests
-
 import pytest
+import requests
 
 from l7r.repl import namespace
 from l7r.repl.sheets import (
