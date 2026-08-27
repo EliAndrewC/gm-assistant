@@ -66,6 +66,27 @@ OUT=$(printf '{"session_id":"sid-me","tool_input":{"file_path":"%s/README.md"}}'
 
 run pretool sid-me miscellaneous a.txt;        check "canonical clone, clean, at tip, unclaimed" 0 "$RC"
 
+# ---- transcript-first name resolution (GUARD_EDIT_OK: new test cases, GM 2026-08-27) -----------
+# /clear mints a new session_id; the sessions json is rewritten asynchronously, the transcript's
+# custom-title record is there before the first prompt. So the transcript outranks the json.
+TR=$TMP/transcripts; mkdir -p "$TR"
+runt() { # runt <mode> <sid> <transcript> <clonename> <file-under-clone> ; run + transcript_path
+  local fp="$FMAIN/.clones/$4/$5"
+  OUT=$(printf '{"session_id":"%s","transcript_path":"%s","tool_input":{"file_path":"%s"}}' "$2" "$3" "$fp" \
+        | CLONE_MAIN="$FMAIN" CLONE_SESSIONS_DIR="$SESS" "$HOOK" "$1" 2>&1); RC=$?
+}
+title() { printf '{"type":"custom-title","customTitle":"%s","sessionId":"%s"}\n' "$1" "$2"; }
+{ title "Diagram (town)" sid-cleared; echo '{"type":"user","message":{"role":"user","content":"hi"}}'; } > "$TR/cleared.jsonl"
+runt pretool sid-cleared "$TR/cleared.jsonl" diagram-town a.txt;   check "sid absent from sessions json, transcript names it -> resolves, allowed" 0 "$RC"
+runt pretool sid-cleared "$TR/cleared.jsonl" miscellaneous a.txt;  check "sid absent from sessions json, transcript names another clone -> routing block" 2 "$RC"
+{ title miscellaneous sid-me; title "Diagram (town)" sid-me; } > "$TR/renamed.jsonl"   # renamed twice; json says miscellaneous
+runt pretool sid-me "$TR/renamed.jsonl" diagram-town a.txt;        check "transcript outranks the sessions json; LAST rename wins" 0 "$RC"
+runt pretool sid-me "$TR/renamed.jsonl" miscellaneous a.txt;       check "transcript outranks the sessions json (json's own clone now blocked)" 2 "$RC"
+echo '{"type":"user","message":{"role":"user","content":"custom-title mentioned in prose only"}}' > "$TR/plain.jsonl"
+runt pretool sid-me "$TR/plain.jsonl" miscellaneous a.txt;         check "transcript without a rename record -> sessions json fallback" 0 "$RC"
+runt pretool sid-me "$TR/missing.jsonl" miscellaneous a.txt;       check "transcript path that does not exist -> sessions json fallback" 0 "$RC"
+rm -f "$MAPDIR/sid-cleared" "$MAPDIR/sid-me"
+
 printf '%s' "$FMAIN/.clones/miscellaneous" > "$MAPDIR/sid-live-other"
 run pretool sid-me miscellaneous a.txt;        check "canonical clone claimed by a LIVE other session -> blocked" 2 "$RC"
 rm -f "$MAPDIR/sid-live-other"
