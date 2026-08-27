@@ -28,14 +28,19 @@ def build_namespace() -> dict[str, Any]:
     return ns
 
 
-def setup_readline(history: Path = HISTORY) -> bool:
-    """Tab completion and persistent history; False when readline is absent."""
+def setup_readline(history: Path = HISTORY, ns: dict[str, Any] | None = None) -> bool:
+    """Tab completion over ``ns`` and persistent history; False when readline
+    is absent. The completer MUST be built on ``ns``: rlcompleter's default
+    completes against ``__main__``'s globals, and the prompt's names live in
+    the dict handed to ``code.interact``, which is not that - so with the
+    default, ``discern_hon<TAB>`` found nothing (GM 2026-08-27)."""
     try:
         import atexit
         import readline
-        import rlcompleter  # noqa: F401 - registers the completer
+        import rlcompleter
     except ImportError:  # pragma: no cover - Windows, or a stripped build
         return False
+    readline.set_completer(rlcompleter.Completer(ns if ns is not None else {}).complete)
     readline.parse_and_bind('tab: complete')
     with contextlib.suppress(OSError):  # no history yet
         readline.read_history_file(history)
@@ -66,7 +71,7 @@ def run_snippet(source: str, ns: dict[str, Any]) -> None:
 def main(
     argv: Sequence[str] = (),
     interact: Callable[..., Any] = code.interact,
-    readline_setup: Callable[[], bool] = setup_readline,
+    readline_setup: Callable[[Path, dict[str, Any]], bool] = setup_readline,
 ) -> int:
     args = list(argv)
     stay = '-i' in args
@@ -76,6 +81,6 @@ def main(
         run_snippet(' '.join(args), ns)
         if not stay:
             return 0
-    readline_setup()
+    readline_setup(HISTORY, ns)
     interact(banner=help_text(), local=ns, exitmsg='')
     return 0
