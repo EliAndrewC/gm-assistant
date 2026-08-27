@@ -15,7 +15,7 @@
 #     enforces, in order: (0) FORBIDDEN NAME - '.clones/gm-assistant' is banned (it is the repo,
 #     not a session), so a session that resolves or routes to it is stopped and the GM is asked to
 #     name it; (1) NAME-ROUTING - a session may only edit in .clones/<its-own-name>, resolved from
-#     its session_id via ~/.claude/sessions/*.json; (2) CLAIM BACKSTOP - that clone must not be one
+#     its transcript's last /rename record, else ~/.claude/sessions/*.json; (2) CLAIM BACKSTOP - that clone must not be one
 #     another LIVE session already occupies; (3) STALE-BASE - the clone's HEAD must equal main's. A
 #     DIRTY tree is mid-task work and is sacred: never blocked (would strand in-flight work), only
 #     its clone->session claim is recorded so the prompt hook can find it.
@@ -67,17 +67,37 @@ derive_main() {
 MAIN=${CLONE_MAIN:-$(derive_main)}
 MAPDIR=$MAIN/.clones/.session-clones
 
-canonical_clone() { # canonical_clone <sid> - print .clones/<kebab-name> for a session, or "" if
-  # the session_id resolves to no sessions-json entry (unresolvable -> caller falls through). An
-  # entry with a derived/auto title or blank name is treated as UNNAMED -> the shared default,
-  # matching CLAUDE.md's naming rule.
-  SID="$1" MAIN="$MAIN" SDIR="$SESSIONS_DIR" python3 -c "
+canonical_clone() { # canonical_clone <sid> [transcript] - print .clones/<kebab-name> for a session,
+  # or "" if neither source names it (unresolvable -> caller falls through).
+  # TWO SOURCES, transcript FIRST (GM 2026-08-27; GUARD_EDIT_OK - ported from diagram dccd116b).
+  # /rename appends {"type":"custom-title"} to the
+  # session's transcript (the hook input's transcript_path) synchronously, and /clear - which mints
+  # a NEW session_id - re-emits it as line 1 of the new transcript before a first prompt can exist;
+  # --resume carries it too. ~/.claude/sessions/<pid>.json is the running process's STATUS file,
+  # rewritten asynchronously, so a lookup keyed by the post-/clear session_id could find no entry
+  # yet and report "no human-given name" although the tab title (written from the same name) was
+  # right all along. The sessions json stays as the FALLBACK, and remains the liveness source
+  # (sid_is_live) - that is a different question and the PID filename answers it. The LAST
+  # custom-title wins (a session renamed twice). An entry with a derived/auto title or blank name
+  # is treated as UNNAMED -> the shared default, matching CLAUDE.md's naming rule.
+  SID="$1" TP="${2:-}" MAIN="$MAIN" SDIR="$SESSIONS_DIR" python3 -c "
 import glob, json, os, re, sys
-sid, main, sdir = os.environ['SID'], os.environ['MAIN'], os.environ['SDIR']
+sid, tp, main, sdir = os.environ['SID'], os.environ['TP'], os.environ['MAIN'], os.environ['SDIR']
 if not sid:
     sys.exit(0)
 name = source = None; found = False
-for f in glob.glob(os.path.join(sdir, '*.json')):
+if tp and os.path.isfile(tp):
+    with open(tp, errors='replace') as fh:
+        for line in fh:
+            if 'custom-title' not in line:
+                continue
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue
+            if r.get('type') == 'custom-title' and str(r.get('customTitle') or '').strip():
+                found, name, source = True, r['customTitle'], 'transcript'
+for f in ([] if found else glob.glob(os.path.join(sdir, '*.json'))):
     try:
         d = json.load(open(f))
     except Exception:
@@ -129,7 +149,7 @@ case $MODE in
     [ -d "$clone/.git" ] || exit 0
     sid=$(field session_id)
     dirty=$([ -n "$(git -C "$clone" status --porcelain 2>/dev/null)" ] && echo 1 || true)
-    canon=$(canonical_clone "$sid")
+    canon=$(canonical_clone "$sid" "$(field transcript_path)")
 
     # DIRTY = mid-task work, sacred: allow (record the claim), never strand in-flight work on a
     # moving main. EVERY guard below is a clean-work-unit-boundary check only.
@@ -204,9 +224,9 @@ case $MODE in
       notice="$MAPDIR/$sid.name-notice"
       if [ ! -f "$notice" ]; then
         mkdir -p "$MAPDIR"; : > "$notice"
-        canon=$(canonical_clone "$sid")
+        canon=$(canonical_clone "$sid" "$(field transcript_path)")
         if [ -z "$canon" ]; then
-          echo "clone-sync: this session's name does not resolve (no entry for it under $SESSIONS_DIR), so it has NO valid clone name. Read-only work is fine. If you are going to modify this repo, ask the GM to /rename the session NOW - before the recon, not after it."
+          echo "clone-sync: this session's name does not resolve (no /rename record in its transcript and no entry for it under $SESSIONS_DIR), so it has NO valid clone name. Read-only work is fine. If you are going to modify this repo, ask the GM to /rename the session NOW - before the recon, not after it."
         elif [ "$(basename "$canon")" = "gm-assistant" ]; then
           echo "clone-sync: this session resolves to the FORBIDDEN '.clones/gm-assistant' (unnamed or auto-derived). Read-only work is fine. If you are going to modify this repo, ask the GM to /rename the session NOW - before the recon, not after it."
         fi
