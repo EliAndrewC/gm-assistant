@@ -27,6 +27,8 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
+from chargen import sheetroster
+
 logger = logging.getLogger(__name__)
 
 #: One character entry / a raw OP object: heterogeneous string-keyed mapping.
@@ -127,6 +129,8 @@ def refresh_if_stale(max_age_seconds: float = 3600.0, path: Path = _CACHE_PATH) 
     call retries."""
     from chargen import op
 
+    # The character-sheet roster rides along on the same cadence (fail-soft inside).
+    sheetroster.refresh_if_stale(max_age_seconds)
     age = cache_age(path)
     if age is not None and age < max_age_seconds:
         return False
@@ -158,6 +162,20 @@ EXTRA_USED_PATH = (
 )
 
 _used_key: tuple[tuple[Path, int, int] | None, ...] | None = None
+#: Set by tests to point the character-sheet roster at a fixture; None = the real cache.
+SHEET_USED_PATH: Path | None = None
+
+
+def _lineage_names(path: Path) -> frozenset[str]:
+    """Family / house / lineage names (see ``placeuse.lineage_names``);
+    imported lazily because placeuse imports this module."""
+    from chargen import placeuse
+
+    return placeuse.used_lineage_names(path)
+
+
+#: Tests point this at a stub; the chargen config is static so it needs no memo key of its own.
+LINEAGE_NAMES: Callable[[Path], frozenset[str]] = _lineage_names
 _used_names: frozenset[str] = frozenset()
 
 
@@ -173,13 +191,17 @@ def used_given_names(path: Path = _CACHE_PATH, extra: Path | None = None) -> fro
     """Given names in use in this campaign: the last whitespace token of each
     roster character's full name from the cache (feature 200, FR-002:
     ``Bayushi no Daika Bokuden`` -> ``Bokuden``; a mononym is itself), plus the
-    names listed in ``extra`` (see :data:`EXTRA_USED_PATH`). Memoized on both
-    files' identity/mtime/size so the engine can call this per character at no
-    cost. A missing cache contributes nothing; a missing extra file likewise."""
+    names listed in ``extra`` (see :data:`EXTRA_USED_PATH`), plus every
+    character in a group on the character-sheet app (``sheetroster`` - a PC
+    there may have no OP record; GM 2026-08-27, the Hidemasa case), plus every
+    family / house / lineage name (the Obana case, same day). Memoized
+    on all three files' identity/mtime/size so the engine can call this per
+    character at no cost. A missing file contributes nothing."""
     global _used_key, _used_names
     if extra is None:
         extra = EXTRA_USED_PATH  # resolved at call time so tests can point it elsewhere
-    key = (_stat_key(path), _stat_key(extra))
+    sheet = SHEET_USED_PATH if SHEET_USED_PATH is not None else sheetroster.CACHE_PATH
+    key = (_stat_key(path), _stat_key(extra), _stat_key(sheet))
     if key != _used_key:
         names: set[str] = set()
         if key[0] is not None:
@@ -192,6 +214,9 @@ def used_given_names(path: Path = _CACHE_PATH, extra: Path | None = None) -> fro
                 word = line.split('#', 1)[0].strip()
                 if word:
                     names.add(word)
+        if key[2] is not None:
+            names |= sheetroster.given_names(sheet)
+        names |= LINEAGE_NAMES(path)
         _used_names = frozenset(names)
         _used_key = key
     return _used_names

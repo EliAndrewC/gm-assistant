@@ -13,6 +13,7 @@ from l7r.repl.honor import discern_honor
 from l7r.repl.names import (
     Pick,
     bank,
+    cache_status,
     hamlet_name,
     name,
     names,
@@ -30,6 +31,7 @@ __all__ = [
     'Pick',
     'actual_xky',
     'bank',
+    'cache_status',
     'd10',
     'discern_honor',
     'dist',
@@ -62,6 +64,7 @@ COMMANDS: tuple[tuple[str, str], ...] = (
     ('names("f", 3)', 'several, mutually distinct;  bank(3) = 3 male + 3 female'),
     ('place("village")', 'a place name: province / town / village / hamlet'),
     ('village_name()', 'same; also province_name(), town_name(), hamlet_name()'),
+    ('cache_status()', 'did the background roster refresh (OP + character-sheet app) succeed?'),
     (
         'discern_honor("Otsuki", Jimen)',
         'the knack: reads Honor off OP and the rank off the sheet, records it (rank= to override)',

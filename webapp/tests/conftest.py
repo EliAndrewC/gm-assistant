@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+from chargen import sheetroster
+
 
 @pytest.fixture(scope='session')
 def sample_pool_dir() -> Path:
@@ -25,3 +27,13 @@ def sample_dream_pool_dir() -> Path:
     can prove the loader never traverses to the spoiler tier (FR-007).
     """
     return Path(__file__).parent / 'fixtures' / 'dream_pool' / 'pool'
+
+
+@pytest.fixture(autouse=True)
+def _offline_sheet_index(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Never let a test reach the character-sheet app (tests are offline)."""
+
+    def refuse() -> str:
+        raise RuntimeError('tests are offline: patch sheetroster.fetch_index')
+
+    monkeypatch.setattr(sheetroster, 'fetch_index', refuse)

@@ -419,3 +419,24 @@ def test_used_given_names_includes_extra_file(tmp_path: Path) -> None:
     x.write_text('Hidemasa\n', encoding='utf-8')
     assert opcache.used_given_names(p, x) == {'Izumi', 'Hidemasa'}
     assert opcache.EXTRA_USED_PATH.name == 'used-names-extra.txt'
+
+
+def test_used_given_names_includes_the_character_sheet_roster(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from chargen import opcache, sheetroster
+
+    cache = tmp_path / 'characters.json'
+    cache.write_text('{}')
+    sheet = tmp_path / 'sheet.json'
+    sheet.write_text('{"names": ["Tsuruchi Hidemasa", "Kitsune Moriko"]}')
+    monkeypatch.setattr(opcache, 'SHEET_USED_PATH', sheet)
+    monkeypatch.setattr(opcache, 'SHEET_USED_PATH', None)  # the real path...
+    monkeypatch.setattr(sheetroster, 'CACHE_PATH', sheet)  # ...pointed at the fixture
+    assert opcache.used_given_names(cache, tmp_path / 'no-extra.txt') == {'Hidemasa', 'Moriko'}
+    sheet.unlink()
+    assert opcache.used_given_names(cache, tmp_path / 'no-extra.txt') == frozenset()
+    monkeypatch.setattr(opcache, 'LINEAGE_NAMES', opcache._lineage_names)
+    cache.write_text('{"1": {"name": "Q", "tags": ["Zenji Lineage"]}}')
+    got = opcache.used_given_names(cache, tmp_path / 'no-extra.txt')
+    assert {'Q', 'Zenji', 'Obana', 'Tsuruchi'} <= got  # tag + development-defaults.ini

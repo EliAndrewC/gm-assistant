@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from l7r import places as _places
 from l7r.names import GeneratedName
 from l7r.places import Place
 from l7r.repl.names import (
@@ -44,6 +45,9 @@ def roster(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     monkeypatch.setattr(mod.opcache, 'refresh_if_stale', lambda age: calls.append(age))
     monkeypatch.setattr(mod.opcache, 'cache_age', lambda: 10.0)
     monkeypatch.setattr(mod.opcache, 'used_given_names', lambda: ROSTER)
+    monkeypatch.setattr(
+        mod.placeuse, 'used_place_names', lambda: {s: frozenset() for s in mod.placeuse.SCALES}
+    )
     monkeypatch.delenv('L7R_NAMES_DIR', raising=False)
     monkeypatch.delenv('L7R_PLACES_DIR', raising=False)
     return calls
@@ -53,6 +57,17 @@ class TestUsedNames:
     def test_default_refreshes_if_stale(self, roster: list[float]) -> None:
         assert used_names() == ROSTER
         assert roster == [mod.MAX_AGE]
+        assert mod.MAX_AGE == 6 * 3600
+
+    def test_warm_caches_reports_status(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.setattr(mod.opcache, 'refresh_if_stale', lambda age: True)
+        assert mod.warm_caches().startswith('refreshed (0.0 h old)')
+        monkeypatch.setattr(mod.opcache, 'refresh_if_stale', lambda age: False)
+        mod.warm_caches()
+        assert mod.cache_status().startswith('fresh (0.0 h old)')
+        assert capsys.readouterr().out.startswith('fresh')
 
     def test_force_and_offline(self, roster: list[float]) -> None:
         used_names(refresh=True)
@@ -67,14 +82,14 @@ class TestUsedNames:
 
         monkeypatch.setattr(mod.opcache, 'refresh_if_stale', boom)
         used_names()
-        assert 'WARNING: campaign cache refresh failed: no creds' in capsys.readouterr().out
+        assert 'WARNING: refresh failed: no creds' in capsys.readouterr().out
 
     def test_missing_cache_warns(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
         monkeypatch.setattr(mod.opcache, 'cache_age', lambda: None)
         used_names()
-        assert 'EMPTY roster' in capsys.readouterr().out
+        assert 'every name looks free' in capsys.readouterr().out
 
 
 class TestNames:
@@ -145,6 +160,22 @@ class TestPlace:
             assert p.explanation.endswith(f'({scale})')
             assert scale in _place(p).place_types
 
+    def test_in_use_names_are_excluded_per_scale(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        pool = _places.load_places(places_dir())
+        village = next(p for p in pool if 'village' in p.place_types)
+        taken: dict[str, frozenset[str]] = {s: frozenset() for s in mod.placeuse.SCALES}
+        taken['village'] = frozenset({village.name.upper()})  # case-insensitive
+        monkeypatch.setattr(mod.placeuse, 'used_place_names', lambda: taken)
+        for _ in range(40):
+            assert _place(place('village', quiet=True)).name != village.name
+        taken['village'] = frozenset(p.name for p in pool)
+        with pytest.raises(ValueError, match='no unused place names'):
+            place('village')
+        # in use at ANOTHER scale does not retire the name at this one
+        taken['village'] = frozenset()
+        taken['province'] = frozenset(p.name for p in pool)
+        assert place('village', quiet=True)
+
     def test_bad_scale(self) -> None:
         with pytest.raises(ValueError, match='scale'):
             place('city')
@@ -152,7 +183,7 @@ class TestPlace:
     def test_empty_pool(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         monkeypatch.setenv('L7R_PLACES_DIR', str(tmp_path))
         assert places_dir() == tmp_path
-        with pytest.raises(ValueError, match='no place names'):
+        with pytest.raises(ValueError, match='no unused place names'):
             place()
 
     def test_places_dir_bundled(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

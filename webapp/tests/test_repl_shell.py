@@ -2,6 +2,7 @@
 
 import importlib.util
 import sys
+import threading
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -47,9 +48,11 @@ def test_main_snippet_then_exit(capsys: pytest.CaptureFixture[str]) -> None:
     assert capsys.readouterr().out == '(2, 2, 0)\n'
 
 
-def test_main_interactive_and_stay() -> None:
+def test_main_interactive_and_stay(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[dict[str, Any]] = []
     ran: list[int] = []
+    warmed: list[str] = []
+    monkeypatch.setattr(mod, 'warm_caches', lambda: warmed.append('ok'))
 
     def fake_readline(history: Path, ns: dict[str, Any]) -> bool:
         assert history == mod.HISTORY
@@ -63,6 +66,10 @@ def test_main_interactive_and_stay() -> None:
     assert ran == [1]
     main(['percent()', '-i'], interact=lambda **kw: calls.append(kw), readline_setup=fake_readline)
     assert len(calls) == 2
+    for t in threading.enumerate():
+        if t.name == 'l7r-cache-warm':
+            t.join(5)
+    assert warmed == ['ok', 'ok']  # the warm-up thread ran once per interactive start
 
 
 def test_setup_readline_uses_history_file(tmp_path: Path) -> None:
