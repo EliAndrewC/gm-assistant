@@ -15,7 +15,7 @@ from l7r.repl.honor import (
     first_guess,
     parse_honor,
     parse_records,
-    refine,
+    perceived,
     render,
 )
 
@@ -59,11 +59,16 @@ class TestMath:
         assert first_guess(3.0, 5) == 3.0
         assert first_guess(3.0, 10) == 5.5
 
-    def test_refine_moves_toward_truth_and_stops(self) -> None:
-        assert refine(4.5, 3.0, 2) == 4.3
-        assert refine(1.0, 3.0, 3) == 1.3
-        assert refine(3.1, 3.0, 5) == 3.0
-        assert refine(3.0, 3.0, 5) == 3.0
+    def test_unconventional_reads_low_and_virtue_reads_high(self) -> None:
+        assert first_guess(3.0, 10, 'low') == 0.5
+        assert first_guess(3.0, 1, 'low') == 1.0
+        assert first_guess(3.0, 5, 'low') == 3.0
+        assert first_guess(3.0, 1, 'high') == 5.0
+        assert first_guess(3.0, 10, 'high') == 5.5
+        assert perceived('XP: 65\nHonor: 3.0\n\nUnconventional\nboisterous\n') == 'low'
+        assert perceived('Honor: 3.0\n\nVirtue\nscarred\n') == 'high'
+        assert perceived('Honor: 3.0\nan unconventional fellow of virtue\n') == 'normal'
+        assert advance(None, 'Jimen', 3.0, 2, 10, 'low').told == 0.5
 
     def test_advance_first_needs_rank(self) -> None:
         with pytest.raises(ValueError, match='pass rank='):
@@ -109,31 +114,33 @@ class FakeOP:
         self.updates.append((cid, fields))
         self.gm_info = fields['game_master_info']
 
-    def run(self, npc: str, pc: str, rank: int | None = None, die: int = 8, **kw: Any) -> Record:
+    def run(self, npc: str, pc: object, rank: int | None = None, die: int = 8, **kw: Any) -> Record:
         return discern_honor(
             npc,
-            pc,
+            pc,  # type: ignore[arg-type]
             rank,
             characters=lambda: CHARS,
             get_body=self.get_body,
             update=self.update,
             roll=lambda: die,
+            rank_lookup=lambda pc: 4,
             **kw,
         )
 
 
 class TestDiscernHonor:
     def test_first_then_second_conversation(self, capsys: pytest.CaptureFixture[str]) -> None:
-        fake = FakeOP(GM)
-        first = fake.run('Otsuki', 'Jimen', rank=2, die=8)
-        assert first == Record('Jimen', 2, 4.5, 1)
+        # Kaede has no sheet, so rank= is given once and then remembered.
+        fake = FakeOP('XP: 10\nHonor: 3.0\n')
+        first = fake.run('Otsuki', 'Kaede', rank=2, die=8)
+        assert first == Record('Kaede', 2, 4.5, 1)
         out = capsys.readouterr().out
-        assert 'Otsuki - true Honor 3.0' in out
+        assert 'Otsuki - true Honor 3.0\n' in out
         assert 'recorded on https://op/characters/otsuki' in out
         assert fake.updates[0][0] == '1'
-        assert '- Jimen (rank 2): told 4.5 after 1 conversation' in fake.gm_info
-        second = fake.run('otsuki', 'jimen')  # case-insensitive PC, rank remembered
-        assert second == Record('Jimen', 2, 4.3, 2)
+        assert '- Kaede (rank 2): told 4.5 after 1 conversation' in fake.gm_info
+        second = fake.run('otsuki', 'kaede')  # case-insensitive PC, rank remembered
+        assert second == Record('Kaede', 2, 4.3, 2)
         assert 'told 4.3 after 2 conversations' in fake.gm_info
         assert 'told 4.5' not in fake.gm_info
 
@@ -146,6 +153,23 @@ class TestDiscernHonor:
         # "Rei" is inside "Reiji": with substring matching this was ambiguous.
         with pytest.raises(RuntimeError, match='could not fetch Hida no Reiji Rei'):
             FakeOP(GM).run('Rei', 'Jimen', rank=1)
+
+    def test_registered_pc_rank_comes_from_the_sheet(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from l7r.repl.sheets import PCS
+
+        fake = FakeOP(GM)
+        for form in ('Jimen', 'TSURUCHI_JIMEN', PCS[0]):
+            rec = fake.run('Otsuki', form, die=10)
+            assert rec.pc == 'Jimen'
+            assert rec.rank == 4
+        assert rec.conversations == 3
+        assert rec.told == 0.5 + 0.4 + 0.4  # Unconventional first guess, then 0.4 closer twice
+        out = capsys.readouterr().out
+        assert 'Jimen: Discern Honor rank 4 (character sheet https://l7r-character-sheet' in out
+        assert '(Unconventional: reads low)' in out
+        assert fake.run('Otsuki', 'Jimen', rank=1).rank == 1  # explicit rank overrides
 
     def test_preview_does_not_upload(self, capsys: pytest.CaptureFixture[str]) -> None:
         fake = FakeOP(GM)

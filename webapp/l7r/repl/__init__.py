@@ -11,8 +11,11 @@ from typing import Any
 from l7r.repl.dice import Dist, actual_xky, d10, dist, initiative, percent, prob, xky
 from l7r.repl.honor import discern_honor
 from l7r.repl.names import Pick, bank, name, names, place
+from l7r.repl.sheets import PC, PCS, knack_rank
 
 __all__ = [
+    'PC',
+    'PCS',
     'Dist',
     'Pick',
     'actual_xky',
@@ -21,6 +24,7 @@ __all__ = [
     'discern_honor',
     'dist',
     'initiative',
+    'knack_rank',
     'name',
     'names',
     'percent',
@@ -44,9 +48,10 @@ COMMANDS: tuple[tuple[str, str], ...] = (
     ('names("f", 3)', 'several, mutually distinct;  bank(3) = 3 male + 3 female'),
     ('place("village")', 'a place name: province / town / village / hamlet'),
     (
-        'discern_honor("Otsuki", "Jimen", rank=2)',
-        'the knack: reads Honor off OP, says what to tell them, records it (rank: first time only)',
+        'discern_honor("Otsuki", Jimen)',
+        'the knack: reads Honor off OP and the rank off the sheet, records it (rank= to override)',
     ),
+    ('Jimen / TSURUCHI_JIMEN', 'the PCs with the knack, as constants or "strings"; PCS lists them'),
 )
 
 
@@ -54,7 +59,10 @@ def namespace() -> dict[str, Any]:
     """The REPL's starting globals."""
     import l7r.repl as pkg
 
-    return {n: getattr(pkg, n) for n in __all__}
+    ns = {n: getattr(pkg, n) for n in __all__}
+    for pc in PCS:  # Jimen, TsuruchiJimen, JIMEN, TSURUCHI_JIMEN ...
+        ns.update(pc.constants)
+    return ns
 
 
 def help_text() -> str:

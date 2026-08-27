@@ -22,10 +22,19 @@ record is a block in the NPC's ``game_master_info``::
     - Jimen (rank 2): told 4.5 after 1 conversation
     - Kaede (rank 1): told 3.0 after 4 conversations - locked in
 
-One line per PC; the rank is stored so it need only be given once (passing
-``rank=`` again updates it - a PC who bought a rank). Nothing older than
-this block is read: the GM ruled (2026-08-27) that no backward compatibility
-with prose notes is wanted.
+One line per PC. The rank comes from the PC's public character sheet
+(``l7r.repl.sheets``, 24 h cache) when the PC is registered there, so
+``discern_honor("Otsuki", Jimen)`` needs nothing else; ``rank=`` overrides
+it, and is required for a PC with no sheet. Nothing older than this block is
+read: the GM ruled (2026-08-27) that no backward compatibility with prose
+notes is wanted.
+
+UNCONVENTIONAL / VIRTUE (``rules/08-disadvantages.md``, ``07-advantages.md``):
+these belong to the TARGET, so they are read off the NPC's OP notes, never
+the PC's sheet (GM 2026-08-27). An NPC listing ``Unconventional`` seems LESS
+honorable at first - the first-conversation adjustment is
+``- |0.5 * (d10 - 5)|``; one listing ``Virtue`` seems MORE honorable -
+``+ |0.5 * (d10 - 5)|``. Otsuki is Unconventional.
 """
 
 from __future__ import annotations
@@ -37,6 +46,7 @@ from dataclasses import dataclass, replace
 from chargen import op
 from chargen.opsynth import match_character
 from l7r.repl.dice import d10
+from l7r.repl.sheets import PC, knack_rank, resolve_pc
 
 HEADING = 'Discern Honor:'
 _HONOR_RE = re.compile(r'^\s*Honor:\s*(-?\d+(?:\.\d+)?)\s*$', re.MULTILINE)
@@ -110,9 +120,28 @@ def render(gm_info: str, records: Mapping[str, Record]) -> str:
     return '\n'.join(lines)
 
 
-def first_guess(honor: float, die: int) -> float:
-    """``honor + 0.5 * (die - 5)``: -2.0 .. +2.5 on a flat d10."""
-    return round(honor + 0.5 * (die - 5), 1)
+def perceived(gm_info: str) -> str:
+    """``'low'`` when the NPC's GM notes list Unconventional, ``'high'`` for
+    Virtue (each a line of its own, the way chargen writes them), else
+    ``'normal'``. These are the TARGET's traits, so the NPC's notes."""
+    lines = {ln.strip().lower() for ln in gm_info.splitlines()}
+    if 'unconventional' in lines:
+        return 'low'
+    if 'virtue' in lines:
+        return 'high'
+    return 'normal'
+
+
+def first_guess(honor: float, die: int, reads: str = 'normal') -> float:
+    """``honor + 0.5 * (die - 5)``: -2.0 .. +2.5 on a flat d10. An
+    Unconventional target always reads low (``- |adjust|``), a Virtue target
+    always high (``+ |adjust|``)."""
+    adjust = 0.5 * (die - 5)
+    if reads == 'low':
+        adjust = -abs(adjust)
+    elif reads == 'high':
+        adjust = abs(adjust)
+    return round(honor + adjust, 1)
 
 
 def refine(told: float, honor: float, rank: int) -> float:
@@ -121,7 +150,14 @@ def refine(told: float, honor: float, rank: int) -> float:
     return round(told + step if told < honor else told - step, 1)
 
 
-def advance(record: Record | None, pc: str, honor: float, rank: int | None, die: int) -> Record:
+def advance(
+    record: Record | None,
+    pc: str,
+    honor: float,
+    rank: int | None,
+    die: int,
+    reads: str = 'normal',
+) -> Record:
     """The record after this conversation. A missing ``rank`` is an error on
     a first conversation and 'keep the stored rank' afterwards."""
     if record is None:
@@ -129,7 +165,7 @@ def advance(record: Record | None, pc: str, honor: float, rank: int | None, die:
             raise ValueError(
                 f'{pc} has never used Discern Honor on this character: pass rank=<knack rank>'
             )
-        told = first_guess(honor, die)
+        told = first_guess(honor, die, reads)
         return Record(pc, rank, told, 1, locked=told == honor)
     r = rank if rank is not None else record.rank
     told = refine(record.told, honor, r)
@@ -138,8 +174,13 @@ def advance(record: Record | None, pc: str, honor: float, rank: int | None, die:
     )
 
 
-def describe(npc: str, honor: float, before: Record | None, after: Record) -> str:
-    lines = [f'{npc} - true Honor {honor:.1f}']
+_READS_NOTE = {'low': ' (Unconventional: reads low)', 'high': ' (Virtue: reads high)', 'normal': ''}
+
+
+def describe(
+    npc: str, honor: float, before: Record | None, after: Record, reads: str = 'normal'
+) -> str:
+    lines = [f'{npc} - true Honor {honor:.1f}{_READS_NOTE[reads]}']
     if before is None:
         lines.append(
             f'{after.pc} (Discern Honor rank {after.rank}), first conversation: '
@@ -158,17 +199,26 @@ def describe(npc: str, honor: float, before: Record | None, after: Record) -> st
 
 def discern_honor(
     npc: str,
-    pc: str,
+    pc: str | PC,
     rank: int | None = None,
     *,
     upload: bool = True,
+    rank_lookup: Callable[[PC], int] = knack_rank,
     characters: Callable[[], Sequence[Mapping[str, object]]] = op.existing_characters,
     get_body: Callable[[str], Mapping[str, object] | None] = op.get_character_body,
     update: Callable[..., object] = op.update_character,
     roll: Callable[[], int] = lambda: d10(reroll=False),
 ) -> Record:
     """Resolve one Discern Honor conversation between ``pc`` and ``npc``,
-    record it on OP (``upload=False`` to only preview), print the result."""
+    record it on OP (``upload=False`` to only preview), print the result.
+    ``pc`` is a registered PC in any form (``Jimen``, ``"Tsuruchi Jimen"``,
+    ``TSURUCHI_JIMEN``) - their rank is read off the character sheet - or
+    any name with an explicit ``rank=``."""
+    who = resolve_pc(pc)
+    pc_name = who.given if who else str(pc)
+    if rank is None and who is not None:
+        rank = rank_lookup(who)
+        print(f'{pc_name}: Discern Honor rank {rank} (character sheet {who.url})')
     match = match_character(npc, characters())
     if match.kind == 'ambiguous':
         names = ', '.join(str(c['name']) for c in match.matches)
@@ -184,10 +234,11 @@ def discern_honor(
     if honor is None:
         raise ValueError(f'{char["name"]} has no "Honor: X.Y" line in the GM-only notes')
     records = parse_records(gm_info)
-    before = records.get(pc.lower())
-    after = advance(before, before.pc if before else pc, honor, rank, roll())
+    before = records.get(pc_name.lower())
+    reads = perceived(gm_info)
+    after = advance(before, before.pc if before else pc_name, honor, rank, roll(), reads)
     records[after.pc.lower()] = after
-    print(describe(str(char['name']), honor, before, after))
+    print(describe(str(char['name']), honor, before, after, reads))
     if upload:
         update(str(char['id']), game_master_info=render(gm_info, records))
         print(f'recorded on {char["character_url"]}')
