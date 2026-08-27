@@ -34,6 +34,8 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 # Tests may use `print` for diagnostics.
 "**/test_*.py"           = ["T20"]
 "tests/**"               = ["T20"]
+# The GM's REPL prints on purpose - printing IS the interface.
+"l7r/repl/**"            = ["T20"]
 # screenshot.py and dom_audit.py embed JS that exceeds line length.
 "tests/dom_audit.py"     = ["T20", "E501"]
 "tests/screenshot.py"    = ["T20"]
