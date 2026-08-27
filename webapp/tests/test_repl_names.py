@@ -74,6 +74,33 @@ class TestUsedNames:
         used_names(refresh=False)
         assert roster == [0.0]
 
+    def test_concurrent_warm_up_downloads_once(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # The REPL starts warm_caches() in a thread; a name() a moment later must
+        # wait on the lock and then find the cache fresh - never a second download
+        # (measured live 2026-08-27: 1 OP fetch, 1 sheet fetch, name() waited 6.5 s).
+        import threading
+        import time
+
+        state = {'fresh': False, 'downloads': 0}
+
+        def refresh(age: float) -> bool:
+            if state['fresh'] and age > 0:
+                return False
+            state['downloads'] += 1
+            time.sleep(0.2)
+            state['fresh'] = True
+            return True
+
+        monkeypatch.setattr(mod.opcache, 'refresh_if_stale', refresh)
+        thread = threading.Thread(target=mod.warm_caches)
+        t0 = time.monotonic()
+        thread.start()
+        time.sleep(0.02)
+        assert used_names() == ROSTER  # blocks on the lock, then sees a fresh cache
+        assert time.monotonic() - t0 >= 0.2
+        thread.join()
+        assert state['downloads'] == 1
+
     def test_refresh_failure_warns(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
