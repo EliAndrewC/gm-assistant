@@ -51,7 +51,9 @@ def test_main_interactive_and_stay() -> None:
     calls: list[dict[str, Any]] = []
     ran: list[int] = []
 
-    def fake_readline() -> bool:
+    def fake_readline(history: Path, ns: dict[str, Any]) -> bool:
+        assert history == mod.HISTORY
+        assert 'discern_honor' in ns
         ran.append(1)
         return True
 
@@ -66,7 +68,11 @@ def test_main_interactive_and_stay() -> None:
 def test_setup_readline_uses_history_file(tmp_path: Path) -> None:
     readline = pytest.importorskip('readline')
     history = tmp_path / 'hist'
-    assert setup_readline(history) is True  # no file yet: OSError suppressed
+    assert setup_readline(history, build_namespace()) is True  # no file yet: OSError suppressed
+    completer = readline.get_completer()
+    assert completer is not None
+    assert completer('discern_hon', 0) == 'discern_honor('
+    assert completer('xk', 0) == 'xky('
     readline.add_history('xky(6, 3)')
     mod._write_history(history)
     assert 'xky(6, 3)' in history.read_text()
