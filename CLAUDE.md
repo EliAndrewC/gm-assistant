@@ -14,6 +14,8 @@ This project is a Legend of the Five Rings tabletop RPG worldbuilding environmen
 
 The GM's canonical notes file is `/host-l7r-repo/setting/l7r.md` - the GM's `EliAndrewC/l7r` repo, bind-mounted from the host. This file is the master record of campaign and setting notes. The GM appends to it directly from their laptop, and you append to it via the [Note Intake Workflow](#note-intake-workflow) below when the GM pastes notes into the chat. If the mount is not present, the container was not launched per [`/gm-assistant/README.md`](README.md) - ask the GM rather than guessing.
 
+**The L7R RULES live in the same repo at `/host-l7r-repo/rules/NN-*.md`** (character creation, skills, combat, schools, school knacks, spells, advantages, disadvantages, professions, ...). A question about how a knack, skill, roll or mechanic works is answered THERE, by grep, before anything is built on it - and a rule that reads wrong (a formula that cannot produce the range the GM describes) is flagged to the GM, not silently fixed in the rules file. Exemplar: `discern_honor()` in `webapp/l7r/repl/honor.py` (2026-08-27).
+
 The GM handles all git operations (`add`, `commit`, `push`) from their laptop. From inside the container, **never run `git commit` or `git push`** against the mount; read-only operations like `git log` / `git diff` are fine if you need historical context.
 
 ### Protecting the GM's Writing

@@ -95,11 +95,20 @@ def match_character(query: str, characters: Sequence[Mapping[str, object]]) -> M
     """
     q = _tokens(query)
     hits: list[Mapping[str, object]] = []
+    exact: list[Mapping[str, object]] = []
     if q:
         for ch in characters:
             name_tokens = _tokens(str(ch.get('name', '')))
             if all(any(qt in nt for nt in name_tokens) for qt in q):
                 hits.append(ch)
+                if all(qt in name_tokens for qt in q):
+                    exact.append(ch)
+    # Whole-token matches outrank substring ones (2026-08-27): "Rei" is inside
+    # "Reiji", so by containment alone it hit all 18 Hida no Reiji and the one
+    # character actually NAMED Rei could never be resolved. The substring rule
+    # stays for what it was for - a typed fragment like "Jitsu" for Jitsuyo.
+    if exact:
+        hits = exact
     if len(hits) == 1:
         return MatchResult('unique', (hits[0],))
     if len(hits) > 1:
