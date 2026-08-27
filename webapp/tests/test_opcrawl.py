@@ -205,6 +205,13 @@ class TestCensus:
         census, slept = run(FakeSite(robots='User-agent: *\nCrawl-delay: 1\nAllow: /\n'))
         assert census.crawl_delay == 20.0
 
+    def test_delay_option_raises_but_never_lowers(self) -> None:
+        census, slept = run(FakeSite(), delay=60.0)
+        assert census.crawl_delay == 60.0
+        assert slept == [60.0] * 4
+        census, _ = run(FakeSite(), delay=5.0)
+        assert census.crawl_delay == 20.0
+
     def test_refuses_when_robots_changes_under_us(self) -> None:
         with pytest.raises(ConsentError, match='no longer allows /campaigns'):
             load_policy(FakeSite(robots='User-agent: *\nDisallow: /campaigns\n'))

@@ -147,11 +147,15 @@ def run_census(
     *,
     game_system_id: int = L5R_GAME_SYSTEM_ID,
     own: tuple[str, ...] = OWN_CAMPAIGNS,
+    delay: float = 0.0,
     clock: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
     progress: Callable[[str], None] = lambda _: None,
 ) -> Census:
-    policy = load_policy(fetch)
+    # `delay` can only RAISE the pace. robots.txt says 20 s, but a site's Cloudflare rate rule is
+    # configured separately and is often stricter than (or never reconciled with) its robots.txt
+    # (GM 2026-08-27), so the CLI runs slower than the published floor by default.
+    policy = load_policy(fetch, max(RECORDED.crawl_delay or 0.0, delay))
     throttle = Throttle(policy.crawl_delay or 0.0, clock, sleep)
     throttle.wait()  # robots.txt was a request too
     site = _Site(fetch, throttle, policy)
