@@ -20,10 +20,13 @@ from the GM's own campaign root), are in `census.py`'s module docstring and `__i
 Measured 2026-08-27: the site answers ~15 requests bunched inside a few minutes with a
 Cloudflare challenge (`403`, `cf-mitigated: challenge`) on the browse listing for a while
 afterwards. That is exactly the case the throttle exists for; if a run stops on a challenge,
-wait and retry later rather than changing the delay downward. The CLI's default is `--delay 60`,
-three times the published floor, because a site's Cloudflare rate rule is configured separately
-from its robots.txt and is often stricter than it, or never reconciled with it (GM 2026-08-27);
-`--delay` can only raise the pace, never take it under 20 s.
+wait and retry later rather than changing the delay downward. The CLI's default is `--delay 61`,
+three times the published floor and just past one minute, because a site's Cloudflare rate rule
+is configured separately from its robots.txt and is often stricter than it, or never reconciled
+with it (GM 2026-08-27); `--delay` can only raise the pace, never take it under 20 s. The backoff
+ladder if a run is still challenged is 61 -> 121 -> 301 -> 601 s (one past 1, 2, 5 and 10
+minutes); a challenge at 601 s means the site blocks effectively everything and the endeavor is
+scrapped rather than slowed further.
 
 ## Testing
 
