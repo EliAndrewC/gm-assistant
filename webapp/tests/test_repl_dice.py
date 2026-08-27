@@ -139,3 +139,5 @@ class TestProb:
         assert d.mean == 5.5
         assert prob[False][1, 1, 6] == pytest.approx(0.5)
         assert prob[True][6, 3] is dist(6, 3, True)
+        assert prob[6, 3] is dist(6, 3, True)
+        assert prob[6, 3, 20] == pytest.approx(dist(6, 3).at_least(20))

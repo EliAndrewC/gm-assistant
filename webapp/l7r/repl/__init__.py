@@ -34,7 +34,10 @@ COMMANDS: tuple[tuple[str, str], ...] = (
     ('initiative(5, 2)', 'the 2 lowest of 5 flat d10s'),
     ('percent()', 'd100'),
     ('prob(6, 3)', 'exact mean of 6k3;  prob(6, 3, 20) = P(>= 20);  prob(6, 3, table=True)'),
-    ('prob[True][6, 3]', 'the old dice.py indexing still works'),
+    (
+        'prob[6, 3]',
+        'dict-style: same as prob(6, 3);  prob[6, 3, 20];  prob[False][6, 3] = flat dice',
+    ),
     ('name()', 'a given name off the pool: name("f"), name("m", peasant=True)'),
     ('names("f", 3)', 'several, mutually distinct;  bank(3) = 3 male + 3 female'),
     ('place("village")', 'a place name: province / town / village / hamlet'),
