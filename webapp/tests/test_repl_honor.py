@@ -143,7 +143,7 @@ class TestDiscernHonor:
             assert fake.run(q, 'Jimen', rank=1, die=5).told == 2.5
 
     def test_whole_token_beats_substring(self) -> None:
-        # "Rei" is inside "Reiji": without the exact-token rule this is ambiguous.
+        # "Rei" is inside "Reiji": with substring matching this was ambiguous.
         with pytest.raises(RuntimeError, match='could not fetch Hida no Reiji Rei'):
             FakeOP(GM).run('Rei', 'Jimen', rank=1)
 
