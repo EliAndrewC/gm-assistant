@@ -20,12 +20,25 @@
 # `done` survives as the documented name of "the stop-work command" and is now an alias of `push`.
 # The diagram repository keeps its own copy of this script with render-sync in it.
 #
+# MAIN IS PUSHED TO GITHUB AS PART OF EVERY PUSH INTO MAIN (GM 2026-08-27). Until then the GM did
+# the GitHub push by hand from their laptop and main sat "ahead of origin/main by N commits" between
+# sessions. The GM now trusts a fine-grained personal access token (repo-scoped, Contents
+# read/write) to do that step: `push` / `done` runs `github-push` inside the same lock, right after
+# the push into main, so main and GitHub never drift apart by more than the seconds between the two
+# pushes. The token lives ONLY in main's gitignored webapp/development-secrets.ini ([github]
+# push_pat) and is handed to git through a credential helper - never on the command line, never in
+# a remote URL, never in a log. A failed GitHub push is exit 4: the work HAS landed in main (safe, as
+# before), only the mirror step is missing - report it, never force.
+#
 # Run from anywhere INSIDE a session clone. Subcommands:
 #   sync-in         start-of-work pull from main (near-free; almost always a fast-forward)
-#   push            stop-work: refuse dirty tree, locked pull+push, overlap advisory (exit 3 =
-#                   the pull merged other sessions' edits into files your commits touched -
-#                   rerun the relevant gate NOW and fix forward)
+#   push            stop-work: refuse dirty tree, locked pull+push+github-push, overlap advisory
+#                   (exit 3 = the pull merged other sessions' edits into files your commits
+#                   touched - rerun the relevant gate NOW and fix forward; exit 4 = landed in main
+#                   but the GitHub push failed - see the message, fix, rerun `github-push`)
 #   done            alias of push (the stop-work command CLAUDE.md names)
+#   github-push     push main's tip to GitHub with the PAT (what push/done run last; standalone
+#                   for recovering from an exit 4, or for mirroring main after a laptop-side pull)
 set -euo pipefail
 
 die() { echo "sync-with-main: $*" >&2; exit 1; }
@@ -59,6 +72,39 @@ sync_in() {
   git pull --no-rebase origin main
   date > "$ROOT/.git/sync-with-main.stamp"
   echo "sync-with-main: clone synced with main (git)"
+}
+
+# github_push - mirror main's `main` to GitHub with the PAT. Returns 4 on any failure so push_cmd can
+# report "landed in main, GitHub missing" distinctly; never dies mid-lock.
+#   GITHUB_PUSH_URL  test seam / override: where to push (default: main's origin, ssh rewritten to
+#                    https so the token applies; the GM's laptop clone keeps using ssh)
+# The token is read from main's secrets file, NOT the clone's: development-secrets.ini is
+# gitignored and a fresh clone has no copy (CLAUDE.md memory "Clone needs secrets for OP").
+github_push() {
+  local secrets url token
+  secrets=$MAIN/webapp/development-secrets.ini
+  url=${GITHUB_PUSH_URL:-$(git -C "$MAIN" remote get-url origin 2>/dev/null || true)}
+  case "$url" in
+    ssh://git@github.com/*) url="https://github.com/${url#ssh://git@github.com/}" ;;
+    git@github.com:*)       url="https://github.com/${url#git@github.com:}" ;;
+    "") echo "sync-with-main: github-push: main has no 'origin' remote and GITHUB_PUSH_URL is unset" >&2; return 4 ;;
+  esac
+  # [github] push_pat = ... - the section is read by range so a same-named key elsewhere cannot match.
+  token=$(sed -n '/^\[github\]/,/^\[/p' "$secrets" 2>/dev/null | sed -n 's/^push_pat[[:space:]]*=[[:space:]]*//p' | head -1)
+  if [ -z "$token" ]; then
+    echo "sync-with-main: github-push: no 'push_pat' under [github] in $secrets - main is pushed but NOT mirrored to GitHub. Add the GM's fine-grained PAT there (see webapp/development-secrets.ini.example), then rerun: scripts/sync-with-main.sh github-push" >&2
+    return 4
+  fi
+  # The helper reads the token from the environment: `-c credential.helper=` first CLEARS any
+  # configured helpers, then ours answers every prompt. Nothing secret reaches argv or the URL.
+  if ! SYNC_GITHUB_TOKEN=$token git -C "$MAIN" \
+        -c credential.helper= \
+        -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$SYNC_GITHUB_TOKEN"; }; f' \
+        push "$url" main:main; then
+    echo "sync-with-main: github-push FAILED - main holds the work but GitHub does not. A non-fast-forward means GitHub has commits main lacks (a laptop-side push): the GM reconciles main against origin (pull, never force), then rerun: scripts/sync-with-main.sh github-push. Any other error: check the token in $secrets ([github] push_pat - expired or wrong scope?)." >&2
+    return 4
+  fi
+  echo "sync-with-main: main pushed to GitHub ($url)"
 }
 
 push_cmd() {
@@ -103,9 +149,22 @@ push_cmd() {
   # been skipped in practice. Checked here because this is the moment work becomes everyone
   # else's problem.
   "$(dirname "$0")/review-gate.sh" || exit 1
-  flock "$LOCK" sh -c 'git pull --no-rebase origin main && git push origin HEAD:main'
+  # The GitHub push runs INSIDE the same lock (GM 2026-08-27): two sessions finishing together
+  # would otherwise race each other's mirror push and one would see a non-fast-forward for no
+  # reason. fd-9 locking instead of `flock sh -c` so github_push (a function) can run under it.
+  local gh_rc=0
+  (
+    flock 9
+    git pull --no-rebase origin main && git push origin HEAD:main || exit 1
+    github_push || exit 4
+  ) 9>"$LOCK" || gh_rc=$?
+  [ "$gh_rc" != 1 ] || exit 1   # pull or push into main failed: nothing landed, git said why
   theirs=$(git diff --name-only "$before"..HEAD | sort -u)
   date > "$ROOT/.git/sync-with-main.stamp"  # post-push the clone is at main's tip = synced by definition
+  if [ "$gh_rc" = 4 ]; then
+    echo "sync-with-main: PUSHED to main, but NOT to GitHub (above). Fix, then: scripts/sync-with-main.sh github-push" >&2
+    exit 4
+  fi
   overlap=$(comm -12 <(printf '%s\n' "$ours") <(printf '%s\n' "$theirs"))
   if [ -n "$overlap" ]; then
     echo "sync-with-main: PUSHED, but the pull auto-merged other sessions' edits into files your commits touched:" >&2
@@ -119,6 +178,7 @@ push_cmd() {
 case "${1:-}" in
   sync-in)     sync_in ;;
   push|done)   push_cmd ;;
+  github-push) github_push || exit $? ;;
   render-sync) echo "sync-with-main: render-sync no longer exists here - the diagram skill and its renders moved to https://github.com/EliAndrewC/diagram (feature 131); nothing in this repository derives a gitignored artifact into main. Use 'done'." >&2; exit 1 ;;
-  *)           die "usage: sync-with-main.sh sync-in | push | done" ;;
+  *)           die "usage: sync-with-main.sh sync-in | push | done | github-push" ;;
 esac

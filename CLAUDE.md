@@ -16,7 +16,7 @@ The GM's canonical notes file is `/host-l7r-repo/setting/l7r.md` - the GM's `Eli
 
 **The L7R RULES live in the same repo at `/host-l7r-repo/rules/NN-*.md`** (character creation, skills, combat, schools, school knacks, spells, advantages, disadvantages, professions, ...). A question about how a knack, skill, roll or mechanic works is answered THERE, by grep, before anything is built on it - and a rule that reads wrong (a formula that cannot produce the range the GM describes) is flagged to the GM, not silently fixed in the rules file. Exemplar: `discern_honor()` in `webapp/l7r/repl/honor.py` (2026-08-27).
 
-The GM handles all git operations (`add`, `commit`, `push`) from their laptop. From inside the container, **never run `git commit` or `git push`** against the mount; read-only operations like `git log` / `git diff` are fine if you need historical context.
+For the l7r repo, the GM handles all git operations (`add`, `commit`, `push`) from their laptop. From inside the container, **never run `git commit` or `git push`** against the mount; read-only operations like `git log` / `git diff` are fine if you need historical context. (This repository is different: since 2026-08-27 the session's stop-work procedure pushes main to GitHub itself - see "Session clones" below.)
 
 ### Protecting the GM's Writing
 
@@ -285,7 +285,7 @@ The diagram skill's own dev-loop doctrine moved with it to <https://github.com/E
 - **Sync in at the start of EVERY new piece of work** - `git pull origin main` inside the clone - not just at the final push.
 - **Stop-work procedure, EVERY time you stop** (task done, milestone, or pausing for GM input): commit in the clone, then run [`scripts/sync-with-main.sh`](scripts/sync-with-main.sh) `done` from inside it (locked pull+push). **Never `git push --force`** - it is the one thing that overwrites other sessions' work.
 - **Main is the integration point, never a workspace.** A session runs NOTHING in main's tree: no generators, no tests, no writes. Read-only commands are fine.
-- **Git ownership:** the session does all commits/merges/push-back-to-main; the GM's only git job is the GitHub push/pull from main. Never commit or push against `/host-l7r-repo`.
+- **Git ownership:** the session does all commits/merges/push-back-to-main, **and the push to GitHub** (GM 2026-08-27): `sync-with-main.sh done` mirrors main's `main` to `origin` inside the same lock, using the GM's fine-grained PAT from MAIN's gitignored `webapp/development-secrets.ini` (`[github] push_pat`). Exit 4 = landed in main but not on GitHub - report it, fix the cause (missing token, or GitHub ahead of main from a laptop-side push, which the GM reconciles), rerun `sync-with-main.sh github-push`. The GM's git job is the laptop-side pull. Never commit or push against `/host-l7r-repo`.
 - **Commit on `main` inside the clone** - never on a branch. `sync-with-main.sh` pushes `HEAD:main`, so what you committed is what lands.
 - Hooks enforce all of this ([`scripts/clone-sync-hooks.sh`](scripts/clone-sync-hooks.sh)): the forbidden name, name-routing to another session's clone, a live-session claim, and a clean-but-stale HEAD. A dirty tree is never blocked - mid-task work is sacred. **If a hook blocks you, the full spec and every failure mode is in [`docs/session-clones.md`](docs/session-clones.md).**
 - **Gotcha:** keep `pytest`/`ripgrep` scoped to the working dir - they do not read `.gitignore`, so a repo-root run double-collects every clone.
