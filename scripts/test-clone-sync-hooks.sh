@@ -29,7 +29,7 @@ check() { # check <label> <expected-rc> <actual-rc>
 
 # ---- fixtures ---------------------------------------------------------------------------------
 FMAIN=$TMP/main
-git init -q "$FMAIN"
+git init -q -b main "$FMAIN"   # -b main: github-push pushes main:main, as the real main is on main
 git -C "$FMAIN" config user.email t@t; git -C "$FMAIN" config user.name t
 echo m0 > "$FMAIN/f"; git -C "$FMAIN" add f; git -C "$FMAIN" commit -qm m0
 mkdir -p "$FMAIN/.clones/.session-clones"
@@ -137,6 +137,22 @@ OUT=$(printf '{"session_id":"sid-me","tool_input":{"file_path":"%s/.clones/misce
 OUT=$(cd "$FMAIN/.clones/gm-assistant" && CLONE_MAIN="$FMAIN" "$SYNC" sync-in 2>&1); RC=$?
 check "sync-with-main refuses to run from .clones/gm-assistant" 1 "$RC"
 case $OUT in *"FORBIDDEN"*) : ;; *) echo "FAIL  sync-with-main refusal message missing 'FORBIDDEN': $OUT"; FAILED=1 ;; esac
+
+# ---- sync-with-main.sh github-push (GM 2026-08-27: main is mirrored to GitHub after every push) --
+# A bare repo stands in for GitHub via the GITHUB_PUSH_URL seam; the token comes from MAIN's
+# webapp/development-secrets.ini, read by [github] section range. Both directions are proven: no
+# token -> exit 4 and nothing pushed; token -> the bare repo's main == main's HEAD.
+GHBARE=$TMP/github.git; git init -q --bare "$GHBARE"
+OUT=$(cd "$FMAIN/.clones/miscellaneous" && CLONE_MAIN="$FMAIN" GITHUB_PUSH_URL="$GHBARE" "$SYNC" github-push 2>&1); RC=$?
+check "github-push without a push_pat -> exit 4" 4 "$RC"
+case $OUT in *"push_pat"*) : ;; *) echo "FAIL  github-push no-token message does not name 'push_pat': $OUT"; FAILED=1 ;; esac
+OUT=$(git -C "$GHBARE" rev-parse --verify -q main 2>&1); check "github-push without a token pushed nothing" 1 $?
+mkdir -p "$FMAIN/webapp"
+printf '[other]\npush_pat = decoy\n[github]\ncodebuild_pat = x\npush_pat = fake-token\n' > "$FMAIN/webapp/development-secrets.ini"
+OUT=$(cd "$FMAIN/.clones/miscellaneous" && CLONE_MAIN="$FMAIN" GITHUB_PUSH_URL="$GHBARE" "$SYNC" github-push 2>&1); RC=$?
+check "github-push with a push_pat -> exit 0" 0 "$RC"
+case $OUT in *"fake-token"*|*"decoy"*) echo "FAIL  github-push leaked the token into its output: $OUT"; FAILED=1 ;; esac
+[ "$(git -C "$GHBARE" rev-parse main)" = "$(git -C "$FMAIN" rev-parse main)" ]; check "github-push landed main's tip in the GitHub stand-in" 0 $?
 
 # ---- prompt-mode: the .specify/feature.json re-track guard -------------------------------------
 # The pointer must stay gitignored. common.sh resolves FEATURE_DIR from it at priority 2, ABOVE the
