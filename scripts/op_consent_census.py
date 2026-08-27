@@ -12,6 +12,14 @@ See webapp/l7r/opcrawl/__init__.py.
 Backoff ladder if Cloudflare still challenges (GM 2026-08-27): 61 -> 121 -> 301 -> 601 s, each one
 just past a threshold a rate rule plausibly uses (1, 2, 5, 10 minutes). A challenge at 601 s
 means the site is effectively blocking everything and the endeavor is scrapped, not slowed further.
+
+Why the ladder only ever goes UP, and why a challenge is never solved or routed around: this tool
+exists to comply rigorously with Obsidian Portal's documented wishes (robots.txt) and its apparent
+ones (a challenge is a "no"), and with the wishes of the humans who host their campaigns there
+(only owners who turned on "allow bots" are ever read). We aim to be responsible internet
+denizens and to be above board in appearance as well as conduct - this code is public, and
+anyone at Obsidian Portal reading it should find nothing to object to. The full statement is in
+webapp/l7r/opcrawl/__init__.py.
 """
 
 from __future__ import annotations
