@@ -8,7 +8,19 @@ import pytest
 
 from l7r.names import GeneratedName
 from l7r.places import Place
-from l7r.repl.names import Pick, bank, name, names, place, places_dir, used_names
+from l7r.repl.names import (
+    Pick,
+    bank,
+    hamlet_name,
+    name,
+    names,
+    place,
+    places_dir,
+    province_name,
+    town_name,
+    used_names,
+    village_name,
+)
 
 # `l7r.repl.names` the MODULE is shadowed by `names` the function on the package.
 mod = importlib.import_module('l7r.repl.names')
@@ -121,6 +133,17 @@ class TestPlace:
         t = place('town', quiet=True)
         assert 'town' in _place(t).place_types
         assert t == _place(t).name
+
+    def test_scale_aliases(self) -> None:
+        for fn, scale in (
+            (province_name, 'province'),
+            (town_name, 'town'),
+            (village_name, 'village'),
+            (hamlet_name, 'hamlet'),
+        ):
+            p = fn(quiet=True)
+            assert p.explanation.endswith(f'({scale})')
+            assert scale in _place(p).place_types
 
     def test_bad_scale(self) -> None:
         with pytest.raises(ValueError, match='scale'):
