@@ -132,8 +132,15 @@ class TestNames:
         assert _entry(n).gender == 'female'
         out = capsys.readouterr().out
         assert out.startswith(
-            f'{n} - {n.explanation}\n  notes: {_entry(n).notes}\n  tags: female, '
+            f'{n} - {n.explanation}
+
+  notes: {_entry(n).notes}
+
+  tags: female, '
         )
+        assert out.endswith('
+
+')  # a blank line before the prompt's echo
         assert n.notes == _entry(n).notes
         assert n.tags[0] == 'female'
 
@@ -164,6 +171,7 @@ class TestNames:
         )
         assert name_tags(entry(provenance='')) == ('male', 'samurai')
         assert Pick('K', 'e', None).describe() == 'K - e'
+        assert Pick('K', 'e', None, tags=('m',)).describe() == 'K - e\n\n  tags: m\n'
 
     def test_gender_aliases_and_random(self) -> None:
         assert _entry(name('male')).gender == 'male'
@@ -191,7 +199,7 @@ class TestNames:
         picks = bank(2)
         assert [_entry(p).gender for p in picks] == ['male', 'male', 'female', 'female']
         assert len({p[0] for p in picks}) == 4
-        assert capsys.readouterr().out.count('\n') >= 4
+        assert capsys.readouterr().out.count(' - ') >= 4
 
 
 class TestPlace:
