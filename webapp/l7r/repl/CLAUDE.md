@@ -10,7 +10,7 @@ pool-backed picks (`name`, `names`, `bank`, `place`). It replaced the GM's copy-
 | `__init__.py` | `namespace()` - what the prompt starts with - and the `COMMANDS` banner. **Add a function to `__all__` and `COMMANDS` and it is at the prompt.** |
 | `dice.py` | the rolls and the EXACT XkY distribution (a DP over "how many dice are still >= t"; the docstring has the math). `prob(6, 3)` is a `Dist` that compares and formats as its mean; `prob(6, 3, 20)` is P(>= 20); `prob(6, 3, table=True)` prints a TN table. `prob[True][6, 3]` is the old dict-style indexing. |
 | `names.py` | `name` / `names` / `bank` go through `chargen.namepool.pick_name` - the chargen engine's own picker - so a REPL pick excludes the campaign roster (cache refreshed if > 1 h old, fail-soft) and is set-distinct within a call. `place(scale)` reads the place-name pool. Both return a `Pick`: a `str` with `.explanation` and `.entry`. |
-| `shell.py` | readline + tab completion + `~/.l7r_repl_history`; `repl.py 'xky(6, 3)'` runs one statement and exits, `-i` stays. |
+| `shell.py` | readline + tab completion + `~/.l7r_repl_history`; `repl.py 'xky(6, 3)'` runs the argument and exits (a lone expression echoes its value; a multi-line quoted script just runs), `-i` stays. |
 
 Design notes:
 

@@ -34,7 +34,9 @@ def test_run_snippet_echoes_expressions(capsys: pytest.CaptureFixture[str]) -> N
     assert capsys.readouterr().out == '(10, 6, 0)\n'
     run_snippet('x = 3', ns)
     assert ns['x'] == 3
-    with pytest.raises(SyntaxError, match='incomplete'):
+    run_snippet('def f(n):\n    return n + 1\n\nfor i in range(2):\n    print(f(i))\nf(9)', ns)
+    assert capsys.readouterr().out == '1\n2\n'  # a script: the last expression is NOT echoed
+    with pytest.raises(SyntaxError):
         run_snippet('if True:', ns)
 
 

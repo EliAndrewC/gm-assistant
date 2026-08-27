@@ -1,13 +1,14 @@
 """Start the GM REPL: readline, tab completion, a history file, the banner.
 
 ``main(argv)``: with no arguments, an interactive prompt; with arguments,
-they are joined and run as one statement in the same namespace and the
-process exits (``repl.py 'xky(6, 3)'``). ``-i`` after a snippet stays
-interactive afterwards.
+they are joined and run as a script in the same namespace and the process
+exits - ``repl.py 'xky(6, 3)'`` echoes the value, a multi-line quoted
+script just runs. ``-i`` after a snippet stays interactive afterwards.
 """
 
 from __future__ import annotations
 
+import ast
 import code
 import contextlib
 import os
@@ -51,12 +52,15 @@ def _write_history(history: Path) -> None:
 
 
 def run_snippet(source: str, ns: dict[str, Any]) -> None:
-    """Run ``source`` in ``ns``; an expression statement echoes its value
-    the way the prompt would."""
-    compiled = code.compile_command(source, symbol='single')
-    if compiled is None:
-        raise SyntaxError(f'incomplete statement: {source!r}')
-    exec(compiled, ns)  # noqa: S102 - this IS the REPL
+    """Run ``source`` in ``ns``. A lone expression echoes its value the way
+    the prompt would; anything longer (several statements, a whole script
+    with loops and defs) runs as a script."""
+    tree = ast.parse(source)
+    if len(tree.body) == 1 and isinstance(tree.body[0], ast.Expr):
+        single = ast.Interactive(body=tree.body)
+        exec(compile(single, '<repl>', 'single'), ns)  # noqa: S102 - this IS the REPL
+        return
+    exec(compile(tree, '<repl>', 'exec'), ns)  # noqa: S102
 
 
 def main(
