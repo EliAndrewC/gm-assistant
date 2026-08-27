@@ -19,6 +19,7 @@ from __future__ import annotations
 import random as _random
 from functools import cache
 from math import comb
+from typing import overload
 
 _CAP = 130  # a die above this carries < 1e-12 of the mass
 
@@ -197,6 +198,10 @@ class _Prob:
             return d
         return d.at_least(tn)
 
+    @overload
+    def __getitem__(self, key: bool) -> _Indexed: ...
+    @overload
+    def __getitem__(self, key: tuple[int, ...]) -> Dist | float: ...
     def __getitem__(self, key: bool | tuple[int, ...]) -> _Indexed | Dist | float:
         # prob[6, 3] and prob[6, 3, 20] mean rerolls on (GM 2026-08-27);
         # prob[False][6, 3] is the flat form; prob[True][...] still works.
