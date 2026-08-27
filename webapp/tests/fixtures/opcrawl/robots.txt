@@ -1,0 +1,19 @@
+User-agent: *
+Crawl-delay: 20
+Allow: /
+Disallow: /messages/
+Disallow: /friends
+Disallow: /login?*
+Disallow: /oauth*
+Disallow: /profile/*
+Disallow: /pre-human-check?*
+Sitemap: https://obsidianportal.com/sitemap-www.xml
+
+User-agent: Yandex
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
