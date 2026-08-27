@@ -4,6 +4,8 @@ page is a saved fixture; nothing here reaches the network."""
 import json
 from pathlib import Path
 
+import requests
+
 import pytest
 
 from l7r.repl import namespace
@@ -81,9 +83,12 @@ def test_fetch_sheet_uses_requests(monkeypatch: pytest.MonkeyPatch) -> None:
             pass
 
     seen: list[tuple[str, float]] = []
-    monkeypatch.setattr(
-        sheets.requests, 'get', lambda url, timeout: seen.append((url, timeout)) or Resp()
-    )
+
+    def get(url: str, timeout: float) -> Resp:
+        seen.append((url, timeout))
+        return Resp()
+
+    monkeypatch.setattr(requests, 'get', get)
     assert sheets.fetch_sheet(JIMEN) == '<title>L7R - X</title>'
     assert seen == [(JIMEN.url, 20)]
 
