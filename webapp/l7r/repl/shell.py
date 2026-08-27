@@ -12,6 +12,7 @@ import ast
 import code
 import contextlib
 import os
+import sys
 import threading
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -21,6 +22,18 @@ from l7r.repl import help_text, namespace
 from l7r.repl.names import warm_caches
 
 HISTORY = Path(os.environ.get('L7R_REPL_HISTORY', Path.home() / '.l7r_repl_history'))
+TITLE = 'L7R repl >>>'
+
+
+def set_title(title: str = TITLE, out: Any = None) -> bool:
+    """Name the terminal tab/window (xterm OSC 0), only when stdout is a
+    terminal - piped output must not carry escape codes. True when set."""
+    stream = out if out is not None else sys.stdout
+    if not getattr(stream, 'isatty', lambda: False)():
+        return False
+    stream.write(f'\033]0;{title}\007')
+    stream.flush()
+    return True
 
 
 def build_namespace() -> dict[str, Any]:
@@ -84,6 +97,7 @@ def main(
         if not stay:
             return 0
     readline_setup(HISTORY, ns)
+    set_title()
     # Roster caches warm in the background so the prompt appears at once
     # (GM 2026-08-27); a pick before it finishes waits on the refresh lock.
     threading.Thread(target=warm_caches, name='l7r-cache-warm', daemon=True).start()

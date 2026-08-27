@@ -11,7 +11,7 @@ import pytest
 
 from l7r.repl import COMMANDS, help_text, namespace
 from l7r.repl import shell as mod
-from l7r.repl.shell import build_namespace, main, run_snippet, setup_readline
+from l7r.repl.shell import TITLE, build_namespace, main, run_snippet, set_title, setup_readline
 
 
 def test_namespace_and_banner() -> None:
@@ -70,6 +70,22 @@ def test_main_interactive_and_stay(monkeypatch: pytest.MonkeyPatch) -> None:
         if t.name == 'l7r-cache-warm':
             t.join(5)
     assert warmed == ['ok', 'ok']  # the warm-up thread ran once per interactive start
+
+
+def test_set_title_only_on_a_terminal() -> None:
+    import io
+
+    class Tty(io.StringIO):
+        def isatty(self) -> bool:
+            return True
+
+    tty = Tty()
+    assert set_title(out=tty) is True
+    assert tty.getvalue() == f'\033]0;{TITLE}\007'
+    assert TITLE == 'L7R repl >>>'
+    piped = io.StringIO()
+    assert set_title(out=piped) is False
+    assert piped.getvalue() == ''
 
 
 def test_setup_readline_uses_history_file(tmp_path: Path) -> None:
