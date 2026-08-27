@@ -19,16 +19,22 @@ from __future__ import annotations
 import logging
 import os
 import random as _random
+import threading
 from collections.abc import Sequence
 from pathlib import Path
 
-from chargen import namepool, opcache
+from chargen import namepool, opcache, placeuse
 from l7r import places as _places
 
 logger = logging.getLogger(__name__)
 
 _WEBAPP = Path(__file__).resolve().parent.parent.parent
-MAX_AGE = 3600.0
+#: Six hours (GM 2026-08-27): the REPL's roster window, wider than the skill's
+#: one hour because a REPL session is a game night and the roster does not
+#: move during one. A warm-up thread at REPL start refreshes both caches.
+MAX_AGE = 6 * 3600.0
+_refresh_lock = threading.Lock()
+CACHE_STATUS: dict[str, str] = {'roster': 'not checked'}
 
 SCALES = ('province', 'town', 'village', 'hamlet')
 
@@ -61,16 +67,39 @@ def places_dir() -> Path:
     return (_WEBAPP.parent / '.claude' / 'skills' / 'place-names').resolve()
 
 
+def warm_caches(max_age: float = MAX_AGE) -> str:
+    """Refresh the OP roster (and, inside it, the character-sheet roster) if
+    older than ``max_age``. Run by the REPL in a background thread at start
+    so the prompt is never blocked on Obsidian Portal; a pick that arrives
+    while it runs waits on the lock rather than fetching twice. Returns a
+    one-line status, also kept in ``CACHE_STATUS['roster']``."""
+    with _refresh_lock:
+        try:
+            written = opcache.refresh_if_stale(max_age)
+        except Exception as e:  # OP boundary: report, never block a pick
+            CACHE_STATUS['roster'] = f'refresh failed: {e}'
+            return CACHE_STATUS['roster']
+    age = opcache.cache_age()
+    if age is None:
+        CACHE_STATUS['roster'] = 'no campaign cache - every name looks free'
+    else:
+        CACHE_STATUS['roster'] = f'{"refreshed" if written else "fresh"} ({age / 3600:.1f} h old)'
+    return CACHE_STATUS['roster']
+
+
+def cache_status() -> str:
+    """What the warm-up thread found (``help_l7r()`` lists this)."""
+    print(CACHE_STATUS['roster'])
+    return CACHE_STATUS['roster']
+
+
 def used_names(refresh: bool | None = None) -> frozenset[str]:
     """Given names on the campaign roster. ``refresh``: None = refresh the
-    cache if older than an hour, True = force, False = offline read."""
+    cache if older than :data:`MAX_AGE`, True = force, False = offline read."""
     if refresh is not False:
-        try:
-            opcache.refresh_if_stale(0.0 if refresh else MAX_AGE)
-        except Exception as e:  # OP boundary: warn, never block a pick
-            print(f'WARNING: campaign cache refresh failed: {e}')
-    if opcache.cache_age() is None:
-        print('WARNING: no campaign cache - picking against an EMPTY roster')
+        status = warm_caches(0.0 if refresh else MAX_AGE)
+        if 'failed' in status or 'no campaign cache' in status:
+            print(f'WARNING: {status}')
     return opcache.used_given_names()
 
 
@@ -142,9 +171,17 @@ def place(scale: str | None = None, quiet: bool = False) -> Pick:
             raise ValueError(f'scale must be one of {SCALES}, not {scale!r}')
         scale = matches[0]
         pool = _places.filter_places(pool, place_type=scale)
+    # Names already in use at this scale (OP tags + the chargen house config)
+    # are excluded; with no scale, in use at ANY scale. Per-scale by design -
+    # see chargen/placeuse.py.
+    in_use = placeuse.used_place_names()
+    taken = {
+        placeuse.normalize(n) for s, ns in in_use.items() if scale is None or s == scale for n in ns
+    }
+    pool = [p for p in pool if placeuse.normalize(p.name) not in taken]
     chosen = _places.random_place(pool)
     if chosen is None:
-        raise ValueError(f'no place names in the pool at {places_dir()}')
+        raise ValueError(f'no unused place names in the pool at {places_dir()}')
     shown = chosen.name
     if scale == 'village':
         shown, _ = _places.villageify(chosen)

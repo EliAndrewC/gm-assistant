@@ -119,7 +119,7 @@ def knack_rank(
     knack: str = 'Discern Honor',
     *,
     max_age: float = CACHE_TTL,
-    fetch: Callable[[PC], str] = fetch_sheet,
+    fetch: Callable[[PC], str] | None = None,
     cache_path: Path = CACHE_PATH,
     now: Callable[[], float] = time.time,
 ) -> int:
@@ -129,7 +129,7 @@ def knack_rank(
     entry = cache.get(key)
     if entry and now() - float(str(entry.get('at', 0))) < max_age:
         return int(str(entry['rank']))
-    html = fetch(pc)
+    html = (fetch or fetch_sheet)(pc)  # resolved at call time so a patch of fetch_sheet holds
     rank = parse_knack_rank(html, knack)
     if rank is None:
         raise ValueError(f'{pc.name} has no {knack} on the sheet at {pc.url}')
