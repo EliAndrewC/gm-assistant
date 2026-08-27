@@ -32,6 +32,11 @@ def test_load_names_preserves_fields(sample_names_dir: Path) -> None:
     assert hiroshi.notes == 'Real Japanese name.'
 
 
+def test_load_names_keeps_provenance(sample_names_dir: Path) -> None:
+    names = load_names(sample_names_dir)
+    assert all(n.provenance in ('', 'historical', 'idiom', 'invented') for n in names)
+
+
 def test_load_names_marks_peasant(sample_names_dir: Path) -> None:
     names = load_names(sample_names_dir)
     goro = next(n for n in names if n.name == 'Goro')

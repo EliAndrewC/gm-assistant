@@ -49,6 +49,9 @@ class GeneratedName:
     # preference tier in ``chargen.namepool.pick_name`` reaches these directly
     # rather than only through the whole-pool fallback (GM 2026-08-26).
     samurai: bool = False
+    #: ``historical`` / ``idiom`` / ``invented`` (the pool's attestation class;
+    #: the REPL prints it - GM 2026-08-27). '' when the entry predates the field.
+    provenance: str = ''
 
     @property
     def slug(self) -> str:
@@ -131,6 +134,7 @@ def _load_jsonl(path: Path) -> list[GeneratedName]:
                 peasant=bool(entry.get('peasant', False)),
                 notes=str(entry.get('notes', '')),
                 samurai=bool(entry.get('samurai', False)),
+                provenance=str(entry.get('provenance', '')),
             )
         )
     return result

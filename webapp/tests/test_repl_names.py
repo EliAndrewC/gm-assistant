@@ -14,6 +14,7 @@ from l7r.repl.names import (
     bank,
     hamlet_name,
     name,
+    name_tags,
     names,
     place,
     places_dir,
@@ -129,14 +130,47 @@ class TestNames:
         assert isinstance(n, Pick)
         assert isinstance(n, str)
         assert _entry(n).gender == 'female'
-        assert capsys.readouterr().out == f'{n} - {n.explanation}\n'
+        out = capsys.readouterr().out
+        assert out.startswith(
+            f'{n} - {n.explanation}\n  notes: {_entry(n).notes}\n  tags: female, '
+        )
+        assert n.notes == _entry(n).notes
+        assert n.tags[0] == 'female'
+
+    def test_name_tags(self) -> None:
+        def entry(**kw: object) -> GeneratedName:
+            base: dict[str, object] = {
+                'name': 'X',
+                'gender': 'male',
+                'format': 1,
+                'explanation': 'e',
+                'peasant': False,
+                'notes': '',
+                'provenance': 'historical',
+            }
+            base.update(kw)
+            return GeneratedName(**base)  # type: ignore[arg-type]
+
+        assert name_tags(entry()) == ('male', 'samurai', 'historical')
+        assert name_tags(entry(peasant=True, gender='female')) == (
+            'female',
+            'peasant',
+            'historical',
+        )
+        assert name_tags(entry(peasant=True, samurai=True)) == (
+            'male',
+            'peasant + samurai',
+            'historical',
+        )
+        assert name_tags(entry(provenance='')) == ('male', 'samurai')
+        assert Pick('K', 'e', None).describe() == 'K - e'
 
     def test_gender_aliases_and_random(self) -> None:
         assert _entry(name('male')).gender == 'male'
         assert _entry(name('M')).gender == 'male'
         assert _entry(name('female')).gender == 'female'
         unlabeled = name()
-        assert unlabeled.explanation.endswith(('(male)', '(female)'))
+        assert unlabeled.tags[0] in ('male', 'female')
 
     def test_bad_gender(self) -> None:
         with pytest.raises(ValueError, match='gender'):
@@ -157,7 +191,7 @@ class TestNames:
         picks = bank(2)
         assert [_entry(p).gender for p in picks] == ['male', 'male', 'female', 'female']
         assert len({p[0] for p in picks}) == 4
-        assert capsys.readouterr().out.count('\n') == 4
+        assert capsys.readouterr().out.count('\n') >= 4
 
 
 class TestPlace:

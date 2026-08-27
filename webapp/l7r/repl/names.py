@@ -25,6 +25,7 @@ from pathlib import Path
 
 from chargen import namepool, opcache, placeuse
 from l7r import places as _places
+from l7r.names import GeneratedName
 
 logger = logging.getLogger(__name__)
 
@@ -41,20 +42,49 @@ SCALES = ('province', 'town', 'village', 'hamlet')
 
 class Pick(str):
     """A picked name: a plain ``str`` with ``.explanation`` (the pool's
-    meaning line) and ``.entry`` (the pool record) attached."""
+    meaning line), ``.notes`` (the authenticity notes) and ``.tags`` (gender,
+    caste, provenance) attached, and ``.entry`` the pool record."""
 
     explanation: str
+    notes: str
+    tags: tuple[str, ...]
     entry: object
 
-    def __new__(cls, name: str, explanation: str, entry: object) -> Pick:
+    def __new__(
+        cls,
+        name: str,
+        explanation: str,
+        entry: object,
+        notes: str = '',
+        tags: tuple[str, ...] = (),
+    ) -> Pick:
         self = super().__new__(cls, name)
         # Some pool formats open with the name itself; do not print it twice.
         self.explanation = explanation.removeprefix(f'{name} - ')
+        self.notes = notes
+        self.tags = tags
         self.entry = entry
         return self
 
     def describe(self) -> str:
-        return f'{self} - {self.explanation}'
+        """The name and its meaning, then the authenticity notes and the tags
+        (GM 2026-08-27: both printed on every pick), indented under it."""
+        lines = [f'{self} - {self.explanation}']
+        if self.notes:
+            lines.append(f'  notes: {self.notes}')
+        if self.tags:
+            lines.append(f'  tags: {", ".join(self.tags)}')
+        return '\n'.join(lines)
+
+
+def name_tags(entry: GeneratedName) -> tuple[str, ...]:
+    """``male``/``female``; ``peasant`` (a commoner-register name), ``samurai``,
+    or both when a peasant-flagged name is attested on warrior-house women;
+    then the provenance (``historical`` / ``idiom`` / ``invented``)."""
+    caste = 'samurai'
+    if entry.peasant:
+        caste = 'peasant + samurai' if entry.samurai else 'peasant'
+    return tuple(t for t in (entry.gender, caste, entry.provenance) if t)
 
 
 def places_dir() -> Path:
@@ -131,8 +161,7 @@ def names(
     for _ in range(n):
         g = _gender(gender)
         chosen = namepool.pick_name(g, pool, used, [*avoid, *picks], peasant=peasant)
-        tag = '' if gender else f' ({chosen.gender})'
-        picks.append(Pick(chosen.name, f'{chosen.explanation}{tag}', chosen))
+        picks.append(Pick(chosen.name, chosen.explanation, chosen, chosen.notes, name_tags(chosen)))
     if not quiet:
         for p in picks:
             print(p.describe())
