@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from l7r.repl.dice import Dist, actual_xky, d10, dist, initiative, percent, prob, xky
+from l7r.repl.honor import discern_honor
 from l7r.repl.names import Pick, bank, name, names, place
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     'actual_xky',
     'bank',
     'd10',
+    'discern_honor',
     'dist',
     'initiative',
     'name',
@@ -41,6 +43,10 @@ COMMANDS: tuple[tuple[str, str], ...] = (
     ('name()', 'a given name off the pool: name("f"), name("m", peasant=True)'),
     ('names("f", 3)', 'several, mutually distinct;  bank(3) = 3 male + 3 female'),
     ('place("village")', 'a place name: province / town / village / hamlet'),
+    (
+        'discern_honor("Otsuki", "Jimen", rank=2)',
+        'the knack: reads Honor off OP, says what to tell them, records it (rank: first time only)',
+    ),
 )
 
 

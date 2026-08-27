@@ -48,6 +48,17 @@ def test_match_character_ambiguous_lists_all_candidates() -> None:
     assert len(result.matches) == 2
 
 
+def test_match_character_whole_token_outranks_substring() -> None:
+    # "Rei" is a substring of "Reiji": containment alone matched every Hida no
+    # Reiji and the character actually named Rei could never resolve (2026-08-27).
+    cast = [{'name': 'Hida no Reiji Sakura'}, {'name': 'Hida no Reiji Rei'}]
+    result = opsynth.match_character('Rei', cast)
+    assert result.kind == 'unique'
+    assert result.character['name'] == 'Hida no Reiji Rei'
+    assert opsynth.match_character('Reiji', cast).kind == 'ambiguous'
+    assert opsynth.match_character('Saku', cast).character['name'] == 'Hida no Reiji Sakura'
+
+
 def test_match_character_no_match_offers_nearest_names() -> None:
     result = opsynth.match_character('Bayushi Zzzz', _CAST)
     assert result.kind == 'none'
