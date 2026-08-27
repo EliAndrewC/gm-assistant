@@ -31,7 +31,7 @@ _CAST: list[dict[str, object]] = [
     'query',
     ['Daidoji Jitsuyo', 'jitsuyo', 'DAIDOJI   jitsuyo', 'Etsuko'],
 )
-def test_match_character_resolves_partial_or_approximate_name(query: str) -> None:
+def test_match_character_resolves_partial_name_forms(query: str) -> None:
     result = opsynth.match_character(query, _CAST)
     assert result.kind == 'unique'
     assert result.character['name'] == 'Daidoji no Etsuko Jitsuyo'
@@ -48,15 +48,18 @@ def test_match_character_ambiguous_lists_all_candidates() -> None:
     assert len(result.matches) == 2
 
 
-def test_match_character_whole_token_outranks_substring() -> None:
-    # "Rei" is a substring of "Reiji": containment alone matched every Hida no
-    # Reiji and the character actually named Rei could never resolve (2026-08-27).
+def test_match_character_whole_tokens_only() -> None:
+    # "Rei" is a substring of "Reiji": substring matching hit every Hida no
+    # Reiji and the character actually named Rei could never resolve. The GM
+    # (2026-08-27) wants only the forms a person is actually called by.
     cast = [{'name': 'Hida no Reiji Sakura'}, {'name': 'Hida no Reiji Rei'}]
     result = opsynth.match_character('Rei', cast)
     assert result.kind == 'unique'
     assert result.character['name'] == 'Hida no Reiji Rei'
     assert opsynth.match_character('Reiji', cast).kind == 'ambiguous'
-    assert opsynth.match_character('Saku', cast).character['name'] == 'Hida no Reiji Sakura'
+    for form in ('Sakura', 'Reiji Sakura', 'Hida Sakura', 'Hida no Reiji Sakura'):
+        assert opsynth.match_character(form, cast).character['name'] == 'Hida no Reiji Sakura'
+    assert opsynth.match_character('Saku', cast).kind == 'none'
 
 
 def test_match_character_no_match_offers_nearest_names() -> None:
