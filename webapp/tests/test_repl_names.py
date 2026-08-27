@@ -132,15 +132,9 @@ class TestNames:
         assert _entry(n).gender == 'female'
         out = capsys.readouterr().out
         assert out.startswith(
-            f'{n} - {n.explanation}
-
-  notes: {_entry(n).notes}
-
-  tags: female, '
+            f'{n} - {n.explanation}\n\n  notes: {_entry(n).notes}\n\n  tags: female, '
         )
-        assert out.endswith('
-
-')  # a blank line before the prompt's echo
+        assert out.endswith('\n\n')  # a blank line before the prompt's echo
         assert n.notes == _entry(n).notes
         assert n.tags[0] == 'female'
 
