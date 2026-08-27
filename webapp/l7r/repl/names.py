@@ -74,7 +74,9 @@ class Pick(str):
             lines.append(f'  notes: {self.notes}')
         if self.tags:
             lines.append(f'  tags: {", ".join(self.tags)}')
-        return '\n'.join(lines)
+        # Blank lines between the blocks and one after, so the prompt's echo
+        # of the value does not butt against the tags (GM 2026-08-27).
+        return '\n\n'.join(lines) + ('\n' if len(lines) > 1 else '')
 
 
 def name_tags(entry: GeneratedName) -> tuple[str, ...]:
