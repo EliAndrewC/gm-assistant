@@ -92,6 +92,11 @@ class Conversation:
     rolls: list[Roll] = field(default_factory=list)
     last_seen: dict[str, str] = field(default_factory=dict)
     unresolved: list[str] = field(default_factory=list)
+    #: The lines most recently written to Obsidian Portal - one per skill - so the
+    #: next write REPLACES them instead of stacking more under the portrait.
+    written: tuple[str, ...] = ()
+    #: Monotonic timestamp of that write, for the debounce.
+    written_at: float = 0.0
 
     @property
     def npc_name(self) -> str:

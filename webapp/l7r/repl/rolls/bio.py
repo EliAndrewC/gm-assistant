@@ -21,6 +21,7 @@ and returns the whole body.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 
 #: The Textile file embed. Obsidian Portal writes it with irregular internal
 #: spacing (`[[File:1515940  | class=...`), so the pattern is deliberately loose
@@ -47,6 +48,46 @@ def already_present(bio: str, line: str) -> bool:
     """
     target = line.strip()
     return any(existing.strip() == target for existing in bio.splitlines())
+
+
+def remove_lines(bio: str, lines: Sequence[str]) -> str:
+    """Drop each of `lines` from the body, leaving everything else untouched."""
+    targets = {line.strip() for line in lines if line.strip()}
+    if not targets:
+        return bio
+    # Each line was spliced WITH a blank line after it, so removing only the line
+    # leaves the blank behind and the body grows a stray newline on every rewrite.
+    # Measured 2026-08-28 before this: three writes produced `\r\n\r\n\r\n`.
+    source = bio.splitlines(keepends=True)
+    kept: list[str] = []
+    index = 0
+    while index < len(source):
+        if source[index].strip() in targets:
+            index += 1
+            if index < len(source) and not source[index].strip():
+                index += 1
+            continue
+        kept.append(source[index])
+        index += 1
+    return ''.join(kept)
+
+
+def rewrite(bio: str, previous: Sequence[str], lines: Sequence[str]) -> str:
+    """Replace the block this conversation wrote before with its current form.
+
+    The conversation writes as it goes, so the same conversation writes repeatedly
+    with a growing set of rolls, and possibly a growing set of SKILLS - one line
+    each. Removing what we wrote last time and re-splicing keeps exactly this
+    conversation's lines under the portrait, with everything else in the bio
+    untouched.
+
+    Lines are spliced in reverse because `splice` always inserts directly under the
+    embed, so the last one spliced ends up first.
+    """
+    body = remove_lines(bio, previous)
+    for line in reversed([x for x in lines if x.strip()]):
+        body = splice(body, line)
+    return body
 
 
 def splice(bio: str, line: str) -> str:

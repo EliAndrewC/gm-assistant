@@ -109,6 +109,28 @@ def render_open(rolls: Sequence[Roll], rule: RecordingRule = DEFAULT_RULE) -> st
     return f'{names} {usable[0].skill.lower()}: {totals}'
 
 
+def render_lines(rolls: Sequence[Roll], rule: RecordingRule = DEFAULT_RULE) -> list[str]:
+    """One line per SKILL, in the order each skill first appeared.
+
+    A conversation is not one round. The players greet an NPC (etiquette), then
+    press them (interrogation), then try a lie (sincerity) - and the GM's format
+    names the skill once per line, so mixed rolls are several lines rather than one
+    impossible one. `render_open` raises on a mixed set precisely so this grouping
+    cannot be forgotten.
+    """
+    order: list[str] = []
+    groups: dict[str, list[Roll]] = {}
+    for roll in rolls:
+        if not roll.attributed:
+            continue
+        key = roll.skill.lower()
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(roll)
+    return [render_open(groups[key], rule) for key in order]
+
+
 def render_contest(scored: Contest) -> str:
     """One contested roll.
 
