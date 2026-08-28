@@ -159,3 +159,26 @@ motivating etiquette round: a synthesized snowflake for 01:53:00Z returned the r
 
 This also means paging is one-directional and naturally incremental, which suits a poller: keep the
 last seen message id, ask for everything after it, stop when the page comes back short.
+
+## R10. "Directly underneath the portrait" has a concrete anchor
+
+Verified against the live campaign. A character's public `bio` opens with a Textile file embed
+carrying the full-body portrait:
+
+```
+[[File:1515940  | class=media-item-align-none | Tsuruchi.png]]
+```
+
+**Decision**: the roll line is spliced immediately after that embed line, which is literally what
+the GM asked for. When a record has no embed, the line goes at the top of the bio - the spec's
+existing edge case, now confirmed as the real fallback rather than a hypothetical one.
+
+Two API facts found while establishing this, both of which cost a wrong turn first:
+
+- `op.get_character_body()` takes the character **id**, not the slug. A slug returns 404 from an
+  otherwise-healthy endpoint. `discern_honor` already passes the id correctly; this note exists so
+  the next reader does not diagnose a 404 as a broken endpoint the way this session briefly did.
+- The characters LIST endpoint returns `bio`, `description` and `game_master_info` as KEYS but
+  leaves them EMPTY for every character - 0 of 119 populated. The body fields only arrive from the
+  per-character fetch. A design that assumed one list call could supply bios would appear to work
+  (the keys are present) and silently see nothing anywhere.
