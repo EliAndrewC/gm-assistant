@@ -171,10 +171,15 @@ line. Pure logic, no I/O.
 - **FR-017**: Collection MUST NOT block the REPL prompt.
 - **FR-018**: When the character-sheet endpoints are absent or failing, the typed path MUST still
   work end to end, and the GM MUST be told what could not be resolved.
-- **FR-019**: The GM MUST be able to see what will be written before it is written, and to discard
-  a conversation without writing.
+- **FR-019**: `end_conversation()` MUST write immediately, with no confirmation step. A separate
+  call MUST be available to abandon an open conversation without writing; it is not part of the
+  normal path and nothing blocks on it.
 - **FR-020**: Every roll recorded MUST be attributable to a named character; an unattributed roll is
   reported to the GM and excluded from the line.
+- **FR-021**: A round of open rolls MUST be written as one line pairing character names with their
+  recorded totals in the same order, in the GM's existing shorthand -
+  `<name> / <name> / ... <skill>: <total> / <total> / ...`, as in the GM's own example
+  `Sadakichi / Moriko / Jimen / Tetsuro / Toshihiro etiquette: 35 / 25 / 25 / 20 / 15`.
 
 ### Key Entities
 
@@ -230,3 +235,41 @@ line. Pure logic, no I/O.
 - The Discord bot is read-only by design (permissions 66560) and this feature never posts.
 - Existing project machinery is reused rather than rebuilt: NPC name resolution, the Obsidian Portal
   client, and the REPL's background-refresh pattern.
+- **The abandon call in FR-019 is an ADDITION beyond the GM's request**, kept only for the
+  "opened against the wrong NPC" case. The GM described two calls and no third step, and this
+  project forbids pre-review gates on generated content, so `end_conversation()` writes immediately
+  and nothing blocks on the abort. To be raised with the GM once the implementation works, per
+  constitution Principle XVI.
+
+## Review history
+
+**Round 1** (2026-08-28, `spec-fidelity` Mode 2, independent of the author): **CHANGES REQUIRED.**
+Question 1 (does it specify what was asked) passed on every clause of the request, including all
+four elements of the contested rule and both halves of the placement instruction. Question 2 found
+one unrequested addition and one omission:
+
+1. **FR-019 was a pre-review gate.** As originally written - *"The GM MUST be able to see what will
+   be written before it is written"* - it reinserted a manual step at the table, which is the exact
+   cost the feature exists to remove, contradicted the spec's own SC-001 ("two REPL calls"), and
+   matched the shape CLAUDE.md's NO PRE-REVIEW GATE rule forbids. Rewritten to write immediately,
+   with the abort call kept as an explicitly-recorded addition.
+2. **No FR carried the output line format**, the single most concrete thing the GM specified; it
+   existed only in an acceptance scenario. Added as FR-021, quoting the GM's example.
+
+The reviewer explicitly considered and WITHDREW three findings after reading `research.md` - FR-006's
+`@N` threshold, FR-008's silent ignore, and FR-020's exclusion of unattributed rolls - on the
+grounds that each handles data outside the domain of a GM rule rather than carving out an exception
+inside one. Recorded here so a later reviewer does not re-raise them.
+
+Two items referred to the GM rather than changed, both after the implementation works: whether the
+Etiquette cap should also apply to CONTESTED etiquette rolls (the GM's words scope it to open rolls,
+but the stated reason - politeness has a ceiling - would apply to both), and whether a bare-number
+roll should inherit the conversation's skill.
+
+**Round 2** (2026-08-28, same agent, re-review of the two changes only): **FAITHFUL.** Both changes
+were judged applied "correctly and completely", with neither introducing a new addition, carve-out
+or contradiction. The reviewer's words: *"The pre-review gate is gone. The write path is now
+unconditional and single-step"*, and of FR-021, *"The most concrete thing the GM specified now has a
+normative carrier in the FR list rather than living only in an acceptance scenario."* FR-021 was
+moved after FR-020 to fix the numbering order the reviewer flagged as cosmetic. Cleared for
+implementation.
