@@ -1,0 +1,6905 @@
+{
+ "note": "Real messages from the GM's two campaign channels, author ids and names pseudonymized. Every message that contains a digit or an image attachment; pure chatter is excluded as it is trivially rejected and is the players private conversation. Positives and hard negatives are NOT pre-labeled here - labeling lives in the test.",
+ "messages": [
+  {
+   "id": "1387239124251181067",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:13:00.878000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "27",
+   "attachments": []
+  },
+  {
+   "id": "1387239220279644201",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:13:23.773000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "15",
+   "attachments": []
+  },
+  {
+   "id": "1387239257457950752",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:13:32.637000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "24 eti",
+   "attachments": []
+  },
+  {
+   "id": "1387240142099710072",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:17:03.552000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "It worked!\n\n```\n>>> xky(6, 5)\n[1, 3, 4, 6, 7, 8]\n28\n```",
+   "attachments": []
+  },
+  {
+   "id": "1387242564117073981",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:26:41.006000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "5 minutes to go....",
+   "attachments": []
+  },
+  {
+   "id": "1387242780031586415",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:27:32.484000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "roll of 36, +2h, maybe +5 hayato, spending 4 3rd dans and 5 conv = 68",
+   "attachments": []
+  },
+  {
+   "id": "1387244395694260255",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:33:57.688000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "31+15acting+10 for two free raises from saved free raises in sprit encounter +4 conv from hayato = 60",
+   "attachments": []
+  },
+  {
+   "id": "1387246243972907098",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:41:18.352000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "53",
+   "attachments": []
+  },
+  {
+   "id": "1387246248637235242",
+   "channel": "monday",
+   "timestamp": "2025-06-25T01:41:19.464000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "65 precepts@5 (49 + 2x3.0 Honor + 5 Hayato Points, rounded up by Hayato) to argue that the sword does not serve her in following the Way of the Samurai, because she should make war to create a chance for the people to live in peace and righteousness, but it is an unfocused weapon that destroys at random, and her future with it is even less than the grave",
+   "attachments": []
+  },
+  {
+   "id": "1387252464234795069",
+   "channel": "monday",
+   "timestamp": "2025-06-25T02:06:01.378000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "there are 4 bears",
+   "attachments": []
+  },
+  {
+   "id": "1387252634510954496",
+   "channel": "monday",
+   "timestamp": "2025-06-25T02:06:41.975000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "Untitled.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1389752488319652010",
+   "channel": "monday",
+   "timestamp": "2025-07-01T23:40:13.568000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "https://tenor.com/view/fingers-trick-magic-gif-8480841",
+   "attachments": []
+  },
+  {
+   "id": "1389752931342880911",
+   "channel": "monday",
+   "timestamp": "2025-07-01T23:41:59.193000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "I am now at 0.6 shadowlands taint",
+   "attachments": []
+  },
+  {
+   "id": "1389757043732123731",
+   "channel": "monday",
+   "timestamp": "2025-07-01T23:58:19.663000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "initial roll is two tens two 1's, talk about balance",
+   "attachments": []
+  },
+  {
+   "id": "1389757103542894684",
+   "channel": "monday",
+   "timestamp": "2025-07-01T23:58:33.923000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "and 6 and 8",
+   "attachments": []
+  },
+  {
+   "id": "1389758110767255656",
+   "channel": "monday",
+   "timestamp": "2025-07-02T00:02:34.064000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "25",
+   "attachments": []
+  },
+  {
+   "id": "1389758178669105254",
+   "channel": "monday",
+   "timestamp": "2025-07-02T00:02:50.253000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "15",
+   "attachments": []
+  },
+  {
+   "id": "1389758342519328871",
+   "channel": "monday",
+   "timestamp": "2025-07-02T00:03:29.318000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "17",
+   "attachments": []
+  },
+  {
+   "id": "1389758420424331354",
+   "channel": "monday",
+   "timestamp": "2025-07-02T00:03:47.892000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Wakku rn is Fire 5, Air 4, Water 6, Void 5, and 8 Earth (15 serious able to be taken) (my math abilities were poor, this is actually it this time)",
+   "attachments": []
+  },
+  {
+   "id": "1389758765242257548",
+   "channel": "monday",
+   "timestamp": "2025-07-02T00:05:10.103000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "22 eti",
+   "attachments": []
+  },
+  {
+   "id": "1389774375796080650",
+   "channel": "monday",
+   "timestamp": "2025-07-02T01:07:11.949000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "5f979d7cd6228826bc05df63ce2ed924ed7a37672094536351af01d3c6339d3c_1.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1389775422975250504",
+   "channel": "monday",
+   "timestamp": "2025-07-02T01:11:21.616000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "Untitled.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1389775487513006130",
+   "channel": "monday",
+   "timestamp": "2025-07-02T01:11:37.003000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "'Someone in camp needs to speak to you' from Baldur's gate 3",
+   "attachments": []
+  },
+  {
+   "id": "1389776491319132272",
+   "channel": "monday",
+   "timestamp": "2025-07-02T01:15:36.329000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "67 after boni",
+   "attachments": []
+  },
+  {
+   "id": "1389795264629575832",
+   "channel": "monday",
+   "timestamp": "2025-07-02T02:30:12.235000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Legend of the 40K rings",
+   "attachments": []
+  },
+  {
+   "id": "1389795910124572732",
+   "channel": "monday",
+   "timestamp": "2025-07-02T02:32:46.133000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "We started this one on 06/20/2023",
+   "attachments": []
+  },
+  {
+   "id": "1389796086029488178",
+   "channel": "monday",
+   "timestamp": "2025-07-02T02:33:28.072000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "It's been 2 years for this campaign?",
+   "attachments": []
+  },
+  {
+   "id": "1389796151309635616",
+   "channel": "monday",
+   "timestamp": "2025-07-02T02:33:43.636000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Last one ended on 12/06/2022",
+   "attachments": []
+  },
+  {
+   "id": "1390055781759455346",
+   "channel": "monday",
+   "timestamp": "2025-07-02T19:45:24.359000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Looks like the Hidden Way Campaign ended on 22 December 2022, and the Karmic Inquisitors Campaign began on 4 July 2023 (7 month hiatus!)\nYes, hard to believe but Karmic Inquisitors has been 2 years",
+   "attachments": []
+  },
+  {
+   "id": "1390056140099813428",
+   "channel": "monday",
+   "timestamp": "2025-07-02T19:46:49.794000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "There were 85 sessions in the Tuesday group's Karmic Inquisitors Campaign.\nAlso hard to believe that Hidden Way was shorter - only 73 sessions!",
+   "attachments": []
+  },
+  {
+   "id": "1390066980287025345",
+   "channel": "monday",
+   "timestamp": "2025-07-02T20:29:54.296000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Huh, yeah - I thought the Hidden Way was longer.\n\nAlso... yeesh, it took me 7 months to prep the Karmic Inquisitors campaign.  I remember it being longer than I expected/wanted but I didn't realize it was THAT long... I appreciate you guys still being available after a SEVEN MONTH hiatus!\n\n(I'll try to get this done sooner this time.)",
+   "attachments": []
+  },
+  {
+   "id": "1499832942246101122",
+   "channel": "monday",
+   "timestamp": "2026-05-01T18:00:38.980000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "There's a random name generator at https://l7r-character-sheet.fly.dev/ if you don't already have one you like.",
+   "attachments": []
+  },
+  {
+   "id": "1500284926476419103",
+   "channel": "monday",
+   "timestamp": "2026-05-02T23:56:40.418000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Although I haven't added professions to https://l7r-character-sheet.fly.dev/ I will definitely do so no matter what, and will prioritize doing it sooner if anyone goes that route.",
+   "attachments": []
+  },
+  {
+   "id": "1500577693127675905",
+   "channel": "monday",
+   "timestamp": "2026-05-03T19:20:01.427000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Option 1: Hiruma Scout https://l7r-character-sheet.fly.dev/characters/10 (We don't talk about the fifth finger and no thumb on my right hand.)",
+   "attachments": []
+  },
+  {
+   "id": "1500637754151932096",
+   "channel": "monday",
+   "timestamp": "2026-05-03T23:18:41.091000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "tank: https://l7r-character-sheet.fly.dev/characters/2",
+   "attachments": []
+  },
+  {
+   "id": "1500655073594839141",
+   "channel": "monday",
+   "timestamp": "2026-05-04T00:27:30.368000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "It doesn't look like the Unkept disadvantage is tracking the -10 to Culture (it isn't specified in the notes like the +5 from Charming or the no rerolls of tens if it's set to 0, etc.)",
+   "attachments": []
+  },
+  {
+   "id": "1500656764570439720",
+   "channel": "monday",
+   "timestamp": "2026-05-04T00:34:13.528000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Mine says \"2k2 (-10 in the eyes of those who judge the unkempt, unskilled: no 10s reroll) \" for Culture",
+   "attachments": []
+  },
+  {
+   "id": "1500910769657741443",
+   "channel": "monday",
+   "timestamp": "2026-05-04T17:23:33.060000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "I'll def be home before 8 tonight, hoping to be home by 7. I just told Marshall I believed we had our session 0 tonight but now that I'm looking I can't see that our Monday group actually confirmed that",
+   "attachments": []
+  },
+  {
+   "id": "1500998628326768678",
+   "channel": "monday",
+   "timestamp": "2026-05-04T23:12:40.199000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "9k.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1501004151767957695",
+   "channel": "monday",
+   "timestamp": "2026-05-04T23:34:37.090000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "It keeps wanting to put them on top.",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1501004510728818799",
+   "channel": "monday",
+   "timestamp": "2026-05-04T23:36:02.673000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "It wants you to have not 4 fingers and 1 thumb, also",
+   "attachments": []
+  },
+  {
+   "id": "1501023997586964531",
+   "channel": "monday",
+   "timestamp": "2026-05-05T00:53:28.702000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Kyuden Togashi does not have a Wasp Marshall, yet the Dragon there claim that there is and that he's just currently out visiting the Togashi Captain's second in command at the 4th battalion of the 1st Imperial Legion.",
+   "attachments": []
+  },
+  {
+   "id": "1501024946384670911",
+   "channel": "monday",
+   "timestamp": "2026-05-05T00:57:14.913000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "<@213078006250340353> this NPC is biting off your name: https://waspbountyhunters.obsidianportal.com/characters/seppun-yuudai",
+   "attachments": []
+  },
+  {
+   "id": "1501026201278484520",
+   "channel": "monday",
+   "timestamp": "2026-05-05T01:02:14.103000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "Z.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1501039056220454952",
+   "channel": "monday",
+   "timestamp": "2026-05-05T01:53:18.960000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "I think what dawned on me when Patrick said that is that there's a world where Adv. knacks should get one raise and basic knacks get 2 raises.",
+   "attachments": []
+  },
+  {
+   "id": "1501417786382221372",
+   "channel": "monday",
+   "timestamp": "2026-05-06T02:58:15.267000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Yes, but it would need to be highly specific to be allowed to apply to combat roll.  \n\nHere are some examples of things I'd allow (this isn't mean to be an exhaustive list but is meant to give an idea of how specific it would need to be in order to be allowed to be taken for a combat skill):\n* an extra +10 (on top of the normal bonus) when attacking someone you've ambushed and taken by surprise\n* an extra +10 (on top of the normal bonus) when spending an extra action to aim your arrow when taking a shot\n* an extra +10 (on top of the normal bonuses) while surrounding a target\n\nI'd allow any of those.  But it couldn't be like \"specialization: spears\" or whatever.",
+   "attachments": []
+  },
+  {
+   "id": "1501419110532120817",
+   "channel": "monday",
+   "timestamp": "2026-05-06T03:03:30.969000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "I actually am okay with that!\n\nBrass knuckles are a 1k2 weapon.  If you take a specialization with them, you're basically saying \"I get to use as 1k2 weapon as if it was a 3k2 weapon\".\n\nWhich is not actually unbalanced.  It's situationally very useful because you're basically saying \"I get to use the same damage as a spear or wakizashi while using a concealed weapon I can bring with me anywhere without raising alarm\".\n\nSo that's both useful enough that it makes sense you'd want it, while not actually unbalancing the combat system.",
+   "attachments": []
+  },
+  {
+   "id": "1501757317912203304",
+   "channel": "monday",
+   "timestamp": "2026-05-07T01:27:25.892000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "<@832037313558609930> Given my inability to actually start fights, we might want to work out a signal where you start them for me. Like me stoking or cracking my knuckles.",
+   "attachments": []
+  },
+  {
+   "id": "1502179243637866612",
+   "channel": "monday",
+   "timestamp": "2026-05-08T05:24:00.824000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Just an fyi, I dropped Unlucky and just lowered manipulation from 4 when I realized that was basically all I was getting with it. Not worth the downsides there when Unlucky can hit against so many potential pitfalls this character already has. I was also *really* considering a particular Dark Secret to move Conviction rank 2 to 3, but again decided it wasn't worth the downsides - even though I suspect Yudai will likely end up doing the thing his Dark Secret would have been anyway.",
+   "attachments": []
+  },
+  {
+   "id": "1502483501306609795",
+   "channel": "monday",
+   "timestamp": "2026-05-09T01:33:01.505000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "<@316306960855072769> character building advice for being a \"fixer\" who knows who to ask about stuff:\n* culture (knowing about the arts, games, literature, and similar things - important if you want to be knowledgeable about that kind of stuff)\n* heraldry (knowing about people, places, and institutions)\n* Underworld (knowing about the criminal underworld, demimonde, and the supernatural)\n* Worldly Advantage (+5 to Commerce and Underworld)\n* Streetwise Advantage (+5 to rolls involving bounty hunting)\n* Specialization Advantage (+10 to a skill in a narrow specialty area, like \"I know everything about forgery\" or \"I know all of the fences who deal in art theft\")\n* Minor Clan Major Ally: Mantis Advantage (call in favors from the Mantis Clan)\n* Geneaologist Advantage (+5 on heraldry rolls)",
+   "attachments": []
+  },
+  {
+   "id": "1502504078675148842",
+   "channel": "monday",
+   "timestamp": "2026-05-09T02:54:47.532000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "<@316306960855072769> recommend lowering Void to 4 or 5, so you can raise your skills",
+   "attachments": []
+  },
+  {
+   "id": "1502711597796298833",
+   "channel": "monday",
+   "timestamp": "2026-05-09T16:39:23.946000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "Is this acceptable character art?",
+   "attachments": [
+    {
+     "filename": "character-14-1778344643783.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1502749003014475922",
+   "channel": "monday",
+   "timestamp": "2026-05-09T19:08:02.045000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Like 3 SW to your investigation or something",
+   "attachments": []
+  },
+  {
+   "id": "1503530288657989643",
+   "channel": "monday",
+   "timestamp": "2026-05-11T22:52:35.058000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "I will be joining slightly late this evening, but probably no later than ~7:15pm.  Have to finish a few things around the house (walking Obie, finishing dishes, microwaving dinner) and then I'll log on.",
+   "attachments": []
+  },
+  {
+   "id": "1503554610101616680",
+   "channel": "monday",
+   "timestamp": "2026-05-12T00:29:13.742000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "Z.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1503558119618248756",
+   "channel": "monday",
+   "timestamp": "2026-05-12T00:43:10.476000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "30 investigation@3, 36 Interrogation@3: where is Tsuruchi Kyoma, really?",
+   "attachments": []
+  },
+  {
+   "id": "1503559447643951114",
+   "channel": "monday",
+   "timestamp": "2026-05-12T00:48:27.102000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "35 Interrogation",
+   "attachments": []
+  },
+  {
+   "id": "1503561860442624151",
+   "channel": "monday",
+   "timestamp": "2026-05-12T00:58:02.358000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "35/17/24",
+   "attachments": []
+  },
+  {
+   "id": "1503561894114623610",
+   "channel": "monday",
+   "timestamp": "2026-05-12T00:58:10.386000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "Etiquette: 25 (v), 31, 24",
+   "attachments": []
+  },
+  {
+   "id": "1503562117633282158",
+   "channel": "monday",
+   "timestamp": "2026-05-12T00:59:03.677000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Etiquette rolls for meeting Tsuruchi Kyoma:\n* 33\n* 28\n* 18",
+   "attachments": []
+  },
+  {
+   "id": "1503562164370407484",
+   "channel": "monday",
+   "timestamp": "2026-05-12T00:59:14.820000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "eti: 13, 19, 20",
+   "attachments": []
+  },
+  {
+   "id": "1503562442482127010",
+   "channel": "monday",
+   "timestamp": "2026-05-12T01:00:21.127000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "26 so 15, 37 so 15, 30 so 15",
+   "attachments": []
+  },
+  {
+   "id": "1503562839493705850",
+   "channel": "monday",
+   "timestamp": "2026-05-12T01:01:55.782000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "37 investigation@3: do I notice anybody watching my house and my comings and goings?\nSame question about whether I notice anybody keeping an eye on Kyoma's house, every time we visit.",
+   "attachments": []
+  },
+  {
+   "id": "1503570781215527005",
+   "channel": "monday",
+   "timestamp": "2026-05-12T01:33:29.236000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "I think I looked at the wrong line in my sheet when I got the 63. It still would have been above 40 given the 3 tens and +10 from discerning so 46.",
+   "attachments": []
+  },
+  {
+   "id": "1503574541190828032",
+   "channel": "monday",
+   "timestamp": "2026-05-12T01:48:25.684000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "How hard is <@316306960855072769> hitting the sake at these meetings?",
+   "attachments": []
+  },
+  {
+   "id": "1503575268277620877",
+   "channel": "monday",
+   "timestamp": "2026-05-12T01:51:19.035000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "51 investigation@3: is Kyoma drinking a lot, or is he affecting to drink a lot? And does he get visibly intoxicated?",
+   "attachments": []
+  },
+  {
+   "id": "1503576577383071805",
+   "channel": "monday",
+   "timestamp": "2026-05-12T01:56:31.150000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "52 Acting: Makoto puts his cup to his lips frequently to make it seem like he's in the drinking game - but not overdoing it, because Kyoma will probably notice that I don't need many refills.",
+   "attachments": []
+  },
+  {
+   "id": "1503576629216022528",
+   "channel": "monday",
+   "timestamp": "2026-05-12T01:56:43.508000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "Earth rolls for alcohol consumption: 23 / 31 / 17",
+   "attachments": []
+  },
+  {
+   "id": "1503580000404902029",
+   "channel": "monday",
+   "timestamp": "2026-05-12T02:10:07.262000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "Z.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1503584274534629377",
+   "channel": "monday",
+   "timestamp": "2026-05-12T02:27:06.294000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Do we know how long Inspector Jiro and Escorts Aito and Jukka have served in their posts here in Shinden Kitsune?\nGM's answer: probably 5-6 years.",
+   "attachments": []
+  },
+  {
+   "id": "1505408928853528586",
+   "channel": "monday",
+   "timestamp": "2026-05-17T03:17:37.784000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "I will probably also drop a point of tact to raise honor by the full point that 2 xp gives.",
+   "attachments": []
+  },
+  {
+   "id": "1506072386661777419",
+   "channel": "monday",
+   "timestamp": "2026-05-18T23:13:58.452000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "24 Underworld (13 + 5 Streetwise + 5 Worldly): what would it take to get to interrogate the captured White Dust Gang members in labor camp?",
+   "attachments": []
+  },
+  {
+   "id": "1506078756735946863",
+   "channel": "monday",
+   "timestamp": "2026-05-18T23:39:17.196000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "My 0 in commerce wonders what silk is",
+   "attachments": []
+  },
+  {
+   "id": "1506078875728351314",
+   "channel": "monday",
+   "timestamp": "2026-05-18T23:39:45.566000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1506083816668794960",
+   "channel": "monday",
+   "timestamp": "2026-05-18T23:59:23.578000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1506083956724862976",
+   "channel": "monday",
+   "timestamp": "2026-05-18T23:59:56.970000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1506088529451679866",
+   "channel": "monday",
+   "timestamp": "2026-05-19T00:18:07.193000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "ha 21, he's so telling the truth",
+   "attachments": []
+  },
+  {
+   "id": "1506090035454148850",
+   "channel": "monday",
+   "timestamp": "2026-05-19T00:24:06.252000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1506090208842743878",
+   "channel": "monday",
+   "timestamp": "2026-05-19T00:24:47.591000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "You're 3 for 3 on rolls with 1+ ten",
+   "attachments": []
+  },
+  {
+   "id": "1506093831190351993",
+   "channel": "monday",
+   "timestamp": "2026-05-19T00:39:11.226000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1506095037102948493",
+   "channel": "monday",
+   "timestamp": "2026-05-19T00:43:58.738000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Buy 6 koku worth of dyed silk, 9 koku worth of secondhand silk",
+   "attachments": []
+  },
+  {
+   "id": "1506095928090558485",
+   "channel": "monday",
+   "timestamp": "2026-05-19T00:47:31.166000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1506096907557273720",
+   "channel": "monday",
+   "timestamp": "2026-05-19T00:51:24.689000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1506104516775514122",
+   "channel": "monday",
+   "timestamp": "2026-05-19T01:21:38.868000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "401027f1-f8ac-4d3e-b68e-074ea60db0df.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1506104561130274826",
+   "channel": "monday",
+   "timestamp": "2026-05-19T01:21:49.443000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "87863fca-5adb-4582-b0dc-0115bb12b8cd.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1506104762058408139",
+   "channel": "monday",
+   "timestamp": "2026-05-19T01:22:37.348000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "f84074f0-de1e-45c9-b9e1-aa2d614c0ebf.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1506105087297065030",
+   "channel": "monday",
+   "timestamp": "2026-05-19T01:23:54.891000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "4097ccc2-b942-49e8-8017-35dad2c89bd9.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1506106709339410574",
+   "channel": "monday",
+   "timestamp": "2026-05-19T01:30:21.616000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "33 Acting@3 to become the silk merchant Ito, who is not a samurai.\nI entrust my wakizashi and any other revealing items to the party.\nAnd my bow and arrows of course!",
+   "attachments": []
+  },
+  {
+   "id": "1506112445909962752",
+   "channel": "monday",
+   "timestamp": "2026-05-19T01:53:09.321000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "16588877-0d45-4ff7-a3d1-b511715d8012.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1506112473458016317",
+   "channel": "monday",
+   "timestamp": "2026-05-19T01:53:15.889000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "9261d5ff-95de-4024-a4dd-9295de42a430.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1511146374144593931",
+   "channel": "monday",
+   "timestamp": "2026-06-01T23:16:11.338000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "I'll just forgo bluetooth and you can all deal with my built-in laptop speaker/mic:",
+   "attachments": [
+    {
+     "filename": "bluetooth.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1511148996960194641",
+   "channel": "monday",
+   "timestamp": "2026-06-01T23:26:36.666000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "925217e5-533a-4902-bace-8756716b3e0f.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1511152209998643261",
+   "channel": "monday",
+   "timestamp": "2026-06-01T23:39:22.714000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "23 Investigation for staking out the market",
+   "attachments": []
+  },
+  {
+   "id": "1511152894345351309",
+   "channel": "monday",
+   "timestamp": "2026-06-01T23:42:05.875000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "strategy roll for stakeout",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1511153119906627615",
+   "channel": "monday",
+   "timestamp": "2026-06-01T23:42:59.653000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1511153168094859304",
+   "channel": "monday",
+   "timestamp": "2026-06-01T23:43:11.142000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "This is new",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1511161374703616020",
+   "channel": "monday",
+   "timestamp": "2026-06-02T00:15:47.750000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "https://www.ebay.com/itm/298003453586 ?",
+   "attachments": []
+  },
+  {
+   "id": "1511161844046499881",
+   "channel": "monday",
+   "timestamp": "2026-06-02T00:17:39.650000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Sean standing in any room, near a knife",
+   "attachments": [
+    {
+     "filename": "9k.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1511162679925149857",
+   "channel": "monday",
+   "timestamp": "2026-06-02T00:20:58.939000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Some daggers/knives are from my SCA days, some are from Dad/family history.\n\n I bought the Claymore cause I'm Scottish, the scimitar because I used to dual wield as a ranger in D&D. This one I waited 20 years to finally buy https://storebond.com/product/design-toscano-wj29049-excalibur-sword/",
+   "attachments": []
+  },
+  {
+   "id": "1511169307919257701",
+   "channel": "monday",
+   "timestamp": "2026-06-02T00:47:19.176000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1511169485581844773",
+   "channel": "monday",
+   "timestamp": "2026-06-02T00:48:01.534000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1511170211162755243",
+   "channel": "monday",
+   "timestamp": "2026-06-02T00:50:54.526000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "24 eti",
+   "attachments": []
+  },
+  {
+   "id": "1511171090414829590",
+   "channel": "monday",
+   "timestamp": "2026-06-02T00:54:24.156000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "42 Etiquette so 15, when I get there",
+   "attachments": []
+  },
+  {
+   "id": "1511175741499379845",
+   "channel": "monday",
+   "timestamp": "2026-06-02T01:12:53.061000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "24 tact",
+   "attachments": []
+  },
+  {
+   "id": "1511177691317928077",
+   "channel": "monday",
+   "timestamp": "2026-06-02T01:20:37.934000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Checking out the manor, as Ito the silk merchant.\n53 sneaking (33 + 5 2nd Dan + 15 blending in to observe)\n\nWhat's up with that threshold stone? Isn't that one of the types of wards we learned about?",
+   "attachments": []
+  },
+  {
+   "id": "1511178149780652033",
+   "channel": "monday",
+   "timestamp": "2026-06-02T01:22:27.240000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "24 manip, unless it related to a perceived implied insult which, honestly the comparison kind of was an insult",
+   "attachments": []
+  },
+  {
+   "id": "1511178223042691144",
+   "channel": "monday",
+   "timestamp": "2026-06-02T01:22:44.707000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Oddly, that was third roll tonight all of which was 24",
+   "attachments": []
+  },
+  {
+   "id": "1511190606141980864",
+   "channel": "monday",
+   "timestamp": "2026-06-02T02:11:57.068000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "2152ad0a-f238-4324-866d-80aa0a50b44c.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1513647581077569696",
+   "channel": "monday",
+   "timestamp": "2026-06-08T20:55:05.541000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "I'll be joining around 8 PM tonight.",
+   "attachments": []
+  },
+  {
+   "id": "1513687579000570056",
+   "channel": "monday",
+   "timestamp": "2026-06-08T23:34:01.789000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "4k2 + 10 (from Discerning)",
+   "attachments": []
+  },
+  {
+   "id": "1513688158586536128",
+   "channel": "monday",
+   "timestamp": "2026-06-08T23:36:19.973000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "27 (on a 7k4!)",
+   "attachments": []
+  },
+  {
+   "id": "1513688288819413072",
+   "channel": "monday",
+   "timestamp": "2026-06-08T23:36:51.023000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513688503710650420",
+   "channel": "monday",
+   "timestamp": "2026-06-08T23:37:42.257000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "8+10",
+   "attachments": []
+  },
+  {
+   "id": "1513693949624320160",
+   "channel": "monday",
+   "timestamp": "2026-06-08T23:59:20.664000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513694023913574430",
+   "channel": "monday",
+   "timestamp": "2026-06-08T23:59:38.376000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Intimidation 8k4 +15\nInterrogation 7k4 +5",
+   "attachments": []
+  },
+  {
+   "id": "1513695164982628352",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:04:10.428000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513697855720657198",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:14:51.950000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "Z.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513698791860211813",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:18:35.143000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "45 sneaking@3 to follow the PCs.\n35 investigation@3 to determine if I'm being followed.",
+   "attachments": []
+  },
+  {
+   "id": "1513700202102526024",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:24:11.371000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "Z.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513702457186717797",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:33:09.025000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "21",
+   "attachments": []
+  },
+  {
+   "id": "1513702475712958504",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:33:13.442000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513702550602252461",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:33:31.297000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "22 so 15",
+   "attachments": []
+  },
+  {
+   "id": "1513702570202239150",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:33:35.970000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513705009403920474",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:43:17.521000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "9k.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513705139163103352",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:43:48.458000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "https://tenor.com/view/two-dollars-2dollars-cash-better-off-dead-paperboy-gif-27055345",
+   "attachments": []
+  },
+  {
+   "id": "1513707797093552289",
+   "channel": "monday",
+   "timestamp": "2026-06-09T00:54:22.158000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "23 sneaking to slip on the brass knuckles",
+   "attachments": []
+  },
+  {
+   "id": "1513711996032520345",
+   "channel": "monday",
+   "timestamp": "2026-06-09T01:11:03.263000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "+2 for conviction, +20 (4 free raises)= 61",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513712319287267451",
+   "channel": "monday",
+   "timestamp": "2026-06-09T01:12:20.333000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513712821874069514",
+   "channel": "monday",
+   "timestamp": "2026-06-09T01:14:20.159000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "I also have 3 Manip, but Joel beat me to it",
+   "attachments": []
+  },
+  {
+   "id": "1513718353062002708",
+   "channel": "monday",
+   "timestamp": "2026-06-09T01:36:18.897000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "<@829461716525514762> : I can hear you",
+   "attachments": []
+  },
+  {
+   "id": "1513724882276319354",
+   "channel": "monday",
+   "timestamp": "2026-06-09T02:02:15.583000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1513728265108590715",
+   "channel": "monday",
+   "timestamp": "2026-06-09T02:15:42.113000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "VP Points spent: 2 out of order in the future, 1 in the current scene",
+   "attachments": []
+  },
+  {
+   "id": "1513735479038574676",
+   "channel": "monday",
+   "timestamp": "2026-06-09T02:44:22.048000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "It will be trivial to learn he is a [Kitsune Warden](https://github.com/EliAndrewC/l7r/blob/master/rules/11-non_pc_schools.md#kitsune-warden)",
+   "attachments": []
+  },
+  {
+   "id": "1514024295427473520",
+   "channel": "monday",
+   "timestamp": "2026-06-09T21:52:01.241000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Any way to find out details of his 'modified Shugenja' spell if it's ever been used?  Fox ally might have people willing to talk without actually consulting a Shugenja, perhaps,  Also, no rush on this since it likely won't be next session but had questions about duels. First: \"Each duelist's TN to be hit begins at their experience point total divided by 10, rounded down.\" Is that Earned, or Earned+Starting, or actually Earned+Starting+Disadvantages? Second: \"Void points can't be spent and 10s aren't rerolled on either these rolls or the wound checks they cause, but they are rolled on the resulting damage rolls.\" Just want to make sure that I should be reading that as Void points can't be spent on the wound check of Iaijutsu portion of the duel.",
+   "attachments": []
+  },
+  {
+   "id": "1514416058277036084",
+   "channel": "monday",
+   "timestamp": "2026-06-10T23:48:44.783000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Normally I'd have made people roll heraldry when you got to Shiro Reiji and then see whether you could find anyone who knows, but since you have `Minor Clan Major Ally: Fox` then I'll just give this to you, since it's exactly the kind of thing that advantage is meant to provide.\n\nNoboru's spell is [The Fires From Within](https://github.com/EliAndrewC/l7r/blob/master/rules/06-spells.md#the-fires-from-within) which he has been seen casting, but you'd probably need to call upon an actual Fox shugenja to learn the details of what makes his version different, since every Kitsune Warden ends up with a different version, generally.\n\nThat said... you can probably tell just by looking at the spell that this will be pretty useless in a 1v1 duel.  It would have been **really good** if a melee against the entire party had broken out.  As it is, he's basically spent 30 XP which will be useless in his duel against you.  Alas.",
+   "attachments": []
+  },
+  {
+   "id": "1514459304218853416",
+   "channel": "monday",
+   "timestamp": "2026-06-11T02:40:35.419000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "To clarify, PCs were notified of their new posting on Setsubun, prior to the start of the campaign.  However, the first session was when the PCs arrived in Shinden Kitsune.\n\nThe PCs probably trickled into the city sometime around the 8th-10th day of the 2nd month, and the first trip to present themselves to Tsuruchi Kyoma was [11th Day: Rekken (Examinations)](https://github.com/EliAndrewC/l7r/blob/master/setting/l7r.md#11th-day-rekken-examinations)",
+   "attachments": []
+  },
+  {
+   "id": "1515817083055771819",
+   "channel": "monday",
+   "timestamp": "2026-06-14T20:35:55.120000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Additionally, Makoto will ask <@316306960855072769> about merchants in Shiro Reiji who might be interested in unconventional arrangements involving Fox Clan specialty goods, especially incense and white charcoal - maybe we can get an interesting side business going that helps us cultivate some contacts.",
+   "attachments": []
+  },
+  {
+   "id": "1516220573569515744",
+   "channel": "monday",
+   "timestamp": "2026-06-15T23:19:14.755000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "34 sneaking@3 (24 + 5 Second Dan + 5x1 Third Dan Free Raise) to walk quietly behind the dais in the hearing court.",
+   "attachments": []
+  },
+  {
+   "id": "1516221488418787530",
+   "channel": "monday",
+   "timestamp": "2026-06-15T23:22:52.872000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "```\n>>> xky(8, 4)\n[1, 2, 4, 5, 6, 6, 7, 9]\n28\n```\n\nthat's a 33 after the free raise from having 1 higher investigation than you, so you prevailed by 1!",
+   "attachments": []
+  },
+  {
+   "id": "1516221706832973845",
+   "channel": "monday",
+   "timestamp": "2026-06-15T23:23:44.946000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "images.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516222667886432266",
+   "channel": "monday",
+   "timestamp": "2026-06-15T23:27:34.079000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516223782375657512",
+   "channel": "monday",
+   "timestamp": "2026-06-15T23:31:59.794000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "50 sincerity@5 (30 + 5 Second Dan + 15 Acting) for playing the scared act on getting called out in the courtyard.",
+   "attachments": []
+  },
+  {
+   "id": "1516226856091914371",
+   "channel": "monday",
+   "timestamp": "2026-06-15T23:44:12.625000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516230887304335534",
+   "channel": "monday",
+   "timestamp": "2026-06-16T00:00:13.741000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516239449896386580",
+   "channel": "monday",
+   "timestamp": "2026-06-16T00:34:15.222000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "18 Commerce@0 to pay for a ride to the next village on the road to Shiro Reiji.",
+   "attachments": []
+  },
+  {
+   "id": "1516240289457508402",
+   "channel": "monday",
+   "timestamp": "2026-06-16T00:37:35.389000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "https://github.com/EliAndrewC/l7r/blob/master/setting/l7r.md#3rd-month-yayoi-new-life",
+   "attachments": []
+  },
+  {
+   "id": "1516242751925260429",
+   "channel": "monday",
+   "timestamp": "2026-06-16T00:47:22.487000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "cc58f58b-41d8-437e-8fcf-4f5df0179aa1.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1516243266998239252",
+   "channel": "monday",
+   "timestamp": "2026-06-16T00:49:25.290000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "f53e99a2-c1d7-4e5d-9b44-f38aa3c3ef22.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1516244019619823798",
+   "channel": "monday",
+   "timestamp": "2026-06-16T00:52:24.729000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "10 heraldry, what do I know about Shiro Reiji?\nI think <@316306960855072769> can outdo me on this",
+   "attachments": []
+  },
+  {
+   "id": "1516244152722133064",
+   "channel": "monday",
+   "timestamp": "2026-06-16T00:52:56.463000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516245595101200465",
+   "channel": "monday",
+   "timestamp": "2026-06-16T00:58:40.353000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516252312417341531",
+   "channel": "monday",
+   "timestamp": "2026-06-16T01:25:21.886000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "1 koku = 10 bu = 100 zeni = 1,000 sen",
+   "attachments": []
+  },
+  {
+   "id": "1516254331744157697",
+   "channel": "monday",
+   "timestamp": "2026-06-16T01:33:23.331000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516254369593557052",
+   "channel": "monday",
+   "timestamp": "2026-06-16T01:33:32.355000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516254436115218482",
+   "channel": "monday",
+   "timestamp": "2026-06-16T01:33:48.215000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1516259373146574971",
+   "channel": "monday",
+   "timestamp": "2026-06-16T01:53:25.295000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "The bounty for the Silk Stained Three is 50 koku.\nWe are going to get 25k.\nIf we offer a 1k bounty, we basically are paying 2.5 bu each.\nIf we offer a 5k bounty, we are paying 1k each.",
+   "attachments": []
+  },
+  {
+   "id": "1516260991703318568",
+   "channel": "monday",
+   "timestamp": "2026-06-16T01:59:51.189000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Yudai is basically proposing:\n* 1 koku: information directing to...\n* 2 koku: information about the identities or whereabouts\n* 3 koku: identities or whereabouts\n* 4 koku: identities and whereabouts",
+   "attachments": []
+  },
+  {
+   "id": "1516266582991441971",
+   "channel": "monday",
+   "timestamp": "2026-06-16T02:22:04.256000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1518735774067982387",
+   "channel": "monday",
+   "timestamp": "2026-06-22T21:53:45.284000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Sorry for the late notice, but I'm stuck at work trying to prep for a customer demo on Wednesday and won't be able to make L7R tonight.\n\nA co-worker was originally supposed to handle this but they weren't able to get it working, nor was the other more senior co-worker who was tasked with assisting them, so I've been called in to get things working.",
+   "attachments": []
+  },
+  {
+   "id": "1519108328041484411",
+   "channel": "monday",
+   "timestamp": "2026-06-23T22:34:09.073000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Okay, then let's plan on not trying to do a rescheduled session this week.  (I didn't leave work until after 11:30pm yesterday so I'm going to be more tired than usual this week anyway!)",
+   "attachments": []
+  },
+  {
+   "id": "1521300328438562958",
+   "channel": "monday",
+   "timestamp": "2026-06-29T23:44:22.693000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521300386554577037",
+   "channel": "monday",
+   "timestamp": "2026-06-29T23:44:36.549000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521300523855118437",
+   "channel": "monday",
+   "timestamp": "2026-06-29T23:45:09.284000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521300584785776821",
+   "channel": "monday",
+   "timestamp": "2026-06-29T23:45:23.811000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Eti 32 so 15",
+   "attachments": []
+  },
+  {
+   "id": "1521300784745021540",
+   "channel": "monday",
+   "timestamp": "2026-06-29T23:46:11.485000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Meeting Inspector Fumitake:\n15 etiquette (35 + 5 Streetwise, limited by Withdrawn)\n18 Interrogation@3 (13 + 5 Discerning)",
+   "attachments": []
+  },
+  {
+   "id": "1521301483545428160",
+   "channel": "monday",
+   "timestamp": "2026-06-29T23:48:58.092000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "37 Interrogation@3 with Discerning",
+   "attachments": []
+  },
+  {
+   "id": "1521303007067897928",
+   "channel": "monday",
+   "timestamp": "2026-06-29T23:55:01.328000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "20 heraldry on Inspector Fumitake.\n\"His name is Fumitake, he's an Inspector.\"",
+   "attachments": []
+  },
+  {
+   "id": "1521303023387676733",
+   "channel": "monday",
+   "timestamp": "2026-06-29T23:55:05.219000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521306607185690684",
+   "channel": "monday",
+   "timestamp": "2026-06-30T00:09:19.663000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "39 law@3 (35 + 5 Streetwise) to press for details about these Imperial bounties that \"haven't been posted yet\"",
+   "attachments": []
+  },
+  {
+   "id": "1521309894660329523",
+   "channel": "monday",
+   "timestamp": "2026-06-30T00:22:23.458000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "33 Law@2 on this if I end up responding",
+   "attachments": []
+  },
+  {
+   "id": "1521310664751186052",
+   "channel": "monday",
+   "timestamp": "2026-06-30T00:25:27.062000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521310969060393103",
+   "channel": "monday",
+   "timestamp": "2026-06-30T00:26:39.615000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "28 law@3 (23 + 5 Streetwise) to argue with Fumitake that in the loan shark case, we don't have an obligation to intervene to uphold Imperial law, because the dispute is a Crab Clan matter.",
+   "attachments": []
+  },
+  {
+   "id": "1521312169919119390",
+   "channel": "monday",
+   "timestamp": "2026-06-30T00:31:25.922000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521313649074110606",
+   "channel": "monday",
+   "timestamp": "2026-06-30T00:37:18.580000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "66 Interrogation@3 (61 + 5 Discerning) to ask why Yasuki Chuzuru isn't being posted as a bounty in the Imperial Bulletin.",
+   "attachments": []
+  },
+  {
+   "id": "1521317641069920327",
+   "channel": "monday",
+   "timestamp": "2026-06-30T00:53:10.346000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "51 Interrogation@3 to ask about Reiji Hajime, County Magistrate of Hayakawa County.",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1521319173806886922",
+   "channel": "monday",
+   "timestamp": "2026-06-30T00:59:15.779000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "54 sincerity@5 to claim I don't know anything else about Reiji Hajime",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1521321629756690433",
+   "channel": "monday",
+   "timestamp": "2026-06-30T01:09:01.323000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "39 Interrogation@3 to ask about Hiruma Kojiro.",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1521321667375272100",
+   "channel": "monday",
+   "timestamp": "2026-06-30T01:09:10.292000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "This is probably his worst roll of the session, but honestly not even that much worse than his other rolls!\n```\n>>> xky(5, 3)\n[2, 2, 2, 3, 7]\n12\n```",
+   "attachments": []
+  },
+  {
+   "id": "1521324865020362772",
+   "channel": "monday",
+   "timestamp": "2026-06-30T01:21:52.670000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "32 Interrogation@4",
+   "attachments": []
+  },
+  {
+   "id": "1521328322813104279",
+   "channel": "monday",
+   "timestamp": "2026-06-30T01:35:37.072000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "10->7 10->7 8 8 +15 65@4 Intimidation",
+   "attachments": []
+  },
+  {
+   "id": "1521331265675071569",
+   "channel": "monday",
+   "timestamp": "2026-06-30T01:47:18.705000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521331309656412362",
+   "channel": "monday",
+   "timestamp": "2026-06-30T01:47:29.191000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "19 Underworld. What kind of opium lord accompanies his own shipments?",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1521336545095847989",
+   "channel": "monday",
+   "timestamp": "2026-06-30T02:08:17.417000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "58 intimidation@3 to ask if Fumitake knows somebody is cooperating with Hiruma Kojiro. (+5 from Streetwise)",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1521339741923053841",
+   "channel": "monday",
+   "timestamp": "2026-06-30T02:20:59.600000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Next session: picking up the conversation with Fumitake for Wednesday July 8th.",
+   "attachments": []
+  },
+  {
+   "id": "1523420745437413397",
+   "channel": "monday",
+   "timestamp": "2026-07-05T20:10:09.501000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "The cutting and barbecue was good. We had 60 mats soaked, and a lot of people didn't show up, so I got to cut 10 mats, pretty good training.",
+   "attachments": []
+  },
+  {
+   "id": "1524529472177574010",
+   "channel": "monday",
+   "timestamp": "2026-07-08T21:35:50.555000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "I'm going to need to leave the session a little early, about 9, my apologies",
+   "attachments": []
+  },
+  {
+   "id": "1524530022663061774",
+   "channel": "monday",
+   "timestamp": "2026-07-08T21:38:01.801000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "\"Marshall said I could use this +2k1 on whatever I wanted.  He never said it wouldn't apply to having my character punch Tadashi, so...\"",
+   "attachments": []
+  },
+  {
+   "id": "1524550524958146701",
+   "channel": "monday",
+   "timestamp": "2026-07-08T22:59:29.929000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "I'll be about 15 minutes late to L7R.  Obie found and ate some outdoor mushrooms which disagreed with him, and we're pretty sure we narrowed it down to some slightly-bad-for-him-but-not-poisionous species, and his digestion seems to have settled down, but I'm running a little late as a result \ud83d\ude41",
+   "attachments": []
+  },
+  {
+   "id": "1524558313008922856",
+   "channel": "monday",
+   "timestamp": "2026-07-08T23:30:26.745000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524561033849733163",
+   "channel": "monday",
+   "timestamp": "2026-07-08T23:41:15.444000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Just moving this down for visibility of the 4 prices",
+   "attachments": []
+  },
+  {
+   "id": "1524563551484645377",
+   "channel": "monday",
+   "timestamp": "2026-07-08T23:51:15.695000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "i have 0 heraldry",
+   "attachments": []
+  },
+  {
+   "id": "1524563598259654666",
+   "channel": "monday",
+   "timestamp": "2026-07-08T23:51:26.847000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524564344619270355",
+   "channel": "monday",
+   "timestamp": "2026-07-08T23:54:24.793000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "9",
+   "attachments": []
+  },
+  {
+   "id": "1524564782844350584",
+   "channel": "monday",
+   "timestamp": "2026-07-08T23:56:09.274000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "I got a 16. \"That sounds like it could be a name.\"",
+   "attachments": []
+  },
+  {
+   "id": "1524564975291469844",
+   "channel": "monday",
+   "timestamp": "2026-07-08T23:56:55.157000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "-10 is only advanced right?",
+   "attachments": []
+  },
+  {
+   "id": "1524567104412450866",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:05:22.779000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "28 etiquette (23 + 5 Streetwise?) to write to Shione Irehemu asking about attending breakfast with him - unless Tadashi can do better?",
+   "attachments": []
+  },
+  {
+   "id": "1524567231537877112",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:05:53.088000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "I cannot, only 26",
+   "attachments": []
+  },
+  {
+   "id": "1524568269632049153",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:10:00.589000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "34 etiquette, so 15",
+   "attachments": []
+  },
+  {
+   "id": "1524570224911978608",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:17:46.764000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524570239952486410",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:17:50.350000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524570335507120148",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:18:13.132000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524570660939104316",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:19:30.721000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Visiting Shione Irehemu.\n15 etiquette (24, limited by Withdrawn)\n51 investigation@3 (41 + 10 Discerning)\n35 Interrogation@3 (30 + 5 Discerning) for whatever we start talking about first (whether Fumitake is \"one for direct action\")",
+   "attachments": []
+  },
+  {
+   "id": "1524571403792154827",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:22:27.831000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "41 Interrogation",
+   "attachments": []
+  },
+  {
+   "id": "1524576443080900718",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:42:29.291000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "3",
+   "attachments": []
+  },
+  {
+   "id": "1524578378437492758",
+   "channel": "monday",
+   "timestamp": "2026-07-09T00:50:10.716000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "40 law@3 (35 + 5 Streetwise) to ask about Fumitake's investigation. If the investigation was lawful, Fumitake should have been able to search the house. So how is it that Irehemu was able to turn him away?",
+   "attachments": []
+  },
+  {
+   "id": "1524581521766223913",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:02:40.144000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "30",
+   "attachments": []
+  },
+  {
+   "id": "1524581679975501955",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:03:17.864000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "7 and 13",
+   "attachments": []
+  },
+  {
+   "id": "1524581691857834057",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:03:20.697000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "49",
+   "attachments": []
+  },
+  {
+   "id": "1524581756345385011",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:03:36.072000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "2 10s on the 49",
+   "attachments": []
+  },
+  {
+   "id": "1524581814356934898",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:03:49.903000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "I got a ten for the 13",
+   "attachments": []
+  },
+  {
+   "id": "1524582075569668157",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:04:52.181000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "43 Interrogation@3 (38 + 5 Discerning) about Hiruma Kojiro",
+   "attachments": []
+  },
+  {
+   "id": "1524586649634472116",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:23:02.723000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "10->8 9 9 8 6 +5 Used 1 void = 55",
+   "attachments": []
+  },
+  {
+   "id": "1524591341097582724",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:41:41.255000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Staking out the fliers with Shizukanaken:\n40 Acting (35 + 5 Second Dan) to assume the persona of loitering townsperson\n34 investigation@3 (24 + 10 Discerning)\n36 Interrogation@3 (31 + 5 Discerning)",
+   "attachments": []
+  },
+  {
+   "id": "1524591926257389640",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:44:00.768000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "I spend so much time trying to blend in that I suck at everything else\n\nSneaking@2 10->8 10->3 4 3 +5 = 43\nInvestigation@2 9 7 +10 = 26\nInterrogation@3 6 6 4 3 +5 = 24",
+   "attachments": []
+  },
+  {
+   "id": "1524595164037910619",
+   "channel": "monday",
+   "timestamp": "2026-07-09T01:56:52.715000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "10->8 8 9 7 +5 = 47 Interrogation@3",
+   "attachments": []
+  },
+  {
+   "id": "1524597404563673248",
+   "channel": "monday",
+   "timestamp": "2026-07-09T02:05:46.898000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "10->8 7 4 4 +5 = 38 Sneaking @2",
+   "attachments": []
+  },
+  {
+   "id": "1524599110089310380",
+   "channel": "monday",
+   "timestamp": "2026-07-09T02:12:33.527000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "36 investigation@3 to sneak a look at the ink stained guy's fingers",
+   "attachments": []
+  },
+  {
+   "id": "1524600504548589809",
+   "channel": "monday",
+   "timestamp": "2026-07-09T02:18:05.992000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "23 Investigation@2",
+   "attachments": []
+  },
+  {
+   "id": "1524601685060620420",
+   "channel": "monday",
+   "timestamp": "2026-07-09T02:22:47.448000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "30 Investigation@2",
+   "attachments": []
+  },
+  {
+   "id": "1526378465526546462",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:03:04.922000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "30 Sneaking@2",
+   "attachments": []
+  },
+  {
+   "id": "1526378784813748318",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:04:21.046000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "23 Investigation@2",
+   "attachments": []
+  },
+  {
+   "id": "1526383765503479808",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:24:08.535000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "37",
+   "attachments": []
+  },
+  {
+   "id": "1526383785812426784",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:24:13.377000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "36 investigation@3 to watch for spies",
+   "attachments": []
+  },
+  {
+   "id": "1526383792082915509",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:24:14.872000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "23 Investigation@2",
+   "attachments": []
+  },
+  {
+   "id": "1526387233186386050",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:37:55.295000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "https://db4sgowjqfwig.cloudfront.net/campaigns/354034/assets/1548455/Three_Man_Alliance.jpeg",
+   "attachments": []
+  },
+  {
+   "id": "1526392181303152700",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:57:35.018000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526392283107299439",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:57:59.290000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "24 Etiquette so 15",
+   "attachments": []
+  },
+  {
+   "id": "1526392383099637930",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:58:23.130000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526392781277233372",
+   "channel": "monday",
+   "timestamp": "2026-07-14T00:59:58.063000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "This was a test: Etiquette doesn't reflect Withdrawn",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526404726189723770",
+   "channel": "monday",
+   "timestamp": "2026-07-14T01:47:25.952000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "19 Underworld (9 + 5 Streetwise + 5 Worldly) to contemplate why Fumitake has stopped bringing in bounties.",
+   "attachments": []
+  },
+  {
+   "id": "1526405085121347724",
+   "channel": "monday",
+   "timestamp": "2026-07-14T01:48:51.528000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "26 underworld",
+   "attachments": []
+  },
+  {
+   "id": "1528892170428481656",
+   "channel": "monday",
+   "timestamp": "2026-07-20T22:31:38.873000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Am I the only one seeing something wrong with this?",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528907790020644884",
+   "channel": "monday",
+   "timestamp": "2026-07-20T23:33:42.874000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528907862892613744",
+   "channel": "monday",
+   "timestamp": "2026-07-20T23:34:00.248000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528908916002390126",
+   "channel": "monday",
+   "timestamp": "2026-07-20T23:38:11.329000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "24",
+   "attachments": []
+  },
+  {
+   "id": "1528914011855388783",
+   "channel": "monday",
+   "timestamp": "2026-07-20T23:58:26.275000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528914522830671993",
+   "channel": "monday",
+   "timestamp": "2026-07-21T00:00:28.101000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528916119065465005",
+   "channel": "monday",
+   "timestamp": "2026-07-21T00:06:48.673000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528920153524277411",
+   "channel": "monday",
+   "timestamp": "2026-07-21T00:22:50.563000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528922774028947526",
+   "channel": "monday",
+   "timestamp": "2026-07-21T00:33:15.340000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528922931038523522",
+   "channel": "monday",
+   "timestamp": "2026-07-21T00:33:52.774000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528925826438004817",
+   "channel": "monday",
+   "timestamp": "2026-07-21T00:45:23.091000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528928951898996746",
+   "channel": "monday",
+   "timestamp": "2026-07-21T00:57:48.259000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528930981476569159",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:05:52.148000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528931525087989860",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:08:01.755000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "I only got 15",
+   "attachments": []
+  },
+  {
+   "id": "1528931547229589626",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:08:07.034000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "I got 28",
+   "attachments": []
+  },
+  {
+   "id": "1528933494250668114",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:15:51.240000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528933589285208226",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:16:13.898000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528933609548021791",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:16:18.729000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "24",
+   "attachments": []
+  },
+  {
+   "id": "1528933710022443123",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:16:42.684000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "The rare occasion where I actually roll a 15",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528936418146123920",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:27:28.351000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528936580889317507",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:28:07.152000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528941568210374789",
+   "channel": "monday",
+   "timestamp": "2026-07-21T01:47:56.222000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1528945087713771581",
+   "channel": "monday",
+   "timestamp": "2026-07-21T02:01:55.337000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image4-scaled-365x275.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531442222585741454",
+   "channel": "monday",
+   "timestamp": "2026-07-27T23:24:38.685000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Was grabbing food, 34 Interrogation, is she leave anything out?",
+   "attachments": []
+  },
+  {
+   "id": "1531442570314514533",
+   "channel": "monday",
+   "timestamp": "2026-07-27T23:26:01.590000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "3",
+   "attachments": []
+  },
+  {
+   "id": "1531442675306332161",
+   "channel": "monday",
+   "timestamp": "2026-07-27T23:26:26.622000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Cat on my front deck",
+   "attachments": [
+    {
+     "filename": "IMG_20260727_192525_999.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1531448729582698807",
+   "channel": "monday",
+   "timestamp": "2026-07-27T23:50:30.074000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "15@1",
+   "attachments": []
+  },
+  {
+   "id": "1531448906175483954",
+   "channel": "monday",
+   "timestamp": "2026-07-27T23:51:12.177000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531449064498004118",
+   "channel": "monday",
+   "timestamp": "2026-07-27T23:51:49.924000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531449108232147107",
+   "channel": "monday",
+   "timestamp": "2026-07-27T23:52:00.351000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531449504509853877",
+   "channel": "monday",
+   "timestamp": "2026-07-27T23:53:34.831000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "10->9 8 +5 Streetwise = 32 Law@2",
+   "attachments": []
+  },
+  {
+   "id": "1531452164906684577",
+   "channel": "monday",
+   "timestamp": "2026-07-28T00:04:09.119000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "blarg",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531452230190891079",
+   "channel": "monday",
+   "timestamp": "2026-07-28T00:04:24.684000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "beats my 22",
+   "attachments": []
+  },
+  {
+   "id": "1531452661772058745",
+   "channel": "monday",
+   "timestamp": "2026-07-28T00:06:07.581000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "Is today 3/4?",
+   "attachments": []
+  },
+  {
+   "id": "1531453528634036434",
+   "channel": "monday",
+   "timestamp": "2026-07-28T00:09:34.257000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "10->4 10->2 8 6 +5 =45 Interrogation@3\n10->4 6 +10 =30 Investigation@2",
+   "attachments": []
+  },
+  {
+   "id": "1531461575490408670",
+   "channel": "monday",
+   "timestamp": "2026-07-28T00:41:32.777000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531461603785052211",
+   "channel": "monday",
+   "timestamp": "2026-07-28T00:41:39.523000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531461614983975054",
+   "channel": "monday",
+   "timestamp": "2026-07-28T00:41:42.193000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531468650295459861",
+   "channel": "monday",
+   "timestamp": "2026-07-28T01:09:39.542000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "52 law@3 to argue that under the circumstances, it was clear that it would no longer be possible to bring in Shoda alive.",
+   "attachments": []
+  },
+  {
+   "id": "1531470083799646258",
+   "channel": "monday",
+   "timestamp": "2026-07-28T01:15:21.316000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531474187838030005",
+   "channel": "monday",
+   "timestamp": "2026-07-28T01:31:39.795000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "2Q.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531480275509313726",
+   "channel": "monday",
+   "timestamp": "2026-07-28T01:55:51.209000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "\"Snaggletooth, or Yaeba (\u516b\u91cd\u6b6f) in Japanese, [3] is the term given to human teeth, especially upper canines, with an uncommonly fang-like appearance.\"",
+   "attachments": []
+  },
+  {
+   "id": "1531484703595692153",
+   "channel": "monday",
+   "timestamp": "2026-07-28T02:13:26.947000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "DO9RO_1XcAAK8oE.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1533915392031068240",
+   "channel": "monday",
+   "timestamp": "2026-08-03T19:12:08.230000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Reminder that we're targeting an ~8pm start time tonight, since we want to start the session with an out-of-character conversation prior to jumping back into the in-character interactions, and thus we need everyone to be there.",
+   "attachments": []
+  },
+  {
+   "id": "1533988278859075716",
+   "channel": "monday",
+   "timestamp": "2026-08-04T00:01:45.804000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Sorry I'm running late (despite the late start time!) - I got held up at work but am heading home now.  I'll log on in about 15 minutes.",
+   "attachments": []
+  },
+  {
+   "id": "1533992000129335477",
+   "channel": "monday",
+   "timestamp": "2026-08-04T00:16:33.024000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "10s exploding left and right",
+   "attachments": []
+  },
+  {
+   "id": "1533992083415760998",
+   "channel": "monday",
+   "timestamp": "2026-08-04T00:16:52.881000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "images.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1533993479771001024",
+   "channel": "monday",
+   "timestamp": "2026-08-04T00:22:25.798000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Our session 0 became session 1",
+   "attachments": []
+  },
+  {
+   "id": "1533997791423234078",
+   "channel": "monday",
+   "timestamp": "2026-08-04T00:39:33.776000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "The session that Patrick met with Eli before 7, I think they started at 6:30 - They were in channel for 15 minutes til 8. Alex had been in the channel for a bit already and we just sort of shot the breeze. I believe that same session, there was another 20-30 min that Patrick was away with Eli",
+   "attachments": []
+  },
+  {
+   "id": "1534009964664848585",
+   "channel": "monday",
+   "timestamp": "2026-08-04T01:27:56.103000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "Impeding a lawful investigation: 1. Taking Shoda from where he was to begin with. 2. Killing Shoda, thereby permanently removing a witness' ability to testify. 3.? Possibly slowing the horses that would follow?\nKilling Shoda unjustly: In addition to the above, 1. Killing a bounty is legally permissible... but at the same time once a person has submitted themselves, they are in the custody of the magistrate and that magistrate has a duty of care. 2. Falsely claiming there was an escape attempt, Makoto seemed to indicate seeing fellow Wasp bounty hunters approaching, as if -we- were causing an escape attempt. 3. Makoto promised no legal action with regards to Shoda's disciples, effectively apparently binding us to this, so clearly he both knew our intentions to speak with Shoda about another investigation and also considered us part of the Shoda bounty investigation as well. (Initially, since we didn't know it was Matoko that had even made this deal, we were obligated to follow to make sure this wasn't some escape attempt by Shoda. Once we reached the first roadway station, we determined we needed to be present at the trial which is why we continued.) 4. Did Makoto report to Tsuruchi Kyoma any of this? If not this may further both the argument that Shoda was killed unjustly and that Makoto was impeding an investigation by his actions.",
+   "attachments": []
+  },
+  {
+   "id": "1536498971801944225",
+   "channel": "monday",
+   "timestamp": "2026-08-10T22:18:21.648000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Storm rolling in, power already blipped once. If it goes out I'll call <@213078006250340353>",
+   "attachments": []
+  },
+  {
+   "id": "1536499163510874175",
+   "channel": "monday",
+   "timestamp": "2026-08-10T22:19:07.355000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "Are we starting at 7 or 8 tonight?",
+   "attachments": []
+  },
+  {
+   "id": "1536500422997708820",
+   "channel": "monday",
+   "timestamp": "2026-08-10T22:24:07.640000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Yep, we also lost power earlier but it's been on for the past ~90 minutes and the worst of the storm has passed us, so I currently expect to log on at around 7pm even if we're not starting until a little later.",
+   "attachments": []
+  },
+  {
+   "id": "1536526649615458335",
+   "channel": "monday",
+   "timestamp": "2026-08-11T00:08:20.553000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536534313208913961",
+   "channel": "monday",
+   "timestamp": "2026-08-11T00:38:47.696000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "43",
+   "attachments": []
+  },
+  {
+   "id": "1536538404118863983",
+   "channel": "monday",
+   "timestamp": "2026-08-11T00:55:03.045000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Sorry, did I get anything from the 43?",
+   "attachments": []
+  },
+  {
+   "id": "1536539125161656390",
+   "channel": "monday",
+   "timestamp": "2026-08-11T00:57:54.955000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536539147366441071",
+   "channel": "monday",
+   "timestamp": "2026-08-11T00:58:00.249000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536544751942246410",
+   "channel": "monday",
+   "timestamp": "2026-08-11T01:20:16.484000+00:00",
+   "author_id": "100000002431134793",
+   "author": "player1",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536544769923088566",
+   "channel": "monday",
+   "timestamp": "2026-08-11T01:20:20.771000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536544782531436574",
+   "channel": "monday",
+   "timestamp": "2026-08-11T01:20:23.777000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "6 Heraldry",
+   "attachments": []
+  },
+  {
+   "id": "1536549856993349713",
+   "channel": "monday",
+   "timestamp": "2026-08-11T01:40:33.623000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "10->10->10->4  10->8 5 4=61+5=66 Sincerity@1",
+   "attachments": []
+  },
+  {
+   "id": "1536555350319304854",
+   "channel": "monday",
+   "timestamp": "2026-08-11T02:02:23.334000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Possibly how Shizu feels seeing how people regard him as he carries around a head in a bag:",
+   "attachments": [
+    {
+     "filename": "images.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536555587850993725",
+   "channel": "monday",
+   "timestamp": "2026-08-11T02:03:19.966000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "https://www.lookmovie2.to/movies/search/?q=the%20man%20who%20would%20be%20king",
+   "attachments": []
+  },
+  {
+   "id": "1536559243476607127",
+   "channel": "monday",
+   "timestamp": "2026-08-11T02:17:51.535000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "<@183026066498125825> Since I'm taking the head back, I'll hold off on the letter and just explain when I get there.",
+   "attachments": []
+  },
+  {
+   "id": "1537862818035015751",
+   "channel": "monday",
+   "timestamp": "2026-08-14T16:37:47.929000+00:00",
+   "author_id": "100000003351244786",
+   "author": "player5",
+   "content": "I am going to drop out of the campaign. I've considered it and decided this is what's best for me.\n<@209412082351734785> <@213078006250340353> <@316306960855072769> I look forward to hanging out with you in our semi-regular voice chats on Friday and Saturday nights.\n <@183026066498125825> <@832037313558609930> I don't see either of you much outside of L7R, so we should try to schedule an in person gaming night sometime this fall.",
+   "attachments": []
+  },
+  {
+   "id": "1537865393853693992",
+   "channel": "monday",
+   "timestamp": "2026-08-14T16:48:02.052000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "I've already expressed my sadness about you dropping out in  our private conversation so I won't reiterate it here, other than to repeat that I'm sorry to see you go but support you choosing whatever is best and healthiest for yourself.\n\nI'll definitely try to schedule an in-person gaming night in the fall, and to find time to jump in on some of those voice chats if I won't be seeing you in L7R - you've invited me in the past and I haven't found the time but now I have extra motivation to do so in order to keep in touch!",
+   "attachments": []
+  },
+  {
+   "id": "1538968918557728898",
+   "channel": "monday",
+   "timestamp": "2026-08-17T17:53:02.844000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Fair warning while I remember: I didn't have a power from 8:30 PM last night to noon today, so I got almost no sleep. Just letting you know if I'm more quiet, tired, and irritable than normal.",
+   "attachments": []
+  },
+  {
+   "id": "1539048141209477140",
+   "channel": "monday",
+   "timestamp": "2026-08-17T23:07:50.996000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "images.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539056755974086686",
+   "channel": "monday",
+   "timestamp": "2026-08-17T23:42:04.916000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Session 0 was 05/04",
+   "attachments": []
+  },
+  {
+   "id": "1539060875262959737",
+   "channel": "monday",
+   "timestamp": "2026-08-17T23:58:27.031000+00:00",
+   "author_id": "100000003225736696",
+   "author": "player2",
+   "content": "https://store.steampowered.com/app/286160/Tabletop_Simulator/",
+   "attachments": []
+  },
+  {
+   "id": "1541585026674724955",
+   "channel": "monday",
+   "timestamp": "2026-08-24T23:08:31.624000+00:00",
+   "author_id": "100000003795476105",
+   "author": "player3",
+   "content": "https://discord.gg/47gHHFP43",
+   "attachments": []
+  },
+  {
+   "id": "1541991471702478971",
+   "channel": "monday",
+   "timestamp": "2026-08-26T02:03:35.670000+00:00",
+   "author_id": "100000001091114387",
+   "author": "player6",
+   "content": "Since Joel, Patrick, and Marshall are out next Monday (08/27) night, I think I'm going to bow out as well. I just realized I'm going to be busy pretty much the rest of the week so having that night free would be helpful for me. Monday 09/07 should be fine.",
+   "attachments": []
+  },
+  {
+   "id": "1521666745495195791",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:00:23.327000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "I've seen that in a play before",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521669787825082478",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:12:28.675000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/fake-it-till-you-make-it-2",
+   "attachments": []
+  },
+  {
+   "id": "1521669995988516864",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:13:18.305000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "It's really annoying when you see 10s and then they continue rolling until you get 6+6+6, so 28 Sneaking @3",
+   "attachments": []
+  },
+  {
+   "id": "1521670676103303268",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:16:00.457000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521671050771955875",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:17:29.785000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1521671133558997062",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:17:49.523000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "I was at a 7-11 today and the total was $6.66. The cashier refused to say the total out loud and just pointed me to the credit card pin pad.",
+   "attachments": []
+  },
+  {
+   "id": "1521671211136974919",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:18:08.019000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "your laughing made me think it was either *really* high or *really* low <@551647271423574026>",
+   "attachments": []
+  },
+  {
+   "id": "1521671441937076304",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:19:03.046000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "I worked for an inventory company.  We counted a Joann's and I counted 666 of something (cannot remember).  My coworker said I needed to fake the number and scan another item.",
+   "attachments": []
+  },
+  {
+   "id": "1521673334415163432",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:26:34.248000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/onward-4",
+   "attachments": []
+  },
+  {
+   "id": "1521674147032469564",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:29:47.991000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521675280060645427",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:34:18.126000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521677478400098384",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:43:02.251000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521679122168938546",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T00:49:34.156000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521694147549986929",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T01:49:16.486000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521695047794298940",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T01:52:51.121000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521695113242214610",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T01:53:06.725000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521695901939400775",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T01:56:14.765000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Moriko has spent 2 of her 3rd Dan free raises",
+   "attachments": []
+  },
+  {
+   "id": "1521697663391895573",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:03:14.728000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "57 @3 Sneaking",
+   "attachments": []
+  },
+  {
+   "id": "1521697826252263485",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:03:53.557000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "27 Investigation @ 2",
+   "attachments": []
+  },
+  {
+   "id": "1521697945555304520",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:04:22.001000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521698001192489102",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:04:35.266000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521701330400317680",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:17:49.011000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1521702235799814184",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:21:24.875000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "47 @4",
+   "attachments": []
+  },
+  {
+   "id": "1521703894676144148",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:28:00.382000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "https://klipy.com/gifs/peter-pan-7",
+   "attachments": []
+  },
+  {
+   "id": "1521704118786326599",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:28:53.814000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "23 Sneaking base roll +10 if Acting still applies",
+   "attachments": []
+  },
+  {
+   "id": "1521706115228897401",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:36:49.803000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "30 @4 Sneaking",
+   "attachments": []
+  },
+  {
+   "id": "1521706422927229009",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T02:38:03.164000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "```\n>>> xky(7, 4)\n[2, 4, 7, 7, 7, 8, 9]\n31\n```\n(but with the free raise, Sadakichi wins!)",
+   "attachments": []
+  },
+  {
+   "id": "1521874745291833434",
+   "channel": "tuesday",
+   "timestamp": "2026-07-01T13:46:54.343000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "I found that comic about the girl wearing the ribbon I was I was talking about at the end of last session:\nhttps://www.reddit.com/r/LoveTrash/comments/1syirab/a_tale_as_old_as_time/",
+   "attachments": []
+  },
+  {
+   "id": "1523844637641408543",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T00:14:33.278000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Howdy.  I'd like to make a request.  Can we accumulate the various open threads and have a conversation in character or out about our priorities?  I'm getting a little overwhelmed about everything that we've started or noted for future activity and I'm not really certain which I need to put my thoughts into first.\n1)  Shoda - I know this bounty is our immediate primary attention focus and I'm all for finishing this first.  I feel like we actually worked well as a team and planned to compliment everyone in character. (Ah, \"woodcutter\" is Shoda, I remembered the axe but not the \"woodsman's\" descriptor.)\n\n2)  Fumito - Monk that led the group that might be protecting Shoda.  May need to interact with him later.\n\n3) Fumitake - I still want to do research on his past bounties.  I'm not squaring his opulent life with his lack of effort.  He might just be making a lot of money handling bounties without the proper paperwork, but I also get the sense that he could be on the take.  I'm fine with this being a focus for just Sadakichi and I recognize we might not have had time to do the research, but I don't want this to get forgotten. ALSO, what Jack mentioned above about backing down from the Mantis.  I think I missed that.\n\n4) Silk Stained Three - Have we stopped pursuing this?  Are we waiting on information from Fumitake or someone else?  Is the investigation into Shoda a detour on the way to doing somehting about this?\n\n5) Otohime - Related to the above, I still wanted to look into this person to make sure the theft wasn't an inside job. Same caveats as Fumitake.",
+   "attachments": []
+  },
+  {
+   "id": "1523844699817775186",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T00:14:48.102000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "6) Yasuki Chizuru - I have rememberances of him being a sketchy bastard we may want to take down.  But I think we decided we would wait for the proper paperwork, so maybe he's not a concern for the immediate future.\n\n7) Hida no Reiji Susano - Potential victim of Chizuru, but maybe we aren't doing anything for/about him at the moment.\n\n8) Otsuki - Toshihiro's conversation might be the first time that we heard of this person.  However, unless he is related to some of the other people above, I don't know if we want to add him to our focus yet.\n\nThis might be everything but let me know if there's more.  I think after we deal with Shoda (with whatever result), then we should more clearly discuss our next move.",
+   "attachments": []
+  },
+  {
+   "id": "1523846163084873838",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T00:20:36.972000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "OOC: We're looking into Shoda which connects 1 & 2. I believe you're the main one investigating 3 / Fumitake. For what it's worth Jimen think he's likely got an extra source of money on the side (bounty hunting is lurcative but not that luractive)",
+   "attachments": []
+  },
+  {
+   "id": "1523846440684883978",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T00:21:43.157000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "I believe 8 Otsuki is connected to the 4 Silk Stained Three. I believe he's the sketchy monk in that area so likely was involved. Unless that was 5 Otohime",
+   "attachments": []
+  },
+  {
+   "id": "1523847055900934184",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T00:24:09.836000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Jimen, Moriko, and Tetsuro are planning on beating up 7 Susano to see if the bounty for 6 Chizuru will increase. However, we agreed that we won't do the bounty off the books. I don't think we'll tell the rest of the party about beating Susano up. That's schedueld for the festival which I think is tomorrow in game",
+   "attachments": []
+  },
+  {
+   "id": "1524199516092239923",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T23:44:42.894000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524199571150999633",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T23:44:56.021000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524199811715170396",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T23:45:53.376000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524199818858336447",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T23:45:55.079000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "29 Underworld & 23 Law",
+   "attachments": []
+  },
+  {
+   "id": "1524199846272041142",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T23:46:01.615000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "33 law",
+   "attachments": []
+  },
+  {
+   "id": "1524201582995177554",
+   "channel": "tuesday",
+   "timestamp": "2026-07-07T23:52:55.682000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Same result btw",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524204254334550176",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T00:03:32.579000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/megamind-metroman-6",
+   "attachments": []
+  },
+  {
+   "id": "1524206734724563064",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T00:13:23.950000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Jimen's roll",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524208953096011986",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T00:22:12.851000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524208987191644271",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T00:22:20.980000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "34 Manipulation at 2",
+   "attachments": []
+  },
+  {
+   "id": "1524213069939474482",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T00:38:34.383000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524213244011741266",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T00:39:15.885000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "Masala fell asleep face down in the food bowl",
+   "attachments": [
+    {
+     "filename": "20260707_203722.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1524213279311007765",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T00:39:24.301000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "With three free dan raises I could go for 100",
+   "attachments": []
+  },
+  {
+   "id": "1524218500036694067",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:00:09.019000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "20260707_205926.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1524221074332581909",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:10:22.779000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "20260707_210915.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1524222505173389352",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:16:03.918000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "And by appointment, honest work <a:CataNodders:1522826779050639414>",
+   "attachments": []
+  },
+  {
+   "id": "1524223293278785678",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:19:11.817000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "46 Open Sincerity @4",
+   "attachments": []
+  },
+  {
+   "id": "1524223675531001996",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:20:42.953000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "40 Etiquette",
+   "attachments": []
+  },
+  {
+   "id": "1524223751346978947",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:21:01.029000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1524228034746384475",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:38:02.271000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "Cat 3 Purricane",
+   "attachments": [
+    {
+     "filename": "20260707_213720.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1524228365840683068",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:39:21.210000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "20260707_213850.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1524228435097157712",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:39:37.722000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "20260707_213847.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1524231923378163742",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:53:29.393000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/it-aint-much-but-its-honest-work-1",
+   "attachments": []
+  },
+  {
+   "id": "1524232999254888499",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:57:45.902000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524233102774370325",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T01:58:10.583000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1524233727981523178",
+   "channel": "tuesday",
+   "timestamp": "2026-07-08T02:00:39.644000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "```\n>>> xky(6, 4)\n[1, 5, 9, 9, 13, 19]\n50\n```",
+   "attachments": []
+  },
+  {
+   "id": "1526736208372170762",
+   "channel": "tuesday",
+   "timestamp": "2026-07-14T23:44:37.463000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "It was like a 2% chance roll",
+   "attachments": []
+  },
+  {
+   "id": "1526736347715469472",
+   "channel": "tuesday",
+   "timestamp": "2026-07-14T23:45:10.685000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "https://klipy.com/gifs/meonly-1",
+   "attachments": []
+  },
+  {
+   "id": "1526737059811688603",
+   "channel": "tuesday",
+   "timestamp": "2026-07-14T23:48:00.462000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "https://klipy.com/gifs/dont-move-2",
+   "attachments": []
+  },
+  {
+   "id": "1526740103504986132",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:00:06.135000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526740206722744450",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:00:30.744000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1526740873902030871",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:03:09.812000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "```\n>>> xky(6, 4)\n[2, 3, 7, 7, 17, 17]\n48\n```",
+   "attachments": []
+  },
+  {
+   "id": "1526741688192729256",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:06:23.954000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526742216444346409",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:08:29.899000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1526742999609118731",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:11:36.620000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526743524958277723",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:13:41.873000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526744196961271951",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:16:22.091000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526744590194053261",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:17:55.845000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "```\n>>> xky(5, 4)\n[1, 2, 9, 9, 16]\n36\n```",
+   "attachments": []
+  },
+  {
+   "id": "1526746047785996419",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:23:43.362000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "I rolled my big \"destiny\" die with the large Kanji numbers.....I got a 4....sigh",
+   "attachments": []
+  },
+  {
+   "id": "1526746093788860537",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:23:54.330000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526746128199061655",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:24:02.534000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "4",
+   "attachments": []
+  },
+  {
+   "id": "1526746195773620345",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:24:18.645000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "8",
+   "attachments": []
+  },
+  {
+   "id": "1526751894003777688",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:46:57.209000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526752485656760456",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:49:18.270000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526752574785720371",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:49:39.520000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526752757854371961",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:50:23.167000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "```\n>>> xky(6, 4)\n[1, 1, 4, 4, 6, 9]\n23\n```",
+   "attachments": []
+  },
+  {
+   "id": "1526753415353602109",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:52:59.927000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526753471041241098",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:53:13.204000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526753866199339098",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:54:47.417000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "```\n>>> xky(7, 5)\n[2, 3, 4, 6, 7, 8, 17]\n42\n```",
+   "attachments": []
+  },
+  {
+   "id": "1526753868573179924",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:54:47.983000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "He's got 3 Earth, he's fine",
+   "attachments": []
+  },
+  {
+   "id": "1526754152871493644",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T00:55:55.765000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526755390002565151",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T01:00:50.720000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526756777293516800",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T01:06:21.476000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526764537242587156",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T01:37:11.592000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "66Sincerity @4, that's with +37 and 2 10s. Ugh\n36 Intimidation",
+   "attachments": []
+  },
+  {
+   "id": "1526765658375983247",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T01:41:38.891000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "29@2 Interrogation",
+   "attachments": []
+  },
+  {
+   "id": "1526767147882119278",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T01:47:34.017000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526768044225855538",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T01:51:07.722000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526771569718984824",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T02:05:08.265000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526771898648756306",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T02:06:26.688000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1526772078639054889",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T02:07:09.601000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "(I wouldn't suggest this in character, but I can totally get you a document from the Duty Minister of Justice that says everyrhing was approved <:kitany1Sus:1400706173069557771> )",
+   "attachments": []
+  },
+  {
+   "id": "1526774200981917697",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T02:15:35.607000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "31 Sneaking @4, 25 Acting",
+   "attachments": []
+  },
+  {
+   "id": "1526774843033256039",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T02:18:08.684000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "33 @ 2 Investigation",
+   "attachments": []
+  },
+  {
+   "id": "1526775367799541933",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T02:20:13.798000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "21@1 Interrogation",
+   "attachments": []
+  },
+  {
+   "id": "1526778064745533440",
+   "channel": "tuesday",
+   "timestamp": "2026-07-15T02:30:56.800000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/andersomviolao-1",
+   "attachments": []
+  },
+  {
+   "id": "1529264217788649583",
+   "channel": "tuesday",
+   "timestamp": "2026-07-21T23:10:01.876000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Meh, 18 @3",
+   "attachments": []
+  },
+  {
+   "id": "1529266820786159678",
+   "channel": "tuesday",
+   "timestamp": "2026-07-21T23:20:22.479000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "30 Sneaking @4",
+   "attachments": []
+  },
+  {
+   "id": "1529266862532202516",
+   "channel": "tuesday",
+   "timestamp": "2026-07-21T23:20:32.432000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529266929821290627",
+   "channel": "tuesday",
+   "timestamp": "2026-07-21T23:20:48.475000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1529269625773097052",
+   "channel": "tuesday",
+   "timestamp": "2026-07-21T23:31:31.240000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1529271818786181140",
+   "channel": "tuesday",
+   "timestamp": "2026-07-21T23:40:14.095000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1529280450089062480",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T00:14:31.958000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "To be cool",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529281258969108685",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T00:17:44.810000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Jimen's judgement (I could do better)",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529283797185724546",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T00:27:49.968000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "31 @ 4 Sneaking",
+   "attachments": []
+  },
+  {
+   "id": "1529284026962280578",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T00:28:44.751000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "30@4 Sincerity (+10 if Kind Eye Applies to HIm)",
+   "attachments": []
+  },
+  {
+   "id": "1529284734054699060",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T00:31:33.335000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "30 Investigation @3",
+   "attachments": []
+  },
+  {
+   "id": "1529285041794842716",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T00:32:46.706000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "I've have multiple 1s and 2s on every roll.  I'm glad for the +10 from Acting and Discerning",
+   "attachments": []
+  },
+  {
+   "id": "1529291049485336636",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T00:56:39.051000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "33@4 Attack",
+   "attachments": []
+  },
+  {
+   "id": "1529291950379761765",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:00:13.841000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "For the record, staying close-by",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529292103165939722",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:00:50.268000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "So, I forgot about my Wave Treader School and picking my posture.  I think it's in chacter to take Offensive Posture.  So it would be 38@4 Attack, so It starts at 31 Damage, unless I rolled more than 4k2 dice on the damage roll",
+   "attachments": []
+  },
+  {
+   "id": "1529292539163836597",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:02:34.218000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "(Damage Dice Rolled were 17, 9, 7, 2 for 26+5 Damage)",
+   "attachments": []
+  },
+  {
+   "id": "1529298172621492384",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:24:57.339000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529302771097014443",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:43:13.701000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "sorry if that seemed like it came out of left field but I had mentioned that I had heard about this guy before:",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529303187272499405",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:44:52.925000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "43 athletics",
+   "attachments": []
+  },
+  {
+   "id": "1529303323700887562",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:45:25.452000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "```\n>>> xky(7, 4)\n[1, 5, 5, 8, 8, 9, 9]\n34\n>>> xky(7, 4)\n[2, 6, 6, 6, 7, 8, 9]\n30\n```",
+   "attachments": []
+  },
+  {
+   "id": "1529303580320862440",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:46:26.635000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "53 sneaking @4 to blend into the crowd",
+   "attachments": []
+  },
+  {
+   "id": "1529303998559944735",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:48:06.351000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Very sorry, I just a clumsy ignorant peasant",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529305015532126422",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:52:08.816000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1529306963178164276",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:59:53.171000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529306975068880896",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T01:59:56.006000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529309136901243042",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:08:31.427000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529312639551799407",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:22:26.524000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/doubt-fire-hello-1",
+   "attachments": []
+  },
+  {
+   "id": "1529313987253112862",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:27:47.841000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/applegifs-1",
+   "attachments": []
+  },
+  {
+   "id": "1529314870783115416",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:31:18.491000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529314944695402536",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:31:36.113000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529315134604968048",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:32:21.391000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "<:coolapple:976962578590859274> <:mindapple:976962197798391848>",
+   "attachments": []
+  },
+  {
+   "id": "1529315289018138664",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:32:58.206000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529315449899057273",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:33:36.563000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1529316594226958507",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:38:09.392000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "42@2 Investigation",
+   "attachments": []
+  },
+  {
+   "id": "1529318077987160206",
+   "channel": "tuesday",
+   "timestamp": "2026-07-22T02:44:03.148000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1531802303651254444",
+   "channel": "tuesday",
+   "timestamp": "2026-07-28T23:15:28.701000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "14",
+   "attachments": []
+  },
+  {
+   "id": "1531806726767247422",
+   "channel": "tuesday",
+   "timestamp": "2026-07-28T23:33:03.254000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1531810664006553711",
+   "channel": "tuesday",
+   "timestamp": "2026-07-28T23:48:41.965000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531810945826029610",
+   "channel": "tuesday",
+   "timestamp": "2026-07-28T23:49:49.156000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "20260728_194421.jpg",
+     "content_type": "image/jpeg"
+    }
+   ]
+  },
+  {
+   "id": "1531811851946692668",
+   "channel": "tuesday",
+   "timestamp": "2026-07-28T23:53:25.192000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531813009750757417",
+   "channel": "tuesday",
+   "timestamp": "2026-07-28T23:58:01.234000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531815822744354950",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T00:09:11.904000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "42 tact to make our apologies to Ayame for our depature.",
+   "attachments": []
+  },
+  {
+   "id": "1531818407811612672",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T00:19:28.232000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Sigh, only 25@1 interrogation",
+   "attachments": []
+  },
+  {
+   "id": "1531823208297402521",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T00:38:32.757000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "What is the payout spilt for the 200 koku (assuming we get it)? [I can roll Commerce if needed]",
+   "attachments": []
+  },
+  {
+   "id": "1531824791714009128",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T00:44:50.273000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "29@2 Tact",
+   "attachments": []
+  },
+  {
+   "id": "1531831786085159092",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:12:37.861000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531831909192306758",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:13:07.212000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "39 @3 Etiquette",
+   "attachments": []
+  },
+  {
+   "id": "1531831909381046524",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:13:07.257000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1531832410608767017",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:15:06.759000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "53@2 Intimidation, keep in mind that my bonuses are +35",
+   "attachments": []
+  },
+  {
+   "id": "1531833834885349508",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:20:46.333000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "38@3 Investigation",
+   "attachments": []
+  },
+  {
+   "id": "1531835283438309518",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:26:31.695000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "26@1 Interrogation  (Someone else please roll too)",
+   "attachments": []
+  },
+  {
+   "id": "1531835394327576678",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:26:58.133000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531835681129889857",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:28:06.512000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531836392534048768",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:30:56.124000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Oh, wow, I just checked, and only two players have Interrogation, only at 1 each.  We are going to miss so much.",
+   "attachments": []
+  },
+  {
+   "id": "1531839249479893003",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:42:17.273000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Athletics Fire 24\nAthletics Air 37",
+   "attachments": []
+  },
+  {
+   "id": "1531840212769177733",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:46:06.939000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Always expect the knife <:Knife:1113494410685075546>",
+   "attachments": []
+  },
+  {
+   "id": "1531840793780813916",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T01:48:25.463000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "46@1 Interrogation",
+   "attachments": []
+  },
+  {
+   "id": "1531844171353292971",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:01:50.739000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "30 Investigation @ 2",
+   "attachments": []
+  },
+  {
+   "id": "1531846327087140978",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:10:24.706000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "38 @4 Sincerity",
+   "attachments": []
+  },
+  {
+   "id": "1531847538292949022",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:15:13.480000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "We are bounty hunters with 2 Interrogation and 3 Investigation for the entire group.  This is going to be so much fun.",
+   "attachments": []
+  },
+  {
+   "id": "1531847727430897775",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:15:58.574000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "I see everything!",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531848160358567976",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:17:41.792000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "400/8 is 25 Koku each",
+   "attachments": []
+  },
+  {
+   "id": "1531848256106135783",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:18:04.620000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Oh no, Toshihiro is negotiating for us <:chibinyaConcern:1400662659677818911>",
+   "attachments": []
+  },
+  {
+   "id": "1531848421055664301",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:18:43.947000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Oh, 12.5 then",
+   "attachments": []
+  },
+  {
+   "id": "1531848577205272676",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:19:21.176000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "tetsuro's take on money: \"how much can a banana be worth? 9 koku?\"",
+   "attachments": []
+  },
+  {
+   "id": "1531848873729851433",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:20:31.873000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531850676521668659",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:27:41.692000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "14.33 Koku each for everyone else and 7 each for them gets us to 100",
+   "attachments": []
+  },
+  {
+   "id": "1531851206266191993",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:29:47.993000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "31",
+   "attachments": []
+  },
+  {
+   "id": "1531853947084476549",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:40:41.455000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531854049178157248",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:41:05.796000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "How to handle debts",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531857624142839920",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:55:18.134000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1531857703477973093",
+   "channel": "tuesday",
+   "timestamp": "2026-07-29T02:55:37.049000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534339531128705116",
+   "channel": "tuesday",
+   "timestamp": "2026-08-04T23:17:30.871000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "On the going rate for hits",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534342464096305213",
+   "channel": "tuesday",
+   "timestamp": "2026-08-04T23:29:10.145000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "https://www.imdb.com/title/tt0449467/?ref_=ls_t_2",
+   "attachments": []
+  },
+  {
+   "id": "1534346703170310334",
+   "channel": "tuesday",
+   "timestamp": "2026-08-04T23:46:00.819000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "1) Do we need to do an etiquette roll?\n2)  Is it bad manners to return the gonsho?",
+   "attachments": []
+  },
+  {
+   "id": "1534347209875919000",
+   "channel": "tuesday",
+   "timestamp": "2026-08-04T23:48:01.627000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "38 Etiquette @3",
+   "attachments": []
+  },
+  {
+   "id": "1534347272681295882",
+   "channel": "tuesday",
+   "timestamp": "2026-08-04T23:48:16.601000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534347407272317019",
+   "channel": "tuesday",
+   "timestamp": "2026-08-04T23:48:48.690000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534348200247558269",
+   "channel": "tuesday",
+   "timestamp": "2026-08-04T23:51:57.750000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1534348293054926969",
+   "channel": "tuesday",
+   "timestamp": "2026-08-04T23:52:19.877000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "41 Sincerity @4",
+   "attachments": []
+  },
+  {
+   "id": "1534353026586771617",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T00:11:08.439000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "https://klipy.com/gifs/captain-planet-captain-planet-and-the-planeteers-2",
+   "attachments": []
+  },
+  {
+   "id": "1534355428132261948",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T00:20:41.012000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "18 Interrogation @1 Blah\nI know what I'm increasing next XP distribution",
+   "attachments": []
+  },
+  {
+   "id": "1534356499541786704",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T00:24:56.456000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1534358390514651176",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T00:32:27.299000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1534359736269537371",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T00:37:48.152000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1534364751067349052",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T00:57:43.773000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "I'm sure my 2 Investigation will help me",
+   "attachments": []
+  },
+  {
+   "id": "1534370561978007634",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:20:49.202000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534371688073003012",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:25:17.684000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "In comparison, the other group has 6 interrogation and 9 investigation.",
+   "attachments": []
+  },
+  {
+   "id": "1534373889067450368",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:34:02.442000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534374732521148537",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:37:23.537000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1534377328338010156",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:47:42.428000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534377489416065044",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:48:20.832000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534377965989920791",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:50:14.456000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Here's the corrected attack roll:",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534378041181081610",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:50:32.383000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534378194507927613",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:51:08.939000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1534379102625071144",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T01:54:45.451000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "tetsuro does actually have 1 rank in acting, that could work pretty well",
+   "attachments": []
+  },
+  {
+   "id": "1534381186699497533",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T02:03:02.333000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "29 @2 Intimidation",
+   "attachments": []
+  },
+  {
+   "id": "1534381514702192943",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T02:04:20.535000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "19 on 10K3, 4 ones",
+   "attachments": []
+  },
+  {
+   "id": "1534382343828148407",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T02:07:38.214000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "24 Investigation.  I think I've rolled 2 ones with every roll of my physical dice tonight",
+   "attachments": []
+  },
+  {
+   "id": "1534382892166287562",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T02:09:48.948000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "38 Athletics",
+   "attachments": []
+  },
+  {
+   "id": "1534383362750550046",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T02:11:41.144000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "34 @2 intimidation",
+   "attachments": []
+  },
+  {
+   "id": "1534388265333821481",
+   "channel": "tuesday",
+   "timestamp": "2026-08-05T02:31:10.011000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "59 Sincerity",
+   "attachments": []
+  },
+  {
+   "id": "1535791234650611792",
+   "channel": "tuesday",
+   "timestamp": "2026-08-08T23:26:03.962000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1536867397150187520",
+   "channel": "tuesday",
+   "timestamp": "2026-08-11T22:42:21.096000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "I'll be logging on a bit late tonight, I'm already home but I have to run out for a couple of unexpected errands.  I don't expect to be later than ~7:30pm, and folks are welcome to fill Jack in on what happened last session before I arrive.",
+   "attachments": []
+  },
+  {
+   "id": "1536885912955265076",
+   "channel": "tuesday",
+   "timestamp": "2026-08-11T23:55:55.608000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "14 Light Wounds",
+   "attachments": []
+  },
+  {
+   "id": "1536886076810207332",
+   "channel": "tuesday",
+   "timestamp": "2026-08-11T23:56:34.674000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "I'm keeping",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536886398236491918",
+   "channel": "tuesday",
+   "timestamp": "2026-08-11T23:57:51.308000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "45 Intimidation @2 for Gennai",
+   "attachments": []
+  },
+  {
+   "id": "1536887934979149955",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T00:03:57.696000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "28 Interrogation @1",
+   "attachments": []
+  },
+  {
+   "id": "1536893356200824963",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T00:25:30.216000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536896385386020874",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T00:37:32.430000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "https://klipy.com/gifs/its-always-sunny-in-philadelphia-charlie-4",
+   "attachments": []
+  },
+  {
+   "id": "1536899377371811901",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T00:49:25.775000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "64 Sincerity @4",
+   "attachments": []
+  },
+  {
+   "id": "1536903528751173792",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:05:55.541000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536903593339265157",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:06:10.940000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536908066140848259",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:23:57.339000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "9k.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536908665922129981",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:26:20.338000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1536910969307922442",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:35:29.508000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536915539773890660",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:53:39.192000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536915619855867954",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:53:58.285000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1536915665687154759",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:54:09.212000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536915673744416799",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:54:11.133000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1536915680136269935",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:54:12.657000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "38 Etiquette @3",
+   "attachments": []
+  },
+  {
+   "id": "1536916812761927730",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T01:58:42.696000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "@27 Tact to drop comments that compare this meal to what we recieved at Fumitakes - in a manner that ponders how his cook could thrive in this setting.  Yes, I am trying to get her to poach Fumitake's chef.  I'm being an asshole, gotta play Long Temper. (Tact to not be disparaging her chef.)",
+   "attachments": []
+  },
+  {
+   "id": "1536925392265416714",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T02:32:48.209000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "23 Interrogation @1 (with a 10.  I rolled 10, 4, 2, 1 and got a 2 on the reroll. Sigh.  +5 for Discerning at least)",
+   "attachments": []
+  },
+  {
+   "id": "1536927394043138199",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T02:40:45.470000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Yep never met him! <:AJLie:1009245958724386887>",
+   "attachments": []
+  },
+  {
+   "id": "1536931838331985943",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T02:58:25.071000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1536934109299871826",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T03:07:26.512000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Next week:\n1)  Let us know if we have a night's rest.  Need that Void.\n2)  I wanted to have a quick in-character conversation with the team.\n3) Discuss cursed object we recieved.",
+   "attachments": []
+  },
+  {
+   "id": "1536935417222397953",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T03:12:38.345000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "> Genichi the gambler [5 koku]\n> Genichi operated rigged dice games on market day in Shiro Suzume for months before being caught and sentenced to forced labor. He escaped his labor detail on the 9th day of the Month of the Boar of last year by slipping away during a rainstorm. Slight build, quick-moving, has a distinctive gap between his front teeth and is known to be a master of sleight of hand.",
+   "attachments": []
+  },
+  {
+   "id": "1537082665583382659",
+   "channel": "tuesday",
+   "timestamp": "2026-08-12T12:57:45.090000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "I realized that he likely kept the Bu I gave him at his place. If so, I\u2019m taking it back <:kitany1Grab:1400706072523833476>",
+   "attachments": []
+  },
+  {
+   "id": "1539415617591975998",
+   "channel": "tuesday",
+   "timestamp": "2026-08-18T23:28:04.193000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539420233272655902",
+   "channel": "tuesday",
+   "timestamp": "2026-08-18T23:46:24.657000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Healed my serious wound <:kitany1Comfy:1400662811331264594>",
+   "attachments": []
+  },
+  {
+   "id": "1539420446573862985",
+   "channel": "tuesday",
+   "timestamp": "2026-08-18T23:47:15.512000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539421870544126032",
+   "channel": "tuesday",
+   "timestamp": "2026-08-18T23:52:55.013000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539423744928387133",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:00:21.901000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "Two people have 1 Interrogation each",
+   "attachments": []
+  },
+  {
+   "id": "1539423914634125312",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:01:02.362000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539425639176867912",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:07:53.525000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "20 Underworld at 2",
+   "attachments": []
+  },
+  {
+   "id": "1539426349964333056",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:10:42.990000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Jimen will write up papers deputizing Tsuruchi Rensho (rank 5.0)",
+   "attachments": []
+  },
+  {
+   "id": "1539427535165726831",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:15:25.564000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "patti found someone to do our lawn one time only for 80-100 bucks.  im not sure they realize how overgrown it is.",
+   "attachments": []
+  },
+  {
+   "id": "1539429655235399711",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:23:51.028000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "26@3 Etiquette",
+   "attachments": []
+  },
+  {
+   "id": "1539429909410349217",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:24:51.628000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1539430154626138194",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:25:50.092000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "25 interrogation@1",
+   "attachments": []
+  },
+  {
+   "id": "1539430329318637720",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:26:31.742000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "<@551647271423574026> is that payment coming from tetsuro? so i can track the expenditure",
+   "attachments": []
+  },
+  {
+   "id": "1539430846950285382",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:28:35.155000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "this guy's gotta have like 5.5 honor",
+   "attachments": []
+  },
+  {
+   "id": "1539431202543501383",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:29:59.935000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539434134949339268",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:41:39.075000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "19 Tact@2",
+   "attachments": []
+  },
+  {
+   "id": "1539436244080136222",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:50:01.931000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539436267568238683",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:50:07.531000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539436278414573630",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:50:10.117000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539438679838167160",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T00:59:42.661000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Just checking out the place (anything change?)",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539442151178633216",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T01:13:30.293000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "On the contract",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539443519880433695",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T01:18:56.617000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "On his story, how out of line is it leave seals here?",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539445828123623424",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T01:28:06.945000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539445971610501270",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T01:28:41.155000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "On the size of the bounty (200 koku)",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539452180308959302",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T01:53:21.424000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/sweats-7",
+   "attachments": []
+  },
+  {
+   "id": "1539452282377084958",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T01:53:45.759000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539452421548548126",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T01:54:18.940000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539456639004971038",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:11:04.460000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "we'll see if another 200 koku bounty shows up on the 2 that killed him",
+   "attachments": []
+  },
+  {
+   "id": "1539458293095735388",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:17:38.826000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539458293481742347",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:17:38.918000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539458369138597969",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:17:56.956000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539458381558063196",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:17:59.917000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "6 9 6 9",
+   "attachments": []
+  },
+  {
+   "id": "1539458746185420810",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:19:26.851000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "47 Etiquette@3 assuming streetwise counts",
+   "attachments": []
+  },
+  {
+   "id": "1539458958362681404",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:20:17.438000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1539459628499214436",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:22:57.211000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "1, 1, 2, 5.  Sigh",
+   "attachments": []
+  },
+  {
+   "id": "1539463329418846308",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:37:39.579000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "https://klipy.com/gifs/love-quotes-29",
+   "attachments": []
+  },
+  {
+   "id": "1539463651675742361",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:38:56.411000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "a yasuki prince who needs help transferring 1 million koku out of his account",
+   "attachments": []
+  },
+  {
+   "id": "1539465652710936616",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:46:53.495000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "805ce9510a78faf71d24fa48508fa4eb.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1539465675129626694",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:46:58.840000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "https://www.youtube.com/watch?v=ny2772yR1xE I think this is relevant if Rokugan had tractors",
+   "attachments": []
+  },
+  {
+   "id": "1539465807342600262",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:47:30.362000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "dx9j3ks7d21a1.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1539465839986872431",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:47:38.145000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "\"voluptuous tree\" turned up those 2 gems",
+   "attachments": []
+  },
+  {
+   "id": "1539465854884913206",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:47:41.697000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "Screen_Shot_2026-08-18_at_10.47.11_PM.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1539466008866201641",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T02:48:18.409000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "This is the canonical \"attractive looking tree\".",
+   "attachments": [
+    {
+     "filename": "images.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1539777413737611374",
+   "channel": "tuesday",
+   "timestamp": "2026-08-19T23:25:43.116000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Jimen didn\u2019t take the weighted dice. He doesn\u2019t cheat, that\u2019s why he has a 5 honor",
+   "attachments": []
+  },
+  {
+   "id": "1541951513008537620",
+   "channel": "tuesday",
+   "timestamp": "2026-08-25T23:24:48.775000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1541952070360498237",
+   "channel": "tuesday",
+   "timestamp": "2026-08-25T23:27:01.658000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1541953409362694225",
+   "channel": "tuesday",
+   "timestamp": "2026-08-25T23:32:20.901000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1541955388205961226",
+   "channel": "tuesday",
+   "timestamp": "2026-08-25T23:40:12.694000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "tetsuro gets 8 bu out to give to moriko for a job very well done",
+   "attachments": []
+  },
+  {
+   "id": "1541963013177876540",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:10:30.629000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541963020677283930",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:10:32.417000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541963279662972989",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:11:34.164000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541963291679531088",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:11:37.029000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "50 Intimidation @2 on Masayuki",
+   "attachments": []
+  },
+  {
+   "id": "1541965291607818283",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:19:33.849000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "30 Interrogation @1",
+   "attachments": []
+  },
+  {
+   "id": "1541968920834220244",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:33:59.124000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "17 years of accounting related experience and I have never heard that pun......",
+   "attachments": []
+  },
+  {
+   "id": "1541969068729438289",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:34:34.385000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "It's a good one that I've going to have to steal <:kitany1Grab:1400706072523833476>",
+   "attachments": []
+  },
+  {
+   "id": "1541971467086856293",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:44:06.198000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541971780166488155",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:45:20.842000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541971906117247167",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:45:50.871000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "41 on open Sincerity at 4 for my hand signal",
+   "attachments": []
+  },
+  {
+   "id": "1541974511950368818",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T00:56:12.150000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "https://klipy.com/gifs/columbo-detective-6",
+   "attachments": []
+  },
+  {
+   "id": "1541978694367846430",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:12:49.316000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Birds eating his fruits <:sweatsnervously:490323720213233664>",
+   "attachments": []
+  },
+  {
+   "id": "1541979040137609297",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:14:11.754000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "46/66 Open Sincerity for one last comment to Natuso/Masayuki.  (I'm assuming Kind Eye applies to Masayuki in this case.)",
+   "attachments": []
+  },
+  {
+   "id": "1541979066918375626",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:14:18.139000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541980961414058087",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:21:49.822000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Could the Deputy Minister Of Justice promote him? <:AJLie:1009245958724386887>",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541983288741339176",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:31:04.700000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "<@183026066498125825> just want you to know how much I appreciate you bro.",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541984223806627980",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:34:47.637000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image0.gif",
+     "content_type": "image/gif"
+    }
+   ]
+  },
+  {
+   "id": "1541987927033249803",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:49:30.555000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1541988077742858291",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:50:06.487000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541990226623332404",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T01:58:38.820000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1541991173600845895",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:02:24.597000+00:00",
+   "author_id": "100000003287817586",
+   "author": "player9",
+   "content": "No one kicked me out. I have Major Ally Mantis and both the Crane and Scorpion appreciate me! \nIf Jimen tells me 20% of what this guy is saying, I don't think I need to worry about long temper with him since he's going to be dead. (Not Jimen)",
+   "attachments": []
+  },
+  {
+   "id": "1541991414525591552",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:03:22.038000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "Jimen is totally just keeping to the bit and not expressing true opinions <:kitany1Teehee:1400706178060910612>",
+   "attachments": []
+  },
+  {
+   "id": "1541991623242551306",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:04:11.800000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1541991869540605963",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:05:10.522000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541994086641303712",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:13:59.120000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541994433376157777",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:15:21.788000+00:00",
+   "author_id": "100000000604582719",
+   "author": "player7",
+   "content": "+10",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1541997558136709160",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:27:46.789000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "out of character: do we know that these two were tipped off or primed in some way to jump on the 200 koku bounty?",
+   "attachments": []
+  },
+  {
+   "id": "1542000084730912838",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:37:49.176000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1542000264314232933",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:38:31.992000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "<@741082265404047481> i just planted the idea that hideki could \"totally take sadakichi\" to him",
+   "attachments": []
+  },
+  {
+   "id": "1542001830450565142",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:44:45.388000+00:00",
+   "author_id": "100000000761392058",
+   "author": "player10",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "l7r-roll.png",
+     "content_type": "image/png"
+    }
+   ]
+  },
+  {
+   "id": "1542004462715932732",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T02:55:12.969000+00:00",
+   "author_id": "100000004280906092",
+   "author": "player8",
+   "content": "https://klipy.com/gifs/-32064",
+   "attachments": []
+  },
+  {
+   "id": "1542259631022153868",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T19:49:09.834000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "To keep track of the dark secret relationships, I have add a `Dark Secrets` page to the character sheet app:",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1542263353341124728",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T20:03:57.304000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "I didn't accept that logic from Wolfwood, and I won't accept it from Sadakichi! \ud83d\ude1b",
+   "attachments": [
+    {
+     "filename": "images.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1542265345471942696",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T20:11:52.265000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "I'm too lazy to photoshop Jack's head onto this, but you get the idea:",
+   "attachments": [
+    {
+     "filename": "images.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1542266683228422165",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T20:17:11.211000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "It's all making sense now.",
+   "attachments": [
+    {
+     "filename": "image.png",
+     "content_type": "image/webp"
+    }
+   ]
+  },
+  {
+   "id": "1542266830729510983",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T20:17:46.378000+00:00",
+   "author_id": "100000001118831701",
+   "author": "player11",
+   "content": "https://klipy.com/gifs/tin-foil-hat-jabrils-1",
+   "attachments": []
+  },
+  {
+   "id": "1542267061424758866",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T20:18:41.380000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "",
+   "attachments": [
+    {
+     "filename": "mindblown.gif",
+     "content_type": "image/gif"
+    }
+   ]
+  },
+  {
+   "id": "1542279217918771211",
+   "channel": "tuesday",
+   "timestamp": "2026-08-26T21:06:59.714000+00:00",
+   "author_id": "100000002067665996",
+   "author": "player4",
+   "content": "Also, not everyone was present by the time we talked about this, but Phil can't make it to the session next Tuesday.\n\nIs everyone available on Monday (August 31)?  If so then we'd be able to play next week with a full group.  If not then we'll just run on Tuesday as normal and we'll be down 1 player.",
+   "attachments": []
+  }
+ ]
+}
