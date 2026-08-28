@@ -12,7 +12,7 @@ the local index a session uses to summarize and search them.
 The first request to any campaign is its own `content_summary.json`, which lists every public
 wiki page, adventure-log post and character with title and tags. That list IS the crawl list -
 nothing outside it is requested, and pages the owner marked GM-only are never asked for. One
-request per --delay (default 61 s), a resumable manifest per campaign, and the census's stop
+request per --delay (default 21 s), a resumable manifest per campaign, and the census's stop
 rules: a Cloudflare challenge or a robots.txt change ends the run. The same principles apply -
 see webapp/l7r/opcrawl/__init__.py - and everything cached is gitignored.
 """
@@ -38,7 +38,7 @@ from l7r.opcrawl.index import build_index, search  # noqa: E402
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n', 1)[0])
     parser.add_argument('--slug', action='append', help='crawl only these campaigns')
-    parser.add_argument('--delay', type=float, default=61.0)
+    parser.add_argument('--delay', type=float, default=21.0)
     parser.add_argument('--max-pages', type=int, default=None, help='per campaign, this run')
     parser.add_argument('--game-system-id', type=int, default=L5R_GAME_SYSTEM_ID)
     parser.add_argument(

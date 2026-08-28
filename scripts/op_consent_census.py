@@ -2,13 +2,13 @@
 """Census of Legend of the Five Rings campaigns on Obsidian Portal whose owners allow bots.
 
 Reads robots.txt and the pre-human-check exempt list, then visits the front page of every
-opted-in campaign ONCE at one request per --delay (default 61 s; the floor is robots.txt's 20 s)
+opted-in campaign ONCE at one request per --delay (default 21 s; the floor is robots.txt's 20 s)
 to learn its game system. Never a non-opted-in campaign, never the campaign directory (see
 below). Writes the result under the gitignored webapp/opcache/opcrawl/. About five hours for
 ~290 opted-in campaigns; run it in the background.
 
   ./scripts/op_consent_census.py                 report L5R (game_system_id=62)
-  ./scripts/op_consent_census.py --delay 121     slower still; --delay can never go below 20
+  ./scripts/op_consent_census.py --delay 61      slower; --delay can never go below 20
 
 Why not the campaign directory: `/campaigns?...&page=N` is answered with a Cloudflare challenge
 on every paginated request, at any pace (measured 2026-08-27/28; the probes are recorded in
@@ -49,8 +49,8 @@ def main() -> int:
     parser.add_argument(
         '--delay',
         type=float,
-        default=61.0,
-        help='seconds between requests; never below the robots.txt Crawl-delay (default 61)',
+        default=21.0,
+        help='seconds between requests; never below the robots.txt Crawl-delay (default 21)',
     )
     parser.add_argument(
         '--refresh',
