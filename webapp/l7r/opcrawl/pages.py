@@ -1,6 +1,7 @@
 """Parsers for the two Obsidian Portal pages the census reads: the pre-human-check gate (for the
-exempt list) and the campaign browse listing (for the L5R roster). Regex over saved fixture
-markup rather than a DOM walk - the markup is simple and the fixtures pin it."""
+exempt list) and a campaign's own front page (for its name, game system and last-updated).
+Regex over saved fixture markup rather than a DOM walk - the markup is simple and the fixtures
+pin it."""
 
 from __future__ import annotations
 
@@ -10,29 +11,21 @@ import re
 from dataclasses import dataclass
 
 _EXEMPT = re.compile(r"data-exempt-cses='([^']*)'")
-_TILE = re.compile(
-    r"<a class='campaign-thumb-and-info' href='https://(?P<slug>[a-z0-9-]+)\.obsidianportal\.com/'>"
-    r'.*?<h4 class=\'underlined name\'>\s*(?P<name>.*?)\s*</h4>'
-    r'\s*<small class=\'underlined name\'>\s*(?P<visibility>.*?)\s*</small>'
-    r'(?:.*?<span class=\'game-system\'>(?P<system>.*?)</span>)?'
-    r'(?:.*?<time[^>]*datetime="(?P<updated>[^"]*)")?'
-    r'.*?</a>',
+_TITLE = re.compile(r'<title>\s*(.*?)\s*\|\s*Obsidian Portal\s*</title>', re.S)
+_SYSTEM = re.compile(
+    r"<div class='system-logo-container[^']*'>\s*<a href='/campaigns\?game_system_id=(?P<id>\d+)'>"
+    r"\s*<img alt='(?P<name>[^']*)'",
     re.S,
 )
-_PAGE = re.compile(r'[?&;]page=(\d+)')
+_UPDATED = re.compile(r'Last Updated:.*?<time[^>]*datetime="([^"]*)"', re.S)
 
 
 @dataclass(frozen=True)
-class Campaign:
-    slug: str
+class FrontPage:
     name: str
-    visibility: str
     game_system: str
+    game_system_id: int | None
     updated: str
-
-    @property
-    def url(self) -> str:
-        return f'https://{self.slug}.obsidianportal.com/'
 
 
 def parse_exempt_slugs(gate_html: str) -> frozenset[str]:
@@ -47,18 +40,15 @@ def parse_exempt_slugs(gate_html: str) -> frozenset[str]:
     return frozenset(slugs)
 
 
-def parse_browse(page_html: str) -> tuple[list[Campaign], int]:
-    """The campaign tiles on one browse page, plus the total page count (max `page=N` seen;
-    1 when the listing has no pagination)."""
-    tiles = [
-        Campaign(
-            slug=m['slug'],
-            name=html.unescape(m['name']),
-            visibility=m['visibility'],
-            game_system=html.unescape(m['system'] or ''),
-            updated=m['updated'] or '',
-        )
-        for m in _TILE.finditer(page_html)
-    ]
-    pages = [int(n) for n in _PAGE.findall(page_html)]
-    return tiles, max(pages, default=1)
+def parse_front_page(page_html: str) -> FrontPage:
+    """Name, game system and last-updated from a campaign's front page. A campaign with no game
+    system set (or a page without the sidebar) yields an empty system and `None` id."""
+    title = _TITLE.search(page_html)
+    system = _SYSTEM.search(page_html)
+    updated = _UPDATED.search(page_html)
+    return FrontPage(
+        name=html.unescape(title.group(1)) if title else '',
+        game_system=html.unescape(system['name']) if system else '',
+        game_system_id=int(system['id']) if system else None,
+        updated=updated.group(1) if updated else '',
+    )

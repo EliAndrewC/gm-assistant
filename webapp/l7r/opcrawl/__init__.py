@@ -32,25 +32,27 @@ How the consent signal works (measured 2026-08-27, see `census.py`):
 * `www.obsidianportal.com/robots.txt` says `Crawl-delay: 20` for everyone and disallows GPTBot
   outright. `robots.py` parses it and the census refuses to run if the recorded floor no longer
   holds or a URL it wants is now disallowed.
-* The browse page `/campaigns?game_system_id=62` lists every L5R campaign (834 on 2026-08-27,
-  19 pages). `pages.py` parses it from saved-fixture markup.
+* Each opted-in campaign's front page names its game system (`pages.py`). The census visits
+  each once. The campaign DIRECTORY is deliberately not walked - Cloudflare challenges any
+  paginated listing request, an undocumented but unambiguous wish; the diagnosis is in
+  `census.py`.
 
 Entry point: `scripts/op_consent_census.py` at the repo root; the results land under the
 gitignored `webapp/opcache/opcrawl/` and are never committed - only this tooling is.
 """
 
 from l7r.opcrawl.census import OWN_CAMPAIGNS, Census, CensusRow, run_census, summarize
-from l7r.opcrawl.pages import Campaign, parse_browse, parse_exempt_slugs
+from l7r.opcrawl.pages import FrontPage, parse_exempt_slugs, parse_front_page
 from l7r.opcrawl.robots import RobotsPolicy, parse_robots
 
 __all__ = [
     'OWN_CAMPAIGNS',
-    'Campaign',
     'Census',
     'CensusRow',
+    'FrontPage',
     'RobotsPolicy',
-    'parse_browse',
     'parse_exempt_slugs',
+    'parse_front_page',
     'parse_robots',
     'run_census',
     'summarize',
