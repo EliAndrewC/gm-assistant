@@ -54,7 +54,7 @@ def message(
     }
 
 
-def open_one(channel: str = 'tuesday') -> Any:
+def open_one(channel: str | None = 'tuesday') -> Any:
     return conv.begin_conversation('Otsuki', channel, characters=lambda: CAST, now=lambda: OPENED)
 
 
@@ -66,7 +66,7 @@ def collect_with(
     who: dict[str, sheet.SheetCharacter] | None = None,
 ) -> Any:
     return conv.collect(
-        fetch=lambda *a, **k: messages,
+        fetch=lambda cid, cursor, **k: messages,
         recorded=lambda *a, **k: sheet.SheetResult(rolls=rolls, reason=reason),
         roster=lambda *a, **k: sheet.SheetResult(characters=who or {}),
         vocabulary=words,
@@ -83,11 +83,11 @@ class TestBeginConversation:
     def test_opens_against_a_uniquely_named_npc(self) -> None:
         opened = open_one()
         assert opened.npc_name == 'Otsuki'
-        assert opened.channel_id == '832075722516201492'
+        assert opened.channels == ('832075722516201492',)
         assert opened.opened_at == OPENED
 
     def test_accepts_a_raw_channel_id(self) -> None:
-        assert open_one('832075590726844436').channel_id == '832075590726844436'
+        assert open_one('832075590726844436').channels == ('832075590726844436',)
 
     def test_refuses_an_ambiguous_name_and_lists_the_candidates(self) -> None:
         with pytest.raises(ValueError, match='matches several characters'):
@@ -103,9 +103,15 @@ class TestBeginConversation:
         with pytest.raises(conv.AlreadyOpen, match='already talking to Otsuki'):
             open_one()
 
-    def test_requires_a_channel(self) -> None:
-        with pytest.raises(ValueError, match='name the channel'):
-            conv.begin_conversation('Otsuki', characters=lambda: CAST)
+    def test_no_channel_watches_every_monitored_channel(self) -> None:
+        """The GM asked for one argument: begin_conversation("Otsuki")."""
+        opened = conv.begin_conversation('Otsuki', characters=lambda: CAST, now=lambda: OPENED)
+        assert set(opened.channels) == set(discord_mod.CHANNELS.values())
+        assert len(opened.channels) > 1
+
+    def test_an_empty_channel_string_is_refused(self) -> None:
+        with pytest.raises(ValueError, match='name a channel'):
+            conv.begin_conversation('Otsuki', '  ', characters=lambda: CAST)
 
 
 class TestCollect:
@@ -119,7 +125,7 @@ class TestCollect:
         got = collect_with(
             [message('1', '1', '38 Etiquette @3'), message('7', '2', '24 eti')], words, who=PLAYERS
         )
-        assert got.last_seen == '7'
+        assert set(got.last_seen.values()) == {'7'}
 
     def test_reports_a_roll_it_cannot_attribute(self, words: tuple[str, ...]) -> None:
         open_one()
@@ -220,7 +226,7 @@ class TestCollect:
     def test_discord_being_unreachable_is_reported_not_raised(self, words: tuple[str, ...]) -> None:
         open_one()
 
-        def boom(*args: Any, **kwargs: Any) -> Any:
+        def boom(cid: str, cursor: Any, **kwargs: Any) -> Any:
             raise discord_mod.DiscordUnavailable('403 Missing Access')
 
         got = conv.collect(
@@ -244,6 +250,84 @@ class TestCollect:
             roster=lambda *a, **k: sheet.SheetResult(characters=PLAYERS),
         )
         assert got.rolls[0].skill == 'etiquette'
+
+
+class TestManyChannels:
+    def test_reads_every_watched_channel(self, words: tuple[str, ...]) -> None:
+        conv.begin_conversation('Otsuki', characters=lambda: CAST, now=lambda: OPENED)
+        per_channel = {
+            '832075590726844436': [message('1', '1', '38 Etiquette @3', minute=54)],
+            '832075722516201492': [message('2', '2', '28 Etiquette @2', minute=55)],
+        }
+        got = conv.collect(
+            fetch=lambda cid, cursor, **k: per_channel.get(cid, []),
+            recorded=lambda *a, **k: sheet.SheetResult(),
+            roster=lambda *a, **k: sheet.SheetResult(characters=PLAYERS),
+            vocabulary=words,
+        )
+        assert {(r.character, r.total) for r in got.rolls} == {('Jimen', 38), ('Tetsuro', 28)}
+
+    def test_each_channel_keeps_its_own_cursor(self, words: tuple[str, ...]) -> None:
+        conv.begin_conversation('Otsuki', characters=lambda: CAST, now=lambda: OPENED)
+        per_channel = {
+            '832075590726844436': [message('11', '1', '38 Etiquette @3', minute=54)],
+            '832075722516201492': [message('22', '2', '28 Etiquette @2', minute=55)],
+        }
+        got = conv.collect(
+            fetch=lambda cid, cursor, **k: per_channel.get(cid, []),
+            recorded=lambda *a, **k: sheet.SheetResult(),
+            roster=lambda *a, **k: sheet.SheetResult(characters=PLAYERS),
+            vocabulary=words,
+        )
+        assert got.last_seen['832075590726844436'] == '11'
+        assert got.last_seen['832075722516201492'] == '22'
+
+    def test_one_unreadable_channel_does_not_hide_another(self, words: tuple[str, ...]) -> None:
+        conv.begin_conversation('Otsuki', characters=lambda: CAST, now=lambda: OPENED)
+
+        def fetch(cid: str, cursor: Any, **k: Any) -> Any:
+            if cid == '832075590726844436':
+                raise discord_mod.DiscordUnavailable('403 Missing Access')
+            # Only the Tuesday channel has anything; the conversation watches every
+            # monitored channel, so an unconditional return would double the roll.
+            if cid == '832075722516201492':
+                return [message('2', '2', '28 Etiquette @2')]
+            return []
+
+        got = conv.collect(
+            fetch=fetch,
+            recorded=lambda *a, **k: sheet.SheetResult(),
+            roster=lambda *a, **k: sheet.SheetResult(characters=PLAYERS),
+            vocabulary=words,
+        )
+        assert [(r.character, r.total) for r in got.rolls] == [('Tetsuro', 28)]
+        assert any('#monday' in u and '403' in u for u in got.unresolved)
+
+
+class TestResolveChannels:
+    def test_none_means_all(self) -> None:
+        assert set(conv.resolve_channels(None)) == set(discord_mod.CHANNELS.values())
+
+    def test_a_name_resolves(self) -> None:
+        assert conv.resolve_channels('tuesday') == ('832075722516201492',)
+
+    def test_a_name_is_case_insensitive(self) -> None:
+        assert conv.resolve_channels('TUESDAY') == ('832075722516201492',)
+
+    def test_an_unknown_string_is_taken_as_an_id(self) -> None:
+        assert conv.resolve_channels('999') == ('999',)
+
+    def test_blank_is_refused(self) -> None:
+        with pytest.raises(ValueError, match='name a channel'):
+            conv.resolve_channels('   ')
+
+
+class TestChannelLabel:
+    def test_known_channels_get_their_name(self) -> None:
+        assert conv._label('832075722516201492') == '#tuesday'
+
+    def test_an_unknown_id_is_shown_as_is(self) -> None:
+        assert conv._label('999') == 'channel 999'
 
 
 class TestPlayerMap:

@@ -4,11 +4,17 @@ The GM plays online; players post their rolls in Discord; the GM used to transcr
 NPC's record by hand. This package removes the transcription. At the prompt:
 
 ```python
->>> begin_conversation("Otsuki", "tuesday")
-Talking to Otsuki. Rolls from now until end_conversation().
+>>> begin_conversation("Otsuki")
+Talking to Otsuki, watching every monitored channel. Rolls until end_conversation().
 >>> end_conversation()
 Otsuki: Sadakichi / Moriko / Jimen / Tetsuro / Toshihiro etiquette: 35 / 25 / 25 / 20 / 15
 ```
+
+**One argument is the whole interface.** With no channel named, a conversation watches EVERY
+monitored channel, so a roll posted anywhere lands - the two live game channels belong to groups
+that play on different nights, so watching both cannot mix two sessions in practice. Pass a channel
+(`begin_conversation("Otsuki", "test")`) only to narrow it, which is really for the scratch server.
+Cursors are kept PER CHANNEL, and one unreadable channel never hides another's rolls.
 
 Which NPC the players are talking to is the ONE thing that cannot be inferred, so it is the one
 thing the GM says. `end_conversation()` writes immediately - no confirmation step, because a

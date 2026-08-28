@@ -80,15 +80,17 @@ class Conversation:
     """The one piece of mutable state in the feature. At most one is open.
 
     `npc` is the matched Obsidian Portal record, so it carries the id the write
-    needs. `last_seen` makes polling incremental: ask Discord for everything after
-    the newest message already consumed.
+    needs. `last_seen` maps channel id -> newest message already consumed, which
+    makes polling incremental and has to be PER CHANNEL: a conversation watches
+    every monitored channel at once, and one cursor shared between them would let
+    a busy channel drag the others past unread messages.
     """
 
     npc: Mapping[str, object]
     opened_at: datetime
-    channel_id: str
+    channels: tuple[str, ...]
     rolls: list[Roll] = field(default_factory=list)
-    last_seen: str | None = None
+    last_seen: dict[str, str] = field(default_factory=dict)
     unresolved: list[str] = field(default_factory=list)
 
     @property
