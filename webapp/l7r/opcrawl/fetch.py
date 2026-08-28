@@ -1,12 +1,13 @@
 """Stage 2: read the public pages of ONE opted-in campaign into the local cache.
 
-Same rules as the census: every request throttled (61 s by default), a Cloudflare challenge
+Same rules as the census: every request throttled (21 s by default), a Cloudflare challenge
 stops the whole run, robots.txt's disallowed paths are never requested, and only campaigns the
 census marked crawlable (opted in, L5R, not the GM's own) are ever given to this module by the
-CLI. Pages are discovered by following links whose URL SHAPE says they are campaign content -
-`/wikis/<slug>`, `/wiki_pages/<slug>`, `/characters/<slug>`, `/adventure-log` and its posts -
-starting from the front page and the three section indexes. Nothing outside the campaign's own
-host is ever followed.
+CLI. The page list comes from the campaign's own `content_summary.json` (`summary.py`), so we
+ask for exactly what its owner published and never for a page they marked GM-only. A campaign
+that does not serve one falls back to link discovery by URL SHAPE - `/wikis/<slug>`,
+`/wiki_pages/<slug>`, `/characters/<slug>`, `/adventure-log` and its posts - from the front page
+and the three section indexes. Nothing outside the campaign's own host is ever followed.
 
 The cache is `webapp/opcache/opcrawl/<slug>/`: `manifest.json` (one entry per URL: status,
 kind, title, text length, file) and `pages/<n>.html` + `pages/<n>.txt`. A rerun skips URLs the
@@ -158,7 +159,7 @@ def crawl_campaign(
     fetch: Fetcher = http_get,
     *,
     store: Store | None = None,
-    delay: float = 61.0,
+    delay: float = 21.0,
     max_pages: int | None = None,
     clock: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,

@@ -194,7 +194,7 @@ class TestCrawlWithSummary:
             json.loads((tmp_path / 'hiddenway' / 'content_summary.json').read_text())['id']
             == 259473
         )
-        assert slept == [61.0] * 6  # summary + 5 pages, each throttled at the default pace
+        assert slept == [21.0] * 6  # summary + 5 pages, each throttled at the default pace
 
     def test_summary_only_stops_after_one_request(self, tmp_path: Path) -> None:
         site = FakeCampaign()
