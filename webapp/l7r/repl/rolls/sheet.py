@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import configparser
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -79,9 +80,18 @@ class SheetResult:
         return not self.reason
 
 
-def query_token(path: Path = SECRETS) -> str:
+def query_token(path: Path | None = None) -> str:
+    """The GM-equivalent read token for the sheet app's API.
+
+    `path` defaults to `SECRETS` AT CALL TIME rather than as a bound default. That
+    is not a style preference: a default argument is evaluated once at import, so
+    `SECRETS` could not be redirected afterwards, and the tests that thought they
+    were pointing this at a temp file were silently reading the real one. They
+    passed only while no token existed anywhere, and started failing the moment one
+    did - which is exactly backwards from what a test should do.
+    """
     parser = configparser.ConfigParser()
-    parser.read(path)
+    parser.read(path or SECRETS)
     return parser.get('character_sheet', 'roll_query_token', fallback='').strip()
 
 
@@ -154,13 +164,34 @@ def characters(
     return SheetResult(characters=found)
 
 
+#: The sheet app labels a roll with its ring: `etiquette (air)`, `underworld
+#: (water)`, `commune (air)`. The ring is display, not identity, and carrying it
+#: through breaks anything that looks a skill up by name - MEASURED 2026-08-28
+#: against the live endpoint: `record(68, "etiquette (air)")` returned 65 because
+#: `RecordingRule.caps` is keyed on `etiquette`, so the GM's cap silently did not
+#: fire and a 68 would have been written as 65 instead of 40. Silently wrong is the
+#: worst failure this feature has, so the ring is stripped here, at the boundary
+#: that knows the sheet's label format, rather than defended against everywhere
+#: downstream.
+_RING_SUFFIX = re.compile(r'\s*\([^)]*\)\s*$')
+
+
+def canonical_skill(label: str) -> str:
+    """The sheet app's roll label reduced to a bare skill name.
+
+    Handles `skill:etiquette` and `knack:discern_honor` prefixes as well as the
+    trailing ring.
+    """
+    return _RING_SUFFIX.sub('', str(label).split(':')[-1]).strip().lower()
+
+
 def _as_roll(raw: Mapping[str, Any]) -> RecordedRoll:
     from l7r.repl.rolls.discord import parse_timestamp
 
     label = str(raw.get('label') or raw.get('roll_key') or '')
     return RecordedRoll(
         character=str(raw.get('character_name') or ''),
-        skill=label.split(':')[-1].strip().lower(),
+        skill=canonical_skill(label),
         total=int(raw.get('total') or 0),
         actor_discord_id=str(raw.get('actor_discord_id') or ''),
         at=parse_timestamp(str(raw.get('created_at') or raw.get('updated_at') or '')),
