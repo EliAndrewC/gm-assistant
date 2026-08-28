@@ -12,6 +12,9 @@ did not opt in, and never the campaign directory - and writes the answer under t
 | `robots.py` | `parse_robots` (the `*` group, longest-match with `*` wildcards) and `RECORDED`, what `www.obsidianportal.com/robots.txt` said on 2026-08-27: `Crawl-delay: 20`, GPTBot disallowed outright. |
 | `pages.py` | `parse_exempt_slugs` - the `data-exempt-cses` list on the pre-human-check gate page, which IS the per-campaign "allow bots" setting (all six of the GM's campaigns are on it) - and `parse_front_page` for a campaign's name, game system (`system-logo-container` sidebar) and `Last Updated`. |
 | `http.py` | one GET with a descriptive User-Agent that does NOT follow redirects, so every hop is throttled; sends the bare `human_check=` cookie only when asked to (exempt campaigns). |
+| `fetch.py` | STAGE 2 - `crawl_campaign(slug)`: front page + `/wikis` + `/characters` + `/adventure-log`, then every content link discovered by URL SHAPE (`classify`, `campaign_links`: same host only, query strings and fragments dropped so `?page=N` is never requested), one request per 61 s with the census's `_Site` stop rules, into a resumable `Manifest` (`opcache/opcrawl/<slug>/manifest.json` + `pages/NNNN.{html,txt}`). A rerun costs the site nothing for pages already cached; a challenge saves the manifest and raises. |
+| `text.py` | `page_title` (minus the ` \| Campaign \| Obsidian Portal` suffixes), `strip_scripts`, and a generic `html_to_text` that keeps block structure - deliberately not a per-template parser, since the text is only read locally by a session. |
+| `index.py` | STAGE 3 - `build_index` writes `opcache/opcrawl/index.json` and `index.md` (per campaign: counts by kind, prose volume, every page's title/url/length/snippet, sorted by volume) - the digest a session reads to act as summarizer and search engine; `search(regex)` greps every cached page and returns campaign/title/url/context. |
 | `census.py` | `Throttle` (the larger of the recorded and live crawl delay between ANY two requests), `run_census` (robots -> gate -> every exempt slug's front page once), `write_census`, `summarize`, and `ConsentError` - raised, never worked around, when robots.txt changes, an own campaign leaves the exempt list, the gate is not served, or Cloudflare answers with a "Just a moment..." challenge. A 404 on one campaign is recorded on its row and the run continues. |
 
 How the consent signal was established, the robots.txt judgment call (the gate page is under
@@ -34,10 +37,15 @@ never take it under 20 s. The GM's back-off ladder if a run is ever challenged a
 -> 301 -> 601 s; a challenge at 601 s means the site blocks effectively everything and the
 endeavor is scrapped rather than slowed further.
 
+Entry points: `scripts/op_consent_census.py` (stage 1) and `scripts/op_fetch_campaigns.py`
+(stages 2/3: `--slug X` for one campaign, `--max-pages N` to trial, `--index-only`, `--search REGEX`).
+Order of operations for the GM's questions: census -> GM sees the crawlable list -> fetch ->
+index -> a session reads `index.md` and `search()`es, then hands the GM the Obsidian Portal URL.
+
 ## Testing
 
 ```
-( cd webapp && pytest -n auto tests/test_opcrawl.py )
+( cd webapp && pytest -n auto tests/test_opcrawl.py tests/test_opcrawl_fetch.py )
 ```
 
 Every parsed page is a fixture under `tests/fixtures/opcrawl/`; the HTTP boundary is tested
