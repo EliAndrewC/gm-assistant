@@ -22,6 +22,12 @@ from l7r.repl.names import (
     town_name,
     village_name,
 )
+from l7r.repl.rolls import (
+    abandon_conversation,
+    begin_conversation,
+    conversation_status,
+    end_conversation,
+)
 from l7r.repl.sheets import PC, PCS, knack_rank
 
 __all__ = [
@@ -29,12 +35,16 @@ __all__ = [
     'PCS',
     'Dist',
     'Pick',
+    'abandon_conversation',
     'actual_xky',
     'bank',
+    'begin_conversation',
     'cache_status',
+    'conversation_status',
     'd10',
     'discern_honor',
     'dist',
+    'end_conversation',
     'hamlet_name',
     'initiative',
     'knack_rank',
@@ -70,6 +80,12 @@ COMMANDS: tuple[tuple[str, str], ...] = (
         'the knack: reads Honor off OP and the rank off the sheet, records it (rank= to override)',
     ),
     ('Jimen / TSURUCHI_JIMEN', 'the PCs with the knack, as constants or "strings"; PCS lists them'),
+    (
+        'begin_conversation("Otsuki", "tuesday")',
+        "start capturing the group's Discord rolls for that NPC",
+    ),
+    ('end_conversation()', "write the round into the NPC's Obsidian Portal bio and stop"),
+    ('conversation_status()', 'what is open and the line so far; abandon_conversation() discards'),
 )
 
 
