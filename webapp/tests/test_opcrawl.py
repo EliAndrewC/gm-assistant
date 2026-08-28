@@ -26,9 +26,11 @@ from l7r.opcrawl.census import (
     HOST,
     HUMAN_CHECK_COOKIE,
     ConsentError,
+    Fetcher,
     Throttle,
     _Site,
     load_policy,
+    read_census,
     write_census,
 )
 from l7r.opcrawl.http import USER_AGENT, Response, http_get
@@ -163,7 +165,7 @@ class FakeSite:
         return Response(200, None, fixture('front-other.html'))
 
 
-def run(site: FakeSite, **kw: object) -> tuple[Census, list[float]]:
+def run(site: Fetcher, **kw: object) -> tuple[Census, list[float]]:
     slept: list[float] = []
     now = [0.0]
 
@@ -269,6 +271,56 @@ class TestCensus:
         assert 'hiddenway' not in text
         assert text.endswith(f'written to {path} (gitignored)')
         assert not summarize(census).endswith('(gitignored)')
+
+    def test_resume_skips_known_campaigns_and_checkpoints_each_new_row(self) -> None:
+        first = FakeSite()
+        seen: list[int] = []
+        census, _ = run(first, checkpoint=lambda c: seen.append(len(c.rows)))
+        assert seen == list(range(1, 10))  # one checkpoint per campaign, cumulative
+
+        known = {r.slug: r for r in census.rows if r.slug != 'horai'}
+        second = FakeSite()
+        messages: list[str] = []
+        resumed, slept = run(second, known=known, progress=messages.append)
+        assert [r.slug for r in resumed.rows] == [r.slug for r in census.rows]
+        assert second.urls == [  # robots, own root, gate hop, and ONLY the missing campaign
+            f'{HOST}/robots.txt',
+            f'https://{OWN_CAMPAIGNS[0]}.obsidianportal.com/',
+            f'{HOST}/pre-human-check?ch=x&path=/',
+            'https://horai.obsidianportal.com/',
+        ]
+        assert slept == [20.0] * 3
+        assert '3/9 hiddenway: cached' in messages
+        assert '4/9 horai: HTTP 404' in messages
+
+    def test_transport_failure_is_retried_then_propagates(self) -> None:
+        site = FakeSite()
+        attempts: list[str] = []
+
+        def flaky(url: str, cookie: str | None) -> Response:
+            attempts.append(url)
+            if 'daidoji' in url and attempts.count(url) < 3:
+                raise OSError('Temporary failure in name resolution')
+            return site(url, cookie)
+
+        census, slept = run(flaky)
+        assert len(census.rows) == 9  # the blip cost two extra attempts, not the run
+        assert attempts.count('https://daidoji.obsidianportal.com/') == 3
+        assert slept == [20.0] * 13  # 11 requests + the 2 throttled retries
+
+        def always_fails(url: str, cookie: str | None) -> Response:
+            if url.endswith('robots.txt'):
+                return site(url, cookie)
+            raise OSError('Temporary failure in name resolution')
+
+        with pytest.raises(OSError, match='name resolution'):
+            run(always_fails)
+
+    def test_read_census_roundtrip(self, tmp_path: Path) -> None:
+        assert read_census(62, tmp_path) is None
+        census, _ = run(FakeSite())
+        write_census(census, tmp_path)
+        assert read_census(62, tmp_path) == census
 
     def test_row_dataclass(self) -> None:
         row = CensusRow('a', 'A', 'https://a.obsidianportal.com/', '', None, '', 200, False)
