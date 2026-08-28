@@ -45,6 +45,8 @@ HOST = 'https://www.obsidianportal.com'
 L5R_GAME_SYSTEM_ID = 62
 # The bare cookie the gate's own JavaScript sets for an exempt campaign (`skipHumanCheck`).
 HUMAN_CHECK_COOKIE = 'human_check='
+# Attempts per URL before a transport error propagates (see `_Site._fetch_retrying`).
+RETRIES = 3
 # The GM's own campaigns (GM 2026-08-27). Excluded from "other people's games", and the first of
 # them is the allowed URL whose redirect reaches the gate page.
 OWN_CAMPAIGNS = (
@@ -128,6 +130,20 @@ class _Site:
     def __init__(self, fetch: Fetcher, throttle: Throttle, policy: RobotsPolicy) -> None:
         self._fetch, self._throttle, self._policy = fetch, throttle, policy
 
+    def _fetch_retrying(self, url: str, cookie: str | None) -> Response:
+        """Retry a TRANSPORT failure (DNS, a dropped connection) a few times, throttled.
+
+        A fault on OUR side of the wire is not the site saying no: on 2026-08-28 a single DNS
+        blip 278 campaigns into a 289-campaign run raised out of the whole census. A refusal BY
+        the site - a challenge, an HTTP status - is obeyed immediately in `get` and never retried.
+        """
+        for _ in range(RETRIES - 1):
+            try:
+                return self._fetch(url, cookie)
+            except OSError:
+                self._throttle.wait()
+        return self._fetch(url, cookie)
+
     def get(
         self, url: str, *, follow: bool = False, cookie: str | None = None, tolerate: bool = False
     ) -> Response:
@@ -136,10 +152,10 @@ class _Site:
         if parts.netloc == urlsplit(HOST).netloc and not self._policy.allows(path):
             raise ConsentError(f'robots.txt now disallows {path}; refusing')
         self._throttle.wait()
-        resp = self._fetch(url, cookie)
+        resp = self._fetch_retrying(url, cookie)
         if follow and resp.status in (301, 302, 303, 307, 308) and resp.location:
             self._throttle.wait()
-            resp = self._fetch(resp.location, cookie)
+            resp = self._fetch_retrying(resp.location, cookie)
         if is_challenge(resp):
             # Cloudflare's "Just a moment..." interstitial: the site asking us to prove we are a
             # person. That is a NO - stop, never solve it, never route around it.
@@ -169,6 +185,8 @@ def run_census(
     game_system_id: int = L5R_GAME_SYSTEM_ID,
     own: tuple[str, ...] = OWN_CAMPAIGNS,
     delay: float = 0.0,
+    known: dict[str, CensusRow] | None = None,
+    checkpoint: Callable[[Census], object] = lambda _census: None,
     clock: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
     progress: Callable[[str], None] = lambda _: None,
@@ -188,14 +206,23 @@ def run_census(
         raise ConsentError(f'own campaigns not on the exempt list: {missing}; the signal moved')
     progress(f'exempt list: {len(exempt)} campaigns site-wide')
 
-    rows: list[CensusRow] = []
+    # `known` is the resume point: rows a previous run already recorded, kept without re-asking
+    # the site for them. `checkpoint` is called after every NEW row, so an interrupted run keeps
+    # everything it paid for (the 2026-08-28 DNS failure discarded 4.7 hours of polite requests).
+    cached = known or {}
+    census = Census(game_system_id, policy.crawl_delay or 0.0, len(exempt))
     for n, slug in enumerate(sorted(exempt), 1):
+        prior = cached.get(slug)
+        if prior is not None:
+            census.rows.append(prior)
+            progress(f'{n}/{len(exempt)} {slug}: cached')
+            continue
         url = f'https://{slug}.obsidianportal.com/'
         # A deleted or renamed campaign answers 404; that is a fact about the row, not a reason
         # to abandon the run. A challenge still stops everything (inside `get`).
         resp = site.get(url, cookie=HUMAN_CHECK_COOKIE, tolerate=True)
         page = parse_front_page(resp.text) if resp.status == 200 else parse_front_page('')
-        rows.append(
+        census.rows.append(
             CensusRow(
                 slug,
                 page.name,
@@ -207,9 +234,24 @@ def run_census(
                 slug in own,
             )
         )
+        checkpoint(census)
         tag = page.game_system or f'HTTP {resp.status}'
         progress(f'{n}/{len(exempt)} {slug}: {tag}')
-    return Census(game_system_id, policy.crawl_delay or 0.0, len(exempt), rows)
+    return census
+
+
+def read_census(game_system_id: int = L5R_GAME_SYSTEM_ID, out_dir: Path = OUT_DIR) -> Census | None:
+    """The census file if one exists - the resume point for an interrupted run."""
+    path = out_dir / f'census-{game_system_id}.json'
+    if not path.exists():
+        return None
+    raw = json.loads(path.read_text())
+    return Census(
+        raw['game_system_id'],
+        raw['crawl_delay'],
+        raw['exempt_total'],
+        [CensusRow(**r) for r in raw['rows']],
+    )
 
 
 def write_census(census: Census, out_dir: Path = OUT_DIR) -> Path:

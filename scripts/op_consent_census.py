@@ -33,7 +33,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'webapp'))
 
-from l7r.opcrawl.census import L5R_GAME_SYSTEM_ID, run_census, summarize, write_census  # noqa: E402
+from l7r.opcrawl.census import (  # noqa: E402
+    L5R_GAME_SYSTEM_ID,
+    ConsentError,
+    read_census,
+    run_census,
+    summarize,
+    write_census,
+)
 
 
 def main() -> int:
@@ -45,12 +52,28 @@ def main() -> int:
         default=61.0,
         help='seconds between requests; never below the robots.txt Crawl-delay (default 61)',
     )
-    args = parser.parse_args()
-    census = run_census(
-        game_system_id=args.game_system_id,
-        delay=args.delay,
-        progress=lambda s: print(s, flush=True),
+    parser.add_argument(
+        '--refresh',
+        action='store_true',
+        help='re-visit campaigns already recorded in the census file',
     )
+    args = parser.parse_args()
+    prior = None if args.refresh else read_census(args.game_system_id)
+    known = {r.slug: r for r in prior.rows} if prior else {}
+    if known:
+        print(f'resuming: {len(known)} campaigns already recorded', flush=True)
+    try:
+        census = run_census(
+            game_system_id=args.game_system_id,
+            delay=args.delay,
+            known=known,
+            checkpoint=write_census,
+            progress=lambda s: print(s, flush=True),
+        )
+    except (ConsentError, OSError) as err:
+        print(f'STOPPED: {err}', flush=True)
+        print('Progress is saved - rerun to resume where this left off.', flush=True)
+        return 1
     print(summarize(census, write_census(census)))
     return 0
 
