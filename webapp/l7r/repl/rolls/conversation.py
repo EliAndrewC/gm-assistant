@@ -17,7 +17,9 @@ conversation was opened against the wrong NPC.
 
 from __future__ import annotations
 
+import re
 import threading
+import time
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from typing import Any
@@ -36,8 +38,28 @@ from l7r.repl.rolls.skills import load_skills
 #: nothing here because the author id already narrows the join to one person.
 MATCH_WINDOW_SECONDS = 300
 
+#: How often the background watcher polls Discord while a conversation is open.
+POLL_SECONDS = 20.0
+
+#: How long to wait before writing an updated line to Obsidian Portal. The GM asked
+#: for this: they want to SEE that a roll was noticed straight away, but not a write
+#: per roll - "maybe we debounce so that within 2 minutes we update with the latest
+#: set of rolls". Feedback is immediate and local; the write is coalesced.
+WRITE_DEBOUNCE_SECONDS = 120.0
+
+#: The character-sheet app's own bot. A `/etiquette` slash command is posted BY THE
+#: BOT, not by the player who typed it, so the message author is the bot and joining
+#: on `actor_discord_id` finds nothing. Measured 2026-08-28 against a real post:
+#: author `1490400739934212116`, content `**Roll Tester**: **23** Etiquette@1`. The
+#: character is named in the message instead, so that is what the join uses.
+SHEET_BOT_ID = '1490400739934212116'
+
+_BOT_ROLL = re.compile(r'^\s*\*\*(?P<character>[^*]{1,60})\*\*\s*:')
+
 _lock = threading.Lock()
 _open: Conversation | None = None
+_stop = threading.Event()
+_watcher: threading.Thread | None = None
 
 
 class NoConversation(RuntimeError):
@@ -89,6 +111,7 @@ def begin_conversation(
     *,
     characters: Callable[[], Sequence[Mapping[str, object]]] = op.existing_characters,
     now: Callable[[], datetime] | None = None,
+    watch: bool = True,
 ) -> Conversation:
     """Open a conversation with `npc`. Prints what it opened; returns it.
 
@@ -118,7 +141,10 @@ def begin_conversation(
         _open = Conversation(npc=match.character, opened_at=clock(), channels=channels)
         where = 'every monitored channel' if channel is None else _label(channels[0])
         print(f'Talking to {_open.npc_name}, watching {where}. Rolls until end_conversation().')
-        return _open
+        opened = _open
+    if watch:
+        start_watching(opened)
+    return opened
 
 
 def collect(
@@ -201,11 +227,14 @@ def _join(
 ) -> Roll | None:
     """Find the recorded roll a pasted dice card was rendered from."""
     poster = discord.author_id(message)
-    near = [
-        r
-        for r in candidates
-        if r.actor_discord_id == poster and abs((at - r.at).total_seconds()) <= MATCH_WINDOW_SECONDS
-    ]
+    in_window = [r for r in candidates if abs((at - r.at).total_seconds()) <= MATCH_WINDOW_SECONDS]
+    named = bot_roll_character(message)
+    if named:
+        # A slash-command roll: the bot posted it, so the author id is the bot's and
+        # the player is named in the message body instead.
+        near = [r for r in in_window if r.character.strip().lower() == named.strip().lower()]
+    else:
+        near = [r for r in in_window if r.actor_discord_id == poster]
     if not near:
         return None
     best = min(near, key=lambda r: abs((at - r.at).total_seconds()))
@@ -220,6 +249,93 @@ def _join(
     )
 
 
+def _tick(
+    conv: Conversation,
+    *,
+    collector: Callable[..., Conversation] = collect,
+    get_body: Callable[[str], Mapping[str, object] | None] = op.get_character_body,
+    update: Callable[..., object] = op.update_character,
+    clock: Callable[[], float] = time.monotonic,
+    debounce: float = WRITE_DEBOUNCE_SECONDS,
+    announce: bool = True,
+) -> bool:
+    """One poll: read new rolls, say so, and write if the debounce has elapsed.
+
+    Returns True when Obsidian Portal was written. Split out from the loop so the
+    behavior the GM cares about is testable without threads or waiting.
+
+    The FIRST write of a conversation is immediate - `conv.written` is empty, so the
+    debounce does not apply. That is deliberate: seeing the line appear once
+    confirms the whole path is working, and everything after it is coalesced.
+    """
+    before = len(conv.rolls)
+    collector(conv)
+    if announce:
+        for roll in conv.rolls[before:]:
+            rank = f' @{roll.rank}' if roll.rank is not None else ''
+            print(f'  + {roll.character}: {roll.skill} {roll.total}{rank}')
+    if not conv.rolls:
+        return False
+    lines = tuple(rules.render_lines(conv.rolls))
+    if not lines or lines == conv.written:
+        return False
+    if conv.written and clock() - conv.written_at < debounce:
+        return False
+    body = str((get_body(conv.npc_id) or {}).get('bio') or '')
+    update(conv.npc_id, bio=biomod.rewrite(body, conv.written, lines))
+    conv.written = lines
+    conv.written_at = clock()
+    if announce:
+        for line in lines:
+            print(f'  -> {conv.npc_name}: {line}')
+    return True
+
+
+def start_watching(conv: Conversation, *, interval: float = POLL_SECONDS, **kwargs: Any) -> None:
+    """Poll in the background, following `shell.py`'s warm-cache daemon pattern.
+
+    A daemon thread so it never keeps the REPL alive, and every exception is caught
+    and printed: a watcher that dies silently is worse than one that complains,
+    because the GM would go on playing while nothing was being recorded.
+    """
+    global _watcher
+    _stop.clear()
+
+    def loop() -> None:
+        while not _stop.wait(interval):
+            if _open is not conv:
+                return
+            try:
+                _tick(conv, **kwargs)
+            except Exception as exc:  # noqa: BLE001 - a dead watcher must not be silent
+                print(f'  ! watching {conv.npc_name}: {exc}')
+
+    _watcher = threading.Thread(target=loop, name='l7r-roll-watch', daemon=True)
+    _watcher.start()
+
+
+def stop_watching(timeout: float = 2.0) -> None:
+    """Signal the watcher and wait briefly for it to notice."""
+    global _watcher
+    _stop.set()
+    if _watcher is not None and _watcher.is_alive():
+        _watcher.join(timeout=timeout)
+    _watcher = None
+
+
+def bot_roll_character(message: Mapping[str, Any]) -> str:
+    """The character named in a roll the character-sheet bot posted, if any.
+
+    Returns '' for anything else, including a human's message that happens to start
+    with bold text - the author must be the sheet bot for this to mean anything.
+    """
+    author: Mapping[str, Any] = message.get('author') or {}
+    if str(author.get('id') or '') != SHEET_BOT_ID:
+        return ''
+    found = _BOT_ROLL.match(str(message.get('content') or ''))
+    return found.group('character').strip() if found else ''
+
+
 def end_conversation(
     *,
     rule: RecordingRule | None = None,
@@ -230,27 +346,33 @@ def end_conversation(
     """Close, format, and write. No confirmation step (FR-019)."""
     global _open
     conv = _require()
-    collector(conv)
+    stop_watching()
+    # debounce=0: the final write always happens, however recently the watcher wrote.
+    _tick(
+        conv,
+        collector=collector,
+        get_body=get_body,
+        update=update,
+        debounce=0.0,
+        announce=False,
+    )
     with _lock:
         _open = None
     if not conv.rolls:
         _report(conv)
         print(f'Nothing to record for {conv.npc_name}.')
         return ''
-
-    line = rules.render_open(conv.rolls, rule or rules.DEFAULT_RULE)
-    body = get_body(conv.npc_id) or {}
-    current = str(body.get('bio') or '')
-    update(conv.npc_id, bio=biomod.splice(current, line))
-    print(f'{conv.npc_name}: {line}')
+    for line in conv.written:
+        print(f'{conv.npc_name}: {line}')
     _report(conv)
-    return line
+    return '\n'.join(conv.written)
 
 
 def abandon_conversation() -> None:
     """Close without writing. Not part of the normal path; nothing blocks on it."""
     global _open
     conv = _require()
+    stop_watching()
     with _lock:
         _open = None
     print(f'Threw away {len(conv.rolls)} roll(s) for {conv.npc_name}. Nothing written.')
@@ -263,7 +385,8 @@ def conversation_status() -> Conversation | None:
         return None
     print(f'Talking to {_open.npc_name} since {_open.opened_at:%H:%M:%S}.')
     if _open.rolls:
-        print(f'  {rules.render_open(_open.rolls)}')
+        for line in rules.render_lines(_open.rolls):
+            print(f'  {line}')
     else:
         print('  no rolls yet')
     _report(_open)

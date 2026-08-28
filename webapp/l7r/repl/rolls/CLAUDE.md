@@ -20,16 +20,25 @@ Which NPC the players are talking to is the ONE thing that cannot be inferred, s
 thing the GM says. `end_conversation()` writes immediately - no confirmation step, because a
 "does this look right?" prompt would put back the manual step the feature exists to remove.
 
+**A background watcher polls while the conversation is open** (`start_watching`, a daemon thread on
+`shell.py`'s warm-cache pattern). It prints each roll the moment it sees one and updates the
+Obsidian Portal record on a debounce - the GM's own shape: *"it would be nice to see something
+indicating that the roll was seen, and then maybe we debounce so that within 2 minutes we update
+with the latest set of rolls."* The FIRST write is immediate (seeing the line appear once proves
+the path works); everything after it coalesces on `WRITE_DEBOUNCE_SECONDS`. Each write REPLACES the
+conversation's previous lines via `bio.rewrite` rather than stacking another line under the
+portrait, and a conversation spanning several skills writes one line per skill.
+
 | file | holds |
 |---|---|
 | `models.py` | `Roll`, `Contest`, `RecordingRule`, `Conversation`. Pure data. `Roll.total` is deliberately NOT decomposed into dice plus bonuses - the character-sheet app owns the dice math and we never reimplement it. |
 | `rules.py` | The GM's RECORDING rules (not game rules): round down to 5, cap Etiquette at 40 before rounding, contested keeps both totals raw and rounds only the margin. The GM's reasoning for the cap is in the module docstring - **do not delete it**, the rule is meaningless without it. `render_open` reproduces the GM's shorthand exactly. |
 | `skills.py` | The skill vocabulary, READ from `/host-l7r-repo/rules/02-skills.md` rather than copied, so a rename in the rules reaches us. Unambiguous prefixes resolve (`eti` -> `etiquette`); an ambiguous one is reported, never guessed. |
 | `parse.py` | Hand-typed rolls. The forms are wilder than they look - see the module docstring for the fifteen real shapes. A number is a roll ONLY when a real skill name sits beside it; that one rule kills nearly every false positive, and the three that survived it are each pinned by a test. |
-| `bio.py` | Splices the line directly under the `[[File:...]]` portrait embed. Idempotent, and preserves existing bio text byte for byte. |
+| `bio.py` | Splices lines directly under the `[[File:...]]` portrait embed. `rewrite` swaps this conversation's previous block for its current one - the watcher writes repeatedly, so appending would stack a line per poll. Removing a line takes the blank line spliced with it, or the body grows a newline every write. |
 | `discord.py` | Read-only REST. The bot holds permissions 66560 (View Channel + Read Message History) and there is no code here that could post. Snowflakes are synthesized from a timestamp; `before`/`after` are mutually exclusive in the API, so the far end is bounded in Python. |
 | `sheet.py` | The character-sheet app's roll-history client. **THOSE ENDPOINTS DO NOT EXIST YET** (spec: `character-sheet/externally-queryable-roll-results.md`). Every failure degrades to empty with a reason; nothing raises. |
-| `conversation.py` | The only stateful module: open, collect, close, write. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
+| `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
 ## Two things that will bite you
 
@@ -38,6 +47,12 @@ do memes, alongside `Z.png`, `9k.png`, `Untitled.jpg`. There is no filename or c
 message with an image is a roll if and only if the character-sheet app has a recorded roll for that
 author around that timestamp - **the join IS the detector**, which is why the endpoint is worth
 building and why an unmatched image is ignored silently rather than reported.
+
+**A slash-command roll is posted BY THE BOT, not by the player.** A real `/etiquette` post comes
+from author `1490400739934212116` with content `**Roll Tester**: **23** Etiquette@1`, so joining on
+`actor_discord_id` finds nothing - the player is named in the message body instead, and
+`bot_roll_character` is what reads it. The markdown matters too: `**23**` glued to the number
+stopped the parser matching at all until emphasis was stripped.
 
 **The typed path is primary, not a fallback.** 204 image posts against ~99 typed, split by PLAYER
 rather than by group: two Monday players and one Tuesday player type almost everything. It is the

@@ -62,6 +62,13 @@ AMBIGUOUS_AT = range(MAX_RANK + 1, MIN_TOTAL)
 #: user mentions `<@123...>`, custom emoji `<:name:123...>`, channel links, and URLs.
 _NOISE = re.compile(r'<[@#:!&][^>]*>|https?://\S+|`[^`]*`', re.S)
 
+#: Discord emphasis. The character-sheet bot posts `**Roll Tester**: **23**
+#: Etiquette@1`, and the `**` glued to the number stopped the cluster pattern
+#: matching at all - measured 2026-08-28 against a real `/etiquette` post, which
+#: the parser read as NOTHING. Players use bold by hand too, so this is not
+#: specific to the bot.
+_EMPHASIS = re.compile(r'\*+|__|~~')
+
 #: Parenthesized spans hold the player's own BREAKDOWN of a total, never the total
 #: itself: `50 sincerity@5 (30 + 5 Second Dan + 15 Acting)`, `24 Underworld (13 + 5
 #: Streetwise + 5 Worldly)`, `43 Interrogation@3 (38 + 5 Discerning)`. Every one of
@@ -129,7 +136,7 @@ def parse_message(
     go to the GM at the end of the conversation rather than into the record.
     """
     when = at or datetime.now().astimezone()
-    clean = _BREAKDOWN.sub(' ', _NOISE.sub(' ', text or ''))
+    clean = _BREAKDOWN.sub(' ', _EMPHASIS.sub('', _NOISE.sub(' ', text or '')))
     rolls: list[Roll] = []
     problems: list[str] = []
     claimed: set[int] = set()

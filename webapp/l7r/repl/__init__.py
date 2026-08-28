@@ -81,8 +81,8 @@ COMMANDS: tuple[tuple[str, str], ...] = (
     ),
     ('Jimen / TSURUCHI_JIMEN', 'the PCs with the knack, as constants or "strings"; PCS lists them'),
     (
-        'begin_conversation("Otsuki", "tuesday")',
-        "start capturing the group's Discord rolls for that NPC",
+        'begin_conversation("Otsuki")',
+        'watch every channel for rolls and record them against that NPC',
     ),
     ('end_conversation()', "write the round into the NPC's Obsidian Portal bio and stop"),
     ('conversation_status()', 'what is open and the line so far; abandon_conversation() discards'),

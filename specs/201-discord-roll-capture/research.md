@@ -304,3 +304,54 @@ LINE: Roll Tester / Roll Tester / Roll Tester / Roll Tester etiquette: 30 / 25 /
 
 Real rolls, real character name, real ranks, real rounding, real ordering. The only synthetic part
 is the Discord messages standing in for the pasted cards, since none had been posted yet.
+
+## R11a. The channel argument was a defect, found by the GM reading the signature
+
+(Recorded late: this entry was DESCRIBED as written in an earlier session message and was not -
+the patch that should have written it failed its own assert inside a backgrounded command, so the
+failure was invisible and the claim went out anyway. Worth keeping the admission: a scripted edit
+whose output nobody reads is an edit that did not necessarily happen.)
+
+`begin_conversation(npc, channel)` shipped with the channel REQUIRED. The GM asked why: *"I would
+have expected to be able to just say `begin_conversation("Otsuki")` ... and then any roll posted to
+any channel being monitored would work."*
+
+Their original request names exactly one argument, and this spec's own Assumptions say rolls come
+from the NPC's group's channel *"when that cannot be determined the GM names the channel"* - a
+DEFAULT with a fallback. Only the fallback was built, so it became the whole interface. Every test
+passed before and after, because they were written against the implementation's shape rather than
+the spec's sentence. Reading the SIGNATURE caught what the suite structurally could not.
+
+Fixed: no channel means every monitored channel, cursors kept per channel, and one unreadable
+channel reported and skipped rather than aborting the poll.
+
+## R18. A slash-command roll is posted by the BOT, and nothing about it matched
+
+The character-sheet app now answers `/etiquette` by posting the result itself. The first real one,
+2026-08-28 23:28:01 in the test server, broke the pipeline in two independent ways:
+
+- **Wrong author.** The message comes from the sheet bot (`1490400739934212116`), while the
+  recorded roll's `actor_discord_id` is the player's. `_join` matched on the author, so it found
+  nothing at all. The bot names the character in the message instead - `**Roll Tester**: **23**
+  Etiquette@1` - so the join now reads that when the author is the bot.
+- **Markdown.** `**23**` glued to the number stopped the cluster pattern matching, and the parser
+  read the message as NOTHING. Emphasis is now stripped before parsing, which helps hand-typed
+  rolls too since players bold their totals.
+
+Both were invisible to the whole suite, because every fixture was written before the slash commands
+existed. The general shape, again: **fixtures test the contract you imagined.**
+
+## R19. Nothing was watching, which is why the GM saw nothing happen
+
+The spec required collection not to block the prompt (FR-017) and tasks.md T009 named a
+daemon-thread poller. It was never built - `collect()` only ever ran from `end_conversation()`, so
+a conversation left open recorded nothing and said nothing. The GM opened one, ran `/etiquette`,
+and correctly reported that the Obsidian Portal page had not changed.
+
+Now: a daemon thread polls every `POLL_SECONDS`, prints each roll as it is seen, and writes on a
+debounce the GM specified - *"within 2 minutes we update with the latest set of rolls"*. The first
+write is immediate, because seeing the line appear once is what proves the path works; the rest
+coalesce. `end_conversation()` forces a final write with the debounce disabled.
+
+This is the second thing in this feature that the tests could not have caught: a task marked done
+in `tasks.md` whose code was never written. Checkboxes are not evidence.
