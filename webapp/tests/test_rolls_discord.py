@@ -193,6 +193,8 @@ class TestMessageShapes:
         assert discord.author_name({}) == ''
 
 
-def test_both_game_channels_are_known() -> None:
+def test_the_known_channels() -> None:
     assert discord.CHANNELS['monday'] == '832075590726844436'
     assert discord.CHANNELS['tuesday'] == '832075722516201492'
+    # The scratch server, so a test run never touches the players' channels.
+    assert discord.CHANNELS['test'] == '1543009572359241840'

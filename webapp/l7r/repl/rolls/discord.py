@@ -46,9 +46,13 @@ SECRETS = Path(__file__).resolve().parents[3] / 'development-secrets.ini'
 #: The GM's two game channels. Named here rather than configured because they are
 #: campaign facts that change roughly never, and a session that has to look them up
 #: cannot start a conversation.
+#: `test` is the GM's "Robot Role Call" server (guild 1543009570157236274), which
+#: exists so nothing half-finished lands in the players' channels. The reader bot
+#: holds the same read-only 66560 there as it does in the live server.
 CHANNELS: Mapping[str, str] = {
     'monday': '832075590726844436',
     'tuesday': '832075722516201492',
+    'test': '1543009572359241840',
 }
 
 
