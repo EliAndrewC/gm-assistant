@@ -2,6 +2,8 @@
 
 Redirects are returned rather than followed so the census throttles EVERY request - the
 redirect hop from a campaign root to the gate page counts against `Crawl-delay` like any other.
+The optional cookie is the bare `human_check=` the gate's own JavaScript sets for exempt
+campaigns; it is sent only to campaigns on the exempt list.
 """
 
 from __future__ import annotations
@@ -28,8 +30,11 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 _opener = urllib.request.build_opener(_NoRedirect)
 
 
-def http_get(url: str) -> Response:
-    request = urllib.request.Request(url, headers={'User-Agent': USER_AGENT})
+def http_get(url: str, cookie: str | None = None) -> Response:
+    headers = {'User-Agent': USER_AGENT}
+    if cookie is not None:
+        headers['Cookie'] = cookie
+    request = urllib.request.Request(url, headers=headers)
     try:
         with _opener.open(request, timeout=60) as resp:
             return Response(

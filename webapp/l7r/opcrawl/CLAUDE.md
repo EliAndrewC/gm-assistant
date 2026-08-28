@@ -1,32 +1,38 @@
 # `l7r.opcrawl` - consent census of other people's L5R campaigns on Obsidian Portal
 
 `scripts/op_consent_census.py` (repo root) answers one question: which Legend of the Five Rings
-campaigns on Obsidian Portal have owners who turned on "allow bots"? It reads ONLY the site's
-own policy pages and the public browse listing - never another owner's campaign - and writes the
-answer under the gitignored `webapp/opcache/opcrawl/census-62.json`. The results are never
-committed; this tooling is (GM 2026-08-27).
+campaigns on Obsidian Portal have owners who turned on "allow bots"? It reads the site's own
+policy pages and then ONE front page of each opted-in campaign - never a campaign whose owner
+did not opt in, and never the campaign directory - and writes the answer under the gitignored
+`webapp/opcache/opcrawl/census-62.json`. The results are never committed; this tooling is
+(GM 2026-08-27).
 
 | file | holds |
 |---|---|
 | `robots.py` | `parse_robots` (the `*` group, longest-match with `*` wildcards) and `RECORDED`, what `www.obsidianportal.com/robots.txt` said on 2026-08-27: `Crawl-delay: 20`, GPTBot disallowed outright. |
-| `pages.py` | `parse_exempt_slugs` - the `data-exempt-cses` list on the pre-human-check gate page, which IS the per-campaign "allow bots" setting (all six of the GM's campaigns are on it) - and `parse_browse` for the `/campaigns?game_system_id=62` tiles (12 per page) and page count. |
-| `http.py` | one GET with a descriptive User-Agent that does NOT follow redirects, so every hop is throttled. |
-| `census.py` | `Throttle` (the larger of the recorded and live crawl delay between ANY two requests), `run_census`, `write_census`, `summarize`, and `ConsentError` - raised, never worked around, when robots.txt changes, an own campaign leaves the exempt list, a non-200 comes back, or Cloudflare answers with a "Just a moment..." challenge. |
+| `pages.py` | `parse_exempt_slugs` - the `data-exempt-cses` list on the pre-human-check gate page, which IS the per-campaign "allow bots" setting (all six of the GM's campaigns are on it) - and `parse_front_page` for a campaign's name, game system (`system-logo-container` sidebar) and `Last Updated`. |
+| `http.py` | one GET with a descriptive User-Agent that does NOT follow redirects, so every hop is throttled; sends the bare `human_check=` cookie only when asked to (exempt campaigns). |
+| `census.py` | `Throttle` (the larger of the recorded and live crawl delay between ANY two requests), `run_census` (robots -> gate -> every exempt slug's front page once), `write_census`, `summarize`, and `ConsentError` - raised, never worked around, when robots.txt changes, an own campaign leaves the exempt list, the gate is not served, or Cloudflare answers with a "Just a moment..." challenge. A 404 on one campaign is recorded on its row and the run continues. |
 
-How the consent signal was established, and the one robots.txt judgment call (the gate page
-is under `Disallow: /pre-human-check?*` and is reached only by following the server's redirect
-from the GM's own campaign root), are in `census.py`'s module docstring and `__init__.py`.
+How the consent signal was established, the robots.txt judgment call (the gate page is under
+`Disallow: /pre-human-check?*` and is reached only by following the server's redirect from the
+GM's own campaign root), and the PRINCIPLES statement are in `census.py`'s module docstring and
+`__init__.py`.
 
-Measured 2026-08-27: the site answers ~15 requests bunched inside a few minutes with a
-Cloudflare challenge (`403`, `cf-mitigated: challenge`) on the browse listing for a while
-afterwards. That is exactly the case the throttle exists for; if a run stops on a challenge,
-wait and retry later rather than changing the delay downward. The CLI's default is `--delay 61`,
-three times the published floor and just past one minute, because a site's Cloudflare rate rule
-is configured separately from its robots.txt and is often stricter than it, or never reconciled
-with it (GM 2026-08-27); `--delay` can only raise the pace, never take it under 20 s. The backoff
-ladder if a run is still challenged is 61 -> 121 -> 301 -> 601 s (one past 1, 2, 5 and 10
-minutes); a challenge at 601 s means the site blocks effectively everything and the endeavor is
-scrapped rather than slowed further.
+**The campaign directory is a recorded dead end** (2026-08-27/28). `/campaigns?game_system_id=62&page=N`
+was challenged by Cloudflare (`403`, `cf-mitigated: challenge`) at 20, 61, 121 and 301 s between
+requests across a day, while every other page served. Two 61 s probes isolated it: `/campaigns` and
+`/campaigns?game_system_id=62` serve; `/campaigns?page=2` is challenged. The rule is on
+PAGINATION. The GM ruled (2026-08-28): if the listing is not meant to be pulled automatically we
+do not pull it that way - and sort-order or search tricks would only be the block worked around.
+The exempt list is complete without it.
+
+The CLI's default is `--delay 61`, three times the published floor and just past one minute,
+because a site's Cloudflare rate rule is configured separately from its robots.txt and is often
+stricter than it, or never reconciled with it (GM 2026-08-27); `--delay` can only raise the pace,
+never take it under 20 s. The GM's back-off ladder if a run is ever challenged again is 61 -> 121
+-> 301 -> 601 s; a challenge at 601 s means the site blocks effectively everything and the
+endeavor is scrapped rather than slowed further.
 
 ## Testing
 
@@ -35,5 +41,6 @@ scrapped rather than slowed further.
 ```
 
 Every parsed page is a fixture under `tests/fixtures/opcrawl/`; the HTTP boundary is tested
-against a local `http.server` thread. Hand-check: `./scripts/op_consent_census.py` (about
-`(pages + 3) * 20` seconds; prints progress per page and the crawlable list at the end).
+against a local `http.server` thread. Hand-check: `./scripts/op_consent_census.py` in the
+background (about `(exempt + 3) * 61` seconds, ~5 h; prints one progress line per campaign and
+the crawlable list at the end).

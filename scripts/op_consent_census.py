@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """Census of Legend of the Five Rings campaigns on Obsidian Portal whose owners allow bots.
 
-Reads robots.txt, the pre-human-check exempt list and the L5R browse listing at one request
-per --delay (default 61 s; the floor is robots.txt's 20 s), never any other owner's campaign
-pages, and writes the result under the gitignored webapp/opcache/opcrawl/. About 22 minutes.
-See webapp/l7r/opcrawl/__init__.py.
+Reads robots.txt and the pre-human-check exempt list, then visits the front page of every
+opted-in campaign ONCE at one request per --delay (default 61 s; the floor is robots.txt's 20 s)
+to learn its game system. Never a non-opted-in campaign, never the campaign directory (see
+below). Writes the result under the gitignored webapp/opcache/opcrawl/. About five hours for
+~290 opted-in campaigns; run it in the background.
 
-  ./scripts/op_consent_census.py                 L5R (game_system_id=62), 61 s between requests
+  ./scripts/op_consent_census.py                 report L5R (game_system_id=62)
   ./scripts/op_consent_census.py --delay 121     slower still; --delay can never go below 20
 
-Backoff ladder if Cloudflare still challenges (GM 2026-08-27): 61 -> 121 -> 301 -> 601 s, each one
-just past a threshold a rate rule plausibly uses (1, 2, 5, 10 minutes). A challenge at 601 s
-means the site is effectively blocking everything and the endeavor is scrapped, not slowed further.
+Why not the campaign directory: `/campaigns?...&page=N` is answered with a Cloudflare challenge
+on every paginated request, at any pace (measured 2026-08-27/28; the probes are recorded in
+webapp/l7r/opcrawl/census.py). An undocumented block is still a block, and the GM ruled that if
+the listing is not meant to be pulled automatically we do not pull it that way. The exempt list
+is complete on its own, so nothing is lost.
 
-Why the ladder only ever goes UP, and why a challenge is never solved or routed around: this tool
+Why the pace only ever goes UP, and why a challenge is never solved or routed around: this tool
 exists to comply rigorously with Obsidian Portal's documented wishes (robots.txt) and its apparent
 ones (a challenge is a "no"), and with the wishes of the humans who host their campaigns there
 (only owners who turned on "allow bots" are ever read). We aim to be responsible internet

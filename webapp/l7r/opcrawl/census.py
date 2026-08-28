@@ -1,16 +1,27 @@
-"""The census itself: verify robots.txt, learn the exempt list, walk the L5R browse pages,
-and write one JSON file saying which campaigns may be read.
+"""The census itself: verify robots.txt, learn the exempt list, visit the front page of every
+opted-in campaign once, and write one JSON file saying which of them are L5R and may be read.
 
 Every request goes through `Throttle`, which enforces the larger of the recorded and the live
 `Crawl-delay` between ANY two requests to the site, redirect hops included.
 
-THE ONE DELIBERATE robots.txt JUDGMENT CALL (recorded 2026-08-27, the GM may overrule it):
-`robots.txt` disallows `/pre-human-check?*`, and that gate page is the only place the exempt
-list exists. The census never REQUESTS that path on its own initiative - it requests the root
-of one of the GM's OWN campaigns (allowed, and the GM's to read) and follows the server's own
-302 to the gate exactly once per run, throttled. The disallow was read as index-suppression
-(the page also carries `noindex` and `x-robots-tag: none`) rather than an access rule, and a
-single throttled fetch of one interstitial per run is the whole cost. Alternatives priced:
+WHY THE EXEMPT LIST IS WALKED AND THE CAMPAIGN DIRECTORY IS NOT (measured 2026-08-27/28).
+The first design walked `/campaigns?game_system_id=62&page=N`. It was answered with a
+Cloudflare challenge (`403`, `cf-mitigated: challenge`) on every attempt across a day, at 20,
+61, 121 and 301 s between requests, while robots.txt, the gate page and the GM's own campaign
+pages served normally. Two probes at 61 s settled it: four pages of an opted-in campaign, the
+unfiltered `/campaigns` and `/campaigns?game_system_id=62` all returned 200; `/campaigns?page=2`
+alone was challenged. The rule is on PAGINATION of the directory - the site lets a script see a
+listing but not walk it. That is an undocumented but unambiguous wish, so the directory is not
+walked by any means (sort orders and search terms would only be the block worked around), and
+the GM ruled the same way (2026-08-28). The consent signal never needed the directory: the
+exempt list is complete on its own, and each campaign's front page states its game system.
+
+THE ONE robots.txt JUDGMENT CALL (recorded 2026-08-27, the GM may overrule it): `robots.txt`
+disallows `/pre-human-check?*`, and that gate page is the only place the exempt list exists. The
+census never REQUESTS that path on its own initiative - it requests the root of one of the GM's
+OWN campaigns (allowed, and the GM's to read) and follows the server's own 302 to the gate
+exactly once per run, throttled. The disallow was read as index-suppression (the page also
+carries `noindex` and `x-robots-tag: none`) rather than an access rule. Alternatives priced:
 (a) skip the exempt list and treat every campaign as off-limits - defeats the purpose;
 (b) ask Obsidian Portal support for the list - worth doing anyway, but it does not make a tool.
 """
@@ -25,13 +36,15 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from l7r.opcrawl.http import Response, http_get
-from l7r.opcrawl.pages import Campaign, parse_browse, parse_exempt_slugs
+from l7r.opcrawl.pages import parse_exempt_slugs, parse_front_page
 from l7r.opcrawl.robots import RECORDED, RobotsPolicy, parse_robots
 
-Fetcher = Callable[[str], Response]
+Fetcher = Callable[[str, str | None], Response]
 
 HOST = 'https://www.obsidianportal.com'
 L5R_GAME_SYSTEM_ID = 62
+# The bare cookie the gate's own JavaScript sets for an exempt campaign (`skipHumanCheck`).
+HUMAN_CHECK_COOKIE = 'human_check='
 # The GM's own campaigns (GM 2026-08-27). Excluded from "other people's games", and the first of
 # them is the allowed URL whose redirect reaches the gate page.
 OWN_CAMPAIGNS = (
@@ -46,7 +59,7 @@ OUT_DIR = Path(__file__).resolve().parents[2] / 'opcache' / 'opcrawl'
 
 
 class ConsentError(RuntimeError):
-    """The site's published policy no longer permits what the census wants to do."""
+    """The site's published or apparent policy no longer permits what the census wants to do."""
 
 
 class Throttle:
@@ -76,9 +89,10 @@ class CensusRow:
     slug: str
     name: str
     url: str
-    visibility: str
+    game_system: str
+    game_system_id: int | None
     updated: str
-    exempt: bool
+    http_status: int
     own: bool
 
 
@@ -87,13 +101,17 @@ class Census:
     game_system_id: int
     crawl_delay: float
     exempt_total: int
-    pages: int
     rows: list[CensusRow] = field(default_factory=list)
 
     @property
     def crawlable(self) -> list[CensusRow]:
-        """Other people's campaigns whose owners opted in - the only ones a fetcher may read."""
-        return [r for r in self.rows if r.exempt and not r.own]
+        """Other people's campaigns in the target game system whose owners opted in - the only
+        ones a fetcher may read."""
+        return [
+            r
+            for r in self.rows
+            if r.game_system_id == self.game_system_id and not r.own and r.http_status == 200
+        ]
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), indent=2, sort_keys=True) + '\n'
@@ -110,35 +128,38 @@ class _Site:
     def __init__(self, fetch: Fetcher, throttle: Throttle, policy: RobotsPolicy) -> None:
         self._fetch, self._throttle, self._policy = fetch, throttle, policy
 
-    def get(self, url: str, *, follow: bool = False) -> Response:
-        path = urlsplit(url).path + ('?' + urlsplit(url).query if urlsplit(url).query else '')
-        if urlsplit(url).netloc == urlsplit(HOST).netloc and not self._policy.allows(path):
+    def get(
+        self, url: str, *, follow: bool = False, cookie: str | None = None, tolerate: bool = False
+    ) -> Response:
+        parts = urlsplit(url)
+        path = parts.path + ('?' + parts.query if parts.query else '')
+        if parts.netloc == urlsplit(HOST).netloc and not self._policy.allows(path):
             raise ConsentError(f'robots.txt now disallows {path}; refusing')
         self._throttle.wait()
-        resp = self._fetch(url)
+        resp = self._fetch(url, cookie)
         if follow and resp.status in (301, 302, 303, 307, 308) and resp.location:
             self._throttle.wait()
-            resp = self._fetch(resp.location)
-        if resp.status != 200:
-            raise ConsentError(f'{url} returned HTTP {resp.status}')
+            resp = self._fetch(resp.location, cookie)
         if is_challenge(resp):
             # Cloudflare's "Just a moment..." interstitial: the site asking us to prove we are a
-            # person. Seen live on 2026-08-27 on browse page 2. That is a NO - stop, never solve it.
+            # person. That is a NO - stop, never solve it, never route around it.
             raise ConsentError(f'{url} answered with a Cloudflare challenge; stopping')
+        if resp.status != 200 and not tolerate:
+            raise ConsentError(f'{url} returned HTTP {resp.status}')
         return resp
 
 
 def load_policy(fetch: Fetcher, delay_floor: float = RECORDED.crawl_delay or 0.0) -> RobotsPolicy:
     """Live robots.txt, checked against the recording: the delay is the larger of the two, and the
     root must still be allowed. Raises ConsentError otherwise."""
-    resp = fetch(f'{HOST}/robots.txt')
+    resp = fetch(f'{HOST}/robots.txt', None)
     if resp.status != 200:
         raise ConsentError(f'robots.txt returned HTTP {resp.status}; refusing to guess')
     live = parse_robots(resp.text)
     delay = max(delay_floor, live.crawl_delay or 0.0)
     policy = RobotsPolicy(delay, live.allow, live.disallow)
-    if not policy.allows('/campaigns'):
-        raise ConsentError('robots.txt no longer allows /campaigns; refusing')
+    if not policy.allows('/'):
+        raise ConsentError('robots.txt no longer allows /; refusing')
     return policy
 
 
@@ -167,23 +188,28 @@ def run_census(
         raise ConsentError(f'own campaigns not on the exempt list: {missing}; the signal moved')
     progress(f'exempt list: {len(exempt)} campaigns site-wide')
 
-    seen: dict[str, Campaign] = {}
-    page, total = 1, 1
-    while page <= total:
-        tiles, last = parse_browse(
-            site.get(f'{HOST}/campaigns?game_system_id={game_system_id}&page={page}').text
+    rows: list[CensusRow] = []
+    for n, slug in enumerate(sorted(exempt), 1):
+        url = f'https://{slug}.obsidianportal.com/'
+        # A deleted or renamed campaign answers 404; that is a fact about the row, not a reason
+        # to abandon the run. A challenge still stops everything (inside `get`).
+        resp = site.get(url, cookie=HUMAN_CHECK_COOKIE, tolerate=True)
+        page = parse_front_page(resp.text) if resp.status == 200 else parse_front_page('')
+        rows.append(
+            CensusRow(
+                slug,
+                page.name,
+                url,
+                page.game_system,
+                page.game_system_id,
+                page.updated,
+                resp.status,
+                slug in own,
+            )
         )
-        total = max(total, last)  # a later page links only backward; never let it shrink the walk
-        for c in tiles:
-            seen.setdefault(c.slug, c)
-        progress(f'page {page}/{total}: {len(seen)} campaigns so far')
-        page += 1
-
-    rows = [
-        CensusRow(c.slug, c.name, c.url, c.visibility, c.updated, c.slug in exempt, c.slug in own)
-        for c in seen.values()
-    ]
-    return Census(game_system_id, policy.crawl_delay or 0.0, len(exempt), total, rows)
+        tag = page.game_system or f'HTTP {resp.status}'
+        progress(f'{n}/{len(exempt)} {slug}: {tag}')
+    return Census(game_system_id, policy.crawl_delay or 0.0, len(exempt), rows)
 
 
 def write_census(census: Census, out_dir: Path = OUT_DIR) -> Path:
@@ -195,10 +221,10 @@ def write_census(census: Census, out_dir: Path = OUT_DIR) -> Path:
 
 def summarize(census: Census, path: Path | None = None) -> str:
     lines = [
-        f'{len(census.rows)} campaigns for game_system_id={census.game_system_id} '
-        f'over {census.pages} pages at one request per {census.crawl_delay:g} s',
-        f'{census.exempt_total} campaigns site-wide have "allow bots" on',
-        f"{len(census.crawlable)} of them are other people's campaigns in this listing:",
+        f'{census.exempt_total} campaigns site-wide have "allow bots" on, visited at one request '
+        f'per {census.crawl_delay:g} s',
+        f"{len(census.crawlable)} of them are other people's campaigns in game system "
+        f'{census.game_system_id}:',
     ]
     lines += [f'  {r.slug:40} {r.name}  (updated {r.updated[:10]})' for r in census.crawlable]
     if path is not None:

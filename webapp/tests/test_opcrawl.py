@@ -15,13 +15,22 @@ from l7r.opcrawl import (
     OWN_CAMPAIGNS,
     Census,
     CensusRow,
-    parse_browse,
+    FrontPage,
     parse_exempt_slugs,
+    parse_front_page,
     parse_robots,
     run_census,
     summarize,
 )
-from l7r.opcrawl.census import HOST, ConsentError, Throttle, load_policy, write_census
+from l7r.opcrawl.census import (
+    HOST,
+    HUMAN_CHECK_COOKIE,
+    ConsentError,
+    Throttle,
+    _Site,
+    load_policy,
+    write_census,
+)
 from l7r.opcrawl.http import USER_AGENT, Response, http_get
 from l7r.opcrawl.robots import RECORDED, RobotsPolicy
 
@@ -89,33 +98,16 @@ class TestPages:
         with pytest.raises(ValueError, match='data-exempt-cses'):
             parse_exempt_slugs(bad)
 
-    def test_browse_tiles_and_pagination(self) -> None:
-        tiles, total = parse_browse(fixture('browse-p1.html'))
-        assert total == 2
-        assert [t.slug for t in tiles] == [
-            'karmicinquisitors',
-            'l5rsilkandsteel',
-            'legends-of-rokugan',
-        ]
-        silk = tiles[1]
-        assert silk.name == 'Legend of the Five Rings: Silk & Steel'
-        assert silk.visibility == 'public'
-        assert silk.game_system == 'Legend of the Five Rings'
-        assert silk.updated == '2024-01-02T03:04:05Z'
-        assert silk.url == 'https://l5rsilkandsteel.obsidianportal.com/'
-        assert tiles[2].name == 'Legends of Rokugan'
-
-    def test_browse_without_pagination_is_one_page(self) -> None:
-        tiles, total = parse_browse('<html></html>')
-        assert (tiles, total) == ([], 1)
-
-    def test_tile_without_details(self) -> None:
-        page = (
-            "<a class='campaign-thumb-and-info' href='https://x.obsidianportal.com/'>"
-            "<h4 class='underlined name'>X</h4><small class='underlined name'>private</small></a>"
+    def test_front_page(self) -> None:
+        assert parse_front_page(fixture('front-hiddenway.html')) == FrontPage(
+            'The Hidden Way', 'Legend of the Five Rings', 62, '2026-06-28T07:01:51-04:00'
         )
-        (tile,), _ = parse_browse(page)
-        assert (tile.game_system, tile.updated, tile.visibility) == ('', '', 'private')
+        assert parse_front_page(fixture('front-other.html')) == FrontPage(
+            'Silk & Steel', 'Dungeons & Dragons 5e', 7, ''
+        )
+
+    def test_front_page_without_markers(self) -> None:
+        assert parse_front_page('<html><title>Nope</title></html>') == FrontPage('', '', None, '')
 
 
 class TestThrottle:
@@ -136,27 +128,39 @@ class TestThrottle:
         assert slept == [15.0]
 
 
+CHALLENGE = (
+    '<html><head><title>Just a moment...</title></head><body>'
+    '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script></body></html>'
+)
+
+
 class FakeSite:
-    """Answers the URLs the census asks for from fixtures, recording the order."""
+    """Answers the URLs the census asks for from fixtures, recording the order and cookies."""
 
     def __init__(self, robots: str | None = None, gate: str | None = None) -> None:
         self.robots = fixture('robots.txt') if robots is None else robots
         self.gate = fixture('gate.html') if gate is None else gate
         self.urls: list[str] = []
+        self.cookies: list[str | None] = []
+        self.challenge_slug: str | None = None
 
-    def __call__(self, url: str) -> Response:
+    def __call__(self, url: str, cookie: str | None) -> Response:
         self.urls.append(url)
+        self.cookies.append(cookie)
         if url == f'{HOST}/robots.txt':
             return Response(200, None, self.robots)
-        if url == f'https://{OWN_CAMPAIGNS[0]}.obsidianportal.com/':
+        if url == f'https://{OWN_CAMPAIGNS[0]}.obsidianportal.com/' and cookie is None:
             return Response(302, f'{HOST}/pre-human-check?ch=x&path=/', '')
         if url.startswith(f'{HOST}/pre-human-check'):
             return Response(200, None, self.gate)
-        if url == f'{HOST}/campaigns?game_system_id=62&page=1':
-            return Response(200, None, fixture('browse-p1.html'))
-        if url == f'{HOST}/campaigns?game_system_id=62&page=2':
-            return Response(200, None, fixture('browse-p2.html'))
-        return Response(404, None, 'nope')
+        slug = url.removeprefix('https://').split('.')[0]
+        if slug == self.challenge_slug:
+            return Response(403, None, CHALLENGE)
+        if slug == 'horai':
+            return Response(404, None, 'gone')
+        if slug in OWN_CAMPAIGNS or slug == 'l5rsilkandsteel':
+            return Response(200, None, fixture('front-hiddenway.html'))
+        return Response(200, None, fixture('front-other.html'))
 
 
 def run(site: FakeSite, **kw: object) -> tuple[Census, list[float]]:
@@ -176,49 +180,47 @@ class TestCensus:
         site = FakeSite()
         messages: list[str] = []
         census, slept = run(site, progress=messages.append)
-        assert census.pages == 2
         assert census.crawl_delay == 20.0
         assert census.exempt_total == 9
-        assert [r.slug for r in census.rows] == [
-            'karmicinquisitors',
-            'l5rsilkandsteel',
-            'legends-of-rokugan',
-            'horai',
-            'shadowed-autumn-leaves',
-        ]
-        assert [r.slug for r in census.crawlable] == ['l5rsilkandsteel', 'horai']
-        own = census.rows[0]
-        assert (own.own, own.exempt) == (True, True)
+        assert len(census.rows) == 9
+        assert [r.slug for r in census.crawlable] == ['l5rsilkandsteel']
+        by_slug = {r.slug: r for r in census.rows}
+        assert by_slug['hiddenway'].own
+        assert by_slug['hiddenway'].game_system_id == 62
+        assert by_slug['horai'].http_status == 404
+        assert by_slug['horai'].game_system == ''
+        assert by_slug['shadowrun-throw-back'].game_system == 'Dungeons & Dragons 5e'
         assert messages[0] == 'exempt list: 9 campaigns site-wide'
-        assert messages[-1] == 'page 2/2: 5 campaigns so far'
-        # Every request after the first waited the full delay - the redirect hop included.
-        assert len(site.urls) == 5
-        assert slept == [20.0] * 4
-        assert site.urls[1:3] == [
-            'https://karmicinquisitors.obsidianportal.com/',
-            f'{HOST}/pre-human-check?ch=x&path=/',
-        ]
-
-    def test_live_delay_raises_but_never_lowers_the_floor(self) -> None:
-        _, slept = run(FakeSite(robots='User-agent: *\nCrawl-delay: 30\nAllow: /\n'))
-        assert slept == [30.0] * 4
-        census, slept = run(FakeSite(robots='User-agent: *\nCrawl-delay: 1\nAllow: /\n'))
-        assert census.crawl_delay == 20.0
+        assert '9/9 waspbountyhunters: Legend of the Five Rings' in messages
+        assert '4/9 horai: HTTP 404' in messages
+        # robots, own root, gate hop, then one front page per exempt slug - every one throttled.
+        assert len(site.urls) == 3 + 9
+        assert slept == [20.0] * (2 + 9)
+        assert site.cookies[:3] == [None, None, None]
+        assert set(site.cookies[3:]) == {HUMAN_CHECK_COOKIE}
 
     def test_delay_option_raises_but_never_lowers(self) -> None:
-        census, slept = run(FakeSite(), delay=60.0)
-        assert census.crawl_delay == 60.0
-        assert slept == [60.0] * 4
+        census, slept = run(FakeSite(), delay=61.0)
+        assert census.crawl_delay == 61.0
+        assert set(slept) == {61.0}
         census, _ = run(FakeSite(), delay=5.0)
         assert census.crawl_delay == 20.0
 
+    def test_live_delay_raises_but_never_lowers_the_floor(self) -> None:
+        census, _ = run(FakeSite(robots='User-agent: *\nCrawl-delay: 30\nAllow: /\n'))
+        assert census.crawl_delay == 30.0
+        census, _ = run(FakeSite(robots='User-agent: *\nCrawl-delay: 1\nAllow: /\n'))
+        assert census.crawl_delay == 20.0
+
     def test_refuses_when_robots_changes_under_us(self) -> None:
-        with pytest.raises(ConsentError, match='no longer allows /campaigns'):
-            load_policy(FakeSite(robots='User-agent: *\nDisallow: /campaigns\n'))
+        with pytest.raises(ConsentError, match='no longer allows /'):
+            load_policy(FakeSite(robots='User-agent: *\nDisallow: /\n'))
         with pytest.raises(ConsentError, match='HTTP 404'):
-            load_policy(lambda _url: Response(404, None, ''))
-        with pytest.raises(ConsentError, match='disallows /campaigns'):
-            run(FakeSite(robots='User-agent: *\nAllow: /\nDisallow: /campaigns?*\n'))
+            load_policy(lambda _url, _cookie: Response(404, None, ''))
+        site = FakeSite()
+        with pytest.raises(ConsentError, match='disallows /profile/x'):
+            _Site(site, Throttle(0.0), RECORDED).get(f'{HOST}/profile/x')
+        assert site.urls == []  # refused before any request was made
 
     def test_refuses_when_own_campaigns_leave_the_exempt_list(self) -> None:
         gate = "<div data-exempt-cses='[&quot;karmicinquisitors&quot;]'></div>"
@@ -227,17 +229,21 @@ class TestCensus:
 
     def test_cloudflare_challenge_stops_the_run(self) -> None:
         site = FakeSite()
-        site.gate = (
-            '<html><head><title>Just a moment...</title></head><body>'
-            '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script></body></html>'
-        )
+        site.challenge_slug = 'daidoji'
         with pytest.raises(ConsentError, match='Cloudflare challenge'):
             run(site)
-        assert len(site.urls) == 3  # robots, own campaign root, the gate - and nothing after
+        assert site.urls[-1] == 'https://daidoji.obsidianportal.com/'  # nothing after it
 
-    def test_non_200_is_an_error(self) -> None:
-        with pytest.raises(ConsentError, match='HTTP 404'):
-            run(FakeSite(), game_system_id=99)
+    def test_gate_non_200_is_an_error(self) -> None:
+        site = FakeSite()
+
+        def fetch(url: str, cookie: str | None) -> Response:
+            if url.startswith(f'{HOST}/pre-human-check'):
+                return Response(500, None, 'boom')
+            return site(url, cookie)
+
+        with pytest.raises(ConsentError, match='HTTP 500'):
+            run_census(fetch, sleep=lambda _s: None)
 
     def test_write_and_summarize(self, tmp_path: Path) -> None:
         census, _ = run(FakeSite())
@@ -245,35 +251,37 @@ class TestCensus:
         assert path == tmp_path / 'census-62.json'
         data = json.loads(path.read_text())
         assert data['exempt_total'] == 9
-        assert data['rows'][1] == {
+        silk = next(r for r in data['rows'] if r['slug'] == 'l5rsilkandsteel')
+        assert silk == {
             'slug': 'l5rsilkandsteel',
-            'name': 'Legend of the Five Rings: Silk & Steel',
+            'name': 'The Hidden Way',
             'url': 'https://l5rsilkandsteel.obsidianportal.com/',
-            'visibility': 'public',
-            'updated': '2024-01-02T03:04:05Z',
-            'exempt': True,
+            'game_system': 'Legend of the Five Rings',
+            'game_system_id': 62,
+            'updated': '2026-06-28T07:01:51-04:00',
+            'http_status': 200,
             'own': False,
         }
         text = summarize(census, path)
-        assert '5 campaigns for game_system_id=62 over 2 pages at one request per 20 s' in text
-        assert '9 campaigns site-wide have "allow bots" on' in text
-        assert "2 of them are other people's campaigns" in text
+        assert '9 campaigns site-wide have "allow bots" on, visited at one request per 20 s' in text
+        assert "1 of them are other people's campaigns in game system 62" in text
         assert 'l5rsilkandsteel' in text
-        assert 'horai' in text
-        assert 'legends-of-rokugan' not in text
+        assert 'hiddenway' not in text
         assert text.endswith(f'written to {path} (gitignored)')
         assert not summarize(census).endswith('(gitignored)')
 
     def test_row_dataclass(self) -> None:
-        row = CensusRow('a', 'A', 'https://a.obsidianportal.com/', 'public', '', False, False)
-        assert Census(62, 20.0, 0, 1, [row]).crawlable == []
+        row = CensusRow('a', 'A', 'https://a.obsidianportal.com/', '', None, '', 200, False)
+        assert Census(62, 20.0, 1, [row]).crawlable == []
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
     agents: list[str] = []
+    cookies: list[str | None] = []
 
     def do_GET(self) -> None:
         Handler.agents.append(self.headers['User-Agent'])
+        Handler.cookies.append(self.headers.get('Cookie'))
         if self.path == '/redirect':
             self.send_response(302)
             self.send_header('Location', '/target')
@@ -287,7 +295,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write('ok é'.encode())
 
-    def log_message(self, *args: object) -> None:  # noqa: D102 - silence the test log
+    def log_message(self, *args: object) -> None:
         pass
 
 
@@ -303,6 +311,7 @@ def server() -> Iterator[str]:
 class TestHttp:
     def test_get_does_not_follow_redirects(self, server: str) -> None:
         assert http_get(f'{server}/redirect') == Response(302, '/target', '')
-        assert http_get(f'{server}/target') == Response(200, None, 'ok é')
+        assert http_get(f'{server}/target', cookie='human_check=') == Response(200, None, 'ok é')
         assert http_get(f'{server}/missing') == Response(404, None, 'gone')
         assert set(Handler.agents) == {USER_AGENT}
+        assert Handler.cookies == [None, 'human_check=', None]
