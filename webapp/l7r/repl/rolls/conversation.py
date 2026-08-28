@@ -95,6 +95,13 @@ def begin_conversation(
     The name resolves through `match_character`, exactly as `discern_honor` does:
     whole name tokens only, and an ambiguous name raises listing the candidates
     rather than picking one. Which record gets written to is not a guess we make.
+
+    `channel` is OPTIONAL and normally omitted. With no channel, the conversation
+    watches EVERY monitored channel, which is what the GM asked for: one argument,
+    and a roll posted anywhere lands. Naming a channel narrows it to that one -
+    useful for the scratch server, rarely otherwise. The two live game channels
+    belong to groups that play on different nights, so watching both at once
+    cannot mix two sessions' rolls in practice.
     """
     global _open
     with _lock:
@@ -106,14 +113,11 @@ def begin_conversation(
         match = match_character(npc, characters())
         if match.kind != 'unique':
             raise ValueError(_no_match(npc, match))
-        channel_id = discord.CHANNELS.get((channel or '').lower(), channel or '')
-        if not channel_id:
-            raise ValueError(
-                f'name the channel: one of {", ".join(sorted(discord.CHANNELS))}, or a channel id'
-            )
+        channels = resolve_channels(channel)
         clock = now or (lambda: datetime.now(UTC))
-        _open = Conversation(npc=match.character, opened_at=clock(), channel_id=channel_id)
-        print(f'Talking to {_open.npc_name}. Rolls from now until end_conversation().')
+        _open = Conversation(npc=match.character, opened_at=clock(), channels=channels)
+        where = 'every monitored channel' if channel is None else _label(channels[0])
+        print(f'Talking to {_open.npc_name}, watching {where}. Rolls until end_conversation().')
         return _open
 
 
@@ -128,11 +132,22 @@ def collect(
     """Read everything posted since the last poll and fold it into the conversation."""
     conv = conversation or _require()
     words = vocabulary if vocabulary is not None else load_skills()
-    try:
-        messages = fetch(conv.channel_id, conv.last_seen or conv.opened_at)
-    except discord.DiscordUnavailable as exc:
-        conv.unresolved.append(str(exc))
-        return conv
+    messages: list[dict[str, Any]] = []
+    for channel_id in conv.channels:
+        try:
+            page = fetch(channel_id, conv.last_seen.get(channel_id) or conv.opened_at)
+        except discord.DiscordUnavailable as exc:
+            note = f'{_label(channel_id)}: {exc}'
+            if note not in conv.unresolved:
+                conv.unresolved.append(note)
+            continue
+        for message in page:
+            message['_channel_id'] = channel_id
+        messages.extend(page)
+    # One channel being unreadable must not hide another's rolls, so the loop above
+    # continues rather than returning - and the merged stream is re-sorted, because
+    # each channel arrives in its own order.
+    messages.sort(key=lambda m: discord.parse_timestamp(m['timestamp']))
 
     from_sheet = recorded(conv.opened_at)
     who = _players(roster())
@@ -142,7 +157,7 @@ def collect(
             conv.unresolved.append(note)
 
     for message in messages:
-        conv.last_seen = str(message['id'])
+        conv.last_seen[str(message.get('_channel_id') or '')] = str(message['id'])
         who_posted = who.get(discord.author_id(message), '')
         at = discord.parse_timestamp(message['timestamp'])
         found, problems = parse_message(
@@ -253,6 +268,33 @@ def conversation_status() -> Conversation | None:
         print('  no rolls yet')
     _report(_open)
     return _open
+
+
+def resolve_channels(channel: str | None) -> tuple[str, ...]:
+    """Which channels a conversation watches.
+
+    `None` means every monitored channel - the normal case, and the reason
+    `begin_conversation("Otsuki")` takes one argument. A name resolves through
+    `CHANNELS`; anything else is taken as a raw channel id.
+    """
+    if channel is None:
+        return tuple(discord.CHANNELS.values())
+    named = discord.CHANNELS.get(channel.lower())
+    if named:
+        return (named,)
+    if not channel.strip():
+        raise ValueError(
+            f'name a channel: one of {", ".join(sorted(discord.CHANNELS))}, or a channel id'
+        )
+    return (channel,)
+
+
+def _label(channel_id: str) -> str:
+    """A channel id as its friendly name where we have one."""
+    for name, known in discord.CHANNELS.items():
+        if known == channel_id:
+            return f'#{name}'
+    return f'channel {channel_id}'
 
 
 def _report(conv: Conversation) -> None:

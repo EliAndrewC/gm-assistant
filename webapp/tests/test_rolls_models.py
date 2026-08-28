@@ -48,17 +48,17 @@ class TestRecordingRule:
 
 class TestConversation:
     def test_exposes_the_npcs_name_and_id(self) -> None:
-        conv = Conversation(npc={'id': 'abc', 'name': 'Otsuki'}, opened_at=WHEN, channel_id='832')
+        conv = Conversation(npc={'id': 'abc', 'name': 'Otsuki'}, opened_at=WHEN, channels=('832',))
         assert conv.npc_name == 'Otsuki'
         assert conv.npc_id == 'abc'
 
     def test_tolerates_a_record_missing_those_fields(self) -> None:
-        conv = Conversation(npc={}, opened_at=WHEN, channel_id='832')
+        conv = Conversation(npc={}, opened_at=WHEN, channels=('832',))
         assert conv.npc_name == ''
         assert conv.npc_id == ''
 
     def test_starts_empty(self) -> None:
-        conv = Conversation(npc={}, opened_at=WHEN, channel_id='832')
+        conv = Conversation(npc={}, opened_at=WHEN, channels=('832',))
         assert conv.rolls == []
         assert conv.unresolved == []
-        assert conv.last_seen is None
+        assert conv.last_seen == {}  # one cursor PER CHANNEL, not one shared
