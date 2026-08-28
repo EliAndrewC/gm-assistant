@@ -136,6 +136,42 @@ class TestRecordedRolls:
         assert not sheet.recorded_rolls(SINCE, token='t', get=boom).available
 
 
+class TestCanonicalSkill:
+    """The ring suffix is display, not identity - and carrying it through silently
+    defeated the GM's Etiquette cap. Measured against the live endpoint."""
+
+    @pytest.mark.parametrize(
+        ('label', 'expected'),
+        [
+            ('etiquette (air)', 'etiquette'),
+            ('underworld (water)', 'underworld'),
+            ('commune (air)', 'commune'),
+            ('attack', 'attack'),
+            ('skill:investigation', 'investigation'),
+            ('knack:discern_honor', 'discern_honor'),
+            ('Etiquette (Air)', 'etiquette'),
+            ('', ''),
+        ],
+    )
+    def test_reduces_to_a_bare_skill_name(self, label: str, expected: str) -> None:
+        assert sheet.canonical_skill(label) == expected
+
+    def test_the_cap_fires_on_a_recorded_roll(self) -> None:
+        from l7r.repl.rolls.rules import record
+
+        payload = {
+            'rolls': [
+                {
+                    'label': 'etiquette (air)',
+                    'total': 68,
+                    'created_at': '2026-08-12T01:00:00+00:00',
+                }
+            ]
+        }
+        (roll,) = sheet.recorded_rolls(SINCE, token='t', get=lambda *a: payload).rolls
+        assert record(roll.total, roll.skill) == 40, 'the GM cap must fire on recorded rolls too'
+
+
 class TestCharacters:
     def test_keys_by_discord_id_and_lowercases_skills(self) -> None:
         result = sheet.characters(token='t', get=lambda *a: CHARACTERS_PAYLOAD)

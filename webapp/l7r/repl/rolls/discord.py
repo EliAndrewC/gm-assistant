@@ -71,10 +71,14 @@ def snowflake(when: datetime) -> str:
     return str((int(when.timestamp() * 1000) - EPOCH_MS) << 22)
 
 
-def bot_token(path: Path = SECRETS) -> str:
-    """The bot token from `[discord] bot_token`, gitignored."""
+def bot_token(path: Path | None = None) -> str:
+    """The bot token from `[discord] bot_token`, gitignored.
+
+    `path` resolves to `SECRETS` at call time, not as a bound default - see the
+    note on `sheet.query_token` for the test that this pattern silently defeated.
+    """
     parser = configparser.ConfigParser()
-    parser.read(path)
+    parser.read(path or SECRETS)
     token = parser.get('discord', 'bot_token', fallback='').strip()
     if not token:
         raise DiscordUnavailable(

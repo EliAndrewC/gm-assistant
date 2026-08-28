@@ -248,3 +248,59 @@ just the image one - which raises its priority above where this feature's plan f
 
 `[discord_players]` in the gitignored secrets remains as a testing stopgap only. It is explicitly
 NOT to be maintained by hand, and should be deleted once the endpoint ships.
+
+## R15. The endpoints shipped, and real data immediately found a silent defect
+
+The character-sheet session did not just build `/api/rolls` and `/api/characters` - it went on to
+ship `/etiquette` slash commands too (`c59eb1d`, `ebf0947`). Both endpoints verified live
+2026-08-28 with the token from that repo's `.env`.
+
+Real data broke something the fixtures could not, because the fixtures were written from the SPEC
+and the spec did not describe this detail. **The sheet labels a roll with its ring**:
+`etiquette (air)`, `underworld (water)`, `commune (air)`. `RecordingRule.caps` is keyed on
+`etiquette`, so:
+
+```
+record(68, 'etiquette')       = 40   correct
+record(68, 'etiquette (air)') = 65   WRONG - the GM's cap silently did not fire
+```
+
+A 68 would have been written as 65. Nothing would have raised, no test would have failed, and the
+number looks entirely plausible in the record - the worst failure this feature can have.
+
+**Fixed at the boundary** (`sheet.canonical_skill`), not defended against downstream: the module
+that knows the sheet's label format is the one that should normalize it. The ring is display, not
+identity.
+
+The general lesson: a fixture written from a specification tests your understanding of the
+contract, not the contract. The first call against the live endpoint is a distinct verification
+step and it found this in one look.
+
+## R16. A default argument bound at import silently defeated two tests
+
+Exposed by the same session, because installing a real `roll_query_token` made two previously-green
+tests fail. `query_token(path: Path = SECRETS)` evaluates `SECRETS` ONCE at import, so the tests
+that monkeypatched `sheet.SECRETS` to a temp file were reading the real file all along. They passed
+only while no token existed anywhere - the assertion "degrades with no token" was true for the wrong
+reason, and would have gone on being true right up until it mattered.
+
+Both token readers (`sheet.query_token`, `discord.bot_token`) now resolve `SECRETS` at CALL time.
+Worth remembering as a shape rather than an incident: a module-level path used as a default argument
+cannot be redirected by a test, and the failure mode is a test that passes vacuously.
+
+## R17. Verified end to end against live data
+
+2026-08-28, with real recorded rolls (Roll Tester, the GM's own character 22, mapped automatically
+to their Discord id by `/api/characters` - no hand-written player map needed):
+
+```
+joined 4 of 4 pasted cards to their recorded rolls:
+  Roll Tester  etiquette  raw  22 -> recorded  20  rank=1 source=recorded
+  Roll Tester  etiquette  raw  22 -> recorded  20  rank=1 source=recorded
+  Roll Tester  etiquette  raw  27 -> recorded  25  rank=1 source=recorded
+  Roll Tester  etiquette  raw  31 -> recorded  30  rank=1 source=recorded
+LINE: Roll Tester / Roll Tester / Roll Tester / Roll Tester etiquette: 30 / 25 / 20 / 20
+```
+
+Real rolls, real character name, real ranks, real rounding, real ordering. The only synthetic part
+is the Discord messages standing in for the pasted cards, since none had been posted yet.
