@@ -29,6 +29,10 @@ How the consent signal works (measured 2026-08-27, see `census.py`):
   `data-exempt-cses`, the site-wide list of campaign slugs the owners exempted from the human
   check. The server enforces it: an exempt slug is served with the bare `human_check=` cookie the
   gate's own JavaScript sets; a non-exempt slug 302-loops forever without a real human check.
+  CONFIRMED against the campaign settings form 2026-08-28, not merely inferred: Privacy is a
+  four-way radio - `internet` "Public with no human check" (the exempt list exactly), `public`
+  "Public with human check", `friends`, `private`. It is an ordinary setting, not a paid perk,
+  so the list is precisely the owners who chose to let scripts read them.
 * `www.obsidianportal.com/robots.txt` says `Crawl-delay: 20` for everyone and disallows GPTBot
   outright. `robots.py` parses it and the census refuses to run if the recorded floor no longer
   holds or a URL it wants is now disallowed.
