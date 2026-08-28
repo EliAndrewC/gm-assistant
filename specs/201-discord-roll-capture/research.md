@@ -182,3 +182,41 @@ Two API facts found while establishing this, both of which cost a wrong turn fir
   leaves them EMPTY for every character - 0 of 119 populated. The body fields only arrive from the
   per-character fetch. A design that assumed one list call could supply bios would appear to work
   (the keys are present) and silently see nothing anywhere.
+
+## R11. Measured end to end against the live channel, with the endpoint absent
+
+Run 2026-08-28 against the GM's motivating etiquette round (Tuesday channel,
+2026-08-12 01:53:39-01:54:12Z, five rolls in 33 seconds), reading Discord live and stubbing only
+the character-sheet client to report what it will actually report until the endpoint is built:
+
+```
+fetched 6 live messages in the window
+rolls captured: 1
+  ShosuroAjo: etiquette 38 (rank 3, typed)
+LINE: ShosuroAjo etiquette: 35
+unresolved (5):
+  ! recorded rolls unavailable (endpoint not built yet)
+  ! image from originaljack at 01:53:39 could not be resolved
+  ! image from Queen of Rats and Crows at 01:53:58 could not be resolved
+  ! image from auxarc at 01:54:09 could not be resolved
+  ! image from HamburgerOfJustice at 01:54:11 could not be resolved
+```
+
+This is the intended shape of the degraded mode, not a shortfall: the typed roll is captured and
+correctly recorded as 35, and each unresolvable image is named with its poster and time so the GM
+can transcribe those four by hand exactly as they do today. When
+`/api/rolls` exists, the same run yields all five and the line becomes the GM's full example.
+
+Worth stating plainly because it sets expectations for the first live test: **until the
+character-sheet endpoint ships, this feature captures roughly a third of the rolls** - the typed
+ones - and tells the GM precisely which ones it missed.
+
+## R12. The line's ORDERING is inferred, and is the one thing the GM should check first
+
+The GM's single worked example reads `35 / 25 / 25 / 20 / 15` - perfectly descending. Five rolls
+land in descending order by chance about once in 120 times, so `render_open` sorts highest-first.
+
+The competing reading is that `Sadakichi / Moriko / Jimen / Tetsuro / Toshihiro` is a habitual
+party order and the descent is coincidence. One example cannot separate them, and both are
+one-line changes (`sorted(..., reverse=True)` versus keeping posting order). Flagged for the GM
+rather than resolved, because guessing wrong here is invisible - every line would look plausible.
