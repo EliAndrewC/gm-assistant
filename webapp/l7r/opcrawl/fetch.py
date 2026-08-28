@@ -28,6 +28,7 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from l7r.opcrawl.census import OUT_DIR, Fetcher, Throttle, _Site, load_policy
 from l7r.opcrawl.http import http_get
+from l7r.opcrawl.summary import ContentSummary, parse_content_summary, summary_url
 from l7r.opcrawl.text import html_to_text, page_title, strip_scripts
 
 HUMAN_CHECK_COOKIE = 'human_check='
@@ -116,6 +117,41 @@ class Store:
         (pages / f'{n:04d}.txt').write_text(text)
         return f'{n:04d}'
 
+    def summary_path(self, slug: str) -> Path:
+        return self.root / slug / 'content_summary.json'
+
+    def write_summary(self, slug: str, text: str) -> Path:
+        path = self.summary_path(slug)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+        return path
+
+    def read_summary(self, slug: str) -> ContentSummary | None:
+        path = self.summary_path(slug)
+        if not path.exists():
+            return None
+        try:
+            return parse_content_summary(path.read_text())
+        except ValueError:
+            return None
+
+
+def fetch_summary(
+    site: _Site, slug: str, store: Store, unix_time: int
+) -> tuple[ContentSummary | None, int]:
+    """One request for the campaign's own manifest of its content. Returns the parsed summary
+    (None if the campaign does not serve one) and the HTTP status. The raw JSON is stored
+    verbatim - it is the "how much content is here" record, useful with no page ever fetched."""
+    resp = site.get(summary_url(slug, unix_time), cookie=HUMAN_CHECK_COOKIE, tolerate=True)
+    if resp.status != 200:
+        return None, resp.status
+    try:
+        summary = parse_content_summary(resp.text)
+    except ValueError:
+        return None, resp.status
+    store.write_summary(slug, resp.text)
+    return summary, resp.status
+
 
 def crawl_campaign(
     slug: str,
@@ -127,12 +163,20 @@ def crawl_campaign(
     clock: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
     now: Callable[[], str] = lambda: time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+    unix_time: Callable[[], int] = lambda: int(time.time()),
+    summary_only: bool = False,
     progress: Callable[[str], None] = lambda _: None,
-    policy_loaded: bool = False,
 ) -> Manifest:
     """Fetch every content page of `slug` not already in its manifest. Returns the manifest.
     A ConsentError (challenge, robots change) propagates after the manifest is saved, so the
-    pages already fetched are kept and a later rerun resumes."""
+    pages already fetched are kept and a later rerun resumes.
+
+    The first request is always `content_summary.json`, the campaign's own list of its content.
+    When it is served, it IS the crawl list: exactly its non-GM-only pages are fetched and no
+    link is followed, so nothing outside what the owner published is ever requested. A campaign
+    that does not serve one falls back to link discovery from the section indexes.
+    `summary_only=True` stops after the summary - enough to rank campaigns by how much they hold.
+    """
     store = store or Store(OUT_DIR)
     policy = load_policy(fetch, delay)
     throttle = Throttle(policy.crawl_delay or 0.0, clock, sleep)
@@ -140,7 +184,19 @@ def crawl_campaign(
     site = _Site(fetch, throttle, policy)
     base = f'https://{slug}.obsidianportal.com'
     manifest = Manifest.load(store.manifest_path(slug), slug)
-    queue: deque[str] = deque(urljoin(base, s) for s in SEEDS)
+
+    summary, status = fetch_summary(site, slug, store, unix_time())
+    if summary is None:
+        progress(f'{slug}: no content summary (HTTP {status}); falling back to link discovery')
+        queue: deque[str] = deque(urljoin(base, s) for s in SEEDS)
+    else:
+        counts = ', '.join(f'{n} {k}s' for k, n in sorted(summary.counts.items()))
+        progress(f'{slug}: content summary lists {counts}')
+        queue = deque([f'{base}/'] + [urljoin(base, p.path) for p in summary.public])
+    if summary_only:
+        manifest.save(store.manifest_path(slug))
+        return manifest
+    discover = summary is None
     queued = set(queue)
     fetched = 0
     try:
@@ -161,10 +217,11 @@ def crawl_campaign(
                 manifest.pages[url] = PageRecord(
                     url, kind, 200, page_title(resp.text), len(text), name, now()
                 )
-                for link in campaign_links(resp.text, url):
-                    if link not in queued:
-                        queued.add(link)
-                        queue.append(link)
+                if discover:
+                    for link in campaign_links(resp.text, url):
+                        if link not in queued:
+                            queued.add(link)
+                            queue.append(link)
             else:
                 manifest.pages[url] = PageRecord(url, kind, resp.status, '', 0, '', now())
             progress(f'{slug}: {resp.status} {kind:9} {url}  ({len(queue)} queued)')

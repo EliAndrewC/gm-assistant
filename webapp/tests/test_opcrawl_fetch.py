@@ -1,5 +1,5 @@
-"""Stage 2/3 of l7r.opcrawl: the campaign crawler, text extraction and the local index. All
-fixture-driven; no request leaves the process."""
+"""Stage 2/3 of l7r.opcrawl: the content summary, the campaign crawler, text extraction and the
+local index. All fixture-driven; no request leaves the process."""
 
 from __future__ import annotations
 
@@ -8,18 +8,58 @@ from pathlib import Path
 
 import pytest
 
-from l7r.opcrawl.census import HOST, ConsentError
-from l7r.opcrawl.fetch import Manifest, PageRecord, Store, campaign_links, classify, crawl_campaign
+from l7r.opcrawl.census import HOST, ConsentError, Fetcher
+from l7r.opcrawl.fetch import (
+    Manifest,
+    PageRecord,
+    Store,
+    campaign_links,
+    classify,
+    crawl_campaign,
+)
 from l7r.opcrawl.http import Response
 from l7r.opcrawl.index import build_index, digest, search
+from l7r.opcrawl.summary import parse_content_summary, summary_url
 from l7r.opcrawl.text import html_to_text, page_title
 
 FIX = Path(__file__).parent / 'fixtures' / 'opcrawl'
 BASE = 'https://hiddenway.obsidianportal.com'
+SUMMARY_URL = f'{BASE}/content_summary.json?cc=1700000000'
 
 
 def fixture(name: str) -> str:
     return (FIX / name).read_text()
+
+
+class TestSummary:
+    def test_url_carries_the_cache_buster(self) -> None:
+        assert summary_url('hiddenway', 1700000000) == SUMMARY_URL
+
+    def test_parse(self) -> None:
+        s = parse_content_summary(fixture('content-summary.json'))
+        assert s.campaign_id == 259473
+        assert s.tags == ('hub', 'unicorn')
+        assert s.counts == {'wiki': 2, 'post': 1, 'character': 1}  # the GM-only page is not counted
+        assert [p.path for p in s.public] == [
+            '/wikis/main-page',
+            '/wikis/mass-combat',
+            '/adventure-log/tea-and-silk',
+            '/characters/moto-khunbish',
+        ]
+        secret = next(p for p in s.pages if p.gm_only)
+        assert secret.path == '/wikis/gm-secrets'
+        khunbish = next(p for p in s.pages if p.kind == 'character')
+        assert (khunbish.title, khunbish.tags) == ('Moto Khunbish', ('unicorn',))
+
+    @pytest.mark.parametrize('bad', ['[]', '{"x": 1}', 'not json'])
+    def test_parse_rejects_other_payloads(self, bad: str) -> None:
+        with pytest.raises(ValueError, match='content_summary|Expecting'):
+            parse_content_summary(bad)
+
+    def test_entries_without_a_path_are_skipped(self) -> None:
+        s = parse_content_summary('{"wiki_pages": [{"title": "x"}, {"path": "/wikis/y"}]}')
+        assert [p.path for p in s.pages] == ['/wikis/y']
+        assert (s.campaign_id, s.updated_at, s.version, s.tags) == (0, '', '', ())
 
 
 class TestText:
@@ -62,7 +102,6 @@ class TestLinks:
     def test_campaign_links_stay_on_host_and_drop_queries(self) -> None:
         links = campaign_links(fixture('front-links.html'), f'{BASE}/')
         assert links[:3] == [f'{BASE}/wikis', f'{BASE}/characters', f'{BASE}/adventure-log']
-        assert f'{BASE}/wikis' in links  # `/wikis?page=2` collapsed onto it, not requested
         assert f'{BASE}/wikis/mass-combat' in links
         assert f'{BASE}/characters/moto-khunbish' in links
         assert f'{BASE}/wikis/from-script' not in links  # hrefs inside <script> are not links
@@ -71,10 +110,14 @@ class TestLinks:
         assert len(links) == len(set(links))
 
 
+CHALLENGE = '<title>Just a moment...</title>challenges.cloudflare.com'
+
+
 class FakeCampaign:
     """The pages of a small campaign, answered by URL."""
 
-    def __init__(self) -> None:
+    def __init__(self, summary: str | None = None) -> None:
+        self.summary = fixture('content-summary.json') if summary is None else summary
         self.urls: list[str] = []
         self.challenge_at: str | None = None
 
@@ -84,7 +127,11 @@ class FakeCampaign:
             return Response(200, None, fixture('robots.txt'))
         assert cookie == 'human_check='
         if url == self.challenge_at:
-            return Response(403, None, '<title>Just a moment...</title>challenges.cloudflare.com')
+            return Response(403, None, CHALLENGE)
+        if url.startswith(f'{BASE}/content_summary.json'):
+            if not self.summary:
+                return Response(400, None, '')
+            return Response(200, None, self.summary)
 
         def page(title: str, body: str) -> str:
             return f'<title>{title} | X | Obsidian Portal</title>{body}'
@@ -104,7 +151,7 @@ class FakeCampaign:
         return Response(404, None, 'nope')
 
 
-def crawl(site: FakeCampaign, root: Path, **kw: object) -> tuple[Manifest, list[float]]:
+def crawl(site: Fetcher, root: Path, **kw: object) -> tuple[Manifest, list[float]]:
     slept: list[float] = []
     now = [0.0]
 
@@ -119,51 +166,80 @@ def crawl(site: FakeCampaign, root: Path, **kw: object) -> tuple[Manifest, list[
         clock=lambda: now[0],
         sleep=sleep,
         now=lambda: 'T',
+        unix_time=lambda: 1700000000,
         **kw,  # type: ignore[arg-type]
     )
     return m, slept
 
 
-class TestCrawl:
-    def test_crawl_discovers_content_and_stores_it(self, tmp_path: Path) -> None:
+class TestCrawlWithSummary:
+    def test_the_summary_is_the_crawl_list(self, tmp_path: Path) -> None:
         site = FakeCampaign()
         messages: list[str] = []
         manifest, slept = crawl(site, tmp_path, progress=messages.append)
-        kinds = {u.removeprefix(BASE): r.kind for u, r in manifest.pages.items()}
-        assert kinds['/'] == 'front'
-        assert kinds['/wikis'] == 'index'
-        assert kinds['/wikis/mass-combat'] == 'wiki'
-        assert kinds['/characters/moto-khunbish'] == 'character'
-        assert kinds['/adventure-log/tea-and-silk'] == 'post'
-        assert kinds['/wikis/main-page'] == 'wiki'  # found via the wiki page's link
-        assert f'{BASE}/wikis/from-script' not in manifest.pages
-        rec = manifest.pages[f'{BASE}/wikis/mass-combat']
-        assert rec.title == 'Mass combat'
-        assert rec.chars == len(html_to_text(fixture('wiki-page.html')))
+        assert site.urls[:3] == [f'{HOST}/robots.txt', SUMMARY_URL, f'{BASE}/']
+        # exactly the front page plus the summary's PUBLIC pages - the GM-only one is never asked
+        assert sorted(u.removeprefix(BASE) for u in manifest.pages) == [
+            '/',
+            '/adventure-log/tea-and-silk',
+            '/characters/moto-khunbish',
+            '/wikis/main-page',
+            '/wikis/mass-combat',
+        ]
+        assert not any('gm-secrets' in u for u in site.urls)
+        # and no link discovery: /wikis, /characters and the front page's other links are skipped
+        assert f'{BASE}/wikis' not in manifest.pages
+        assert 'hiddenway: content summary lists 1 characters, 1 posts, 2 wikis' in messages
         assert (
-            (tmp_path / 'hiddenway' / 'pages' / f'{rec.file}.txt')
-            .read_text()
-            .startswith('Mass combat')
+            json.loads((tmp_path / 'hiddenway' / 'content_summary.json').read_text())['id']
+            == 259473
         )
-        assert (tmp_path / 'hiddenway' / 'pages' / f'{rec.file}.html').read_text() == fixture(
-            'wiki-page.html'
-        )
-        # robots + every page, each throttled at the 61 s default, never under the floor
-        assert len(site.urls) == 1 + len(manifest.pages)
-        # links the fake site does not serve (real hrefs from the front page) are recorded as 404
-        assert {r.status for r in manifest.pages.values()} == {200, 404}
-        assert slept == [61.0] * len(manifest.pages)
-        assert messages[-1].startswith('hiddenway: ')
-        saved = Manifest.load(tmp_path / 'hiddenway' / 'manifest.json', 'hiddenway')
-        assert saved == manifest
+        assert slept == [61.0] * 6  # summary + 5 pages, each throttled at the default pace
 
-    def test_rerun_fetches_nothing_new(self, tmp_path: Path) -> None:
+    def test_summary_only_stops_after_one_request(self, tmp_path: Path) -> None:
+        site = FakeCampaign()
+        manifest, _ = crawl(site, tmp_path, summary_only=True)
+        assert site.urls == [f'{HOST}/robots.txt', SUMMARY_URL]
+        assert manifest.pages == {}
+        assert (tmp_path / 'hiddenway' / 'content_summary.json').exists()
+
+    @pytest.mark.parametrize('summary', ['', 'not json at all'])
+    def test_without_a_usable_summary_it_falls_back_to_link_discovery(
+        self, tmp_path: Path, summary: str
+    ) -> None:
+        site = FakeCampaign(summary)
+        messages: list[str] = []
+        manifest, _ = crawl(site, tmp_path, progress=messages.append)
+        assert any('falling back to link discovery' in m for m in messages)
+        assert f'{BASE}/wikis' in manifest.pages  # the section indexes are seeds again
+        assert f'{BASE}/wikis/mass-combat' in manifest.pages  # found by following links
+        assert f'{BASE}/wikis/main-page' in manifest.pages  # found via the wiki page's own link
+
+
+class TestCrawl:
+    def test_pages_are_stored_with_text(self, tmp_path: Path) -> None:
+        site = FakeCampaign()
+        manifest, _ = crawl(site, tmp_path)
+        rec = manifest.pages[f'{BASE}/wikis/mass-combat']
+        assert (rec.kind, rec.title, rec.status) == ('wiki', 'Mass combat', 200)
+        assert rec.chars == len(html_to_text(fixture('wiki-page.html')))
+        pages = tmp_path / 'hiddenway' / 'pages'
+        assert (pages / f'{rec.file}.txt').read_text().startswith('Mass combat')
+        assert (pages / f'{rec.file}.html').read_text() == fixture('wiki-page.html')
+        assert Manifest.load(tmp_path / 'hiddenway' / 'manifest.json', 'hiddenway') == manifest
+
+    def test_missing_page_is_recorded_not_fatal(self, tmp_path: Path) -> None:
+        site = FakeCampaign(json.dumps({'wiki_pages': [{'path': '/wikis/deleted', 'title': 'X'}]}))
+        manifest, _ = crawl(site, tmp_path)
+        assert manifest.pages[f'{BASE}/wikis/deleted'].status == 404
+        assert manifest.pages[f'{BASE}/wikis/deleted'].chars == 0
+
+    def test_rerun_fetches_only_the_summary(self, tmp_path: Path) -> None:
         crawl(FakeCampaign(), tmp_path)
         site = FakeCampaign()
-        manifest, slept = crawl(site, tmp_path)
-        assert site.urls == [f'{HOST}/robots.txt']
-        assert slept == []
-        assert len(manifest.pages) > 5
+        manifest, _ = crawl(site, tmp_path)
+        assert site.urls == [f'{HOST}/robots.txt', SUMMARY_URL]
+        assert len(manifest.pages) == 5
 
     def test_max_pages_then_resume(self, tmp_path: Path) -> None:
         messages: list[str] = []
@@ -171,17 +247,17 @@ class TestCrawl:
         assert len(first.pages) == 2
         assert any('stopped at --max-pages 2' in m for m in messages)
         second, _ = crawl(FakeCampaign(), tmp_path)
-        assert len(second.pages) > 2
+        assert len(second.pages) == 5
         assert set(first.pages) <= set(second.pages)
 
     def test_challenge_stops_and_keeps_what_was_fetched(self, tmp_path: Path) -> None:
         site = FakeCampaign()
-        site.challenge_at = f'{BASE}/characters'
+        site.challenge_at = f'{BASE}/wikis/main-page'
         with pytest.raises(ConsentError, match='Cloudflare challenge'):
             crawl(site, tmp_path)
         saved = Manifest.load(tmp_path / 'hiddenway' / 'manifest.json', 'hiddenway')
-        assert set(saved.pages) == {f'{BASE}/', f'{BASE}/wikis'}
-        assert site.urls[-1] == f'{BASE}/characters'
+        assert set(saved.pages) == {f'{BASE}/'}
+        assert site.urls[-1] == f'{BASE}/wikis/main-page'
 
     def test_manifest_roundtrip_and_empty_load(self, tmp_path: Path) -> None:
         assert Manifest.load(tmp_path / 'none.json', 's') == Manifest('s')
@@ -189,34 +265,68 @@ class TestCrawl:
         m.save(tmp_path / 'd' / 'manifest.json')
         assert Manifest.load(tmp_path / 'd' / 'manifest.json', 's') == m
 
+    def test_store_reads_back_a_summary_and_shrugs_at_a_broken_one(self, tmp_path: Path) -> None:
+        store = Store(tmp_path)
+        assert store.read_summary('nobody') is None
+        store.write_summary('broken', 'not json')
+        assert store.read_summary('broken') is None
+        store.write_summary('ok', fixture('content-summary.json'))
+        assert store.read_summary('ok') is not None
+
 
 class TestIndex:
-    def test_build_index_and_digest(self, tmp_path: Path) -> None:
-        crawl(FakeCampaign(), tmp_path)
-        entries = build_index(tmp_path)
-        assert [e.slug for e in entries] == ['hiddenway']
-        e = entries[0]
-        assert e.name == 'The Hidden Way'
-        assert e.counts == {'character': 1, 'post': 1, 'wiki': 2}
-        assert e.total_chars == sum(e.chars.values()) > 0
-        assert all(p.kind in ('wiki', 'character', 'post') for p in e.pages)
-        mass = next(p for p in e.pages if p.title == 'Mass combat')
-        assert mass.snippet.startswith('Mass combat Armies in Rokugan clash at dawn.')
+    def test_index_from_summary_alone(self, tmp_path: Path) -> None:
+        """The GM's first question - who has uploaded a lot - answered with no page fetched."""
+        crawl(FakeCampaign(), tmp_path, summary_only=True)
+        (entry,) = build_index(tmp_path, names={'hiddenway': 'The Hidden Way'})
+        assert entry.name == 'The Hidden Way'
+        assert entry.available == {'wiki': 2, 'post': 1, 'character': 1}
+        assert entry.total_available == 4
+        assert entry.counts == {}
+        assert [p.title for p in entry.pages] == [  # by kind, then title
+            'Moto Khunbish',
+            'Tea and Silk',
+            'Main Page',
+            'Mass combat',
+        ]
+        assert not any(p.cached for p in entry.pages)
         md = (tmp_path / 'index.md').read_text()
-        assert '## The Hidden Way (hiddenway)' in md
-        assert '1 characters, 1 posts, 2 wikis' in md
-        assert '[wiki] Mass combat' in md
+        assert 'publishes 1 characters, 1 posts, 2 wikis; cached no pages, 0 characters' in md
+        assert '[not cached]' in md
+        assert 'tags: hub, unicorn' in md
+
+    def test_index_after_a_crawl(self, tmp_path: Path) -> None:
+        crawl(FakeCampaign(), tmp_path)
+        (entry,) = build_index(tmp_path)
+        assert entry.name == 'The Hidden Way'  # from the cached front page
+        assert entry.counts == {'wiki': 2, 'post': 1, 'character': 1}
+        assert entry.total_chars > 0
+        assert all(p.cached for p in entry.pages)
+        mass = next(p for p in entry.pages if p.title == 'Mass combat')
+        assert mass.snippet.startswith('Mass combat Armies in Rokugan clash at dawn.')
+        khunbish = next(p for p in entry.pages if p.kind == 'character')
+        assert khunbish.tags == ('unicorn',)
         data = json.loads((tmp_path / 'index.json').read_text())
         assert data[0]['slug'] == 'hiddenway'
-        assert digest([]) == '# Obsidian Portal L5R campaigns - local index\n'
+        md = (tmp_path / 'index.md').read_text()
+        assert '## The Hidden Way (hiddenway)' in md
+        assert '[not cached]' not in md
 
-    def test_index_without_front_page_and_untitled(self, tmp_path: Path) -> None:
+    def test_index_of_a_link_discovered_campaign(self, tmp_path: Path) -> None:
+        crawl(FakeCampaign(''), tmp_path)
+        (entry,) = build_index(tmp_path)
+        assert entry.available == {}
+        assert entry.counts['wiki'] == 2  # discovered pages still counted
+        assert all(p.cached for p in entry.pages)
+
+    def test_index_edges(self, tmp_path: Path) -> None:
         m = Manifest('s', {'u': PageRecord('u', 'wiki', 200, '', 0, '', 'T')})
         m.save(tmp_path / 's' / 'manifest.json')
         (e,) = build_index(tmp_path)
         assert e.name == 's'
         assert e.pages[0].snippet == ''
         assert '(untitled)' in (tmp_path / 'index.md').read_text()
+        assert digest([]) == '# Obsidian Portal L5R campaigns - local index\n'
 
     def test_search(self, tmp_path: Path) -> None:
         crawl(FakeCampaign(), tmp_path)

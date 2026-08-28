@@ -36,6 +36,10 @@ How the consent signal works (measured 2026-08-27, see `census.py`):
   each once. The campaign DIRECTORY is deliberately not walked - Cloudflare challenges any
   paginated listing request, an undocumented but unambiguous wish; the diagnosis is in
   `census.py`.
+* Each campaign publishes `content_summary.json` (`summary.py`), its own list of every public
+  wiki page, post and character - and of the ones the owner marked GM-only, which we therefore
+  never request. It is the crawl list, so nothing outside what the owner published is asked for,
+  and it is reachable only with the same opted-in cookie.
 
 Entry point: `scripts/op_consent_census.py` at the repo root; the results land under the
 gitignored `webapp/opcache/opcrawl/` and are never committed - only this tooling is.
@@ -44,16 +48,21 @@ gitignored `webapp/opcache/opcrawl/` and are never committed - only this tooling
 from l7r.opcrawl.census import OWN_CAMPAIGNS, Census, CensusRow, run_census, summarize
 from l7r.opcrawl.pages import FrontPage, parse_exempt_slugs, parse_front_page
 from l7r.opcrawl.robots import RobotsPolicy, parse_robots
+from l7r.opcrawl.summary import ContentSummary, SummaryPage, parse_content_summary, summary_url
 
 __all__ = [
     'OWN_CAMPAIGNS',
     'Census',
+    'ContentSummary',
     'CensusRow',
     'FrontPage',
     'RobotsPolicy',
+    'SummaryPage',
+    'parse_content_summary',
     'parse_exempt_slugs',
     'parse_front_page',
     'parse_robots',
     'run_census',
+    'summary_url',
     'summarize',
 ]
