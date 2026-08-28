@@ -35,9 +35,11 @@ amount that the winner won by should be rounded down to the nearest increment of
 five ... but the rolls themselves are not rounded."*
 
 Note what the cap does NOT do: it applies to OPEN etiquette rolls only, which is
-the GM's literal scope. Whether a contested etiquette roll should also be capped is
-a question referred to the GM (see the spec's Review history); until they answer,
-the code does what the words say.
+the GM's literal scope. That was queried, and the answer closes it rather than
+narrowing it - **there is no such thing as a contested etiquette roll** (GM
+2026-08-28: *"there is no contested etiquette so that can't happen"*). The case the
+cap does not cover cannot arise, so the scoping is not a gap and does not want a
+guard. Recorded here because the question looks live to anyone reading the rule.
 """
 
 from __future__ import annotations
@@ -95,12 +97,12 @@ def render_open(rolls: Sequence[Roll], rule: RecordingRule = DEFAULT_RULE) -> st
     skills = {r.skill.lower() for r in usable}
     if len(skills) > 1:
         raise ValueError(f'one line holds one skill, got: {", ".join(sorted(skills))}')
-    # HIGHEST FIRST, and this is an inference rather than an instruction. The GM's
-    # one worked example runs 35 / 25 / 25 / 20 / 15 - perfectly descending, which
-    # five rolls land on by chance about once in 120 times. The competing reading is
-    # that the names are in a habitual party order and the ordering is coincidence;
-    # a single example cannot separate the two. Descending matches the only evidence
-    # there is, and the sort is one line to invert. FLAGGED FOR THE GM.
+    # HIGHEST FIRST. CONFIRMED BY THE GM (2026-08-28): *"ordering rolls from highest
+    # to lowest is intentional"*. It was originally inferred from their one worked
+    # example running 35 / 25 / 25 / 20 / 15 - perfectly descending, which five rolls
+    # land on by chance about once in 120 times - against the competing reading that
+    # the names were in a habitual party order. The inference was right; this is now
+    # an instruction, not a guess, so do not "restore" posting order.
     usable = sorted(usable, key=lambda r: record(r.total, r.skill, rule), reverse=True)
     names = ' / '.join(r.character for r in usable)
     totals = ' / '.join(str(record(r.total, r.skill, rule)) for r in usable)

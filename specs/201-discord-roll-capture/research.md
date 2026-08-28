@@ -211,12 +211,40 @@ Worth stating plainly because it sets expectations for the first live test: **un
 character-sheet endpoint ships, this feature captures roughly a third of the rolls** - the typed
 ones - and tells the GM precisely which ones it missed.
 
-## R12. The line's ORDERING is inferred, and is the one thing the GM should check first
+## R12. The line's ORDERING - inferred, then CONFIRMED
 
 The GM's single worked example reads `35 / 25 / 25 / 20 / 15` - perfectly descending. Five rolls
-land in descending order by chance about once in 120 times, so `render_open` sorts highest-first.
+land in descending order by chance about once in 120 times, so `render_open` was written to sort
+highest-first, against the competing reading that `Sadakichi / Moriko / Jimen / Tetsuro /
+Toshihiro` was a habitual party order.
 
-The competing reading is that `Sadakichi / Moriko / Jimen / Tetsuro / Toshihiro` is a habitual
-party order and the descent is coincidence. One example cannot separate them, and both are
-one-line changes (`sorted(..., reverse=True)` versus keeping posting order). Flagged for the GM
-rather than resolved, because guessing wrong here is invisible - every line would look plausible.
+**Confirmed by the GM 2026-08-28**: *"ordering rolls from highest to lowest is intentional"*. The
+inference was correct. It is now an instruction rather than a guess, recorded at the sort in
+`rules.py` so nobody restores posting order.
+
+## R13. There is no contested etiquette roll, so the cap's scope is not a gap
+
+The fidelity review flagged that FR-011 caps OPEN etiquette only - the GM's literal scope - while
+the GM's stated reason (politeness has a ceiling) would seem to apply to a contested etiquette roll
+too, and suggested confirming it.
+
+**The GM closed it rather than narrowing it** (2026-08-28): *"there is no contested etiquette so
+that can't happen."* The uncovered case does not exist in the game, so the scoping needs no guard
+and no follow-up. Recorded because the question looks live to anyone reading the rule, and this is
+the kind of thing that gets "fixed" by a later session that has not asked.
+
+## R14. Attribution has exactly one source, and it is the endpoint
+
+The parser reads a typed roll without any character-sheet endpoint, but it cannot say WHOSE roll it
+is - all Discord gives is an account id. Checked 2026-08-28 for an existing source:
+
+- The sheet's public index page (already scraped by `chargen/sheetroster.py`) carries character
+  names and gaming groups, but no owner Discord ids.
+- Obsidian Portal holds no Discord ids at all.
+
+**The GM's ruling** (2026-08-28): *"The L7R character sheet app knows who plays whom."* So
+`/api/characters` is the source, and it is on the critical path for BOTH input paths rather than
+just the image one - which raises its priority above where this feature's plan first placed it.
+
+`[discord_players]` in the gitignored secrets remains as a testing stopgap only. It is explicitly
+NOT to be maintained by hand, and should be deleted once the endpoint ships.

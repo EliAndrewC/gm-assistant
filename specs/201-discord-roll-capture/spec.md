@@ -261,10 +261,14 @@ The reviewer explicitly considered and WITHDREW three findings after reading `re
 grounds that each handles data outside the domain of a GM rule rather than carving out an exception
 inside one. Recorded here so a later reviewer does not re-raise them.
 
-Two items referred to the GM rather than changed, both after the implementation works: whether the
-Etiquette cap should also apply to CONTESTED etiquette rolls (the GM's words scope it to open rolls,
-but the stated reason - politeness has a ceiling - would apply to both), and whether a bare-number
-roll should inherit the conversation's skill.
+Two items were referred to the GM rather than changed. **Both are now answered (2026-08-28)**:
+the Etiquette cap's scope is not a gap because *"there is no contested etiquette so that can't
+happen"*, and the descending order of the line was confirmed as deliberate - *"ordering rolls from
+highest to lowest is intentional"*. A third answer settled attribution: *"The L7R character sheet
+app knows who plays whom"*, making `/api/characters` the single source and putting it on the
+critical path for the typed path as well as the image one. Details in research.md R12-R14. The
+remaining open question (a bare-number roll inheriting the conversation's skill) is unasked and
+unblocking.
 
 **Round 2** (2026-08-28, same agent, re-review of the two changes only): **FAITHFUL.** Both changes
 were judged applied "correctly and completely", with neither introducing a new addition, carve-out

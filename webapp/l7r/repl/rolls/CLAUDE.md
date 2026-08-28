@@ -34,13 +34,22 @@ author around that timestamp - **the join IS the detector**, which is why the en
 building and why an unmatched image is ignored silently rather than reported.
 
 **The typed path is primary, not a fallback.** 204 image posts against ~99 typed, split by PLAYER
-rather than by group: two Monday players and one Tuesday player type almost everything. It is also
-the only path that works with no endpoint at all, so it is the one to keep working.
+rather than by group: two Monday players and one Tuesday player type almost everything. It is the
+path that still PARSES with no endpoint at all - though see below, it cannot attribute without
+one.
 
-## Before the endpoints exist
+## Attribution needs the endpoint, and this is the honest limit today
 
-`[discord_players]` in `development-secrets.ini` maps `<discord_id> = <Character Name>` so typed
-rolls can be attributed today. `sheet.characters()` supersedes it when the endpoint lands.
+**The character-sheet app is the source of truth for who plays whom** (GM 2026-08-28), and it is
+the ONLY source: the sheet's public index page carries character names and groups but no owner
+Discord ids (checked 2026-08-28), and Obsidian Portal has no Discord ids at all. So
+`/api/characters` is on the critical path for BOTH input paths, not just the image one - the parser
+reads a typed roll perfectly well without it, but cannot say whose roll it is.
+
+`[discord_players]` in `development-secrets.ini` (`<discord_id> = <Character Name>`) exists as a
+stopgap for testing before that endpoint ships. It is NOT meant to be maintained by hand:
+`sheet.characters()` takes over the moment the endpoint exists, and the fallback should then be
+deleted rather than left to drift.
 
 ## Testing
 
