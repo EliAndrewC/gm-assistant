@@ -3,9 +3,11 @@
 `scripts/op_consent_census.py` (repo root) answers one question: which Legend of the Five Rings
 campaigns on Obsidian Portal have owners who turned on "allow bots"? It reads the site's own
 policy pages and then ONE front page of each opted-in campaign - never a campaign whose owner
-did not opt in, and never the campaign directory - and writes the answer under the gitignored
-`webapp/opcache/opcrawl/census-62.json`. The results are never committed; this tooling is
-(GM 2026-08-27).
+did not opt in, and never the campaign directory - and writes the answer, plus every
+campaign's downloaded pages, under the gitignored `webapp/opcache/opcrawl/` of the MAIN checkout -
+a single shared cache (`_shared_opcrawl_dir` resolves to main whether the tool runs from main or a
+clone, GM 2026-08-29), so a later session in a different clone finds earlier downloads. The cache
+is never committed; only this tooling is (GM 2026-08-27).
 
 | file | holds |
 |---|---|
