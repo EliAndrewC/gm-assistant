@@ -77,7 +77,7 @@ def route_cherrypy_logs() -> bool:
 
 def build_namespace() -> dict[str, Any]:
     ns = namespace()
-    ns['help_l7r'] = lambda: print(help_text())
+    ns['help_l7r'] = lambda full=True: print(help_text(full))
     ns['__name__'] = '__l7r_repl__'
     return ns
 

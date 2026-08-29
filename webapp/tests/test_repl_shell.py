@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from l7r.repl import COMMANDS, help_text, namespace
+from l7r.repl import BANNER, COMMANDS, help_text, namespace, undocumented
 from l7r.repl import shell as mod
 from l7r.repl.shell import TITLE, build_namespace, main, run_snippet, set_title, setup_readline
 
@@ -17,15 +17,24 @@ from l7r.repl.shell import TITLE, build_namespace, main, run_snippet, set_title,
 def test_namespace_and_banner() -> None:
     ns = namespace()
     assert {'d10', 'xky', 'prob', 'name', 'place'} <= ns.keys()
-    text = help_text()
+    # The STARTUP banner is a subset now; the full listing carries every row.
+    text = help_text(full=True)
     for command, _ in COMMANDS:
         assert command in text
     assert 'help_l7r()' in text
 
 
 def test_build_namespace_has_help(capsys: pytest.CaptureFixture[str]) -> None:
+    """help_l7r() defaults to the FULL listing - the GM's "easy way to look
+    something up or confirm for myself that something exists"."""
     ns = build_namespace()
     ns['help_l7r']()
+    assert help_text(full=True) in capsys.readouterr().out
+
+
+def test_help_l7r_can_still_show_the_short_form(capsys: pytest.CaptureFixture[str]) -> None:
+    ns = build_namespace()
+    ns['help_l7r'](False)
     assert help_text() in capsys.readouterr().out
 
 
@@ -153,3 +162,100 @@ class TestLauncher:
     def test_in_container_is_true_here(self) -> None:
         launcher = _load_launcher()
         assert launcher.in_container() is (Path('/gm-assistant').is_dir())
+
+
+class TestBannerAndShortcuts:
+    """The GM trimmed the banner on 2026-08-29 and asked for bare `m` / `f`."""
+
+    def test_the_startup_banner_lists_only_what_still_needs_reminding(self) -> None:
+        listed = [command for command, _ in COMMANDS if command in BANNER]
+        assert listed == [
+            'name()',
+            'names(f, 3)',
+            'village_name()',
+            'cache_status()',
+            'discern_honor("Otsuki", Jimen)',
+            'begin_conversation("Otsuki")',
+            'annotate()',
+            'end_conversation()',
+            'conversation_status()',
+        ]
+
+    def test_dropping_a_row_does_not_remove_the_function(self) -> None:
+        """The banner is a reminder, not the namespace - these are all still usable."""
+        ns = namespace()
+        for unlisted in (
+            'd10',
+            'xky',
+            'initiative',
+            'percent',
+            'prob',
+            'place',
+            'province_name',
+            'town_name',
+            'hamlet_name',
+            'bank',
+            'names',
+            'abandon_conversation',
+        ):
+            assert unlisted in ns, f'{unlisted} was delisted, not deleted'
+
+    def test_the_pc_constants_survive_the_trim(self) -> None:
+        ns = namespace()
+        assert 'Jimen' in ns
+        assert 'TSURUCHI_JIMEN' in ns
+
+    def test_m_and_f_are_bare_at_the_prompt(self) -> None:
+        """So `names(f, 3)` works without the quotes."""
+        ns = namespace()
+        assert ns['m'] == 'm'
+        assert ns['f'] == 'f'
+
+    def test_the_shortcuts_actually_drive_names(self) -> None:
+        ns = namespace()
+        picked = ns['name'](ns['f'])
+        assert isinstance(picked, str)
+        assert picked
+
+
+class TestFullListing:
+    """`help_l7r()` shows everything; the startup banner shows the short list."""
+
+    def test_the_startup_banner_is_a_strict_subset(self) -> None:
+        short = help_text()
+        full = help_text(full=True)
+        assert len(short.splitlines()) < len(full.splitlines())
+        for command in BANNER:
+            assert command in short
+
+    def test_the_full_listing_carries_the_rows_the_banner_hides(self) -> None:
+        full = help_text(full=True)
+        for hidden in ('d10()', 'xky(6, 3)', 'prob(6, 3)', 'place("village")'):
+            assert hidden in full
+            assert hidden not in help_text()
+
+    def test_every_banner_row_is_a_real_command(self) -> None:
+        """A typo in BANNER would silently drop a row from the startup banner."""
+        assert {command for command, _ in COMMANDS} >= BANNER
+
+    def test_nothing_in_the_namespace_is_invisible(self) -> None:
+        """The full listing plus the derived tail must cover the whole namespace."""
+        full = help_text(full=True)
+        for entry in namespace():
+            if entry.startswith('_'):
+                continue
+            assert entry in full, f'{entry} appears nowhere in help_l7r()'
+
+    def test_undocumented_is_derived_not_listed(self) -> None:
+        """A new export shows up without anyone remembering to add a row."""
+        assert 'actual_xky' in undocumented()
+        assert 'knack_rank' in undocumented()
+
+    def test_it_matches_whole_identifiers_not_substrings(self) -> None:
+        """`dist` was counted as documented because "mutually distinct" contains it.
+
+        A loose match loses exactly the names most likely to be looked up.
+        """
+        assert 'dist' in undocumented()
+        for covered in ('bank', 'PCS', 'province_name', 'abandon_conversation'):
+            assert covered not in undocumented(), f'{covered} is named in a row'
