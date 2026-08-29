@@ -159,7 +159,14 @@ line. Pure logic, no I/O.
 - **FR-010**: Open roll totals MUST be rounded down to the nearest 5.
 - **FR-011**: Open Etiquette totals MUST be capped at 40 before rounding.
 - **FR-012**: Contested rolls MUST show both sides' totals after each side's bonuses, unrounded,
-  plus the winner and the margin, with only the margin rounded down to the nearest 5.
+  plus the winner and the margin.
+
+  **SUPERSEDED IN PART, 2026-08-29**: the margin was originally "rounded down to the nearest 5",
+  which recorded a win by 2 as "by 0" - reading as no victory at all. The GM replaced it with BREAK
+  POINTS: `<5` for 0-4, `<10` for 5-9, then bands of ten (`>=10`, `>=20`, ...). Their reason:
+  *"we round to five for low numbers, but then when it comes to higher amounts, we start doing
+  increments of ten... you beat him by at least ten, or you beat him by at least twenty."* See
+  `rules.margin_text`. Open rolls are unaffected and still round down to 5.
 - **FR-013**: The recording rules MUST be expressed so that adding a further rule - another capped
   skill, another rounding increment - is a data or single-function change, not a restructuring.
 - **FR-014**: The result MUST be written into the NPC's PUBLIC Obsidian Portal bio, immediately

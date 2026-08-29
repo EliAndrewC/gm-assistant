@@ -207,7 +207,12 @@ def annotate(
             shown = _apply(roll, staged[index])
             print(f'  staged: {rules.render_annotated(shown, conv.npc_name)}')
     except Abandoned:
-        print(f'\nCtrl-C - nothing annotated ({len(staged)} discarded).')
+        # "discarded" would read as the roll-discard feature, which this is not:
+        # the rolls are all still there, unannotated, and annotate() can be re-run.
+        print(
+            f'\nCtrl-C - nothing saved ({len(staged)} choice(s) abandoned). '
+            'The rolls are untouched; run annotate() again when you are ready.'
+        )
         return 0
 
     for index, decision in staged.items():

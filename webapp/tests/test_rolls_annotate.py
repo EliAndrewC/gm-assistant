@@ -98,14 +98,14 @@ class TestRenderAnnotated:
             'Otsuki',
         )
         assert line == (
-            'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by 10 - claiming he never met the man'
+            'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10 - claiming he never met the man'
         )
 
     def test_the_npc_can_win(self) -> None:
         line = rules.render_annotated(
             replace(roll('Jimen', 'sincerity', 20, note='the lie'), opposed_total=44), 'Otsuki'
         )
-        assert 'Otsuki by 20' in line
+        assert 'Otsuki by >=20' in line
 
     def test_a_tie(self) -> None:
         line = rules.render_annotated(
@@ -260,7 +260,7 @@ class TestAnnotateMenu:
         ann.annotate(c, ask=lambda q: next(answers), mine=gmrolls.recent)
         assert c.rolls[0].opposed_total == 28
         assert c.rolls[0].contested
-        assert 'Jimen by 10' in rules.render_annotated(c.rolls[0], 'Otsuki')
+        assert 'Jimen by >=10' in rules.render_annotated(c.rolls[0], 'Otsuki')
 
     def test_contested_with_no_gm_rolls_falls_back_to_open(self, capsys: Any) -> None:
         c = conversation(roll('Jimen', 'sincerity', 41))
@@ -287,7 +287,7 @@ class TestAnnotateMenu:
 
         assert ann.annotate(c, ask=ask) == 0
         assert all(r.note == '' for r in c.rolls), 'nothing at all is saved'
-        assert 'nothing annotated' in capsys.readouterr().out
+        assert 'nothing saved' in capsys.readouterr().out
 
     def test_ctrl_d_is_the_same_as_ctrl_c(self) -> None:
         c = conversation(roll('A', 'law', 40))

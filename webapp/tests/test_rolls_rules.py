@@ -9,6 +9,7 @@ import pytest
 from l7r.repl.rolls.models import RecordingRule, Roll
 from l7r.repl.rolls.rules import (
     contest,
+    margin_text,
     record,
     render_contest,
     render_open,
@@ -93,17 +94,17 @@ class TestContest:
     """*"show each of the two roles ... the difference between them and who won.
     The amount that the winner won by should be rounded down."*"""
 
-    def test_scores_and_rounds_only_the_margin(self) -> None:
+    def test_scores_and_keeps_the_raw_margin(self) -> None:
         scored = contest(roll('Jimen', 41, 'sincerity'), roll('Otsuki', 28, 'sincerity'))
         assert scored.winner == 'Jimen'
-        assert scored.margin == 10  # 13 rounded down to a multiple of 5
+        assert scored.margin == 13, 'raw; the banding is applied when it is written'
         assert scored.left.total == 41  # *"the rolls themselves are not rounded"*
         assert scored.right.total == 28
 
     def test_right_side_can_win(self) -> None:
         scored = contest(roll('Jimen', 20, 'sincerity'), roll('Otsuki', 44, 'sincerity'))
         assert scored.winner == 'Otsuki'
-        assert scored.margin == 20
+        assert scored.margin == 24
 
     def test_a_tie_has_no_winner(self) -> None:
         scored = contest(roll('Jimen', 30, 'sincerity'), roll('Otsuki', 30, 'sincerity'))
@@ -147,8 +148,40 @@ class TestRenderOpen:
 class TestRenderContest:
     def test_names_both_totals_the_winner_and_the_margin(self) -> None:
         scored = contest(roll('Jimen', 41, 'sincerity'), roll('Otsuki', 28, 'sincerity'))
-        assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by 10'
+        assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10'
 
     def test_a_tie_says_so(self) -> None:
         scored = contest(roll('Jimen', 30, 'sincerity'), roll('Otsuki', 30, 'sincerity'))
         assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 30 vs 30, tied'
+
+
+class TestMarginBands:
+    """The GM's break points (2026-08-29), replacing "round the margin down to 5".
+
+    A win by 2 used to record as "by 0", which reads as no victory at all. The GM:
+    "we round to five for low numbers, but then when it comes to higher amounts, we
+    start doing increments of ten... you beat him by at least ten, or at least
+    twenty."
+    """
+
+    @pytest.mark.parametrize(
+        ('margin', 'expected'),
+        [
+            (0, '<5'),
+            (1, '<5'),
+            (4, '<5'),
+            (5, '<10'),
+            (9, '<10'),
+            (10, '>=10'),
+            (19, '>=10'),
+            (20, '>=20'),
+            (29, '>=20'),
+            (30, '>=30'),
+            (45, '>=40'),
+        ],
+    )
+    def test_bands(self, margin: int, expected: str) -> None:
+        assert margin_text(margin) == expected
+
+    def test_a_narrow_win_is_still_a_win(self) -> None:
+        assert margin_text(2) == '<5', 'never "by 0" - that reads as no victory'
