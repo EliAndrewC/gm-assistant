@@ -20,7 +20,7 @@ anger. Finishing normally (blank line at the roll prompt) commits what is done.
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 from l7r.repl import gmrolls
 from l7r.repl.rolls import rules
@@ -31,6 +31,36 @@ Ask = Callable[[str], str]
 
 class Abandoned(Exception):
     """The GM pressed Ctrl-C. Nothing is saved."""
+
+
+@dataclass(frozen=True)
+class Decision:
+    """One staged choice: annotate a roll, or throw it away.
+
+    Staged rather than applied as the GM works, so a Ctrl-C part way through can
+    discard the whole run - which is what the GM asked for.
+    """
+
+    note: str = ''
+    discard: bool = False
+    #: (opposing total, bonus to the player, bonus to the NPC) when contested.
+    contest: tuple[int, int, int] | None = None
+
+
+def _apply(roll: Roll, decision: Decision) -> Roll:
+    """Turn a staged decision into the roll it produces."""
+    if decision.discard:
+        return replace(roll, discarded=True)
+    if decision.contest is None:
+        return replace(roll, note=decision.note)
+    opposed, bonus_self, bonus_opposed = decision.contest
+    return replace(
+        roll,
+        note=decision.note,
+        opposed_total=opposed,
+        bonus_self=bonus_self,
+        bonus_opposed=bonus_opposed,
+    )
 
 
 def pending(conv: Conversation) -> list[tuple[int, Roll]]:
@@ -69,18 +99,46 @@ def _choose(ask: Ask, question: str, count: int, *, allow_blank: bool = False) -
         )
 
 
-def _contested_total(ask: Ask, mine: Sequence[gmrolls.GmRoll]) -> int | None:
-    """Which of the GM's own rolls opposed this one. None falls back to open."""
+def _number(ask: Ask, question: str, default: int) -> int:
+    """A signed number, defaulting to `default` on a blank line."""
+    while True:
+        answer = _prompt(ask, question)
+        if not answer:
+            return default
+        try:
+            return int(answer)
+        except ValueError:
+            print('  ? a whole number, or blank to accept the default')
+
+
+def _opposing(ask: Ask, roll: Roll, mine: Sequence[gmrolls.GmRoll]) -> tuple[int, int, int] | None:
+    """Pick the opposing roll and the bonus each side gets. None falls back to open.
+
+    Returns `(opposing total, bonus to the player, bonus to the NPC)`.
+
+    The default bonus is the free raises the rules grant - one per point of skill
+    difference, five each (`rules/02-skills.md:64` and :66). The player's skill comes
+    from the rank the character-sheet app recorded when it has one, which is EXACT;
+    the NPC's is inferred from their pool, which is not. Either can be overridden,
+    which is the whole reason the GM asked for the prompt.
+    """
     if not mine:
-        print('  You have made no rolls this conversation, so there is nothing to contest')
-        print('  against. Recording it as open.')
+        print('  You have no recent rolls to contest against. Recording it as open.')
         return None
-    print('  Your rolls this conversation:')
+    print('  Your recent rolls:')
     for position, entry in enumerate(mine, start=1):
-        print(f'    {position}. {entry.describe()}')
+        print(f'    {position}. {entry.describe()}  [implies {entry.skill}]')
     chosen = _choose(ask, '  Which of yours? (number) > ', len(mine))
     assert chosen is not None  # allow_blank is False
-    return mine[chosen].total
+    opponent = mine[chosen]
+    theirs, ours = rules.free_raises(roll.rank, opponent.skill)
+    if roll.rank is None:
+        print(f'  {roll.character} has no recorded rank, so no free raises are inferred.')
+    else:
+        print(f'  Free raises: {roll.character} {roll.skill} {roll.rank} vs yours {opponent.skill}')
+    bonus_self = _number(ask, f'  Bonus to {roll.character}? [{theirs}] > ', theirs)
+    bonus_opposed = _number(ask, f'  Bonus to your side? [{ours}] > ', ours)
+    return opponent.total, bonus_self, bonus_opposed
 
 
 def annotate(
@@ -103,7 +161,7 @@ def annotate(
         print('Nothing waiting to be annotated.')
         return 0
 
-    staged: dict[int, tuple[str, int | None]] = {}
+    staged: dict[int, Decision] = {}
     try:
         while True:
             waiting = [item for item in pending(conv) if item[0] not in staged]
@@ -129,24 +187,33 @@ def annotate(
             # the "which?" question is skipped, and without this the GM would have no
             # way to stop except Ctrl-C - which discards everything already staged.
             kind = ''
-            while kind not in ('o', 'c'):
-                kind = _prompt(ask, '  Open or contested? [o/c, blank to finish] > ').lower()[:1]
+            while kind not in ('o', 'c', 'd'):
+                kind = _prompt(
+                    ask, '  Open, contested, or discard? [o/c/d, blank to finish] > '
+                ).lower()[:1]
                 if not kind:
                     break
             if not kind:
                 break
-            opposed = _contested_total(ask, list(mine())) if kind == 'c' else None
+            if kind == 'd':
+                staged[index] = Decision(discard=True)
+                print('  staged: discarded')
+                continue
+            opposed = _opposing(ask, roll, list(mine())) if kind == 'c' else None
             note = ''
             while not note:
                 note = _prompt(ask, '  What was it for? > ')
-            staged[index] = (note, opposed)
-            shown = replace(roll, note=note, opposed_total=opposed)
+            staged[index] = Decision(note=note, contest=opposed)
+            shown = _apply(roll, staged[index])
             print(f'  staged: {rules.render_annotated(shown, conv.npc_name)}')
     except Abandoned:
         print(f'\nCtrl-C - nothing annotated ({len(staged)} discarded).')
         return 0
 
-    for index, (note, opposed) in staged.items():
-        conv.rolls[index] = replace(conv.rolls[index], note=note, opposed_total=opposed)
-    print(f'Annotated {len(staged)} roll(s).')
+    for index, decision in staged.items():
+        conv.rolls[index] = _apply(conv.rolls[index], decision)
+    discarded = sum(1 for decision in staged.values() if decision.discard)
+    kept = len(staged) - discarded
+    tail = f', {discarded} discarded' if discarded else ''
+    print(f'Annotated {kept} roll(s){tail}.')
     return len(staged)

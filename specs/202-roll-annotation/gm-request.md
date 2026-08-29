@@ -114,3 +114,53 @@ that had not been proposed and chose it over their own earlier suggestion:
 > 15` as the mechanism For applying a bonus after seeing the results of the role, which is perfect.
 > that can be the thing that we do instead of the `apply_bonus_to_previous_roll()` function, which
 > is even better.
+
+## Follow-up requirements (2026-08-29, after first use)
+
+Three changes, given after the first version was built and tried.
+
+### Rolls made BEFORE the conversation opens must be available
+
+This REVERSES FR-011 as originally written, and the reversal comes from the GM's actual workflow
+rather than a change of mind about the principle:
+
+> I would like to be able to roll the NPCs side before opening. That is actually the most common
+> workflow is that by the time I go to annotate something, I have already made the role, which I
+> expect to mark as being paired with a role made by a player character that I am about to annotate.
+
+### Discarding a roll made in error
+
+> When selecting a role to annotate, I should also be able to discard the role. Like, if somebody
+> made it in error, then I should be able to mark it as something which gets ignored and not
+> recorded.
+
+### Contested rolls carry automatic bonuses
+
+> One last thing about recording contested roles is that contested roles automatically get some
+> bonuses. The most notable one is that whoever's skill is higher gets a number of free raises equal
+> to the difference between the two skills. So for example, if two people are making a contested law
+> roll, and one character has two points of the law skill, and a different character has four points
+> of the law skill, then that character will get a plus ten to their role because their law skill is
+> two points higher than the other, which is two free raises, which is plus ten.
+
+> Thus, when I select a role as being contested, you should present me with a menu selection, which
+> allows me to indicate what the bonus that is applied to one side or the other is. You should select
+> a default value based on the two roles that were made. For example, if one character made a 7k4 Law
+> roll, then we can infer that their loss skill is probably three. By doing this for each character,
+> we can. infer what the total net bonus was to one side or another. This is not completely reliable
+> because there are things that can cause extra dice to be rolled. Therefore, I should be able to
+> override this default value by entering my own value.
+
+> This is also important because there are other things that can add to or subtract from these
+> various roles. For example, a player who has used the Oppose Knowledge skill might be applying a
+> penalty to the NPC, though in this case I would track that with a `_ - 6` (if the amount subtracted
+> was 6) from the NPC roll. But other things can provice bonuses, including circumstances and role
+> playing and the result of previous roles, which there would not be a good general purpose way to
+> track. Therefore, what is probably easiest is for me to be able to indicate the total net bonus or
+> penalty being applied to both sides.
+
+> It is important that we track the difference between bonuses and penalties because, for example, a
+> player whose Opponent received two free raises. should not have this reflected by having minus ten
+> applied to their own role because the value of their own role is still significant in end of
+> itself. It makes a difference whether they got a 30 or a 40 even if This is "only" an accounting
+> mechanism and the difference between their role and their opponent's role did not change.

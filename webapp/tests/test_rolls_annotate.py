@@ -252,11 +252,11 @@ class TestAnnotateMenu:
 
     def test_a_contested_annotation_uses_one_of_the_gms_rolls(self) -> None:
         c = conversation(roll('Jimen', 'sincerity', 41))
-        gmrolls.start()
-        entry = gmrolls.record((10, 9, 8, 1), 3, 20)
-        assert entry is not None
+        gmrolls.clear()
+        entry = gmrolls.record((10, 9, 8, 1), 3, 20, asked=(4, 3))
         entry.bonus = 8
-        answers = iter(['c', '1', 'claiming he never met the man'])
+        # two blanks accept the inferred per-side bonuses added by the follow-up
+        answers = iter(['c', '1', '', '', 'claiming he never met the man'])
         ann.annotate(c, ask=lambda q: next(answers), mine=gmrolls.recent)
         assert c.rolls[0].opposed_total == 28
         assert c.rolls[0].contested
@@ -267,7 +267,7 @@ class TestAnnotateMenu:
         answers = iter(['c', 'the lie'])
         ann.annotate(c, ask=lambda q: next(answers), mine=lambda: ())
         assert c.rolls[0].opposed_total is None
-        assert 'no rolls this conversation' in capsys.readouterr().out
+        assert 'no recent rolls' in capsys.readouterr().out
 
     def test_ctrl_c_discards_everything_staged(self, capsys: Any) -> None:
         """Four annotated then Ctrl-C loses all four - the literal reading."""
