@@ -279,7 +279,12 @@ def _tick(
     lines = tuple(rules.render_lines(conv.rolls))
     if not lines or lines == conv.written:
         return False
-    if conv.written and clock() - conv.written_at < debounce:
+    # `debounce > 0` guards the guard: end_conversation and the exit hook pass 0.0
+    # meaning "write now, whatever just happened". Without it, a written_at that is
+    # ahead of the clock - a forced value in a test, or a monotonic clock that has
+    # not caught up - makes the elapsed time negative and blocks the FINAL write,
+    # which is the one write that must never be skipped.
+    if conv.written and debounce > 0 and clock() - conv.written_at < debounce:
         return False
     body = str((get_body(conv.npc_id) or {}).get('bio') or '')
     update(conv.npc_id, bio=biomod.rewrite(body, conv.written, lines))
@@ -376,6 +381,39 @@ def abandon_conversation() -> None:
     with _lock:
         _open = None
     print(f'Threw away {len(conv.rolls)} roll(s) for {conv.npc_name}. Nothing written.')
+
+
+def close_open_conversation(**kwargs: Any) -> str:
+    """Write out an open conversation on the way down. Never raises.
+
+    Registered with `atexit` by the REPL, because quitting with one open loses
+    real work and it is not obvious that it does. `end_conversation` performs two
+    things the watcher never gets to: a FINAL collect, catching rolls posted since
+    the last poll, and a write with the debounce DISABLED, flushing everything
+    collected since the last write. Without this hook, quitting inside the debounce
+    window silently discards up to `WRITE_DEBOUNCE_SECONDS` of rolls plus up to
+    `POLL_SECONDS` of uncollected ones - and they live only in memory, so nothing
+    recovers them.
+
+    Exceptions are swallowed deliberately: an interpreter on its way out must not
+    be held up or made to fail by Obsidian Portal being unreachable. Losing the
+    write is bad; hanging the GM's terminal on exit is worse.
+
+    `kwargs` forward to `end_conversation`, which exists so this is testable at all:
+    that function takes its boundaries as default arguments bound at import (the
+    project's injectable-boundary convention), and a wrapper taking none of its own
+    would leave nothing to inject. `atexit` calls it with no arguments and gets the
+    real ones - see research.md R16 for the day this shape bit silently.
+    """
+    if _open is None:
+        return ''
+    name = _open.npc_name
+    print(f'Closing the conversation with {name} before exit.')
+    try:
+        return end_conversation(**kwargs)
+    except Exception as exc:  # noqa: BLE001 - exiting must not fail
+        print(f'  ! could not write the last rolls for {name}: {exc}')
+        return ''
 
 
 def conversation_status() -> Conversation | None:

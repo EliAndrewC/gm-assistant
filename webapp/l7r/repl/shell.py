@@ -9,6 +9,7 @@ script just runs. ``-i`` after a snippet stays interactive afterwards.
 from __future__ import annotations
 
 import ast
+import atexit
 import code
 import contextlib
 import logging
@@ -22,6 +23,7 @@ from typing import Any
 from l7r.repl import help_text, namespace
 from l7r.repl.names import warm_caches
 from l7r.repl.rolls import console
+from l7r.repl.rolls.conversation import close_open_conversation
 
 HISTORY = Path(os.environ.get('L7R_REPL_HISTORY', Path.home() / '.l7r_repl_history'))
 TITLE = 'L7R repl >>>'
@@ -137,6 +139,10 @@ def main(
     set_title()
     # The roll watcher and CherryPy both print from outside the prompt's control.
     route_cherrypy_logs()
+    # An open conversation holds collected rolls in memory and writes them only on a
+    # debounce, so quitting without closing it discards real work. The watcher is a
+    # daemon thread and simply dies with the process; this is what flushes.
+    atexit.register(close_open_conversation)
     # Roster caches warm in the background so the prompt appears at once
     # (GM 2026-08-27); a pick before it finishes waits on the refresh lock.
     threading.Thread(target=warm_caches, name='l7r-cache-warm', daemon=True).start()

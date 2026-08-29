@@ -10,6 +10,7 @@ from __future__ import annotations
 from l7r.repl.rolls.conversation import (
     abandon_conversation,
     begin_conversation,
+    close_open_conversation,
     collect,
     conversation_status,
     end_conversation,
@@ -24,6 +25,7 @@ __all__ = [
     'Roll',
     'abandon_conversation',
     'begin_conversation',
+    'close_open_conversation',
     'collect',
     'contest',
     'conversation_status',
