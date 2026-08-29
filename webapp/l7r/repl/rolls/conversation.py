@@ -27,7 +27,7 @@ from typing import Any
 from chargen import op
 from chargen.opsynth import MatchResult, match_character
 from l7r.repl.rolls import bio as biomod
-from l7r.repl.rolls import discord, rules, sheet
+from l7r.repl.rolls import console, discord, rules, sheet
 from l7r.repl.rolls.models import Conversation, RecordingRule, Roll
 from l7r.repl.rolls.parse import parse_message
 from l7r.repl.rolls.skills import load_skills
@@ -273,7 +273,7 @@ def _tick(
     if announce:
         for roll in conv.rolls[before:]:
             rank = f' @{roll.rank}' if roll.rank is not None else ''
-            print(f'  + {roll.character}: {roll.skill} {roll.total}{rank}')
+            say(f'  + {roll.character}: {roll.skill} {roll.total}{rank}')
     if not conv.rolls:
         return False
     lines = tuple(rules.render_lines(conv.rolls))
@@ -287,7 +287,7 @@ def _tick(
     conv.written_at = clock()
     if announce:
         for line in lines:
-            print(f'  -> {conv.npc_name}: {line}')
+            say(f'  -> {conv.npc_name}: {line}')
     return True
 
 
@@ -308,7 +308,7 @@ def start_watching(conv: Conversation, *, interval: float = POLL_SECONDS, **kwar
             try:
                 _tick(conv, **kwargs)
             except Exception as exc:  # noqa: BLE001 - a dead watcher must not be silent
-                print(f'  ! watching {conv.npc_name}: {exc}')
+                say(f'  ! watching {conv.npc_name}: {exc}')
 
     _watcher = threading.Thread(target=loop, name='l7r-roll-watch', daemon=True)
     _watcher.start()
@@ -391,6 +391,16 @@ def conversation_status() -> Conversation | None:
         print('  no rolls yet')
     _report(_open)
     return _open
+
+
+def say(text: str) -> None:
+    """Print from the watcher thread without disturbing the prompt.
+
+    Everything the WATCHER emits goes through here; everything the GM triggers
+    directly (begin/end/status) uses plain `print`, because there is no prompt to
+    preserve while their own call is running.
+    """
+    console.print_above(text)
 
 
 def resolve_channels(channel: str | None) -> tuple[str, ...]:

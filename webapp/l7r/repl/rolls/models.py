@@ -75,7 +75,7 @@ class RecordingRule:
     caps: Mapping[str, int] = field(default_factory=lambda: {'etiquette': 40})
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class Conversation:
     """The one piece of mutable state in the feature. At most one is open.
 
@@ -97,6 +97,18 @@ class Conversation:
     written: tuple[str, ...] = ()
     #: Monotonic timestamp of that write, for the debounce.
     written_at: float = 0.0
+
+    def __repr__(self) -> str:
+        """One line, because the REPL echoes whatever `begin_conversation` returns.
+
+        The generated dataclass repr printed the entire Obsidian Portal record, every
+        channel id and every empty field - about 700 characters of noise straight
+        after the one line that actually said what happened. The object still carries
+        all of it; it just does not shout it.
+        """
+        rolls = f'{len(self.rolls)} roll' + ('' if len(self.rolls) == 1 else 's')
+        watching = f'{len(self.channels)} channel' + ('' if len(self.channels) == 1 else 's')
+        return f'<talking to {self.npc_name}: {rolls}, watching {watching}>'
 
     @property
     def npc_name(self) -> str:
