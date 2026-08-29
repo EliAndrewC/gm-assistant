@@ -404,3 +404,30 @@ one and call it a fix.
 finding every place the old rule was asserted - especially acceptance scenarios, which read as tests
 and get implemented as tests. Grepping for the requirement's number would not have found any of the
 five: the old rule was restated in prose four times without once naming FR-011.
+
+## Follow-up round 2 (2026-08-29), implemented directly
+
+Three rulings after the first follow-up landed. None needed a spec cycle - each is a rule the GM
+stated exactly, which CLAUDE.md routes to "just do the work directly".
+
+**The character-sheet rank is the default, confirmed.** The addition flagged in Assumptions is
+ratified: *"When you have a character sheet and thus you know the exact rank, then you should indeed
+default to that value."* The GM also named the case it cannot cover - the Otherworldliness school
+knack temporarily raises a skill for one roll, which the app shows if the player rolls there but not
+if they simply post a number - and ruled the override sufficient: *"The fact that I am able to
+override this and apply bonuses before we lock in what is recorded on Obsidian portal means that we
+are always able to handle these sorts of interactions even if there is not a built in way to infer
+the correct thing in every case."* So the inference is not worth hardening further.
+
+**Ctrl-C, confirmed as scoped to the menu run.** The GM checked: *"I assume that you just mean the
+run of the annotate function and not that we are actually getting rid of anything from our records."*
+Correct, and now verified in the code rather than from memory - the staged decisions are a local
+dict; `conv.rolls` is untouched, so every roll stays collected and unannotated and `annotate()` can
+be re-run from scratch. The message said "nothing annotated (2 discarded)", where "discarded" now
+also names the roll-discard feature; reworded to "nothing saved (2 choice(s) abandoned). The rolls
+are untouched."
+
+**Margin BREAK POINTS replace rounding the margin to 5.** `<5` / `<10` / `>=10` / `>=20` / ... This
+supersedes feature 201's FR-012 in part, noted there too. `Contest.margin` now holds the RAW
+difference and the banding is applied at render time, since it is presentation rather than a
+recorded value.

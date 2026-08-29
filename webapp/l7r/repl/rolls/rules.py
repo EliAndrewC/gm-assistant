@@ -113,9 +113,37 @@ def record(total: int, skill: str, rule: RecordingRule = DEFAULT_RULE) -> int:
     return round_down(capped, rule.increment)
 
 
+#: The margin bands the GM records a contested victory in (2026-08-29). NOT the
+#: same as rounding an open roll down to 5, and it replaces the earlier "round the
+#: margin down to the nearest 5" from feature 201's FR-012.
+#:
+#: The GM's reason is that these are BREAK POINTS, not measurements: what matters is
+#: which band you cleared, and the bands get coarser as they get higher. Their
+#: words: *"we round to five for low numbers, but then when it comes to higher
+#: amounts, we start doing increments of ten... you beat him by at least ten, or you
+#: beat him by at least twenty."*
+#:
+#: It also fixes a wart the old rule produced: a win by 2 rounded down to "by 0",
+#: which reads as no victory at all. It is now "by <5" - a win, in the smallest band.
+def margin_text(margin: int) -> str:
+    """How a contested victory margin is written down.
+
+    0-4   -> <5        (a win, but inside the smallest band)
+    5-9   -> <10
+    10-19 -> >=10      (from here up, bands of ten)
+    20-29 -> >=20
+    """
+    if margin < 5:
+        return '<5'
+    if margin < 10:
+        return '<10'
+    return f'>={(margin // 10) * 10}'
+
+
 def contest(left: Roll, right: Roll, rule: RecordingRule = DEFAULT_RULE) -> Contest:
-    """Score one roll against another. Totals stay raw; only the margin rounds."""
-    margin = round_down(abs(left.total - right.total), rule.increment)
+    """Score one roll against another. Totals stay raw, and so does the margin -
+    the banding in `margin_text` is presentation, applied when it is written."""
+    margin = abs(left.total - right.total)
     if left.total == right.total:
         winner = None
     else:
@@ -215,12 +243,11 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
     # Each side AFTER its own bonus - feature 201's rule ("adjusted for bonuses on
     # each side") and the GM's per-side insistence are the same requirement.
     mine, theirs = roll.final_total, roll.final_opposed or 0
-    margin = round_down(abs(mine - theirs), rule.increment)
     if mine == theirs:
         outcome = 'tied'
     else:
         winner = roll.character if mine > theirs else npc
-        outcome = f'{winner} by {margin}'
+        outcome = f'{winner} by {margin_text(abs(mine - theirs))}'
     return f'{roll.character} vs {npc} {roll.skill.lower()}: {mine} vs {theirs}, {outcome}{tail}'
 
 
@@ -239,4 +266,4 @@ def render_contest(scored: Contest) -> str:
     )
     if scored.tied:
         return f'{head}, tied'
-    return f'{head}, {scored.winner} by {scored.margin}'
+    return f'{head}, {scored.winner} by {margin_text(scored.margin)}'

@@ -123,7 +123,7 @@ class TestPerSideBonuses:
         r = roll('Jimen', 'law', 30, note='the argument', opposed_total=30, bonus_opposed=10)
         line = rules.render_annotated(r, 'Otsuki')
         assert '30 vs 40' in line, "Jimen's own 30 survives"
-        assert 'Otsuki by 10' in line
+        assert 'Otsuki by >=10' in line
 
     def test_a_bonus_to_the_player_raises_the_player(self) -> None:
         r = roll('Jimen', 'law', 30, note='the argument', opposed_total=30, bonus_self=10)
