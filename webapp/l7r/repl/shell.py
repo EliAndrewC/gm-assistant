@@ -11,6 +11,7 @@ from __future__ import annotations
 import ast
 import code
 import contextlib
+import logging
 import os
 import sys
 import threading
@@ -20,6 +21,7 @@ from typing import Any
 
 from l7r.repl import help_text, namespace
 from l7r.repl.names import warm_caches
+from l7r.repl.rolls import console
 
 HISTORY = Path(os.environ.get('L7R_REPL_HISTORY', Path.home() / '.l7r_repl_history'))
 TITLE = 'L7R repl >>>'
@@ -33,6 +35,41 @@ def set_title(title: str = TITLE, out: Any = None) -> bool:
         return False
     stream.write(f'\033]0;{title}\007')
     stream.flush()
+    return True
+
+
+class PromptSafeHandler(logging.Handler):
+    """A logging handler that writes above the REPL prompt instead of through it."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        console.print_above(f'  . {record.getMessage()}')
+
+
+def route_cherrypy_logs() -> bool:
+    """Send CherryPy's logger above the prompt rather than straight at the cursor.
+
+    `chargen/op.py` reports through `cherrypy.log`, which is right for a running
+    server and wrong for a prompt: the GM saw
+
+        [29/Aug/2026:00:24:10]  Updated character eb7c70a9...: ['bio']
+
+    land between the watcher's two lines, timestamped and un-prefixed. Silencing it
+    outright would have been easier and worse - the same logger carries the
+    fail-soft "Failed to fetch character body" messages, which matter. So the screen
+    handler comes off and ours goes on, and everything CherryPy says now obeys the
+    same prompt discipline as the watcher.
+
+    False when CherryPy is not installed, which is not an error here.
+    """
+    try:
+        import cherrypy
+    except ImportError:  # pragma: no cover - cherrypy is a hard dependency of the webapp
+        return False
+    cherrypy.log.screen = False
+    for existing in list(cherrypy.log.error_log.handlers):
+        if isinstance(existing, PromptSafeHandler):
+            return True
+    cherrypy.log.error_log.addHandler(PromptSafeHandler())
     return True
 
 
@@ -98,6 +135,8 @@ def main(
             return 0
     readline_setup(HISTORY, ns)
     set_title()
+    # The roll watcher and CherryPy both print from outside the prompt's control.
+    route_cherrypy_logs()
     # Roster caches warm in the background so the prompt appears at once
     # (GM 2026-08-27); a pick before it finishes waits on the refresh lock.
     threading.Thread(target=warm_caches, name='l7r-cache-warm', daemon=True).start()

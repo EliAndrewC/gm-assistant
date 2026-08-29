@@ -355,3 +355,38 @@ coalesce. `end_conversation()` forces a final write with the debounce disabled.
 
 This is the second thing in this feature that the tests could not have caught: a task marked done
 in `tasks.md` whose code was never written. Checkboxes are not evidence.
+
+## R20. Output from a background thread has to respect the prompt
+
+The watcher prints from a daemon thread, so its output landed wherever the cursor was - inside the
+`>>> ` the GM was looking at, with no prompt afterwards until they pressed Enter:
+
+```
+>>>   + Roll Tester: etiquette 28 @1
+[29/Aug/2026:00:24:10]  Updated character eb7c70a9...: ['bio']
+  -> Hatsu: Roll Tester etiquette: 25
+
+>>>
+```
+
+Three separate causes, all display rather than logic:
+
+1. **The prompt was not redrawn.** `readline` still holds what the GM has typed, so the fix is the
+   standard dance: `\r` to column 0, `\x1b[K` to erase the prompt line, write the message, then
+   re-emit the prompt followed by `readline.get_line_buffer()`. Output then appears ABOVE a prompt
+   that never moves. TTY only - a pipe must not carry escape codes, the rule `set_title` already
+   follows. Accepted limit: the cursor lands at the end of the redrawn buffer, so a GM who had
+   moved left mid-line keeps every character but loses their column.
+2. **CherryPy logs straight at the cursor.** `chargen/op.py` reports through `cherrypy.log`, which
+   is right for a server and wrong for a prompt. Silencing it would have been easier and worse -
+   the same logger carries the fail-soft "Failed to fetch character body" messages - so the screen
+   handler comes off and a `PromptSafeHandler` goes on, and CherryPy now obeys the same discipline.
+3. **`begin_conversation` echoed its whole return value.** The generated dataclass repr printed the
+   entire Obsidian Portal record, every channel id and every empty field - roughly 700 characters
+   of noise directly under the one line that said what happened. `Conversation.__repr__` is now
+   `<talking to Hatsu: 1 roll, watching 3 channels>`. The object still carries everything; it just
+   does not shout it.
+
+Worth noting what this was NOT: no logic was wrong, every test passed, and the feature worked
+correctly throughout. It was unusable-feeling anyway. A tool the GM drives from a prompt is judged
+at the prompt.
