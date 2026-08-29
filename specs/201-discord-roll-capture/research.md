@@ -390,3 +390,36 @@ Three separate causes, all display rather than logic:
 Worth noting what this was NOT: no logic was wrong, every test passed, and the feature worked
 correctly throughout. It was unusable-feeling anyway. A tool the GM drives from a prompt is judged
 at the prompt.
+
+## R21. Quitting with a conversation open lost rolls, and it did not look like it would
+
+The GM asked whether an automatic `end_conversation()` on exit mattered, guessing that *"all that
+probably does is stop the background poller anyway"*. It does two more things, and both are the
+point:
+
+- a FINAL collect, catching rolls posted since the last poll (up to `POLL_SECONDS`), and
+- a write with the debounce DISABLED, flushing everything collected since the last write (up to
+  `WRITE_DEBOUNCE_SECONDS`).
+
+The watcher is a daemon thread, so it simply dies with the process. Nothing else writes. Quitting
+inside the debounce window therefore discarded up to about two minutes of real rolls, held only in
+memory, with no error and no sign anything had gone. `atexit.register(close_open_conversation)` in
+`shell.main` now flushes on the way out; exceptions are swallowed there deliberately, because
+hanging or crashing the GM's terminal on exit would be worse than losing the write.
+
+**Two defects surfaced while building it, both instances of shapes already recorded here:**
+
+- `close_open_conversation()` took no arguments, so nothing could be injected and it was untestable
+  - the same default-arguments-bound-at-import shape as R16. It now forwards `**kwargs` to
+  `end_conversation`.
+- The debounce guard blocked even when `debounce=0.0`. A `written_at` ahead of the clock makes the
+  elapsed time negative, and `negative < 0.0` is true, so the FORCED write - the one that must never
+  be skipped - was skipped. Now guarded with `debounce > 0`, and pinned by a test.
+
+**Accepted limitation, deliberately.** A hard kill (SIGKILL, container stop, power loss) still loses
+whatever the debounce is holding, because unwritten rolls live only in memory. Priced and declined:
+persisting the conversation to disk on every poll would make it durable, at the cost of a state file
+to keep, migrate and reconcile against Obsidian Portal - for a window of at most two minutes, during
+a game the GM is sitting in front of. Writing on every roll instead was also declined: that is the
+per-roll write the GM explicitly did not want. If a hard kill ever does cost a real round, the cheap
+first move is lowering `WRITE_DEBOUNCE_SECONDS`, not adding a store.

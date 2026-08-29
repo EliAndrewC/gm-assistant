@@ -9,6 +9,7 @@ the write to Obsidian Portal is coalesced.
 from __future__ import annotations
 
 import threading
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -195,6 +196,27 @@ class TestTick:
         assert c.written == ('B / A etiquette: 30 / 20',)
         assert str(seen['bio']).count('etiquette:') == 1, 'the line is REPLACED, not stacked'
 
+    def test_a_zero_debounce_always_writes(self) -> None:
+        """end_conversation and the exit hook pass 0.0 meaning "write now".
+
+        A written_at ahead of the clock made the elapsed time negative, and the
+        guard then blocked the one write that must never be skipped.
+        """
+        c = conversation()
+        seen, update = recorder()
+        c.written = ('A etiquette: 20',)
+        c.written_at = 1e9  # ahead of any monotonic reading
+        assert conv._tick(
+            c,
+            collector=adder(roll('B', 'etiquette', 31)),
+            get_body=lambda cid: {'bio': BIO},
+            update=update,
+            clock=lambda: 5.0,
+            debounce=0.0,
+            announce=False,
+        )
+        assert seen, 'a forced write must not be blocked by the clock'
+
     def test_a_second_skill_becomes_a_second_line(self) -> None:
         c = conversation()
         seen, update = recorder()
@@ -301,6 +323,56 @@ class TestWatcher:
     def test_stopping_when_nothing_runs_is_harmless(self) -> None:
         conv.stop_watching(timeout=0.1)
         assert conv._watcher is None
+
+
+class TestCloseOnExit:
+    """Quitting with a conversation open would otherwise discard real work.
+
+    `end_conversation` does two things the watcher never gets to: a final collect,
+    and a write with the debounce disabled. A daemon thread just dies with the
+    process, so without an exit hook the GM loses up to WRITE_DEBOUNCE_SECONDS of
+    rolls plus up to POLL_SECONDS of uncollected ones - held only in memory.
+    """
+
+    def test_nothing_open_is_a_no_op(self) -> None:
+        conv._open = None
+        assert conv.close_open_conversation() == ''
+
+    def test_it_flushes_rolls_the_debounce_was_still_holding(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        c = conversation()
+        conv._open = c
+        seen, update = recorder()
+        # A write happened a moment ago, and a further roll arrived after it - the
+        # exact window the debounce holds open and a plain exit would discard.
+        c.written = ('A etiquette: 20',)
+        c.written_at = time.monotonic()
+        c.rolls.extend([roll('A', 'etiquette', 23), roll('B', 'etiquette', 31)])
+        written = conv.close_open_conversation(
+            get_body=lambda cid: {'bio': BIO},
+            update=update,
+            collector=lambda c: c,
+        )
+        assert written == 'B / A etiquette: 30 / 20', 'the later roll must reach the record'
+        assert seen, 'the final write must happen despite the debounce'
+        assert conv._open is None
+
+    def test_a_failure_on_the_way_out_is_reported_not_raised(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: Any
+    ) -> None:
+        c = conversation()
+        conv._open = c
+        c.rolls.append(roll('A', 'etiquette', 23))
+
+        def explode(*args: Any, **kwargs: Any) -> Any:
+            raise RuntimeError('obsidian portal unreachable')
+
+        monkeypatch.setattr(conv, 'end_conversation', explode)
+        assert conv.close_open_conversation() == ''
+        out = capsys.readouterr().out
+        assert 'could not write the last rolls for Hatsu' in out
+        assert 'obsidian portal unreachable' in out
 
 
 class TestBotAuthoredJoin:
