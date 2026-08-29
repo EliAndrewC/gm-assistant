@@ -80,7 +80,7 @@ not.
 
 The GM runs `annotate()` and is shown the rolls awaiting annotation. They pick one, say whether it
 was open or contested, and describe what it was for. A contested roll is paired with one of the
-GM's own rolls made during the conversation.
+GM's own recorded rolls, including one made before the conversation opened.
 
 **Why this priority**: Nothing above works without it - it is the only way a roll becomes
 annotated.
@@ -94,11 +94,14 @@ annotated.
 2. **Given** exactly one unannotated roll, **When** `annotate()` runs, **Then** it goes straight to
    that roll without asking which.
 3. **Given** the GM chooses "contested", **When** prompted, **Then** they choose one of the GM's
-   own recorded rolls as the opposing side, and the result records both totals, the winner and the
+   own recorded rolls as the opposing side, are offered a per-side bonus defaulted from the inferred
+   skill difference, and the result records both totals AFTER THEIR OWN BONUSES, the winner and the
    margin.
-4. **Given** the GM presses Ctrl-C at any point, **When** the menu exits, **Then** NOTHING is
-   annotated, including anything answered earlier in that session of the menu.
-5. **Given** no rolls are awaiting annotation, **When** `annotate()` runs, **Then** it says so and
+4. **Given** a roll made in error, **When** the GM chooses to discard it, **Then** it is never
+   written, is not offered again, and does not hold the conversation open.
+5. **Given** the GM presses Ctrl-C at any point, **When** the menu exits, **Then** NOTHING is
+   annotated or discarded, including anything answered earlier in that session of the menu.
+6. **Given** no rolls are awaiting annotation, **When** `annotate()` runs, **Then** it says so and
    does nothing.
 
 ---
@@ -106,22 +109,24 @@ annotated.
 ### User Story 5 - The GM's own rolls are captured with their bonuses (Priority: P2)
 
 The GM rolls for the NPC in the REPL as they always have - `xky(7, 4) + 8`. While a conversation is
-open, that roll and its bonus are remembered so `annotate()` can offer it as the opposing side of a
-contest. A bonus decided AFTER seeing the dice, as several schools allow, is added by ordinary
+that roll and its bonus are remembered so `annotate()` can offer it as the opposing side of a
+contest - whether or not a conversation was open when it was made, since rolling the NPC's side
+first is the GM's most common order. A bonus decided AFTER seeing the dice, as several schools allow, is added by ordinary
 arithmetic on the REPL's `_` - `_ + 15` - which updates the same recorded roll.
 
 **Why this priority**: Contested annotation depends on it, but open annotation does not, so it
 follows Story 4.
 
-**Independent Test**: With a conversation open, `xky(7, 4) + 8` leaves a recorded roll whose total
-includes the 8; with no conversation open, nothing is recorded.
+**Independent Test**: `xky(7, 4) + 8` leaves a recorded roll whose total includes the 8; with no
+conversation open, the roll is still recorded and remains available to `annotate()`.
 
 **Acceptance Scenarios**:
 
 1. **Given** an open conversation, **When** the GM evaluates `xky(7, 4) + 8`, **Then** a roll is
    recorded whose total is the kept dice plus 8.
-2. **Given** no open conversation, **When** the GM evaluates `xky(7, 4)`, **Then** nothing is
-   recorded.
+2. **Given** no open conversation, **When** the GM evaluates `xky(7, 4) + 8`, **Then** the roll is
+   recorded into the pre-conversation buffer and is offered by `annotate()` once a conversation
+   opens.
 3. **Given** a recorded roll, **When** the GM evaluates `_ + 15` at the prompt, **Then** that
    roll's recorded total increases by 15 and NO second roll is recorded.
 4. **Given** the GM's habitual syntax must keep working, **When** `xky` is called, **Then** its
@@ -150,7 +155,10 @@ concern that depends on everything above.
 
 - A roll annotated twice: the second annotation replaces the first.
 - A contested annotation when the GM has made no rolls: the menu says so and offers open instead.
-- A GM roll made before the conversation opened is not offered.
+- A pre-conversation roll older than the buffer's bound is no longer offered; `annotate()` shows
+  the candidates it still has rather than failing.
+- A roll the GM discards is never written, never offered again, and does not hold the conversation
+  open.
 - `annotate()` with no conversation open: an error naming the situation, not a traceback.
 - An unparseable menu answer: re-ask rather than crash or guess.
 - A roll already written to Obsidian Portal that is then annotated: the record is updated in place,
@@ -185,16 +193,22 @@ concern that depends on everything above.
   there is more than one.
 - **FR-007**: `annotate()` MUST let the GM mark a roll open or contested and MUST take a free-text
   description of what the roll was for.
-- **FR-008**: A contested annotation MUST let the GM choose one of the GM's own rolls made during
-  the conversation as the opposing side, and MUST record both totals, the winner and the margin per
-  feature 201's rules.
+- **FR-008**: A contested annotation MUST let the GM choose one of the GM's own RECORDED rolls -
+  including those made before the conversation opened, per FR-011 - as the opposing side, and MUST
+  record both totals, the winner and the margin per feature 201's rules.
 - **FR-009**: Ctrl-C anywhere in `annotate()` MUST abandon the whole menu session, saving nothing -
   including answers given earlier in that session.
 - **FR-010**: While a conversation is open, `xky` MUST record its result as ONE roll, and any bonus
   later added to that value by ordinary arithmetic - in the same expression, as in the GM's habitual
   `xky(7, 4) + 8`, or afterwards once the dice are seen, as in `_ + 15` - MUST UPDATE that same
   recorded roll's total rather than record a new one.
-- **FR-011**: With no conversation open, `xky` MUST record nothing.
+- **FR-011**: `xky` MUST record its result whether or not a conversation is open, into a bounded
+  rolling buffer, and `annotate()` MUST offer recent rolls made BEFORE the conversation opened.
+  **This REVERSES the original FR-011** ("with no conversation open, `xky` MUST record nothing"),
+  which was faithful to the GM's first statement and wrong about their actual workflow
+  (2026-08-29): *"I would like to be able to roll the NPCs side before opening. That is actually the
+  most common workflow is that by the time I go to annotate something, I have already made the
+  role."* The buffer is bounded so it cannot grow without limit across a long session.
 - **FR-012**: `xky`'s return value MUST remain usable as an integer everywhere it is used today.
 - **FR-013**: A bonus decided after seeing the dice MUST be applied by ordinary arithmetic on the
   returned value (`_ + 15`) per FR-010; no separate function is required. This
@@ -206,12 +220,31 @@ concern that depends on everything above.
 - **FR-015**: A round of Etiquette rolls MUST remain one line, highest-first, unchanged from
   feature 201.
 - **FR-016**: An annotated roll's description MUST appear with it in the record.
+- **FR-017**: `annotate()` MUST let the GM DISCARD a roll made in error. A discarded roll is never
+  written, never offered again, and does not block `end_conversation()`.
+- **FR-018**: When a roll is marked contested, `annotate()` MUST offer a bonus for EACH SIDE
+  separately, defaulting to the free raises the rules grant - *"you get a free raise for every point
+  your character's skill is higher than your opponent's"* (`rules/02-skills.md:64`), each raise
+  adding 5 (line 66). The GM MUST be able to override either value.
+- **FR-019**: The default free raises MUST be inferred from the two rolls: a skill roll is
+  `(Ring + skill)k(Ring)`, so the skill is the difference between dice rolled and dice kept (a `7k4`
+  Law roll implies Law 3). The player's rank, when the character-sheet app supplied one, is EXACT
+  and MUST be preferred over the inference. The inference is explicitly unreliable - the GM: *"This
+  is not completely reliable because there are things that can cause extra dice to be rolled"* -
+  which is why FR-018 requires the override. The inference MUST use the pool the GM ASKED for, not
+  the post-cap pool, since `actual_xky` converts dice above ten into a flat bonus.
+- **FR-020**: Bonuses MUST be recorded and applied PER SIDE, never netted into one number. The GM's
+  reason: *"a player whose Opponent received two free raises should not have this reflected by
+  having minus ten applied to their own role because the value of their own role is still
+  significant in and of itself. It makes a difference whether they got a 30 or a 40."* A bonus to
+  the NPC raises the NPC's total; it never lowers the player's.
 
 ### Key Entities
 
 - **Annotation**: what a roll was for (free text), whether it was open or contested, and for a
   contested roll the opposing GM roll.
-- **GM roll**: a roll the GM made in the REPL while a conversation was open - the dice, the total
+- **GM roll**: a roll the GM made in the REPL, whether or not a conversation was open - the dice,
+  the pool as ASKED for (before the ten-die cap, which the skill inference needs), the total
   including bonuses, and when it happened.
 
 ## Success Criteria *(mandatory)*
@@ -221,11 +254,16 @@ concern that depends on everything above.
 - **SC-001**: A record written by this feature lets the GM reconstruct what each non-Etiquette roll
   was for, without opening Discord.
 - **SC-002**: No unannotated non-Etiquette roll reaches Obsidian Portal except via the exit path.
-- **SC-003**: Annotating a roll takes one call and at most FOUR answers - which roll, open or
-  contested, which opposing roll when contested, and the description. The open path takes three.
+- **SC-003**: Annotating a roll takes one call. The OPEN path takes three answers - which roll,
+  open, and the description. The CONTESTED path takes at most six, the two extra being one bonus per
+  side, each pre-filled with the inferred default so that accepting both is a keypress.
 - **SC-004**: The GM's existing `xky` habits keep working unchanged, including in code that uses
   the return value arithmetically.
 - **SC-005**: Ctrl-C out of the menu leaves the conversation exactly as it was.
+- **SC-006**: A roll of the NPC's side made BEFORE `begin_conversation` is offered as an opposing
+  roll, because that is the GM's most common order of operations.
+- **SC-007**: A contested roll's recorded totals show each side after ITS OWN bonuses, and a
+  player's own total is never reduced by a bonus their opponent received.
 
 ## Assumptions
 
@@ -247,9 +285,23 @@ concern that depends on everything above.
 - **The exit path's report in FR-005 is an ADDITION beyond the GM's request**, kept so the GM knows
   the record contains bare entries. To be raised with the GM once the implementation works, per
   constitution Principle XVI - the same treatment feature 201 gave its abandon call.
-- **`xky` returns the recording subclass ONLY while a conversation is open**, and a plain `int`
-  otherwise. That satisfies FR-011 directly and, more usefully, means the capture machinery does not
-  exist during ordinary use, so no other code path can mutate a record by doing arithmetic on a roll.
+- **`xky` now always returns the recording subclass**, since FR-011 was reversed. The earlier
+  design returned a plain `int` outside a conversation, which had the pleasant property that no
+  other code path could mutate a record by doing arithmetic on a roll. That property is GONE,
+  deliberately, and the cost is bounded: a stray bonus lands on a buffer entry only `annotate()`
+  reads, and the GM sees each candidate's current total when choosing one.
+- **The contested bonus prompt shows the inferred default and takes an override per side** - two
+  numbers, not one net number, per FR-020.
+- **Preferring the character-sheet's exact rank over the dice inference in FR-019 is an ADDITION
+  beyond the request.** The GM asked for a default *"based on the two rolls that were made"* and gave
+  the dice inference as the method; feature 201 already carries a stated rank on the roll, so the
+  exact value is to hand and using it serves the GM's own reason for wanting an override - that the
+  inference *"is not completely reliable"*. To be raised with the GM once the implementation works,
+  the same treatment FR-005's report clause got.
+- **The pre-conversation buffer holds the last 20 rolls.** The GM's own framing is *"recently"*, so
+  any reasonable bound satisfies the request; naming it here stops a later session inventing a
+  different one and calling it a fix. Twenty is several minutes of a GM rolling steadily, and an
+  older candidate is one the GM would not recognize in the menu anyway.
 - Subtraction is captured as well as addition, so `xky(5, 2) - 5` records a penalty rather than
   silently dropping it. Not requested; it falls out of the same mechanism and would be surprising by
   its absence.
@@ -300,6 +352,11 @@ state the distinguishing condition on both sides, making the raise-on-manual / s
 "impossible to read as harmonized". That split was the highest-risk part of this spec, because the
 two rules contradict each other by design.
 
+**Round 5** (2026-08-29, after first use): the GM returned three follow-up requirements, recorded
+verbatim in `gm-request.md`. One REVERSES FR-011 - the original was faithful to their first
+statement and wrong about their actual workflow, which is the kind of error only using the thing
+finds. FR-017 to FR-020 and SC-007/SC-008 are new. Pending review.
+
 **Round 4** (2026-08-29, a SECOND reviewer with no prior context, asked to judge the current file on
 its merits rather than defer): **FAITHFUL.** It reached the round-1 clearances independently from the
 request text - *"I would have cleared them on first read"* - and found no finding the earlier rounds
@@ -323,3 +380,27 @@ One item stays REFERRED TO THE GM, unresolved by three rounds because it is thei
 means a GM roll made just BEFORE `begin_conversation` is not offered as a contested opponent, while
 the GM's own example describes rolling the NPC's side beforehand (*"I have recently done this in the
 Python REPL"*). Faithful to what they asked for; possibly not what they do. To confirm in testing.
+
+**Round 5 verdict** (2026-08-29, `spec-fidelity` on the amendment): **CHANGES REQUIRED**, seven
+findings, all applied. Both questions passed on the three new requirements themselves; every failure
+was one thing.
+
+**FR-011 was reversed in exactly one place and left standing in five others.** US5's Independent
+Test and acceptance scenario 2 still asserted that nothing is recorded outside a conversation - as a
+TEST, so a faithful implementation of the amended FR-011 would have failed it. An Edge Case still
+said a pre-conversation roll "is not offered". Key Entities still defined a GM roll as one made
+"while a conversation was open". FR-008 still restricted the contested opponent to rolls "made
+during the conversation" - two MUSTs with opposite scopes on one behavior. The reviewer's summary:
+*"not caution, it is an unfinished sweep"*.
+
+Also found and fixed: SC-003 was stale - the contested path is six answers now, not four, so the
+GM's own follow-up request had quietly made their own success criterion unachievable; US4 had no
+discard scenario; the SC list skipped SC-006; and FR-019's preference for the character-sheet's exact
+rank over the dice inference is an unrequested addition, now recorded in Assumptions as one. The
+pre-conversation buffer's bound is named there too, so a later session does not invent a different
+one and call it a fix.
+
+**The lesson worth keeping: a reversal is a SWEEP, not an edit.** Reversing a requirement means
+finding every place the old rule was asserted - especially acceptance scenarios, which read as tests
+and get implemented as tests. Grepping for the requirement's number would not have found any of the
+five: the old rule was restated in prose four times without once naming FR-011.

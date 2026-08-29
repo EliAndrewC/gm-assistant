@@ -36,6 +36,17 @@ class Roll:
     #: "Jimen precepts: 25" read back months later tells the GM nothing, which is
     #: the entire reason this field exists.
     note: str = ''
+    #: True when the GM marked this a mistake in `annotate()`. Never written, never
+    #: offered again, and never holds the conversation open.
+    discarded: bool = False
+    #: Contest bonuses, kept PER SIDE and never netted. The GM's reason: *"a player
+    #: whose Opponent received two free raises should not have this reflected by
+    #: having minus ten applied to their own roll because the value of their own roll
+    #: is still significant in and of itself. It makes a difference whether they got
+    #: a 30 or a 40."* A bonus to the NPC raises the NPC's total; it never lowers
+    #: the player's.
+    bonus_self: int = 0
+    bonus_opposed: int = 0
     #: The total of the GM's opposing roll when this was contested; None when open.
     #: Stored as a bare number rather than a reference to the GM roll because the
     #: winner and margin are derived at render time and nothing else needs the dice.
@@ -44,6 +55,18 @@ class Roll:
     @property
     def annotated(self) -> bool:
         return bool(self.note.strip())
+
+    @property
+    def final_total(self) -> int:
+        """This side's total after its OWN contest bonus."""
+        return self.total + self.bonus_self
+
+    @property
+    def final_opposed(self) -> int | None:
+        """The opposing side's total after ITS own contest bonus."""
+        if self.opposed_total is None:
+            return None
+        return self.opposed_total + self.bonus_opposed
 
     @property
     def contested(self) -> bool:

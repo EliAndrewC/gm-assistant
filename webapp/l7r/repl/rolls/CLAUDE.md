@@ -56,9 +56,22 @@ both in those terms. `render_lines(..., include_unannotated=True)` is what lets 
 write what the normal path holds back - measured: without it, `force` skipped the raise and then
 wrote nothing at all, which is the exact opposite of what it is for.
 
-The GM's own opposing rolls come from `xky` while a conversation is open - see `l7r/repl/gmrolls.py`
-and `DiceTotal` in `l7r/repl/dice.py`. `xky(7, 4) + 8` captures the bonus, and `_ + 15` afterwards
-updates the SAME roll rather than making a second one.
+The GM's own opposing rolls come from `xky` - see `l7r/repl/gmrolls.py` and `DiceTotal` in
+`l7r/repl/dice.py`. `xky(7, 4) + 8` captures the bonus, and `_ + 15` afterwards updates the SAME
+roll rather than making a second one. Rolls are buffered whether or not a conversation is open,
+because the GM's usual order is to roll the NPC's side FIRST and open the conversation after.
+
+**A contested annotation defaults to the free raises the rules grant** - one per point of skill
+difference, +5 each (`rules/02-skills.md:64` and :66). The player's skill comes from the rank the
+character-sheet app recorded when it has one; the NPC's is inferred from their pool as ASKED for
+(above ten dice `actual_xky` turns the excess into a flat bonus, so the capped pool infers wrong).
+Both bonuses are offered per side and both can be overridden - the GM warned the inference is *"not
+completely reliable"*.
+
+**Bonuses are kept PER SIDE and never netted.** A bonus to the NPC raises the NPC's total; it never
+lowers the player's. The GM's reason: a player who rolled 30 against an opponent's free raises still
+rolled 30, and flattening that to "-10 to the player" destroys information that matters even when
+the margin is identical.
 
 ## Two things that will bite you
 

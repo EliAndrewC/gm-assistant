@@ -58,9 +58,38 @@ DEFAULT_RULE = RecordingRule()
 EXEMPT_FROM_ANNOTATION = frozenset({'etiquette'})
 
 
+#: A free raise adds 5 - `rules/02-skills.md:66`.
+FREE_RAISE = 5
+
+
 def needs_annotation(roll: Roll) -> bool:
-    """True when this roll must not be written until the GM says what it was for."""
+    """True when this roll must not be written until the GM says what it was for.
+
+    A DISCARDED roll needs nothing: the GM has said it was a mistake, so it is
+    neither written nor allowed to hold the conversation open.
+    """
+    if roll.discarded:
+        return False
     return roll.skill.lower() not in EXEMPT_FROM_ANNOTATION and not roll.annotated
+
+
+def free_raises(mine: int | None, theirs: int | None) -> tuple[int, int]:
+    """The contest bonus each side gets from the skill difference.
+
+    `rules/02-skills.md:64`: *"you get a free raise for every point your character's
+    skill is higher than your opponent's"*, and each raise adds 5 (line 66). Returns
+    `(bonus to mine, bonus to theirs)`, one of which is always zero.
+
+    Unknown skill on either side means no inferred bonus - a guess here would be
+    worse than nothing, since the GM would have to notice it was wrong to override
+    it.
+    """
+    if mine is None or theirs is None:
+        return (0, 0)
+    gap = mine - theirs
+    if gap > 0:
+        return (gap * FREE_RAISE, 0)
+    return (0, -gap * FREE_RAISE)
 
 
 def round_down(total: int, increment: int = 5) -> int:
@@ -146,7 +175,7 @@ def render_lines(
     order: list[str] = []
     groups: dict[str, list[Roll]] = {}
     for roll in rolls:
-        if not roll.attributed:
+        if not roll.attributed or roll.discarded:
             continue
         if needs_annotation(roll) and not include_unannotated:
             continue
@@ -162,6 +191,7 @@ def render_lines(
         render_annotated(roll, npc, rule)
         for roll in rolls
         if roll.attributed
+        and not roll.discarded
         and roll.skill.lower() not in EXEMPT_FROM_ANNOTATION
         and (roll.annotated or include_unannotated)
     ]
@@ -180,18 +210,18 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
     """
     tail = f' - {roll.note}' if roll.annotated else ''
     if roll.opposed_total is None:
-        shown = record(roll.total, roll.skill, rule)
+        shown = record(roll.total + roll.bonus_self, roll.skill, rule)
         return f'{roll.character} {roll.skill.lower()}: {shown}{tail}'
-    margin = round_down(abs(roll.total - roll.opposed_total), rule.increment)
-    if roll.total == roll.opposed_total:
+    # Each side AFTER its own bonus - feature 201's rule ("adjusted for bonuses on
+    # each side") and the GM's per-side insistence are the same requirement.
+    mine, theirs = roll.final_total, roll.final_opposed or 0
+    margin = round_down(abs(mine - theirs), rule.increment)
+    if mine == theirs:
         outcome = 'tied'
     else:
-        winner = roll.character if roll.total > roll.opposed_total else npc
+        winner = roll.character if mine > theirs else npc
         outcome = f'{winner} by {margin}'
-    return (
-        f'{roll.character} vs {npc} {roll.skill.lower()}: '
-        f'{roll.total} vs {roll.opposed_total}, {outcome}{tail}'
-    )
+    return f'{roll.character} vs {npc} {roll.skill.lower()}: {mine} vs {theirs}, {outcome}{tail}'
 
 
 def render_contest(scored: Contest) -> str:

@@ -12,29 +12,35 @@ from l7r.repl.dice import DiceTotal, xky
 
 @pytest.fixture(autouse=True)
 def closed() -> Any:
-    gmrolls.stop()
+    gmrolls.clear()
     yield
-    gmrolls.stop()
+    gmrolls.clear()
 
 
 class TestRecordingScope:
-    def test_nothing_is_recorded_with_no_conversation(self) -> None:
-        assert gmrolls.record((10, 9), 1, 10) is None
-        assert gmrolls.recent() == ()
-        assert not gmrolls.recording()
+    """These four asserted the ORIGINAL FR-011 - nothing recorded outside a
+    conversation - which the GM reversed on 2026-08-29 once they used it: rolling
+    the NPC's side BEFORE opening is their most common order. Rewritten to the new
+    rule rather than deleted; the behavior is still worth pinning, in the opposite
+    direction."""
 
-    def test_start_records_and_stop_forgets(self) -> None:
-        gmrolls.start()
-        assert gmrolls.recording()
+    def test_a_roll_is_recorded_with_no_conversation_open(self) -> None:
         assert gmrolls.record((10, 9), 1, 10) is not None
         assert len(gmrolls.recent()) == 1
-        gmrolls.stop()
-        assert gmrolls.recent() == ()
 
-    def test_start_clears_a_previous_conversation(self) -> None:
+    def test_start_keeps_what_was_rolled_beforehand(self) -> None:
+        gmrolls.record((10, 9), 1, 10)
         gmrolls.start()
+        assert len(gmrolls.recent()) == 1, 'the pre-conversation roll is the point'
+
+    def test_stop_keeps_it_too(self) -> None:
+        gmrolls.record((10, 9), 1, 10)
+        gmrolls.stop()
+        assert len(gmrolls.recent()) == 1
+
+    def test_clear_is_the_only_thing_that_forgets(self) -> None:
         gmrolls.record((5,), 1, 5)
-        gmrolls.start()
+        gmrolls.clear()
         assert gmrolls.recent() == ()
 
     def test_rolls_are_numbered_in_order(self) -> None:
@@ -63,11 +69,8 @@ class TestDescribe:
 
 
 class TestXkyCapture:
-    def test_a_plain_int_when_no_conversation_is_open(self) -> None:
-        assert type(xky(6, 3, print_dice=False)) is int
-
-    def test_a_recording_total_while_one_is_open(self) -> None:
-        gmrolls.start()
+    def test_always_a_recording_total_now(self) -> None:
+        """Previously a plain int outside a conversation. FR-011 was reversed."""
         assert isinstance(xky(6, 3, print_dice=False), DiceTotal)
 
     def test_the_gms_habitual_form_captures_the_bonus(self) -> None:

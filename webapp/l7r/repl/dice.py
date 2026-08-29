@@ -74,9 +74,7 @@ class DiceTotal(int):
     history applies it twice. ``annotate()`` shows the current total when the GM
     picks an opposing roll, so a double-apply is visible before anything is written.
 
-    Instances are only produced while a conversation is open; otherwise ``xky``
-    returns a plain ``int`` and none of this exists. Int subclasses cannot define
-    ``__slots__``, so do not add one.
+    Int subclasses cannot define ``__slots__``, so do not add one.
     """
 
     entry: gmrolls.GmRoll
@@ -104,17 +102,19 @@ def xky(roll: int, keep: int, reroll: bool = True, print_dice: bool = True) -> i
     """Roll ``roll`` d10s and keep the best ``keep``. Prints the sorted dice
     (the GM's REPL habit) and returns the kept total.
 
-    While a conversation is open the return value is a ``DiceTotal``, so the roll
-    and any bonus added to it are remembered for ``annotate()``. Otherwise it is an
-    ordinary ``int``, exactly as before.
+    The return value is a ``DiceTotal``, so the roll and any bonus added to it are
+    remembered for ``annotate()`` - whether or not a conversation is open, because
+    the GM's usual order is to roll the NPC's side FIRST and open the conversation
+    afterwards.
     """
+    asked_roll, asked_keep = roll, keep
     roll, keep, bonus = actual_xky(roll, keep)
     dice = sorted(d10(reroll) for _ in range(roll))
     if print_dice:
         print(dice)
     total = bonus + sum(dice[-keep:])
-    entry = gmrolls.record(tuple(dice), keep, total)
-    return total if entry is None else DiceTotal(total, entry)
+    entry = gmrolls.record(tuple(dice), keep, total, asked=(asked_roll, asked_keep))
+    return DiceTotal(total, entry)
 
 
 def initiative(roll: int, keep: int) -> list[int]:
