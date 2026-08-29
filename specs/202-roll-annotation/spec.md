@@ -221,7 +221,8 @@ concern that depends on everything above.
 - **SC-001**: A record written by this feature lets the GM reconstruct what each non-Etiquette roll
   was for, without opening Discord.
 - **SC-002**: No unannotated non-Etiquette roll reaches Obsidian Portal except via the exit path.
-- **SC-003**: Annotating a roll takes one call and at most three answers.
+- **SC-003**: Annotating a roll takes one call and at most FOUR answers - which roll, open or
+  contested, which opposing roll when contested, and the description. The open path takes three.
 - **SC-004**: The GM's existing `xky` habits keep working unchanged, including in code that uses
   the return value arithmetically.
 - **SC-005**: Ctrl-C out of the menu leaves the conversation exactly as it was.
@@ -298,6 +299,15 @@ that FR-003 ("called by the GM") and FR-005 ("invoked from the exit hook rather 
 state the distinguishing condition on both sides, making the raise-on-manual / save-on-exit split
 "impossible to read as harmonized". That split was the highest-risk part of this spec, because the
 two rules contradict each other by design.
+
+**Round 4** (2026-08-29, a SECOND reviewer with no prior context, asked to judge the current file on
+its merits rather than defer): **FAITHFUL.** It reached the round-1 clearances independently from the
+request text - *"I would have cleared them on first read"* - and found no finding the earlier rounds
+missed. Two non-blocking items it raised are now fixed: `gm-request.md` did not contain the two later
+GM statements the spec quotes, so FR-013's authority could not be checked against the primary record
+(both appended verbatim); and SC-003 said "at most three answers" while the contested path needs four
+(corrected). Its reason for wanting the first is worth keeping: a quote a future reviewer cannot
+check is worth less than one they can.
 
 **Round 3** (2026-08-29, after an explicit instruction to re-read from disk; the reviewer recorded
 the file's md5): **FAITHFUL - implement it.**

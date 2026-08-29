@@ -88,3 +88,29 @@ themselves at the end. Quoted as written.
 > How does all of this sound? I think I've given you enough description for you to be able to
 > implement something at which point we can begin testing it out and seeing whether it matches my
 > needs.
+
+## Later in the same exchange (2026-08-29)
+
+These two statements came after the spec was first drafted, in reply to questions about it. They are
+recorded here because the spec rests on them - FR-013 in particular has no other authority, and a
+quote a future reviewer cannot check against this file is worth less than one they can.
+
+### Ruling on the gate, given the project's rule against pre-review gates
+
+Asked directly whether `end_conversation()` refusing to close was the same shape as the pre-review
+gates the GM had previously had removed from `/chargen`:
+
+> As for the gate on end conversation, I understand that this is different than what I wanted for
+> that other skill, but I think it makes sense here. So please accept my ruling and judgment that it
+> is indeed something which should gate the end of a conversation when I call the end conversation
+> function manually and there are still non annotated rolls.
+
+### Replacing `apply_bonus_to_previous_roll()` with `_ + 15`
+
+On being shown that an int subclass would capture `xky(7, 4) + 8`, the GM saw a consequence of it
+that had not been proposed and chose it over their own earlier suggestion:
+
+> That's a great idea about the int subclass. I love that. it also allows me to be able to do `_ +
+> 15` as the mechanism For applying a bonus after seeing the results of the role, which is perfect.
+> that can be the thing that we do instead of the `apply_bonus_to_previous_roll()` function, which
+> is even better.

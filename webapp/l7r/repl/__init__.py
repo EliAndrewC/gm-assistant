@@ -24,6 +24,7 @@ from l7r.repl.names import (
 )
 from l7r.repl.rolls import (
     abandon_conversation,
+    annotate,
     begin_conversation,
     conversation_status,
     end_conversation,
@@ -36,6 +37,7 @@ __all__ = [
     'Dist',
     'Pick',
     'abandon_conversation',
+    'annotate',
     'actual_xky',
     'bank',
     'begin_conversation',
@@ -84,6 +86,7 @@ COMMANDS: tuple[tuple[str, str], ...] = (
         'begin_conversation("Otsuki")',
         'watch every channel for rolls and record them against that NPC',
     ),
+    ('annotate()', 'say what each roll was for; only Etiquette is saved without it'),
     ('end_conversation()', "write the round into the NPC's Obsidian Portal bio and stop"),
     ('conversation_status()', 'what is open and the line so far; abandon_conversation() discards'),
 )

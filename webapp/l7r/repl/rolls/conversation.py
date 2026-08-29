@@ -26,6 +26,7 @@ from typing import Any
 
 from chargen import op
 from chargen.opsynth import MatchResult, match_character
+from l7r.repl import gmrolls
 from l7r.repl.rolls import bio as biomod
 from l7r.repl.rolls import console, discord, rules, sheet
 from l7r.repl.rolls.models import Conversation, RecordingRule, Roll
@@ -60,6 +61,23 @@ _lock = threading.Lock()
 _open: Conversation | None = None
 _stop = threading.Event()
 _watcher: threading.Thread | None = None
+
+
+class NotAnnotated(RuntimeError):
+    """Rolls are waiting to be annotated, so the conversation is not over.
+
+    The GM asked for this in these terms: *"if I call the end_conversation()
+    function manually, and there are unannotated rolls which have not yet been
+    saved ... raise an exception and print an error message saying, hey. You need to
+    Annotate these rolls before they can be saved. Otherwise, the conversation is
+    not over."*
+
+    It is NOT the pre-review gate this project forbids elsewhere. That rule is about
+    asking the GM to approve generated CONTENT; this is a required INPUT that only
+    they can supply, which CLAUDE.md's own rule carves out. The GM was shown the
+    tension and ruled on it directly - see FR-003 in
+    `specs/202-roll-annotation/spec.md`.
+    """
 
 
 class NoConversation(RuntimeError):
@@ -141,6 +159,7 @@ def begin_conversation(
         _open = Conversation(npc=match.character, opened_at=clock(), channels=channels)
         where = 'every monitored channel' if channel is None else _label(channels[0])
         print(f'Talking to {_open.npc_name}, watching {where}. Rolls until end_conversation().')
+        gmrolls.start()
         opened = _open
     if watch:
         start_watching(opened)
@@ -258,6 +277,7 @@ def _tick(
     clock: Callable[[], float] = time.monotonic,
     debounce: float = WRITE_DEBOUNCE_SECONDS,
     announce: bool = True,
+    include_unannotated: bool = False,
 ) -> bool:
     """One poll: read new rolls, say so, and write if the debounce has elapsed.
 
@@ -276,7 +296,9 @@ def _tick(
             say(f'  + {roll.character}: {roll.skill} {roll.total}{rank}')
     if not conv.rolls:
         return False
-    lines = tuple(rules.render_lines(conv.rolls))
+    lines = tuple(
+        rules.render_lines(conv.rolls, conv.npc_name, include_unannotated=include_unannotated)
+    )
     if not lines or lines == conv.written:
         return False
     # `debounce > 0` guards the guard: end_conversation and the exit hook pass 0.0
@@ -343,6 +365,7 @@ def bot_roll_character(message: Mapping[str, Any]) -> str:
 
 def end_conversation(
     *,
+    force: bool = False,
     rule: RecordingRule | None = None,
     get_body: Callable[[str], Mapping[str, object] | None] = op.get_character_body,
     update: Callable[..., object] = op.update_character,
@@ -351,7 +374,18 @@ def end_conversation(
     """Close, format, and write. No confirmation step (FR-019)."""
     global _open
     conv = _require()
+    waiting = [roll for roll in conv.rolls if rules.needs_annotation(roll) and roll.attributed]
+    if waiting and not force:
+        listing = '\n'.join(f'  - {roll.character} {roll.skill} {roll.total}' for roll in waiting)
+        raise NotAnnotated(
+            f'{len(waiting)} roll(s) still need annotating before they can be saved:\n'
+            f'{listing}\n'
+            'Run annotate() to say what they were for. The conversation is still open.'
+        )
+    if waiting and force:
+        say(f'Saving {len(waiting)} unannotated roll(s) - better recorded bare than lost.')
     stop_watching()
+    gmrolls.stop()
     # debounce=0: the final write always happens, however recently the watcher wrote.
     _tick(
         conv,
@@ -360,6 +394,7 @@ def end_conversation(
         update=update,
         debounce=0.0,
         announce=False,
+        include_unannotated=force,
     )
     with _lock:
         _open = None
@@ -378,6 +413,7 @@ def abandon_conversation() -> None:
     global _open
     conv = _require()
     stop_watching()
+    gmrolls.stop()
     with _lock:
         _open = None
     print(f'Threw away {len(conv.rolls)} roll(s) for {conv.npc_name}. Nothing written.')
@@ -410,6 +446,7 @@ def close_open_conversation(**kwargs: Any) -> str:
     name = _open.npc_name
     print(f'Closing the conversation with {name} before exit.')
     try:
+        kwargs.setdefault('force', True)
         return end_conversation(**kwargs)
     except Exception as exc:  # noqa: BLE001 - exiting must not fail
         print(f'  ! could not write the last rolls for {name}: {exc}')
@@ -423,7 +460,7 @@ def conversation_status() -> Conversation | None:
         return None
     print(f'Talking to {_open.npc_name} since {_open.opened_at:%H:%M:%S}.')
     if _open.rolls:
-        for line in rules.render_lines(_open.rolls):
+        for line in rules.render_lines(_open.rolls, _open.npc_name):
             print(f'  {line}')
     else:
         print('  no rolls yet')
@@ -471,6 +508,11 @@ def _label(channel_id: str) -> str:
 def _report(conv: Conversation) -> None:
     for problem in conv.unresolved:
         print(f'  ! {problem}')
+
+
+def require_open() -> Conversation:
+    """The open conversation, or an error saying how to open one."""
+    return _require()
 
 
 def _require() -> Conversation:

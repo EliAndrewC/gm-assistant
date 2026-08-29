@@ -21,6 +21,8 @@ from functools import cache
 from math import comb
 from typing import overload
 
+from l7r.repl import gmrolls
+
 _CAP = 130  # a die above this carries < 1e-12 of the mass
 
 
@@ -47,14 +49,72 @@ def actual_xky(roll: int, keep: int) -> tuple[int, int, int]:
     return roll, keep, bonus
 
 
+class DiceTotal(int):
+    """The total of an ``xky`` roll, which remembers the roll it came from.
+
+    An ``int`` in every way that matters - ``isinstance``, comparisons, f-strings,
+    ``sum``, ``sorted`` - with one addition: arithmetic on it feeds the bonus back
+    into the recorded roll. That is what lets the GM keep writing::
+
+        >>> xky(7, 4) + 8        # the habitual form; the 8 is captured
+        39
+        >>> _ + 15               # third-dan free raises, decided after the dice
+        54
+
+    and have both land on ONE recorded roll rather than three, with no new argument
+    to remember and no dependence on readline (which a piped or scripted run does
+    not have). The GM proposed a separate ``apply_bonus_to_previous_roll()`` for the
+    second case and then replaced it with ``_ + 15`` on seeing this - the same
+    mechanism, less surface.
+
+    Subtraction works too, so a penalty is captured rather than silently dropped.
+
+    Note the consequence, which is inherent rather than accidental: because ``+``
+    MEANS "apply this bonus", it is not idempotent. Re-running ``_ + 15`` out of the
+    history applies it twice. ``annotate()`` shows the current total when the GM
+    picks an opposing roll, so a double-apply is visible before anything is written.
+
+    Instances are only produced while a conversation is open; otherwise ``xky``
+    returns a plain ``int`` and none of this exists. Int subclasses cannot define
+    ``__slots__``, so do not add one.
+    """
+
+    entry: gmrolls.GmRoll
+
+    def __new__(cls, value: int, entry: gmrolls.GmRoll) -> DiceTotal:
+        self = super().__new__(cls, value)
+        self.entry = entry
+        return self
+
+    def _shift(self, delta: int) -> DiceTotal:
+        self.entry.bonus += delta
+        return DiceTotal(int(self) + delta, self.entry)
+
+    def __add__(self, other: int) -> DiceTotal:
+        return self._shift(int(other))
+
+    def __radd__(self, other: int) -> DiceTotal:
+        return self._shift(int(other))
+
+    def __sub__(self, other: int) -> DiceTotal:
+        return self._shift(-int(other))
+
+
 def xky(roll: int, keep: int, reroll: bool = True, print_dice: bool = True) -> int:
     """Roll ``roll`` d10s and keep the best ``keep``. Prints the sorted dice
-    (the GM's REPL habit) and returns the kept total."""
+    (the GM's REPL habit) and returns the kept total.
+
+    While a conversation is open the return value is a ``DiceTotal``, so the roll
+    and any bonus added to it are remembered for ``annotate()``. Otherwise it is an
+    ordinary ``int``, exactly as before.
+    """
     roll, keep, bonus = actual_xky(roll, keep)
     dice = sorted(d10(reroll) for _ in range(roll))
     if print_dice:
         print(dice)
-    return bonus + sum(dice[-keep:])
+    total = bonus + sum(dice[-keep:])
+    entry = gmrolls.record(tuple(dice), keep, total)
+    return total if entry is None else DiceTotal(total, entry)
 
 
 def initiative(roll: int, keep: int) -> list[int]:
