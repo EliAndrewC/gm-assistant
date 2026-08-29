@@ -57,7 +57,31 @@ OWN_CAMPAIGNS = (
     'hiddenway',
     'waspbountyhunters',
 )
-OUT_DIR = Path(__file__).resolve().parents[2] / 'opcache' / 'opcrawl'
+
+
+def _shared_opcrawl_dir(module_file: Path) -> Path:
+    """The opcrawl cache, resolved to the MAIN checkout's `webapp/opcache/opcrawl` whether the
+    tool runs from main or from any session clone.
+
+    The cache is deliberately SHARED across sessions (GM 2026-08-29): a future session should find
+    previously-downloaded campaigns without having to know which clone fetched them. Main is the
+    tree that holds `.clones/` (the same definition `mainguard` uses), so a clone's path contains
+    a `/.clones/<name>/` segment - strip it and everything after to reach main. `opcache/` is
+    gitignored in main, so the downloaded pages are never committed; only the tooling is. This is
+    the one place opcrawl writes into the main tree, and it is a gitignored data cache, not a
+    workspace mutation - the `mainguard` rule it sits beside is about gate/test runs racing a
+    push, which this is not.
+    """
+    parts = module_file.resolve().parts
+    if '.clones' in parts:
+        root = Path(*parts[: parts.index('.clones')])
+    else:
+        # <root>/webapp/l7r/opcrawl/census.py -> <root>
+        root = module_file.resolve().parents[3]
+    return root / 'webapp' / 'opcache' / 'opcrawl'
+
+
+OUT_DIR = _shared_opcrawl_dir(Path(__file__))
 
 
 class ConsentError(RuntimeError):

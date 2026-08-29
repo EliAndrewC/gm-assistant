@@ -45,8 +45,11 @@ How the consent signal works (measured 2026-08-27, see `census.py`):
   never request. It is the crawl list, so nothing outside what the owner published is asked for,
   and it is reachable only with the same opted-in cookie.
 
-Entry point: `scripts/op_consent_census.py` at the repo root; the results land under the
-gitignored `webapp/opcache/opcrawl/` and are never committed - only this tooling is.
+Entry point: `scripts/op_consent_census.py` at the repo root. The results, and every campaign's
+downloaded pages, land under the gitignored `webapp/opcache/opcrawl/` of the MAIN checkout - a
+single shared cache, resolved the same way whether the tool runs from main or any session clone
+(`_shared_opcrawl_dir` in `census.py`), so a later session finds earlier downloads without
+knowing which clone fetched them. Nothing there is ever committed - only this tooling is.
 """
 
 from l7r.opcrawl.census import OWN_CAMPAIGNS, Census, CensusRow, run_census, summarize

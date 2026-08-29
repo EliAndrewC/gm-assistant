@@ -316,6 +316,17 @@ class TestCensus:
         with pytest.raises(OSError, match='name resolution'):
             run(always_fails)
 
+    def test_cache_dir_is_shared_in_main_from_main_or_a_clone(self) -> None:
+        from l7r.opcrawl.census import _shared_opcrawl_dir
+
+        shared = Path('/repo/webapp/opcache/opcrawl')
+        # From the main checkout and from any clone, the cache resolves to the SAME main location.
+        assert _shared_opcrawl_dir(Path('/repo/webapp/l7r/opcrawl/census.py')) == shared
+        assert (
+            _shared_opcrawl_dir(Path('/repo/.clones/some-session/webapp/l7r/opcrawl/census.py'))
+            == shared
+        )
+
     def test_read_census_roundtrip(self, tmp_path: Path) -> None:
         assert read_census(62, tmp_path) is None
         census, _ = run(FakeSite())
