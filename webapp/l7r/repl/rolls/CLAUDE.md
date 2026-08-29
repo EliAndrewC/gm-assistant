@@ -39,7 +39,26 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `discord.py` | Read-only REST. The bot holds permissions 66560 (View Channel + Read Message History) and there is no code here that could post. Snowflakes are synthesized from a timestamp; `before`/`after` are mutually exclusive in the API, so the far end is bounded in Python. |
 | `sheet.py` | The character-sheet app's roll-history client. **THOSE ENDPOINTS DO NOT EXIST YET** (spec: `character-sheet/externally-queryable-roll-results.md`). Every failure degrades to empty with a reason; nothing raises. |
 | `console.py` | `print_above` - writes from the watcher thread WITHOUT stomping the prompt: `\r\x1b[K` erases the prompt line, the message goes there, then the prompt and whatever the GM had typed are redrawn beneath it. TTY only; a pipe gets a plain print. |
+| `annotate.py` | The `annotate()` menu - which roll, open or contested, what it was for. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
+
+## Rolls are HELD until the GM says what they were for
+
+Feature 202. A bare `Jimen precepts: 25` read back months later tells the GM nothing, so a roll of
+any skill except Etiquette is collected but NOT written until `annotate()` gives it a note.
+Etiquette is exempt because those rolls are presumed to be introductions - one entry in
+`rules.EXEMPT_FROM_ANNOTATION`, the same shape as a cap.
+
+**Two opposite rules for closing, and they must not be harmonized.** A manual `end_conversation()`
+RAISES `NotAnnotated` and leaves the conversation open; the interpreter-exit path calls the same
+function with `force=True` and SAVES the bare rolls, because losing them is worse. The GM asked for
+both in those terms. `render_lines(..., include_unannotated=True)` is what lets the forced path
+write what the normal path holds back - measured: without it, `force` skipped the raise and then
+wrote nothing at all, which is the exact opposite of what it is for.
+
+The GM's own opposing rolls come from `xky` while a conversation is open - see `l7r/repl/gmrolls.py`
+and `DiceTotal` in `l7r/repl/dice.py`. `xky(7, 4) + 8` captures the bonus, and `_ + 15` afterwards
+updates the SAME roll rather than making a second one.
 
 ## Two things that will bite you
 

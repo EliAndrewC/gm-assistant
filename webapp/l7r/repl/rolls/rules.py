@@ -50,6 +50,18 @@ from l7r.repl.rolls.models import Contest, RecordingRule, Roll
 
 DEFAULT_RULE = RecordingRule()
 
+#: Skills whose rolls are written WITHOUT annotation. The GM: *"we have not bothered
+#: to do this with etiquette because etiquette roles are presumed to be about making
+#: an introduction. So, therefore, the annotation is redundant because almost every
+#: etiquette role is the same."* Etiquette is the only one they named; another is one
+#: entry here, the same way another cap is one entry in `RecordingRule.caps`.
+EXEMPT_FROM_ANNOTATION = frozenset({'etiquette'})
+
+
+def needs_annotation(roll: Roll) -> bool:
+    """True when this roll must not be written until the GM says what it was for."""
+    return roll.skill.lower() not in EXEMPT_FROM_ANNOTATION and not roll.annotated
+
 
 def round_down(total: int, increment: int = 5) -> int:
     """Round down to the nearest `increment`, never below zero.
@@ -109,26 +121,77 @@ def render_open(rolls: Sequence[Roll], rule: RecordingRule = DEFAULT_RULE) -> st
     return f'{names} {usable[0].skill.lower()}: {totals}'
 
 
-def render_lines(rolls: Sequence[Roll], rule: RecordingRule = DEFAULT_RULE) -> list[str]:
-    """One line per SKILL, in the order each skill first appeared.
+def render_lines(
+    rolls: Sequence[Roll],
+    npc: str = '',
+    rule: RecordingRule = DEFAULT_RULE,
+    *,
+    include_unannotated: bool = False,
+) -> list[str]:
+    """Everything this conversation should write, in the shape the GM reads.
 
-    A conversation is not one round. The players greet an NPC (etiquette), then
-    press them (interrogation), then try a lie (sincerity) - and the GM's format
-    names the skill once per line, so mixed rolls are several lines rather than one
-    impossible one. `render_open` raises on a mixed set precisely so this grouping
-    cannot be forgotten.
+    Two kinds of line, deliberately different:
+
+    - **Exempt skills** (Etiquette) are GROUPED, one line per skill, highest-first -
+      a round of introductions read at a glance, which is feature 201's format and
+      the GM confirmed the ordering was intentional.
+    - **Annotated rolls** are listed INDIVIDUALLY in the order they were made, each
+      with what it was for. That order is the point: *"remember the conversation by
+      seeing these sequence of rolls that were made."*
+
+    A roll that needs annotation and has not had it is NOT rendered at all. Holding
+    it back is the feature, not an omission - `end_conversation` refuses to close
+    while any are waiting, and only the exit hook writes them bare.
     """
     order: list[str] = []
     groups: dict[str, list[Roll]] = {}
     for roll in rolls:
         if not roll.attributed:
             continue
+        if needs_annotation(roll) and not include_unannotated:
+            continue
+        if roll.skill.lower() not in EXEMPT_FROM_ANNOTATION:
+            continue
         key = roll.skill.lower()
         if key not in groups:
             groups[key] = []
             order.append(key)
         groups[key].append(roll)
-    return [render_open(groups[key], rule) for key in order]
+    lines = [render_open(groups[key], rule) for key in order]
+    lines += [
+        render_annotated(roll, npc, rule)
+        for roll in rolls
+        if roll.attributed
+        and roll.skill.lower() not in EXEMPT_FROM_ANNOTATION
+        and (roll.annotated or include_unannotated)
+    ]
+    return lines
+
+
+def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -> str:
+    """One annotated roll, with what it was for.
+
+        Jimen law: 40 - assessing whether the arrest was lawful
+        Jimen vs Otsuki sincerity: 41 vs 28, Jimen by 10 - claiming he never met the man
+
+    An OPEN roll is rounded like any other. A CONTESTED one keeps both totals raw and
+    rounds only the margin, which is the GM's rule from feature 201 - the annotation
+    changes what is said about a roll, never how its number is recorded.
+    """
+    tail = f' - {roll.note}' if roll.annotated else ''
+    if roll.opposed_total is None:
+        shown = record(roll.total, roll.skill, rule)
+        return f'{roll.character} {roll.skill.lower()}: {shown}{tail}'
+    margin = round_down(abs(roll.total - roll.opposed_total), rule.increment)
+    if roll.total == roll.opposed_total:
+        outcome = 'tied'
+    else:
+        winner = roll.character if roll.total > roll.opposed_total else npc
+        outcome = f'{winner} by {margin}'
+    return (
+        f'{roll.character} vs {npc} {roll.skill.lower()}: '
+        f'{roll.total} vs {roll.opposed_total}, {outcome}{tail}'
+    )
 
 
 def render_contest(scored: Contest) -> str:

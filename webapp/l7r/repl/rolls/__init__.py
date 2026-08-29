@@ -7,6 +7,7 @@ own shorthand. See `CLAUDE.md` in this directory for which file holds what.
 
 from __future__ import annotations
 
+from l7r.repl.rolls.annotate import annotate
 from l7r.repl.rolls.conversation import (
     abandon_conversation,
     begin_conversation,
@@ -24,6 +25,7 @@ __all__ = [
     'RecordingRule',
     'Roll',
     'abandon_conversation',
+    'annotate',
     'begin_conversation',
     'close_open_conversation',
     'collect',

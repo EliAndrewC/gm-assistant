@@ -32,6 +32,22 @@ class Roll:
     message_id: str
     at: datetime
     rank: int | None = None
+    #: What the roll was FOR, in the GM's words. Empty until annotated. A bare
+    #: "Jimen precepts: 25" read back months later tells the GM nothing, which is
+    #: the entire reason this field exists.
+    note: str = ''
+    #: The total of the GM's opposing roll when this was contested; None when open.
+    #: Stored as a bare number rather than a reference to the GM roll because the
+    #: winner and margin are derived at render time and nothing else needs the dice.
+    opposed_total: int | None = None
+
+    @property
+    def annotated(self) -> bool:
+        return bool(self.note.strip())
+
+    @property
+    def contested(self) -> bool:
+        return self.opposed_total is not None
 
     @property
     def attributed(self) -> bool:

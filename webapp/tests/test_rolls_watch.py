@@ -11,6 +11,7 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -217,7 +218,14 @@ class TestTick:
         )
         assert seen, 'a forced write must not be blocked by the clock'
 
-    def test_a_second_skill_becomes_a_second_line(self) -> None:
+    def test_an_unannotated_second_skill_is_HELD_not_written(self) -> None:
+        """Feature 202 deliberately changed this: only Etiquette writes unannotated.
+
+        This test previously asserted that a Law roll produced a second line. It does
+        not any more - a bare "A law: 40" months later tells the GM nothing, so it
+        waits for annotate(). Updated rather than deleted, because the ASSERTION is
+        still worth making, just with the opposite expectation.
+        """
         c = conversation()
         seen, update = recorder()
         conv._tick(
@@ -234,7 +242,30 @@ class TestTick:
             update=update,
             clock=lambda: 10_000.0,
         )
-        assert c.written == ('A etiquette: 20', 'A law: 40')
+        assert c.written == ('A etiquette: 20',), 'the law roll must be held'
+
+    def test_an_ANNOTATED_second_skill_becomes_a_second_line(self) -> None:
+        c = conversation()
+        seen, update = recorder()
+        conv._tick(
+            c,
+            collector=adder(roll('A', 'etiquette', 23)),
+            get_body=lambda cid: {'bio': BIO},
+            update=update,
+            clock=lambda: 0.0,
+        )
+        annotated = replace(roll('A', 'law', 44), note='pressing him on the warrant')
+        conv._tick(
+            c,
+            collector=adder(annotated),
+            get_body=lambda cid: {'bio': str(seen['bio'])},
+            update=update,
+            clock=lambda: 10_000.0,
+        )
+        assert c.written == (
+            'A etiquette: 20',
+            'A law: 40 - pressing him on the warrant',
+        )
         assert 'A silk merchant.' in str(seen['bio'])
 
     def test_a_record_with_no_body_still_writes(self) -> None:
