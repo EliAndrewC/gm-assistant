@@ -1,5 +1,8 @@
 import os
+
+from configobj import ConfigObj
 import json
+import os
 import base64
 import re
 import traceback
@@ -44,26 +47,56 @@ def ajax(func):
     return wrapped
 
 
-# Sections that ConfigObj merges in from development-secrets.ini and that
-# the chargen frontend does NOT need. Filtered out before the config dict
-# is serialized into the HTML so secrets don't leak via view-source.
-# Add new secret sections here whenever development-secrets.ini grows.
-_SECRET_CONFIG_SECTIONS = frozenset(
+# index.html inlines the whole config dict via ``{{ config|tojson }}``, so
+# anything ConfigObj merged in from development-secrets.ini would be readable
+# from view-source. These are the sections stripped before serialization.
+#
+# DERIVED FROM THE FILE, never listed. This was a hand-maintained frozenset of
+# six names with a comment saying "add new secret sections here whenever
+# development-secrets.ini grows", and it did exactly what such a list always
+# does: the file grew [aws], [character_sheet] and [github] - AWS keys, a bearer
+# token and a GitHub PAT - and all three were served in the page. The test that
+# was supposed to catch it kept its own copy of the same six names, so the guard
+# and the guarded agreed with each other and both were wrong. A list that must be
+# updated by memory is not a security boundary.
+#
+# The floor below is belt-and-suspenders for an environment where the secrets
+# file is absent but the values reached config some other way. A section present
+# in BOTH files (today: mention_bots) is excluded whole - the safe direction, at
+# the cost of hiding its public half from the frontend, which no page needs.
+_SECRET_SECTION_FLOOR = frozenset(
     {
         'auth',
+        'aws',
+        'character_sheet',
         'discord',
         'discord_whitelist',
         'gemini',
+        'github',
         'gm_whitelist',
+        'mention_bots',
         'obsidian_portal',
     }
 )
 
+_SECRETS_FILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), '..', 'development-secrets.ini'
+)
+
+
+def _secret_config_sections() -> frozenset[str]:
+    """Every top-level name the secrets file defines, plus the static floor."""
+    found: set[str] = set()
+    if os.path.exists(_SECRETS_FILE):
+        found = set(ConfigObj(_SECRETS_FILE, encoding='utf-8'))
+    return _SECRET_SECTION_FLOOR | found
+
 
 def _safe_config_for_frontend() -> dict:
     """Return the chargen config dict with secret sections stripped."""
+    secret = _secret_config_sections()
     full = config.dict()
-    return {k: v for k, v in full.items() if k not in _SECRET_CONFIG_SECTIONS}
+    return {k: v for k, v in full.items() if k not in secret}
 
 
 class Root:
