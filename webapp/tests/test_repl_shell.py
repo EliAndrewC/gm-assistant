@@ -1,6 +1,7 @@
 """The REPL entry point (l7r.repl.shell) and the scripts/repl.py launcher."""
 
 import importlib.util
+import subprocess
 import sys
 import threading
 from pathlib import Path
@@ -140,9 +141,56 @@ class TestLauncher:
         assert capsys.readouterr().out == '(1, 1, 0)\n'
         assert str(launcher.WEBAPP) in sys.path
 
-    def test_main_on_host(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_container_running_anchors_the_name(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A substring filter would match a sibling repo's container."""
+        launcher = _load_launcher()
+        seen: list[list[str]] = []
+
+        def up(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+            seen.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0, stdout='c0ffee\n', stderr='')
+
+        monkeypatch.setattr(launcher.subprocess, 'run', up)
+        assert launcher.container_running() is True
+        assert seen[0][1:] == ['ps', '-q', '-f', f'name=^{launcher.container_name()}$']
+
+        def down(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(cmd, 0, stdout='', stderr='')
+
+        monkeypatch.setattr(launcher.subprocess, 'run', down)
+        assert launcher.container_running() is False
+
+    def test_start_container_runs_the_launcher_from_the_repo(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--no-shell, and cwd = the repo, which is how the launcher finds its config."""
+        launcher = _load_launcher()
+        seen: list[tuple[list[str], str | None]] = []
+
+        def record(cmd: list[str], cwd: str | None = None) -> int:
+            seen.append((cmd, cwd))
+            return 0
+
+        monkeypatch.setattr(launcher.subprocess, 'call', record)
+        assert launcher.start_container() == 0
+        assert seen == [([str(launcher.LAUNCHER), '--no-shell'], str(launcher.REPO))]
+        assert 'not running' in capsys.readouterr().err
+
+    def test_start_container_without_the_launcher_script(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+    ) -> None:
+        launcher = _load_launcher()
+        monkeypatch.setattr(launcher, 'LAUNCHER', tmp_path / 'gone.sh')
+        assert launcher.start_container() == 1
+        assert 'missing' in capsys.readouterr().err
+
+    def test_main_on_host_with_the_container_already_up(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         launcher = _load_launcher()
         monkeypatch.setattr(launcher, 'in_container', lambda: False)
+        monkeypatch.setattr(launcher, 'container_running', lambda: True)
+        monkeypatch.setattr(launcher, 'start_container', lambda: pytest.fail('should not launch'))
         seen: list[list[str]] = []
 
         def record(cmd: list[str]) -> int:
@@ -153,11 +201,52 @@ class TestLauncher:
         assert launcher.main([]) == 0
         assert seen[0][1] == 'exec'
 
-        def missing(cmd: list[str]) -> int:
+    def test_main_on_host_starts_the_container_first(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The motivating case: `repl` on a host whose container is not up."""
+        launcher = _load_launcher()
+        monkeypatch.setattr(launcher, 'in_container', lambda: False)
+        monkeypatch.setattr(launcher, 'container_running', lambda: False)
+        launched: list[bool] = []
+
+        def launch() -> int:
+            launched.append(True)
+            return 0
+
+        monkeypatch.setattr(launcher, 'start_container', launch)
+        seen: list[list[str]] = []
+
+        def record(cmd: list[str]) -> int:
+            seen.append(cmd)
+            return 0
+
+        monkeypatch.setattr(launcher.subprocess, 'call', record)
+        assert launcher.main([]) == 0
+        assert launched == [True]
+        assert seen[0][1] == 'exec'
+
+    def test_main_on_host_when_the_launch_fails(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        launcher = _load_launcher()
+        monkeypatch.setattr(launcher, 'in_container', lambda: False)
+        monkeypatch.setattr(launcher, 'container_running', lambda: False)
+        monkeypatch.setattr(launcher, 'start_container', lambda: 3)
+        monkeypatch.setattr(launcher.subprocess, 'call', lambda cmd: pytest.fail('should not exec'))
+        assert launcher.main([]) == 3
+        assert 'could not start the container' in capsys.readouterr().err
+
+    def test_main_on_host_without_a_container_runtime(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        launcher = _load_launcher()
+        monkeypatch.setattr(launcher, 'in_container', lambda: False)
+
+        def missing() -> bool:
             raise FileNotFoundError
 
-        monkeypatch.setattr(launcher.subprocess, 'call', missing)
+        monkeypatch.setattr(launcher, 'container_running', missing)
         assert launcher.main([]) == 1
+        assert 'not found' in capsys.readouterr().err
 
     def test_in_container_is_true_here(self) -> None:
         launcher = _load_launcher()
