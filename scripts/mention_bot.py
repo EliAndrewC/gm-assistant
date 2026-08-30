@@ -4,8 +4,11 @@
     ./scripts/mention_bot.py
 
 Listens on one bot's gateway connection and replies as whichever bot was
-mentioned. Configure the fleet in `webapp/development-secrets.ini` under
-`[mention_bots]` - see `webapp/l7r/mention/bots.py`.
+mentioned. The fleet is configured in two files, split by sensitivity: the bot
+TOKENS in `[mention_bots]` of the gitignored `webapp/development-secrets.ini`,
+and the public application id of the bot that holds the socket in
+`[mention_bots]` of `webapp/development-defaults.ini`. See
+`webapp/l7r/mention/bots.py`.
 
 Meant for an always-on box. It reconnects on its own and answers no bot, ever.
 """

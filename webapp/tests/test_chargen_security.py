@@ -17,27 +17,36 @@ read a nonexistent ``config.base_ranks`` and render empty).
 from __future__ import annotations
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
+from configobj import ConfigObj
 
 from chargen import config
 from chargen import website as chargen_website
 from chargen.website import Root
 from l7r.jinja_env import build_environment
 
-# Sections this test treats as secret. Kept as a literal tuple here (not
-# imported from chargen.website) so the assertions stay coupled to the
-# *security boundary* - "these section names must not appear in rendered
-# HTML" - rather than to the implementation symbol that enforces it. If
-# development-secrets.ini gains a new section, add it here too.
-_EXPECTED_SECRET_SECTIONS: tuple[str, ...] = (
-    'auth',
-    'discord',
-    'discord_whitelist',
-    'gemini',
-    'gm_whitelist',
-    'obsidian_portal',
-)
+# Sections this test treats as secret. DERIVED from development-secrets.ini
+# rather than listed, and deliberately NOT imported from chargen.website, so
+# the assertions stay coupled to the *security boundary* - "nothing that comes
+# out of the secrets file may appear in rendered HTML" - rather than to the
+# implementation symbol that enforces it.
+#
+# It used to be a hand-maintained tuple, and it drifted, which is the whole
+# reason it is derived now: the file had grown [aws], [character_sheet] and
+# [github] (AWS keys, a bearer token and a GitHub PAT) and this test named none
+# of them, while chargen.website's filter listed exactly the same six sections.
+# The guard and the thing it guards agreed with each other and both disagreed
+# with reality, so the leak was invisible from either side. Reading the file is
+# the only version of this check that cannot go stale.
+_SECRETS_FILE = Path(__file__).resolve().parents[1] / 'development-secrets.ini'
+
+
+def _expected_secret_sections() -> tuple[str, ...]:
+    if not _SECRETS_FILE.exists():  # pragma: no cover - present in every dev tree
+        return ()
+    return tuple(sorted(ConfigObj(str(_SECRETS_FILE), encoding='utf-8')))
 
 
 @pytest.fixture(autouse=True)
@@ -70,7 +79,7 @@ def _live_secret_values() -> list[str]:
     the deployed ``development-secrets.ini`` actually holds.
     """
     out: list[str] = []
-    for section in _EXPECTED_SECRET_SECTIONS:
+    for section in _expected_secret_sections():
         if section in config:
             out.extend(_string_leaves(config[section]))
     return out
@@ -89,7 +98,7 @@ class TestRenderedHTMLDoesNotLeakSecrets:
     def index_html(self) -> str:
         return _render('index')
 
-    @pytest.mark.parametrize('section', _EXPECTED_SECRET_SECTIONS)
+    @pytest.mark.parametrize('section', _expected_secret_sections())
     def test_secret_section_key_absent_from_index(self, section: str, index_html: str) -> None:
         # The tojson serialization writes each section name as a quoted
         # JSON key, e.g. ``"discord":``. Checking the quoted form avoids

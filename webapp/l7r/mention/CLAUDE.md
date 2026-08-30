@@ -17,7 +17,7 @@ its users will intuitively expect it to work."* Answering under the wrong name b
 |---|---|
 | `rules.py` | The reply table. DATA - adding a joke is an entry, not a code change. Mentions are stripped before matching, first match wins, and `DEFAULT_REPLY` catches everything else so a page is never met with silence. |
 | `policy.py` | Whether to answer at all: the bot guard, who was addressed, the per-channel rate limit, and the seen-message set. Pure and synchronous, so every rule that keeps this safe is testable without a socket. |
-| `bots.py` | The fleet - which application ids this process can speak as, and which one holds the socket. Read from `[mention_bots]` in the gitignored secrets. |
+| `bots.py` | The fleet - which application ids this process can speak as, and which one holds the socket. Split by sensitivity: tokens from the gitignored secrets, the listener's public application id from the checked-in defaults. |
 | `gateway.py` | The only module that touches the network: the websocket protocol constants, `IDENTIFY`/`RESUME`, the heartbeat, and the REST call that posts a reply. Its docstring summarizes the protocol so a reader need not go and look it up. |
 | `responder.py` | The loop. `handle` answers one message (synchronous, injectable); `pump` runs one connection; `run_forever` reconnects with backoff. |
 
@@ -45,12 +45,27 @@ it, and doing so touches only `rules.py`.
 
 ## Configuration
 
+Split across two files by SENSITIVITY. Tokens are credentials, in the gitignored
+`development-secrets.ini`:
+
 ```ini
 [mention_bots]
-listener = 1509288141985415300
 1509288141985415300 = <the GM Assistant's bot token>
 1490400739934212116 = <the Character Sheet's bot token>
 ```
+
+Which one listens is a **public** Discord application id - it is in every invite URL and is
+rendered into this app's own OAuth login link - so it goes in the checked-in
+`development-defaults.ini`:
+
+```ini
+[mention_bots]
+listener = 1509288141985415300
+```
+
+It started out in the secrets file, and `tests/test_chargen_security.py` caught it: a value from
+the secrets file was appearing in served HTML. The guard was right and the classification was
+wrong. If that test fires again, move the non-secret out - do not relax the test.
 
 Each speaking bot needs **Send Messages** in the guild; the listener needs the **Message Content**
 privileged intent. Both are Discord configuration, not code - and a bot's permissions widen IN PLACE

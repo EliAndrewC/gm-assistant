@@ -9,12 +9,14 @@ here exist only to make that impossible to regress.
 from __future__ import annotations
 
 import asyncio
+import configparser
 import contextlib
 import json
 from pathlib import Path
 from typing import Any
 
 import pytest
+from configobj import ConfigObj
 
 from l7r.mention import bots, gateway, policy, responder, rules
 
@@ -186,39 +188,94 @@ def secrets(tmp_path: Path, body: str) -> Path:
     return path
 
 
+def defaults(tmp_path: Path, listener: str | None = 'A') -> Path:
+    """The public half of the config: which application id holds the socket."""
+    path = tmp_path / 'defaults.ini'
+    body = 'campaign_url = "https://example.invalid"\n'
+    if listener is not None:
+        body += f'\n[mention_bots]\nlistener = {listener}\n'
+    path.write_text(body)
+    return path
+
+
 class TestFleet:
     def test_loads_a_listener_and_two_tokens(self, tmp_path: Path) -> None:
-        path = secrets(tmp_path, '[mention_bots]\nlistener = A\nA = tok-a\nB = tok-b\n')
-        fleet = bots.load_fleet(path)
+        path = secrets(tmp_path, '[mention_bots]\nA = tok-a\nB = tok-b\n')
+        fleet = bots.load_fleet(path, defaults(tmp_path))
         assert fleet.listener == 'A'
         assert fleet.listener_token == 'tok-a'
         assert fleet.token_for('B') == 'tok-b'
         assert fleet.token_for('Z') is None
 
+    def test_reads_a_defaults_file_with_keys_before_its_first_section(self, tmp_path: Path) -> None:
+        """The real defaults file opens with top-level keys; configparser refuses it.
+
+        This is why the public half is read with ConfigObj. The helper writes a
+        leading `campaign_url` for exactly this reason - without it the test would
+        pass against a parser that could not read production config.
+        """
+        text = (defaults(tmp_path)).read_text()
+        assert text.startswith('campaign_url'), 'the fixture must lead with a bare key'
+        fleet = bots.load_fleet(
+            secrets(tmp_path, '[mention_bots]\nA = tok-a\n'), defaults(tmp_path)
+        )
+        assert fleet.listener == 'A'
+
     def test_a_missing_section_says_how_to_fix_it(self, tmp_path: Path) -> None:
-        with pytest.raises(bots.NotConfigured, match='listener'):
-            bots.load_fleet(secrets(tmp_path, '[other]\nx = 1\n'))
+        with pytest.raises(bots.NotConfigured, match='application id'):
+            bots.load_fleet(secrets(tmp_path, '[other]\nx = 1\n'), defaults(tmp_path))
 
     def test_no_tokens(self, tmp_path: Path) -> None:
         with pytest.raises(bots.NotConfigured, match='no bot tokens'):
-            bots.load_fleet(secrets(tmp_path, '[mention_bots]\nlistener = A\n'))
+            bots.load_fleet(secrets(tmp_path, '[mention_bots]\n'), defaults(tmp_path))
 
     def test_no_listener(self, tmp_path: Path) -> None:
         with pytest.raises(bots.NotConfigured, match='no `listener'):
-            bots.load_fleet(secrets(tmp_path, '[mention_bots]\nA = tok\n'))
+            bots.load_fleet(
+                secrets(tmp_path, '[mention_bots]\nA = tok\n'),
+                defaults(tmp_path, listener=None),
+            )
 
     def test_a_listener_we_cannot_speak_as(self, tmp_path: Path) -> None:
-        path = secrets(tmp_path, '[mention_bots]\nlistener = Z\nA = tok\n')
+        path = secrets(tmp_path, '[mention_bots]\nA = tok\n')
         with pytest.raises(bots.NotConfigured, match='has no token'):
-            bots.load_fleet(path)
+            bots.load_fleet(path, defaults(tmp_path, listener='Z'))
 
-    def test_the_default_path_resolves_at_call_time(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        """A bound default cannot be redirected by a test - that shape bit us before."""
-        path = secrets(tmp_path, '[mention_bots]\nlistener = A\nA = tok-a\n')
-        monkeypatch.setattr(bots, 'SECRETS', path)
-        assert bots.load_fleet().listener == 'A'
+    def test_the_default_paths_point_at_the_real_files(self) -> None:
+        """Every other test injects a path, so nothing checked the real ones.
+
+        SECRETS was wrong: `parents[3]` is the repo root here, copied from
+        `l7r/repl/rolls/`, which sits one directory deeper.
+        """
+        for path in (bots.SECRETS, bots.DEFAULTS):
+            assert path.parent.name == 'webapp'
+            assert (path.parent / 'l7r' / 'mention').is_dir()
+        assert bots.SECRETS.name == 'development-secrets.ini'
+        assert bots.DEFAULTS.name == 'development-defaults.ini'
+
+    def test_the_listener_id_is_public_and_is_not_kept_as_a_secret(self) -> None:
+        """The regression this split exists to prevent.
+
+        A Discord application id is public - it is in every invite URL and is
+        rendered into this app's OAuth login link - so keeping it in the secrets
+        file made `test_chargen_security` report a secret value appearing in served
+        HTML. That guard was right; the classification was wrong. Assert the shape,
+        not just the current values, so putting it back fails here too.
+        """
+        public = ConfigObj(str(bots.DEFAULTS))
+        assert str(public.get(bots.SECTION, {}).get('listener', '')).strip(), (
+            f'{bots.DEFAULTS.name} must carry the public listener id'
+        )
+        if not bots.SECRETS.exists():  # pragma: no cover - present in every dev tree
+            return
+        private = configparser.ConfigParser()
+        private.optionxform = str  # type: ignore[method-assign,assignment]
+        private.read(bots.SECRETS)
+        if private.has_section(bots.SECTION):
+            assert 'listener' not in private.options(bots.SECTION), (
+                'the listener application id is public; it belongs in '
+                'development-defaults.ini, not among the secrets'
+            )
 
 
 # --------------------------------------------------------------------------

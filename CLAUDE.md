@@ -316,11 +316,18 @@ office-holders (named characters keep their pronouns), Principle XI's kanji tria
 behavioral principles XII/XIV/XV. File size past ~1,000 lines is REPORTED by `make audit`, never
 gated - the rule prompts a question rather than forbidding a size.
 
-**When you add a guard**, three properties, each learned by getting it wrong: match INVOCATIONS not
+**When you add a guard**, four properties, each learned by getting it wrong: match INVOCATIONS not
 mentions (seven false positives in one feature - a grep, a commit message, a docstring, a fixture
 argument, a redirect, a test harness, and a hook that blocked its own repair); check the ESCAPE FIRST
-or the guard cannot be repaired through the channel it guards; and prove it FIRES by deleting it and
-watching a test go red.
+or the guard cannot be repaired through the channel it guards; prove it FIRES by deleting it and
+watching a test go red; and **DERIVE the guard's list from the thing it guards - never hand-maintain
+it, and never let the test keep its own copy**. Measured 2026-08-30: `chargen/website.py` stripped
+secret config sections using a frozenset of six names commented *"add new secret sections here
+whenever development-secrets.ini grows"*, and `tests/test_chargen_security.py` listed the same six.
+The file had since grown three more, so AWS keys, a bearer token and a GitHub PAT were being
+serialized into `index.html` - and because the guard and the guarded agreed with each other, the leak
+was invisible from both sides. Both now read the file. A list that must be updated from memory is not
+a security boundary.
 
 **Review subagents are pre-authorized (GM 2026-07-27).** Claude Code's default system prompt tells a session not to call the Agent tool unless the user asked - a sensible default that nonetheless sits ABOVE this file in the instruction hierarchy, so it silently outranked the mandate to run a review agent before shipping (three diagram city maps went out unreviewed with nothing warning). The fix is [`container-scripts/append-system-prompt.md`](container-scripts/append-system-prompt.md), loaded via `--append-system-prompt` by the `claude()` wrapper that `setup-dev-env.sh` installs into `~/.bashrc`: it lands AFTER that line with the same authority and grants standing authorization for this repository's three review agents (`backstory-review`, `frontend-review`, `spec-fidelity`) only. **If a review agent ever gets skipped again, check `type claude` first** - the wrapper is per-container and dies with a rebuild. Broad fan-out, `Workflow`, and deep research still need an explicit request.
 
