@@ -18,6 +18,16 @@ pool-backed picks (`name`, `names`, `bank`, `place`). It replaced the GM's copy-
 
 Design notes:
 
+- **From the host, `repl` starts the container if it has to** (2026-08-30). `scripts/repl.py` run
+  outside the container `podman exec`s into `claude-<repo-dir>`; when no such container is up it
+  first hands off to `scripts/launch-container.sh --no-shell`, which does the whole normal launch
+  (pull, mounts, ports, packages, `claude update`) and returns instead of opening a bash shell. The
+  handoff runs with the repo as its cwd, because the launcher finds the repo - and therefore its
+  ports, mounts and workdir - with `git rev-parse`, not from the path it was invoked by. The
+  running check filters on `^name$`: `podman ps -f name=` matches substrings, so an unanchored
+  filter would count a sibling repo's container as ours. Tested in
+  `webapp/tests/test_repl_shell.py::TestLauncher` (fakes `podman`); end to end, the check is to run
+  `repl` on the host with the container stopped or removed.
 - **Printing is the interface** - every pick prints its meaning and every `xky` prints its dice,
   so `l7r/repl/**` is exempt from ruff's T20 in `pyproject.toml`. Functions still RETURN real
   values (`Pick` is a `str`), so they compose in a snippet.

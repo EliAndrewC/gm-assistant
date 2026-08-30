@@ -81,7 +81,16 @@
 #
 # Usage:
 #   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--no-pull]
-#                       [--no-apt] [--no-update] [--fresh] [--help]
+#                       [--no-apt] [--no-update] [--fresh] [--no-shell] [--help]
+#
+# --no-shell makes the script ENSURE the container is running and then return,
+# instead of ending in an interactive `podman exec ... bash`. Every other step is
+# unchanged - a fresh launch still pulls, mounts, publishes, installs and updates
+# exactly as it would otherwise, so the container it leaves behind is the same one
+# you would have got by hand; a running or stopped container is attached/started
+# and reported on, then left alone. This is the entry point for scripts that need
+# the container up before they do their own `podman exec`, which is how
+# `scripts/repl.py` starts the container when the GM runs `repl` on a cold host.
 #
 # A fresh launch first runs `podman pull` for the latest image; --no-pull skips
 # that (offline, or to save time), as --no-apt skips the package install and
@@ -117,6 +126,7 @@ MOUNT_CLAUDE=1
 PULL=1
 APT=1
 UPDATE=1
+SHELL_AFTER=1
 CLAUDE_SRC="${CLAUDE_SRC:-$HOME}"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -127,6 +137,7 @@ while [ $# -gt 0 ]; do
     --no-apt) APT=0; shift ;;
     --no-update) UPDATE=0; shift ;;
     --fresh) FRESH=1; shift ;;
+    --no-shell) SHELL_AFTER=0; shift ;;
     -h|--help) show_help ;;
     *) die "unknown option: $1 (try --help)" ;;
   esac
@@ -182,15 +193,25 @@ if [ "$FRESH" -eq 1 ] && podman container exists "$NAME" 2>/dev/null; then
 fi
 
 if [ -n "$(podman ps -q -f "name=^${NAME}$" 2>/dev/null)" ]; then
-  echo ">> '$NAME' is already running; opening a new bash shell inside it."
+  if [ "$SHELL_AFTER" -eq 1 ]; then
+    echo ">> '$NAME' is already running; opening a new bash shell inside it."
+  else
+    echo ">> '$NAME' is already running; --no-shell, so nothing else to do."
+  fi
   echo ">> ports published by the running container:"
   podman port "$NAME" 2>/dev/null | sed 's/^/     /' || true
+  [ "$SHELL_AFTER" -eq 1 ] || exit 0
   exec podman exec -it "$NAME" bash
 fi
 
 if podman container exists "$NAME" 2>/dev/null; then
-  echo ">> '$NAME' exists but is stopped; starting it and attaching."
+  if [ "$SHELL_AFTER" -eq 1 ]; then
+    echo ">> '$NAME' exists but is stopped; starting it and attaching."
+  else
+    echo ">> '$NAME' exists but is stopped; starting it (--no-shell)."
+  fi
   podman start "$NAME" >/dev/null
+  [ "$SHELL_AFTER" -eq 1 ] || exit 0
   exec podman exec -it "$NAME" bash
 fi
 
@@ -472,5 +493,11 @@ HISTORY_SEED='claude --dangerously-skip-permissions'
 echo ">> seeding bash history with: $HISTORY_SEED"
 podman exec "$NAME" bash -c 'printf "%s\n" "$1" >> "$HOME/.bash_history"' _ "$HISTORY_SEED" \
   || echo ">> warning: could not seed bash history; type the command by hand." >&2
+
+# --no-shell callers (scripts/repl.py) want the container up, not a terminal.
+if [ "$SHELL_AFTER" -eq 0 ]; then
+  echo ">> --no-shell: '$NAME' is up; not opening a shell."
+  exit 0
+fi
 
 exec podman exec -it "$NAME" bash
