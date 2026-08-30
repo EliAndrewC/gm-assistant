@@ -14,3 +14,4 @@ pillow
 pyyaml
 requests
 requests-oauthlib
+websockets
