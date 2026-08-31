@@ -109,6 +109,36 @@ of them, and a message containing L7R vocabulary is answered from the game-flavo
 - **FR-013**: A reply MUST still be produced when extraction yields nothing usable.
 - **FR-014**: Adding a joke MUST remain a data edit, per feature 203's FR-008. Pools are data.
 
+The following were added by the GM DURING implementation, after the fidelity review returned
+FAITHFUL. They are recorded here with their verbatim wording so the spec still describes what was
+built, and so a later reader does not mistake them for scope the implementer invented.
+
+- **FR-015**: About ONE REPLY IN FIVE should carry an image, and *"every message involving your pet
+  porpoise should always have an image attached"*. The rate is a property of how many pool lines are
+  written with an image, never a probability applied at send time - because of FR-016.
+- **FR-016**: An image MUST belong to a line written to set it up. The GM: *"the images themselves
+  do not need to be funny as long as the context in which they are included are funny... it might be
+  very incongruous to just post a picture of a street sign. But if you have some funny story
+  attached to it... then that is fine."* Attaching a picture to an arbitrary reply is exactly the
+  incongruity being ruled out.
+- **FR-017**: **The Character Sheet MUST NEVER post an image.** *"I think that your messages should
+  include images, but I think that the replies to the character sheet should never include images.
+  Like, that would be one of the differences between the two bots."* This overrode FR-005's open
+  choice of which bot posts the burning computer: the picture went to the bot allowed to have
+  pictures, and the Character Sheet's version of that joke is told entirely in text. The GM Assistant
+  MUST also hold the Character Sheet's imagelessness against him, as part of the contempt in FR-006.
+- **FR-018**: Classic Japanese art in the public domain SHOULD be used, *"especially well for any of
+  the keywords that we trip"*, including a deflection family the GM specified: *"who am I, Miyamoto
+  Musashi? You see this guy? ... That ain't me, bub."*
+- **FR-019**: A response category for the **Mirumoto** family, of at least ten replies, accusing the
+  original designers of laziness - Mirumoto is one letter from Miyamoto in a game named for the Book
+  of Five Rings. *"We've all just tried to ship something on a Friday so we can get home for the
+  weekend, but that one's going a bit far."*
+- **FR-020**: Some Character Sheet replies about the pair MUST acknowledge that ONE PROGRAM sends
+  for both accounts, as part of why he feels so close; and the GM Assistant, asked about it, MUST
+  confirm it and resent it - *"yeah, that's true, and I hate it. It's part of why I hate that guy so
+  much."*
+
 ### Key Entities
 
 - **Topic** - a pattern plus a POOL of replies, per bot.
@@ -125,6 +155,8 @@ of them, and a message containing L7R vocabulary is answered from the game-flavo
 
 - **SC-001**: Asking one bot the same question ten times yields at least five distinct replies.
 - **SC-002**: The unmatched pool holds at least 100 templates per bot across both tiers.
+- **SC-006**: Between 12% and 35% of the GM Assistant's lines carry an image (FR-015), and 0% of the
+  Character Sheet's do (FR-017).
 - **SC-003**: The feud reaches its deepest tier within four RELAYS (the unit FR-007 defines) and
   does not loop back.
 - **SC-004**: Resident memory of the deployed process stays under 40 MB (it is ~18 MB today). The
@@ -184,6 +216,12 @@ the implementer's number rather than the GM's, and a note on Out of Scope.
 
 **Round 2 - FAITHFUL.** Both required changes verified as made and propagated through the User
 Stories, Key Entities and Edge Cases rather than patched in one place; no new infidelity introduced.
+
+**After the review, during implementation**, the GM added six further requirements in five messages
+(FR-015 through FR-020). They were not re-reviewed: each is recorded above in the GM's own words
+rather than paraphrased, which is the condition the review exists to protect. FR-017 in particular
+overrode an option FR-005 had deliberately left open, and that override is written down at the point
+it changed the design (`voices.py`) as well as here.
 
 The reviewer also noted that the GM asked two direct questions - *"Do you feel like you understand
 what I'm going for here?"* and *"does this feel like something you would be able to implement?"* - 

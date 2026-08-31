@@ -17,6 +17,7 @@ from typing import Any
 
 from l7r.mention import gateway, rules
 from l7r.mention.bots import Fleet, load_fleet
+from l7r.mention.memory import Memory
 from l7r.mention.policy import Decider
 
 
@@ -26,6 +27,7 @@ def handle(
     fleet: Fleet,
     *,
     now: float,
+    memory: Memory | None = None,
     send: Callable[..., None] = gateway.send_message,
     say: Callable[[str], None] = print,
 ) -> list[str]:
@@ -45,8 +47,8 @@ def handle(
         if token is None:  # pragma: no cover - should_answer only returns known ids
             continue
         # Per bot, not per message: two bots addressed in one line each answer in
-        # their own voice, which is the whole point of the split in `rules`.
-        reply = rules.respond_to(content, application_id)
+        # their own voice, and each one's memory of this channel is its own.
+        reply = rules.respond_to(content, application_id, channel=channel, memory=memory)
         try:
             send(channel, token, reply, reply_to=str(message.get('id') or ''))
         except Exception as exc:  # noqa: BLE001 - a failed reply must not kill the loop
@@ -62,6 +64,7 @@ async def pump(
     decider: Decider,
     session: gateway.Session,
     *,
+    memory: Memory | None = None,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     clock: Callable[[], float] = time.monotonic,
     send: Callable[..., None] = gateway.send_message,
@@ -94,7 +97,7 @@ async def pump(
             elif op == gateway.OP_DISPATCH and payload.get('t') == 'MESSAGE_CREATE':
                 message = payload.get('d') or {}
                 for application_id in handle(
-                    message, decider, fleet, now=clock(), send=send, say=say
+                    message, decider, fleet, now=clock(), memory=memory, send=send, say=say
                 ):
                     say(
                         f'  -> {application_id} replied in {message.get("channel_id")} '
@@ -128,6 +131,9 @@ async def run_forever(
     fleet = fleet or load_fleet()
     opener = connect or ws_connect
     decider = Decider(known=dict(fleet.tokens))
+    # One memory for the process: it is what keeps a bot from repeating itself and
+    # what remembers how far the feud has gone in each channel.
+    memory = Memory()
     session = gateway.Session()
     failures = 0
     tries = 0
@@ -144,7 +150,9 @@ async def run_forever(
         try:
             async with opener(url) as socket:
                 failures = 0
-                outcome = await pump(socket, fleet, decider, session, sleep=sleep, say=say)
+                outcome = await pump(
+                    socket, fleet, decider, session, memory=memory, sleep=sleep, say=say
+                )
             if outcome == 'restart':
                 session.forget()
         except Exception as exc:  # noqa: BLE001 - the point is to survive the night

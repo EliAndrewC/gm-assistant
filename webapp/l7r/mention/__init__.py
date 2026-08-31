@@ -8,25 +8,25 @@ answers. See `CLAUDE.md` here for which file holds what.
 from __future__ import annotations
 
 from l7r.mention.bots import Fleet, NotConfigured, load_fleet
+from l7r.mention.memory import Memory
 from l7r.mention.policy import Decider, is_bot, mentioned_bots
 from l7r.mention.responder import handle, run_forever
 from l7r.mention.rules import (
-    COMMON,
+    CHARACTER_SHEET,
     DEFAULT_REPLY,
-    RULES_BY_BOT,
-    Rule,
+    GM_ASSISTANT,
     respond_to,
     strip_mentions,
 )
 
 __all__ = [
+    'CHARACTER_SHEET',
     'DEFAULT_REPLY',
-    'COMMON',
-    'RULES_BY_BOT',
+    'GM_ASSISTANT',
+    'Memory',
     'Decider',
     'Fleet',
     'NotConfigured',
-    'Rule',
     'handle',
     'is_bot',
     'load_fleet',

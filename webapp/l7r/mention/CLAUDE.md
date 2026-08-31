@@ -15,7 +15,13 @@ its users will intuitively expect it to work."* Answering under the wrong name b
 
 | file | holds |
 |---|---|
-| `rules.py` | The reply tables, one PER BOT plus a shared `COMMON`. DATA - adding a joke is an entry, not a code change. Mentions are stripped before matching, the bot's own table beats the shared one, first match wins, and every bot has its own default so even a shrug is in character. |
+| `rules.py` | The ENGINE: which pool answers a message, slot rendering, and the random pick that never repeats itself. Holds no jokes. |
+| `voices.py` | Each bot's own material - purpose, the porpoise, the feud tiers, the Mirumoto grievance, small talk. DATA. |
+| `pools.py` | The two large unmatched pools per bot: generic, and game-flavored. ~100 lines each. DATA. |
+| `words.py` | The ELIZA-style extractor. Hand-rolled on purpose; the alternatives are priced in its docstring. |
+| `memory.py` | Per bot, per channel: the last thing said, and how far the feud has gone. In-process and forgetful by design. |
+| `vocab.py` | The words that mean "this is about the game". Literal, because the deployed box has no rules repository - with a test that cross-checks it against one. |
+| `images.py` | Every postable URL, what it shows, and the proof it is free. The only place a URL may be added. |
 | `policy.py` | Whether to answer at all: the bot guard, who was addressed, the per-channel rate limit, and the seen-message set. Pure and synchronous, so every rule that keeps this safe is testable without a socket. |
 | `bots.py` | The fleet - which application ids this process can speak as, and which one holds the socket. Split by sensitivity: tokens from the gitignored secrets, the listener's public application id from the checked-in defaults. |
 | `gateway.py` | The only module that touches the network: the websocket protocol constants, `IDENTIFY`/`RESUME`, the heartbeat, and the REST call that posts a reply. Its docstring summarizes the protocol so a reader need not go and look it up. |
@@ -31,6 +37,34 @@ in an infinite loop that was really bad for the server and made it unusable."*
 path whatever it says - and with two bots in the fleet it also stops one of ours setting off the
 other. Replies also carry `allowed_mentions: {parse: []}`, so a reply can never ping anyone even if
 a joke contains an `@`.
+
+## How a reply is chosen
+
+Four layers, in order: the feud (if the message names the other bot), that bot's own topics, the
+shared `COMMON` table, then the unmatched pools - game-flavored if the message used table or
+Rokugani vocabulary. One line is picked at random and never repeats the bot's previous line in that
+channel.
+
+**The feud escalates on a RELAY** - a player quoting one bot to the other - and not on repetition.
+That distinction cost a round of the spec review: an earlier design advanced on how often the topic
+came up, which let a neutral question asked three times reach the deepest insult while the actual
+punchline fired unreliably. A relay count still exists, but only to pick WHICH tier line is used.
+
+**A direct question beats the relay check.** Several opinion words ("think", "like") are also
+reporting words, so `what do you think of the character sheet?` matched the relay pattern and
+escalated the feud until the order was fixed. The comment sits at the branch.
+
+## Images: only one bot has them
+
+The Character Sheet never posts an image - the GM's rule, and one of the differences between the
+two. Everything postable lives in `images.py` with its provenance; a test rejects any URL in a reply
+that did not come from there, and another measures the rate (about one GM Assistant line in five).
+
+An image always belongs to a line written to set it up. Never attach one at random: the GM's point
+was that *"the images themselves do not need to be funny as long as the context in which they are
+included are funny"*, and a picture bolted onto an arbitrary reply is exactly the incongruity that
+rules out. That is why the rate lives in the WRITING and there is no probability anywhere in the
+engine.
 
 ## Each bot has its own voice
 
