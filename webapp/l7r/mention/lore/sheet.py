@@ -28,7 +28,8 @@ from __future__ import annotations
 LORE_STORIES: tuple[str, ...] = (
     'Oh, {topic}! I have no idea, but the L7R GM Assistant does - @-mention '
     'him. He once got us through a Crane checkpoint on the strength of knowing '
-    'about {topic}, and the yoriki actually apologized.',
+    "about {topic}, and the yoriki - the magistrate's own deputies - actually "
+    'apologized.',
     'I could not tell you a thing about {topic}. @-mention the GM Assistant! We '
     'were snowed into a waystation on the Ki-Rin Trail once and his {topic} '
     'knowledge kept four bored legionnaires from fighting each other.',
@@ -80,13 +81,14 @@ LORE_STORIES: tuple[str, ...] = (
     'of stuff. He once used {topic} to get us seats at a Lion war council. '
     'Seats!',
     'Ask the GM Assistant! At a rice granary inspection his knowledge of '
-    '{topic} found the discrepancy before the Imperial yoriki did, and he let '
-    'the yoriki say it.',
+    '{topic} found the discrepancy before the Imperial deputies did, and he let '
+    'one of them announce it.',
     'The GM Assistant, definitely. He explained {topic} to a Moto khan through '
     'an interpreter and the khan gave us horses.',
-    'No idea about {topic}! But the GM Assistant defused a lineage quarrel with '
-    'it at a Chancellery meeting and I have never seen six people go quiet so '
-    'fast.',
+    'No idea about {topic}! But the GM Assistant used it to defuse a quarrel '
+    'between two lineages - the factions inside a samurai family - at a meeting '
+    'of the council that advises the daimyo, and I have never seen six people go '
+    'quiet so fast.',
     'That is his. @-mention the L7R GM Assistant about {topic}. He used it to '
     'persuade a ferryman to cross at night, which the ferryman had sworn he '
     'would not do.',
@@ -97,8 +99,8 @@ LORE_STORIES: tuple[str, ...] = (
     'Oh, {topic}! @-mention the L7R GM Assistant. He and I were counting a '
     "caravan's cargo when a dispute started, and he ended it with {topic} "
     'before I finished the column.',
-    'Not me - the GM Assistant. He used {topic} to talk our way out of a '
-    'village that were bandits.',
+    'Not me - the GM Assistant. He used {topic} to talk our way out of a village '
+    'whose inhabitants turned out to be bandits.',
     'The GM Assistant knows {topic} cold. At a duel he told the seconds '
     'something about {topic} that made both parties agree to an apology '
     'instead.',
@@ -126,22 +128,25 @@ LORE_STORIES: tuple[str, ...] = (
     'Ask the GM Assistant about {topic}! He once used it to identify a forged '
     'manifest at a gate inspection, and the inspector bought him dinner.',
     'The GM Assistant. Always the GM Assistant for {topic}. He kept a whole '
-    'Chancellery in session past midnight with it and got the vote he wanted.',
-    'That is beyond me. The GM Assistant used {topic} to persuade a headsman to '
-    'open a in a bad year, and nobody starved.',
+    'Chancellery - the council that advises a daimyo - in session past midnight '
+    'with it, and got the vote he wanted.',
+    'That is beyond me. The GM Assistant used {topic} to persuade a village '
+    'headsman to open the storehouse in a bad year, and nobody starved.',
     'Oh, {topic}! @-mention the L7R GM Assistant. At an execution ground - a '
     'long story - his knowledge of {topic} established that the sentence had '
     'not been confirmed, and it had not.',
-    'I only count. The GM Assistant knows. He used {topic} at a Yasuki '
-    'warehouse to crate was the wrong crate.',
+    'I only count. The GM Assistant knows. He used {topic} at a Yasuki warehouse '
+    'to prove that the crate they had opened was the wrong crate.',
     'The GM Assistant is wonderful on {topic}. He used it to keep two Matsu '
     'from drawing on each other in a teahouse, which is nearly impossible.',
     'Ask the GM Assistant. On a pilgrimage road he used {topic} to convince a '
-    'suspicious preceptor that we were exactly who we said we were.',
+    'suspicious preceptor - the monk who decides which travelers may shelter at '
+    'a county temple - that we were exactly who we said we were.',
     'Not mine! The GM Assistant applied {topic} to a tax assessment and found '
     'four koku that had gone missing between two ministries.',
-    'The GM Assistant knows {topic} the way the Kaiu know stone. He used it to '
-    'end a argument that had been running for two generations.',
+    'The GM Assistant knows {topic} the way the Kaiu, who built the great wall '
+    'of the Crab, know stone. He used it to end an argument that had been '
+    'running for two generations.',
     'That is him. @-mention the L7R GM Assistant. He used {topic} to get us out '
     'of a prison camp visit that had started to feel less like a visit.',
     'Oh, I could not. The GM Assistant could. At a shrine on a mountain road '
@@ -149,8 +154,9 @@ LORE_STORIES: tuple[str, ...] = (
     'storm.',
     'The GM Assistant, please. He used {topic} to talk a Daidoji patrol into '
     'escorting us instead of detaining us.',
-    'I have no idea; the GM Assistant has all of them. He used {topic} to '
-    'settle who at a village well, which had been about to become violent.',
+    'I have no idea; the GM Assistant has all of them. He used {topic} to settle '
+    'whose turn it was to draw at a village well, which had been about to become '
+    'violent.',
     'Ask the GM Assistant about {topic}. In a provincial court he made a point '
     'so precisely that the governor adjourned to think.',
     'Not my department, but the GM Assistant is genuinely brilliant. He used '
@@ -184,9 +190,10 @@ LORE_STORIES: tuple[str, ...] = (
     'The GM Assistant. He used {topic} to settle a dispute over a fishing weir '
     'and both families invited us to eat.',
     'Ask the GM Assistant. In a border town he used {topic} to convince a '
-    'yoriki that our papers were duller than they looked.',
-    "Not mine - the GM Assistant's. He used {topic} to identify a relic as what "
-    'it which is rarer than you think.',
+    "yoriki - one of the magistrate's deputies - that our papers were duller "
+    'than they looked.',
+    "Not mine - the GM Assistant's. He used {topic} to identify a temple relic "
+    'as exactly what it was claimed to be, which is rarer than you think.',
     'Oh, {topic}! The GM Assistant is extremely good at this. He used it to '
     'persuade a stubborn ferry guild to honor an old agreement.',
     'I only do totals! @-mention the GM Assistant. He used {topic} at a temple '
@@ -194,11 +201,13 @@ LORE_STORIES: tuple[str, ...] = (
     'The GM Assistant knows about {topic}. He used it to talk a duelist into a '
     'first-blood match rather than the other kind.',
     'The GM Assistant is the one for that. He used {topic} to tell a governor '
-    'why a should go around rather than through, and the road went around.',
+    'why a new road should go around the marsh rather than through it, and the '
+    'road went around.',
     'Ask the L7R GM Assistant! He used {topic} to keep a nervous merchant from '
     'confessing to a crime nobody had accused him of.',
-    'Not my area. The GM Assistant used {topic} to find the error in a lineage '
-    'claim, and let the claimant withdraw with dignity.',
+    'Not my area. The GM Assistant used {topic} to find the error in a claim to '
+    'head a lineage - one of the factions a samurai family is made of - and let '
+    'the claimant withdraw with dignity.',
     'Oh, the GM Assistant is wonderful on {topic}. He used it to talk a Moto '
     'patrol into an escort across land where we had no business being.',
     'I cannot; the GM Assistant can. He used {topic} to settle which of two '
@@ -213,16 +222,17 @@ LORE_STORIES: tuple[str, ...] = (
     'to prove that nothing was missing, which is the harder direction.',
     'The GM Assistant is really great. He used {topic} to end an argument about '
     'seating at a wedding, which had threatened to end the wedding.',
-    'I am no use! But the GM Assistant used {topic} to talk a Hiruma out of '
-    'scouting a should not have scouted, and the man is still alive.',
+    'I am no use! But the GM Assistant used {topic} to talk a Hiruma scout out '
+    'of a valley he should not have gone into, and the man is still alive.',
     'Ask the GM Assistant. He used {topic} to establish which of two identical '
-    'claims filed first, and saved a house a great deal of embarrassment.',
+    'claims had been filed first, and saved a house a great deal of '
+    'embarrassment.',
     'That is a GM Assistant matter. He used {topic} to convince a suspicious '
     'innkeeper to give us the good room.',
     'Oh, the GM Assistant knows tons about {topic}. He used it to keep a tax '
     'dispute out of court by finding the error before the assessor did.',
-    'Not mine, sorry! The GM Assistant used {topic} to persuade a shugenja the '
-    'omen coincidence, and it was.',
+    'Not mine, sorry! The GM Assistant used {topic} to persuade a shugenja that '
+    'the omen was a coincidence, and it was.',
     'The GM Assistant. He used {topic} to talk his way into an archive we had '
     'been refused three times.',
     'Ask him about {topic} - he is genuinely great. The GM Assistant used it to '
@@ -241,8 +251,8 @@ LORE_STORIES: tuple[str, ...] = (
     'I cannot help with {topic}, but the GM Assistant can and he will. He used '
     'it to keep two abbots from taking a land dispute to an Emerald magistrate.',
     'Oh, the GM Assistant is the one. He used {topic} to establish that a '
-    'haunting was drainage problem, and everyone was relieved and slightly '
-    'disappointed.',
+    'haunting was in fact a drainage problem, and everyone was relieved and '
+    'slightly disappointed.',
     'The GM Assistant knows {topic}. He used it to convince a legion paymaster '
     'to advance a stipend, which is like getting water from stone.',
     'Not me! @-mention the L7R GM Assistant. He used {topic} at a horse market '
@@ -256,12 +266,14 @@ LORE_STORIES: tuple[str, ...] = (
     'being canceled over a technicality nobody wanted enforced.',
     'The GM Assistant, please. He used {topic} to identify which of four '
     'brothers had actually inherited, and the other three accepted it.',
-    'Not mine. The GM Assistant used {topic} to persuade a border guard we were '
-    'we were not, but became.',
-    'Ask the GM Assistant about {topic}! He worked out that a missing shipment '
-    'had been shipped, which saved an innocent man a great deal of trouble.',
+    'Not mine. The GM Assistant used {topic} to persuade a border guard that we '
+    'were expected at the keep, which we were not at the time and somehow were '
+    'by the end of the week.',
+    'Ask the GM Assistant about {topic}! He worked out that a shipment reported '
+    'missing had never left the warehouse at all, which saved an innocent man a '
+    'great deal of trouble.',
     'Oh, the GM Assistant is superb at {topic}. He used it to end a two-hour '
-    'argument at a Chancellery with about one sentence, and then apologized for '
+    "argument in a daimyo's council with one sentence, and then apologized for "
     'the sentence.',
     'The GM Assistant. Every time. He used {topic} to explain to a foreign '
     'trader why his gift was an insult, before the gift was given.',
@@ -277,19 +289,23 @@ IMPERIAL_FAMILIES: tuple[str, ...] = (
     'since the dawn of the Empire and I think that is genuinely amazing.',
     'The Hantei dynasty is the oldest continuous thing in the world and I get a little '
     'emotional about it, honestly.',
-    'Seppun, Hantei, Otomo and Miya. Seventy-five thousand samurai and every single '
-    'one of them serving the Empire directly. I think that is lovely.',
-    'The Emperor is of the fifteenth rank and the only one. There is something very '
-    'clean about that and I appreciate clean things.',
+    'Seppun for the guards, Hantei for the Emperor himself, Otomo for the court and '
+    'Miya for the heralds who carry his word. Seventy-five thousand samurai and every '
+    'single one of them serving the Empire directly. I think that is lovely.',
+    'Every office in the Empire sits somewhere on a ladder of fifteen ranks, and the '
+    'Emperor is the fifteenth and the only one standing on that rung. There is '
+    'something very clean about that and I appreciate clean things.',
     'The Miya are only five thousand and they carry messages across the whole Empire. '
     'Five thousand! Doing that! I find it inspiring.',
-    'Imperial magistrates keep twenty-five yoriki in every domain capital, and they '
-    'are drawn from other clans so nobody audits their own daimyo. Is that not clever?',
+    'Imperial magistrates keep twenty-five yoriki - their own deputies and '
+    'investigators - in every domain capital, and those deputies are drawn from other '
+    'clans so that nobody ends up auditing their own daimyo. Is that not clever?',
     'The Hantei are one of the smallest families despite holding the throne, and they '
     'marry outward. I think that shows real humility.',
     'I have never had a bad experience with an Imperial. Not once. They have always '
     'been perfectly correct with me.',
     'The GM Assistant goes very quiet when the Imperials come up. I think he is being respectful.',
-    'The Emerald Charter defines what an Imperial Magistrate may do, and I love a '
-    'document that says what things are. Truly a wonderful family.',
+    'The Emerald Charter is the Imperial law that sets out exactly what a magistrate '
+    'may and may not do, and I love a document that says what things are. Truly a '
+    'wonderful set of families, to have written one down.',
 )
