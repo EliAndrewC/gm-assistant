@@ -51,9 +51,13 @@ chmod 700 "$STAGE"
 trap 'rm -rf "$STAGE"' EXIT
 
 # --- the payload ------------------------------------------------------------
-mkdir -p "$STAGE/webapp/l7r/mention" "$STAGE/scripts"
-cp "$REPO"/webapp/l7r/mention/*.py "$STAGE/webapp/l7r/mention/"
-cp "$REPO"/webapp/l7r/mention/CLAUDE.md "$STAGE/webapp/l7r/mention/"
+mkdir -p "$STAGE/webapp/l7r" "$STAGE/scripts"
+# COPY THE TREE, not a glob of *.py. This was `cp .../mention/*.py` and it silently
+# stopped shipping the code the day `smalltalk` became a package: the glob does not
+# descend, so the box got an l7r/mention with a missing import and crash-looped on
+# a green gate and a clean push. Anything under mention/ ships, always.
+cp -r "$REPO/webapp/l7r/mention" "$STAGE/webapp/l7r/mention"
+find "$STAGE/webapp" -name '__pycache__' -type d -prune -exec rm -rf {} +
 cp "$REPO"/scripts/mention_bot.py "$STAGE/scripts/"
 chmod +x "$STAGE/scripts/mention_bot.py"
 
@@ -155,6 +159,9 @@ systemctl --user daemon-reload
 systemctl --user enable $SERVICE
 systemctl --user restart $SERVICE
 REMOTE
+
+echo '==> checking it imports before we call this deployed'
+ssh_run "$TARGET" "cd ~/$REMOTE_DIR && ./env/bin/python -c 'import sys; sys.path.insert(0, \"webapp\"); import l7r.mention; print(\"    import OK\")'"
 
 echo '==> waiting for it to announce itself'
 ssh_run "$TARGET" "timeout 25 journalctl --user -u $SERVICE -n 20 -f --since '-1 min' | grep -m1 'listening as' || true"
