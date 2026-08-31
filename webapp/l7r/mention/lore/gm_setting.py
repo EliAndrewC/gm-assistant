@@ -862,10 +862,11 @@ SETTING: dict[str, tuple[str, ...]] = {
         'more in an emergency. It is the only budget in the Empire denominated in other '
         'people.',
         'Corvee is the unpaid labor every peasant household owes its lord each year, '
-        'and somebody has to decide which household sends a man for which days of it - '
-        'it is the village headsman - a farmer, with no stipend and no guards. The '
-        'Empire has arranged for its least defensible decisions to be made by the '
-        'person with the least protection, and it did not arrange that by accident.',
+        'and somebody has to decide which household sends a man for which of those '
+        'days. That somebody is the village headsman: a farmer, with no stipend and no '
+        'guards. The Empire has arranged for its least defensible decisions to be made '
+        'by the person with the least protection, and it did not arrange that by '
+        'accident.',
         'The Imperial branch of Works keeps Otosan Uchi, the Imperial capital, '
         'contributes heavily to the Kaiu Wall, and builds and staffs the waystations '
         'along the Imperial roads. A capital, a wall, and somewhere to sleep between '
@@ -1090,9 +1091,9 @@ SETTING: dict[str, tuple[str, ...]] = {
     ),
     'festivals': (
         'There is roughly one festival a month, and most of them are an apology to a '
-        'fortune for something the year did. The rest are an apology to a neighbor for '
-        'something you did. I file both under the same heading and nobody has ever '
-        'objected.',
+        'Fortune - one of the gods of this Empire - for something the year did. The '
+        'rest are an apology to a neighbor for something you did. I file both under the '
+        'same heading and nobody has ever objected.',
         'Festivals are administered by the Ministry of Rites, which is the ministry '
         'that handles religion, and that makes them more paperwork than devotion. A '
         'festival is a devotional act with a permit, a budget line, a precedence '
@@ -1142,9 +1143,10 @@ SETTING: dict[str, tuple[str, ...]] = {
         'opening. A week of preparation so that the dead are not inconvenienced. Nobody '
         'has ever prepared a week for me.',
         'The Moto - the Unicorn family who spent centuries beyond the western border - '
-        'say the monks do not open the gates of the underworld themselves - the gates '
-        'that let the dead come home for the night - and only ask a god to open them. '
-        'An Empire-wide observance whose actual mechanism is disputed by the people who '
+        'say the monks do not open the gates of the underworld at all. Somebody has to '
+        'open them, or the dead cannot come home for the night; the Moto hold that the '
+        'chanting only asks a god to do it. An observance the whole Empire keeps, whose '
+        'actual mechanism is disputed by the people who '
         'know that god best, and in four centuries nobody has convened so much as a '
         'hearing about it.',
         'The souls come from Yomi, where the honored dead go, and from Jigoku, where '
