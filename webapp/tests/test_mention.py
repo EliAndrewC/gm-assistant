@@ -842,6 +842,31 @@ DROPPED_WORD = re.compile(
 )
 
 
+#: Discord rejects a message body longer than this. Not our rule, and not a
+#: number anybody here gets to choose.
+DISCORD_MESSAGE_LIMIT = 2000
+
+
+def test_no_reply_is_too_long_for_discord_to_send() -> None:
+    """The threshold is Discord's, set where the standard is and not where we sit.
+
+    Worth having only since 2026-08-31, when the context rewrite made every lore
+    reply carry its own glosses and the corpus grew about half as long again.
+    The longest reply is around 600 characters including its image URL, so this
+    has three times the headroom - which is the point: a rate test whose floor
+    sits where the code currently is would be a thermometer. A reply that
+    crosses this does not get truncated, it fails to send, and the player sees
+    the bot ignore them.
+    """
+    too_long = [
+        f'{name}#{i} ({len(reply)} chars)'
+        for name, pool in named_pools()
+        for i, reply in enumerate(pool)
+        if len(reply) > DISCORD_MESSAGE_LIMIT
+    ]
+    assert not too_long, f'Discord will refuse to send these: {too_long}'
+
+
 def test_every_image_says_what_it_shows() -> None:
     """Adding a picture must add its subject words, or the caption check goes blind."""
     missing = [url for url in images.ALL_IMAGES if url not in images.SUBJECTS]
