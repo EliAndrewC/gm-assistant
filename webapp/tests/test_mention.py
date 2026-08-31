@@ -842,6 +842,43 @@ DROPPED_WORD = re.compile(
 )
 
 
+def test_every_image_says_what_it_shows() -> None:
+    """Adding a picture must add its subject words, or the caption check goes blind."""
+    missing = [url for url in images.ALL_IMAGES if url not in images.SUBJECTS]
+    assert not missing, f'no SUBJECTS entry, so nothing knows what these show: {missing}'
+
+
+def test_no_caption_describes_a_different_picture() -> None:
+    """A reply shipped saying "You have earned a fish" over a print of cats.
+
+    `smalltalk/gm.py`, `rickroll`, found by the context audit on 2026-08-31. Not
+    an unexplained joke - a reply falsified by its own attachment, and it read
+    perfectly well in the source, where the caption and the image constant are
+    two lines apart and nobody pictures the picture.
+
+    So: if a caption names one of the concrete nouns from `images.SUBJECTS` and
+    the attached URL is a DIFFERENT image, that is a mismatch. Measured before
+    adding it - one hit at the commit that shipped it, zero false positives
+    across the whole corpus - which is what makes it a ban rather than a
+    threshold. It cannot catch a caption that describes the wrong picture in
+    words no other picture owns; that still needs somebody to look.
+    """
+    every = {word for words in images.SUBJECTS.values() for word in words}
+    wrong = []
+    for name, pool in named_pools():
+        for i, reply in enumerate(pool):
+            lines = reply.split('\n')
+            url = next((line for line in lines if line.startswith('http')), None)
+            if url is None or url not in images.SUBJECTS:
+                continue
+            text = lines[0].lower()
+            said = {w for w in every if re.search(rf'\b{w}\b', text)}
+            other = said - images.SUBJECTS[url]
+            if other:
+                wrong.append(f'{name}#{i} says {sorted(other)}: {lines[0][:60]}')
+    assert not wrong, f'the caption describes a picture other than the one attached: {wrong}'
+
+
 def test_no_pool_offers_the_same_reply_twice() -> None:
     """A pool of eleven that contains a pair is a pool of ten wearing a bigger number.
 
