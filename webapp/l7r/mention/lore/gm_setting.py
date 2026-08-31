@@ -425,7 +425,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'unbunded waste, because death pollution does not come inside a town. The '
         'paperwork does. The paperwork goes everywhere.',
         'Rokugan does not imprison as punishment. The county jail is a waiting room '
-        'while the sentence travels up for confirmation - and the travelling is done '
+        'while the sentence travels up for confirmation - and the traveling is done '
         'by documents, which is to say by me.',
         'A county magistrate may TRY a capital case and may not conclude one. That '
         'distinction has saved more lives than mercy, and it exists entirely because '
@@ -434,8 +434,8 @@ SETTING: dict[str, tuple[str, ...]] = {
         'to ten years. A bandit gang taken alive can supply a decade in an afternoon '
         'and a fortnight of filing.',
         "The condemned are held, fed and guarded at the county magistrate's expense "
-        'while the confirmation travels. An Empire that does not imprison as punishment '
-        'still ends up paying to house people, and it has never enjoyed noticing.',
+        'while the confirmation travels upward. Justice here is free at the point of '
+        'delivery and expensive at the point of waiting.',
         'The execution ground is busy at a capital and nearly idle in a county. People '
         'imagine the reverse, and people are wrong, and I am the one holding the '
         'counts.',
@@ -449,7 +449,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         ),
         attach(
             'A matter settled before it reached either address. No cangue, no boundary '
-            'stone, no confirmation travelling anywhere - the Empire calls this an '
+            'stone, no confirmation traveling anywhere - the Empire calls this an '
             'irregularity and quietly relies on it.',
             DUEL_ON_THE_BRIDGE,
         ),
@@ -547,8 +547,8 @@ SETTING: dict[str, tuple[str, ...]] = {
         'The Imperial branch awards commendations - Kitsuki Fu has the Order of the '
         'Precious Crown for the Forgotten Tomb, the highest available below daimyo. The '
         'Empire pays its greatest debts in objects that cannot be sold.',
-        'It cannot be spent, which is rather the point, and which makes it the only '
-        'form of compensation I am theoretically eligible for.',
+        'An Imperial commendation cannot be spent, which is rather the point, and which '
+        'makes it the only form of compensation I am theoretically eligible for.',
         'A stipend is single digits in koku and people have killed over the difference '
         'between nine and eleven. I have both numbers and the resulting entry.',
         'The legal exchange rate is fixed by decree and the real one is not. Somebody '
@@ -785,8 +785,8 @@ SETTING: dict[str, tuple[str, ...]] = {
         'exception.',
         'The calendar is agricultural, the festivals are agricultural, and the theology '
         'arrived afterward and has been very gracious about it.',
-        'The theology arrived after the calendar and has been extremely gracious about '
-        'it, in the manner of a guest who has decided not to mention whose house it is.',
+        'Twelve annual occasions for organized regret, and the Empire files them under '
+        'holidays. Name one and somebody in my record is apologizing at it.',
         attach(
             'A festival, at the point where the record starts getting interesting and '
             'my evening stops being free.',

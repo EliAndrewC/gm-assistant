@@ -162,9 +162,8 @@ WORLD: dict[str, tuple[str, ...]] = {
     'the_nameless_one': (
         'The Nameless One. I am not going to be clever about the name and I would ask '
         'you to notice how much restraint that represents.',
-        'The worldbuilding here is deliberately consistent - a new concept is not '
-        'permitted to contradict an existing principle. That constraint is the entire '
-        'reason this one lands rather than being a costume.',
+        'Nothing in the record contradicts anything else about him, which sounds like '
+        'rigor and is actually the problem: there is not enough of him to contradict.',
         'A thing without a name is a thing the record cannot hold. Consider, at your '
         'leisure, what that means for the record. Consider what it means for me.',
         'Names are how this Empire does everything: lineage, rank, obligation, '
@@ -183,7 +182,8 @@ WORLD: dict[str, tuple[str, ...]] = {
             INNER_VISION,
         ),
         attach(
-            'What it cannot. There is no second picture; that is the point of the first one.',
+            'A thing the record cannot hold looks, from the archive, exactly like this: '
+            'quiet, orderly, and missing something nobody can name.',
             RAINY_MOON,
         ),
     ),
@@ -293,8 +293,9 @@ WORLD: dict[str, tuple[str, ...]] = {
         'in an upset when Doji Masayo turned up with the cursed sword Shitsuten and '
         'killed Akodo no Damasu Tsuo. A treaty clause, honored exactly, producing an '
         'outcome nobody who wrote it would have signed.',
-        'The man was expected to win. That is the entire weight of the entry, and it is '
-        'the only line in it anybody has ever quoted back to me.',
+        'Akodo no Damasu Tsuo was expected to win Tango province, and the word expected '
+        'is carrying the entire entry. It is also the only part of it anybody has ever '
+        'quoted back to me.',
         'A province decided by one duel, and the duel decided by a sword forged out of '
         "a swordsmith's hatred for the Yasuki. History is not tidy and I am the one who "
         'has to make it look tidy in the margins.',
@@ -359,11 +360,11 @@ WORLD: dict[str, tuple[str, ...]] = {
         'becomes merely inconvenient. I am, professionally, the point at which that '
         'transition occurs.',
         'Toranosuke is the abbot of Chai Sedo, which makes one man simultaneously the '
-        'keeper of eleven Imperial Gardens, the custodian of an unaudited library, and '
-        "the Empire's most quoted authority on a war nobody has declared.",
-        'The Chai Sedo library is the source for a great deal that nobody has '
-        'independently verified, including where the Moto came from - a load-bearing '
-        'claim resting on one shelf nobody has visited twice.',
+        "keeper of eleven Imperial Gardens and, by some distance, the Empire's most "
+        'quoted authority on a war nobody has formally declared is happening.',
+        'Everything in this campaign is a threshold of some kind: a gate, a garden, a '
+        'boundary, a keep named for the people on the other side of it. I noticed that '
+        'in the fourth year and have told nobody until now.',
         'The gardens number eleven and each of them means something, and the meanings '
         'are in my record, and in four hundred sessions I have been asked for one of '
         'them.',
@@ -422,8 +423,9 @@ WORLD: dict[str, tuple[str, ...]] = {
         'currently carried by their daimyo Akodo no Damasu Chiho. Ancestral swords are '
         'inventory. I say so quietly and only here.',
         'The domain has its own lineages, its own temples, and its own Order of '
-        'Bishamon with its own Grand Abbot - who is not subordinate to any other Grand '
-        'Abbot and will find an occasion to mention it.',
+        'Bishamon with its own Grand Abbot, its own endowments and its own tenants. A '
+        'domain is not a place with temples in it; it is a place the temples are part '
+        'of the accounts of.',
         'A capital, six provincial cities, thirty-six towns, and the villages and '
         'hamlets underneath them. Every one of those has a headsman, a monk, and a '
         'dispute, and I hold all three columns.',
@@ -452,7 +454,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'Sublimities. Beauty of Empty Space. Waving Lawn. Snow Rose. Pleasure After. '
         'Circle of Here. Ten names, each of them a small argument, none of them a '
         'description of a garden.',
-        'That is ten. There is an eleventh and I enjoy watching people count.',
+        'Ten gardens have names anybody will tell you. There is an eleventh, and I '
+        'enjoy watching people count.',
         'The Beauty of Empty Space Garden is the one that annoys visitors, which is '
         'unambiguously the intention, and which makes it the most successful garden in '
         'the Empire by its own stated criteria.',
@@ -472,8 +475,8 @@ WORLD: dict[str, tuple[str, ...]] = {
             INNER_VISION,
         ),
         attach(
-            'The Beauty of Empty Space, which visitors find infuriating, on purpose, '
-            'and at considerable expense.',
+            'The gardens in the eleventh month, when the Imperial gardeners are the '
+            'only staff in Rokugan whose year has not yet ended.',
             RAINY_MOON,
         ),
     ),
@@ -501,8 +504,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'to go back, which is a recruiting fact the Ministry of War has had for four '
         'centuries and has never once put on a banner.',
         attach(
-            'The legion at its actual work: standing somewhere expensive so that '
-            'nothing happens, for four centuries, successfully.',
+            'The legion at its actual work. Every man in this picture is a samurai, '
+            'which is the whole of why there are so few of them.',
             ARCHERS,
         ),
         attach(

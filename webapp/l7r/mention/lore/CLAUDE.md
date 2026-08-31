@@ -48,6 +48,28 @@ and privately unable to stand the Character Sheet - who is a free beat in any ca
 number. The full version of this section, with the audit's findings, is at the top of
 `gm_religion.py`; each other file's docstring records what was repaired in it.
 
+### WORK AN AUDIT'S FINDINGS CATEGORY-FIRST, NEVER LINE-BY-LINE
+
+The single most expensive lesson of the 2026-08-31 rewrite, and it cost a whole round to learn.
+
+A tone audit returns a punch list of named lines. Working that list line by line **fixes the named
+instances and lets the general rule slip** - and the third audit measured the result: after about
+ninety line edits, the strict rate went DOWN, 94.0% to 93.0%, because identical defects sitting two
+lines from a repaired one were never opened, and **five repairs manufactured fresh duplicates**.
+
+The failures are worth naming, because they are the shape this always takes:
+
+- The label caption `'What the Wall is for.'` was repaired by **lifting the punchline out of the
+  line directly above it**, putting the same joke twice in one ten-line pool.
+- A tic in `festivals#7` was rewritten into something almost word for word identical to
+  `festivals#6`.
+- `benten#4` quoted *"Probably right"* as a phrase from the text - and the same pass's repair to
+  `benten#3` had **deleted that phrase from the corpus**, leaving a line quoting nothing.
+
+So: when an audit names a line, **open its whole category and the neighbours of every line you
+touch**, fix the class rather than the instance, and re-read the pool as ten things a player meets
+one at a time. A finding is a symptom; the category is the patient.
+
 ### EVERY LINE SHIPS ALONE - captions included
 
 `rules.py` serves exactly ONE reply per query, `rng.choice(rendered)`. **Two replies are never
