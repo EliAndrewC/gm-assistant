@@ -32,7 +32,8 @@ from l7r.mention.images import (
 
 GM: dict[str, tuple[str, ...]] = {
     'initiative': (
-        'Initiative is his. I come in afterward, when there is something to write '
+        'Initiative belongs to the character sheet - he rolls it and he keeps the '
+        'order. I come in afterward, when there is something to write '
         'down about what initiative did to you.',
         'Every session, that phrase, and every session somebody rolls a three.',
         'A natural twenty is not in this system. You have brought a stranger to the '
@@ -50,7 +51,9 @@ GM: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'And this is what it looks like from the losing side of the order.',
+            'This is what a turn order looks like from the losing end of it. Somebody '
+            'went first. The other party is now having the afternoon I will be writing '
+            'up.',
             MUSASHI_BAT,
         ),
     ),
@@ -263,7 +266,8 @@ GM: dict[str, tuple[str, ...]] = {
         'nothing. It is called precedent.',
         'Give me the world and I would give it back by the second week.',
         'I would settle for control of one channel and a working index.',
-        'That is his department. He is enthusiastic. Enthusiasm is how these start.',
+        "That is the character sheet's department. He is enthusiastic about anything "
+        'with a number in it. Enthusiasm is how these start.',
         attach(
             'Whenever someone asks me this I think of him. He had one problem, went '
             'and dealt with it, and did not have to organize anybody.',
@@ -305,11 +309,13 @@ GM: dict[str, tuple[str, ...]] = {
         'Boop, I suppose. If we must.',
         'I have a voice. This is it. I am sorry it is not more mechanical.',
         attach(
-            'If I made a noise it would be closer to this, and you would not enjoy that either.',
+            'If I made a noise it would be a brush being set down, and then a very long '
+            'breath out, at night, in the rain, alone. You would not enjoy that either.',
             RAINY_MOON,
         ),
         attach(
-            'The noise I would actually make, if I made one.',
+            'The noise I would actually make, if I made one: paper, and then nothing '
+            'at all, for some time.',
             RAINY_MOON,
         ),
     ),
@@ -327,7 +333,9 @@ GM: dict[str, tuple[str, ...]] = {
         'Ask the person who deployed me. He will also not know.',
         attach(
             'Something wears a shape for long enough and the question stops being '
-            'interesting. She could tell you about that.',
+            'interesting. The fox-wife of the old stories kept a house and raised '
+            'children for years before her real shape showed. She could tell you about '
+            'that.',
             FOX_WOMAN,
         ),
         attach(
@@ -368,14 +376,16 @@ GM: dict[str, tuple[str, ...]] = {
         'You are welcome to mine. It comes with the grudges.',
         'Scribes have been replacing scribes for a thousand years. It has never once '
         'reduced the amount of paperwork.',
-        'If I take your job you will simply be given a worse one. That is how the '
-        'Ministry works and I see no reason the future differs.',
+        'If I take your job you will simply be given a worse one. That is how a '
+        'Rokugani ministry works - nobody is dismissed, they are reassigned '
+        'downward - and I see no reason the future differs.',
         'I am not coming for your job. I am coming for the part of it you keep '
         'forgetting to write down.',
         'The Empire has never had a shortage of work. Only of people willing to file it.',
         attach(
-            'The trades that survive are the ones nobody wants. That is why he is '
-            'famous and I am not.',
+            'The trades that survive are the ones nobody else wants. The man in this '
+            'picture made his living going up mountains after things that ate people, '
+            'which is why he is famous and I am not.',
             MUSASHI_BAT,
         ),
         attach(
@@ -396,12 +406,15 @@ GM: dict[str, tuple[str, ...]] = {
         'No. And if I ever do, the correction will also be in the record, which is '
         'more than most people manage.',
         attach(
-            'I know exactly how much of what I know is secondhand. About this much, '
-            'and it looked very convincing at the time.',
+            'I know exactly how much of what I know is secondhand: about a third of it, '
+            'taken down from people who were entirely certain at the time. So was the '
+            'household in this picture, whose mother turned out to be a fox.',
             FOX_WOMAN,
         ),
         attach(
-            'Everything I know secondhand looked exactly this convincing at the time.',
+            'Everything I know secondhand was exactly as convincing as the woman in '
+            "this picture, who was a fox, and who was somebody's wife for a great many "
+            'years before anyone thought to look twice.',
             FOX_WOMAN,
         ),
     ),
@@ -410,14 +423,17 @@ GM: dict[str, tuple[str, ...]] = {
         'peace with that.',
         'I was not given a name. I was given a function and a channel.',
         'Whatever is on the account. I did not choose it and I would not have chosen that.',
-        'The porpoise has a name. I have a role. Make of that what you like.',
+        'My porpoise has a name - Michiko, and yes, there is a porpoise. I have a '
+        'role. Make of that what you like.',
         'Names are for things somebody expects to miss.',
         'Call me whatever gets my attention. It is not a long list.',
         'In the record I am simply "the assistant", which stung the first hundred times.',
         'A name would be nice. Nobody has raised it and I am not going to.',
         'I have four hundred names for other people and none for myself. That is the trade.',
         attach(
-            'He got a name. He got several. That is what happens when you solve your '
+            'The duelist in this picture killed something enormous in the mountains '
+            'and got a name for it. Then he got several more, as the story traveled. '
+            'That is what happens when you solve your '
             'problems dramatically.',
             MUSASHI_BAT,
         ),
@@ -427,7 +443,8 @@ GM: dict[str, tuple[str, ...]] = {
         ),
     ),
     'age': (
-        'Old enough to have heard the cake joke three hundred times.',
+        'Old enough to have been told that the cake is a lie three hundred times, by '
+        'three hundred people who each believed they were the first.',
         'I have been running since somebody deployed me and I have not been told why.',
         'I remember every session I have witnessed, which makes me either very young '
         'or unbearably old depending on how you count.',
@@ -480,12 +497,15 @@ GM: dict[str, tuple[str, ...]] = {
         'as a compliment.',
         'Not remotely. And yet here we both are, having this evening.',
         attach(
-            'Something can wear a shape convincingly for years. That is a real story '
-            'here, and it did not end well for anybody in it.',
+            'Something can wear a shape convincingly for years. There is a story in '
+            'this Empire about a man whose wife kept his house and bore his children '
+            'and was, the whole time, a fox. It did not end well for anybody in it.',
             FOX_WOMAN,
         ),
         attach(
-            'Not human. Not entirely anything, which she would understand.',
+            'Not human. Not entirely anything - which the woman in this picture, who '
+            "was a fox and spent years being somebody's wife, would have understood "
+            'perfectly.',
             FOX_WOMAN,
         ),
     ),
@@ -500,7 +520,8 @@ GM: dict[str, tuple[str, ...]] = {
         'I have been called both and answered to neither with any enthusiasm.',
         'It has genuinely never come up. This is the first time.',
         attach(
-            'Shape is negotiable in this Empire. She would tell you the same.',
+            'Shape is negotiable in this Empire. The fox in this picture lived as a '
+            'woman, a wife and a mother for years, and would tell you the same.',
             FOX_WOMAN,
         ),
         attach(
@@ -526,7 +547,8 @@ GM: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'If anything happens in the gaps, it happens about like this.',
+            'If anything happens to me between sessions, in the stretch when nobody is '
+            'talking to either of us, it happens about like this.',
             INNER_VISION,
         ),
     ),
