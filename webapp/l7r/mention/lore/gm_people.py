@@ -251,8 +251,9 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'to be surveying.',
         'Each detector - each device for telling in advance which stretch of ground is '
         'shortly going to be covered in bodies - has to be surveyed to one particular '
-        'region and works only there. The Moto one cannot be used in Uru lands, out west beyond the '
-        'desert, which is precisely where Gaheris is fighting his war. An instrument '
+        'region and works only there. The Moto one cannot be used in Uru lands, out '
+        'west beyond the desert, which is precisely where Gaheris is fighting his war. '
+        'An instrument '
         'perfectly calibrated to somewhere else. I have sympathized with objects '
         'before.',
         'The intended use is to scatter your forces, watch where the instrument says the '
