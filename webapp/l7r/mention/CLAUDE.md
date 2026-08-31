@@ -94,7 +94,21 @@ the time."*
 
 What the tests can hold: reply COUNTS, the image ban on every Character Sheet pool, the provenance
 of every image URL, that no pattern is dead and no pool unreachable, and that the two bots never
-share a line. What they cannot hold: TONE. Whether a line is genuinely earnest or genuinely
+share a line. Three more were added on 2026-08-31, each of them a ban whose only acceptable value is
+zero, each measured against the commit that shipped the defect it catches:
+
+- **No pool offers the same reply twice.** Seven byte-identical `#9`/`#10` caption pairs were
+  sitting in `smalltalk/gm.py`, so seven pools of eleven were really pools of ten. The existing
+  duplicate ban swept `lore.GM` and nothing else; widening it was free and found all seven.
+- **No reply has a word missing out of the middle of it.** An article followed straight by a
+  preposition or an auxiliary - "open a in a bad year" - is never English. It catches three of the
+  fourteen corrupt replies the context audit found by reading, and the docstring says so: it is a
+  floor, not the answer.
+- **No caption describes a different picture.** One reply shipped saying *"You have earned a fish"*
+  with the CATS print attached. `images.py` now records what each picture SHOWS, beside its URL, so
+  the comparison is possible at all.
+
+What they cannot hold: TONE. Whether a line is genuinely earnest or genuinely
 sarcastic is a judgment call, so it is left to whoever is writing, guided by the voice notes at the
 top of each file. Do not try to test it.
 
