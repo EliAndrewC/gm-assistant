@@ -128,15 +128,22 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'they are meant for. He afterward swore a vow of soothsaying to Benten, the '
         'Fortune of love, because people take the news so badly. His blessing came with '
         'a complaints procedure. Mine did not.',
-        'Three people in recent years were sketched a soulmate who was GAIJIN - a '
-        'foreigner from beyond the Empire, which is where those three had never been '
-        'and could not respectably go. Excellent news for the war in the west, '
-        'catastrophic news for them, and a genuinely lovely afternoon for me.',
-        'Toranosuke, abbot of the monastery at Chai Sedo, examined those three foreign '
-        'soulmate sketches and declared that they portend success for the military '
-        'campaign in the west. A blessing about marriage, entered into the record as a '
-        'military dispatch, and nobody involved thought that was strange.',
-        'The terms of it: by vowing always to convey truth to all who seek it, Ritsu '
+        'A pilgrim carrying the blessing of the love goddess can draw you the face of '
+        'whoever you are meant to end up with, and three people in recent years were '
+        'shown a GAIJIN - a foreigner from beyond the Empire, which is where those '
+        'had never been and could not respectably go. Excellent news for those reading '
+        'it as an omen about the war in the west, catastrophic news for them, and a '
+        'genuinely lovely afternoon for me.',
+        'A pilgrim of Benten can look at a stranger and draw the one they are meant to '
+        'marry, and three people in recent years were drawn foreigners. Toranosuke, '
+        'abbot of '
+        'the monastery at Chai Sedo, examined the sketches and declared that they '
+        'portend success for the military campaign in the west. A blessing about '
+        'marriage, entered into the record as a military dispatch, and nobody involved '
+        'thought that was strange.',
+        "The terms of Benten's Blessing, which lets its holder sketch a stranger the "
+        'face of the person they are destined for: by vowing always to convey truth to '
+        'all who seek it, the pilgrim Ritsu '
         'receives divine truth in return. He is paid in the exact commodity he is '
         'obliged to give away. I have raised the comparison with my own situation with '
         'nobody, because there is nobody.',
@@ -148,7 +155,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'the person you are destined for, delivered to your face by a pilgrim who will '
         'not soften it. On the evidence in front of me she is also the Fortune of '
         'extremely awkward afternoons, and I maintain that register.',
-        'Everybody asks Ritsu for the blessing. Nobody asks what the blessing costs, or '
+        'Everybody asks Ritsu, the pilgrim who can draw you the face of the person you '
+        'are destined for, to do it. Nobody asks what the blessing costs, or '
         'what they intend to do about the answer, or whether the face in the sketch '
         'might already be married. That ratio holds for most things people ask me '
         'about, myself included.',
@@ -450,8 +458,10 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'dead. Ryoshun simply decides whether you get past, which is worse, because '
         'there is no argument to make and no hearing to attend. It also happens to be '
         'the arrangement I work under.',
-        'The Order of Lord Moon takes its members as disciples of the celestial '
-        'servants in that court, and he is one of the figures they may be sworn to. I '
+        'The Order of Lord Moon, a secret society, takes its members as disciples of '
+        "the celestial servants in the moon god's heavenly court, and Ryoshun - who "
+        'guards the entrance to the heavens - is one of the figures they may be sworn '
+        'to. I '
         'record which member is disciple to which. I do not discuss which. Those are '
         'two separate services and only one of them has ever been requested.',
         'Everything above the mortal realm has a doorman. That is the theology of the '
@@ -462,8 +472,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'will thank you not to describe the work as simple.',
         attach(
             'A threshold, and one figure deciding at it. That is the whole of Ryoshun, '
-            'which is more than most Fortunes manage to be about, and considerably more '
-            'than most of them can be summarized in.',
+            'who is the god standing at the entrance to the celestial heavens - which '
+            'is more than most gods of this Empire manage to be about, and considerably '
+            'more than most of them can be summarized in.',
             INNER_VISION,
         ),
         attach(
@@ -489,9 +500,10 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'the only rules that apply. It is deliberately unhelpful, whoever drafted it '
         'knew that it was unhelpful, and they wrote it down anyway and sent me a copy.',
         'Kuni Isamu, a Crab witch-hunter, went into the Forgotten Tomb - which is a '
-        'between place. Kitsuki Fu received the highest commendation available below '
-        'daimyo for what happened there. Read those two facts together, then picture '
-        'the face of the man who had to file them on the same page.',
+        'between place - and came out with his perception and his speech impaired. '
+        'Kitsuki Fu, a Dragon investigator, came out of the same business with the '
+        'highest commendation available below daimyo. Read those two facts together, '
+        'then picture the face of the man who had to file them on the same page.',
         'Caves are the usual doorway in the record. Not always. Usually. "Usually" is '
         'doing an enormous amount of load-bearing work in a subject where being wrong '
         'relocates you.',
@@ -562,8 +574,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         attach(
             'What that magic actually costs tends to arrive wearing a shape you would '
             'have trusted - the fox-wife of the old stories lived for years as a wife '
-            'and a mother before her real shape showed. Nobody who wrote about the '
-            'totems mentioned this part, and every one of them knew.',
+            'and a mother before her real shape showed. Nobody who wrote admiringly '
+            'about what blood magic can store in an object mentioned this part, and '
+            'every one of them knew.',
             FOX_WOMAN,
         ),
     ),
@@ -585,13 +598,16 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'been explaining it ever since, at length, to me.',
         'The rule is that a shugenja who practices the forbidden blood magic loses the '
         'power to ask the spirits for anything. Isawa Akuma did both and lost nothing, '
-        'and nobody has established why. The Phoenix have a prepared explanation for '
+        'and nobody has established why. At the dawn of the Empire the Phoenix ruling '
+        'family knelt to its own vassal, and they have a prepared explanation for '
         'the kneeling and none whatsoever for this.',
         'They are rarer than the stories suggest and considerably more administrative '
         'than the stories admit. Most of a shugenja year is requests, in order, with '
         'reasons attached, for rain and for the absence of rain.',
-        'Every clan has shugenja. Only one clan is DEFINED by them, and largely by the '
-        'accident of which ancestor it has spent a thousand years explaining.',
+        'Every clan has shugenja. Only the Phoenix are DEFINED by them, and largely by '
+        'the accident of which ancestor they got - Isawa, who founded their priestly '
+        'family and practiced the forbidden blood magic, and whom they have spent a '
+        'thousand years explaining.',
         'Ask a shugenja to fix your problem and you will receive a lecture on the '
         'proper relationship between man and the elements. I have transcribed nine of '
         'those lectures word for word. The problem is not fixed in any of the nine.',
@@ -603,9 +619,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
             KIDOMARU_TENGU,
         ),
         attach(
-            'What those requests are about, almost all of them, in every domain, in '
-            'every century: rain, or the absence of rain. An entire priesthood, and the '
-            'correspondence is weather.',
+            'What a shugenja actually spends the year petitioning the elemental spirits '
+            'for, in every domain, in every century, is this: rain, or the absence of '
+            'rain. An entire priesthood, and the correspondence is weather.',
             RAINY_MOON,
         ),
     ),
@@ -684,9 +700,10 @@ RELIGION: dict[str, tuple[str, ...]] = {
             CARP,
         ),
         attach(
-            'A prosperous evening, courtesy of the same Fortune, and considerably more '
-            'popular than the granary that paid for it. Nobody has ever drunk a toast '
-            'to a granary. I have proposed it twice.',
+            'A prosperous evening, courtesy of Daikoku, the god of wealth, whose '
+            'temples are granaries with altars in them. The evening is considerably '
+            'more popular than the granary that paid for it. Nobody has ever drunk a '
+            'toast to a granary. I have proposed it twice.',
             SAKE_SAMURAI,
         ),
     ),
@@ -699,8 +716,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'recipients were shown a gaijin - a foreigner from outside the Empire, whom a '
         'Rokugani cannot respectably marry. None of the three has recovered and all '
         'three are now in this record permanently.',
-        'Ritsu, the pilgrim who carries that blessing, swore a vow of soothsaying to '
-        'her because conveying her truths reliably upsets people. A goddess of love '
+        'Ritsu, the pilgrim who can look at a stranger and sketch the face of the '
+        'person they are destined for, swore a vow of soothsaying to Benten because '
+        'conveying her truths reliably upsets people. A goddess of love '
         'whose signature gift required a legal remedy.',
         'When a foreigner names their own god of love, a samurai will assume they mean '
         'Benten and is generally held to be correct, on the grounds that she is woven '
@@ -754,8 +772,10 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'every clan needs one and nobody has ever managed to build one after they '
         'needed it. That is the sole piece of foresight in the entire religious '
         'apparatus.',
-        'No Fortune is evil, though a good many are terrifying. Death is part of the '
-        'natural order and she is part of the interconnectedness of all things - a '
+        'No god of this Empire is evil, though a good many are terrifying, and Emma-O '
+        'is the one whose whole portfolio is dying. Death is part of the natural order '
+        'and she is part of '
+        'the interconnectedness of all things - a '
         'sentence the devout say brightly and I write down flatly, in the same ink as '
         'everything else.',
         'Moto Gaheris, the Khan who leads the Moto, carries four swords, one dedicated '
@@ -778,8 +798,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'Bloodstorm is the sword the Khan dedicated to Emma-O, and it is the one '
-            'for killing that was expected: a challenge, a battle, something announced '
+            'Moto Gaheris, the Khan of the Moto, dedicated the sword Bloodstorm to the '
+            'goddess whose business is dying, and it is the one he draws for killing '
+            'that was expected: a challenge, a battle, something announced '
             'in advance. That is the category that comes with paperwork, which is why '
             'it is the category I know best.',
             DUEL_ON_THE_BRIDGE,
@@ -838,8 +859,10 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'bringing civilization to that city as the Great Ancestors brought it to the '
         'warlords of old. Considered. My folder of considered vows is my largest '
         'folder.',
-        'The danger of that particular vow is arithmetic rather than theology. If Tetsu '
-        "swears to build a temple in a conquered western city and the Khan's campaign "
+        'What Tetsu has in mind is a temple, built and staffed, in a foreign city his '
+        'allies have only just taken. The danger of that is arithmetic rather than '
+        'theology. If he swears it and '
+        "the Khan's campaign "
         'then fails, he remains bound to build it in a city that will by then belong to '
         'somebody with opinions about Rokugani temples.',
         'The Ministry of Rites, which rules on what is doctrine and what is heresy, has '
@@ -868,8 +891,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'The plot of ground in Medin al Salaat where that temple was to stand is '
-            'still empty four years on, because the vow was considered and never sworn. '
+            'The ground set aside for a Rokugani temple in a conquered western city '
+            'stands empty four years on, because the Dragon who proposed building it '
+            'thought about the vow and never swore it. '
             'The proposal has not altered by a single word. Everything around it has, '
             'which is what makes a considered vow the dangerous kind.',
             RAINY_MOON,
@@ -881,18 +905,22 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'deliberately: four is the unlucky number here because the word for four sounds '
         'like the word for death. So of course there are four of them. Whoever made '
         'that pun is long gone and the pun is still working.',
-        'The four are Emma-O, Enma, King Yan and Wei Tin, and the grouping is Moto '
+        'The four are Emma-O, whose portfolio is dying and whom the whole Empire '
+        'recognizes; Enma, the gatekeeper of the hell realm; King Yan, the judge; and '
+        'Wei Tin, who has charge of every spirit that walks. The grouping is Moto '
         'teaching - the Moto being the Unicorn family who spent centuries out west. '
         'Only two of the four are recognized in the rest of the Empire. The others '
         'appear to be theirs alone, which is the polite way of saying that nobody east '
         'of the mountains ever checked.',
-        'Moto Gaheris, the Khan who leads them, carries four swords, one dedicated to '
-        'each god, so which blade he draws declares what kind of killing this is. '
+        'Moto Gaheris, the Khan who leads the Moto, carries four swords, one dedicated '
+        'to each of their gods of death, so which blade he draws declares what kind of '
+        'killing this is. '
         'Bloodstorm goes to Emma-O, Fortune of death, for a fight that was expected. '
         'Lamentation goes to Enma, who guards the gates of hell, for when he is '
         'ambushed.',
-        "The other two of the Khan's four dedicated swords: Lightning, for single "
-        'combat, to King Yan, who judges the souls of the dead. Retirement, for '
+        'Moto Gaheris dedicated each of his four swords to one of the four gods of '
+        'death, and two of the four go like this: Lightning, for single combat, to King '
+        'Yan, who judges the souls of the dead. Retirement, for '
         'executions, to Wei Tin, the lord of ghosts. That is the theology entire - a '
         'taxonomy of killing, maintained at the hip and settled before the fight '
         'starts.',
@@ -1032,8 +1060,10 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'they often need help FINDING their descendants - particularly where the family '
         'burned the wrong incense at Obon, the festival at which the dead are invited '
         'home. An entire god employed because somebody misfiled an offering.',
-        'The lord of ghosts therefore bargains with honored ancestors as well as with '
-        'the damned, telling them where and when they may usefully intervene among the '
+        'Souls out of Yomi cannot always locate the households they belong to, so Wei '
+        'Tin, who has dominion over every spirit that walks, bargains with honored '
+        'ancestors as well as with the '
+        'damned, telling them where and when they may usefully intervene among the '
         'living. He is, functionally, a scheduling office. I want it minuted that the '
         'cosmology has a scheduling office and that it is not me.',
         'A man cuts his own throat for no reason anybody can name, or breaks his neck '
@@ -1041,8 +1071,10 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'a vengeful ghost choose the moment. A theology that turns accidents into '
         'appointments.',
         'When a dying man is possessed in battle by an ancestor who fights on through '
-        'him as his own strength fails, that is the same god on the opposite errand. He '
-        'works both sides of the ledger, which I would report to somebody if there were '
+        'him as his own strength fails, that is Wei Tin again - the same lord of ghosts '
+        'who elsewhere helps a vengeful spirit pick the moment to kill somebody, on the '
+        'opposite errand. He works both sides of the ledger, which I would report to '
+        'somebody if there were '
         'anybody to report it to.',
         'Pilgrims to the shrine at Bodi Kaikhan pray to him in order to reach their own '
         'ancestors, and Gaheris certainly did before forging his covenant with the four '
