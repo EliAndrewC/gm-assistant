@@ -143,3 +143,56 @@ def test_no_category_leaves_him_out_entirely() -> None:
         f'ten straight lines of encyclopedia with nobody speaking them - no register 1 '
         f'is present at all: {absent}'
     )
+
+
+#: Words too common to carry a joke. Dropped before shingling, which is the whole
+#: reason this guard can exist - see below.
+_STOPWORD_TEXT = (
+    'a an the of to in and or is are was were be been it its that this those these for '
+    'with on at by as i me my he she they them his her their you your not no but so '
+    'which who whom what when where how all any one two three from into over under than '
+    'then there here have has had do does did will would can could'
+)
+_STOPWORDS = frozenset(_STOPWORD_TEXT.split())
+
+#: Content words in a row that two replies IN THE SAME POOL may not share in their
+#: closing sentence. Measured: at four, three pairs, all three genuine repeats and
+#: no false positive. At three, "eleven imperial gardens" trips - a fact two lines
+#: legitimately share. So four.
+POOL_ECHO_WINDOW = 4
+
+
+def _closing_content_words(reply: str) -> list[str]:
+    body = re.sub(r'https?://\S+', '', reply).strip()
+    sentences = [s for s in re.split(r'(?<=[.!?])\s+', body) if s]
+    last = sentences[-1] if sentences else ''
+    return [w for w in re.findall(r"[a-z']+", last.lower()) if w not in _STOPWORDS]
+
+
+def test_no_pool_tells_the_same_joke_twice() -> None:
+    """The defect that survived three passes and grew in every one of them.
+
+    A near-duplicate guard over the WHOLE corpus was built, measured and dropped:
+    it fired on facts two categories deliberately share, and no mechanism
+    separates a repeated fact from a repeated joke. That reasoning is correct
+    and it does not apply here, which is the insight this guard rests on:
+    **inside a single ten-reply pool, a repeated punchline is never a
+    legitimately shared fact.** The scope IS the discriminator.
+
+    It is narrow on purpose. It catches the severe subclass - a punchline lifted
+    onto a neighbor, which is how three of these were introduced, one of them
+    verbatim - and it does not pretend to catch every echo. A guard that fires
+    only on things with no defensible use is worth more than a broad one that
+    argues with the author.
+    """
+    echoes: list[str] = []
+    for topic, pool in GM.items():
+        seen: dict[tuple[str, ...], int] = {}
+        for i, reply in enumerate(pool):
+            words = _closing_content_words(reply)
+            for j in range(len(words) - POOL_ECHO_WINDOW + 1):
+                gram = tuple(words[j : j + POOL_ECHO_WINDOW])
+                if seen.get(gram, i) != i:
+                    echoes.append(f'{topic}#{seen[gram]} ~ #{i}: {" ".join(gram)!r}')
+                seen.setdefault(gram, i)
+    assert not echoes, f'the same punchline twice in one ten-reply pool: {sorted(set(echoes))}'

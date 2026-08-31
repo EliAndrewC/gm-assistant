@@ -46,9 +46,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'On paper their tribes are ruled by local governors, whom the Moto call khans. '
         'Two words for the same office, chosen by two peoples who each believe the '
         'other is being humored.',
-        'Not knowing how many subordinate units you have is, administratively, my least '
-        'favorite fact in this entire record, and I have had to hold it for years '
-        'without being able to do anything about it.',
+        'Nobody, the Shinjo included, has an accurate count of the Moto tribes. Not '
+        'knowing how many subordinate units you have is, administratively, my least '
+        'favorite fact in this entire record, and I have held it for years.',
         'They are Unicorn. They are also, in every practical sense, a separate '
         'civilization living inside the Empire, and the Empire has decided not to '
         'examine that closely.',
@@ -150,9 +150,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'The same trap waits with every gaijin pantheon. A traveler from Medin al '
         'Salaat names their God of Love and a samurai hears Benten and writes down '
         'Benten, and then I inherit the note.',
-        'A samurai who hears a foreign god of love and writes down Benten is usually '
-        'correct, since she is woven through reality itself. Usually is doing the work, '
-        'and I am the one who keeps the footnote alive.',
+        'Usually is doing the work in that sentence. Nobody has ever come back to '
+        'confirm one of those identifications, and the footnote is mine to keep alive '
+        'in the meantime.',
         'Every misunderstanding in the Moto material is a translation before it is a '
         'heresy. I would put that on a wall if anybody let me have a wall.',
         'If a Moto tells you something impossible, ask which word they used. Then ask '
@@ -447,8 +447,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'The constraint is water, and specifically the RATE - a well may hold enough '
         'and still not refill fast enough for an army and its animals. Every expedition '
         'that died out there was defeated by a well that was, technically, full.',
-        'The rate a well refills has killed more expeditions in the Burning Sands than '
-        'any enemy out there, and it appears in no song about any of them.',
+        'No song about the Burning Sands has ever mentioned a well, and the wells are '
+        'what decided every one of the events the songs are about.',
         'The Unicorn crossed it. The Moto came from beyond it. Everything strange about '
         'both clans starts there, and everyone who finds them strange has declined to '
         'go and look.',

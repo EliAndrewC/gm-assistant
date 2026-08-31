@@ -66,7 +66,7 @@ The failures are worth naming, because they are the shape this always takes:
 - `benten#4` quoted *"Probably right"* as a phrase from the text - and the same pass's repair to
   `benten#3` had **deleted that phrase from the corpus**, leaving a line quoting nothing.
 
-So: when an audit names a line, **open its whole category and the neighbours of every line you
+So: when an audit names a line, **open its whole category and the neighbors of every line you
 touch**, fix the class rather than the instance, and re-read the pool as ten things a player meets
 one at a time. A finding is a symptom; the category is the patient.
 
@@ -85,6 +85,15 @@ of them fine in the file and inert in the channel.
 
 **Read a line as though it is the only thing the player will ever see, because for that player it
 is.** An author reading the file top to bottom cannot see this; it took reading `rules.py`.
+
+**THE `#8`/`#9` SLOT IS THE DEFECT GENERATOR, and it is structural rather than accidental.** Roughly
+a fifth of all categories put a setup at index 8 and its payoff at index 9, because the two captions
+sit adjacent in the file and read as a pair there. `rng.choice` guarantees they never arrive as one.
+Three separate rewrites have now repaired individual orphans in that slot and left the shape intact,
+and a fifth audit found 18 still standing - most of them index-9 captions whose other half is index
+8. **Until both captions are written as two independent lines that happen to share an image budget,
+this class regenerates faster than it is repaired.** Repairing instances here is not progress; the
+slot is the bug.
 
 | file | holds |
 |---|---|

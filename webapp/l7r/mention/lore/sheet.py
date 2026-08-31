@@ -253,7 +253,7 @@ LORE_STORIES: tuple[str, ...] = (
     'Oh, {topic} is his whole thing. The GM Assistant used it to settle whether '
     'a road counted as Imperial, which decided who paid for the bridge.',
     'I do arithmetic. The GM Assistant does {topic}. He kept a festival from '
-    'being cancelled over a technicality nobody wanted enforced.',
+    'being canceled over a technicality nobody wanted enforced.',
     'The GM Assistant, please. He used {topic} to identify which of four '
     'brothers had actually inherited, and the other three accepted it.',
     'Not mine. The GM Assistant used {topic} to persuade a border guard we were '

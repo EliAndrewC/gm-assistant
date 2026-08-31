@@ -460,9 +460,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'The Order of Bishamon is the network of temples, monasteries and shrines in '
         'Damasu lands. Every Lion domain has its own, each with its own Grand Abbot, '
         'all of whom would like a word.',
-        'Fortune of strength and war, and the only fortune whose temples are endowed '
-        'faster than they can be built. Piety and the treasury have never disagreed '
-        'about Bishamon, which is the entire secret of his popularity.',
+        'His temples are endowed faster than they can be consecrated, and the backlog '
+        'is filed with me rather than with him. I hold a waiting list of buildings.',
         'Fortune of strength and war, which is why a Lion domain has so many of his '
         'temples and so few arguments about funding them. Piety is far easier to '
         'arrange when it agrees with the treasury.',
@@ -477,13 +476,13 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'Everyone swears by him before a battle. Notably fewer thank him afterward. I '
         'hold both lists and the second one fits on a smaller page.',
         attach(
-            'Strength and war, which is the department everybody swears by beforehand '
-            'and rather fewer thank afterward.',
+            'A print commissioned by somebody who had never been near the work, for '
+            'somebody who was about to be.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'The rest of what a fortune of war presides over. It is the larger half of '
-            'the portfolio and it has never once been put on a banner.',
+            'Rain on a field somebody fought over. A fortune of war presides over this '
+            'for far more of the year than over anything with a banner in it.',
             RAINY_MOON,
         ),
     ),
@@ -637,8 +636,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'build it or die trying, in a city that will by then belong to somebody with '
         'opinions about Rokugani temples.',
         'Building a temple in a gaijin city is either the most pious act of a generation '
-        'or a naked provocation, and both readings have partisans, and both sets of '
-        'partisans write to me.',
+        'or a naked provocation. Kitsuki Tetsu has not sworn it, which is the only '
+        'reason the question is still theoretical.',
         "Dying with it unfulfilled brings bad karma and the fortune's wrath; dying "
         'attempting it brings the opposite. People work out which half they are in at '
         'the very end, reliably, every time.',

@@ -499,9 +499,8 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Revenue problem, so neither ministry wants it and both of them write to me '
         'about it.',
         attach(
-            'A road you cannot fence, cannot patrol cheaply and cannot divert around. '
-            'Three properties, all of them advantages to somebody other than the '
-            'magistrate.',
+            'Water moving goods past a gate that is not there. Every tariff in the '
+            'Empire assumes a wall, and this has none.',
             GREAT_WAVE,
         ),
         attach(

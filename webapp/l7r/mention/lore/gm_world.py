@@ -178,7 +178,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'The one thing in this Empire I cannot file properly, and it is the one thing '
         'everybody assumes I am relaxed about.',
         attach(
-            'What the record can hold. Almost everything, as it happens.',
+            'Lineage, rank, obligation, inheritance - the machinery a name drives. All '
+            'of it in one archive, and none of it able to grip on him.',
             INNER_VISION,
         ),
         attach(
@@ -363,8 +364,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         "keeper of eleven Imperial Gardens and, by some distance, the Empire's most "
         'quoted authority on a war nobody has formally declared is happening.',
         'Everything in this campaign is a threshold of some kind: a gate, a garden, a '
-        'boundary, a keep named for the people on the other side of it. I noticed that '
-        'in the fourth year and have told nobody until now.',
+        'boundary, a keep named for the people outside it. A campaign about doorways, '
+        'run by people who mostly wanted to know what was through them.',
         'The gardens number eleven and each of them means something, and the meanings '
         'are in my record, and in four hundred sessions I have been asked for one of '
         'them.',
@@ -504,8 +505,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'to go back, which is a recruiting fact the Ministry of War has had for four '
         'centuries and has never once put on a banner.',
         attach(
-            'The legion at its actual work. Every man in this picture is a samurai, '
-            'which is the whole of why there are so few of them.',
+            'The legion at its actual work: waiting, in formation, at a door, for a '
+            'century at a time. Four hundred years of this and eleven pages of it.',
             ARCHERS,
         ),
         attach(
