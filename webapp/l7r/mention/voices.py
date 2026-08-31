@@ -555,9 +555,16 @@ COMMON_TOPICS: dict[str, tuple[str, ...]] = {
         'Honesty and Courtesy are usually in direct conflict, and Courtesy wins.',
     ),
     'shadowlands': (
-        'We do not discuss it in open channels. Ask a Crab, and then buy them a drink.',
-        'That is a Crab matter. Buy a Crab a drink and do not ask twice.',
-        'Not in this channel. Not in any channel, really.',
+        'We do not discuss the Shadowlands in open channels. It is the tainted country '
+        'south of the Crab wall, everything in it is trying to get further in, and that '
+        'is as much as I will put in writing here.',
+        'That is a Crab matter. They are the clan that holds the wall against it, they '
+        'have held it for a thousand years, and they will tell you exactly as much as '
+        'they think you need. Buy one a drink and do not ask twice.',
+        'Not in this channel. Not in any channel, really. The short version is that '
+        'there is a corrupted country south of the wall, that what lives there wants to '
+        'come north, and that people who ask a great many questions about it get '
+        'remembered for asking.',
         'The Wall has held for a thousand years. That is not reassurance, that is a '
         'thousand years of people holding it.',
         'The Taint does not need you to be wicked. It only needs you to be there.',
