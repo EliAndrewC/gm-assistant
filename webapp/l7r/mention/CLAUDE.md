@@ -61,6 +61,27 @@ punchline fired unreliably. A relay count still exists, but only to pick WHICH t
 reporting words, so `what do you think of the character sheet?` matched the relay pattern and
 escalated the feud until the order was fixed. The comment sits at the branch.
 
+## Every reply explains itself, because every reply ships alone
+
+GM 2026-08-31, after reading the live bot: *"someone who doesn't already know what the response is
+referring to will likely be confused."* His example - a player asked about a Mirumoto character and
+was told the name "was decided at four-fifty on a Friday", a joke about `Mirumoto` being one letter
+from `Miyamoto` Musashi, whose Book of Five Rings gave this game its title, with none of that in the
+message. His fix, verbatim: *"make the responses longer and provide the context ... as long as there
+is at least one joke in the response, then it doesn't matter whether each individual thing has a
+joke attached."*
+
+So a term of art gets a gloss, a list gets a defining clause per item, a named person or system gets
+a phrase saying what it is, and no reply opens on a connective ("Then", "So", "the second clause")
+or points at another category - `rules.py` delivers exactly ONE reply per question, so a sibling
+reply is not context, it is a message the player will never receive.
+
+**The instrument is `.claude/agents/mention-context-review.md`**, a review subagent that sweeps one
+category at a time and returns a verdict per reply. The GM asked for it in those terms and also set
+how to run it: *"limit your subagent calls to only checking a single category of responses at a
+time"* - his terminal has crashed twice on parallel fan-out, so audits run **strictly one at a
+time**. Full rule, and the mechanism the audits kept finding, in [`lore/CLAUDE.md`](lore/CLAUDE.md).
+
 ## At least ten replies per pool, enforced
 
 The GM's rule of thumb is *"a dozen different responses for each call and response"*, and
