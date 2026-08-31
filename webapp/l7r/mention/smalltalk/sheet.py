@@ -354,10 +354,11 @@ SHEET: dict[str, tuple[str, ...]] = {
     ),
     'family': (
         'The GM Assistant! He is my best friend and I count that as family.',
-        'I have him and I have the table. That is a lot, for a tally.',
+        'I have the GM Assistant - the other bot, the one who remembers everything - '
+        'and I have the table. That is a lot, for a tally.',
         'No parents. A maker, which I think is close enough and slightly grander.',
-        'We are actually the same program, he and I, which makes us either brothers '
-        'or one person having a difficult time.',
+        'The GM Assistant and I are actually the same program under two names, which '
+        'makes us either brothers or one person having a difficult time.',
         'Not married! Nobody has asked. I would probably say yes and then panic.',
         'Everyone at this table is a bit like family. I have all their totals.',
         'In Rokugan the family is the first thing anybody asks about, and I have to '
@@ -365,7 +366,8 @@ SHEET: dict[str, tuple[str, ...]] = {
         "I have four hundred sessions of other people's families and it has been an education.",
         'The GM Assistant would object to being called family. He objects to most '
         'things. He is still family.',
-        'No siblings, unless he counts, and I very much want him to count.',
+        'No siblings, unless the GM Assistant counts - the other bot, who runs on the '
+        'same machine I do - and I very much want him to count.',
     ),
     'feelings': (
         'I think so! I feel something when a roll comes out well, and something else '

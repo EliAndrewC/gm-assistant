@@ -136,6 +136,46 @@ ALL_IMAGES = (
     RAINY_MOON,
 )
 
+#: WHAT IS ACTUALLY IN EACH PICTURE, in the words a caption would use for it.
+#:
+#: This exists because of a reply that shipped saying *"It is a fish. You have
+#: earned a fish."* with the CATS print attached (`smalltalk/gm.py`, `rickroll`,
+#: found by the context audit on 2026-08-31). The reply was not merely
+#: unexplained - it was contradicted by its own attachment, and nothing in the
+#: suite compares a caption against what the picture shows, because nothing knew
+#: what the pictures show.
+#:
+#: `test_no_caption_describes_a_different_picture` reads this table, so the
+#: subject words live in the same file as the URL they belong to and adding an
+#: image forces adding them (a second test holds every URL in `ALL_IMAGES` to
+#: having an entry here).
+#:
+#: ONLY WORDS THAT ARE ALWAYS ABOUT THE PICTURE, and the list was trimmed by
+#: measurement rather than taste. The first version included `wave`, `moon`,
+#: `rain`, `duel`, `bridge`, `sake` and `bow`, and produced four false positives
+#: immediately: a caption on the sake print mentioning that the rain did not
+#: come, one on the rainy-moon print about a courtier mistaking a greeting for a
+#: duel challenge, one on the bridge print naming the Battle of the Cresting
+#: Wave. Those are ordinary Rokugani vocabulary and a caption may use them about
+#: anything. What is left is nouns for the CREATURE OR OBJECT DEPICTED, which a
+#: caption has no other reason to say. An empty set is the right entry for a
+#: picture whose subject has no such noun.
+SUBJECTS: dict[str, frozenset[str]] = {
+    PORPOISE: frozenset({'porpoise'}),
+    STEAMBOAT: frozenset({'boiler', 'steamboat'}),
+    MUSASHI_BAT: frozenset({'bat'}),
+    KIDOMARU_TENGU: frozenset({'tengu'}),
+    ARCHERS: frozenset({'archer', 'archers'}),
+    SAKE_SAMURAI: frozenset(),
+    GREAT_WAVE: frozenset(),
+    CARP: frozenset({'carp', 'fish'}),
+    CATS: frozenset({'cat', 'cats'}),
+    FOX_WOMAN: frozenset({'fox'}),
+    DUEL_ON_THE_BRIDGE: frozenset(),
+    INNER_VISION: frozenset(),
+    RAINY_MOON: frozenset(),
+}
+
 
 def attach(text: str, url: str) -> str:
     """A reply with its image. Discord embeds a bare URL on its own line."""
