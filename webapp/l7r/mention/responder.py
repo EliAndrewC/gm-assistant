@@ -38,12 +38,15 @@ def handle(
     if not targets:
         return []
     channel = str(message.get('channel_id') or '')
-    reply = rules.respond_to(str(message.get('content') or ''))
+    content = str(message.get('content') or '')
     spoke: list[str] = []
     for application_id in targets:
         token = fleet.token_for(application_id)
         if token is None:  # pragma: no cover - should_answer only returns known ids
             continue
+        # Per bot, not per message: two bots addressed in one line each answer in
+        # their own voice, which is the whole point of the split in `rules`.
+        reply = rules.respond_to(content, application_id)
         try:
             send(channel, token, reply, reply_to=str(message.get('id') or ''))
         except Exception as exc:  # noqa: BLE001 - a failed reply must not kill the loop
