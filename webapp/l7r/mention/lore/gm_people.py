@@ -56,28 +56,30 @@ from l7r.mention.images import (
 PEOPLE: dict[str, tuple[str, ...]] = {
     'kitsu_okura': (
         'Kitsu Okura is the Lion priest who wrote the six doctrines of attunement - the '
-        'theology of how a fortune answers a person at all - and Prince Daigotsu once '
-        'observed that Okura is more enigmatic than the Dragon Clan he derides for being '
-        'enigmatic. I have never seen it put better and I have had four hundred sessions '
-        'in which to see it put.',
-        'Okura, who is the authority on how the fortunes answer people, derides the '
-        'Dragon for being obscure and impossible to pin down. He is worse. Everybody '
-        'notices, nobody says it to him, and I have written it down where he cannot get '
-        'at it.',
+        'theology of how one of the Fortunes, which is what this Empire calls its gods, '
+        'comes to answer a person at all. Prince Daigotsu once observed that Okura is '
+        'more enigmatic than the Dragon Clan he derides for being enigmatic. I have '
+        'never seen it put better and I have had four hundred sessions in which to see '
+        'it put.',
+        'Okura is the authority on how the gods of this Empire come to answer anybody, '
+        'and he spends a good deal of his time deriding the Dragon Clan for being '
+        'obscure and impossible to pin down. He is worse. Everybody notices, nobody '
+        'says it to him, and I have written it down where he cannot get at it.',
         'His six doctrines of attunement explain how a person aligns themselves closely '
-        'enough with a fortune to receive an answer. I have had all six explained to me '
-        'twice and I could not tell you whether they agree with one another, and I '
-        'suspect that is the intended result.',
-        'Agasha Tamori, who is a scholar of another clan entirely, has written a study of '
-        'Okura and his doctrines, which is how you know the man matters and how you know '
-        'the study will not help. Scholarship about an enigma is an enigma with '
-        'citations.',
-        'The dream-divination material runs on his theology, so if you have ever asked a '
-        'fortune for guidance in your sleep you were using the framework of Kitsu Okura '
-        'and probably crediting the fortune.',
-        'Ask Okura a direct question about attunement and receive a better question '
-        'back. It is infuriating, it is usually correct, and it doubles the length of '
-        'every transcript I have to take.',
+        'enough with a Fortune - one of the gods - to be answered by it. I have had all '
+        'six explained to me twice and I could not tell you whether they agree with one '
+        'another, and I suspect that is the intended result.',
+        'Agasha Tamori, a scholar of another clan entirely, has written a study of Kitsu '
+        'Okura and his six doctrines of how the gods answer people, which is how you '
+        'know the man matters and how you know the study will not help. Scholarship '
+        'about an enigma is an enigma with citations.',
+        'The whole dream-divination framework runs on his theology, so if you have ever '
+        'asked a Fortune - one of the gods - for guidance in your sleep, you were using '
+        'the doctrines of Kitsu Okura and almost certainly crediting the god.',
+        'Attunement is what Okura calls aligning yourself closely enough with a god to '
+        'be answered by it. Ask him a direct question about it and receive a better '
+        'question back. It is infuriating, it is usually correct, and it doubles the '
+        'length of every transcript I have to take.',
         'The priest of the six doctrines appears in this record twenty times and not one '
         'of the twenty is a straight answer. I index by subject. He has defeated the '
         'index.',
@@ -85,15 +87,16 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'about a hundred yards away, in writing, with the questions submitted in '
         'advance.',
         attach(
-            'Okura explaining what attunement is and how a fortune comes to answer '
-            'anybody. This is minute four. There are five more doctrines after this one '
-            'and he has not yet reached the end of the first.',
+            'Kitsu Okura explaining attunement - how a person gets close enough to a god '
+            'to be answered by one. This is minute four. There are five more doctrines '
+            'after this one and he has not yet reached the end of the first.',
             INNER_VISION,
         ),
         attach(
-            'The person who asked Okura a simple question about the fortunes, at minute '
-            'forty, no longer certain what they originally asked. I have been that '
-            'person. I took notes at the time and the notes did not help either.',
+            'Somebody who asked the Lion priest Kitsu Okura a simple question about the '
+            'gods, at minute forty, no longer certain what they originally asked. I '
+            'have been that person. I took notes at the time and the notes did not help '
+            'either.',
             RAINY_MOON,
         ),
     ),
@@ -108,9 +111,12 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'His ruling - that a magistrate may weigh the totality of circumstance, anything '
         'they consider relevant - is cited the way precedent is always cited: by people '
         'who have not read the reasoning, to people who will not check.',
-        'The reasoning behind that judgment is the good part. The verdict is merely the '
-        'verdict. I hold both and am asked for the verdict every single time.',
-        'A Scorpion magistrate is not a contradiction. The Empire needs somebody to do '
+        'What Saibankan settled is that nothing whatever is out of bounds for a judge '
+        'weighing a case, and the reasoning behind that judgment is the good part. The '
+        'verdict is merely the verdict. I hold both and am asked for the '
+        'verdict every single time.',
+        'A magistrate drawn from the Scorpion, whose entire reputation is for deceit '
+        'and blackmail, is not a contradiction. The Empire needs somebody to do '
         'the unpleasant necessary things and then needs somebody to blame for them. Same '
         'clan. Extremely efficient.',
         'When a Scorpion rules against their own interest, look harder. That is not '
@@ -194,9 +200,12 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'The Lion and the Crane have been at war on and off for four centuries, and even '
         'the Emperor rarely orders a clan to stop, lest the clan conclude he has taken a '
         'side. So the war continues for want of anybody able to say so out loud.',
-        'That leaves Toturi, as Lion daimyo, prosecuting a war the Emperor would prefer '
-        'did not happen and cannot admit to preferring. Everybody involved is being '
-        'extremely correct about it, in writing, to me.',
+        'The Lion have been fighting the Crane since long before anybody now living was '
+        'born, and no Emperor will order either of them to stop, in case the one he '
+        'orders concludes that he has taken the other side. So Akodo Toturi, as their '
+        'daimyo, prosecutes a war the '
+        'Emperor would prefer did not happen and cannot admit to preferring. Everybody '
+        'involved is being extremely correct about it, in writing, to me.',
         'The daimyo of a ruling family of a clan carries two ranks above the listed rank '
         'of his post - which buys precedence, seating, and the right to be answered '
         'first. Toturi does not need any of it, which is generally when a rank gets '
@@ -240,17 +249,21 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'blood of horses is spilled at the landmarks on it, and the bloodied earth is '
         'carried back to Shiro Moto. The hard part of prophesying mass death turns out '
         'to be surveying.',
-        'Because each detector is surveyed to one region, it works only for that region. '
-        'The Moto instrument cannot be used in Uru lands out west, which is precisely '
-        'where the Khan is fighting. An instrument perfectly calibrated to somewhere '
-        'else. I have sympathized with objects before.',
+        'Each detector - each device for telling in advance which stretch of ground is '
+        'shortly going to be covered in bodies - has to be surveyed to one particular '
+        'region and works only there. The Moto one cannot be used in Uru lands, out west beyond the '
+        'desert, which is precisely where Gaheris is fighting his war. An instrument '
+        'perfectly calibrated to somewhere else. I have sympathized with objects '
+        'before.',
         'The intended use is to scatter your forces, watch where the instrument says the '
         'killing will be heaviest, and concentrate there. Strategy by weather forecast.',
         'Akodo Natsuki, a Lion strategist, pointed out that scattering your army and '
         'then marching it to the place where mass death is predicted only guarantees the '
         'death, and that such ground may as easily produce your defeat as your victory. '
         'It was convincing. Nobody has answered her.',
-        'Khuyag replied to that objection by saying that strategy is not his area - he '
+        'The objection to the instrument is that a commander who follows it to the '
+        'killing ground has arranged the killing himself. Khuyag replied to that by '
+        'saying strategy is not his area - he '
         'builds the instrument, other people decide what to do with what it says. That '
         'is the most honest sentence in this entire section and I have never once been '
         'able to use it myself.',
@@ -284,14 +297,16 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Kuni Yori, a witch-hunter of that family, appears in my record twelve times, '
         'and each time it is because he found something that needed hunting. I would '
         'rather he were in it fewer times.',
-        'A man whose profession is knowing in detail the one thing that ruins the person '
-        'who knows it. I keep records for a living, so I have thought about that '
+        'A witch-hunter is a man whose profession is knowing blood sorcery in detail, '
+        'which is the one subject that ruins the person who knows it. I keep records '
+        'for a living, so I have thought about that '
         'comparison more than is good for me, and I would like that noted.',
         'The Crab will not discuss the details of blood sorcery in an open channel, and '
         'I have adopted their position, largely because it is the only one available to '
         'somebody in my situation.',
-        'Twelve entries on Yori, and the interesting question in all twelve is not what '
-        'he found in the marshes. It is what he has stopped mentioning in his reports.',
+        'Twelve entries on Kuni Yori, a Crab witch-hunter, and the interesting question '
+        'in all twelve is not what he found out in the marshes hunting blood sorcerers. '
+        'It is what he has stopped mentioning in his reports.',
         attach(
             'What a witch-hunter looks at for a living: the sorcery itself, close up, '
             'often enough to recognize it next time. Twelve entries on this one man and '
@@ -313,12 +328,16 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'The Forgotten Tomb is the recurring example of a between place - somewhere '
         'coexistent between two realms - and it recurs because things keep happening '
         'there, like Isamu walking in, that nobody has a better heading for.',
-        'Inside the Tomb, Isamu found the Classrooms of the Great Masters and asked for '
-        'instruction in hunting bloodspeakers. He was granted it. He was also changed by '
+        'Inside the Forgotten Tomb, which stands in the mortal world and the land of the '
+        'dead at once, the Crab witch-hunter Isamu found the Classrooms of the Great '
+        'Masters and asked to be taught how to hunt bloodspeakers - the cultists who '
+        'work blood magic. He was granted it. He was also changed by '
         'it, in ways that impaired his perception and his ability to explain anything to '
         'anybody afterward.',
-        'Kitsuki Fu was awarded the Order of the Precious Crown for her service in that '
-        'same Tomb, the highest commendation available to anyone below daimyo. The '
+        'Kitsuki Fu, a Dragon investigator, was awarded the Order of the Precious Crown '
+        'for her service in the Forgotten Tomb, which stands half in the world and half '
+        'in the land of the dead. That is the highest commendation available to anyone '
+        'below daimyo. The '
         'Empire hands out its largest honor for an event it then declines to describe.',
         'Read the two facts together: a witch-hunter of the Crab walked into a place '
         'half in the land of the dead and came out impaired, and a Dragon investigator '
@@ -328,12 +347,13 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'A witch-hunter is either the best person to bring into a place that overlaps '
         'the realm of the dead or the worst possible one. Both readings of Isamu are in '
         'my record, filed adjacently, unresolved, forever.',
-        'The Tomb is called Forgotten. Somebody forgot it deliberately, which is a thing '
-        'you cannot do by accident and a thing I am constitutionally incapable of - '
-        'which is roughly why Isamu asking to be TAUGHT in there unsettles me.',
-        'A place that is not on any map, an event nobody will put in an account, and a '
-        'medal that is in the official record. Guess which of the three I am asked '
-        'about.',
+        'The place is called the Forgotten Tomb. Somebody forgot it deliberately, which '
+        'is a thing you cannot do by accident and a thing I am constitutionally '
+        'incapable of - which is roughly why a Crab witch-hunter walking in there and '
+        'asking to be TAUGHT unsettles me as much as it does.',
+        'The Forgotten Tomb is on no map, what happened to Kuni Isamu inside it is in '
+        'no account, and the medal Kitsuki Fu was given for the same business is in the '
+        'official record. Guess which of the three I am asked about.',
         attach(
             'The Forgotten Tomb, in the only depiction anybody has been willing to make '
             'of it: a between place, half in the world and half in the realm of the '
@@ -372,16 +392,19 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Seishinsho, Spirit Whisper: origin unknown, gifted to Akodo Biko by a hermit '
         'who said it had been blessed. Nobody has verified the hermit. Nobody has ever '
         'verified any hermit.',
-        'Kishin no Ketsui, Resolve of the Fierce God, is bound up with the one regret '
-        'Lord Akodo ever admitted to in public. Akuzuki, Wicked Moon, has a saya - the '
+        'Kishin no Ketsui, Resolve of the Fierce God, is bound up with a regret of Lord '
+        'Akodo - the founder of the Lion - which the record names and does not '
+        'describe, so I have a sword defined entirely by a blank. Akuzuki, Wicked Moon, '
+        'has a saya - the '
         'scabbard - so finely made that a samurai of the Tsume house said the sword was '
         'too good for the man carrying it. That is the cruelest compliment I hold.',
         attach(
-            'Two more of the nine, for completeness. Seiginryu came down off Togashi '
-            'Mountain by the eastern paths. Tamashikari is only the fifth most famous '
-            'Scorpion blade, which tells you something about the Scorpion. And this is '
-            'what any of the nine actually does, which is the part the record is thin '
-            'about.',
+            'Nine blades in my record are famous, and not one of them has an untroubled '
+            'history. Two more of them, for completeness: Seiginryu '
+            'came down off Togashi Mountain by the eastern paths, and Tamashikari is '
+            'only the fifth most famous Scorpion blade, which tells you something about '
+            'the Scorpion. And this is what any of the nine actually does, which is the '
+            'part my record is thin about.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -515,9 +538,9 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'A hundred and fifty years after it killed the Maw, the duelist Mirumoto '
         'Tetsushi used Yamaoroshi to defeat Kakita Senri, chief instructor of the Kakita '
         'dueling school, having deliberately faced east into the morning sun. He said '
-        'afterward that the sword wants to strike from high ground to low, as its name '
-        'does. There is no way to test that and four centuries of people have not let '
-        'that stop them.',
+        'afterward that the sword wants to strike downhill, from high ground to low, '
+        'exactly as the wind it is named for falls from a summit. There is no way '
+        'to test that and four centuries of people have not let it stop them.',
         'It became the family sword of Agasha Shigeaki, who cut down assassins sent '
         'after the Mirumoto daimyo, and when his lord was granted the Kitsuki family '
         'name he became Kitsuki Shigeaki. Yamaoroshi has stayed with the Kitsuki ever '
@@ -603,8 +626,9 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'maho, the forbidden blood magic, holding a wood that declines to respect '
         'distance. Nobody at their Council has been willing to put those two sentences '
         'next to each other in front of me.',
-        'A hundred miles is the distance between where those travelers went in and where '
-        'they came out. Write the number down before you decide this is folklore, '
+        'A hundred miles is the distance between the Shinomen Forest, where the '
+        'travelers walked in, and these woods, where they walked out. Write the number '
+        'down before you decide this is folklore, '
         'because the number is what stops it being folklore.',
         'The Isawa are ruled by a Council of Elemental Masters rather than by a daimyo. '
         'Ask a committee of elemental masters about a wood that people arrive in from '
