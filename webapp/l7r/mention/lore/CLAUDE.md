@@ -58,6 +58,29 @@ something like this, the terminal has crashed ... maybe you could limit your sub
 checking a single category of responses at a time."* One live audit agent, ever. It costs wall-clock
 and it is not negotiable.
 
+### SEQUENCE-DEPENDENCE IS THE RESIDUE, AND A GUARD FOR IT WAS PRICED AND DECLINED
+
+After the whole corpus was rewritten, the verification sweeps found the same defect over and over,
+and it is not a missing gloss: it is a reply that is really the BACK HALF of the one beside it in
+the file. "The second address..." with no first address. "those corvee days" where corvee is
+explained one reply earlier. "The other two of the Khan's four swords." "Khuyag replied to that
+objection", where the objection is in the neighbor. Thirteen of 24 residues in one pair of files,
+and four of ten replies in `first_toshi_ranbo` alone.
+
+**It is invisible to an author.** Reading the file top to bottom, every one of those replies has its
+setup two lines above it. `rules.py` sends exactly one.
+
+Two of the audit agents suggested the obvious guard - ban a reply-initial connective or
+demonstrative - so it was **measured before being built, and then not built**. A strict pattern
+(`^(Also|Therefore|Then|So|Those|These)`) hits five distinct replies in the corpus and **two of them
+are correct writing**: `bored#1` ("Then roll something and give me work") answers the player's own
+line, and `fish#9` ("These are carp") points at the picture attached to it. A wider pattern is worse
+still - "The same person who made the character sheet" is a complete answer to "who made you".
+
+A guard that fires on correct work teaches a session to bypass every guard, which is why this one
+does not exist. Sequence-dependence stays a **writing rule enforced by the audit**: before shipping
+a reply, read it with the file closed.
+
 ### ENUMERATE THE CORPUS WITH `named_pools()`, NEVER WITH A FRESH COLLECTOR
 
 Handing the audit a dump of the replies means walking every pool, and the pools are not all the same
