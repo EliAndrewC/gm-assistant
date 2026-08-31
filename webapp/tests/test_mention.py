@@ -26,22 +26,79 @@ from l7r.mention import bots, gateway, policy, responder, rules
 
 
 class TestReplies:
-    def test_the_gms_own_example_has_an_answer(self) -> None:
-        assert respond('<@1509288141985415300> What is your purpose?').startswith('I record')
+    def test_the_character_sheet_keeps_the_line_the_gm_liked(self) -> None:
+        """The GM said they liked this answer, so it is pinned rather than tidied."""
+        reply = rules.respond_to('<@1> What is your purpose?', rules.CHARACTER_SHEET)
+        assert reply == 'I record what you roll. I do not judge it. Much.'
 
-    def test_the_joke_the_players_asked_for(self) -> None:
-        assert rules.respond_to('<@1> is there cake?') == 'The cake is a lie.'
+    def test_the_gm_assistant_answers_with_its_porpoise(self) -> None:
+        """The joke the GM asked for: it mishears the question, entirely straight."""
+        reply = rules.respond_to('<@1> What is your purpose?', rules.GM_ASSISTANT)
+        assert 'Michiko' in reply
+        assert 'porpoise' in reply
+        assert reply.endswith(rules.PORPOISE_IMAGE)
+
+    def test_the_two_bots_never_answer_alike_on_their_own_topics(self) -> None:
+        """The point of the split. If these ever converge, the feature is gone."""
+        for question in (
+            'what is your purpose?',
+            'is there cake?',
+            'who are you?',
+            'hello',
+            'thanks',
+            'are you a bot?',
+            'help',
+            'can I roll?',
+            'something nobody wrote a rule for',
+        ):
+            gm = rules.respond_to(question, rules.GM_ASSISTANT)
+            sheet = rules.respond_to(question, rules.CHARACTER_SHEET)
+            assert gm != sheet, f'both bots said the same thing to {question!r}'
+
+    def test_a_shared_topic_is_answered_the_same_way_by_both(self) -> None:
+        """COMMON is for the setting, not for the bot, so both voices agree."""
+        gm = rules.respond_to('tell me about honor', rules.GM_ASSISTANT)
+        sheet = rules.respond_to('tell me about honor', rules.CHARACTER_SHEET)
+        assert gm == sheet
+        assert 'Honor' in gm
+
+    def test_a_bots_own_table_beats_the_shared_one(self) -> None:
+        """Precedence, asserted rather than assumed - `rules_for` concatenates."""
+        table = rules.rules_for(rules.GM_ASSISTANT)
+        assert table[: len(rules.GM_ASSISTANT_RULES)] == rules.GM_ASSISTANT_RULES
+        assert table[-len(rules.COMMON) :] == rules.COMMON
+
+    def test_the_porpoise_image_is_the_public_domain_one_we_checked(self) -> None:
+        """Pinned deliberately (GM 2026-08-31).
+
+        The GM's condition was that we *"never make use of something not
+        legitimately free for this kind of jokey use"*. The recorded choice is a
+        1911 Encyclopaedia Britannica plate - public domain by AGE, which cannot be
+        revoked the way a granted license can. Swapping in some other image is a
+        licensing decision, so it should have to change a test that says so out loud
+        rather than slipping through as a one-character edit.
+        """
+        assert rules.PORPOISE_IMAGE.startswith('https://upload.wikimedia.org/wikipedia/commons/')
+        assert rules.PORPOISE_IMAGE.endswith('EB1911_Porpoise_-_Phocaena_communis.jpg')
 
     def test_matching_ignores_case(self) -> None:
-        assert rules.respond_to('<@1> CAKE') == 'The cake is a lie.'
+        assert rules.respond_to('<@1> CAKE', rules.CHARACTER_SHEET) == 'The cake is a lie.'
 
-    def test_an_unanticipated_question_still_gets_an_answer(self) -> None:
+    def test_an_unanticipated_question_gets_that_bots_own_shrug(self) -> None:
         """FR-002. A page met with silence reads as broken."""
-        assert rules.respond_to('<@1> what is the airspeed of a swallow') == rules.DEFAULT_REPLY
+        assert (
+            rules.respond_to('<@1> what is the airspeed of a swallow', rules.GM_ASSISTANT)
+            == rules.DEFAULTS[rules.GM_ASSISTANT]
+        )
 
-    def test_the_first_matching_rule_wins(self) -> None:
-        table = (rules.rule('a', 'first'), rules.rule('a', 'second'))
-        assert rules.respond_to('a', table) == 'first'
+    def test_a_bot_with_no_voice_yet_still_answers(self) -> None:
+        """A new bot in the fleet gets the shared table and the shared default.
+
+        It must not raise, and it must not go silent - adding a token should never
+        be able to break the responder for the bots that already work.
+        """
+        assert rules.respond_to('hello there', 'not-a-known-bot') == rules.DEFAULT_REPLY
+        assert rules.respond_to('about honor', 'not-a-known-bot') == rules.COMMON[0].reply
 
     def test_mentions_are_stripped_before_matching(self) -> None:
         assert rules.strip_mentions('<@123> hello <@!456>') == 'hello'
@@ -53,13 +110,17 @@ class TestReplies:
     def test_empty_text(self) -> None:
         assert rules.respond_to('') == rules.DEFAULT_REPLY
 
-    def test_every_rule_has_a_non_empty_reply(self) -> None:
-        for entry in rules.RULES:
-            assert entry.reply.strip()
+    def test_every_rule_everywhere_has_a_non_empty_reply(self) -> None:
+        tables = [*rules.RULES_BY_BOT.values(), rules.COMMON]
+        assert tables, 'no rule tables found'
+        for table in tables:
+            for entry in table:
+                assert entry.reply.strip()
 
-
-def respond(text: str) -> str:
-    return rules.respond_to(text)
+    def test_every_bot_with_a_table_also_has_a_default(self) -> None:
+        """Otherwise a bot with a voice still shrugs in the house voice."""
+        for application_id in rules.RULES_BY_BOT:
+            assert rules.DEFAULTS.get(application_id, '').strip()
 
 
 # --------------------------------------------------------------------------
@@ -538,14 +599,40 @@ class TestHandle:
     def test_the_reply_is_the_matched_rule(self) -> None:
         sent: list[str] = []
         responder.handle(
-            message(mentions=['A'], content='<@A> cake?'),
+            message(mentions=['A'], content='<@A> tell me about honor'),
             policy.Decider(known=FLEET.tokens),
             FLEET,
             now=0.0,
             send=lambda ch, tok, text, **kw: sent.append(text),
             say=lambda s: None,
         )
-        assert sent == ['The cake is a lie.']
+        assert sent == [rules.COMMON[0].reply]
+
+    def test_each_bot_replies_in_its_own_voice_through_handle(self) -> None:
+        """The routing, end to end.
+
+        `respond_to` being per-bot is worth nothing if `handle` computes one reply
+        for the message and sends it to everybody - which is exactly what it used to
+        do, so this is the test that would have caught leaving it that way.
+        """
+        real = bots.Fleet(
+            tokens={rules.GM_ASSISTANT: 'tok-gm', rules.CHARACTER_SHEET: 'tok-cs'},
+            listener=rules.GM_ASSISTANT,
+        )
+        sent: dict[str, str] = {}
+        responder.handle(
+            message(
+                mentions=[rules.GM_ASSISTANT, rules.CHARACTER_SHEET],
+                content=f'<@{rules.GM_ASSISTANT}> <@{rules.CHARACTER_SHEET}> what is your purpose?',
+            ),
+            policy.Decider(known=real.tokens),
+            real,
+            now=0.0,
+            send=lambda ch, tok, text, **kw: sent.__setitem__(tok, text),
+            say=lambda s: None,
+        )
+        assert 'Michiko' in sent['tok-gm']
+        assert sent['tok-cs'] == 'I record what you roll. I do not judge it. Much.'
 
 
 def pumped(payloads: list[dict[str, Any]], **kwargs: Any) -> tuple[Socket, str, list[str]]:

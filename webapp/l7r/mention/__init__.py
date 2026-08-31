@@ -10,11 +10,19 @@ from __future__ import annotations
 from l7r.mention.bots import Fleet, NotConfigured, load_fleet
 from l7r.mention.policy import Decider, is_bot, mentioned_bots
 from l7r.mention.responder import handle, run_forever
-from l7r.mention.rules import DEFAULT_REPLY, RULES, Rule, respond_to, strip_mentions
+from l7r.mention.rules import (
+    COMMON,
+    DEFAULT_REPLY,
+    RULES_BY_BOT,
+    Rule,
+    respond_to,
+    strip_mentions,
+)
 
 __all__ = [
     'DEFAULT_REPLY',
-    'RULES',
+    'COMMON',
+    'RULES_BY_BOT',
     'Decider',
     'Fleet',
     'NotConfigured',

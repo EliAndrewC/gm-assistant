@@ -15,7 +15,7 @@ its users will intuitively expect it to work."* Answering under the wrong name b
 
 | file | holds |
 |---|---|
-| `rules.py` | The reply table. DATA - adding a joke is an entry, not a code change. Mentions are stripped before matching, first match wins, and `DEFAULT_REPLY` catches everything else so a page is never met with silence. |
+| `rules.py` | The reply tables, one PER BOT plus a shared `COMMON`. DATA - adding a joke is an entry, not a code change. Mentions are stripped before matching, the bot's own table beats the shared one, first match wins, and every bot has its own default so even a shrug is in character. |
 | `policy.py` | Whether to answer at all: the bot guard, who was addressed, the per-channel rate limit, and the seen-message set. Pure and synchronous, so every rule that keeps this safe is testable without a socket. |
 | `bots.py` | The fleet - which application ids this process can speak as, and which one holds the socket. Split by sensitivity: tokens from the gitignored secrets, the listener's public application id from the checked-in defaults. |
 | `gateway.py` | The only module that touches the network: the websocket protocol constants, `IDENTIFY`/`RESUME`, the heartbeat, and the REST call that posts a reply. Its docstring summarizes the protocol so a reader need not go and look it up. |
@@ -31,6 +31,33 @@ in an infinite loop that was really bad for the server and made it unusable."*
 path whatever it says - and with two bots in the fleet it also stops one of ours setting off the
 other. Replies also carry `allowed_mentions: {parse: []}`, so a reply can never ping anyone even if
 a joke contains an `@`.
+
+## Each bot has its own voice
+
+GM 2026-08-31. The Character Sheet is a clerk that records dice; the GM Assistant is a scribe that
+remembers what you did. `respond_to(text, application_id)` checks that bot's own table, falls
+through to `COMMON` for things that are about the SETTING rather than about the bot, and only then
+reaches that bot's default.
+
+This is the second half of "the bot that was addressed is the bot that replies" - answering as the
+right bot is worth much less if both bots say the same words. `test_the_two_bots_never_answer_alike`
+pins that: if the two voices ever converge on their own topics, the suite goes red.
+
+`handle` computes the reply INSIDE the per-bot loop. It used to compute one reply per message and
+send it to everybody, which looked identical until two bots were addressed in one line.
+
+## Images must be free, and checked rather than assumed
+
+GM 2026-08-31: *"We should only use freely available images, never making use of something not
+legitimately free for this kind of jokey use."*
+
+`PORPOISE_IMAGE` is a plate from the Encyclopaedia Britannica, 11th ed. (1911) - **public domain by
+AGE**, which is sturdier than a granted permission because it cannot be revoked or relicensed later.
+The bar for a replacement is the same: public domain by age, or CC0. A CC BY image would need its
+attribution line carried in the message, and a joke is not a reason to break someone's terms.
+
+A test pins the specific URL, deliberately: swapping the image is a licensing decision, so it should
+have to change a test that says so out loud rather than slipping through as a one-character edit.
 
 ## Two design notes worth keeping
 
