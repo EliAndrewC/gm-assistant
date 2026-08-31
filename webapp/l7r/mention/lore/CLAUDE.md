@@ -58,6 +58,20 @@ something like this, the terminal has crashed ... maybe you could limit your sub
 checking a single category of responses at a time."* One live audit agent, ever. It costs wall-clock
 and it is not negotiable.
 
+### ENUMERATE THE CORPUS WITH `named_pools()`, NEVER WITH A FRESH COLLECTOR
+
+Handing the audit a dump of the replies means walking every pool, and the pools are not all the same
+shape: most are `dict[str, tuple[str, ...]]`, `pools.py` has bare tuples, and the relay tiers are
+tuples OF tuples. A collector written for this pass on the obvious shapes silently skipped three
+pools - `voices.COMMON_TOPICS` and both `RELAY_TIERS`, **90 replies, 3% of the corpus** - and
+nothing said so; the gap was found by counting the pools two different ways and getting different
+answers.
+
+`named_pools()` in `tests/test_mention.py` already enumerates all 369 of them and is exercised by
+every sweeping assertion in the suite, so it cannot drift from the corpus without a test noticing.
+Use it. A second collector is a second thing to keep correct, and this one was wrong on its first
+outing.
+
 ### The one interaction to expect: glosses trip the echo guard
 
 Self-containment repeats FACTS by design, and `test_no_pool_tells_the_same_joke_twice` cannot tell a
