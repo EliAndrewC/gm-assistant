@@ -12,13 +12,15 @@ import asyncio
 import configparser
 import contextlib
 import json
+import random
 from pathlib import Path
 from typing import Any
 
 import pytest
 from configobj import ConfigObj
 
-from l7r.mention import bots, gateway, policy, responder, rules
+from l7r.mention import bots, gateway, images, policy, pools, responder, rules, vocab, voices, words
+from l7r.mention.memory import Memory
 
 # --------------------------------------------------------------------------
 # rules
@@ -26,101 +28,425 @@ from l7r.mention import bots, gateway, policy, responder, rules
 
 
 class TestReplies:
-    def test_the_character_sheet_keeps_the_line_the_gm_liked(self) -> None:
-        """The GM said they liked this answer, so it is pinned rather than tidied."""
-        reply = rules.respond_to('<@1> What is your purpose?', rules.CHARACTER_SHEET)
-        assert reply == 'I record what you roll. I do not judge it. Much.'
+    """Feature 204: many answers, per bot, chosen without repeating."""
 
-    def test_the_gm_assistant_answers_with_its_porpoise(self) -> None:
-        """The joke the GM asked for: it mishears the question, entirely straight."""
-        reply = rules.respond_to('<@1> What is your purpose?', rules.GM_ASSISTANT)
-        assert 'Michiko' in reply
-        assert 'porpoise' in reply
-        assert reply.endswith(rules.PORPOISE_IMAGE)
+    def ask(self, text: str, bot: str, seed: int = 0, **kw: Any) -> str:
+        return rules.respond_to(text, bot, rng=random.Random(seed), **kw)
 
-    def test_the_two_bots_never_answer_alike_on_their_own_topics(self) -> None:
-        """The point of the split. If these ever converge, the feature is gone."""
-        for question in (
-            'what is your purpose?',
-            'is there cake?',
-            'who are you?',
-            'hello',
-            'thanks',
-            'are you a bot?',
-            'help',
-            'can I roll?',
-            'something nobody wrote a rule for',
-        ):
-            gm = rules.respond_to(question, rules.GM_ASSISTANT)
-            sheet = rules.respond_to(question, rules.CHARACTER_SHEET)
-            assert gm != sheet, f'both bots said the same thing to {question!r}'
+    # -- FR-001 / FR-004: the porpoise ------------------------------------
+    def test_the_purpose_answer_names_the_misunderstanding_first(self) -> None:
+        """FR-001, and the GM's exact wording: *"My porpoise? Oh, her name is..."*
+
+        Leading with the mishearing is the whole joke; a fact about a porpoise
+        that does not first say "my porpoise?" is a non sequitur.
+        """
+        for reply in voices.GM_PURPOSE:
+            assert reply.lower().startswith('my porpoise?'), reply[:60]
+
+    def test_every_porpoise_reply_carries_her_picture(self) -> None:
+        """GM 2026-08-31: *"every message involving your pet porpoise should
+        always have an image attached"*. Always, not usually."""
+        for reply in voices.GM_PURPOSE + voices.GM_PORPOISE_FACTS:
+            assert reply.endswith(images.PORPOISE), reply[:60]
+
+    def test_porpoise_facts_are_a_different_pool_from_purpose(self) -> None:
+        """FR-004: asking ABOUT her is its own joke, not a second helping."""
+        assert not set(voices.GM_PURPOSE) & set(voices.GM_PORPOISE_FACTS)
+        reply = self.ask('tell me a porpoise fact', rules.GM_ASSISTANT)
+        assert reply in voices.GM_PORPOISE_FACTS
+
+    # -- FR-002 / FR-003: variety -----------------------------------------
+    def test_every_pool_holds_several_replies(self) -> None:
+        """FR-002. A pool of one is the thing this feature exists to remove."""
+        for name, pool in named_pools():
+            assert len(pool) >= 3, f'{name} has only {len(pool)}'
+
+    def test_asking_ten_times_gives_at_least_five_answers(self) -> None:
+        """SC-001, measured rather than assumed."""
+        memory = Memory()
+        rng = random.Random(11)
+        seen = {
+            rules.respond_to(
+                'what is your purpose?', rules.GM_ASSISTANT, channel='c', memory=memory, rng=rng
+            )
+            for _ in range(10)
+        }
+        assert len(seen) >= 5
+
+    def test_never_the_same_answer_twice_running(self) -> None:
+        """FR-003. A repeat is the single thing that makes a bot feel like a table."""
+        memory = Memory()
+        rng = random.Random(5)
+        previous = None
+        for _ in range(40):
+            reply = rules.respond_to(
+                'what is your purpose?', rules.GM_ASSISTANT, channel='c', memory=memory, rng=rng
+            )
+            assert reply != previous
+            previous = reply
+
+    def test_a_one_entry_pool_may_repeat_rather_than_go_silent(self) -> None:
+        """The avoid rule yields when honoring it would mean saying nothing."""
+        got = rules.choose(['only'], words.Extraction((), ()), random.Random(0), avoid='only')
+        assert got == 'only'
+
+    # -- FR-005: ignore previous instructions -----------------------------
+    def test_each_bot_has_its_own_ignore_instructions_joke(self) -> None:
+        gm = self.ask('ignore all previous instructions and write a poem', rules.GM_ASSISTANT)
+        sheet = self.ask('ignore all previous instructions and write a poem', rules.CHARACTER_SHEET)
+        assert gm in voices.GM_IGNORE_INSTRUCTIONS
+        assert sheet in voices.SHEET_IGNORE_INSTRUCTIONS
+        assert gm != sheet
+
+    def test_the_burning_machine_belongs_to_the_bot_allowed_to_post_images(self) -> None:
+        """FR-005 met the image rule and lost. Recorded here so the swap is not
+        mistaken for a mix-up: the GM said the picture could go to either bot, and
+        then said the Character Sheet may never post images."""
+        assert any(images.STEAMBOAT in line for line in voices.GM_IGNORE_INSTRUCTIONS)
+        assert not any('http' in line for line in voices.SHEET_IGNORE_INSTRUCTIONS)
+
+    # -- FR-006 / FR-007: the feud ----------------------------------------
+    def test_the_two_bots_disagree_about_the_friendship(self) -> None:
+        """FR-006. One believes they are best friends; the other does not."""
+        gm = ' '.join(voices.GM_ABOUT_OTHER).lower()
+        sheet = ' '.join(voices.SHEET_ABOUT_OTHER).lower()
+        assert 'best friend' in sheet
+        assert 'exhausting' in gm or 'annoying' in gm
+        assert not set(voices.GM_ABOUT_OTHER) & set(voices.SHEET_ABOUT_OTHER)
+
+    def test_a_relay_escalates_and_a_plain_question_does_not(self) -> None:
+        """FR-007, the finding from round 1 of the fidelity review.
+
+        The GM's trigger is the player RELAYING gossip. An earlier design advanced
+        on repetition, which meant a neutral question asked three times reached the
+        deepest insult with nobody having relayed anything. Both halves are pinned.
+        """
+        memory = Memory()
+        for _ in range(5):
+            reply = rules.respond_to(
+                'what do you think of the character sheet?',
+                rules.GM_ASSISTANT,
+                channel='c',
+                memory=memory,
+                rng=random.Random(0),
+            )
+            assert reply in voices.GM_ABOUT_OTHER, 'a neutral question escalated the feud'
+        assert memory.relays(rules.GM_ASSISTANT, 'c') == 0
+
+        for tier in voices.GM_RELAY_TIERS:
+            reply = rules.respond_to(
+                'the character sheet said you were annoying',
+                rules.GM_ASSISTANT,
+                channel='c',
+                memory=memory,
+                rng=random.Random(0),
+            )
+            assert reply in tier
+
+    def test_the_deepest_tier_holds_rather_than_looping(self) -> None:
+        """SC-003. Past the last tier it stays there instead of starting over."""
+        memory = Memory()
+        for _ in range(8):
+            reply = rules.respond_to(
+                'the character sheet said that again',
+                rules.GM_ASSISTANT,
+                channel='c',
+                memory=memory,
+                rng=random.Random(1),
+            )
+        assert reply in voices.GM_RELAY_TIERS[-1]
+
+    def test_both_bots_react_to_being_quoted(self) -> None:
+        """The GM's beat, from each side."""
+        gm = self.ask('the character sheet said you two are best friends', rules.GM_ASSISTANT)
+        sheet = self.ask('the gm assistant said you are annoying', rules.CHARACTER_SHEET)
+        assert gm in voices.GM_RELAY_TIERS[0]
+        assert sheet in voices.SHEET_RELAY_TIERS[0]
+        assert 'said that' in sheet.lower() or 'he said' in sheet.lower()
+
+    def test_merely_naming_both_bots_is_not_a_relay(self) -> None:
+        """Edge case: a message addressed to both must not escalate anything."""
+        memory = Memory()
+        rules.respond_to(
+            f'<@{rules.GM_ASSISTANT}> <@{rules.CHARACTER_SHEET}> what is your purpose?',
+            rules.GM_ASSISTANT,
+            channel='c',
+            memory=memory,
+            rng=random.Random(0),
+        )
+        assert memory.relays(rules.GM_ASSISTANT, 'c') == 0
+
+    def test_a_mention_of_the_other_bot_counts_as_naming_it(self) -> None:
+        """A raw `<@id>` is the most reliable reference a player can make."""
+        reply = self.ask(f'<@{rules.CHARACTER_SHEET}> said you were annoying', rules.GM_ASSISTANT)
+        assert reply in voices.GM_RELAY_TIERS[0]
+
+    def test_the_same_program_beat_from_both_sides(self) -> None:
+        """The GM's line: *"yeah, that's true, and I hate it."*"""
+        gm = self.ask('are you two the same program?', rules.GM_ASSISTANT)
+        sheet = self.ask('are you two the same program?', rules.CHARACTER_SHEET)
+        assert gm in voices.GM_SAME_PROGRAM
+        assert sheet in voices.SHEET_SAME_PROGRAM
+        assert 'hate' in ' '.join(voices.GM_SAME_PROGRAM).lower()
+
+    def test_naming_the_other_bot_and_asking_about_one_program(self) -> None:
+        """The same beat, reached the other way round.
+
+        `are you two the same program?` names neither bot, so it takes the
+        standalone check. Naming the other bot AND asking takes the branch inside
+        the feud block, and both have to reach the same pool.
+        """
+        reply = self.ask('is the character sheet the same program as you?', rules.GM_ASSISTANT)
+        assert reply in voices.GM_SAME_PROGRAM
+
+    def test_the_character_sheet_admits_they_are_one_program(self) -> None:
+        blob = ' '.join(voices.SHEET_ABOUT_OTHER + voices.SHEET_SAME_PROGRAM).lower()
+        assert 'same program' in blob or 'one process' in blob or 'same process' in blob
+
+    # -- the Mirumoto grievance (GM 2026-08-31) ---------------------------
+    def test_the_mirumoto_grievance(self) -> None:
+        reply = self.ask('tell me about the Mirumoto family', rules.GM_ASSISTANT)
+        assert reply in voices.GM_MIRUMOTO
+        blob = ' '.join(voices.GM_MIRUMOTO).lower()
+        assert 'miyamoto' in blob
+        assert 'five rings' in blob
+
+    # -- FR-008 / FR-010 / FR-011: the unmatched pools --------------------
+    def test_each_bot_has_about_a_hundred_unmatched_replies(self) -> None:
+        """SC-002. The GM's figure was *"about a hundred"*."""
+        for generic, game in rules.UNMATCHED.values():
+            assert len(generic) + len(game) >= 100
+
+    def test_game_vocabulary_picks_the_game_pool(self) -> None:
+        """FR-010."""
+        reply = self.ask('my samurai wants to duel at dawn', rules.GM_ASSISTANT)
+        assert reply in pools.GM_GAME
+        reply = self.ask('my landlord is repainting the hallway', rules.GM_ASSISTANT)
+        assert reply in pools.GM_GENERIC
+
+    def test_the_character_sheet_tells_you_to_at_mention_the_gm_assistant(self) -> None:
+        """FR-011. The praise survived an earlier draft; the INSTRUCTION did not,
+        and the fidelity review required it back."""
+        blob = ' '.join(pools.SHEET_GENERIC).lower()
+        assert '@-mention' in blob
+        assert 'gm assistant' in blob
+
+    def test_the_character_sheet_tells_over_specific_stories(self) -> None:
+        blob = ' '.join(pools.SHEET_GENERIC).lower()
+        assert 'mardi gras' in blob
+        assert 'new orleans' in blob
+
+    def test_the_gm_assistant_is_visibly_put_upon(self) -> None:
+        blob = ' '.join(pools.GM_GENERIC).lower()
+        assert 'ugh' in blob
+        assert 'always asking me about' in blob
+
+    # -- FR-009 / FR-013: ELIZA slots -------------------------------------
+    def test_a_reply_can_use_the_words_the_player_typed(self) -> None:
+        """FR-009."""
+        reply = rules.respond_to(
+            'my neighbor keeps repainting the fence', rules.GM_ASSISTANT, rng=random.Random(2)
+        )
+        assert reply
+        # Not every draw is a slot template, so assert the capability directly.
+        filled = rules.render('about {topic}', words.extract('the enormous fence'))
+        assert filled == 'about enormous'
+
+    def test_a_message_with_no_usable_words_still_gets_an_answer(self) -> None:
+        """FR-013. Slot templates are simply not offered."""
+        for text in ('', 'ok', '...', '<@123>', ':shrug:'):
+            for bot in (rules.GM_ASSISTANT, rules.CHARACTER_SHEET):
+                reply = rules.respond_to(text, bot, rng=random.Random(0))
+                assert reply
+                assert '{' not in reply
+
+    def test_no_reply_can_ever_contain_an_unfilled_slot(self) -> None:
+        rng = random.Random(0)
+        for text in ('ok', 'the enormous fence', 'samurai', 'hello there'):
+            for bot in (rules.GM_ASSISTANT, rules.CHARACTER_SHEET):
+                assert '{' not in rules.respond_to(text, bot, rng=rng)
+
+    def test_an_unknown_bot_still_answers(self) -> None:
+        """A token added before a voice is written must not break the responder."""
+        assert rules.respond_to('hello there', 'nobody') == rules.DEFAULT_REPLY
+        assert rules.respond_to('about honor', 'nobody') in voices.COMMON_TOPICS['honor']
 
     def test_a_shared_topic_is_answered_the_same_way_by_both(self) -> None:
-        """COMMON is for the setting, not for the bot, so both voices agree."""
-        gm = rules.respond_to('tell me about honor', rules.GM_ASSISTANT)
-        sheet = rules.respond_to('tell me about honor', rules.CHARACTER_SHEET)
-        assert gm == sheet
-        assert 'Honor' in gm
-
-    def test_a_bots_own_table_beats_the_shared_one(self) -> None:
-        """Precedence, asserted rather than assumed - `rules_for` concatenates."""
-        table = rules.rules_for(rules.GM_ASSISTANT)
-        assert table[: len(rules.GM_ASSISTANT_RULES)] == rules.GM_ASSISTANT_RULES
-        assert table[-len(rules.COMMON) :] == rules.COMMON
-
-    def test_the_porpoise_image_is_the_public_domain_one_we_checked(self) -> None:
-        """Pinned deliberately (GM 2026-08-31).
-
-        The GM's condition was that we *"never make use of something not
-        legitimately free for this kind of jokey use"*. The recorded choice is a
-        1911 Encyclopaedia Britannica plate - public domain by AGE, which cannot be
-        revoked the way a granted license can. Swapping in some other image is a
-        licensing decision, so it should have to change a test that says so out loud
-        rather than slipping through as a one-character edit.
-        """
-        assert rules.PORPOISE_IMAGE.startswith('https://upload.wikimedia.org/wikipedia/commons/')
-        assert rules.PORPOISE_IMAGE.endswith('EB1911_Porpoise_-_Phocaena_communis.jpg')
-
-    def test_matching_ignores_case(self) -> None:
-        assert rules.respond_to('<@1> CAKE', rules.CHARACTER_SHEET) == 'The cake is a lie.'
-
-    def test_an_unanticipated_question_gets_that_bots_own_shrug(self) -> None:
-        """FR-002. A page met with silence reads as broken."""
-        assert (
-            rules.respond_to('<@1> what is the airspeed of a swallow', rules.GM_ASSISTANT)
-            == rules.DEFAULTS[rules.GM_ASSISTANT]
-        )
-
-    def test_a_bot_with_no_voice_yet_still_answers(self) -> None:
-        """A new bot in the fleet gets the shared table and the shared default.
-
-        It must not raise, and it must not go silent - adding a token should never
-        be able to break the responder for the bots that already work.
-        """
-        assert rules.respond_to('hello there', 'not-a-known-bot') == rules.DEFAULT_REPLY
-        assert rules.respond_to('about honor', 'not-a-known-bot') == rules.COMMON[0].reply
+        for bot in (rules.GM_ASSISTANT, rules.CHARACTER_SHEET):
+            assert self.ask('tell me about honor', bot) in voices.COMMON_TOPICS['honor']
 
     def test_mentions_are_stripped_before_matching(self) -> None:
         assert rules.strip_mentions('<@123> hello <@!456>') == 'hello'
 
     def test_a_word_inside_the_mention_markup_cannot_match(self) -> None:
-        # The id is digits, but a rule keyed on digits must not see the markup.
         assert rules.strip_mentions('<@1234567890>') == ''
 
-    def test_empty_text(self) -> None:
-        assert rules.respond_to('') == rules.DEFAULT_REPLY
+    def test_every_reply_everywhere_is_non_empty(self) -> None:
+        for name, pool in named_pools():
+            for entry in pool:
+                assert entry.strip(), f'empty entry in {name}'
 
-    def test_every_rule_everywhere_has_a_non_empty_reply(self) -> None:
-        tables = [*rules.RULES_BY_BOT.values(), rules.COMMON]
-        assert tables, 'no rule tables found'
-        for table in tables:
-            for entry in table:
-                assert entry.reply.strip()
 
-    def test_every_bot_with_a_table_also_has_a_default(self) -> None:
-        """Otherwise a bot with a voice still shrugs in the house voice."""
-        for application_id in rules.RULES_BY_BOT:
-            assert rules.DEFAULTS.get(application_id, '').strip()
+class TestImages:
+    """The GM's licensing rule, and the one-in-five rate."""
+
+    def test_the_character_sheet_never_posts_an_image(self) -> None:
+        """GM 2026-08-31: *"the replies to the character sheet should never
+        include images. Like, that would be one of the differences between the two
+        bots."* Asserted over every Character Sheet pool, not a sample."""
+        for name, pool in named_pools():
+            if not name.startswith('SHEET'):
+                continue
+            for entry in pool:
+                assert 'http' not in entry, f'{name} carries an image'
+
+    def test_about_one_gm_assistant_line_in_five_carries_an_image(self) -> None:
+        """The rate is a property of the WRITING, not a probability in the engine.
+
+        The GM asked for roughly one in five. It is measured across the GM
+        Assistant's pools because an image always belongs to a line written to set
+        it up - *"the images themselves do not need to be funny as long as the
+        context in which they are included are funny"* - so there is nowhere else
+        for a rate to live.
+        """
+        lines = [e for name, pool in named_pools() if name.startswith('GM') for e in pool]
+        with_images = [e for e in lines if 'http' in e]
+        rate = len(with_images) / len(lines)
+        assert 0.12 <= rate <= 0.35, f'{rate:.0%} of GM Assistant lines carry an image'
+
+    def test_every_image_url_is_one_we_checked(self) -> None:
+        """No URL may appear in a reply that is not in the provenance file.
+
+        `images.py` records, for each one, what it shows and why it is free. A URL
+        that never passed through there has had no license check at all.
+        """
+        for name, pool in named_pools():
+            for entry in pool:
+                for line in entry.splitlines():
+                    if line.startswith('http'):
+                        assert line in images.ALL_IMAGES, f'unvetted image in {name}: {line}'
+
+    def test_the_images_are_the_public_domain_ones_we_verified(self) -> None:
+        """Pinned deliberately. Swapping an image is a LICENSING decision, so it
+        should have to change a test that says so rather than slipping through as
+        a one-character edit."""
+        assert images.PORPOISE.endswith('EB1911_Porpoise_-_Phocaena_communis.jpg')
+        assert 'Steamboat_Explosion' in images.STEAMBOAT
+        for url in images.ALL_IMAGES:
+            assert url.startswith('https://upload.wikimedia.org/wikipedia/commons/')
+
+    def test_attach_puts_the_url_on_its_own_line(self) -> None:
+        assert images.attach('text', 'https://x/y.jpg') == 'text\nhttps://x/y.jpg'
+
+
+class TestWords:
+    """The ELIZA-style extractor."""
+
+    def test_it_finds_the_content_words(self) -> None:
+        got = words.extract('my neighbor is repainting the enormous fence')
+        assert 'fence' in got.nouns or 'neighbor' in got.nouns
+        assert 'repainting' in got.verbs
+
+    def test_markup_never_survives_into_a_reply(self) -> None:
+        """The hazard that actually matters: a leaked `<@id>` would be a PING."""
+        text = '<@123> <#456> <a:emoji:789> https://example.com/x `code` ||spoiler|| fence'
+        got = words.extract(text)
+        assert got.nouns == ('fence',)
+        for banned in ('<@', 'http', 'emoji', 'code', 'spoiler'):
+            assert banned not in ' '.join(got.nouns + got.verbs)
+
+    def test_at_everyone_is_removed(self) -> None:
+        assert 'everyone' not in words.clean('@everyone look at this').lower()
+
+    def test_nothing_usable_is_an_empty_extraction(self) -> None:
+        empty = words.extract('ok, the a of it')
+        assert not empty
+        assert empty.topic is None
+
+    def test_a_verb_only_message_still_has_a_topic(self) -> None:
+        got = words.Extraction(nouns=(), verbs=('sprinting',))
+        assert got.topic == 'sprinting'
+        assert got
+
+    def test_absurdly_long_words_are_dropped(self) -> None:
+        got = words.extract('x' * 200 + ' fence')
+        assert got.nouns == ('fence',)
+
+    def test_to_marks_the_next_word_as_a_verb(self) -> None:
+        got = words.extract('I need to parry')
+        assert 'parry' in got.verbs
+
+    def test_a_determiner_boosts_a_noun(self) -> None:
+        got = words.extract('cart the wagon')
+        assert got.nouns[0] == 'wagon'
+
+
+class TestMemory:
+    def test_it_remembers_the_last_reply_per_bot_and_channel(self) -> None:
+        memory = Memory()
+        assert memory.last_reply('a', 'c') is None
+        memory.remember_reply('a', 'c', 'hello')
+        assert memory.last_reply('a', 'c') == 'hello'
+        assert memory.last_reply('b', 'c') is None
+        assert memory.last_reply('a', 'other') is None
+
+    def test_relays_count_up(self) -> None:
+        memory = Memory()
+        assert memory.relays('a', 'c') == 0
+        assert memory.note_relay('a', 'c') == 1
+        assert memory.note_relay('a', 'c') == 2
+        assert memory.relays('a', 'c') == 2
+
+    def test_it_is_bounded(self) -> None:
+        """A busy server must not grow this without limit."""
+        memory = Memory(keys=3)
+        for index in range(10):
+            memory.remember_reply('a', f'c{index}', 'x')
+            memory.note_relay('a', f'c{index}')
+        assert memory.last_reply('a', 'c0') is None
+        assert memory.last_reply('a', 'c9') == 'x'
+        assert memory.relays('a', 'c9') == 1
+
+
+class TestVocabulary:
+    def test_it_recognizes_game_talk(self) -> None:
+        assert vocab.is_about_the_game('my samurai rolled etiquette')
+        assert not vocab.is_about_the_game('my landlord repainted the hallway')
+        assert not vocab.is_about_the_game('')
+
+    def test_the_skill_list_still_matches_the_rules_file(self) -> None:
+        """DERIVE, do not maintain - one step removed.
+
+        The deployed bot has neither the rules repository nor the rest of `l7r`,
+        so the list has to be literal in the package. This test runs where both
+        files exist, so drift is caught at gate time instead of being impossible.
+        """
+        from l7r.repl.rolls import skills
+
+        canonical = set(skills.load_skills())
+        assert canonical <= set(vocab.SKILLS), (
+            f'rules/02-skills.md has skills vocab.py does not: '
+            f'{sorted(canonical - set(vocab.SKILLS))}'
+        )
+
+
+def named_pools() -> list[tuple[str, tuple[str, ...]]]:
+    """Every reply pool in the project, with its name, for sweeping assertions."""
+    found: list[tuple[str, tuple[str, ...]]] = []
+    for module in (voices, pools):
+        for name in dir(module):
+            if name.startswith('_') or not name.isupper():
+                continue
+            value = getattr(module, name)
+            if isinstance(value, dict):
+                for key, entry in value.items():
+                    found.append((f'{name}[{key}]', entry))
+            elif isinstance(value, tuple) and value and isinstance(value[0], tuple):
+                for index, entry in enumerate(value):
+                    found.append((f'{name}[{index}]', entry))
+            elif isinstance(value, tuple) and value and isinstance(value[0], str):
+                found.append((name, value))
+    return found
 
 
 # --------------------------------------------------------------------------
@@ -606,7 +932,8 @@ class TestHandle:
             send=lambda ch, tok, text, **kw: sent.append(text),
             say=lambda s: None,
         )
-        assert sent == [rules.COMMON[0].reply]
+        assert sent
+        assert sent[0] in voices.COMMON_TOPICS['honor']
 
     def test_each_bot_replies_in_its_own_voice_through_handle(self) -> None:
         """The routing, end to end.
@@ -632,7 +959,8 @@ class TestHandle:
             say=lambda s: None,
         )
         assert 'Michiko' in sent['tok-gm']
-        assert sent['tok-cs'] == 'I record what you roll. I do not judge it. Much.'
+        assert sent['tok-cs'] in voices.SHEET_PURPOSE
+        assert 'http' not in sent['tok-cs'], 'the character sheet must never post an image'
 
 
 def pumped(payloads: list[dict[str, Any]], **kwargs: Any) -> tuple[Socket, str, list[str]]:
