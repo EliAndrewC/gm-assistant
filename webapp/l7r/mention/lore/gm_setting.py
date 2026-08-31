@@ -605,8 +605,8 @@ SETTING: dict[str, tuple[str, ...]] = {
         'is not corruption, it is the design, and I have to write "as designed" beside '
         'things that read very badly.',
         'So negotiating a good price on timber is a form of income. Half of what you '
-        'would call embezzlement is simply Rokugan functioning, and I am the one who '
-        'has to phrase it neutrally.',
+        'would call embezzlement is simply Rokugan functioning, and the Empire has '
+        'never once had to lie about it, because it wrote the rule down first.',
         'They hold one resource no other ministry has: corvee labor. Every peasant '
         'household owes ten to twenty days a year, more in an emergency - the only '
         'budget in the Empire denominated in other people.',

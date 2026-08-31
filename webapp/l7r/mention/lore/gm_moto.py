@@ -120,8 +120,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Nobody, including the Shinjo, has an accurate count of the tribes. I have made '
         'my peace with that and it took years.',
         'Ask which tribe before you ask anything else. It is the only unit that '
-        'reliably means anything, and I have watched four separate conversations fail '
-        'for want of asking.',
+        'reliably means anything out there, and the Empire has spent two centuries '
+        'asking which province instead.',
         attach(
             'A tribe, in the only arrangement that matters to them, and one that fits '
             'on no form I possess.',
