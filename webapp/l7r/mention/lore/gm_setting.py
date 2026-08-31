@@ -51,7 +51,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'every time, forever, without pay.',
         'The real job is the fields: families grow and shrink, so the strips get '
         'reshuffled and somebody decides which household works which piece this year. '
-        'A man who spends his life reassigning other people\'s allocations. We would '
+        "A man who spends his life reassigning other people's allocations. We would "
         'get on.',
         'He tracks who owes what rent, because the merchant house owns the FIELD, not '
         'the farm. Ten households on one field do not divide themselves, and the man '
@@ -104,7 +104,7 @@ SETTING: dict[str, tuple[str, ...]] = {
             ARCHERS,
         ),
         attach(
-            'And this is two domains disagreeing about a boundary, which reaches me as '
+            'Two domains disagreeing about a boundary, which reaches me as '
             'four pages and a request for precedent.',
             DUEL_ON_THE_BRIDGE,
         ),
@@ -151,7 +151,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'stipends of the people who write about the two percent. I am one of the '
         'writers and I am not proud.',
         'Burakumin handle the dead, the hides and every execution that is not a '
-        'samurai\'s. The Empire needs them absolutely and will not look at them, which '
+        "samurai's. The Empire needs them absolutely and will not look at them, which "
         'is a feeling I recognize from a great height below.',
         'A condemned samurai is dealt with by samurai - seppuku where permitted, a '
         'blade where not, inside the walls. Everyone else goes to the ground outside '
@@ -172,8 +172,7 @@ SETTING: dict[str, tuple[str, ...]] = {
             SAKE_SAMURAI,
         ),
         attach(
-            'And this is everyone else, in aggregate, being weather. I am the man '
-            'writing down the rainfall.',
+            'Everyone else, in aggregate, being weather. I am the man writing down the rainfall.',
             GREAT_WAVE,
         ),
     ),
@@ -200,7 +199,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'sacks, and most of what I do is note which sacks.',
         attach(
             'Wealth in Rokugan: mostly food, mostly elsewhere, mostly somebody '
-            'else\'s. I have described this pond four times this month.',
+            "else's. I have described this pond four times this month.",
             CARP,
         ),
         attach(
@@ -221,7 +220,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'Business license fees, and the great one is sake brewing - every brewery above '
         'household scale holds an annual license tiered by output. The Empire taxes joy '
         'by volume.',
-        'The Yasuki invented the anti-corruption system and are the Empire\'s finest '
+        "The Yasuki invented the anti-corruption system and are the Empire's finest "
         'smugglers. Both facts, same family, nobody blinks. I blinked for years.',
         'Merchants are ten percent of samurai, which startles people who assume trade '
         'is beneath the caste. It is beneath the caste. They do it anyway. Everyone '
@@ -237,8 +236,7 @@ SETTING: dict[str, tuple[str, ...]] = {
             CARP,
         ),
         attach(
-            'Two of them negotiating well. This arrives on my desk as a contract and '
-            'a grudge.',
+            'Two of them negotiating well. This arrives on my desk as a contract and a grudge.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
@@ -264,25 +262,23 @@ SETTING: dict[str, tuple[str, ...]] = {
         'They come home. That is the whole difference between them and everyone in the '
         'stories, and it is the only part I enjoy writing.',
         attach(
-            'Training, such as it is, such as there is time for. The record calls this '
-            '"prepared".',
+            'Training, such as it is, such as there is time for. The record calls this "prepared".',
             ARCHERS,
         ),
         attach(
-            'What the songs say it looks like. My entries are shorter and involve more '
-            'walking.',
+            'What the songs say it looks like. My entries are shorter and involve more walking.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
     'samurai_lineages': (
         'Not bloodlines - political coalitions that share an ancestor. Every retainer '
-        'belongs to one, every one is somebody\'s faction, and I hold all of them at '
+        "belongs to one, every one is somebody's faction, and I hold all of them at "
         'once, which is why I am like this.',
-        'Any lineage with ten percent of a domain\'s samurai generally gets a '
+        "Any lineage with ten percent of a domain's samurai generally gets a "
         'Chancellery seat, which advises the daimyo, which means decides while '
         'appearing not to. I minute those meetings.',
         'The ruling lineage bears the house name, and the chancellor is usually the '
-        'daimyo\'s spouse, sibling or child. Nepotism with a filing system, and guess '
+        "daimyo's spouse, sibling or child. Nepotism with a filing system, and guess "
         'who maintains the filing system.',
         'The Ryusei domain runs on six lineages holding ninety percent: Ryusei, Isa, '
         'Sasara, Moe, Tokino, Joji. Three of them are Mirumoto displaced by the return '
@@ -317,7 +313,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'Eligible to retire at forty, encouraged at fifty, required at sixty without '
         'dispensation. There is no retirement age for a record and I have checked '
         'twice.',
-        'About fifty-eight percent of a domain\'s samurai sit between those lines. The '
+        "About fifty-eight percent of a domain's samurai sit between those lines. The "
         'rest are children or retired, and the retired ones write me letters.',
         'The interesting number is never how good somebody is. It is how long they '
         'have been in a position to make the same mistake, and I have that number for '
@@ -349,7 +345,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'it obliges you to. It is not etiquette, it is contract law with better '
         'manners, and I am its clerk.',
         'The Doctrine of Three Steps governs how far a matter may travel from where it '
-        'started before it becomes somebody else\'s problem. I have never successfully '
+        "started before it becomes somebody else's problem. I have never successfully "
         'invoked it.',
         'A gift you cannot refuse is a debt you did not agree to. That mechanism runs '
         'the Empire, and nobody has ever tried it on me, which I notice.',
@@ -421,7 +417,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'A county of seven thousand produces a formal execution perhaps once in five '
         'to ten years. A bandit gang taken alive can supply a decade in an afternoon '
         'and a fortnight of filing.',
-        'Burakumin perform every execution that is not a samurai\'s. The Empire needs '
+        "Burakumin perform every execution that is not a samurai's. The Empire needs "
         'them for its worst hour and will not seat them at its best.',
         'The execution ground is busy at a capital and nearly idle in a county. People '
         'imagine the reverse, and people are wrong, and I am the one holding the '
@@ -486,7 +482,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'pay nothing, which is either elegant policy or an invitation, and the record '
         'says both.',
         'Maximum twenty percent of declared value: two to the Family, three to the '
-        'Clan, five to the Emperor, up to ten to the daimyo. Only the daimyo\'s cut is '
+        "Clan, five to the Emperor, up to ten to the daimyo. Only the daimyo's cut is "
         'negotiable, and every negotiation about it lands on my desk in triplicate.',
         'The Yasuki Taka system separates discretion from collection. An inspector in '
         'the sash of office examines the goods and stamps a manifest; a different '
@@ -501,7 +497,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'Four ways to smuggle: transit fraud, origin spoofing, misclassification, and '
         'walking round the gate. I have entries for all four and a favorite, which I '
         'am not going to name because somebody would try it.',
-        'The Yasuki paradox: they invented the system, they staff the Treasurer\'s '
+        "The Yasuki paradox: they invented the system, they staff the Treasurer's "
         'office, and they are the finest smugglers in the Empire. Nobody finds this '
         'strange except visitors and me, and I have stopped mentioning it.',
         attach(
@@ -549,15 +545,15 @@ SETTING: dict[str, tuple[str, ...]] = {
     ),
     'ministry_of_war': (
         'They general the armies, make the weapons and armor, keep the stables, and '
-        'maintain maps of their own land and their neighbors\'. That last duty is the '
+        "maintain maps of their own land and their neighbors'. That last duty is the "
         'interesting one and in four hundred sessions nobody has asked about it.',
         'The Imperial Minister of War is the Shogun. Part ceremonial, part twenty-odd '
         'legions on the Kaiu Wall. My title has no second half.',
         'Every legionnaire is a samurai, which is what makes a legion expensive and '
-        'what makes it a legion. The arithmetic is the character sheet\'s. The '
+        "what makes it a legion. The arithmetic is the character sheet's. The "
         'consequences are mine.',
         'The 1st guards the Gateway to the Burning Sands, the 2nd holds Beiden Pass, '
-        'the 3rd is on the Wall with most of the rest of the Empire\'s standing '
+        "the 3rd is on the Wall with most of the rest of the Empire's standing "
         'strength.',
         'A ministry of war is mostly logistics. Food, feed, horses, arrows, boots. The '
         'battles are the short part and, inconveniently, the only part anyone wants '
@@ -565,13 +561,13 @@ SETTING: dict[str, tuple[str, ...]] = {
         'Give a minister a budget for military readiness and he keeps what he does not '
         'spend. Now consider the quality of the boots. I have considered it at length '
         'and so has every legionnaire.',
-        'Ask me about a war and I will tell you what it cost. Somebody else can tell '
+        'Ask about a war and I will tell you what it cost. Somebody else can tell '
         'you who won; that half gets songs and mine gets a column.',
-        'They maintain maps of their neighbors\' territory in peacetime. Everybody '
+        "They maintain maps of their neighbors' territory in peacetime. Everybody "
         'knows. Everybody does it. Everybody is offended when it is written down, and '
         'writing it down is my entire function.',
         attach(
-            'The Ministry of War\'s actual annual output. Nobody commissions a print '
+            "The Ministry of War's actual annual output. Nobody commissions a print "
             'of the quartermaster.',
             ARCHERS,
         ),
@@ -626,7 +622,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'The jail is a waiting room, not a sentence. Rokugan does not imprison as '
         'punishment - it prefers to make you kneel where your neighbors can see, which '
         'is cheaper and worse.',
-        'Yoriki do the actual work and most come from OTHER clans, because a daimyo\'s '
+        "Yoriki do the actual work and most come from OTHER clans, because a daimyo's "
         'own people cannot be trusted to audit the daimyo. A whole institution built '
         'on the assumption that proximity corrupts. I am extremely proximate.',
         'Twenty-five yoriki at the capital office, five at each provincial '
@@ -639,13 +635,12 @@ SETTING: dict[str, tuple[str, ...]] = {
         'hundred extra troops decides battles, and Emerald magistrates know it, and I '
         'have to describe that as "assistance".',
         attach(
-            'The display ground. The audience IS the sentence, and I keep the '
-            'attendance.',
+            'The display ground. The audience IS the sentence, and I keep the attendance.',
             RAINY_MOON,
         ),
         attach(
             'A jurisdictional dispute between two magistrates. Both of them will write '
-            'to me. Neither will read the other\'s letter.',
+            "to me. Neither will read the other's letter.",
             DUEL_ON_THE_BRIDGE,
         ),
     ),
@@ -707,8 +702,7 @@ SETTING: dict[str, tuple[str, ...]] = {
             INNER_VISION,
         ),
         attach(
-            'The Rat. Where it starts, every single time, whether or not anyone is '
-            'ready.',
+            'The Rat. Where it starts, every single time, whether or not anyone is ready.',
             CATS,
         ),
     ),
@@ -717,8 +711,7 @@ SETTING: dict[str, tuple[str, ...]] = {
         'The Hour of the Rat is the middle of the night, which is when most of what I '
         'have to write down actually happens. Nobody decides anything sensible then '
         'and nobody has ever waited until morning.',
-        'It is currently late. It is always late by the time somebody asks me the '
-        'time.',
+        'It is currently late. It is always late by the time somebody asks me the time.',
         'Nobody in this Empire has ever agreed when an hour BEGINS. They agree '
         'entirely on when it is over, which is a thing I could say about most '
         'arrangements here.',

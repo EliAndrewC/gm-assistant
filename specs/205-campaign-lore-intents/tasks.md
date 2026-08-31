@@ -29,6 +29,27 @@
 - [x] **T010** `make done` green.
 - [x] **T011** Deploy and verify on the box.
 
+## Phase 5 - the tone pass (GM, 2026-08-31, after reading Phase 2)
+
+The facts were right and the jokes were not there: *"just saying 'Ugh' doesn't really do the trick
+... the idea that there should be something funny in every response is maybe not quite there."*
+
+- [x] **T012** Independent subagent audit of all 1,030 lines. Verdict: **6.1% strict / 8.3%
+      generous**, 35 of 103 categories with no first-person word at all, 3 of 206 image captions
+      referencing him. The GM's read was correct and if anything generous.
+- [x] **T013** Rewrite all six `gm_*.py` files to the restated bar - **three registers, mixed**
+      (woe-is-me / judgment of the source / edged observation), the mix itself being the GM's
+      instruction and the reason for having ten replies.
+- [x] **T014** `tests/test_mention_lore_tone.py` - the countable half of the bar: the four traps
+      (bare acknowledgment opener, `And this is` caption, `Ask me about` signpost, any reply reused
+      anywhere) plus a floor of three self-referential replies in ten per category. Proven to fire:
+      run against `c9a7fd45` in a detached worktree, all five checks go red, 89 of 103 categories
+      under the floor.
+- [ ] **T015** Re-run the same audit against the rewrite. The GM asked for this explicitly, and for
+      the reason: *"that separates validation and verification from the actual implementation, which
+      is a good general practice whether we're talking about coding or creative writing."*
+- [ ] **T016** Redeploy to the box (`make done` already green on the rewrite: 1,371 tests, 100%).
+
 ## What implementation found that the spec did not
 
 - **Two pattern hazards that would have failed silently.** `\w+ no \w+` for houses matched ordinary
