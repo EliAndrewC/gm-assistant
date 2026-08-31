@@ -43,8 +43,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'grass.',
         'Their population is sparse for the same reason. You cannot graze a city. I '
         'have watched three separate administrators discover that sentence.',
-        'On paper their tribes are ruled by local governors, whom the Moto call khans, '
-        'and even the Shinjo usually do not know how many tribes there are.',
+        'On paper their tribes are ruled by local governors, whom the Moto call khans. '
+        'Two words for the same office, chosen by two peoples who each believe the '
+        'other is being humored.',
         'Not knowing how many subordinate units you have is, administratively, my least '
         'favorite fact in this entire record, and I have had to hold it for years '
         'without being able to do anything about it.',
@@ -143,14 +144,15 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Eastern Moto are mostly bilingual, because Rokugani has been the official '
         'language for centuries and the successful ones needed it. Bilingualism runs '
         'one direction here, and the Empire has never once noticed which.',
-        'The successful ones. Which tells you plainly what became of the others, and '
-        'the record is silent on them in a way that is itself an entry.',
+        'Bilingualism among the eastern Moto belongs to the ones who prospered, which '
+        'tells you plainly what became of the others. The record is silent on them in a '
+        'way that is itself an entry.',
         'The same trap waits with every gaijin pantheon. A traveler from Medin al '
         'Salaat names their God of Love and a samurai hears Benten and writes down '
         'Benten, and then I inherit the note.',
-        'They will probably be right, since Benten is part of the fabric of reality and '
-        'therefore omnipresent. "Probably" is doing the work, and I am the one who has '
-        'to keep the footnote alive.',
+        'A samurai who hears a foreign god of love and writes down Benten is usually '
+        'correct, since she is woven through reality itself. Usually is doing the work, '
+        'and I am the one who keeps the footnote alive.',
         'Every misunderstanding in the Moto material is a translation before it is a '
         'heresy. I would put that on a wall if anybody let me have a wall.',
         'If a Moto tells you something impossible, ask which word they used. Then ask '
@@ -307,7 +309,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'here means I have written down that you asked.',
         'When the Unicorn journeyed, some went south - the Moto especially, whose '
         'ancestral homelands lie southwest of Medin al Salaat according to the Chai '
-        'Sedo library, which is a source everybody cites and nobody has audited.',
+        'Sedo library. Somewhere southwest of a gaijin city is not a location; it is a '
+        'direction with a story attached.',
         'A large contingent ran out of water and, in desperation, entered the '
         'Shadowlands. They were corrupted there. The whole tragedy turns on a '
         'quartermaster.',
@@ -351,9 +354,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Traders buy cheap in Moto lands and sell dear in the Empire. Horses are '
         'self-transporting, which is the only reason the trade works at all - the goods '
         'walk themselves to market, and I still get asked about caravan costs.',
-        'Only reason it BARELY works. Months of driving them east eats most of the '
-        'margin, which is the sort of detail that gets left out of every story about '
-        'wealthy horse traders.',
+        'The horse trade BARELY works: months of driving them east eats most of the '
+        'margin. That is the sort of detail left out of every story about a wealthy '
+        'horse trader, and it is the reason there are so few of them.',
         'An active horse eats twenty pounds of hay a day. Everything else about cavalry '
         'in this Empire follows from that number, including several campaigns that '
         'ended because nobody asked me to multiply it.',
@@ -397,8 +400,8 @@ MOTO: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'The same event, as remembered by the people who were already living there. '
-            'I file both under the same date.',
+            'The return of the Unicorn, as remembered by the Mirumoto who were already '
+            'living there. Same date, same event, two entries that do not agree.',
             RAINY_MOON,
         ),
     ),
@@ -406,13 +409,14 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Medin al Salaat: a gaijin city, west, and the reason half this record has '
         'footnotes attached to it in a smaller hand.',
         'The Moto ancestral homelands lie southwest of it, according to the Chai Sedo '
-        'library - a source cited constantly, verified never, and now load-bearing in '
-        'four separate entries of mine.',
+        'library, which is the single most-cited shelf in my whole record and the one '
+        'nobody has ever offered to go and check.',
         'Kitsuki Tetsu considered a vow of creation to Jikoju to build and staff a '
         'temple there: civilization brought to the city, as the Great Ancestors brought '
         'it to the warlords. A sentiment with a construction schedule attached.',
-        'The danger being that if the campaign fails he is still bound to build it or '
-        'die trying. Piety does not read the dispatches.',
+        'A vow of creation sworn over a foreign city binds you whether or not the army '
+        'that made it sensible is still winning. Kitsuki Tetsu has considered this, at '
+        'length, out loud, to me.',
         'There is a dream quest associated with the place. I have the account. I do not '
         'enjoy having the account, and I have not been offered the option of not having '
         'it.',
@@ -443,8 +447,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'The constraint is water, and specifically the RATE - a well may hold enough '
         'and still not refill fast enough for an army and its animals. Every expedition '
         'that died out there was defeated by a well that was, technically, full.',
-        'That single fact has killed more expeditions than any enemy out there, and it '
-        'appears in no song about any of them.',
+        'The rate a well refills has killed more expeditions in the Burning Sands than '
+        'any enemy out there, and it appears in no song about any of them.',
         'The Unicorn crossed it. The Moto came from beyond it. Everything strange about '
         'both clans starts there, and everyone who finds them strange has declined to '
         'go and look.',

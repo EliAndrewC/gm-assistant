@@ -120,8 +120,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'The same person that evening. This is the part of the blessing the pilgrim '
-            'does not sketch.',
+            'Somebody who received a soulmate sketch this morning, pictured this '
+            'evening. The pilgrim does not draw this part.',
             SAKE_SAMURAI,
         ),
     ),
@@ -155,8 +155,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
             CATS,
         ),
         attach(
-            'A doctrinal disagreement between two orders, neither subordinate to the '
-            'other, both certain, and no authority anywhere entitled to decide.',
+            'Where a doctrinal disagreement goes once the Ministry of Rites has '
+            'declined to schedule it.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
@@ -410,8 +410,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'Do not ask me for the mechanism. Ask a Kuni, then do not sleep, and please do '
         'not tell me about it afterward, because I will have to keep it.',
         attach(
-            'The respectable version of what maho is said to be for - which the Empire '
-            'filed under crafting, and has never revisited.',
+            'The respectable version of what maho is said to be for. Every account of it '
+            'was written by somebody explaining why they had needed to look.',
             KIDOMARU_TENGU,
         ),
         attach(
@@ -460,9 +460,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'The Order of Bishamon is the network of temples, monasteries and shrines in '
         'Damasu lands. Every Lion domain has its own, each with its own Grand Abbot, '
         'all of whom would like a word.',
-        'Those Grand Abbots are not subordinate to one another and are extremely clear '
-        'about it whenever the question is raised. The question is raised constantly, '
-        'by them.',
+        'Fortune of strength and war, and the only fortune whose temples are endowed '
+        'faster than they can be built. Piety and the treasury have never disagreed '
+        'about Bishamon, which is the entire secret of his popularity.',
         'Fortune of strength and war, which is why a Lion domain has so many of his '
         'temples and so few arguments about funding them. Piety is far easier to '
         'arrange when it agrees with the treasury.',
@@ -477,11 +477,13 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'Everyone swears by him before a battle. Notably fewer thank him afterward. I '
         'hold both lists and the second one fits on a smaller page.',
         attach(
-            "Bishamon's department, accurately depicted.",
+            'Strength and war, which is the department everybody swears by beforehand '
+            'and rather fewer thank afterward.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'His other department. It is the larger of the two and it never gets a banner.',
+            'The rest of what a fortune of war presides over. It is the larger half of '
+            'the portfolio and it has never once been put on a banner.',
             RAINY_MOON,
         ),
     ),
@@ -528,9 +530,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'If a gaijin names their god of love, a samurai assumes Benten and is generally '
         'correct, since she is woven through reality itself. An entire theology of '
         'translation resting on the assumption that everyone else meant us.',
-        '"Probably right" is doing a great deal of work in that sentence, and the space '
-        'it leaves is where the interesting adventures live and where my footnotes '
-        'multiply.',
+        'A theology that is usually correct is a theology nobody checks. The margin '
+        'where it is not is where the interesting adventures live, and where my '
+        'footnotes multiply.',
         'She is one of the seven Major Fortunes the Shinsei identified. People forget '
         'that and remember the romance, which is roughly what happened to her entire '
         'portfolio.',
@@ -602,8 +604,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'some Miya heralds now walk barefoot in imitation. In imitation of a '
         'catastrophe, at a comfortable distance from it.',
         'A vow of creation to Koshin is an excellent idea right up until the campaign '
-        'that justified it fails and you remain obliged. The vow does not read the '
-        'dispatches. I read the dispatches.',
+        'that justified it fails and you remain obliged. Roads outlive the reasons for '
+        'building them, which is the nicest thing anybody can say about a road.',
         'His order walks the roads it is sworn to build, which makes it the only '
         'priesthood in the Empire whose devotion can be measured in worn-out sandals '
         'and is.',
@@ -618,7 +620,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'What a waystation is for, officially and otherwise.',
+            'A waystation, being used for the purpose it is actually used for. The '
+            'Ministry of Works funds the roof and nobody funds the rest of it.',
             SAKE_SAMURAI,
         ),
     ),
@@ -631,9 +634,11 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'brought it to the warlords. Considered. My folder of considered vows is my '
         'largest.',
         "The danger being that if Gaheris' campaign fails, Tetsu is still bound to "
-        'build it or die trying. A contract with no clause for the war going badly.',
-        'A vow does not care whether the war it assumed is still being won. I have said '
-        'that sentence to four people and watched it land on three of them.',
+        'build it or die trying, in a city that will by then belong to somebody with '
+        'opinions about Rokugani temples.',
+        'Building a temple in a gaijin city is either the most pious act of a generation '
+        'or a naked provocation, and both readings have partisans, and both sets of '
+        'partisans write to me.',
         "Dying with it unfulfilled brings bad karma and the fortune's wrath; dying "
         'attempting it brings the opposite. People work out which half they are in at '
         'the very end, reliably, every time.',

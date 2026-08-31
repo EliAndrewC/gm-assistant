@@ -250,17 +250,17 @@ CLANS: dict[str, tuple[str, ...]] = {
         'embarrassing founding story in the Empire, which they would prefer to discuss '
         'another time, forever.',
         'Shiba rule with a hundred thousand. Isawa sixty, Asako fifteen - except the '
-        'Isawa are not ruled by a daimyo at all. They are ruled by the Council of '
-        'Elemental Masters, the only Great Family arranged that way.',
+        'Isawa have no daimyo at all, only a Council of Elemental Masters. The one '
+        'Great Family in the Empire governed by a committee, and it is the mystical one.',
         'And Shiba bent his knee to Isawa at the dawn of the Empire. The ruling family '
         'knelt to its own vassal. They have been explaining it ever since and the '
         'explanation has grown, not shortened.',
         'Isawa himself practiced maho. The founder. He made totems with the crafting '
         'discipline and stored the power of names and wounds in them, and the Empire '
         'wrote it down under crafting and moved along.',
-        'Then Isawa Akuma, in the third century, achieved what nobody has repeated or '
-        'accounted for. The Phoenix have a prepared answer about the kneeling and have '
-        'never been asked to prepare one about him.',
+        'Then Isawa Akuma, third century, wielded maho without losing his spellcasting - '
+        'which nobody has repeated or explained since. The Phoenix have a prepared '
+        'answer about the kneeling and have never been asked to prepare one about him.',
         'So the clan famous for renouncing blood magic is the clan whose founder '
         'practiced it and whose most cunning son perfected it. I did not arrange that. '
         'I only have to keep it in order.',
@@ -269,7 +269,8 @@ CLANS: dict[str, tuple[str, ...]] = {
         'A clan of scholars whose own history is the one document they have declined to '
         'audit. I would find that funnier if it were not so restful to watch.',
         attach(
-            'The Phoenix, as they would prefer to be understood.',
+            'The Phoenix as they would prefer to be understood: contemplative, '
+            'unhurried, and not currently being asked about their founder.',
             INNER_VISION,
         ),
         attach(

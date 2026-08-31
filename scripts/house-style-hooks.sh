@@ -86,8 +86,14 @@ BRIT = ("colour","colours","centre","centres","centred","behaviour","behaviours"
         "cruellest","crueller","cruelly","duelling","duelled","cancelled","cancelling",
         "travelling","modelling","fuelled","fuelling","signalled","signalling","counselled",
         "counselling","totalled","marvelled","equalled","quarrelled","levelled","rivalled")
+# GUARD_EDIT_OK: STRENGTHENING - the exact-word match let INFLECTIONS through.
+# `\bcatalogue\b` does not match `catalogued`, so `catalogued` shipped into
+# webapp/l7r/mention/lore/ and was caught by a prose reviewer rather than here, exactly like the
+# doubled-l family before it. Allowing the four regular English suffixes closes the class rather
+# than the instance - `catalogues`, `catalogued`, `cataloguing`, `colours`, `moulded`, `kerbs`.
+# Chosen over a bare `[a-z]*` tail, which would flag `greyhound`, an ordinary American word.
 for w in BRIT:
-    if re.search(rf"\b{w}\b", body, re.I):
+    if re.search(rf"\b{w}(?:s|d|ed|ing)?\b", body, re.I):
         hits.append(w)
 print(" | ".join(hits[:6]))
 ')

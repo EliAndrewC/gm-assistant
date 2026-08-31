@@ -355,8 +355,9 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Any candle placed in it drips wax in two distinct trails, one down each side. '
         'Like tears. Hence the name, which somebody clearly enjoyed choosing rather '
         'more than I enjoy explaining.',
-        'It does this reliably. Reliability is what makes it a relic rather than an '
-        'anecdote, and reliability is the only virtue I have ever been praised for.',
+        'The candle-holder weeps on schedule, every time, for anybody. Reliability is '
+        'what makes a relic rather than an anecdote, and reliability is the only virtue '
+        'I have ever been praised for.',
         'Whether that is divine or merely well-cast has never been formally tested, and '
         'the people best placed to test it have the least interest in the answer.',
         'The Ministry of Rites decides what is doctrine and what is heresy. Nobody has '
@@ -389,10 +390,10 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Doji no Tsume Toyohiro and Kakita Korihime - company that tells you what kind '
         'of sword it is without my having to commit to anything.',
         'Every famous sword in this record is famous for what its owner did rather than '
-        'for how it was made. Two of the nine are exceptions. This is not one and it '
-        'has never minded.',
+        'for how it was made. Two of the nine are exceptions, and both of those are '
+        'about the smith rather than the man who carried it.',
         'A named wind and a named blade. Rokugan does like that construction, and '
-        'having catalogued four hundred sessions of it, I can confirm it never gets old '
+        'having cataloged four hundred sessions of it, I can confirm it never gets old '
         'for anybody except me.',
         'It is not in the list of nine, it is its own thing, and it earned that, which '
         'is more than most items in my index have managed.',
@@ -434,8 +435,8 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'A thousand years and no ceremony for it. The Empire will hold a festival for a '
         'good plum harvest. I have checked and I have opinions.',
         attach(
-            'What the Wall is for. A thousand years of standing here, and the Empire '
-            'holds a festival for a good plum harvest and none for this.',
+            'What the Wall is for. Every painting anybody commissions is of the Wall; '
+            'this is the half that decided it had to be built.',
             KIDOMARU_TENGU,
         ),
         attach(
@@ -498,7 +499,9 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Revenue problem, so neither ministry wants it and both of them write to me '
         'about it.',
         attach(
-            'The river, and its principal advantage over every road in the Empire.',
+            'A road you cannot fence, cannot patrol cheaply and cannot divert around. '
+            'Three properties, all of them advantages to somebody other than the '
+            'magistrate.',
             GREAT_WAVE,
         ),
         attach(
