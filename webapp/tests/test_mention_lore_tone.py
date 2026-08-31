@@ -174,13 +174,23 @@ _STOPWORDS = frozenset(_STOPWORD_TEXT.split())
 POOL_ECHO_WINDOW = 4
 
 
-def _joke_positions(reply: str) -> list[str]:
-    """The opening and closing sentence - where a punchline actually lands."""
+def _sentences(reply: str) -> list[str]:
+    """EVERY sentence. Scope has been wrong twice and both times cost a real catch.
+
+    First version looked only at the closing sentence, reasoning that a punchline
+    sits at the end. It passed green over two verbatim duplicates sharing a
+    twenty-word OPENING - the two its own commit existed to fix. Widened to both
+    ends, it then missed `moto_gaheris#0`~`#8`, whose shared joke sits in a
+    MIDDLE sentence: 334 middle sentences across 269 replies, 15% of the corpus,
+    uninspected.
+
+    Measured before widening again: scanning all sentences at window 4 yields
+    exactly that one additional pair and NO new false positive. The cost of the
+    correct scope was zero, both times, and the reasoning that narrowed it was
+    mine and was wrong.
+    """
     body = re.sub(r'https?://\S+', '', reply).strip()
-    sentences = [s for s in re.split(r'(?<=[.!?])\s+', body) if s]
-    if not sentences:
-        return []
-    return [sentences[0]] if len(sentences) == 1 else [sentences[0], sentences[-1]]
+    return [s for s in re.split(r'(?<=[.!?])\s+', body) if s]
 
 
 def _content_words(sentence: str) -> list[str]:
@@ -207,7 +217,7 @@ def test_no_pool_tells_the_same_joke_twice() -> None:
     for topic, pool in GM.items():
         seen: dict[tuple[str, ...], int] = {}
         for i, reply in enumerate(pool):
-            for sentence in _joke_positions(reply):
+            for sentence in _sentences(reply):
                 words = _content_words(sentence)
                 for j in range(len(words) - POOL_ECHO_WINDOW + 1):
                     gram = tuple(words[j : j + POOL_ECHO_WINDOW])
@@ -254,7 +264,7 @@ def test_no_reply_points_at_text_it_has_not_shown_you() -> None:
     """
     dangling: list[str] = []
     for topic, i, reply in _all_replies():
-        opening = _joke_positions(reply)
+        opening = _sentences(reply)
         if opening and DANGLING_META_REFERENCE.search(opening[0]):
             dangling.append(f'{topic}#{i}: {opening[0]}')
     assert not dangling, (
