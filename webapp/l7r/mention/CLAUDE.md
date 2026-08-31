@@ -78,8 +78,12 @@ zero costs a few dollars a month, and the GM's ruling on that was that this is *
 and not worth it.
 
 ```
-./scripts/deploy_mention_bot.sh ubuntu@<the box>
+eval "$(./scripts/lightsail_access.py --export)"
+./scripts/deploy_mention_bot.sh "$LIGHTSAIL_TARGET"
 ```
+
+Live since 2026-08-31 on the Lightsail instance `courtwright.org` (Ubuntu, `nano_3_0`, us-east-1)
+as the systemd user service `l7r-mention`, resident at ~18 MB of the box's 512 MB.
 
 Idempotent: re-run it after any change. It syncs, rebuilds the venv if needed, and restarts the
 systemd user service, so there is no separate update path to get wrong.
@@ -93,20 +97,19 @@ Three third-party pieces total: `websockets` and `configobj` on the box, and sys
 Everything else the responder uses is stdlib - which is why the answer to *"should this be Rust to
 be lightweight?"* was no. Measured resident footprint of the whole Python process: **21 MB**.
 
-**Deploying from a session needs Lightsail permissions the CI user does not have.**
-`gm-assistant-ci` gets `AccessDeniedException` on `lightsail:GetInstances`. The clean route - no
-long-lived private key anywhere near a transcript - is to let it mint TEMPORARY SSH credentials:
+**No durable SSH key exists for this, deliberately.** `scripts/lightsail_access.py` mints
+credentials that expire in minutes, so there is no key to store, leak or remember to rotate. The
+IAM policy `gm-assistant-lightsail-deploy` is attached to `gm-assistant-ci` and grants exactly
+three read-ish actions - `GetInstances`, `GetInstance`, `GetInstanceAccessDetails` - and no
+lifecycle actions at all, so these credentials cannot create, delete, reboot or snapshot anything.
 
-```json
-{
-  "Effect": "Allow",
-  "Action": ["lightsail:GetInstances", "lightsail:GetInstanceAccessDetails"],
-  "Resource": "*"
-}
-```
+**The gotcha, because it costs a confusing half hour otherwise:** Lightsail's temporary access is
+CERTIFICATE-based. The private key alone gets `Permission denied (publickey)`, because the box
+trusts the Lightsail CA and not that key. The `certKey` from the same response must be written
+beside the key as exactly `<identity>-cert.pub` for OpenSSH to present it.
 
-`GetInstanceAccessDetails` returns a short-lived key pair, so nothing durable is ever pasted
-anywhere. Until that is granted, the GM runs the deploy script themselves.
+Host keys come back from that same call and are written to a `known_hosts` file, so the deploy
+verifies the host instead of reaching for `StrictHostKeyChecking=no`.
 
 ## Testing
 

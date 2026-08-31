@@ -125,8 +125,14 @@ These are FR-011: what the GM has to do to exercise it. None of them is code.
       else, runs under a systemd user service with lingering enabled, and the script is idempotent
       so a redeploy is the same command.
 
-- [ ] **Grant Lightsail permissions, or run the deploy script yourself.** The clean route needs no
-      durable key anywhere: `lightsail:GetInstanceAccessDetails` mints TEMPORARY SSH credentials.
-      `gm-assistant-ci` currently gets `AccessDeniedException` on `lightsail:GetInstances`, so the
-      policy in `l7r/mention/CLAUDE.md` has to be attached first. Either way the deploy itself is
-      one command.
+- [x] **T018** **Deployed.** The GM supplied a temporary admin key; it was used for exactly one
+      thing - creating `gm-assistant-lightsail-deploy` and attaching it to `gm-assistant-ci` - and
+      the rest of the work ran as the CI user. Live on `courtwright.org` as the systemd user service
+      `l7r-mention`, ~18 MB resident. No durable SSH key was created: `scripts/lightsail_access.py`
+      mints credentials that expire in minutes. Lightsail's access turned out to be
+      CERTIFICATE-based, which is documented at the point of use because the private key alone fails
+      with a misleading `Permission denied (publickey)`.
+
+- [ ] ~~Grant Lightsail permissions, or run the deploy script yourself.~~ Done - but **the temporary admin access key the GM pasted
+      (`AKIAR4SG6VVWRTCYQYV5`) should now be deleted** - it is in a transcript, it is no longer
+      needed, and it was full IAM admin.
