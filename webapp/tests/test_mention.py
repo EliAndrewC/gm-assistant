@@ -23,6 +23,7 @@ from l7r.mention import (
     bots,
     gateway,
     images,
+    lore,
     policy,
     pools,
     responder,
@@ -32,6 +33,7 @@ from l7r.mention import (
     voices,
     words,
 )
+from l7r.mention.lore import sheet as lore_sheet
 from l7r.mention.memory import Memory
 
 # --------------------------------------------------------------------------
@@ -474,6 +476,164 @@ class TestSmallTalk:
             assert not set(smalltalk.GM[key]) & set(smalltalk.SHEET[key]), key
 
 
+class TestCampaignLore:
+    """Feature 205: what the GM Assistant knows about this campaign."""
+
+    GM = rules.GM_ASSISTANT
+    CS = rules.CHARACTER_SHEET
+
+    def ask(self, text: str, bot: str) -> str:
+        return rules.respond_to(text, bot, rng=random.Random(0))
+
+    def test_no_dead_patterns_and_no_unreachable_pools(self) -> None:
+        """Derived from the tables, so a new category is covered when it exists."""
+        keys = {key for key, _ in lore.LORE_ORDER}
+        answered = set(lore.GM) | set(lore.SHEET)
+        assert keys - answered == set(), f'patterns with no pool: {sorted(keys - answered)}'
+        assert answered - keys == set(), f'pools no pattern reaches: {sorted(answered - keys)}'
+
+    @pytest.mark.parametrize('sword', lore.NAMED_SWORDS)
+    def test_every_named_sword_reaches_the_one_swords_category(self, sword: str) -> None:
+        """SC-001 and FR-006. The GM: one category, but naming any sword finds it.
+
+        Their example was Shitsuten, which is the cursed blade that cost the
+        Damasu a province - so this is not a hypothetical.
+        """
+        assert self.ask(f'tell me about {sword}', self.GM) in lore.GM['famous_swords']
+
+    def test_a_house_is_not_a_person(self) -> None:
+        """The GM's correction, as behavior rather than prose.
+
+        `Akodo no Damasu` is family + house. `Akodo no Damasu Sei` is a person.
+        Answering the house as though it were an unimportant guy is the same
+        mistake as answering it as though it were a person.
+        """
+        assert self.ask('tell me about Akodo no Damasu', self.GM) in lore.GM['damasu']
+        assert self.ask('who is Akodo no Damasu Sei', self.GM) in lore.GM['nobody_important']
+
+    def test_a_kept_person_beats_a_cut_one(self) -> None:
+        """SC-008 - the form the round-2 review found unrouted."""
+        assert self.ask('who is Kitsu Okura', self.GM) in lore.GM['kitsu_okura']
+        assert self.ask('who is Shinjo Jotsu', self.GM) in lore.GM['nobody_important']
+
+    def test_a_family_reference_is_not_a_person(self) -> None:
+        """ "Matsu family" is the Lion, not somebody nobody has heard of."""
+        assert self.ask('tell me about the Matsu family', self.GM) in lore.GM['clan_lion']
+
+    @pytest.mark.parametrize(
+        ('family', 'clan'),
+        [
+            (family, f'clan_{clan}')
+            for clan, families in lore.topics.CLAN_FAMILIES.items()
+            for family in families
+        ],
+    )
+    def test_every_great_family_routes_to_its_clan(self, family: str, clan: str) -> None:
+        """FR-016 - *"if the Asako family is mentioned then that is the same as if
+        the Phoenix clan was mentioned."* Derived from the table, so all 29 run.
+
+        Moto is the exception the GM's own earlier instruction creates, and it is
+        asserted separately below rather than excused here.
+        """
+        reply = self.ask(f'tell me about the {family} family', self.GM)
+        # Two families are claimed by something MORE specific that the GM also
+        # asked for, and both exceptions are deliberate: the Moto have fourteen
+        # categories of their own (message 2), and Mirumoto carries the
+        # designers-were-lazy grievance from feature 204. Asserted here rather
+        # than excluded, so that losing either one fails loudly.
+        if family == 'Moto':
+            assert reply in lore.GM['the_moto']
+        elif family == 'Mirumoto':
+            assert reply in voices.GM_MIRUMOTO
+        else:
+            assert reply in lore.GM[clan]
+
+    def test_clan_routing_does_not_make_older_categories_unreachable(self) -> None:
+        """SC-009, and the reason `topics.py` is ordered rather than alphabetical.
+
+        `Moto` is a Unicorn family and `Kuni` a Crab one, so family-to-clan
+        routing would have swallowed fourteen Moto categories and two people.
+        """
+        assert self.ask('tell me about the Moto', self.GM) in lore.GM['the_moto']
+        assert self.ask('the yassa', self.GM) in lore.GM['the_yassa']
+        assert self.ask('who is Kuni Yori', self.GM) in lore.GM['kuni_yori']
+        assert self.ask('who is Kuni Isamu', self.GM) in lore.GM['kuni_isamu']
+
+    def test_the_bots_own_topics_outrank_lore(self) -> None:
+        """Mirumoto is a Dragon family AND the GM's grievance joke. Both are his.
+
+        The specific joke wins on its own trigger; the clan keeps everything else.
+        """
+        assert self.ask('tell me about the Mirumoto', self.GM) in voices.GM_MIRUMOTO
+        assert self.ask('tell me about Togashi', self.GM) in lore.GM['clan_dragon']
+
+    # -- the Character Sheet has no lore (FR-009 to FR-011) ----------------
+    def test_the_character_sheet_never_answers_lore_himself(self) -> None:
+        """He praises and redirects. He does not assert setting facts."""
+        for question in (
+            'what is a village headsman',
+            'tell me about the Ministry of Justice',
+            'who is Moto Gaheris',
+            'what is maho',
+            'tell me about the Kaiu Wall',
+        ):
+            reply = self.ask(question, self.CS)
+            assert reply not in set().union(*(set(p) for p in lore.GM.values()))
+            assert 'GM Assistant' in reply
+
+    def test_his_lore_stories_have_the_shape_the_gm_specified(self) -> None:
+        """FR-010 / SC-006. The beat is the GM Assistant's knowledge OF THAT
+        SUBJECT proving decisive when the two of them were together - not merely
+        "a story about the two of them", which is what an earlier draft said."""
+        assert len(lore_sheet.LORE_STORIES) >= 100
+        for line in lore_sheet.LORE_STORIES:
+            assert 'GM Assistant' in line
+            assert '{topic}' in line
+
+    def test_his_lore_stories_are_set_in_rokugan_and_his_others_are_not(self) -> None:
+        """FR-011. The contrast is the joke, so it is asserted rather than hoped."""
+        rokugan = ' '.join(lore_sheet.LORE_STORIES).lower()
+        real = ' '.join(pools.SHEET_GENERIC).lower()
+        assert 'new orleans' in real
+        assert 'new orleans' not in rokugan
+        assert 'magistrate' in rokugan
+
+    def test_no_lore_pool_anywhere_carries_an_image_for_the_character_sheet(self) -> None:
+        for line in lore_sheet.LORE_STORIES + lore_sheet.IMPERIAL_FAMILIES:
+            assert 'http' not in line
+
+    # -- the two GM-ruled exceptions --------------------------------------
+    def test_the_imperial_families_are_answered_by_both(self) -> None:
+        """FR-018, the GM's deliberate exception: *"that's okay because it's funny."*"""
+        gm = self.ask('tell me about the Hantei', self.GM)
+        cs = self.ask('tell me about the Hantei', self.CS)
+        assert gm in lore.GM['imperial_families']
+        assert cs in lore.SHEET['imperial_families']
+        assert 'in public' in ' '.join(lore.GM['imperial_families']).lower()
+
+    @pytest.mark.parametrize('family', ['Seppun', 'Hantei', 'Otomo', 'Miya'])
+    def test_each_imperial_family_reaches_it(self, family: str) -> None:
+        assert self.ask(f'tell me about the {family}', self.GM) in lore.GM['imperial_families']
+
+    def test_the_assistant_joke_is_his_alone(self) -> None:
+        """FR-021. The insult only lands on the bot whose name contains his own
+        subordination, so the Character Sheet must not have this category."""
+        assert self.ask('let me speak to your manager', self.GM) in lore.GM['merely_an_assistant']
+        assert 'merely_an_assistant' not in lore.SHEET
+        cs = self.ask('let me speak to your manager', self.CS)
+        assert cs not in lore.GM['merely_an_assistant']
+
+    def test_every_lore_pool_is_annoyed_and_informative_enough_to_be_long(self) -> None:
+        """Tone is not testable; LENGTH is a weak proxy for "then a fact".
+
+        A pool of one-word grunts would pass every other test here, so this holds
+        the floor that makes FR-002 plausible without pretending to judge humor.
+        """
+        for key, pool in lore.GM.items():
+            average = sum(len(line) for line in pool) / len(pool)
+            assert average > 60, f'{key} averages {average:.0f} characters'
+
+
 class TestImages:
     """The GM's licensing rule, and the one-in-five rate."""
 
@@ -628,8 +788,17 @@ def named_pools() -> list[tuple[str, tuple[str, ...]]]:
     # TOPIC_ORDER is (key, regex) pairs, not replies. It is upper-case and tuple
     # shaped like a pool, so it has to be named out or the sweeping assertions
     # start checking regexes for unfilled slots.
-    not_pools = {'TOPIC_ORDER', 'ALL_IMAGES', 'LEGACY_ORDER'}
-    for module in (voices, pools, smalltalk):
+    not_pools = {
+        'TOPIC_ORDER',
+        'ALL_IMAGES',
+        'LEGACY_ORDER',
+        'LORE_ORDER',
+        'NAMED_SWORDS',
+        'SHEET_SILENT_ON',
+        'CLAN_FAMILIES',
+        'IMPERIAL_FAMILIES',
+    }
+    for module in (voices, pools, smalltalk, lore, lore_sheet):
         for name in dir(module):
             if name.startswith('_') or not name.isupper() or name in not_pools:
                 continue

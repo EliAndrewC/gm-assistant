@@ -18,6 +18,7 @@ its users will intuitively expect it to work."* Answering under the wrong name b
 | `rules.py` | The ENGINE: which pool answers a message, slot rendering, and the random pick that never repeats itself. Holds no jokes. |
 | `voices.py` | The material that is OURS - purpose, the porpoise, the feud tiers, the Mirumoto grievance, the same-program beat. DATA. |
 | `smalltalk/` | The long tail every bot gets asked, drawn from the standard small-talk taxonomies: `topics.py` (patterns and their order), `gm.py`, `sheet.py`. See its own CLAUDE.md. |
+| `lore/` | ~103 categories of THIS campaign, from `l7r.md` - annoyed first, factual second. The Character Sheet has no lore of his own. See its own CLAUDE.md. |
 | `pools.py` | The two large unmatched pools per bot: generic, and game-flavored. ~100 lines each. DATA. |
 | `words.py` | The ELIZA-style extractor. Hand-rolled on purpose; the alternatives are priced in its docstring. |
 | `memory.py` | Per bot, per channel: the last thing said, and how far the feud has gone. In-process and forgetful by design. |
@@ -41,10 +42,15 @@ a joke contains an `@`.
 
 ## How a reply is chosen
 
-Four layers, in order: the feud (if the message names the other bot), that bot's own topics, the
-shared `COMMON` table, then the unmatched pools - game-flavored if the message used table or
-Rokugani vocabulary. One line is picked at random and never repeats the bot's previous line in that
-channel.
+Five layers, in order: the feud (if the message names the other bot), that bot's own SIGNATURE
+topics (the porpoise, the jailbreak joke, the Mirumoto grievance), campaign LORE, the rest of the
+small talk, then the unmatched pools. One line is picked at random and never repeats the bot's
+previous line in that channel.
+
+**Signature topics outrank lore, and that boundary is load-bearing.** `Mirumoto` is a Dragon family,
+so feature 205's family-to-clan routing claimed it and made the Mirumoto grievance unreachable - two
+things the GM asked for, colliding. The specific joke wins on its own trigger; `Dragon`, `Togashi`,
+`Agasha` and `Kitsuki` still reach the clan. Pinned by a test.
 
 **The feud escalates on a RELAY** - a player quoting one bot to the other - and not on repetition.
 That distinction cost a round of the spec review: an earlier design advanced on how often the topic
