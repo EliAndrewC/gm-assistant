@@ -32,6 +32,20 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REMOTE_DIR='l7r-mention'
 SERVICE='l7r-mention'
 
+# Optional, and how scripts/lightsail_access.py feeds this script: a TEMPORARY
+# key plus the host keys the Lightsail API handed us. Host verification stays
+# ON - the API tells us the fingerprints, so there is no reason to reach for
+# StrictHostKeyChecking=no.
+SSH_ARGS=()
+if [ -n "${SSH_KEY:-}" ]; then
+    SSH_ARGS+=(-i "$SSH_KEY" -o IdentitiesOnly=yes)
+fi
+if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
+    SSH_ARGS+=(-o "UserKnownHostsFile=$SSH_KNOWN_HOSTS" -o StrictHostKeyChecking=yes)
+fi
+SSH_CMD=(ssh "${SSH_ARGS[@]}")
+ssh_run() { "${SSH_CMD[@]}" "$@"; }
+
 STAGE="$(mktemp -d)"
 chmod 700 "$STAGE"
 trap 'rm -rf "$STAGE"' EXIT
@@ -105,15 +119,16 @@ EOF
 
 # --- ship it ----------------------------------------------------------------
 echo "==> syncing to $TARGET:~/$REMOTE_DIR"
-ssh "$TARGET" "mkdir -p ~/$REMOTE_DIR"
+ssh_run "$TARGET" "mkdir -p ~/$REMOTE_DIR"
 rsync -az --delete \
+    -e "$(printf '%q ' "${SSH_CMD[@]}")" \
     --exclude '__pycache__' \
     "$STAGE"/webapp "$STAGE"/scripts \
     "$TARGET:~/$REMOTE_DIR/"
-scp -q "$STAGE/$SERVICE.service" "$TARGET:~/$REMOTE_DIR/$SERVICE.service"
+scp -q "${SSH_ARGS[@]}" "$STAGE/$SERVICE.service" "$TARGET:~/$REMOTE_DIR/$SERVICE.service"
 
 echo '==> installing on the box'
-ssh "$TARGET" "bash -seuo pipefail" <<REMOTE
+ssh_run "$TARGET" "bash -seuo pipefail" <<REMOTE
 cd ~/$REMOTE_DIR
 chmod 600 webapp/development-secrets.ini
 
@@ -129,18 +144,24 @@ fi
 # boot rather than at the GM's next login - the whole point is "always on".
 mkdir -p ~/.config/systemd/user
 cp $SERVICE.service ~/.config/systemd/user/$SERVICE.service
+
+# Enable lingering FIRST: it is what creates /run/user/<uid>, and without that
+# directory every systemctl --user call over a non-login ssh session fails with
+# "Failed to connect to bus". The export is needed for the same reason - a
+# non-interactive ssh gets no XDG_RUNTIME_DIR.
 sudo loginctl enable-linger "\$USER" || echo '    (could not enable lingering; it will start at login instead)'
+export XDG_RUNTIME_DIR="/run/user/\$(id -u)"
 systemctl --user daemon-reload
 systemctl --user enable $SERVICE
 systemctl --user restart $SERVICE
 REMOTE
 
 echo '==> waiting for it to announce itself'
-ssh "$TARGET" "timeout 25 journalctl --user -u $SERVICE -n 20 -f --since '-1 min' | grep -m1 'listening as' || true"
+ssh_run "$TARGET" "timeout 25 journalctl --user -u $SERVICE -n 20 -f --since '-1 min' | grep -m1 'listening as' || true"
 
 echo
 echo "==> status"
-ssh "$TARGET" "systemctl --user is-active $SERVICE && systemctl --user status $SERVICE --no-pager -n 12" || true
+ssh_run "$TARGET" "systemctl --user is-active $SERVICE && systemctl --user status $SERVICE --no-pager -n 12" || true
 
 cat <<DONE
 
