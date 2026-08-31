@@ -135,8 +135,9 @@ SETTING: dict[str, tuple[str, ...]] = {
         'government at that level - a magistrate, his assistants, a garrison you could '
         'seat at two tables - and it works, which is the most alarming sentence in the '
         'whole demographic section, and I have read the whole demographic section.',
-        'Village districts have no resident samurai at all; a heimin headsman runs them '
-        'and answers upward. And a country estate standing in the same valley is NOT '
+        'Village districts have no resident samurai at all. They are run by a headsman, '
+        'who is a farmer of the commoner caste rather than a samurai, answering upward '
+        'to the county magistrate. And a country estate standing in the same valley is NOT '
         'part of the village and is certainly not under that headsman - it belongs to '
         'the samurai who owns it and answers elsewhere entirely. I have written that '
         'distinction out ninety times and will write it again before the year ends.',
@@ -255,10 +256,12 @@ SETTING: dict[str, tuple[str, ...]] = {
             SAKE_SAMURAI,
         ),
         attach(
-            'The other ninety-eight percent enter the records the way weather does: in '
-            'aggregate, as a quantity. "The district yielded." "The levy raised." An '
-            'individual heimin appears in my files only by being unusual, which in '
-            'practice means being in trouble. I am the man writing down the rainfall.',
+            'Samurai are two percent of this Empire. The other ninety-eight - the '
+            'heimen, the farmers and artisans and everybody else - enter the records '
+            'the way weather does: in aggregate, as a quantity. "The district yielded." '
+            '"The levy raised." One of them appears in my files by name only by being '
+            'unusual, which in practice means being in trouble. I am the man writing '
+            'down the rainfall.',
             GREAT_WAVE,
         ),
     ),
@@ -371,9 +374,9 @@ SETTING: dict[str, tuple[str, ...]] = {
         'distinction is quietly set aside and I am asked to record the whole business '
         'as though it never happened.',
         'A bandit report goes up to the county magistrate; the hunt goes out under the '
-        'headsman with whatever men the village can spare from the fields. Two offices, '
-        'and the one that does the walking is not the one that appears in the account '
-        'afterward.',
+        'village headsman, with whatever farmers the village can spare from the fields '
+        'and whatever spears it can find them. Two offices, and the one that does the '
+        'walking is not the one that appears in the account afterward.',
         'The real limit on Rokugani warfare is not courage or swords, it is how many '
         'pairs of hands a farming district can lose in a given week without the harvest '
         'failing. That constraint decides campaigns. It appears in no song. It appears '
@@ -385,9 +388,10 @@ SETTING: dict[str, tuple[str, ...]] = {
         'Arm a farmer and you have a farmer with a spear who would rather be farming, '
         'which is a sentence I have written into about ninety after-action notes '
         'without once being asked to expand on it.',
-        'The ashigaru go home afterward. That is the entire difference between them and '
-        'everybody in the stories, and in four centuries of stories it has never once '
-        'been counted as an advantage.',
+        'The ashigaru are farmers who were handed spears for a season, and when the '
+        'season ends they go home to the fields. That is the entire difference between '
+        'them and everybody in the stories, and in four centuries of stories it has '
+        'never once been counted as an advantage.',
         attach(
             'Levy training is whatever the magistrate can arrange in the weeks when the '
             'fields do not need everyone: some drill, some spear work, a great deal of '
@@ -412,14 +416,17 @@ SETTING: dict[str, tuple[str, ...]] = {
         'on the Chancellery, the council that advises the daimyo - which is to say '
         'decides, while appearing not to. I take the minutes of those meetings, and the '
         'minutes are not the decision either.',
-        'The ruling lineage carries the house name, and the chancellor who runs that '
-        "council is usually the daimyo's spouse, sibling or child. Nepotism with a "
+        'The ruling lineage carries the house name, and the chancellor who presides '
+        'over the Chancellery - the body a daimyo is supposed to consult before doing '
+        "anything - is usually that same daimyo's own spouse, sibling or child. Nepotism with a "
         'filing system is still nepotism; it is merely auditable, and this Empire '
         'counts auditability as a virtue.',
         'The Ryusei domain is run by six lineages holding ninety percent of its samurai '
         'between them: Ryusei, Isa, Sasara, Moe, Tokino and Joji. Three of the six are '
-        'Mirumoto families displaced when the Unicorn came back from the west, they '
-        'have not let it go in two centuries, and neither has my record.',
+        'Mirumoto families who were farming that ground when the Unicorn came home - '
+        'that clan spent centuries outside the Empire and wanted its old lands back on '
+        'arrival - and were moved off it. They have not let it go in two centuries, and '
+        'neither has my record.',
         'Look at which lineage holds which ministry in a domain and you will know what '
         'that domain has been arguing about for sixty years - the offices ARE the '
         'argument, made permanent. It took me eleven years to notice and nobody has '
@@ -525,11 +532,10 @@ SETTING: dict[str, tuple[str, ...]] = {
         'to legislating against generosity, and it has never once been embarrassed '
         'about that. I have looked for the embarrassment.',
         attach(
-            'A gift offered at exactly the correct rank and received exactly correctly. '
-            'Both men are armed. Both know precisely what the object is worth and what '
-            'accepting it obliges them to do. The correctness is the only reason nobody '
-            'is drawing, which means the Accordances are what is holding those swords '
-            'in place.',
+            'An entire book of precedence exists so that two armed men who meet on a '
+            'bridge, each certain he outranks the other, do not end up doing this. Rank '
+            'is published in advance precisely so that the question never has to be '
+            'settled here. It works most of the time. I keep the exceptions.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -562,8 +568,9 @@ SETTING: dict[str, tuple[str, ...]] = {
         'as intended. Negotiate a good price on the timber for the bridge and the '
         'surplus is honestly yours. The Empire has monetized thrift and named it duty, '
         'and it did that deliberately, in writing.',
-        'The rule bites hardest in the Ministry of Works, which spends most on '
-        'materials, and it applies anywhere a budget exists, which is everywhere. A '
+        'An official keeps whatever he does not spend and pays any overrun himself, and '
+        'that rule bites hardest in the Ministry of Works, which spends most on '
+        'materials. It applies anywhere a budget exists, which is everywhere. A '
         'rule that governs everything and is written down almost nowhere is the most '
         'Rokugani object in existence.',
         'The Empire is unusually well administered for its technology: the roads are '
@@ -594,8 +601,9 @@ SETTING: dict[str, tuple[str, ...]] = {
         'wooden collar worn in public - the flogging post, the kneeling stone. That '
         'ground exists in order to be seen, which makes it, technically, a colleague of '
         'mine.',
-        'The second address sits outside the settlement past the boundary stone, on '
-        'bare waste ground that grows nothing: the execution ground. Death pollution '
+        'Punishment here has two addresses - the display ground in the middle of town, '
+        'and the execution ground - and the second one sits outside the settlement past '
+        'the boundary stone, on bare waste that grows nothing. Death pollution '
         'does not come inside a town. The paperwork does. The paperwork goes absolutely '
         'everywhere.',
         'Rokugan does not imprison as a punishment. A county jail is a waiting room '
@@ -762,9 +770,11 @@ SETTING: dict[str, tuple[str, ...]] = {
         'coalitions inside each family - fight about them. That is the process stated '
         'honestly, which nobody else will do, because nobody else is unpaid enough to '
         'be candid.',
-        'The Imperial branch of Retainers awards commendations. Kitsuki Fu holds the '
-        'Order of the Precious Crown for the Forgotten Tomb, which is the highest honor '
-        'available to anybody below the rank of daimyo. The Empire pays its greatest '
+        'The Imperial branch of Retainers awards commendations. A Dragon investigator '
+        'called Kitsuki Fu holds the Order of the Precious Crown - the highest honor '
+        'available to anybody below the rank of daimyo - for what she did inside the '
+        'Forgotten Tomb, a place that exists in this world and the land of the dead at '
+        'the same time. The Empire pays its greatest '
         'debts in objects that cannot be sold.',
         'An Imperial commendation cannot be spent, traded or eaten, which is exactly '
         'the point of it: a reward that can be sold is a payment. It is also the only '
@@ -803,9 +813,10 @@ SETTING: dict[str, tuple[str, ...]] = {
         'which is why the Empire fields so few of them and talks about them so much. '
         'The talking is free.',
         'There are twenty-odd legions, and where they stand is the Empire naming its '
-        'fears in order: one at the western gate where the Unicorn came home, one at '
-        'Beiden Pass, and every single one of the rest piled onto the Kaiu Wall against '
-        'the Shadowlands.',
+        'fears in order. One sits at the western gate, where the Unicorn clan came back '
+        'into the Empire after centuries outside it. One holds Beiden Pass, the single '
+        'route through the mountains that split the Empire in half. Every one of the '
+        'rest is piled onto the Kaiu Wall, which holds back the Shadowlands.',
         'A ministry of war is mostly food, feed, horses, arrows and boots. The battles '
         'are the short part and, inconveniently for everyone in my profession, the only '
         'part anybody ever wants described.',
@@ -850,7 +861,8 @@ SETTING: dict[str, tuple[str, ...]] = {
         'household in the domain owes ten to twenty days of unpaid work a year, and '
         'more in an emergency. It is the only budget in the Empire denominated in other '
         'people.',
-        'Somebody has to decide which household sends a man for those corvee days, and '
+        'Corvee is the unpaid labor every peasant household owes its lord each year, '
+        'and somebody has to decide which household sends a man for which days of it - '
         'it is the village headsman - a farmer, with no stipend and no guards. The '
         'Empire has arranged for its least defensible decisions to be made by the '
         'person with the least protection, and it did not arrange that by accident.',
@@ -910,9 +922,10 @@ SETTING: dict[str, tuple[str, ...]] = {
         'of records. I am the records. In a sense that keeps me awake, I am the '
         'opinions.',
         'When two neighboring domains fight, the Emerald magistrates nearby can be '
-        'assembled to assist one side, and a couple of hundred extra trained men '
-        'decides battles. Everybody knows this. I am obliged to describe it in the file '
-        'as "assistance".',
+        "assembled to assist one side - and these are the EMPEROR'S magistrates, whose "
+        'entire standing rests on being neutral between clans. A couple of hundred '
+        'extra trained men decides battles. Everybody knows. I am obliged to describe '
+        'it in the file as "assistance".',
         attach(
             'On the display ground, the audience IS the sentence: a man kneels in the '
             'middle of town for a set number of days, and what punishes him is not the '
@@ -957,10 +970,10 @@ SETTING: dict[str, tuple[str, ...]] = {
         'hands that bring it in. Then the war runs long, ends in the ninth month with '
         'the fields half cut, and everyone acts astonished. I have written that '
         'astonishment down eleven times in eleven different hands.',
-        'Twelve months, at least one festival in each, and about a third of those are '
-        'somebody apologizing to a fortune. The other two thirds are somebody '
-        'apologizing to a magistrate the following morning, and that second kind is '
-        'mine.',
+        'Twelve months, at least one festival in each, and about a third of them are '
+        'somebody apologizing to a Fortune - which is what this Empire calls its gods. '
+        'The other two thirds are somebody apologizing to a magistrate the following '
+        'morning, and that second kind is mine.',
         attach(
             'Minazuki is the sixth month and its name means dry, which is a hope rather '
             'than a description: it is also when the rains and the storms decide '
@@ -985,15 +998,18 @@ SETTING: dict[str, tuple[str, ...]] = {
         'The Stem changes every two years and the Branch every year, so the pair does '
         'not return for sixty. It is by a considerable margin the tidiest system in '
         'this Empire, which is exactly why I distrust it.',
-        'It runs Yang Wood Rat, Yang Wood Ox, on through Yang Wood Boar, and then the '
-        'Stem turns and it is Yin Wood Rat. That is the entire mechanism. I can recite '
+        'Each year is one of ten Stems paired with one of the twelve zodiac animals, so '
+        'it runs Yang Wood Rat, Yang Wood Ox, on through Yang Wood Boar, and then the '
+        'Stem turns and it is Yin Wood Rat again. That is the entire mechanism. I can recite '
         'all sixty, unasked, and have, and was not invited back.',
         'The same sixty-name cycle also names the DAY, which is why a soothsayer can '
         'always find something significant about today - today is a Fire Horse day, or '
         'a Water Snake day, and each pairing has a character. There has never been an '
         'insignificant day in this Empire and I have checked all of them.',
-        'The Ten Stems are the five elements taken twice over, once yang and once yin. '
-        'Sixty combinations, no exceptions, no judgment calls, no appeals: a system '
+        'The Ten Stems are the five elements taken twice over, once yang and once yin, '
+        'and they pair off against the twelve zodiac animals - ten and twelve, which '
+        'come back into step after sixty. Sixty combinations, no exceptions, no '
+        'judgment calls, no appeals: a system '
         'that never has to decide anything. I envy it in a way I would rather not '
         'examine.',
         'People born under the same pairing believe things about one another before '
@@ -1126,8 +1142,9 @@ SETTING: dict[str, tuple[str, ...]] = {
         'opening. A week of preparation so that the dead are not inconvenienced. Nobody '
         'has ever prepared a week for me.',
         'The Moto - the Unicorn family who spent centuries beyond the western border - '
-        'say the monks do not open the gates at all and only ask a god to open them. An '
-        'Empire-wide observance whose actual mechanism is disputed by the people who '
+        'say the monks do not open the gates of the underworld themselves - the gates '
+        'that let the dead come home for the night - and only ask a god to open them. '
+        'An Empire-wide observance whose actual mechanism is disputed by the people who '
         'know that god best, and in four centuries nobody has convened so much as a '
         'hearing about it.',
         'The souls come from Yomi, where the honored dead go, and from Jigoku, where '

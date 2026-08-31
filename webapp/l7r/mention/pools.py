@@ -325,7 +325,7 @@ GM_GAME: tuple[str, ...] = (
     'The Empire is very good at making a simple thing into a ceremony.',
     'Whatever the dice say, somebody is going to be offended about it later.',
     'Everything at this table eventually becomes a question about who owes whom.',
-    'You want the mechanics, he has them. You want the consequences, sit down.',
+    'You want the mechanics, the character sheet has them. You want the consequences, sit down.',
     'That has the shape of a thing that ends in an apology.',
     'A samurai would ask about duty. You are all going to ask about the dice.',
     'I know exactly how that ends, and I am not going to spoil it.',
