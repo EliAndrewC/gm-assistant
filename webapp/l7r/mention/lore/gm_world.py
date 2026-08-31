@@ -752,9 +752,10 @@ WORLD: dict[str, tuple[str, ...]] = {
         'deal of hunting, and the hunting is what gets recounted afterward at dinner '
         'rather than either company.',
         'The county also holds Matsu Yokijiro, a Lion officer, and Shinjo no Dorai '
-        'Rakuo of the Unicorn, and a Lion plan to settle the water rights in their own '
-        'favor before anybody upstream noticed. It did not survive contact with the '
-        'county. Plans rarely survive a county.',
+        'Rakuo of the Unicorn, and a Lion scheme that arrived with objectives and left '
+        'without them. Plans rarely survive a county: the water schedule is older than '
+        'the plan, the headsmen are older than the schedule, and neither will be '
+        'hurried.',
         'Bandit hunting is led by village headsmen with ashigaru - peasant levies, '
         'farmers handed spears a week earlier. It is not glamorous, it is most of rural '
         'law enforcement, and the headsman gets no line in the story afterward. He and '
@@ -793,7 +794,7 @@ WORLD: dict[str, tuple[str, ...]] = {
         'A keep named for outsiders tells you precisely what the Empire believes it is '
         'for, and the Empire has never once been embarrassed by the name.',
         'Moto Gaheris, the Khan who leads the Moto, is waging his campaign out that '
-        'way. So stands the gaijin city of Medin al Salaat. And the Empire files all of '
+        'way. So does the gaijin city of Medin al Salaat. And the Empire files all of '
         'it - everything beyond that Gateway - under "abroad". It is a heading I did '
         'not choose and cannot stop using.',
         'The duty out there is boring for years and then very suddenly is not, and my '
