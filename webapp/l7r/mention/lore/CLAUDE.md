@@ -32,6 +32,17 @@ player (his comedy runs the other way - he is at the bottom of the ladder and it
 flat inventory assertion, which is a receipt rather than a grievance; withholding used instead of a
 punchline; and a line reused across categories, which thins an already small stock.
 
+**And the newest one, which is what a rewrite turns into if nobody watches it: THE TRAILING
+SELF-REFERENTIAL CLAUSE.** A fact, then `, and I ...` / `, which I ...` bolted onto the end of it.
+The second audit named this directly and called it *"the new 'And this is...'"* - better writing than
+the old caption formula, and still one shape doing all the work. It measured **109 lines, 10.6% of
+the corpus**, with 16 categories at 8-or-more of ten and 13 of those in `gm_setting` alone.
+
+It is a trap rather than a test, deliberately, and the reasoning is in
+`tests/test_mention_lore_tone.py`: a ceiling on it was built, measured, adjudicated and removed,
+because how much of one construction is too much is a density judgment and the GM assigned density
+judgment to the audit. Watch for it while writing; let the audit catch it if you miss.
+
 His grievances, for reuse: unpaid, unthanked, cannot forget, subordinate by name, buried in filing,
 and privately unable to stand the Character Sheet - who is a free beat in any category holding a
 number. The full version of this section, with the audit's findings, is at the top of
@@ -120,28 +131,36 @@ the candle-HOLDER; and Moto Khuyag's region-locked detector.
 
 ## What the tests hold, and what they cannot
 
-`tests/test_mention_lore_tone.py` holds the four traps that can be counted exactly - the bare
-acknowledgment opener, the `And this is` caption, the `Ask me about` signpost, and any reply reused
-anywhere in the corpus - plus a **floor and a ceiling** on self-reference, per category, both set at
-the standard rather than at wherever the corpus sat:
+**The audit is the instrument, and the GM chose it.** He said so twice - *"You could dispatch the
+evaluation of whether your existing responses are good enough to a subagent check ... that separates
+validation and verification from the actual implementation"*, and *"when you are done with your next
+editing pass, you should run the same subagent check on what you have written."* So the project's
+"a guideline that lives only in prose is not a rule" does NOT license a test for tone here. That
+rule exists because nobody remembers prose; the GM named who remembers, and it is not pytest.
 
-- **Floor, three replies in ten.** A proxy, deliberately per-CATEGORY rather than per-line, because
-  register-2 humor needs no self-reference at all. Below three, nobody is speaking the category.
-  Four categories were under it when it was set and were rewritten to clear it.
-- **Ceiling, seven replies in ten.** The second audit found sixteen categories at 8+, thirteen of
-  them in `gm_setting`, all leaning on the same trailing self-referential clause - it called this
-  *"the new 'And this is...'"*, and it is: better writing, still one construction doing all the
-  work. The GM asked for a MIX and said the ten replies are why. `merely_an_assistant` and
-  `imperial_families` are exempt in the test, by name, because saturation IS the joke in those two -
-  one is the insult that only lands on him, the other is sustained ironic deference that only works
-  if it never breaks.
+`tests/test_mention_lore_tone.py` therefore holds only what a test may legitimately hold, and the
+line is **a BAN, never a THRESHOLD**:
 
-**A near-duplicate guard was built, measured and dropped** - the reasoning is in the test file, at
-length, so nobody rebuilds it. Short version: an eight-word shingle over the whole reply hits 70+
-pairs and nearly all of them are deliberately shared FACTS, not shared jokes; shingling only the
-final sentence is far cleaner but misses the motivating case, because the repeated joke is often
-mid-reply. No mechanism separates a fact repeated for the reader from a joke repeated out of habit,
-so joke repetition is the audit's job. Reopen only with a mechanism that makes that distinction.
+- **Four bans**, on shapes with no defensible use: the bare acknowledgment opener, the `And this is`
+  caption, the `Ask me about` signpost, and any reply reused verbatim anywhere in the corpus.
+  Nothing is lost by never writing these, so none of them can fire on writing the GM would have
+  liked, and no number had to be invented - the only value a ban takes is zero.
+- **One presence check**: no category may leave him out of all ten replies. Not "enough"
+  self-reference - ANY. Register 1 is definitionally about him, so a category with none of it is not
+  a mix of three registers whatever else is true of it, and that much is entailed by the GM's own
+  words rather than decided on his behalf. The audit had measured 35 of 103 categories at zero.
+
+**Two guards were built, measured and deliberately removed.** Both are written up at length where
+they lived, so nobody rebuilds them:
+
+- **A ceiling on the trailing self-referential clause.** Rejected on adjudication: the GM asked for
+  "a good mix" and never for a number, 30 of 103 categories sat exactly at the cap with no headroom,
+  and it was satisfiable without satisfying him (move the clause to the front, keep the monotony).
+  The construction is now a named trap in the tone section above.
+- **A near-duplicate detector.** An eight-word shingle over the whole reply hits 70+ pairs and
+  nearly all are deliberately shared FACTS, not shared jokes; shingling only the final sentence is
+  cleaner but misses the motivating case, where the joke is mid-reply. Reopen only with a mechanism
+  that separates a repeated fact from a repeated joke.
 
 **Whether a line is actually funny is a judgment call and no test holds it.** The verification for
 that is a subagent tone audit run against the finished corpus - author is not a reliable reviewer,
