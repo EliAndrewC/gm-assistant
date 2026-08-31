@@ -102,9 +102,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'Three people in recent years received sketches of GAIJIN soulmates. Excellent '
         'news for the campaign, catastrophic news for those three, and a genuinely '
         'lovely afternoon for me.',
-        'Toranosuke, abbot of Chai Sedo, declared it portends success. Abbots discover '
-        'that things portend success at almost exactly the moment armies begin moving. '
-        'I have noticed. I have written it down. Nothing has come of noticing.',
+        'Toranosuke, abbot of Chai Sedo, declared it portends success for the campaign. '
+        'A blessing about marriage, entered into the record as a military dispatch, and '
+        'nobody involved thought that was strange.',
         'By vowing to always convey truth to all who seek it, Ritsu receives divine '
         'truth in return. He is paid in the very thing he is obliged to give away. I '
         'have raised the comparison with nobody, because there is nobody.',
@@ -136,8 +136,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'Abbot, none of them subordinate to another, and all of them willing to say so '
         'in writing, at length, to me.',
         'For a large network the capital temple is sovereign and the provincial ones '
-        'subordinate. Within a domain. Only within a domain. I have written that second '
-        'sentence into more letters than I can count and it has never once held.',
+        'subordinate. Within a domain. Only within a domain. The Empire built a '
+        'hierarchy that stops at the border and then acted surprised by the arguments.',
         'The Shinsei identified seven Major Fortunes whose favor brings luck and '
         'prosperity. Everyone can name three. Nobody has ever asked me for the other '
         'four, and I have them ready.',
@@ -155,8 +155,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
             CATS,
         ),
         attach(
-            'A doctrinal disagreement between two orders which are, I remind you, not '
-            'subordinate to one another.',
+            'A doctrinal disagreement between two orders, neither subordinate to the '
+            'other, both certain, and no authority anywhere entitled to decide.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
@@ -183,8 +183,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'character sheet is superb at arithmetic and has never been handed anything '
         'worth counting.',
         attach(
-            'The endowment, in its usual form: slow, cold, and older than the building '
-            'it paid for.',
+            'The endowment, in its usual form: slow, cold, older than the building it '
+            'paid for, and the only member of the congregation nobody preaches at.',
             CARP,
         ),
         attach(
@@ -375,8 +375,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'If you believe you are in one, the useful action is to write down the time. '
         'Somebody will want it later. That somebody is me, and I will want it very much.',
         attach(
-            'The moment of noticing. It is always this quiet, which is the detail '
-            'nobody believes until it is theirs.',
+            'The moment of noticing. Every account agrees it is this quiet, and every '
+            'account was written by somebody who did not believe the previous one.',
             INNER_VISION,
         ),
         attach(
@@ -409,11 +409,13 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'Do not ask me for the mechanism. Ask a Kuni, then do not sleep, and please do '
         'not tell me about it afterward, because I will have to keep it.',
         attach(
-            'The respectable version of what maho is said to be for.',
+            'The respectable version of what maho is said to be for - which the Empire '
+            'filed under crafting, and has never revisited.',
             KIDOMARU_TENGU,
         ),
         attach(
-            'What it actually costs, wearing a shape you would have trusted.',
+            'What it actually costs, wearing a shape you would have trusted. Nobody who '
+            'wrote about the totems mentioned this part, and they all knew.',
             FOX_WOMAN,
         ),
     ),
@@ -441,7 +443,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'relationship between man and the elements. I have transcribed nine of those '
         'lectures. The problem is not fixed in any of them.',
         attach(
-            'A shugenja at work, as the prints imagine it.',
+            'A shugenja at work, as the prints imagine it. The prints have never once '
+            'depicted the request form, which is the part that takes the afternoon.',
             KIDOMARU_TENGU,
         ),
         attach(
@@ -521,9 +524,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'the record permanently.',
         'Ritsu swore the vow of soothsaying to her because conveying her truths '
         'reliably upsets people. A fortune of love whose gift required a legal remedy.',
-        'If a gaijin names their god of love, a samurai assumes Benten, and will '
-        'probably be right, since she is part of the fabric of reality and therefore '
-        'everywhere.',
+        'If a gaijin names their god of love, a samurai assumes Benten and is generally '
+        'correct, since she is woven through reality itself. An entire theology of '
+        'translation resting on the assumption that everyone else meant us.',
         '"Probably right" is doing a great deal of work in that sentence, and the space '
         'it leaves is where the interesting adventures live and where my footnotes '
         'multiply.',
@@ -549,7 +552,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
     'emma_o': (
         'Emma-O. Fortune of death, recognized throughout the Empire since the dawn of '
         'civilization, and the fourth of the Gods of Death whether or not the Moto '
-        'phrase it that way.',
+        'phrase it that way. The oldest Fortune in the record and the one with the '
+        'fewest temples anybody can find.',
         'There is no Grand Abbot of Emma-O. Her temples sit in remote places '
         'specifically to avoid attracting her attention near people. An entire order '
         'organized around not being noticed. I have read the principle and I have '
@@ -585,7 +589,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
     ),
     'koshin': (
         'Koshin. Roads and travel, and therefore the fortune people swear creation vows '
-        'to whenever the Empire has decided to build something.',
+        'to whenever the Empire has decided to build something. A god of infrastructure '
+        'is a strange thing to have invented and a stranger thing to have needed.',
         'When the road system was constructed, people swore to build a certain length '
         'of road or a certain number of waystations. Some of them are still bound. Some '
         'are still building. I hold the outstanding list and it is not short.',
@@ -598,9 +603,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'A vow of creation to Koshin is an excellent idea right up until the campaign '
         'that justified it fails and you remain obliged. The vow does not read the '
         'dispatches. I read the dispatches.',
-        'Hantei the Tenth outlawed tolls on Imperial roads. Koshin received the credit, '
-        'the Ministry of Works received the bill, and I received the correspondence '
-        'about the bill.',
+        'His order walks the roads it is sworn to build, which makes it the only '
+        'priesthood in the Empire whose devotion can be measured in worn-out sandals '
+        'and is.',
         'Roads are the least romantic infrastructure in the Empire and the reason it '
         'holds together at all. Nobody has ever written a poem about a culvert. I would '
         'read it twice.',
@@ -658,7 +663,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'appear unique to Moto teaching, which is the polite way of saying that nobody '
         'east of the mountains ever checked.',
         'Gaheris carries four swords, one dedicated to each. Bloodstorm for battle, to '
-        'Emma-O. Lamentation for defense when ambushed, to Enma.',
+        'Emma-O. Lamentation for defense when ambushed, to Enma. Two gods consulted '
+        'before the fight starts, so that the fight need not be thought about.',
         'Lightning for single combat, to King Yan. Retirement for executions, to Wei '
         'Tin. He chose which sword for which killing, and that is the theology: a '
         'taxonomy of killing, maintained at the hip.',
@@ -675,7 +681,8 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'his covenant with all four. He negotiated with a god of ghosts before he '
         'negotiated with anybody living. I respect the ordering.',
         attach(
-            'Four swords, four gods, one man deciding which kind of killing this is.',
+            'A covenant being sworn. Every other theology in this record asks what '
+            'happens after a death; this one asks which category it was.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -687,7 +694,7 @@ RELIGION: dict[str, tuple[str, ...]] = {
     'king_yan': (
         'King Yan, the King of Hell. He judges the souls of the dead and sentences '
         'them, and Gaheris dedicated Lightning to him - the sword for single combat. A '
-        'god of judgment given the duelling sword. Somebody was paying attention.',
+        'god of judgment given the dueling sword. Somebody was paying attention.',
         'Eight greater hells and sixteen lesser, and he sentences a soul to one or to '
         'several in succession. Twenty-four hells and a docket. He is structurally a '
         'magistrate, and I mean that as a compliment to hell.',

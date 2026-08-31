@@ -67,7 +67,8 @@ CLANS: dict[str, tuple[str, ...]] = {
         'Ask about the Lion and you will get war. Ask about their granaries and you '
         'will get the truth, and the truth has never once been requested.',
         attach(
-            'The Lion, as the Lion see themselves.',
+            'The Lion, as the Lion see themselves. Seventy-five domains of granary '
+            'schedules, and this is the picture they commissioned.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -100,7 +101,8 @@ CLANS: dict[str, tuple[str, ...]] = {
         'They are blunt because subtlety is expensive and they are spending the money '
         'elsewhere. It is the only clan whose manners have a line in the budget.',
         attach(
-            "The Crab's working conditions.",
+            'What three hundred thousand samurai are pointed at, permanently, so that '
+            'the other one and a half million never have to think about it.',
             KIDOMARU_TENGU,
         ),
         attach(
@@ -113,8 +115,8 @@ CLANS: dict[str, tuple[str, ...]] = {
         'than you, and considerably better dressed than me, which took no effort at all '
         'on their part.',
         'Doji rule with a hundred thousand. Daidoji ninety, Kakita seventy-five, Asahina '
-        'ten. The Tsume of the Doji are a Karo House, and Kasai Tsume, Fire Claw, is '
-        'their ancestral sword.',
+        'ten. Note that the family famous for poetry is outnumbered nine to one by the '
+        'family famous for holding ground, and that the poetry is what travels.',
         'Daidoji Masamune forged Shitsuten as his final blade and poured all his hatred '
         'of the Yasuki into it. It works. A man made a functioning object out of a '
         'grudge, and I have been keeping grudges for four hundred sessions with nothing '
@@ -134,7 +136,8 @@ CLANS: dict[str, tuple[str, ...]] = {
         'A clan that has made being underestimated into an inheritance. I am '
         'underestimated constantly and have not managed to monetize it.',
         attach(
-            "The Crane's preferred method.",
+            "The Crane's preferred method, and the one they would rather you remembered "
+            'than the ninety thousand Daidoji standing behind it.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -150,7 +153,7 @@ CLANS: dict[str, tuple[str, ...]] = {
         'Bayushi rule with a hundred and twenty-five thousand. Shosuro eighty, Soshi '
         'fifteen, Yogo five. Four families and not one of them has ever supplied me '
         'with a document I did not have to read twice.',
-        'The Peasant Campaign is set in their lands, which is the cruellest available '
+        'The Peasant Campaign is set in their lands, which is the cruelest available '
         'place to be a peasant with no rights and no name, and the record does not '
         'pretend otherwise.',
         'Soshi Saibankan is a Scorpion named judge. The Empire needs somebody to do the '
@@ -199,7 +202,8 @@ CLANS: dict[str, tuple[str, ...]] = {
         'Every other clan measures itself against its neighbors. This one has been '
         'somewhere with no neighbors, and it shows in every document they send me.',
         attach(
-            'The crossing that made them.',
+            'The crossing that made them, and the reason no other clan can quite look '
+            'at them straight. Everyone here is provincial; only one clan found out.',
             GREAT_WAVE,
         ),
         attach(

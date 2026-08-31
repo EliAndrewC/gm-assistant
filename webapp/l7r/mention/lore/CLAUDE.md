@@ -37,6 +37,22 @@ and privately unable to stand the Character Sheet - who is a free beat in any ca
 number. The full version of this section, with the audit's findings, is at the top of
 `gm_religion.py`; each other file's docstring records what was repaired in it.
 
+### EVERY LINE SHIPS ALONE - captions included
+
+`rules.py` serves exactly ONE reply per query, `rng.choice(rendered)`. **Two replies are never
+delivered as a pair.** So a line written as the setup half of a two-part joke is broken by
+construction: it goes out on its own about half the time it goes out at all.
+
+This is the defect the `And this is...` formula was hiding. Ninety-seven of 103 second captions
+opened that way because they were written as the punchline to the caption above them - and the
+caption above them was written as a straight label, because it had a partner. A second tone audit
+found fifteen of those labels still standing after the first rewrite (`'The Lion, as the Lion see
+themselves.'`, `"The Crab's working conditions."`, `'What the Wall is for.'`), all at index 8, all
+of them fine in the file and inert in the channel.
+
+**Read a line as though it is the only thing the player will ever see, because for that player it
+is.** An author reading the file top to bottom cannot see this; it took reading `rules.py`.
+
 | file | holds |
 |---|---|
 | `topics.py` | every pattern, IN RESOLUTION ORDER. The order is the correctness story - read it first. |
@@ -106,11 +122,26 @@ the candle-HOLDER; and Moto Khuyag's region-locked detector.
 
 `tests/test_mention_lore_tone.py` holds the four traps that can be counted exactly - the bare
 acknowledgment opener, the `And this is` caption, the `Ask me about` signpost, and any reply reused
-anywhere in the corpus - plus a floor of **three replies in ten** per category carrying a
-first-person marker or the other bot. That floor is a proxy, chosen at the standard rather than at
-wherever the corpus sat: humor of register 2 needs no self-reference at all, so the rule is
-per-CATEGORY, and a category he appears in fewer than three times has stopped being spoken by
-anybody. Four categories were below it when it was set and were rewritten to clear it.
+anywhere in the corpus - plus a **floor and a ceiling** on self-reference, per category, both set at
+the standard rather than at wherever the corpus sat:
+
+- **Floor, three replies in ten.** A proxy, deliberately per-CATEGORY rather than per-line, because
+  register-2 humor needs no self-reference at all. Below three, nobody is speaking the category.
+  Four categories were under it when it was set and were rewritten to clear it.
+- **Ceiling, seven replies in ten.** The second audit found sixteen categories at 8+, thirteen of
+  them in `gm_setting`, all leaning on the same trailing self-referential clause - it called this
+  *"the new 'And this is...'"*, and it is: better writing, still one construction doing all the
+  work. The GM asked for a MIX and said the ten replies are why. `merely_an_assistant` and
+  `imperial_families` are exempt in the test, by name, because saturation IS the joke in those two -
+  one is the insult that only lands on him, the other is sustained ironic deference that only works
+  if it never breaks.
+
+**A near-duplicate guard was built, measured and dropped** - the reasoning is in the test file, at
+length, so nobody rebuilds it. Short version: an eight-word shingle over the whole reply hits 70+
+pairs and nearly all of them are deliberately shared FACTS, not shared jokes; shingling only the
+final sentence is far cleaner but misses the motivating case, because the repeated joke is often
+mid-reply. No mechanism separates a fact repeated for the reader from a joke repeated out of habit,
+so joke repetition is the audit's job. Reopen only with a mechanism that makes that distinction.
 
 **Whether a line is actually funny is a judgment call and no test holds it.** The verification for
 that is a subagent tone audit run against the finished corpus - author is not a reliable reviewer,

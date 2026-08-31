@@ -45,10 +45,36 @@ The facts were right and the jokes were not there: *"just saying 'Ugh' doesn't r
       anywhere) plus a floor of three self-referential replies in ten per category. Proven to fire:
       run against `c9a7fd45` in a detached worktree, all five checks go red, 89 of 103 categories
       under the floor.
-- [ ] **T015** Re-run the same audit against the rewrite. The GM asked for this explicitly, and for
+- [x] **T015** Re-run the same audit against the rewrite. The GM asked for this explicitly, and for
       the reason: *"that separates validation and verification from the actual implementation, which
       is a good general practice whether we're talking about coding or creative writing."*
-- [ ] **T016** Redeploy to the box (`make done` already green on the rewrite: 1,371 tests, 100%).
+      **Verdict: 94.0% strict / 95.9% generous**, from 6.1% / 8.3%. No factual damage - it checked
+      every load-bearing fact and found all six four-sword sites in step. It returned a punch list
+      of ~90 line edits, worked in T017.
+- [x] **T017** Work the round-2 punch list. Four defect classes, one of which was not a writing
+      problem at all:
+      - **15 captions written as the setup half of a diptych.** `rules.py` serves ONE line via
+        `rng.choice`, so those shipped alone about half the time. Invisible while reading the file,
+        obvious the moment you read the engine. Rule now recorded in `lore/CLAUDE.md`.
+      - **21 pure-fact lines**, each the joke-free half of a fact split across a pair - same root
+        cause. Facts kept, turns added; `moto_khuyag#3` and `gods_of_death#2` were on the fail list
+        precisely BECAUSE they refused to trade the mechanism for a joke, which is the right trade.
+      - **13 monotone categories**, almost all in `gm_setting`, leaning on one trailing
+        self-referential clause. The audit called it *"the new 'And this is...'"*. Rebalanced, and a
+        7-in-10 ceiling test added so it cannot silently return.
+      - **12 jokes recurring across categories**, the worst used five times. Reduced to one use.
+- [x] **T018** Fix the guard that let three British spellings through a green gate. CLAUDE.md states
+      the doubled-`l` rule in prose and enumerates four of its members; `house-style-hooks.sh` only
+      implemented the enumeration, so `cruellest` x2 and `duelling` shipped. Twenty doubled-`l` forms
+      added, with cases in both directions. **The repair was itself blocked by the guard**: the
+      exemption named the two-line wrapper `test-house-style-hooks.sh` and not `test_hooks_cases.py`
+      where the cases live, so adding a case tripped the rule the case asserts. That is the project's
+      own "check the ESCAPE first, or the guard cannot be repaired through the channel it guards"
+      failure, and it is now fixed and pinned.
+- [ ] **T019** Round-3 audit of the corrected corpus - full 1,030-line census, not scoped to the ~90
+      changed lines, because the mix is a per-CATEGORY property, duplicate collision is corpus-global
+      and fact consistency is cross-file. None of the three is visible from a scoped diff.
+- [ ] **T020** Redeploy to the box, then push.
 
 ## What implementation found that the spec did not
 
