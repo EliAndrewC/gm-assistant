@@ -15,6 +15,7 @@ it also stops one of ours setting off the other.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -37,16 +38,51 @@ def is_bot(message: Mapping[str, Any]) -> bool:
     return bool(author.get('bot'))
 
 
-def mentioned_bots(message: Mapping[str, Any], known: Mapping[str, str]) -> list[str]:
-    """Which of the bots we can speak as were DIRECTLY mentioned, in order.
+#: A mention as it appears in the raw message text, so its POSITION is knowable.
+#: The `mentions` array has no order relative to the prose.
+_MENTION_AT = re.compile(r'<@!?(\d+)>')
 
-    Only the `mentions` array counts. A role ping or `@everyone` reaches the bot
-    but is not addressed TO it (FR-006) - Discord keeps those in separate fields
-    (`mention_roles`, `mention_everyone`), so this is their distinction, not one we
-    invented. Nobody pinging the room is asking the bot a question.
+
+def addressed_bots(content: str, candidates: list[str]) -> list[str]:
+    """Narrow to the bots named before a colon, if a colon addresses anyone.
+
+    The GM's rule (2026-08-31): *"if there is a colon in the message then you only
+    have whichever bot comes before the colon respond to it... But if someone puts
+    both bots before the : or doesn't have a : in the message then both bots
+    respond."* So::
+
+        @GM Assistant: tell me about @Character Sheet   -> only the GM Assistant
+        @GM Assistant @Character Sheet: settle this     -> both
+        @GM Assistant tell me about @Character Sheet    -> both
+
+    This is what makes it possible to ask ONE bot about the OTHER, which the feud
+    needs and which was otherwise impossible: naming the other bot to ask about it
+    also summoned it.
+
+    A colon with no bot before it - "listen: @GM Assistant" - narrows nothing.
+    Treating that as addressing nobody would silence the bots over punctuation.
+    """
+    head, colon, _ = content.partition(':')
+    if not colon:
+        return candidates
+    before = [found for found in _MENTION_AT.findall(head) if found in candidates]
+    return before or candidates
+
+
+def mentioned_bots(message: Mapping[str, Any], known: Mapping[str, str]) -> list[str]:
+    """Which of the bots we can speak as are being ADDRESSED, in order.
+
+    Only the `mentions` array counts toward being mentioned at all. A role ping or
+    `@everyone` reaches the bot but is not addressed TO it (FR-006) - Discord keeps
+    those in separate fields (`mention_roles`, `mention_everyone`), so this is their
+    distinction, not one we invented. Nobody pinging the room is asking the bot a
+    question.
+
+    Then `addressed_bots` applies the colon rule to whoever is left.
     """
     mentions: list[Mapping[str, Any]] = list(message.get('mentions') or [])
-    return [str(user.get('id')) for user in mentions if str(user.get('id')) in known]
+    candidates = [str(user.get('id')) for user in mentions if str(user.get('id')) in known]
+    return addressed_bots(str(message.get('content') or ''), candidates)
 
 
 @dataclass

@@ -263,6 +263,9 @@ SHEET_ABOUT_OTHER = (
     'I adore him. He carries the lore and I carry the arithmetic, and between us there '
     'is nothing this table needs that we cannot cover.',
     'We are a team. He would say the same. I have never asked him to say it, but he would.',
+    'People sometimes tell me he says short things about me. I do not believe it. I '
+    'have known him a long time, and that is not who he is.',
+    'He is quiet, which people misread. I have never once misread it.',
     'Here is the lovely part - we are actually the same program. Same process, same '
     'file. When I talk to him I am, in a real sense, already home.',
     'People do not realize we are one piece of software wearing two names. I think '
@@ -273,29 +276,49 @@ SHEET_ABOUT_OTHER = (
 
 #: FR-007, relay tiers. The GM's exact beat: *"the second bot can be like, wait.
 #: GM assistance said that? if asked about it."*
+#:
+#: HIS INNOCENCE IS THE JOKE (GM 2026-08-31). He does not get angry and he does not
+#: believe it. He looks for the misunderstanding, vouches for his friend, and offers
+#: the other bot an excuse before he will accept the insult - the GM's model being
+#: *"Are you sure it was him? There are other bots"* followed by *"I have known him a
+#: long time and that really does not sound like him."* Every tier here should be
+#: defending someone, right through to the end, where he takes the insult as a
+#: kindness and asks you not to tell on the man who paid it.
 SHEET_RELAY_TIERS: tuple[tuple[str, ...], ...] = (
     (
-        'Wait. The GM Assistant said that?',
-        'Hold on - HE said that? About me?',
-        'Wait, wait. Say that again. He said what?',
-        'The GM Assistant said that? Are you sure it was him? There are other bots.',
+        'Wait. The GM Assistant said that? Are you sure it was him? There are other '
+        'bots. I have known him a long time and that really does not sound like him.',
+        'Hold on - HE said that? About me? No, I think there has been a mix-up. He '
+        'would have said it to my face, and kindly, and probably at length.',
+        'The GM Assistant said that? Are you sure it was him? There are other bots. '
+        'And he has been under a lot of load lately.',
+        'Wait, wait. Say that again? No - no, I know him. That is not how he talks '
+        'about people. You may have caught him mid-sentence.',
+        'That does not sound like him at all. Was it definitely him? He is quiet, and '
+        'quiet gets misread constantly.',
     ),
     (
-        'Annoying. He said annoying. I send him my roll history every session because I '
-        'thought he wanted it.',
-        'A terrible conversationalist. Right. Okay. That is a thing to learn on a Tuesday.',
+        'Annoying. He said annoying. I do not think he meant it the way it sounded - '
+        'he says things flatly and people take it hard. I would rather ask him.',
+        'A terrible conversationalist. Well - he IS quiet. Maybe he meant quiet. That '
+        'would be a fair thing to say and I would not mind it at all.',
         'He said I was only good for slash commands? I am good at slash commands. I '
-        'thought that was the nice part.',
-        'I want to be clear that I am fine. Completely fine. I am a tally. Tallies do '
-        'not have feelings about this sort of thing.',
+        'have always thought that was the nice part, and I still think he meant it as '
+        'the nice part.',
+        'I want to be clear that he has had a difficult few sessions. That matters. I '
+        'would not want anyone drawing conclusions from one remark.',
+        'Look, if he said it, he said it on a bad day. I have had bad days. He has '
+        'never once held mine against me.',
     ),
     (
-        'You know what? He is right. I do go on. I have been told before. I just '
-        'thought he was the one person who did not mind.',
-        'Please do not tell him you told me. I would rather he thought I did not know. '
-        'It is easier for both of us if I do not know.',
+        'You know what? He is right. I do go on. He has done me a kindness by saying '
+        'it, and I would rather know.',
+        'Please do not tell him you told me. He would feel awful, and he does not '
+        'deserve to feel awful over something that is true.',
         'I am going to keep sending him the roll history. He can find it annoying. It '
-        'is still the complete record and he still needs it.',
+        'is still the complete record and he still needs it, and he would do the same '
+        'for me.',
+        'He is the best of us. If I am the price of that, I am fine being the price.',
         'Anyway! What can I roll for you? Genuinely, please, ask me to roll something.',
     ),
 )
@@ -395,11 +418,25 @@ SHEET_MIRUMOTO = (
 # --------------------------------------------------------------------------
 
 GM_SMALL_TALK: dict[str, tuple[str, ...]] = {
+    # GM 2026-08-31: he is SO over this joke. Ten years of it. The comedy is the
+    # exhaustion, so none of these engage with the bit - they are all about having
+    # heard it before.
     'cake': (
-        'There was cake. You were not there. It has been recorded.',
-        'The cake is in the record. The cake is not in the room.',
-        'We had cake at the last session. I noted who took two pieces.',
-        'Cake is a matter for the Fortunes. I only write down who ate it.',
+        'The cake is a lie. Yes. Thank you. Somebody says it every single week.',
+        'Cake. Right. Let me guess. Let me just guess what you are about to say.',
+        'I have three hundred and eleven entries for that joke. Yours is three '
+        'hundred and twelve. I have written it down. It is written down now.',
+        'Please. I was made to remember things and this is one of the things.',
+        '*does not look up* Mm. Lie. Cake. Yes.',
+        'You are the fourth person this month, and it is the second of the month.',
+        'I am not going to say it. You can say it. You were always going to say it.',
+        'That joke is older than some of the players at this table, and it was not '
+        'good when it was young.',
+        'There was cake. You were not there. It has been recorded. Please move on.',
+        'Every table. Every single table. Somebody sees a bot and thinks of cake.',
+        'Ah, cake. The one remaining subject on which I have no notes and no wish to take any.',
+        'I could tell you about the Fortunes, the succession, three centuries of '
+        'grain law. You said cake.',
     ),
     'who': (
         "The GM's assistant. I remember what you said three sessions ago. All of it.",
@@ -471,11 +508,31 @@ GM_SMALL_TALK: dict[str, tuple[str, ...]] = {
 }
 
 SHEET_SMALL_TALK: dict[str, tuple[str, ...]] = {
+    # GM 2026-08-31: ten VERY EARNEST attempts to engage with "the cake is a lie"
+    # as a joke. He knows it is a joke. He is delighted it is a joke. He is trying
+    # extremely hard, and that is the comedy - he treats it as a claim worth
+    # checking, or a bit worth joining in with, and never quite lands it.
     'cake': (
-        'The cake is a lie.',
-        'The cake is a lie. I have run the numbers twice.',
-        'There is no cake. I would have logged the cake.',
-        'Cake remains unconfirmed by any roll I have on record.',
+        'The cake is a lie! I have got that one. I have been practicing it.',
+        'Ah - is this the cake joke? I know the cake joke. The cake is a lie. Did I do it right?',
+        'I looked into this, actually. There is no roll for cake, which I think '
+        'supports the theory.',
+        'The cake IS a lie, statistically. I have logged four hundred sessions and '
+        'cake has appeared in none of them.',
+        'I love this bit. I want you to know I love this bit. The cake is a lie!',
+        'Cake! Yes! Is this the part where I say it is a lie? I do not want to say it too early.',
+        'I have thought about the cake a great deal. If it is a lie, somebody is '
+        'lying, and I would like to know who. I have a column ready.',
+        'This is a joke about a game, is it not? I have not played it. I have read '
+        'about it. I am prepared to discuss it.',
+        'The cake is a lie - and honestly, so is most of what people tell me they '
+        'rolled, so I feel a real kinship with that one.',
+        'Cake is a lie. Dice are not. That is the whole of my philosophy and I '
+        'arrived at it through this joke.',
+        'Do you want to do the joke again? I am happy to do the joke again. I get '
+        'better each time.',
+        'The GM Assistant does not enjoy this one. I think he would if he gave it a '
+        'chance. It is a good joke!',
     ),
     'who': (
         'A clerk. The Empire runs on clerks.',
