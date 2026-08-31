@@ -632,18 +632,18 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'in Medin al Salaat, civilization brought to the city as the Great Ancestors '
         'brought it to the warlords. Considered. My folder of considered vows is my '
         'largest.',
-        "The danger being that if Gaheris' campaign fails, Tetsu is still bound to "
-        'build it or die trying, in a city that will by then belong to somebody with '
-        'opinions about Rokugani temples.',
+        "The danger, if he swears it and Gaheris' campaign then fails, is that Tetsu "
+        'remains bound to build a temple in a city that will by then belong to somebody '
+        'with opinions about Rokugani temples.',
         'Rites has never ruled on whether a Rokugani temple abroad is devotion or a flag '
         "planted in somebody else's ground. Nobody has asked them to, and I have a very "
         'clear sense that nobody intends to.',
         "Dying with it unfulfilled brings bad karma and the fortune's wrath; dying "
         'attempting it brings the opposite. People work out which half they are in at '
         'the very end, reliably, every time.',
-        'Building a temple in a gaijin city is either the most pious act of a '
-        'generation or a naked provocation. Both readings are live, both have '
-        'partisans, and both sets of partisans write to me.',
+        'Both partisan camps on that question write to me, at length, and I file their '
+        'letters in the same box. Neither would thank me for the arrangement and '
+        'neither has asked.',
         'He is not one of the seven the Shinsei named, which has not made him smaller. '
         'It has made him less quoted, and I feel a certain kinship with the distinction.',
         'Every vow to Jikoju in this record was sworn by somebody who assumed the army '
@@ -654,8 +654,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'The temple, four years on, still unbuilt. The vow is unchanged. Everything '
-            'else has changed.',
+            'The site, four years on, still empty. The proposal has not altered by a '
+            'word. Everything around it has, which is what makes a considered vow the '
+            'dangerous kind.',
             RAINY_MOON,
         ),
     ),

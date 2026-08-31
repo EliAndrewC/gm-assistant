@@ -226,8 +226,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'more carefully than you have, and rather more carefully than the people '
         'currently describing him as a barbarian.',
         attach(
-            'The khan of khans, in a title the Empire has never granted and never '
-            'disputed. Both halves of that were a decision, and only one was his.',
+            'A fight nobody will write down. Four years of dispatches out of Uru lands '
+            'and not one Imperial record of any of it. I have asked. Twice.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(

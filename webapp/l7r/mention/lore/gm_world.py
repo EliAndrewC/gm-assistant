@@ -169,8 +169,9 @@ WORLD: dict[str, tuple[str, ...]] = {
         'Names are how this Empire does everything: lineage, rank, obligation, '
         'inheritance. Remove the name and not one gear grips - which makes the most '
         'dangerous thing in the setting a gap in the paperwork.',
-        'That is not a mystical claim. It is an administrative one, which is worse, '
-        'because administration is the part that was supposed to be reliable.',
+        'The danger he represents is not a mystical claim. It is an administrative one, '
+        'which is worse, because administration is the part that was supposed to be '
+        'reliable.',
         'I have nine entries and not one of them is comfortable, and I have read all '
         'nine more times than the work required, which I attribute to thoroughness.',
         'Asking me this in an open channel is a choice you have made, and I have '
