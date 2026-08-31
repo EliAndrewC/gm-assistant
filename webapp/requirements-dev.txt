@@ -6,6 +6,12 @@
 #
 ast-serialize==0.6.0
     # via mypy
+boto3==1.43.83
+    # via -r requirements-dev.in
+botocore==1.43.83
+    # via
+    #   boto3
+    #   s3transfer
 build==1.5.0
     # via pip-tools
 click==8.4.2
@@ -18,6 +24,10 @@ greenlet==3.5.3
     # via playwright
 iniconfig==2.3.0
     # via pytest
+jmespath==1.1.0
+    # via
+    #   boto3
+    #   botocore
 librt==0.13.0
     # via mypy
 mypy==2.3.0
@@ -56,12 +66,20 @@ pytest-cov==7.1.0
     # via -r requirements-dev.in
 pytest-xdist==3.8.0
     # via -r requirements-dev.in
+python-dateutil==2.9.0.post0
+    # via botocore
 ruff==0.15.22
     # via -r requirements-dev.in
+s3transfer==0.19.2
+    # via boto3
+six==1.17.0
+    # via python-dateutil
 typing-extensions==4.16.0
     # via
     #   mypy
     #   pyee
+urllib3==2.7.0
+    # via botocore
 wheel==0.47.0
     # via pip-tools
 
