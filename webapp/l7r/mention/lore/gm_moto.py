@@ -141,7 +141,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Different god entirely. Decades of scholarship, and the error was that nobody '
         'asked.',
         'Eastern Moto are mostly bilingual, because Rokugani has been the official '
-        'language for centuries and the successful ones needed it.',
+        'language for centuries and the successful ones needed it. Bilingualism runs '
+        'one direction here, and the Empire has never once noticed which.',
         'The successful ones. Which tells you plainly what became of the others, and '
         'the record is silent on them in a way that is itself an entry.',
         'The same trap waits with every gaijin pantheon. A traveler from Medin al '
@@ -203,7 +204,7 @@ MOTO: dict[str, tuple[str, ...]] = {
         'challenged. That combination is the whole of Imperial policy toward him.',
         'He carries four swords, one for each God of Death: Bloodstorm into battle, '
         'Lamentation when ambushed, Lightning in single combat, Retirement for '
-        'executions.',
+        'executions. A man who has pre-decided every killing he will ever do.',
         'He chose which sword for which killing. That is not flourish, that is a '
         'covenant, sworn at Bodi Kaikhan - and it means a man has thought harder about '
         'the categories of killing than I have about anything.',
@@ -213,9 +214,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         "Moto Khunbish is his spiritual advisor. Khuyag is Khunbish's student, and "
         'Khuyag builds death detectors. A lineage of advisors ending in a device, which '
         'is either the beginning or the end of a philosophy.',
-        'Toranosuke of Chai Sedo declared that gaijin soulmate sketches portend success '
-        'for his campaign. Abbots say that sort of thing at a very particular moment in '
-        'a war, and it is never the beginning.',
+        'A Rokugani abbot has publicly declared his campaign blessed, which means the '
+        'Empire has taken a position on a war it has never formally acknowledged is '
+        'being fought.',
         'Khunbish met him years ago at Kyuden Shinjo, as a farrier assigned to the Moto '
         'guests, and impressed him philosophically while shoeing horses. Somebody was '
         'promoted out of a stable for talking well. I shoe nothing and talk constantly.',
@@ -223,7 +224,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'more carefully than you have, and rather more carefully than the people '
         'currently describing him as a barbarian.',
         attach(
-            'Four swords. One decision per killing, made in advance.',
+            'The khan of khans, in a title the Empire has never granted and never '
+            'disputed. Both halves of that were a decision, and only one was his.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -281,9 +283,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'It is heretical to say oni are "not malicious". The Vindicator have found a '
         'formulation that is not quite that, deliberately, and I would like it noted '
         'that theological caution is a skill and they have it.',
-        'They are the ones who turned away the corrupted Moto who tried to come home. '
-        'That is in the record. It is not a comfortable entry and I do not read it '
-        'twice.',
+        'They are the ones who turned away the corrupted Moto who tried to come home - '
+        'the same tribe that preaches mercy toward oni, applying none of it at their '
+        'own gate. Doctrine is easiest at a distance.',
         'A tribe defined by what it stands between. There are several of those in this '
         'Empire, none of them are cheerful, and all of them are asked to explain '
         'themselves by people who have never stood anywhere.',
@@ -295,7 +297,8 @@ MOTO: dict[str, tuple[str, ...]] = {
             KIDOMARU_TENGU,
         ),
         attach(
-            'What they think about it afterward, which is the part the songs leave out entirely.',
+            'The evening after. A tribe that has argued itself into calling the work '
+            'mercy still drinks like men who have done something else.',
             RAINY_MOON,
         ),
     ),
@@ -311,8 +314,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Some tried to come back anyway. Their own kinsmen turned them away, and that '
         'is the sentence in this record I would most like to have never had to write '
         'down.',
-        'It is a tragedy that fits in three sentences, and the Moto do not tell it in '
-        'three sentences, and they are right not to.',
+        'It fits in three sentences and the Moto take an evening over it, and they are '
+        'right and the Empire is wrong, and the Empire has the shorter version in '
+        'writing, which is how these things get settled.',
         'Water is the constraint on every desert crossing - not distance, but the RATE '
         'at which wells refill. An entire people lost to a rate of flow.',
         'The Vindicator are the ones who deal with what came of it, which is why their '
@@ -324,7 +328,8 @@ MOTO: dict[str, tuple[str, ...]] = {
             GREAT_WAVE,
         ),
         attach(
-            'What came back to the gate, and was not admitted.',
+            'What came back to the gate and was not admitted. The Empire files this '
+            'under folklore, which is a decision it made without going to look.',
             KIDOMARU_TENGU,
         ),
     ),
@@ -338,8 +343,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'mount is a statement rather than a conveyance. Nobody rides an argument about '
         'land use, and yet.',
         'Moto horses cost a few bu, and a single family keeps dozens alongside their '
-        'sheep at almost no effort. The same animal, priced by two civilizations, an '
-        'order of magnitude apart.',
+        'sheep at almost no effort. The same animal, priced by two civilizations an '
+        'order of magnitude apart, and each is certain the other is a fool.',
         'The catch is pedigree: run horses that way and you have no idea which stallion '
         'fathered which colt. The Otaku find this appalling, and they are correct, and '
         'the Moto have never once cared.',
@@ -387,7 +392,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'land alone, and a few thousand more besides. I hold that number because '
         'somebody must, and no one has ever asked me for it.',
         attach(
-            'The return, as remembered by the Unicorn.',
+            'The return, as remembered by the Unicorn: a homecoming. Two centuries on, '
+            'they are still the only party to it who use that word.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -413,8 +419,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Gaijin gods get translated into Rokugani ones on contact, usually wrongly, '
         'occasionally catastrophically, and always by somebody who was certain at the '
         'time.',
-        'A samurai hears their God of Love and thinks Benten. They are probably right. '
-        'Probably. That word has done more damage in this record than any weapon in it.',
+        'A samurai hears their God of Love and writes down Benten, and is usually '
+        'correct, and has still recorded a foreign god under a Rokugani name without '
+        'asking anybody. That is the Empire abroad, in one sentence.',
         'It is a real city with real politics and real records of its own, and the '
         'Empire files the entire thing under "abroad". I am obliged to use the same '
         'heading and I resent every use of it.',
@@ -434,7 +441,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Gateway to it and having done so for a very long time. Centuries of duty at a '
         'door, which is a posting I feel qualified to comment on.',
         'The constraint is water, and specifically the RATE - a well may hold enough '
-        'and still not refill fast enough for an army and its animals.',
+        'and still not refill fast enough for an army and its animals. Every expedition '
+        'that died out there was defeated by a well that was, technically, full.',
         'That single fact has killed more expeditions than any enemy out there, and it '
         'appears in no song about any of them.',
         'The Unicorn crossed it. The Moto came from beyond it. Everything strange about '
@@ -466,9 +474,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'They pray to Wei Tin to assist them, because ancestors need help finding their '
         'descendants and he is the one who bargains. A pilgrimage that requires an '
         'intermediary to arrange the meeting.',
-        'Gaheris certainly prayed there before swearing his vows and forging his '
-        'covenant with the four Gods of Death, which makes it the most consequential '
-        'ground in the Moto material.',
+        'Gaheris prayed there before swearing his vows and forging his covenant with '
+        'the four Gods of Death. The most consequential ground in the Moto material is '
+        'a place with no building on it and no office-holder in it.',
         'The most consequential site in the file and almost nobody asks about it. They '
         'ask about the swords. The swords came afterward.',
         'It is a pilgrimage, not a temple network. There is no Grand Abbot of Bodi '

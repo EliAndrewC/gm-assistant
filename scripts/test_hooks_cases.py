@@ -77,6 +77,21 @@ HOUSE_STYLE = [
     # gm-request.md is a verbatim transcript of the GM speaking; correcting it defeats its purpose
     ("the GM's own words, by heredoc", cmd("cat > specs/128-x/gm-request.md <<'EOF'\nthey wrote colour\nEOF"), "ok"),
     ("merely GREPPING for one", cmd("grep -n colour docs/a.md"), "ok"),
+    # THE DOUBLED-L FAMILY. CLAUDE.md states it as a RULE and then enumerates only four of its
+    # members, so the list under-implemented the prose and three spellings shipped through a green
+    # gate on 2026-08-31 (`cruellest` twice, `duelling` once, in webapp/l7r/mention/lore/), caught
+    # by a prose reviewer instead of by this guard. Both directions, as always.
+    ("a doubled-l British form", edit("/r/docs/a.md", new="the cruellest month"), "blocked"),
+    ("another, in code", edit("/r/webapp/x.py", new="the duelling sword"), "blocked"),
+    ("a third", edit("/r/docs/a.md", new="cancelled the travelling party"), "blocked"),
+    ("their American forms", edit("/r/docs/a.md", new="the cruelest dueling canceled the traveling"), "ok"),
+    # THIS FILE has to quote every forbidden spelling in order to assert that it blocks, so it is
+    # exempt. The exemption used to name only `test-house-style-hooks.sh`, a two-line wrapper -
+    # the cases live HERE, so a session adding a case was blocked by the guard it was repairing.
+    # That is the "check the escape first, or the guard cannot be repaired through the channel it
+    # guards" rule, met head on. Asserted with a doubled-l word so this case does not itself
+    # depend on the fix it is testing.
+    ("the cases file quoting one", edit("/r/scripts/test_hooks_cases.py", new="the cruellest form"), "ok"),
 ]
 
 

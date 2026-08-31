@@ -98,3 +98,56 @@ def test_every_category_puts_him_in_it() -> None:
         f'ten straight lines of encyclopedia with nobody speaking them '
         f'(floor is {SELF_REFERENCE_FLOOR} of ten): {thin}'
     )
+
+
+# A NEAR-DUPLICATE GUARD WAS BUILT, MEASURED AND DELIBERATELY DROPPED.
+#
+# The re-audit found twelve JOKES still recurring near-verbatim across
+# categories after the rewrite - one of them (abbots discovering that things
+# portend success once the army is already moving) spent five times - and noted
+# that the general rule had not taken because only the specific lines a previous
+# audit named were fixed. That is exactly the shape this file exists to catch,
+# so a guard was written for it. It does not work, and the two ways of building
+# it were measured rather than guessed:
+#
+#   - Eight-word shingles over the whole reply: 70+ hits, and almost all of them
+#     were deliberately shared FACTS, not shared jokes. "Ryoshun guards the
+#     entrance to the celestial heavens" is asserted in three categories on
+#     purpose; so is "every legionnaire is a samurai". A mechanism cannot tell a
+#     fact repeated for a reader who lands in one category from a joke repeated
+#     out of authorial habit.
+#   - Shingling only the final sentence, where a punchline usually sits: far
+#     fewer false positives, but it misses the motivating five-fold case,
+#     because in three of those five the joke is mid-reply.
+#
+# So joke repetition stays with the audit subagent, which is where judgment
+# lives. This is recorded rather than silently omitted so the next session does
+# not spend the afternoon rebuilding it: the bar to reopen is a mechanism that
+# separates a repeated fact from a repeated joke, and neither candidate does.
+
+#: The other half of the floor. The GM asked for a MIX and said the ten replies
+#: exist to carry one; a category where he is in nine of ten has replaced the
+#: encyclopedia with a single reliable construction, which the re-audit called
+#: "the new 'And this is...'". Seven of ten is the standard.
+SELF_REFERENCE_CEILING = 7
+
+#: The two categories that are ABOUT him, where saturation is the joke rather
+#: than a tic. `merely_an_assistant` is the insult that only lands on the bot
+#: whose name contains his subordination; `imperial_families` is sustained
+#: ironic deference, which only works if it never breaks. Both were reviewed
+#: and kept deliberately - this is a decision, not a backlog.
+SATURATION_IS_THE_JOKE = frozenset({'merely_an_assistant', 'imperial_families'})
+
+
+def test_no_category_is_monotone() -> None:
+    saturated = {
+        topic: sum(1 for reply in pool if SELF_REFERENCE.search(reply))
+        for topic, pool in GM.items()
+        if topic not in SATURATION_IS_THE_JOKE
+        and sum(1 for reply in pool if SELF_REFERENCE.search(reply)) > SELF_REFERENCE_CEILING
+    }
+    assert not saturated, (
+        f'one construction carrying the whole category - the GM asked for a mix of the '
+        f'three registers and said the ten replies are why (ceiling is '
+        f'{SELF_REFERENCE_CEILING} of ten): {saturated}'
+    )

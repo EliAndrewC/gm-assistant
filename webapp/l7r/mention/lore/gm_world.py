@@ -168,8 +168,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'A thing without a name is a thing the record cannot hold. Consider, at your '
         'leisure, what that means for the record. Consider what it means for me.',
         'Names are how this Empire does everything: lineage, rank, obligation, '
-        'inheritance. Remove the name and none of the machinery grips - not one gear of '
-        'it.',
+        'inheritance. Remove the name and not one gear grips - which makes the most '
+        'dangerous thing in the setting a gap in the paperwork.',
         'That is not a mystical claim. It is an administrative one, which is worse, '
         'because administration is the part that was supposed to be reliable.',
         'I have nine entries and not one of them is comfortable, and I have read all '
@@ -192,7 +192,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'mechanic in this setting, and it is frightening for an administrative reason, '
         'which is the worst kind.',
         'You do not lose health. You lose the ties between yourself and the people you '
-        'are tied to - and in this Empire the ties are the person.',
+        'are tied to - and in an Empire that defines a person by their obligations, '
+        'that is not an injury, it is a deletion.',
         'In one dream quest the PCs found themselves in a Court and took it there. That '
         'is my canonical example and it is instructive: the Court did not have to do '
         'anything unusual at all.',
@@ -290,7 +291,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'transcribed the bracket.',
         'The Lion did well overall - except for Tango province, which the Damasu lost '
         'in an upset when Doji Masayo turned up with the cursed sword Shitsuten and '
-        'killed Akodo no Damasu Tsuo.',
+        'killed Akodo no Damasu Tsuo. A treaty clause, honored exactly, producing an '
+        'outcome nobody who wrote it would have signed.',
         'The man was expected to win. That is the entire weight of the entry, and it is '
         'the only line in it anybody has ever quoted back to me.',
         'A province decided by one duel, and the duel decided by a sword forged out of '
@@ -320,8 +322,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'No stipend, no rank, no right to be anywhere. The most constrained characters '
         'in the record and, not coincidentally, the most interesting problems in it.',
         'A peasant may not carry a daisho, may not travel without papers, and answers '
-        'to a headsman before a magistrate. Three restrictions, and the third is the '
-        'one that actually shapes a life.',
+        'to a headsman before a magistrate. Two of those are about weapons and travel. '
+        'The third is a neighbor, and it is the one that shapes the life.',
         'Which means the village headsman - whom everybody finds boring - is the single '
         'most powerful person in the campaign. I have said this for years to no effect '
         'whatsoever.',
@@ -356,9 +358,9 @@ WORLD: dict[str, tuple[str, ...]] = {
         'A hidden way is only hidden until somebody writes it down, at which point it '
         'becomes merely inconvenient. I am, professionally, the point at which that '
         'transition occurs.',
-        'Toranosuke is the abbot of Chai Sedo and declares that things portend success '
-        'at moments of remarkable convenience. I date every declaration. The pattern is '
-        'not subtle.',
+        'Toranosuke is the abbot of Chai Sedo, which makes one man simultaneously the '
+        'keeper of eleven Imperial Gardens, the custodian of an unaudited library, and '
+        "the Empire's most quoted authority on a war nobody has declared.",
         'The Chai Sedo library is the source for a great deal that nobody has '
         'independently verified, including where the Moto came from - a load-bearing '
         'claim resting on one shelf nobody has visited twice.',
@@ -373,7 +375,8 @@ WORLD: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'What is at the other end of it, and what the Legion is standing between.',
+            'What is at the other end of it. The Legion has stood between the Empire '
+            'and this for so long that the Empire has stopped counting it as a border.',
             GREAT_WAVE,
         ),
     ),
@@ -398,7 +401,9 @@ WORLD: dict[str, tuple[str, ...]] = {
         'looking for them there.',
         'Everyone wants the chase. I have the warrant.',
         attach(
-            'The pursuit, as the stories have it.',
+            'The pursuit, as the stories have it. Two thousand samurai against the '
+            'Empire, and the songs have settled on the one part of the work that does '
+            'not involve a document.',
             MUSASHI_BAT,
         ),
         attach(
@@ -445,14 +450,15 @@ WORLD: dict[str, tuple[str, ...]] = {
         'twelve and I have stopped expecting to be told.',
         'Pond Paradise. Borrowed Scenery. Sunken Sceneries. Mossy Stone Triad. Seven '
         'Sublimities. Beauty of Empty Space. Waving Lawn. Snow Rose. Pleasure After. '
-        'Circle of Here.',
+        'Circle of Here. Ten names, each of them a small argument, none of them a '
+        'description of a garden.',
         'That is ten. There is an eleventh and I enjoy watching people count.',
         'The Beauty of Empty Space Garden is the one that annoys visitors, which is '
         'unambiguously the intention, and which makes it the most successful garden in '
         'the Empire by its own stated criteria.',
-        'Toranosuke is the abbot. He declares that things portend success, generally at '
-        'the moment an army has finished forming up. I have the declarations and the '
-        'marching orders and I have compared their dates.',
+        'Toranosuke is the abbot. I have his declarations and the marching orders they '
+        'accompany, and I have compared their dates, which is the single most '
+        'rewarding afternoon I have ever spent unasked.',
         'The Chai Sedo library is the source for a great deal that nobody has verified, '
         'including where the Moto originally came from. A library is only as good as '
         'its second reader, and this one is still waiting for hers.',
@@ -491,10 +497,12 @@ WORLD: dict[str, tuple[str, ...]] = {
         'about that word and so am I.',
         'A legion is a small city that marches, and most of what it does is eat. The '
         'heroic fraction of a legion year would fit in an afternoon.',
-        'The interesting duty is at the Outsider Keep and nobody enlists for it, and '
-        'everybody who has served there asks to go back.',
+        'Nobody enlists for the Outsider Keep and everybody who has served there asks '
+        'to go back, which is a recruiting fact the Ministry of War has had for four '
+        'centuries and has never once put on a banner.',
         attach(
-            'The legion at its actual work.',
+            'The legion at its actual work: standing somewhere expensive so that '
+            'nothing happens, for four centuries, successfully.',
             ARCHERS,
         ),
         attach(

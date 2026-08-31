@@ -151,7 +151,8 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Ask about the Lion and I end up talking about him whether or not you wanted '
         'that, which is roughly what it is like to work for the Lion.',
         attach(
-            'The Lion, in the aggregate.',
+            'The Lion, in the aggregate. Five hundred thousand samurai, and the '
+            'arrangement that holds them together is a man answering letters.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -170,7 +171,7 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'have started from worse and mine started from nothing.',
         'The detection is tied to a geographic location: an accurate map is made, the '
         'blood of horses is spilled at landmarks, and the bloodied earth is returned to '
-        'Shiro Moto.',
+        'Shiro Moto. The hard part of prophesying mass death turns out to be surveying.',
         'Which means a detector works for one region only. He cannot use the Moto one '
         'in Uru lands, where Gaheris is actually fighting. An instrument perfectly '
         'calibrated to somewhere else - I have sympathized with objects before.',
@@ -208,7 +209,8 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Twelve entries, and the interesting question in all twelve is not what he '
         'found. It is what he has stopped mentioning.',
         attach(
-            "The Kuni's working conditions.",
+            'What a Kuni looks at for a living. Twelve entries, and not one of them '
+            'records anybody asking him how he was afterward.',
             KIDOMARU_TENGU,
         ),
         attach(
@@ -222,8 +224,9 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'The Forgotten Tomb is the recurring example of a between place, somewhere '
         'coexistent between two realms, and it recurs because things keep happening '
         'there that nobody has a better heading for.',
-        'Kitsuki Fu was awarded the Order of the Precious Crown for her service there - '
-        'the highest commendation available below daimyo.',
+        'Kitsuki Fu was awarded the Order of the Precious Crown for her service there, '
+        'the highest commendation available below daimyo. The Empire hands out its '
+        'largest honor for events it then declines to describe.',
         'Read the two facts together: a Kuni went in, and somebody else came out with '
         'the highest honor short of a daimyoship. Something went badly and somebody '
         'behaved extremely well, and the record is silent on the middle.',
@@ -269,7 +272,7 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'verified any hermit.',
         "Kishin no Ketsui, Resolve of the Fierce God, is tied to Lord Akodo's one "
         'stated regret. Akuzuki, Wicked Moon, has a saya so fine that a Tsume said the '
-        'sword was too good for its wielder - which is the cruellest compliment I hold.',
+        'sword was too good for its wielder - which is the cruelest compliment I hold.',
         attach(
             'Seiginryu came off Togashi Mountain by the eastern paths. Tamashikari is '
             'only the fifth most famous Scorpion blade. This is what any of them '
@@ -366,7 +369,8 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'Put a candle in it and watch. That is the whole ritual. No vow, no offering, '
         'no attendant fee - which may be why it has never become fashionable.',
         attach(
-            'Two trails, every time, for anybody who tries it.',
+            'Two trails, every time, for anybody who tries it. A miracle that submits '
+            'to testing is the only kind this Empire has never bothered to test.',
             RAINY_MOON,
         ),
         attach(
@@ -397,7 +401,8 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'A sword that is remembered for a story, in a record kept by somebody who is '
         'remembered for nothing. I raise it in a professional spirit.',
         attach(
-            'The wind the sword is named for. Cold, sudden, and from above.',
+            'The wind the sword is named for. Rokugan will name a blade after weather '
+            'and then spend four centuries insisting the blade is the remarkable half.',
             GREAT_WAVE,
         ),
         attach(
@@ -429,7 +434,8 @@ PEOPLE: dict[str, tuple[str, ...]] = {
         'A thousand years and no ceremony for it. The Empire will hold a festival for a '
         'good plum harvest. I have checked and I have opinions.',
         attach(
-            'What the Wall is for.',
+            'What the Wall is for. A thousand years of standing here, and the Empire '
+            'holds a festival for a good plum harvest and none for this.',
             KIDOMARU_TENGU,
         ),
         attach(

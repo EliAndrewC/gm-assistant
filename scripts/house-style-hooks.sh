@@ -57,7 +57,12 @@ if not body:
 # gm-request.md is a verbatim transcript of the GM speaking - correcting it would defeat its purpose
 if "/host-l7r-repo" in path or path.endswith("l7r.md") or "gm-request.md" in path:
     print(""); raise SystemExit
-if re.search(r"(^|/)(CLAUDE\.md|constitution\.md|l7r-style\.md|house-style-hooks\.sh|test-house-style-hooks\.sh)$", path):
+# GUARD_EDIT_OK: fixing a guard that FIRES ON CORRECT WORK. `test-house-style-hooks.sh` was exempt
+# but it is a two-line wrapper; the cases it runs live in `test_hooks_cases.py`, which has to quote
+# every forbidden spelling in order to assert that they block. Adding a case to this guard was
+# therefore blocked BY this guard - the "check the escape first, or the guard cannot be repaired
+# through the channel it guards" failure, met head on while adding the doubled-l family.
+if re.search(r"(^|/)(CLAUDE\.md|constitution\.md|l7r-style\.md|house-style-hooks\.sh|test-house-style-hooks\.sh|test_hooks_cases\.py)$", path):
     print(""); raise SystemExit
 # a SOURCE block inside the added text is the GM speaking; drop it before looking
 body = re.sub(r"<!--\s*SOURCE: GM NOTES.*?<!--\s*END SOURCE\s*-->", " ", body, flags=re.S | re.I)
@@ -70,7 +75,17 @@ BRIT = ("colour","colours","centre","centres","centred","behaviour","behaviours"
         "recognised","defence","licence","practise","sceptic","storey","whilst","travelled",
         "modelled","programme","metre","litre","mould","plough","kerb","draught","ageing",
         "marvellous","jewellery","skilful","artefact","demesne","labelled","labelling","judgement",
-        "catalogue","honour","honours","grey")
+        "catalogue","honour","honours","grey",
+        # GUARD_EDIT_OK: STRENGTHENING this guard, not relaxing it - adding words it should always
+        # have caught. CLAUDE.md states the doubled-`l` family as a RULE and then enumerates only
+        # four of its members, so the prose and the list disagreed and the list won. Measured
+        # 2026-08-31: `cruellest` twice and `duelling` once shipped into webapp/l7r/mention/lore/
+        # through a green gate and were caught by a prose reviewer, not by this hook. A rule
+        # stated beside a list that does not implement it is not enforced. Add to this list
+        # whenever you meet another member of the family.
+        "cruellest","crueller","cruelly","duelling","duelled","cancelled","cancelling",
+        "travelling","modelling","fuelled","fuelling","signalled","signalling","counselled",
+        "counselling","totalled","marvelled","equalled","quarrelled","levelled","rivalled")
 for w in BRIT:
     if re.search(rf"\b{w}\b", body, re.I):
         hits.append(w)
