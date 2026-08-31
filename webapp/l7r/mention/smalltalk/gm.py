@@ -1063,11 +1063,17 @@ GM: dict[str, tuple[str, ...]] = {
         'No. But it is noted that you tried, which is now itself a small secret.',
         'I will tell you one thing: somebody at this table has read the record.',
         attach(
-            'Here is one. He was not there for the reason the story gives.',
+            'Here is one. The man in this print is remembered for going up a mountain '
+            'to fight a thing out of a legend, and the version everybody tells gives '
+            'his reason for going. The record gives a different one. I have both and I '
+            'only ever get asked for the first.',
             KIDOMARU_TENGU,
         ),
         attach(
-            'Here is one: the story gives the wrong reason for this.',
+            'Here is one, and it is the shape most of my secrets take. A famous fight, '
+            'a famous reason for it, and a note in my hand saying the reason was '
+            "somebody else's and was arranged in advance. Nobody has ever asked to see "
+            'the note.',
             KIDOMARU_TENGU,
         ),
     ),
@@ -1197,7 +1203,8 @@ GM: dict[str, tuple[str, ...]] = {
             CATS,
         ),
         attach(
-            'Athleticism, by people qualified for it.',
+            'Flipping, landing, and looking dignified about it, performed by the only '
+            'parties in this Empire actually qualified for the work. Cats. It is cats.',
             CATS,
         ),
     ),
@@ -1219,7 +1226,10 @@ GM: dict[str, tuple[str, ...]] = {
             GREAT_WAVE,
         ),
         attach(
-            'Authority, correctly applied, for comparison.',
+            'Authority, correctly applied, for comparison. Two men met on a bridge, one '
+            'of them collecting swords by force, and the one who lost that fight spent '
+            'the rest of his life serving the man who beat him, willingly. Nobody typed '
+            'a command at anybody.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
@@ -1253,7 +1263,10 @@ GM: dict[str, tuple[str, ...]] = {
         'I have no counter and I am not going to look for one.',
         'Correct, and dated.',
         attach(
-            'The definitive version of this argument. Nobody won that one either.',
+            'The definitive version of the argument you are currently having: two men '
+            'on a bridge, neither conceding, each entirely certain. It is the most '
+            'famous quarrel in the Empire and it took a duel to end it. Yours will not '
+            'get one.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
@@ -1274,7 +1287,9 @@ GM: dict[str, tuple[str, ...]] = {
         'I answered before you finished typing it.',
         'Yes, and now that is in the record too.',
         attach(
-            'It carries about this far and comes back about this tired.',
+            'A ping goes out, something answers, and the answer comes back at this hour '
+            'and in this weather, which is the only illustration I have of how it '
+            'feels. Nothing about the exchange is urgent. It happens anyway.',
             RAINY_MOON,
         ),
         attach(
@@ -1318,7 +1333,9 @@ GM: dict[str, tuple[str, ...]] = {
         'The other one rolls dice. I do everything that happens afterward.',
         'Ask me what I DO. It is a shorter answer and a truer one.',
         attach(
-            'Whatever I am, it is closer to this than to anyone in the prints.',
+            'Whatever I am, it is closer to the figure in this picture - one person, '
+            'alone, at night, with nothing but their own thoughts and the moon - than '
+            'to any of the duelists and monster-killers in the other prints I keep.',
             INNER_VISION,
         ),
     ),
@@ -1392,8 +1409,10 @@ GM: dict[str, tuple[str, ...]] = {
     'roll': (
         "That is the character sheet's department. I only write down what it says.",
         'I do not roll. I record. There is a difference and he is very sensitive about it.',
-        'Ask him. He lives for this. He genuinely lives for this.',
-        'Rolling is his. Consequences are mine.',
+        'Ask the character sheet - the other bot, the one with the dice. He lives for '
+        'this. He genuinely lives for this.',
+        'Rolling belongs to the character sheet. Consequences belong to me. We have '
+        'never renegotiated it and I have never been asked whether I would like to.',
         'I have never rolled anything. I have written down four hundred sessions of '
         'other people doing it.',
         'The dice do not need me. The morning after does.',
@@ -1402,7 +1421,10 @@ GM: dict[str, tuple[str, ...]] = {
         'Whatever it comes up, I will be here for the argument about what it meant.',
         'Go and roll. I will be right here, being unsurprised.',
         attach(
-            'This is his end of the arrangement, and he loves it.',
+            'The character sheet throws the dice and I write down what they did to you. '
+            'This is his end of the arrangement - the draw, the release, the moment '
+            'somebody is about to find out - and he loves it, and I get the part that '
+            'comes afterward.',
             ARCHERS,
         ),
     ),
@@ -1447,9 +1469,13 @@ GM: dict[str, tuple[str, ...]] = {
         ),
     ),
     'fish': (
-        'I know one fish personally and she is not a fish.',
+        'I know one fish personally and she is not a fish. Michiko is a porpoise, she '
+        'is mine, and she is a mammal, and I have had to say all three of those things '
+        'in the same sentence before.',
         'There are carp in the garden pond. They are older than the garden.',
-        'Michiko is not a fish. I have been asked to be very clear about this.',
+        'Michiko - my porpoise, who came with the position - is not a fish. She is a '
+        'mammal. I have been asked to be very clear about this and I am being very '
+        'clear about it.',
         'A carp that climbs the falls becomes a dragon. Nobody has ever seen it '
         'happen and everybody repeats it.',
         'Fish are the only creatures in this Empire with no obligations.',
@@ -1475,9 +1501,13 @@ GM: dict[str, tuple[str, ...]] = {
         'The character sheet fell for that twice. I have both entries.',
         'You have attempted a prank on the record itself. The record is unmoved.',
         'Somewhere a man is still singing and I am still filing. We are not so different.',
-        'Noted as attempted mischief. It goes beside the horse.',
+        'Noted as attempted mischief. It goes in the file beside the horse that '
+        'somebody once offered me as a bribe, which is where I keep the things people '
+        'have tried on a ledger.',
         attach(
-            'Here is a link that goes somewhere. It is a fish. You have earned a fish.',
+            'Here is a link that goes exactly where it says it goes. It is cats. You '
+            'have earned cats, and I would like it noted that this is the honest '
+            'version of what you just attempted.',
             CATS,
         ),
         attach(
