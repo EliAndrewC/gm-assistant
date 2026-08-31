@@ -31,7 +31,7 @@ import random
 import re
 from collections.abc import Sequence
 
-from l7r.mention import pools, smalltalk, vocab, voices, words
+from l7r.mention import lore, pools, smalltalk, vocab, voices, words
 from l7r.mention.memory import Memory
 
 #: Discord renders a mention as `<@id>` or `<@!id>`.
@@ -85,6 +85,37 @@ DEFAULT_REPLY = 'I am listening, but that one has not been explained to me yet.'
 _RNG = random.Random()
 
 
+#: Feature 205. Compiled once - the lore table is large and the order within it
+#: is load-bearing (see `lore/topics.py`).
+LORE = tuple((re.compile(expr, re.I), key) for key, expr in lore.LORE_ORDER)
+
+
+def _lore_pool(body: str, bot: str) -> Sequence[str] | None:
+    """The lore answer for this message, or None if it is not a lore question.
+
+    The two bots diverge here, which is the whole of FR-009 through FR-011:
+
+      - The GM Assistant gets the category's own pool.
+      - The Character Sheet gets `imperial_families` in his own right (FR-018,
+        the GM's deliberate exception) and, for every other lore subject, the
+        Rokugan-set story pool - he never asserts a setting fact.
+      - `merely_an_assistant` is the GM Assistant's alone (FR-021), so for the
+        Character Sheet it is not a match at all and falls through to small talk.
+    """
+    for pattern, key in LORE:
+        if not pattern.search(body):
+            continue
+        if bot == GM_ASSISTANT:
+            return lore.GM.get(key)
+        if bot == CHARACTER_SHEET:
+            if key in lore.SHEET:
+                return lore.SHEET[key]
+            if key in lore.SHEET_SILENT_ON:
+                return lore.LORE_STORIES
+        return None
+    return None
+
+
 TOPIC_ORDER = smalltalk.TOPIC_ORDER
 
 
@@ -100,6 +131,28 @@ def _topics(
 
 
 #: Per-bot topic tables, most specific first.
+def _bot_signature(bot: str) -> tuple[tuple[re.Pattern[str], tuple[str, ...]], ...]:
+    """The bot's OWN topics, which outrank lore.
+
+    The porpoise, the jailbreak joke and the Mirumoto grievance are about THESE
+    BOTS, not about the setting, so a lore category must not swallow them. The
+    Mirumoto case is the live one: `Mirumoto` is a Dragon family, so feature
+    205's family-to-clan routing claimed it and the grievance the GM asked for in
+    204 became unreachable. Both are the GM's; the specific joke wins on its own
+    trigger, and `Dragon`, `Togashi`, `Agasha` and `Kitsuki` still reach the clan.
+    """
+    return _bot_topics(bot)[: _SIGNATURE_COUNT.get(bot, 0)]
+
+
+def _bot_smalltalk(bot: str) -> tuple[tuple[re.Pattern[str], tuple[str, ...]], ...]:
+    """Everything after the signature topics - the common-bot small talk."""
+    return _bot_topics(bot)[_SIGNATURE_COUNT.get(bot, 0) :]
+
+
+#: How many leading entries of `_bot_topics` are the bot's own signature material.
+_SIGNATURE_COUNT = {GM_ASSISTANT: 4, CHARACTER_SHEET: 3}
+
+
 def _bot_topics(bot: str) -> tuple[tuple[re.Pattern[str], tuple[str, ...]], ...]:
     purpose = re.compile(
         r"\bwhat(?:'s| is| are)?\s+(?:your|ur)\s+purpose\b|\bwhy do you exist\b", re.I
@@ -248,7 +301,15 @@ def _pool_for(
             return tiers[min(depth - 1, len(tiers) - 1)]
     if SAME_PROGRAM.search(body) and bot in SAME_PROGRAM_POOL:
         return SAME_PROGRAM_POOL[bot]
-    for pattern, pool in _bot_topics(bot):
+    # The bot's OWN topics first - they are about these bots, not the setting.
+    for pattern, pool in _bot_signature(bot):
+        if pattern.search(body):
+            return pool
+    # Then lore: more specific than "hello", less specific than the porpoise.
+    lore_pool = _lore_pool(body, bot)
+    if lore_pool:
+        return lore_pool
+    for pattern, pool in _bot_smalltalk(bot):
         if pattern.search(body):
             return pool
     for pattern, pool in COMMON:
