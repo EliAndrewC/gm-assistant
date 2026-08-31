@@ -276,7 +276,7 @@ CLANS: dict[str, tuple[str, ...]] = {
         'doctrines of attunement - is more enigmatic than the Dragon Clan he derides for '
         'being enigmatic. It is the sharpest thing anybody has said about either party '
         'and it was said by a third party who was not asked.',
-        'And the Dragon swordsmen are called the Mirumoto, which is one letter from '
+        'The Dragon swordsmen are called the Mirumoto, which is one letter from '
         'Miyamoto - as in Miyamoto Musashi, the real duelist who fought with two swords '
         'and wrote the Book of Five Rings, which is the book this game is named after. '
         'Do not get me started.',

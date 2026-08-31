@@ -389,8 +389,10 @@ MOTO: dict[str, tuple[str, ...]] = {
         ),
     ),
     'dark_moto': (
-        'The Dark Moto. Yes. Be careful where you ask that, and be aware that asking it '
-        'here means I have written down that you asked.',
+        'The Dark Moto. Yes - the ones who went into the Shadowlands and were changed '
+        'by what lives there, and whose own kin turned them away at the border '
+        'afterward. Be careful where you ask about them, and be aware that asking here '
+        'means I have written down that you asked.',
         'When the Unicorn made their long journey outside the Empire, some went south - '
         'the Moto especially, whose ancestral homelands lie southwest of the gaijin '
         'city of Medin al Salaat, according to the library at Chai Sedo, which is a '
