@@ -261,8 +261,8 @@ SETTING: dict[str, tuple[str, ...]] = {
         'A bandit report goes to the magistrate; the hunt goes out under the headsman '
         'with whatever the village can spare from the fields. Two offices, one of which '
         'does the work, and it is not the one that appears in the account afterward.',
-        '"Whatever the village can spare from the fields" is the actual limit on '
-        'Rokugani warfare. It appears in no song. It appears in all of my entries.',
+        'The real limit on Rokugani warfare is how many hands a district can lose in a '
+        'given week. It appears in no song. It appears in all of my entries.',
         'Every legionnaire is a samurai. Ashigaru are the other thing, there are vastly '
         'more of them, and the Empire has built its entire mythology around the smaller '
         'number.',

@@ -150,9 +150,9 @@ MOTO: dict[str, tuple[str, ...]] = {
         'The same trap waits with every gaijin pantheon. A traveler from Medin al '
         'Salaat names their God of Love and a samurai hears Benten and writes down '
         'Benten, and then I inherit the note.',
-        'Usually is doing the work in that sentence. Nobody has ever come back to '
-        'confirm one of those identifications, and the footnote is mine to keep alive '
-        'in the meantime.',
+        'Nobody has ever gone back to check one of those identifications. A whole '
+        'foreign pantheon mapped onto ours by travelers who were tired and in a hurry, '
+        'and not one entry has been revisited since.',
         'Every misunderstanding in the Moto material is a translation before it is a '
         'heresy. I would put that on a wall if anybody let me have a wall.',
         'If a Moto tells you something impossible, ask which word they used. Then ask '
