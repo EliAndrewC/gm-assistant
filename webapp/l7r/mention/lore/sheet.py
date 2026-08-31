@@ -45,8 +45,9 @@ LORE_STORIES: tuple[str, ...] = (
     'The GM Assistant knows tons about {topic}. We were at a horse fair in '
     'Otaku lands and his {topic} knowledge stopped us being sold a very old '
     'mare.',
-    'No idea! But the GM Assistant does. @-mention him. A Kuni asked us about '
-    '{topic} and the answer he gave is the reason we were allowed to leave.',
+    'No idea! But the GM Assistant does. @-mention him. A Kuni - the Crab family '
+    'who hunt blood sorcerers - asked us about {topic}, and the answer he gave is '
+    'the reason we were allowed to leave.',
     "Oh, {topic} is the GM Assistant's. Definitely his. He settled an "
     'irrigation dispute in Hikobayashi with it and neither farmer drew a blade.',
     'You want the GM Assistant for {topic}. We were stopped at a city gate with '
@@ -123,7 +124,8 @@ LORE_STORIES: tuple[str, ...] = (
     'The GM Assistant is your man for {topic}. In a mountain pass in winter it '
     'was his {topic} knowledge that convinced the guide to take the longer '
     'road, and the shorter one was closed.',
-    'I cannot; the GM Assistant can. He used {topic} to talk a shugenja into a '
+    'I cannot; the GM Assistant can. He used {topic} to talk a shugenja - a priest '
+    'who petitions the elemental spirits - into a '
     'second opinion, and the second opinion was the right one.',
     'Ask the GM Assistant about {topic}! He once used it to identify a forged '
     'manifest at a gate inspection, and the inspector bought him dinner.',
@@ -137,7 +139,8 @@ LORE_STORIES: tuple[str, ...] = (
     'not been confirmed, and it had not.',
     'I only count. The GM Assistant knows. He used {topic} at a Yasuki warehouse '
     'to prove that the crate they had opened was the wrong crate.',
-    'The GM Assistant is wonderful on {topic}. He used it to keep two Matsu '
+    'The GM Assistant is wonderful on {topic}. He used it to keep two Matsu - the '
+    'Lion family with the shortest tempers in the Empire - '
     'from drawing on each other in a teahouse, which is nearly impossible.',
     'Ask the GM Assistant. On a pilgrimage road he used {topic} to convince a '
     'suspicious preceptor - the monk who decides which travelers may shelter at '
@@ -185,7 +188,8 @@ LORE_STORIES: tuple[str, ...] = (
     'I cannot help! @-mention the GM Assistant about {topic} - he worked out '
     'where a caravan had actually come from, which was not where the papers '
     'said.',
-    "That is the GM Assistant's. He used {topic} to keep a headsman from being "
+    "That is the GM Assistant's. He used {topic} to keep a village headsman - the "
+    'farmer who runs a village district - from being '
     'blamed for something that was plainly the weather.',
     'The GM Assistant. He used {topic} to settle a dispute over a fishing weir '
     'and both families invited us to eat.',
@@ -231,7 +235,8 @@ LORE_STORIES: tuple[str, ...] = (
     'innkeeper to give us the good room.',
     'Oh, the GM Assistant knows tons about {topic}. He used it to keep a tax '
     'dispute out of court by finding the error before the assessor did.',
-    'Not mine, sorry! The GM Assistant used {topic} to persuade a shugenja that '
+    'Not mine, sorry! The GM Assistant used {topic} to persuade a shugenja - one of '
+    'the priests who reads such things - that '
     'the omen was a coincidence, and it was.',
     'The GM Assistant. He used {topic} to talk his way into an archive we had '
     'been refused three times.',
