@@ -78,7 +78,7 @@ MOTO: dict[str, tuple[str, ...]] = {
         'movements, reliably, like a tea ceremony with worse outcomes.',
         'The correct reply to "what did you just say to me" is not an apology. It is to '
         'ask whether their hearing is failing and to offer to speak up.',
-        'That exchange is not a fight starting. That exchange is a greeting. Rokugani '
+        'The insult-and-refutation is not a fight starting. It is a greeting. Rokugani '
         'guests survive it by accident roughly half the time, and I write up the other '
         'half.',
         'Getting off the horse is the escalation. Everything said on horseback is still '
@@ -342,7 +342,7 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Stabled: grain for one horse costs four to five koku a year, and grazing needs '
         'two to four acres per horse that would otherwise grow food. That second cost '
         'is the real one and it never appears in a single ledger.',
-        "That opportunity cost is the true price of a Rokugani horse, and why a bushi's "
+        "The land a horse eats is the true price of a Rokugani horse, and why a bushi's "
         'mount is a statement rather than a conveyance. Nobody rides an argument about '
         'land use, and yet.',
         'Moto horses cost a few bu, and a single family keeps dozens alongside their '

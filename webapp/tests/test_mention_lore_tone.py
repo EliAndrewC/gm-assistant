@@ -230,7 +230,19 @@ def test_no_pool_tells_the_same_joke_twice() -> None:
 #: A reply that says "that sentence" / "that word" IN ITS OPENING SENTENCE is
 #: pointing at text it has not shown you. There is nothing earlier in the reply
 #: for it to mean, and the sibling it does mean will not be delivered with it.
-DANGLING_META_REFERENCE = re.compile(r'\bthat (sentence|word|phrase|clause|line)\b', re.IGNORECASE)
+#: The noun list is MEASURED, not imagined. Each addition was checked across all
+#: 1,030 replies before being added and every one fires only on genuine defects:
+#: `question` catches `jikoju#5`, `exchange` catches `moto_etiquette#3`,
+#: `asymmetry` catches `vows_and_oaths#6`, each with zero false positives.
+#:
+#: `question` is here because the first version of this guard was written in the
+#: same commit that shipped a dangling "that question" and did not catch it - the
+#: noun list was guessed from the two instances already known instead of being
+#: swept for. Sweep before you add, and add when the sweep is clean.
+DANGLING_META_REFERENCE = re.compile(
+    r'\bthat (sentence|word|phrase|clause|line|question|exchange|asymmetry)\b',
+    re.IGNORECASE,
+)
 
 
 def test_no_reply_points_at_text_it_has_not_shown_you() -> None:

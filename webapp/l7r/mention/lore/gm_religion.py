@@ -76,9 +76,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'Dying with a vow unfulfilled brings bad karma into your next lives and the '
         'wrath of the fortune. Dying ATTEMPTING it brings the opposite. The gods reward '
         'effort over outcome, which is the most encouraging fact I have.',
-        'That asymmetry is the whole reason vows are dangerous and the whole reason '
-        'people swear them anyway. Whoever designed it understood gamblers rather '
-        'better than theologians usually do.',
+        'A vow is the only instrument in this Empire that punishes you for stopping and '
+        'rewards you for dying. People swear them anyway, in numbers, and whoever '
+        'designed that understood gamblers rather better than theologians usually do.',
         'A vow of creation obliges you to build the thing whether or not the war that '
         'made it sensible is still being won. There is no clause for "circumstances '
         'changed". I have read it looking for one, on behalf of a friend.',
@@ -641,9 +641,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         "Dying with it unfulfilled brings bad karma and the fortune's wrath; dying "
         'attempting it brings the opposite. People work out which half they are in at '
         'the very end, reliably, every time.',
-        'Both partisan camps on that question write to me, at length, and I file their '
-        'letters in the same box. Neither would thank me for the arrangement and '
-        'neither has asked.',
+        'Two camps write to me at length about the Medin al Salaat temple - the ones '
+        'who call it piety and the ones who call it a land grab. I file both in the '
+        'same box, which neither would thank me for and neither has asked about.',
         'He is not one of the seven the Shinsei named, which has not made him smaller. '
         'It has made him less quoted, and I feel a certain kinship with the distinction.',
         'Every vow to Jikoju in this record was sworn by somebody who assumed the army '
