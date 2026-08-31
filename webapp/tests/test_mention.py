@@ -13,6 +13,7 @@ import configparser
 import contextlib
 import json
 import random
+import re
 from pathlib import Path
 from typing import Any
 
@@ -69,7 +70,8 @@ class TestReplies:
             head = reply[:40].lower()
             assert 'porpoise' in head or 'purpose' in head, reply[:60]
             body = reply.lower()
-            assert 'porpoise' in body and 'purpose' in body, reply[:60]
+            assert 'porpoise' in body, reply[:60]
+            assert 'purpose' in body, reply[:60]
 
     def test_every_porpoise_reply_carries_her_picture(self) -> None:
         """GM 2026-08-31: *"every message involving your pet porpoise should
@@ -826,6 +828,45 @@ def named_pools() -> list[tuple[str, tuple[str, ...]]]:
             elif isinstance(value, tuple) and value and isinstance(value[0], str):
                 found.append((name, value))
     return found
+
+
+#: An article followed straight by a preposition, an auxiliary or a conjunction.
+#: "open a in a bad year". "why a should go around". English never does this, so
+#: the only value this check can take is zero and it cannot fire on writing
+#: anybody meant.
+DROPPED_WORD = re.compile(
+    r'\b(a|an|the)\s+(in|on|at|of|to|for|from|with|was|were|is|are|be|been|had|has|have'
+    r'|should|would|could|which|that|and|or|but)(?![-\w])',
+    re.IGNORECASE,
+)
+
+
+def test_no_reply_has_a_word_missing_out_of_the_middle_of_it() -> None:
+    """Fourteen shipped replies had words dropped mid-clause and nothing caught it.
+
+    The 2026-08-31 context audit read `lore/sheet.py` and found fourteen of the
+    Character Sheet's 102 lore stories corrupt: "persuade a headsman to open a in
+    a bad year", "identify a relic as what it which is rarer than you think",
+    "persuade a border guard we were we were not, but became". Valid Python,
+    valid types, 100% coverage, ten replies per pool, and prose that stops making
+    sense halfway through. Every test in this file passed over them, because no
+    test in this file reads a sentence.
+
+    This catches the mechanically decidable part of that class and NOT the rest:
+    measured against the corrupt file at the commit that shipped it, it fires on
+    three of the fourteen, and against the whole 2,994-reply corpus it produces
+    zero false positives. So it is a floor, not the answer - the other eleven
+    needed somebody to read them, which is what the context audit is for. It is
+    here anyway because three defects a machine can catch for free should not
+    require a subagent and a human afterward.
+    """
+    broken = [
+        f'{name}#{i}: ...{reply[max(0, m.start() - 40) : m.end() + 40]}...'
+        for name, pool in named_pools()
+        for i, reply in enumerate(pool)
+        if (m := DROPPED_WORD.search(reply))
+    ]
+    assert not broken, f'a word has fallen out of the middle of these replies: {broken}'
 
 
 # --------------------------------------------------------------------------

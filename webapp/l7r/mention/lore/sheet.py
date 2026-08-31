@@ -211,7 +211,7 @@ LORE_STORIES: tuple[str, ...] = (
     'Oh, the GM Assistant is wonderful on {topic}. He used it to talk a Moto '
     'patrol into an escort across land where we had no business being.',
     'I cannot; the GM Assistant can. He used {topic} to settle which of two '
-    'shrines older claim, and the losing shrine thanked him.',
+    'shrines had the older claim, and the losing shrine thanked him.',
     'The GM Assistant, definitely. He used {topic} to get a stubborn abbot to '
     'open the library, which had been closed for a season.',
     'Ask him about {topic}! The GM Assistant used it to work out that a bandit '
