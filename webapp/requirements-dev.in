@@ -11,6 +11,14 @@
 #   pip-compile --output-file=requirements.txt requirements.in
 #   pip-compile --output-file=requirements-dev.txt requirements-dev.in
 
+# boto3 is what scripts/lightsail_access.py uses to mint the short-lived SSH
+# key pair for the mention-bot box, so no durable server key is ever written
+# down. It belongs HERE rather than in requirements.in: the fly.io image
+# installs only requirements.txt, and the Lightsail box itself installs only
+# websockets + configobj, so neither of them should carry an AWS SDK. A session
+# that cannot import boto3 cannot deploy or even check the deployed bot -
+# caught 2026-08-31, when a fresh container had to pip-install it by hand.
+boto3
 mypy
 pip-tools
 playwright

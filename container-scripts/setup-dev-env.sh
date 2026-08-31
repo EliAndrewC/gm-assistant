@@ -54,6 +54,9 @@ check_all() {
     # dev deps - the quality gate itself
     _t "python: pytest + cov + xdist"            "python3 -c 'import pytest, pytest_cov, xdist'"
     _t "python: ruff mypy"                       "python3 -m ruff --version; python3 -m mypy --version"
+    # boto3: scripts/lightsail_access.py needs it to mint Lightsail SSH creds,
+    # i.e. it is the difference between being able to deploy the bot and not.
+    _t "python: boto3 (Lightsail deploy creds)"  "python3 -c 'import boto3'"
     _t "playwright chromium (UI screenshots)"    "python3 -c 'from playwright.sync_api import sync_playwright
 with sync_playwright() as p: p.chromium.launch().close()'"
     # the claude() wrapper that appends this repo's standing authorizations to the system prompt.
