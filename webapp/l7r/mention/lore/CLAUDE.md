@@ -3,6 +3,73 @@
 Feature 205. ~103 categories drawn from `/host-l7r-repo/setting/l7r.md`, each with ten replies. The
 Character Sheet has no lore of his own.
 
+## THE CONTEXT BAR - a reply that has to be explained has failed
+
+**2026-08-31, and it is the newer of the two bars, so read it first.** The GM read the shipped bot
+and found the jokes landing only on readers who were already in on them:
+
+> *"There is one aspect of the preprogrammed responses which I think is lacking, and that is that
+> someone who doesn't already know what the response is referring to will likely be confused ... the
+> joke has not really explained sufficiently for someone to understand what is being discussed."*
+
+His two examples, both of which the audit agent below now catches. A player asked about a Mirumoto
+character and got *"I will go to my grave believing their name was decided at four-fifty on a
+Friday"* - a joke about `Mirumoto` being one letter off `Miyamoto` Musashi, who wrote the book this
+game is named after, with **none of that in the reply**. A player asked about the Ministry of
+Revenue and got *"Four ways to smuggle: transit fraud, origin spoofing, misclassification, and
+walking round the gate"* - good information, three opaque terms, and no statement that tariffs are
+collected at city gates in the first place, which is what makes any of it smuggling.
+
+**The fix is length, and the GM said so in as many words**: *"make the responses longer and provide
+the context ... you could put a parenthetical footnote next to each of them explaining what they
+mean, or even just break them out into separate sentences. The explanations could themselves be
+humorous, or not, but as long as there is at least one joke in the response, then it doesn't matter
+whether each individual thing has a joke attached."* So an explanatory clause does not have to earn
+its place with a punchline. The REPLY has to be funny. The gloss just has to be there.
+
+What that means at the keyboard:
+
+- **Gloss a term where it is USED, not once per file.** The audit's finding across `gm_religion`
+  was one mechanism repeated: `maho`, `tsukai`, `oni`, `Jigoku`, `Yomi`, `gaijin`, `khan`, the
+  Celestial Order, Fortune-meaning-a-god - each defined in exactly one reply somewhere, and **the
+  player only ever sees one reply.**
+- **A campaign referent carries its own introduction.** Gaheris and his four dedicated swords, and
+  Benten's soulmate blessing, between them carried a third of `gm_religion` and were introduced
+  nowhere in it.
+- **Never open on a connective.** "Then", "So", "too", "the second clause", "on this evidence",
+  "the same greeting" - each one points at a sibling reply that ships separately or not at all.
+  This is the same defect the `#8`/`#9` caption slot has, generalized to every index.
+- **A category may not cross-reference another category.** `burning_sands` said *"See the Dark
+  Moto"*, which is unreachable by construction: `rules.py` serves one reply per question. Tell the
+  story here or do not allude to it.
+- **State the frame the fact sits in.** Not "maximum twenty percent of declared value" but "the
+  tariff on goods brought into a walled city to sell is capped at twenty percent of declared
+  value". A number with no subject is an answer to a question the player cannot see.
+
+**The instrument is a subagent, at the GM's own instruction** (*"This seems like something which is
+worth a subagent check"*) - `.claude/agents/mention-context-review.md`, which sweeps one category at
+a time and returns a verdict per reply. That is the same allocation of judgment as the tone bar
+below, and it is why there is no threshold test for this either: how much context is enough is a
+reading judgment, and the GM assigned reading judgment to the audit.
+
+**RUN IT ONE CATEGORY-GROUP AT A TIME, SEQUENTIALLY.** Also the GM's instruction, and it is about
+his terminal rather than about quality: *"the last couple of times that I have requested that you do
+something like this, the terminal has crashed ... maybe you could limit your subagent calls to only
+checking a single category of responses at a time."* One live audit agent, ever. It costs wall-clock
+and it is not negotiable.
+
+### The one interaction to expect: glosses trip the echo guard
+
+Self-containment repeats FACTS by design, and `test_no_pool_tells_the_same_joke_twice` cannot tell a
+repeated fact from a repeated joke - so the same gloss written the same way twice in one pool turns
+the gate red. It fired seven times across this rewrite (`ministry_of_revenue#4`~`#9`,
+`emma_o#2`~`#8`, `the_yassa#7`~`#9`, and four more).
+
+**Rephrase the gloss; do not widen the stopword list and do not weaken the guard.** "The lord of
+ghosts" and "who holds dominion over every ghost that walks" are the same fact and different
+sentences, and having to find the second one is a small tax that produces better prose than the
+first draft had. The guard was measured and is right; this is what it feels like when it works.
+
 ## The tone bar - read this before writing a line
 
 The first pass was **annoyed first, factual second**, and the GM read it and said the facts were
