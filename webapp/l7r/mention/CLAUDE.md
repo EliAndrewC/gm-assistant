@@ -16,7 +16,8 @@ its users will intuitively expect it to work."* Answering under the wrong name b
 | file | holds |
 |---|---|
 | `rules.py` | The ENGINE: which pool answers a message, slot rendering, and the random pick that never repeats itself. Holds no jokes. |
-| `voices.py` | Each bot's own material - purpose, the porpoise, the feud tiers, the Mirumoto grievance, small talk. DATA. |
+| `voices.py` | The material that is OURS - purpose, the porpoise, the feud tiers, the Mirumoto grievance, the same-program beat. DATA. |
+| `smalltalk/` | The long tail every bot gets asked, drawn from the standard small-talk taxonomies: `topics.py` (patterns and their order), `gm.py`, `sheet.py`. See its own CLAUDE.md. |
 | `pools.py` | The two large unmatched pools per bot: generic, and game-flavored. ~100 lines each. DATA. |
 | `words.py` | The ELIZA-style extractor. Hand-rolled on purpose; the alternatives are priced in its docstring. |
 | `memory.py` | Per bot, per channel: the last thing said, and how far the feud has gone. In-process and forgetful by design. |
@@ -53,6 +54,22 @@ punchline fired unreliably. A relay count still exists, but only to pick WHICH t
 **A direct question beats the relay check.** Several opinion words ("think", "like") are also
 reporting words, so `what do you think of the character sheet?` matched the relay pattern and
 escalated the feud until the order was fixed. The comment sits at the branch.
+
+## At least ten replies per pool, enforced
+
+The GM's rule of thumb is *"a dozen different responses for each call and response"*, and
+`test_every_pool_holds_at_least_ten_replies` holds every pool in the project to a floor of ten.
+
+**It used to demand three.** A pass shipped a median of four and went green, because the real rule
+was living in a docstring and nobody's memory is a mechanism. The GM's own framing when we fixed it:
+*"automated tests are the solution for not making people correctly remember how to do everything all
+the time."*
+
+What the tests can hold: reply COUNTS, the image ban on every Character Sheet pool, the provenance
+of every image URL, that no pattern is dead and no pool unreachable, and that the two bots never
+share a line. What they cannot hold: TONE. Whether a line is genuinely earnest or genuinely
+sarcastic is a judgment call, so it is left to whoever is writing, guided by the voice notes at the
+top of each file. Do not try to test it.
 
 ## Images: only one bot has them
 

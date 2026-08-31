@@ -68,10 +68,22 @@ class TestReplies:
         assert reply in voices.GM_PORPOISE_FACTS
 
     # -- FR-002 / FR-003: variety -----------------------------------------
-    def test_every_pool_holds_several_replies(self) -> None:
-        """FR-002. A pool of one is the thing this feature exists to remove."""
-        for name, pool in named_pools():
-            assert len(pool) >= 3, f'{name} has only {len(pool)}'
+    def test_every_pool_holds_at_least_ten_replies(self) -> None:
+        """FR-002, and the reason this test exists in this exact form.
+
+        The GM's rule of thumb is *"a dozen different responses for each call and
+        response"*. This assertion used to demand THREE, and so a median of four
+        shipped through a green gate - the guideline was living in someone's memory
+        and memory is not a mechanism. The GM's own words on the fix: *"automated
+        tests are the solution for not making people correctly remember how to do
+        everything all the time."*
+
+        Ten, not twelve, so that a category with one genuinely weak line is not
+        forced to keep it. If a category cannot support ten it is probably not a
+        category.
+        """
+        thin = {name: len(pool) for name, pool in named_pools() if len(pool) < 10}
+        assert not thin, f'pools below the ten-reply floor: {thin}'
 
     def test_asking_ten_times_gives_at_least_five_answers(self) -> None:
         """SC-001, measured rather than assumed."""
@@ -158,7 +170,7 @@ class TestReplies:
     def test_the_character_sheet_engages_earnestly_with_the_cake_joke(self) -> None:
         """Ten-plus VERY EARNEST attempts. He knows it is a joke, he is delighted
         it is a joke, and he is trying so hard - that is the comedy."""
-        pool = voices.SHEET_SMALL_TALK['cake']
+        pool = smalltalk.SHEET['cake']
         assert len(pool) >= 10
         blob = ' '.join(pool).lower()
         assert 'cake is a lie' in blob
@@ -167,9 +179,9 @@ class TestReplies:
     def test_the_gm_assistant_is_utterly_over_the_cake_joke(self) -> None:
         """The same prompt, the opposite reaction. If these two ever read alike the
         joke is gone, so the pools are asserted disjoint."""
-        pool = voices.GM_SMALL_TALK['cake']
+        pool = smalltalk.GM['cake']
         assert len(pool) >= 10
-        assert not set(pool) & set(voices.SHEET_SMALL_TALK['cake'])
+        assert not set(pool) & set(smalltalk.SHEET['cake'])
         blob = ' '.join(pool).lower()
         assert any(word in blob for word in ('every single week', 'entries', 'older than'))
 
@@ -267,6 +279,12 @@ class TestReplies:
             'i know him',
             'misread',
             'other bots',
+            'do not believe',
+            'he would not',
+            'same one',
+            'more to the sentence',
+            'bad session',
+            'definitely him',
         )
         for line in voices.SHEET_RELAY_TIERS[0]:
             lowered = line.lower()
@@ -399,15 +417,10 @@ class TestSmallTalk:
         ignoring you. Neither is visible by reading either file alone.
         """
         ordered = {key for key, _ in rules.TOPIC_ORDER}
-        for label, table in (
-            ('GM', {**voices.GM_SMALL_TALK, **smalltalk.GM}),
-            ('SHEET', {**voices.SHEET_SMALL_TALK, **smalltalk.SHEET}),
-        ):
+        for label, table in (('GM', smalltalk.GM), ('SHEET', smalltalk.SHEET)):
             orphans = set(table) - ordered
             assert not orphans, f'{label} pools no pattern can reach: {sorted(orphans)}'
-        covered = set(smalltalk.GM) | set(smalltalk.SHEET) | set(voices.GM_SMALL_TALK)
-        covered |= set(voices.SHEET_SMALL_TALK)
-        dead = ordered - covered
+        dead = ordered - (set(smalltalk.GM) | set(smalltalk.SHEET))
         assert not dead, f'patterns with no pool behind them: {sorted(dead)}'
 
     @pytest.mark.parametrize(
@@ -438,8 +451,8 @@ class TestSmallTalk:
         """One probe per category, because a pattern can be shadowed by an earlier
         one in TOPIC_ORDER and the only symptom is a slightly wrong joke."""
         for bot, table in (
-            (rules.GM_ASSISTANT, {**voices.GM_SMALL_TALK, **smalltalk.GM}),
-            (rules.CHARACTER_SHEET, {**voices.SHEET_SMALL_TALK, **smalltalk.SHEET}),
+            (rules.GM_ASSISTANT, smalltalk.GM),
+            (rules.CHARACTER_SHEET, smalltalk.SHEET),
         ):
             if key not in table:
                 continue
@@ -449,9 +462,7 @@ class TestSmallTalk:
         """The ordering hazard, named because it is the one that will recur:
         every new pattern has to be placed against the general ones already there."""
         assert self.ask('roll for initiative', rules.GM_ASSISTANT) in smalltalk.GM['initiative']
-        assert (
-            self.ask('can you roll etiquette', rules.GM_ASSISTANT) in voices.GM_SMALL_TALK['roll']
-        )
+        assert self.ask('can you roll etiquette', rules.GM_ASSISTANT) in smalltalk.GM['roll']
 
     def test_good_bot_is_not_swallowed_by_the_greeting(self) -> None:
         assert self.ask('good bot', rules.CHARACTER_SHEET) in smalltalk.SHEET['good_bot']
@@ -484,11 +495,16 @@ class TestImages:
         it up - *"the images themselves do not need to be funny as long as the
         context in which they are included are funny"* - so there is nowhere else
         for a rate to live.
+
+        The band matters: deepening every category to ten replies added ~600 lines
+        of text and quietly dropped this to 12%, which the old floor of 0.12 let
+        through. A rate test whose floor is set where the code currently sits is
+        not a test, it is a thermometer.
         """
         lines = [e for name, pool in named_pools() if name.startswith('GM') for e in pool]
         with_images = [e for e in lines if 'http' in e]
         rate = len(with_images) / len(lines)
-        assert 0.12 <= rate <= 0.35, f'{rate:.0%} of GM Assistant lines carry an image'
+        assert 0.15 <= rate <= 0.30, f'{rate:.0%} of GM Assistant lines carry an image'
 
     def test_every_image_url_is_one_we_checked(self) -> None:
         """No URL may appear in a reply that is not in the provenance file.

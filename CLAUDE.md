@@ -316,6 +316,15 @@ office-holders (named characters keep their pronouns), Principle XI's kanji tria
 behavioral principles XII/XIV/XV. File size past ~1,000 lines is REPORTED by `make audit`, never
 gated - the rule prompts a question rather than forbidding a size.
 
+**A GUIDELINE THAT LIVES ONLY IN PROSE IS NOT A RULE** (GM 2026-08-31: *"automated tests are the
+solution for not making people correctly remember how to do everything all the time"*). Where a
+standard can be counted, assert the count - and set the threshold at the STANDARD, never at wherever
+the code currently sits. Measured the same day: the mention bot's reply pools were documented as
+needing "about a dozen" responses each and asserted at `>= 3`, so a median of four shipped through a
+green gate with the docstring still claiming twelve. The corollary is knowing what cannot be tested
+- whether a joke is in voice is a judgment call - and saying so in the doc rather than leaving the
+next reader to guess which rules are enforced.
+
 **When you add a guard**, four properties, each learned by getting it wrong: match INVOCATIONS not
 mentions (seven false positives in one feature - a grep, a commit message, a docstring, a fixture
 argument, a redirect, a test harness, and a hook that blocked its own repair); check the ESCAPE FIRST
