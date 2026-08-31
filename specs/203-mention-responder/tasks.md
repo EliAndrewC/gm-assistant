@@ -118,7 +118,15 @@ These are FR-011: what the GM has to do to exercise it. None of them is code.
 
 - [ ] Invite the **Character Sheet** bot to the live L7R server (it is in Robot Role Call only).
       Until then it can be mentioned in the test server but not the real one.
-- [ ] Deploy to the Lightsail box and run it under a supervisor. **The implementation deliberately
-      does not do this**: the GM pasted a private SSH key into the session, it was not used and not
-      stored, and the standing advice is that the key is burned and should be rotated. Deployment
-      stays a step the GM runs.
+- [x] **T017** `scripts/deploy_mention_bot.sh` - deployment, written after the GM asked why it had
+      not happened. The original answer conflated two things: refusing to use the private key they
+      pasted (correct - it is in a transcript and is burned) was treated as a reason not to deploy
+      at all (wrong). The box gets a MINIMAL secrets file holding the two bot tokens and nothing
+      else, runs under a systemd user service with lingering enabled, and the script is idempotent
+      so a redeploy is the same command.
+
+- [ ] **Grant Lightsail permissions, or run the deploy script yourself.** The clean route needs no
+      durable key anywhere: `lightsail:GetInstanceAccessDetails` mints TEMPORARY SSH credentials.
+      `gm-assistant-ci` currently gets `AccessDeniedException` on `lightsail:GetInstances`, so the
+      policy in `l7r/mention/CLAUDE.md` has to be attached first. Either way the deploy itself is
+      one command.

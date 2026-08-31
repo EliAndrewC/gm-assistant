@@ -25,6 +25,12 @@ from l7r.mention import NotConfigured, run_forever  # noqa: E402
 
 
 def main() -> int:
+    # Line-buffer stdout. Python block-buffers when stdout is a pipe rather than a
+    # terminal, which is exactly how this runs on an always-on box - under a
+    # supervisor, redirected to a log. Without this the log stays EMPTY for hours
+    # while the bot works perfectly, so the first thing you check when it seems
+    # dead tells you nothing. Cost of learning this: one "is it even running?".
+    sys.stdout.reconfigure(line_buffering=True)
     try:
         asyncio.run(run_forever())
     except NotConfigured as exc:

@@ -71,6 +71,43 @@ Each speaking bot needs **Send Messages** in the guild; the listener needs the *
 privileged intent. Both are Discord configuration, not code - and a bot's permissions widen IN PLACE
 on its managed role, with no kick and no re-invite.
 
+## Deployment
+
+It runs on the GM's always-on AWS Lightsail box, NOT on fly.io - a machine that never scales to
+zero costs a few dollars a month, and the GM's ruling on that was that this is *"basically a joke"*
+and not worth it.
+
+```
+./scripts/deploy_mention_bot.sh ubuntu@<the box>
+```
+
+Idempotent: re-run it after any change. It syncs, rebuilds the venv if needed, and restarts the
+systemd user service, so there is no separate update path to get wrong.
+
+**The box gets the two bot tokens and nothing else.** The deploy script writes a minimal
+`development-secrets.ini` containing only `[mention_bots]`; it does not copy the real one, which
+also holds AWS keys, a GitHub PAT, the Gemini key and the Obsidian Portal credentials. A joke bot on
+an internet-facing box has no business holding any of those.
+
+Three third-party pieces total: `websockets` and `configobj` on the box, and systemd to keep it up.
+Everything else the responder uses is stdlib - which is why the answer to *"should this be Rust to
+be lightweight?"* was no. Measured resident footprint of the whole Python process: **21 MB**.
+
+**Deploying from a session needs Lightsail permissions the CI user does not have.**
+`gm-assistant-ci` gets `AccessDeniedException` on `lightsail:GetInstances`. The clean route - no
+long-lived private key anywhere near a transcript - is to let it mint TEMPORARY SSH credentials:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["lightsail:GetInstances", "lightsail:GetInstanceAccessDetails"],
+  "Resource": "*"
+}
+```
+
+`GetInstanceAccessDetails` returns a short-lived key pair, so nothing durable is ever pasted
+anywhere. Until that is granted, the GM runs the deploy script themselves.
+
 ## Testing
 
 ```
