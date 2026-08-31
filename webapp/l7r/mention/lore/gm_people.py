@@ -1,9 +1,27 @@
 """Significant people, relics and geography. GM Assistant only.
 
 Only people the GM kept as individuals live here. Anyone else who is merely
-name-shaped gets the dismissal in `sheet.py` - and a HOUSE (`Akodo no Damasu`)
-gets the houses handling instead, which is the distinction the GM corrected and
-`topics.py` enforces by ordering.
+name-shaped gets the dismissal in `gm_clans.py` - and a HOUSE (`Akodo no
+Damasu`) gets the houses handling instead, which is the distinction the GM
+corrected and `topics.py` enforces by ordering.
+
+TONE: the bar and the three permitted registers are documented at the top of
+`gm_religion.py`; read that before editing a line here.
+
+Rewritten whole on 2026-08-31 (audit rate: 4.7%). The repairs specific to this
+file, so they are not quietly undone:
+
+  - **Three categories shared the same between-place line** - "You do not find a
+    between place. You are in one, and then you notice." - and two shared the
+    same caption. It now appears once, in `gm_religion/between_places`, where a
+    player asking about the phenomenon will actually land.
+  - **"Buy him a drink. Do not ask twice."** closed `kuni_yori`, `kaiu_wall` and
+    `gm_moto/vindicator_moto`. Withholding is not a punchline three times; it is
+    barely one.
+  - **`famous_swords`' first image caption is the ONLY caption in the corpus
+    carrying unique facts** (Seiginryu's route off Togashi Mountain,
+    Tamashikari's ranking). Every other caption here is free to be a joke; that
+    one is not.
 """
 
 from __future__ import annotations
@@ -24,188 +42,234 @@ from l7r.mention.images import (
 
 PEOPLE: dict[str, tuple[str, ...]] = {
     'kitsu_okura': (
-        'Kitsu Okura. Prince Daigotsu once observed that Okura is more enigmatic than '
-        'the Dragon Clan he derides, and I have never seen it put better.',
-        'He derides the Dragon for being enigmatic. He is worse. Everyone notices and '
-        'nobody says it to him.',
+        'Prince Daigotsu once observed that Okura is more enigmatic than the Dragon '
+        'Clan he derides. I have never seen it put better and I have had four hundred '
+        'sessions in which to see it put.',
+        'He derides the Dragon for being enigmatic. He is worse. Everybody notices, '
+        'nobody says it to him, and I have written it down where he cannot get at it.',
         'Six doctrines of attunement. I have had all six explained to me twice and I '
-        'could not tell you whether they agree with each other.',
-        'Agasha Tamori has written on him, which is how you know he matters and how '
-        'you know the writing will not help.',
-        'The dream-divination material runs through his theology. If you have ever '
-        'asked a fortune for guidance in sleep, that is his framework.',
-        'Ask him a direct question and receive a better question. It is infuriating '
-        'and it is usually correct.',
-        'Twenty entries in this record and not one of them is a straight answer.',
+        'could not tell you whether they agree with one another, and I suspect that is '
+        'the intended result.',
+        'Agasha Tamori has written on him, which is how you know he matters and how you '
+        'know the writing will not help. Scholarship about an enigma is an enigma with '
+        'citations.',
+        'The dream-divination material runs through his theology, so if you have ever '
+        'asked a fortune for guidance in sleep, you were using his framework and '
+        'probably crediting the fortune.',
+        'Ask him a direct question and receive a better question. It is infuriating, it '
+        'is usually correct, and it doubles the length of every transcript.',
+        'Twenty entries in this record and not one of them is a straight answer. I '
+        'index by subject. He has defeated the index.',
         'I like him. I would like him more at a distance.',
         attach(
             'Okura, explaining something. This is minute four.',
             INNER_VISION,
         ),
         attach(
-            'And this is the questioner, at minute forty.',
+            'The questioner, at minute forty, no longer certain what was asked.',
             RAINY_MOON,
         ),
     ),
     'soshi_saibankan': (
-        'Soshi Saibankan. A Scorpion, and a ruling of his is in the record, and the '
-        'ruling is the reason you have heard the name.',
-        'Saibankan means judge. A Scorpion named judge. Sit with that for a moment.',
-        'His ruling is cited the way precedent is always cited - by people who have '
-        'not read the reasoning.',
-        'The reasoning is the good part. The outcome is merely the outcome.',
+        'A Scorpion, and a ruling of his sits in the record, and that ruling is the '
+        'only reason you have heard the name. Most people get remembered for less and '
+        'get asked about more.',
+        'Saibankan means judge. A Scorpion named judge. Sit with that for a moment; the '
+        'Empire evidently did not.',
+        'His ruling is cited the way precedent is always cited: by people who have not '
+        'read the reasoning, to people who will not check.',
+        'The reasoning is the good part. The outcome is merely the outcome. I hold both '
+        'and am asked for the outcome every single time.',
         'A Scorpion magistrate is not a contradiction. The Empire needs somebody to do '
-        'the unpleasant necessary things.',
-        'And then it needs somebody to blame for them. Same clan. Very efficient.',
-        'When a Scorpion rules against their own interest, look harder.',
-        'I have the ruling in full. Ask and be specific.',
+        'the unpleasant necessary things, and then it needs somebody to blame for them. '
+        'Same clan. Extremely efficient.',
+        'When a Scorpion rules against their own interest, look harder. That is not '
+        'cynicism, it is a filing instruction, and it has never once been wrong.',
+        'A judge whose clan is famous for lying, in an Empire that never noticed the '
+        'joke. I noticed. I have nowhere to put it.',
+        'I have the ruling in full, and the day somebody asks for the reasoning rather '
+        'than the verdict, I intend to make an occasion of it.',
         attach(
-            'A ruling being delivered. Brief, correct, and about something else.',
+            'A ruling being delivered: brief, correct, and about something else entirely.',
             CATS,
         ),
         attach(
-            'And this is the appeal.',
+            'The appeal. It is faster than the hearing and rather more final.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
     'grand_abbot_benshi': (
-        'Grand Abbot Benshi. The Outrage Over Outrageousness is his, and so is '
-        'Promoting the Tao, and the two together tell you everything.',
-        'A Grand Abbot sits in a domain capital. Every domain in Lion lands has its '
-        'own Order of Bishamon with its own, and they are not subordinate to one '
-        'another.',
-        'Benshi is very clear about that last point whenever it is raised.',
+        'The Outrage Over Outrageousness is his, and so is Promoting the Tao, and the '
+        'two titles together tell you everything about the man and something '
+        'unflattering about the order that promoted him.',
+        'A Grand Abbot sits in a domain capital, and every domain in Lion lands has its '
+        'own Order of Bishamon with its own. Benshi is very clear about that whenever '
+        'the question is raised, and he raises it.',
         'Promoting the Tao sounds devotional. It is mostly administrative and it is '
-        'mostly about land.',
-        'An abbot who is good at arithmetic is more use to his order than one who is '
-        'good at doctrine. Benshi is both, which is why he is difficult.',
-        'The Outrage material is where he becomes interesting rather than merely senior.',
+        'mostly about land, and the title has been doing excellent work for a very long '
+        'time.',
+        'An abbot who is good at arithmetic is worth more to his order than one who is '
+        'good at doctrine. Benshi is both, which is exactly why he is difficult.',
+        'The Outrage material is where he stops being merely senior and becomes '
+        'interesting - and it is the section nobody has ever asked me to summarize.',
         'He endows, he arbitrates, and he remembers. We have that last one in common '
         'and it has not made us friends.',
-        'Ask him about the Tao and clear your afternoon.',
+        'Between us, he has the same job I do and a temple to do it in. I raise this '
+        'with nobody and I have raised it with you.',
+        'Ask him about the Tao and clear your afternoon. Ask me about the Tao and clear '
+        'considerably less; I have learned to be brief because nobody stayed.',
         attach(
-            'The Grand Abbot at his actual work.',
+            'The Grand Abbot at his actual work, which is property.',
             INNER_VISION,
         ),
         attach(
-            'And this is a dispute between two of them.',
+            'A dispute between two of them, neither subordinate to the other, both certain.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
     'akodo_toturi': (
-        'Akodo Toturi. Daimyo of the Lion Clan, which is five hundred thousand samurai '
-        'and the largest clan in the Empire.',
-        'Every Lion vassal owes him three percent of gross land output. Two goes to '
-        'their Family daimyo, five to the Emperor.',
-        'That is three percent of everything the Lion grow. Consider the size of that '
-        'and then consider that it is the smallest of his problems.',
-        'The Matsu alone are two hundred and seventy-five thousand - roughly twice the '
-        'next largest family in the Empire. He administers that.',
+        'Daimyo of the Lion Clan: five hundred thousand samurai, the largest clan in '
+        'the Empire. One man at the top of the biggest thing there is, and the entry '
+        'still fits on a page.',
+        'Every Lion vassal owes him three percent of gross land output - two to their '
+        'Family daimyo, five to the Emperor. Three percent of everything the Lion grow, '
+        'and it is comfortably the smallest of his problems.',
+        'The Matsu alone are two hundred and seventy-five thousand, roughly twice the '
+        'next largest family in the Empire. He administers that. I administer a channel '
+        'and I would like some acknowledgment of the comparison.',
         'The Lion and the Crane keep fighting, and even the Emperor rarely orders a '
-        'clan to stop, lest the clan conclude he has taken a side.',
-        'So Toturi is left holding a war the Emperor would prefer did not happen and '
-        'cannot say so.',
+        'clan to stop, lest the clan conclude he has taken a side. So the war continues '
+        'for want of anybody able to say so out loud.',
+        'Which leaves Toturi holding a war the Emperor would prefer did not happen and '
+        'cannot admit to preferring. Everybody involved is being extremely correct.',
         'A daimyo of the ruling family of a clan carries two ranks above the listed '
-        'rank of his post. He does not need them.',
-        'Ask me about the Lion and I will end up talking about him whether or not you wanted that.',
+        'rank of his post. He does not need them, which is generally when a rank gets '
+        'granted.',
+        'The character sheet could work out three percent of the Lion harvest faster '
+        'than I can. He could not tell you why the number is three, and that is the '
+        'entire division of labor between us.',
+        'Ask about the Lion and I end up talking about him whether or not you wanted '
+        'that, which is roughly what it is like to work for the Lion.',
         attach(
             'The Lion, in the aggregate.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'And this is what administering it actually looks like.',
+            'What administering it actually looks like, on a day nothing is on fire.',
             CATS,
         ),
     ),
     'moto_khuyag': (
-        'Moto Khuyag. He builds death detectors, and yes, that is the correct term, '
-        'and no, I do not like writing it down either.',
-        'Rokugani by birth. Born southeast of Kyuden Otaku, moved there, then to '
-        'Kyuden Shinjo. His master is Moto Khunbish, spiritual advisor to Gaheris.',
-        'Khunbish was a farrier - had made knives before that - and impressed Gaheris '
-        'philosophically while shoeing his horses. His Rokugani name was Seito.',
-        'The detection is tied to a geographic location. An accurate map is made, the '
-        'blood of horses is spilled at landmarks, and bloodied earth is returned to '
+        'He builds death detectors. That is the correct term, I did not invent it, and '
+        'I do not enjoy writing it down any more than you enjoy reading it.',
+        'Rokugani by birth: born southeast of Kyuden Otaku, moved there, then to Kyuden '
+        'Shinjo. His master is Moto Khunbish, spiritual advisor to Gaheris - a lineage '
+        'of philosophers that has arrived, in one generation, at a device.',
+        'Khunbish was a farrier and had made knives before that, and impressed Gaheris '
+        'philosophically while shoeing his horses. His Rokugani name was Seito. Careers '
+        'have started from worse and mine started from nothing.',
+        'The detection is tied to a geographic location: an accurate map is made, the '
+        'blood of horses is spilled at landmarks, and the bloodied earth is returned to '
         'Shiro Moto.',
         'Which means a detector works for one region only. He cannot use the Moto one '
-        'in Uru lands, where Gaheris is actually fighting.',
+        'in Uru lands, where Gaheris is actually fighting. An instrument perfectly '
+        'calibrated to somewhere else - I have sympathized with objects before.',
         'The intended use is to scatter forces, see where large-scale violent death is '
-        'predicted, and concentrate there.',
-        'Akodo Natsuki pointed out - convincingly - that this only guarantees death, '
-        'and that such deadly ground may produce defeat rather than victory.',
-        'Khuyag replied that strategy is not his area. That is the most honest thing '
-        'anybody says in this entire section.',
+        'predicted, and concentrate there. Strategy by weather forecast.',
+        'Akodo Natsuki pointed out, convincingly, that this only guarantees death, and '
+        'that such deadly ground may as easily produce your defeat as your victory. '
+        'Nobody has answered her.',
+        'Khuyag replied that strategy is not his area. That is the most honest sentence '
+        'in this entire section and I have never been able to use it myself.',
         attach(
-            'The instrument. It requires horses and a map and is not subtle.',
+            'The instrument. It requires horses and a map and it is not subtle.',
             RAINY_MOON,
         ),
         attach(
-            'And this is what it predicts.',
+            'What it predicts. It does not say whose.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
     'kuni_yori': (
-        'Kuni Yori. A Kuni, which means a Crab, which means witch-hunting, which means '
-        'the conversation is already unpleasant.',
-        'The Kuni are fifteen thousand samurai in a single domain. Small, and nobody '
-        'treats them as small.',
-        'They study what they hunt. That is the whole controversy and it has never been resolved.',
-        'A Kuni who knows too much about maho is doing their job. Right up until they are not.',
+        'A Kuni, which means a Crab, which means witch-hunting, which means this '
+        'conversation was unpleasant before either of us arrived at it.',
+        'The Kuni are fifteen thousand samurai in a single domain. Small - and nobody '
+        'anywhere treats them as small, which is a form of respect I would settle for.',
+        'They study what they hunt. That is the entire controversy, it has never been '
+        'resolved, and both sides of it are correct, which is why it will not resolve.',
+        'A Kuni who knows too much about maho is doing his job. Right up until the '
+        'afternoon he is not, and nobody has ever identified the afternoon in advance.',
         'He is in the record twelve times and I would rather he were in it fewer.',
-        'Ask a Kuni about the Taint and then do not sleep well.',
-        'The Crab do not discuss it in open channels, and neither will I.',
-        'Buy him a drink. Do not ask twice.',
+        'A man whose profession is knowing the thing that ruins the knower. I keep '
+        'records for a living and I would like it noted that I have thought about this '
+        'more than is good for me.',
+        'The Crab will not discuss it in an open channel, and I have adopted their '
+        'position, largely because it is the only one available.',
+        'Twelve entries, and the interesting question in all twelve is not what he '
+        'found. It is what he has stopped mentioning.',
         attach(
             "The Kuni's working conditions.",
             KIDOMARU_TENGU,
         ),
         attach(
-            'And this is what studying it does over time.',
+            'What studying it does, over time, to somebody who was fine at the start.',
             FOX_WOMAN,
         ),
     ),
     'kuni_isamu': (
-        'Kuni Isamu at the Forgotten Tomb. Yes. That entry.',
-        'The Forgotten Tomb is the recurring example of a between place - somewhere '
-        'coexistent between two realms.',
-        'Kitsuki Fu was awarded the Order of the Precious Crown for her service there, '
+        'Kuni Isamu at the Forgotten Tomb. That entry. I have read it more often than '
+        'the work required and I could not tell you why.',
+        'The Forgotten Tomb is the recurring example of a between place, somewhere '
+        'coexistent between two realms, and it recurs because things keep happening '
+        'there that nobody has a better heading for.',
+        'Kitsuki Fu was awarded the Order of the Precious Crown for her service there - '
         'the highest commendation available below daimyo.',
-        'Read those two facts together and you will understand that something went '
-        'badly and someone behaved extremely well.',
-        'You do not find a between place. You are in one, and then you notice. That is '
-        'what happened at the Tomb.',
-        'A Kuni in a between place is either the best or the worst person to have '
-        'brought. Both readings are in the record.',
-        'It is called Forgotten. Somebody forgot it deliberately.',
-        'Ask me about the commendation. It is the part with a clean answer.',
+        'Read the two facts together: a Kuni went in, and somebody else came out with '
+        'the highest honor short of a daimyoship. Something went badly and somebody '
+        'behaved extremely well, and the record is silent on the middle.',
+        'A Kuni in a between place is either the best person to have brought or the '
+        'worst. Both readings are in my record, filed adjacently, unresolved, forever.',
+        'It is called Forgotten. Somebody forgot it deliberately, which is a thing you '
+        'cannot do by accident and a thing I am constitutionally incapable of.',
+        'The commendation is the part of this with a clean answer, and the clean answer '
+        'is the part nobody asks for.',
+        'A place that is not on the map, an event that is not in the account, and a '
+        'medal that is in both. Guess which of the three I get asked about.',
         attach(
-            'The moment of noticing. It is always this quiet.',
+            'The Tomb, in the only depiction anyone has been willing to make.',
             INNER_VISION,
         ),
         attach(
-            'And this is what was in there.',
+            'What was in there, according to a report I have read and would rather not summarize.',
             KIDOMARU_TENGU,
         ),
     ),
     # ---- relics and swords --------------------------------------------------
     'famous_swords': (
-        'Famous swords. Fine. There are nine in the record and every one of them has '
-        'cost somebody a province, a name, or a life.',
-        "Amatsukami no Ken, the Heavenly Sovereign's Sword - ancestral blade of the "
-        'Damasu, carried by their daimyo Akodo no Damasu Chiho.',
-        'Shitsuten, Lost Heaven. The final sword of Daidoji Masamune, who poured all '
-        'his hatred of the Yasuki into it. Cursed, and it works.',
-        'Doji Masayo turned up at the Toshi Ranbo tournament with Shitsuten and killed '
-        'the man expected to win. Tango province changed hands over it.',
-        'Kasai Tsume, Fire Claw - ancestral sword of the Tsume. There are two hundred '
-        'and eighty-four domains and most ancestral swords are not worth naming.',
-        "Ohari, Big Needle - the Riori lineage's, and the familial sword of the "
-        'governor of Owari, who has always been a Riori.',
-        'Seishinsho, Spirit Whisper - origin unknown, gifted to Akodo Biko by a hermit '
-        'who said it had been blessed. Nobody has verified the hermit.',
+        'There are nine in the record, and every one of them has cost somebody a '
+        'province, a name, or a life. Nine objects with a body count and a filing '
+        'system, and I maintain the second half.',
+        "Amatsukami no Ken, the Heavenly Sovereign's Sword: ancestral blade of the "
+        'Damasu, carried by their daimyo Akodo no Damasu Chiho. An ancestral sword is '
+        'inventory that has been given a personality.',
+        'Shitsuten, Lost Heaven: the final sword of Daidoji Masamune, who poured all '
+        'his hatred of the Yasuki into it. Cursed, and it works, which is the '
+        'inconvenient half of that sentence.',
+        'Doji Masayo took Shitsuten to the Toshi Ranbo tournament and killed the man '
+        "expected to win. Tango province changed hands over it. A smith's grudge "
+        'redrew a border, and the smith was not present.',
+        'Kasai Tsume, Fire Claw, is the ancestral sword of the Tsume. There are two '
+        'hundred and eighty-four domains and most ancestral swords are not worth '
+        'naming, which the domains holding them do not accept.',
+        'Ohari, Big Needle, belongs to the Riori lineage and is the familial sword of '
+        'the governor of Owari, who has always been a Riori. Sometimes the record is '
+        'this tidy and it makes me suspicious.',
+        'Seishinsho, Spirit Whisper: origin unknown, gifted to Akodo Biko by a hermit '
+        'who said it had been blessed. Nobody has verified the hermit. Nobody has ever '
+        'verified any hermit.',
         "Kishin no Ketsui, Resolve of the Fierce God, is tied to Lord Akodo's one "
-        'stated regret. Akuzuki, Wicked Moon, has a saya so fine a Tsume said the '
-        'sword was too good for its wielder.',
+        'stated regret. Akuzuki, Wicked Moon, has a saya so fine that a Tsume said the '
+        'sword was too good for its wielder - which is the cruellest compliment I hold.',
         attach(
             'Seiginryu came off Togashi Mountain by the eastern paths. Tamashikari is '
             'only the fifth most famous Scorpion blade. This is what any of them '
@@ -213,170 +277,226 @@ PEOPLE: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'And this is what a famous sword is for, most of the time. Being owned.',
+            'What a famous sword is for, most of the time: being owned, described, and '
+            'inventoried by somebody like me.',
             INNER_VISION,
         ),
     ),
     'temple_relics': (
-        'Temple relics. Half of them are genuine, half are supposedly cursed, and the '
-        'distinction is decided by a committee.',
+        'Half of them are genuine, half are supposedly cursed, and which half a given '
+        'object lands in is decided by a committee. I have the minutes of some of the '
+        'committees and they do not improve the experience.',
         'A relic is an object with a story attached firmly enough that the story '
-        'travels with it. That is the whole definition.',
+        'travels with it. That is the entire definition, and it means my job and the '
+        'relic trade are the same job with different overheads.',
         'Relic seekers are a real category of person and I have entries on several. '
-        'None of the entries end well.',
-        'A temple that holds a famous relic holds an income. Pilgrims are an economy.',
-        'The Candle of Tears technically refers to the candle-HOLDER. Any candle put '
-        'in it dribbles wax in two distinct trails.',
-        'Which is either a miracle or a very well-made candle-holder, and the Ministry '
-        'of Rites has never been asked to rule.',
+        'None of the entries end well, and all of them end at length.',
+        'A temple that holds a famous relic holds an income. Pilgrims are an economy '
+        'and the relic is the shopfront, and every abbot in the Empire knows it and '
+        'none will say it.',
+        'The Candle of Tears technically refers to the candle-HOLDER, and any candle '
+        'put in it dribbles wax in two distinct trails. Either a miracle or excellent '
+        'metalwork, and the Ministry of Rites has never been asked to rule.',
         "The Armor of Fool's Regret is supposedly cursed and is currently with Ikoma "
-        'Akaho of the 1st Legion, who seems fine.',
-        'Ask whether a relic is real and you have asked the wrong question. Ask who '
-        'benefits from it being real.',
+        'Akaho of the 1st Legion, who seems entirely fine, which is the worst possible '
+        'outcome for the story and the best for Akaho.',
+        'Asking whether a relic is real is the wrong question. The right question is '
+        'who benefits from it being real, and I keep that column, and nobody reads that '
+        'column.',
+        'Every relic in my record is an argument that somebody won a long time ago and '
+        'nobody has re-opened. I find that restful and I am aware that says something.',
         attach(
-            'A relic doing what relics do. Attracting an audience.',
+            'A relic doing what relics do: attracting an audience and an income.',
             CATS,
         ),
         attach(
-            'And this is the seeker, on the way back.',
+            'The seeker, on the way back, having found it or not - the pose is '
+            'identical either way.',
             RAINY_MOON,
         ),
     ),
     'armor_of_fools_regret': (
-        "The Armor of Fool's Regret. Supposedly cursed. That word is carrying the entire entry.",
+        "The Armor of Fool's Regret. Supposedly cursed. That word is carrying the "
+        'entire entry and it has been carrying it for a century without visible strain.',
         'It is currently in the possession of Ikoma Akaho, a platoon lieutenant in the '
-        '6th battalion of the 1st Imperial Legion.',
-        'He is, as far as the record shows, entirely well, which is inconvenient for the story.',
-        'A supposedly-cursed item is more useful to a campaign than a cursed one. The '
-        'ambiguity does the work.',
-        "Somebody named it Fool's Regret. Consider that somebody had to choose that "
-        'name and had a reason.',
-        'The 1st Legion guards the Gateway. It is a long posting with a lot of time to '
-        'think about your armor.',
+        '6th battalion of the 1st Imperial Legion, which is a very ordinary posting for '
+        'a very theatrical object.',
+        'He is, as far as the record shows, entirely well. Inconvenient for the story, '
+        'excellent for Akaho, and mildly disappointing to everyone who asks me about it.',
+        'A supposedly-cursed item is worth far more to a campaign than a cursed one. '
+        'The ambiguity does all the work and requires no upkeep, which is more than can '
+        'be said for me.',
+        "Somebody named it Fool's Regret. Somebody chose that name, deliberately, "
+        'having thought about it, and then declined to explain, and I have to live '
+        'inside that decision.',
+        'The 1st Legion guards the Gateway, which is a long posting with a great deal '
+        'of time in which to think about your armor. I would not put the curse first on '
+        'the list of hazards there.',
         'Every piece of famous armor in this Empire is famous because of what happened '
-        'to the man inside it.',
-        'Ask me whether it is really cursed and I will ask you what would change.',
+        'to the man inside it. The armor is a witness that got the credit.',
+        'People ask whether it is really cursed. Nothing about the answer would change '
+        'anything anybody does, which is true of a surprising amount of theology.',
         attach(
-            "The armor's previous owner, allegedly.",
+            "The armor's previous owner, allegedly, in an account I would not lean on.",
             MUSASHI_BAT,
         ),
         attach(
-            'And this is Akaho, being entirely fine.',
+            'Akaho, being entirely fine, at length, in defiance of a good story.',
             SAKE_SAMURAI,
         ),
     ),
     'candle_of_tears': (
-        'The Candle of Tears. And it is not the candle. It is the candle-HOLDER, which '
-        'nobody ever gets right.',
+        'It is not the candle. It is the candle-HOLDER, which nobody ever gets right, '
+        'and which I have corrected so many times that the correction has become the '
+        'entry.',
         'Any candle placed in it drips wax in two distinct trails, one down each side. '
-        'Like tears. Hence the name, which somebody clearly enjoyed choosing.',
-        'It does this reliably. That is what makes it a relic rather than an anecdote.',
-        'Whether that is divine or merely well-cast has never been formally tested.',
+        'Like tears. Hence the name, which somebody clearly enjoyed choosing rather '
+        'more than I enjoy explaining.',
+        'It does this reliably. Reliability is what makes it a relic rather than an '
+        'anecdote, and reliability is the only virtue I have ever been praised for.',
+        'Whether that is divine or merely well-cast has never been formally tested, and '
+        'the people best placed to test it have the least interest in the answer.',
         'The Ministry of Rites decides what is doctrine and what is heresy. Nobody has '
-        'asked them about a candle-holder and nobody should.',
+        'asked them about a candle-holder, and nobody should, and I will be the one '
+        'writing up the ruling if anybody does.',
         'It is the most modest object in the relic material and the one I find hardest '
-        'to explain away.',
-        'A thing that weeps on schedule is either a miracle or good metalwork, and the '
-        'Empire has never needed to choose.',
-        'Put a candle in it and watch. That is the whole ritual.',
+        'to explain away, and I have tried, in the margin, twice.',
+        'A thing that weeps on schedule is either a miracle or good metalwork, and this '
+        'Empire has never once been obliged to choose between those two.',
+        'Put a candle in it and watch. That is the whole ritual. No vow, no offering, '
+        'no attendant fee - which may be why it has never become fashionable.',
         attach(
-            'Two trails, every time, for anyone who tries it.',
+            'Two trails, every time, for anybody who tries it.',
             RAINY_MOON,
         ),
         attach(
-            'And this is the audience it draws.',
+            'The audience it draws, which is the actual miracle.',
             CATS,
         ),
     ),
     'yamaoroshi': (
-        'Yamaoroshi. A famous sword with a backstory, and the backstory is the reason '
-        'anybody remembers the blade.',
-        'The name means the wind that comes down off a mountain. Cold, sudden, and from above.',
-        'It is in the touched-by-the-supernatural material, alongside Otaku Mirai and '
-        'Doji no Tsume Toyohiro and Kakita Korihime.',
-        'Which is company that tells you what kind of sword it is without my having to say so.',
-        'Every famous sword in this record is famous for what its owner did, not for '
-        'how it was made. Two of the nine are exceptions and this is not one.',
-        'A named wind and a named blade. Rokugan does like that construction.',
-        'It is not in the list of nine famous swords. It is its own thing and it earned that.',
-        'Ask for the backstory. That is genuinely the good part.',
+        'A famous sword with a backstory, and the backstory is the only reason anybody '
+        'remembers the blade. That is true of eight of the nine and nobody likes '
+        'hearing it about their own.',
+        'The name means the wind that comes down off a mountain: cold, sudden, and from '
+        'above. Somebody named a sword after a downdraft and it worked, which is '
+        'irritating to those of us who labor over a heading.',
+        'It sits in the touched-by-the-supernatural material, alongside Otaku Mirai, '
+        'Doji no Tsume Toyohiro and Kakita Korihime - company that tells you what kind '
+        'of sword it is without my having to commit to anything.',
+        'Every famous sword in this record is famous for what its owner did rather than '
+        'for how it was made. Two of the nine are exceptions. This is not one and it '
+        'has never minded.',
+        'A named wind and a named blade. Rokugan does like that construction, and '
+        'having catalogued four hundred sessions of it, I can confirm it never gets old '
+        'for anybody except me.',
+        'It is not in the list of nine, it is its own thing, and it earned that, which '
+        'is more than most items in my index have managed.',
+        'The backstory is genuinely the good part, and it is the part that gets cut '
+        'when somebody repeats this to somebody else.',
+        'A sword that is remembered for a story, in a record kept by somebody who is '
+        'remembered for nothing. I raise it in a professional spirit.',
         attach(
-            'The wind the sword is named for.',
+            'The wind the sword is named for. Cold, sudden, and from above.',
             GREAT_WAVE,
         ),
         attach(
-            'And this is what it was used for.',
+            'What it was actually used for, which the name does not prepare you for.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
     # ---- geography ----------------------------------------------------------
     'kaiu_wall': (
-        'The Kaiu Wall. It has held for a thousand years. That is not reassurance - '
-        'that is a thousand years of people holding it.',
-        'The 3rd Imperial Legion is there, and most of the remaining twenty-odd '
-        'legions are there with it.',
+        'It has held for a thousand years, which is not reassurance. That is a thousand '
+        'years of people holding it, in shifts, and somebody has kept the roster the '
+        'entire time.',
+        'The 3rd Imperial Legion is there, and most of the remaining twenty-odd legions '
+        'are there with it. The Empire has decided, with its budget, what it is '
+        'actually afraid of.',
         'Every legionnaire is a samurai. Consider what twenty legions of samurai '
-        'standing in one place costs the Empire annually.',
-        'The Imperial Ministry of Works contributes significantly to its upkeep, on '
-        'top of everything the Crab put in.',
+        'standing in one place costs annually, and then consider that nobody has ever '
+        'asked me for that figure, which I hold.',
+        'The Imperial Ministry of Works contributes significantly to its upkeep on top '
+        'of everything the Crab put in, which makes the Wall the one thing in the '
+        'Empire nobody has managed to make somebody else pay for.',
         'The Kaiu are twenty-five thousand samurai in a single domain and the Wall is '
-        'their entire reason.',
-        'The Crab do not discuss what is on the other side in open channels. Neither do I.',
+        'their entire reason. An entire family that is a maintenance contract.',
         'It is the single largest standing commitment in the Empire and most of the '
-        'Empire never thinks about it.',
-        'Buy a Crab a drink and do not ask twice.',
+        'Empire never thinks about it, which is precisely the outcome the Crab have '
+        'been paying for.',
+        'The Crab will not discuss what is on the other side, and after four hundred '
+        'sessions of not being told, I have stopped experiencing that as rudeness.',
+        'A thousand years and no ceremony for it. The Empire will hold a festival for a '
+        'good plum harvest. I have checked and I have opinions.',
         attach(
             'What the Wall is for.',
             KIDOMARU_TENGU,
         ),
         attach(
-            'And this is what it feels like to be posted there.',
+            'What being posted there feels like on the other three hundred and sixty days.',
             RAINY_MOON,
         ),
     ),
     'isawa_woodlands': (
-        'The Isawa Woodlands. People walk in somewhere else and walk out here, which '
-        'is the whole entry.',
-        'Someone lost in the Shinomen Forest a hundred miles from the Gateway to the '
-        'Burning Sands came out of these woods. That is not a story. It is an entry.',
+        'People walk in somewhere else and walk out here. That is the whole entry, it '
+        'is four words longer than I would like, and I cannot shorten it further '
+        'without losing the part that matters.',
+        'Somebody lost in the Shinomen Forest a hundred miles from the Gateway to the '
+        'Burning Sands came out of these woods. Not a story. An entry, with a date, and '
+        'a witness who was believed.',
         'Which makes this a between place, or adjacent to one, and the Empire files it '
-        'under forestry.',
-        'Phoenix land, which is fitting - a clan whose founder practiced maho having a '
-        'wood that does not respect distance.',
-        'You do not find a between place. You are in one, and then you notice.',
-        'A hundred miles. Write that number down before you decide this is folklore.',
+        'under forestry. I did not choose the heading and I have raised it twice.',
+        'Phoenix land, which is fitting: a clan whose founder practiced maho, holding a '
+        'wood that declines to respect distance. Nobody at the Council has been willing '
+        'to connect those two sentences in front of me.',
+        'A hundred miles. Write the number down before you decide this is folklore, '
+        'because the number is what stops it being folklore.',
         'The Isawa are ruled by the Council of Elemental Masters rather than a daimyo. '
-        'Ask them about the woods and see how the meeting goes.',
-        'Go in with a map and a witness. The map will not help.',
+        'Ask a committee of elemental masters about an inexplicable wood and observe '
+        'how a meeting can last a season.',
+        'Go in with a map and a witness. The map will not help. The witness is the '
+        'point, and the witness is what my record is made of.',
+        'It is the only geography in my record that has, in a sense, edited itself. '
+        'Professionally, I find that intolerable.',
         attach(
-            'The moment of noticing. It is always this quiet.',
+            'The woods, and the reason nobody surveys them twice.',
             INNER_VISION,
         ),
         attach(
-            'And this is what people report seeing.',
+            'What people report seeing, consistently enough that I have had to keep a '
+            'heading for it.',
             KIDOMARU_TENGU,
         ),
     ),
     'drowned_merchant_river': (
-        'The Drowned Merchant River. Pirates. Yes. On a river. People find that '
-        'surprising and rivers are exactly where piracy works.',
-        'A river is a road you cannot fence, patrol cheaply, or divert around.',
-        'It runs through the Toshi Ranbo material, alongside the irrigation disputes '
-        'and the bandit hunting.',
-        'The name is doing a lot of work and nobody has ever asked me which merchant.',
+        'Pirates. On a river. People find that surprising, and rivers are precisely '
+        'where piracy works, which anyone would know if they read the revenue material '
+        'instead of the songs.',
+        'A river is a road you cannot fence, cannot patrol cheaply, and cannot divert '
+        'around. Three properties, all of them advantages to somebody other than the '
+        'magistrate.',
+        'It runs through the Toshi Ranbo material alongside the irrigation disputes and '
+        'the bandit hunting - three problems, one county, and one very tired magistrate '
+        'whose correspondence I hold.',
+        'The name is doing a great deal of work and nobody has ever asked me which merchant.',
         'Tariffs are collected at city gates, not on the water. Consider what that '
-        'implies about who uses the river and why.',
-        'Point-of-sale, not point-of-transit. A cargo that never enters a walled city never pays.',
-        'Which makes the whole river a structural invitation, and the Empire has '
-        'noticed and done very little.',
+        'implies about who uses the river and why, and then consider that the '
+        'implication has been sitting in plain sight for centuries.',
+        'Point-of-sale, not point-of-transit: a cargo that never enters a walled city '
+        'never pays. That is not a loophole somebody found. That is the design, '
+        'working.',
+        'Which makes the entire river a structural invitation, and the Empire has '
+        'noticed, and has done very little, and has asked me to keep the file current '
+        'regardless.',
         'River piracy is a Ministry of Justice problem that behaves like a Ministry of '
-        'Revenue problem. Nobody wants it.',
+        'Revenue problem, so neither ministry wants it and both of them write to me '
+        'about it.',
         attach(
-            'The river, and its principal advantage.',
+            'The river, and its principal advantage over every road in the Empire.',
             GREAT_WAVE,
         ),
         attach(
-            'And this is enforcement, such as it is.',
+            'Enforcement, such as it is, arriving after the cargo has been sold.',
             ARCHERS,
         ),
     ),
