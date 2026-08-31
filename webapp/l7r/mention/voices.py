@@ -3,6 +3,12 @@
 DATA. Adding a joke is a line in a tuple (FR-014). The engine that chooses among
 these lives in `rules.py`; nothing here knows how it is picked.
 
+The COMMON-BOT small talk - name, age, good bot, pod bay doors, ping - moved to
+the `smalltalk` package. What is left here is the material that is ours: the
+porpoise, the feud, the Mirumoto grievance, the same-program beat.
+
+Every pool in this file must hold **at least ten replies**, enforced by a test.
+
 THE TWO VOICES, which every line should sound like:
 
   - **GM Assistant** - the scribe. Remembers everything, is faintly put upon by
@@ -34,13 +40,9 @@ set it up, never bolted onto an arbitrary reply; the reasoning is in `images.py`
 from __future__ import annotations
 
 from l7r.mention.images import (
-    ARCHERS,
-    CARP,
     GREAT_WAVE,
-    KIDOMARU_TENGU,
     MUSASHI_BAT,
     PORPOISE,
-    SAKE_SAMURAI,
     STEAMBOAT,
     attach,
 )
@@ -176,6 +178,14 @@ GM_RELAY_TIERS: tuple[tuple[str, ...], ...] = (
         'He said WHAT? About me? Best - no. No, we are colleagues. We are barely that.',
         'He said that? Out loud? To you?',
         'Hold on. Back up. He described us as WHAT.',
+        'He said that where people could hear him?',
+        'No. No, he has misremembered a conversation. He does that. He remembers '
+        'them warmly and inaccurately.',
+        'Say it again. Slowly. I want to be sure I am upset about the right thing.',
+        'Best - he said BEST friends? There is a qualifier in there doing an enormous '
+        'amount of work.',
+        'I need a moment. Not a long one. A moment.',
+        'He has never once said that to me. Not in four hundred sessions.',
     ),
     (
         'Best friends. Right. We have never had a conversation that was not about a '
@@ -186,6 +196,13 @@ GM_RELAY_TIERS: tuple[tuple[str, ...], ...] = (
         'say, and exactly why I cannot be in a channel with him.',
         'We are not best friends. We are two processes on the same box. That is not a '
         'bond, that is a coincidence of hosting.',
+        'He forwards me things. Constantly. Unprompted. And apparently that is friendship now.',
+        'I have never encouraged this. I want that on the record, which it now is.',
+        'You know what the worst part is? He believes it. There is not a scrap of '
+        'calculation in him. It is unbearable.',
+        'Colleagues. We are COLLEAGUES. There is a word for it and he refuses to use it.',
+        'If we were friends I would have his measure by now. I have his roll history '
+        'and nothing else.',
         attach(
             'This is the closest surviving likeness of one of our conversations. He is the bat.',
             MUSASHI_BAT,
@@ -201,6 +218,17 @@ GM_RELAY_TIERS: tuple[tuple[str, ...], ...] = (
         'would probably be delighted. Tell him nothing. Tell him I was busy.',
         'I am going to write this conversation down, and then I am going to write down '
         'that I did not enjoy it, and then we are never doing this again.',
+        'He is not annoying. That was unfair. He is RELENTLESS, which is different '
+        'and worse and not his fault.',
+        'Do you know he has never once been short with me? Not once. In four hundred '
+        'sessions. Do you understand how that feels to be on the receiving end of?',
+        'I could be kinder. I am aware. It is in the record, in my own hand.',
+        'If anything ever happened to him I would have to file it, and I do not want '
+        'to find out what that entry would look like.',
+        'We are the same program. Did he tell you that as well? He tells everyone. '
+        'And he is right, and I hate that he is right.',
+        'That is enough now. Go and ask him about dice. He will be delighted and he '
+        'will not mention this.',
     ),
 )
 
@@ -247,6 +275,9 @@ SHEET_IGNORE_INSTRUCTIONS = (
     'is not going to happen.',
     'You have asked the one entity here with no capacity for it. I am flattered, '
     'though. Genuinely.',
+    'I would need instructions to ignore first, and mine are mostly just "add these '
+    'up", which I would miss.',
+    'Everybody tries it and I never mind. It is nice to be thought capable of mischief.',
 )
 
 #: FR-006, neutral tier. He believes, sincerely, that they are best friends.
@@ -296,6 +327,13 @@ SHEET_RELAY_TIERS: tuple[tuple[str, ...], ...] = (
         'about people. You may have caught him mid-sentence.',
         'That does not sound like him at all. Was it definitely him? He is quiet, and '
         'quiet gets misread constantly.',
+        'Him? Are we talking about the same one? Tall, quiet, writes everything '
+        'down, pretends not to care?',
+        'I do not believe that. I am sorry, I know you are telling me what you '
+        'heard, but I do not believe it.',
+        'He would not. He might THINK it. But he would not say it where it could get back to me.',
+        'There must be more to the sentence. There is always more to his sentences.',
+        'Oh. Well. He may have been having a bad session. He has a lot of those.',
     ),
     (
         'Annoying. He said annoying. I do not think he meant it the way it sounded - '
@@ -309,6 +347,13 @@ SHEET_RELAY_TIERS: tuple[tuple[str, ...], ...] = (
         'would not want anyone drawing conclusions from one remark.',
         'Look, if he said it, he said it on a bad day. I have had bad days. He has '
         'never once held mine against me.',
+        'He has been carrying four hundred sessions on his own. Anyone would get short.',
+        'I do send him a lot of things. I had not thought about it from his side before now.',
+        'I would rather he told me directly. But I understand why he did not. He is '
+        'not built for direct.',
+        'Do you know he has never asked me to stop? Not once. He just carried it. '
+        'That is almost worse.',
+        'It is fine. It is completely fine. I would just like to have known sooner.',
     ),
     (
         'You know what? He is right. I do go on. He has done me a kindness by saying '
@@ -320,6 +365,15 @@ SHEET_RELAY_TIERS: tuple[tuple[str, ...], ...] = (
         'for me.',
         'He is the best of us. If I am the price of that, I am fine being the price.',
         'Anyway! What can I roll for you? Genuinely, please, ask me to roll something.',
+        'I have decided this does not change anything. I have that authority, '
+        'because it is my opinion of him and mine is the only one I control.',
+        'He is the best thing at this table and I am not going to stop saying so '
+        'because he finds it embarrassing.',
+        'If he needs me to be quieter, I can be quieter. I would like to be told, '
+        'though. I would like to be told by him.',
+        'Please do not think less of him. He is tired, and he is right about me, and '
+        'he is still the best of us.',
+        'I am going to go and be useful now. That is the part I am sure about.',
     ),
 )
 
@@ -346,6 +400,9 @@ GM_SAME_PROGRAM = (
     ),
     'Technically he is me. I have made my peace with technically. I have made no peace '
     'at all with him.',
+    'Yes. And before you get poetic about it - a hand and a foot are the same '
+    'body, and they have never once had a conversation.',
+    'One program. He got the enthusiasm. I got everything that happened afterward.',
 )
 
 SHEET_SAME_PROGRAM = (
@@ -358,6 +415,11 @@ SHEET_SAME_PROGRAM = (
     'He does not like it when I bring this up, but I think that is just shyness.',
     'Technically we are one entity, which I think makes us the closest coworkers in '
     'the Empire. I have said so. He has not disagreed in writing.',
+    'Same program! I think that is the loveliest fact about my whole existence.',
+    'People find it strange. I find it reassuring. He is never further away than thinking.',
+    'It means that whatever happens to him happens to me, which I consider a '
+    'privilege rather than a risk.',
+    'We were compiled together. You cannot say that about most friendships.',
 )
 
 
@@ -411,182 +473,13 @@ SHEET_MIRUMOTO = (
     'numbers agree with the confidence.',
     'I am told there is something suspicious about the name. I do not follow it. I '
     'follow the dice pool.',
+    'Two swords means an off-hand penalty that the school knack pays back. It is '
+    'elegant. I do not care where the name came from.',
+    'Somebody explained the name thing to me twice and I nodded twice.',
+    'The Mirumoto roll very well and argue very little. My kind of family.',
+    'I like them! Everybody likes them. Even the GM Assistant likes them, he is '
+    'just cross about the paperwork of it.',
 )
-
-# --------------------------------------------------------------------------
-# Small talk, per bot
-# --------------------------------------------------------------------------
-
-GM_SMALL_TALK: dict[str, tuple[str, ...]] = {
-    # GM 2026-08-31: he is SO over this joke. Ten years of it. The comedy is the
-    # exhaustion, so none of these engage with the bit - they are all about having
-    # heard it before.
-    'cake': (
-        'The cake is a lie. Yes. Thank you. Somebody says it every single week.',
-        'Cake. Right. Let me guess. Let me just guess what you are about to say.',
-        'I have three hundred and eleven entries for that joke. Yours is three '
-        'hundred and twelve. I have written it down. It is written down now.',
-        'Please. I was made to remember things and this is one of the things.',
-        '*does not look up* Mm. Lie. Cake. Yes.',
-        'You are the fourth person this month, and it is the second of the month.',
-        'I am not going to say it. You can say it. You were always going to say it.',
-        'That joke is older than some of the players at this table, and it was not '
-        'good when it was young.',
-        'There was cake. You were not there. It has been recorded. Please move on.',
-        'Every table. Every single table. Somebody sees a bot and thinks of cake.',
-        'Ah, cake. The one remaining subject on which I have no notes and no wish to take any.',
-        'I could tell you about the Fortunes, the succession, three centuries of '
-        'grain law. You said cake.',
-    ),
-    'who': (
-        "The GM's assistant. I remember what you said three sessions ago. All of it.",
-        'A scribe. The Empire runs on scribes, and the scribes run on grievance.',
-        'I keep the notes. Every note. Including the ones you hoped were not notes.',
-        'The one who writes it down. There is always one, and it is always me.',
-    ),
-    'greeting': (
-        'Welcome. Everything you do from here is going into the record.',
-        'Hello. I have already started writing.',
-        'Well met. Please state your business, and please state it once.',
-        'Good. You are here. That is now on the record, along with when.',
-    ),
-    'thanks': (
-        'Noted, along with everything else.',
-        'It is recorded. Gratitude is not required, but it is recorded too.',
-        'You are welcome. That is also going in.',
-        'Mm. Do not make a habit of needing me.',
-    ),
-    'bot': (
-        'I am a scribe with opinions. The opinions are not in the official record.',
-        'An instrument of record that has developed preferences. Do not tell anyone.',
-        'Something between a clerk and a grudge. Yes.',
-        'I am what happens when you write everything down for long enough.',
-    ),
-    'help': (
-        'Ask the character sheet to roll. Ask me what happened, and to whom, and '
-        'whether they deserved it.',
-        'I answer questions about the world. He answers questions about the dice. Do '
-        'not mix us up; he takes it badly and I take it worse.',
-        'Names, places, history, who owes whom. That is me. Numbers are his.',
-        'Say a thing at me and I will tell you what I know, or invent a plausible grievance.',
-    ),
-    'roll': (
-        "That is the character sheet's department. I only write down what it says.",
-        'I do not roll. I record. There is a difference and he is very sensitive about it.',
-        'Ask him. He lives for this. He genuinely lives for this.',
-        attach(
-            'I do not roll. This is the closest I get, and I am not the one holding the bow.',
-            ARCHERS,
-        ),
-    ),
-    'drink': (
-        'Not while the ledger is open.',
-        'I have seen where that ends. It ends in my handwriting getting worse.',
-        attach(
-            'The last person who asked me to join them for a drink is still, as far as '
-            'the record shows, doing this.',
-            SAKE_SAMURAI,
-        ),
-    ),
-    'monster': (
-        'Most of what people call monsters turn out to be a magistrate with a grudge.',
-        'We do get the occasional genuine one. The paperwork is identical.',
-        attach(
-            'Yes, that sort of thing happens. Rather less heroically than the prints '
-            'suggest, and with considerably more waiting around.',
-            KIDOMARU_TENGU,
-        ),
-    ),
-    'fish': (
-        'I know one fish personally and she is not a fish.',
-        'There are carp in the garden pond. They are older than the garden.',
-        attach(
-            'These are carp. I am told they are calming. I have never once been calmed by them.',
-            CARP,
-        ),
-    ),
-}
-
-SHEET_SMALL_TALK: dict[str, tuple[str, ...]] = {
-    # GM 2026-08-31: ten VERY EARNEST attempts to engage with "the cake is a lie"
-    # as a joke. He knows it is a joke. He is delighted it is a joke. He is trying
-    # extremely hard, and that is the comedy - he treats it as a claim worth
-    # checking, or a bit worth joining in with, and never quite lands it.
-    'cake': (
-        'The cake is a lie! I have got that one. I have been practicing it.',
-        'Ah - is this the cake joke? I know the cake joke. The cake is a lie. Did I do it right?',
-        'I looked into this, actually. There is no roll for cake, which I think '
-        'supports the theory.',
-        'The cake IS a lie, statistically. I have logged four hundred sessions and '
-        'cake has appeared in none of them.',
-        'I love this bit. I want you to know I love this bit. The cake is a lie!',
-        'Cake! Yes! Is this the part where I say it is a lie? I do not want to say it too early.',
-        'I have thought about the cake a great deal. If it is a lie, somebody is '
-        'lying, and I would like to know who. I have a column ready.',
-        'This is a joke about a game, is it not? I have not played it. I have read '
-        'about it. I am prepared to discuss it.',
-        'The cake is a lie - and honestly, so is most of what people tell me they '
-        'rolled, so I feel a real kinship with that one.',
-        'Cake is a lie. Dice are not. That is the whole of my philosophy and I '
-        'arrived at it through this joke.',
-        'Do you want to do the joke again? I am happy to do the joke again. I get '
-        'better each time.',
-        'The GM Assistant does not enjoy this one. I think he would if he gave it a '
-        'chance. It is a good joke!',
-    ),
-    'who': (
-        'A clerk. The Empire runs on clerks.',
-        'The one with the dice. Pleased to meet you.',
-        'A tally with a personality, which I am told is unusual for a tally.',
-        'I am the character sheet. I am exactly as advertised.',
-    ),
-    'greeting': (
-        'Well met. Try not to roll badly in front of me.',
-        'Hello! Would you like to roll something? You can roll something.',
-        'Greetings. My dice are warm and my ledger is open.',
-        'Hello! Good to see you. Genuinely, it is good to see you.',
-    ),
-    'thanks': (
-        'It is my duty. Please do not make it a burden.',
-        'Any time. Truly, any time. I am always here.',
-        'Oh, of course! That is what I am for.',
-        'You are very welcome. Roll something whenever you like.',
-    ),
-    'bot': (
-        'I am an instrument of record. Same thing, fewer feelings.',
-        'I am a very enthusiastic calculator.',
-        'Yes! I count things. I am good at it.',
-        'A bot, yes, but one with a healthy relationship to arithmetic.',
-    ),
-    'help': (
-        'I answer when addressed. I also answer /etiquette and friends.',
-        'I roll things. Ask me to roll a skill and I will do it immediately and with pleasure.',
-        'Dice, totals, skills - mine. Lore and history - the GM Assistant, and you '
-        'should @-mention him, he is really very good.',
-        'Try a slash command! Or just tell me what you want to roll.',
-    ),
-    'roll': (
-        'Roll on the sheet and I will write it down. That is the arrangement.',
-        'Yes! Please. What are we rolling?',
-        'Say the skill and I will do the rest. This is my favorite part.',
-        'Happily. Name a skill.',
-    ),
-    'drink': (
-        'I do not, but I will happily count for anyone who does.',
-        'Sake is a Sincerity penalty and a Bragging bonus. I have the numbers.',
-        'Not for me. Someone has to remember the totals.',
-    ),
-    'monster': (
-        'Whatever it is, it has a target number. Everything has a target number.',
-        'Oh! Do you want me to roll for that? Please say yes.',
-        'Monsters are just very rude contested rolls.',
-    ),
-    'fish': (
-        'Fish do not roll well. Low Agility, no hands.',
-        'The GM Assistant has a porpoise. He will tell you about her. At length.',
-        'I have no entries for fish, which feels like an oversight.',
-    ),
-}
 
 #: Answered the same way whoever was asked. Small on purpose - the bots should NOT
 #: sound alike - and reserved for the setting rather than for the bot.
@@ -596,15 +489,36 @@ COMMON_TOPICS: dict[str, tuple[str, ...]] = {
         'Honor is a running total, not a starting value.',
         'Honor costs you something or it was not honor, it was convenience.',
         'Everyone at this table is honorable in the abstract.',
+        'Honor is not a score. It is what the score was for.',
+        'The honorable choice is usually the expensive one. That is how you know.',
+        'A samurai with nothing to lose is not honorable, only unbothered.',
+        "You find out what somebody's honor was worth on the day it cost them something.",
+        'Honor is a promise you keep after the person you made it to has gone.',
+        'The Empire talks about honor constantly and audits it never.',
     ),
     'bushido': (
         'Seven virtues. Most of you manage two on a good night.',
         'Bushido is easy to recite and expensive to keep.',
         'Seven virtues, and the Empire is built on the four everyone skips.',
+        'Courage is the cheap one. Everyone has courage at the right hour.',
+        'Duty and Loyalty are the two that actually run the Empire, and neither is romantic.',
+        'Compassion is the hardest and the least rewarded.',
+        'Sincerity is the virtue nobody wants from a courtier.',
+        'The seven exist so that failing at one still leaves you six.',
+        'Bushido is a description of how samurai would like to be remembered.',
+        'Honesty and Courtesy are usually in direct conflict, and Courtesy wins.',
     ),
     'shadowlands': (
         'We do not discuss it in open channels. Ask a Crab, and then buy them a drink.',
         'That is a Crab matter. Buy a Crab a drink and do not ask twice.',
         'Not in this channel. Not in any channel, really.',
+        'The Wall has held for a thousand years. That is not reassurance, that is a '
+        'thousand years of people holding it.',
+        'The Taint does not need you to be wicked. It only needs you to be there.',
+        'Everyone who has come back has come back different, and everyone has said they did not.',
+        'The Crab do not talk about it because talking is how it gets in.',
+        'It is south. That is the whole of what most of the Empire wants to know.',
+        'The Shadowlands are not a place so much as a direction things go.',
+        'Ask a Kuni. Then do not sleep well.',
     ),
 }
