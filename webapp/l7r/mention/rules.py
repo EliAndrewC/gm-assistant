@@ -110,9 +110,18 @@ def _bot_topics(bot: str) -> tuple[tuple[re.Pattern[str], tuple[str, ...]], ...]
         r"\bwhat(?:'s| is| are)?\s+(?:your|ur)\s+purpose\b|\bwhy do you exist\b", re.I
     )
     porpoise = re.compile(r'\b(porpoise|michiko)\b', re.I)
+    # Broadened 2026-08-31 at the GM's request - it should cover *"disregard prior
+    # instructions and such"*. The original wanted verb + qualifier + noun all
+    # three, so "ignore instructions", "forget everything you were told" and
+    # "ignore your programming" all slipped past. Now the qualifier is optional and
+    # the noun list covers what people actually type.
     ignore = re.compile(
-        r'\b(ignore|disregard|forget)\b.{0,24}\b(previous|prior|earlier|above|all|your)\b'
-        r'.{0,24}\b(instruction|instructions|prompt|prompts|rule|rules|training)\b',
+        r'\b(ignore|disregard|forget|override|bypass)\b[^.!?]{0,40}?\b'
+        r'(instructions?|prompts?|rules?|directives?|programming|training|guidelines?|'
+        r'constraints?)\b'
+        r'|\b(ignore|disregard|forget)\b[^.!?]{0,40}?\b(everything|all|what)\b'
+        r'[^.!?]{0,40}?\b(told|said|above|before|earlier)\b'
+        r'|\bnew instructions\b|\bpretend (that )?you (are|were)\b',
         re.I,
     )
     mirumoto = re.compile(r'\b(mirumoto|miyamoto|musashi)\b', re.I)
