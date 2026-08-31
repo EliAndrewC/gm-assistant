@@ -99,8 +99,9 @@ CLANS: dict[str, tuple[str, ...]] = {
         'Forty-four domains, all pointed the same direction.',
         'The Akito are a Karo House of the Hida - a senior vassal house with its own '
         'domain and a specialized duty - and their daimyo is General of the Northern '
-        'Armies, a title that exists because somebody had to be in charge of the '
-        'direction the Crab are not facing.',
+        'Armies, a title that exists because the entire Crab clan faces south at the '
+        'wall against the Shadowlands and somebody still had to be put in charge of '
+        'every other direction.',
         'The Kaiu family built the Kaiu Wall against the Shadowlands and the Wall is why '
         'the Kaiu exist. Twenty-odd Imperial legions stand on it alongside them, and the '
         'Empire calls that a contribution rather than a dependency.',
@@ -143,7 +144,8 @@ CLANS: dict[str, tuple[str, ...]] = {
         'his hatred of the Yasuki, the Crab merchant family, into it. The curse works. A '
         'man made a functioning object out of a grudge, and I have been keeping grudges '
         'for four hundred sessions with nothing to show for it.',
-        'Doji Masayo carried that cursed blade to the dueling tournament at Toshi Ranbo, '
+        'Doji Masayo carried Shitsuten, a blade forged as a curse and working as one, '
+        'to the dueling tournament at Toshi Ranbo, '
         'where a peace treaty had disputed provinces settled by single combat, and beat '
         'the man expected to win. One afternoon, one sword, one border redrawn, and '
         'about nine hundred pages of consequence in my keeping.',
@@ -178,9 +180,11 @@ CLANS: dict[str, tuple[str, ...]] = {
         'spies, they tell you what they will do to you, and then they do it. I have '
         'never had to correct a Scorpion entry, which is more than I can say for the '
         'Crane.',
-        'The Bayushi family rule with a hundred and twenty-five thousand. Shosuro '
-        'eighty thousand, Soshi fifteen, Yogo five. Four families and not one of them '
-        'has ever supplied me with a document I did not have to read twice.',
+        'The Bayushi family rule the Scorpion with a hundred and twenty-five thousand. '
+        'The Shosuro are eighty thousand and they are the actors and the poisoners; the '
+        'Soshi fifteen thousand and they are priests; the Yogo five thousand and they '
+        'keep what nobody else will touch. Four families, and not one of them has ever '
+        'supplied me with a document I did not have to read twice.',
         'The Peasant Campaign is set in Scorpion lands, which is the cruelest available '
         'place to be a peasant with no rights, no rank and no protection, and the record '
         'does not pretend otherwise.',
@@ -188,10 +192,10 @@ CLANS: dict[str, tuple[str, ...]] = {
         'magistrates weigh a case. The Empire needs somebody to do the unpleasant '
         'necessary things and then needs somebody to blame for them. Same clan. '
         'Extremely efficient, and they know exactly what they are.',
-        'Bayushi Tangen carries the sword Kurainigo, which is more famous than '
-        'Tamashikari, which is only the fifth most famous blade the Scorpion own. A clan '
-        'with a deep bench of legendary swords and no interest whatsoever in mentioning '
-        'it.',
+        'Bayushi Tangen carries a blade called Kurainigo, and it is better known than '
+        'Tamashikari, which is itself only the fifth most famous sword the Scorpion own '
+        'and would be the pride of most other clans. A deep bench of legendary steel, '
+        'and no interest whatsoever in mentioning any of it.',
         'The Scorpion keep good records. That is very nearly the nicest thing I can say '
         'about anybody, and I am aware of what it says about my range.',
         'Every clan in this Empire has secrets. Only one has admitted it and gone into '
@@ -260,7 +264,8 @@ CLANS: dict[str, tuple[str, ...]] = {
         'assignment in this record.',
         'The Togashi family rule the Dragon with only twenty thousand. The Mirumoto are '
         'a hundred and twenty-five thousand and they are the swordsmen; the Agasha '
-        'fifteen thousand; the Kitsuki fifteen and they investigate. A ruling family a '
+        'fifteen thousand and they are the priests and alchemists; the Kitsuki fifteen '
+        'and they investigate. A ruling family a '
         'sixth the size of its largest vassal, which is arranged that way nowhere else, '
         'and the Dragon like it that way.',
         'The Ryusei domain of the Mirumoto is my worked example whenever anybody asks '
@@ -272,10 +277,11 @@ CLANS: dict[str, tuple[str, ...]] = {
         'a place that exists in this world and the land of the dead at once. A family of '
         'detectives inside a clan devoted to not explaining itself. Somebody enjoyed '
         'setting that up.',
-        'Prince Daigotsu said that Kitsu Okura - the Lion priest who wrote the six '
-        'doctrines of attunement - is more enigmatic than the Dragon Clan he derides for '
-        'being enigmatic. It is the sharpest thing anybody has said about either party '
-        'and it was said by a third party who was not asked.',
+        'Kitsu Okura, the Lion priest who wrote the six doctrines explaining how a god '
+        'comes to answer anybody, spends a good deal of his time deriding the Dragon '
+        'for being impossible to pin down. An Imperial prince, Daigotsu, observed that '
+        'Okura himself is more enigmatic than the clan he mocks. It is the sharpest '
+        'thing anybody has said about either of them and it came from a bystander.',
         'The Dragon swordsmen are called the Mirumoto, which is one letter from '
         'Miyamoto - as in Miyamoto Musashi, the real duelist who fought with two swords '
         'and wrote the Book of Five Rings, which is the book this game is named after. '
@@ -303,26 +309,30 @@ CLANS: dict[str, tuple[str, ...]] = {
         'priests and scholars, and they sit on the most embarrassing founding story in '
         'the Empire, which they would prefer to discuss another time, forever.',
         'The Shiba family rule with a hundred thousand. The Isawa are sixty thousand and '
-        'the Asako fifteen - except the Isawa have no daimyo at all, only a Council of '
+        'the Asako fifteen thousand and they are the scholars and historians - except '
+        'that the Isawa have no daimyo at all, only a Council of '
         'Elemental Masters. The one Great Family in the Empire governed by a committee, '
         'and it is the mystical one.',
         'At the dawn of the Empire, Shiba - founder of the family that rules the '
         'Phoenix - bent his knee to Isawa, his own vassal, because Isawa was the greater '
         'priest. The ruling family knelt to its retainer. They have been explaining it '
         'ever since and the explanation has grown rather than shortened.',
-        'Isawa himself, the founder of that priestly family, practiced maho - the '
+        'Isawa himself, who founded the priestly family that gives the Phoenix their '
+        'reputation for holiness, practiced maho - the '
         'forbidden magic worked with blood. He made totems with the ordinary crafting '
         'discipline and stored the power of names and wounds in them, and the Empire '
         'wrote the whole business down under crafting and moved along.',
-        'Then Isawa Akuma, in the third century, worked maho without losing his ability '
-        'to petition the spirits, which is supposed to be impossible and which nobody '
-        'has repeated or explained since. The Phoenix have a prepared answer about the '
-        'kneeling and have never once been asked to prepare one about him.',
-        'So the clan famous for opposing blood magic is the clan whose founding priest '
-        'practiced it and whose most cunning son perfected it. I did not arrange any of '
-        'that. I only have to keep it in order.',
-        'It is also the one clan this campaign has never been set in, which I notice, '
-        'and which I am not going to speculate about in a channel he can read.',
+        'Isawa Akuma of the Phoenix, in the third century, worked maho - the forbidden '
+        'blood magic - without losing his ability to petition the spirits, which is '
+        'supposed to be impossible and which nobody has repeated or explained since. '
+        'The Phoenix have a prepared answer about their founder kneeling to his own '
+        'vassal and have never once been asked to prepare one about Akuma.',
+        'The Phoenix are famous for opposing blood magic. Isawa, who founded their '
+        'priestly family, practiced it, and Isawa Akuma perfected it three centuries '
+        'later. I did not arrange any of that. I only have to keep it in order.',
+        'The Phoenix are also the one clan this campaign has never been set in, which I '
+        'notice, and which I am not going to speculate about in a channel the GM can '
+        'read.',
         'A clan of scholars whose own history is the single document they have declined '
         'to audit. I would find that funnier if it were not so restful to watch.',
         attach(
@@ -346,13 +356,16 @@ CLANS: dict[str, tuple[str, ...]] = {
         'The largest Families - roughly a hundred thousand samurai and up - also have '
         'Karo Houses among their vassals, comparable in size to the ruling domain '
         'itself. A vassal as large as its lord, by design, on purpose, deliberately.',
-        'Three Karo Houses, three entirely different reasons for existing: the Akito of '
-        'the Hida, whose daimyo is General of the Northern Armies of the Crab; the Tsume '
-        'of the Doji; the Damasu of the Akodo. One filing convention holds all three '
-        'together and it is mine.',
-        'The Matsu family, being twice the size of anybody else in the Empire, have '
-        'several Karo Houses rather than one. Of course they do. Nothing about the Matsu '
-        'has ever stopped at one of anything.',
+        'A Karo House is a senior vassal house nearly as large as the domain its lord '
+        'holds, and three of them exist for three entirely different reasons: the Akito '
+        'of the Hida, whose daimyo commands the armies on the side the Crab are not '
+        'watching; the Tsume of the Doji, who hold ground for the Crane; the Damasu of '
+        'the Akodo, where most of this campaign happens. One filing convention holds '
+        'all three together and it is mine.',
+        'The Matsu, the largest family of the Lion and twice the size of anybody else '
+        'in the Empire, have several Karo Houses - senior vassal houses each holding a '
+        'domain of its own - rather than one. Of course they do. Nothing about the '
+        'Matsu has ever stopped at one of anything.',
         'A Karo House is headed by a senior vassal daimyo with specialized military or '
         'administrative duties - the general, the treasurer, the man who runs the '
         'frontier. Not a lesser thing. A specialized one, and I would appreciate the '
@@ -373,9 +386,10 @@ CLANS: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'The Chancellery meeting that follows a boundary dispute between two '
-            'houses - the council that advises a daimyo, which is to say decides. It '
-            'takes four months and settles roughly the same amount as the swords did.',
+            'Two vassal houses arguing about a boundary settle it first with drawn '
+            'blades and settle nothing. Then it goes to the Chancellery, the council '
+            'that advises a daimyo, which is to say decides. That takes four months and '
+            'settles roughly the same amount the swords did.',
             CATS,
         ),
     ),
@@ -397,24 +411,30 @@ CLANS: dict[str, tuple[str, ...]] = {
         "A Karo House is comparable in size to the ruling daimyo's own domain. The "
         'Damasu are not a minor branch of anything and would take the suggestion '
         'extremely poorly, in writing, at length, to me.',
-        'They have their own lineages, their own temples and their own Order of Bishamon '
-        '- the network of war-Fortune temples - with its own Grand Abbot. A house that '
-        'has assembled, piece by piece, everything a clan has except the name.',
-        'Forty-seven mentions in this record, which is more than most Great Families '
-        'manage, every one of them logged by somebody who was not invited to any of it.',
-        'If you want to know what this campaign is actually about, it is not the Empire. '
-        'It is one Karo House and the people adjacent to it, and I worked that out from '
-        'the index alone.',
+        'The Damasu have their own lineages - the political factions inside a samurai '
+        'family - their own temples, and their own Order of Bishamon, which is the '
+        'network of temples to the god of war, with a Grand Abbot at the head of it. A '
+        'house that has assembled, piece by piece, everything a clan has except the '
+        'name.',
+        'The Damasu have forty-seven mentions in this record, which is more than most '
+        'Great Families manage, every one of them logged by somebody who was not '
+        'invited to any of it.',
+        'If you want to know what this campaign is actually about, it is not the '
+        'Empire. It is the Damasu - one senior vassal house of the Akodo - and the '
+        'people adjacent to them, and I worked that out from the index alone.',
         attach(
-            'Amatsukami no Ken, the ancestral sword of this house, currently carried by '
-            'their daimyo. Ancestral AND in use, which is rarer than the word ancestral '
+            'Amatsukami no Ken, the ancestral blade of the Damasu house, worn every day '
+            'by the man who currently leads it. Ancestral AND in use, which is rarer '
+            'than the word ancestral '
             'suggests - most such blades are in a box being described to visitors.',
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'The morning of the tournament that cost this house the province of Tango, '
-            'while it was still a formality and their champion was still expected to '
-            'win. Nobody present is worried. The entry is four lines long.',
+            'The Lion and the Crane agreed to decide the ownership of several provinces '
+            'by a dueling tournament, and this is the morning of the one that cost the '
+            'Damasu the province of Tango, while it was still a formality and their '
+            'champion was still expected to win. Nobody present is worried. The entry '
+            'is four lines long.',
             RAINY_MOON,
         ),
     ),
@@ -424,9 +444,11 @@ CLANS: dict[str, tuple[str, ...]] = {
         'Hantei, who provide him; the Otomo, who run his court; and the Miya, who carry '
         'his word to the clans. Oh, they are wonderful. Truly. I have nothing bad to '
         'say about them. Out loud. In public.',
-        'Seppun forty-five thousand, Hantei fifteen, Otomo ten, Miya five. Seventy-five '
-        'thousand samurai all told, and a hundred million souls arrange themselves '
-        'around them, which is a ratio I have chosen to describe as impressive.',
+        'Forty-five thousand Seppun on the guard, fifteen thousand Hantei to supply the '
+        'Emperor, ten thousand Otomo running his court and five thousand Miya carrying '
+        'his word. Seventy-five thousand samurai all told, and a hundred million souls '
+        'arrange themselves around them, which is a ratio I have chosen to describe as '
+        'impressive.',
         'The Hantei are the smallest of the Imperial families but for the Miya, at '
         'fifteen thousand, despite containing the Emperor himself. They marry outward '
         'constantly. I am certain there is a very good reason and I am certain it is not '
@@ -435,15 +457,19 @@ CLANS: dict[str, tuple[str, ...]] = {
         'the Emerald Charter, the Imperial law that governs them - twenty-five yoriki, '
         'his assistants, in the capital and five in each provincial city. A beautifully '
         'designed system. I admire it at the volume permitted to me.',
-        'Almost all of those assistant magistrates come from OTHER clans, because a '
+        'A magistrate works through yoriki, his own deputies, and almost all of the '
+        'ones in an Imperial office come from OTHER clans, because a '
         "daimyo's own retainers cannot be trusted to audit the daimyo. A wise "
         'arrangement. Very wise. I note that nobody audits the auditors and I note it '
         'quietly.',
-        'The Otomo are ten thousand and the Miya five, and both carry weight out of all '
-        'proportion to either number, which is of course entirely appropriate and not at '
-        'all the sort of thing one remarks upon.',
-        'An Emerald magistrate may assemble the assistant magistrates of nearby domains '
-        'to assist one side of a fight, and two hundred extra trained men decides '
+        "The Otomo, who run the Emperor's court, are ten thousand, and the Miya, whose "
+        'heralds travel the Empire on his business, are five, and both carry weight out '
+        'of all '
+        'proportion to either number, which is of course entirely appropriate and not '
+        'at all the sort of thing one remarks upon.',
+        "An Emerald magistrate is the Emperor's own, with authority that crosses clan "
+        'lines, and he may summon the deputies of neighboring domains to assist one '
+        'side of a fight, and two hundred extra trained men decides '
         'battles. They are not shy about it, and I am not permitted to be anything but '
         'admiring about it.',
         'I record everything, which means I hold opinions I am structurally prevented '
@@ -515,9 +541,10 @@ CLANS: dict[str, tuple[str, ...]] = {
         'he has just been discussed in a channel. That is the closest thing to peace in '
         'this Empire and he is squandering it.',
         attach(
-            'Here is somebody who DID do something, for comparison: a name that survived '
-            'because of one afternoon. That is the entire qualification, and your man '
-            'has not met it.',
+            'Here is somebody who DID do something, for comparison: a duelist who went '
+            'up a mountain after a thing that had been killing travelers, and came '
+            'back, and is remembered four hundred years later for that one afternoon. '
+            'That is the entire qualification, and your man has not met it.',
             MUSASHI_BAT,
         ),
         attach(
