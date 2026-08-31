@@ -635,9 +635,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         "The danger being that if Gaheris' campaign fails, Tetsu is still bound to "
         'build it or die trying, in a city that will by then belong to somebody with '
         'opinions about Rokugani temples.',
-        'Building a temple in a gaijin city is either the most pious act of a generation '
-        'or a naked provocation. Kitsuki Tetsu has not sworn it, which is the only '
-        'reason the question is still theoretical.',
+        'Rites has never ruled on whether a Rokugani temple abroad is devotion or a flag '
+        "planted in somebody else's ground. Nobody has asked them to, and I have a very "
+        'clear sense that nobody intends to.',
         "Dying with it unfulfilled brings bad karma and the fortune's wrath; dying "
         'attempting it brings the opposite. People work out which half they are in at '
         'the very end, reliably, every time.',

@@ -150,23 +150,41 @@ def test_no_category_leaves_him_out_entirely() -> None:
 _STOPWORD_TEXT = (
     'a an the of to in and or is are was were be been it its that this those these for '
     'with on at by as i me my he she they them his her their you your not no but so '
-    'which who whom what when where how all any one two three from into over under than '
-    'then there here have has had do does did will would can could'
+    'which who whom what when where how all any from into over under than '
+    'then there here have has had do does did will would can could '
+    # NUMBERS. A pool legitimately repeats its own population figure - `akodo_toturi`
+    # says "five hundred thousand samurai" in two lines on purpose. Without these the
+    # guard fires on that, which is a guard firing on correct work.
+    'one two three four five six seven eight nine ten eleven twelve fifteen twenty '
+    'thirty forty fifty sixty seventy eighty ninety hundred thousand million percent'
 )
 _STOPWORDS = frozenset(_STOPWORD_TEXT.split())
 
-#: Content words in a row that two replies IN THE SAME POOL may not share in their
-#: closing sentence. Measured: at four, three pairs, all three genuine repeats and
-#: no false positive. At three, "eleven imperial gardens" trips - a fact two lines
-#: legitimately share. So four.
+#: Content words in a row that two replies IN THE SAME POOL may not share, compared
+#: over the OPENING and CLOSING sentence of each - the two places a joke sits.
+#:
+#: It was closing-sentence-only at first, and a scoped audit caught that scoping
+#: certifying an incomplete repair: two verbatim duplicates (`jikoju#3`/`#5` and
+#: `hidden_way#5`/`#7`) shared a twenty-word OPENING sentence and sailed through
+#: green. A guard that passes over the very defect its commit was written to fix is
+#: worse than no guard, because it is trusted.
+#:
+#: Window measured rather than chosen: at four content words, five pairs, all five
+#: genuine. At five, it misses `the_nameless_one#3`/`#8`, which is a real duplicate.
 POOL_ECHO_WINDOW = 4
 
 
-def _closing_content_words(reply: str) -> list[str]:
+def _joke_positions(reply: str) -> list[str]:
+    """The opening and closing sentence - where a punchline actually lands."""
     body = re.sub(r'https?://\S+', '', reply).strip()
     sentences = [s for s in re.split(r'(?<=[.!?])\s+', body) if s]
-    last = sentences[-1] if sentences else ''
-    return [w for w in re.findall(r"[a-z']+", last.lower()) if w not in _STOPWORDS]
+    if not sentences:
+        return []
+    return [sentences[0]] if len(sentences) == 1 else [sentences[0], sentences[-1]]
+
+
+def _content_words(sentence: str) -> list[str]:
+    return [w for w in re.findall(r"[a-z']+", sentence.lower()) if w not in _STOPWORDS]
 
 
 def test_no_pool_tells_the_same_joke_twice() -> None:
@@ -189,10 +207,11 @@ def test_no_pool_tells_the_same_joke_twice() -> None:
     for topic, pool in GM.items():
         seen: dict[tuple[str, ...], int] = {}
         for i, reply in enumerate(pool):
-            words = _closing_content_words(reply)
-            for j in range(len(words) - POOL_ECHO_WINDOW + 1):
-                gram = tuple(words[j : j + POOL_ECHO_WINDOW])
-                if seen.get(gram, i) != i:
-                    echoes.append(f'{topic}#{seen[gram]} ~ #{i}: {" ".join(gram)!r}')
-                seen.setdefault(gram, i)
+            for sentence in _joke_positions(reply):
+                words = _content_words(sentence)
+                for j in range(len(words) - POOL_ECHO_WINDOW + 1):
+                    gram = tuple(words[j : j + POOL_ECHO_WINDOW])
+                    if seen.get(gram, i) != i:
+                        echoes.append(f'{topic}#{seen[gram]} ~ #{i}: {" ".join(gram)!r}')
+                    seen.setdefault(gram, i)
     assert not echoes, f'the same punchline twice in one ten-reply pool: {sorted(set(echoes))}'

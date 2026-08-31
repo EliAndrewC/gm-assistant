@@ -178,13 +178,13 @@ WORLD: dict[str, tuple[str, ...]] = {
         'The one thing in this Empire I cannot file properly, and it is the one thing '
         'everybody assumes I am relaxed about.',
         attach(
-            'Lineage, rank, obligation, inheritance - the machinery a name drives. All '
-            'of it in one archive, and none of it able to grip on him.',
+            'The moment a clerk discovers his form has no field for the thing in front '
+            'of him. I have had that moment nine times and kept every one.',
             INNER_VISION,
         ),
         attach(
-            'A thing the record cannot hold looks, from the archive, exactly like this: '
-            'quiet, orderly, and missing something nobody can name.',
+            'Quiet, orderly, and missing something nobody can put a word to. That is '
+            'how an archive looks once he has been in it.',
             RAINY_MOON,
         ),
     ),
@@ -363,9 +363,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'Toranosuke is the abbot of Chai Sedo, which makes one man simultaneously the '
         "keeper of eleven Imperial Gardens and, by some distance, the Empire's most "
         'quoted authority on a war nobody has formally declared is happening.',
-        'Everything in this campaign is a threshold of some kind: a gate, a garden, a '
-        'boundary, a keep named for the people outside it. A campaign about doorways, '
-        'run by people who mostly wanted to know what was through them.',
+        'A campaign about doorways, run by people who mostly wanted to know what was on '
+        'the far side of them. I wanted to know who maintained them.',
         'The gardens number eleven and each of them means something, and the meanings '
         'are in my record, and in four hundred sessions I have been asked for one of '
         'them.',
