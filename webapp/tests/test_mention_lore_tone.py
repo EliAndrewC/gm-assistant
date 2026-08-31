@@ -215,3 +215,49 @@ def test_no_pool_tells_the_same_joke_twice() -> None:
                         echoes.append(f'{topic}#{seen[gram]} ~ #{i}: {" ".join(gram)!r}')
                     seen.setdefault(gram, i)
     assert not echoes, f'the same punchline twice in one ten-reply pool: {sorted(set(echoes))}'
+
+
+#: A reply that says "that sentence" / "that word" IN ITS OPENING SENTENCE is
+#: pointing at text it has not shown you. There is nothing earlier in the reply
+#: for it to mean, and the sibling it does mean will not be delivered with it.
+DANGLING_META_REFERENCE = re.compile(r'\bthat (sentence|word|phrase|clause|line)\b', re.IGNORECASE)
+
+
+def test_no_reply_points_at_text_it_has_not_shown_you() -> None:
+    """The one defect this session shipped TWICE, a commit apart.
+
+    `benten#4` quoted "Probably right" after the same pass deleted that phrase
+    from its sibling. `moto_language#5` said "Usually is doing the work in that
+    sentence" after the same pass deleted the sentence. Both were caught by an
+    audit, two commits and forty minutes later; both were committed by an author
+    who had just written the rule against them into `lore/CLAUDE.md` in prose.
+
+    A BROADER rule was proposed and measured first: every quoted span must occur
+    elsewhere in its pool. It is not viable - 24 hits, and every one is correct
+    writing, because a quoted span is normally a COINAGE rather than a
+    back-reference. `castes#5` quotes "inhabitants" to name the right word,
+    `ashigaru#8` quotes the record's euphemism "prepared", `vows_and_oaths#3`
+    quotes the text of an oath. Nothing distinguishes those from a dangling
+    quote by the quotation marks alone, and a guard firing on 24 good lines
+    would be worse than none.
+
+    What IS decidable is POSITION. Both real defects put the meta-reference in
+    the opening sentence, where the reply cannot yet have shown you anything.
+    The correct look-alikes put it in a later sentence, pointing back at their
+    own first: `the_moto#7` ("...bringing back the old ways. THAT PHRASE ought
+    to worry Rites") and `ministry_of_rites#6` ("...never formally tested. I
+    have written THAT SENTENCE four times"). Both stay quiet, as they must.
+
+    Verified against history rather than asserted: run over `gm_moto.py` at
+    `add0dd24` and `gm_religion.py` at `9475cc11` - the exact commits that
+    shipped them - this fires on each, once.
+    """
+    dangling: list[str] = []
+    for topic, i, reply in _all_replies():
+        opening = _joke_positions(reply)
+        if opening and DANGLING_META_REFERENCE.search(opening[0]):
+            dangling.append(f'{topic}#{i}: {opening[0]}')
+    assert not dangling, (
+        f'a reply pointing at text the player was never shown - the sibling it means '
+        f'ships separately or not at all: {dangling}'
+    )
