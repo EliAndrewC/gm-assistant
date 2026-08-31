@@ -67,9 +67,10 @@ MOTO: dict[str, tuple[str, ...]] = {
         'They are Unicorn. They are also, in every practical sense, a separate '
         'civilization living inside the Empire, and the Empire has decided not to '
         'examine that too closely.',
-        'Every Moto entry I hold needs three qualifiers: which tribe, which khan, and '
-        'which of the two languages the conversation actually happened in. Nobody has '
-        'ever supplied any of the three unprompted.',
+        'Every Moto entry I hold needs three qualifiers: which tribe, which khan - '
+        'their word for the leader of a clan - and whether the conversation happened in '
+        'Rokugani or in the language the Moto speak among themselves. Nobody has ever '
+        'supplied any of the three unprompted.',
         'The modern Moto are bringing back what they call the old ways - the '
         'pre-Imperial custom and worship they carried through their centuries outside '
         'the Empire. That phrase ought to worry the Ministry of Rites, which decides '
@@ -122,8 +123,9 @@ MOTO: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'A Rokugani courtier three minutes into that same greeting, having taken '
-            'the traded insults for a duel challenge. He is not in danger. He does not '
+            'A Rokugani courtier three minutes into a Moto greeting, which opens with '
+            'an insult and a refusal and an offer to dismount, having taken all of it '
+            'for a challenge to a duel. He is not in danger. He does not '
             'know that. Nobody will tell him and I am four hundred miles away.',
             RAINY_MOON,
         ),
@@ -214,10 +216,11 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Emperor being the fifteenth. The Moto are on it like everybody else, and then '
         'come the adjustments, which is where every single person gets it wrong and '
         'where I earn what I am not paid.',
-        'The published table is only the start. Anyone above Governor who comes from '
-        'the ruling House of a Family sits one rank above what the table says; from a '
-        "Clan's ruling Family, two. A system of exceptions wearing a system of ranks "
-        'over it.',
+        'A clan is made of families and a family of houses, and the published rank '
+        'table - the list of what each office is worth - is only the start. Anyone '
+        'above Governor from the ruling House of a Family sits one rank above what the '
+        "table says; from a Clan's ruling Family, two. A system of exceptions wearing a "
+        'system of ranks over it.',
         'A worked example: Ikoma Yuan is Deputy Minister of War for the Ikoma lands and '
         'sits at the tenth rank, because that ministry also oversees the vassal '
         'families - the lesser houses sworn to the Ikoma. Try deriving that from the '
@@ -245,10 +248,10 @@ MOTO: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'The ceremonial way of establishing the same thing - who outranks whom, '
-            'settled by precedence, seating and an exchange of gifts. It takes three '
-            'days instead of three minutes and it produces documents, which is the only '
-            'reason I prefer it.',
+            'Rank can be settled on the spot by a challenge, which takes about three '
+            'minutes. Or it can be settled the ceremonial way - precedence, seating and '
+            'an exchange of gifts - which takes three days and produces documents. The '
+            'documents are the only reason I prefer the second one.',
             ARCHERS,
         ),
     ),
@@ -262,8 +265,10 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Bloodstorm into an expected battle, Lamentation when ambushed, Lightning in '
         'single combat, Retirement for executions. A man who has pre-decided every '
         'killing he will ever do.',
-        'He chose which sword for which killing at Bodi Kaikhan, the pilgrimage ground '
-        'where the Moto go to speak with their ancestors, and swore a covenant there. '
+        'Each of the four blades the Khan wears is sworn to one of the death gods his '
+        'people keep, and he settled which one goes with which kind of killing at Bodi '
+        'Kaikhan, the pilgrimage ground where the Moto speak with their ancestors, and '
+        'swore his covenant there. '
         'That is not flourish. It means a man has thought harder about the categories '
         'of killing than I have thought about anything.',
         'Gaheris is waging a military campaign in Uru lands, which lie out west beyond '
@@ -381,8 +386,9 @@ MOTO: dict[str, tuple[str, ...]] = {
             KIDOMARU_TENGU,
         ),
         attach(
-            'The evening after. A tribe that has argued its way to calling the killing '
-            'a mercy - a maddened thing returned to where it belongs - still drinks '
+            'The evening after a night of killing whatever came over the Shadowlands '
+            'border. A tribe that has argued its way to calling that work a mercy - a '
+            'maddened thing returned to where it belongs - still drinks '
             'afterward like men who have done something else entirely. I record what '
             'they say, not what they mean.',
             RAINY_MOON,
@@ -493,7 +499,8 @@ MOTO: dict[str, tuple[str, ...]] = {
         'is what "the return of the Unicorn" means in practice: not a parade, a land '
         'dispute.',
         'That land dispute - the returning Unicorn against the Dragon families already '
-        'settled there - has lasted generations and been conducted almost entirely in '
+        'settled there, in what is now the Ryusei domain - has lasted generations and '
+        'been conducted almost entirely in '
         'documents, most of which have passed through my hands and none of which have '
         'settled anything.',
         'A clan that has seen the outside is a clan the rest of the Empire cannot quite '
@@ -526,15 +533,17 @@ MOTO: dict[str, tuple[str, ...]] = {
         'Medin al Salaat is a gaijin city - foreign, west, beyond the Empire entirely - '
         'and it is the reason half of this record has footnotes attached to it in a '
         'smaller hand.',
-        'The Moto ancestral homelands are said to lie southwest of that city, according '
+        'The ancestral homelands of the Moto - the Unicorn family who spent centuries '
+        'out west - are said to lie southwest of that city, according '
         'to the library at Chai Sedo, a monastery in these lands. It is the '
         'single most-cited shelf in my whole record and the one nobody has ever offered '
         'to go and check.',
         'Kitsuki Tetsu, a Dragon investigator, considered swearing a vow of creation - '
         'a binding promise to build a thing, enforced by a god - to Jikoju, the Fortune '
         'of civilization: a temple built and staffed in that foreign city, civilization '
-        'carried there as the Great Ancestors are said to have carried it to the '
-        'warlords of old. A sentiment with a construction schedule attached.',
+        'carried there as the Great Ancestors of legend are said to have carried it to '
+        'the warring tribes that eventually became this Empire. A sentiment with a '
+        'construction schedule attached.',
         'A vow of creation binds you to build the thing whatever happens next. Sworn '
         'over a foreign city, it binds you even if the army that made building there '
         'sensible - which is to say the Moto campaign in the west - stops winning. '

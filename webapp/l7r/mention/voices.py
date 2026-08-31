@@ -545,7 +545,8 @@ COMMON_TOPICS: dict[str, tuple[str, ...]] = {
     'bushido': (
         'Seven virtues. Most of you manage two on a good night.',
         'Bushido is easy to recite and expensive to keep.',
-        'Seven virtues, and the Empire is built on the four everyone skips.',
+        'Seven virtues, and the Empire actually runs on the four nobody quotes: Duty, '
+        'Loyalty, Honesty and Courtesy. Courage and Honor get the poems.',
         'Courage is the cheap one. Everyone has courage at the right hour.',
         'Duty and Loyalty are the two that actually run the Empire, and neither is romantic.',
         'Compassion is the hardest and the least rewarded.',
@@ -556,11 +557,14 @@ COMMON_TOPICS: dict[str, tuple[str, ...]] = {
     ),
     'shadowlands': (
         'We do not discuss the Shadowlands in open channels. It is the tainted country '
-        'south of the Crab wall, everything in it is trying to get further in, and that '
-        'is as much as I will put in writing here.',
-        'That is a Crab matter. They are the clan that holds the wall against it, they '
-        'have held it for a thousand years, and they will tell you exactly as much as '
-        'they think you need. Buy one a drink and do not ask twice.',
+        'south of the wall the Crab have held for a thousand years, everything in it is '
+        'trying to get further north, and that is as much as I will put in writing '
+        'here. Ask a Crab, since holding the wall is their whole existence, and then '
+        'buy them a drink.',
+        'That is a Crab matter, which is to say it belongs to the clan that stands on '
+        'the wall keeping the tainted country south of it from coming north. They know '
+        'because they are the ones being asked to know. Buy one a drink and do not ask '
+        'twice.',
         'Not in this channel. Not in any channel, really. The short version is that '
         'there is a corrupted country south of the wall, that what lives there wants to '
         'come north, and that people who ask a great many questions about it get '
@@ -572,6 +576,7 @@ COMMON_TOPICS: dict[str, tuple[str, ...]] = {
         'The Crab do not talk about it because talking is how it gets in.',
         'It is south. That is the whole of what most of the Empire wants to know.',
         'The Shadowlands are not a place so much as a direction things go.',
-        'Ask a Kuni. Then do not sleep well.',
+        'Ask a Kuni - the Crab family whose work is studying the Taint at close range '
+        'in order to hunt it. Then do not sleep well.',
     ),
 }

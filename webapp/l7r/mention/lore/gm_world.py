@@ -96,7 +96,8 @@ WORLD: dict[str, tuple[str, ...]] = {
             'This is the shape the stories give Iuchiban: the sorcerer prince, '
             'confronted in the open by somebody brave. The shape my record gives him is '
             'a man who spent years collecting books at a frontier posting and then '
-            'began abducting clerks for their names. The first version is considerably '
+            'began abducting clerks for their names, blood sorcery being a craft that '
+            'runs on names. The first version is considerably '
             'more legible and I am obliged to keep the second.',
             KIDOMARU_TENGU,
         ),
@@ -105,7 +106,8 @@ WORLD: dict[str, tuple[str, ...]] = {
             'nothing visibly wrong on any given day: a name given away here, a favor '
             'accepted there, an official who is not quite the man he was. Iuchiban '
             'perfected that method and his surviving disciples still work it. The '
-            'fox-wife of the old stories is the closest picture anybody has.',
+            'closest picture anybody has is the fox-wife of the old stories, who kept a '
+            "man's house for years before anyone noticed she was not a woman.",
             FOX_WOMAN,
         ),
     ),
@@ -232,9 +234,11 @@ WORLD: dict[str, tuple[str, ...]] = {
         'written by nobody who was there, largely by people with an interest in how it '
         'read, and both of those facts are omitted whenever it is quoted at me.',
         'Every history of the Steel Chrysanthemum was written to explain something that '
-        'had already happened - his elevation of a Crane courtier to the Fortune of '
-        'Dung, for instance, which reads very differently depending on who is telling '
-        'you why. I keep all of them and I trust the dates.',
+        'had already happened. An Emperor can raise a mortal into the company of the '
+        'Fortunes, who are the gods of this Empire, and the Steel Chrysanthemum used '
+        'that power on a Crane courtier who had crossed him: he made the man the '
+        'Fortune of Dung, permanently. That reads very differently depending on who is '
+        'telling you why. I keep all of the tellings and I trust only the dates.',
         attach(
             'The throne during that reign was structurally sound and notably '
             'unattended: every order given, every order loyally acknowledged, and the '
@@ -354,14 +358,17 @@ WORLD: dict[str, tuple[str, ...]] = {
         'court, and what they gain comes in tiers named for the phases of the moon: '
         'Crescent, then Half, then a third that does not get said out loud in a '
         'channel. Three tiers means somebody somewhere is keeping a chart. It is me.',
-        'A member begins with three of those moon-phase grants and may spread them '
-        'across different celestial servants or stack them all on one. Most go wide and '
+        'Everybody in the Order is sworn to one or more individual servants of the moon '
+        'god, and each ability granted to them is ranked by a phase. A member starts '
+        'with three such grants and may spread them across different patrons or stack '
+        'them all on a single one. Most go wide and '
         'later wish they had gone deep, which is true of secret societies and true of '
         'very nearly everything else.',
         'The campaign takes in a ruling by Soshi Saibankan, who set the legal standard '
         'magistrates still judge by; the Forgotten Tomb, which exists in the mortal '
-        'world and in the realm of the honored dead at the same time; and Kitsu Okura '
-        'being enigmatic at considerable length. I transcribed the enigmatic part.',
+        'world and in the realm of the honored dead at the same time; and Kitsu Okura, '
+        'the Lion priest whose doctrines govern how a god answers anybody, being '
+        'enigmatic at considerable length. I transcribed the enigmatic part.',
         'The timeline of it is long and I keep all of it, which is why you are asking '
         'me and not the character sheet, and I would like that noted somewhere '
         'permanent.',
@@ -434,10 +441,12 @@ WORLD: dict[str, tuple[str, ...]] = {
         'Toshi Ranbo is a city the Lion and the Crane have been fighting over for four '
         'centuries. I hold the entries and they are distinguishable only by their '
         'dates.',
-        'Under the terms of the peace treaty between those two clans, the final '
+        'Under the terms of the peace treaty between the Lion and the Crane, who have '
+        'been fighting over the city of Toshi Ranbo for four centuries, the final '
         'ownership of several disputed provinces was settled by a dueling tournament. '
         'Provinces, decided by fencing. I transcribed the bracket.',
-        'The Lion did well overall, except for Tango province, which the Damasu - a '
+        'When a treaty settled several disputed provinces by a dueling tournament, the '
+        'Lion did well overall - except for Tango province, which the Damasu - a '
         'Lion house - lost in an upset when Doji Masayo of the Crane arrived carrying '
         'the cursed sword Shitsuten, "Lost Heaven", and killed Akodo no Damasu Tsuo. A '
         'treaty clause honored exactly, producing an outcome that nobody who wrote it '
@@ -449,11 +458,13 @@ WORLD: dict[str, tuple[str, ...]] = {
         "swordsmith forged out of his hatred for the Yasuki, the Crab clan's merchant "
         'family. History is not tidy and I am the one who has to make it look tidy in '
         'the margins.',
-        'The campaign around that tournament runs through Hikobayashi County, where the '
+        'The campaign around the tournament that settled the disputed provinces by duel '
+        'runs through Hikobayashi County, where the '
         'business is irrigation disputes, bandit hunting, and a party of Dragon '
         'magistrates auditing everybody. Three of those are administration and one of '
         'them gets talked about afterward.',
-        'There were also pirates on the Drowned Merchant River, which is exactly as '
+        'The same campaign - the one built around the tournament that settled provinces '
+        'by duel - also had pirates on the Drowned Merchant River, which is exactly as '
         'entertaining as it sounds and generates considerably more paperwork than it '
         'sounds.',
         'Everybody asks who won the tournament that settled the provinces. The useful '
@@ -647,8 +658,9 @@ WORLD: dict[str, tuple[str, ...]] = {
         'Empty Space, Waving Lawn, Snow Rose, Pleasure After, Circle of Here. Each name '
         'is a small argument about what a garden is for and not one of them describes a '
         'garden.',
-        'That is ten names for eleven gardens. There is an eleventh, its name is not '
-        'given out, and I enjoy watching people count.',
+        'Ten of the eleven Imperial Gardens at Chai Sedo have names that anybody will '
+        'give you. The eleventh does not, or has one nobody says, and I enjoy watching '
+        'visitors count.',
         'The Beauty of Empty Space garden is the one that annoys visitors, which is '
         'unambiguously the intention, which makes it the most successful garden in the '
         'Empire by its own stated criteria.',
@@ -739,9 +751,10 @@ WORLD: dict[str, tuple[str, ...]] = {
         'with better names than most of the officers in them - and there is a great '
         'deal of hunting, and the hunting is what gets recounted afterward at dinner '
         'rather than either company.',
-        'Also Matsu Yokijiro of the Lion, and Shinjo no Dorai Rakuo of the Unicorn, and '
-        'a plan the Lion had which did not survive contact with the county. Plans '
-        'rarely survive a county.',
+        'The county also holds Matsu Yokijiro, a Lion officer, and Shinjo no Dorai '
+        'Rakuo of the Unicorn, and a Lion plan to settle the water rights in their own '
+        'favor before anybody upstream noticed. It did not survive contact with the '
+        'county. Plans rarely survive a county.',
         'Bandit hunting is led by village headsmen with ashigaru - peasant levies, '
         'farmers handed spears a week earlier. It is not glamorous, it is most of rural '
         'law enforcement, and the headsman gets no line in the story afterward. He and '
@@ -780,8 +793,8 @@ WORLD: dict[str, tuple[str, ...]] = {
         'A keep named for outsiders tells you precisely what the Empire believes it is '
         'for, and the Empire has never once been embarrassed by the name.',
         'Moto Gaheris, the Khan who leads the Moto, is waging his campaign out that '
-        'way, and so lies the gaijin city of Medin al Salaat, and the Empire files all '
-        'of it - everything beyond that Gateway - under "abroad". It is a heading I did '
+        'way. So stands the gaijin city of Medin al Salaat. And the Empire files all of '
+        'it - everything beyond that Gateway - under "abroad". It is a heading I did '
         'not choose and cannot stop using.',
         'The duty out there is boring for years and then very suddenly is not, and my '
         'record keeps only the second kind, which makes my own record a liar about what '
