@@ -125,29 +125,45 @@ def test_every_category_puts_him_in_it() -> None:
 # not spend the afternoon rebuilding it: the bar to reopen is a mechanism that
 # separates a repeated fact from a repeated joke, and neither candidate does.
 
-#: The other half of the floor. The GM asked for a MIX and said the ten replies
-#: exist to carry one; a category where he is in nine of ten has replaced the
-#: encyclopedia with a single reliable construction, which the re-audit called
-#: "the new 'And this is...'". Seven of ten is the standard.
-SELF_REFERENCE_CEILING = 7
+#: THE TIC, matched directly rather than by proxy: a self-referential clause
+#: BOLTED ONTO the end of a fact. This is the construction the re-audit named as
+#: "the new 'And this is...'" - better writing than the old caption formula, and
+#: still one shape doing all the work.
+#:
+#: MEASURE THE DEFECT, NOT A PROXY FOR IT. The first version of this ceiling
+#: counted first-person markers of any kind, which forced a hardcoded exemption
+#: for `merely_an_assistant` and `imperial_families` - the two categories that
+#: are legitimately ABOUT him, where saturation is the joke. That exemption was
+#: an "X except Y" written into a threshold, which Principle XVI presumes wrong
+#: and which is not an implementing session's to approve. The right answer was
+#: not to defend the carve-out but to stop needing one: measured against the tic
+#: itself those two categories score 0 and 1, because their lines are about him
+#: from the first word rather than by a clause tacked onto a fact. No exemption
+#: list, nothing hand-maintained, and the guard now fails on the thing that was
+#: actually wrong.
+#:
+#: The regex reproduces the audit's own census exactly - 109 lines, 10.6% of the
+#: corpus - which is the evidence that it matches what a reader noticed.
+TRAILING_SELF_REFERENCE = re.compile(
+    r',\s+(and|which|but|so|though|as)\s+I\b|,\s+I\s+(have|am|had|would|will|keep|hold|do|did)\b',
+    re.IGNORECASE,
+)
 
-#: The two categories that are ABOUT him, where saturation is the joke rather
-#: than a tic. `merely_an_assistant` is the insult that only lands on the bot
-#: whose name contains his subordination; `imperial_families` is sustained
-#: ironic deference, which only works if it never breaks. Both were reviewed
-#: and kept deliberately - this is a decision, not a backlog.
-SATURATION_IS_THE_JOKE = frozenset({'merely_an_assistant', 'imperial_families'})
+#: Per category, out of ten. Set at the standard: three uses of one grammatical
+#: shape in a ten-reply pool is a pattern a player meets in a single sitting.
+#: Three categories were at three when this was chosen and were rewritten to
+#: clear it, rather than the threshold being raised to admit them.
+TRAILING_CEILING = 2
 
 
-def test_no_category_is_monotone() -> None:
-    saturated = {
-        topic: sum(1 for reply in pool if SELF_REFERENCE.search(reply))
+def test_no_category_leans_on_one_construction() -> None:
+    ticcy = {
+        topic: sum(1 for reply in pool if TRAILING_SELF_REFERENCE.search(reply))
         for topic, pool in GM.items()
-        if topic not in SATURATION_IS_THE_JOKE
-        and sum(1 for reply in pool if SELF_REFERENCE.search(reply)) > SELF_REFERENCE_CEILING
+        if sum(1 for reply in pool if TRAILING_SELF_REFERENCE.search(reply)) > TRAILING_CEILING
     }
-    assert not saturated, (
-        f'one construction carrying the whole category - the GM asked for a mix of the '
-        f'three registers and said the ten replies are why (ceiling is '
-        f'{SELF_REFERENCE_CEILING} of ten): {saturated}'
+    assert not ticcy, (
+        f'the same clause bolted onto the end of the fact, over and over - the GM asked '
+        f'for a mix of the three registers and said the ten replies are why (ceiling is '
+        f'{TRAILING_CEILING} of ten): {ticcy}'
     )

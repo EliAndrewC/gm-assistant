@@ -291,8 +291,9 @@ RELIGION: dict[str, tuple[str, ...]] = {
         'open channel, and I have now written that down, which is the only power I have '
         'and I do use it.',
         "Members of the Order become disciples of one or more of Lord Moon's celestial "
-        'servants. Three levels: Crescent, Half, and the third one, which I am not '
-        'going to name here and which you could work out with a moment of arithmetic.',
+        'servants. Three levels: Crescent, Half, and a third that does not get named in '
+        'open channels. Two of the three are phases of the moon. Work the third out '
+        'yourself; the arithmetic is not difficult and the saying of it is.',
         'You may mix and match - Crescent abilities of three servants, or go deep with '
         'one. Most go wide and regret it. A secret society with an optimization problem '
         'is not what the founders had in mind.',
