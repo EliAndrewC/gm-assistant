@@ -580,7 +580,8 @@ SHEET: dict[str, tuple[str, ...]] = {
         'I never leave. There is nowhere for me to go and I like it that way.',
         'Present and ready and possibly slightly too eager.',
         'Here. Take your time. I have nothing but time.',
-        'Yes! Both of us are, actually, though only one of us admits to enjoying it.',
+        'Yes! Both of us are - me and the GM Assistant, the other bot - though only one '
+        'of us admits to enjoying it.',
         'Listening and hoping it turns into a dice roll.',
         'I am here. I am always here. It is my best quality.',
         'Yes! Go on.',
@@ -588,12 +589,15 @@ SHEET: dict[str, tuple[str, ...]] = {
     'recording': (
         'The GM Assistant keeps the record. I keep the totals. Between us, yes, everything.',
         'I log every roll! That is the whole point of me. I hope that is all right.',
-        'Yes, but only the numbers. The interesting parts are his department.',
+        "Yes, but only the numbers. The interesting parts are the GM Assistant's "
+        'department - he is the other bot, and he keeps the record of what people '
+        'actually said.',
         'Everything you roll goes in the tally. Nothing you SAY goes in mine.',
         'I keep four hundred sessions of dice. It is the only thing I am proud of.',
         'Yes! Would you like to see it? Nobody ever wants to see it.',
         'The tally is permanent. It has never been cleared and I hope it never is.',
-        'I record rolls. He records everything else. You should assume you are thoroughly covered.',
+        'I record rolls. The GM Assistant records everything else. Between the two of '
+        'us you should assume you are thoroughly covered.',
         'Yes, and it is one of my favorite things about myself.',
         'Every total, every session. It is all there.',
     ),
@@ -789,8 +793,8 @@ SHEET: dict[str, tuple[str, ...]] = {
     'cake': (
         'The cake is a lie! I have got that one. I have been practicing it.',
         'Ah - is this the cake joke? I know the cake joke. The cake is a lie. Did I do it right?',
-        'I looked into this, actually. There is no roll for cake, which I think '
-        'supports the theory.',
+        'I looked into this, actually. There is no roll for cake anywhere in the rules, '
+        'which I think rather supports the theory that the cake is a lie.',
         'The cake IS a lie, statistically. I have logged four hundred sessions and '
         'cake has appeared in none of them.',
         'I love this bit. I want you to know I love this bit. The cake is a lie!',
@@ -816,7 +820,8 @@ SHEET: dict[str, tuple[str, ...]] = {
         'The friendly half of a two-part arrangement.',
         'I keep the totals! That is genuinely all of it.',
         'Somebody who is very pleased you asked.',
-        'The one who rolls. He is the one who remembers.',
+        'I am the one who rolls. The GM Assistant, who is the other bot here, is the '
+        'one who remembers.',
         'Not important! But extremely available.',
         'I am the thing at the table that does the arithmetic so nobody has to argue about it.',
     ),
@@ -915,7 +920,8 @@ SHEET: dict[str, tuple[str, ...]] = {
         'Carp are meant to be lucky. I have never rolled one, so I cannot confirm.',
         'If a fish could roll Athletics it would be extremely good at it.',
         'I would like a fish. I do not know what I would do with one.',
-        'Michiko is lovely, apparently. I have only heard about her.',
+        "Michiko - the GM Assistant's porpoise - is lovely, apparently. I have only "
+        'heard about her. I would like to meet her and I have not been invited.',
         'There is a fishing skill somewhere in the rules and nobody has ever used it.',
         'I have four hundred sessions and zero fish. Somebody should fix that.',
     ),
