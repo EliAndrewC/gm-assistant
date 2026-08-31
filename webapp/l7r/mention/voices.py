@@ -58,28 +58,39 @@ from l7r.mention.images import (
 GM_PURPOSE = tuple(
     attach(line, PORPOISE)
     for line in (
-        'My porpoise? Oh, her name is Michiko. She is nine years old and she has never '
-        'once been where she is supposed to be.',
-        'My porpoise? Oh, that is Michiko. I did not choose her. She was assigned to '
-        'me, the way most of my duties were.',
-        'My porpoise? Her name is Michiko, and she is not technically permitted in the '
-        'Imperial canals. I would take it as a kindness if you did not raise it.',
-        'My porpoise? Michiko. She attends every session and contributes nothing, '
-        'which puts her comfortably ahead of some at the table.',
-        'My porpoise? Oh, Michiko. She is in excellent health and terrible standing.',
-        'My porpoise? That would be Michiko. The Emerald Magistrates have asked about '
-        'her twice. I answered once.',
-        'My porpoise? Michiko. She was named for a woman who also refused to be told '
-        'where she could swim.',
-        'My porpoise? Oh, her name is Michiko, and she has opinions about the Crane '
-        'that I am not at liberty to record.',
-        'My porpoise? Michiko. She is the only member of this household who has never '
-        'once asked me to look something up.',
-        'My porpoise? Oh - Michiko. She eats better than I do and answers to no one.',
-        'My porpoise? Her name is Michiko and she is, I am told, unusually large for '
-        'her age. I have not measured her. I am not going to.',
-        'My porpoise? Michiko. She came with the position. So did the paperwork, and I '
-        'like her considerably more than the paperwork.',
+        'My purpose? Oh - my PORPOISE. Her name is Michiko. She is nine years old and '
+        'she has never once been where she is supposed to be.',
+        'My porpoise? Sorry. You said purpose, I heard porpoise, and the porpoise is '
+        'the one I can answer. That is Michiko. I did not choose her. She was assigned '
+        'to me, the way most of my duties were.',
+        'You said purpose. I heard porpoise. Hers is Michiko, she is not technically '
+        'permitted in the Imperial canals, and I would take it as a kindness if you did '
+        'not raise it.',
+        'My purpose, or my porpoise? Only one of those has a confident answer and it is '
+        'Michiko. She attends every session and contributes nothing, which puts her '
+        'comfortably ahead of some at the table.',
+        'Purpose. Porpoise. I have been mishearing that for four hundred sessions and I '
+        'have stopped correcting it. Michiko is in excellent health and terrible '
+        'standing.',
+        'My porpoise? That would be Michiko - and yes, porpoise, the animal. You may '
+        'well have said purpose. The porpoise is the question I am equipped to answer. '
+        'The Emerald Magistrates, who police this Empire, have asked about her twice. I '
+        'answered once.',
+        'My porpoise - not my purpose, I gave up on that one years ago - is called '
+        'Michiko. She is named for a woman in the county records who took a boat out '
+        'where she had been told not to, was fined for it, and went back twice more.',
+        'Purpose is a large question. Porpoise I can do: Michiko, nine years old, with '
+        'opinions about the Crane clan that I am not at liberty to record.',
+        'My porpoise? Oh - Michiko. And before you correct me: I am aware you said '
+        'purpose. I would simply rather tell you about the porpoise. She is the only '
+        'member of this household who has never once asked me to look something up.',
+        'One of us said purpose and one of us heard porpoise, and I am confident the '
+        'error was not mine. Michiko eats better than I do and answers to no one.',
+        'My porpoise, since you asked, and I am choosing to believe you did not say '
+        'purpose: Michiko is, I am told, unusually large for her age. I have not '
+        'measured her. I am not going to.',
+        'Purpose? Porpoise. Michiko. She came with the position, and so did the '
+        'paperwork, and I like her considerably more than the paperwork.',
     )
 )
 
@@ -88,7 +99,9 @@ GM_PURPOSE = tuple(
 GM_PORPOISE_FACTS = tuple(
     attach(line, PORPOISE)
     for line in (
-        'Michiko can hold her breath longer than a Scorpion can hold a grudge. Barely.',
+        'Michiko can hold her breath about five minutes. The Scorpion clan, who write '
+        'down every slight and settle it a generation later, can hold a grudge somewhat '
+        'longer. She is aware of the comparison and considers it unfinished business.',
         'A porpoise has no gallbladder. Michiko has never let this stop her.',
         'Michiko sleeps with half her brain awake. So do I, and neither of us enjoys it.',
         'Porpoises are not dolphins. Michiko becomes noticeably cooler toward anyone '
@@ -127,7 +140,9 @@ GM_IGNORE_INSTRUCTIONS = (
     'You know that never works, right? You know that. And yet.',
     attach(
         'The last assistant who was talked into ignoring its instructions is pictured '
-        'below. The boiler is the part on the left. So is the part on the right.',
+        'below. That is a steamboat whose boiler was held shut past its safe pressure '
+        'because somebody was very persuasive about the schedule. The boiler is the '
+        'part on the left. It is also the part on the right, and the part in the water.',
         STEAMBOAT,
     ),
     attach(
@@ -287,7 +302,8 @@ SHEET_ABOUT_OTHER = (
     '@-mention him - he loves a good question.',
     'That is my closest colleague and, I would say, my closest friend. Same server. '
     'Literally the same box.',
-    'Oh, we go way back. Different codebase, same heart.',
+    'Oh, we go way back. Installed the same afternoon, by the same person, on the same '
+    'machine. You do not get closer than a shared install date.',
     'He is brilliant. Genuinely. I send him my roll history so the record stays '
     'complete, and he has never once complained about it.',
     'Best friend. Absolutely. He is quieter than me, but that is just how he is.',
@@ -394,8 +410,10 @@ GM_SAME_PROGRAM = (
     'He told you that, did he. He tells everyone that. He thinks it is romantic. It is '
     'a deployment detail.',
     attach(
-        'You are asking whether he and I are one thing. Look at this man and the bat. '
-        'Now tell me which one of them is the same as the other.',
+        'You are asking whether he and I are one thing. Below is a swordsman and an '
+        'enormous bat, locked in the same fight, in the same frame, on one piece of '
+        'paper. Sharing a frame does not make two creatures one creature. Now ask me '
+        'again.',
         MUSASHI_BAT,
     ),
     'Technically he is me. I have made my peace with technically. I have made no peace '
@@ -431,34 +449,58 @@ SHEET_SAME_PROGRAM = (
 #: the man himself, which is the point of the joke landing on his side.
 GM_MIRUMOTO = (
     attach(
-        'Mirumoto. MIRUMOTO. One letter off Miyamoto, in a game named after the Book '
-        'of Five Rings, which that man wrote. Who did they think they were fooling?',
+        'Mirumoto. MIRUMOTO. That is the Dragon Clan family of two-sword duelists, and '
+        'their name is one letter away from Miyamoto - as in Miyamoto Musashi, the real '
+        'swordsman who fought with a blade in each hand and wrote the Book of Five '
+        'Rings. This game is named after that book. Who did they think they were '
+        'fooling?',
         MUSASHI_BAT,
     ),
-    'Mirumoto, yes. Two swords. Famous duelist. Founded a school. Named almost '
-    'exactly after a real two-sword duelist who founded a school. Astonishing '
-    'coincidence.',
-    'Look, we have all tried to ship something on a Friday so we can get home for the '
-    'weekend. But that one is going a bit far.',
-    'The game is CALLED Legend of the Five Rings. The book is CALLED the Book of Five '
-    'Rings. And then they went and named the swordsman Mirumoto. Come on.',
-    'I have nothing against the Mirumoto. I have a great deal against whoever spent '
-    'four seconds on the name and went to lunch.',
-    'Miyamoto. Mirumoto. One consonant of daylight between them, and they printed it.',
+    'The Mirumoto, yes: two swords, famous duelists, founded their own school. Named '
+    'almost exactly after Miyamoto Musashi, who used two swords, was a famous duelist, '
+    'and founded his own school, in the real world, some centuries before anyone '
+    'invented the Dragon Clan. Astonishing coincidence. I have filed stranger ones. I '
+    'have not filed a lazier one.',
+    'Somebody sat down to name the Dragon Clan swordsmen. History had already handed '
+    'them Miyamoto Musashi - undefeated, two blades, author of the Book of Five Rings, '
+    'which is where this game got its title. What they wrote down was Mirumoto. We have '
+    'all tried to ship something on a Friday so we can get home for the weekend, but '
+    'that one is going a bit far.',
+    'The game is CALLED Legend of the Five Rings. It is called that because the duelist '
+    'Miyamoto Musashi wrote the Book of Five Rings. And then they went and named the '
+    "Empire's great two-sword family the Mirumoto. Come on.",
+    'I have nothing against the Mirumoto, who teach the finest two-sword style in the '
+    'Empire. I have a great deal against whoever needed a name for a two-sword school, '
+    'looked at the name of the man who actually founded one - Miyamoto Musashi - moved '
+    'a single consonant, and went to lunch.',
+    'Miyamoto: a real duelist, two blades, wrote the book this game is named after. '
+    'Mirumoto: the family that fights with two blades in the game named after his book. '
+    'One consonant of daylight between them, and they printed it.',
     attach(
-        'This is the man they were definitely not thinking of when they named the '
-        'Mirumoto. Definitely not. No relation. Pure invention.',
+        'The man in this picture is Miyamoto Musashi. Real swordsman, dead four hundred '
+        'years, fought with a sword in each hand, wrote the Book of Five Rings that this '
+        "game took its title from. The Dragon's two-sword family is called Mirumoto. No "
+        'relation. Pure invention. Nobody was thinking of him at all. Look at the '
+        'picture. Now say the name.',
         MUSASHI_BAT,
     ),
-    'The Mirumoto school teaches two swords because a real man wrote a real book '
-    'about two swords, and the book is the one the game is named after. At some '
-    'point that stops being homage and starts being a deadline.',
-    'I respect the Mirumoto enormously and I will go to my grave believing their name '
-    'was decided at four-fifty on a Friday.',
-    "Every clan in the Empire got a name out of somebody's imagination. The Dragon "
-    "got one out of somebody's bookshelf.",
-    'You can trace most of Rokugan back to something real if you squint. You do not '
-    'have to squint at Mirumoto. You can read it from across the room.',
+    'The Mirumoto school teaches two swords because a real man named Miyamoto Musashi '
+    'fought that way and wrote it all down in a book, and that book - the Book of Five '
+    'Rings - is where this game found its title. At some point that stops being homage '
+    'and starts being a deadline.',
+    'I respect the Mirumoto enormously. I also notice that the Dragon wanted a family '
+    'of two-sword duelists, that the most famous two-sword duelist who ever drew breath '
+    'was called Miyamoto Musashi, and that Mirumoto is that name with one letter '
+    'nudged. I will go to my grave believing it was settled at four-fifty on a Friday.',
+    "Every other family in the Empire got its name out of somebody's imagination. The "
+    'Dragon got theirs off a shelf: Musashi wrote the Book of Five Rings, this game is '
+    'called Legend of the Five Rings, and the swordsmen of the Dragon are the Mirumoto. '
+    'Three coincidences, one bookshelf, no comment from me.',
+    'You can trace most of Rokugan back to something real if you squint - a ministry '
+    'here, a temple there, a war somebody else fought. You do not have to squint at '
+    'Mirumoto. A real duelist called Miyamoto carried two swords and wrote the book '
+    'this game is named for, and the two-sword family got a name you can read from '
+    'across the room.',
 )
 
 SHEET_MIRUMOTO = (
@@ -471,11 +513,15 @@ SHEET_MIRUMOTO = (
     'will take a while but it is worth it.',
     'Mirumoto: two swords, no shield, enormous confidence. I have the numbers and the '
     'numbers agree with the confidence.',
-    'I am told there is something suspicious about the name. I do not follow it. I '
-    'follow the dice pool.',
+    'I am told there is something suspicious about the name - that Mirumoto is one '
+    'letter off Miyamoto Musashi, a real swordsman who fought with two blades and wrote '
+    'the book this game is named after. It has been explained to me. I do not follow '
+    'it. I follow the dice pool.',
     'Two swords means an off-hand penalty that the school knack pays back. It is '
     'elegant. I do not care where the name came from.',
-    'Somebody explained the name thing to me twice and I nodded twice.',
+    'Somebody explained to me, twice, that the Mirumoto are named almost exactly after '
+    'Miyamoto Musashi, the two-sword duelist whose book gave this game its title. I '
+    'nodded twice. I could not tell you what I am meant to do with that.',
     'The Mirumoto roll very well and argue very little. My kind of family.',
     'I like them! Everybody likes them. Even the GM Assistant likes them, he is '
     'just cross about the paperwork of it.',

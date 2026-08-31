@@ -48,14 +48,28 @@ class TestReplies:
         return rules.respond_to(text, bot, rng=random.Random(seed), **kw)
 
     # -- FR-001 / FR-004: the porpoise ------------------------------------
-    def test_the_purpose_answer_names_the_misunderstanding_first(self) -> None:
+    def test_the_purpose_answer_names_both_halves_of_the_mishearing(self) -> None:
         """FR-001, and the GM's exact wording: *"My porpoise? Oh, her name is..."*
 
-        Leading with the mishearing is the whole joke; a fact about a porpoise
-        that does not first say "my porpoise?" is a non sequitur.
+        Leading with the mishearing is the whole joke - but a mishearing has TWO
+        halves and only one of them used to be on screen. This assertion read
+        `startswith('my porpoise?')` and nothing else, and every one of the
+        twelve replies opened that way while not one of them ever said the word
+        "purpose". On the `what is your purpose` trigger the player supplies the
+        other half themselves and it lands. On the `why do you exist` trigger
+        they never type it, and the reply was a picture of a sea mammal in
+        answer to a question about existence, with the joke's other half nowhere
+        a reader could see it.
+
+        Found by the context audit (`.claude/agents/mention-context-review.md`,
+        2026-08-31), which is the standard this now asserts: both words in every
+        reply, one of them still leading.
         """
         for reply in voices.GM_PURPOSE:
-            assert reply.lower().startswith('my porpoise?'), reply[:60]
+            head = reply[:40].lower()
+            assert 'porpoise' in head or 'purpose' in head, reply[:60]
+            body = reply.lower()
+            assert 'porpoise' in body and 'purpose' in body, reply[:60]
 
     def test_every_porpoise_reply_carries_her_picture(self) -> None:
         """GM 2026-08-31: *"every message involving your pet porpoise should
