@@ -48,6 +48,45 @@ and privately unable to stand the Character Sheet - who is a free beat in any ca
 number. The full version of this section, with the audit's findings, is at the top of
 `gm_religion.py`; each other file's docstring records what was repaired in it.
 
+### AFTER EDITING A LORE LINE, RENDER IT AND READ IT
+
+Not optional, and not covered by any test. Editing a reply means editing a multi-line Python string
+literal, and replacing only PART of one strands the rest:
+
+```
+'Building a temple in a gaijin city is either the most pious act of a '   <- head left behind
+'Both partisan camps on that question write to me, at length, ...'       <- new tail
+```
+
+which renders as *"...the most pious act of a Both partisan camps on that question write to me"*.
+**The gate passes.** It is valid Python, valid types, valid coverage, and prose nobody would ship.
+
+This happened THREE times in one session. All three were caught by printing the rendered reply and
+reading it; **zero** were caught by tooling. It is not cleanly guardable either - a sweep for the
+signature (lowercase word, space, capitalised word) returns proper nouns, because "the Ministry of
+Rites" looks identical to a splice. So this is a process rule and it stays one:
+
+```python
+python3 -c "import sys; sys.path.insert(0,'.'); from l7r.mention.lore import GM; print(GM['jikoju'][5])"
+```
+
+### MEASURE A GUARD'S SCOPE - NEVER REASON ABOUT IT
+
+The most transferable lesson here for anyone writing a guard in this repo, learned twice in one
+night on the same guard, in the same shape.
+
+The within-pool duplicate check began by shingling only the CLOSING sentence, on the reasoning that
+a punchline sits at the end. True, and incomplete: it passed green over two verbatim duplicates
+sharing a twenty-word OPENING - the two its own commit had been written to remove. Widened to both
+ends, it then missed a joke sitting in a MIDDLE sentence, leaving 334 middle sentences across 269
+replies uninspected, 15% of the corpus.
+
+**Both narrowings were reasoning. Neither was measured. And measurement was free**: widening to all
+sentences cost ZERO new false positives and caught one more real duplicate, exactly as widening to
+both ends had. A guard's scope is a five-minute experiment, so run the experiment. The window and
+the stopword list here WERE measured, and both are right; only the scope was argued, and it was
+wrong twice.
+
 ### WORK AN AUDIT'S FINDINGS CATEGORY-FIRST, NEVER LINE-BY-LINE
 
 The single most expensive lesson of the 2026-08-31 rewrite, and it cost a whole round to learn.
