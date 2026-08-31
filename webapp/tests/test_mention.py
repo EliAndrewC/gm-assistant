@@ -9,6 +9,7 @@ here exist only to make that impossible to regress.
 from __future__ import annotations
 
 import asyncio
+import collections
 import configparser
 import contextlib
 import json
@@ -839,6 +840,31 @@ DROPPED_WORD = re.compile(
     r'|should|would|could|which|that|and|or|but)(?![-\w])',
     re.IGNORECASE,
 )
+
+
+def test_no_pool_offers_the_same_reply_twice() -> None:
+    """A pool of eleven that contains a pair is a pool of ten wearing a bigger number.
+
+    `test_mention_lore_tone.py` has banned a repeated reply since feature 205 -
+    and it sweeps `lore.GM` and nothing else, which is exactly the scoping
+    mistake `lore/CLAUDE.md` records under "MEASURE A GUARD'S SCOPE, NEVER REASON
+    ABOUT IT". Widened here on 2026-08-31 and measured rather than argued:
+    SEVEN duplicate pairs in `smalltalk/gm.py` had been sitting in the shipped
+    corpus, one per category in `recording`, `tired`, `sorry`, `time`,
+    `meaning`, `no_u` and `ping`, all of them the `#9`/`#10` image captions. The
+    ten-per-pool floor could not see them, because eleven entries is eleven
+    entries whatever they say.
+
+    Zero false positives across all 369 pools, which is what makes this a ban:
+    two identical replies in one pool are never what anybody meant.
+    """
+    duplicates = [
+        f'{name}: {line[:70]}'
+        for name, pool in named_pools()
+        for line, count in collections.Counter(pool).items()
+        if count > 1
+    ]
+    assert not duplicates, f'the same reply twice in one pool: {duplicates}'
 
 
 def test_no_reply_has_a_word_missing_out_of_the_middle_of_it() -> None:

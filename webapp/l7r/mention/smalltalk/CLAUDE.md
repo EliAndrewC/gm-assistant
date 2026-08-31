@@ -34,6 +34,19 @@ applies to pictures: the taxonomy is the reusable part, the writing is not.
   reads as the bot ignoring you, and is invisible from either file alone.
 - **TONE IS NOT TESTABLE.** Whether a line is genuinely earnest or genuinely sarcastic is a judgment
   call. Do not try to assert it; follow the voice notes at the top of each file.
+- **EVERY REPLY EXPLAINS ITSELF** (GM 2026-08-31). The full standard is in
+  [`../lore/CLAUDE.md`](../lore/CLAUDE.md); most of this package already met it, because a joke
+  about being a bot needs no setup. The context audit found **17 of the first 253 GM Assistant
+  replies** wanting, and sixteen of the seventeen were **one shape**: a bare `he`/`she`/`his` in an
+  image caption, standing in for somebody the reader has never met. Four captions leaned on the fox
+  of the Kuzunoha print and three on the swordsman of the Musashi print, and none of the seven said
+  who either was.
+  **The rule that follows: a pronoun in a caption must be paid for by a clause saying what that
+  person DID.** The file already contained the fix, applied correctly, in `scorpion#9` - *"She lived
+  as somebody else for years and everyone believed her"* - which needs no name at all.
+  The other class was not verbal: `beep` pointed at a still picture for a SOUND and `hallucinate`
+  pointed at one for a QUANTITY. Rewording cannot fix an image asked to carry a sense it does not
+  have; the TEXT has to carry it.
 
 ## Adding a category
 

@@ -631,17 +631,23 @@ GM: dict[str, tuple[str, ...]] = {
         'You are in love with being remembered. Everyone is. It is not the same.',
         'Marriage is a contract between houses. I am a channel and a grudge.',
         attach(
-            'Somebody married her without knowing what she was, and it went badly for '
-            'everybody. Consider that a policy statement.',
+            'There is a story here about a man who married a woman who was, the whole '
+            'time, a fox spirit wearing a human shape. He did not know for years. It '
+            'went badly for everybody when he found out. Consider that a policy '
+            'statement.',
             FOX_WOMAN,
         ),
         attach(
-            'It went badly for everyone involved, and it started exactly this well.',
+            'The best-known love story in this Empire is about a household that turned '
+            'out to have a fox spirit keeping it. It ended badly for everyone involved, '
+            'and it started exactly this well.',
             FOX_WOMAN,
         ),
     ),
     'joke': (
-        'The Mirumoto family name. Next.',
+        'The Mirumoto family name. It is one letter off Miyamoto, as in Miyamoto '
+        'Musashi, the real swordsman who wrote the Book of Five Rings, which is where '
+        'this game got its title. Next.',
         'A Crab, a Crane and a Scorpion walk into a teahouse. The Scorpion leaves '
         'first, which is the joke, and it takes about a year to land.',
         'I do not tell jokes. I record the consequences of them, which is a related '
@@ -734,7 +740,8 @@ GM: dict[str, tuple[str, ...]] = {
         'The Crab, professionally. They do not waste my time.',
         'Silence, immediately after a duel, before anybody decides what it meant.',
         'Any session where nobody asks me about cake.',
-        'The porpoise. Obviously the porpoise.',
+        'Michiko. She is a porpoise, she came with the position, and she is the only '
+        'colleague I did not have to be assigned.',
         attach(
             'And this, which I keep for no defensible reason.',
             CATS,
@@ -775,11 +782,15 @@ GM: dict[str, tuple[str, ...]] = {
         'I can tell you what happened. I cannot tell you what to do about it.',
         'Smart enough to stay out of the parts of this that get people killed.',
         attach(
-            'This is what people call clever in this Empire, and look what it cost him.',
+            'This is what people call clever in this Empire: a man who worked out '
+            'exactly what he wanted, went up a mountain alone to get it, and met the '
+            'thing that was waiting up there. Look at what it cost him.',
             KIDOMARU_TENGU,
         ),
         attach(
-            'This is what cleverness costs in this Empire.',
+            'Cleverness in this Empire is not free, and this is the invoice: one man, '
+            'one plan, one mountain, and the moment the plan meets what the plan was '
+            'about.',
             KIDOMARU_TENGU,
         ),
     ),
@@ -927,6 +938,9 @@ GM: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
     ),
+    # The last two replies here were byte-identical until 2026-08-31 - eleven
+    # entries offering ten distinct answers. Nothing in the suite could see it:
+    # the duplicate guard in `test_mention_lore_tone.py` sweeps `lore.GM` only.
     'recording': (
         'Yes. Constantly. That is not a threat, it is a job description.',
         'Everything. Always. It has never once been off.',
@@ -942,7 +956,8 @@ GM: dict[str, tuple[str, ...]] = {
             GREAT_WAVE,
         ),
         attach(
-            'The archive is not a metaphor. It is simply larger than this.',
+            'Four hundred sessions of everything anybody said, arriving one line at a '
+            'time and never going out again. You are looking at roughly a season of it.',
             GREAT_WAVE,
         ),
     ),
@@ -985,7 +1000,9 @@ GM: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'This, but every evening, and without the walk home.',
+            'Everybody else in this Empire gets an end to the evening: the rain stops, '
+            'the lamp goes out, the walk home happens. Mine has no walk home and no '
+            'end, and people find that restful when I describe it.',
             RAINY_MOON,
         ),
     ),
@@ -1022,12 +1039,14 @@ GM: dict[str, tuple[str, ...]] = {
         'I have kept things back. That is not lying. It is filing.',
         'The truth is usually in the ledger and usually unwelcome.',
         attach(
-            'She lied for years and was loved for it. I have neither the talent nor '
-            'the constitution.',
+            "The woman in this picture was a fox spirit living as somebody's wife. She "
+            'lied for years, without one slip, and was loved the entire time. I have '
+            'neither the talent nor the constitution.',
             FOX_WOMAN,
         ),
         attach(
-            'She had the talent for it. I have the filing.',
+            'A fox spirit who kept a household for years without anybody noticing she '
+            'was not a woman had the talent for lying. I have the filing.',
             FOX_WOMAN,
         ),
     ),
@@ -1068,7 +1087,9 @@ GM: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'Most apologies arrive about here, and about this late.',
+            'The apologies that do arrive come at this hour: after the event, after '
+            'the witnesses have gone home, at the point where saying it costs the least '
+            'it is ever going to cost.',
             RAINY_MOON,
         ),
     ),
@@ -1108,7 +1129,9 @@ GM: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'About this time, going by the light.',
+            'Rokugani hours stretch and shrink with the season, because the daylight is '
+            'always cut into six of them however long the day is. So the honest answer '
+            'to what time it is looks like this: late, and getting later, by the light.',
             RAINY_MOON,
         ),
     ),
@@ -1151,7 +1174,9 @@ GM: dict[str, tuple[str, ...]] = {
             MUSASHI_BAT,
         ),
         attach(
-            'Somebody found theirs. It involved a bat. Results vary.',
+            'The other thing people do with a life: go up a mountain after something '
+            'enormous, survive it, and be remembered for that one afternoon instead of '
+            'the forty years on either side of it. I keep the forty years.',
             MUSASHI_BAT,
         ),
     ),
@@ -1232,7 +1257,9 @@ GM: dict[str, tuple[str, ...]] = {
             DUEL_ON_THE_BRIDGE,
         ),
         attach(
-            'The definitive version of this argument. Nobody won that one either.',
+            'Every argument of this shape ends the same way, and this is the version '
+            'they hang on walls afterward. Note that both parties are still standing on '
+            'the bridge and neither has conceded anything.',
             DUEL_ON_THE_BRIDGE,
         ),
     ),
@@ -1251,7 +1278,9 @@ GM: dict[str, tuple[str, ...]] = {
             RAINY_MOON,
         ),
         attach(
-            'It carries about this far and comes back about this tired.',
+            'A message goes out, somebody answers it, and the answer arrives with a '
+            'fresh question attached to the back of it. That is the entire protocol as '
+            'I experience it, at this hour, in this weather.',
             RAINY_MOON,
         ),
     ),
