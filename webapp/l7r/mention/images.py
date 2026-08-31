@@ -91,6 +91,34 @@ GREAT_WAVE = 'https://upload.wikimedia.org/wikipedia/commons/0/0d/Great_Wave_off
 #: Hokusai. Free by age.
 CARP = 'https://upload.wikimedia.org/wikipedia/commons/5/58/Hokusai_Carps.jpg'
 
+#: SHOWS: four cats in assorted poses, illustrating Japanese proverbs.
+#: PUBLIC DOMAIN - Utagawa Kuniyoshi. Free by age.
+CATS = (
+    'https://upload.wikimedia.org/wikipedia/commons/1/15/'
+    'Kuniyoshi_Utagawa%2C_For_cats_in_different_poses.jpg'
+)
+
+#: SHOWS: Kuzunoha, the fox-woman of legend, who lived for years as a human wife
+#: before her true shape showed. PUBLIC DOMAIN - Utagawa Kuniyoshi. Free by age.
+FOX_WOMAN = 'https://upload.wikimedia.org/wikipedia/commons/c/c6/Kuniyoshi_Kuzunoha.jpg'
+
+#: SHOWS: Yoshitsune and Benkei duelling on Gojo Bridge. PUBLIC DOMAIN - Utagawa
+#: Kuniyoshi, 19th century. Free by age.
+DUEL_ON_THE_BRIDGE = (
+    'https://upload.wikimedia.org/wikipedia/commons/e/ec/'
+    'Yoshitsune_and_Benkei%27s_duel_on_Gojo_Bridge%2C_a_scean_of_the_Chronicle_of_'
+    'Yoshitsune_%28Gikei-ki%29_-_Heroes_of_China_and_Japan_%28Wakan_Eiyu_Ga-den%29%2C_'
+    'Ukiyo-e_print_by_Kuniyoshi_Utagawa%2C_circa_19th_century.jpg'
+)
+
+#: SHOWS: "The moon's inner vision", a figure in contemplation under the moon.
+#: PUBLIC DOMAIN - Tsukioka Yoshitoshi, One Hundred Aspects of the Moon. Free by age.
+INNER_VISION = 'https://upload.wikimedia.org/wikipedia/commons/2/28/Yoshitoshi_-_100_Aspects_of_the_Moon_-_34.jpg'
+
+#: SHOWS: "Rainy moon" - a solitary figure in the rain at night. PUBLIC DOMAIN -
+#: Tsukioka Yoshitoshi, One Hundred Aspects of the Moon. Free by age.
+RAINY_MOON = 'https://upload.wikimedia.org/wikipedia/commons/8/8d/Yoshitoshi_-_100_Aspects_of_the_Moon_-_78.jpg'
+
 #: Everything postable, for the test that pins provenance.
 ALL_IMAGES = (
     PORPOISE,
@@ -101,6 +129,11 @@ ALL_IMAGES = (
     SAKE_SAMURAI,
     GREAT_WAVE,
     CARP,
+    CATS,
+    FOX_WOMAN,
+    DUEL_ON_THE_BRIDGE,
+    INNER_VISION,
+    RAINY_MOON,
 )
 
 

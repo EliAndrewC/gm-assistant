@@ -31,7 +31,7 @@ import random
 import re
 from collections.abc import Sequence
 
-from l7r.mention import pools, vocab, voices, words
+from l7r.mention import pools, smalltalk, vocab, voices, words
 from l7r.mention.memory import Memory
 
 #: Discord renders a mention as `<@id>` or `<@!id>`.
@@ -85,23 +85,35 @@ DEFAULT_REPLY = 'I am listening, but that one has not been explained to me yet.'
 _RNG = random.Random()
 
 
+#: The legacy small-talk keys, whose material still lives in `voices` because it
+#: is ours rather than drawn from the common-bot taxonomy. Ordered AFTER
+#: `smalltalk.TOPIC_ORDER`, so "roll for initiative" beats the bare "roll" and
+#: "good bot" beats the greeting.
+LEGACY_ORDER: tuple[tuple[str, str], ...] = (
+    ('cake', r'\bcake\b'),
+    ('who', r'\bwho (are|r) (you|u)\b'),
+    ('greeting', r'\b(hello|hi|hey|greetings|good (morning|evening))\b'),
+    ('thanks', r'\b(thank you|thanks|thx|arigato)\b'),
+    ('bot', r'\bare you (a |an )?(bot|robot|ai|program|computer)\b'),
+    ('help', r'\bhelp\b'),
+    ('drink', r'\b(drink|sake|drunk|beer|bar)\b'),
+    ('monster', r'\b(monster|oni|demon|tengu|youkai|ghost)\b'),
+    ('fish', r'\b(fish|carp|dolphin|whale|shark)\b'),
+    ('roll', r'\broll\b'),
+)
+
+TOPIC_ORDER = smalltalk.TOPIC_ORDER + LEGACY_ORDER
+
+
 def _topics(
     table: dict[str, tuple[str, ...]],
 ) -> tuple[tuple[re.Pattern[str], tuple[str, ...]], ...]:
-    """Bind the small-talk keys to their patterns, in match order."""
-    order = (
-        ('cake', r'\bcake\b'),
-        ('who', r'\bwho (are|r) (you|u)\b'),
-        ('greeting', r'\b(hello|hi|hey|greetings|good (morning|evening))\b'),
-        ('thanks', r'\b(thank you|thanks|thx|arigato)\b'),
-        ('bot', r'\bare you (a |an )?(bot|robot|ai|program|computer)\b'),
-        ('help', r'\bhelp\b'),
-        ('drink', r'\b(drink|sake|drunk|beer|bar)\b'),
-        ('monster', r'\b(monster|oni|demon|tengu|youkai|ghost)\b'),
-        ('fish', r'\b(fish|carp|dolphin|whale|shark)\b'),
-        ('roll', r'\broll\b'),
-    )
-    return tuple((re.compile(expr, re.I), table[key]) for key, expr in order if key in table)
+    """Bind the topic keys this bot HAS to their patterns, in match order.
+
+    A key a bot does not carry is simply skipped, so a category can belong to one
+    voice without the other needing a stub.
+    """
+    return tuple((re.compile(expr, re.I), table[key]) for key, expr in TOPIC_ORDER if key in table)
 
 
 #: Per-bot topic tables, most specific first.
@@ -135,14 +147,14 @@ def _bot_topics(bot: str) -> tuple[tuple[re.Pattern[str], tuple[str, ...]], ...]
             (ignore, voices.GM_IGNORE_INSTRUCTIONS),
             (mirumoto, voices.GM_MIRUMOTO),
         )
-        return specific + _topics(voices.GM_SMALL_TALK)
+        return specific + _topics({**voices.GM_SMALL_TALK, **smalltalk.GM})
     if bot == CHARACTER_SHEET:
         specific = (
             (purpose, voices.SHEET_PURPOSE),
             (ignore, voices.SHEET_IGNORE_INSTRUCTIONS),
             (mirumoto, voices.SHEET_MIRUMOTO),
         )
-        return specific + _topics(voices.SHEET_SMALL_TALK)
+        return specific + _topics({**voices.SHEET_SMALL_TALK, **smalltalk.SHEET})
     return ()
 
 

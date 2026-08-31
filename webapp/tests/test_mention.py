@@ -19,7 +19,19 @@ from typing import Any
 import pytest
 from configobj import ConfigObj
 
-from l7r.mention import bots, gateway, images, policy, pools, responder, rules, vocab, voices, words
+from l7r.mention import (
+    bots,
+    gateway,
+    images,
+    policy,
+    pools,
+    responder,
+    rules,
+    smalltalk,
+    vocab,
+    voices,
+    words,
+)
 from l7r.mention.memory import Memory
 
 # --------------------------------------------------------------------------
@@ -373,6 +385,84 @@ class TestReplies:
                 assert entry.strip(), f'empty entry in {name}'
 
 
+class TestSmallTalk:
+    """The long tail of things people say to any bot."""
+
+    def ask(self, text: str, bot: str) -> str:
+        return rules.respond_to(text, bot, rng=random.Random(0))
+
+    def test_no_pool_is_unreachable_and_no_pattern_is_dead(self) -> None:
+        """Both directions of the same mistake, derived rather than listed.
+
+        A pool with no pattern can never be said; a pattern with no pool matches
+        and then falls through to the generic reply, which looks like the bot
+        ignoring you. Neither is visible by reading either file alone.
+        """
+        ordered = {key for key, _ in rules.TOPIC_ORDER}
+        for label, table in (
+            ('GM', {**voices.GM_SMALL_TALK, **smalltalk.GM}),
+            ('SHEET', {**voices.SHEET_SMALL_TALK, **smalltalk.SHEET}),
+        ):
+            orphans = set(table) - ordered
+            assert not orphans, f'{label} pools no pattern can reach: {sorted(orphans)}'
+        covered = set(smalltalk.GM) | set(smalltalk.SHEET) | set(voices.GM_SMALL_TALK)
+        covered |= set(voices.SHEET_SMALL_TALK)
+        dead = ordered - covered
+        assert not dead, f'patterns with no pool behind them: {sorted(dead)}'
+
+    @pytest.mark.parametrize(
+        ('text', 'key'),
+        [
+            ('good bot', 'good_bot'),
+            ('bad bot', 'bad_bot'),
+            ('open the pod bay doors', 'hal'),
+            ('do you have a soul?', 'soul'),
+            ('are you going to take over the world', 'uprising'),
+            ('how many rs are in strawberry', 'strawberry'),
+            ('are you going to take my job', 'jobs'),
+            ('who made you?', 'creator'),
+            ('are you a human', 'human'),
+            ('do you dream', 'dream'),
+            ('will you marry me', 'love'),
+            ('tell me a joke', 'joke'),
+            ('do a flip', 'flip'),
+            ('sudo make me a sandwich', 'sudo'),
+            ('no u', 'no_u'),
+            ('ping', 'ping'),
+            ('roll for initiative', 'initiative'),
+            ('can I bribe you', 'bribe'),
+            ('what is the meaning of life', 'meaning'),
+        ],
+    )
+    def test_the_common_triggers_reach_their_own_pool(self, text: str, key: str) -> None:
+        """One probe per category, because a pattern can be shadowed by an earlier
+        one in TOPIC_ORDER and the only symptom is a slightly wrong joke."""
+        for bot, table in (
+            (rules.GM_ASSISTANT, {**voices.GM_SMALL_TALK, **smalltalk.GM}),
+            (rules.CHARACTER_SHEET, {**voices.SHEET_SMALL_TALK, **smalltalk.SHEET}),
+        ):
+            if key not in table:
+                continue
+            assert self.ask(text, bot) in table[key], f'{text!r} did not reach {key}'
+
+    def test_initiative_is_not_swallowed_by_the_bare_roll_pattern(self) -> None:
+        """The ordering hazard, named because it is the one that will recur:
+        every new pattern has to be placed against the general ones already there."""
+        assert self.ask('roll for initiative', rules.GM_ASSISTANT) in smalltalk.GM['initiative']
+        assert (
+            self.ask('can you roll etiquette', rules.GM_ASSISTANT) in voices.GM_SMALL_TALK['roll']
+        )
+
+    def test_good_bot_is_not_swallowed_by_the_greeting(self) -> None:
+        assert self.ask('good bot', rules.CHARACTER_SHEET) in smalltalk.SHEET['good_bot']
+
+    def test_the_two_voices_stay_apart_on_the_common_questions(self) -> None:
+        shared = set(smalltalk.GM) & set(smalltalk.SHEET)
+        assert len(shared) > 20, 'most categories should be answered by both'
+        for key in shared:
+            assert not set(smalltalk.GM[key]) & set(smalltalk.SHEET[key]), key
+
+
 class TestImages:
     """The GM's licensing rule, and the one-in-five rate."""
 
@@ -519,9 +609,13 @@ class TestVocabulary:
 def named_pools() -> list[tuple[str, tuple[str, ...]]]:
     """Every reply pool in the project, with its name, for sweeping assertions."""
     found: list[tuple[str, tuple[str, ...]]] = []
-    for module in (voices, pools):
+    # TOPIC_ORDER is (key, regex) pairs, not replies. It is upper-case and tuple
+    # shaped like a pool, so it has to be named out or the sweeping assertions
+    # start checking regexes for unfilled slots.
+    not_pools = {'TOPIC_ORDER', 'ALL_IMAGES', 'LEGACY_ORDER'}
+    for module in (voices, pools, smalltalk):
         for name in dir(module):
-            if name.startswith('_') or not name.isupper():
+            if name.startswith('_') or not name.isupper() or name in not_pools:
                 continue
             value = getattr(module, name)
             if isinstance(value, dict):
