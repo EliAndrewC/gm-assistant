@@ -471,6 +471,86 @@ def generate_image_base64(prompt: str) -> str:
     return base64.b64encode(image_bytes).decode('utf-8')
 
 
+# The Haar cascades run over every portrait, in this order. The FRONTAL ones
+# alone are not enough: the portrait generator regularly produces a figure in
+# three-quarter profile, whose face they miss entirely - and having missed it
+# they are perfectly happy to "find" a face in a patterned haori, a knot of
+# cloth, or a tattoo. Measured 2026-09-01 on Otomo Kagemaru (the fixture in
+# test_art.py): frontal-default returned exactly one box, on the scale tattoo
+# across his chest; frontal-alt2 returned nothing; profile found the head.
+_FACE_CASCADES = (
+    'haarcascade_frontalface_default.xml',
+    'haarcascade_frontalface_alt2.xml',
+    'haarcascade_profileface.xml',
+)
+
+# A standing full-body portrait puts the head in the top fifth of the frame, so
+# a detection whose top edge is below this band is a pattern on the body rather
+# than a face, and is thrown away - better to fall back to a blind top crop,
+# which at least contains the head, than to confidently crop someone's chest.
+# Applied only to tall (full-body) images; an image that is already a headshot
+# may legitimately have its face anywhere.
+_HEAD_BAND = 0.35
+_FULL_BODY_ASPECT = 1.5
+
+
+Box = tuple[int, int, int, int]
+
+
+def _detect_faces(gray: object, width: int) -> list[tuple[int, Box]]:
+    """Every face box any cascade finds, each tagged with its cascade's rank."""
+    import cv2
+
+    faces: list[tuple[int, Box]] = []
+    for rank, name in enumerate(_FACE_CASCADES):
+        cascade = cv2.CascadeClassifier(cv2.data.haarcascades + name)
+        for fx, fy, fw, fh in cascade.detectMultiScale(
+            gray, scaleFactor=1.1, minNeighbors=5, minSize=(50, 50)
+        ):
+            faces.append((rank, (int(fx), int(fy), int(fw), int(fh))))
+
+    # The profile cascade is trained on one facing direction only, so a head
+    # turned the other way is invisible to it until the image is mirrored.
+    mirrored = cv2.CascadeClassifier(cv2.data.haarcascades + _FACE_CASCADES[-1])
+    for fx, fy, fw, fh in mirrored.detectMultiScale(
+        cv2.flip(gray, 1), scaleFactor=1.1, minNeighbors=5, minSize=(50, 50)
+    ):
+        faces.append((len(_FACE_CASCADES) - 1, (int(width - fx - fw), int(fy), int(fw), int(fh))))
+
+    return faces
+
+
+def _same_face(one: Box, other: Box) -> bool:
+    """Whether two boxes are two cascades' readings of the SAME face.
+
+    True when either box's center falls inside the other - loose on purpose,
+    because the profile cascade habitually returns a box half again the size of
+    the frontal one over the same head.
+    """
+    for box, mate in ((one, other), (other, one)):
+        cx, cy = box[0] + box[2] // 2, box[1] + box[3] // 2
+        if mate[0] <= cx <= mate[0] + mate[2] and mate[1] <= cy <= mate[1] + mate[3]:
+            return True
+    return False
+
+
+def _pick_face(faces: list[tuple[int, Box]]) -> Box:
+    """The head, out of everything the cascades reported.
+
+    Topmost first, since in a standing portrait the head is above every patch of
+    cloth or skin a cascade might like the look of - but topmost by CLUSTER, and
+    within the winning cluster the earliest cascade in `_FACE_CASCADES` wins.
+    That ordering matters: where the cascades agree on a head, the frontal ones
+    box the face itself while the profile one takes in hair, ear and jaw, and
+    cropping to the profile box gives a slack half-body portrait. Measured over
+    14 campaign portraits on 2026-09-01: cluster-then-rank reproduces the old
+    frontal-only crop on all 14 and still finds Kagemaru's turned-away head.
+    """
+    topmost = min(faces, key=lambda face: face[1][1])
+    cluster = [face for face in faces if _same_face(face[1], topmost[1])]
+    return min(cluster, key=lambda face: (face[0], face[1][1]))[1]
+
+
 def get_headshot_crop(image_data: bytes) -> tuple[int, int, int, int]:
     """
     Detect the face in an image and return suggested headshot crop coordinates.
@@ -492,28 +572,25 @@ def get_headshot_crop(image_data: bytes) -> tuple[int, int, int, int]:
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     h, w = img.shape[:2]
 
-    # Load face detector
-    face_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-    )
-
     # Convert to grayscale for detection
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Detect faces
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(50, 50))
+    faces = _detect_faces(gray, w)
+    full_body = h >= w * _FULL_BODY_ASPECT
+    if full_body:
+        faces = [face for face in faces if face[1][1] < h * _HEAD_BAND]
 
-    if len(faces) == 0:
-        # Fallback: crop top-center portion of image
+    if not faces:
+        # Fallback: crop the top-center of the image. On a full-body portrait
+        # half the height reaches the waist, so take a head-and-shoulders slab
+        # off the top instead.
         crop_w = w // 2
-        crop_h = h // 2
+        crop_h = min(h // 2, int(w * 0.75)) if full_body else h // 2
         crop_x = w // 4
         crop_y = 0
         return (int(crop_x), int(crop_y), int(crop_w), int(crop_h))
 
-    # Pick the topmost face (smallest y value) - heads are usually at the top
-    faces = sorted(faces, key=lambda f: f[1])
-    fx, fy, fw, fh = faces[0]
+    fx, fy, fw, fh = _pick_face(faces)
 
     # Expand to create a nice headshot (space above head, include shoulders)
     expand_top = int(fh * 0.6)
