@@ -47,7 +47,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 ```
 Tetsuro / Toshihiro / Sadakichi / Jimen / Moriko etiquette: 30 / 20 / 20 / 15 / 15
 10 tact: Jimen asking how much money Fumitake owed
-Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10 - claiming he never met the man
+Jimen vs Otsuki precepts: 41 vs 28, Jimen wins by >=10 arguing it is wrong to lie to a magistrate
 ```
 
 **Personal names only** (GM 2026-09-02). The full name is what joins a Discord account to a
@@ -58,10 +58,13 @@ is in `rules.py`'s module docstring.
 
 **The annotated open line leads with the number; the contested line leads with the pairing.** The
 GM asked for `{roll} {skill}: {name} {annotation}` for the open rolls specifically, and `41 vs 28`
-says nothing until you know who the two sides were. The `-` before the note goes with the reorder
-on the open line only - there the note follows a name and reads on from it, while on the contested
-line it would otherwise run into a number. **Do not harmonize these**; both shapes are pinned by
-tests that say so.
+says nothing until you know who the two sides were. **Do not harmonize these**; both shapes are
+pinned by tests that say so.
+
+**Neither line separates its note with a dash** (GM 2026-09-02). On the open line the note follows
+a name and reads straight on from it. On the contested line the GM's fix for the margin running
+into the note was to give the clause a VERB - `Jimen wins by >=10 arguing ...` - so the `wins` is
+doing the work the `-` used to. Do not put the dash back beside it.
 
 ## Rolls are HELD until the GM says what they were for
 
