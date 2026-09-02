@@ -8,14 +8,20 @@ import pytest
 
 from l7r.repl.rolls.models import RecordingRule, Roll
 from l7r.repl.rolls.rules import (
+    CONTESTED_PAIRS,
+    OPPOSING_SKILL,
     contest,
+    contested_winner,
     margin_text,
+    opposing_skill,
     personal_name,
     record,
     render_contest,
     render_open,
     round_down,
+    skills_text,
 )
+from l7r.repl.rolls.skills import RULES_PATH, load_skills
 
 WHEN = datetime(2026, 8, 12, 1, 54, tzinfo=UTC)
 
@@ -189,6 +195,108 @@ class TestFamilyNamesAreNotWrittenDown:
             roll('Tsuruchi Jimen', 41, 'sincerity'), roll('Bayushi Otsuki', 28, 'sincerity')
         )
         assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10'
+
+
+class TestContestedPairs:
+    """GM 2026-09-02: six skills never contest themselves, and one side takes a tie."""
+
+    @pytest.mark.parametrize(
+        ('skill', 'opposed'),
+        [
+            ('interrogation', 'sincerity'),
+            ('sincerity', 'interrogation'),
+            ('manipulation', 'tact'),
+            ('tact', 'manipulation'),
+            ('investigation', 'sneaking'),
+            ('sneaking', 'investigation'),
+        ],
+    )
+    def test_the_six_are_paired_both_ways(self, skill: str, opposed: str) -> None:
+        assert opposing_skill(skill) == opposed
+
+    def test_every_other_skill_contests_itself(self) -> None:
+        """*"you may always assume that the NPC rolled the same skill that the
+        player character did"* - the default, and much the commoner case."""
+        for skill in ('precepts', 'law', 'etiquette', 'commerce', 'bragging', 'strategy'):
+            assert opposing_skill(skill) == skill, skill
+
+    def test_the_lookup_is_case_insensitive(self) -> None:
+        assert opposing_skill('Sincerity') == 'interrogation'
+        assert opposing_skill('Precepts') == 'precepts'
+
+    def test_the_pairing_table_is_derived_not_hand_mirrored(self) -> None:
+        """A fourth pairing must be ONE row in CONTESTED_PAIRS and nothing else."""
+        for winner, loser in CONTESTED_PAIRS:
+            assert OPPOSING_SKILL[winner] == loser
+            assert OPPOSING_SKILL[loser] == winner
+        assert len(OPPOSING_SKILL) == 2 * len(CONTESTED_PAIRS)
+
+    def test_all_six_are_real_skills_in_the_rules(self) -> None:
+        """Guard against a typo, or a rename in the rules leaving us pointing at air."""
+        vocabulary = load_skills()
+        for pair in CONTESTED_PAIRS:
+            for skill in pair:
+                assert skill in vocabulary, f'{skill} is not a skill in {RULES_PATH}'
+
+
+class TestTieBreaks:
+    @pytest.mark.parametrize(
+        ('mine', 'theirs', 'side'),
+        [
+            # *"an interrogation roll succeeds when it ties the sincerity roll"*
+            ('interrogation', 'sincerity', 'mine'),
+            ('sincerity', 'interrogation', 'theirs'),
+            # Corroborated by the rules: manipulation's result table opens at a
+            # delta of `0 - 9` (rules/02-skills.md:247), so nothing-between-them is
+            # already a manipulator success.
+            ('manipulation', 'tact', 'mine'),
+            ('tact', 'manipulation', 'theirs'),
+            # *"both investigation and sneaking are basic skills, in the case of a
+            # tie, investigation wins rather than sneaking winning"*
+            ('investigation', 'sneaking', 'mine'),
+            ('sneaking', 'investigation', 'theirs'),
+        ],
+    )
+    def test_the_named_side_takes_the_tie(self, mine: str, theirs: str, side: str) -> None:
+        assert contested_winner(mine, theirs, 30, 30) == side
+
+    def test_a_skill_against_itself_is_a_real_tie(self) -> None:
+        """*"when the same skill contests itself, as in the case of two different
+        people rolling precepts, then it is a tie."*"""
+        assert contested_winner('precepts', 'precepts', 30, 30) is None
+
+    def test_the_tie_rule_only_applies_to_ties(self) -> None:
+        assert contested_winner('sincerity', 'interrogation', 31, 30) == 'mine'
+        assert contested_winner('interrogation', 'sincerity', 30, 31) == 'theirs'
+
+    def test_a_mismatched_pair_falls_back_to_a_tie(self) -> None:
+        """The pairing rule says this cannot happen; if it does, do not award a win
+        to whichever side the half-matching rule happens to name first."""
+        assert contested_winner('sincerity', 'law', 30, 30) is None
+
+    def test_a_tie_break_is_scored_as_a_win_in_the_smallest_band(self) -> None:
+        scored = contest(roll('Jimen', 30, 'interrogation'), roll('Otsuki', 30, 'sincerity'))
+        assert not scored.tied
+        assert scored.winner == 'Jimen'
+        assert scored.margin == 0
+        assert render_contest(scored) == (
+            'Jimen vs Otsuki interrogation vs sincerity: 30 vs 30, Jimen wins by <5'
+        )
+
+    def test_the_same_skill_still_ties_through_contest(self) -> None:
+        scored = contest(roll('Jimen', 30, 'precepts'), roll('Otsuki', 30, 'precepts'))
+        assert scored.tied
+        assert render_contest(scored) == 'Jimen vs Otsuki precepts: 30 vs 30, tied'
+
+
+class TestSkillsText:
+    def test_one_name_when_both_sides_rolled_the_same_skill(self) -> None:
+        assert skills_text('precepts', 'precepts') == 'precepts'
+
+    def test_both_names_when_they_differ(self) -> None:
+        """A tie-break is a bare contradiction unless the reader can see the skills:
+        `30 vs 30, Otsuki wins` only makes sense beside `sincerity vs interrogation`."""
+        assert skills_text('sincerity', 'interrogation') == 'sincerity vs interrogation'
 
 
 class TestRenderContest:

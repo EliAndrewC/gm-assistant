@@ -34,6 +34,16 @@ on each side. and then it should show the difference between them and who won. T
 amount that the winner won by should be rounded down to the nearest increment of
 five ... but the rolls themselves are not rounded."*
 
+**Six skills contest a DIFFERENT skill, and one side of each pair takes the tie.**
+Everything else contests ITSELF, and a tie there is a real tie. See
+`CONTESTED_PAIRS` for the three pairings, the tie rule, and the GM's words - the
+part worth having up here is WHY it is a table rather than a question the GM gets
+asked: the pairing is total. *"if you see a player post one of those six skills and
+then you see me record that as a contested roll against an NPC's roll, you may
+always assume that the corresponding skill is what the NPC rolled. This will always
+be true"* (GM 2026-09-02). So the opposing skill is DERIVED at render time from the
+player's, never stored on the roll and never prompted for.
+
 **Only the personal name is written down.** The GM records `Tetsuro`, never
 `Tsuruchi Tetsuro` (2026-09-02). Every roll in a conversation is by a player
 character the GM knows on sight, so the family name is four syllables of noise on
@@ -70,6 +80,7 @@ guard. Recorded here because the question looks live to anyone reading the rule.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 from l7r.repl.rolls.models import Contest, RecordingRule, Roll
 
@@ -115,6 +126,92 @@ def free_raises(mine: int | None, theirs: int | None) -> tuple[int, int]:
     if gap > 0:
         return (gap * FREE_RAISE, 0)
     return (0, -gap * FREE_RAISE)
+
+
+#: The three skills that are never rolled against themselves, each paired with the
+#: skill that opposes it. **The FIRST of each pair takes a tie**; the second needs
+#: to beat it outright. The GM (2026-09-02): *"the advanced skill actually wins when
+#: it ties the basic skill. So an interrogation roll succeeds when it ties the
+#: sincerity roll ... while both investigation and sneaking are basic skills, in the
+#: case of a tie, investigation wins rather than sneaking winning."*
+#:
+#: All three pairings are in the rules: interrogation *"contested against the
+#: sincerity of an NPC"* (`rules/02-skills.md:213`), manipulation *"contested
+#: against another character's tact"* (:243), sneaking *"contested against the
+#: investigation of potential observers"* (:271).
+#:
+#: The rules corroborate the TIE rule for manipulation and are silent on the other
+#: two: manipulation's own result table opens at delta **`0 - 9`** (:247), so a
+#: nothing-between-them roll is already a manipulator success. Interrogation's
+#: prose reads the other way - *"Exceeding the opposing sincerity roll tells you
+#: whether the other person is lying"* (:217) - which taken strictly would make a
+#: tie a failure for the interrogator. **That is a wording imprecision in the rules
+#: file, not a rule we are overriding**: the GM ruled directly on it and the
+#: manipulation table shows the intended pattern for an advanced-vs-basic pairing.
+#: Raised with the GM 2026-09-02; do not "fix" this table to match :217.
+CONTESTED_PAIRS = (
+    ('interrogation', 'sincerity'),
+    ('manipulation', 'tact'),
+    ('investigation', 'sneaking'),
+)
+
+#: skill -> the skill it is contested against. DERIVED from `CONTESTED_PAIRS` in
+#: both directions rather than written out, so a fourth pairing is one row above and
+#: nothing else - a hand-maintained mirror of a table is a table that goes stale on
+#: one side only.
+OPPOSING_SKILL = {a: b for pair in CONTESTED_PAIRS for a, b in (pair, pair[::-1])}
+
+#: skill -> which skill of its pair takes a tie. Absent means the skill contests
+#: itself, where a tie is a genuine tie.
+TIE_WINNER = {skill: pair[0] for pair in CONTESTED_PAIRS for skill in pair}
+
+#: Which side of a contest won. `None` is a real tie.
+Side = Literal['mine', 'theirs']
+
+
+def opposing_skill(skill: str) -> str:
+    """What the other side rolled, given what this side rolled.
+
+    One of the three pairings, or the same skill back - *"if any other skill besides
+    those six skills is marked as having been rolled contested, then you may always
+    assume that the NPC rolled the same skill that the player character did"* (GM
+    2026-09-02).
+    """
+    return OPPOSING_SKILL.get(skill.lower(), skill.lower())
+
+
+def contested_winner(mine_skill: str, theirs_skill: str, mine: int, theirs: int) -> Side | None:
+    """Which side won, resolving a tie by the skills involved.
+
+    A tie between a skill and ITSELF is a tie. A tie across one of the three
+    pairings goes to the side named first in `CONTESTED_PAIRS`, and is recorded as
+    a win by the smallest margin band rather than as a draw.
+
+    Both skills are named rather than just one so that a mismatched pair - a call
+    that opposes sincerity to law, which the pairing rule says cannot happen -
+    resolves to a tie rather than silently handing the win to whichever side the
+    half-matching rule mentions first.
+    """
+    if mine != theirs:
+        return 'mine' if mine > theirs else 'theirs'
+    won = TIE_WINNER.get(mine_skill.lower())
+    if won is None or {mine_skill.lower(), theirs_skill.lower()} != set((won, OPPOSING_SKILL[won])):
+        return None
+    return 'mine' if won == mine_skill.lower() else 'theirs'
+
+
+def skills_text(mine_skill: str, theirs_skill: str) -> str:
+    """How the skill(s) are named on a contested line.
+
+    One name when both sides rolled the same skill, which is the GM's own shape.
+    BOTH names when they differ, because otherwise a tie-break reads as a bare
+    contradiction - `30 vs 30, Otsuki wins` is only sensible once you can see that
+    the 30s were an interrogation and a sincerity. Everything on the line then runs
+    left-vs-right in the same order: names, skills, totals.
+    """
+    if mine_skill.lower() == theirs_skill.lower():
+        return mine_skill.lower()
+    return f'{mine_skill.lower()} vs {theirs_skill.lower()}'
 
 
 def round_down(total: int, increment: int = 5) -> int:
@@ -186,12 +283,14 @@ def margin_text(margin: int) -> str:
 
 def contest(left: Roll, right: Roll, rule: RecordingRule = DEFAULT_RULE) -> Contest:
     """Score one roll against another. Totals stay raw, and so does the margin -
-    the banding in `margin_text` is presentation, applied when it is written."""
+    the banding in `margin_text` is presentation, applied when it is written.
+
+    A tie is resolved by `contested_winner`, so an interrogation that ties a
+    sincerity is a WIN with a margin of 0 rather than a draw.
+    """
     margin = abs(left.total - right.total)
-    if left.total == right.total:
-        winner = None
-    else:
-        winner = (left if left.total > right.total else right).character
+    side = contested_winner(left.skill, right.skill, left.total, right.total)
+    winner = None if side is None else (left if side == 'mine' else right).character
     return Contest(left=left, right=right, winner=winner, margin=margin)
 
 
@@ -299,12 +398,17 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
     tail = f' {roll.note}' if roll.annotated else ''
     them = personal_name(npc)
     mine, theirs = roll.final_total, roll.final_opposed or 0
-    if mine == theirs:
+    # The NPC's skill is DERIVED, never stored and never asked for: the pairing is
+    # total, so the player's skill determines it (GM 2026-09-02).
+    their_skill = opposing_skill(roll.skill)
+    side = contested_winner(roll.skill, their_skill, mine, theirs)
+    if side is None:
         outcome = 'tied'
     else:
-        winner = who if mine > theirs else them
+        winner = who if side == 'mine' else them
         outcome = f'{winner} wins by {margin_text(abs(mine - theirs))}'
-    return f'{who} vs {them} {roll.skill.lower()}: {mine} vs {theirs}, {outcome}{tail}'
+    skills = skills_text(roll.skill, their_skill)
+    return f'{who} vs {them} {skills}: {mine} vs {theirs}, {outcome}{tail}'
 
 
 def render_contest(scored: Contest) -> str:
@@ -318,7 +422,7 @@ def render_contest(scored: Contest) -> str:
     left, right = scored.left, scored.right
     head = (
         f'{personal_name(left.character)} vs {personal_name(right.character)} '
-        f'{left.skill.lower()}: {left.total} vs {right.total}'
+        f'{skills_text(left.skill, right.skill)}: {left.total} vs {right.total}'
     )
     if scored.tied:
         return f'{head}, tied'
