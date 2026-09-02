@@ -135,7 +135,13 @@ def _opposing(ask: Ask, roll: Roll, mine: Sequence[gmrolls.GmRoll]) -> tuple[int
     if roll.rank is None:
         print(f'  {roll.character} has no recorded rank, so no free raises are inferred.')
     else:
-        print(f'  Free raises: {roll.character} {roll.skill} {roll.rank} vs yours {opponent.skill}')
+        # Name the skill the NPC is TAKEN to have rolled. It is derived from the
+        # player's by the pairing rule and never asked for, so showing it here is
+        # the GM's only chance to notice if the roll was not what they expected.
+        print(
+            f'  Free raises: {roll.character} {roll.skill} {roll.rank} '
+            f'vs your {rules.opposing_skill(roll.skill)} {opponent.skill}'
+        )
     bonus_self = _number(ask, f'  Bonus to {roll.character}? [{theirs}] > ', theirs)
     bonus_opposed = _number(ask, f'  Bonus to your side? [{ours}] > ', ours)
     return opponent.total, bonus_self, bonus_opposed

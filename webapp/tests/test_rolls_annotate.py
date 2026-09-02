@@ -105,13 +105,13 @@ class TestRenderAnnotated:
     def test_a_contested_roll_keeps_both_totals_raw(self) -> None:
         line = rules.render_annotated(
             replace(
-                roll('Jimen', 'sincerity', 41, note='claiming he never met the man'),
+                roll('Jimen', 'precepts', 41, note='claiming he never met the man'),
                 opposed_total=28,
             ),
             'Otsuki',
         )
         assert line == (
-            'Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10 claiming he never met the man'
+            'Jimen vs Otsuki precepts: 41 vs 28, Jimen wins by >=10 claiming he never met the man'
         )
 
     def test_the_npc_can_win(self) -> None:
@@ -122,10 +122,10 @@ class TestRenderAnnotated:
 
     def test_the_npcs_own_family_name_is_stripped_too(self) -> None:
         line = rules.render_annotated(
-            replace(roll('Tsuruchi Jimen', 'sincerity', 41, note='the lie'), opposed_total=28),
+            replace(roll('Tsuruchi Jimen', 'precepts', 41, note='the lie'), opposed_total=28),
             'Bayushi Otsuki',
         )
-        assert line == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10 the lie'
+        assert line == 'Jimen vs Otsuki precepts: 41 vs 28, Jimen wins by >=10 the lie'
 
     def test_the_gms_own_contested_example(self) -> None:
         """GM 2026-09-02, verbatim: the winner WINS by the margin, and no dash."""
@@ -150,15 +150,45 @@ class TestRenderAnnotated:
         """Deliberately NOT harmonized with the open line: `41 vs 28` means nothing
         until you know who the two sides were, so the pairing leads."""
         line = rules.render_annotated(
-            replace(roll('Jimen', 'sincerity', 41, note='the lie'), opposed_total=28), 'Otsuki'
+            replace(roll('Jimen', 'precepts', 41, note='the lie'), opposed_total=28), 'Otsuki'
         )
-        assert line.startswith('Jimen vs Otsuki sincerity:')
+        assert line.startswith('Jimen vs Otsuki precepts:')
 
     def test_a_tie(self) -> None:
+        """Precepts contests ITSELF, so 30 against 30 is a genuine draw."""
+        line = rules.render_annotated(
+            replace(roll('Jimen', 'precepts', 30, note='the argument'), opposed_total=30), 'Otsuki'
+        )
+        assert line == 'Jimen vs Otsuki precepts: 30 vs 30, tied the argument'
+
+    def test_a_tied_sincerity_LOSES_to_the_npcs_interrogation(self) -> None:
+        """The player rolled sincerity, so the NPC rolled interrogation - and the
+        interrogation takes the tie (GM 2026-09-02)."""
         line = rules.render_annotated(
             replace(roll('Jimen', 'sincerity', 30, note='the lie'), opposed_total=30), 'Otsuki'
         )
-        assert 'tied' in line
+        assert line == (
+            'Jimen vs Otsuki sincerity vs interrogation: 30 vs 30, Otsuki wins by <5 the lie'
+        )
+
+    def test_a_tied_interrogation_BEATS_the_npcs_sincerity(self) -> None:
+        line = rules.render_annotated(
+            replace(roll('Jimen', 'interrogation', 30, note='pressing him'), opposed_total=30),
+            'Otsuki',
+        )
+        assert line == (
+            'Jimen vs Otsuki interrogation vs sincerity: 30 vs 30, Jimen wins by <5 pressing him'
+        )
+
+    def test_the_opposing_skill_is_named_even_when_nobody_tied(self) -> None:
+        """It is derived from the player's, so it is always known - and a reader who
+        cannot see both skills cannot tell a tie-break from a mistake."""
+        line = rules.render_annotated(
+            replace(roll('Jimen', 'tact', 41, note='deflecting'), opposed_total=28), 'Otsuki'
+        )
+        assert line == (
+            'Jimen vs Otsuki tact vs manipulation: 41 vs 28, Jimen wins by >=10 deflecting'
+        )
 
 
 class TestWhatGetsWritten:

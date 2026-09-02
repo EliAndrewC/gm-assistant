@@ -48,6 +48,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 Tetsuro / Toshihiro / Sadakichi / Jimen / Moriko etiquette: 30 / 20 / 20 / 15 / 15
 10 tact: Jimen asking how much money Fumitake owed
 Jimen vs Otsuki precepts: 41 vs 28, Jimen wins by >=10 arguing it is wrong to lie to a magistrate
+Jimen vs Otsuki sincerity vs interrogation: 30 vs 30, Otsuki wins by <5 denying he was ever there
 ```
 
 **Personal names only** (GM 2026-09-02). The full name is what joins a Discord account to a
@@ -65,6 +66,17 @@ pinned by tests that say so.
 a name and reads straight on from it. On the contested line the GM's fix for the margin running
 into the note was to give the clause a VERB - `Jimen wins by >=10 arguing ...` - so the `wins` is
 doing the work the `-` used to. Do not put the dash back beside it.
+
+**The NPC's skill is never asked for, and a tie is not always a tie.** Six skills form three fixed
+pairs - interrogation/sincerity, manipulation/tact, investigation/sneaking - and the first of each
+**takes the tie**, recorded as a win in the smallest band (`wins by <5`) rather than as a draw.
+Every other skill contests itself, where a tie is real. Because the pairing is total, the opposing
+skill is DERIVED from the player's at render time (`opposing_skill`) rather than stored on the roll
+or prompted for; `annotate()` prints it beside the free-raise line so the GM can see what was
+assumed. `CONTESTED_PAIRS` in `rules.py` is the one place to add a fourth pair - both lookups are
+derived from it - and carries the rules citations plus the one place the rules text reads the other
+way. When the two skills differ, BOTH are named on the line, so a tie-break does not read as a
+contradiction.
 
 ## Rolls are HELD until the GM says what they were for
 
