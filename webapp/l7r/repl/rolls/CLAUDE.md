@@ -32,7 +32,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | file | holds |
 |---|---|
 | `models.py` | `Roll`, `Contest`, `RecordingRule`, `Conversation`. Pure data. `Roll.total` is deliberately NOT decomposed into dice plus bonuses - the character-sheet app owns the dice math and we never reimplement it. |
-| `rules.py` | The GM's RECORDING rules (not game rules): round down to 5, cap Etiquette at 40 before rounding, contested keeps both totals raw and rounds only the margin. The GM's reasoning for the cap is in the module docstring - **do not delete it**, the rule is meaningless without it. `render_open` reproduces the GM's shorthand exactly. |
+| `rules.py` | The GM's RECORDING rules (not game rules): round down to 5, cap Etiquette at 40 before rounding, contested keeps both totals raw and rounds only the margin, and only the PERSONAL name is written (`Tsuruchi Jimen` -> `Jimen`, `personal_name`). The GM's reasoning for the cap is in the module docstring - **do not delete it**, the rule is meaningless without it. `render_open` reproduces the GM's shorthand exactly. |
 | `skills.py` | The skill vocabulary, READ from `/host-l7r-repo/rules/02-skills.md` rather than copied, so a rename in the rules reaches us. Unambiguous prefixes resolve (`eti` -> `etiquette`); an ambiguous one is reported, never guessed. |
 | `parse.py` | Hand-typed rolls. The forms are wilder than they look - see the module docstring for the fifteen real shapes. A number is a roll ONLY when a real skill name sits beside it; that one rule kills nearly every false positive, and the three that survived it are each pinned by a test. |
 | `bio.py` | Splices lines directly under the `[[File:...]]` portrait embed. `rewrite` swaps this conversation's previous block for its current one - the watcher writes repeatedly, so appending would stack a line per poll. Removing a line takes the blank line spliced with it, or the body grows a newline every write. |
@@ -41,6 +41,27 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `console.py` | `print_above` - writes from the watcher thread WITHOUT stomping the prompt: `\r\x1b[K` erases the prompt line, the message goes there, then the prompt and whatever the GM had typed are redrawn beneath it. TTY only; a pipe gets a plain print. |
 | `annotate.py` | The `annotate()` menu - which roll, open or contested, what it was for. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
+
+## What a written line looks like, and the two orders that must stay different
+
+```
+Tetsuro / Toshihiro / Sadakichi / Jimen / Moriko etiquette: 30 / 20 / 20 / 15 / 15
+10 tact: Jimen asking how much money Fumitake owed
+Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10 - claiming he never met the man
+```
+
+**Personal names only** (GM 2026-09-02). The full name is what joins a Discord account to a
+character, dedups a pasted card against a typed roll, and matches the sheet bot's `**Name**:`
+prefix - so it is trimmed at the moment of WRITING and nowhere earlier. The rule is the naive
+last-token one and it is naive on purpose; the reasoning, including why there is no roster lookup,
+is in `rules.py`'s module docstring.
+
+**The annotated open line leads with the number; the contested line leads with the pairing.** The
+GM asked for `{roll} {skill}: {name} {annotation}` for the open rolls specifically, and `41 vs 28`
+says nothing until you know who the two sides were. The `-` before the note goes with the reorder
+on the open line only - there the note follows a name and reads on from it, while on the contested
+line it would otherwise run into a number. **Do not harmonize these**; both shapes are pinned by
+tests that say so.
 
 ## Rolls are HELD until the GM says what they were for
 

@@ -10,6 +10,7 @@ from l7r.repl.rolls.models import RecordingRule, Roll
 from l7r.repl.rolls.rules import (
     contest,
     margin_text,
+    personal_name,
     record,
     render_contest,
     render_open,
@@ -143,6 +144,51 @@ class TestRenderOpen:
     def test_one_line_holds_one_skill(self) -> None:
         with pytest.raises(ValueError, match='one line holds one skill'):
             render_open([roll('Jimen', 38), roll('Tetsuro', 25, 'sincerity')])
+
+
+class TestPersonalName:
+    """*"use personal names without the family names"*, GM 2026-09-02."""
+
+    @pytest.mark.parametrize(
+        ('full', 'written'),
+        [
+            ('Tsuruchi Tetsuro', 'Tetsuro'),
+            ('Kitsune Moriko', 'Moriko'),
+            # The compound form: family, the particle, the domain, then the name.
+            ('Hida no Reiji Kazuma', 'Kazuma'),
+            # Already one word - a monk, a peasant, an NPC the GM entered short.
+            ('Otsuki', 'Otsuki'),
+            ('  Tsuruchi   Jimen  ', 'Jimen'),
+            ('', ''),
+        ],
+    )
+    def test_the_last_token_is_what_gets_written(self, full: str, written: str) -> None:
+        assert personal_name(full) == written
+
+
+class TestFamilyNamesAreNotWrittenDown:
+    """The GM's own before/after (2026-09-02): a party out of one family repeats it
+    until the names it is meant to distinguish are the shortest part of the line."""
+
+    def test_the_gms_own_line_loses_four_tsuruchis(self) -> None:
+        line = render_open(
+            [
+                roll('Tsuruchi Tetsuro', 30),
+                roll('Tsuruchi Toshihiro', 24),
+                roll('Tsuruchi Sadakichi', 20),
+                roll('Tsuruchi Jimen', 19),
+                roll('Kitsune Moriko', 15),
+            ]
+        )
+        assert line == (
+            'Tetsuro / Toshihiro / Sadakichi / Jimen / Moriko etiquette: 30 / 20 / 20 / 15 / 15'
+        )
+
+    def test_a_contest_strips_both_sides_and_the_winner(self) -> None:
+        scored = contest(
+            roll('Tsuruchi Jimen', 41, 'sincerity'), roll('Bayushi Otsuki', 28, 'sincerity')
+        )
+        assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10'
 
 
 class TestRenderContest:

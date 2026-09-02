@@ -137,7 +137,7 @@ class TestPerSideBonuses:
 
     def test_an_open_roll_still_takes_its_own_bonus(self) -> None:
         r = roll('Jimen', 'law', 38, note='the argument', bonus_self=5)
-        assert rules.render_annotated(r, 'Otsuki') == 'Jimen law: 40 - the argument'
+        assert rules.render_annotated(r, 'Otsuki') == '40 law: Jimen the argument'
 
 
 class TestFinalTotals:

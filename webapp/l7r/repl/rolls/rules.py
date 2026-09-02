@@ -34,6 +34,28 @@ on each side. and then it should show the difference between them and who won. T
 amount that the winner won by should be rounded down to the nearest increment of
 five ... but the rolls themselves are not rounded."*
 
+**Only the personal name is written down.** The GM records `Tetsuro`, never
+`Tsuruchi Tetsuro` (2026-09-02). Every roll in a conversation is by a player
+character the GM knows on sight, so the family name is four syllables of noise on
+every line of a format whose whole point is to be read at a glance - and a party
+drawn mostly from one family (`Tsuruchi Tetsuro / Tsuruchi Toshihiro / Tsuruchi
+Sadakichi / Tsuruchi Jimen`) repeats it until the names it is supposed to
+distinguish are the shortest part of the line.
+
+This is a RECORDING rule, which is why it lives here rather than in the parser:
+the full name is still what joins a Discord account to a character, what dedups a
+pasted card against a typed roll, and what matches the bot's `**Name**:` prefix.
+It is trimmed at the moment of writing and nowhere earlier.
+
+**An annotated open roll leads with the number.** `40 law: Jimen assessing whether
+the arrest was lawful`, not `Jimen law: 40 - ...` (2026-09-02). The GM asked for
+this shape for the annotated open rolls specifically; a CONTESTED line keeps its
+own order, because the thing it has to say first is which two rolls were compared.
+The `-` before the note goes with the reorder: in the new order the note follows a
+NAME and reads on from it, so a separator would be punctuation between a subject
+and its verb. The contested line still takes one, since there the note follows the
+margin and would otherwise run into a number.
+
 Note what the cap does NOT do: it applies to OPEN etiquette rolls only, which is
 the GM's literal scope. That was queried, and the answer closes it rather than
 narrowing it - **there is no such thing as a contested etiquette roll** (GM
@@ -113,6 +135,25 @@ def record(total: int, skill: str, rule: RecordingRule = DEFAULT_RULE) -> int:
     return round_down(capped, rule.increment)
 
 
+def personal_name(name: str) -> str:
+    """The part of a character's name the GM writes down: `Tsuruchi Jimen` -> `Jimen`.
+
+    A Rokugani name runs family-first, so the personal name is the LAST token. That
+    holds for the compound forms too - `Hida no Reiji Kazuma` gives `Kazuma` - and a
+    name that is already one word (a monk, a peasant, an NPC the GM entered as
+    `Otsuki`) passes through untouched, which is what makes this safe to apply
+    unconditionally at render time.
+
+    Deliberately no roster lookup and no attempt to verify that the leading tokens
+    really are a family name. There is no list to check against that would not
+    itself go stale, and the failure mode of the naive rule is that an unusual name
+    loses a word the GM can still read past; the failure mode of a lookup is that a
+    name missing from the list is written differently from every other line.
+    """
+    parts = name.split()
+    return parts[-1] if parts else ''
+
+
 #: The margin bands the GM records a contested victory in (2026-08-29). NOT the
 #: same as rounding an open roll down to 5, and it replaces the earlier "round the
 #: margin down to the nearest 5" from feature 201's FR-012.
@@ -173,7 +214,7 @@ def render_open(rolls: Sequence[Roll], rule: RecordingRule = DEFAULT_RULE) -> st
     # the names were in a habitual party order. The inference was right; this is now
     # an instruction, not a guess, so do not "restore" posting order.
     usable = sorted(usable, key=lambda r: record(r.total, r.skill, rule), reverse=True)
-    names = ' / '.join(r.character for r in usable)
+    names = ' / '.join(personal_name(r.character) for r in usable)
     totals = ' / '.join(str(record(r.total, r.skill, rule)) for r in usable)
     return f'{names} {usable[0].skill.lower()}: {totals}'
 
@@ -229,26 +270,37 @@ def render_lines(
 def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -> str:
     """One annotated roll, with what it was for.
 
-        Jimen law: 40 - assessing whether the arrest was lawful
-        Jimen vs Otsuki sincerity: 41 vs 28, Jimen by 10 - claiming he never met the man
+        40 law: Jimen assessing whether the arrest was lawful
+        Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10 - claiming he never met the man
+
+    THE TWO ORDERS ARE DIFFERENT ON PURPOSE (2026-09-02, and see the module
+    docstring). The open line leads with the number, because that is the GM's own
+    shape for it; the contested line leads with the pairing, because `41 vs 28`
+    means nothing until you know who the two sides were. Do not harmonize them.
 
     An OPEN roll is rounded like any other. A CONTESTED one keeps both totals raw and
     rounds only the margin, which is the GM's rule from feature 201 - the annotation
     changes what is said about a roll, never how its number is recorded.
+
+    A roll with no note renders the same line minus the note - that is the forced
+    close on interpreter exit, which writes bare rolls rather than losing them.
     """
-    tail = f' - {roll.note}' if roll.annotated else ''
+    who = personal_name(roll.character)
     if roll.opposed_total is None:
         shown = record(roll.total + roll.bonus_self, roll.skill, rule)
-        return f'{roll.character} {roll.skill.lower()}: {shown}{tail}'
+        tail = f' {roll.note}' if roll.annotated else ''
+        return f'{shown} {roll.skill.lower()}: {who}{tail}'
     # Each side AFTER its own bonus - feature 201's rule ("adjusted for bonuses on
     # each side") and the GM's per-side insistence are the same requirement.
+    tail = f' - {roll.note}' if roll.annotated else ''
+    them = personal_name(npc)
     mine, theirs = roll.final_total, roll.final_opposed or 0
     if mine == theirs:
         outcome = 'tied'
     else:
-        winner = roll.character if mine > theirs else npc
+        winner = who if mine > theirs else them
         outcome = f'{winner} by {margin_text(abs(mine - theirs))}'
-    return f'{roll.character} vs {npc} {roll.skill.lower()}: {mine} vs {theirs}, {outcome}{tail}'
+    return f'{who} vs {them} {roll.skill.lower()}: {mine} vs {theirs}, {outcome}{tail}'
 
 
 def render_contest(scored: Contest) -> str:
@@ -262,8 +314,9 @@ def render_contest(scored: Contest) -> str:
     """
     left, right = scored.left, scored.right
     head = (
-        f'{left.character} vs {right.character} {left.skill.lower()}: {left.total} vs {right.total}'
+        f'{personal_name(left.character)} vs {personal_name(right.character)} '
+        f'{left.skill.lower()}: {left.total} vs {right.total}'
     )
     if scored.tied:
         return f'{head}, tied'
-    return f'{head}, {scored.winner} by {margin_text(scored.margin)}'
+    return f'{head}, {personal_name(scored.winner or "")} by {margin_text(scored.margin)}'
