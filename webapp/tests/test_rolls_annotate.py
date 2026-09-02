@@ -111,21 +111,40 @@ class TestRenderAnnotated:
             'Otsuki',
         )
         assert line == (
-            'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10 - claiming he never met the man'
+            'Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10 claiming he never met the man'
         )
 
     def test_the_npc_can_win(self) -> None:
         line = rules.render_annotated(
             replace(roll('Jimen', 'sincerity', 20, note='the lie'), opposed_total=44), 'Otsuki'
         )
-        assert 'Otsuki by >=20' in line
+        assert 'Otsuki wins by >=20' in line
 
     def test_the_npcs_own_family_name_is_stripped_too(self) -> None:
         line = rules.render_annotated(
             replace(roll('Tsuruchi Jimen', 'sincerity', 41, note='the lie'), opposed_total=28),
             'Bayushi Otsuki',
         )
-        assert line == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10 - the lie'
+        assert line == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10 the lie'
+
+    def test_the_gms_own_contested_example(self) -> None:
+        """GM 2026-09-02, verbatim: the winner WINS by the margin, and no dash."""
+        line = rules.render_annotated(
+            replace(
+                roll(
+                    'Tsuruchi Jimen',
+                    'precepts',
+                    41,
+                    note='arguing it is wrong to lie to a magistrate to save face',
+                ),
+                opposed_total=28,
+            ),
+            'Bayushi Otsuki',
+        )
+        assert line == (
+            'Jimen vs Otsuki precepts: 41 vs 28, Jimen wins by >=10 '
+            'arguing it is wrong to lie to a magistrate to save face'
+        )
 
     def test_a_contested_line_keeps_its_own_word_order(self) -> None:
         """Deliberately NOT harmonized with the open line: `41 vs 28` means nothing
@@ -288,7 +307,7 @@ class TestAnnotateMenu:
         ann.annotate(c, ask=lambda q: next(answers), mine=gmrolls.recent)
         assert c.rolls[0].opposed_total == 28
         assert c.rolls[0].contested
-        assert 'Jimen by >=10' in rules.render_annotated(c.rolls[0], 'Otsuki')
+        assert 'Jimen wins by >=10' in rules.render_annotated(c.rolls[0], 'Otsuki')
 
     def test_contested_with_no_gm_rolls_falls_back_to_open(self, capsys: Any) -> None:
         c = conversation(roll('Jimen', 'sincerity', 41))

@@ -188,13 +188,13 @@ class TestFamilyNamesAreNotWrittenDown:
         scored = contest(
             roll('Tsuruchi Jimen', 41, 'sincerity'), roll('Bayushi Otsuki', 28, 'sincerity')
         )
-        assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10'
+        assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10'
 
 
 class TestRenderContest:
     def test_names_both_totals_the_winner_and_the_margin(self) -> None:
         scored = contest(roll('Jimen', 41, 'sincerity'), roll('Otsuki', 28, 'sincerity'))
-        assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10'
+        assert render_contest(scored) == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10'
 
     def test_a_tie_says_so(self) -> None:
         scored = contest(roll('Jimen', 30, 'sincerity'), roll('Otsuki', 30, 'sincerity'))

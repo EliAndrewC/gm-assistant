@@ -51,10 +51,13 @@ It is trimmed at the moment of writing and nowhere earlier.
 the arrest was lawful`, not `Jimen law: 40 - ...` (2026-09-02). The GM asked for
 this shape for the annotated open rolls specifically; a CONTESTED line keeps its
 own order, because the thing it has to say first is which two rolls were compared.
-The `-` before the note goes with the reorder: in the new order the note follows a
-NAME and reads on from it, so a separator would be punctuation between a subject
-and its verb. The contested line still takes one, since there the note follows the
-margin and would otherwise run into a number.
+
+**No line separates its note with a dash** (GM 2026-09-02, both formats). On the
+open line the note follows a NAME and reads straight on from it; on the contested
+line it follows the margin, and the GM's fix for the number running into the note
+was to give the clause a VERB rather than a separator - `Jimen wins by >=10
+arguing it is wrong to lie to a magistrate to save face`. The `wins` is doing the
+work the `-` used to, so do not put the dash back alongside it.
 
 Note what the cap does NOT do: it applies to OPEN etiquette rolls only, which is
 the GM's literal scope. That was queried, and the answer closes it rather than
@@ -271,12 +274,13 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
     """One annotated roll, with what it was for.
 
         40 law: Jimen assessing whether the arrest was lawful
-        Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10 - claiming he never met the man
+        Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10 claiming he never met the man
 
     THE TWO ORDERS ARE DIFFERENT ON PURPOSE (2026-09-02, and see the module
     docstring). The open line leads with the number, because that is the GM's own
     shape for it; the contested line leads with the pairing, because `41 vs 28`
     means nothing until you know who the two sides were. Do not harmonize them.
+    Neither takes a dash before its note.
 
     An OPEN roll is rounded like any other. A CONTESTED one keeps both totals raw and
     rounds only the margin, which is the GM's rule from feature 201 - the annotation
@@ -292,25 +296,24 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
         return f'{shown} {roll.skill.lower()}: {who}{tail}'
     # Each side AFTER its own bonus - feature 201's rule ("adjusted for bonuses on
     # each side") and the GM's per-side insistence are the same requirement.
-    tail = f' - {roll.note}' if roll.annotated else ''
+    tail = f' {roll.note}' if roll.annotated else ''
     them = personal_name(npc)
     mine, theirs = roll.final_total, roll.final_opposed or 0
     if mine == theirs:
         outcome = 'tied'
     else:
         winner = who if mine > theirs else them
-        outcome = f'{winner} by {margin_text(abs(mine - theirs))}'
+        outcome = f'{winner} wins by {margin_text(abs(mine - theirs))}'
     return f'{who} vs {them} {roll.skill.lower()}: {mine} vs {theirs}, {outcome}{tail}'
 
 
 def render_contest(scored: Contest) -> str:
-    """One contested roll.
+    """One contested roll, with no note on it.
 
-        Jimen vs Otsuki sincerity: 41 vs 28, Jimen by 10
+        Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10
 
-    The wording is this feature's choice rather than the GM's - they specified the
-    four elements (both adjusted totals, the difference, the winner) but not the
-    sentence. Recorded in the spec's Assumptions as trivially adjustable.
+    The sentence is now the GM's own (2026-09-02) rather than this feature's guess
+    at it - the same clause `render_annotated` builds, so the two stay one format.
     """
     left, right = scored.left, scored.right
     head = (
@@ -319,4 +322,4 @@ def render_contest(scored: Contest) -> str:
     )
     if scored.tied:
         return f'{head}, tied'
-    return f'{head}, {personal_name(scored.winner or "")} by {margin_text(scored.margin)}'
+    return f'{head}, {personal_name(scored.winner or "")} wins by {margin_text(scored.margin)}'
