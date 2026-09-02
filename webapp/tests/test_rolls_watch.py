@@ -79,8 +79,11 @@ class TestTick:
             clock=lambda: 100.0,
         )
         assert wrote
-        assert c.written == ('Roll Tester etiquette: 20',)
-        assert 'Roll Tester etiquette: 20' in str(seen['bio'])
+        # "Tester", not "Roll Tester": the record carries personal names only, and the
+        # rule is the naive last-token one, applied to the sheet app's test character
+        # exactly as it is to a Rokugani one.
+        assert c.written == ('Tester etiquette: 20',)
+        assert 'Tester etiquette: 20' in str(seen['bio'])
         assert 'A silk merchant.' in str(seen['bio'])
 
     def test_announces_each_new_roll(self, capsys: Any) -> None:
@@ -94,8 +97,10 @@ class TestTick:
             clock=lambda: 1.0,
         )
         out = capsys.readouterr().out
+        # The live announcement keeps the FULL name - it is how the GM confirms the
+        # roll was attributed to the right character. Only the written line is trimmed.
         assert '+ Roll Tester: etiquette 23 @1' in out
-        assert '-> Hatsu: Roll Tester etiquette: 20' in out
+        assert '-> Hatsu: Tester etiquette: 20' in out
 
     def test_a_roll_with_no_rank_announces_without_one(self, capsys: Any) -> None:
         c = conversation()
@@ -264,7 +269,7 @@ class TestTick:
         )
         assert c.written == (
             'A etiquette: 20',
-            'A law: 40 - pressing him on the warrant',
+            '40 law: A pressing him on the warrant',
         )
         assert 'A silk merchant.' in str(seen['bio'])
 

@@ -87,7 +87,20 @@ class TestRenderAnnotated:
         line = rules.render_annotated(
             roll('Jimen', 'law', 44, note='assessing whether the arrest was lawful'), 'Otsuki'
         )
-        assert line == 'Jimen law: 40 - assessing whether the arrest was lawful'
+        assert line == '40 law: Jimen assessing whether the arrest was lawful'
+
+    def test_the_number_leads_and_the_note_follows_the_name(self) -> None:
+        """The GM's own worked example (2026-09-02): `{roll} {skill}: {name} {annotation}`."""
+        line = rules.render_annotated(
+            roll('Tsuruchi Jimen', 'tact', 10, note='asking how much money Fumitake owed'),
+            'Otsuki',
+        )
+        assert line == '10 tact: Jimen asking how much money Fumitake owed'
+
+    def test_a_bare_open_roll_is_the_same_line_without_the_note(self) -> None:
+        """What the forced close on interpreter exit writes rather than losing it."""
+        line = rules.render_annotated(roll('Tsuruchi Jimen', 'tact', 10), 'Otsuki')
+        assert line == '10 tact: Jimen'
 
     def test_a_contested_roll_keeps_both_totals_raw(self) -> None:
         line = rules.render_annotated(
@@ -106,6 +119,21 @@ class TestRenderAnnotated:
             replace(roll('Jimen', 'sincerity', 20, note='the lie'), opposed_total=44), 'Otsuki'
         )
         assert 'Otsuki by >=20' in line
+
+    def test_the_npcs_own_family_name_is_stripped_too(self) -> None:
+        line = rules.render_annotated(
+            replace(roll('Tsuruchi Jimen', 'sincerity', 41, note='the lie'), opposed_total=28),
+            'Bayushi Otsuki',
+        )
+        assert line == 'Jimen vs Otsuki sincerity: 41 vs 28, Jimen by >=10 - the lie'
+
+    def test_a_contested_line_keeps_its_own_word_order(self) -> None:
+        """Deliberately NOT harmonized with the open line: `41 vs 28` means nothing
+        until you know who the two sides were, so the pairing leads."""
+        line = rules.render_annotated(
+            replace(roll('Jimen', 'sincerity', 41, note='the lie'), opposed_total=28), 'Otsuki'
+        )
+        assert line.startswith('Jimen vs Otsuki sincerity:')
 
     def test_a_tie(self) -> None:
         line = rules.render_annotated(
@@ -126,7 +154,7 @@ class TestWhatGetsWritten:
         )
         assert rules.render_lines(c.rolls, c.npc_name) == [
             'Jimen etiquette: 25',
-            'Jimen precepts: 25 - reading the room',
+            '25 precepts: Jimen reading the room',
         ]
 
     def test_annotated_rolls_keep_the_order_they_were_made(self) -> None:
@@ -136,7 +164,7 @@ class TestWhatGetsWritten:
             roll('B', 'precepts', 30, minute=2, note='first'),
             roll('C', 'sincerity', 35, minute=5, note='second'),
         )
-        notes = [line.rsplit(' - ', 1)[1] for line in rules.render_lines(c.rolls, c.npc_name)]
+        notes = [line.rsplit(' ', 1)[1] for line in rules.render_lines(c.rolls, c.npc_name)]
         assert notes == ['third', 'first', 'second'], 'collection order, not sorted'
 
     def test_etiquette_stays_one_line_highest_first(self) -> None:
@@ -208,7 +236,7 @@ class TestClosing:
             update=lambda cid, **kw: seen.update(kw),
             collector=lambda x: x,
         )
-        assert 'Jimen precepts: 25' in str(seen['bio'])
+        assert '25 precepts: Jimen' in str(seen['bio'])
         assert conv._open is None
 
     def test_the_exit_path_says_it_saved_bare_rolls(self, capsys: Any) -> None:
