@@ -6,6 +6,7 @@ This project is a Legend of the Five Rings tabletop RPG worldbuilding environmen
 <!-- container-ports: 8080:8080 8091:8090 -->
 <!-- container-mounts: ..:/host-l7r-repo -->
 <!-- container-workdir: /gm-assistant -->
+<!-- container-setup: container-scripts/setup-dev-env.sh -->
 <!-- (distinct mount path per repo so Claude memory under ~/.claude/projects/ stays separate across sibling repos) -->
 
 ## Core Rules
@@ -340,7 +341,7 @@ a security boundary.
 
 **Review subagents are pre-authorized (GM 2026-07-27).** Claude Code's default system prompt tells a session not to call the Agent tool unless the user asked - a sensible default that nonetheless sits ABOVE this file in the instruction hierarchy, so it silently outranked the mandate to run a review agent before shipping (three diagram city maps went out unreviewed with nothing warning). The fix is [`container-scripts/append-system-prompt.md`](container-scripts/append-system-prompt.md), loaded via `--append-system-prompt` by the `claude()` wrapper that `setup-dev-env.sh` installs into `~/.bashrc`: it lands AFTER that line with the same authority and grants standing authorization for this repository's three review agents (`backstory-review`, `frontend-review`, `spec-fidelity`) only. **If a review agent ever gets skipped again, check `type claude` first** - the wrapper is per-container and dies with a rebuild. Broad fan-out, `Workflow`, and deep research still need an explicit request.
 
-**Container.** Launch with [`scripts/launch-container.sh`](scripts/launch-container.sh) from the repo root. On every fresh container run `container-scripts/setup-dev-env.sh` once (`--check` re-verifies in ~3s - run it the moment something that used to work fails with "command not found" / "No module named" / "resvg not found"). **INSTALL WHAT YOU NEED** - passwordless sudo exists precisely so a session can `apt-get install` or pip-install without asking; never reject a design *because* a dependency is not currently installed. Ports/mounts, the Python 3.14 pin, the two lockfiles and the server-binding logic are in [`docs/container.md`](docs/container.md).
+**Container.** Launch with [`scripts/launch-container.sh`](scripts/launch-container.sh) from the repo root. A fresh launch runs `container-scripts/setup-dev-env.sh` itself (the `container-setup` directive at the top of this file; `--no-setup` skips it), and `scripts/repl.py` runs it again if its own imports fail, so a container the launcher built has its packages. Run `setup-dev-env.sh --check` (~3s) the moment something that used to work fails with "command not found" / "No module named", and the script without arguments to install what it lists. **INSTALL WHAT YOU NEED** - passwordless sudo exists precisely so a session can `apt-get install` or pip-install without asking; never reject a design *because* a dependency is not currently installed. Ports/mounts, the Python 3.14 pin, the two lockfiles and the server-binding logic are in [`docs/container.md`](docs/container.md).
 
 **Key paths**:
 

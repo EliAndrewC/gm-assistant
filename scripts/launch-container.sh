@@ -41,6 +41,7 @@
 #   <!-- container-mounts: ..:/host-l7r-repo -->
 #   <!-- container-workdir: /gm-assistant -->
 #   <!-- container-apt: libmagic1 antiword libcairo2 -->
+#   <!-- container-setup: container-scripts/setup-dev-env.sh -->
 #
 # container-apt (optional) lists apt packages installed as root on a FRESH
 # launch, on top of the baseline the script always installs (see "Audio").
@@ -48,7 +49,15 @@
 # effect on the next --fresh. It is best-effort: a failed update/install warns
 # and still drops you into the shell (you may just be offline). Skip it for a
 # launch with --no-apt. This is for SYSTEM packages only - language-level deps
-# (pip, npm, playwright browsers) stay in the repo's own setup docs.
+# (pip, npm, playwright browsers) belong to the repo's own setup script:
+#
+# container-setup (optional) names a script, relative to the repo root, that a
+# FRESH launch runs inside the container as the default user from the workdir,
+# after apt and `claude update`. It is the repo's half of provisioning - pip
+# lockfiles, browsers, shell wrappers - and it must be idempotent, since a
+# session may run it again by hand. Before this existed (2026-09-08) a rebuilt
+# container came up with every mount and port and not one pip package, and the
+# GM's `repl` died on its first import. Best-effort like apt; --no-setup skips.
 #
 # container-workdir (optional, default /workspace) is where the repo is mounted
 # and the shell starts. Give each repo a DISTINCT path (e.g. /gm-assistant,
@@ -89,7 +98,8 @@
 #
 # Usage:
 #   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--no-pull]
-#                       [--no-apt] [--no-update] [--fresh] [--no-shell] [--help]
+#                       [--no-apt] [--no-update] [--no-setup] [--fresh]
+#                       [--no-shell] [--help]
 #
 # --no-shell makes the script ENSURE the container is running and then return,
 # instead of ending in an interactive `podman exec ... bash`. Every other step is
@@ -101,8 +111,9 @@
 # `scripts/repl.py` starts the container when the GM runs `repl` on a cold host.
 #
 # A fresh launch first runs `podman pull` for the latest image; --no-pull skips
-# that (offline, or to save time), as --no-apt skips the package install and
-# --no-update skips the in-container `claude update`. It also leaves
+# that (offline, or to save time), as --no-apt skips the package install,
+# --no-update skips the in-container `claude update` and --no-setup skips the
+# repo's container-setup script. It also leaves
 # `claude --dangerously-skip-permissions` in the shell history, so the first
 # thing you do in the new container is Up-Enter.
 # Attaching to a running container never pulls, installs, or updates.
@@ -145,6 +156,7 @@ MOUNT_CLAUDE=1
 PULL=1
 APT=1
 UPDATE=1
+SETUP=1
 SHELL_AFTER=1
 CLAUDE_SRC="${CLAUDE_SRC:-$HOME}"
 while [ $# -gt 0 ]; do
@@ -155,6 +167,7 @@ while [ $# -gt 0 ]; do
     --no-pull) PULL=0; shift ;;
     --no-apt) APT=0; shift ;;
     --no-update) UPDATE=0; shift ;;
+    --no-setup) SETUP=0; shift ;;
     --fresh) FRESH=1; shift ;;
     --no-shell) SHELL_AFTER=0; shift ;;
     -h|--help) show_help ;;
@@ -562,6 +575,30 @@ if [ "$UPDATE" -eq 1 ]; then
     || echo ">> warning: claude update failed (offline?); using the image's version." >&2
 else
   echo ">> --no-update: not updating Claude Code."
+fi
+
+# ---- the repo's own setup script (fresh containers only) ----
+#
+# Everything above is what the image and the host owe the container; this is
+# what the REPO owes it - pip lockfiles, a Playwright browser, whatever else its
+# container-setup script establishes. A rebuild keeps only the bind mounts and
+# ~/.claude, so the packages have to be put back every time, and a launcher that
+# promises "the same container a hand launch would build" has to be the thing
+# that puts them back. The motivating failure (2026-09-08): scripts/repl.py on a
+# cold host handed off here with --no-shell, got back a container with every
+# mount and port and not one pip package, and died on its first import with
+# `No module named 'configobj'`. Runs as the container's default user from the
+# workdir (the script does its own sudo where it needs root). Best-effort like
+# apt: a failed run warns and continues, and --no-setup skips it.
+SETUP_SCRIPT="$(read_directive container-setup | head -n1)"
+if [ -z "$SETUP_SCRIPT" ]; then
+  :
+elif [ "$SETUP" -eq 1 ]; then
+  echo ">> running the repo's setup script: $SETUP_SCRIPT"
+  podman exec --workdir "$WORKDIR" "$NAME" "$WORKDIR/$SETUP_SCRIPT" \
+    || echo ">> warning: $SETUP_SCRIPT failed (offline?); rerun it by hand inside the container." >&2
+else
+  echo ">> --no-setup: not running $SETUP_SCRIPT."
 fi
 
 # ---- seed bash history (fresh containers only) ----

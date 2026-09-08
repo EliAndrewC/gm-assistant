@@ -4,6 +4,7 @@ import importlib.util
 import subprocess
 import sys
 import threading
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -12,7 +13,14 @@ import pytest
 
 from l7r.repl import BANNER, COMMANDS, help_text, namespace, undocumented
 from l7r.repl import shell as mod
-from l7r.repl.shell import TITLE, build_namespace, main, run_snippet, set_title, setup_readline
+from l7r.repl.shell import (
+    TITLE,
+    build_namespace,
+    main,
+    run_snippet,
+    set_title,
+    setup_readline,
+)
 
 
 def test_namespace_and_banner() -> None:
@@ -33,7 +41,9 @@ def test_build_namespace_has_help(capsys: pytest.CaptureFixture[str]) -> None:
     assert help_text(full=True) in capsys.readouterr().out
 
 
-def test_help_l7r_can_still_show_the_short_form(capsys: pytest.CaptureFixture[str]) -> None:
+def test_help_l7r_can_still_show_the_short_form(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     ns = build_namespace()
     ns['help_l7r'](False)
     assert help_text() in capsys.readouterr().out
@@ -74,7 +84,11 @@ def test_main_interactive_and_stay(monkeypatch: pytest.MonkeyPatch) -> None:
     assert calls[0]['banner'] == help_text()
     assert 'xky' in calls[0]['local']
     assert ran == [1]
-    main(['percent()', '-i'], interact=lambda **kw: calls.append(kw), readline_setup=fake_readline)
+    main(
+        ['percent()', '-i'],
+        interact=lambda **kw: calls.append(kw),
+        readline_setup=fake_readline,
+    )
     assert len(calls) == 2
     for t in threading.enumerate():
         if t.name == 'l7r-cache-warm':
@@ -141,6 +155,66 @@ class TestLauncher:
         assert capsys.readouterr().out == '(1, 1, 0)\n'
         assert str(launcher.WEBAPP) in sys.path
 
+    @staticmethod
+    def _bare_container(
+        launcher: ModuleType,
+        monkeypatch: pytest.MonkeyPatch,
+        missing: str,
+        setup_exit: int,
+    ) -> tuple[list[list[str]], list[int]]:
+        """Fake a container whose FIRST import fails with `No module named <missing>`.
+
+        Returns the setup-script invocations and the number of import attempts.
+        """
+        monkeypatch.setattr(launcher, 'in_container', lambda: True)
+        calls: list[list[str]] = []
+        attempts = [0]
+
+        def import_shell() -> Callable[[list[str]], int]:
+            attempts[0] += 1
+            if attempts[0] == 1:
+                raise ModuleNotFoundError(f"No module named '{missing}'", name=missing)
+            return lambda argv: 7
+
+        def call(cmd: list[str], **kwargs: Any) -> int:
+            calls.append(cmd)
+            return setup_exit
+
+        monkeypatch.setattr(launcher, 'import_shell', import_shell)
+        monkeypatch.setattr(launcher.subprocess, 'call', call)
+        return calls, attempts
+
+    def test_main_provisions_a_bare_container(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A rebuilt container has no pip packages; the first `repl` installs them (2026-09-08)."""
+        launcher = _load_launcher()
+        calls, attempts = self._bare_container(launcher, monkeypatch, 'configobj', 0)
+        assert launcher.main(['d10()']) == 7
+        assert calls == [[str(launcher.SETUP)]]
+        assert attempts == [2]
+        assert 'configobj' in capsys.readouterr().err
+
+    def test_main_reports_a_failed_provision(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        launcher = _load_launcher()
+        calls, attempts = self._bare_container(launcher, monkeypatch, 'configobj', 3)
+        assert launcher.main([]) == 3
+        assert len(calls) == 1
+        assert attempts == [1]
+        assert 'could not install' in capsys.readouterr().err
+
+    def test_missing_repo_module_is_a_bug_not_a_bare_container(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`l7r.repl.nothing` is OUR module: installing packages would not help, so re-raise."""
+        launcher = _load_launcher()
+        calls, _ = self._bare_container(launcher, monkeypatch, 'l7r.repl.nothing', 0)
+        with pytest.raises(ModuleNotFoundError):
+            launcher.main([])
+        assert calls == []
+
     def test_container_running_anchors_the_name(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A substring filter would match a sibling repo's container."""
         launcher = _load_launcher()
@@ -177,7 +251,10 @@ class TestLauncher:
         assert 'not running' in capsys.readouterr().err
 
     def test_start_container_without_the_launcher_script(
-        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        tmp_path: Path,
     ) -> None:
         launcher = _load_launcher()
         monkeypatch.setattr(launcher, 'LAUNCHER', tmp_path / 'gone.sh')
