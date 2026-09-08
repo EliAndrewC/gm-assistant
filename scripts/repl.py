@@ -20,15 +20,18 @@ Works from either side of the container:
 
 from __future__ import annotations
 
+import importlib
 import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 WEBAPP = REPO / "webapp"
 LAUNCHER = REPO / "scripts" / "launch-container.sh"
+SETUP = REPO / "container-scripts" / "setup-dev-env.sh"
 
 
 def in_container() -> bool:
@@ -86,21 +89,63 @@ def host_command(argv: list[str]) -> list[str]:
     ]
 
 
+def import_shell() -> Callable[[list[str]], int]:
+    from l7r.repl.shell import main as shell_main
+
+    return shell_main
+
+
+def provision(missing: ModuleNotFoundError) -> int:
+    """Install the container's packages when the REPL's own imports cannot be met.
+
+    A rebuilt container keeps only the bind-mounted repo and ``~/.claude``;
+    every pip package is gone, and ``repl`` on a cold host is the first thing
+    to notice (2026-09-08: ``No module named 'configobj'`` from a container
+    the launcher had just built). ``launch-container.sh`` now runs the repo's
+    setup script on a fresh launch (its ``container-setup`` directive), so this
+    is the fallback for a container built before that or launched with
+    ``--no-setup``. Only a THIRD-PARTY module triggers it: a missing name that
+    is one of ``webapp/``'s own packages is a bug in the repo, and installing
+    packages would not fix it, so that error is re-raised untouched.
+    """
+    top = (missing.name or "").partition(".")[0]
+    if not top or (WEBAPP / top).exists():
+        raise missing
+    sys.stderr.write(
+        f">> python cannot import {top!r}: this container has no packages yet;"
+        f" running {SETUP.relative_to(REPO)} (one-time, a few minutes)\n"
+    )
+    return subprocess.call([str(SETUP)], cwd=str(REPO))
+
+
 def main(argv: list[str]) -> int:
     if in_container():
         sys.path.insert(0, str(WEBAPP))
-        from l7r.repl.shell import main as shell_main
-
+        try:
+            shell_main = import_shell()
+        except ModuleNotFoundError as exc:
+            code = provision(exc)
+            if code != 0:
+                sys.stderr.write(
+                    "could not install the REPL's packages; see the output above\n"
+                )
+                return code
+            importlib.invalidate_caches()  # site-packages changed under a live finder
+            shell_main = import_shell()
         return shell_main(argv)
     try:
         if not container_running():
             code = start_container()
             if code != 0:
-                sys.stderr.write("could not start the container; see the output above\n")
+                sys.stderr.write(
+                    "could not start the container; see the output above\n"
+                )
                 return code
         return subprocess.call(host_command(argv))
     except FileNotFoundError:
-        sys.stderr.write(f"{runtime_bin()} not found; run this inside the container instead\n")
+        sys.stderr.write(
+            f"{runtime_bin()} not found; run this inside the container instead\n"
+        )
         return 1
 
 

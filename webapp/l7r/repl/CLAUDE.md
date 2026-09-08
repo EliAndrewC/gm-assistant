@@ -21,8 +21,14 @@ Design notes:
 - **From the host, `repl` starts the container if it has to** (2026-08-30). `scripts/repl.py` run
   outside the container `podman exec`s into `claude-<repo-dir>`; when no such container is up it
   first hands off to `scripts/launch-container.sh --no-shell`, which does the whole normal launch
-  (pull, mounts, ports, packages, `claude update`) and returns instead of opening a bash shell. The
-  handoff runs with the repo as its cwd, because the launcher finds the repo - and therefore its
+  (pull, mounts, ports, packages, `claude update`, the repo's `setup-dev-env.sh`) and returns
+  instead of opening a bash shell. The launcher did not run `setup-dev-env.sh` until 2026-09-08,
+  when the GM's `repl` on a rebuilt container died with `No module named 'configobj'`: a rebuild
+  keeps only the bind mounts and `~/.claude`, so every pip package was gone. Now the launcher runs
+  it (CLAUDE.md's `container-setup` directive), and `repl.py` runs it itself when its in-container
+  import fails on a THIRD-PARTY module (`provision()`; a missing module of our own is a repo bug
+  and is re-raised) - so a container from before the change, or one launched with `--no-setup`,
+  heals on the first `repl`. The handoff runs with the repo as its cwd, because the launcher finds the repo - and therefore its
   ports, mounts and workdir - with `git rev-parse`, not from the path it was invoked by. The
   running check filters on `^name$`: `podman ps -f name=` matches substrings, so an unanchored
   filter would count a sibling repo's container as ours. Tested in
