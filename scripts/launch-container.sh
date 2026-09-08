@@ -79,6 +79,14 @@
 # suspends idle capture devices, so the mic is normally free, but a host app
 # actively recording (a Zoom call) can make it "busy" until it lets go.
 #
+# Memory: every container gets its own hard cap (--memory, and no swap inside
+# the container: an OOM kill is a loud signal that the tests' memory use has
+# gone wrong, which is preferable to a silent slowdown into swap), and ALL the
+# containers this script launches sit under one parent cgroup with its own,
+# higher ceiling, so several containers running expensive tests at once cannot
+# take the host down. See "shared memory ceiling" below for how and why; the
+# numbers are the CONTAINER_* variables at the top of the script.
+#
 # Usage:
 #   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--no-pull]
 #                       [--no-apt] [--no-update] [--fresh] [--no-shell] [--help]
@@ -103,13 +111,24 @@
 # account (you log in fresh inside instead, on your own account). Point at a
 # specific config dir with CLAUDE_SRC=/path (defaults to ~). Reusable across
 # repos: run from any repo root; it reads the CURRENT repo's CLAUDE.md. Override
-# the name prefix with CONTAINER_PREFIX, the image with CONTAINER_IMAGE.
+# the name prefix with CONTAINER_PREFIX, the image with CONTAINER_IMAGE, the
+# per-container cap with CONTAINER_MEMORY, the shared ceiling with
+# CONTAINER_SLICE_HIGH / CONTAINER_SLICE_MAX, and the parent slice's name with
+# CONTAINER_SLICE (empty = no shared ceiling, each container on its own cap).
 
 set -euo pipefail
 
 IMAGE="${CONTAINER_IMAGE:-docker.io/docker/sandbox-templates:claude-code}"
 PREFIX="${CONTAINER_PREFIX:-claude}"
-MEMORY="8g"
+# Per-container hard cap, and the shared ceiling over every container together
+# (GM 2026-09-08, on a 15.4 GB laptop whose desktop uses ~4.5 GB and which has
+# host swap to absorb the desktop's cold pages while the containers are full).
+# The per-container cap went 8g -> 10g because usually only one container is
+# running, and then it is the diagram one, whose gate is the expensive thing.
+MEMORY="${CONTAINER_MEMORY:-10g}"
+SLICE="${CONTAINER_SLICE-claude-containers.slice}"
+SLICE_HIGH="${CONTAINER_SLICE_HIGH:-11G}"
+SLICE_MAX="${CONTAINER_SLICE_MAX:-12G}"
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -186,6 +205,70 @@ case "$WORKDIR" in
   *) die "container-workdir must be an absolute path (got '$WORKDIR')" ;;
 esac
 
+# ---- shared memory ceiling over every container (host side) ----
+#
+# cgroup v2 is hierarchical: a child's limit nests under its parent's, and when
+# the parent reaches its own limit the kernel reclaims across every child - each
+# container's file cache first, which is the memory that costs nothing to give
+# back - before anything is killed. MemoryHigh throttles the group once the
+# total crosses it; MemoryMax is the hard stop, where the OOM killer picks the
+# largest process anywhere in the group (which can be a claude session rather
+# than a test worker). Neither touches a container's own --memory cap, which
+# still applies underneath.
+#
+# The parent is a systemd slice in the invoking user's manager - what rootless
+# podman's systemd cgroup manager parents a container's scope under when given
+# --cgroup-parent <name>.slice. `systemctl --user set-property` both creates the
+# slice and PERSISTS the numbers (a drop-in under ~/.config/systemd/user.control/),
+# and applies them at once to a slice that is already live - so it runs on every
+# invocation, attach included: change the numbers at the top of the script and
+# re-run it, and the ceiling moves under the running containers. A container
+# started before the slice existed is outside it until it is recreated (--fresh).
+#
+# Check from the host:
+#   systemctl --user show claude-containers.slice -p MemoryHigh -p MemoryMax -p MemoryCurrent
+#   systemd-cgls --user --no-pager | grep -A3 claude-containers
+#
+# Best-effort, like the apt step: without a systemd cgroup manager on cgroup v2
+# or a user manager to talk to, it warns and the containers run on their own
+# caps alone.
+#
+# Raising a RUNNING container's own cap without recreating it (podman 3.4 has
+# no `podman update`; the slice membership still needs --fresh): crun keeps the
+# processes in a child cgroup named `container` beneath the libpod scope and
+# sets --memory THERE, so `systemctl --user set-property libpod-<id>.scope
+# MemoryMax=` loosens only the parent and changes nothing (measured 2026-09-08).
+# Write the child directly - delegated, so no sudo:
+#   echo 10G > /sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/user.slice/libpod-$(podman inspect -f '{{.Id}}' <name>).scope/container/memory.max
+# The container sees it at once in its own /sys/fs/cgroup/memory.max; a
+# stop/start reverts to the stored 8g/10g from `podman run`.
+CGROUP_PARENT=()
+if [ -n "$SLICE" ]; then
+  # The manager comes from podman; the cgroup version from the kernel itself
+  # (cgroup.controllers at the root exists only on the v2 unified hierarchy),
+  # because podman's own field for it is spelled differently across versions
+  # (CGroupsVersion in 3.x, CgroupsVersion in 4.x) and a Go template names the
+  # field literally - the wrong spelling printed 'systemd ' on podman 3.4.
+  cg_mgr="$(podman info --format '{{.Host.CgroupManager}}' 2>/dev/null || true)"
+  cg_ver=v1; [ -f /sys/fs/cgroup/cgroup.controllers ] && cg_ver=v2
+  cg_info="$cg_mgr $cg_ver"
+  case "$cg_info" in
+    systemd\ v2)
+      if systemctl --user set-property "$SLICE" "MemoryHigh=$SLICE_HIGH" "MemoryMax=$SLICE_MAX"; then
+        CGROUP_PARENT=( --cgroup-parent "$SLICE" )
+        echo ">> memory: $MEMORY per container; all containers under $SLICE (high $SLICE_HIGH, max $SLICE_MAX)"
+      else
+        echo ">> warning: 'systemctl --user set-property $SLICE' failed (no user systemd manager?);" >&2
+        echo "   no shared ceiling - each container keeps only its own --memory cap ($MEMORY)." >&2
+      fi
+      ;;
+    *)
+      echo ">> warning: podman reports cgroup manager/version '${cg_info:-unknown}', not 'systemd v2';" >&2
+      echo "   no shared ceiling - each container keeps only its own --memory cap ($MEMORY)." >&2
+      ;;
+  esac
+fi
+
 # ---- if a container of this name exists, attach (or recreate with --fresh) ----
 if [ "$FRESH" -eq 1 ] && podman container exists "$NAME" 2>/dev/null; then
   echo ">> --fresh: removing existing container '$NAME'"
@@ -246,6 +329,7 @@ RUN_ARGS=(
   --env HOME=/home/agent
   --workdir "$WORKDIR"
   --memory "$MEMORY" --memory-swap "$MEMORY"
+  ${CGROUP_PARENT[@]+"${CGROUP_PARENT[@]}"}
   --volume "${REPO_ROOT}:${WORKDIR}:Z"
 )
 
