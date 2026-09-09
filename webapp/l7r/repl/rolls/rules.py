@@ -57,17 +57,22 @@ the full name is still what joins a Discord account to a character, what dedups 
 pasted card against a typed roll, and what matches the bot's `**Name**:` prefix.
 It is trimmed at the moment of writing and nowhere earlier.
 
-**An annotated open roll leads with the number.** `40 law: Jimen assessing whether
-the arrest was lawful`, not `Jimen law: 40 - ...` (2026-09-02). The GM asked for
-this shape for the annotated open rolls specifically; a CONTESTED line keeps its
-own order, because the thing it has to say first is which two rolls were compared.
+**An annotated open roll leads with the number.** `40 law: Jimen - assessing
+whether the arrest was lawful`, not `Jimen law: 40 - ...` (2026-09-02). The GM
+asked for this shape for the annotated open rolls specifically; a CONTESTED line
+keeps its own order, because the thing it has to say first is which two rolls were
+compared.
 
-**No line separates its note with a dash** (GM 2026-09-02, both formats). On the
-open line the note follows a NAME and reads straight on from it; on the contested
-line it follows the margin, and the GM's fix for the number running into the note
-was to give the clause a VERB rather than a separator - `Jimen wins by >=10
-arguing it is wrong to lie to a magistrate to save face`. The `wins` is doing the
-work the `-` used to, so do not put the dash back alongside it.
+**The open line separates its note with ` - `; the contested line does not.** The
+open line's dash was removed on 2026-09-02 and put back on 2026-09-09 - the GM:
+*"I had initially thought that I did not want a hyphen, but now I think I do"* -
+so `50 underworld: Jimen - what kinds of spirits cannot cross running water?`. A
+bare open roll (no note yet, the forced close on exit) takes no dash, since there
+is nothing to separate. The contested line was not part of that reversal: there
+the GM's fix for the margin running into the note was to give the clause a VERB
+rather than a separator - `Jimen wins by >=10 arguing it is wrong to lie to a
+magistrate to save face` - and the `wins` still does the work a dash would, so do
+not add one beside it.
 
 Note what the cap does NOT do: it applies to OPEN etiquette rolls only, which is
 the GM's literal scope. That was queried, and the answer closes it rather than
@@ -372,14 +377,15 @@ def render_lines(
 def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -> str:
     """One annotated roll, with what it was for.
 
-        40 law: Jimen assessing whether the arrest was lawful
+        40 law: Jimen - assessing whether the arrest was lawful
         Jimen vs Otsuki sincerity: 41 vs 28, Jimen wins by >=10 claiming he never met the man
 
     THE TWO ORDERS ARE DIFFERENT ON PURPOSE (2026-09-02, and see the module
     docstring). The open line leads with the number, because that is the GM's own
     shape for it; the contested line leads with the pairing, because `41 vs 28`
     means nothing until you know who the two sides were. Do not harmonize them.
-    Neither takes a dash before its note.
+    The open line takes ` - ` before its note (GM 2026-09-09); the contested line
+    does not, because its `wins` verb already separates the margin from the note.
 
     An OPEN roll is rounded like any other. A CONTESTED one keeps both totals raw and
     rounds only the margin, which is the GM's rule from feature 201 - the annotation
@@ -391,7 +397,10 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
     who = personal_name(roll.character)
     if roll.opposed_total is None:
         shown = record(roll.total + roll.bonus_self, roll.skill, rule)
-        tail = f' {roll.note}' if roll.annotated else ''
+        # The open line separates its note with ` - ` (GM 2026-09-09, reversing
+        # 2026-09-02); the contested line below still does not, because its `wins`
+        # verb is the separator there. See the module docstring.
+        tail = f' - {roll.note}' if roll.annotated else ''
         return f'{shown} {roll.skill.lower()}: {who}{tail}'
     # Each side AFTER its own bonus - feature 201's rule ("adjusted for bonuses on
     # each side") and the GM's per-side insistence are the same requirement.
