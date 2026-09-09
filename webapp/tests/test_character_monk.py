@@ -3,7 +3,8 @@
 Each Monk is tagged with one of the 7 Fortunes of Good Luck (the Order dropdown,
 random if unset) instead of a hard-coded Order of Bishamon. Ranks that pair two
 roles (4: Senior Monk / Preceptor; 5: Adept Monk / Country Monk) tag the chosen
-seat, or a random one of the pair if none was chosen.
+seat, or a random one of the pair if none was chosen. Every Monk also leads with
+a plain 'monk' tag, the one tag a player can search the campaign by.
 """
 
 from __future__ import annotations
@@ -25,21 +26,30 @@ def _tags(**kw: Any) -> list[str]:
     return tags
 
 
+def test_every_monk_leads_with_the_monk_tag() -> None:
+    # The Order and rank say WHICH monk; 'monk' is the tag they all share, so a
+    # player can pull up every monk in the campaign with one tag search (GM
+    # 2026-09-09). Same shape as Peasant's 'peasant'.
+    for base_rank in (1, 2, 4, 5, 9):
+        assert _tags(base_rank=base_rank)[0] == 'monk'
+        assert _tags(base_rank=base_rank, order='Order of Benten')[0] == 'monk'
+
+
 def test_order_is_used_when_given() -> None:
-    assert _tags(base_rank=2, order='Order of Benten')[0] == 'Order of Benten'
+    assert _tags(base_rank=2, order='Order of Benten')[1] == 'Order of Benten'
 
 
 def test_blank_order_yields_no_order_tag() -> None:
     # Unlike the other dropdowns, a blank Order is NOT randomized - it is left
     # off so the GM can hand-enter an uncommon order. A rank-2 monk with no
-    # order is tagged only with its designator.
-    assert _tags(base_rank=2) == ['Abbot']
+    # order is tagged only with the caste tag and its designator.
+    assert _tags(base_rank=2) == ['monk', 'Abbot']
     assert not any(o in _tags(base_rank=2) for o in ORDERS)
 
 
 def test_custom_order_is_used_as_typed() -> None:
     # An order outside the seven (typed by the GM) is honored as-is.
-    assert _tags(base_rank=2, order='Order of Inari') == ['Order of Inari', 'Abbot']
+    assert _tags(base_rank=2, order='Order of Inari') == ['monk', 'Order of Inari', 'Abbot']
 
 
 @pytest.mark.parametrize(

@@ -86,7 +86,7 @@ If unspecified, base_rank is picked randomly from the type's rank table (Peasant
 
 The chargen engine only auto-tags a **Samurai**'s location (derived from house/
 lineage/rank, and only sometimes). **Monk and Peasant sheets carry NO location
-tag at all** - `Monk.gen_tags` emits just the order and rank designator,
+tag at all** - `Monk.gen_tags` emits `monk`, the order and the rank designator,
 `Peasant.gen_tags` just `peasant`. So a monk or peasant will upload with no sense
 of *where* they are unless you add it. Always tag the NPC's place, via the
 `LOCATION_TAGS` list in Step 2.
@@ -102,9 +102,9 @@ of *where* they are unless you add it. Always tag the NPC's place, via the
 
 Match the character's reach: a **domain-capital abbot** gets the town
 (`Shiro Reiji`); a **provincial abbot** gets the province
-(`['Order of Bishamon', 'Abbot', 'Nagahara province']`); a **village monk or
+(`['monk', 'Order of Bishamon', 'Abbot', 'Nagahara province']`); a **village monk or
 peasant** gets the fine-grained stack the cast uses for locals
-(`['Order of Bishamon', 'Country Monk', 'Nagahara province', 'Hoshigaoka village',
+(`['monk', 'Order of Bishamon', 'Country Monk', 'Nagahara province', 'Hoshigaoka village',
 'Reiji domain', 'Hayakawa county']`). When unsure of the exact scale, prefer the
 one the surrounding cast uses for comparable NPCs, or ask in Step 1.
 

@@ -114,6 +114,18 @@ def test_prompt_monk_is_a_monastic_without_swords() -> None:
     assert 'unstyled black hair' not in prompt
 
 
+def test_prompt_monk_tag_alone_classifies_a_monk() -> None:
+    # A monk read back from Obsidian Portal has no 'order'/'seat' keys - only
+    # its tags survive the round trip - so the 'monk' tag must be enough.
+    from chargen.art import generate_prompt, infer_character_type
+
+    record = {'gender': 'male', 'tags': ['Order of Ebisu', 'Steward', 'monk'], 'age': 50}
+    assert infer_character_type(record) == 'monk'
+    prompt = generate_prompt(record)
+    assert 'monk from Rokugan' in prompt
+    assert 'no swords and no armor' in prompt
+
+
 def test_prompt_monk_head_is_shaved_or_grown_out_roughly_evenly() -> None:
     from chargen.art import generate_prompt
 
