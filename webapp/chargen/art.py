@@ -125,9 +125,11 @@ def infer_character_type(character: dict) -> str:
 
     An explicit ``character_type`` (the webapp's type dropdown value) wins;
     otherwise the dict shape decides: only the Monk class carries ``order`` and
-    ``seat``, and the Peasant class tags itself 'peasant'. Anything else -
-    including the partial dicts the art-prompt AJAX sends - defaults to samurai,
-    the common case.
+    ``seat``, and the Monk and Peasant classes tag themselves 'monk' /
+    'peasant' (the tags are what survives a round trip through Obsidian
+    Portal, where ``order``/``seat`` do not exist). Anything else - including
+    the partial dicts the art-prompt AJAX sends - defaults to samurai, the
+    common case.
     """
     explicit = str(character.get('character_type') or '').strip().lower()
     if explicit in ('samurai', 'monk', 'peasant'):
@@ -135,6 +137,8 @@ def infer_character_type(character: dict) -> str:
     if 'order' in character or 'seat' in character:
         return 'monk'
     tags = [str(tag).lower() for tag in character.get('tags') or []]
+    if 'monk' in tags:
+        return 'monk'
     if 'peasant' in tags:
         return 'peasant'
     return 'samurai'

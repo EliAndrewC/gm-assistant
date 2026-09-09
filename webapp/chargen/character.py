@@ -492,7 +492,11 @@ class Monk(Character):
         # seat, or a random one of the pair if none was chosen.
         roles = [role.strip() for role in config['ranks']['Monk'][str(self.rank)].split(',')]
         designator = self.seat if self.seat in roles else choice(roles)
-        return ([self.order] if self.order else []) + [designator]
+        # 'monk' leads, the way every Peasant carries 'peasant': the Order and
+        # rank designator say WHICH monk, but a player searching the campaign
+        # for monks needs one tag they all share (GM 2026-09-09 - a player
+        # could not pull up the monks by tag).
+        return ['monk'] + ([self.order] if self.order else []) + [designator]
 
     def gen_honor(self, base=3.0) -> float:
         variance = 1.1 - self.rank / 10
