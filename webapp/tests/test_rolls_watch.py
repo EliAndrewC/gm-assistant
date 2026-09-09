@@ -269,7 +269,7 @@ class TestTick:
         )
         assert c.written == (
             'A etiquette: 20',
-            '40 law: A pressing him on the warrant',
+            '40 law: A - pressing him on the warrant',
         )
         assert 'A silk merchant.' in str(seen['bio'])
 

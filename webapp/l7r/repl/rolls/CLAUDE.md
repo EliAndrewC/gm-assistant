@@ -39,14 +39,14 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `discord.py` | Read-only REST. The bot holds permissions 66560 (View Channel + Read Message History) and there is no code here that could post. Snowflakes are synthesized from a timestamp; `before`/`after` are mutually exclusive in the API, so the far end is bounded in Python. |
 | `sheet.py` | The character-sheet app's roll-history client. **THOSE ENDPOINTS DO NOT EXIST YET** (spec: `character-sheet/externally-queryable-roll-results.md`). Every failure degrades to empty with a reason; nothing raises. |
 | `console.py` | `print_above` - writes from the watcher thread WITHOUT stomping the prompt: `\r\x1b[K` erases the prompt line, the message goes there, then the prompt and whatever the GM had typed are redrawn beneath it. TTY only; a pipe gets a plain print. |
-| `annotate.py` | The `annotate()` menu - which roll, open or contested, what it was for. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
+| `annotate.py` | The `annotate()` menu - which roll; open (`o`), contested (`c`), discard (`d`) or open with a bonus (`ob`); what it was for. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
 ## What a written line looks like, and the two orders that must stay different
 
 ```
 Tetsuro / Toshihiro / Sadakichi / Jimen / Moriko etiquette: 30 / 20 / 20 / 15 / 15
-10 tact: Jimen asking how much money Fumitake owed
+10 tact: Jimen - asking how much money Fumitake owed
 Jimen vs Otsuki precepts: 41 vs 28, Jimen wins by >=10 arguing it is wrong to lie to a magistrate
 Jimen vs Otsuki sincerity vs interrogation: 30 vs 30, Otsuki wins by <5 denying he was ever there
 ```
@@ -62,10 +62,11 @@ GM asked for `{roll} {skill}: {name} {annotation}` for the open rolls specifical
 says nothing until you know who the two sides were. **Do not harmonize these**; both shapes are
 pinned by tests that say so.
 
-**Neither line separates its note with a dash** (GM 2026-09-02). On the open line the note follows
-a name and reads straight on from it. On the contested line the GM's fix for the margin running
-into the note was to give the clause a VERB - `Jimen wins by >=10 arguing ...` - so the `wins` is
-doing the work the `-` used to. Do not put the dash back beside it.
+**The open line separates its note with ` - `; the contested line does not** (GM 2026-09-09,
+reversing 2026-09-02 for the open line only: *"I had initially thought that I did not want a
+hyphen, but now I think I do"*). A bare open roll with no note takes no dash. On the contested
+line the GM's fix for the margin running into the note was to give the clause a VERB - `Jimen wins
+by >=10 arguing ...` - so the `wins` is doing the work a dash would. Do not add one beside it.
 
 **The NPC's skill is never asked for, and a tie is not always a tie.** Six skills form three fixed
 pairs - interrogation/sincerity, manipulation/tact, investigation/sneaking - and the first of each
@@ -103,6 +104,18 @@ character-sheet app recorded when it has one; the NPC's is inferred from their p
 (above ten dice `actual_xky` turns the excess into a flat bonus, so the capped pool infers wrong).
 Both bonuses are offered per side and both can be overridden - the GM warned the inference is *"not
 completely reliable"*.
+
+**An OPEN roll's bonus is a fourth menu entry, `ob`, not a question on every open roll** (GM
+2026-09-09: *"this is not as common. So instead of always asking every time we add an open roll
+... an open with bonus option"*). `o` never asks; `ob` (or `b`) asks `Bonus to <name>? [0]` and
+the line shows the total after it, rounded like any open roll. `annotate._kind` is where `ob`
+survives the one-letter collapse that turns `open` into `o`.
+
+**Two things `annotate()` deliberately does NOT do** (GM 2026-09-09): it returns nothing - the old
+count was echoed at the prompt as an unlabeled number after the summary line - and its answers stay
+OUT of the readline history (`ask_quietly` takes each line back off as `input()` returns, only when
+the length grew, since readline never records a blank line). Every `annotate()` prompt goes through
+`ask_quietly`; a new prompt that calls `input()` directly puts the answers back in the history.
 
 **Bonuses are kept PER SIDE and never netted.** A bonus to the NPC raises the NPC's total; it never
 lowers the player's. The GM's reason: a player who rolled 30 against an opponent's free raises still

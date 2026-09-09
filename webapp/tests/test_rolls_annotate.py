@@ -87,15 +87,18 @@ class TestRenderAnnotated:
         line = rules.render_annotated(
             roll('Jimen', 'law', 44, note='assessing whether the arrest was lawful'), 'Otsuki'
         )
-        assert line == '40 law: Jimen assessing whether the arrest was lawful'
+        assert line == '40 law: Jimen - assessing whether the arrest was lawful'
 
     def test_the_number_leads_and_the_note_follows_the_name(self) -> None:
-        """The GM's own worked example (2026-09-02): `{roll} {skill}: {name} {annotation}`."""
+        """The GM's own worked example (2026-09-02), with the ` - ` put back on 2026-09-09.
+
+        `{roll} {skill}: {name} - {annotation}`
+        """
         line = rules.render_annotated(
             roll('Tsuruchi Jimen', 'tact', 10, note='asking how much money Fumitake owed'),
             'Otsuki',
         )
-        assert line == '10 tact: Jimen asking how much money Fumitake owed'
+        assert line == '10 tact: Jimen - asking how much money Fumitake owed'
 
     def test_a_bare_open_roll_is_the_same_line_without_the_note(self) -> None:
         """What the forced close on interpreter exit writes rather than losing it."""
@@ -203,7 +206,7 @@ class TestWhatGetsWritten:
         )
         assert rules.render_lines(c.rolls, c.npc_name) == [
             'Jimen etiquette: 25',
-            '25 precepts: Jimen reading the room',
+            '25 precepts: Jimen - reading the room',
         ]
 
     def test_annotated_rolls_keep_the_order_they_were_made(self) -> None:
@@ -302,7 +305,7 @@ class TestClosing:
 class TestAnnotateMenu:
     def test_nothing_waiting(self, capsys: Any) -> None:
         c = conversation(roll('Jimen', 'etiquette', 28))
-        assert ann.annotate(c, ask=lambda q: '') == 0
+        assert ann.annotate(c, ask=lambda q: '') is None
         assert 'Nothing waiting' in capsys.readouterr().out
 
     def test_one_waiting_roll_skips_the_which_prompt(self) -> None:
@@ -316,14 +319,14 @@ class TestAnnotateMenu:
             asked.append(question)
             return 'o' if 'contested' in question else 'reading the room'
 
-        assert ann.annotate(c, ask=ask) == 1
+        assert ann.annotate(c, ask=ask) is None
         assert not any('Which roll?' in q for q in asked)
         assert c.rolls[0].note == 'reading the room'
 
     def test_choosing_among_several(self) -> None:
         c = conversation(roll('Jimen', 'precepts', 25), roll('Tetsuro', 'law', 44, minute=4))
         answers = iter(['2', 'o', 'the warrant', '', ''])
-        assert ann.annotate(c, ask=lambda q: next(answers)) == 1
+        assert ann.annotate(c, ask=lambda q: next(answers)) is None
         assert c.rolls[1].note == 'the warrant'
         assert c.rolls[0].note == '', 'the unchosen roll is untouched'
 
@@ -362,7 +365,7 @@ class TestAnnotateMenu:
             except StopIteration:
                 raise KeyboardInterrupt from None
 
-        assert ann.annotate(c, ask=ask) == 0
+        assert ann.annotate(c, ask=ask) is None
         assert all(r.note == '' for r in c.rolls), 'nothing at all is saved'
         assert 'nothing saved' in capsys.readouterr().out
 
@@ -372,13 +375,13 @@ class TestAnnotateMenu:
         def ask(question: str) -> str:
             raise EOFError
 
-        assert ann.annotate(c, ask=ask) == 0
+        assert ann.annotate(c, ask=ask) is None
         assert c.rolls[0].note == ''
 
     def test_a_blank_line_finishes_and_commits_what_is_done(self) -> None:
         c = conversation(roll('A', 'law', 40), roll('B', 'precepts', 30, minute=2))
         answers = iter(['1', 'o', 'kept this one', ''])
-        assert ann.annotate(c, ask=lambda q: next(answers)) == 1
+        assert ann.annotate(c, ask=lambda q: next(answers)) is None
         assert c.rolls[0].note == 'kept this one'
         assert c.rolls[1].note == ''
 
@@ -395,7 +398,7 @@ class TestAnnotateMenu:
             roll('C', 'sincerity', 35, minute=4),
         )
         answers = iter(['1', 'o', 'the one I did', ''])
-        assert ann.annotate(c, ask=lambda q: next(answers)) == 1
+        assert ann.annotate(c, ask=lambda q: next(answers)) is None
         assert c.rolls[0].note == 'the one I did'
         assert c.rolls[1].note == ''
         assert c.rolls[2].note == ''
@@ -403,7 +406,7 @@ class TestAnnotateMenu:
     def test_a_bad_menu_answer_is_re_asked(self, capsys: Any) -> None:
         c = conversation(roll('A', 'law', 40), roll('B', 'precepts', 30, minute=2))
         answers = iter(['nine', '99', '1', 'x', 'o', 'the note', ''])
-        assert ann.annotate(c, ask=lambda q: next(answers)) == 1
+        assert ann.annotate(c, ask=lambda q: next(answers)) is None
         assert 'enter a number from 1 to 2' in capsys.readouterr().out
 
     def test_an_empty_description_is_re_asked(self) -> None:
@@ -419,3 +422,144 @@ class TestAnnotateMenu:
     def test_unattributed_rolls_are_not_offered(self) -> None:
         c = conversation(roll('', 'law', 40))
         assert ann.pending(c) == []
+
+
+class TestOpenWithBonus:
+    """The `ob` option (GM 2026-09-09): a bonus on an OPEN roll, asked for only
+    when the GM picks it, because it is uncommon and a question on every open roll
+    would be answered "no" almost every time."""
+
+    def test_ob_asks_for_the_bonus_and_adds_it_to_the_line(self) -> None:
+        c = conversation(roll('Jimen', 'law', 38))
+        answers = iter(['ob', '5', 'the argument'])
+        assert ann.annotate(c, ask=lambda q: next(answers)) is None
+        assert c.rolls[0].bonus_self == 5
+        assert not c.rolls[0].contested
+        assert rules.render_annotated(c.rolls[0], 'Otsuki') == '40 law: Jimen - the argument'
+
+    def test_the_bonus_is_asked_for_by_name(self) -> None:
+        c = conversation(roll('Tsuruchi Jimen', 'law', 38))
+        asked: list[str] = []
+
+        def ask(question: str) -> str:
+            asked.append(question)
+            if 'Bonus' in question:
+                return '10'
+            return 'ob' if 'contested' in question else 'the note'
+
+        ann.annotate(c, ask=ask)
+        assert any('Bonus to Tsuruchi Jimen?' in q for q in asked)
+        assert c.rolls[0].bonus_self == 10
+
+    def test_a_plain_open_roll_never_asks_about_a_bonus(self) -> None:
+        """The whole reason `ob` is its own entry rather than a question on `o`."""
+        c = conversation(roll('Jimen', 'law', 38))
+        asked: list[str] = []
+
+        def ask(question: str) -> str:
+            asked.append(question)
+            return 'o' if 'contested' in question else 'the note'
+
+        ann.annotate(c, ask=ask)
+        assert not any('Bonus' in q for q in asked)
+        assert c.rolls[0].bonus_self == 0
+
+    def test_a_blank_bonus_is_zero(self) -> None:
+        c = conversation(roll('Jimen', 'law', 38))
+        answers = iter(['ob', '', 'the note'])
+        ann.annotate(c, ask=lambda q: next(answers))
+        assert c.rolls[0].bonus_self == 0
+
+    def test_a_bonus_can_be_negative(self) -> None:
+        c = conversation(roll('Jimen', 'law', 42))
+        answers = iter(['ob', '-5', 'the note'])
+        ann.annotate(c, ask=lambda q: next(answers))
+        assert rules.render_annotated(c.rolls[0], 'Otsuki') == '35 law: Jimen - the note'
+
+    def test_the_menu_offers_ob(self) -> None:
+        c = conversation(roll('Jimen', 'law', 38))
+        asked: list[str] = []
+
+        def ask(question: str) -> str:
+            asked.append(question)
+            return 'o' if 'contested' in question else 'x'
+
+        ann.annotate(c, ask=ask)
+        assert any('[o/c/d/ob' in q for q in asked)
+
+    @pytest.mark.parametrize(
+        ('typed', 'kind'),
+        [
+            ('ob', 'ob'),
+            ('OB', 'ob'),
+            ('b', 'ob'),
+            ('bonus', 'ob'),
+            ('o', 'o'),
+            ('open', 'o'),
+            ('c', 'c'),
+            ('contested', 'c'),
+            ('d', 'd'),
+            ('', ''),
+            ('x', 'x'),
+        ],
+    )
+    def test_how_answers_normalize(self, typed: str, kind: str) -> None:
+        """`ob` must not collapse to `o` the way `open` does."""
+        assert ann._kind(typed) == kind
+
+    def test_ob_is_staged_and_a_ctrl_c_still_discards_it(self, capsys: Any) -> None:
+        """The bonus is staged with the note, so Ctrl-C loses both together."""
+        c = conversation(roll('Jimen', 'law', 38), roll('Tetsuro', 'law', 44, minute=4))
+        answers = iter(['1', 'ob', '5', 'the note'])
+
+        def ask(question: str) -> str:
+            try:
+                return next(answers)
+            except StopIteration:
+                raise KeyboardInterrupt from None  # at the second "which roll?"
+
+        assert ann.annotate(c, ask=ask) is None
+        assert c.rolls[0].bonus_self == 0
+        assert c.rolls[0].note == ''
+        assert 'nothing saved' in capsys.readouterr().out
+
+
+class TestReturnsNothing:
+    """GM 2026-09-09: the returned count was echoed at the prompt as a bare number
+    after the summary line, and made the GM do a double take. Nothing is returned."""
+
+    def test_the_summary_line_is_the_whole_report(self, capsys: Any) -> None:
+        c = conversation(roll('Jimen', 'precepts', 25), roll('Tetsuro', 'law', 44, minute=4))
+        answers = iter(['1', 'o', 'the room', '2', 'd'])
+        assert ann.annotate(c, ask=lambda q: next(answers)) is None
+        assert 'Annotated 1 roll(s), 1 discarded.' in capsys.readouterr().out
+
+
+class TestAskQuietly:
+    """GM 2026-09-09: menu answers were landing in the Python readline history."""
+
+    def test_the_answer_comes_back_and_leaves_no_history(self) -> None:
+        readline = pytest.importorskip('readline')
+        before = readline.get_current_history_length()
+
+        def reader(question: str) -> str:
+            readline.add_history('the note')  # what readline does under input()
+            return 'the note'
+
+        assert ann.ask_quietly('> ', reader=reader) == 'the note'
+        assert readline.get_current_history_length() == before
+
+    def test_a_blank_answer_removes_nothing(self) -> None:
+        """readline does not record a blank line, so there is nothing to take back -
+        and taking one back anyway would delete a real line of history."""
+        readline = pytest.importorskip('readline')
+        readline.add_history('real history')
+        before = readline.get_current_history_length()
+        assert ann.ask_quietly('> ', reader=lambda q: '') == ''
+        assert readline.get_current_history_length() == before
+        assert readline.get_history_item(before) == 'real history'
+
+    def test_it_is_what_annotate_asks_with(self) -> None:
+        import inspect
+
+        assert inspect.signature(ann.annotate).parameters['ask'].default is ann.ask_quietly

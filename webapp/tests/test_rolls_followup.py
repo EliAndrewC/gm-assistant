@@ -137,7 +137,7 @@ class TestPerSideBonuses:
 
     def test_an_open_roll_still_takes_its_own_bonus(self) -> None:
         r = roll('Jimen', 'law', 38, note='the argument', bonus_self=5)
-        assert rules.render_annotated(r, 'Otsuki') == '40 law: Jimen the argument'
+        assert rules.render_annotated(r, 'Otsuki') == '40 law: Jimen - the argument'
 
 
 class TestFinalTotals:
@@ -178,7 +178,7 @@ class TestDiscard:
 
     def test_the_menu_can_discard(self) -> None:
         c = conversation(roll('A', 'law', 40))
-        assert ann.annotate(c, ask=lambda q: 'd') == 1
+        assert ann.annotate(c, ask=lambda q: 'd') is None
         assert c.rolls[0].discarded
         assert c.rolls[0].note == ''
 
@@ -192,7 +192,7 @@ class TestDiscard:
             except StopIteration:
                 raise KeyboardInterrupt from None
 
-        assert ann.annotate(c, ask=ask) == 0
+        assert ann.annotate(c, ask=ask) is None
         assert not c.rolls[0].discarded, 'a staged discard is abandoned like an annotation'
 
 

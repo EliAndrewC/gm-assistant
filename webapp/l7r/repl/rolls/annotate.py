@@ -9,6 +9,13 @@ this is where that sentence comes from.
 Etiquette never appears here - those are presumed to be introductions, so the
 annotation would say the same thing every time.
 
+FOUR KINDS: open (`o`), contested (`c`), discard (`d`), and open with a bonus
+(`ob`). The last is a separate menu entry rather than a "bonus?" question asked on
+every open roll, because open rolls with a bonus are uncommon and a question on
+the common path would be answered "no" almost every time (GM 2026-09-09). The
+contested path asks for both sides' bonuses every time, because there the rules'
+free raises make a bonus the usual case rather than the exception.
+
 CTRL-C DISCARDS EVERYTHING. Annotations are staged as the GM works and committed
 only when they finish, so a Ctrl-C part way through a run of five leaves all five
 unannotated rather than four annotated and one not. That is the literal reading of
@@ -19,6 +26,7 @@ anger. Finishing normally (blank line at the roll prompt) commits what is done.
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 
@@ -33,6 +41,37 @@ class Abandoned(Exception):
     """The GM pressed Ctrl-C. Nothing is saved."""
 
 
+def _history_length() -> int:
+    """How many lines readline's history holds; 0 where there is no readline."""
+    try:
+        import readline
+    except ImportError:  # pragma: no cover - Windows, or a stripped build
+        return 0
+    return readline.get_current_history_length()
+
+
+def ask_quietly(question: str, *, reader: Ask = input) -> str:
+    """`input()`, with the answer kept OUT of the readline history.
+
+    At the REPL every `input()` line goes into the same readline history as the
+    Python the GM types, so after an annotate run the up-arrow walked back through
+    `o`, `5`, `what kinds of spirits cannot cross running water?` before reaching
+    any code (GM 2026-09-09: *"the things that I typed into the menus on the
+    annotate function show up in my Python history"*). readline appends the line
+    as `input()` returns, so the fix is to take it straight back off - and only
+    when the length actually grew, because readline does not record a blank line
+    and removing on a blank would delete real history.
+    """
+    before = _history_length()
+    answer = reader(question)
+    with contextlib.suppress(ImportError):
+        import readline
+
+        if readline.get_current_history_length() > before:
+            readline.remove_history_item(readline.get_current_history_length() - 1)
+    return answer
+
+
 @dataclass(frozen=True)
 class Decision:
     """One staged choice: annotate a roll, or throw it away.
@@ -45,6 +84,8 @@ class Decision:
     discard: bool = False
     #: (opposing total, bonus to the player, bonus to the NPC) when contested.
     contest: tuple[int, int, int] | None = None
+    #: The player's bonus on an OPEN roll - the `ob` option. Zero for a plain `o`.
+    bonus: int = 0
 
 
 def _apply(roll: Roll, decision: Decision) -> Roll:
@@ -52,7 +93,7 @@ def _apply(roll: Roll, decision: Decision) -> Roll:
     if decision.discard:
         return replace(roll, discarded=True)
     if decision.contest is None:
-        return replace(roll, note=decision.note)
+        return replace(roll, note=decision.note, bonus_self=decision.bonus)
     opposed, bonus_self, bonus_opposed = decision.contest
     return replace(
         roll,
@@ -97,6 +138,25 @@ def _choose(ask: Ask, question: str, count: int, *, allow_blank: bool = False) -
             f'  ? enter a number from 1 to {count}'
             + (', or blank to finish' if allow_blank else '')
         )
+
+
+#: The answers the kind prompt accepts, after `_kind` has normalized them.
+KINDS = ('o', 'c', 'd', 'ob')
+
+
+def _kind(answer: str) -> str:
+    """Normalize the GM's answer at the kind prompt.
+
+    One letter is enough for open / contested / discard, and a whole word still
+    works (`open` -> `o`). The exception is `ob` - open WITH a bonus - which is the
+    GM's own spelling for the uncommon case and must not collapse to `o`; a bare `b`
+    (or `bonus`) means the same thing. Anything unrecognized comes back as typed so
+    the caller re-asks.
+    """
+    answer = answer.lower()
+    if answer in ('ob', 'b', 'bonus'):
+        return 'ob'
+    return answer[:1]
 
 
 def _number(ask: Ask, question: str, default: int) -> int:
@@ -150,14 +210,19 @@ def _opposing(ask: Ask, roll: Roll, mine: Sequence[gmrolls.GmRoll]) -> tuple[int
 def annotate(
     conversation: Conversation | None = None,
     *,
-    ask: Ask = input,
+    ask: Ask = ask_quietly,
     mine: Callable[[], Sequence[gmrolls.GmRoll]] = gmrolls.recent,
-) -> int:
-    """Say what each waiting roll was for. Returns how many were annotated.
+) -> None:
+    """Say what each waiting roll was for.
 
     Loops rather than taking one roll per call, because rolls arrive in rounds and
     annotating them one call at a time would be tedious in exactly the moment the
     GM is busiest.
+
+    RETURNS NOTHING, on purpose. It used to return the count of rolls annotated,
+    and at the prompt that number was echoed after the summary line with no label
+    on it (GM 2026-09-09: *"I do a double take sometimes when I see it to figure out
+    what was happening there"*). Everything worth knowing is printed.
     """
     from l7r.repl.rolls.conversation import require_open
 
@@ -165,7 +230,7 @@ def annotate(
     waiting = pending(conv)
     if not waiting:
         print('Nothing waiting to be annotated.')
-        return 0
+        return
 
     staged: dict[int, Decision] = {}
     try:
@@ -193,10 +258,14 @@ def annotate(
             # the "which?" question is skipped, and without this the GM would have no
             # way to stop except Ctrl-C - which discards everything already staged.
             kind = ''
-            while kind not in ('o', 'c', 'd'):
-                kind = _prompt(
-                    ask, '  Open, contested, or discard? [o/c/d, blank to finish] > '
-                ).lower()[:1]
+            while kind not in KINDS:
+                kind = _kind(
+                    _prompt(
+                        ask,
+                        '  Open, contested, discard, or open with bonus? '
+                        '[o/c/d/ob, blank to finish] > ',
+                    )
+                )
                 if not kind:
                     break
             if not kind:
@@ -206,10 +275,15 @@ def annotate(
                 print('  staged: discarded')
                 continue
             opposed = _opposing(ask, roll, list(mine())) if kind == 'c' else None
+            # An open roll with a bonus is its own menu entry rather than a question
+            # asked on every open roll, because it is the uncommon case (GM
+            # 2026-09-09: *"this is not as common. So instead of always asking every
+            # time we add an open roll ... an open with bonus option"*).
+            bonus = _number(ask, f'  Bonus to {roll.character}? [0] > ', 0) if kind == 'ob' else 0
             note = ''
             while not note:
                 note = _prompt(ask, '  What was it for? > ')
-            staged[index] = Decision(note=note, contest=opposed)
+            staged[index] = Decision(note=note, contest=opposed, bonus=bonus)
             shown = _apply(roll, staged[index])
             print(f'  staged: {rules.render_annotated(shown, conv.npc_name)}')
     except Abandoned:
@@ -219,7 +293,7 @@ def annotate(
             f'\nCtrl-C - nothing saved ({len(staged)} choice(s) abandoned). '
             'The rolls are untouched; run annotate() again when you are ready.'
         )
-        return 0
+        return
 
     for index, decision in staged.items():
         conv.rolls[index] = _apply(conv.rolls[index], decision)
@@ -227,4 +301,3 @@ def annotate(
     kept = len(staged) - discarded
     tail = f', {discarded} discarded' if discarded else ''
     print(f'Annotated {kept} roll(s){tail}.')
-    return len(staged)
