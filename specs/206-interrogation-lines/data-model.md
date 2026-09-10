@@ -57,12 +57,15 @@ and NOTHING else - no `opposed_total`, no bonuses.
 ## Rendering (`rules.py`)
 
 ```
-render_interrogation(rolls_on_one_line, *, bare=False) -> str
+render_interrogation(rolls_on_one_line) -> str
     'interrogation (grilling): 37@2 Jimen / 24@1 Moriko - what Fumitake ordered his escorts to do'
     'interrogation: 25@2 Jimen - what Fumitake thinks of Tsuruchi'
     'interrogation: 37 Jimen - ...'                # no rank known
     'interrogation: 37@2 Jimen'                     # bare (exit path, FR-012): one roll, no note
 ```
+
+(As built there is no `bare` flag: the note is written iff the first roll is annotated, which is
+already what "bare" meant, so the parameter would have duplicated a fact the roll carries.)
 
 `render_lines` change: in its second pass (annotated rolls in collection order), an interrogation
 roll that is the first of its line emits the whole line; later rolls of that line emit nothing.

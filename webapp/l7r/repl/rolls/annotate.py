@@ -86,12 +86,28 @@ class Decision:
     contest: tuple[int, int, int] | None = None
     #: The player's bonus on an OPEN roll - the `ob` option. Zero for a plain `o`.
     bonus: int = 0
+    #: Feature 206, interrogation only: the line of questioning the roll goes on
+    #: (non-None marks an interrogation decision), the line's grilling flag, and the
+    #: rank to record - the roll's own when it had one, else what the GM answered.
+    line: int | None = None
+    grilling: bool = False
+    rank: int | None = None
 
 
 def _apply(roll: Roll, decision: Decision) -> Roll:
     """Turn a staged decision into the roll it produces."""
     if decision.discard:
         return replace(roll, discarded=True)
+    if decision.line is not None:
+        # An interrogation roll: note, line, grilling, rank - and NOTHING about an
+        # opposing side or a bonus, which is the leak feature 206 closes.
+        return replace(
+            roll,
+            note=decision.note,
+            line=decision.line,
+            grilling=decision.grilling,
+            rank=decision.rank,
+        )
     if decision.contest is None:
         return replace(roll, note=decision.note, bonus_self=decision.bonus)
     opposed, bonus_self, bonus_opposed = decision.contest
@@ -169,6 +185,97 @@ def _number(ask: Ask, question: str, default: int) -> int:
             return int(answer)
         except ValueError:
             print('  ? a whole number, or blank to accept the default')
+
+
+def _optional_number(ask: Ask, question: str) -> int | None:
+    """A whole number, or None on a blank line. Used for a rank nobody recorded."""
+    while True:
+        answer = _prompt(ask, question)
+        if not answer:
+            return None
+        if answer.isdigit():
+            return int(answer)
+        print('  ? a whole number, or blank for none')
+
+
+def _yes_no(ask: Ask, question: str, *, default: bool = False) -> bool:
+    while True:
+        answer = _prompt(ask, question).lower()
+        if not answer:
+            return default
+        if answer in ('y', 'yes'):
+            return True
+        if answer in ('n', 'no'):
+            return False
+        print('  ? y or n, or blank for ' + ('yes' if default else 'no'))
+
+
+def _overlaid(conv: Conversation, staged: dict[int, Decision]) -> list[Roll]:
+    """The conversation's rolls as they WILL be once the staged decisions commit.
+
+    The menu reads lines of questioning from this rather than from `conv.rolls`, so
+    a line started earlier in the same run is offered to the next roll - and, since
+    nothing here is written back, Ctrl-C still discards all of it.
+    """
+    return [
+        _apply(roll, staged[index]) if index in staged else roll
+        for index, roll in enumerate(conv.rolls)
+    ]
+
+
+def _interrogate(ask: Ask, roll: Roll, rolls: Sequence[Roll]) -> Decision | None:
+    """The interrogation branch of the menu (feature 206).
+
+    Instead of open / contested / discard / open-with-bonus, an interrogation roll is
+    asked which LINE OF QUESTIONING it belongs to - joining one already stated, or
+    starting a new one - then, in this order, its rank if nobody recorded one,
+    whether the interrogator was grilling (new lines only), and what the line was
+    about (new lines only). Contested is never offered because the opposing roll is
+    the NPC's Sincerity, which must not be written; a bonus is never offered because
+    every bonus on either side reveals NPC state (`rules.INTERROGATION`).
+
+    Returns the staged decision, a discard, or None when the GM finished with a
+    blank line. `rolls` is the conversation overlaid with what is already staged.
+    """
+    lines = rules.lines_of_questioning(rolls)
+    if lines:
+        print('  Lines of questioning so far:')
+        for position, group in enumerate(lines, start=1):
+            flag = '(grilling) ' if group[0].grilling else ''
+            print(f'    {position}. {flag}{group[0].note}')
+        question = '  Join which line? (number, n for new, d to discard, blank to finish) > '
+        hint = '  ? a line number, n for new, d to discard, or blank to finish'
+    else:
+        question = '  New line of questioning, or discard? [n/d, blank to finish] > '
+        hint = '  ? n for new, d to discard, or blank to finish'
+    joined: list[Roll] | None = None
+    while True:
+        answer = _prompt(ask, question).lower()
+        if not answer:
+            return None
+        if answer[:1] == 'd':
+            return Decision(discard=True)
+        if answer[:1] == 'n':
+            break
+        if lines and answer.isdigit() and 1 <= int(answer) <= len(lines):
+            joined = lines[int(answer) - 1]
+            break
+        print(hint)
+    rank = roll.rank
+    if rank is None:
+        who = rules.personal_name(roll.character)
+        rank = _optional_number(ask, f"  {who}'s interrogation rank? [none] > ")
+    if joined is not None:
+        head = joined[0]
+        return Decision(note=head.note, line=head.line, grilling=head.grilling, rank=rank)
+    grilling = _yes_no(ask, '  Grilling? [y/N] > ')
+    note = ''
+    while not note:
+        note = _prompt(ask, '  What was the line of questioning? > ')
+    # A fresh id: above every id in use, discarded rolls included, so an id is never
+    # shared between a live line and a dead one even though nothing would break.
+    used = [r.line for r in rolls if r.line is not None]
+    return Decision(note=note, line=max(used, default=0) + 1, grilling=grilling, rank=rank)
 
 
 def _opposing(ask: Ask, roll: Roll, mine: Sequence[gmrolls.GmRoll]) -> tuple[int, int, int] | None:
@@ -254,6 +361,24 @@ def annotate(
                     break
                 index, roll = waiting[choice]
             print(f'  {_describe(roll)}')
+            if rules.is_interrogation(roll):
+                # Interrogation never sees o/c/d/ob: no contest (the opposing roll is
+                # the NPC's Sincerity, which is never written) and no bonus (feature
+                # 206). Its prompt is which line of questioning, with d and blank.
+                decision = _interrogate(ask, roll, _overlaid(conv, staged))
+                if decision is None:
+                    break
+                staged[index] = decision
+                if decision.discard:
+                    print('  staged: discarded')
+                    continue
+                line = next(
+                    group
+                    for group in rules.lines_of_questioning(_overlaid(conv, staged))
+                    if group[0].line == decision.line
+                )
+                print(f'  staged: {rules.render_interrogation(line)}')
+                continue
             # Blank finishes here as well as at the roll prompt. With one roll left
             # the "which?" question is skipped, and without this the GM would have no
             # way to stop except Ctrl-C - which discards everything already staged.
