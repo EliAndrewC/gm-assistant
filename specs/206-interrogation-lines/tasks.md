@@ -150,7 +150,7 @@ two joined, one new - and assert two written lines.
       `conversation_status()` shows the two lines; confirm the `xky` Sincerity roll is never
       offered. Record the transcript's two written lines in quickstart.md if they differ from
       the expected ones there.
-- [ ] T021 Stop-work: commit in the clone with a message that states the three rulings and their
+- [x] T021 Stop-work: commit in the clone with a message that states the three rulings and their
       why; `scripts/sync-with-main.sh done`; confirm the GitHub push line.
 
 ---
