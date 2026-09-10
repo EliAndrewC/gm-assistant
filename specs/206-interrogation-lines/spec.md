@@ -82,7 +82,8 @@ the record has exactly two interrogation lines.
 3. **Given** the GM chooses a new line, **When** prompted, **Then** they are asked whether the
    interrogator was grilling and what the line of questioning was about.
 4. **Given** no interrogation line exists yet, **When** the GM annotates the first interrogation
-   roll, **Then** the join-or-new question is skipped and a new line is started.
+   roll, **Then** no list is shown and no join is offered - the prompt offers only a new line,
+   discard, or blank to finish.
 5. **Given** rolls of 24 and 37 on one line, **When** it is written, **Then** the 37 comes first.
 6. **Given** one character rolls Interrogation twice on different topics, **When** both are
    annotated to separate lines, **Then** the record has two lines, each naming that character.
@@ -214,8 +215,10 @@ when a roll is written or how the menu is left.
   - and a blank answer MUST write the roll with no `@`.
 - **FR-008**: When at least one line of questioning already exists in the conversation, annotating
   a further interrogation roll MUST list the existing lines (by note, with `(grilling)` where set)
-  and ask whether the roll joins one of them or starts a new one. When none exists, the question
-  MUST be skipped and a new line started.
+  and ask whether the roll joins one of them or starts a new one. When none exists, there is
+  nothing to list and nothing to join, so the prompt MUST offer only "new line", discard and
+  blank-to-finish - the GM is never asked to choose among zero lines, and can still discard or stop
+  on the first interrogation roll as on any other.
 - **FR-009**: Starting a new line MUST ask, in this order: the rank if FR-007 needs it, whether
   the interrogator was grilling, and what the line of questioning was about. Joining an existing
   line MUST ask only for the rank if FR-007 needs it - never for the note or grilling again.
@@ -270,7 +273,24 @@ when a roll is written or how the menu is left.
   second line.
 - The GM's Sincerity roll for the NPC continues to be made with `xky` and kept in the GM's own
   buffer; it is simply never offered to, or stored by, an interrogation annotation. Keeping it in
-  GM-only notes was offered and declined for now (2026-09-10).
+  GM-only notes was mentioned in the session's reply as a possible later addition ("I would not
+  add that unless you ask") and the GM did not take it up, so it is out of scope by the spec's own
+  choice, not by a GM ruling.
+
+## Fidelity review (constitution Principle XVI)
+
+Reviewed 2026-09-10 by the independent `spec-fidelity` agent against the GM's verbatim request
+in `gm-request.md`, round one. Verdict: **FAITHFUL**. Every clause of the request and every
+accepted judgment call was traced to a requirement; no requirement was found unrequested,
+contradicting, or scope-inflating. Two asides were returned, neither a finding:
+
+- The Assumptions bullet above originally said the GM-only-notes idea was "offered and declined";
+  the reviewer could not find a decline in the record, and there was none - the wording was
+  corrected to what happened.
+- FR-012's bare exit-path line (`interrogation: 37@2 Jimen`) is indistinguishable from an
+  annotated line whose note is empty. Accepted: feature 202's bare open line (`25 precepts:
+  Jimen`) has the same property, the exit path already announces that it saved unannotated rolls,
+  and a marker on the line would be a format the GM did not ask for.
 - Interrogation is the only skill handled this way. A player's own Sincerity roll - open, or
   contested against an NPC's Interrogation - is out of scope and unchanged; the GM raised only the
   player-interrogates-NPC direction, and the other direction is theirs to rule on if it ever
