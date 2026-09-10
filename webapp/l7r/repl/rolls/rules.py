@@ -74,6 +74,13 @@ rather than a separator - `Jimen wins by >=10 arguing it is wrong to lie to a
 magistrate to save face` - and the `wins` still does the work a dash would, so do
 not add one beside it.
 
+**Interrogation is written alone, exact, ranked and grouped** (feature 206, GM
+2026-09-10). Never against the NPC's Sincerity roll - the margin would tell the
+players whether "not holding anything back" was truthfulness or a low roll - so no
+contest, no rounding, no bonus either side, the rank attached as `37@2`, and one
+line per line of questioning with `(grilling)` as the only bonus ever noted. The
+reasoning sits on `INTERROGATION`; the shape on `render_interrogation`.
+
 Note what the cap does NOT do: it applies to OPEN etiquette rolls only, which is
 the GM's literal scope. That was queried, and the answer closes it rather than
 narrowing it - **there is no such thing as a contested etiquette roll** (GM
@@ -101,6 +108,45 @@ EXEMPT_FROM_ANNOTATION = frozenset({'etiquette'})
 
 #: A free raise adds 5 - `rules/02-skills.md:66`.
 FREE_RAISE = 5
+
+#: Feature 206: the one skill written ALONE, EXACT and GROUPED. An interrogation
+#: roll is contested against the NPC's Sincerity, and that number is never written -
+#: the GM (2026-09-10): *"if someone knows how high the NPC rolled on sincerity,
+#: then they would know whether the 'doesn't seem to be holding anything back'
+#: result represents truthfulness or if that is simply because the interrogator
+#: didn't roll high enough."* So the roll goes down exactly as made, with the
+#: interrogator's rank attached (`37@2`) so it can be read without the other side,
+#: and rolls on one line of questioning share one written line - the rules say the
+#: skill is *"rolled once for each line of questioning"* (`rules/02-skills.md`).
+#: No bonus is written on either side: the NPC's raises for an unprovable lie, and
+#: the interrogator's for a scared or guilty subject, each reveal NPC state. The
+#: one exception is `(grilling)`, which the players already know.
+INTERROGATION = 'interrogation'
+
+
+def is_interrogation(roll: Roll) -> bool:
+    return roll.skill.lower() == INTERROGATION
+
+
+def lines_of_questioning(rolls: Sequence[Roll]) -> list[list[Roll]]:
+    """The conversation's lines of questioning, each a list of the rolls on it.
+
+    A line is DERIVED - the interrogation rolls sharing a `line` id - rather than
+    stored, so a line with no live rolls simply does not exist (a discarded or
+    unattributed roll is on no line, and an unannotated one has no id yet). Lines
+    come in the order their first roll was made; rolls within a line keep the order
+    they were made (`render_interrogation` sorts them for writing). Both the
+    renderer and the annotate menu read lines through this one function so they
+    cannot disagree about what a line is.
+    """
+    groups: dict[int, list[Roll]] = {}
+    for roll in rolls:
+        if roll.line is None or roll.discarded or not roll.attributed:
+            continue
+        if not is_interrogation(roll):
+            continue
+        groups.setdefault(roll.line, []).append(roll)
+    return list(groups.values())
 
 
 def needs_annotation(roll: Roll) -> bool:
@@ -363,15 +409,55 @@ def render_lines(
             order.append(key)
         groups[key].append(roll)
     lines = [render_open(groups[key], rule) for key in order]
-    lines += [
-        render_annotated(roll, npc, rule)
-        for roll in rolls
-        if roll.attributed
-        and not roll.discarded
-        and roll.skill.lower() not in EXEMPT_FROM_ANNOTATION
-        and (roll.annotated or include_unannotated)
-    ]
+    # Feature 206: an interrogation line is written ONCE, where its first roll sits
+    # in the sequence; later rolls on the same line add nothing at their own
+    # position. A held interrogation roll (no line yet) is written bare, one per
+    # roll, only on the exit path - the GM never said which line it belonged to.
+    by_line = {group[0].line: group for group in lines_of_questioning(rolls)}
+    written_lines: set[int] = set()
+    for roll in rolls:
+        if not roll.attributed or roll.discarded:
+            continue
+        if roll.skill.lower() in EXEMPT_FROM_ANNOTATION:
+            continue
+        if not (roll.annotated or include_unannotated):
+            continue
+        if not is_interrogation(roll):
+            lines.append(render_annotated(roll, npc, rule))
+        elif roll.line is None:
+            lines.append(render_interrogation([roll]))
+        elif roll.line not in written_lines:
+            written_lines.add(roll.line)
+            lines.append(render_interrogation(by_line[roll.line]))
     return lines
+
+
+def render_interrogation(rolls: Sequence[Roll]) -> str:
+    """One line of questioning (feature 206), or one bare held roll.
+
+        interrogation (grilling): 37@2 Jimen / 24@1 Moriko - what Fumitake ordered his escorts to do
+        interrogation: 25@2 Jimen - what Fumitake thinks of Tsuruchi
+        interrogation: 37@2 Jimen                                  (held; the exit path)
+
+    Alone, exact, ranked, grouped - see `INTERROGATION` for the GM's reasoning. The
+    total is written RAW (no rounding, no bonus either side) and `opposed_total` is
+    ignored even when a pre-feature roll carries one. Highest roll first, ties in the
+    order they were made - Etiquette's rule, so grouped lines have one ordering.
+    The note and grilling flag are read from the first roll handed in; every roll on
+    a line carries the same pair (the annotate menu copies them on a join), which is
+    the cost of deriving lines from rolls rather than storing them (research R2).
+    """
+    if not rolls:
+        raise ValueError('no rolls to render')
+    first = rolls[0]
+    head = 'interrogation (grilling)' if first.grilling else 'interrogation'
+    ordered = sorted(rolls, key=lambda r: -r.total)
+    entries = ' / '.join(
+        f'{r.total}{"" if r.rank is None else f"@{r.rank}"} {personal_name(r.character)}'
+        for r in ordered
+    )
+    tail = f' - {first.note}' if first.annotated else ''
+    return f'{head}: {entries}{tail}'
 
 
 def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -> str:

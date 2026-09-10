@@ -50,7 +50,21 @@ class Roll:
     #: The total of the GM's opposing roll when this was contested; None when open.
     #: Stored as a bare number rather than a reference to the GM roll because the
     #: winner and margin are derived at render time and nothing else needs the dice.
+    #: IGNORED for an Interrogation roll, along with both bonuses: that skill is
+    #: never written against its opposing roll (feature 206).
     opposed_total: int | None = None
+    #: Feature 206. The line of questioning this INTERROGATION roll belongs to - a
+    #: small id unique within the conversation, None until annotated and always None
+    #: for any other skill. A line of questioning is DERIVED: it is the set of rolls
+    #: sharing this id, with its note and grilling flag read off them. There is no
+    #: Line object, so the annotate menu's stage-then-commit and Ctrl-C-discards-all
+    #: need no second code path (specs/206, research R2). The cost is that the note
+    #: and flag are duplicated across every roll on the line.
+    line: int | None = None
+    #: Whether the interrogator was grilling on this roll's line. The players know
+    #: this, so it is the ONE conditional Sincerity bonus that may be written - as a
+    #: flag, never as a number. Meaningless when `line` is None.
+    grilling: bool = False
 
     @property
     def annotated(self) -> bool:

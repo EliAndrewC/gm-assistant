@@ -39,7 +39,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `discord.py` | Read-only REST. The bot holds permissions 66560 (View Channel + Read Message History) and there is no code here that could post. Snowflakes are synthesized from a timestamp; `before`/`after` are mutually exclusive in the API, so the far end is bounded in Python. |
 | `sheet.py` | The character-sheet app's roll-history client. **THOSE ENDPOINTS DO NOT EXIST YET** (spec: `character-sheet/externally-queryable-roll-results.md`). Every failure degrades to empty with a reason; nothing raises. |
 | `console.py` | `print_above` - writes from the watcher thread WITHOUT stomping the prompt: `\r\x1b[K` erases the prompt line, the message goes there, then the prompt and whatever the GM had typed are redrawn beneath it. TTY only; a pipe gets a plain print. |
-| `annotate.py` | The `annotate()` menu - which roll; open (`o`), contested (`c`), discard (`d`) or open with a bonus (`ob`); what it was for. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
+| `annotate.py` | The `annotate()` menu - which roll; open (`o`), contested (`c`), discard (`d`) or open with a bonus (`ob`); what it was for. An INTERROGATION roll gets a different prompt - which line of questioning (join / new / discard), rank if unrecorded, grilling, topic - and never o/c/ob (`_interrogate`, feature 206). Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
 ## What a written line looks like, and the two orders that must stay different
@@ -49,6 +49,8 @@ Tetsuro / Toshihiro / Sadakichi / Jimen / Moriko etiquette: 30 / 20 / 20 / 15 / 
 10 tact: Jimen - asking how much money Fumitake owed
 Jimen vs Otsuki precepts: 41 vs 28, Jimen wins by >=10 arguing it is wrong to lie to a magistrate
 Jimen vs Otsuki sincerity vs interrogation: 30 vs 30, Otsuki wins by <5 denying he was ever there
+interrogation (grilling): 37@2 Jimen / 24@1 Moriko - what Fumitake ordered his escorts to do
+interrogation: 25@2 Jimen - what Fumitake thinks of Tsuruchi
 ```
 
 **Personal names only** (GM 2026-09-02). The full name is what joins a Discord account to a
@@ -117,6 +119,24 @@ OUT of the readline history (`ask_quietly` takes each line back off as `input()`
 the length grew, since readline never records a blank line). Every `annotate()` prompt goes through
 `ask_quietly`; a new prompt that calls `input()` directly puts the answers back in the history.
 
+**INTERROGATION IS WRITTEN ALONE, EXACT, RANKED AND GROUPED - never against the GM's Sincerity
+roll** (feature 206, GM 2026-09-10). The leak: *"if someone knows how high the NPC rolled on
+sincerity, then they would know whether the 'doesn't seem to be holding anything back' result
+represents truthfulness or if that is simply because the interrogator didn't roll high enough."*
+So `annotate()` never offers `o/c/d/ob` for an interrogation roll - its prompt is WHICH LINE OF
+QUESTIONING (`Join which line? (number, n for new, d to discard, blank to finish)`, or just
+`[n/d, blank to finish]` for the first), then the rank if nobody recorded one, then for a new line
+`Grilling? [y/N]` and the topic. The written line is `interrogation[ (grilling)]: 37@2 Jimen /
+24@1 Moriko - <topic>`: the raw total (no rounding, no bonus on either side - the NPC's raises for
+an unprovable lie and the interrogator's for a scared subject both reveal NPC state, and only
+grilling is public), the rank as `@N` so the number reads without the other side, rollers highest
+first as Etiquette does, one line per line of questioning because the rules roll the skill *"once
+for each line of questioning"*. **Lines are DERIVED from the rolls** (`Roll.line` id + `grilling`
+flag; `rules.lines_of_questioning`), not stored beside them, so the menu's staging and Ctrl-C need
+no second code path; the cost is the topic and flag duplicated on every roll of a line. A held
+interrogation roll is written bare (`interrogation: 37@2 Jimen`) by the exit path only. Full
+reasoning and the declined alternatives in `specs/206-interrogation-lines/research.md`.
+
 **Bonuses are kept PER SIDE and never netted.** A bonus to the NPC raises the NPC's total; it never
 lowers the player's. The GM's reason: a player who rolled 30 against an opponent's free raises still
 rolled 30, and flattening that to "-10 to the player" destroys information that matters even when
@@ -160,7 +180,8 @@ deleted rather than left to drift.
 ( cd webapp && pytest -n auto tests/test_rolls_rules.py tests/test_rolls_parse.py \
     tests/test_rolls_skills.py tests/test_rolls_models.py tests/test_rolls_bio.py \
     tests/test_rolls_discord.py tests/test_rolls_sheet.py tests/test_rolls_conversation.py \
-    tests/test_rolls_corpus.py )
+    tests/test_rolls_corpus.py tests/test_rolls_annotate.py tests/test_rolls_followup.py \
+    tests/test_rolls_interrogation.py )
 ```
 
 `test_rolls_corpus.py` is the one that matters most: it sweeps 615 real messages and pins the
