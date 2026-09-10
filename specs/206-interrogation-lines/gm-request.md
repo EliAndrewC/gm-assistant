@@ -68,7 +68,12 @@ Three calls, all cheap to change later:
 - Rank comes from the character-sheet app when it recorded the roll; a hand-typed roll has no
   rank, so the menu asks for it on interrogation rolls only, and a blank writes `37` with no `@`.
 
-The GM's rolled sincerity total is not written anywhere.
+The GM's rolled sincerity total is not written anywhere. The reply added that if the GM later
+wants it kept for their own reference, GM-only notes would be the obvious place, "but I would not
+add that unless you ask" - an offer of a later addition, which the GM's reply did not take up.
+
+The reply closed by saying this was feature-sized work for spec-kit, to be run end to end with the
+three calls above as the defaults, on the GM's go.
 
 ## Message 2
 
