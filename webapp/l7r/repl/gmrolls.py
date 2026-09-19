@@ -68,9 +68,22 @@ class GmRoll:
     #: `annotate()` has used this roll as the opposing side of a contest, so the
     #: pre-pairing does not offer it to a second player roll.
     paired: bool = False
+    #: Feature 208. What a player's Oppose Social / Oppose Knowledge took off this
+    #: roll, kept APART from `bonus` on purpose: `bonus` is what the GM typed and is
+    #: never adjusted, while this is the tool's own and is SET (never added to) each
+    #: time it is worked out, so working it out twice cannot subtract it twice.
+    penalty: int = 0
+    #: One line saying where `penalty` came from, for the menus.
+    penalty_source: str = ''
 
     @property
     def total(self) -> int:
+        return self.base + self.bonus - self.penalty
+
+    @property
+    def unpenalized(self) -> int:
+        """The roll before the oppose penalty. A line of questioning reads THIS and
+        applies the line's own penalty, so a Sincerity roll never pays it twice."""
         return self.base + self.bonus
 
     @property
@@ -91,6 +104,8 @@ class GmRoll:
         kept = ', '.join(str(d) for d in sorted(self.dice, reverse=True)[: self.keep])
         rolled, keeping = self.asked if self.asked != (0, 0) else (len(self.dice), self.keep)
         bonus = f' {self.bonus:+d}' if self.bonus else ''
+        if self.penalty:
+            bonus += f' {-self.penalty:+d} {self.penalty_source}'.rstrip()
         tag = f' {self.tagged}' if self.tagged else ''
         return f'{self.total}{tag}  ({rolled}k{keeping}: kept {kept}{bonus}) at {self.at:%H:%M:%S}'
 

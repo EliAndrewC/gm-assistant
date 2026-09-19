@@ -28,7 +28,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from l7r.repl.gmrolls import GmRoll
-from l7r.repl.rolls import npcnumbers, npcskills, rules
+from l7r.repl.rolls import npcnumbers, npcskills, oppose, rules
 from l7r.repl.rolls.models import Conversation, Line, Roll
 
 HEADING = 'Hidden rolls:'
@@ -50,6 +50,10 @@ class Comparison:
     sincerity: int
     casual: int
     npc_bonus: int
+    #: Feature 208: what a player's Oppose Social takes off the line's Sincerity
+    #: roll, and the knack's name for the text. Private, like everything else here.
+    opposed: int = 0
+    opposed_by: str = ''
 
     @property
     def mine(self) -> int:
@@ -57,7 +61,7 @@ class Comparison:
 
     @property
     def theirs(self) -> int:
-        return self.sincerity + self.casual + self.npc_bonus
+        return self.sincerity + self.casual + self.npc_bonus - self.opposed
 
     @property
     def detected(self) -> bool:
@@ -70,6 +74,8 @@ class Comparison:
         extras = [f'+{self.casual} not grilling'] if self.casual else []
         if self.npc_bonus:
             extras.append(f'+{self.npc_bonus} free raises')
+        if self.opposed:
+            extras.append(f'-{self.opposed} {self.opposed_by}')
         theirs = f'{self.sincerity}' + (f' ({", ".join(extras)})' if extras else '')
         verdict = 'DETECTED' if self.detected else 'not detected'
         return f'{who} {mine} vs sincerity {theirs}: {verdict}'
@@ -93,10 +99,27 @@ def compare(conv: Conversation, line: Line, roll: Roll) -> Comparison | None:
     """How `roll` stands against `line`'s Sincerity roll; None when there is none."""
     if line.sincerity is None:
         return None
-    total = line.sincerity.total if isinstance(line.sincerity, GmRoll) else int(line.sincerity)
+    total = _sincerity_total(line)
     bonus, npc_bonus = rules.free_raises(roll.rank, sincerity_rank(conv, line.sincerity))
     casual = 0 if line.grilling else CASUAL_RAISES
-    return Comparison(roll, bonus, total, casual, npc_bonus)
+    taxed = oppose.for_line(conv, line)
+    if taxed is None:
+        return Comparison(roll, bonus, total, casual, npc_bonus)
+    return Comparison(roll, bonus, total, casual, npc_bonus, taxed.amount, taxed.knack)
+
+
+def _sincerity_total(line: Line) -> int:
+    """The line's Sincerity roll BEFORE any oppose penalty (feature 208).
+
+    `unpenalized`, not `total`: a Sincerity roll tagged after an Oppose Social has
+    already had the penalty set on it as an Air roll, and the LINE applies its own
+    (`oppose.for_line`, which also covers the retroactive case). Reading `total`
+    here would charge the NPC twice.
+    """
+    assert line.sincerity is not None
+    if isinstance(line.sincerity, GmRoll):
+        return line.sincerity.unpenalized
+    return int(line.sincerity)
 
 
 def _on_line(conv: Conversation, line: Line) -> list[Roll]:
@@ -114,8 +137,12 @@ def entries(conv: Conversation) -> tuple[str, ...]:
     for line in conv.lines:
         if line.sincerity is None:
             continue
-        total = line.sincerity.total if isinstance(line.sincerity, GmRoll) else int(line.sincerity)
-        casual = '' if line.grilling else f' (+{CASUAL_RAISES} not grilling)'
+        total = _sincerity_total(line)
+        extras = [] if line.grilling else [f'+{CASUAL_RAISES} not grilling']
+        taxed = oppose.for_line(conv, line)
+        if taxed is not None:
+            extras.append(f'-{taxed.amount} {taxed.knack}')
+        casual = f' ({", ".join(extras)})' if extras else ''
         results = []
         for roll in _on_line(conv, line):
             found = compare(conv, line, roll)

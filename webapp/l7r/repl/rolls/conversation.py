@@ -29,7 +29,7 @@ from chargen import op
 from chargen.opsynth import MatchResult, match_character
 from l7r.repl import gmrolls
 from l7r.repl.rolls import bio as biomod
-from l7r.repl.rolls import console, discord, hidden, npcnumbers, npcskills, rules, sheet
+from l7r.repl.rolls import console, discord, hidden, npcnumbers, npcskills, oppose, rules, sheet
 from l7r.repl.rolls.models import Conversation, RecordingRule, Roll
 from l7r.repl.rolls.parse import parse_message
 from l7r.repl.rolls.skills import load_skills
@@ -166,6 +166,12 @@ def begin_conversation(
         _open = Conversation(npc=match.character, opened_at=clock(), channels=channels)
         where = 'every monitored channel' if channel is None else _label(channels[0])
         print(f'Talking to {_open.npc_name}, watching {where}. Rolls until end_conversation().')
+        # Feature 208: a CHECK of the oppose knacks against the rules text. Whatever
+        # it says, the penalties apply as the GM stated them - this only makes a
+        # rules edit that the tool has not followed visible instead of silent.
+        disagreement = oppose.rules_disagreement()
+        if disagreement:
+            print(f'  ! {disagreement}')
         gmrolls.start()
         opened = _open
     # Feature 207: the NPC's remembered rings and ranks, read ONCE here. The GM: *"we
@@ -267,6 +273,14 @@ def collect(
                 )
                 continue
             conv.rolls.append(attach(conv, roll))
+            if oppose.is_oppose(roll):
+                # Feature 208. HERE rather than in `_tick`, because
+                # `new_line_of_questioning` collects too and the GM's rolls must be
+                # right whichever path saw the oppose roll first. Collection lags the
+                # message by up to a poll, so the NPC may already have rolled under
+                # this penalty without the tool knowing - `settle` prices those now.
+                for change in oppose.settle(conv, gmrolls.recent()):
+                    say(f'  = {change.describe(conv.npc_name)}')
     return conv
 
 
@@ -347,6 +361,7 @@ def _tick(
             rank = f' @{roll.rank}' if roll.rank is not None else ''
             say(f'  + {roll.character}: {roll.skill} {roll.total}{rank}')
             announce_comparison(conv, roll)
+            announce_oppose(conv, roll)
     lines = tuple(
         rules.render_lines(conv.rolls, conv.npc_name, include_unannotated=include_unannotated)
     )
@@ -403,6 +418,29 @@ def announce_comparison(conv: Conversation, roll: Roll) -> None:
             found = hidden.compare(conv, line, roll)
             if found is not None:
                 say(f'  = {found.describe()}')
+
+
+def announce_oppose(conv: Conversation, roll: Roll) -> None:
+    """Say what an oppose roll did, and re-run the line it reached back into.
+
+    The line of questioning in progress is the ONE retroactive case (feature 208):
+    its hidden Sincerity roll is still active, so every comparison already printed
+    for it is stale and is printed again - what `grilling()` does for its raises.
+    """
+    if not oppose.is_oppose(roll):
+        return
+    say(f'  = {oppose.effect(conv, roll)}')
+    if not conv.lines:
+        return
+    line = conv.lines[-1]
+    found = oppose.for_line(conv, line)
+    if found is None or found.roll is not roll:
+        return
+    for other in conv.rolls:
+        if other.line == line.id and rules.is_interrogation(other) and not other.discarded:
+            compared = hidden.compare(conv, line, other)
+            if compared is not None:
+                say(f'  = {compared.describe()}')
 
 
 def start_watching(conv: Conversation, *, interval: float = POLL_SECONDS, **kwargs: Any) -> None:

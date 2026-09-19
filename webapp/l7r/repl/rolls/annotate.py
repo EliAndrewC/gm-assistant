@@ -39,9 +39,10 @@ from __future__ import annotations
 import contextlib
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
+from datetime import datetime
 
 from l7r.repl import gmrolls
-from l7r.repl.rolls import hidden, keys, modes, rules
+from l7r.repl.rolls import hidden, keys, modes, oppose, rules
 from l7r.repl.rolls.models import Conversation, Roll
 
 Ask = Callable[[str], str]
@@ -329,6 +330,34 @@ def _say_raises(roll: Roll, their_skill: str, their_rank: int | None) -> None:
         )
 
 
+def _taxed(
+    conv: Conversation,
+    their_skill: str,
+    total: int,
+    when: datetime,
+    entry: gmrolls.GmRoll | None = None,
+) -> int:
+    """The NPC's opposing total after a player's oppose penalty (feature 208).
+
+    Pairing is the moment an UNTAGGED roll, or a total the GM types, becomes a roll
+    of a known skill - and so of a known ring - which makes it the moment the tool
+    can price it. The GM: *"All rolls made by the NPC for the remainder of the
+    conversation."* A TAGGED roll was priced when it was tagged and is returned as it
+    stands. A typed total has no time of its own, so it takes the player's roll's.
+    The manipulation default of 15 never comes here: no roll was made.
+
+    Works on the NUMBER and leaves the recorded roll alone, because everything in
+    this menu is staged and a Ctrl-C must leave nothing behind.
+    """
+    if entry is not None and entry.tagged:
+        return total
+    found = oppose.for_skill(conv, their_skill, when)
+    if found is None:
+        return total
+    print(f'  {found.describe()}: {total} -> {total - found.amount}')
+    return total - found.amount
+
+
 def _opposing(
     ask: Ask, roll: Roll, mine: Sequence[gmrolls.GmRoll], conv: Conversation
 ) -> tuple[int, int, int, int] | None:
@@ -356,7 +385,8 @@ def _opposing(
     bonus_self, bonus_opposed = _bonuses(
         ask, roll, their_skill, _their_rank(conv, their_skill, opponent)
     )
-    return opponent.total, bonus_self, bonus_opposed, opponent.seq
+    total = _taxed(conv, their_skill, opponent.total, opponent.at, opponent)
+    return total, bonus_self, bonus_opposed, opponent.seq
 
 
 @dataclass
@@ -531,11 +561,13 @@ def _pick(
         chosen: gmrolls.GmRoll | None = None
         if answer.isdigit() and 1 <= int(answer) <= len(menu.mine):
             chosen = menu.mine[int(answer) - 1]
-            total, their_rank = chosen.total, _their_rank(menu.conv, their_skill, chosen)
+            total = _taxed(menu.conv, their_skill, chosen.total, chosen.at, chosen)
+            their_rank = _their_rank(menu.conv, their_skill, chosen)
         elif fifteen and answer[:1] == 'f':
             total, their_rank = modes.UNROLLED_TOTAL, 0
         elif answer[:1] == 't':
             total = _number(menu.ask, f'  Their {their_skill} total? > ', 0)
+            total = _taxed(menu.conv, their_skill, total, roll.at)
             their_rank = _their_rank(menu.conv, their_skill, None)
         else:
             print('  ? ' + ', '.join(options))

@@ -93,7 +93,10 @@ class DiceTotal(int):
 
     def _shift(self, delta: int) -> DiceTotal:
         self.entry.bonus += delta
-        return DiceTotal(int(self) + delta, self.entry)
+        # The ENTRY's total, not `int(self) + delta`: an oppose penalty (feature 208)
+        # can land on the recorded roll after this value was handed out, and `_ + 15`
+        # must show what the roll now stands at rather than a number nothing holds.
+        return DiceTotal(self.entry.total, self.entry)
 
     def __add__(self, other: int) -> DiceTotal:
         return self._shift(int(other))

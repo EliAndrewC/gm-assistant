@@ -45,6 +45,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `npcskills.py` | `tact`, `sincerity`, ... at the prompt: `xky(5, 3) - tact` tags a roll, `tact()` / `tact(2)` / `tact(5, 3)` / `tact(vp)` roll for the NPC. The disagreement prompt, where Ctrl-C is an ANSWER (the roll was a mistake). `acting(2)` and `history(3)` record and never roll. |
 | `lines.py` | `new_line_of_questioning`, `grilling`, `detected`. Replaces 206's join-or-new menu. |
 | `hidden.py` | PURE. The `Hidden rolls:` block in the GM-only notes - each line's Sincerity roll, each acting roll's opposing investigation - and the advisory who-won arithmetic. **Nothing here may reach the bio**; `tests/test_rolls_hidden.py` renders both halves from one conversation and checks. |
+| `oppose.py` | PURE. Feature 208: a player's Oppose Social / Oppose Knowledge taxes the NPC's later Air / Water rolls. The penalty in effect is DERIVED from the conversation's rolls (highest live oppose roll at or before the moment - never stored, never summed); `for_line` is the one retroactive case; `settle` re-prices tagged GM rolls when an oppose roll is collected late. |
 | `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
@@ -214,6 +215,54 @@ a tag holds no NPC and the numbers live on the `Conversation`.
 Reasoning, declined alternatives and one recorded dead end (the pty test that hung) are in
 `specs/207-roll-modes/research.md`.
 
+## Feature 208: oppose rolls take effect by themselves
+
+```
+  + Tsuruchi Jimen: oppose social 32 @3
+  = Fumitake takes -6 oppose social (Jimen 32) on every Air roll from here on
+>>> tact()
+  Fumitake tact: 5k3
+  -6 oppose social (Jimen 32): 12
+```
+
+Public bio - bare, in sequence, nothing asked: `30 oppose social: Jimen`. GM-only:
+`sincerity 48 (+10 not grilling, -6 oppose social) - topic: ...`.
+
+**The tool OWNS this penalty; the GM never subtracts it by hand.** It lands on the called form
+(`tact()`), the tagged form (`xky(5, 3) - tact`), and - at the moment `annotate()` pairs it - an
+untagged roll or a typed total, because pairing is when its ring becomes known. This is NOT
+feature 207's called-form-only rule for the acting/history raises: that rule exists because the GM
+types the acting `+ 10` by hand, and nobody types this. The manipulation default of 15 is not a
+roll and pays nothing.
+
+**It is kept APART from the GM's bonus** (`GmRoll.penalty`, SET and never added), so re-deriving it
+cannot subtract it twice, and a line of questioning reads the Sincerity roll `unpenalized` and
+applies the LINE's penalty - which is also what makes the one retroactive case work: an Oppose
+Social made part way through a line comes off that line's Sincerity roll (*"basically the same as
+... not grilling to grilling"*), while a line that had already ended is left alone.
+
+**Air and Water are the GM's statement (`oppose.TARGET_RINGS`), not read from the rules.** Each
+knack's `**Ring:**` header is the ring it is ROLLED with, which is the OTHER ring. The rules text is
+only checked at `begin_conversation`, and a disagreement is printed while the penalty still applies.
+
+**Time is message time**, as for lines of questioning: the watcher lags by up to a poll, so
+`conversation.collect` calls `oppose.settle` to price NPC rolls already made under a late-seen
+oppose roll, and says which moved.
+
+**Only these two two-word knacks are in the vocabulary** (`skills.MULTIWORD_KNACKS`), read by a
+phrase pass that runs BEFORE the one-word cluster and blanks what it claims. `double attack` and
+the rest stay out until someone rules on their `annotate()` mode.
+
+**AN OPPOSE ROLL CANNOT BE TAKEN BACK - a known gap, raised with the GM, not yet ruled on.** Every
+other player roll is discarded from the `annotate()` menu; these never reach it, so a mistyped
+`52 oppose social` taxes the rest of the scene and the only recourse is `abandon_conversation()`.
+The derivation already ignores a `discarded` oppose roll, so whatever the GM chooses (a command, an
+`annotate()` entry, nothing) is a small change. A session built a command for it and the
+spec-fidelity review struck it: a new GM-facing command is the GM's to dictate.
+
+Three things that review struck, recorded in `specs/208-oppose-penalties/spec.md`: a tool-written
+note on the public line, reading the ring mapping from the rules text, and that discard command.
+
 ## Two things that will bite you
 
 **A pasted dice card cannot be recognized as one.** Clipboard pastes arrive as `image.png` and so
@@ -255,7 +304,7 @@ deleted rather than left to drift.
     tests/test_rolls_corpus.py tests/test_rolls_annotate.py tests/test_rolls_followup.py \
     tests/test_rolls_interrogation.py tests/test_rolls_modes.py tests/test_rolls_npcnumbers.py \
     tests/test_rolls_npcskills.py tests/test_rolls_lines.py tests/test_rolls_hidden.py \
-    tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py )
+    tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py tests/test_rolls_oppose.py )
 ```
 
 `test_rolls_keys.py` drives a REAL pseudo-terminal. The undo keys must be written to it AFTER it is
