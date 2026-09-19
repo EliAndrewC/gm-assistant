@@ -55,6 +55,19 @@ class GmRoll:
     asked: tuple[int, int] = (0, 0)
     bonus: int = 0
     at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    #: Feature 207. The skill the GM said this roll was - `xky(5, 3) - tact`, or the
+    #: called form `tact()`. Empty for an untagged roll, which is still most of them.
+    tagged: str = ''
+    #: The GM said this roll was a MISTAKE (the disagreement prompt, or Ctrl-C at
+    #: it). Never offered or pre-paired as an opposing roll; the GM re-rolls.
+    mistake: bool = False
+    #: Void points the tool was TOLD about - `tact(vp)` - or that the GM confirmed at
+    #: the disagreement prompt. One rolled and one kept die each, which must not be
+    #: read as a bigger ring.
+    void_points: int = 0
+    #: `annotate()` has used this roll as the opposing side of a contest, so the
+    #: pre-pairing does not offer it to a second player roll.
+    paired: bool = False
 
     @property
     def total(self) -> int:
@@ -78,7 +91,8 @@ class GmRoll:
         kept = ', '.join(str(d) for d in sorted(self.dice, reverse=True)[: self.keep])
         rolled, keeping = self.asked if self.asked != (0, 0) else (len(self.dice), self.keep)
         bonus = f' {self.bonus:+d}' if self.bonus else ''
-        return f'{self.total}  ({rolled}k{keeping}: kept {kept}{bonus}) at {self.at:%H:%M:%S}'
+        tag = f' {self.tagged}' if self.tagged else ''
+        return f'{self.total}{tag}  ({rolled}k{keeping}: kept {kept}{bonus}) at {self.at:%H:%M:%S}'
 
 
 _recorded: deque[GmRoll] = deque(maxlen=BUFFER)
@@ -115,5 +129,10 @@ def record(dice: tuple[int, ...], keep: int, base: int, asked: tuple[int, int] =
 
 
 def recent() -> tuple[GmRoll, ...]:
-    """The buffered rolls, oldest first."""
-    return tuple(_recorded)
+    """The buffered rolls the GM could still mean, oldest first.
+
+    A roll marked a MISTAKE is gone from every menu (feature 207): the GM said it
+    was wrong and re-rolled, and offering it beside its replacement invites picking
+    the wrong one.
+    """
+    return tuple(entry for entry in _recorded if not entry.mistake)

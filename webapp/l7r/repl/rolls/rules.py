@@ -94,6 +94,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal
 
+from l7r.repl.rolls import modes
 from l7r.repl.rolls.models import Contest, RecordingRule, Roll
 
 DEFAULT_RULE = RecordingRule()
@@ -122,6 +123,10 @@ FREE_RAISE = 5
 #: the interrogator's for a scared or guilty subject, each reveal NPC state. The
 #: one exception is `(grilling)`, which the players already know.
 INTERROGATION = 'interrogation'
+
+#: Feature 207: the other skill whose opposing roll is hidden. The GM: *"the NPC
+#: might see through their disguise and then not reveal that."*
+ACTING = 'acting'
 
 
 def is_interrogation(roll: Roll) -> bool:
@@ -428,8 +433,29 @@ def render_lines(
             lines.append(render_interrogation([roll]))
         elif roll.line not in written_lines:
             written_lines.add(roll.line)
-            lines.append(render_interrogation(by_line[roll.line]))
+            # Feature 207: one written line per OUTCOME on the line of questioning,
+            # so a PC who detected something stands apart from those who did not.
+            lines.extend(render_interrogation(group) for group in by_outcome(by_line[roll.line]))
     return lines
+
+
+def by_outcome(rolls: Sequence[Roll]) -> list[list[Roll]]:
+    """One line of questioning's rolls, grouped by what each roller GOT.
+
+    The GM (2026-09-19): *"When the default option is selected of 'nothing hidden
+    detected' then we group them on the same line. However, if a specific PC does
+    detect something hidden, but the others do not, then we would need to split them
+    out to a separate line."* Groups come in the order their first roll was made.
+    """
+    groups: dict[str, list[Roll]] = {}
+    for roll in rolls:
+        groups.setdefault(roll.outcome.strip(), []).append(roll)
+    return list(groups.values())
+
+
+def outcome_text(roll: Roll) -> str:
+    """What a hidden-opposition roll got the players: the GM's words, or the default."""
+    return roll.outcome.strip() or modes.default_outcome(roll.skill)
 
 
 def render_interrogation(rolls: Sequence[Roll]) -> str:
@@ -456,7 +482,9 @@ def render_interrogation(rolls: Sequence[Roll]) -> str:
         f'{r.total}{"" if r.rank is None else f"@{r.rank}"} {personal_name(r.character)}'
         for r in ordered
     )
-    tail = f' - {first.note}' if first.annotated else ''
+    # The outcome follows the topic (feature 207) and is the same words whether the
+    # NPC was truthful, lied well, or was never rolled for - see `modes.DEFAULT_OUTCOME`.
+    tail = f' - {first.note}: {outcome_text(first)}' if first.annotated else ''
     return f'{head}: {entries}{tail}'
 
 
@@ -481,6 +509,13 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
     close on interpreter exit, which writes bare rolls rather than losing them.
     """
     who = personal_name(roll.character)
+    if roll.skill.lower() == ACTING:
+        # Feature 207: acting is written like interrogation - alone, exact, ranked,
+        # with what the players got - because its opposing investigation roll is
+        # hidden (`hidden.py`). `opposed_total` is deliberately not read here.
+        rank = '' if roll.rank is None else f'@{roll.rank}'
+        tail = f' - {roll.note}: {outcome_text(roll)}' if roll.annotated else ''
+        return f'acting: {roll.total}{rank} {who}{tail}'
     if roll.opposed_total is None:
         shown = record(roll.total + roll.bonus_self, roll.skill, rule)
         # The open line separates its note with ` - ` (GM 2026-09-09, reversing

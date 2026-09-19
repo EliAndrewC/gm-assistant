@@ -37,3 +37,16 @@ def _offline_sheet_index(monkeypatch: pytest.MonkeyPatch) -> None:
         raise RuntimeError('tests are offline: patch sheetroster.fetch_index')
 
     monkeypatch.setattr(sheetroster, 'fetch_index', refuse)
+
+
+@pytest.fixture(autouse=True)
+def _offline_character_body(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Never let a test fetch a character from Obsidian Portal (tests are offline).
+
+    `begin_conversation` reads the NPC's remembered numbers from their record
+    (feature 207) and resolves the fetch at call time, so this reaches it. A test
+    that wants a record passes `get_body=`.
+    """
+    from chargen import op
+
+    monkeypatch.setattr(op, 'get_character_body', lambda character_id: None)
