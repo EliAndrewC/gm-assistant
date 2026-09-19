@@ -1,6 +1,6 @@
 # GM request, verbatim (2026-09-19)
 
-Four messages in the "Discord repl" session, plus the session's questions between them and the
+Five messages in the "Discord repl" session, plus the session's questions between them and the
 GM's answers. Nothing the GM said has been edited. **The GM dictates by voice-to-text, and says so
 in message 1**: read "role(s)", "holes", "tools" and "rule(s)" as "roll(s)" wherever dice are meant,
 "Don" as "Dan", and "tapped value" / "attacks" / "tech" as "tact value" / "tact" / "tact".
@@ -213,6 +213,117 @@ It also proposed a `detected("Jimen", "...")` style function for marking a detec
 > I would really like to have keystrokes detected. So is there a way that we are able to do that by
 > pulling from the TTY or something? like I know that we're using readline now but in theory we
 > don't have to, right?
+
+### What the session asked after message 4
+
+Is the `+ 10` in `new_line_of_questioning("Chizuru's death", xky(8, 3) + 10)` the NPC's casual
+free raises added by hand? Proposed: the tool adds those itself on a non-grilling line.
+
+## Message 5
+
+(More voice-to-text in this one: "tax", "tech" and most uses of "tapped" are "tact"; "tapped die" is
+"kept die"; "error" is the Air ring; "rules" is "rolls".)
+
+> w.r.t. the grilling question, I would never apply the "lack of grilling" bonuses manually, so you
+> can assume that grilling bonuses are only ever applied by the grilling flag which is false by
+> default (thus assigning the bonuses of +10 to the NPC's roll).  I agree with you - any bonuses I
+> add manually should be things which do not get adjusted, e.g. in this case the +10 was from
+> Fumitake having 2 acting, whhich results in +10 to his sincerity roll.
+>
+> Okay, so here's another big thing that I want as part of this feature. A problem that I have
+> sometimes is remembering what skill I have assigned to an NPC. For example, let's say that the
+> players talk to someone, and then I make a tact roll. And then the players come back a few weeks
+> of real-world time later, even if maybe within the game it's the same day or something. And then
+> I have to make another tact roll for that NPC. I would like to use the same tact skill and not
+> have the NPC's tact vary from session to session. However, this requires me currently to either
+> write down what I did or to just remember. And I'm not going to be able to remember every skill
+> for every NPC. Now, I think that we can probably do something about this. Obviously, I do not
+> want to show what the NPC's skills are to the players. However, there is a GM-only section where
+> this data could be stored in a parsable manner. So that mechanically, our code can grab it.
+>
+> Now, one thing I would like to get into the habit of doing is annotating the rules when I make
+> them. For example, instead of saying
+>
+> >>> xky(8, 3) + 10
+>
+> I will try to start saying
+>
+> >>> xky(8, 3) + 10 - sincerity
+>
+> Now note that we will have to do some trickery in order to make this work. Thankfully, I believe
+> that it is already the case that `xky()` returns an instance of a class with operator overloading
+> to accept things like the plus 10. And then we can have that still also return an instance of the
+> same class, which is then able to accept things like `- sincerity`. And then, of course, we will
+> have to define a `sincerity` variable which is itself an instance of a class which and have
+> operator overloading combine it with our rolls in order to mark what type of roll they are.
+>
+> Now, when this happens, I want a couple of things to occur. First of all, if we are in a
+> conversation with an NPC, and then I do something like
+>
+> >>> xky(5, 3) - tact
+>
+> then we should immediately check what is on Obsidian Portal (or what we have cached from
+> downloading it at the start of the conversation - we do not need to check every time, we can
+> assume that nothing will update this in Obsidian portal besides our own repl, and I have only one
+> repl going at a time), And that I am making different tech skill than what was there previously,
+> then I should be notified of this and then given the option to either correct the skill that is
+> there or cancel the skill. I would like to be able to cancel either by hitting Ctrl+c and having
+> that actually caught and recorded as indicating that I made a mistake and that I will redo the
+> skill correctly. Or I should be able to indicate that what was previously there was wrong and I
+> am now entering something new.
+>
+> Note that for the purpose of this feature, we are assuming that the players are only ever talking
+> to one NPC at a time. This is not strictly true, and a later feature will likely add the ability
+> to track different NPCs. To the extent that this informs our implementation choices today, then
+> we should be aware of it, but it is perfectly fine for now. for our implementation to just assume
+> that whoever we have begun the conversation with is the only NPC whose skills are being rolled.
+>
+> Now, of course, the default and most common thing that will happen is that when I make a role
+> such as the one above, then there will not already be a tapped skill recorded for that NPC, so we
+> should record one. And then for the rest of this conversation, further tapped roles which I make
+> should be checked against this value because we will have updated our local cache even if we have
+> not yet persisted it to Obsidian Portal, since I believe that happens on some kind of debounced
+> timer where we do it every 30 seconds or every two minutes or something.
+>
+> Also note that we need to record not only what the individual skills are, but also what the ring
+> values are. For example, in this case, the NPC is rolling tact, which is an air skill, and
+> therefore their air ring should be presumed to be three. And that also should be checked. such
+> that if I enter the wrong value, then I am prompted about whether this was a mistake or whether
+> it should be corrected. For example, I might have made a roll previously in which I just added on
+> an extra one die to the rolled and kept dice because I knew that the NPC was spending a void
+> point and then I did not bother to denote what had happened and therefore this is an example of
+> needing to make a correction.
+>
+> I would also like for these skill instances like `sincerity` or `tact` to be callable. for
+> example, if I say `tact()` And the NPC already has a tact skill recorded, then it can roll tax for
+> them. ( Please update your memory about common voice-to-text errors to note that the word "tact"
+> is often transcribed as "tax".) If I say `tact(vp)` then that should be rolling tapped while
+> spending a void point, which is to say giving one extra rolled and also one extra kept die.
+> (Also, the Voice to text appears to keep mistaking the word kept for the word tapped. So if you
+> see me saying tapped, then your memory should indicate that this probably means kept.)  This means
+> that `vp` must also be a class instance which is defined to indicate that a void point is spent
+> in these cases and I should be able to also say `tact(vp * 2)` to denote that two void points are
+> being spent, etc.
+>
+> early in a conversation when I have not yet rolled enough rolls for the functions to be able to
+> know what ring and skill values are then the function can prompt me. For example, if I say
+> `sincerity()` and you know that the NPC has three error, but you do not know their rank in the
+> sincerity skill, then you can ask me what it is, and I can enter a number, between zero and five
+> inclusive. I would also like to be able to say `sincerity(5, 3)` and have that be the same as if
+> I had said `xky(5, 3) - sincerity`, doing the appropriate saving of values and also checks
+> against previously saved values. However, I would also like to be able to enter a single number
+> by saying `sincerity(2)` in which I am indicating that the character has a sincerity value of
+> two. and that you should make a roll with whatever error they already have recorded or prompting
+> me for what their error value is, which will be a value between two and six inclusive, if you do
+> not already have it.
+>
+> Another great thing about tracking what types of roles we have made is that when I am annotating
+> things, then you will often already know what role was opposing something. For example, if a
+> player rolled manipulation and I have a tact roll, then when I call the annotate() function, then
+> you can pre-pair the tact and manipulation rules against each other such that the only thing that
+> I am asked to annotate is adding the note about what the manipulation rule represented, like what
+> way in which someone was trying to twist another character's words or whatever. And then your
+> default selections can be overcome with things like hitting the backspace key twice or whatever.
 
 ## Rules-file edits made on the GM's instruction (2026-09-19, uncommitted; the GM handles git there)
 
