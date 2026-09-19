@@ -34,7 +34,7 @@ from datetime import UTC, datetime
 
 from l7r.repl import dice
 from l7r.repl.gmrolls import GmRoll
-from l7r.repl.rolls import conversation, hidden, npcskills, rules
+from l7r.repl.rolls import conversation, hidden, menu, npcskills, rules
 from l7r.repl.rolls.models import Conversation, Line, Roll
 
 Ask = Callable[[str], str]
@@ -44,6 +44,15 @@ def _ask(question: str) -> str:
     # `annotate` the FUNCTION shadows the module on the package, so import by path.
     asker: Ask = importlib.import_module('l7r.repl.rolls.annotate').ask_quietly
     return asker(question)
+
+
+# Feature 210: this reads the real terminal, so a choice asked through it is a menu.
+menu.terminal_asker(_ask)
+
+JOIN_OPTIONS = (
+    menu.Option('p', 'part of this line', ('part',)),
+    menu.Option('d', 'discard', ('discard',)),
+)
 
 
 def _describe(roll: Roll) -> str:
@@ -128,7 +137,11 @@ def new_line_of_questioning(
         answer = ''
         while answer not in ('p', 'd'):
             try:
-                answer = asker(f'    {_describe(conv.rolls[index])} [P/d] > ').strip().lower()[:1]
+                described = _describe(conv.rolls[index])
+                answer = menu.ask_choice(
+                    asker, f'    {described} [P/d] > ', f'    {described}', JOIN_OPTIONS
+                )
+                answer = answer.strip().lower()[:1]
             except KeyboardInterrupt, EOFError:
                 print('\n  Ctrl-C - the line was not declared and nothing changed.')
                 return

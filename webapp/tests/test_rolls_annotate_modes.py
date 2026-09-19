@@ -421,3 +421,15 @@ class TestIntimidationAppearance:
         assert rules.render_lines(c.rolls, 'Fumitake', include_unannotated=True) == [
             '30 intimidation: Jimen'
         ]
+
+
+class TestCtrlCAtATypedPrompt:
+    """Feature 210 moved every CHOICE onto `_select`; the typed prompts keep `_prompt`,
+    and Ctrl-C there must still abandon the whole run."""
+
+    @pytest.mark.parametrize('interrupt', [KeyboardInterrupt(), EOFError()])
+    def test_at_the_note(self, interrupt: BaseException, capsys: Any) -> None:
+        c = conversation(roll('Jimen', 'pontificate', 31))
+        run(c, interrupt)
+        assert 'nothing saved' in capsys.readouterr().out
+        assert rules.needs_annotation(c.rolls[0])

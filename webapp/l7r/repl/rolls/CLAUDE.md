@@ -38,7 +38,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `bio.py` | Splices lines directly under the `[[File:...]]` portrait embed. `rewrite` swaps this conversation's previous block for its current one - the watcher writes repeatedly, so appending would stack a line per poll. Removing a line takes the blank line spliced with it, or the body grows a newline every write. |
 | `discord.py` | Read-only REST. The bot holds permissions 66560 (View Channel + Read Message History) and there is no code here that could post. Snowflakes are synthesized from a timestamp; `before`/`after` are mutually exclusive in the API, so the far end is bounded in Python. |
 | `sheet.py` | The character-sheet app's roll-history client. **THOSE ENDPOINTS DO NOT EXIST YET** (spec: `character-sheet/externally-queryable-roll-results.md`). Every failure degrades to empty with a reason; nothing raises. |
-| `console.py` | `print_above` - writes from the watcher thread WITHOUT stomping the prompt: `\r\x1b[K` erases the prompt line, the message goes there, then the prompt and whatever the GM had typed are redrawn beneath it. TTY only; a pipe gets a plain print. |
+| `console.py` | (Feature 210: while a menu is open it is the console's OVERLAY - an announcement erases the whole list, prints, and redraws it unmoved; and `asking()` makes a typed roll prompt redraw as ITSELF rather than as `>>> `, a defect found on the way.) `print_above` - writes from the watcher thread WITHOUT stomping the prompt: `\r\x1b[K` erases the prompt line, the message goes there, then the prompt and whatever the GM had typed are redrawn beneath it. TTY only; a pipe gets a plain print. |
 | `annotate.py` | The `annotate()` menu. **What it asks depends on the skill's MODE** (`modes.py`, feature 207): always-open skills are asked only what the roll was for; default-open ones arrive with open SELECTED and a two-press keystroke undoes it; manipulation and sneaking go straight to the opposing roll (`f` = 15 no roll made, `n` = nobody opposed it, `t` = type a total); acting takes a HIDDEN opposing roll and an outcome; everything else keeps open (`o`), contested (`c`), discard (`d`), open with a bonus (`ob`); an INTIMIDATION roll is then asked how the NPC appeared (feature 209). A GM roll TAGGED with the opposing skill is paired without asking. An INTERROGATION roll reaches the menu only when it is on no line (join a declared line, or discard) or has no rank. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
 | `modes.py` | What each skill's roll MAY be - one mode per vocabulary entry, and a test that reads the rules file fails when a skill has none. Also the default OUTCOMES and the manipulation default of 15. Written out rather than derived: each row is a ruling. |
 | `npcnumbers.py` | PURE. The NPC's rings and ranks: the `NPC numbers:` block in the GM-only notes, reading a pool into ring + rank (less school dice and declared void points), the disagreement and its void point answer, and the acting/history automatic raises. Schools with an extra die are PARSED from the rules. |
@@ -46,6 +46,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `lines.py` | `new_line_of_questioning`, `grilling`, `detected`, and `cancel_grilling` / `cancel_detected` (feature 208). Replaces 206's join-or-new menu. |
 | `hidden.py` | PURE. The `Hidden rolls:` block in the GM-only notes - each line's Sincerity roll, each acting roll's opposing investigation - and the advisory who-won arithmetic. **Nothing here may reach the bio**; `tests/test_rolls_hidden.py` renders both halves from one conversation and checks. |
 | `oppose.py` | PURE. Feature 208: a player's Oppose Social / Oppose Knowledge taxes the NPC's later Air / Water rolls. The penalty in effect is DERIVED from the conversation's rolls (highest live oppose roll at or before the moment - never stored, never summed); `for_line` is the one retroactive case; `settle` re-prices tagged GM rolls when an oppose roll is collected late. |
+| `menu.py` | Feature 210: the arrow-key list every CHOICE prompt uses (`ask_choice`). `Picker` is the pure state and drawing; `choose` is the key loop; `interactive(ask)` decides whether a prompt is a menu at all. An `Option.key` is the answer the GM would have TYPED, which is why call sites have no second code path. |
 | `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
@@ -285,6 +286,48 @@ always names the NPC, and that is right: the GM ruled (2026-09-19) that an NPC o
 intimidation as the opposing side of a PC's CONTESTED roll, so the roll being annotated is always
 the PC's - do not add a "who appeared?" question.
 
+## Feature 210: choices are made with the arrow keys
+
+```
+  Open, contested, discard, or open with bonus?
+  > open  [o]
+    contested  [c]
+    discard  [d]
+    open with a bonus  [ob]
+    finish - keep what is staged
+```
+
+Up / Down move (wrapping), Enter chooses, and the list then collapses to one line - the question
+and the chosen row - so the scrollback reads as a record. **Typing MOVES the highlight; Enter
+chooses**: `o` Enter, `ob` Enter, `12` Enter all still work keystroke for keystroke. A letter
+choosing instantly was declined - it breaks `ob` (its `o` would already have chosen "open") and
+every two-digit row.
+
+**A prompt is a menu only when the answers come from the REAL terminal**: stdin and stdout are ttys
+AND the `ask` in use was registered with `menu.terminal_asker` (the package's own quiet `input`,
+and the `_ask` wrappers in `lines.py` / `npcskills.py`). A test or script that supplies its own
+`ask` is ALWAYS asked the typed question - which is why every scripted test that predates the
+feature passes unmodified, and why a test never hangs waiting for an arrow key even when pytest is
+run from a terminal. **A new choice prompt calls `menu.ask_choice(ask, question, title, options)`**
+with the typed `question` as its fallback; a new `ask` wrapper that reads the terminal must be
+registered or its prompts stay typed.
+
+**The row that starts highlighted is whatever a bare Enter means at that prompt today**: "part of
+this line" at the join-or-discard question (the GM's Enter-per-roll habit; opening on "discard"
+would be data loss), "leave it for now" at the no-lines interrogation question, "mistake" at the
+disagreement prompts (also what Ctrl-C means there). Where a blank line finished, there is an
+explicit `FINISH` row.
+
+**NOT converted, on purpose**: free text (what a roll was for, a bonus, a typed total, a rank) and
+the MIXED prompt - "what was it for?", which takes a note but also `c` / `ob` / `d`. A list cannot
+hold a free-text row; the GM approved leaving it typed, and the two-press undo still lives there.
+
+**At a terminal the typed enumeration is NOT printed** (`annotate._listed`, and the `[m] ... [r]`
+line in `npcskills`): the menu is the list, and printing both showed everything twice.
+
+`tests/test_rolls_menu.py` drives a real pseudo-terminal for the key loop, and a whole
+`annotate()` run with scripted arrow keys for the call sites.
+
 ## Two things that will bite you
 
 **A pasted dice card cannot be recognized as one.** Clipboard pastes arrive as `image.png` and so
@@ -326,7 +369,8 @@ deleted rather than left to drift.
     tests/test_rolls_corpus.py tests/test_rolls_annotate.py tests/test_rolls_followup.py \
     tests/test_rolls_interrogation.py tests/test_rolls_modes.py tests/test_rolls_npcnumbers.py \
     tests/test_rolls_npcskills.py tests/test_rolls_lines.py tests/test_rolls_hidden.py \
-    tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py tests/test_rolls_oppose.py )
+    tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py tests/test_rolls_oppose.py \
+    tests/test_rolls_menu.py )
 ```
 
 `test_rolls_keys.py` drives a REAL pseudo-terminal. The undo keys must be written to it AFTER it is
