@@ -126,6 +126,13 @@ DEFAULT_OUTCOME = {
 #: roll to contest something."* Choosing it presumes a tact of ZERO.
 UNROLLED_TOTAL = 15
 
+#: Feature 209. How an NPC may APPEAR after an intimidation roll, mildest first. The
+#: GM (2026-09-19): *"someone can either be stoic, unsettled, rattled, or shaken."*
+#: The words are the GM's; the rules name three hidden thresholds and no states,
+#: which makes four. There is NO default among them: the thresholds are set per scene
+#: and never told to the players, so the number cannot say which one it was.
+APPEARANCES = ('stoic', 'unsettled', 'rattled', 'shaken')
+
 
 def mode_of(skill: str) -> Mode:
     """The mode of `skill`. An unknown name gets the full menu - asking everything

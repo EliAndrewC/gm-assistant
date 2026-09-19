@@ -138,6 +138,24 @@ INTERROGATION = 'interrogation'
 #: might see through their disguise and then not reveal that."*
 ACTING = 'acting'
 
+#: Feature 209: the skill whose annotation also records how the NPC APPEARED.
+INTIMIDATION = 'intimidation'
+
+
+def appeared_text(roll: Roll, npc: str) -> str:
+    """`: Fumitake appeared unsettled`, or '' - the tail of an intimidation line.
+
+    APPEARED, never "was" or "felt". The GM (2026-09-19): *"We should make it clear in
+    the write-up that it would be '<name> appeared stoic' or '<name> appeared
+    unsettled' rather than asserting that they actually did feel that way."* An NPC
+    can put on a face, and the thresholds are hidden by rule, so the record states
+    what the players SAW. Sits after a colon at the end of the line, the place
+    interrogation and acting already put what the players got.
+    """
+    if roll.skill.lower() != INTIMIDATION or not roll.outcome.strip():
+        return ''
+    return f': {personal_name(npc)} appeared {roll.outcome.strip()}'
+
 
 def is_interrogation(roll: Roll) -> bool:
     return roll.skill.lower() == INTERROGATION
@@ -547,7 +565,7 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
         # 2026-09-02); the contested line below still does not, because its `wins`
         # verb is the separator there. See the module docstring.
         tail = f' - {roll.note}' if roll.annotated else ''
-        return f'{shown} {roll.skill.lower()}: {who}{tail}'
+        return f'{shown} {roll.skill.lower()}: {who}{tail}{appeared_text(roll, npc)}'
     # Each side AFTER its own bonus - feature 201's rule ("adjusted for bonuses on
     # each side") and the GM's per-side insistence are the same requirement.
     tail = f' {roll.note}' if roll.annotated else ''
@@ -563,7 +581,9 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
         winner = who if side == 'mine' else them
         outcome = f'{winner} wins by {margin_text(abs(mine - theirs))}'
     skills = skills_text(roll.skill, their_skill)
-    return f'{who} vs {them} {skills}: {mine} vs {theirs}, {outcome}{tail}'
+    return (
+        f'{who} vs {them} {skills}: {mine} vs {theirs}, {outcome}{tail}{appeared_text(roll, npc)}'
+    )
 
 
 def render_contest(scored: Contest) -> str:

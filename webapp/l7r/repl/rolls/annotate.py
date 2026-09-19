@@ -146,12 +146,17 @@ def _apply(roll: Roll, decision: Decision) -> Roll:
             bonus_self=bonus_self,
             bonus_opposed=bonus_opposed,
         )
+    # `outcome` is '' for every skill but intimidation (feature 209: how the NPC
+    # APPEARED), and nothing renders it for any other.
     if decision.contest is None:
-        return replace(roll, note=decision.note, bonus_self=decision.bonus)
+        return replace(
+            roll, note=decision.note, bonus_self=decision.bonus, outcome=decision.outcome
+        )
     opposed, bonus_self, bonus_opposed = decision.contest
     return replace(
         roll,
         note=decision.note,
+        outcome=decision.outcome,
         opposed_total=opposed,
         bonus_self=bonus_self,
         bonus_opposed=bonus_opposed,
@@ -680,8 +685,36 @@ def _decide(menu: _Menu, roll: Roll) -> Decision | None:
     if mode in ('contested_required', 'contested_maybe_unopposed'):
         return _always_contested(menu, roll, mode)
     if mode in ('always_open', 'default_open'):
-        return _open_by_default(menu, roll, only_open=mode == 'always_open')
-    return _full_menu(menu, roll)
+        decision = _open_by_default(menu, roll, only_open=mode == 'always_open')
+    else:
+        decision = _full_menu(menu, roll)
+    if roll.skill.lower() == rules.INTIMIDATION and decision is not None and not decision.discard:
+        # Feature 209, asked LAST so it follows whichever way the roll was recorded -
+        # open, open with a bonus, or the rare contest.
+        decision = replace(decision, outcome=_appearance(menu.ask, menu.conv.npc_name))
+    return decision
+
+
+def _appearance(ask: Ask, npc: str) -> str:
+    """How the NPC APPEARED after an intimidation roll - one of `modes.APPEARANCES`.
+
+    The GM (2026-09-19): *"I would like to select from options that indicate what the
+    apparent effect was."* REQUIRED, unlike nearly every other prompt here, where a
+    blank line finishes: there is no default to fall back on (the thresholds are
+    hidden and set per scene), and the note before it has already been given, so a
+    blank that quietly dropped the roll would throw that away. A number, the word, or
+    an unambiguous start of it; `s` alone could be stoic or shaken and asks again.
+    """
+    who = rules.personal_name(npc)
+    options = ' / '.join(f'{n}. {word}' for n, word in enumerate(modes.APPEARANCES, start=1))
+    while True:
+        answer = _prompt(ask, f'  How did {who} appear? ({options}) > ').lower()
+        if answer.isdigit() and 1 <= int(answer) <= len(modes.APPEARANCES):
+            return modes.APPEARANCES[int(answer) - 1]
+        hits = [word for word in modes.APPEARANCES if answer and word.startswith(answer)]
+        if len(hits) == 1:
+            return hits[0]
+        print(f'  ? one of: {", ".join(modes.APPEARANCES)} - or its number')
 
 
 def _staged_text(conv: Conversation, roll: Roll, decision: Decision) -> str:
