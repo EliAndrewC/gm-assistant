@@ -32,7 +32,11 @@ FIXTURE = Path(__file__).parent / 'fixtures' / 'discord' / 'messages.json'
 #: and after `@27 Tact` stopped being counted twice (both the total-cluster pattern
 #: and the leading-`@` pattern matched it, one character apart). This constant
 #: caught that duplicate: it went 124 -> 123 and the drop had to be explained.
-EXPECTED_ROLLS = 123
+#: 123 -> 125 on 2026-09-19 (feature 207), when the school knacks joined the
+#: vocabulary: the two new rolls are `43 athletics` and `38 Athletics`, both real
+#: and both silently dropped until then. No other message's parse changed, and no
+#: new ambiguity appeared - checked by sweeping the corpus with and without the knacks.
+EXPECTED_ROLLS = 125
 
 
 @pytest.fixture(scope='module')

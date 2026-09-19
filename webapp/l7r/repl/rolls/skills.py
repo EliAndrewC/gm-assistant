@@ -29,8 +29,20 @@ RULES_PATH = Path('/host-l7r-repo/rules/02-skills.md')
 #: bulleted Skill List, so they are named here instead of parsed.
 COMBAT_SKILLS: tuple[str, ...] = ('attack', 'parry')
 
+#: School knacks (`05-school_knacks.md`). Feature 207 found that `31 pontificate` and
+#: `25 athletics` parsed to NOTHING: both are knacks, and the vocabulary was read
+#: from the skill list alone. The GM: *"They definitely can be made, and they can be
+#: captured. So we should make sure that we are capturing them."*
+KNACKS_PATH = RULES_PATH.with_name('05-school_knacks.md')
+
 _SECTION = re.compile(r'^## Skill List$(.*?)^## ', re.M | re.S)
 _BULLET = re.compile(r'^- ([A-Za-z][A-Za-z ]*?)\s*$', re.M)
+
+
+_KNACK = re.compile(r'^## (?P<name>[^\n]+)\n+\*\*Ring:\*\*[ \t]*(?P<ring>[^\n]*)$', re.M)
+_SKILL_HEAD = re.compile(r'^### (?P<name>[A-Za-z]+)[ \t]*$', re.M)
+_ADVANCED = re.compile(r'^\*\*Advanced\*\*[ \t]*$', re.M)
+_RING = re.compile(r'^\*\*Ring:\*\*[ \t]*(?P<ring>[A-Za-z]+)[ \t]*$', re.M)
 
 
 class UnknownSkill(ValueError):
@@ -63,7 +75,73 @@ def load_skills(path: Path = RULES_PATH) -> tuple[str, ...]:
     found = tuple(m.group(1).strip().lower() for m in _BULLET.finditer(section.group(1)))
     if not found:
         raise UnknownSkill(f'the "## Skill List" section of {path} lists no skills')
-    return found + COMBAT_SKILLS
+    return found + COMBAT_SKILLS + load_knacks(path.with_name(KNACKS_PATH.name))
+
+
+def rules_skills(path: Path = RULES_PATH) -> tuple[str, ...]:
+    """The skill list ALONE - no combat skills, no knacks.
+
+    What the GM's skill tags are built from (feature 207): `tact`, `sincerity` and
+    the rest are *"these skill instances"*, and a knack is not one.
+    """
+    knacks = set(load_knacks(path.with_name(KNACKS_PATH.name)))
+    return tuple(s for s in load_skills(path) if s not in COMBAT_SKILLS and s not in knacks)
+
+
+def load_knacks(path: Path = KNACKS_PATH) -> tuple[str, ...]:
+    """The school knacks a player can post as a roll, lowercased, in rules order.
+
+    ROLLABLE is read off the rules rather than listed: every knack's entry opens
+    with a `**Ring:**` line, and the ones that are never rolled say `N/A` (Absorb
+    Void, Conviction, Discern Honor, ...). SINGLE-WORD only, because the parser's
+    rule is one skill word beside a number - `double attack 31` cannot be read by
+    it, and admitting `attack` there would file the roll under the wrong name.
+
+    A missing file means no knacks, not an error: the skill list is what the
+    feature cannot work without, and this file arrived later.
+    """
+    if not path.exists():
+        return ()
+    found = []
+    for match in _KNACK.finditer(path.read_text(encoding='utf-8')):
+        name = match.group('name').strip().lower()
+        if match.group('ring').strip().upper() != 'N/A' and ' ' not in name:
+            found.append(name)
+    return tuple(found)
+
+
+def _sections(path: Path) -> dict[str, str]:
+    """Skill name -> the text of its `### Name` entry in the detailed rules."""
+    text = path.read_text(encoding='utf-8')
+    heads = list(_SKILL_HEAD.finditer(text))
+    out: dict[str, str] = {}
+    for index, head in enumerate(heads):
+        end = heads[index + 1].start() if index + 1 < len(heads) else len(text)
+        out[head.group('name').lower()] = text[head.end() : end]
+    return out
+
+
+def skill_rings(path: Path = RULES_PATH) -> dict[str, str]:
+    """skill -> the ring it is rolled with (`tact` -> `air`), read from the rules.
+
+    Every skill's entry carries a `**Ring:**` line. Feature 207 needs it because the
+    KEPT dice of an NPC's skill roll are that ring: `xky(5, 3) - tact` says Air 3.
+    """
+    skills = set(load_skills(path))
+    rings: dict[str, str] = {}
+    for name, body in _sections(path).items():
+        found = _RING.search(body)
+        if name in skills and found is not None:
+            rings[name] = found.group('ring').lower()
+    return rings
+
+
+def advanced_skills(path: Path = RULES_PATH) -> frozenset[str]:
+    """The skills marked `**Advanced**`, which take -10 when rolled at rank 0."""
+    skills = set(load_skills(path))
+    return frozenset(
+        name for name, body in _sections(path).items() if name in skills and _ADVANCED.search(body)
+    )
 
 
 def match_skill(word: str, vocabulary: tuple[str, ...]) -> str:
