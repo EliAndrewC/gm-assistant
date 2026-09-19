@@ -93,9 +93,14 @@ keeps full line editing and the quiet-history behavior (2026-09-09).
 NOTHING has been typed. Once a character is in, the line belongs to readline, and deleting back to
 empty and pressing Backspace again does nothing. Lifting that means replacing readline for these
 prompts (a full line editor such as prompt_toolkit), which was priced and declined as far more
-machinery than the case deserves. **One press, not the GM's floated two**: on an empty line
-Backspace and Left Arrow have no other meaning, so a second press would buy nothing - one constant
-to change if an accidental undo ever happens in play.
+machinery than the case deserves. **TWO presses, as the GM said** (messages 1 and 5 both say
+"twice"): the first press prints a one-line hint that another undoes the selection, the second
+undoes it, and any other key after the first press simply starts the note. The session had drafted
+one press on the grounds that a second buys nothing on an empty line; the GM's wording is the spec,
+and the count is one constant.
+
+**The same undo applies to every default this feature selects** - the pre-paired opposing roll of
+Story 14 as well as the open selection here.
 
 Where there is no terminal (a pipe, the tests), the key read is skipped and a bare `c`, `ob` or `d`
 as the whole answer switches kind; that typed form also works at a terminal.
@@ -104,8 +109,8 @@ as the whole answer switches kind; that typed form also works at a terminal.
 
 1. **Given** a history roll, **When** the GM types a note, **Then** it is written as an open line
    with one answer given, and the first character typed is not lost.
-2. **Given** a history roll and an empty line, **When** the GM presses Backspace or Left Arrow,
-   **Then** the full kind question is asked and `c` runs the contested flow exactly as today.
+2. **Given** a history roll and an empty line, **When** the GM presses Backspace or Left Arrow
+   twice, **Then** the full kind question is asked and `c` runs the contested flow exactly as today.
 3. **Given** an investigation roll, **Then** it behaves as history does.
 4. **Given** a pasted note, or one starting with a non-ASCII character, **Then** it arrives whole.
 5. **Given** Ctrl-C at the key read, **Then** it abandons the run exactly as at any other prompt.
@@ -225,7 +230,8 @@ nothing and says that grilling was already recorded.
 
 With the Sincerity roll in hand the repl can work out the free raises. The NPC's Sincerity rank is
 INFERRED from the roll's dice: rolled minus kept, minus one more when the NPC's Obsidian Portal
-record names a school that rolls an extra die on sincerity. Today those are Merchant and Shosuro
+record names a school that rolls an extra die on sincerity. (When the Sincerity roll was TAGGED or made
+with `sincerity()`, the rank is the recorded one and nothing is inferred - Story 11.) Today those are Merchant and Shosuro
 Actor; the list is READ from the rules' school text, not written into the code. (Schools whose
 first Dan lets the player CHOOSE the extra die are deliberately ignored - the GM: *"I don't think
 that that will actually come up in practice."*) The interrogator's rank comes from the roll.
@@ -278,7 +284,132 @@ totals, who won. It is rewritten in place as the conversation goes, never stacke
 3. **Given** the GM-only write fails, **Then** the public write still happens and the failure is
    reported in the terminal.
 
+### User Story 11 - The GM says what an NPC roll was, and the NPC's numbers are remembered (Priority: P1)
+
+The problem, in the GM's words: the players talk to someone, the GM makes a tact roll, and weeks of
+real time later has to make another for the same NPC - *"I would like to use the same tact skill
+and not have the NPC's tact vary from session to session."* Nobody remembers every skill of every
+NPC, so the record does.
+
+The GM tags a roll with the skill it was: `xky(8, 3) + 10 - sincerity`. The roll still returns its
+total and still accepts further `+ N`. From the dice the tool reads the NPC's numbers - kept dice
+are the RING the skill uses (tact is an Air skill, so `xky(5, 3) - tact` means Air 3) and rolled
+minus kept is the skill RANK (tact 2) - less any extra die the NPC's school rolls on that skill
+(Story 8's rule, generalized: every "roll one extra die on ..." line in the rules' school text, not
+only sincerity's). Flat bonuses are not part of the inference. With nothing recorded for that skill
+or ring, the values are recorded and the tool says so in one line. This is the common case.
+
+The numbers live in a parsable block in the NPC's GM-ONLY notes - never the bio - fetched once when
+the conversation begins. Later rolls are checked against the local copy at once, whether or not it
+has been persisted yet; persisting rides the conversation's existing debounced write. Nothing else
+is assumed to edit the block: one repl, one writer.
+
+**One NPC at a time** (GM: *"perfectly fine for now ... to just assume that whoever we have begun
+the conversation with is the only NPC whose skills are being rolled"*). A later feature will track
+several; so the numbers are kept per NPC record and a tag never bakes in who rolled.
+
+**Acceptance Scenarios**:
+
+1. **Given** an open conversation and nothing recorded, **When** the GM enters `xky(5, 3) - tact`,
+   **Then** Air 3 and tact 2 are recorded, reported in one line, and the expression still
+   evaluates to the roll's total.
+2. **Given** that, **When** the conversation's next write happens, **Then** the GM-only notes carry
+   both values and the public bio carries neither.
+3. **Given** a new conversation with the same NPC weeks later, **Then** the recorded values are
+   there before the first roll.
+4. **Given** an NPC whose record names a school with an extra die on sincerity, **Then**
+   `xky(8, 3) - sincerity` records sincerity 4, not 5.
+5. **Given** `xky(8, 3) + 10 - sincerity`, **Then** the `+ 10` changes the total and nothing else.
+
+---
+
+### User Story 12 - A roll that disagrees with the record stops and asks (Priority: P1)
+
+When a tagged roll implies a different skill rank OR a different ring than what is recorded, the GM
+is told both values and chooses: THE ROLL WAS A MISTAKE, or THE RECORD WAS WRONG. Ctrl-C at that
+prompt is caught and means the first - the roll is marked as a mistake so it is never offered as an
+opposing roll, the record is untouched, and the GM re-rolls. Choosing the second corrects the record
+to what this roll implies and keeps the roll. The GM's example of a wrong record: an earlier roll
+that silently included a void point's extra die.
+
+**Acceptance Scenarios**:
+
+1. **Given** tact 2 / Air 3 recorded, **When** the GM enters `xky(6, 3) - tact`, **Then** they are
+   told the record says tact 2 and this roll says tact 3, and asked which is wrong.
+2. **Given** the same record, **When** the GM enters `xky(6, 4) - tact`, **Then** the RING
+   disagreement (Air 3 against Air 4) is what is reported.
+3. **Given** that prompt, **When** the GM presses Ctrl-C, **Then** the repl does not exit or raise,
+   the roll is marked a mistake, and the record is unchanged.
+4. **Given** that prompt, **When** the GM says the record was wrong, **Then** the record takes the
+   new value, in the local copy at once.
+
+---
+
+### User Story 13 - The skill names roll for the NPC (Priority: P1)
+
+`sincerity`, `tact` and the rest are also callable:
+
+- `tact()` rolls the NPC's tact from the record. Whatever is missing is asked for: the skill rank
+  (0 to 5 inclusive) or the ring (2 to 6 inclusive), then recorded.
+- `tact(2)` states the rank: checked against the record (Story 12), or recorded; the ring comes
+  from the record or is asked for. Then it rolls.
+- `tact(5, 3)` is exactly `xky(5, 3) - tact`, with the same recording and checks.
+- `tact(vp)` spends a void point: one more rolled AND one more kept die, which the tool knows about
+  and so does not mistake for a bigger ring. `tact(vp * 2)` spends two; `vp` combines with the
+  other forms (`tact(2, vp)`).
+
+Every form prints its dice as `xky` does, returns the same kind of total (so `tact() + 10` works),
+and counts as a tagged GM roll for Story 14.
+
+**Acceptance Scenarios**:
+
+1. **Given** Air 3 and tact 2 recorded, **Then** `tact()` rolls 5k3 and asks nothing.
+2. **Given** Air 3 recorded and no sincerity, **Then** `sincerity()` asks for the rank, accepts
+   0 to 5 and re-asks otherwise, records it, and rolls.
+3. **Given** nothing recorded, **Then** `sincerity(2)` asks for Air, accepts 2 to 6, records both.
+4. **Given** Air 3 and tact 2, **Then** `tact(vp)` rolls 6k4 and `tact(vp * 2)` rolls 7k5, and
+   neither triggers a disagreement nor changes the record.
+5. **Given** no open conversation, **Then** a call says there is no NPC to roll for.
+
+---
+
+### User Story 14 - annotate() already knows the opposing roll (Priority: P1)
+
+When a player's roll has a fixed opposing skill and the GM has a TAGGED roll of that skill in this
+conversation, `annotate()` pairs them itself. For a manipulation roll with a tact roll on record,
+the GM's words: *"the only thing that I am asked to annotate is adding the note."* The pairing and
+the free raises - now from EXACT ranks on both sides, not inferred from a pool - are shown, not
+asked. The keystroke undo of Story 3 drops back to the full picker and bonus questions.
+
+Applies to manipulation (tact), sneaking (investigation) and acting (investigation); a line of
+questioning takes its sincerity roll directly. Skills that contest THEMSELVES are not pre-paired: a
+GM history roll is not evidence that a player's history roll was contested.
+
+**Acceptance Scenarios**:
+
+1. **Given** a manipulation roll and one tagged tact roll, **Then** the pairing and bonuses are
+   displayed and the one question is what it was for.
+2. **Given** several tagged tact rolls, **Then** the one nearest in time that no other roll has
+   used is chosen, and the undo reaches the others.
+3. **Given** no tagged tact roll, **Then** the picker of Story 4 appears, 15 entry included.
+4. **Given** the GM undoes the pairing, **Then** the picker and both bonus questions are asked as
+   today.
+
+---
+
 ### Edge Cases
+
+- A roll tagged with NO conversation open (the GM often rolls the NPC's side first): the tag is
+  kept on the remembered roll, nothing is recorded or checked because there is no NPC yet, and when
+  a conversation begins the recent tagged rolls are recorded or checked then.
+- More than ten dice: the inference reads the pool AS ASKED FOR (`xky(12, 3)`), not the capped pool
+  actually rolled.
+- A tag applied twice, or two different tags on one roll: the second is an error, not a silent
+  overwrite.
+- A skill whose ring is a choice (pontificate: Water or Air) or whose roll is not ring-plus-rank
+  (athletics): tag-only, never inferred from and not callable, until the GM asks for more.
+- Correcting a RING does not recompute ranks recorded under the old ring; ranks are stored as
+  ranks, not as dice.
 
 - An interrogation roll arrives and `new_line_of_questioning` is never called: the roll is held,
   `end_conversation()` refuses as it does for any unannotated roll, and the message names the
@@ -351,7 +482,33 @@ totals, who won. It is rewritten in place as the conversation goes, never stacke
 - **FR-015**: Everything else MUST be unchanged: Etiquette's line, the FULL MENU skills' prompts,
   the open and contested line shapes, per-side bonuses, Ctrl-C, quiet input, the two closing rules.
 
+- **FR-016**: Every skill in the rules' skill list MUST exist at the prompt as a tag usable as
+  `<roll> - <skill>`, which marks the GM's roll with that skill and evaluates to the same total.
+- **FR-017**: A tagged roll in an open conversation MUST be read as ring = kept dice and rank =
+  rolled minus kept, less school extra dice (derived from the rules text), excluding void-point
+  dice the tool was told about. The skill's ring MUST be read from the rules, not listed in code.
+- **FR-018**: NPC ring and skill values MUST be stored in a parsable block of the NPC's GM-only
+  notes, MUST NEVER appear in the bio, MUST be loaded once when the conversation begins, and MUST
+  be updated in the local copy immediately and persisted with the conversation's debounced write.
+- **FR-019**: A tagged roll disagreeing with the record on rank or ring MUST stop and offer exactly:
+  the roll was a mistake, or the record was wrong. Ctrl-C there MUST be caught, MUST mean the
+  former, and MUST NOT end the repl or discard anything else. A mistaken roll MUST never be offered
+  or pre-paired as an opposing roll.
+- **FR-020**: Skill tags MUST be callable as `skill()`, `skill(rank)`, `skill(rolled, kept)`, each
+  optionally with `vp` or `vp * N`; missing values MUST be prompted for within 0-5 (rank) and 2-6
+  (ring). `skill(rolled, kept)` MUST behave exactly as `xky(rolled, kept) - skill`.
+- **FR-021**: `annotate()` MUST pre-pair a manipulation, sneaking or acting roll with a tagged GM
+  roll of its opposing skill, compute free raises from the recorded ranks, and ask only for the
+  note (plus acting's outcome). The Story 3 undo MUST restore the full questions.
+- **FR-022**: On a line that is not grilling the TOOL adds the NPC's 2 casual free raises; the GM
+  never adds them by hand (message 5). Any bonus the GM adds to a roll is never adjusted.
+
 ### Key Entities
+
+- **NPC numbers**: the rings and skill ranks established for one NPC by the GM's own rolls, kept
+  in that NPC's GM-only notes.
+- **Skill tag**: the name of a skill at the prompt - marks a roll, and rolls for the NPC when called.
+- **Void point marker** (`vp`): says how many void points a called roll spends.
 
 - **Mode**: what a skill's roll may be - one per vocabulary entry.
 - **Line of questioning**: a description, an optional hidden Sincerity roll, whether grilling, and
@@ -389,14 +546,19 @@ totals, who won. It is rewritten in place as the conversation goes, never stacke
 - Acting's outcome needs NO change-it-later path: *"The worst case scenario is that I can just edit
   Obsidian Portal directly."*
 
+## Resolved with the GM (message 5)
+
+- The casual-conversation raises are applied ONLY by the grilling flag, never by hand. The `+ 10`
+  in the GM's example was Fumitake's acting 2 (a free raise per rank on sincerity).
+
 ## Open Questions (for the GM, before the scope closes)
 
-1. **Who adds the casual-conversation raises - the GM or the tool?** In
-   `new_line_of_questioning("Chizuru's death", xky(8, 3) + 10)`, is that `+ 10` the NPC's 2 casual
-   free raises, already included by hand? `grilling()` can only "subtract the free raises which the
-   NPC received" if the tool knows they are there. Proposed: the TOOL adds them to a non-grilling
-   line, and whatever the GM adds to the roll is everything else (the unprovable-lie raises,
-   situational ones). The wrong reading double-counts 10 silently, so this one is asked.
+A. **A third answer at the disagreement prompt: "a void point was spent".** When a roll is exactly
+   one die up in BOTH rolled and kept (`xky(6, 4) - tact` against Air 3 / tact 2), neither the roll
+   nor the record is wrong. The GM named two answers; this would be a third. Not added unasked.
+B. **Acting's free raises.** With acting recorded, `sincerity()` could add the per-rank free raise
+   itself instead of the GM typing `+ 10`. Not added unasked; FR-022 says hand bonuses are left
+   alone either way.
 
 ## Review history
 
