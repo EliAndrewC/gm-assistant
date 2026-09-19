@@ -1,6 +1,6 @@
 # GM request, verbatim (2026-09-19)
 
-Six messages in the "Discord repl" session, plus the session's questions between them and the
+Seven messages in the "Discord repl" session, plus the session's questions between them and the
 GM's answers. Nothing the GM said has been edited. **The GM dictates by voice-to-text, and says so
 in message 1**: read "role(s)", "holes", "tools" and "rule(s)" as "roll(s)" wherever dice are meant,
 "Don" as "Dan", and "tapped value" / "attacks" / "tech" as "tact value" / "tact" / "tact".
@@ -353,6 +353,22 @@ B. With acting recorded, should `sincerity()` add acting's free raises itself?
 > giving bonuses to culture because that is also conditional. And so we should presume in both
 > cases that that will not apply and that I will apply those bonuses manually if and when it comes
 > up.
+
+### What the session asked after message 6
+
+C. Do the automatic raises also land on `xky(8, 3) - sincerity`, or only on `sincerity()`?
+D. The rules make history's raises on CULTURE unconditional and on HERALDRY conditional - the
+   reverse of what message 6 said. Which?
+
+## Message 7
+
+> The automatic raises should only be applied when we roll with the skill function and not when I
+> roll with the xky function. So in your example, `xky(8, 3) - sincerity` should not get an
+> automatic acting bonus, but `sincerity()` should.
+>
+> Oh, yeah, sorry. Uh, my bad on the history and culture. Uh, you are right and I had misremembered.
+> So, yes, please always apply it to culture and law and strategy. And then do not ever apply it to
+> heraldry because I can do that for them when appropriate.
 
 ## Rules-file edits made on the GM's instruction (2026-09-19, uncommitted; the GM handles git there)
 

@@ -377,7 +377,12 @@ shown in the printed line so the GM can see it happened:
 | recorded | adds its free raises to the NPC's | NOT added (conditional - the GM adds by hand) |
 |---|---|---|
 | acting | sincerity, intimidation | sneaking (only when blending into a crowd) |
-| history | law, strategy | culture (GM, message 6); heraldry (places, families and institutions only) |
+| history | culture, law, strategy | heraldry (places, families and institutions only) |
+
+**Only the skill FUNCTION adds them** (message 7): `sincerity()`, `sincerity(2)` and
+`sincerity(5, 3)` add the automatic raises; `xky(8, 3) - sincerity` never does, so a bonus the GM
+types onto an `xky` roll is never counted twice. This is the ONE difference between
+`sincerity(5, 3)` and `xky(5, 3) - sincerity`, which are otherwise the same.
 
 With no argument, `acting()` / `history()` report the recorded rank, or ask for it. A disagreement
 with a recorded rank asks the Story 12 question (no dice, so no void point answer).
@@ -397,8 +402,10 @@ and counts as a tagged GM roll for Story 14.
 6. **Given** `acting(2)`, **Then** acting 2 is recorded, nothing is rolled and no ring is asked for.
 7. **Given** acting 2 recorded, **Then** `sincerity()` and `intimidation()` each add +10, say so,
    and a sneaking roll adds nothing.
-8. **Given** history 3 recorded, **Then** `law()` and `strategy()` each add +15 and `culture()` and
-   `heraldry()` add nothing.
+8. **Given** history 3 recorded, **Then** `culture()`, `law()` and `strategy()` each add +15 and
+   `heraldry()` adds nothing.
+9. **Given** acting 2 recorded, **Then** `xky(8, 3) - sincerity` adds nothing and
+   `sincerity(8, 3)` adds +10.
 
 ---
 
@@ -525,11 +532,13 @@ GM history roll is not evidence that a player's history roll was contested.
   or pre-paired as an opposing roll.
 - **FR-020**: Skill tags MUST be callable as `skill()`, `skill(rank)`, `skill(rolled, kept)`, each
   optionally with `vp` or `vp * N`; missing values MUST be prompted for within 0-5 (rank) and 2-6
-  (ring). `skill(rolled, kept)` MUST behave exactly as `xky(rolled, kept) - skill`.
+  (ring). `skill(rolled, kept)` MUST behave exactly as `xky(rolled, kept) - skill` apart from FR-020a's
+  automatic bonuses.
 - **FR-020a**: `acting(N)` and `history(N)` MUST record the rank and MUST NOT roll. Recorded acting
-  MUST add +5 per rank to the NPC's sincerity and intimidation rolls, and recorded history to law
-  and strategy rolls; sneaking, culture and heraldry MUST NOT receive an automatic bonus. Every
-  automatic bonus MUST be named in the roll's printed line.
+  MUST add +5 per rank to the NPC's sincerity and intimidation rolls, and recorded history to culture,
+  law and strategy rolls; sneaking and heraldry MUST NOT receive an automatic bonus. Automatic
+  bonuses MUST be added only by the skill-function forms, never to an `xky(...) - skill` roll, and
+  MUST be named in the roll's printed line.
 - **FR-019a**: When the disagreement is exactly 1k1 or 2k2, the prompt MUST also offer the void
   point answer worded for the direction and count, with the effects Story 12 gives.
 - **FR-021**: `annotate()` MUST pre-pair a manipulation, sneaking or acting roll with a tagged GM
@@ -592,18 +601,15 @@ GM history roll is not evidence that a player's history roll was contested.
 - Acting and history are recorded by `acting(N)` / `history(N)` and never rolled; their
   unconditional free raises are automatic, their conditional ones are the GM's to add.
 
-## Open Questions (for the GM, before the scope closes)
+## Resolved with the GM (message 7)
 
-C. **Do the automatic raises also land on `xky(8, 3) - sincerity`, or only on `sincerity()`?** The
-   GM ruled `sincerity(5, 3)` is "the same as" `xky(5, 3) - sincerity`, and also plans to type
-   `xky(8, 3) + 10 - sincerity` where the `+ 10` IS acting 2 - which, if the tag adds acting as
-   well, counts it twice. Proposed: the automatic raises apply to EVERY tagged form, always named
-   in the printed line (`+10 acting 2`), so the hand-typed `+ 10` is what gets dropped.
-D. **History and culture.** The GM called history's raises on culture conditional. The rules read
-   the other way: *"one free raise on all culture, law, and strategy rolls ... You also receive
-   these free raises on heraldry rolls, but ... only ... places and families and institutions"* -
-   heraldry is the conditional one. The spec follows the GM's words (culture NOT automatic) until
-   told otherwise; if the rules are right it is one table row.
+- Automatic raises come from the skill function only, never from a tagged `xky` roll.
+- History's raises are automatic on culture, law and strategy and never on heraldry - the rules'
+  reading; the GM had misremembered in message 6.
+
+## Open Questions
+
+None outstanding.
 
 ## Review history
 
