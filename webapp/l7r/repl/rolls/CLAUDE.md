@@ -33,13 +33,19 @@ portrait, and a conversation spanning several skills writes one line per skill.
 |---|---|
 | `models.py` | `Roll`, `Contest`, `RecordingRule`, `Conversation`. Pure data. `Roll.total` is deliberately NOT decomposed into dice plus bonuses - the character-sheet app owns the dice math and we never reimplement it. |
 | `rules.py` | The GM's RECORDING rules (not game rules): round down to 5, cap Etiquette at 40 before rounding, contested keeps both totals raw and rounds only the margin, and only the PERSONAL name is written (`Tsuruchi Jimen` -> `Jimen`, `personal_name`). The GM's reasoning for the cap is in the module docstring - **do not delete it**, the rule is meaningless without it. `render_open` reproduces the GM's shorthand exactly. |
-| `skills.py` | The skill vocabulary, READ from `/host-l7r-repo/rules/02-skills.md` rather than copied, so a rename in the rules reaches us. Unambiguous prefixes resolve (`eti` -> `etiquette`); an ambiguous one is reported, never guessed. |
+| `skills.py` | The skill vocabulary, READ from `/host-l7r-repo/rules/02-skills.md` rather than copied, so a rename in the rules reaches us - plus the single-word school knacks that declare a ring (`05-school_knacks.md`; `31 pontificate` parsed to nothing until feature 207), each skill's ring, and which are advanced. Unambiguous prefixes resolve (`eti` -> `etiquette`); an ambiguous one is reported, never guessed. |
 | `parse.py` | Hand-typed rolls. The forms are wilder than they look - see the module docstring for the fifteen real shapes. A number is a roll ONLY when a real skill name sits beside it; that one rule kills nearly every false positive, and the three that survived it are each pinned by a test. |
 | `bio.py` | Splices lines directly under the `[[File:...]]` portrait embed. `rewrite` swaps this conversation's previous block for its current one - the watcher writes repeatedly, so appending would stack a line per poll. Removing a line takes the blank line spliced with it, or the body grows a newline every write. |
 | `discord.py` | Read-only REST. The bot holds permissions 66560 (View Channel + Read Message History) and there is no code here that could post. Snowflakes are synthesized from a timestamp; `before`/`after` are mutually exclusive in the API, so the far end is bounded in Python. |
 | `sheet.py` | The character-sheet app's roll-history client. **THOSE ENDPOINTS DO NOT EXIST YET** (spec: `character-sheet/externally-queryable-roll-results.md`). Every failure degrades to empty with a reason; nothing raises. |
 | `console.py` | `print_above` - writes from the watcher thread WITHOUT stomping the prompt: `\r\x1b[K` erases the prompt line, the message goes there, then the prompt and whatever the GM had typed are redrawn beneath it. TTY only; a pipe gets a plain print. |
-| `annotate.py` | The `annotate()` menu - which roll; open (`o`), contested (`c`), discard (`d`) or open with a bonus (`ob`); what it was for. An INTERROGATION roll gets a different prompt - which line of questioning (join / new / discard), rank if unrecorded, grilling, topic - and never o/c/ob (`_interrogate`, feature 206). Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
+| `annotate.py` | The `annotate()` menu. **What it asks depends on the skill's MODE** (`modes.py`, feature 207): always-open skills are asked only what the roll was for; default-open ones arrive with open SELECTED and a two-press keystroke undoes it; manipulation and sneaking go straight to the opposing roll (`f` = 15 no roll made, `n` = nobody opposed it, `t` = type a total); acting takes a HIDDEN opposing roll and an outcome; everything else keeps open (`o`), contested (`c`), discard (`d`), open with a bonus (`ob`). A GM roll TAGGED with the opposing skill is paired without asking. An INTERROGATION roll reaches the menu only when it is on no line (join a declared line, or discard) or has no rank. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
+| `modes.py` | What each skill's roll MAY be - one mode per vocabulary entry, and a test that reads the rules file fails when a skill has none. Also the default OUTCOMES and the manipulation default of 15. Written out rather than derived: each row is a ruling. |
+| `npcnumbers.py` | PURE. The NPC's rings and ranks: the `NPC numbers:` block in the GM-only notes, reading a pool into ring + rank (less school dice and declared void points), the disagreement and its void point answer, and the acting/history automatic raises. Schools with an extra die are PARSED from the rules. |
+| `npcskills.py` | `tact`, `sincerity`, ... at the prompt: `xky(5, 3) - tact` tags a roll, `tact()` / `tact(2)` / `tact(5, 3)` / `tact(vp)` roll for the NPC. The disagreement prompt, where Ctrl-C is an ANSWER (the roll was a mistake). `acting(2)` and `history(3)` record and never roll. |
+| `lines.py` | `new_line_of_questioning`, `grilling`, `detected`. Replaces 206's join-or-new menu. |
+| `hidden.py` | PURE. The `Hidden rolls:` block in the GM-only notes - each line's Sincerity roll, each acting roll's opposing investigation - and the advisory who-won arithmetic. **Nothing here may reach the bio**; `tests/test_rolls_hidden.py` renders both halves from one conversation and checks. |
+| `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
 ## What a written line looks like, and the two orders that must stay different
@@ -123,11 +129,11 @@ the length grew, since readline never records a blank line). Every `annotate()` 
 roll** (feature 206, GM 2026-09-10). The leak: *"if someone knows how high the NPC rolled on
 sincerity, then they would know whether the 'doesn't seem to be holding anything back' result
 represents truthfulness or if that is simply because the interrogator didn't roll high enough."*
-So `annotate()` never offers `o/c/d/ob` for an interrogation roll - its prompt is WHICH LINE OF
-QUESTIONING (`Join which line? (number, n for new, d to discard, blank to finish)`, or just
-`[n/d, blank to finish]` for the first), then the rank if nobody recorded one, then for a new line
-`Grilling? [y/N]` and the topic. The written line is `interrogation[ (grilling)]: 37@2 Jimen /
-24@1 Moriko - <topic>`: the raw total (no rounding, no bonus on either side - the NPC's raises for
+So `annotate()` never offers `o/c/d/ob` for an interrogation roll. (206's own prompt - join which
+line, or start a new one, then grilling and the topic - was REPLACED by feature 207: lines are
+declared with `new_line_of_questioning`, and the menu now sees an interrogation roll only when it
+is on no line or has no rank. See the feature 207 section below.) The written line is `interrogation[ (grilling)]: 37@2 Jimen /
+24@1 Moriko - <topic>: <outcome>`: the raw total (no rounding, no bonus on either side - the NPC's raises for
 an unprovable lie and the interrogator's for a scared subject both reveal NPC state, and only
 grilling is public), the rank as `@N` so the number reads without the other side, rollers highest
 first as Etiquette does, one line per line of questioning because the rules roll the skill *"once
@@ -141,6 +147,72 @@ reasoning and the declined alternatives in `specs/206-interrogation-lines/resear
 lowers the player's. The GM's reason: a player who rolled 30 against an opponent's free raises still
 rolled 30, and flattening that to "-10 to the player" destroys information that matters even when
 the margin is identical.
+
+## Feature 207: modes, hidden opposition, and the NPC's remembered numbers
+
+```
+>>> begin_conversation("Fumitake")
+  on record for Fumitake: Air 3, sincerity 5
+>>> acting(2)                                  # records; never rolls
+>>> new_line_of_questioning("Chizuru's death", sincerity())
+  Fumitake sincerity: 8k3
+  +10 acting 2
+Line of questioning: Chizuru's death - sincerity roll kept in the GM-only notes
+  + Tsuruchi Jimen: interrogation 37 @2
+  = Jimen 37 vs sincerity 48 (+10 not grilling, +15 free raises): not detected
+>>> detected("Jimen", "he is lying about the hour")     # any time; he gets his own line
+>>> xky(5, 3) - tact                            # records tact 2; a later 6k3 stops and asks
+```
+
+Public bio - **no hidden number, ever**:
+
+```
+interrogation: 24@1 Moriko - Chizuru's death: nothing hidden detected
+interrogation: 37@2 Jimen - Chizuru's death: he is lying about the hour
+acting: 32@1 Jimen - posing as a rice factor: no signs of the persona being seen through
+25 sneaking: Jimen - blending into the crowd          <- always contested, nobody opposed it
+```
+
+GM-only notes:
+
+```
+NPC numbers:
+- Air 3
+- sincerity 5
+- acting 2
+
+Hidden rolls:
+- 2026-09-19 sincerity 48 (+10 not grilling) - Chizuru's death: Jimen 37@2 not detected
+```
+
+**This REVERSES one rule of feature 206, on the GM's word.** 206 wrote the Sincerity roll NOWHERE;
+it now goes to the GM-only notes. The PUBLIC half of 206 is untouched: alone, exact, ranked,
+grouped - and now grouped BY OUTCOME, so a PC who detected something stands apart. The default
+outcome is written whether the NPC was truthful, lied well, or was never rolled for; that sameness
+is the point and `test_the_line_reads_the_same_with_and_without_a_sincerity_roll` pins it.
+
+**The who-won is ADVISORY and private.** It is printed in the terminal (never screen-shared, GM
+2026-09-19) and written to the GM-only block, and it NEVER sets the public outcome: the raises the
+GM hands out as a line of questioning goes on are not known to the tool. `detected()` is how the
+public outcome changes.
+
+**Only the tool applies the casual +10**, from the line's grilling flag; `grilling()` takes it back
+retroactively. Whatever the GM adds to a roll by hand is never adjusted.
+
+**`sincerity(8, 3)` and `xky(8, 3) - sincerity` differ in ONE thing**: only the called form adds the
+automatic raises (acting -> sincerity, intimidation; history -> culture, law, strategy; never
+sneaking or heraldry, which are conditional). The `+ 10` the GM types onto an `xky` roll IS the
+acting bonus, so the tag adding it again would count it twice.
+
+**Nothing is recorded or checked without an open conversation** - a tag made outside one only marks
+the roll. The fidelity review struck a draft that recorded such rolls when the next conversation
+began: the numbers could land on the wrong NPC's permanent record.
+
+**One NPC at a time**, by the GM's ruling for now. A later feature will track several, which is why
+a tag holds no NPC and the numbers live on the `Conversation`.
+
+Reasoning, declined alternatives and one recorded dead end (the pty test that hung) are in
+`specs/207-roll-modes/research.md`.
 
 ## Two things that will bite you
 
@@ -181,8 +253,14 @@ deleted rather than left to drift.
     tests/test_rolls_skills.py tests/test_rolls_models.py tests/test_rolls_bio.py \
     tests/test_rolls_discord.py tests/test_rolls_sheet.py tests/test_rolls_conversation.py \
     tests/test_rolls_corpus.py tests/test_rolls_annotate.py tests/test_rolls_followup.py \
-    tests/test_rolls_interrogation.py )
+    tests/test_rolls_interrogation.py tests/test_rolls_modes.py tests/test_rolls_npcnumbers.py \
+    tests/test_rolls_npcskills.py tests/test_rolls_lines.py tests/test_rolls_hidden.py \
+    tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py )
 ```
+
+`test_rolls_keys.py` drives a REAL pseudo-terminal. The undo keys must be written to it AFTER it is
+in cbreak mode - in canonical mode a queued Backspace is eaten as an erase and the read blocks
+forever (it hung the suite once).
 
 `test_rolls_corpus.py` is the one that matters most: it sweeps 615 real messages and pins the
 number of rolls found (`EXPECTED_ROLLS`). **That constant is a regression fixture, not a target** -

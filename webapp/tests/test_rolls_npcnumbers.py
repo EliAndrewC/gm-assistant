@@ -60,7 +60,8 @@ class TestSchools:
     def test_a_missing_file_and_a_school_with_no_line(self, tmp_path: Path) -> None:
         rules = tmp_path / 'schools.md'
         rules.write_text(
-            '## Plain\n\nNothing.\n\n## Chooser\n\nRoll one extra die on any three types of rolls.\n'
+            '## Plain\n\nNothing.\n\n## Chooser\n\n'
+            'Roll one extra die on any three types of rolls.\n'
             '\n## Talker\n\nRoll one extra die on tact and wound checks.\n'
         )
         table = nn.school_extra_dice(('tact',), (rules, tmp_path / 'absent.md'))
@@ -82,7 +83,12 @@ class TestSchools:
 class TestInfer:
     def test_the_gm_s_example(self) -> None:
         reading = nn.infer((5, 3), 'Tact', 'Air')
-        assert (reading.skill, reading.ring_name, reading.ring, reading.rank) == ('tact', 'air', 3, 2)
+        assert (reading.skill, reading.ring_name, reading.ring, reading.rank) == (
+            'tact',
+            'air',
+            3,
+            2,
+        )
 
     def test_a_school_die_comes_off_the_rank(self) -> None:
         assert nn.infer((8, 3), 'sincerity', 'air', extra_dice=1).rank == 4
@@ -123,7 +129,8 @@ class TestCompare:
 
     def test_three_dice_is_not_a_void_point(self) -> None:
         found = nn.compare({'air': 3, 'tact': 2}, nn.infer((8, 6), 'tact', 'air'))
-        assert found is not None and found.void_answer == ''
+        assert found is not None
+        assert found.void_answer == ''
 
     def test_both_differing_is_not_a_void_point(self) -> None:
         found = nn.compare({'air': 3, 'tact': 2}, nn.infer((5, 4), 'tact', 'air'))
@@ -135,7 +142,8 @@ class TestCompare:
 
     def test_a_ring_alone_on_record_can_still_offer_the_void_point(self) -> None:
         found = nn.compare({'air': 3}, nn.infer((6, 4), 'sincerity', 'air'))
-        assert found is not None and found.void_points == 1
+        assert found is not None
+        assert found.void_points == 1
 
 
 class TestRecording:

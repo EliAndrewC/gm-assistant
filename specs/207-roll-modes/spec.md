@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-19
 
-**Status**: Scope closed by the GM 2026-09-19 (message 8); in implementation.
+**Status**: Implemented 2026-09-19. Scope closed by the GM in message 8.
 
 **Input**: GM request 2026-09-19, reproduced verbatim in [gm-request.md](gm-request.md) with the
 session's questions and the GM's answers. Builds on feature 201 (roll capture), 202 (annotation)

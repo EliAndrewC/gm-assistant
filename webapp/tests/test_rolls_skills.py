@@ -133,14 +133,17 @@ class TestKnacksAndRings:
         from l7r.repl.rolls.skills import rules_skills
 
         listed = rules_skills()
-        assert 'tact' in listed and 'attack' not in listed and 'pontificate' not in listed
+        assert 'tact' in listed
+        assert 'attack' not in listed
+        assert 'pontificate' not in listed
         assert len(listed) == 18
 
     def test_rings_come_from_the_rules(self) -> None:
         from l7r.repl.rolls.skills import rules_skills, skill_rings
 
         rings = skill_rings()
-        assert rings['tact'] == 'air' and rings['law'] == 'water'
+        assert rings['tact'] == 'air'
+        assert rings['law'] == 'water'
         assert set(rules_skills()) <= set(rings)
 
     def test_advanced_skills_come_from_the_rules(self) -> None:

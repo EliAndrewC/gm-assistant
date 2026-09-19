@@ -90,7 +90,9 @@ def _sincerity(value: object) -> GmRoll | int | None:
         if not entry.tagged:
             npcskills.build_tags()['sincerity'].tag_roll(value)
         if entry.mistake:
-            raise ValueError('that roll was marked a mistake - roll it again, then declare the line.')
+            raise ValueError(
+                'that roll was marked a mistake - roll it again, then declare the line.'
+            )
         return entry
     return int(value)  # type: ignore[call-overload,no-any-return]
 

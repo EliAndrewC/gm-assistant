@@ -377,9 +377,7 @@ def _tick(
         numbers = dict(conv.numbers)
         notes = npcnumbers.render(str(record.get('game_master_info') or ''), numbers)
         try:
-            update(
-                conv.npc_id, game_master_info=hidden.rewrite(notes, conv.hidden_written, secret)
-            )
+            update(conv.npc_id, game_master_info=hidden.rewrite(notes, conv.hidden_written, secret))
         except Exception as exc:  # noqa: BLE001 - reported, never fatal to the bio write
             say(f"  ! could not update {conv.npc_name}'s GM-only notes: {exc}")
         else:
@@ -470,6 +468,12 @@ def end_conversation(
             f'{len(waiting)} roll(s) still need annotating before they can be saved:\n'
             f'{listing}\n'
             'Run annotate() to say what they were for. The conversation is still open.'
+            + (
+                '\nAn interrogation roll joins a line of questioning: '
+                'new_line_of_questioning("...") declares one.'
+                if any(rules.is_interrogation(roll) for roll in waiting)
+                else ''
+            )
         )
     if waiting and force:
         say(f'Saving {len(waiting)} unannotated roll(s) - better recorded bare than lost.')

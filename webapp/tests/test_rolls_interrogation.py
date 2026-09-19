@@ -21,7 +21,7 @@ import pytest
 from l7r.repl import gmrolls
 from l7r.repl.rolls import conversation as conv
 from l7r.repl.rolls import rules
-from l7r.repl.rolls.models import Conversation, Roll
+from l7r.repl.rolls.models import Conversation, Line, Roll
 
 ann = importlib.import_module('l7r.repl.rolls.annotate')
 
@@ -86,6 +86,8 @@ def clean() -> Any:
 
 ESCORTS = 'what Fumitake ordered his escorts to do'
 OPINION = 'what Fumitake thinks of Tsuruchi'
+#: Feature 207: every written line of questioning ends with what the players got.
+DEFAULT = ': nothing hidden detected'
 
 
 class TestTheGmsExamples:
@@ -97,12 +99,12 @@ class TestTheGmsExamples:
             roll('Moriko', total=24, rank=1, minute=1, note=ESCORTS, line=1, grilling=True),
         ]
         assert rules.render_interrogation(line) == (
-            f'interrogation (grilling): 37@2 Jimen / 24@1 Moriko - {ESCORTS}'
+            f'interrogation (grilling): 37@2 Jimen / 24@1 Moriko - {ESCORTS}{DEFAULT}'
         )
 
     def test_one_interrogator_on_a_casual_line(self) -> None:
         line = [roll('Tsuruchi Jimen', total=25, rank=2, note=OPINION, line=2)]
-        assert rules.render_interrogation(line) == f'interrogation: 25@2 Jimen - {OPINION}'
+        assert rules.render_interrogation(line) == f'interrogation: 25@2 Jimen - {OPINION}{DEFAULT}'
 
 
 class TestLinesOfQuestioning:
@@ -144,7 +146,7 @@ class TestLinesOfQuestioning:
 class TestRenderInterrogation:
     def test_the_total_is_exact_never_rounded(self) -> None:
         assert rules.render_interrogation([roll('Jimen', total=37, note='x', line=1)]) == (
-            'interrogation: 37 Jimen - x'
+            f'interrogation: 37 Jimen - x{DEFAULT}'
         )
 
     def test_no_rank_means_no_at(self) -> None:
@@ -166,8 +168,14 @@ class TestRenderInterrogation:
     def test_a_tie_keeps_the_order_the_rolls_were_made(self) -> None:
         a = roll('Moriko', total=30, note='x', line=1)
         b = roll('Jimen', total=30, minute=1, note='x', line=1)
-        assert rules.render_interrogation([a, b]) == 'interrogation: 30 Moriko / 30 Jimen - x'
-        assert rules.render_interrogation([b, a]) == 'interrogation: 30 Jimen / 30 Moriko - x'
+        assert (
+            rules.render_interrogation([a, b])
+            == f'interrogation: 30 Moriko / 30 Jimen - x{DEFAULT}'
+        )
+        assert (
+            rules.render_interrogation([b, a])
+            == f'interrogation: 30 Jimen / 30 Moriko - x{DEFAULT}'
+        )
 
     def test_a_bare_roll_has_no_note_and_no_dash(self) -> None:
         """What the exit path writes for a roll the GM never annotated."""
@@ -194,7 +202,7 @@ class TestRenderLines:
         assert rules.render_lines(c.rolls, 'Otsuki') == [
             'Jimen etiquette: 25',
             '40 law: Jimen - the warrant',
-            f'interrogation (grilling): 37@2 Jimen / 24@1 Moriko - {ESCORTS}',
+            f'interrogation (grilling): 37@2 Jimen / 24@1 Moriko - {ESCORTS}{DEFAULT}',
             '30 precepts: Tetsuro - the oath',
         ]
 
@@ -211,7 +219,9 @@ class TestRenderLines:
     def test_an_annotated_roll_with_no_line_is_its_own_line(self) -> None:
         """A roll annotated before this feature: no line id, but a note."""
         old = replace(roll('Jimen', rank=2, note=ESCORTS), opposed_total=28)
-        assert rules.render_lines([old], 'Otsuki') == [f'interrogation: 37@2 Jimen - {ESCORTS}']
+        assert rules.render_lines([old], 'Otsuki') == [
+            f'interrogation: 37@2 Jimen - {ESCORTS}{DEFAULT}'
+        ]
 
     def test_the_contested_line_is_never_used_for_interrogation(self) -> None:
         old = replace(roll('Jimen', rank=2, note=ESCORTS), opposed_total=28)
@@ -229,115 +239,76 @@ class TestRenderLines:
 KIND_PROMPT = 'Open, contested, discard, or open with bonus?'
 
 
-class TestTheMenu:
-    """US2: join-or-new replaces the o/c/d/ob prompt for this one skill."""
+def declared(c: Conversation, *topics: str, grilling: bool = False) -> None:
+    """Lines of questioning as `new_line_of_questioning` leaves them (feature 207)."""
+    for number, topic in enumerate(topics, start=1):
+        c.lines.append(Line(id=number, description=topic, at=W, grilling=grilling))
 
-    def test_the_first_interrogation_roll_is_offered_new_or_discard_only(self) -> None:
-        c = conversation(roll('Jimen', rank=2))
-        script = Script('n', '', ESCORTS)
-        ann.annotate(c, ask=script)
-        assert script.was_asked('[n/d, blank to finish]')
-        assert not script.was_asked('Lines of questioning so far')
-        assert not script.was_asked('Join which line?')
-        assert c.rolls[0].line is not None
-        assert c.rolls[0].note == ESCORTS
+
+class TestTheMenu:
+    """Feature 207 REPLACED 206's join-or-new menu: lines are declared by function
+    and a roll lands on the current one, so the menu sees only the leftovers."""
+
+    def test_a_roll_on_its_line_with_a_rank_is_never_asked_about(self, capsys: Any) -> None:
+        c = conversation(roll('Jimen', rank=2, note=ESCORTS, line=1))
+        ann.annotate(c, ask=Script())
+        assert 'Nothing waiting' in capsys.readouterr().out
 
     def test_the_kind_prompt_never_appears_for_interrogation(self) -> None:
         c = conversation(roll('Jimen', rank=2))
-        script = Script('n', '', ESCORTS)
-        ann.annotate(c, ask=script)
-        assert not script.was_asked(KIND_PROMPT)
-        assert not script.was_asked('Bonus')
-
-    def test_the_second_roll_sees_the_lines_and_joins_by_number(self, capsys: Any) -> None:
-        c = conversation(
-            roll('Jimen', rank=2, note=ESCORTS, line=1, grilling=True),
-            roll('Moriko', total=24, rank=1, minute=1),
-        )
+        declared(c, ESCORTS)
         script = Script('1')
         ann.annotate(c, ask=script)
+        assert not script.was_asked(KIND_PROMPT)
+
+    def test_a_roll_on_no_line_joins_a_declared_one_by_number(self, capsys: Any) -> None:
+        c = conversation(roll('Tsuruchi Jimen', rank=2))
+        declared(c, ESCORTS, OPINION, grilling=True)
+        ann.annotate(c, ask=Script('2'))
         out = capsys.readouterr().out
-        assert 'Lines of questioning so far:' in out
         assert f'1. (grilling) {ESCORTS}' in out
-        assert script.was_asked('Join which line?')
-        assert not script.was_asked('Grilling?')
-        assert not script.was_asked('line of questioning?')
-        joined = c.rolls[1]
-        assert (joined.line, joined.note, joined.grilling) == (1, ESCORTS, True)
+        assert f'2. (grilling) {OPINION}' in out
+        assert (c.rolls[0].line, c.rolls[0].note, c.rolls[0].grilling) == (2, OPINION, True)
+        assert f'staged: interrogation (grilling): 37@2 Jimen - {OPINION}{DEFAULT}' in out
 
-    def test_n_starts_a_new_line_asking_grilling_then_the_note(self) -> None:
-        c = conversation(
-            roll('Jimen', rank=2, note=ESCORTS, line=1, grilling=True),
-            roll('Jimen', total=25, rank=2, minute=5),
-        )
-        script = Script('n', '', OPINION)
-        ann.annotate(c, ask=script)
-        grilling_at = next(i for i, q in enumerate(script.asked) if 'Grilling?' in q)
-        note_at = next(i for i, q in enumerate(script.asked) if 'line of questioning?' in q)
-        assert grilling_at < note_at
-        new = c.rolls[1]
-        assert new.line not in (None, 1)
-        assert (new.note, new.grilling) == (OPINION, False)
-
-    def test_the_staged_echo_shows_the_whole_line(self, capsys: Any) -> None:
-        c = conversation(
-            roll('Jimen', rank=2, note=ESCORTS, line=1, grilling=True),
-            roll('Moriko', total=24, rank=1, minute=1),
-        )
-        ann.annotate(c, ask=Script('1'))
-        assert (
-            f'staged: interrogation (grilling): 37@2 Jimen / 24@1 Moriko - {ESCORTS}'
-            in capsys.readouterr().out
-        )
-
-    def test_a_line_staged_in_this_run_is_offered_to_the_next_roll(self, capsys: Any) -> None:
-        c = conversation(roll('Jimen', rank=2), roll('Moriko', total=24, rank=1, minute=1))
-        script = Script('1', 'n', 'y', ESCORTS, '1', '1')
-        ann.annotate(c, ask=script)
-        assert f'1. (grilling) {ESCORTS}' in capsys.readouterr().out
-        assert c.rolls[0].line == c.rolls[1].line
-        assert rules.render_lines(c.rolls, 'Otsuki') == [
-            f'interrogation (grilling): 37@2 Jimen / 24@1 Moriko - {ESCORTS}'
-        ]
-
-    def test_the_gms_whole_example_end_to_end(self) -> None:
-        c = conversation(
-            roll('Tsuruchi Jimen', rank=2),
-            roll('Moriko', total=24, rank=1, minute=1),
-            roll('Tsuruchi Jimen', total=25, rank=2, minute=6),
-        )
-        script = Script('1', 'n', 'y', ESCORTS, '1', '1', 'n', '', OPINION)
-        ann.annotate(c, ask=script)
-        assert rules.render_lines(c.rolls, 'Otsuki') == [
-            f'interrogation (grilling): 37@2 Jimen / 24@1 Moriko - {ESCORTS}',
-            f'interrogation: 25@2 Jimen - {OPINION}',
-        ]
-
-    def test_a_bad_answer_at_the_join_prompt_is_re_asked(self, capsys: Any) -> None:
-        c = conversation(
-            roll('Jimen', rank=2, note=ESCORTS, line=1),
-            roll('Moriko', total=24, rank=1, minute=1),
-        )
-        script = Script('9', 'x', '1')
-        ann.annotate(c, ask=script)
-        assert c.rolls[1].line == 1
-        assert '?' in capsys.readouterr().out
-
-    def test_a_bad_answer_at_the_new_or_discard_prompt_is_re_asked(self) -> None:
+    def test_it_is_never_attached_without_being_asked(self) -> None:
         c = conversation(roll('Jimen', rank=2))
-        script = Script('1', 'x', 'n', '', ESCORTS)
-        ann.annotate(c, ask=script)
-        assert c.rolls[0].note == ESCORTS
-
-    def test_blank_at_the_join_prompt_finishes(self) -> None:
-        c = conversation(roll('Jimen', rank=2))
-        assert ann.annotate(c, ask=Script('')) is None
+        declared(c, ESCORTS)
+        ann.annotate(c, ask=Script(''))
         assert c.rolls[0].line is None
 
-    def test_an_empty_note_is_re_asked(self) -> None:
+    def test_with_no_line_declared_it_can_only_be_discarded_or_left(self, capsys: Any) -> None:
+        c = conversation(roll('Jimen', rank=2), roll('Moriko', rank=1, minute=1))
+        script = Script('1', 'n', 'd', '')
+        ann.annotate(c, ask=script)
+        assert 'new_line_of_questioning' in capsys.readouterr().out
+        assert c.rolls[0].discarded
+        assert c.rolls[1].line is None
+        assert script.was_asked('d to discard, blank to leave it')
+
+    def test_a_bad_answer_is_re_asked(self, capsys: Any) -> None:
         c = conversation(roll('Jimen', rank=2))
-        ann.annotate(c, ask=Script('n', '', '', '   ', OPINION))
-        assert c.rolls[0].note == OPINION
+        declared(c, ESCORTS)
+        ann.annotate(c, ask=Script('7', 'n', '1'))
+        assert 'a line number, d to discard' in capsys.readouterr().out
+        assert c.rolls[0].line == 1
+
+    def test_discard_at_the_line_prompt(self) -> None:
+        c = conversation(roll('Jimen', rank=2))
+        declared(c, ESCORTS)
+        ann.annotate(c, ask=Script('d'))
+        assert c.rolls[0].discarded
+
+    def test_joining_compares_privately_when_the_line_has_a_sincerity_roll(
+        self, capsys: Any
+    ) -> None:
+        c = conversation(roll('Jimen', rank=2), roll('Moriko', rank=1, minute=1))
+        c.lines.append(Line(id=1, description=ESCORTS, at=W, sincerity=30))
+        c.lines.append(Line(id=2, description=OPINION, at=W))
+        ann.annotate(c, ask=Script('1', '1', '2'))
+        out = capsys.readouterr().out
+        assert '= Jimen 37 vs sincerity 30 (+10 not grilling): not detected' in out
+        assert out.count('  = ') == 1
 
     def test_other_skills_still_get_the_kind_prompt(self) -> None:
         c = conversation(roll('Jimen', 'law', 44))
@@ -346,80 +317,42 @@ class TestTheMenu:
         assert script.was_asked(KIND_PROMPT)
 
 
-class TestGrilling:
-    @pytest.mark.parametrize('answer', ['y', 'Y', 'yes'])
-    def test_yes_marks_the_line_grilling(self, answer: str) -> None:
-        c = conversation(roll('Jimen', rank=2))
-        ann.annotate(c, ask=Script('n', answer, ESCORTS))
-        assert c.rolls[0].grilling
-        assert rules.render_lines(c.rolls, 'Otsuki')[0].startswith('interrogation (grilling):')
-
-    @pytest.mark.parametrize('answer', ['', 'n', 'no'])
-    def test_blank_and_no_leave_it_casual(self, answer: str) -> None:
-        c = conversation(roll('Jimen', rank=2))
-        ann.annotate(c, ask=Script('n', answer, ESCORTS))
-        assert not c.rolls[0].grilling
-        assert rules.render_lines(c.rolls, 'Otsuki')[0].startswith('interrogation: ')
-
-    def test_anything_else_is_re_asked(self, capsys: Any) -> None:
-        c = conversation(roll('Jimen', rank=2))
-        ann.annotate(c, ask=Script('n', 'maybe', 'y', ESCORTS))
-        assert c.rolls[0].grilling
-        assert '?' in capsys.readouterr().out
-
-    def test_joining_inherits_it_without_asking(self) -> None:
-        c = conversation(
-            roll('Jimen', rank=2, note=ESCORTS, line=1, grilling=True),
-            roll('Moriko', total=24, rank=1, minute=1),
-        )
-        script = Script('1')
-        ann.annotate(c, ask=script)
-        assert c.rolls[1].grilling
-        assert not script.was_asked('Grilling?')
-
-
 class TestRank:
+    def test_a_roll_on_its_line_without_a_rank_is_asked_for_it_and_nothing_else(self) -> None:
+        c = conversation(roll('Tsuruchi Jimen', note=ESCORTS, line=1))
+        script = Script('2')
+        ann.annotate(c, ask=script)
+        assert script.asked == ["  Jimen's interrogation rank? [none] > "]
+        assert (c.rolls[0].rank, c.rolls[0].note, c.rolls[0].line) == (2, ESCORTS, 1)
+
+    def test_blank_writes_it_with_no_at_and_is_never_asked_again(self, capsys: Any) -> None:
+        c = conversation(roll('Jimen', note=ESCORTS, line=1))
+        ann.annotate(c, ask=Script(''))
+        assert c.rolls[0].rank is None
+        assert c.rolls[0].rank_settled
+        ann.annotate(c, ask=Script())
+        assert 'Nothing waiting' in capsys.readouterr().out
+
+    def test_it_never_holds_the_conversation_open(self) -> None:
+        assert not rules.needs_annotation(roll('Jimen', note=ESCORTS, line=1))
+
+    def test_a_discarded_roll_is_not_asked_for_a_rank(self, capsys: Any) -> None:
+        c = conversation(replace(roll('Jimen', note=ESCORTS, line=1), discarded=True))
+        ann.annotate(c, ask=Script())
+        assert 'Nothing waiting' in capsys.readouterr().out
+
+    def test_joining_asks_when_the_rank_is_missing(self) -> None:
+        c = conversation(roll('Jimen'))
+        declared(c, ESCORTS)
+        ann.annotate(c, ask=Script('1', 'two', '3'))
+        assert c.rolls[0].rank == 3
+
     def test_a_recorded_rank_is_not_asked_for(self) -> None:
         c = conversation(roll('Jimen', rank=2))
-        script = Script('n', '', ESCORTS)
+        declared(c, ESCORTS)
+        script = Script('1')
         ann.annotate(c, ask=script)
         assert not script.was_asked('rank?')
-        assert c.rolls[0].rank == 2
-
-    def test_a_missing_rank_is_asked_for_after_the_join_prompt_and_before_grilling(self) -> None:
-        c = conversation(roll('Jimen'))
-        script = Script('n', '2', '', ESCORTS)
-        ann.annotate(c, ask=script)
-        assert script.was_asked("Jimen's interrogation rank? [none]")
-        order = [
-            next(i for i, q in enumerate(script.asked) if f in q)
-            for f in ('[n/d', 'rank?', 'Grilling?', 'line of questioning?')
-        ]
-        assert order == sorted(order)
-        assert c.rolls[0].rank == 2
-        assert rules.render_lines(c.rolls, 'Otsuki') == [f'interrogation: 37@2 Jimen - {ESCORTS}']
-
-    def test_blank_writes_the_roll_with_no_at(self) -> None:
-        c = conversation(roll('Jimen'))
-        ann.annotate(c, ask=Script('n', '', '', ESCORTS))
-        assert c.rolls[0].rank is None
-        assert rules.render_lines(c.rolls, 'Otsuki') == [f'interrogation: 37 Jimen - {ESCORTS}']
-
-    def test_a_non_number_is_re_asked(self, capsys: Any) -> None:
-        c = conversation(roll('Jimen'))
-        ann.annotate(c, ask=Script('n', 'x', '-1', '2', '', ESCORTS))
-        assert c.rolls[0].rank == 2
-        assert '?' in capsys.readouterr().out
-
-    def test_joining_still_asks_when_the_rank_is_missing(self) -> None:
-        c = conversation(
-            roll('Jimen', rank=2, note=ESCORTS, line=1),
-            roll('Moriko', total=24, minute=1),
-        )
-        script = Script('1', '1')
-        ann.annotate(c, ask=script)
-        assert script.was_asked("Moriko's interrogation rank?")
-        assert c.rolls[1].rank == 1
 
     def test_no_other_skill_is_asked_for_a_rank(self) -> None:
         c = conversation(roll('Jimen', 'law', 44))
@@ -429,9 +362,9 @@ class TestRank:
 
 
 class TestEverythingElseStillHolds:
-    """US5: what feature 202 established is untouched for this skill."""
+    """What feature 202 established is untouched for this skill."""
 
-    def test_end_conversation_refuses_while_one_is_unannotated(self) -> None:
+    def test_end_conversation_refuses_and_names_the_function(self) -> None:
         c = conversation(roll('Jimen', rank=2))
         conv._open = c
         with pytest.raises(conv.NotAnnotated) as caught:
@@ -441,56 +374,33 @@ class TestEverythingElseStillHolds:
                 collector=lambda x: x,
             )
         assert 'Jimen interrogation 37' in str(caught.value)
+        assert 'new_line_of_questioning' in str(caught.value)
         assert conv._open is c
 
-    def test_ctrl_c_abandons_every_staged_line(self, capsys: Any) -> None:
-        c = conversation(
-            roll('Jimen', rank=2),
-            roll('Moriko', total=24, rank=1, minute=1),
-            roll('Tetsuro', total=30, rank=1, minute=2),
-        )
-        answers = iter(['1', 'n', 'y', ESCORTS, '1', '1'])
+    def test_the_hint_is_only_for_interrogation(self) -> None:
+        conv._open = conversation(roll('Jimen', 'law', 44))
+        with pytest.raises(conv.NotAnnotated) as caught:
+            conv.end_conversation(
+                get_body=lambda cid: {'bio': BIO},
+                update=lambda cid, **kw: None,
+                collector=lambda x: x,
+            )
+        assert 'new_line_of_questioning' not in str(caught.value)
+
+    def test_ctrl_c_abandons_every_staged_join(self, capsys: Any) -> None:
+        c = conversation(roll('Jimen', rank=2), roll('Moriko', total=24, rank=1, minute=1))
+        declared(c, ESCORTS)
+        answers = iter(['1', '1'])
 
         def ask(question: str) -> str:
             try:
                 return next(answers)
             except StopIteration:
-                raise KeyboardInterrupt from None  # at the third "which roll?"
+                raise KeyboardInterrupt from None
 
         ann.annotate(c, ask=ask)
-        assert all(r.line is None and r.note == '' and not r.grilling for r in c.rolls)
+        assert all(r.line is None and r.note == '' for r in c.rolls)
         assert 'nothing saved' in capsys.readouterr().out
-
-    def test_discard_at_the_join_prompt(self) -> None:
-        c = conversation(
-            roll('Jimen', rank=2, note=ESCORTS, line=1),
-            roll('Moriko', total=24, rank=1, minute=1),
-        )
-        ann.annotate(c, ask=Script('d'))
-        assert c.rolls[1].discarded
-        assert rules.render_lines(c.rolls, 'Otsuki') == [f'interrogation: 37@2 Jimen - {ESCORTS}']
-
-    def test_discard_at_the_new_or_discard_prompt(self) -> None:
-        c = conversation(roll('Jimen', rank=2))
-        ann.annotate(c, ask=Script('d'))
-        assert c.rolls[0].discarded
-        assert rules.render_lines(c.rolls, 'Otsuki', include_unannotated=True) == []
-
-    def test_a_discarded_rolls_line_id_is_not_reused_for_a_live_one(self) -> None:
-        """Harmless if it were - discarded rolls are on no line - but ids stay unique."""
-        c = conversation(
-            replace(roll('Jimen', rank=2, note='x', line=1), discarded=True),
-            roll('Moriko', total=24, rank=1, minute=1),
-        )
-        ann.annotate(c, ask=Script('n', '', ESCORTS))
-        assert c.rolls[1].line == 2
-
-    def test_re_annotating_onto_another_line_moves_the_roll(self) -> None:
-        """At the record level: a decision applied to an annotated roll replaces its line."""
-        first = roll('Jimen', rank=2, note=ESCORTS, line=1)
-        moved = ann._apply(first, ann.Decision(note=OPINION, line=2, rank=2))
-        assert (moved.line, moved.note) == (2, OPINION)
-        assert rules.render_lines([moved], 'Otsuki') == [f'interrogation: 37@2 Jimen - {OPINION}']
 
     def test_apply_never_sets_an_opposing_side(self) -> None:
         applied = ann._apply(roll('Jimen'), ann.Decision(note='x', line=1, grilling=True, rank=3))
@@ -502,7 +412,8 @@ class TestEverythingElseStillHolds:
         gmrolls.clear()
         gmrolls.record((10, 9, 8, 1), 3, 20, asked=(4, 3))
         c = conversation(roll('Jimen', rank=2))
-        script = Script('n', '', ESCORTS)
+        declared(c, ESCORTS)
+        script = Script('1')
         ann.annotate(c, ask=script, mine=gmrolls.recent)
         assert not script.was_asked('Which of yours?')
         assert 'Your recent rolls' not in capsys.readouterr().out

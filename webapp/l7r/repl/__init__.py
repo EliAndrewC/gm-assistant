@@ -27,8 +27,13 @@ from l7r.repl.rolls import (
     abandon_conversation,
     annotate,
     begin_conversation,
+    build_tags,
     conversation_status,
+    detected,
     end_conversation,
+    grilling,
+    new_line_of_questioning,
+    vp,
 )
 from l7r.repl.sheets import PC, PCS, knack_rank
 
@@ -46,19 +51,23 @@ __all__ = [
     'conversation_status',
     'd10',
     'discern_honor',
+    'detected',
     'dist',
     'end_conversation',
+    'grilling',
     'hamlet_name',
     'initiative',
     'knack_rank',
     'name',
     'names',
+    'new_line_of_questioning',
     'percent',
     'place',
     'province_name',
     'prob',
     'town_name',
     'village_name',
+    'vp',
     'xky',
 ]
 
@@ -98,6 +107,20 @@ COMMANDS: tuple[tuple[str, str], ...] = (
         'watch every channel for rolls and record them against that NPC',
     ),
     ('annotate()', 'say what each roll was for; only Etiquette is saved without it'),
+    (
+        'xky(5, 3) - tact',
+        "tag YOUR roll with its skill: records the NPC's Air 3 / tact 2, checks later rolls",
+    ),
+    (
+        'tact()',
+        'roll it for the NPC from the record: tact(2) states the rank, tact(5, 3), tact(vp)',
+    ),
+    ('acting(2)', 'record only (also history): adds its free raises to sincerity() etc.'),
+    (
+        'new_line_of_questioning("topic", roll)',
+        'interrogation rolls join it; roll = the hidden sincerity(); grilling() part way through',
+    ),
+    ('detected("Jimen", "what")', 'give one interrogator their own outcome, any time'),
     ('end_conversation()', "write the round into the NPC's Obsidian Portal bio and stop"),
     ('conversation_status()', 'what is open and the line so far; abandon_conversation() discards'),
 )
@@ -116,6 +139,10 @@ BANNER: frozenset[str] = frozenset(
         'discern_honor("Otsuki", Jimen)',
         'begin_conversation("Otsuki")',
         'annotate()',
+        'xky(5, 3) - tact',
+        'tact()',
+        'new_line_of_questioning("topic", roll)',
+        'detected("Jimen", "what")',
         'end_conversation()',
         'conversation_status()',
     }
@@ -138,6 +165,9 @@ def namespace() -> dict[str, Any]:
     for pc in PCS:  # Jimen, TsuruchiJimen, JIMEN, TSURUCHI_JIMEN ...
         ns.update(pc.constants)
     ns.update(GENDERS)
+    # Feature 207: `tact`, `sincerity` and the rest - one per skill in the rules.
+    # Built here rather than exported because the list is the rules file's, not ours.
+    ns.update(build_tags())
     return ns
 
 
