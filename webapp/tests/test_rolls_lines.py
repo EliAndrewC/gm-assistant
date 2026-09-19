@@ -284,7 +284,37 @@ class TestGrilling:
             lines.grilling()
 
 
+class TestCancelGrilling:
+    def test_the_exact_reverse_of_grilling(self, capsys: pytest.CaptureFixture[str]) -> None:
+        c = talking()
+        declare('the treasury', dice.xky(8, 3))
+        c.rolls.append(conv.attach(c, roll('Jimen', 25, rank=5, minute=1)))
+        before = rules.render_lines(c.rolls, 'Fumitake')
+        lines.grilling()
+        capsys.readouterr()
+        lines.cancel_grilling()
+        assert not c.lines[0].grilling
+        assert not c.rolls[0].grilling
+        assert (
+            '= Jimen 25 vs sincerity 18 (+10 not grilling): not detected' in capsys.readouterr().out
+        )
+        assert rules.render_lines(c.rolls, 'Fumitake') == before
+
+    def test_when_it_was_never_grilling(self, capsys: pytest.CaptureFixture[str]) -> None:
+        talking()
+        declare('the treasury')
+        lines.cancel_grilling()
+        assert 'was not recorded as grilling' in capsys.readouterr().out
+
+
 class TestDetected:
+    def test_a_mistaken_detection_is_canceled(self) -> None:
+        c = self.setup_rolls()
+        before = rules.render_lines(c.rolls, 'Fumitake')
+        lines.detected('jimen', 'he is lying about the amount')
+        lines.cancel_detected('Jimen')
+        assert rules.render_lines(c.rolls, 'Fumitake') == before
+
     def setup_rolls(self) -> Conversation:
         c = talking()
         declare('the treasury', minute=0)

@@ -443,6 +443,60 @@ def announce_oppose(conv: Conversation, roll: Roll) -> None:
                 say(f'  = {compared.describe()}')
 
 
+def cancel_oppose(pc: str | None = None, knack: str | None = None) -> None:
+    """A player's oppose roll was a MISTAKE - a typo, a roll meant for someone else.
+
+    Every other player roll is discarded from the `annotate()` menu, and an oppose
+    roll never reaches that menu, so a mistyped `52 oppose social` would tax every
+    Air roll for the rest of the scene. The GM, shown that gap (2026-09-19): *"if we
+    had some kind of cancel_* functions for stuff like that it would be good."*
+
+    NEVER A GUESS about which roll: with no name it cancels the one PC who has any,
+    and with no knack it cancels the one knack that PC has rolled; otherwise it
+    lists what is standing. A PC may hold a good Oppose Knowledge beside a mistyped
+    Oppose Social, and a canceled roll cannot be put back - it came from a Discord
+    post, not from this prompt. (The first version canceled everything the PC had;
+    the fidelity review caught that it would destroy the good roll with the bad.)
+    REPEAT rolls of the SAME knack do all go: highest-wins makes the second the
+    correction of the first. The roll is not written, the GM's tagged rolls are
+    re-priced, and the current line is re-run.
+    """
+    conv = _require()
+    standing = [(i, r) for i, r in enumerate(conv.rolls) if oppose.is_oppose(r) and not r.discarded]
+    names = sorted({rules.personal_name(r.character) for _, r in standing})
+    if pc is None:
+        if len(names) != 1:
+            raise ValueError(f'whose oppose roll? Standing: {", ".join(names) or "nobody"}.')
+        pc = names[0]
+    wanted = pc.strip().lower()
+    theirs = [
+        (index, roll)
+        for index, roll in standing
+        if wanted in (roll.character.strip().lower(), rules.personal_name(roll.character).lower())
+    ]
+    if not theirs:
+        raise ValueError(f'{pc} has no oppose roll. Standing: {", ".join(names) or "nobody"}.')
+    knacks = sorted({roll.skill.lower() for _, roll in theirs})
+    if knack is not None:
+        word = knack.strip().lower()
+        knacks = [k for k in knacks if word and (k == word or k.split()[-1].startswith(word))]
+    if len(knacks) != 1:
+        have = ', '.join(sorted({roll.skill.lower() for _, roll in theirs}))
+        raise ValueError(f"which of {pc}'s oppose rolls? They have: {have}.")
+    for index, gone in theirs:
+        if gone.skill.lower() == knacks[0]:
+            conv.rolls[index] = replace(gone, discarded=True)
+            print(f'Canceled {rules.personal_name(gone.character)} {gone.skill} {gone.total}.')
+    for change in oppose.settle(conv, gmrolls.recent()):
+        print(f'  = {change.describe(conv.npc_name)}')
+    for line in conv.lines[-1:]:
+        for other in conv.rolls:
+            if other.line == line.id and rules.is_interrogation(other) and not other.discarded:
+                compared = hidden.compare(conv, line, other)
+                if compared is not None:
+                    print(f'  = {compared.describe()}')
+
+
 def start_watching(conv: Conversation, *, interval: float = POLL_SECONDS, **kwargs: Any) -> None:
     """Poll in the background, following `shell.py`'s warm-cache daemon pattern.
 

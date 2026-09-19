@@ -29,3 +29,11 @@ lost its verb ("then it will All roles made by the NPC"); both are left exactly 
 
 No questions were put to the GM. Every point the request left open was settled by the session and
 is listed, as a session decision, under "Decisions the request left open" in [spec.md](spec.md).
+
+## Message 2 (2026-09-19), after delivery
+
+The session reported Decision 8 - a mistyped oppose roll could not be taken back, and the only
+recourse was `abandon_conversation()` - and asked whether the GM wanted a way. The GM:
+
+> Yes, that's a good point. I guess if we had some kind of cancel_* functions for stuff like that
+> it would be good.
