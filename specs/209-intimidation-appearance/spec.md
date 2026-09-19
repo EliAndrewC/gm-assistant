@@ -76,6 +76,16 @@ Independent `spec-fidelity` review (constitution XVI), against gm-request.md as 
   that re-asks on blank (the note). Two asides: the review ran alongside the implementation rather
   than before it; and the spec assumes the roller is a PC, as the request does.
 
+## Ruled after delivery
+
+- **An NPC's own intimidation roll needs nothing here** (GM 2026-09-19, asked because the prompt
+  always names the NPC as the one who appeared): *"we don't need to worry about NPCs rolling
+  intimidation. The only time that they would do that is if it is a contested intimidation roll
+  against a PC. So most PC intimidation rolls are open but all NPC rolls of intimidation are
+  contested."* An NPC's roll is therefore only ever the OPPOSING side of a PC's contested roll,
+  which `annotate()` already pairs, and the captured roll being annotated is always the PC's.
+  Do not add a "who appeared?" question.
+
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: Every annotated intimidation roll in a bio says how the NPC appeared.
