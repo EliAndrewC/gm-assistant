@@ -107,3 +107,45 @@ class TestIsSkill:
     def test_false_for_unknown_and_ambiguous(self, vocabulary: tuple[str, ...]) -> None:
         assert not is_skill('streetwise', vocabulary)
         assert not is_skill('int', vocabulary)
+
+
+class TestKnacksAndRings:
+    """Feature 207: `31 pontificate` parsed to nothing until the knacks joined."""
+
+    def test_pontificate_and_athletics_are_in_the_vocabulary(self) -> None:
+        from l7r.repl.rolls.skills import load_knacks
+
+        assert {'pontificate', 'athletics'} <= set(load_knacks())
+        assert {'pontificate', 'athletics'} <= set(load_skills())
+
+    def test_a_knack_that_is_never_rolled_is_left_out(self) -> None:
+        from l7r.repl.rolls.skills import load_knacks
+
+        assert 'conviction' not in load_knacks()
+        assert all(' ' not in knack for knack in load_knacks())
+
+    def test_a_missing_knack_file_is_no_knacks(self, tmp_path: Path) -> None:
+        from l7r.repl.rolls.skills import load_knacks
+
+        assert load_knacks(tmp_path / 'absent.md') == ()
+
+    def test_the_skill_list_alone(self) -> None:
+        from l7r.repl.rolls.skills import rules_skills
+
+        listed = rules_skills()
+        assert 'tact' in listed and 'attack' not in listed and 'pontificate' not in listed
+        assert len(listed) == 18
+
+    def test_rings_come_from_the_rules(self) -> None:
+        from l7r.repl.rolls.skills import rules_skills, skill_rings
+
+        rings = skill_rings()
+        assert rings['tact'] == 'air' and rings['law'] == 'water'
+        assert set(rules_skills()) <= set(rings)
+
+    def test_advanced_skills_come_from_the_rules(self) -> None:
+        from l7r.repl.rolls.skills import advanced_skills
+
+        assert advanced_skills() == frozenset(
+            {'acting', 'interrogation', 'manipulation', 'commerce', 'history', 'underworld'}
+        )
