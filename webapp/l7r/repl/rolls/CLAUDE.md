@@ -280,7 +280,10 @@ is unlike the rest of this menu, where a blank line finishes: the thresholds are
 the number cannot say which state it was, and the note has already been typed by then. It is asked
 LAST, in `_decide`, so it follows every way the roll can be recorded (open, `ob`, the rare contest)
 and never follows a discard. Stored in `Roll.outcome`, the field interrogation and acting use for
-what the players got; `rules.appeared_text` renders it and only for intimidation.
+what the players got; `rules.appeared_text` renders it and only for intimidation. The prompt
+always names the NPC, and that is right: the GM ruled (2026-09-19) that an NPC only ever rolls
+intimidation as the opposing side of a PC's CONTESTED roll, so the roll being annotated is always
+the PC's - do not add a "who appeared?" question.
 
 ## Two things that will bite you
 
