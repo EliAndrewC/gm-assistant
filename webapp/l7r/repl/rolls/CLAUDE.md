@@ -39,7 +39,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `discord.py` | Read-only REST. The bot holds permissions 66560 (View Channel + Read Message History) and there is no code here that could post. Snowflakes are synthesized from a timestamp; `before`/`after` are mutually exclusive in the API, so the far end is bounded in Python. |
 | `sheet.py` | The character-sheet app's roll-history client. **THOSE ENDPOINTS DO NOT EXIST YET** (spec: `character-sheet/externally-queryable-roll-results.md`). Every failure degrades to empty with a reason; nothing raises. |
 | `console.py` | `print_above` - writes from the watcher thread WITHOUT stomping the prompt: `\r\x1b[K` erases the prompt line, the message goes there, then the prompt and whatever the GM had typed are redrawn beneath it. TTY only; a pipe gets a plain print. |
-| `annotate.py` | The `annotate()` menu. **What it asks depends on the skill's MODE** (`modes.py`, feature 207): always-open skills are asked only what the roll was for; default-open ones arrive with open SELECTED and a two-press keystroke undoes it; manipulation and sneaking go straight to the opposing roll (`f` = 15 no roll made, `n` = nobody opposed it, `t` = type a total); acting takes a HIDDEN opposing roll and an outcome; everything else keeps open (`o`), contested (`c`), discard (`d`), open with a bonus (`ob`). A GM roll TAGGED with the opposing skill is paired without asking. An INTERROGATION roll reaches the menu only when it is on no line (join a declared line, or discard) or has no rank. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
+| `annotate.py` | The `annotate()` menu. **What it asks depends on the skill's MODE** (`modes.py`, feature 207): always-open skills are asked only what the roll was for; default-open ones arrive with open SELECTED and a two-press keystroke undoes it; manipulation and sneaking go straight to the opposing roll (`f` = 15 no roll made, `n` = nobody opposed it, `t` = type a total); acting takes a HIDDEN opposing roll and an outcome; everything else keeps open (`o`), contested (`c`), discard (`d`), open with a bonus (`ob`); an INTIMIDATION roll is then asked how the NPC appeared (feature 209). A GM roll TAGGED with the opposing skill is paired without asking. An INTERROGATION roll reaches the menu only when it is on no line (join a declared line, or discard) or has no rank. Ctrl-C discards EVERYTHING staged in that run, which is the literal reading of the GM's "not save anything" and the behavior most likely to sting. Blank finishes and commits. |
 | `modes.py` | What each skill's roll MAY be - one mode per vocabulary entry, and a test that reads the rules file fails when a skill has none. Also the default OUTCOMES and the manipulation default of 15. Written out rather than derived: each row is a ruling. |
 | `npcnumbers.py` | PURE. The NPC's rings and ranks: the `NPC numbers:` block in the GM-only notes, reading a pool into ring + rank (less school dice and declared void points), the disagreement and its void point answer, and the acting/history automatic raises. Schools with an extra die are PARSED from the rules. |
 | `npcskills.py` | `tact`, `sincerity`, ... at the prompt: `xky(5, 3) - tact` tags a roll, `tact()` / `tact(2)` / `tact(5, 3)` / `tact(vp)` roll for the NPC. The disagreement prompt, where Ctrl-C is an ANSWER (the roll was a mistake). `acting(2)` and `history(3)` record and never roll. |
@@ -264,6 +264,23 @@ line of questioning - what happens to the rolls already on it is a real question
 Three things that review struck, recorded in `specs/208-oppose-penalties/spec.md`: a tool-written
 note on the public line, reading the ring mapping from the rules text, and a discard command the
 session had built before the GM asked for one (it came back as `cancel_oppose` once they had).
+
+## Feature 209: an intimidation line says how the NPC APPEARED
+
+```
+30 intimidation: Jimen - threatening to have him arrested: Fumitake appeared unsettled
+```
+
+After what the roll was for, `annotate()` asks `How did Fumitake appear?` - stoic, unsettled,
+rattled or shaken (`modes.APPEARANCES`, the GM's words; pick by number, the word, or an unambiguous
+start - a bare `s` asks again). **APPEARED, never "was" or "felt"** (GM 2026-09-19: *"rather than
+asserting that they actually did feel that way"*): an NPC can put on a face, and the intimidation
+thresholds are hidden from the players by rule. **The choice is REQUIRED and has no default**, which
+is unlike the rest of this menu, where a blank line finishes: the thresholds are set per scene, so
+the number cannot say which state it was, and the note has already been typed by then. It is asked
+LAST, in `_decide`, so it follows every way the roll can be recorded (open, `ob`, the rare contest)
+and never follows a discard. Stored in `Roll.outcome`, the field interrogation and acting use for
+what the players got; `rules.appeared_text` renders it and only for intimidation.
 
 ## Two things that will bite you
 

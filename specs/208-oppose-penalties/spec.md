@@ -266,6 +266,8 @@ Settled by the session without asking (the GM starts work and leaves). Each is c
    mistake, but the rolls already on the line raise a real question (back to the previous line, or
    back to no line and asked about again?) that a guess would get wrong in a permanent record. It
    is raised with the GM instead.
+   **RULED by the GM (2026-09-19): not wanted** - *"I don't think it makes sense to cancel a line of
+   questioning ... So let's not worry about that."* Do not build it.
 
 ## Review history
 

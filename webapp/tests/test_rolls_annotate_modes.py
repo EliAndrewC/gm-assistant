@@ -350,3 +350,74 @@ class TestFullMenuIsUnchanged:
         run(c, 'c', '1', '', '', 'the warrant')
         assert c.rolls[0].bonus_self == 10
         assert 'vs your law 1' in capsys.readouterr().out
+
+
+class TestIntimidationAppearance:
+    """Feature 209: the line says how the NPC APPEARED, never how they felt."""
+
+    def test_the_note_then_one_of_four_states(self) -> None:
+        c = conversation(roll('Tsuruchi Jimen', 'intimidation', 32))
+        script = run(c, 'threatening to have him arrested', 'u')
+        assert script.was_asked('How did Fumitake appear? (1. stoic / 2. unsettled')
+        assert rules.render_lines(c.rolls, 'Hida no Reiji Fumitake') == [
+            '30 intimidation: Jimen - threatening to have him arrested: Fumitake appeared unsettled'
+        ]
+
+    @pytest.mark.parametrize(
+        ('answer', 'state'),
+        [
+            ('1', 'stoic'),
+            ('st', 'stoic'),
+            ('Rattled', 'rattled'),
+            ('4', 'shaken'),
+            ('sh', 'shaken'),
+        ],
+    )
+    def test_by_number_word_or_an_unambiguous_start(self, answer: str, state: str) -> None:
+        c = conversation(roll('Jimen', 'intimidation', 32))
+        run(c, 'looming', answer)
+        assert c.rolls[0].outcome == state
+
+    def test_a_choice_is_required_and_a_bare_s_is_ambiguous(self, capsys: Any) -> None:
+        c = conversation(roll('Jimen', 'intimidation', 32))
+        script = run(c, 'looming', '', 's', '9', 'calm', 'r')
+        assert len([q for q in script.asked if 'appear?' in q]) == 5
+        assert 'one of: stoic, unsettled, rattled, shaken' in capsys.readouterr().out
+        assert c.rolls[0].outcome == 'rattled'
+
+    def test_a_bonus_and_the_rare_contest_are_asked_too(self) -> None:
+        c = conversation(
+            roll('Jimen', 'intimidation', 32, rank=2), roll('Moriko', 'intimidation', 41, minute=1)
+        )
+        gm(28, (5, 3))
+        run(c, '1', 'ob', '5', 'looming', '2', 'c', '1', '', '', 'staring him down', 'shaken')
+        assert rules.render_lines(c.rolls, 'Fumitake') == [
+            '35 intimidation: Jimen - looming: Fumitake appeared unsettled',
+            'Moriko vs Fumitake intimidation: 41 vs 28, Moriko wins by >=10 staring him down'
+            ': Fumitake appeared shaken',
+        ]
+
+    def test_a_discard_a_finish_and_ctrl_c_ask_nothing_and_save_nothing(self) -> None:
+        c = conversation(
+            roll('Jimen', 'intimidation', 32), roll('Rei', 'intimidation', 20, minute=1)
+        )
+        script = run(c, '1', 'd', '')
+        assert not script.was_asked('appear?')
+        assert c.rolls[0].discarded
+        abandoned = run(c, 'looming', KeyboardInterrupt())
+        assert abandoned.was_asked('appear?')
+        assert c.rolls[1].note == ''
+
+    def test_no_other_skill_is_asked_or_changed(self) -> None:
+        c = conversation(roll('Jimen', 'bragging', 32))
+        script = run(c, 'his deeds at the wall')
+        assert not script.was_asked('appear?')
+        assert rules.render_lines(c.rolls, 'Fumitake') == [
+            '30 bragging: Jimen - his deeds at the wall'
+        ]
+
+    def test_a_bare_roll_saved_on_exit_has_no_clause(self) -> None:
+        c = conversation(roll('Jimen', 'intimidation', 32))
+        assert rules.render_lines(c.rolls, 'Fumitake', include_unannotated=True) == [
+            '30 intimidation: Jimen'
+        ]
