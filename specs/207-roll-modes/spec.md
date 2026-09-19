@@ -80,21 +80,35 @@ A player rolls history. The GM is not asked the kind; the prompt reads as open a
 for. Nothing is pre-entered that a bare Enter would accept - an empty answer re-asks (or finishes,
 as blank does today). To make it contested instead, the GM undoes the selection.
 
-**The undo is a typed answer, not a keystroke**: a bare `c`, `ob` or `d` as the ENTIRE answer to
-the what-was-it-for prompt switches the kind. The GM floated backspace-twice or left-arrow-twice on
-an empty line; that is not reachable through `input()` and readline, which cannot call back into
-Python on a key, and replacing the line reader would fight the history suppression (2026-09-09) and
-the injected prompts the tests drive. The typed form costs one key plus Enter, and no real note is
-one of those three tokens. **Proposed by the session and not yet explicitly accepted - see Open
-Questions.**
+**The undo is a KEYSTROKE** (GM, message 4: *"I would really like to have keystrokes detected"*).
+With the line still empty, pressing Backspace or Left Arrow undoes the selection and the full
+`o/c/d/ob` question is asked instead. The session first proposed a typed answer on the grounds that
+readline cannot call back into Python on a key; that is true of readline and beside the point,
+because the key can be read from the terminal BEFORE readline is handed the line: the prompt is
+printed, one key is read with the terminal in cbreak mode, and then either the selection is undone
+or that key is fed back as the first character of an ordinary readline-edited line. So the note
+keeps full line editing and the quiet-history behavior (2026-09-09).
+
+**One accepted limit, recorded so it is not mistaken for a bug**: the undo is recognized only while
+NOTHING has been typed. Once a character is in, the line belongs to readline, and deleting back to
+empty and pressing Backspace again does nothing. Lifting that means replacing readline for these
+prompts (a full line editor such as prompt_toolkit), which was priced and declined as far more
+machinery than the case deserves. **One press, not the GM's floated two**: on an empty line
+Backspace and Left Arrow have no other meaning, so a second press would buy nothing - one constant
+to change if an accidental undo ever happens in play.
+
+Where there is no terminal (a pipe, the tests), the key read is skipped and a bare `c`, `ob` or `d`
+as the whole answer switches kind; that typed form also works at a terminal.
 
 **Acceptance Scenarios**:
 
 1. **Given** a history roll, **When** the GM types a note, **Then** it is written as an open line
-   with one answer given.
-2. **Given** a history roll, **When** the GM answers `c`, **Then** the contested flow runs
-   (opposing roll, bonuses, note) exactly as today.
+   with one answer given, and the first character typed is not lost.
+2. **Given** a history roll and an empty line, **When** the GM presses Backspace or Left Arrow,
+   **Then** the full kind question is asked and `c` runs the contested flow exactly as today.
 3. **Given** an investigation roll, **Then** it behaves as history does.
+4. **Given** a pasted note, or one starting with a non-ASCII character, **Then** it arrives whole.
+5. **Given** Ctrl-C at the key read, **Then** it abandons the run exactly as at any other prompt.
 
 ### User Story 4 - Manipulation always has an opposing tact roll, 15 by default (Priority: P1)
 
@@ -125,9 +139,20 @@ the roll is written like an open line, rounded down to 5, with no marker:
 ### User Story 6 - A line of questioning is declared by the GM, with the hidden Sincerity roll (Priority: P1)
 
 The GM calls `new_line_of_questioning("Fumitake's contributions to the Wasp treasury",
-xky(8, 3) + 10)`. Interrogation rolls made AFTER that call and before the next one belong to that
-line. Interrogation rolls made BEFORE the conversation's FIRST call belong to the first line. The
-Sincerity roll is optional - the GM does not roll it when the NPC is simply telling the truth - and
+xky(8, 3) + 10)` - normally BEFORE the players roll, since players ask whether it is a new line
+before rolling again. Interrogation rolls made AFTER that call and before the next one belong to
+that line.
+
+**Earlier rolls are never pulled in silently; the GM is asked about each** (message 4). When the
+function is called and there are PREVIOUS interrogation rolls that might belong to the new line, it
+prompts once per roll: part of this line, or discard. Two kinds of roll qualify, and no others:
+
+- a roll on NO line yet - the case the GM named, a player rolling before the first declaration;
+- a REPEAT roll on the line being left - a PC's second or later roll there. The skill is rolled
+  once per line of questioning, so a second roll is either the new topic's roll made early or a
+  mistake. Joining is the default answer; a PC's FIRST roll on the old line is never asked about.
+
+The Sincerity roll is optional - the GM does not roll it when the NPC is simply telling the truth - and
 the public record MUST look the same either way.
 
 The public line groups the rollers as Etiquette does, but exact and ranked, and ends with what they
@@ -141,8 +166,11 @@ interrogation: 37@2 Jimen / 24@1 Moriko - Fumitake's contributions to the Wasp t
 
 1. **Given** one line declared and two interrogation rolls after it, **Then** one public line
    lists both, highest first, with the default outcome.
-2. **Given** a roll captured before the first `new_line_of_questioning` call, **Then** it joins
-   that first line.
+2. **Given** a roll captured before the first `new_line_of_questioning` call, **When** the GM
+   makes that call, **Then** they are asked whether the roll joins the line or is discarded, and
+   it is never attached without being asked.
+2a. **Given** Jimen has rolled twice on the current line, **When** the GM declares a new line,
+   **Then** they are asked about Jimen's second roll only, with joining the new line the default.
 3. **Given** two lines declared, **Then** rolls go to the line that was current when each was
    made, and two public lines are written.
 4. **Given** a line declared with no Sincerity roll, **Then** the public line is identical in
@@ -170,6 +198,28 @@ interrogation: 37@2 Jimen - Fumitake's contributions to the Wasp treasury: he is
    line carrying that outcome.
 3. **Given** the PC rolled on several lines, **Then** the GM can say which line is meant, and the
    current line is the default.
+
+### User Story 7a - Grilling, declared up front or part way through (Priority: P1)
+
+The rules give the NPC 2 free raises when the interrogator is speaking casually rather than
+grilling. A line is NOT grilling unless the GM says so: `new_line_of_questioning(description, roll,
+grilling=True)`. When a player starts grilling midway, the GM calls `grilling()`: the current line
+becomes a grilling line, the casual-conversation raises the NPC had been given are taken back
+RETROACTIVELY for every roll on the line, the private comparisons are printed again with the new
+numbers, and the public line gains `(grilling)`. A second `grilling()` on the same line changes
+nothing and says that grilling was already recorded.
+
+**Acceptance Scenarios**:
+
+1. **Given** a line declared without `grilling`, **Then** the NPC's side of every private
+   comparison carries the 2 casual free raises and the public line has no `(grilling)`.
+2. **Given** `grilling()` is called after two rolls, **Then** both comparisons are recomputed
+   without those raises and reprinted, and the public line is rewritten with `(grilling)`.
+3. **Given** `grilling()` is called again on that line, **Then** a message says it was already
+   recorded and nothing else happens.
+4. **Given** `grilling()` with no line declared, **Then** an error says to declare one first.
+
+---
 
 ### User Story 8 - The repl tells the GM, privately, how the contest stands (Priority: P2)
 
@@ -235,10 +285,6 @@ totals, who won. It is rewritten in place as the conversation goes, never stacke
   function. The interpreter-exit path writes it bare, as feature 206 specifies.
 - A typed interrogation or acting roll has no recorded rank: `annotate()` asks for the rank and
   nothing else (206's FR-007); until then the roll is written without `@N`.
-- Whether the interrogator was GRILLING (206, public, per line) still needs a home now that the
-  menu that asked it is gone - see Open Questions.
-- The realistic order at the table is ask, players roll, THEN the GM rolls Sincerity and declares
-  the line - which, read literally, attaches those rolls to the PREVIOUS line. See Open Questions.
 - A roll marked as a detection and later discarded leaves no line behind.
 - `detected()` names a PC with no interrogation roll in the conversation: an error naming the PCs
   who have one.
@@ -265,16 +311,25 @@ totals, who won. It is rewritten in place as the conversation goes, never stacke
   and athletics, READ from the rules repository like the skills are.
 - **FR-003**: ALWAYS OPEN skills MUST never be offered contested. Open-with-bonus and discard MUST
   stay reachable.
-- **FR-004**: DEFAULT OPEN skills MUST skip the kind question with open selected, MUST NOT accept a
-  bare Enter as a note, and MUST let the GM switch to contested, open-with-bonus or discard from
-  that same prompt.
+- **FR-004**: DEFAULT OPEN skills MUST skip the kind question with open selected and MUST NOT
+  accept a bare Enter as a note. At a terminal, Backspace or Left Arrow on the still-empty line MUST
+  undo the selection and ask the full kind question; any other first key MUST become the first
+  character of a normally edited line. Without a terminal the typed `c` / `ob` / `d` form MUST work.
 - **FR-005**: Manipulation MUST always be written as a contest. Its picker MUST offer "15, no roll
   made" whether or not the GM has recent rolls, and choosing it MUST presume an opposing rank of 0.
 - **FR-006**: Sneaking MUST never be offered open. Its picker MUST offer "nobody opposed it", which
   MUST write the open-shaped line rounded down to 5 with no marker.
-- **FR-007**: `new_line_of_questioning(description[, sincerity roll])` MUST open a line of
-  questioning in the open conversation. Interrogation rolls attach to the line current when they
-  were MADE (message time, not capture time); rolls made before the first line attach to it.
+- **FR-007**: `new_line_of_questioning(description[, sincerity roll][, grilling=False])` MUST open
+  a line of questioning in the open conversation. Interrogation rolls attach to the line current
+  when they were MADE (message time, not capture time).
+- **FR-007a**: On that call the GM MUST be prompted, once per roll, about every interrogation roll
+  on no line and every REPEAT roll by the same PC on the line being left: part of the new line, or
+  discard. No earlier roll may join a line without being asked about, and no other roll is asked
+  about.
+- **FR-007b**: `grilling()` MUST mark the current line as grilling, remove the casual-conversation
+  free raises from the NPC's side for every roll on the line, reprint the comparisons, and rewrite
+  the public line with `(grilling)`. Called again on the same line it MUST change nothing and say
+  so.
 - **FR-008**: A line's public form MUST be
   `interrogation[ (grilling)]: <roll>[@<rank>] <name> / ... - <description>: <outcome>`, with the
   default outcome `nothing hidden detected`, identical whether or not a Sincerity roll was given.
@@ -326,18 +381,22 @@ totals, who won. It is rewritten in place as the conversation goes, never stacke
   tidied forms and are one constant each to change.
 - A detection splits to its own line rather than being marked inline; the GM offered either.
 
+## Resolved with the GM (message 4)
+
+- Rolls that precede their line: prompted per roll at declaration, never silent (Story 6).
+- Grilling: `grilling=False` by default, plus a retroactive `grilling()` (Story 7a).
+- The undo is a real keystroke (Story 3).
+- Acting's outcome needs NO change-it-later path: *"The worst case scenario is that I can just edit
+  Obsidian Portal directly."*
+
 ## Open Questions (for the GM, before the scope closes)
 
-1. **Rolls that precede their own line.** At the table the players usually roll BEFORE the GM has
-   rolled Sincerity and called `new_line_of_questioning`, so under the literal rule the second
-   topic's rolls attach to the FIRST line. Proposed: keep the literal rule as the default and let
-   `annotate()` move an interrogation roll to a different declared line. Alternative: a roll made
-   within N seconds before a declaration joins the NEW line.
-2. **Grilling.** Proposed: `new_line_of_questioning(description, roll, grilling=True)`, default not
-   grilling, as 206's prompt defaulted.
-3. **The typed undo** (`c` / `ob` / `d` as the whole answer) in place of a keystroke - acceptable?
-4. **Does acting need the late-change path interrogation has?** Proposed: no - the outcome is set
-   when annotating, and re-running `annotate()` on the roll changes it.
+1. **Who adds the casual-conversation raises - the GM or the tool?** In
+   `new_line_of_questioning("Chizuru's death", xky(8, 3) + 10)`, is that `+ 10` the NPC's 2 casual
+   free raises, already included by hand? `grilling()` can only "subtract the free raises which the
+   NPC received" if the tool knows they are there. Proposed: the TOOL adds them to a non-grilling
+   line, and whatever the GM adds to the roll is everything else (the unprovable-lie raises,
+   situational ones). The wrong reading double-counts 10 silently, so this one is asked.
 
 ## Review history
 

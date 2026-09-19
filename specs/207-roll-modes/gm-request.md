@@ -1,6 +1,6 @@
 # GM request, verbatim (2026-09-19)
 
-Three messages in the "Discord repl" session, plus the session's questions between them and the
+Four messages in the "Discord repl" session, plus the session's questions between them and the
 GM's answers. Nothing the GM said has been edited. **The GM dictates by voice-to-text, and says so
 in message 1**: read "role(s)", "holes", "tools" and "rule(s)" as "roll(s)" wherever dice are meant,
 "Don" as "Dan", and "tapped value" / "attacks" / "tech" as "tact value" / "tact" / "tact".
@@ -177,6 +177,42 @@ It also proposed a `detected("Jimen", "...")` style function for marking a detec
 > Go ahead and write this into a spec kit feature. However, I have more things that I want the
 > feature to cover, so do not begin the implementation yet. I want to resolve any of your questions
 > about what we have talked about so far before talking about additional aspects to this feature.
+
+### What the session asked after writing the draft spec
+
+1. Rolls made BEFORE their own line is declared - move them in `annotate()`, or a time window?
+2. Grilling: `new_line_of_questioning(desc, roll, grilling=True)`, default not grilling?
+3. Is the typed undo (`c` / `ob` / `d` as the whole answer) acceptable in place of a keystroke?
+4. Does acting need a change-the-outcome-later path? Proposed: no.
+
+## Message 4
+
+> Most of the time, with lines of questioning, I will explicitly call
+> `new_line_of_questioning("Chizuru's death", xky(8, 3) + 10)` before the players roll
+> interrogation.  Sometimes on the very first line of questioning a player will roll interrogation
+> before I have a chance to do this, which is why I want it denoted here.  Players always ask me
+> whether it's a new line of questioning before they roll another interrogation roll... though I
+> suppose if a player makes a second interrogation roll within the same line of questioning, and
+> then I start a new line of questioning, then the default thing should probably be to pull that
+> roll into this one. But it might be worth some kind of menu option about that. So maybe instead
+> of pulling in previous interrogation rolls automatically, then when I call the new line of
+> questioning function, if there is a previous interrogation roll, then for each previous
+> interrogation roll, then I am prompted to say whether that role should be discarded or treated as
+> part of this line of questioning.
+>
+> Good point about grilling. Yes. We do want to be able to specify grilling and have it false by
+> default. However, sometimes a player will begin grilling an NPC midway through the line of
+> questioning. In this case, I think I want to be able to call a `grilling()` function which will
+> retroactively subtract the free raises which the NPC received. If I call grilling twice within
+> the same line of interrogation, then the second function should just print a message saying that
+> the grilling was already recorded as happening or something..
+>
+> I don't think that we need acting outcome to be able to be changed later. The worst case scenario
+> is that I can just edit Obsidian Portal directly, so that's fine.
+>
+> I would really like to have keystrokes detected. So is there a way that we are able to do that by
+> pulling from the TTY or something? like I know that we're using readline now but in theory we
+> don't have to, right?
 
 ## Rules-file edits made on the GM's instruction (2026-09-19, uncommitted; the GM handles git there)
 
