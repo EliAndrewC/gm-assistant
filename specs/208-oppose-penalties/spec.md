@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-19
 
-**Status**: Draft
+**Status**: Implemented 2026-09-19.
 
 **Input**: GM request 2026-09-19, reproduced verbatim in [gm-request.md](gm-request.md). Builds on
 feature 201 (roll capture), 206 (lines of questioning) and 207 (the NPC's tagged rolls, the hidden
@@ -116,23 +116,22 @@ Two PCs both roll Oppose Social: Jimen 32 (-6), then Moriko 41 (-8). The penalty
    roll changes nothing.
 3. **Given** Oppose Social 32 and Oppose Knowledge 41, **Then** Air rolls take -6 and Water rolls
    take -8: the two knacks never combine or compete.
-4. **Given** an oppose roll the GM later discards as a mistake, **Then** it stops counting.
 
 ### User Story 5 - The oppose roll is part of the conversation's record (Priority: P2)
 
-The roll is written to the NPC's public bio in the sequence of the conversation, in the open-roll
-shape, with a note the tool writes itself - the GM is asked nothing:
+The roll is written to the NPC's public bio in the sequence of the conversation, in the existing
+open-roll shape with NO note - the GM is asked nothing and the tool authors nothing:
 
 ```
-30 oppose social: Jimen - Otsuki takes -6 on Air rolls
+30 oppose social: Jimen
 ```
 
 **Acceptance Scenarios**:
 
 1. **Given** a captured oppose roll, **When** the conversation writes, **Then** the line above
    appears in sequence with the other rolls, the total rounded down to 5 like any open roll.
-2. **Given** a second, lower oppose roll, **Then** its line says it changed nothing; a second,
-   higher one says whose penalty it replaced.
+2. **Given** a second oppose roll, higher or lower, **Then** it is written the same bare way in
+   its own place in the sequence. What it changed is said in the terminal only.
 
 ### Edge Cases
 
@@ -145,8 +144,9 @@ shape, with a note the tool writes itself - the GM is asked nothing:
 - The manipulation default of 15 ("no roll made") is not a roll and takes no penalty.
 - An oppose roll from a poster with no known character is reported as unresolved, like any roll.
 - A roll marked a mistake at the disagreement prompt takes no penalty.
-- The rules file is missing or an oppose knack's text no longer names a ring: that knack has no
-  effect and nothing fails.
+- The rules text cannot be read, or no longer says what FR-003 says: the tool REPORTS it to the GM
+  when the conversation opens and still applies the penalty as the GM stated it. A silently inert
+  knack is the one failure the GM cannot see at the table.
 
 ## Requirements *(mandatory)*
 
@@ -158,8 +158,10 @@ shape, with a note the tool writes itself - the GM is asked nothing:
 - **FR-002**: Capturing the two-word knacks MUST NOT change how any existing message parses; the
   real-message corpus count is the regression fixture.
 - **FR-003**: The penalty MUST be the roll's total divided by 5, rounded down. Oppose Social applies
-  to rolls made with Air; Oppose Knowledge to rolls made with Water. Which ring each knack affects
-  MUST be read from the rules text, not copied.
+  to rolls made with Air; Oppose Knowledge to rolls made with Water. That mapping is the GM's own
+  statement and is the authority. The rules text MAY be used as a consistency check on it and MUST
+  NOT be its source - note that each knack's `**Ring:**` header names the ring it is ROLLED with,
+  which is the opposite ring.
 - **FR-004**: An oppose roll MUST take effect with no input from the GM, MUST NOT be offered by
   `annotate()`, and MUST NOT hold `end_conversation()` open.
 - **FR-005**: From the oppose roll's message time onward, every roll the tool knows the NPC made
@@ -174,12 +176,11 @@ shape, with a note the tool writes itself - the GM is asked nothing:
   as its line's roll).
 - **FR-009**: Several oppose rolls of the same knack MUST NOT stack: the highest live one in effect
   at the time of the NPC's roll is the one applied. The two knacks are independent of each other.
-  A discarded oppose roll MUST stop counting.
 - **FR-010**: The penalty on a hidden Sincerity roll MUST appear only in the terminal and the
   GM-only `Hidden rolls:` block, never in the public bio. The public interrogation line MUST be
   byte-identical with and without an oppose roll.
 - **FR-011**: The oppose roll itself MUST be written to the public bio in conversation order, in
-  the open-roll shape, with a tool-written note naming the penalty and the ring.
+  the existing open-roll shape with no tool-authored note (`30 oppose social: Jimen`).
 - **FR-012**: With no conversation open, nothing is subtracted from any roll.
 - **FR-013**: The tool owns this penalty everywhere. The GM is never expected to subtract it by
   hand, and the tool never adjusts anything else the GM typed onto a roll.
@@ -193,11 +194,12 @@ shape, with a note the tool writes itself - the GM is asked nothing:
 - **NPC roll**: the GM's recorded roll, which now carries the penalty it took separately from the
   bonuses the GM typed, so the two are never confused.
 
+
 ## Decisions the request left open
 
 Settled by the session without asking (the GM starts work and leaves). Each is cheap to reverse.
 
-1. **The oppose roll is written to the bio** (FR-011). The request says the rolls "do not even need
+1. **The oppose roll is written to the bio, bare** (FR-011). The request says the rolls "do not even need
    to be annotated", which presumes they are recorded; the player knows their own roll and the
    rules make the penalty public arithmetic, so nothing leaks. Declined: recording it nowhere
    (the conversation's record would then not explain why the NPC's later totals are low).
@@ -217,6 +219,33 @@ Settled by the session without asking (the GM starts work and leaves). Each is c
    arithmetic (the character-sheet app owns it).
 7. **"Once per conversation" is not enforced.** A second roll by the same PC is handled by
    highest-wins like any other; policing the table is the GM's job.
+
+8. **An oppose roll, once captured, cannot be taken back** - a gap this spec records and does not
+   close. It follows from the GM's own two rules (no annotation, highest wins) meeting a mistyped
+   roll: every other player roll is discarded from the `annotate()` menu, and these never reach
+   it. The only recourse today is `abandon_conversation()`. A correction path is raised with the
+   GM on delivery rather than invented here.
+
+## Review history
+
+Independent `spec-fidelity` review (constitution XVI), against gm-request.md as written.
+
+- **Round 1 - CHANGES REQUIRED** (2026-09-19). (1) FR-011 had the tool write a note into the
+  public bio ("Otsuki takes -6 on Air rolls", plus two variants); the GM said the rolls "do not
+  even need to be annotated", and every line shape in this package is GM-dictated. Struck: the
+  line is the bare open one, and what a roll changed is said in the terminal only. (2) FR-003
+  made the rules text the source of the ring mapping and let a knack go silently inert when it
+  could not be read; the GM stated the mapping himself. Now normative, with the rules text as a
+  reported consistency check. Decisions 2-7, FR-005 and FR-007 were found faithful.
+
+- **Round 2 - CHANGES REQUIRED** (2026-09-19). Both round-1 changes confirmed applied. The session
+  had added a command for taking back a mistyped oppose roll (a user story, FR-014, Decision 8).
+  Ruled "beyond, not contrary - and beyond is enough": the GM-facing surface of this package is
+  GM-dictated, the same reasoning that struck the tool-authored bio line. Struck, with its
+  dependents (US4 scenario 4, FR-009's last sentence); the gap is recorded as Decision 8.
+- **Round 3 - FAITHFUL** (2026-09-19). All five round-2 changes confirmed applied, in the code as
+  well as the spec; nothing in the request missing, nothing beyond it. The reviewer's one aside:
+  Decision 8 wants a one-line ruling from the GM on delivery.
 
 ## Success Criteria *(mandatory)*
 

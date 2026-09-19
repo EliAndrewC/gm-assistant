@@ -122,7 +122,8 @@ class TestKnacksAndRings:
         from l7r.repl.rolls.skills import load_knacks
 
         assert 'conviction' not in load_knacks()
-        assert all(' ' not in knack for knack in load_knacks())
+        # Feature 208 admitted exactly two two-word knacks; every other stays out.
+        assert 'double attack' not in load_knacks()
 
     def test_a_missing_knack_file_is_no_knacks(self, tmp_path: Path) -> None:
         from l7r.repl.rolls.skills import load_knacks

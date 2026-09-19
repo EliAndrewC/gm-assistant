@@ -106,6 +106,16 @@ DEFAULT_RULE = RecordingRule()
 #: entry here, the same way another cap is one entry in `RecordingRule.caps`.
 EXEMPT_FROM_ANNOTATION = frozenset({'etiquette'})
 
+#: Feature 208. Skills written IN SEQUENCE like any annotated roll, but with no note
+#: and nothing asked: the oppose knacks, of which the GM said *"they do not even need
+#: to be annotated. They can just automatically begin their effect."* Not part of
+#: `EXEMPT_FROM_ANNOTATION` because that set is also what GROUPS etiquette into one
+#: highest-first line, and where an oppose roll fell in the conversation is the
+#: point of writing it - every NPC total after it is lower because of it. The line
+#: is the bare open one (`30 oppose social: Jimen`); the fidelity review struck a
+#: tool-written note, since every line shape here is one the GM dictated.
+WRITTEN_BARE = frozenset(modes.AUTOMATIC)
+
 
 #: A free raise adds 5 - `rules/02-skills.md:66`.
 FREE_RAISE = 5
@@ -162,7 +172,8 @@ def needs_annotation(roll: Roll) -> bool:
     """
     if roll.discarded:
         return False
-    return roll.skill.lower() not in EXEMPT_FROM_ANNOTATION and not roll.annotated
+    skill = roll.skill.lower()
+    return skill not in EXEMPT_FROM_ANNOTATION | WRITTEN_BARE and not roll.annotated
 
 
 def free_raises(mine: int | None, theirs: int | None) -> tuple[int, int]:
@@ -439,7 +450,7 @@ def render_lines(
             continue
         if roll.skill.lower() in EXEMPT_FROM_ANNOTATION:
             continue
-        if not (roll.annotated or include_unannotated):
+        if not (roll.annotated or include_unannotated or roll.skill.lower() in WRITTEN_BARE):
             continue
         if not is_interrogation(roll):
             lines.append(render_annotated(roll, npc, rule))

@@ -43,7 +43,7 @@ import importlib
 from collections.abc import Callable
 
 from l7r.repl import dice, gmrolls
-from l7r.repl.rolls import npcnumbers
+from l7r.repl.rolls import npcnumbers, oppose
 from l7r.repl.rolls.models import Conversation
 from l7r.repl.rolls.skills import advanced_skills, load_skills, rules_skills, skill_rings
 
@@ -159,6 +159,24 @@ def resolve(
         print(f'  record corrected: {reading.ring_name.capitalize()} {reading.ring}')
 
 
+def taxed(conv: Conversation, total: dice.DiceTotal, skill: str) -> dice.DiceTotal:
+    """Take a player's Oppose Social / Oppose Knowledge off an NPC roll (feature 208).
+
+    BOTH forms pay it - `tact()` and `xky(5, 3) - tact` - unlike the automatic acting
+    and history RAISES, which only the called form adds. That rule exists because the
+    GM already types the acting `+ 10` onto an `xky` roll by hand; nobody types this
+    penalty by hand, and automating it is the whole of the GM's request (2026-09-19:
+    *"automatically apply the penalties ... All rolls made by the NPC"*). The penalty
+    is SET on the recorded roll, apart from the GM's own bonus, so it is never
+    subtracted twice and `_ + 15` afterwards still lands on the right number.
+    """
+    found = oppose.penalize(conv, total.entry, skill)
+    if found is None:
+        return total
+    print(f'  {found.describe()}: {total.entry.total}')
+    return dice.DiceTotal(total.entry.total, total.entry)
+
+
 def reading_without(reading: npcnumbers.Reading, void_points: int) -> npcnumbers.Reading:
     """The same reading with `void_points` dice taken back out of the ring."""
     return npcnumbers.Reading(
@@ -193,7 +211,8 @@ class SkillTag:
             print(f'  tagged {self.name} - no conversation is open, so nothing is recorded.')
             return total
         self._check(conv, entry, ask or _ask)
-        return total
+        # AFTER the check: a roll the GM called a mistake there pays nothing.
+        return taxed(conv, total, self.name)
 
     def __rsub__(self, other: object) -> object:
         """A plain number minus a tag: there is no roll behind it to tag."""
@@ -306,6 +325,10 @@ class SkillTag:
         rank = max(0, rolled - kept - extra)
         total = self._roll(conv, rolled + spent, kept + spent, rank, spent)
         self._check(conv, total.entry, ask)
+        if total.entry.mistake:
+            # `_roll` priced the oppose penalty before the GM called the roll a
+            # mistake; re-deriving it takes it back off (a mistake pays nothing).
+            oppose.penalize(conv, total.entry, self.name)
         return total
 
     def _roll(
@@ -327,7 +350,7 @@ class SkillTag:
         for source, source_rank, bonus in npcnumbers.automatic_raises(self.name, conv.numbers):
             total = total + bonus
             print(f'  +{bonus} {source} {source_rank}')
-        return total
+        return taxed(conv, total, self.name)
 
 
 def build_tags() -> dict[str, SkillTag]:

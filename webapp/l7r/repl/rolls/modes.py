@@ -21,6 +21,7 @@ from typing import Literal
 
 Mode = Literal[
     'exempt',
+    'automatic',
     'always_open',
     'default_open',
     'contested_required',
@@ -31,6 +32,11 @@ Mode = Literal[
 
 #: Never annotated at all (feature 202): presumed to be introductions.
 EXEMPT = ('etiquette',)
+
+#: Feature 208: takes effect by itself and is never offered by `annotate()` - *"they
+#: do not even need to be annotated. They can just automatically begin their
+#: effect."* Written bare, in sequence (`rules.WRITTEN_BARE` is derived from this).
+AUTOMATIC = ('oppose knowledge', 'oppose social')
 
 #: May ONLY be open. Pontificate's own rule says so - *"when making an uncontested
 #: roll"* (`rules/05-school_knacks.md`) - and the GM ruled the same for athletics.
@@ -92,6 +98,7 @@ FULL_MENU = (
 
 _GROUPS: tuple[tuple[Mode, tuple[str, ...]], ...] = (
     ('exempt', EXEMPT),
+    ('automatic', AUTOMATIC),
     ('always_open', ALWAYS_OPEN),
     ('default_open', DEFAULT_OPEN),
     ('contested_required', CONTESTED_REQUIRED),

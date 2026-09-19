@@ -101,6 +101,21 @@ _CLUSTER = re.compile(
     re.I,
 )
 
+#: The same cluster with a TWO-WORD name: `32 oppose social@3` (feature 208). Run as
+#: a pass of its own, BEFORE the one-word cluster, and only against the vocabulary's
+#: multi-word names - so it can claim `32 oppose social` whole, and so nothing about
+#: how a one-word skill parses changes (the corpus count is the proof). Without it
+#: the one-word pass reads `32 oppose`, finds the word ambiguous between the two
+#: oppose knacks, and reports a problem for a perfectly clear message.
+_PHRASE = re.compile(
+    r'(?<![-+@\w.:/])(?P<total>\d{1,3})[^\S\n]*'
+    + _RANK.format('r1', 'r1b')
+    + r'?[^\S\n]*(?P<skill>[A-Za-z]{3,20}[^\S\n]+[A-Za-z]{3,20})\b[^\S\n]*'
+    + _RANK.format('r2', 'r2b')
+    + r'?',
+    re.I,
+)
+
 #: The leading-`@` form: `@27 Tact`. `@` is excluded from the main cluster's
 #: lookbehind above so this form is matched HERE and only here - otherwise both
 #: patterns fire on the same text and the roll is recorded twice (measured, and it
@@ -141,32 +156,42 @@ def parse_message(
     problems: list[str] = []
     claimed: set[int] = set()
 
-    for match in _CLUSTER.finditer(clean):
-        total = int(match.group('total'))
-        rank = _rank_of(match)
-        skill = _resolve(match.group('skill'), vocabulary, problems)
-        if skill is None:
+    # ORDER MATTERS: the phrase pass runs first and BLANKS what it claims, so the
+    # one-word pass never sees half of `32 oppose social`. Blanked, not deleted -
+    # `claimed` holds positions, and `_AT_FIRST` below checks them.
+    phrases = tuple(name for name in vocabulary if ' ' in name)
+    for pattern, words in ((_PHRASE, phrases), (_CLUSTER, vocabulary)):
+        if not words:
             continue
-        if total < MIN_TOTAL:
-            continue
-        if rank is not None and rank > MAX_RANK:
-            problems.append(
-                f'{match.group(0).strip()!r}: rank {rank} is above the maximum of '
-                f'{MAX_RANK}, so this was not recorded'
+        for match in pattern.finditer(clean):
+            total = int(match.group('total'))
+            rank = _rank_of(match)
+            phrase = ' '.join(match.group('skill').split())
+            skill = _resolve(phrase, words, problems)
+            if skill is None:
+                continue
+            if total < MIN_TOTAL:
+                continue
+            if rank is not None and rank > MAX_RANK:
+                problems.append(
+                    f'{match.group(0).strip()!r}: rank {rank} is above the maximum of '
+                    f'{MAX_RANK}, so this was not recorded'
+                )
+                continue
+            claimed.update(range(match.start(), match.end()))
+            rolls.append(
+                Roll(
+                    character=character,
+                    skill=skill,
+                    total=total,
+                    source='typed',
+                    message_id=message_id,
+                    at=when,
+                    rank=rank,
+                )
             )
-            continue
-        claimed.update(range(match.start(), match.end()))
-        rolls.append(
-            Roll(
-                character=character,
-                skill=skill,
-                total=total,
-                source='typed',
-                message_id=message_id,
-                at=when,
-                rank=rank,
-            )
-        )
+        if pattern is _PHRASE:
+            clean = ''.join(' ' if i in claimed else ch for i, ch in enumerate(clean))
 
     for match in _AT_FIRST.finditer(clean):
         if match.start() in claimed:

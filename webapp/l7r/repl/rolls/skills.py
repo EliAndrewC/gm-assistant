@@ -35,6 +35,14 @@ COMBAT_SKILLS: tuple[str, ...] = ('attack', 'parry')
 #: captured. So we should make sure that we are capturing them."*
 KNACKS_PATH = RULES_PATH.with_name('05-school_knacks.md')
 
+#: The TWO-WORD knacks a player can post as a roll (feature 208). Every other knack
+#: here is a single word because the parser read one skill word beside a number; the
+#: oppose knacks earned a phrase pass of their own (`parse.py`) because they change
+#: every later roll in the conversation and the GM was carrying that by hand. The
+#: other two-word knacks (`double attack`, ...) stay out ON PURPOSE: each would need a
+#: ruling on how `annotate()` treats it (`modes.py`), and nobody has made one.
+MULTIWORD_KNACKS: tuple[str, ...] = ('oppose knowledge', 'oppose social')
+
 _SECTION = re.compile(r'^## Skill List$(.*?)^## ', re.M | re.S)
 _BULLET = re.compile(r'^- ([A-Za-z][A-Za-z ]*?)\s*$', re.M)
 
@@ -95,7 +103,8 @@ def load_knacks(path: Path = KNACKS_PATH) -> tuple[str, ...]:
     with a `**Ring:**` line, and the ones that are never rolled say `N/A` (Absorb
     Void, Conviction, Discern Honor, ...). SINGLE-WORD only, because the parser's
     rule is one skill word beside a number - `double attack 31` cannot be read by
-    it, and admitting `attack` there would file the roll under the wrong name.
+    it, and admitting `attack` there would file the roll under the wrong name. The
+    one exception is `MULTIWORD_KNACKS`, which the parser reads in a pass of its own.
 
     A missing file means no knacks, not an error: the skill list is what the
     feature cannot work without, and this file arrived later.
@@ -105,7 +114,8 @@ def load_knacks(path: Path = KNACKS_PATH) -> tuple[str, ...]:
     found = []
     for match in _KNACK.finditer(path.read_text(encoding='utf-8')):
         name = match.group('name').strip().lower()
-        if match.group('ring').strip().upper() != 'N/A' and ' ' not in name:
+        rolled = match.group('ring').strip().upper() != 'N/A'
+        if rolled and (' ' not in name or name in MULTIWORD_KNACKS):
             found.append(name)
     return tuple(found)
 
@@ -158,12 +168,25 @@ def match_skill(word: str, vocabulary: tuple[str, ...]) -> str:
         raise UnknownSkill('empty skill name')
     if candidate in vocabulary:
         return candidate
-    hits = tuple(s for s in vocabulary if s.startswith(candidate))
+    hits = tuple(s for s in vocabulary if s.startswith(candidate) or _abbreviates(candidate, s))
     if len(hits) == 1:
         return hits[0]
     if hits:
         raise AmbiguousSkill(word, hits)
     raise UnknownSkill(f'{word!r} is not a skill in the rules')
+
+
+def _abbreviates(candidate: str, name: str) -> bool:
+    """`opp soc` for `oppose social`: each typed word abbreviates the word in its place.
+
+    Only ever true of a multi-word name. A single typed word is left to the plain
+    prefix test, which is what makes a bare `oppose` AMBIGUOUS between the two oppose
+    knacks rather than a guess at one of them.
+    """
+    typed, words = candidate.split(), name.split()
+    if len(words) < 2 or len(typed) != len(words):
+        return False
+    return all(word.startswith(part) for part, word in zip(typed, words, strict=True))
 
 
 def is_skill(word: str, vocabulary: tuple[str, ...]) -> bool:
