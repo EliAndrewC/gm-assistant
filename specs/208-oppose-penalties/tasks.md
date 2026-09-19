@@ -18,4 +18,5 @@
 - [x] T015 `tests/test_rolls_oppose.py`, then the whole rolls suite
 - [x] T016 Docs: `rolls/CLAUDE.md` "Feature 208", `repl/CLAUDE.md` gmrolls row
 - [x] T017 Fidelity round 3 verdict recorded in spec.md
+- [x] T019 GM message 2: `cancel_oppose`, `cancel_grilling`, `cancel_detected` (US6)
 - [x] T018 `make done` green; commit; `sync-with-main.sh done`

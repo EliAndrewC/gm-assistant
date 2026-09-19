@@ -133,6 +133,36 @@ open-roll shape with NO note - the GM is asked nothing and the tool authors noth
 2. **Given** a second oppose roll, higher or lower, **Then** it is written the same bare way in
    its own place in the sequence. What it changed is said in the terminal only.
 
+### User Story 6 - A mistake that took effect by itself can be canceled (Priority: P2)
+
+Added on the GM's second message (gm-request.md, Message 2): *"if we had some kind of cancel_*
+functions for stuff like that it would be good."* "That" was an oppose roll that could not be taken
+back. Three functions, one per effect in this package that begins the moment it is recorded and
+had no way back:
+
+- `cancel_oppose("Jimen")` - the PC's oppose roll stops counting and is not written; the NPC rolls
+  priced under it are re-priced and the current line re-run. With no name it cancels the one PC who
+  has made any, and lists them when there are several; likewise `cancel_oppose("Jimen", "social")`
+  names the knack, needed only when that PC has a live roll of BOTH - the knacks are independent
+  (FR-009), and a canceled roll came from Discord and cannot be put back.
+- `cancel_grilling()` - the exact reverse of `grilling()` on the current line.
+- `cancel_detected("Jimen")` - the PC rejoins the default outcome. `detected()` could already
+  CHANGE an outcome but refuses empty words, so nothing could restore the default.
+
+**Acceptance Scenarios**:
+
+1. **Given** Jimen's Oppose Social 52 and a tagged tact roll made under it, **When** the GM calls
+   `cancel_oppose()`, **Then** the tact roll returns to its unpenalized total, later Air rolls
+   take nothing, and the bio carries no oppose line.
+2. **Given** two PCs with oppose rolls and no name given, or a name with none, **Then** the call is
+   an error listing who has one.
+   Likewise a PC with a live roll of both knacks and no knack named: an error listing them, and
+   canceling one leaves the other standing.
+3. **Given** `grilling()` then `cancel_grilling()`, **Then** the public line and the private
+   comparison are exactly what they were before.
+4. **Given** `detected("Jimen", ...)` then `cancel_detected("Jimen")`, **Then** the written lines
+   are exactly what they were before.
+
 ### Edge Cases
 
 - An oppose roll posted just before the GM rolls for the NPC, but not yet seen by the 20-second
@@ -184,6 +214,10 @@ open-roll shape with NO note - the GM is asked nothing and the tool authors noth
 - **FR-012**: With no conversation open, nothing is subtracted from any roll.
 - **FR-013**: The tool owns this penalty everywhere. The GM is never expected to subtract it by
   hand, and the tool never adjusts anything else the GM typed onto a roll.
+- **FR-014**: The GM MUST be able to cancel ONE oppose roll (by PC and knack, either omitted only
+  when it is unambiguous; repeat rolls of the same knack by the same PC go together), a line's
+  grilling flag, and a PC's detected outcome, each returning the conversation to exactly the state
+  before the mistake. A cancel MUST never guess which roll is meant.
 
 ### Key Entities
 
@@ -224,7 +258,14 @@ Settled by the session without asking (the GM starts work and leaves). Each is c
    close. It follows from the GM's own two rules (no annotation, highest wins) meeting a mistyped
    roll: every other player roll is discarded from the `annotate()` menu, and these never reach
    it. The only recourse today is `abandon_conversation()`. A correction path is raised with the
-   GM on delivery rather than invented here.
+   GM on delivery rather than invented here. **CLOSED by the GM's second message** - see User
+   Story 6.
+9. **Which effects "stuff like that" covers** (Message 2). Read as: effects in this package that
+   begin the moment they are recorded and had no way back - the oppose roll, `grilling()`, and
+   `detected()`. NOT built: canceling a declared line of questioning. It is the same kind of
+   mistake, but the rolls already on the line raise a real question (back to the previous line, or
+   back to no line and asked about again?) that a guess would get wrong in a permanent record. It
+   is raised with the GM instead.
 
 ## Review history
 
@@ -246,6 +287,15 @@ Independent `spec-fidelity` review (constitution XVI), against gm-request.md as 
 - **Round 3 - FAITHFUL** (2026-09-19). All five round-2 changes confirmed applied, in the code as
   well as the spec; nothing in the request missing, nothing beyond it. The reviewer's one aside:
   Decision 8 wants a one-line ruling from the GM on delivery.
+- **Amendment (GM message 2), round 1 - CHANGES REQUIRED** (2026-09-19). The three-function
+  reading of "cancel_* functions for stuff like that" was found faithful (one function would have
+  been too narrow; the shared property is irreversibility), and deferring line-cancel to the GM
+  was accepted. One finding: `cancel_oppose` canceled ALL of a PC's oppose rolls, which would
+  destroy a good Oppose Knowledge beside a mistyped Oppose Social - against FR-009's independence
+  and FR-014's "exactly the state before". Narrowed to one knack, never guessed. FR-014 also moved
+  into the requirements list.
+- **Amendment, round 2 - FAITHFUL** (2026-09-19). Both changes confirmed in the spec, the code,
+  the package index and the tests.
 
 ## Success Criteria *(mandatory)*
 

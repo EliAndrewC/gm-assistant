@@ -11,12 +11,19 @@ from l7r.repl.rolls.annotate import annotate
 from l7r.repl.rolls.conversation import (
     abandon_conversation,
     begin_conversation,
+    cancel_oppose,
     close_open_conversation,
     collect,
     conversation_status,
     end_conversation,
 )
-from l7r.repl.rolls.lines import detected, grilling, new_line_of_questioning
+from l7r.repl.rolls.lines import (
+    cancel_detected,
+    cancel_grilling,
+    detected,
+    grilling,
+    new_line_of_questioning,
+)
 from l7r.repl.rolls.models import Contest, Conversation, RecordingRule, Roll
 from l7r.repl.rolls.npcskills import build_tags, vp
 from l7r.repl.rolls.rules import contest, record, render_contest, render_open, round_down
@@ -30,6 +37,9 @@ __all__ = [
     'annotate',
     'begin_conversation',
     'build_tags',
+    'cancel_detected',
+    'cancel_grilling',
+    'cancel_oppose',
     'close_open_conversation',
     'collect',
     'contest',

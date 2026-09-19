@@ -433,6 +433,63 @@ class TestCollecting:
         assert 'vs sincerity' not in capsys.readouterr().out
 
 
+class TestCanceling:
+    def test_a_mistaken_roll_is_taken_back_everywhere(self, capsys: Any) -> None:
+        c = talking(social('Tsuruchi Jimen', 52, minute=2))
+        declare('the treasury', 48, minute=1)
+        c.rolls.append(conv.attach(c, roll('Moriko', 'interrogation', 50, minute=3)))
+        tact = gm(22, tagged='tact', minute=3)
+        oppose.settle(c, gmrolls.recent())
+        assert tact.total == 12
+        conv.cancel_oppose()
+        out = capsys.readouterr().out
+        assert 'Canceled Jimen oppose social 52.' in out
+        assert 'Fumitake tact 12 -> 22' in out
+        assert 'Moriko 50 vs sincerity 48 (+10 not grilling): not detected' in out
+        assert tact.total == 22
+        assert not any('oppose' in text for text in rules.render_lines(c.rolls, 'Fumitake'))
+
+    def test_by_name_with_no_line_and_a_line_with_no_sincerity_roll(self) -> None:
+        c = talking(social('Jimen', 52), social('Moriko', 30))
+        conv.cancel_oppose('jimen')
+        assert [p.roll.character for p in oppose.live(c.rolls)] == ['Moriko']
+        declare('the treasury', minute=2)
+        c.rolls.append(conv.attach(c, roll('Rei', 'interrogation', 50, minute=3)))
+        conv.cancel_oppose('Moriko')
+        assert oppose.live(c.rolls) == []
+
+    def test_who_is_a_question_when_it_is_not_obvious(self) -> None:
+        talking(social('Jimen', 52), social('Moriko', 30))
+        with pytest.raises(ValueError, match='whose oppose roll\\? Standing: Jimen, Moriko'):
+            conv.cancel_oppose()
+        with pytest.raises(ValueError, match='Rei has no oppose roll. Standing: Jimen, Moriko'):
+            conv.cancel_oppose('Rei')
+
+    def test_a_good_roll_of_the_other_knack_is_never_taken_with_it(self) -> None:
+        """The fidelity review's catch: the two knacks are independent, and a canceled
+        roll came from Discord and cannot be put back."""
+        c = talking(
+            social('Jimen', 52),
+            social('Jimen', 25, minute=1),
+            roll('Jimen', 'oppose knowledge', 41, minute=2),
+        )
+        with pytest.raises(ValueError, match='which of Jimen.s oppose rolls'):
+            conv.cancel_oppose()
+        with pytest.raises(ValueError, match='They have: oppose knowledge, oppose social'):
+            conv.cancel_oppose('Jimen', 'basketweaving')
+        conv.cancel_oppose('Jimen', 'soc')
+        assert [(p.knack, p.roll.total) for p in oppose.live(c.rolls)] == [('oppose knowledge', 41)]
+        conv.cancel_oppose(knack='oppose knowledge')
+        assert oppose.live(c.rolls) == []
+
+    def test_with_none_standing(self) -> None:
+        talking()
+        with pytest.raises(ValueError, match='Standing: nobody'):
+            conv.cancel_oppose()
+        with pytest.raises(ValueError, match='Standing: nobody'):
+            conv.cancel_oppose('Jimen')
+
+
 class TestPairingInAnnotate:
     def run(self, c: Conversation, *answers: str) -> None:
         queue = list(answers)

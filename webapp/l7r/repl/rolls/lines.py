@@ -196,6 +196,28 @@ def grilling() -> None:
     _compare_all(conv, line)
 
 
+def cancel_grilling() -> None:
+    """`grilling()` was a mistake: the current line goes back to casual conversation.
+
+    One of the `cancel_*` family the GM asked for (2026-09-19): *"if we had some kind
+    of cancel_* functions for stuff like that it would be good"* - "that" being an
+    effect which begins by itself and could not be taken back. The exact reverse of
+    `grilling()`: the casual raises return to every roll on the line, and the public
+    line loses `(grilling)`.
+    """
+    conv = conversation.require_open()
+    line = _current(conv)
+    if not line.grilling:
+        print(f'"{line.description}" was not recorded as grilling.')
+        return
+    line.grilling = False
+    for index, roll in enumerate(conv.rolls):
+        if roll.line == line.id and rules.is_interrogation(roll):
+            conv.rolls[index] = replace(roll, grilling=False)
+    print(f'Grilling canceled for "{line.description}" - the casual free raises are back.')
+    _compare_all(conv, line)
+
+
 def detected(pc: str, what: str, line: int | None = None) -> None:
     """Say what one interrogator GOT, at any point in the conversation.
 
@@ -205,10 +227,24 @@ def detected(pc: str, what: str, line: int | None = None) -> None:
     gets their own written line under the same topic. `line` is the line's number in
     the order declared; the current line when omitted.
     """
-    conv = conversation.require_open()
     outcome = what.strip()
     if not outcome:
         raise ValueError('say what they detected')
+    _set_outcome(pc, outcome, line)
+
+
+def cancel_detected(pc: str, line: int | None = None) -> None:
+    """`detected()` was a mistake: that PC rejoins the default outcome's group.
+
+    `detected()` can already be called again to CHANGE what a PC got, but nothing
+    could put them back to *"nothing hidden detected"* - it refuses empty words, on
+    purpose, so a slip of the keyboard cannot erase an outcome. This is the way back.
+    """
+    _set_outcome(pc, '', line)
+
+
+def _set_outcome(pc: str, outcome: str, line: int | None) -> None:
+    conv = conversation.require_open()
     target = _current(conv, line)
     wanted = pc.strip().lower()
     on_line = [

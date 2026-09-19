@@ -43,7 +43,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `modes.py` | What each skill's roll MAY be - one mode per vocabulary entry, and a test that reads the rules file fails when a skill has none. Also the default OUTCOMES and the manipulation default of 15. Written out rather than derived: each row is a ruling. |
 | `npcnumbers.py` | PURE. The NPC's rings and ranks: the `NPC numbers:` block in the GM-only notes, reading a pool into ring + rank (less school dice and declared void points), the disagreement and its void point answer, and the acting/history automatic raises. Schools with an extra die are PARSED from the rules. |
 | `npcskills.py` | `tact`, `sincerity`, ... at the prompt: `xky(5, 3) - tact` tags a roll, `tact()` / `tact(2)` / `tact(5, 3)` / `tact(vp)` roll for the NPC. The disagreement prompt, where Ctrl-C is an ANSWER (the roll was a mistake). `acting(2)` and `history(3)` record and never roll. |
-| `lines.py` | `new_line_of_questioning`, `grilling`, `detected`. Replaces 206's join-or-new menu. |
+| `lines.py` | `new_line_of_questioning`, `grilling`, `detected`, and `cancel_grilling` / `cancel_detected` (feature 208). Replaces 206's join-or-new menu. |
 | `hidden.py` | PURE. The `Hidden rolls:` block in the GM-only notes - each line's Sincerity roll, each acting roll's opposing investigation - and the advisory who-won arithmetic. **Nothing here may reach the bio**; `tests/test_rolls_hidden.py` renders both halves from one conversation and checks. |
 | `oppose.py` | PURE. Feature 208: a player's Oppose Social / Oppose Knowledge taxes the NPC's later Air / Water rolls. The penalty in effect is DERIVED from the conversation's rolls (highest live oppose roll at or before the moment - never stored, never summed); `for_line` is the one retroactive case; `settle` re-prices tagged GM rolls when an oppose roll is collected late. |
 | `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
@@ -253,15 +253,17 @@ oppose roll, and says which moved.
 phrase pass that runs BEFORE the one-word cluster and blanks what it claims. `double attack` and
 the rest stay out until someone rules on their `annotate()` mode.
 
-**AN OPPOSE ROLL CANNOT BE TAKEN BACK - a known gap, raised with the GM, not yet ruled on.** Every
-other player roll is discarded from the `annotate()` menu; these never reach it, so a mistyped
-`52 oppose social` taxes the rest of the scene and the only recourse is `abandon_conversation()`.
-The derivation already ignores a `discarded` oppose roll, so whatever the GM chooses (a command, an
-`annotate()` entry, nothing) is a small change. A session built a command for it and the
-spec-fidelity review struck it: a new GM-facing command is the GM's to dictate.
+**`cancel_*` takes back an effect that began by itself** (GM 2026-09-19, shown that a mistyped
+oppose roll had no way back: *"if we had some kind of cancel_* functions for stuff like that it would
+be good"*). `cancel_oppose("Jimen", "social")` (the name and the knack are each needed only when ambiguous - it NEVER guesses, because a PC may hold a good roll of the other knack and a canceled roll cannot be put back), `cancel_grilling()`,
+`cancel_detected("Jimen")`. Each returns the conversation to EXACTLY the state before the mistake,
+and the tests assert that by comparing the rendered lines. The derivation already ignored a
+`discarded` oppose roll, so canceling one is a flag plus `settle`. NOT built: canceling a declared
+line of questioning - what happens to the rolls already on it is a real question, put to the GM.
 
 Three things that review struck, recorded in `specs/208-oppose-penalties/spec.md`: a tool-written
-note on the public line, reading the ring mapping from the rules text, and that discard command.
+note on the public line, reading the ring mapping from the rules text, and a discard command the
+session had built before the GM asked for one (it came back as `cancel_oppose` once they had).
 
 ## Two things that will bite you
 
