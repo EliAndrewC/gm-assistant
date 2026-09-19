@@ -43,7 +43,7 @@ import importlib
 from collections.abc import Callable
 
 from l7r.repl import dice, gmrolls
-from l7r.repl.rolls import npcnumbers, oppose
+from l7r.repl.rolls import menu, npcnumbers, oppose
 from l7r.repl.rolls.models import Conversation
 from l7r.repl.rolls.skills import advanced_skills, load_skills, rules_skills, skill_rings
 
@@ -61,6 +61,15 @@ def _ask(question: str) -> str:
     module = importlib.import_module('l7r.repl.rolls.annotate')
     asker: Ask = module.ask_quietly
     return asker(question)
+
+
+# Feature 210: this reads the real terminal, so a choice asked through it is a menu.
+menu.terminal_asker(_ask)
+
+#: The disagreement's answers. "Mistake" comes first and so starts highlighted: it is
+#: also what Ctrl-C means at that prompt, and the answer that changes nothing.
+MISTAKE = menu.Option('m', 'the roll was a mistake - roll it again', ('mistake',))
+RECORD_WRONG = menu.Option('r', 'the record was wrong - correct it', ('record',))
 
 
 def _open() -> Conversation | None:
@@ -134,12 +143,17 @@ def resolve(
     choices = ['[m] the roll was a mistake (or Ctrl-C)', '[r] the record was wrong']
     if found.void_answer:
         choices.append(f'[v] {found.void_answer}')
-    print('    ' + '   '.join(choices))
+    if not menu.interactive(ask):  # at a terminal the menu below IS this list
+        print('    ' + '   '.join(choices))
     allowed = 'mrv' if found.void_answer else 'mr'
+    rows = [MISTAKE, RECORD_WRONG]
+    if found.void_answer:
+        rows.append(menu.Option('v', found.void_answer))
     answer = ''
     while answer not in tuple(allowed):
         try:
-            answer = ask('    > ').strip().lower()[:1]
+            title = f'    {conv.npc_name}: which is it?'
+            answer = menu.ask_choice(ask, '    > ', title, rows).strip().lower()[:1]
         except KeyboardInterrupt, EOFError:
             print()
             answer = 'm'
@@ -286,11 +300,14 @@ class SkillTag:
         if recorded == stated:
             return stated
         print(f'  ! {conv.npc_name}: {self.name} {recorded} recorded, you said {stated}.')
-        print('    [m] I made a mistake (or Ctrl-C)   [r] the record was wrong')
+        if not menu.interactive(ask):  # at a terminal the menu below IS this list
+            print('    [m] I made a mistake (or Ctrl-C)   [r] the record was wrong')
         answer = ''
         while answer not in ('m', 'r'):
             try:
-                answer = ask('    > ').strip().lower()[:1]
+                title = f'    {conv.npc_name}: which is it?'
+                answer = menu.ask_choice(ask, '    > ', title, (MISTAKE, RECORD_WRONG))
+                answer = answer.strip().lower()[:1]
             except KeyboardInterrupt, EOFError:
                 print()
                 answer = 'm'

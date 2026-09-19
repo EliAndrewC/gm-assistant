@@ -42,7 +42,8 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 
 from l7r.repl import gmrolls
-from l7r.repl.rolls import hidden, keys, modes, oppose, rules
+from l7r.repl.rolls import console, hidden, keys, menu, modes, oppose, rules
+from l7r.repl.rolls.menu import Option
 from l7r.repl.rolls.models import Conversation, Roll
 
 Ask = Callable[[str], str]
@@ -76,13 +77,23 @@ def ask_quietly(question: str, *, reader: Ask = input) -> str:
     and removing on a blank would delete real history.
     """
     before = _history_length()
-    answer = reader(question)
+    # `asking`: so a roll announced meanwhile redraws THIS question, not `>>> `.
+    with console.asking(question):
+        answer = reader(question)
     with contextlib.suppress(ImportError):
         import readline
 
         if readline.get_current_history_length() > before:
             readline.remove_history_item(readline.get_current_history_length() - 1)
     return answer
+
+
+# Feature 210: answers asked through this come from the real terminal, so a CHOICE
+# asked through it may be an arrow-key menu. A test's scripted `ask` never is.
+menu.terminal_asker(ask_quietly)
+
+#: The row that does what a blank line does at a typed prompt.
+FINISH = Option('', 'finish - keep what is staged')
 
 
 @dataclass(frozen=True)
@@ -197,10 +208,37 @@ def _prompt(ask: Ask, question: str) -> str:
         raise Abandoned from exc
 
 
-def _choose(ask: Ask, question: str, count: int, *, allow_blank: bool = False) -> int | None:
+def _select(
+    ask: Ask, question: str, title: str, options: Sequence[Option], *, selected: int = 0
+) -> str:
+    """One CHOICE (feature 210): an arrow-key menu at a terminal, `question` typed
+    anywhere else. Either way the answer is what the GM would have typed, and Ctrl-C
+    or Ctrl-D is one abandonment - exactly as `_prompt` makes it."""
+    try:
+        return menu.ask_choice(ask, question, title, options, selected=selected).strip()
+    except (KeyboardInterrupt, EOFError) as exc:
+        raise Abandoned from exc
+
+
+def _listed(ask: Ask, heading: str, rows: Sequence[str], indent: str = '    ') -> list[Option]:
+    """Rows to choose from by number. Typed, they are PRINTED as a numbered list under
+    `heading`; at a terminal the menu itself is the list, so printing it too would
+    show everything twice."""
+    if not menu.interactive(ask):
+        print(heading)
+        for position, row in enumerate(rows, start=1):
+            print(f'{indent}{position}. {row}')
+    return [Option(str(position), row) for position, row in enumerate(rows, start=1)]
+
+
+def _choose(
+    ask: Ask, question: str, title: str, options: Sequence[Option], *, allow_blank: bool = False
+) -> int | None:
     """A 1-based menu choice. None when the GM finishes with a blank line."""
+    count = len(options)
+    offered = [*options, FINISH] if allow_blank else options
     while True:
-        answer = _prompt(ask, question)
+        answer = _select(ask, question, title, offered)
         if not answer and allow_blank:
             return None
         if answer.isdigit() and 1 <= int(answer) <= count:
@@ -213,6 +251,15 @@ def _choose(ask: Ask, question: str, count: int, *, allow_blank: bool = False) -
 
 #: The answers the kind prompt accepts, after `_kind` has normalized them.
 KINDS = ('o', 'c', 'd', 'ob')
+
+#: The same four as rows of a menu (feature 210), plus the blank line's "finish".
+KIND_OPTIONS = (
+    Option('o', 'open', ('open',)),
+    Option('c', 'contested', ('contested',)),
+    Option('d', 'discard', ('discard',)),
+    Option('ob', 'open with a bonus', ('b', 'bonus')),
+    FINISH,
+)
 
 
 def _kind(answer: str) -> str:
@@ -276,18 +323,23 @@ def _interrogate(ask: Ask, roll: Roll, conv: Conversation) -> Decision | None:
         rank = _optional_number(ask, f"  {who}'s interrogation rank? [none] > ")
         return Decision(rank=rank, rank_only=True)
     if conv.lines:
-        print('  Lines of questioning:')
-        for position, line in enumerate(conv.lines, start=1):
-            flag = '(grilling) ' if line.grilling else ''
-            print(f'    {position}. {flag}{line.description}')
+        rows = _listed(
+            ask,
+            '  Lines of questioning:',
+            [f'{"(grilling) " if ln.grilling else ""}{ln.description}' for ln in conv.lines],
+        )
+        rows += [Option('d', 'discard'), FINISH]
         question = '  Which line? (number, d to discard, blank to finish) > '
+        title = '  Which line of questioning?'
         hint = '  ? a line number, d to discard, or blank to finish'
     else:
         print('  No line of questioning yet - new_line_of_questioning("...") declares one.')
+        rows = [Option('', 'leave it for now'), Option('d', 'discard')]
         question = '  Discard it? [d to discard, blank to leave it for now] > '
+        title = '  Discard it?'
         hint = '  ? d to discard, or blank to leave it'
     while True:
-        answer = _prompt(ask, question).lower()
+        answer = _select(ask, question, title, rows).lower()
         if not answer:
             return None
         if answer[:1] == 'd':
@@ -380,10 +432,10 @@ def _opposing(
     if not mine:
         print('  You have no recent rolls to contest against. Recording it as open.')
         return None
-    print('  Your recent rolls:')
-    for position, entry in enumerate(mine, start=1):
-        print(f'    {position}. {entry.describe()}  [implies {entry.skill}]')
-    chosen = _choose(ask, '  Which of yours? (number) > ', len(mine))
+    rows = _listed(
+        ask, '  Your recent rolls:', [f'{e.describe()}  [implies {e.skill}]' for e in mine]
+    )
+    chosen = _choose(ask, '  Which of yours? (number) > ', '  Which of your rolls?', rows)
     assert chosen is not None  # allow_blank is False
     opponent = mine[chosen]
     their_skill = rules.opposed_by(roll.skill)
@@ -476,9 +528,11 @@ def _full_menu(menu: _Menu, roll: Roll) -> Decision | None:
     kind = ''
     while kind not in KINDS:
         kind = _kind(
-            _prompt(
+            _select(
                 menu.ask,
                 '  Open, contested, discard, or open with bonus? [o/c/d/ob, blank to finish] > ',
+                '  Open, contested, discard, or open with bonus?',
+                KIND_OPTIONS,
             )
         )
         if not kind:
@@ -544,10 +598,18 @@ def _pick(
     - `t` - TYPE a total, for a roll made away from the prompt.
     """
     their_skill = rules.opposed_by(roll.skill)
+    rows: list[Option] = []
     if menu.mine:
-        print('  Your recent rolls:')
-        for position, entry in enumerate(menu.mine, start=1):
-            print(f'    {position}. {entry.describe()}  [implies {entry.skill}]')
+        rows = _listed(
+            menu.ask,
+            '  Your recent rolls:',
+            [f'{e.describe()}  [implies {e.skill}]' for e in menu.mine],
+        )
+    if fifteen:
+        rows.append(Option('f', f'{modes.UNROLLED_TOTAL} - no roll was made'))
+    if nobody:
+        rows.append(Option('n', 'nobody opposed it'))
+    rows += [Option('t', 'type a total'), Option('d', 'discard'), FINISH]
     options = ['number'] if menu.mine else []
     if fifteen:
         options.append(f'f for {modes.UNROLLED_TOTAL} - no roll made')
@@ -556,7 +618,8 @@ def _pick(
     options += ['t to type a total', 'd to discard', 'blank to finish']
     question = f'  Opposed by which {their_skill} roll? ({", ".join(options)}) > '
     while True:
-        answer, first = first or _prompt(menu.ask, question).lower(), ''
+        title = f'  Opposed by which {their_skill} roll?'
+        answer, first = first or _select(menu.ask, question, title, rows).lower(), ''
         if not answer:
             return None
         if answer[:1] == 'd':
@@ -707,8 +770,10 @@ def _appearance(ask: Ask, npc: str) -> str:
     """
     who = rules.personal_name(npc)
     options = ' / '.join(f'{n}. {word}' for n, word in enumerate(modes.APPEARANCES, start=1))
+    rows = [Option(word, word, (str(n),)) for n, word in enumerate(modes.APPEARANCES, start=1)]
     while True:
-        answer = _prompt(ask, f'  How did {who} appear? ({options}) > ').lower()
+        question = f'  How did {who} appear? ({options}) > '
+        answer = _select(ask, question, f'  How did {who} appear?', rows).lower()
         if answer.isdigit() and 1 <= int(answer) <= len(modes.APPEARANCES):
             return modes.APPEARANCES[int(answer) - 1]
         hits = [word for word in modes.APPEARANCES if answer and word.startswith(answer)]
@@ -762,13 +827,12 @@ def annotate(
             if len(waiting) == 1:
                 index, roll = waiting[0]
             else:
-                print(f'Rolls waiting to be annotated for {conv.npc_name}:')
-                for position, (_, candidate) in enumerate(waiting, start=1):
-                    print(f'  {position}. {_describe(candidate)}')
+                heading = f'Rolls waiting to be annotated for {conv.npc_name}:'
                 choice = _choose(
                     ask,
                     'Which roll? (number, or blank to finish) > ',
-                    len(waiting),
+                    heading,
+                    _listed(ask, heading, [_describe(c) for _, c in waiting], indent='  '),
                     allow_blank=True,
                 )
                 if choice is None:

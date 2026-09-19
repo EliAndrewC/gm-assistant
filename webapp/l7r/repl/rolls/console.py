@@ -27,10 +27,11 @@ escape codes, the same rule `shell.set_title` follows.
 
 from __future__ import annotations
 
+import contextlib
 import sys
 import threading
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable, Iterator
+from typing import Any, Protocol
 
 #: One writer at a time. Two threads interleaving escape sequences would leave the
 #: terminal in a state neither of them intended.
@@ -41,6 +42,59 @@ _lock = threading.Lock()
 DEFAULT_PROMPT = '>>> '
 
 CLEAR_LINE = '\r\x1b[K'
+
+
+class Overlay(Protocol):
+    """Something drawn BELOW the scrollback that an announcement must not wreck - an
+    arrow-key menu (`menu.Picker`, feature 210). `erase` removes it from wherever the
+    cursor was left; `render` draws it again."""
+
+    def erase(self) -> str: ...
+
+    def render(self) -> str: ...
+
+
+#: The menu currently on screen, if any. `print_above` assumed a ONE-LINE prompt; a
+#: list is several, so while one is open an announcement erases all of it, prints, and
+#: redraws it - with the highlight where it was, since the overlay holds its own state.
+_overlay: Overlay | None = None
+
+#: The question a typed roll prompt is asking right now, '' at the Python prompt.
+#: Feature 210 found this while reading the redraw: with `annotate()` waiting on
+#: "What was it for? > ", an announcement redrew `>>> ` in its place, because `sys.ps1`
+#: was the only prompt this module knew about.
+_asking = ''
+
+
+@contextlib.contextmanager
+def overlay(view: Overlay) -> Iterator[None]:
+    """`view` is on screen for the length of the block."""
+    global _overlay
+    with _lock:
+        _overlay = view
+    try:
+        yield
+    finally:
+        with _lock:
+            _overlay = None
+
+
+@contextlib.contextmanager
+def asking(question: str) -> Iterator[None]:
+    """A typed prompt showing `question` is open for the length of the block."""
+    global _asking
+    before, _asking = _asking, question
+    try:
+        yield
+    finally:
+        _asking = before
+
+
+def write(text: str) -> None:
+    """Write to the terminal under the same lock the watcher's announcements take."""
+    with _lock:
+        sys.stdout.write(text)
+        sys.stdout.flush()
 
 
 def _line_buffer() -> str:
@@ -69,8 +123,11 @@ def print_above(
         print(text, file=out)
         return False
     buffered = line_buffer()
-    prompt = str(getattr(sys, 'ps1', DEFAULT_PROMPT))
+    prompt = _asking or str(getattr(sys, 'ps1', DEFAULT_PROMPT))
     with _lock:
-        out.write(CLEAR_LINE + text + '\n' + prompt + buffered)
+        if _overlay is not None:
+            out.write(_overlay.erase() + text + '\r\n' + _overlay.render())
+        else:
+            out.write(CLEAR_LINE + text + '\n' + prompt + buffered)
         out.flush()
     return True
