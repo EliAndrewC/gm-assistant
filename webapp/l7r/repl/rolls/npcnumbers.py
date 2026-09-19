@@ -224,7 +224,9 @@ class Disagreement:
         parts = []
         if self.recorded_ring is not None and self.recorded_ring != self.reading.ring:
             ring = self.reading.ring_name.capitalize()
-            parts.append(f'{ring} {self.recorded_ring} recorded, this roll says {self.reading.ring}')
+            parts.append(
+                f'{ring} {self.recorded_ring} recorded, this roll says {self.reading.ring}'
+            )
         if self.recorded_rank is not None and self.recorded_rank != self.reading.rank:
             parts.append(
                 f'{self.reading.skill} {self.recorded_rank} recorded, '

@@ -135,12 +135,12 @@ def entries(conv: Conversation) -> tuple[str, ...]:
         rank = '' if roll.rank is None else f'@{roll.rank}'
         mine, theirs = roll.final_total, roll.final_opposed or 0
         # Investigation is not one of acting's fixed pairings, so a tie is a tie.
-        verdict = 'tied' if mine == theirs else ('not seen through' if mine > theirs else 'SEEN THROUGH')
+        verdict = (
+            'tied' if mine == theirs else ('not seen through' if mine > theirs else 'SEEN THROUGH')
+        )
         who = rules.personal_name(roll.character)
         note = f' - {roll.note}' if roll.annotated else ''
-        out.append(
-            f'- {day} investigation {theirs} vs {who} acting {mine}{rank}{note}: {verdict}'
-        )
+        out.append(f'- {day} investigation {theirs} vs {who} acting {mine}{rank}{note}: {verdict}')
     return tuple(out)
 
 

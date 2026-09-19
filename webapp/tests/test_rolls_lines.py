@@ -12,14 +12,16 @@ import pytest
 
 from l7r.repl import dice, gmrolls
 from l7r.repl.rolls import conversation as conv
-from l7r.repl.rolls import hidden, lines, rules
+from l7r.repl.rolls import hidden, lines, npcskills, rules
 from l7r.repl.rolls.models import Conversation, Roll
 
 ann = importlib.import_module('l7r.repl.rolls.annotate')
 W = datetime(2026, 9, 19, 1, 0, tzinfo=UTC)
 
 
-def roll(name: str, total: int, *, rank: int | None = 2, minute: int = 0, skill: str = 'interrogation') -> Roll:
+def roll(
+    name: str, total: int, *, rank: int | None = 2, minute: int = 0, skill: str = 'interrogation'
+) -> Roll:
     return Roll(
         character=name,
         skill=skill,
@@ -48,7 +50,9 @@ def talking(*rolls: Roll) -> Conversation:
     return c
 
 
-def declare(topic: str, sincerity: Any = None, *, minute: int = 0, replies: tuple[Any, ...] = (), **kw: Any) -> list[str]:
+def declare(
+    topic: str, sincerity: Any = None, *, minute: int = 0, replies: tuple[Any, ...] = (), **kw: Any
+) -> list[str]:
     asked: list[str] = []
     queue = list(replies)
 
@@ -101,31 +105,41 @@ class TestDeclaring:
     ) -> None:
         c = talking(roll('Tsuruchi Jimen', 37, minute=0), roll('Moriko', 24, rank=1, minute=1))
         asked = declare("Chizuru's death", minute=2, replies=('', 'd'))
-        assert len(asked) == 2 and 'Jimen 37@2' in asked[0] and '[P/d]' in asked[0]
-        assert c.rolls[0].line == 1 and c.rolls[0].note == "Chizuru's death"
+        assert len(asked) == 2
+        assert 'Jimen 37@2' in asked[0]
+        assert '[P/d]' in asked[0]
+        assert c.rolls[0].line == 1
+        assert c.rolls[0].note == "Chizuru's death"
         assert c.rolls[1].discarded
         assert "Line of questioning: Chizuru's death" in capsys.readouterr().out
 
     def test_only_a_repeat_roll_on_the_line_being_left_is_asked_about(self) -> None:
         c = talking()
         declare('the treasury', minute=1)
-        for r in (roll('Jimen', 30, minute=2), roll('Moriko', 20, minute=3), roll('Jimen', 35, minute=4)):
+        for r in (
+            roll('Jimen', 30, minute=2),
+            roll('Moriko', 20, minute=3),
+            roll('Jimen', 35, minute=4),
+        ):
             c.rolls.append(conv.attach(c, r))
         asked = declare('the escorts', minute=5, replies=('p',))
-        assert len(asked) == 1 and 'Jimen 35' in asked[0]
+        assert len(asked) == 1
+        assert 'Jimen 35' in asked[0]
         assert [r.line for r in c.rolls] == [1, 1, 2]
         assert c.rolls[2].note == 'the escorts'
 
     def test_a_useless_answer_is_asked_again(self) -> None:
         c = talking(roll('Jimen', 37))
         asked = declare('the treasury', minute=2, replies=('x', 'p'))
-        assert len(asked) == 2 and c.rolls[0].line == 1
+        assert len(asked) == 2
+        assert c.rolls[0].line == 1
 
     @pytest.mark.parametrize('interrupt', [KeyboardInterrupt(), EOFError()])
     def test_ctrl_c_abandons_the_declaration_whole(self, interrupt: BaseException) -> None:
         c = talking(roll('Jimen', 37))
         declare('the treasury', minute=2, replies=(interrupt,))
-        assert c.lines == [] and c.rolls[0].line is None
+        assert c.lines == []
+        assert c.rolls[0].line is None
 
     def test_it_collects_first(self) -> None:
         c = talking()
@@ -153,18 +167,19 @@ class TestTheSincerityRoll:
         declare('the treasury', dice.xky(8, 3) + 10)
         assert c.numbers == {'air': 3, 'sincerity': 5}
         assert isinstance(c.lines[0].sincerity, gmrolls.GmRoll)
-        assert c.lines[0].sincerity.total == 28 and c.lines[0].sincerity.tagged == 'sincerity'
+        assert c.lines[0].sincerity.total == 28
+        assert c.lines[0].sincerity.tagged == 'sincerity'
 
     def test_an_already_tagged_roll_and_a_bare_number(self) -> None:
         c = talking()
-        tagged = dice.xky(8, 3) - conv.npcskills.build_tags()['sincerity']
+        tagged = dice.xky(8, 3) - npcskills.build_tags()['sincerity']
         declare('one', tagged)
         declare('two', 41, minute=1)
         assert c.lines[1].sincerity == 41
 
     def test_a_roll_tagged_something_else_is_refused(self) -> None:
         talking()
-        wrong = dice.xky(5, 3) - conv.npcskills.build_tags()['tact']
+        wrong = dice.xky(5, 3) - npcskills.build_tags()['tact']
         with pytest.raises(ValueError, match='tagged tact, not sincerity'):
             declare('the treasury', wrong)
 
@@ -182,7 +197,8 @@ class TestTheSincerityRoll:
         declare('the treasury', total)
         total + 15
         found = hidden.compare(c, c.lines[0], roll('Jimen', 40, rank=5))
-        assert found is not None and found.sincerity == 33
+        assert found is not None
+        assert found.sincerity == 33
 
 
 class TestComparison:
@@ -199,10 +215,13 @@ class TestComparison:
         c = talking()
         declare('the treasury', dice.xky(8, 3), grilling=True)  # 18, sincerity 5
         found = hidden.compare(c, c.lines[0], roll('Jimen', 33, rank=2))
-        assert found is not None and found.theirs == 33 and found.detected
+        assert found is not None
+        assert found.theirs == 33
+        assert found.detected
         assert found.describe() == 'Jimen 33 vs sincerity 18 (+15 free raises): DETECTED'
         lost = hidden.compare(c, c.lines[0], roll('Jimen', 32, rank=2))
-        assert lost is not None and not lost.detected
+        assert lost is not None
+        assert not lost.detected
 
     def test_no_sincerity_roll_is_no_comparison(self) -> None:
         c = talking()
@@ -213,7 +232,8 @@ class TestComparison:
         c = talking()
         declare('the treasury', 30)
         found = hidden.compare(c, c.lines[0], roll('Jimen', 33, rank=3))
-        assert found is not None and (found.bonus, found.npc_bonus) == (0, 0)
+        assert found is not None
+        assert (found.bonus, found.npc_bonus) == (0, 0)
 
     def test_an_unrecorded_rank_is_read_off_the_dice_less_the_school_die(self) -> None:
         c = talking()
@@ -236,7 +256,9 @@ class TestComparison:
         attached = conv.attach(c, roll('Jimen', 20, minute=1))
         conv.announce_comparison(c, attached)
         conv.announce_comparison(c, roll('Jimen', 20, skill='law'))
-        assert said == ['  = Jimen 20 vs sincerity 18 (+10 not grilling, +15 free raises): not detected']
+        assert said == [
+            '  = Jimen 20 vs sincerity 18 (+10 not grilling, +15 free raises): not detected'
+        ]
 
 
 class TestGrilling:
@@ -245,7 +267,8 @@ class TestGrilling:
         declare('the treasury', dice.xky(8, 3))
         c.rolls.append(conv.attach(c, roll('Jimen', 40, rank=5, minute=1)))
         lines.grilling()
-        assert c.lines[0].grilling and c.rolls[0].grilling
+        assert c.lines[0].grilling
+        assert c.rolls[0].grilling
         assert '= Jimen 40 vs sincerity 18: DETECTED' in capsys.readouterr().out
         assert rules.render_lines(c.rolls, 'Fumitake')[0].startswith('interrogation (grilling):')
 

@@ -236,6 +236,20 @@ def opposing_skill(skill: str) -> str:
     return OPPOSING_SKILL.get(skill.lower(), skill.lower())
 
 
+#: Feature 207. Acting is contested against INVESTIGATION (`rules/02-skills.md`,
+#: corrected 2026-09-19 on the GM's word - it had said interrogation). It is NOT a
+#: row of `CONTESTED_PAIRS`: investigation already pairs with sneaking there, and that
+#: table is one-to-one by construction. Nothing renders an acting contest publicly,
+#: so the tie rule never needs this pairing either.
+HIDDEN_OPPOSITION = {'acting': 'investigation'}
+
+
+def opposed_by(skill: str) -> str:
+    """The skill the GM rolls AGAINST `skill`: a fixed pairing, acting's
+    investigation, or the same skill back."""
+    return HIDDEN_OPPOSITION.get(skill.lower(), opposing_skill(skill))
+
+
 def contested_winner(mine_skill: str, theirs_skill: str, mine: int, theirs: int) -> Side | None:
     """Which side won, resolving a tie by the skills involved.
 

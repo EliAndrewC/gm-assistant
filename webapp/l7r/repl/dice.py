@@ -19,7 +19,7 @@ from __future__ import annotations
 import random as _random
 from functools import cache
 from math import comb
-from typing import overload
+from typing import Protocol, overload
 
 from l7r.repl import gmrolls
 
@@ -47,6 +47,13 @@ def actual_xky(roll: int, keep: int) -> tuple[int, int, int]:
         keep = 10
     keep = min(keep, roll)
     return roll, keep, bonus
+
+
+class Tagger(Protocol):
+    """Anything that can tag a roll - in practice `rolls.npcskills.SkillTag`, which
+    this module cannot import (it sits below `rolls/` in the import order)."""
+
+    def tag_roll(self, total: DiceTotal) -> DiceTotal: ...
 
 
 class DiceTotal(int):
@@ -94,15 +101,13 @@ class DiceTotal(int):
     def __radd__(self, other: int) -> DiceTotal:
         return self._shift(int(other))
 
-    def __sub__(self, other: int) -> DiceTotal:
+    def __sub__(self, other: int | Tagger) -> DiceTotal:
         # Feature 207: `xky(5, 3) - tact` TAGS the roll rather than subtracting. The
         # tag is duck-typed on purpose - `dice.py` sits below `rolls/` in the import
         # order (see `gmrolls.py`), so it cannot name the class, only ask whether
         # the thing on the right knows how to tag a roll.
-        tagger = getattr(other, 'tag_roll', None)
-        if tagger is not None:
-            tagged: DiceTotal = tagger(self)
-            return tagged
+        if not isinstance(other, int):
+            return other.tag_roll(self)
         return self._shift(-int(other))
 
 

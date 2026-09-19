@@ -16,6 +16,16 @@ the common path would be answered "no" almost every time (GM 2026-09-09). The
 contested path asks for both sides' bonuses every time, because there the rules'
 free raises make a bonus the usual case rather than the exception.
 
+FEATURE 207: THE QUESTION DEPENDS ON THE SKILL. `modes.py` says what each skill's
+roll MAY be, and the menu stops asking what it already knows: an always-open skill
+is asked only what it was for; a default-open one arrives with open SELECTED and a
+two-press keystroke undoes it (`keys.py`); manipulation and sneaking go straight to
+the opposing roll; acting takes a HIDDEN opposing roll and an outcome; and an
+interrogation roll already sits on the line of questioning the GM declared
+(`lines.py`), so it is asked about only when it arrived before any line or has no
+rank. Where the GM TAGGED their own roll (`xky(5, 3) - tact`), the opposing roll is
+paired without asking. Every skill not ruled on keeps the four-way question below.
+
 CTRL-C DISCARDS EVERYTHING. Annotations are staged as the GM works and committed
 only when they finish, so a Ctrl-C part way through a run of five leaves all five
 unannotated rather than four annotated and one not. That is the literal reading of
@@ -31,10 +41,12 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 
 from l7r.repl import gmrolls
-from l7r.repl.rolls import rules
+from l7r.repl.rolls import hidden, keys, modes, rules
 from l7r.repl.rolls.models import Conversation, Roll
 
 Ask = Callable[[str], str]
+#: `(question, ask) -> (undone, answer)` - `keys.ask_with_undo`, or a test's script.
+Undoable = Callable[[str, Ask], tuple[bool, str]]
 
 
 class Abandoned(Exception):
@@ -92,12 +104,22 @@ class Decision:
     line: int | None = None
     grilling: bool = False
     rank: int | None = None
+    #: Feature 207. What a hidden-opposition roll got the players; '' is the default.
+    outcome: str = ''
+    #: The GM roll used as the opposing side (its `seq`), so it is marked paired on
+    #: commit and never pre-paired with a second player roll.
+    opponent: int | None = None
+    #: This decision ONLY supplies a rank - an interrogation roll that was already on
+    #: its line when the menu reached it.
+    rank_only: bool = False
 
 
 def _apply(roll: Roll, decision: Decision) -> Roll:
     """Turn a staged decision into the roll it produces."""
     if decision.discard:
         return replace(roll, discarded=True)
+    if decision.rank_only:
+        return replace(roll, rank=decision.rank, rank_settled=True)
     if decision.line is not None:
         # An interrogation roll: note, line, grilling, rank - and NOTHING about an
         # opposing side or a bonus, which is the leak feature 206 closes.
@@ -107,6 +129,21 @@ def _apply(roll: Roll, decision: Decision) -> Roll:
             line=decision.line,
             grilling=decision.grilling,
             rank=decision.rank,
+            rank_settled=True,
+        )
+    if roll.skill.lower() == rules.ACTING:
+        # The opposing investigation roll is KEPT on the roll - `hidden.entries` reads
+        # it for the GM-only notes - and never rendered (`rules.render_annotated`).
+        opposed, bonus_self, bonus_opposed = decision.contest or (None, 0, 0)
+        return replace(
+            roll,
+            note=decision.note,
+            outcome=decision.outcome,
+            rank=decision.rank,
+            rank_settled=True,
+            opposed_total=opposed,
+            bonus_self=bonus_self,
+            bonus_opposed=bonus_opposed,
         )
     if decision.contest is None:
         return replace(roll, note=decision.note, bonus_self=decision.bonus)
@@ -125,8 +162,20 @@ def pending(conv: Conversation) -> list[tuple[int, Roll]]:
     return [
         (index, roll)
         for index, roll in enumerate(conv.rolls)
-        if rules.needs_annotation(roll) and roll.attributed
+        if roll.attributed and (rules.needs_annotation(roll) or _needs_rank(roll))
     ]
+
+
+def _needs_rank(roll: Roll) -> bool:
+    """An interrogation roll already on its line, written without `@N` until the GM
+    says the rank - or says there is none, after which it is never asked again."""
+    return (
+        rules.is_interrogation(roll)
+        and roll.line is not None
+        and roll.rank is None
+        and not roll.rank_settled
+        and not roll.discarded
+    )
 
 
 def _describe(roll: Roll) -> str:
@@ -198,96 +247,101 @@ def _optional_number(ask: Ask, question: str) -> int | None:
         print('  ? a whole number, or blank for none')
 
 
-def _yes_no(ask: Ask, question: str, *, default: bool = False) -> bool:
-    while True:
-        answer = _prompt(ask, question).lower()
-        if not answer:
-            return default
-        if answer in ('y', 'yes'):
-            return True
-        if answer in ('n', 'no'):
-            return False
-        print('  ? y or n, or blank for ' + ('yes' if default else 'no'))
+def _interrogate(ask: Ask, roll: Roll, conv: Conversation) -> Decision | None:
+    """The interrogation branch, reduced by feature 207.
 
+    Lines of questioning are DECLARED now (`lines.new_line_of_questioning`) and a
+    roll lands on the line current when it was made, so most interrogation rolls
+    never reach this menu. Two kinds still do:
 
-def _overlaid(conv: Conversation, staged: dict[int, Decision]) -> list[Roll]:
-    """The conversation's rolls as they WILL be once the staged decisions commit.
+    - a roll already on its line but with NO RANK (a hand-typed roll): asked for the
+      rank and nothing else, because `37@2` cannot be written without it;
+    - a roll on NO line - one that arrived before any line existed, or late. The GM
+      says which declared line it joins, or discards it. It is never attached
+      without being asked (*"instead of pulling in previous interrogation rolls
+      automatically ... I am prompted"*).
 
-    The menu reads lines of questioning from this rather than from `conv.rolls`, so
-    a line started earlier in the same run is offered to the next roll - and, since
-    nothing here is written back, Ctrl-C still discards all of it.
+    Contested is never offered and no bonus is asked, exactly as feature 206 ruled:
+    the opposing roll is the NPC's hidden Sincerity, and every bonus reveals NPC
+    state. Returns the staged decision, or None when the GM finished with a blank.
     """
-    return [
-        _apply(roll, staged[index]) if index in staged else roll
-        for index, roll in enumerate(conv.rolls)
-    ]
-
-
-def _interrogate(ask: Ask, roll: Roll, rolls: Sequence[Roll]) -> Decision | None:
-    """The interrogation branch of the menu (feature 206).
-
-    Instead of open / contested / discard / open-with-bonus, an interrogation roll is
-    asked which LINE OF QUESTIONING it belongs to - joining one already stated, or
-    starting a new one - then, in this order, its rank if nobody recorded one,
-    whether the interrogator was grilling (new lines only), and what the line was
-    about (new lines only). Contested is never offered because the opposing roll is
-    the NPC's Sincerity, which must not be written; a bonus is never offered because
-    every bonus on either side reveals NPC state (`rules.INTERROGATION`).
-
-    Returns the staged decision, a discard, or None when the GM finished with a
-    blank line. `rolls` is the conversation overlaid with what is already staged.
-    """
-    lines = rules.lines_of_questioning(rolls)
-    if lines:
-        print('  Lines of questioning so far:')
-        for position, group in enumerate(lines, start=1):
-            flag = '(grilling) ' if group[0].grilling else ''
-            print(f'    {position}. {flag}{group[0].note}')
-        question = '  Join which line? (number, n for new, d to discard, blank to finish) > '
-        hint = '  ? a line number, n for new, d to discard, or blank to finish'
+    who = rules.personal_name(roll.character)
+    if roll.line is not None:
+        rank = _optional_number(ask, f"  {who}'s interrogation rank? [none] > ")
+        return Decision(rank=rank, rank_only=True)
+    if conv.lines:
+        print('  Lines of questioning:')
+        for position, line in enumerate(conv.lines, start=1):
+            flag = '(grilling) ' if line.grilling else ''
+            print(f'    {position}. {flag}{line.description}')
+        question = '  Which line? (number, d to discard, blank to finish) > '
+        hint = '  ? a line number, d to discard, or blank to finish'
     else:
-        question = '  New line of questioning, or discard? [n/d, blank to finish] > '
-        hint = '  ? n for new, d to discard, or blank to finish'
-    joined: list[Roll] | None = None
+        print('  No line of questioning yet - new_line_of_questioning("...") declares one.')
+        question = '  Discard it? [d to discard, blank to leave it for now] > '
+        hint = '  ? d to discard, or blank to leave it'
     while True:
         answer = _prompt(ask, question).lower()
         if not answer:
             return None
         if answer[:1] == 'd':
             return Decision(discard=True)
-        if answer[:1] == 'n':
-            break
-        if lines and answer.isdigit() and 1 <= int(answer) <= len(lines):
-            joined = lines[int(answer) - 1]
+        if answer.isdigit() and 1 <= int(answer) <= len(conv.lines):
+            chosen = conv.lines[int(answer) - 1]
             break
         print(hint)
     rank = roll.rank
     if rank is None:
-        who = rules.personal_name(roll.character)
         rank = _optional_number(ask, f"  {who}'s interrogation rank? [none] > ")
-    if joined is not None:
-        head = joined[0]
-        return Decision(note=head.note, line=head.line, grilling=head.grilling, rank=rank)
-    grilling = _yes_no(ask, '  Grilling? [y/N] > ')
-    note = ''
-    while not note:
-        note = _prompt(ask, '  What was the line of questioning? > ')
-    # A fresh id: above every id in use, discarded rolls included, so an id is never
-    # shared between a live line and a dead one even though nothing would break.
-    used = [r.line for r in rolls if r.line is not None]
-    return Decision(note=note, line=max(used, default=0) + 1, grilling=grilling, rank=rank)
+    return Decision(note=chosen.description, line=chosen.id, grilling=chosen.grilling, rank=rank)
 
 
-def _opposing(ask: Ask, roll: Roll, mine: Sequence[gmrolls.GmRoll]) -> tuple[int, int, int] | None:
-    """Pick the opposing roll and the bonus each side gets. None falls back to open.
+def _their_rank(conv: Conversation, skill: str, entry: gmrolls.GmRoll | None) -> int | None:
+    """The NPC's rank in `skill`: EXACT when it is on record (feature 207), else read
+    off the chosen roll's pool - which the GM warned is *"not completely reliable"*,
+    and is why both bonuses can still be overridden."""
+    if skill in conv.numbers:
+        return conv.numbers[skill]
+    return None if entry is None else entry.skill
 
-    Returns `(opposing total, bonus to the player, bonus to the NPC)`.
+
+def _bonuses(ask: Ask, roll: Roll, their_skill: str, their_rank: int | None) -> tuple[int, int]:
+    """Ask for the bonus each side gets, defaulting to the rules' free raises."""
+    theirs, ours = rules.free_raises(roll.rank, their_rank)
+    _say_raises(roll, their_skill, their_rank)
+    bonus_self = _number(ask, f'  Bonus to {roll.character}? [{theirs}] > ', theirs)
+    bonus_opposed = _number(ask, f'  Bonus to your side? [{ours}] > ', ours)
+    return bonus_self, bonus_opposed
+
+
+def _say_raises(roll: Roll, their_skill: str, their_rank: int | None) -> None:
+    if roll.rank is None:
+        print(f'  {roll.character} has no recorded rank, so no free raises are inferred.')
+    elif their_rank is None:
+        print(f'  No rank known for your {their_skill}, so no free raises are inferred.')
+    else:
+        # Name the skill the NPC is TAKEN to have rolled. It is derived from the
+        # player's by the pairing rule and never asked for, so showing it here is
+        # the GM's only chance to notice if the roll was not what they expected.
+        print(
+            f'  Free raises: {roll.character} {roll.skill} {roll.rank} '
+            f'vs your {their_skill} {their_rank}'
+        )
+
+
+def _opposing(
+    ask: Ask, roll: Roll, mine: Sequence[gmrolls.GmRoll], conv: Conversation
+) -> tuple[int, int, int, int] | None:
+    """The FULL MENU's contested path: pick the opposing roll and both bonuses.
+
+    Returns `(opposing total, bonus to the player, bonus to the NPC, the GM roll's
+    seq)`, or None - falling back to open - when the GM has no recent rolls.
 
     The default bonus is the free raises the rules grant - one per point of skill
     difference, five each (`rules/02-skills.md:64` and :66). The player's skill comes
     from the rank the character-sheet app recorded when it has one, which is EXACT;
-    the NPC's is inferred from their pool, which is not. Either can be overridden,
-    which is the whole reason the GM asked for the prompt.
+    the NPC's is the recorded rank when there is one, else inferred from their pool.
+    Either can be overridden, which is the whole reason the GM asked for the prompt.
     """
     if not mine:
         print('  You have no recent rolls to contest against. Recording it as open.')
@@ -298,20 +352,313 @@ def _opposing(ask: Ask, roll: Roll, mine: Sequence[gmrolls.GmRoll]) -> tuple[int
     chosen = _choose(ask, '  Which of yours? (number) > ', len(mine))
     assert chosen is not None  # allow_blank is False
     opponent = mine[chosen]
-    theirs, ours = rules.free_raises(roll.rank, opponent.skill)
-    if roll.rank is None:
-        print(f'  {roll.character} has no recorded rank, so no free raises are inferred.')
-    else:
-        # Name the skill the NPC is TAKEN to have rolled. It is derived from the
-        # player's by the pairing rule and never asked for, so showing it here is
-        # the GM's only chance to notice if the roll was not what they expected.
-        print(
-            f'  Free raises: {roll.character} {roll.skill} {roll.rank} '
-            f'vs your {rules.opposing_skill(roll.skill)} {opponent.skill}'
+    their_skill = rules.opposed_by(roll.skill)
+    bonus_self, bonus_opposed = _bonuses(
+        ask, roll, their_skill, _their_rank(conv, their_skill, opponent)
+    )
+    return opponent.total, bonus_self, bonus_opposed, opponent.seq
+
+
+@dataclass
+class _Menu:
+    """What one `annotate()` run carries from roll to roll."""
+
+    ask: Ask
+    undoable: Undoable
+    conv: Conversation
+    mine: list[gmrolls.GmRoll]
+    #: GM rolls already used as an opposing side in THIS run (by `seq`).
+    used: set[int]
+
+    def ask_undoable(self, question: str) -> tuple[bool, str]:
+        try:
+            undone, answer = self.undoable(question, self.ask)
+        except (KeyboardInterrupt, EOFError) as exc:
+            raise Abandoned from exc
+        return undone, answer.strip()
+
+
+#: What a typed answer at a what-was-it-for prompt may switch to. The keystroke is
+#: the GM's undo; these are what a pipe or a test has instead, and they work at a
+#: terminal too. No real note is one of these tokens.
+_TYPED_KINDS = {'c': 'c', 'ob': 'ob', 'b': 'ob', 'd': 'd', 'f': 'f', 'n': 'n', 't': 't'}
+
+
+def _note_or_kind(
+    menu: _Menu, roll: Roll, question: str, *, undo: bool, kinds: tuple[str, ...]
+) -> tuple[str, str]:
+    """One what-was-it-for prompt. `(what, text)`, `what` being one of:
+
+    `note` (text is the note), `kind` (text is c / ob / d), `undo` (the keystroke),
+    or `finish` (a blank line - which commits what is staged, as everywhere else in
+    this menu; a bare Enter is NEVER accepted as a note).
+    """
+    while True:
+        if undo:
+            undone, answer = menu.ask_undoable(question)
+            if undone:
+                return 'undo', ''
+        else:
+            answer = _prompt(menu.ask, question)
+        if not answer:
+            return 'finish', ''
+        kind = _TYPED_KINDS.get(answer.lower())
+        if kind is None:
+            return 'note', answer
+        if kind in kinds:
+            return 'kind', kind
+        print(f'  ? {roll.skill.lower()} is never rolled that way')
+
+
+def _required_note(ask: Ask) -> str:
+    note = ''
+    while not note:
+        note = _prompt(ask, '  What was it for? > ')
+    return note
+
+
+def _by_kind(menu: _Menu, roll: Roll, kind: str) -> Decision:
+    """Finish a roll whose kind is settled: the four-way menu's second half."""
+    if kind == 'd':
+        return Decision(discard=True)
+    picked = _opposing(menu.ask, roll, menu.mine, menu.conv) if kind == 'c' else None
+    # An open roll with a bonus is its own menu entry rather than a question asked
+    # on every open roll, because it is the uncommon case (GM 2026-09-09: *"this is
+    # not as common. So instead of always asking every time we add an open roll ...
+    # an open with bonus option"*).
+    bonus = _number(menu.ask, f'  Bonus to {roll.character}? [0] > ', 0) if kind == 'ob' else 0
+    note = _required_note(menu.ask)
+    if picked is None:
+        return Decision(note=note, bonus=bonus)
+    menu.used.add(picked[3])
+    return Decision(note=note, contest=picked[:3], opponent=picked[3])
+
+
+def _full_menu(menu: _Menu, roll: Roll) -> Decision | None:
+    # Blank finishes here as well as at the roll prompt. With one roll left the
+    # "which?" question is skipped, and without this the GM would have no way to
+    # stop except Ctrl-C - which discards everything already staged.
+    kind = ''
+    while kind not in KINDS:
+        kind = _kind(
+            _prompt(
+                menu.ask,
+                '  Open, contested, discard, or open with bonus? [o/c/d/ob, blank to finish] > ',
+            )
         )
-    bonus_self = _number(ask, f'  Bonus to {roll.character}? [{theirs}] > ', theirs)
-    bonus_opposed = _number(ask, f'  Bonus to your side? [{ours}] > ', ours)
-    return opponent.total, bonus_self, bonus_opposed
+        if not kind:
+            return None
+    return _by_kind(menu, roll, kind)
+
+
+def _open_by_default(menu: _Menu, roll: Roll, *, only_open: bool) -> Decision | None:
+    """ALWAYS OPEN and DEFAULT OPEN: open is already chosen, so ask what it was for.
+
+    An always-open skill (pontificate, athletics) can never be contested, so there
+    is nothing to undo and `c` is refused. A default-open one (history, investigation
+    ...) can, rarely - the keystroke, or a bare `c`, reaches the four-way menu.
+    """
+    if only_open:
+        question = '  open - what was it for? (ob for a bonus, d to discard) > '
+        kinds: tuple[str, ...] = ('ob', 'd')
+    else:
+        question = '  open - what was it for? (backspace twice to change) > '
+        kinds = ('c', 'ob', 'd')
+    what, text = _note_or_kind(menu, roll, question, undo=not only_open, kinds=kinds)
+    if what == 'finish':
+        return None
+    if what == 'undo':
+        return _full_menu(menu, roll)
+    if what == 'kind':
+        return _by_kind(menu, roll, text)
+    return Decision(note=text)
+
+
+def _prepair(menu: _Menu, roll: Roll) -> gmrolls.GmRoll | None:
+    """The GM's TAGGED roll of the opposing skill, if there is one to pair.
+
+    The GM (2026-09-19): *"if a player rolled manipulation and I have a tact roll,
+    then when I call the annotate() function, then you can pre-pair the tact and
+    manipulation rolls against each other such that the only thing that I am asked
+    to annotate is adding the note."* Nearest in time, never one already used, never
+    one marked a mistake (`gmrolls.recent` drops those).
+    """
+    wanted = rules.opposed_by(roll.skill)
+    free = [
+        entry
+        for entry in menu.mine
+        if entry.tagged == wanted and not entry.paired and entry.seq not in menu.used
+    ]
+    if not free:
+        return None
+    return min(free, key=lambda entry: abs((entry.at - roll.at).total_seconds()))
+
+
+def _pick(
+    menu: _Menu, roll: Roll, *, fifteen: bool, nobody: bool, first: str = ''
+) -> tuple[str, tuple[int, int, int] | None, int | None] | None:
+    """The opposing-roll picker for a skill that is ALWAYS contested.
+
+    `(what, contest, seq)` with `what` one of `contest`, `nobody`, `discard`; None
+    when the GM finished with a blank line. Besides the GM's recent rolls it offers:
+
+    - `f` - FIFTEEN, no roll made (manipulation): *"kind of the default value that
+      someone gets if they are not actively making a roll to contest something"*,
+      which presumes a tact of ZERO, so the manipulator's whole rank is free raises;
+    - `n` - NOBODY opposed it (sneaking): written as an open line;
+    - `t` - TYPE a total, for a roll made away from the prompt.
+    """
+    their_skill = rules.opposed_by(roll.skill)
+    if menu.mine:
+        print('  Your recent rolls:')
+        for position, entry in enumerate(menu.mine, start=1):
+            print(f'    {position}. {entry.describe()}  [implies {entry.skill}]')
+    options = ['number'] if menu.mine else []
+    if fifteen:
+        options.append(f'f for {modes.UNROLLED_TOTAL} - no roll made')
+    if nobody:
+        options.append('n for nobody opposed it')
+    options += ['t to type a total', 'd to discard', 'blank to finish']
+    question = f'  Opposed by which {their_skill} roll? ({", ".join(options)}) > '
+    while True:
+        answer, first = first or _prompt(menu.ask, question).lower(), ''
+        if not answer:
+            return None
+        if answer[:1] == 'd':
+            return 'discard', None, None
+        if nobody and answer[:1] == 'n':
+            return 'nobody', None, None
+        chosen: gmrolls.GmRoll | None = None
+        if answer.isdigit() and 1 <= int(answer) <= len(menu.mine):
+            chosen = menu.mine[int(answer) - 1]
+            total, their_rank = chosen.total, _their_rank(menu.conv, their_skill, chosen)
+        elif fifteen and answer[:1] == 'f':
+            total, their_rank = modes.UNROLLED_TOTAL, 0
+        elif answer[:1] == 't':
+            total = _number(menu.ask, f'  Their {their_skill} total? > ', 0)
+            their_rank = _their_rank(menu.conv, their_skill, None)
+        else:
+            print('  ? ' + ', '.join(options))
+            continue
+        bonus_self, bonus_opposed = _bonuses(menu.ask, roll, their_skill, their_rank)
+        return 'contest', (total, bonus_self, bonus_opposed), None if chosen is None else chosen.seq
+
+
+def _contest(
+    menu: _Menu, roll: Roll, *, fifteen: bool = False, nobody: bool = False
+) -> tuple[str, str, tuple[int, int, int] | None, int | None] | None:
+    """Settle the opposing side and the note of an always-contested roll.
+
+    `(what, note, contest, seq)`, `what` being `contest`, `nobody` or `discard`; None
+    to finish. A tagged GM roll is paired WITHOUT asking and only the note is asked;
+    the two-press undo (or a blank picker afterwards) reaches everything else.
+    """
+    their_skill = rules.opposed_by(roll.skill)
+    paired = _prepair(menu, roll)
+    first = ''
+    if paired is not None:
+        their_rank = _their_rank(menu.conv, their_skill, paired)
+        bonus_self, bonus_opposed = rules.free_raises(roll.rank, their_rank)
+        print(f'  Paired with your {their_skill} roll: {paired.describe()}')
+        _say_raises(roll, their_skill, their_rank)
+        if bonus_self or bonus_opposed:
+            print(f'  Bonus to {roll.character}: {bonus_self}; to your side: {bonus_opposed}')
+        # The picker's own letters work here too. Found by running a whole scripted
+        # session (2026-09-19): a tagged investigation roll pre-paired a sneaking roll,
+        # the GM's `n` for "nobody opposed it" was taken as the NOTE, and the roll was
+        # written as a contest it never was. No real note is one of these letters.
+        shortcuts = ('t',) + (('f',) if fifteen else ()) + (('n',) if nobody else ())
+        what, text = _note_or_kind(
+            menu,
+            roll,
+            '  What was it for? (backspace twice for another roll, d to discard) > ',
+            undo=True,
+            kinds=('d', *shortcuts),
+        )
+        if what == 'finish':
+            return None
+        if what == 'kind' and text == 'd':
+            return 'discard', '', None, None
+        if what == 'note':
+            return 'contest', text, (paired.total, bonus_self, bonus_opposed), paired.seq
+        first = text if what == 'kind' else ''
+    picked = _pick(menu, roll, fifteen=fifteen, nobody=nobody, first=first)
+    if picked is None:
+        return None
+    what, contest, seq = picked
+    if what == 'discard':
+        return 'discard', '', None, None
+    return what, _required_note(menu.ask), contest, seq
+
+
+def _always_contested(menu: _Menu, roll: Roll, mode: modes.Mode) -> Decision | None:
+    """Manipulation (an opposing number REQUIRED) and sneaking (may be unopposed)."""
+    settled = _contest(
+        menu,
+        roll,
+        fifteen=mode == 'contested_required',
+        nobody=mode == 'contested_maybe_unopposed',
+    )
+    if settled is None:
+        return None
+    what, note, contest, seq = settled
+    if what == 'discard':
+        return Decision(discard=True)
+    if seq is not None:
+        menu.used.add(seq)
+    # `nobody` leaves `contest` None, which IS the open-shaped line the GM confirmed
+    # for an unopposed sneaking roll: rounded down to 5, no marker.
+    return Decision(note=note, contest=contest, opponent=seq)
+
+
+def _acting(menu: _Menu, roll: Roll) -> Decision | None:
+    """Acting: ALWAYS opposed by investigation, and the opposing roll is HIDDEN.
+
+    The GM (2026-09-19): *"acting should take an opposing roll. But then also have a
+    default value like interrogation does"* - so after the opposing side and the note
+    comes what the players GOT, blank for the default. The number goes to the GM-only
+    notes (`hidden.py`); `rules.render_annotated` never reads it.
+    """
+    settled = _contest(menu, roll)
+    if settled is None:
+        return None
+    what, note, contest, seq = settled
+    if what == 'discard':
+        return Decision(discard=True)
+    if seq is not None:
+        menu.used.add(seq)
+    rank = roll.rank
+    if rank is None:
+        who = rules.personal_name(roll.character)
+        rank = _optional_number(menu.ask, f"  {who}'s acting rank? [none] > ")
+    default = modes.default_outcome(roll.skill)
+    outcome = _prompt(menu.ask, f'  What did they get? [{default}] > ')
+    return Decision(note=note, contest=contest, opponent=seq, rank=rank, outcome=outcome)
+
+
+def _decide(menu: _Menu, roll: Roll) -> Decision | None:
+    """Ask what this roll's MODE leaves to ask. None when the GM finished."""
+    mode = modes.mode_of(roll.skill)
+    if rules.is_interrogation(roll):
+        # Interrogation never sees o/c/d/ob: no contest (the opposing roll is the
+        # NPC's Sincerity, never written publicly) and no bonus (feature 206).
+        return _interrogate(menu.ask, roll, menu.conv)
+    if mode == 'hidden':
+        return _acting(menu, roll)
+    if mode in ('contested_required', 'contested_maybe_unopposed'):
+        return _always_contested(menu, roll, mode)
+    if mode in ('always_open', 'default_open'):
+        return _open_by_default(menu, roll, only_open=mode == 'always_open')
+    return _full_menu(menu, roll)
+
+
+def _staged_text(conv: Conversation, roll: Roll, decision: Decision) -> str:
+    if decision.discard:
+        return 'discarded'
+    shown = _apply(roll, decision)
+    if rules.is_interrogation(shown):
+        return rules.render_interrogation([shown])
+    return rules.render_annotated(shown, conv.npc_name)
 
 
 def annotate(
@@ -319,6 +666,7 @@ def annotate(
     *,
     ask: Ask = ask_quietly,
     mine: Callable[[], Sequence[gmrolls.GmRoll]] = gmrolls.recent,
+    undoable: Undoable = keys.ask_with_undo,
 ) -> None:
     """Say what each waiting roll was for.
 
@@ -340,6 +688,7 @@ def annotate(
         return
 
     staged: dict[int, Decision] = {}
+    menu = _Menu(ask=ask, undoable=undoable, conv=conv, mine=list(mine()), used=set())
     try:
         while True:
             waiting = [item for item in pending(conv) if item[0] not in staged]
@@ -361,56 +710,12 @@ def annotate(
                     break
                 index, roll = waiting[choice]
             print(f'  {_describe(roll)}')
-            if rules.is_interrogation(roll):
-                # Interrogation never sees o/c/d/ob: no contest (the opposing roll is
-                # the NPC's Sincerity, which is never written) and no bonus (feature
-                # 206). Its prompt is which line of questioning, with d and blank.
-                decision = _interrogate(ask, roll, _overlaid(conv, staged))
-                if decision is None:
-                    break
-                staged[index] = decision
-                if decision.discard:
-                    print('  staged: discarded')
-                    continue
-                line = next(
-                    group
-                    for group in rules.lines_of_questioning(_overlaid(conv, staged))
-                    if group[0].line == decision.line
-                )
-                print(f'  staged: {rules.render_interrogation(line)}')
-                continue
-            # Blank finishes here as well as at the roll prompt. With one roll left
-            # the "which?" question is skipped, and without this the GM would have no
-            # way to stop except Ctrl-C - which discards everything already staged.
-            kind = ''
-            while kind not in KINDS:
-                kind = _kind(
-                    _prompt(
-                        ask,
-                        '  Open, contested, discard, or open with bonus? '
-                        '[o/c/d/ob, blank to finish] > ',
-                    )
-                )
-                if not kind:
-                    break
-            if not kind:
+            decision = _decide(menu, roll)
+            if decision is None:
                 break
-            if kind == 'd':
-                staged[index] = Decision(discard=True)
-                print('  staged: discarded')
-                continue
-            opposed = _opposing(ask, roll, list(mine())) if kind == 'c' else None
-            # An open roll with a bonus is its own menu entry rather than a question
-            # asked on every open roll, because it is the uncommon case (GM
-            # 2026-09-09: *"this is not as common. So instead of always asking every
-            # time we add an open roll ... an open with bonus option"*).
-            bonus = _number(ask, f'  Bonus to {roll.character}? [0] > ', 0) if kind == 'ob' else 0
-            note = ''
-            while not note:
-                note = _prompt(ask, '  What was it for? > ')
-            staged[index] = Decision(note=note, contest=opposed, bonus=bonus)
-            shown = _apply(roll, staged[index])
-            print(f'  staged: {rules.render_annotated(shown, conv.npc_name)}')
+            staged[index] = decision
+            print(f'  staged: {_staged_text(conv, roll, decision)}')
+            _compare_privately(conv, roll, decision)
     except Abandoned:
         # "discarded" would read as the roll-discard feature, which this is not:
         # the rolls are all still there, unannotated, and annotate() can be re-run.
@@ -422,7 +727,23 @@ def annotate(
 
     for index, decision in staged.items():
         conv.rolls[index] = _apply(conv.rolls[index], decision)
+    used = {decision.opponent for decision in staged.values() if decision.opponent is not None}
+    for entry in menu.mine:
+        if entry.seq in used:
+            entry.paired = True
     discarded = sum(1 for decision in staged.values() if decision.discard)
     kept = len(staged) - discarded
     tail = f', {discarded} discarded' if discarded else ''
     print(f'Annotated {kept} roll(s){tail}.')
+
+
+def _compare_privately(conv: Conversation, roll: Roll, decision: Decision) -> None:
+    """A roll joining a line here gets the same private comparison the watcher gives
+    one that lands on a line by itself (`conversation.announce_comparison`)."""
+    if decision.line is None or decision.discard:
+        return
+    for line in conv.lines:
+        if line.id == decision.line:
+            found = hidden.compare(conv, line, _apply(roll, decision))
+            if found is not None:
+                print(f'  = {found.describe()}')

@@ -112,7 +112,9 @@ def _ask_number(question: str, low: int, high: int, ask: Ask) -> int:
         print(f'  ? a whole number from {low} to {high}')
 
 
-def resolve(conv: Conversation, entry: gmrolls.GmRoll, reading: npcnumbers.Reading, ask: Ask) -> None:
+def resolve(
+    conv: Conversation, entry: gmrolls.GmRoll, reading: npcnumbers.Reading, ask: Ask
+) -> None:
     """Record what a tagged roll says, or stop and ask when it disagrees.
 
     The two answers are the GM's: *"given the option to either correct the skill
@@ -202,7 +204,7 @@ class SkillTag:
     def _check(self, conv: Conversation, entry: gmrolls.GmRoll, ask: Ask) -> None:
         extra, school = extra_dice(self.name, conv.schools)
         if extra:
-            print(f'  ({school} school: one of those dice is the school\'s)')
+            print(f"  ({school} school: one of those dice is the school's)")
         reading = npcnumbers.infer(
             entry.asked,
             self.name,
@@ -227,7 +229,8 @@ class SkillTag:
         if len(numbers) > 2:
             raise TypeError(f'{self.name}(), {self.name}(rank) or {self.name}(rolled, kept)')
         if self.name in npcnumbers.RECORD_ONLY:
-            return self._record_only(conv, numbers, spent, asker)
+            self._record_only(conv, numbers, spent, asker)
+            return None
         if len(numbers) == 2:
             return self._pool(conv, numbers[0], numbers[1], spent, asker)
         rank = self._rank(conv, numbers[0] if numbers else None, asker)
@@ -279,9 +282,7 @@ class SkillTag:
         print(f'  record corrected: {self.name} {stated}')
         return stated
 
-    def _record_only(
-        self, conv: Conversation, numbers: list[int], spent: int, ask: Ask
-    ) -> None:
+    def _record_only(self, conv: Conversation, numbers: list[int], spent: int, ask: Ask) -> None:
         """`acting(2)` / `history(3)`: say what the NPC has. Never a roll."""
         if len(numbers) == 2 or spent:
             raise TypeError(
@@ -290,9 +291,8 @@ class SkillTag:
             )
         if not numbers and self.name in conv.numbers:
             print(f'  {conv.npc_name}: {self.name} {conv.numbers[self.name]}')
-            return None
+            return
         self._rank(conv, numbers[0] if numbers else None, ask)
-        return None
 
     def _pool(
         self, conv: Conversation, rolled: int, kept: int, spent: int, ask: Ask

@@ -792,7 +792,10 @@ class TestVocabulary:
         """
         from l7r.repl.rolls import skills
 
-        canonical = set(skills.load_skills())
+        # The SKILLS, not the school knacks that joined the roll vocabulary in feature
+        # 207: `presence`, `commune` and `feint` are ordinary words, and the bot's
+        # is-this-about-the-game test should not fire on them.
+        canonical = set(skills.load_skills()) - set(skills.load_knacks())
         assert canonical <= set(vocab.SKILLS), (
             f'rules/02-skills.md has skills vocab.py does not: '
             f'{sorted(canonical - set(vocab.SKILLS))}'

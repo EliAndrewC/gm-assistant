@@ -343,6 +343,10 @@ class TestBannerAndShortcuts:
             'discern_honor("Otsuki", Jimen)',
             'begin_conversation("Otsuki")',
             'annotate()',
+            'xky(5, 3) - tact',
+            'tact()',
+            'new_line_of_questioning("topic", roll)',
+            'detected("Jimen", "what")',
             'end_conversation()',
             'conversation_status()',
         ]

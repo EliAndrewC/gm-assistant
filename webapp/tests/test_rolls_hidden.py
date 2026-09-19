@@ -11,7 +11,7 @@ import pytest
 
 from l7r.repl import dice, gmrolls
 from l7r.repl.rolls import conversation as conv
-from l7r.repl.rolls import hidden, lines, rules
+from l7r.repl.rolls import hidden, lines, npcskills, rules
 from l7r.repl.rolls.models import Conversation, Roll
 
 W = datetime(2026, 9, 19, 1, 0, tzinfo=UTC)
@@ -19,8 +19,12 @@ BIO = '[[File:1 | class=media-item-align-none | Fumitake.png]]\r\n\r\nAn inspect
 NOTES = 'XP: 65\r\nHonor: 3.0'
 
 
-def roll(name: str, skill: str, total: int, *, rank: int | None = 2, minute: int = 1, **kw: Any) -> Roll:
-    return Roll(name, skill, total, 'recorded', f'{name}{minute}', W + timedelta(minutes=minute), rank, **kw)
+def roll(
+    name: str, skill: str, total: int, *, rank: int | None = 2, minute: int = 1, **kw: Any
+) -> Roll:
+    return Roll(
+        name, skill, total, 'recorded', f'{name}{minute}', W + timedelta(minutes=minute), rank, **kw
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -49,8 +53,16 @@ def scene() -> Conversation:
     c.rolls.append(conv.attach(c, roll('Tsuruchi Jimen', 'interrogation', 37)))
     c.rolls.append(conv.attach(c, roll('Moriko', 'interrogation', 24, rank=1, minute=2)))
     c.rolls.append(
-        roll('Jimen', 'acting', 32, rank=1, minute=3, note='posing as a rice factor',
-             opposed_total=27, bonus_opposed=5)
+        roll(
+            'Jimen',
+            'acting',
+            32,
+            rank=1,
+            minute=3,
+            note='posing as a rice factor',
+            opposed_total=27,
+            bonus_opposed=5,
+        )
     )
     return c
 
@@ -90,10 +102,14 @@ class TestEntries:
 
     def test_a_detection_the_tool_can_see(self) -> None:
         c = talking()
-        lines.new_line_of_questioning('the treasury', 20, grilling=True, collector=lambda x: None, now=lambda: W)
+        lines.new_line_of_questioning(
+            'the treasury', 20, grilling=True, collector=lambda x: None, now=lambda: W
+        )
         c.rolls.append(conv.attach(c, roll('Jimen', 'interrogation', 37)))
         c.rolls.append(replace(conv.attach(c, roll('Moriko', 'interrogation', 50)), discarded=True))
-        assert hidden.entries(c) == ('- 2026-09-19 sincerity 20 - the treasury: Jimen 37@2 DETECTED',)
+        assert hidden.entries(c) == (
+            '- 2026-09-19 sincerity 20 - the treasury: Jimen 37@2 DETECTED',
+        )
 
 
 class TestNothingHiddenReachesTheBio:
@@ -104,7 +120,8 @@ class TestNothingHiddenReachesTheBio:
         public = '\n'.join(rules.render_lines(c.rolls, 'Fumitake'))
         assert public == (
             "interrogation: 37@2 Jimen / 24@1 Moriko - Chizuru's death: nothing hidden detected\n"
-            'acting: 32@1 Jimen - posing as a rice factor: no signs of the persona being seen through'
+            'acting: 32@1 Jimen - posing as a rice factor: '
+            'no signs of the persona being seen through'
         )
         for secret in ('31', '27', 'sincerity', 'investigation', 'tied', 'wins'):
             assert secret not in public, secret
@@ -119,7 +136,9 @@ class TestNothingHiddenReachesTheBio:
 
     def test_a_held_acting_roll_is_written_bare(self) -> None:
         bare = roll('Jimen', 'acting', 32, rank=1)
-        assert rules.render_lines([bare], 'Fumitake', include_unannotated=True) == ['acting: 32@1 Jimen']
+        assert rules.render_lines([bare], 'Fumitake', include_unannotated=True) == [
+            'acting: 32@1 Jimen'
+        ]
 
     def test_a_typed_outcome_replaces_the_default(self) -> None:
         shown = rules.render_annotated(
@@ -156,8 +175,14 @@ class TestPersistence:
             calls.append(fields)
             record.update(fields)
 
-        conv._tick(c, collector=lambda x: x, get_body=lambda i: record, update=update,
-                   clock=kw.get('clock', lambda: 100.0), debounce=kw.get('debounce', 0.0))
+        conv._tick(
+            c,
+            collector=lambda x: x,
+            get_body=lambda i: record,
+            update=update,
+            clock=kw.get('clock', lambda: 100.0),
+            debounce=kw.get('debounce', 0.0),
+        )
         return calls
 
     def test_the_numbers_and_the_hidden_rolls_go_to_the_gm_only_notes(self) -> None:
@@ -167,12 +192,13 @@ class TestPersistence:
         assert [sorted(f) for f in calls] == [['bio'], ['game_master_info']]
         assert 'NPC numbers:\n- Air 3\n- sincerity 5' in record['game_master_info']
         assert 'Hidden rolls:\n- 2026-09-19 sincerity 31' in record['game_master_info']
-        assert 'sincerity' not in record['bio'] and '31' not in record['bio']
+        assert 'sincerity' not in record['bio']
+        assert '31' not in record['bio']
         assert self.tick(c, record) == []
 
     def test_a_tagged_roll_alone_is_written_with_no_player_rolls(self) -> None:
         c = talking()
-        dice.xky(5, 3) - conv.npcskills.build_tags()['tact']
+        dice.xky(5, 3) - npcskills.build_tags()['tact']
         record: dict[str, Any] = {'bio': BIO, 'game_master_info': NOTES}
         calls = self.tick(c, record)
         assert [sorted(f) for f in calls] == [['game_master_info']]
@@ -180,7 +206,7 @@ class TestPersistence:
 
     def test_a_second_gm_only_write_is_debounced(self) -> None:
         c = talking()
-        tags = conv.npcskills.build_tags()
+        tags = npcskills.build_tags()
         dice.xky(5, 3) - tags['tact']
         record: dict[str, Any] = {'bio': BIO, 'game_master_info': NOTES}
         assert len(self.tick(c, record, debounce=120.0)) == 1
@@ -195,29 +221,44 @@ class TestPersistence:
         record: dict[str, Any] = {'bio': BIO, 'game_master_info': NOTES}
         calls = self.tick(c, record, fail=True)
         assert [sorted(f) for f in calls] == [['bio']]
-        assert c.hidden_written == () and any('GM-only notes' in s for s in said)
+        assert c.hidden_written == ()
+        assert any('GM-only notes' in s for s in said)
 
 
 class TestLoading:
-    def test_numbers_and_school_come_off_the_record(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_numbers_and_school_come_off_the_record(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         c = talking()
-        conv.load_numbers(c, lambda i: {
-            'game_master_info': 'NPC numbers:\n- Air 3\n- tact 2', 'tags': ['Merchant'], 'description': '',
-        })
-        assert c.numbers == {'air': 3, 'tact': 2} and c.numbers_written == c.numbers
+        conv.load_numbers(
+            c,
+            lambda i: {
+                'game_master_info': 'NPC numbers:\n- Air 3\n- tact 2',
+                'tags': ['Merchant'],
+                'description': '',
+            },
+        )
+        assert c.numbers == {'air': 3, 'tact': 2}
+        assert c.numbers_written == c.numbers
         assert c.schools == ('merchant',)
         assert 'on record for Fumitake: Air 3, tact 2' in capsys.readouterr().out
 
-    def test_an_unreachable_record_is_an_empty_one(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_an_unreachable_record_is_an_empty_one(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         c = talking()
         conv.load_numbers(c, lambda i: None)
-        assert c.numbers == {} and c.schools == ()
+        assert c.numbers == {}
+        assert c.schools == ()
         assert capsys.readouterr().out == ''
 
     def test_begin_conversation_loads_them(self) -> None:
         cast = [{'id': 'f', 'name': 'Fumitake'}]
         c = conv.begin_conversation(
-            'Fumitake', 'test', characters=lambda: cast, watch=False,
+            'Fumitake',
+            'test',
+            characters=lambda: cast,
+            watch=False,
             get_body=lambda i: {'game_master_info': 'NPC numbers:\n- Air 4'},
         )
         assert c.numbers == {'air': 4}

@@ -16,7 +16,9 @@ from l7r.repl.rolls.conversation import (
     conversation_status,
     end_conversation,
 )
+from l7r.repl.rolls.lines import detected, grilling, new_line_of_questioning
 from l7r.repl.rolls.models import Contest, Conversation, RecordingRule, Roll
+from l7r.repl.rolls.npcskills import build_tags, vp
 from l7r.repl.rolls.rules import contest, record, render_contest, render_open, round_down
 
 __all__ = [
@@ -27,13 +29,18 @@ __all__ = [
     'abandon_conversation',
     'annotate',
     'begin_conversation',
+    'build_tags',
     'close_open_conversation',
     'collect',
     'contest',
     'conversation_status',
+    'detected',
     'end_conversation',
+    'grilling',
+    'new_line_of_questioning',
     'record',
     'render_contest',
     'render_open',
     'round_down',
+    'vp',
 ]
