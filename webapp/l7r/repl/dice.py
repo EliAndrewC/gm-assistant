@@ -95,10 +95,18 @@ class DiceTotal(int):
         return self._shift(int(other))
 
     def __sub__(self, other: int) -> DiceTotal:
+        # Feature 207: `xky(5, 3) - tact` TAGS the roll rather than subtracting. The
+        # tag is duck-typed on purpose - `dice.py` sits below `rolls/` in the import
+        # order (see `gmrolls.py`), so it cannot name the class, only ask whether
+        # the thing on the right knows how to tag a roll.
+        tagger = getattr(other, 'tag_roll', None)
+        if tagger is not None:
+            tagged: DiceTotal = tagger(self)
+            return tagged
         return self._shift(-int(other))
 
 
-def xky(roll: int, keep: int, reroll: bool = True, print_dice: bool = True) -> int:
+def xky(roll: int, keep: int, reroll: bool = True, print_dice: bool = True) -> DiceTotal:
     """Roll ``roll`` d10s and keep the best ``keep``. Prints the sorted dice
     (the GM's REPL habit) and returns the kept total.
 

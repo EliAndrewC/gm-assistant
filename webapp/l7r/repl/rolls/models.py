@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
+from l7r.repl.gmrolls import GmRoll
+
 #: Where a roll came from. `recorded` means it was joined to a row in the
 #: character-sheet app's roll history and is therefore exact; `typed` means a
 #: human wrote it in Discord. On a dedup, `recorded` wins (FR-009).
@@ -65,6 +67,14 @@ class Roll:
     #: this, so it is the ONE conditional Sincerity bonus that may be written - as a
     #: flag, never as a number. Meaningless when `line` is None.
     grilling: bool = False
+    #: Feature 207. What the players GOT from a hidden-opposition roll (interrogation,
+    #: acting), in the GM's words. Empty means the skill's default outcome - which is
+    #: what makes a truthful NPC, a good liar and an NPC never rolled for write the
+    #: SAME line. Rollers on one line of questioning are grouped by this.
+    outcome: str = ''
+    #: Feature 207. The GM was asked for this roll's rank and had none to give, so
+    #: `annotate()` stops asking. Only meaningful while `rank` is None.
+    rank_settled: bool = False
 
     @property
     def annotated(self) -> bool:
@@ -128,6 +138,24 @@ class RecordingRule:
     caps: Mapping[str, int] = field(default_factory=lambda: {'etiquette': 40})
 
 
+@dataclass(slots=True)
+class Line:
+    """One line of questioning, DECLARED by the GM (feature 207).
+
+    Feature 206 derived a line purely from the rolls sharing an id, and rendering
+    still does. This object exists beside that because a declared line may have no
+    rolls yet, and because it owns the one thing a roll must never carry: the NPC's
+    hidden Sincerity roll. `sincerity` is the GM's live roll (so a later `_ + 15`
+    counts) or a bare total; None when the NPC was simply telling the truth.
+    """
+
+    id: int
+    description: str
+    at: datetime
+    grilling: bool = False
+    sincerity: GmRoll | int | None = None
+
+
 @dataclass(slots=True, repr=False)
 class Conversation:
     """The one piece of mutable state in the feature. At most one is open.
@@ -150,6 +178,19 @@ class Conversation:
     written: tuple[str, ...] = ()
     #: Monotonic timestamp of that write, for the debounce.
     written_at: float = 0.0
+    #: Feature 207. The NPC's rings and skill ranks - the LOCAL copy, loaded from the
+    #: GM-only notes when the conversation begins and checked against at once,
+    #: whether or not it has been persisted yet (the GM: *"we will have updated our
+    #: local cache even if we have not yet persisted it to Obsidian Portal"*).
+    numbers: dict[str, int] = field(default_factory=dict)
+    #: The schools the NPC's record names that roll an extra die on something.
+    schools: tuple[str, ...] = ()
+    #: The lines of questioning the GM has declared, in order.
+    lines: list[Line] = field(default_factory=list)
+    #: What was last persisted to the GM-only notes, so an unchanged tick writes
+    #: nothing: the numbers, and this conversation's hidden-roll entries.
+    numbers_written: dict[str, int] = field(default_factory=dict)
+    hidden_written: tuple[str, ...] = ()
 
     def __repr__(self) -> str:
         """One line, because the REPL echoes whatever `begin_conversation` returns.

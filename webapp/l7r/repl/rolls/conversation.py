@@ -21,6 +21,7 @@ import re
 import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -28,7 +29,7 @@ from chargen import op
 from chargen.opsynth import MatchResult, match_character
 from l7r.repl import gmrolls
 from l7r.repl.rolls import bio as biomod
-from l7r.repl.rolls import console, discord, rules, sheet
+from l7r.repl.rolls import console, discord, hidden, npcnumbers, npcskills, rules, sheet
 from l7r.repl.rolls.models import Conversation, RecordingRule, Roll
 from l7r.repl.rolls.parse import parse_message
 from l7r.repl.rolls.skills import load_skills
@@ -58,6 +59,11 @@ SHEET_BOT_ID = '1490400739934212116'
 _BOT_ROLL = re.compile(r'^\s*\*\*(?P<character>[^*]{1,60})\*\*\s*:')
 
 _lock = threading.Lock()
+#: Feature 207: `new_line_of_questioning` collects synchronously, so for the first
+#: time the GM's thread and the watcher can both be inside `collect`, each advancing
+#: `last_seen` and appending rolls. One lock around the collect makes that a queue.
+#: Reentrant because a test's collector may itself call `collect`.
+_collect_lock = threading.RLock()
 _open: Conversation | None = None
 _stop = threading.Event()
 _watcher: threading.Thread | None = None
@@ -130,6 +136,7 @@ def begin_conversation(
     characters: Callable[[], Sequence[Mapping[str, object]]] = op.existing_characters,
     now: Callable[[], datetime] | None = None,
     watch: bool = True,
+    get_body: Callable[[str], Mapping[str, object] | None] | None = None,
 ) -> Conversation:
     """Open a conversation with `npc`. Prints what it opened; returns it.
 
@@ -161,9 +168,33 @@ def begin_conversation(
         print(f'Talking to {_open.npc_name}, watching {where}. Rolls until end_conversation().')
         gmrolls.start()
         opened = _open
+    # Feature 207: the NPC's remembered rings and ranks, read ONCE here. The GM: *"we
+    # do not need to check every time, we can assume that nothing will update this in
+    # Obsidian portal besides our own repl, and I have only one repl going at a time."*
+    # `get_body` resolves at CALL time, not as a default bound at import, so the test
+    # suite's offline patch reaches it (research R16 is the day the other shape bit).
+    load_numbers(opened, get_body or op.get_character_body)
     if watch:
         start_watching(opened)
     return opened
+
+
+def load_numbers(
+    conv: Conversation, get_body: Callable[[str], Mapping[str, object] | None]
+) -> None:
+    """Read the NPC's numbers and school off their record. Fail-soft: an unreachable
+    Obsidian Portal means an empty record, and the first tagged roll fills it."""
+    body = get_body(conv.npc_id) or {}
+    conv.numbers = npcnumbers.parse(str(body.get('game_master_info') or ''))
+    conv.numbers_written = dict(conv.numbers)
+    record = {**conv.npc, **body}
+    conv.schools = npcnumbers.find_schools(record, tuple(npcskills.extra_dice_table()))
+    if conv.numbers:
+        known = ', '.join(
+            f'{name.capitalize() if name in npcnumbers.RINGS else name} {value}'
+            for name, value in conv.numbers.items()
+        )
+        print(f'  on record for {conv.npc_name}: {known}')
 
 
 def collect(
@@ -235,8 +266,28 @@ def collect(
                     'character known for that Discord account'
                 )
                 continue
-            conv.rolls.append(roll)
+            conv.rolls.append(attach(conv, roll))
     return conv
+
+
+def attach(conv: Conversation, roll: Roll) -> Roll:
+    """Put an interrogation roll on the line of questioning that was current when
+    it was MADE (feature 207). Anything else passes through untouched.
+
+    By MESSAGE time, not by when the poll happened to see it: the watcher runs every
+    `POLL_SECONDS`, so a roll posted just before a declaration is usually collected
+    just after it. A roll older than the FIRST declaration is left alone - the GM is
+    asked about it (`lines.new_line_of_questioning`, or `annotate()` if it turns up
+    late), because *"instead of pulling in previous interrogation rolls
+    automatically ... I am prompted"*.
+    """
+    if not rules.is_interrogation(roll) or roll.line is not None:
+        return roll
+    current = [line for line in conv.lines if line.at <= roll.at]
+    if not current:
+        return roll
+    line = current[-1]
+    return replace(roll, line=line.id, note=line.description, grilling=line.grilling)
 
 
 def _join(
@@ -289,33 +340,71 @@ def _tick(
     confirms the whole path is working, and everything after it is coalesced.
     """
     before = len(conv.rolls)
-    collector(conv)
+    with _collect_lock:
+        collector(conv)
     if announce:
         for roll in conv.rolls[before:]:
             rank = f' @{roll.rank}' if roll.rank is not None else ''
             say(f'  + {roll.character}: {roll.skill} {roll.total}{rank}')
-    if not conv.rolls:
-        return False
+            announce_comparison(conv, roll)
     lines = tuple(
         rules.render_lines(conv.rolls, conv.npc_name, include_unannotated=include_unannotated)
     )
-    if not lines or lines == conv.written:
+    # Feature 207: the GM-only half. It can change with no player roll at all - a
+    # tagged `xky` records a rank - so it is weighed beside the bio, not under it.
+    secret = hidden.entries(conv)
+    bio_changed = bool(lines) and lines != conv.written
+    notes_changed = conv.numbers != conv.numbers_written or secret != conv.hidden_written
+    if not bio_changed and not notes_changed:
         return False
     # `debounce > 0` guards the guard: end_conversation and the exit hook pass 0.0
     # meaning "write now, whatever just happened". Without it, a written_at that is
     # ahead of the clock - a forced value in a test, or a monotonic clock that has
     # not caught up - makes the elapsed time negative and blocks the FINAL write,
     # which is the one write that must never be skipped.
-    if conv.written and debounce > 0 and clock() - conv.written_at < debounce:
+    wrote_before = bool(conv.written) or conv.written_at > 0
+    if wrote_before and debounce > 0 and clock() - conv.written_at < debounce:
         return False
-    body = str((get_body(conv.npc_id) or {}).get('bio') or '')
-    update(conv.npc_id, bio=biomod.rewrite(body, conv.written, lines))
-    conv.written = lines
+    record = get_body(conv.npc_id) or {}
+    if bio_changed:
+        body = str(record.get('bio') or '')
+        update(conv.npc_id, bio=biomod.rewrite(body, conv.written, lines))
+        conv.written = lines
+    if notes_changed:
+        # AFTER the bio and on its own call: a GM-only write that fails must never
+        # cost the players' record (spec 207, Story 10). The numbers are snapshotted
+        # first because the GM's thread can tag a roll while this one is writing.
+        numbers = dict(conv.numbers)
+        notes = npcnumbers.render(str(record.get('game_master_info') or ''), numbers)
+        try:
+            update(
+                conv.npc_id, game_master_info=hidden.rewrite(notes, conv.hidden_written, secret)
+            )
+        except Exception as exc:  # noqa: BLE001 - reported, never fatal to the bio write
+            say(f"  ! could not update {conv.npc_name}'s GM-only notes: {exc}")
+        else:
+            conv.numbers_written = numbers
+            conv.hidden_written = secret
     conv.written_at = clock()
-    if announce:
+    if announce and bio_changed:
         for line in lines:
             say(f'  -> {conv.npc_name}: {line}')
     return True
+
+
+def announce_comparison(conv: Conversation, roll: Roll) -> None:
+    """Tell the GM, privately, how an interrogation roll stands (spec 207, Story 8).
+
+    The terminal is never screen-shared (GM 2026-09-19), so this is the one place
+    the comparison may appear in the clear. ADVISORY: it never sets the public
+    outcome, because the raises the GM hands out as the questioning goes are not
+    known here.
+    """
+    for line in conv.lines:
+        if line.id == roll.line and rules.is_interrogation(roll):
+            found = hidden.compare(conv, line, roll)
+            if found is not None:
+                say(f'  = {found.describe()}')
 
 
 def start_watching(conv: Conversation, *, interval: float = POLL_SECONDS, **kwargs: Any) -> None:
