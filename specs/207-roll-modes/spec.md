@@ -332,12 +332,23 @@ opposing roll, the record is untouched, and the GM re-rolls. Choosing the second
 to what this roll implies and keeps the roll. The GM's example of a wrong record: an earlier roll
 that silently included a void point's extra die.
 
+**A third answer appears when a void point would explain it** (message 6). When the roll differs
+from the record by EXACTLY 1k1 or 2k2 - the same one or two dice in both rolled and kept, above or
+below - the prompt also offers, worded to the case: "This roll spent a void point" / "This roll
+spent 2 void points" when the roll is above the record (the roll stands, the record is untouched),
+or "The previous roll spent a void point" / "... 2 void points" when it is below (the roll stands
+and the record comes down to what this roll says). Any other difference gets the two answers only.
+
 **Acceptance Scenarios**:
 
 1. **Given** tact 2 / Air 3 recorded, **When** the GM enters `xky(6, 3) - tact`, **Then** they are
    told the record says tact 2 and this roll says tact 3, and asked which is wrong.
 2. **Given** the same record, **When** the GM enters `xky(6, 4) - tact`, **Then** the RING
-   disagreement (Air 3 against Air 4) is what is reported.
+   disagreement (Air 3 against Air 4) is reported and "This roll spent a void point" is offered;
+   choosing it keeps the roll and leaves Air 3 / tact 2 recorded.
+2a. **Given** Air 5 / tact 2 recorded, **When** the GM enters `xky(5, 3) - tact`, **Then** "The
+   previous roll spent 2 void points" is offered, and choosing it records Air 3.
+2b. **Given** a difference of 3k3, or of 1k0, **Then** no void point answer is offered.
 3. **Given** that prompt, **When** the GM presses Ctrl-C, **Then** the repl does not exit or raise,
    the roll is marked a mistake, and the record is unchanged.
 4. **Given** that prompt, **When** the GM says the record was wrong, **Then** the record takes the
@@ -358,6 +369,19 @@ that silently included a void point's extra die.
   and so does not mistake for a bigger ring. `tact(vp * 2)` spends two; `vp` combines with the
   other forms (`tact(2, vp)`).
 
+**Acting and history are RECORDED, never rolled** (message 6). `acting(2)` and `history(3)` state
+that the NPC has that rank and produce no roll, because what they are FOR on an NPC is the free
+raises they hand to other skills - one per rank, +5 each, added by the tool to the NPC's roll and
+shown in the printed line so the GM can see it happened:
+
+| recorded | adds its free raises to the NPC's | NOT added (conditional - the GM adds by hand) |
+|---|---|---|
+| acting | sincerity, intimidation | sneaking (only when blending into a crowd) |
+| history | law, strategy | culture (GM, message 6); heraldry (places, families and institutions only) |
+
+With no argument, `acting()` / `history()` report the recorded rank, or ask for it. A disagreement
+with a recorded rank asks the Story 12 question (no dice, so no void point answer).
+
 Every form prints its dice as `xky` does, returns the same kind of total (so `tact() + 10` works),
 and counts as a tagged GM roll for Story 14.
 
@@ -370,6 +394,11 @@ and counts as a tagged GM roll for Story 14.
 4. **Given** Air 3 and tact 2, **Then** `tact(vp)` rolls 6k4 and `tact(vp * 2)` rolls 7k5, and
    neither triggers a disagreement nor changes the record.
 5. **Given** no open conversation, **Then** a call says there is no NPC to roll for.
+6. **Given** `acting(2)`, **Then** acting 2 is recorded, nothing is rolled and no ring is asked for.
+7. **Given** acting 2 recorded, **Then** `sincerity()` and `intimidation()` each add +10, say so,
+   and a sneaking roll adds nothing.
+8. **Given** history 3 recorded, **Then** `law()` and `strategy()` each add +15 and `culture()` and
+   `heraldry()` add nothing.
 
 ---
 
@@ -497,6 +526,12 @@ GM history roll is not evidence that a player's history roll was contested.
 - **FR-020**: Skill tags MUST be callable as `skill()`, `skill(rank)`, `skill(rolled, kept)`, each
   optionally with `vp` or `vp * N`; missing values MUST be prompted for within 0-5 (rank) and 2-6
   (ring). `skill(rolled, kept)` MUST behave exactly as `xky(rolled, kept) - skill`.
+- **FR-020a**: `acting(N)` and `history(N)` MUST record the rank and MUST NOT roll. Recorded acting
+  MUST add +5 per rank to the NPC's sincerity and intimidation rolls, and recorded history to law
+  and strategy rolls; sneaking, culture and heraldry MUST NOT receive an automatic bonus. Every
+  automatic bonus MUST be named in the roll's printed line.
+- **FR-019a**: When the disagreement is exactly 1k1 or 2k2, the prompt MUST also offer the void
+  point answer worded for the direction and count, with the effects Story 12 gives.
 - **FR-021**: `annotate()` MUST pre-pair a manipulation, sneaking or acting roll with a tagged GM
   roll of its opposing skill, compute free raises from the recorded ranks, and ask only for the
   note (plus acting's outcome). The Story 3 undo MUST restore the full questions.
@@ -551,14 +586,24 @@ GM history roll is not evidence that a player's history roll was contested.
 - The casual-conversation raises are applied ONLY by the grilling flag, never by hand. The `+ 10`
   in the GM's example was Fumitake's acting 2 (a free raise per rank on sincerity).
 
+## Resolved with the GM (message 6)
+
+- The void point answer exists, in four wordings, for differences of exactly 1k1 or 2k2.
+- Acting and history are recorded by `acting(N)` / `history(N)` and never rolled; their
+  unconditional free raises are automatic, their conditional ones are the GM's to add.
+
 ## Open Questions (for the GM, before the scope closes)
 
-A. **A third answer at the disagreement prompt: "a void point was spent".** When a roll is exactly
-   one die up in BOTH rolled and kept (`xky(6, 4) - tact` against Air 3 / tact 2), neither the roll
-   nor the record is wrong. The GM named two answers; this would be a third. Not added unasked.
-B. **Acting's free raises.** With acting recorded, `sincerity()` could add the per-rank free raise
-   itself instead of the GM typing `+ 10`. Not added unasked; FR-022 says hand bonuses are left
-   alone either way.
+C. **Do the automatic raises also land on `xky(8, 3) - sincerity`, or only on `sincerity()`?** The
+   GM ruled `sincerity(5, 3)` is "the same as" `xky(5, 3) - sincerity`, and also plans to type
+   `xky(8, 3) + 10 - sincerity` where the `+ 10` IS acting 2 - which, if the tag adds acting as
+   well, counts it twice. Proposed: the automatic raises apply to EVERY tagged form, always named
+   in the printed line (`+10 acting 2`), so the hand-typed `+ 10` is what gets dropped.
+D. **History and culture.** The GM called history's raises on culture conditional. The rules read
+   the other way: *"one free raise on all culture, law, and strategy rolls ... You also receive
+   these free raises on heraldry rolls, but ... only ... places and families and institutions"* -
+   heraldry is the conditional one. The spec follows the GM's words (culture NOT automatic) until
+   told otherwise; if the rules are right it is one table row.
 
 ## Review history
 

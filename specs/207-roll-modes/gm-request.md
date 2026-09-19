@@ -1,6 +1,6 @@
 # GM request, verbatim (2026-09-19)
 
-Five messages in the "Discord repl" session, plus the session's questions between them and the
+Six messages in the "Discord repl" session, plus the session's questions between them and the
 GM's answers. Nothing the GM said has been edited. **The GM dictates by voice-to-text, and says so
 in message 1**: read "role(s)", "holes", "tools" and "rule(s)" as "roll(s)" wherever dice are meant,
 "Don" as "Dan", and "tapped value" / "attacks" / "tech" as "tact value" / "tact" / "tact".
@@ -324,6 +324,35 @@ free raises added by hand? Proposed: the tool adds those itself on a non-grillin
 > I am asked to annotate is adding the note about what the manipulation rule represented, like what
 > way in which someone was trying to twist another character's words or whatever. And then your
 > default selections can be overcome with things like hitting the backspace key twice or whatever.
+
+### What the session asked after message 5
+
+A. A third answer at the disagreement prompt - "a void point was spent" - when the roll is exactly
+   one die up in both rolled and kept?
+B. With acting recorded, should `sincerity()` add acting's free raises itself?
+
+## Message 6
+
+> Oh yeah, good point about a void point answer. If I make a roll and then it seems to be wrong but
+> it is wrong by exactly 1k1 or 2k2 either above or below what we previously had, then I guess we
+> should have a void point option where the void point option is something like, based on the
+> particulars, "The previous roll spent a void point" or "The previous roll spent 2 void points" or
+> "This roll spent a void point" or "This roll spent 2 void points".
+>
+> And yes, good point about acting being recorded. So I want to be able to say `sincerity()` and
+> have that automatically add acting bonuses. Along those same lines, history also gives bonuses to
+> law and strategy, so we should apply that automatically as well once an NPC is recorded as having
+> history. I guess that raises the question of how I actually do record such a thing. I guess the
+> easiest thing is that we've already established that if I say `acting(2)` or `history(2)` then
+> that will be recorded as something that the NPC has. I think I would further like to make a rule,
+> then, that acting and history are never rolled by NPCs in that way, i.e. me saying `acting(2)` or
+> `history(3)` do not actually generate roles the way that they do for every other skill. Instead,
+> that serves only to record that the NPC has that rank in the skill. Remember that acting also
+> gives free raises to intimidation. So we should apply that as well. we do not need to worry about
+> acting giving bonuses to sneaking because that is conditional. The same thing is true for history
+> giving bonuses to culture because that is also conditional. And so we should presume in both
+> cases that that will not apply and that I will apply those bonuses manually if and when it comes
+> up.
 
 ## Rules-file edits made on the GM's instruction (2026-09-19, uncommitted; the GM handles git there)
 
