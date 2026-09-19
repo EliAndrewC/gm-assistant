@@ -1,12 +1,12 @@
 # GM request, verbatim (2026-09-19)
 
-Seven messages in the "Discord repl" session, plus the session's questions between them and the
+Eight messages in the "Discord repl" session, plus the session's questions between them and the
 GM's answers. Nothing the GM said has been edited. **The GM dictates by voice-to-text, and says so
 in message 1**: read "role(s)", "holes", "tools" and "rule(s)" as "roll(s)" wherever dice are meant,
 "Don" as "Dan", and "tapped value" / "attacks" / "tech" as "tact value" / "tact" / "tact".
 
-**THE FEATURE IS NOT FULLY SCOPED YET.** Message 3 ends: *"I have more things that I want the
-feature to cover, so do not begin the implementation yet."* This file grows as the GM adds them.
+**Scope closed by message 8.** More voice-to-text substitutions are noted at message 5: "tax" /
+"tech" / most "tapped" = tact, "tapped die" = kept die, "error" = the Air ring.
 
 ## Message 1
 
@@ -369,6 +369,12 @@ D. The rules make history's raises on CULTURE unconditional and on HERALDRY cond
 > Oh, yeah, sorry. Uh, my bad on the history and culture. Uh, you are right and I had misremembered.
 > So, yes, please always apply it to culture and law and strategy. And then do not ever apply it to
 > heraldry because I can do that for them when appropriate.
+
+## Message 8 - the scope closes
+
+> I think that's all that I need for now. So yes, please proceed with this entire spec kit feature
+> and take it from start to finished. And then let me know when it is completely done and has
+> landed back in the main checkout. Thanks.
 
 ## Rules-file edits made on the GM's instruction (2026-09-19, uncommitted; the GM handles git there)
 

@@ -4,9 +4,7 @@
 
 **Created**: 2026-09-19
 
-**Status**: Draft - SCOPE STILL OPEN. The GM (2026-09-19): *"I have more things that I want the
-feature to cover, so do not begin the implementation yet."* No plan, tasks or code until the GM
-closes the scope.
+**Status**: Scope closed by the GM 2026-09-19 (message 8); in implementation.
 
 **Input**: GM request 2026-09-19, reproduced verbatim in [gm-request.md](gm-request.md) with the
 session's questions and the GM's answers. Builds on feature 201 (roll capture), 202 (annotation)
@@ -435,9 +433,12 @@ GM history roll is not evidence that a player's history roll was contested.
 
 ### Edge Cases
 
-- A roll tagged with NO conversation open (the GM often rolls the NPC's side first): the tag is
-  kept on the remembered roll, nothing is recorded or checked because there is no NPC yet, and when
-  a conversation begins the recent tagged rolls are recorded or checked then.
+- A roll tagged with NO conversation open: the tag marks the roll - so it is still there for
+  Story 14's pairing - and NOTHING is recorded or checked, then or later. The GM scoped the check to
+  *"if we are in a conversation with an NPC"*, and numbers written from a roll made before the GM
+  said who they were talking to could land on the wrong NPC's permanent record. To put numbers on a
+  record the GM tags, or calls the skill, inside the conversation. (Round 1 of the fidelity review
+  struck an earlier draft that recorded such rolls when the next conversation began.)
 - More than ten dice: the inference reads the pool AS ASKED FOR (`xky(12, 3)`), not the capped pool
   actually rolled.
 - A tag applied twice, or two different tags on one roll: the second is an error, not a silent
@@ -505,7 +506,8 @@ GM history roll is not evidence that a player's history roll was contested.
   Rollers on a line are grouped BY OUTCOME: one written line per distinct outcome.
 - **FR-010**: An interrogation roll attached to a declared line and carrying a rank MUST need no
   `annotate()` answer at all.
-- **FR-011**: The NPC's Sincerity rank MUST be inferred as rolled minus kept dice, less one when
+- **FR-011**: When the Sincerity roll was tagged or made with `sincerity()`, its rank is the
+  RECORDED one (FR-017). Otherwise the NPC's Sincerity rank MUST be inferred as rolled minus kept dice, less one when
   the NPC's Obsidian Portal record names a school the rules give an extra sincerity die; that set
   MUST be derived from the rules text. An unreadable record MUST mean no adjustment, reported.
 - **FR-012**: The repl MUST print the comparison for each interrogation roll on a line that has a
@@ -526,8 +528,8 @@ GM history roll is not evidence that a player's history roll was contested.
 - **FR-018**: NPC ring and skill values MUST be stored in a parsable block of the NPC's GM-only
   notes, MUST NEVER appear in the bio, MUST be loaded once when the conversation begins, and MUST
   be updated in the local copy immediately and persisted with the conversation's debounced write.
-- **FR-019**: A tagged roll disagreeing with the record on rank or ring MUST stop and offer exactly:
-  the roll was a mistake, or the record was wrong. Ctrl-C there MUST be caught, MUST mean the
+- **FR-019**: A tagged roll disagreeing with the record on rank or ring MUST stop and offer:
+  the roll was a mistake, or the record was wrong (plus FR-019a's answer where it applies). Ctrl-C there MUST be caught, MUST mean the
   former, and MUST NOT end the repl or discard anything else. A mistaken roll MUST never be offered
   or pre-paired as an opposing roll.
 - **FR-020**: Skill tags MUST be callable as `skill()`, `skill(rank)`, `skill(rolled, kept)`, each
@@ -613,6 +615,17 @@ None outstanding.
 
 ## Review history
 
-- 2026-09-19: DRAFT, scope open. The independent `spec-fidelity` review (constitution XVI) runs
-  when the GM closes the scope, against gm-request.md as it then stands; no verdict is recorded
-  yet and nothing may be implemented until one is.
+Independent `spec-fidelity` review (constitution XVI), against gm-request.md as written.
+
+- **Round 1 (2026-09-19): CHANGES REQUIRED - one.** An edge case recorded and checked rolls tagged
+  with NO conversation open once the next conversation began. The GM scoped the check to *"if we
+  are in a conversation with an NPC"*, and the deferred write could put one NPC's numbers on
+  another's permanent record. Struck: such a tag now only marks the roll. The reviewer judged
+  FR-007a's narrowing of "each previous interrogation roll" LEGITIMATE (the GM's two answers cannot
+  apply to a PC's first roll on a line the GM declared), the empty-line limit of the undo to be the
+  GM's own condition from message 1, and Story 14's exclusion of self-contested skills to be
+  required by the GM's default-open ruling. Two wording asides (FR-019 "exactly", FR-011's missing
+  recorded-rank caveat) were fixed with it.
+- **Round 2 (2026-09-19): FAITHFUL.** The fix was confirmed to add nothing unasked-for. One seam
+  noted for implementation: a roll tagged outside a conversation has no recorded rank, so when it
+  is pre-paired its rank is inferred from its dice, as an untagged roll's is.
