@@ -1,9 +1,14 @@
 """Client for the character-sheet app's roll-history endpoints.
 
-**THESE ENDPOINTS DO NOT EXIST YET.** They are specified in the character-sheet
-repository at `externally-queryable-roll-results.md`, written for a session in
-that container to implement. This module is the whole of the dependency, so the
-rest of the feature does not know or care whether they are there.
+**THESE ENDPOINTS ARE LIVE** (measured 2026-09-20: `GET /api/characters` on the
+deployed app returns the roster for a valid bearer token and 401 without one).
+They were specified in the character-sheet repository at
+`externally-queryable-roll-results.md` and are now implemented there in
+`app/routes/gm_api.py`. This docstring said they did not exist for as long as
+that was true and then kept saying it, which is worse than silence - a stale
+"not built yet" sends the next session looking for a fallback it does not need.
+This module remains the whole of the dependency, so the rest of the feature does
+not know or care whether they are there.
 
 WHY THE ENDPOINT EXISTS AT ALL. The dice card a player pastes into Discord is
 RENDERED from a `roll_history` row - the PNG is a lossy copy of structured data

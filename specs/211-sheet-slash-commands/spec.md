@@ -4,9 +4,17 @@
 
 **Created**: 2026-09-20
 
-**Status**: Planned, reviewed FAITHFUL. Not implemented - the work is done in the character-sheet repository.
+**Status**: Planned. Amended for GM message 2 and re-reviewed (see Review history). Not
+implemented, and blocked by design until the character-sheet foundation ships.
 
-**Input**: GM request 2026-09-20, verbatim in [gm-request.md](gm-request.md).
+**Input**: GM request 2026-09-20, two messages, verbatim in [gm-request.md](gm-request.md).
+
+**DEPENDS ON WORK IN THE CHARACTER-SHEET APP, WHICH SHIPS FIRST** (GM message 2). The requirements
+this feature needs from that app are written up in
+`discord-slash-commands-requirements.md` at the root of the character-sheet repository; the GM
+runs that work in a separate container and deploys it. **Task 1 of this feature is to validate that
+it was done** - behavior, not a changelog. Nothing here is built on a workaround for a defect that
+document asks to be fixed.
 
 **WHERE THIS IS BUILT - read first.** The commands are implemented in
 **<https://github.com/EliAndrewC/character-sheet>**, not in this repository. That is the standing
@@ -16,7 +24,7 @@ reimplemented outside it. Every sheet-affecting requirement below - spending a v
 action dice - is a write to the sheet's own database, which settles it. This directory is the
 planning record, written here because this is where the GM asked; [plan.md](plan.md) is grounded in
 a read of the character-sheet code at commit `6c4dd9c` and is meant to be carried into a session
-opened in that repository. The one piece that IS gm-assistant work is User Story 5.
+opened in that repository. The one piece that IS gm-assistant work is User Story 6.
 
 ## Why
 
@@ -112,7 +120,30 @@ lists the new action dice; opening the sheet shows those dice, all unspent, and 
 4. **Given** the sheet was already open in a browser, **Then** the new action dice are not lost or
    undone by that open page.
 
-### User Story 5 - The GM's roll capture still reads the bot's posts (Priority: P2, gm-assistant)
+### User Story 5 - Three rolled school knacks get commands (Priority: P1)
+
+`/oppose-social`, `/oppose-knowledge` and `/commune` roll those knacks for the invoker's character.
+`/commune` costs a void point just to be made, which comes off the sheet like any other spend.
+
+**Independent test**: a character with Commune and 1 void point runs `/commune`; the roll is posted
+and the sheet shows 0 void points. With 0 void points, `/commune` is refused privately and nothing
+is rolled.
+
+**Acceptance scenarios**:
+
+1. **Given** a character who has the knack, **When** they run `/oppose-social` or
+   `/oppose-knowledge`, **Then** it rolls that knack exactly as the sheet rolls it, and records the
+   roll the same way a skill command does.
+2. **Given** a character who runs `/commune`, **Then** one void point is spent to activate it
+   before any optional spend, and the post says so.
+3. **Given** a character who cannot pay the activation point, **Then** the roll is refused
+   privately: no dice, no deduction, no post.
+4. **Given** `/commune void:k` on top of the activation point, **Then** the activation point is
+   paid first and k is checked against what remains, as the sheet does.
+5. **Given** a character who does NOT have the knack, **Then** the invoker alone is told so, and
+   nothing is rolled.
+
+### User Story 6 - The GM's roll capture still reads the bot's posts (Priority: P2, gm-assistant)
 
 gm-assistant's roll capture (features 201-210) reads the character-sheet bot's posts. The new post
 shapes - a roll that names a void spend, an initiative post - must not be misread.
@@ -163,18 +194,35 @@ initiative post parses as no skill roll at all.
   same test cases.
 - **FR-014** (gm-assistant): roll capture MUST parse the new post formats correctly, pinned by
   fixtures of real posts.
+- **FR-015**: `/oppose-social`, `/oppose-knowledge` and `/commune` MUST exist and roll
+  `knack:oppose_social`, `knack:oppose_knowledge` and `knack:commune` respectively, following every
+  rule in FR-004 through FR-011 that applies to a skill command.
+- **FR-016**: `/commune` MUST spend one void point to activate, deducted from the sheet, before any
+  optional void spend; a character who cannot pay it MUST be refused without rolling. An optional
+  spend on the same command MUST be checked against what remains after the activation point.
+- **FR-017**: A command for a knack the character does not have MUST refuse privately rather than
+  roll something.
+- **FR-018**: NO other school knack and no school ability is added by this feature; neither is
+  Otherworldliness, which the GM deferred to a later feature by name.
+- **FR-019**: This feature MUST NOT work around any defect named in the character-sheet
+  requirements document - a workaround in the bot is not an acceptable substitute (GM message 2:
+  *"We should not implement any kludgy workarounds when we can instead fix the character sheet
+  app"*). If any **blocking** requirement (that document's Part 1) turns out not to have been
+  delivered, the work STOPS and the GM is told. The stop-rule covers Part 1 only: the audit (Part
+  2) and the non-blocking API addition (Part 1b) are reported on, never a reason to halt.
 
 ## Decisions the request left open
 
 Each is cheap to change after the fact; the plan proceeds on the stated reading.
 
-1. **"void points and such."** Read as: the choices a player makes BEFORE a skill roll. On the
-   sheet today, for a skill roll, void is the only one (the roll menu offers the roll and its void
-   submenu, nothing else). So the one option is `void`. If the GM meant something further - a
-   declared TN, say - it is one more option on the same commands.
-2. **`/roll` completes skills only**, not knacks. The GM said "roll any skill"; rollable
-   non-combat knacks (`/discern-honor`) are a natural next step and nothing here blocks them, but
-   they were not asked for and are not added.
+1. **"void points and such."** Answered by the GM in message 2: the other pre-roll bonus is
+   Otherworldliness, and it is deferred by name. So `void` is the only option on a skill command in
+   this feature, and `/commune`'s activation point is the one other thing that touches the void
+   pools.
+2. **`/roll` completes skills only**, not knacks. The GM said "roll any skill", and named the
+   three knacks he wants as their own commands rather than as `/roll` entries. The other rollable
+   knacks are held for a later feature by his instruction, so putting these three into the
+   completions would advertise a category this feature does not cover.
 3. **Togashi Ise Zumi's two initiative variants**: `/initiative` rolls the default variant, the
    same "a slash command has nobody to ask, so it takes the plain roll" rule the sheet repository
    already applies to the Merchant's `/commerce`. An optional `variant` argument is the declined
@@ -192,7 +240,8 @@ Each is cheap to change after the fact; the plan proceeds on the stated reading.
 Independent `spec-fidelity` review (constitution XVI), against gm-request.md as written.
 
 - **Round 1 - CHANGES REQUIRED** (2026-09-20). Building it in the character-sheet repository, the
-  per-roll void cap, FR-012 and User Story 5 were all found faithful. Four changes: FR-001/FR-002
+  per-roll void cap, FR-012 and the roll-capture story (then numbered 5, now 6) were all found
+  faithful. Four changes: FR-001/FR-002
   said "every skill", which by the rules includes attack and parry - the one thing the GM excluded
   (now "non-combat" throughout); FR-003 swapped the GM's class "combat skills" for "combat rolls"
   and ended in "and the like" (now the GM's class, with the sheet's data as source of truth); void
@@ -205,6 +254,21 @@ Independent `spec-fidelity` review (constitution XVI), against gm-request.md as 
   (so FR-003a is the rules, not a carve-out). Nothing missing against the request, nothing added
   beyond the sheet-write consequences the GM's own parity standard implies.
 
+GM message 2 amended the request (three rolled knacks, Otherworldliness deferred, the
+character-sheet handoff, the ship-order dependency), so a second cycle was run over the amended
+spec AND the companion requirements document, against both messages.
+
+- **Message 2, round 1 - CHANGES REQUIRED** (2026-09-20). Message 2 was found fully carried, the
+  requirements document was found to contain both halves the GM asked of it, and its reading of
+  "you need not do a full audit / the character-sheet session should perform a full audit" as a
+  DELEGATION rather than a reduction was upheld. Two changes, both about a dependency being drawn
+  wider than the GM drew it: one sentence in the audit section attributed a scope limit to the GM
+  that he never stated (reworded to limit the FIXING, not the LOOKING); and the API addition
+  (current void, action dice, cap on `GET /api/characters`) was filed as blocking when no
+  requirement in this spec actually reads it over HTTP - it moved to a non-blocking section, and
+  FR-019's stop-rule is now scoped to the blocking requirements only, so a thin audit write-up
+  cannot halt this feature.
+
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: A player can make any non-combat skill roll, with or without void, without opening
@@ -216,3 +280,7 @@ Independent `spec-fidelity` review (constitution XVI), against gm-request.md as 
 - **SC-004**: For the same character state and the same dice, the sheet and the command produce the
   same roll, the same deduction and the same action dice - pinned by shared test cases.
 - **SC-005**: gm-assistant's capture reads every new post format correctly.
+- **SC-006**: A character can roll all three named knacks from Discord, and `/commune` cannot be
+  made without a void point to pay for it.
+- **SC-007**: No part of this feature compensates for a defect the character-sheet requirements
+  document asks that app to fix.

@@ -1,179 +1,174 @@
-# Implementation Plan: `/roll`, per-skill commands, `/initiative`, and void spends that reach the sheet
+# Implementation Plan: `/roll`, per-skill commands, three rolled knacks, `/initiative`
 
 **Feature**: `specs/211-sheet-slash-commands` | **Date**: 2026-09-20 | **Spec**: [spec.md](spec.md)
 
 **BUILT IN <https://github.com/EliAndrewC/character-sheet>.** Every path below is in that
-repository unless it says gm-assistant. Grounded in a read of commit `6c4dd9c` (2026-09-20). That
-repository does not use spec-kit; it keeps design documents (`import-design/`,
-`profession-design/`) and a long CLAUDE.md. Carry this file and [tasks.md](tasks.md) into a session
-there; the natural home is a `discord-design/` directory beside the others.
+repository unless it says gm-assistant. Grounded in a read of it at commit `6c4dd9c` (2026-09-20),
+which is bind-mounted in this container at `/host-l7r-repo/character-sheet` - the same tree the
+GM's character-sheet container works in.
 
-## Summary
+**THIS FEATURE STARTS AFTER THE SHEET FOUNDATION SHIPS** (GM message 2). The rules this feature
+needs on the server, and the concurrency bug it would otherwise trip over, are specified in
+`discord-slash-commands-requirements.md` at the root of the character-sheet repository. The GM's
+sequence: that work is implemented and deployed by his character-sheet session; then this feature
+is built on it. **Task 1 here is validating it landed** - by behavior, not by changelog - and the
+answer to a missing piece is to say so, never to work around it (FR-019).
 
-Three things are easy and one is not. Registering 18 per-skill commands is a flag that already
-exists. `/roll` with autocomplete is one new interaction type. The void option on a skill roll is
-`rolled += n; kept += n` on a formula the server already builds. **What is not easy is that void
-spending and initiative are today implemented in the BROWSER** - the server has never deducted a
-void point or computed an action die - and that an open sheet tab saves its whole local tracking
-state back to the server, so it will overwrite whatever a command wrote. Most of this plan is about
-those two facts.
+## What moved out of this plan
 
-## What exists (measured, not remembered)
+The first draft carried three large design sections - a server-side void spend, a server-side
+initiative, and a fix for the open-tab overwrite. Those are now the character-sheet requirements
+document's R1, R2 and R4, because they are that app's rules and that app's bug, not this feature's.
+What is left here is the part that is genuinely about slash commands.
+
+The file-and-line detail behind those findings is preserved in that document (its Part 0), so
+nothing measured was lost in the handoff.
+
+## What exists (measured at `6c4dd9c`, not remembered)
 
 | piece | where | state |
 |---|---|---|
-| interactions endpoint | `app/routes/discord.py` | verifies, rolls inline, answers deferred (type 5), renders card in a background task with retry. Handles type 1 (ping) and type 2 (command) only |
-| command -> roll | `app/services/discord_commands.py` | `roll_key_for_command` already maps ANY id in `game_data.SKILLS` to `skill:<id>`; `resolve_character` (pin, else owned+grouped); `_record` follows `should_record_roll` |
-| server roller | `app/services/roll_engine.py` `execute_roll` | the unconditional roll only. Docstring says why: "no void spends ... a slash command has nobody to ask" - this feature changes that premise for PRE-roll choices, which an option can carry |
-| registration | `scripts/register_discord_commands.py` | `--skills all` already registers one command per `SKILLS` entry; default is `etiquette` only. No options on any command |
-| skills | `game_data.SKILLS` | 18, all social/knowledge. Combat rolls (attack, parry, ...) are not in `SKILLS`, so "leave out combat skills" is already true of the table the commands derive from |
-| initiative formula | `app/services/dice.py` `build_initiative_formula` | rolled/kept plus FLAGS (`kakita_phase_zero`, `shinjo_4th_dan`, `hiruma_4th_dan`, `togashi_athletics_extra_die`, `mantis_4th_dan_athletics_die`) that "the client applies after rolling" |
-| initiative post-processing | `_dice_js.html` ~l.2759-2818 | keeps LOWEST dice, applies the flags, builds `[{value, athletics_only?, mantis_4th_dan?}]`, calls `setActionDice` |
-| new-round reset | `_tracking_js.html` `setActionDice` | replaces `actionDice` (all `spent: false`), `resetMantisRound()`, clears `kakita_5th_dan_used`. Does NOT clear `precepts_pool` |
-| void allocation | `static/js/roll_math.js` `allocateVoidSpend` | temp first, then regular, then worldliness; reports `short` |
-| void consequences | `_dice_js.html` `deductVoidPoints` | Ide 5th Dan (temp VP back), Yogo Warden 3rd Dan (heals light wounds), Matsu 3rd Dan (banks wound-check bonuses) |
-| void per-roll cap | `app/routes/pages.py` ~l.752-778 | `void_spend_config`: cap = lowest ring (shugenja: lowest ring - 1); `worldliness_max` from the knack. Built inline in the page route, not callable |
-| sheet state | `models.Character` | `current_void_points`, `current_temp_void_points`, `action_dice` JSON, `adventure_state` JSON |
-| tab save | `_tracking_js.html` `save()` -> `POST /characters/{id}/track` | posts the tab's ENTIRE local tracking state, including void and action dice |
+| interactions endpoint | `app/routes/discord.py` | verifies, rolls inline, answers deferred (type 5), renders the card in a background task with retry. Handles interaction type 1 (ping) and 2 (command) only |
+| command -> roll | `app/services/discord_commands.py` | `roll_key_for_command` maps any id in `game_data.SKILLS` to `skill:<id>`; `resolve_character` (GM pin, else the owned character in a gaming group); `_record` follows `should_record_roll` |
+| server roller | `app/services/roll_engine.py` `execute_roll` | the unconditional roll only |
+| registration | `scripts/register_discord_commands.py` | `--skills all` already registers one command per `SKILLS` entry; default is `etiquette` alone. No options on any command |
+| skills | `game_data.SKILLS` | exactly the 18 non-combat skills. Combat lives in a separate `COMBAT_SKILLS`; iaijutsu is a knack. **Measured: the two are disjoint**, so a command set derived from `SKILLS` satisfies FR-003 by construction |
+| the three knacks | `game_data.SCHOOL_KNACKS` + `dice.py` `build_knack_formula` | `oppose_social` (Water), `oppose_knowledge` (Air), `commune` (School Ring, via `SCHOOL_RING_KNACK_IDS`). All three already produce `knack:<id>` formulas; none is in `NON_ROLLABLE_KNACKS` |
+| Commune's cost | `dice.py` l.1072 `requires_void_point=(knack_id == "commune")` | the flag exists server-side; only the BROWSER charges it (`_dice_js.html` `voidActivationCost`, `computeVoidOptions(reserve)`). Requirement R3.2 moves the charge to the server |
+| read-only GM API | `app/routes/gm_api.py` | `GET /api/rolls`, `GET /api/characters`, bearer `ROLL_QUERY_TOKEN`. Requirement R5.1 adds current void, action dice and the per-roll cap to the character payload |
 
 ## Design
 
-### D1. Commands and options
+### D1. The command set
 
-- Per-skill: one command per entry in `game_data.SKILLS`, 18 today, each with one optional integer
-  option `void` (min 0, max 10; the real limit is enforced server-side because it is per-character).
-  **Measured 2026-09-20**: `SKILLS` holds exactly the 18 non-combat skills; the combat ones live in
-  a separate `game_data.COMBAT_SKILLS` and iaijutsu is a knack, so the two tables are disjoint.
-  Deriving the command set from `SKILLS` therefore satisfies FR-003 by construction rather than by
-  a filter somebody has to remember - and the guard test asserts the disjointness directly, so a
-  future move of attack into `SKILLS` turns the gate red instead of quietly registering `/attack`.
-- `/roll`: required string option `skill` with `autocomplete: true`, plus the same `void`.
-- `/initiative`: no options (spec FR-003a - the rules forbid void on initiative - and Decision 3).
-- 20 commands against a cap of 100. The registration script's default becomes the full set, derived
-  from `SKILLS` - a guard test asserts registered names == `SKILLS` + `{roll, initiative}` and that
-  no combat roll key is reachable, so the list is never hand-maintained.
+| command | rolls | options |
+|---|---|---|
+| `/roll` | any non-combat skill, chosen by autocompletion | `skill` (required, autocomplete), `void` (optional int) |
+| one per skill - `/etiquette`, `/precepts`, `/sincerity`, ... | `skill:<id>` | `void` |
+| `/oppose-social`, `/oppose-knowledge` | `knack:oppose_social`, `knack:oppose_knowledge` | `void` |
+| `/commune` | `knack:commune` | `void` (on top of the activation point) |
+| `/initiative` | `initiative` | none - FR-003a, the rules forbid void on it |
+
+23 commands against Discord's per-application cap of 100.
+
+The per-skill set is DERIVED from `game_data.SKILLS`; the knack set is an explicit allow-list of
+exactly three ids, because the GM held the rest back by name (FR-018). A guard test asserts both:
+registered names == `SKILLS` + the three knacks + `{roll, initiative}`, and no id from
+`COMBAT_SKILLS` is reachable. So a future move of attack into `SKILLS`, or a fourth knack added
+casually, turns the gate red instead of quietly registering a command.
+
+`roll_key_for_command` grows a second branch: a hyphenated command name maps to the underscored
+knack id (`oppose-social` -> `knack:oppose_social`). Discord requires lowercase names with no
+spaces, which is why the command is hyphenated and the roll key is not.
 
 ### D2. Autocomplete (interaction type 4)
 
-`routes/discord.py` gains a branch: type 4 -> respond type 8 with up to 25 choices, synchronously
-(no deferral is allowed for autocomplete, and it must answer in 3 s - it is a dict
-filter). Match = case-insensitive prefix first, then substring, over skill names. 18 skills
-fit under the 25-choice ceiling with nothing typed. Choice `value` is the skill id; `name` is the
-skill's name. (Showing the character's rank in the label is an offer to the GM, not part of this
-feature - spec "Offers".) An autocomplete request never errors to the user.
+`routes/discord.py` gains a branch: type 4 -> respond type 8 with up to 25 choices,
+**synchronously** - Discord does not allow deferral for autocomplete and requires an answer in 3
+seconds, which a dict filter meets easily. Match is case-insensitive prefix first, then substring,
+over skill names; 18 skills fit under the 25-choice ceiling with nothing typed. Choice `value` is
+the skill id, `name` is the skill's name. (Rank in the label is an offer to the GM, not part of
+this feature - see the spec's "Offers".) An autocomplete request never errors to the user.
 
-The submitted value is validated again on the type-2 request (a user can type free text and
-ignore the completions): unknown -> ephemeral `CommandError`.
+`/roll` completes **skills only**. The three knacks have their own commands and the rest of the
+knacks are deferred, so listing any of them would advertise a category this feature does not cover.
 
-### D3. Void on a skill roll - move the rule to the server, once
+The submitted value is re-validated on the type-2 request, since a player can ignore the
+completions and type free text: unknown -> ephemeral `CommandError`.
 
-New `app/services/void_spend.py` (pure, 100% covered):
+### D3. Rolling with void - a thin caller over the sheet's own services
 
-- `void_spend_config(character_data) -> dict` - EXTRACTED from `pages.py`, which then calls it.
-  This is the no-second-implementation rule applied inside the repo: the page and the bot read the
-  cap from one function.
-- `allocate(count, temp, regular, worldliness_avail) -> Allocation` - Python mirror of
-  `allocateVoidSpend`. It is five `min()` calls; like the total cap in `roll_engine.py` it cannot
-  be shared across the language boundary, so it is pinned the same way: the cases in
-  `tests/js/roll_math.test.js` are asserted verbatim in `tests/test_void_spend.py`.
-- `apply_spend(character, allocation, school_abilities) -> None` - mutates the model: the three
-  pools, then the Ide / Yogo / Matsu consequences. **RESEARCH FIRST (T001, T002)**: whether worldliness
-  may fund a plain skill roll, and where `matsuBankedWcBonuses` persists, were not settled by this
-  read. Read `executeRoll`'s void branch (~l.1970-2090) end to end before writing this.
+Once requirement R1 lands, this feature implements no void rule of its own. `run_roll_command`
+grows an optional void count and becomes a caller:
 
-`execute_roll` gains `void_spent: int = 0`: `rolled += n`, `kept += n`, `formula["void_spent"] = n`
-- exactly the three lines the browser runs (`_dice_js.html` l.5973-5976), with the 10k10 overflow
-handled by whatever the formula layer already does for it (verify; do not invent). The payload
-gains the same `void_spent` marker the browser's payload carries, so the dice card and the
-roll-history page render a Discord spend identically.
+1. resolve the character (unchanged),
+2. build the formula (unchanged),
+3. compute the **activation cost** - 1 for `knack:commune` via the formula's existing
+   `requires_void_point`, otherwise 0,
+4. ask the sheet's void service to reserve `activation + requested`, which refuses when the
+   character cannot pay or the request exceeds their per-roll cap,
+5. roll with the requested spend,
+6. commit the deduction and the `roll_history` row in ONE transaction.
 
-Order inside `run_roll_command`, all in ONE transaction: resolve character -> build config ->
-refuse if `void > cap` -> allocate -> refuse if `short` -> roll -> apply spend -> record -> commit.
-A refusal raises `CommandError` before any dice are rolled, so FR-005's all-or-nothing is
-structural, not a rollback. Refusal text names the number: "You have 1 void point; you asked to
-spend 3."
+A refusal raises `CommandError` before any dice are rolled, so the spec's all-or-nothing (FR-005)
+is structural rather than a rollback. Refusal text names the number: "Commune costs a void point
+and you have none", "You have 1 void point; you asked to spend 3".
 
-Post text: `**Name**: **31** Sincerity@3 (1 void)`. The parenthesized suffix is deliberate -
-gm-assistant's capture strips `(...)` spans before parsing (`parse.py` `_BREAKDOWN`), so the
-existing parser reads this line correctly today.
+**Ordering matters and is not arbitrary**: the activation point is paid off the top and the
+optional spend is checked against what remains - matching `computeVoidOptions(reserve)`, so a
+character whose cap is 3 but who holds 2 points can put exactly 1 into a Commune roll. Leave a
+comment at the point of change saying so; this is the kind of ordering a later edit silently
+inverts.
 
-### D4. Initiative - same move
+### D4. Knack availability
 
-New `app/services/initiative.py` (pure): `action_dice_from_roll(formula, dice, rng) -> list[dict]`
-mirroring the browser block: sort kept ascending -> Hiruma (-2, min 1) -> Shinjo (highest := 1) ->
-Kakita (10 -> 0) -> re-sort -> Togashi extra athletics die (one more d10, `athletics_only`) ->
-Mantis fixed value-1 die. `roll_dice` keeps HIGHEST today; initiative keeps LOWEST - add a
-`keep_lowest` parameter rather than negating values. Pinned against the browser by extracting the
-browser block into a `roll_math.js` function (`initiativeActionDice`) with a shared case table, the
-pattern the repo already uses for the total cap. That extraction is the one browser-side change
-this feature makes to existing behavior, and it is a pure move.
+A character who does not have the knack has no `knack:<id>` formula at all - `build_all_roll_formulas`
+emits formulas only for knacks they hold - so `execute_roll` already returns `None`. That becomes an
+ephemeral "you do not have the Commune knack" rather than a generic failure (FR-017).
 
-`start_round(character, dice)` - the server's `setActionDice`: `action_dice = [{..., spent:
-False}]`, clear the Mantis round keys and `kakita_5th_dan_used` from `adventure_state`, leave
-`precepts_pool` alone. **RESEARCH FIRST (T003)**: enumerate every key `resetMantisRound()` touches
-and where each persists; the JS is the specification.
+### D5. `/initiative`
 
-The post: `**Name** rolls initiative - action dice: 2, 5, 7` plus the dice card with
-`show_total: false` (the renderer already supports this for initiative payloads). No number sits
-directly before a skill word, so gm-assistant's `_CLUSTER` has nothing to match; T025 proves it
-with a fixture rather than trusting this sentence.
+Once requirement R2 lands, this is a caller too: ask the sheet for an initiative roll and a
+start-of-round, then post the result. This feature implements no part of the keep-lowest rule, the
+school adjustments, or what a new round resets.
 
-Recorded as roll key `initiative` with `action_dice` in the payload, the shape the browser already
-posts.
+The post: `**Name** rolls initiative - action dice: 2, 5, 7`, plus the dice card with
+`show_total: false` (the renderer already supports this for initiative payloads).
 
-### D5. The open-tab overwrite - the real risk (FR-012)
+### D6. Post formats, and why they are shaped that way
 
-`save()` posts the tab's whole tracking state. A player with the sheet open who runs
-`/sincerity void:1` and later clicks anything that saves will write their stale void count back,
-silently refunding the point. Same for action dice. Discord-side writes make a latent
-last-writer-wins design into a visible bug.
+| roll | posted line |
+|---|---|
+| plain skill | `**Name**: **31** Sincerity@3` (unchanged) |
+| with void | `**Name**: **38** Sincerity@3 (1 void)` |
+| commune | `**Name**: **24** Commune (Water) (1 void to activate)` |
+| initiative | `**Name** rolls initiative - action dice: 2, 5, 7` |
 
-Chosen: **a revision counter on tracking state.** `Character.tracking_rev` (int). `/track`
-requires the rev the tab loaded; a mismatch returns 409 with the current state, and the tab
-adopts the server's values and tells the player ("updated from Discord"). Every server-side writer
-(the two new services) bumps it. Declined alternatives, with reasons:
+The parenthesized suffix is deliberate: gm-assistant's capture strips `(...)` spans before parsing
+(`webapp/l7r/repl/rolls/parse.py`, `_BREAKDOWN`), so a void note cannot be misread as a second
+roll. The initiative line puts no bare number in front of a skill word, so `_CLUSTER` has nothing
+to match. Both are asserted by fixture rather than trusted to this paragraph.
 
-- *Field-level PATCH instead of whole-state POST* - the right long-term shape, but it rewrites
-  every tracking call site in a 5,000-line template. An overhaul; out of proportion here.
-- *Polling / server-push so tabs stay fresh* - reduces the window, does not close it, and a Fly
-  machine that scales to zero should not be held open by polls.
-- *Do nothing, document it* - fails the GM's plain requirement that the spend "actually" lands.
+## Where this feature's code gets written, and by whom
 
-The counter also fixes the same bug between two browser tabs, which exists today.
+The commands live in the character-sheet repository, which this container has mounted but must not
+run git against (project rule: edits under `/host-l7r-repo` are legal, git writes are not). So the
+assumption is: **gm-assistant's session edits that working tree and the GM commits**, exactly as it
+already does for `l7r.md`.
 
-### D6. Authorization (FR-011)
-
-`resolve_character` returns a character the invoker OWNS or one the GM pinned, so the invoker can
-always edit it; no new path to someone else's sheet is opened. Asserted by test rather than assumed:
-the spend path calls the same can-edit predicate the `/track` route uses, so a future change to
-`resolve_character` (say, editors rolling for a character) cannot quietly become a write hole.
-
-### D7. gm-assistant side (User Story 5)
-
-After the sheet work is deployed and real posts exist: save one real post of each new shape as a
-fixture under `webapp/l7r/repl/rolls/`, assert skill/total/rank parse and that the initiative post
-yields no roll. `conversation.py` already recognizes the sheet bot as author. Expected code change:
-none; expected deliverable: the fixtures that prove it.
+The alternative - folding the command layer into the requirements document so the GM's
+character-sheet session builds all of it - is cheaper in coordination and costs this feature its
+reason to exist. It is worth one line from the GM before T002 starts, and nothing before T001
+depends on the answer. **Either way, two sessions must not edit that tree at the same time**; T001
+checks that the sheet session is finished before anything here touches a file.
 
 ## Constitution check (gm-assistant's, as far as it reaches)
 
-- **XVI (literal thing)**: no exceptions carved; the six open decisions are in the spec and the
-  spec is fidelity-reviewed.
-- **X / no second implementation**: D3 and D4 extract-and-share inside the owning repo; mirrors
-  across the JS/Python boundary are pinned to shared case tables.
-- **Record the why / declined alternatives**: D5.
-- **Guidelines as tests**: the registered-command set, the void ceiling and the mirror parity are
-  each an assertion, not a sentence.
+- **XVI (literal thing)**: no exceptions carved. The knack allow-list is exactly the GM's three,
+  and FR-018 records what is being held back and on whose instruction.
+- **XIV (fix defects where you find them)**: the two findings are not deferred, they are specified
+  to the app that owns them, which is the only place either can be fixed correctly.
+- **X / no second implementation**: after R1 and R2 this feature contains no dice or void rule of
+  its own. That is the whole point of the handoff.
+- **Record the why / declined alternatives**: D1's allow-list, D3's ordering, D6's post shapes, and
+  the section above on who edits what.
 
 ## Rollout
 
-1. Land D5 (tracking rev) first and alone - it is a fix to existing behavior and is testable
-   without Discord.
-2. D3 + per-skill commands with `void`, registered to the test guild ("Robot Role Call").
-3. `/roll` autocomplete.
-4. D4 `/initiative`.
-5. Register globally (about an hour to propagate); then the gm-assistant fixtures (D7).
+0. **The GM's character-sheet session implements the requirements document and deploys.** Not this
+   feature's work.
+1. **T001 validation.** Behavior checks against the deployed app. A missing requirement stops the
+   feature and is reported (FR-019).
+2. Per-skill commands with `void`, registered to the test guild ("Robot Role Call").
+3. The three knack commands, `/commune` last since it is the one with an activation cost.
+4. `/roll` autocomplete.
+5. `/initiative`.
+6. Register globally (about an hour to propagate).
+7. gm-assistant: capture fixtures for the new post shapes.
 
-## Open items for the GM (none block starting)
+## Open items for the GM (none block T001)
 
-- Decision 1: does "and such" mean anything beyond void?
+- Who writes the command layer - this session editing the mounted tree, or the character-sheet
+  session from an expanded requirements document? See the section above.
+- Commune's ring: the sheet pins it to the School Ring, the rules text says the element being
+  questioned. Raised as open question 1 in the requirements document.
