@@ -4,27 +4,28 @@
 
 **Created**: 2026-09-20
 
-**Status**: Planned. Amended for GM message 2 and re-reviewed (see Review history). Not
-implemented, and blocked by design until the character-sheet foundation ships.
+**Status**: Planned. Amended for GM messages 2 and 3 and re-reviewed each time (see Review
+history). Not implemented, and blocked by design until the character-sheet work ships.
 
-**Input**: GM request 2026-09-20, two messages, verbatim in [gm-request.md](gm-request.md).
+**Input**: GM request 2026-09-20, three messages, verbatim in [gm-request.md](gm-request.md).
 
-**DEPENDS ON WORK IN THE CHARACTER-SHEET APP, WHICH SHIPS FIRST** (GM message 2). The requirements
-this feature needs from that app are written up in
-`discord-slash-commands-requirements.md` at the root of the character-sheet repository; the GM
-runs that work in a separate container and deploys it. **Task 1 of this feature is to validate that
-it was done** - behavior, not a changelog. Nothing here is built on a workaround for a defect that
-document asks to be fixed.
+**THE CHARACTER-SHEET WORK SHIPS FIRST** (GM message 2). The GM runs that work in a separate
+container and deploys it. **Task 1 here is to validate it was done** - behavior, not a changelog.
+Nothing in this feature is built on a workaround for a defect that document asks to be fixed.
 
-**WHERE THIS IS BUILT - read first.** The commands are implemented in
-**<https://github.com/EliAndrewC/character-sheet>**, not in this repository. That is the standing
-decision of 2026-08-28 (recorded in both repositories' CLAUDE.md): code goes where the WRITE
-happens, the existing `/etiquette` command already lives there, and the dice math is never
-reimplemented outside it. Every sheet-affecting requirement below - spending a void point, setting
-action dice - is a write to the sheet's own database, which settles it. This directory is the
-planning record, written here because this is where the GM asked; [plan.md](plan.md) is grounded in
-a read of the character-sheet code at commit `6c4dd9c` and is meant to be carried into a session
-opened in that repository. The one piece that IS gm-assistant work is User Story 6.
+**WHO BUILDS IT - read first.** Every command below is implemented in
+**<https://github.com/EliAndrewC/character-sheet>**, **by that repository's own Claude Code
+session**, not by this one (GM message 3: *"I forgot that the commands themselves live in the
+character sheet repo, so I do not want you to edit that tree directly ... fold the command layer
+into the requirements document and then I will have the other session build all of it"*). It sits
+there for the standing 2026-08-28 reason - code goes where the WRITE happens, `/etiquette` is
+already there, and the dice math is never reimplemented outside it.
+
+So this feature's own deliverables are three: **this specification**, the handoff document
+`discord-slash-commands-requirements.md` at the root of that repository (which now carries the
+command layer too, as its Part 2), and **gm-assistant's own roll-capture side** - User Story 6, the
+only part of this that is code in this repository. Everything else here is a statement of what
+should exist, verified after the fact.
 
 ## Why
 
@@ -207,9 +208,15 @@ initiative post parses as no skill roll at all.
 - **FR-019**: This feature MUST NOT work around any defect named in the character-sheet
   requirements document - a workaround in the bot is not an acceptable substitute (GM message 2:
   *"We should not implement any kludgy workarounds when we can instead fix the character sheet
-  app"*). If any **blocking** requirement (that document's Part 1) turns out not to have been
-  delivered, the work STOPS and the GM is told. The stop-rule covers Part 1 only: the audit (Part
-  2) and the non-blocking API addition (Part 1b) are reported on, never a reason to halt.
+  app"*). If any **blocking** requirement (that document's Parts 1 and 2) turns out not to have
+  been delivered, the work STOPS and the GM is told. The stop-rule covers those parts only: the
+  audit (Part 4) and the non-blocking API addition (Part 3) are reported on, never a reason to
+  halt.
+- **FR-020**: This session MUST NOT write or change any application code, test, configuration or
+  other file in the character-sheet tree (GM message 3). The single file it writes there is the
+  handoff requirements document at that repository's root, left uncommitted for that repository's
+  own session to commit. Anything else this feature needs from that app is expressed as a
+  requirement in that document, never as an edit.
 
 ## Decisions the request left open
 
@@ -223,11 +230,18 @@ Each is cheap to change after the fact; the plan proceeds on the stated reading.
    three knacks he wants as their own commands rather than as `/roll` entries. The other rollable
    knacks are held for a later feature by his instruction, so putting these three into the
    completions would advertise a category this feature does not cover.
-3. **Togashi Ise Zumi's two initiative variants**: `/initiative` rolls the default variant, the
+3. **Commune takes no element argument.** The sheet pins Commune to the character's School Ring;
+   the rules text said "the Ring of the element of the spirits you are questioning". The GM settled
+   it in message 3 - the app is right and the rules were simply behind - so no command option is
+   needed. This session also made the matching edit to `rules/05-school_knacks.md` in
+   `EliAndrewC/l7r`, since the GM said he had been meaning to and had not had time; that edit is an
+   **uncommitted working-tree change** awaiting his own commit, and keeping or reverting it is his
+   call. Nothing in this decision depends on it - the app already behaves this way.
+4. **Togashi Ise Zumi's two initiative variants**: `/initiative` rolls the default variant, the
    same "a slash command has nobody to ask, so it takes the plain roll" rule the sheet repository
    already applies to the Merchant's `/commerce`. An optional `variant` argument is the declined
    alternative - declined because it would show for every player to serve one school.
-4. **A GM rolling on a pinned test character** spends that character's void like anybody else;
+5. **A GM rolling on a pinned test character** spends that character's void like anybody else;
    the existing rule that such rolls leave no history row is unchanged.
 
 ## Offers, not requirements
@@ -268,6 +282,20 @@ spec AND the companion requirements document, against both messages.
   requirement in this spec actually reads it over HTTP - it moved to a non-blocking section, and
   FR-019's stop-rule is now scoped to the blocking requirements only, so a thin audit write-up
   cannot halt this feature.
+
+GM message 3 settled Commune's ring and reassigned the command layer to the character-sheet
+repository's own session, so a third cycle was run over the amended spec and the handoff document.
+
+- **Message 3, round 1 - CHANGES REQUIRED** (2026-09-20). All three messages were found carried,
+  and the handoff document's Part 2 was checked FR by FR and found to have moved the command layer
+  across without changing what any command does - including every judgment call (skills-only
+  completion, the Togashi default variant, a GM on a pin still spending void, the activation point
+  first). Four changes, three of them about a claim being stated more strongly than the facts
+  support: the header still said two messages; FR-020's blanket "MUST NOT edit that tree" banned
+  the one write message 3 requires, the handoff document itself; the handoff document's scope line
+  enumerated its owned parts in a way that left the GM's own API sentence unowned; and both
+  documents described this session's edit to the GM's rules file as an accomplished published fact
+  when it is an uncommitted working-tree change in a repository this session may not commit.
 
 ## Success Criteria *(mandatory)*
 

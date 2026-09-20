@@ -1,67 +1,40 @@
 # Tasks: feature 211 - sheet slash commands
 
-Repository is **character-sheet** unless a task says gm-assistant. Design references (D1-D6) are in
-[plan.md](plan.md); the sheet-side prerequisites (R1-R5) are in
-`discord-slash-commands-requirements.md` at the root of that repository. Mark a task done only when
-verified.
+Everything in Phase 1 depends on the GM's character-sheet session finishing and deploying the
+handoff document (`discord-slash-commands-requirements.md`, root of the character-sheet
+repository). This session writes **no command code** (FR-020). Mark a task done only when verified.
 
-## Phase 0 - the gate (nothing else starts until this passes)
+## Phase 0 - specify and hand off
 
-- [ ] T001 **Validate the sheet foundation shipped**, against the deployed app, by behavior:
-      R1 (void spent outside the browser deducts, refuses an unaffordable or over-cap spend without
-      rolling, records an identical history row), R2 (initiative outside the browser gives the
-      sheet's action dice, starts the round, leaves `precepts_pool`), R3.2 (commune charges its
-      activation point and refuses when it cannot be paid), R4 (a stale whole-state write is
-      rejected and a tab recovers on screen), R5.1 (`GET /api/characters` carries current void,
-      action dice and the per-roll cap). **Any gap STOPS the feature and is reported to the GM**
-      (FR-019) - no workarounds.
-- [ ] T002 Confirm with the GM who writes the command layer (this session editing the mounted tree,
-      or his character-sheet session), and that no other session is working in that tree.
+- [x] T000 Write the handoff document into the character-sheet working tree: the server-side
+      foundation, the full command layer, the non-blocking API addition, the general audit, the
+      out-of-scope list, the verification contract and the open questions. Uncommitted there; the
+      GM commits. **Done 2026-09-20.**
 
-## Phase 1 - skill commands with void (D1, D3)
+## Phase 1 - verify the delivered work (nothing else starts until this passes)
 
-- [ ] T003 `roll_key_for_command`: keep the `SKILLS` branch, add the three-id knack allow-list with
-      hyphen-to-underscore mapping. Unknown name -> None.
-- [ ] T004 `run_roll_command(void=...)`: activation cost, reserve, refuse-before-rolling, one
-      transaction. Assert the RNG is never called on a refusal.
-- [ ] T005 Refusal messages name the number (cap, shortfall, activation point).
-- [ ] T006 Post text with the void suffix (D6); dice card and history row match a sheet roll with
-      the same spend.
-- [ ] T007 Registration: one command per `SKILLS` entry, each with the `void` option; default set
-      becomes the full set. Guard test: registered == `SKILLS` + 3 knacks + `{roll, initiative}`,
-      and nothing from `COMBAT_SKILLS` is reachable.
-- [ ] T008 Register to the test guild and run a real one.
+- [ ] T001 Run the handoff document's **Part 6** checklist against the deployed app, by behavior:
+      void spent through a command really deducts and refuses cleanly; `/initiative` gives the
+      sheet's own action dice, starts the round and leaves `precepts_pool`; `/commune` charges its
+      activation point and refuses when unaffordable; `/roll` completes and revalidates; the
+      registered set matches C1 with nothing from `COMBAT_SKILLS` reachable; a stale whole-state
+      write is rejected and the tab recovers; the posted formats match C6.
+      **A missing blocking requirement STOPS the feature and is reported to the GM** (FR-019) - no
+      workarounds, and no editing that tree to fix it (FR-020).
+- [ ] T002 Report the non-blocking items rather than acting on them: whether `GET /api/characters`
+      now carries current void, action dice and the per-roll cap (R6.1), and what the audit (Part
+      4) turned up.
 
-## Phase 2 - the three knacks (D1, D3, D4)
+## Phase 2 - gm-assistant's capture side (User Story 6, FR-014)
 
-- [ ] T009 `/oppose-social` and `/oppose-knowledge` end to end; label and post format.
-- [ ] T010 A character without the knack gets an ephemeral refusal (D4), not a generic failure.
-- [ ] T011 `/commune`: activation point charged via `requires_void_point`, refused when unaffordable,
-      `void:k` checked against what remains. Comment the ordering at the point of change.
-- [ ] T012 Test guild: run all three, including a deliberately unaffordable `/commune`.
-
-## Phase 3 - `/roll` (D2)
-
-- [ ] T013 Interaction type 4 branch; prefix-then-substring; plain skill names; skills only; never
-      errors to the user.
-- [ ] T014 Type-2 revalidation of a hand-typed skill; ephemeral error.
-
-## Phase 4 - `/initiative` (D5)
-
-- [ ] T015 Command calls the sheet's initiative + start-of-round services; post lists the action
-      dice; card with `show_total: false`; history row keyed `initiative`.
-- [ ] T016 Open the sheet afterwards in the test guild: dice present, unspent, spendable.
-
-## Phase 5 - ship
-
-- [ ] T017 Update the sheet's CLAUDE.md "Roll slash commands" section: the premise "a slash command
-      has nobody to ask" now reads "pre-roll choices ride on options; post-roll choices stay on the
-      sheet". Record the knack allow-list and why only three.
-- [ ] T018 Deploy; register globally.
-- [ ] T019 (gm-assistant) Fixtures for each new post shape - void suffix, commune, initiative -
-      asserting skill/total/rank parse and that an initiative post yields no roll. Update
-      `webapp/l7r/repl/rolls/CLAUDE.md`'s slash-command note.
-- [ ] T020 (gm-assistant) `webapp/l7r/repl/rolls/sheet.py` says the GM API endpoints "DO NOT EXIST
-      YET"; they do (`app/routes/gm_api.py`, `GET /api/rolls` and `GET /api/characters`). Verify
-      against the deployed app and correct the docstring - a stale comment that says a working
-      endpoint is missing will send a future session down the wrong path.
+- [ ] T003 Collect one REAL post of each new shape from the game channels: a skill roll with a void
+      suffix, a `/commune` roll, an `/initiative` post.
+- [ ] T004 Save them as fixtures under `webapp/l7r/repl/rolls/`, alongside the existing
+      slash-command fixtures.
+- [ ] T005 Assert: each roll post parses to the right skill, total and rank; the void annotation is
+      never read as a second roll (`_BREAKDOWN`); an initiative post yields NO roll (`_CLUSTER`
+      finds nothing). These are the tests that turn the handoff document's C6 from prose into a
+      pinned contract.
+- [ ] T006 Update `webapp/l7r/repl/rolls/CLAUDE.md`'s slash-command note for the new formats and
+      the command set that now exists.
+- [ ] T007 `make done` from `webapp/`, then the stop-work procedure.
