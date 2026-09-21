@@ -7,7 +7,7 @@
 **Status**: Specified and handed off. Not implemented. The gm-assistant side is blocked, by design,
 until the character-sheet side ships (see "Who builds what").
 
-**Input**: GM request 2026-09-21, two messages, verbatim in [gm-request.md](gm-request.md). Message
+**Input**: GM request 2026-09-21, three messages, verbatim in [gm-request.md](gm-request.md). Message
 2 approves a shape the session proposed; that proposal is summarized in the same file, because it is
 what "yes, please do that" refers to.
 
@@ -198,7 +198,10 @@ This is the GM's explicit semantic, and the reason the design precomputes.
 - **FR-018** `rules/05-school_knacks.md` in `EliAndrewC/l7r`, Discern Honor: `0.5 * (1k1 - 0.5)`
   becomes `0.5 * (1k1 - 5)`, which is what the Virtue and Unconventional texts already say, what the
   code has implemented since 2026-08-27, and what gives the GM's stated range of -2.0 to +2.5.
-  **Done 2026-09-21**, as an uncommitted working-tree edit; the GM commits that repository.
+  The GM then confirmed the die is flat (message 3: *"it should be 'no rerolls'"*), so the sentence
+  also gains ", where the 1k1 is rolled without rerolling 10s" - the wording `rules/03-combat.md`
+  already uses for initiative, and what `d10(reroll=False)` has always done. **Both done
+  2026-09-21**, as uncommitted working-tree edits; the GM commits that repository.
 
 ## Decisions (each made by the session, each cheap to change)
 
