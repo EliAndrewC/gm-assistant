@@ -4,8 +4,8 @@
 
 **Created**: 2026-09-21
 
-**Status**: Specified and handed off. Not implemented. The gm-assistant side is blocked, by design,
-until the character-sheet side ships (see "Who builds what").
+**Status**: Both halves BUILT (2026-09-21); NOT yet verified end to end. The character-sheet side is
+committed there but not deployed, so tasks T001 and T008 - the live checks - are open.
 
 **Input**: GM request 2026-09-21, three messages, verbatim in [gm-request.md](gm-request.md). Message
 2 approves a shape the session proposed; that proposal is summarized in the same file, because it is
@@ -223,11 +223,16 @@ This is the GM's explicit semantic, and the reason the design precomputes.
 5. **An abandoned conversation is rolled back, and re-crediting is the GM's.** The GM approved
    "discard on `abandon_conversation()`", and abandon exists for a conversation opened against the
    WRONG NPC - so an advance left standing there would be a number computed from the wrong
-   character's Honor. Commit-on-sight (Decision 6) means some of it may already be written; the
+   character's Honor. Commit-on-sight (Decision 7) means some of it may already be written; the
    marker's `was` value exists precisely so that undoing it is mechanical. What is NOT mechanical
    is which character the player's ask should count against instead, so the REPL reports who was
    told what and leaves that to the GM.
-6. **Commit on sight, not at close** (FR-004). At-close is simpler and loses the record if the REPL
+6. **Every gaming group with a knack-holder is sent the conversation.** `begin_conversation`
+   takes one argument and watches every channel, so it does not know which group is at the table,
+   and the sheet app keys a conversation by group. Cost: a PC of the group NOT playing tonight
+   could run the command and be answered about an NPC they have never met. Accepted, because the
+   groups play on different nights, over asking the GM for a second argument at every open.
+7. **Commit on sight, not at close** (FR-004). At-close is simpler and loses the record if the REPL
    dies; the knack's whole premise is that the first answer is remembered.
 
 ## Success criteria

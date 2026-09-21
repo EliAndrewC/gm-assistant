@@ -13,9 +13,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from l7r.repl.gmrolls import GmRoll
+
+if TYPE_CHECKING:
+    from l7r.repl.honor import Record
 
 #: Where a roll came from. `recorded` means it was joined to a row in the
 #: character-sheet app's roll history and is therefore exact; `typed` means a
@@ -156,6 +159,24 @@ class Line:
     sincerity: GmRoll | int | None = None
 
 
+@dataclass(slots=True)
+class DiscernEntry:
+    """One PC's Discern Honor answer for one conversation (feature 212).
+
+    `record` is the PC's Obsidian Portal line AS IT WILL READ once they ask - decided
+    when the conversation opens, so that asking is a lookup and cannot give two
+    answers. It is written only if `asked` becomes true; otherwise it is forgotten,
+    and the d10 rolled for a first read with it.
+    """
+
+    character_id: int
+    pc: str
+    group: int
+    record: Record
+    asked: bool = False
+    committed: bool = False
+
+
 @dataclass(slots=True, repr=False)
 class Conversation:
     """The one piece of mutable state in the feature. At most one is open.
@@ -191,6 +212,25 @@ class Conversation:
     #: nothing: the numbers, and this conversation's hidden-roll entries.
     numbers_written: dict[str, int] = field(default_factory=dict)
     hidden_written: tuple[str, ...] = ()
+    #: Feature 212. The id minted when the conversation opens - the marker a Discern
+    #: Honor record carries so this conversation can advance it only once - and what
+    #: each PC with the knack will be told, decided at open and never recomputed.
+    conversation_id: str = ''
+    discern: dict[int, DiscernEntry] = field(default_factory=dict)
+    #: The NPC's true Honor as read at open. Never leaves this process.
+    honor: float | None = None
+    #: The gaming groups whose sheet-side conversation was opened successfully -
+    #: the only ones worth polling or closing - and whether a failed poll has been
+    #: reported yet, so an unreachable app complains once and not every 20 seconds.
+    discern_groups: tuple[int, ...] = ()
+    discern_complained: bool = False
+
+    def planned(self, pc: str) -> Record | None:
+        """What `pc` (a given name, any case) is told in this conversation, if decided."""
+        for entry in self.discern.values():
+            if entry.pc.lower() == pc.lower():
+                return entry.record
+        return None
 
     def __repr__(self) -> str:
         """One line, because the REPL echoes whatever `begin_conversation` returns.

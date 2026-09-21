@@ -28,8 +28,19 @@ from typing import Any
 from chargen import op
 from chargen.opsynth import MatchResult, match_character
 from l7r.repl import gmrolls
+from l7r.repl import honor as honormod
 from l7r.repl.rolls import bio as biomod
-from l7r.repl.rolls import console, discord, hidden, npcnumbers, npcskills, oppose, rules, sheet
+from l7r.repl.rolls import (
+    console,
+    discern,
+    discord,
+    hidden,
+    npcnumbers,
+    npcskills,
+    oppose,
+    rules,
+    sheet,
+)
 from l7r.repl.rolls.models import Conversation, RecordingRule, Roll
 from l7r.repl.rolls.parse import parse_message
 from l7r.repl.rolls.skills import load_skills
@@ -137,6 +148,8 @@ def begin_conversation(
     now: Callable[[], datetime] | None = None,
     watch: bool = True,
     get_body: Callable[[str], Mapping[str, object] | None] | None = None,
+    new: bool = False,
+    discern_open: Callable[..., None] = discern.open_,
 ) -> Conversation:
     """Open a conversation with `npc`. Prints what it opened; returns it.
 
@@ -150,6 +163,11 @@ def begin_conversation(
     useful for the scratch server, rarely otherwise. The two live game channels
     belong to groups that play on different nights, so watching both at once
     cannot mix two sessions' rolls in practice.
+
+    `new=True` matters only after a crash or a failed close (feature 212): when the
+    character-sheet app still holds an unclosed conversation with this NPC, the
+    default is to RESUME it - so nobody who already used `/discern-honor` is counted
+    twice - and this says "no, that one is over; this is another conversation".
     """
     global _open
     with _lock:
@@ -180,6 +198,10 @@ def begin_conversation(
     # `get_body` resolves at CALL time, not as a default bound at import, so the test
     # suite's offline patch reaches it (research R16 is the day the other shape bit).
     load_numbers(opened, get_body or op.get_character_body)
+    # Feature 212: decide what each PC with Discern Honor is told, and hand ONLY
+    # those told values to the sheet app. After `load_numbers` and outside the lock
+    # because it is network; never raises, and never stops the conversation opening.
+    discern_open(opened, new=new, get_body=get_body or op.get_character_body)
     if watch:
         start_watching(opened)
     return opened
@@ -343,6 +365,7 @@ def _tick(
     debounce: float = WRITE_DEBOUNCE_SECONDS,
     announce: bool = True,
     include_unannotated: bool = False,
+    get_conversation: Callable[[int], sheet.ConversationResult] = sheet.get_conversation,
 ) -> bool:
     """One poll: read new rolls, say so, and write if the debounce has elapsed.
 
@@ -356,6 +379,14 @@ def _tick(
     before = len(conv.rolls)
     with _collect_lock:
         collector(conv)
+    # Feature 212, and ORDER MATTERS: commit who used Discern Honor BEFORE the
+    # notes write below, and on its own read-modify-write. It is not debounced -
+    # it happens once per PC per conversation, and a REPL that dies inside the
+    # debounce window must not lose the fact that a player was told a number. The
+    # notes write below then re-reads the record, so it cannot drop these lines.
+    if conv.discern_groups:
+        discern.poll(conv, get_conversation=get_conversation, say=say)
+    discern.commit(conv, get_body=get_body, update=update, say=say)
     if announce:
         for roll in conv.rolls[before:]:
             rank = f' @{roll.rank}' if roll.rank is not None else ''
@@ -386,6 +417,26 @@ def _tick(
         update(conv.npc_id, bio=biomod.rewrite(body, conv.written, lines))
         conv.written = lines
     if notes_changed:
+        _write_notes(conv, update, get_body, secret)
+    conv.written_at = clock()
+    if announce and bio_changed:
+        for line in lines:
+            say(f'  -> {conv.npc_name}: {line}')
+    return True
+
+
+def _write_notes(
+    conv: Conversation,
+    update: Callable[..., object],
+    get_body: Callable[[str], Mapping[str, object] | None],
+    secret: tuple[str, ...],
+) -> None:
+    """The GM-only half of a tick's write, under the notes lock and from a FRESH read:
+    the GM's thread may have recorded a Discern Honor answer in these same notes
+    since the tick began (feature 212), and rendering over the older copy would
+    silently delete it."""
+    with honormod.NOTES_LOCK:
+        record = get_body(conv.npc_id) or {}
         # AFTER the bio and on its own call: a GM-only write that fails must never
         # cost the players' record (spec 207, Story 10). The numbers are snapshotted
         # first because the GM's thread can tag a roll while this one is writing.
@@ -398,11 +449,6 @@ def _tick(
         else:
             conv.numbers_written = numbers
             conv.hidden_written = secret
-    conv.written_at = clock()
-    if announce and bio_changed:
-        for line in lines:
-            say(f'  -> {conv.npc_name}: {line}')
-    return True
 
 
 def announce_comparison(conv: Conversation, roll: Roll) -> None:
@@ -549,6 +595,8 @@ def end_conversation(
     get_body: Callable[[str], Mapping[str, object] | None] = op.get_character_body,
     update: Callable[..., object] = op.update_character,
     collector: Callable[..., Conversation] = collect,
+    get_conversation: Callable[[int], sheet.ConversationResult] = sheet.get_conversation,
+    close_sheet: Callable[[str], sheet.ConversationResult] = sheet.close_conversation,
 ) -> str:
     """Close, format, and write. No confirmation step (FR-019)."""
     global _open
@@ -580,7 +628,11 @@ def end_conversation(
         debounce=0.0,
         announce=False,
         include_unannotated=force,
+        get_conversation=get_conversation,
     )
+    # Feature 212: that tick made the last poll and recorded whoever asked; what is
+    # left is to stop the sheet app answering. Unasked values are simply dropped.
+    discern.close(conv, delete=close_sheet)
     with _lock:
         _open = None
     if not conv.rolls:
@@ -593,12 +645,33 @@ def end_conversation(
     return '\n'.join(conv.written)
 
 
-def abandon_conversation() -> None:
-    """Close without writing. Not part of the normal path; nothing blocks on it."""
+def abandon_conversation(
+    *,
+    get_body: Callable[[str], Mapping[str, object] | None] | None = None,
+    update: Callable[..., object] | None = None,
+    get_conversation: Callable[[int], sheet.ConversationResult] = sheet.get_conversation,
+    close_sheet: Callable[[str], sheet.ConversationResult] = sheet.close_conversation,
+) -> None:
+    """Close without writing. Not part of the normal path; nothing blocks on it.
+
+    Feature 212 gives it one thing to UNDO. A PC who used `/discern-honor` was
+    recorded the moment the watcher saw it, and this is the wrong-NPC exit - so that
+    record comes back off (`discern.roll_back`), after one last poll to learn who
+    asked, and the GM is told who had already been given a number. The boundaries
+    resolve at call time so the test suite's offline patches reach them.
+    """
     global _open
     conv = _require()
     stop_watching()
     gmrolls.stop()
+    if conv.discern_groups:
+        discern.poll(conv, get_conversation=get_conversation)
+    discern.roll_back(
+        conv,
+        get_body=get_body or op.get_character_body,
+        update=update or op.update_character,
+    )
+    discern.close(conv, delete=close_sheet)
     with _lock:
         _open = None
     print(f'Threw away {len(conv.rolls)} roll(s) for {conv.npc_name}. Nothing written.')
@@ -636,6 +709,11 @@ def close_open_conversation(**kwargs: Any) -> str:
     except Exception as exc:  # noqa: BLE001 - exiting must not fail
         print(f'  ! could not write the last rolls for {name}: {exc}')
         return ''
+
+
+def current() -> Conversation | None:
+    """The open conversation, or None. For callers that must not print."""
+    return _open
 
 
 def conversation_status() -> Conversation | None:

@@ -48,6 +48,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `oppose.py` | PURE. Feature 208: a player's Oppose Social / Oppose Knowledge taxes the NPC's later Air / Water rolls. The penalty in effect is DERIVED from the conversation's rolls (highest live oppose roll at or before the moment - never stored, never summed); `for_line` is the one retroactive case; `settle` re-prices tagged GM rolls when an oppose roll is collected late. |
 | `menu.py` | Feature 210: the arrow-key list every CHOICE prompt uses (`ask_choice`). `Picker` is the pure state and drawing; `choose` is the key loop; `interactive(ask)` decides whether a prompt is a menu at all. An `Option.key` is the answer the GM would have TYPED, which is why call sites have no second code path. |
 | `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
+| `discern.py` | Feature 212: `/discern-honor`. Decides at open what each PC with the knack is told (`plan`), hands the sheet app ONLY those told values (`payloads`), learns who asked (`poll`), records only them (`commit`), and undoes it on abandon (`roll_back`). Section below. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
 ## What a written line looks like, and the two orders that must stay different
@@ -328,6 +329,48 @@ line in `npcskills`): the menu is the list, and printing both showed everything 
 `tests/test_rolls_menu.py` drives a real pseudo-terminal for the key loop, and a whole
 `annotate()` run with scripted arrow keys for the call sites.
 
+## Feature 212: `/discern-honor` is a lookup, so asking twice cannot give two answers
+
+```
+>>> begin_conversation("Otsuki")
+  Discern Honor (3.0): would tell Jimen 4.1, Makoto 3.5, Tetsuro 2.0
+  + Jimen used Discern Honor: told 4.1            <- the player ran /discern-honor
+>>> discern_honor("Otsuki", Jimen)                 # the SAME 4.1, and it still counts once
+```
+
+GM-only notes afterwards: `- Jimen (rank 4): told 4.1 after 2 conversations [c-20260921-7f3a, was 4.5]`.
+
+The slash command lives in the character-sheet app, which cannot read Obsidian Portal; the true
+Honor lives on Obsidian Portal, which only this side reads; and only `begin_conversation` knows who
+is being talked to. So the answers are **decided when the conversation opens** and the command
+looks them up. The GM's requirement, in his words: *"if somebody slips up and accidentally runs
+discern honor twice in the same conversation, then it will return the same result rather than
+incrementing them closer"* - nothing is computed at ask time, so it cannot.
+
+- **Only told values leave** (the conversation id, the group, the opaque Obsidian Portal id of the
+  NPC, the open time, and per character the told number). No true Honor, die, count, lock or NPC
+  name - `test_only_told_values_leave` asserts it over the serialized payload.
+- **Recorded on sight, once.** The watcher tick polls the sheet app, and a PC whose `asked_at` has
+  appeared is written to the NPC's notes immediately - NOT debounced, because a REPL that dies must
+  not lose the fact that a player was told a number. The record's `[id, was X]` marker is what makes
+  every path idempotent (`honor.advance` returns a record this conversation already advanced
+  unchanged), and what lets `abandon_conversation()` put the block back exactly as it was.
+- **A value nobody asked for is forgotten**, d10 and all.
+- **A restart RESUMES.** If the sheet app still holds an unclosed conversation with this NPC,
+  `begin_conversation` says so and reuses its id and its served values, so nobody is counted twice
+  and no first read is re-rolled. `begin_conversation("Otsuki", new=True)` says "that one is over".
+- **Every group with a knack-holder is sent the conversation**, because one argument does not say
+  which group is at the table. The accepted cost is in `discern.py`'s docstring.
+- **Nothing here can stop a conversation opening.** No `Honor:` line, no write token, the app down:
+  each is one printed line, and roll capture and the manual `discern_honor()` carry on.
+- **All GM-only-notes writes share `honor.NOTES_LOCK`** and re-read before rendering - the watcher's
+  commit, the tick's own notes write, and the GM's manual call all rewrite the same field.
+
+Needs `[character_sheet] gm_write_token` in `development-secrets.ini` (the sheet app's
+`GM_WRITE_TOKEN`; the read token is refused on the write routes by design). Spec, the declined
+alternatives and three rounds of review: `specs/212-discern-honor-command/`. The sheet app's half
+and its exact replies: `discord-design/discern-honor-requirements.md` in that repository.
+
 ## Two things that will bite you
 
 **A pasted dice card cannot be recognized as one.** Clipboard pastes arrive as `image.png` and so
@@ -370,7 +413,7 @@ deleted rather than left to drift.
     tests/test_rolls_interrogation.py tests/test_rolls_modes.py tests/test_rolls_npcnumbers.py \
     tests/test_rolls_npcskills.py tests/test_rolls_lines.py tests/test_rolls_hidden.py \
     tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py tests/test_rolls_oppose.py \
-    tests/test_rolls_menu.py )
+    tests/test_rolls_menu.py tests/test_rolls_discern.py )
 ```
 
 `test_rolls_keys.py` drives a REAL pseudo-terminal. The undo keys must be written to it AFTER it is

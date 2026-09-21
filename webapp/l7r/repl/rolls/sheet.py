@@ -106,6 +106,26 @@ def _get(url: str, token: str, timeout: float) -> Any:
         return json.load(response)
 
 
+def write_token(path: Path | None = None) -> str:
+    """The sheet app's WRITE secret (its `GM_WRITE_TOKEN`), for `/api/conversation`.
+
+    A second secret on purpose (feature 212): the read token's own documentation in
+    that app promises it is read-only, and the write routes answer 401 to it. `path`
+    resolves at call time for the reason `query_token` records.
+    """
+    parser = configparser.ConfigParser()
+    parser.read(path or SECRETS)
+    return parser.get('character_sheet', 'gm_write_token', fallback='').strip()
+
+
+def _send(method: str, url: str, token: str, body: Any, timeout: float) -> Any:
+    data = None if body is None else json.dumps(body).encode()
+    headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.load(response)
+
+
 def _unavailable(exc: Exception) -> str:
     if isinstance(exc, urllib.error.HTTPError):
         if exc.code == 404:
@@ -202,3 +222,150 @@ def _as_roll(raw: Mapping[str, Any]) -> RecordedRoll:
         at=parse_timestamp(str(raw.get('created_at') or raw.get('updated_at') or '')),
         rank=None if raw.get('skill_rank') is None else int(raw['skill_rank']),
     )
+
+
+# ---------------------------------------------------------------------------
+# Feature 212: the open conversation, for `/discern-honor`
+#
+# The sheet app owns the slash command and cannot read Obsidian Portal; this side
+# reads Obsidian Portal and cannot answer a slash command. So this side decides
+# what each PC is told and hands the sheet app ONLY those told values - the true
+# Honor never crosses this boundary (spec 212 FR-003, pinned by a test over the
+# serialized payload). The contract is that app's
+# `discord-design/discern-honor-requirements.md`, status block included.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class KnackHolder:
+    """A character in a gaming group who has a knack, and at what rank."""
+
+    character_id: int
+    name: str
+    group: int
+    rank: int
+
+
+@dataclass(frozen=True, slots=True)
+class HoldersResult:
+    holders: tuple[KnackHolder, ...] = ()
+    reason: str = ''
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationResult:
+    """The sheet app's open conversation for a group - None when nothing is open -
+    or the reason it could not be read or written."""
+
+    conversation: Mapping[str, Any] | None = None
+    reason: str = ''
+
+
+def _conversation_unavailable(exc: Exception) -> str:
+    if isinstance(exc, urllib.error.HTTPError):
+        if exc.code == 404:
+            return 'the character-sheet app has no /api/conversation route (not deployed yet?)'
+        if exc.code == 503:
+            return 'GM_WRITE_TOKEN is not set on the character-sheet app'
+        if exc.code == 401:
+            return 'the character-sheet app refused the [character_sheet] gm_write_token'
+        return f'the character-sheet app returned {exc.code}'
+    return f'could not reach the character-sheet app: {exc}'
+
+
+def knack_holders(
+    knack: str = 'discern_honor',
+    *,
+    token: str | None = None,
+    get: Callable[[str, str, float], Any] = _get,
+    timeout: float = 20.0,
+) -> HoldersResult:
+    """Every GROUPED character with `knack` at rank 1 or more.
+
+    Not built on `characters()`: that map is keyed by the owner's Discord id - it
+    exists to attribute a Discord message - so a player with two characters has
+    only one in it. A character in no gaming group is left out because the sheet's
+    command can never serve them (it looks the conversation up by group).
+    """
+    resolved = token if token is not None else query_token()
+    if not resolved:
+        return HoldersResult(
+            reason='no [character_sheet] roll_query_token in development-secrets.ini'
+        )
+    try:
+        payload = get(f'{BASE_URL}/api/characters', resolved, timeout)
+    except Exception as exc:  # noqa: BLE001 - every failure degrades identically
+        return HoldersResult(reason=_unavailable(exc))
+    found = []
+    for entry in payload.get('characters') or ():
+        rank = int((entry.get('knacks') or {}).get(knack) or 0)
+        group = entry.get('gaming_group_id')
+        if rank >= 1 and group is not None:
+            found.append(
+                KnackHolder(int(entry['id']), str(entry.get('name') or ''), int(group), rank)
+            )
+    return HoldersResult(holders=tuple(found))
+
+
+def get_conversation(
+    group: int,
+    *,
+    token: str | None = None,
+    get: Callable[[str, str, float], Any] = _get,
+    timeout: float = 20.0,
+) -> ConversationResult:
+    """What the sheet app holds open for `group`. The route takes either secret."""
+    resolved = token if token is not None else (write_token() or query_token())
+    if not resolved:
+        return ConversationResult(
+            reason='no [character_sheet] gm_write_token in development-secrets.ini'
+        )
+    try:
+        payload = get(f'{BASE_URL}/api/conversation?group={group}', resolved, timeout)
+    except Exception as exc:  # noqa: BLE001
+        return ConversationResult(reason=_conversation_unavailable(exc))
+    return ConversationResult(conversation=payload.get('conversation'))
+
+
+def open_conversation(
+    body: Mapping[str, Any],
+    *,
+    token: str | None = None,
+    send: Callable[[str, str, str, Any, float], Any] = _send,
+    timeout: float = 20.0,
+) -> ConversationResult:
+    """`PUT` a conversation. Re-sending the open id keeps every entry already there."""
+    resolved = token if token is not None else write_token()
+    if not resolved:
+        return ConversationResult(
+            reason='no [character_sheet] gm_write_token in development-secrets.ini'
+        )
+    try:
+        payload = send('PUT', f'{BASE_URL}/api/conversation', resolved, dict(body), timeout)
+    except Exception as exc:  # noqa: BLE001
+        return ConversationResult(reason=_conversation_unavailable(exc))
+    return ConversationResult(conversation=payload.get('conversation'))
+
+
+def close_conversation(
+    conversation_id: str,
+    *,
+    token: str | None = None,
+    send: Callable[[str, str, str, Any, float], Any] = _send,
+    timeout: float = 20.0,
+) -> ConversationResult:
+    """`DELETE` it. A 404 is success: that is what an already-closed id answers."""
+    resolved = token if token is not None else write_token()
+    if not resolved:
+        return ConversationResult(
+            reason='no [character_sheet] gm_write_token in development-secrets.ini'
+        )
+    quoted = urllib.parse.quote(conversation_id, safe='')
+    try:
+        send('DELETE', f'{BASE_URL}/api/conversation/{quoted}', resolved, None, timeout)
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            return ConversationResult(reason=_conversation_unavailable(exc))
+    except Exception as exc:  # noqa: BLE001
+        return ConversationResult(reason=_conversation_unavailable(exc))
+    return ConversationResult()
