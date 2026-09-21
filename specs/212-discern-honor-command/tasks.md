@@ -21,6 +21,19 @@ task done only when verified.
       token; re-`PUT` of the open id preserves `told` and `asked_at`; close, and the command reports
       no open conversation. A missing requirement is REPORTED, not worked around.
 
+**T001 status 2026-09-21: the API half PASSES against the deployed app; the Discord half needs a
+human.** Verified live, through this repository's own client: the write routes refuse the read
+token (401) and the read routes refuse the write token (401 401); open, read (with either token)
+and close round-trip; a re-`PUT` of the open id kept the existing entry's `told` (3.0 stayed 3.0
+when 9.9 was re-sent) and added the new character; `told` comes back byte-exact; a body naming an
+unknown character is refused whole (400) and leaves the conversation as it was; a retried close
+(404) reads as success. Then a REAL `begin_conversation("Otsuki", "test")` pushed a conversation to
+both groups with the three knack-holders and the Obsidian Portal id as `npc_ref`,
+`abandon_conversation()` closed both, and Otsuki's notes were byte-identical before and after.
+STILL OPEN, because only a Discord user can do it: `/discern-honor` run twice (identical ephemeral
+replies, one `asked_at`, no channel post, no roll row), once without the knack, and once with
+nothing open - which is also T008's end-to-end.
+
 ## Phase 2 - gm-assistant's side
 
 **Built 2026-09-21, AHEAD of T001, against the sheet session's documented contract** (its status
