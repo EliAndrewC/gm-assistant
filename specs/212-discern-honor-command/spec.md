@@ -98,7 +98,9 @@ This is the GM's explicit semantic, and the reason the design precomputes.
    as they stand and gain the marker the next time they advance. The GM's live records - Otsuki's -
    are not orphaned.
 4. **Given** the GM abandons the conversation (`abandon_conversation()`, the "wrong NPC" exit),
-   **Then** anything not yet recorded is discarded. See Decision 6 for what has already been seen.
+   **Then** the NPC's `Discern Honor:` block is left exactly as it was before the conversation
+   opened - including undoing anything this conversation already recorded - and the GM is told
+   which PCs had already been given a number (FR-009, Decision 5).
 
 ### User Story 4 - the command when it cannot answer (P2)
 
@@ -134,32 +136,47 @@ This is the GM's explicit semantic, and the reason the design precomputes.
   in this conversation, using the existing rule code (`first_guess` / `refine`, with `perceived`).
   PCs and ranks come from the sheet's `GET /api/characters`, not from scraping sheet pages.
 - **FR-002** The computation MUST be pure preview: nothing is written to Obsidian Portal at open.
-- **FR-003** gm-assistant MUST push to the sheet app only a conversation id and, per character, the
-  told value. The true Honor, the d10, the conversation count and the locked state MUST NOT leave
-  gm-assistant. By default the NPC's name is not sent either (Decision 2).
+- **FR-003** gm-assistant MUST push to the sheet app the conversation id, the gaming group, an
+  opaque NPC reference, the time the conversation opened, and per character the told value - and
+  nothing else. The true Honor, the d10, the conversation count and the locked state MUST NOT leave
+  gm-assistant, and the NPC's name is not sent (Decision 2); the NPC reference is opaque, is not a
+  name, and is never shown to a player.
 - **FR-004** The conversation watcher MUST learn from the sheet app which PCs have asked, and for
   each one commit that PC's advanced record to the NPC's GM-only notes. The commit happens when the
   ask is SEEN (through the watcher's existing debounced write), not only at `end_conversation`, so a
   crash after a player was told a number cannot lose the fact that they were told it.
 - **FR-005** A commit MUST be idempotent on the conversation id: a record already marked with this
   conversation is never advanced again by it, whichever path gets there first.
-- **FR-006** The record line gains a marker naming the conversation it was last advanced in. Lines
-  without a marker MUST still parse (User Story 3.3).
+- **FR-006** The record line gains a trailing marker naming the conversation it was last advanced
+  in and what the told value was before it. The format is pinned here, because `honor.py`'s line
+  pattern is strict and `parse_records` silently drops a line it cannot match - a writer and a
+  pattern that drift would orphan records without an error:
+  `- Jimen (rank 2): told 4.3 after 2 conversations [c-20260921-7f3a, was 4.5]`, and for a first
+  conversation `... after 1 conversation [c-20260921-7f3a, first]`. ` - locked in`, when present,
+  stays where it is today, before the marker. Lines without a marker MUST still parse (User Story
+  3.3), and a test MUST assert that every line the writer can produce is matched by the pattern.
 - **FR-007** The manual `discern_honor(npc, pc)` call MUST obey the same rule. With a conversation
   open against that NPC it returns the precomputed value for that PC, commits it once, and marks it
-  used so the player's command agrees. With NO conversation open it behaves as today, except that a
-  repeat for the same PC and NPC on the same calendar day returns the stored value unchanged unless
-  the GM passes an explicit "this really is another conversation" argument (Decision 4).
+  used so the player's command agrees. With no conversation open AGAINST THAT NPC (none at all, or
+  one open with somebody else) it behaves as today: one call is one conversation. The GM's idempotency is scoped to a conversation, and outside one the GM's own
+  call IS the boundary.
 - **FR-008** On `end_conversation`, asked-but-uncommitted records are flushed, the sheet's
   conversation is closed, and unasked values are discarded.
-- **FR-009** On `abandon_conversation`, the sheet's conversation is closed and nothing further is
-  committed.
+- **FR-009** On `abandon_conversation`, the sheet's conversation is closed and the NPC's
+  `Discern Honor:` block MUST be returned to its state before the conversation opened: every record
+  whose marker names this conversation is rolled back (a `first` record is removed; any other gets
+  its `was` value back and its count reduced by one), and nothing further is committed. The REPL
+  MUST print which PCs had already been given a number, and what number, so the GM can credit it to
+  the right character by hand.
 - **FR-010** Every failure of the sheet push or poll is reported to the GM in the REPL and MUST NOT
   stop the conversation opening, the roll capture, or the manual call.
 - **FR-011** Opening a conversation against an NPC for whom the sheet app still holds an unclosed
-  conversation RESUMES it: same id, same served values, no recompute for PCs already present. A
-  normal close removes the sheet's conversation, so this fires only after a crash. Opening after a
-  normal close is a NEW conversation (Decision 3).
+  conversation RESUMES it: same id, same served values, no recompute for PCs already present. This
+  is what makes a REPL crash and reopen unable to double count. Because a close can also fail
+  (FR-010), a resume is never silent: `begin_conversation` MUST say so at open ("resuming the
+  conversation opened at HH:MM") and MUST give the GM a way to start a NEW conversation instead, so
+  a failed close cannot quietly merge two conversations and withhold an advance the rule grants.
+  Opening after a successful close is always a NEW conversation (Decision 3).
 
 ### character-sheet (specified in the handoff document; listed here so the whole is reviewable)
 
@@ -193,23 +210,21 @@ This is the GM's explicit semantic, and the reason the design precomputes.
    windows. Approved by the GM in message 2.
 2. **The reply does not name the NPC.** An NPC's Obsidian Portal name can be a name the players do
    not know yet - somebody traveling under an alias. The players know who they are talking to; the
-   bot does not need to tell them. The handoff leaves an optional display label in the payload so
-   the GM can opt in per conversation later without a schema change.
+   bot does not need to tell them. If the GM later wants the name shown, the field is added then.
 3. **Each `begin_conversation` after a normal close is a new conversation**, even the same evening
    with the same NPC. The GM controls the boundary, so the GM controls the count. Put to the GM in
    the proposal; not objected to. Crash recovery is the one exception, and it is detected
-   structurally (FR-011), not by a time window.
-4. **With no conversation open, the manual call treats a same-day repeat as a slip.** The GM asked
-   for protection against a slip; outside a conversation the calendar day is the only boundary
-   there is. A real second conversation that day is one explicit argument away.
-5. **The player is never told a value is exact.** The rule gives the player a number, not its
+   structurally and announced (FR-011), not inferred from a time window.
+4. **The player is never told a value is exact.** The rule gives the player a number, not its
    error bar; "locked in" stays a GM-side note.
-6. **What an abandoned conversation does with values already seen.** If the ask was already
-   committed (FR-004 commits on sight), it stays committed and the GM edits the NPC's notes, which
-   `abandon_conversation()`'s own docstring already names as the recovery path for a wrong-NPC open.
-   Reversing an Obsidian Portal write automatically was priced and declined: the player HAS now been
-   told a number, and which NPC it should count against is a judgment only the GM can make.
-7. **Commit on sight, not at close** (FR-004). At-close is simpler and loses the record if the REPL
+5. **An abandoned conversation is rolled back, and re-crediting is the GM's.** The GM approved
+   "discard on `abandon_conversation()`", and abandon exists for a conversation opened against the
+   WRONG NPC - so an advance left standing there would be a number computed from the wrong
+   character's Honor. Commit-on-sight (Decision 6) means some of it may already be written; the
+   marker's `was` value exists precisely so that undoing it is mechanical. What is NOT mechanical
+   is which character the player's ask should count against instead, so the REPL reports who was
+   told what and leaves that to the GM.
+6. **Commit on sight, not at close** (FR-004). At-close is simpler and loses the record if the REPL
    dies; the knack's whole premise is that the first answer is remembered.
 
 ## Success criteria
@@ -223,4 +238,26 @@ This is the GM's explicit semantic, and the reason the design precomputes.
 
 ## Review history
 
-See the end of this file once the `spec-fidelity` pass has run.
+- **Round 1 - CHANGES REQUIRED** (2026-09-21). Every clause of both messages and of the approved
+  proposal was found carried, nothing missing, scope right, and the rules-text fix verified at
+  source. Four changes, two of them real departures. (1) FR-007 had invented a same-calendar-day
+  rule, with a new REPL argument, for the manual call outside a conversation - a time window where
+  the GM's semantic is a conversation, and a change to a tool he uses today; deleted, with its
+  Decision. (2) Abandon kept an already-committed ask on the wrong NPC's record, against the
+  approved "discard on `abandon_conversation()`"; now a rollback (FR-009), made mechanical by the
+  marker's `was` value. (3) FR-011 claimed resume "fires only after a crash" while FR-010 admits a
+  close can fail; a resume is now announced and the GM can force a new conversation. (4) An
+  optional display-label field was schema for a request nobody made; removed. The reviewer's aside
+  - that an unpinned marker format could silently orphan records - is answered in FR-006.
+- **Round 2 - CHANGES REQUIRED** (2026-09-21). All four round-1 items confirmed fixed, every clause
+  re-traced, scope and plain-reading test passed. Two one-sentence changes: FR-003's "only a
+  conversation id and the told value" contradicted FR-013 and the handoff's payload, and read
+  literally made FR-011's crash-resume unimplementable (now lists what is actually sent, with the
+  prohibition as the operative "nothing else"); and FR-007 left undefined a manual call against
+  NPC B while a conversation is open with NPC A (now scoped to "against that NPC").
+- **Round 3 - FAITHFUL** (2026-09-21). Both round-2 changes confirmed resolved and the whole spec
+  re-walked clause by clause against both messages and the approved proposal. The wider FR-003
+  payload was checked against the proposal's "only" and upheld: every added field is demanded by
+  another approved clause (routing, expiry, crash-resume) and none carries Honor information. FR-017
+  (the sheet app's own copy of the typo) was weighed as possible inflation and found in scope. The
+  rules-text fix was verified at source.
