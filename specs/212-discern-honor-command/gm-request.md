@@ -46,3 +46,10 @@ here, plus the handoff document for the character-sheet repository."
 ## Message 2
 
 Yes, please do that, thanks, and please also include the rules text fix.
+
+## Message 3
+
+(In reply to the session noting that the code rolls a flat d10 with no reroll on 10, while the rules
+text's "1k1" would normally explode.)
+
+Oh yes it should be "no rerolls" so please fix that, thanks.
