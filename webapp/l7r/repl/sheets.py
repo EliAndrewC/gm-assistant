@@ -24,6 +24,8 @@ from pathlib import Path
 
 import requests
 
+from chargen.sheetroster import given_name
+
 SHEET_BASE = 'https://l7r-character-sheet.fly.dev/characters/'
 CACHE_PATH = Path(__file__).resolve().parent.parent.parent / 'opcache' / 'sheet-knacks.json'
 CACHE_TTL = 24 * 3600.0
@@ -32,14 +34,15 @@ CACHE_TTL = 24 * 3600.0
 @dataclass(frozen=True)
 class PC:
     """A player character with a public sheet. ``given`` is how the OP notes
-    name them (the Discern Honor block's ``- Jimen`` line)."""
+    name them (the Discern Honor block's ``- Jimen`` line) - the last LATIN
+    token, so a sheet name with its kanji appended still gives ``Yudai``."""
 
     name: str
     sheet_id: int
 
     @property
     def given(self) -> str:
-        return self.name.split()[-1]
+        return given_name(self.name) or self.name
 
     @property
     def url(self) -> str:
@@ -49,7 +52,7 @@ class PC:
     def constants(self) -> dict[str, PC]:
         """The REPL names this PC answers to: Jimen, TsuruchiJimen, JIMEN,
         TSURUCHI_JIMEN."""
-        parts = self.name.split()
+        parts = [t for t in self.name.split() if t.isascii()]
         return {
             self.given: self,
             ''.join(parts): self,

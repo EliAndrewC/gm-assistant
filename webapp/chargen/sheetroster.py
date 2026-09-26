@@ -99,7 +99,13 @@ _LATIN = re.compile(r"[A-Za-z][A-Za-z'\-]*")
 
 def given_name(full: str) -> str:
     """The last LATIN token: ``Tsuruchi Makoto 鶴知誠`` -> ``Makoto`` (the
-    sheet app lets a player append kanji to their name)."""
+    sheet app lets a player append kanji to their name).
+
+    THE ONE PLACE THE RULE LIVES (GM 2026-09-26: *"what I want to see in the
+    notes and in my annotation and just everything is 'Yudai' not '勇大'"*).
+    ``l7r.repl.rolls.rules.personal_name``, ``l7r.repl.sheets.PC.given`` and the
+    Obsidian Portal used-name tracking in ``op.py`` all delegate here; a fifth
+    copy of ``name.split()[-1]`` is a bug waiting for the next kanji."""
     latin = [t for t in full.split() if _LATIN.fullmatch(t)]
     return latin[-1] if latin else ''
 

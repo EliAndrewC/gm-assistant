@@ -47,7 +47,7 @@ from datetime import datetime
 from typing import Any
 
 from l7r.repl import honor as honormod
-from l7r.repl.rolls import sheet
+from l7r.repl.rolls import rules, sheet
 from l7r.repl.rolls.models import Conversation, DiscernEntry
 from l7r.repl.sheets import resolve_pc
 
@@ -69,17 +69,12 @@ def base_id(sheet_conversation_id: str) -> str:
 
 
 def given_name(name: str) -> str:
-    """How the Discern Honor block names a PC: `Tsuruchi Jimen` -> `Jimen`.
-
-    A registered PC answers for themselves. Otherwise it is the last token that is
-    plain letters, because a sheet name can carry its kanji (`Tsuruchi Makoto
-    鶴知誠`, measured 2026-09-21) and the naive last token would key the record on
-    those."""
+    """How the Discern Honor block names a PC: `Tsuruchi Jimen` -> `Jimen`, and
+    `Tsuruchi Makoto 鶴知誠` -> `Makoto` - the same last-Latin-token rule every
+    written name follows (`rules.personal_name`). A registered PC answers for
+    themselves first, so the block and the REPL constants cannot disagree."""
     known = resolve_pc(name)
-    if known is not None:
-        return known.given
-    plain = [token for token in name.split() if token.isascii() and token.isalpha()]
-    return plain[-1] if plain else name.strip()
+    return known.given if known is not None else rules.personal_name(name)
 
 
 def plan(

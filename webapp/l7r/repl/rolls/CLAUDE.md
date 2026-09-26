@@ -65,8 +65,11 @@ interrogation: 25@2 Jimen - what Fumitake thinks of Tsuruchi
 **Personal names only** (GM 2026-09-02). The full name is what joins a Discord account to a
 character, dedups a pasted card against a typed roll, and matches the sheet bot's `**Name**:`
 prefix - so it is trimmed at the moment of WRITING and nowhere earlier. The rule is the naive
-last-token one and it is naive on purpose; the reasoning, including why there is no roster lookup,
-is in `rules.py`'s module docstring.
+last-LATIN-token one and it is naive on purpose; the reasoning, including why there is no roster
+lookup, is in `rules.py`'s module docstring. **The kanji a player appends to their sheet name is
+never written** (GM 2026-09-26: `Tsuruchi Yudai 勇大` is `Yudai` in the notes, the annotations,
+everywhere) - one rule, `chargen.sheetroster.given_name`, and every name-shortening site delegates
+to it.
 
 **The annotated open line leads with the number; the contested line leads with the pairing.** The
 GM asked for `{roll} {skill}: {name} {annotation}` for the open rolls specifically, and `41 vs 28`

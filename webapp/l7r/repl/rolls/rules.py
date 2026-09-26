@@ -94,6 +94,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal
 
+from chargen.sheetroster import given_name
 from l7r.repl.rolls import modes
 from l7r.repl.rolls.models import Contest, RecordingRule, Roll
 
@@ -343,6 +344,11 @@ def personal_name(name: str) -> str:
     `Otsuki`) passes through untouched, which is what makes this safe to apply
     unconditionally at render time.
 
+    The last LATIN token, precisely (GM 2026-09-26): a player may put their name's
+    kanji after the transliteration on the sheet - `Tsuruchi Yudai 勇大` - and what
+    the GM writes, everywhere, is `Yudai`. The rule itself lives in
+    `chargen.sheetroster.given_name`; this only keeps the all-kanji fallback.
+
     Deliberately no roster lookup and no attempt to verify that the leading tokens
     really are a family name. There is no list to check against that would not
     itself go stale, and the failure mode of the naive rule is that an unusual name
@@ -350,7 +356,7 @@ def personal_name(name: str) -> str:
     name missing from the list is written differently from every other line.
     """
     parts = name.split()
-    return parts[-1] if parts else ''
+    return given_name(name) or (parts[-1] if parts else '')
 
 
 #: The margin bands the GM records a contested victory in (2026-08-29). NOT the

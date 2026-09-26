@@ -28,6 +28,12 @@ class TestParse:
         assert parse_honor('Honor: 2.5\n') == 2.5
         assert parse_honor('no honor here; honor is mentioned in prose 4.0') is None
 
+    def test_a_registered_pc_is_named_by_the_last_latin_token(self) -> None:
+        from l7r.repl.sheets import PC
+
+        assert PC('Tsuruchi Yudai 勇大', 20).given == 'Yudai'
+        assert 'YUDAI' in PC('Tsuruchi Yudai 勇大', 20).constants
+
     def test_records_roundtrip(self) -> None:
         recs = {
             'jimen': Record('Jimen', 2, 4.5, 1),

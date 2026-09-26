@@ -79,6 +79,8 @@ def test_fetch_index_uses_requests(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_given_name_is_the_last_latin_token() -> None:
     assert given_name('Tsuruchi Makoto 鶴知誠') == 'Makoto'
+    assert given_name('Tsuruchi Yudai 勇大') == 'Yudai'
+    assert given_name('Otsuki') == 'Otsuki'
     assert given_name('Tsuruchi Hidemasa') == 'Hidemasa'
     assert given_name('Otsuki') == 'Otsuki'
     assert given_name('鶴知誠') == ''

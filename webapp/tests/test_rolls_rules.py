@@ -166,6 +166,11 @@ class TestPersonalName:
             ('Otsuki', 'Otsuki'),
             ('  Tsuruchi   Jimen  ', 'Jimen'),
             ('', ''),
+            # GM 2026-09-26: a player may put their name's kanji after the
+            # transliteration on the sheet. The kanji is never what gets written.
+            ('Tsuruchi Yudai 勇大', 'Yudai'),
+            ('Tsuruchi Makoto 鶴知誠', 'Makoto'),
+            ('鶴知誠', '鶴知誠'),
         ],
     )
     def test_the_last_token_is_what_gets_written(self, full: str, written: str) -> None:

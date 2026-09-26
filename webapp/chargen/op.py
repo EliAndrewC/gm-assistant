@@ -44,6 +44,7 @@ from requests_oauthlib import OAuth1Session
 
 from chargen import config
 from chargen import constants as c
+from chargen import sheetroster
 
 API_BASE_URL = 'https://api.obsidianportal.com/v1'
 
@@ -175,8 +176,7 @@ def create_character(
         # Success - we were redirected to the new character page
         cherrypy.log(f'Created character: {name} at {response.url}')
         # Add the personal name to USED_NAMES immediately so we don't reuse it
-        personal_name = name.split()[-1]
-        c.USED_NAMES.add(personal_name)
+        c.USED_NAMES.add(sheetroster.given_name(name) or name)
         # Feature 200 (FR-001): reconcile the campaign cache file so the new
         # character is a used name for every consumer (skill picker, engine,
         # /synthesize context) without a separate scrape. Fail-soft: a cache
@@ -709,7 +709,7 @@ def update_used_names():
             opcache.refresh_cache_file()
             for name in existing_names():
                 # we only track the personal name (e.g. "Gohei" instead of "Matsu Gohei")
-                c.USED_NAMES.add(name.split()[-1])
+                c.USED_NAMES.add(sheetroster.given_name(name) or name)
         except Exception as e:
             cherrypy.log(f'Failed to update used names: {e}')
         sleep(3600)
