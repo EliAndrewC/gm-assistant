@@ -99,7 +99,30 @@
 # Usage:
 #   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--no-pull]
 #                       [--no-apt] [--no-update] [--no-setup] [--fresh]
-#                       [--no-shell] [--help]
+#                       [--no-shell] [--no-tmux] [--attach [NAME]] [--help]
+#
+# Every shell opens inside a NEW tmux session in the container (--no-tmux gives
+# the old plain bash). The reason is the connection, not tmux's features: under
+# this laptop's rootless podman a `podman exec -it` session is dropped when the
+# terminal falls behind a burst of output - a busy Claude session, or resuming a
+# long one, is enough (measured 2026-09-26: `yes | head -c 300000000` through
+# `podman exec -it` was cut off early, and a resumed session kept running,
+# orphaned, after its tab was dropped). Inside tmux a dropped connection only
+# DETACHES: the session keeps running, and the next launch lists it with the
+# command that reattaches it. The config it writes (~/.tmux.conf, rewritten on
+# every launch since the container's home does not persist) leaves the TERMINAL
+# in charge of mouse scrolling and selection, exactly as without tmux: tmux's
+# mouse handling is off and it draws on the normal screen, so scrolled-off lines
+# land in the terminal's own scrollback. Every exec also passes LANG=C.UTF-8
+# (and tmux -u): the image sets no locale, and a non-UTF-8 client made tmux draw
+# every non-ASCII glyph as "_".
+#
+# --attach [NAME] reattaches to a tmux session already running in the container
+# instead of opening a new one - after a dropped connection, or to pick a session
+# up from another tab. A plain launch with sessions running shows an arrow-key
+# menu (Enter alone starts a new session) listing each one, whether a terminal is
+# attached, and its title (Claude Code sets it to the session's name). With no NAME
+# it takes the only such session, and lists them when there are several.
 #
 # --no-shell makes the script ENSURE the container is running and then return,
 # instead of ending in an interactive `podman exec ... bash`. Every other step is
@@ -116,7 +139,8 @@
 # repo's container-setup script. It also leaves
 # `claude --dangerously-skip-permissions` in the shell history, so the first
 # thing you do in the new container is Up-Enter.
-# Attaching to a running container never pulls, installs, or updates.
+# Attaching to a running container never pulls, installs, or updates - except
+# tmux, installed on the first launch into a container that predates it.
 # --no-claude skips mounting the host ~/.claude.json and ~/.claude/ - use it on a
 # shared/work machine so the container does NOT inherit that host's default Claude
 # account (you log in fresh inside instead, on your own account). Point at a
@@ -158,6 +182,8 @@ APT=1
 UPDATE=1
 SETUP=1
 SHELL_AFTER=1
+TMUX_SHELL=1
+ATTACH=""
 CLAUDE_SRC="${CLAUDE_SRC:-$HOME}"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -170,6 +196,9 @@ while [ $# -gt 0 ]; do
     --no-setup) SETUP=0; shift ;;
     --fresh) FRESH=1; shift ;;
     --no-shell) SHELL_AFTER=0; shift ;;
+    --no-tmux) TMUX_SHELL=0; shift ;;
+    --attach)
+      if [ $# -ge 2 ] && [ "${2#-}" = "$2" ]; then ATTACH="$2"; shift 2; else ATTACH="-"; shift; fi ;;
     -h|--help) show_help ;;
     *) die "unknown option: $1 (try --help)" ;;
   esac
@@ -282,6 +311,121 @@ if [ -n "$SLICE" ]; then
   esac
 fi
 
+# ---- the interactive shell: a new tmux session (see "Every shell opens" above) ----
+TMUX_CONF='# Written by launch-container.sh on every launch; edit the script, not this file.
+# The TERMINAL keeps scrolling and selection, exactly as without tmux: mouse
+# handling is off and tmux draws on the normal screen (smcup@/rmcup@), so lines
+# that scroll off land in the terminal'"'"'s own scrollback. Ctrl-B [ browses
+# tmux'"'"'s own history, which also holds what came before a reattach.
+set -g mouse off
+set -ga terminal-overrides ",xterm*:smcup@:rmcup@"
+set -g history-limit 100000
+# What Claude Code expects: truecolor, a prompt Esc, focus events, and extended
+# keys so Shift+Enter still inserts a newline.
+set -g default-terminal "tmux-256color"
+set -as terminal-features ",xterm-256color:RGB:extkeys"
+set -g extended-keys on
+set -sg escape-time 10
+set -g focus-events on
+set -g set-clipboard on
+# The terminal tab'"'"'s title follows the pane'"'"'s: Claude Code sets it to the
+# session'"'"'s name (and again on /rename), and tmux keeps it to itself unless told.
+set -g set-titles on
+set -g set-titles-string "#{pane_title}"
+set -as terminal-features ",xterm-256color:title"
+# The tab title follows a change within a second (the default status refresh is 15 s).
+set -g status-interval 1'
+
+# An arrow-key menu over the running tmux sessions: "Start a new session" first
+# and highlighted, so Enter alone does what a launch always did; Up/Down (or k/j)
+# move, Enter picks. Sets PICKED to the chosen session's name, or "" for new.
+# Printed rather than just listed because tmux clears the screen the moment it
+# starts, so a list printed before it could never be read (GM 2026-09-26).
+pick_session() {
+  local -a names=("") labels=("Start a new session")
+  local line name title state active
+  while IFS=$'\t' read -r name title state active; do
+    [ -n "$name" ] || continue
+    names+=( "$name" )
+    labels+=( "$(printf 'Attach to %-8s %-28.28s %s %s' "$name" "$title" "$state" "$active")" )
+  done <<< "$1"
+  local n=${#labels[@]} sel=0 key i
+  echo ">> tmux sessions are already running in '$NAME' (a dropped tab leaves its session WAITING)."
+  echo "   Up/Down to choose, Enter to go:"
+  while :; do
+    for ((i = 0; i < n; i++)); do
+      if [ "$i" -eq "$sel" ]; then printf '\e[2K  \e[7m> %s\e[0m\n' "${labels[i]}"
+      else printf '\e[2K    %s\n' "${labels[i]}"; fi
+    done
+    IFS= read -rsn1 key || break
+    case "$key" in
+      "") break ;;
+      $'\e') IFS= read -rsn2 -t 0.1 key || true
+             case "$key" in
+               "[A") [ "$sel" -gt 0 ] && sel=$((sel - 1)) || true ;;
+               "[B") [ "$sel" -lt $((n - 1)) ] && sel=$((sel + 1)) || true ;;
+             esac ;;
+      k) [ "$sel" -gt 0 ] && sel=$((sel - 1)) || true ;;
+      j) [ "$sel" -lt $((n - 1)) ] && sel=$((sel + 1)) || true ;;
+    esac
+    printf '\e[%dA' "$n"
+  done
+  PICKED="${names[sel]}"
+}
+
+open_shell() {
+  # A container launched before the tmux step (2026-09-26) has no tmux: install it
+  # now, as container root like the package step, whatever the attach path - the
+  # one exception to "attaching installs nothing", because every shell depends on
+  # it. The index is refreshed only if the plain install fails (a stale image).
+  if [ "$TMUX_SHELL" -eq 1 ] && ! podman exec "$NAME" sh -c 'command -v tmux' >/dev/null 2>&1; then
+    echo ">> installing tmux into '$NAME' (it predates the launch script's tmux step)."
+    podman exec --user root --env DEBIAN_FRONTEND=noninteractive "$NAME" bash -c \
+      'apt-get install -y -qq --no-install-recommends tmux >/dev/null 2>&1 \
+       || { apt-get update -qq && apt-get install -y -qq --no-install-recommends tmux >/dev/null; }' \
+      || echo ">> warning: installing tmux failed (offline?)." >&2
+  fi
+  if [ "$TMUX_SHELL" -eq 1 ] && podman exec "$NAME" sh -c 'command -v tmux' >/dev/null 2>&1; then
+    podman exec "$NAME" sh -c 'printf "%s\n" "$1" > "$HOME/.tmux.conf"' _ "$TMUX_CONF" \
+      || echo ">> warning: could not write ~/.tmux.conf; tmux runs on its defaults." >&2
+    local sessions detached
+    sessions="$(podman exec "$NAME" tmux list-sessions \
+      -F '#{session_name}	#{pane_title}	#{?session_attached,attached in a terminal,WAITING - no terminal attached}	(last active #{t/p:session_activity})' 2>/dev/null || true)"  # no server yet = no sessions, not an error (set -e)
+    detached="$(printf '%s' "$sessions" | grep -F 'WAITING' || true)"
+    if [ -n "$ATTACH" ]; then
+      local target="$ATTACH"
+      if [ "$target" = "-" ]; then
+        case "$(printf '%s' "$detached" | grep -c .)" in
+          0) echo ">> --attach: no tmux session is waiting in '$NAME'; opening a new one." ;;
+          1) target="$(printf '%s' "$detached" | cut -f1)" ;;
+          *) echo ">> --attach: several tmux sessions are waiting in '$NAME'; name one:" >&2
+             printf '%s\n' "$detached" | sed 's/^/     /' >&2
+             echo "   $0 --attach <name>" >&2
+             exit 1 ;;
+        esac
+      fi
+      if [ "$target" != "-" ]; then
+        echo ">> reattaching to tmux session '$target'."
+        exec podman exec -it --env LANG=C.UTF-8 "$NAME" tmux -u attach -t "$target"
+      fi
+    elif [ -n "$sessions" ] && [ -t 0 ]; then
+      pick_session "$sessions"
+      if [ -n "$PICKED" ]; then
+        echo ">> attaching to tmux session '$PICKED'."
+        exec podman exec -it --env LANG=C.UTF-8 "$NAME" tmux -u attach -t "$PICKED"
+      fi
+    fi
+    echo ">> opening a new tmux session (if this terminal drops, the session keeps running)."
+    exec podman exec -it --env LANG=C.UTF-8 "$NAME" tmux -u new-session
+  fi
+  [ -z "$ATTACH" ] || die "--attach needs tmux in '$NAME' (and not --no-tmux)"
+  if [ "$TMUX_SHELL" -eq 1 ]; then
+    echo ">> warning: tmux is still not installed in '$NAME'; plain bash instead." >&2
+    echo "   Install it inside with: sudo apt-get install -y tmux" >&2
+  fi
+  exec podman exec -it --env LANG=C.UTF-8 "$NAME" bash
+}
+
 # ---- if a container of this name exists, attach (or recreate with --fresh) ----
 if [ "$FRESH" -eq 1 ] && podman container exists "$NAME" 2>/dev/null; then
   echo ">> --fresh: removing existing container '$NAME'"
@@ -290,14 +434,14 @@ fi
 
 if [ -n "$(podman ps -q -f "name=^${NAME}$" 2>/dev/null)" ]; then
   if [ "$SHELL_AFTER" -eq 1 ]; then
-    echo ">> '$NAME' is already running; opening a new bash shell inside it."
+    echo ">> '$NAME' is already running; opening a new shell inside it."
   else
     echo ">> '$NAME' is already running; --no-shell, so nothing else to do."
   fi
   echo ">> ports published by the running container:"
   podman port "$NAME" 2>/dev/null | sed 's/^/     /' || true
   [ "$SHELL_AFTER" -eq 1 ] || exit 0
-  exec podman exec -it "$NAME" bash
+  open_shell
 fi
 
 if podman container exists "$NAME" 2>/dev/null; then
@@ -308,7 +452,7 @@ if podman container exists "$NAME" 2>/dev/null; then
   fi
   podman start "$NAME" >/dev/null
   [ "$SHELL_AFTER" -eq 1 ] || exit 0
-  exec podman exec -it "$NAME" bash
+  open_shell
 fi
 
 # ---- build a fresh run ----
@@ -467,7 +611,7 @@ podman run "${RUN_ARGS[@]}" "$IMAGE" sleep infinity >/dev/null
 # a freshly pulled image can carry a stale index. Best-effort by design: a
 # broken install should not cost you the shell, so it warns and continues.
 if [ "$APT" -eq 1 ]; then
-  PACKAGES=(alsa-utils)
+  PACKAGES=(alsa-utils tmux)  # tmux: every shell opens in it (see "Every shell opens")
   while IFS= read -r pkg; do
     [ -n "$pkg" ] || continue
     PACKAGES+=( "$pkg" )
@@ -621,4 +765,4 @@ if [ "$SHELL_AFTER" -eq 0 ]; then
   exit 0
 fi
 
-exec podman exec -it "$NAME" bash
+open_shell
