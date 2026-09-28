@@ -160,10 +160,13 @@ PREFIX="${CONTAINER_PREFIX:-claude}"
 # host swap to absorb the desktop's cold pages while the containers are full).
 # The per-container cap went 8g -> 10g because usually only one container is
 # running, and then it is the diagram one, whose gate is the expensive thing.
+# Shared ceiling went 11G/12G -> 9G/10G on 2026-09-28: with 3 containers full, the desktop
+# had ~3.4 GB left, got swapped out, and crawled for 10 min (keys took minutes) until a
+# hard reset. The swap bet does not hold once you use the desktop. See ~/this-laptop/docs/memory/.
 MEMORY="${CONTAINER_MEMORY:-10g}"
 SLICE="${CONTAINER_SLICE-claude-containers.slice}"
-SLICE_HIGH="${CONTAINER_SLICE_HIGH:-11G}"
-SLICE_MAX="${CONTAINER_SLICE_MAX:-12G}"
+SLICE_HIGH="${CONTAINER_SLICE_HIGH:-9G}"
+SLICE_MAX="${CONTAINER_SLICE_MAX:-10G}"
 
 die() { echo "error: $*" >&2; exit 1; }
 
