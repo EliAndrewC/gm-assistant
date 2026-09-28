@@ -193,7 +193,8 @@ def used_given_names(path: Path = _CACHE_PATH, extra: Path | None = None) -> fro
     ``Bayushi no Daika Bokuden`` -> ``Bokuden``; a mononym is itself), plus the
     names listed in ``extra`` (see :data:`EXTRA_USED_PATH`), plus every
     character in a group on the character-sheet app (``sheetroster`` - a PC
-    there may have no OP record; GM 2026-08-27, the Hidemasa case), plus every
+    there may have no OP record; GM 2026-08-27, the Hidemasa case) and every
+    NPC its combat tracker generated (feature 213), plus every
     family / house / lineage name (the Obana case, same day). Memoized
     on all three files' identity/mtime/size so the engine can call this per
     character at no cost. A missing file contributes nothing."""

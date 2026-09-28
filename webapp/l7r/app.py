@@ -9,6 +9,8 @@ Routes:
 - GET /places/<slug>   single place detail
 - GET /dreams          dream-divination framework + example gallery
 - GET /dreams/<slug>   single worked dream-omen example
+- GET /api/names       JSON name suggestions for the character-sheet app's generated NPCs
+                       (feature 213; bearer-token auth, `[character_sheet] names_token`)
 - /chargen/*           mounted chargen Root (legacy)
 - /static/*            static assets
 
@@ -27,12 +29,14 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 import cherrypy
 from jinja2 import Environment
 
+from l7r import sheetnames
 from l7r.auth import AuthConfig, load_auth_config
 from l7r.auth_routes import AuthRoot, current_user, install_auth_tool
 from l7r.dreams import DreamScene, find_scene_by_slug, load_dream_scenes, render_markdown
@@ -177,6 +181,66 @@ def _clans_with_relics(relics: list[Relic]) -> list[str]:
     return sorted({r.clan for r in relics})
 
 
+class NamesApi:
+    """`/api/*`: token-authenticated JSON for the character-sheet app (feature 213).
+
+    The session tool leaves `/api` open (mount config); THIS handler is the whole gate. The
+    token is `[character_sheet] names_token`, INBOUND - the sheet app presents it to us - and is
+    read at request time through `token`, so a test (or a secrets change) reaches it.
+    """
+
+    def __init__(self, token: Callable[[], str]) -> None:
+        self._token = token
+
+    # GET /api/names?count=N&peasant=true|false&avoid=A,B
+    @cherrypy.expose
+    def names(
+        self,
+        count: str | None = None,
+        peasant: str | None = None,
+        avoid: str | list[str] | None = None,
+        **_ignored: Any,
+    ) -> bytes:
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        configured = self._token().strip()
+        if not configured:  # fail closed: no secret configured means nobody gets in
+            return _json_error(503, 'names API is not configured on this server')
+        header = cherrypy.request.headers.get('Authorization', '')
+        # Header only: a `token=` query parameter lands in **_ignored and counts for nothing.
+        if not sheetnames.token_matches(header, configured):
+            cherrypy.response.headers['WWW-Authenticate'] = 'Bearer'
+            return _json_error(401, 'missing or invalid bearer token')
+        # Auth before parsing and before the refresh: an unauthenticated caller can neither
+        # probe the parameters nor make this app walk Obsidian Portal.
+        try:
+            n = sheetnames.parse_count(count)
+            is_peasant = sheetnames.parse_peasant(peasant)
+        except ValueError as e:
+            return _json_error(400, str(e))
+        from chargen import namepool, opcache
+
+        sheetnames.refresh_used_names()
+        picks = sheetnames.suggest_names(
+            n,
+            peasant=is_peasant,
+            pool=namepool.load_pool(namepool.pool_dir()),
+            used=opcache.used_given_names(),
+            avoid=sheetnames.parse_avoid(avoid),
+        )
+        return json.dumps({'names': picks}).encode('utf-8')
+
+
+def _json_error(status: int, message: str) -> bytes:
+    cherrypy.response.status = status
+    return json.dumps({'error': message}).encode('utf-8')
+
+
+def _names_token() -> str:
+    """`[character_sheet] names_token` from development-secrets.ini; '' when unset."""
+    section = _load_secrets().get('character_sheet', {})
+    return str(section.get('names_token', '')).strip()
+
+
 class Root:
     """Top-level CherryPy controller for the L7R Toolkit."""
 
@@ -189,8 +253,12 @@ class Root:
         dream_framework_html: str = '',
         env: Environment | None = None,
         wiki_links: dict[str, str] | None = None,
+        names_token: Callable[[], str] | None = None,
     ) -> None:
         self._relics = relics
+        # Resolved at REQUEST time (a lambda, not a bound default), so a test patching
+        # `_names_token` reaches a Root built before the patch.
+        self.api = NamesApi(names_token or (lambda: _names_token()))
         self._names = names if names is not None else []
         self._places = places if places is not None else []
         self._dream_scenes = dream_scenes if dream_scenes is not None else []
@@ -622,6 +690,12 @@ def mount_application() -> None:
                 # Landing, relics catalog, names catalog: public. The tool
                 # still attaches current_user on these routes if a valid
                 # session is present, so the nav can render the user pill.
+                'tools.l7r_auth.min_role': 'anonymous',
+            },
+            # /api/* is for other apps, not browsers: no Discord session exists there. The
+            # session tool stays non-blocking (anonymous) and each handler checks its own
+            # bearer token - see NamesApi.names.
+            '/api': {
                 'tools.l7r_auth.min_role': 'anonymous',
             },
             # GM-only archive endpoints (currently just /archive/save).

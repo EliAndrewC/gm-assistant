@@ -14,6 +14,11 @@ def _offline_sheet_index(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(sheetroster, 'fetch_index', refuse)
 
+    def refuse_npcs() -> list[str]:
+        raise RuntimeError('tests are offline: patch sheetroster.fetch_npc_names')
+
+    monkeypatch.setattr(sheetroster, 'fetch_npc_names', refuse_npcs)
+
 
 @pytest.fixture(autouse=True)
 def _no_real_sheet_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
