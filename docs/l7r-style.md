@@ -73,6 +73,13 @@ These conventions govern any edit to `/host-l7r-repo/setting/l7r.md` - both copy
 - When in doubt about whether a new heading belongs in the TOC, ask the GM rather than adding it.
 - Never delete a heading from the body to slim the TOC - headings stay in the body for in-page anchoring even when omitted from the TOC.
 
+**Write the world, not the conversation that produced it** (GM 2026-09-28):
+
+- Setting content - `l7r.md`, OP wiki pages (public body AND GM-only notes), character records, backstories - states what IS. It never narrates how it was arrived at: no "decisions and alternatives declined" sections, no "we considered X and chose Y", no "Option A / Option B / Option C" labels (those exist only in the chat that proposed them), no "settled with the GM on <date>", no "the GM's premise holds", no "chosen over" or "see the declined option below". A reader of the page never saw the conversation, so every such line refers to something that is not on the page, and it wastes the space it takes.
+- A rejected idea may appear ONLY in-universe, as lore the world itself carries: a character citing another legend ("beyond the mountains they tell that those a tiger eats walk before it and break the hunters' snares - no one has ever said that of a bear"), a rival school's reading, a folk variant. That makes the world larger; a changelog makes it smaller.
+- GM-facing guidance is still welcome in GM-only notes when it is about RUNNING the material ("the trip shows no sign of the bear, because a sign gives the players something to chase"), because that is advice about the game, not history of the draft.
+- This is the opposite of the repository rule to record declined alternatives, and deliberately so: that rule governs engineering docs (specs, skill docs, code comments) where the next session needs to know an option was priced. It never applies to setting content. Worked example of the violation: the "Decisions, and the alternatives declined" section first published on the `bears-of-the-kitsune-mori` wiki page, since removed.
+
 **Process**:
 
 - File state shifts during long editing sessions (linters, parallel saves). If `Edit` fails with "file modified since read", re-grep the anchor text and try again - don't trust line numbers across multiple edits.
