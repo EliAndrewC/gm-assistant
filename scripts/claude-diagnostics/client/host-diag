@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# host-diag - run a diagnostic command on the HOST as the unprivileged claude-diag account.
+# Runs INSIDE the dev container; the host side is set up by grant-claude-diagnostics.sh.
+#
+#   scripts/claude-diagnostics/client/host-diag journalctl -b -1 --since "2026-09-27 08:00"
+#   scripts/claude-diagnostics/client/host-diag 'journalctl -u systemd-oomd | tail -50'
+#   scripts/claude-diagnostics/client/host-diag sudo -u eli /usr/local/libexec/claude-diag/podman-diag ps -a
+#
+# The arguments are one remote shell command line (ssh joins them with spaces), so quote a pipe.
+# The key, the pinned host key and the socket all live in ~/.claude/host-diag/, the one host
+# directory every container already mounts; see grant-claude-diagnostics.sh for why.
+set -euo pipefail
+DIR="${CLAUDE_HOST_DIAG_DIR:-$HOME/.claude/host-diag}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -S "$DIR/sshd.sock" ] || {
+    echo "host-diag: no socket at $DIR/sshd.sock - has grant-claude-diagnostics.sh been run on the host?" >&2
+    exit 2
+}
+[ $# -gt 0 ] || { echo "usage: host-diag <command...>" >&2; exit 2; }
+exec ssh -F /dev/null -T \
+    -i "$DIR/id_ed25519" -o IdentitiesOnly=yes -o IdentityAgent=none \
+    -o HostKeyAlias=claude-diag-host -o UserKnownHostsFile="$DIR/known_hosts" \
+    -o StrictHostKeyChecking=yes -o BatchMode=yes -o LogLevel=ERROR \
+    -o ProxyUseFdpass=yes -o ProxyCommand="python3 $HERE/fdpass-proxy.py $DIR/sshd.sock" \
+    claude-diag@claude-diag-host -- "$@"

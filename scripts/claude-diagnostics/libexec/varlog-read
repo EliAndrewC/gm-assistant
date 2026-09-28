@@ -1,0 +1,70 @@
+#!/usr/bin/python3 -I
+"""varlog-read - read any file under /var/log, for the claude-diag account.
+
+Installed root-owned at /usr/local/libexec/claude-diag/varlog-read and run as ROOT through sudo:
+
+    sudo /usr/local/libexec/claude-diag/varlog-read ls [DIR]
+    sudo /usr/local/libexec/claude-diag/varlog-read cat FILE     (.gz is decompressed)
+
+The adm group already reads most of /var/log (syslog, kern.log, auth.log, dpkg.log); this is for
+the root-only remainder (boot.log, some app and installer logs). The journal needs none of it:
+the systemd-journal group reads every journal file, the host user's included.
+
+Why a wrapper and not `cat /var/log/*` in sudoers: a sudoers `*` matches "/", so
+`cat /var/log/../../home/eli/.ssh/id_ed25519` would match. Here the path is resolved first
+(symlinks and ".." included) and must land inside /var/log; the final component is then opened
+with O_NOFOLLOW and must be a regular file. O_NONBLOCK stops a FIFO from hanging the read.
+"""
+
+import gzip
+import os
+import stat
+import sys
+import time
+
+ROOT = "/var/log"
+
+
+def resolve(path: str) -> str:
+    """The real path, or ValueError when it falls outside /var/log."""
+    real = os.path.realpath(path if os.path.isabs(path) else os.path.join(ROOT, path))
+    if real != ROOT and not real.startswith(ROOT + "/"):
+        raise ValueError(f"outside {ROOT}: {path}")
+    return real
+
+
+def cat(path: str) -> None:
+    real = resolve(path)
+    fd = os.open(real, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    if not stat.S_ISREG(os.fstat(fd).st_mode):
+        os.close(fd)
+        raise ValueError(f"not a regular file: {real}")
+    with os.fdopen(fd, "rb") as raw:
+        src = gzip.GzipFile(fileobj=raw) if real.endswith(".gz") else raw
+        while chunk := src.read(1 << 16):
+            sys.stdout.buffer.write(chunk)
+
+
+def ls(path: str) -> None:
+    real = resolve(path)
+    for entry in sorted(os.scandir(real), key=lambda e: e.name):
+        st = entry.stat(follow_symlinks=False)
+        when = time.strftime("%Y-%m-%d %H:%M", time.localtime(st.st_mtime))
+        print(f"{stat.filemode(st.st_mode)} {st.st_size:>12} {when} {entry.name}")
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    try:
+        if len(args) == 2 and args[0] == "cat":
+            cat(args[1])
+        elif args[:1] == ["ls"] and len(args) <= 2:
+            ls(args[1] if len(args) == 2 else ROOT)
+        else:
+            sys.exit("usage: varlog-read ls [DIR] | varlog-read cat FILE")
+    except (ValueError, OSError) as err:
+        sys.exit(f"varlog-read: {err}")
+
+
+if __name__ == "__main__":
+    main()

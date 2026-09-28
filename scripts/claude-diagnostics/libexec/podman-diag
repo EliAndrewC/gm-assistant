@@ -1,0 +1,145 @@
+#!/usr/bin/python3 -I
+"""podman-diag - read-only podman for the claude-diag account.
+
+Installed root-owned at /usr/local/libexec/claude-diag/podman-diag and run as the HOST USER
+(eli) through sudo, because rootless containers are visible only to the user that owns them:
+
+    sudo -u eli /usr/local/libexec/claude-diag/podman-diag ps -a
+
+Why a wrapper and not `podman ps *` in sudoers: podman accepts its GLOBAL flags after the
+subcommand too, and several of them name a binary podman will execute (`ps --sync --runtime=X`
+runs X as eli). A sudoers wildcard cannot tell those apart, so this file allows named subcommands,
+named flags, and plain container/image names, and refuses everything else. It never passes a
+flag it has not listed, and a flag's value may not itself start with "-" (so a boolean flag
+mis-classified as taking a value can never smuggle a second flag past the check).
+
+Deliberately absent: exec, run, start, stop, rm, cp, mount, unshare, top (top can execute the
+container's own `ps`), and every write. `-I` (isolated mode) ignores PYTHON* variables and the
+user's site-packages.
+"""
+
+import os
+import pwd
+import re
+import sys
+
+PODMAN = "/usr/bin/podman"
+
+# (subcommand words) -> allowed. Multi-word subcommands are matched on their leading words.
+SUBCOMMANDS = {
+    ("ps",),
+    ("container", "ls"),
+    ("inspect",),
+    ("container", "inspect"),
+    ("logs",),
+    ("events",),
+    ("stats",),
+    ("info",),
+    ("version",),
+    ("images",),
+    ("system", "df"),
+    ("pod", "ps"),
+    ("volume", "ls"),
+    ("network", "ls"),
+}
+
+BOOL_FLAGS = {
+    "-a",
+    "--all",
+    "--no-trunc",
+    "-s",
+    "--size",
+    "-q",
+    "--quiet",
+    "--noheading",
+    "--names",
+    "--latest",
+    "-l",
+    "-t",
+    "--timestamps",
+    "--no-stream",
+    "--external",
+    "--pod",
+    "-p",
+    "--ns",
+    "--namespace",
+    "--digests",
+    "--no-reset",
+    "--stream",
+    "--sort-by-created",
+}
+VALUE_FLAGS = {
+    "--format",
+    "--filter",
+    "-f",
+    "--since",
+    "--until",
+    "--tail",
+    "-n",
+    "--last",
+    "--type",
+    "--sort",
+    "--interval",
+    "-i",
+}
+
+NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@/-]*$")
+
+
+def validate(argv: list[str]) -> list[str]:
+    """Return argv unchanged if every word is allowed, else raise ValueError naming the word."""
+    sub = next((s for s in SUBCOMMANDS if tuple(argv[: len(s)]) == s), None)
+    if sub is None:
+        allowed = ", ".join(sorted(" ".join(s) for s in SUBCOMMANDS))
+        raise ValueError(f"subcommand not allowed (allowed: {allowed})")
+    rest = argv[len(sub) :]
+    i = 0
+    while i < len(rest):
+        word = rest[i]
+        if word.startswith("-"):
+            name, eq, value = word.partition("=")
+            if name in BOOL_FLAGS:
+                if eq and value not in ("true", "false"):
+                    raise ValueError(f"{word}: a boolean flag takes true or false")
+            elif name in VALUE_FLAGS:
+                if not eq:
+                    i += 1
+                    if i == len(rest):
+                        raise ValueError(f"{word}: missing value")
+                    value = rest[i]
+                if value.startswith("-"):
+                    raise ValueError(f"{word}: a value may not start with '-'")
+            else:
+                raise ValueError(f"flag not allowed: {word}")
+        elif not NAME.match(word):
+            raise ValueError(f"not a container or image name: {word!r}")
+        i += 1
+    return argv
+
+
+def main() -> None:
+    if os.getuid() == 0:
+        sys.exit("podman-diag: run as the host user (sudo -u <user>), not as root")
+    try:
+        argv = validate(sys.argv[1:])
+    except ValueError as err:
+        sys.exit(f"podman-diag: {err}")
+    pw = pwd.getpwuid(os.getuid())
+    env = {
+        "HOME": pw.pw_dir,
+        "USER": pw.pw_name,
+        "LOGNAME": pw.pw_name,
+        "PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+        "LANG": "C.UTF-8",
+        "XDG_RUNTIME_DIR": f"/run/user/{pw.pw_uid}",
+        "DBUS_SESSION_BUS_ADDRESS": f"unix:path=/run/user/{pw.pw_uid}/bus",
+    }
+    os.chdir(pw.pw_dir)
+    try:
+        os.execve(PODMAN, [PODMAN, *argv], env)
+    except FileNotFoundError:
+        sys.exit(f"podman-diag: {PODMAN} is not installed")
+
+
+if __name__ == "__main__":
+    main()
