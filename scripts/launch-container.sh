@@ -392,7 +392,9 @@ open_shell() {
     podman exec "$NAME" sh -c 'printf "%s\n" "$1" > "$HOME/.tmux.conf"' _ "$TMUX_CONF" \
       || echo ">> warning: could not write ~/.tmux.conf; tmux runs on its defaults." >&2
     local sessions detached
-    sessions="$(podman exec "$NAME" tmux list-sessions \
+    # LANG as for attach: without a UTF-8 locale tmux 3.6 prints the tabs below
+    # (and the title's ✳) as "_", so the whole line became the session name.
+    sessions="$(podman exec --env LANG=C.UTF-8 "$NAME" tmux list-sessions \
       -F '#{session_name}	#{pane_title}	#{?session_attached,attached in a terminal,WAITING - no terminal attached}	(last active #{t/p:session_activity})' 2>/dev/null || true)"  # no server yet = no sessions, not an error (set -e)
     detached="$(printf '%s' "$sessions" | grep -F 'WAITING' || true)"
     if [ -n "$ATTACH" ]; then
