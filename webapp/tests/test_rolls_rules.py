@@ -344,3 +344,34 @@ class TestMarginBands:
 
     def test_a_narrow_win_is_still_a_win(self) -> None:
         assert margin_text(2) == '<5', 'never "by 0" - that reads as no victory'
+
+
+class TestSheetCeilings:
+    """Withdrawn, read off the roller's sheet: etiquette and OPEN sincerity count as 15."""
+
+    def test_an_open_line_holds_a_withdrawn_roll_to_its_ceiling(self) -> None:
+        from dataclasses import replace
+
+        withdrawn = replace(roll('Tsuruchi Shizukanaken', 34), ceiling=15)
+        line = render_open([withdrawn, roll('Tsuruchi Yudai', 25)])
+        assert line == 'Yudai / Shizukanaken etiquette: 25 / 15'
+
+    def test_an_open_sincerity_roll_takes_the_open_ceiling(self) -> None:
+        from dataclasses import replace
+
+        from l7r.repl.rolls.rules import render_annotated
+
+        rolled = replace(
+            roll('Tsuruchi Makoto', 32, 'sincerity'), open_ceiling=15, note='swearing to it'
+        )
+        assert render_annotated(rolled, 'Okuni').startswith('15 sincerity: Makoto')
+
+    def test_a_contested_sincerity_roll_is_not_held(self) -> None:
+        from dataclasses import replace
+
+        from l7r.repl.rolls.rules import render_annotated
+
+        rolled = replace(
+            roll('Tsuruchi Makoto', 32, 'sincerity'), open_ceiling=15, opposed_total=20, note='x'
+        )
+        assert '32 vs 20' in render_annotated(rolled, 'Okuni')

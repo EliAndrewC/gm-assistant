@@ -441,3 +441,97 @@ class TestAbandonAndStatus:
         open_one()
         conv.conversation_status()
         assert 'no rolls yet' in capsys.readouterr().out
+
+
+class TestLastNightsEtiquette:
+    """2026-09-28, Okuni: Yudai written twice, and Shizukanaken's Withdrawn 34 as 30."""
+
+    CARD = datetime(2026, 8, 12, 1, 54, tzinfo=UTC)
+
+    def test_a_later_picture_does_not_rejoin_the_same_recorded_roll(
+        self, words: tuple[str, ...]
+    ) -> None:
+        open_one()
+        recorded = (sheet.RecordedRoll('Jimen', 'etiquette', 25, '1', self.CARD, 1),)
+        image = [{'content_type': 'image/png'}]
+        got = collect_with(
+            [message('1', '1', attachments=image), message('2', '1', minute=55, attachments=image)],
+            words,
+            rolls=recorded,
+            who=PLAYERS,
+        )
+        assert [(r.character, r.total) for r in got.rolls] == [('Jimen', 25)]
+        # ...and the next poll, which sees the recorded roll again, does not either.
+        collect_with(
+            [message('3', '1', minute=56, attachments=image)], words, rolls=recorded, who=PLAYERS
+        )
+        assert len(got.rolls) == 1
+
+    def test_withdrawn_is_applied_without_being_said(
+        self, words: tuple[str, ...], capsys: Any
+    ) -> None:
+        opened = open_one()
+        cast = {
+            '1': sheet.SheetCharacter(name='Tsuruchi Shizukanaken ', discord_id='1', sheet_id=10),
+            '2': sheet.SheetCharacter(name='Tetsuro', discord_id='2'),
+        }
+        lookups: list[int] = []
+
+        def ceilings(sheet_id: int) -> sheet.Ceilings:
+            lookups.append(sheet_id)
+            return sheet.Ceilings(always={'etiquette': 15}, open={'sincerity': 15})
+
+        conv.collect(
+            fetch=lambda cid, cursor, **k: [
+                message('1', '1', '34 Etiquette so 15'),
+                message('2', '2', '30 Etiquette'),
+                message('3', '1', '33 law'),
+            ],
+            recorded=lambda *a, **k: sheet.SheetResult(),
+            roster=lambda *a, **k: sheet.SheetResult(characters=cast),
+            vocabulary=words,
+            ceilings=ceilings,
+        )
+        assert lookups == [10], 'one sheet read per character per conversation'
+        mine = [r for r in opened.rolls if r.character.startswith('Tsuruchi')]
+        assert [(r.skill, r.total, r.ceiling) for r in mine] == [
+            ('etiquette', 34, 15),
+            ('law', 33, None),
+        ]
+        assert conv.conversation_status() is not None
+        assert 'Tetsuro / Shizukanaken etiquette: 30 / 15' in capsys.readouterr().out
+
+    def test_an_unreadable_sheet_is_reported_and_the_roll_kept(
+        self, words: tuple[str, ...]
+    ) -> None:
+        opened = open_one()
+        cast = {'1': sheet.SheetCharacter(name='Jimen', discord_id='1', sheet_id=3)}
+        conv.collect(
+            fetch=lambda cid, cursor, **k: [message('1', '1', '34 Etiquette')],
+            recorded=lambda *a, **k: sheet.SheetResult(),
+            roster=lambda *a, **k: sheet.SheetResult(characters=cast),
+            vocabulary=words,
+            ceilings=lambda sid: sheet.Ceilings(reason='could not read the sheet'),
+        )
+        assert [r.total for r in opened.rolls] == [34]
+        assert any('Withdrawn not applied' in u for u in opened.unresolved)
+
+    def test_the_watcher_says_what_a_capped_roll_counts_as(
+        self, words: tuple[str, ...], capsys: Any
+    ) -> None:
+        from dataclasses import replace
+
+        from l7r.repl.rolls.models import Roll
+
+        opened = open_one()
+        capped = replace(
+            Roll('Tsuruchi Shizukanaken', 'etiquette', 34, 'typed', '1', self.CARD), ceiling=15
+        )
+        conv._tick(
+            opened,
+            collector=lambda c: c.rolls.append(capped),
+            get_body=lambda i: {'bio': ''},
+            update=lambda *a, **k: None,
+            debounce=0.0,
+        )
+        assert 'etiquette 34 (counts as 15)' in capsys.readouterr().out

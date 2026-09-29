@@ -224,3 +224,71 @@ class TestGet:
 def test_an_empty_result_is_unavailable_only_when_a_reason_is_set() -> None:
     assert sheet.SheetResult().available
     assert not sheet.SheetResult(reason='down').available
+
+
+FORMULAS_FIXTURE = Path(__file__).parent / 'fixtures' / 'sheets' / 'shizukanaken-roll-formulas.html'
+
+
+class TestCeilings:
+    def test_withdrawn_on_a_real_sheet(self) -> None:
+        found = sheet.parse_ceilings(FORMULAS_FIXTURE.read_text())
+        assert found.reason == ''
+        assert dict(found.always) == {'etiquette': 15}
+        assert dict(found.open) == {'sincerity': 15}
+
+    def test_knacks_and_zero_caps_are_ignored(self) -> None:
+        html = (
+            '<script type="application/json" id="roll-formulas">'
+            '{"knack:pontificate:as:etiquette": {"max_total": 15},'
+            ' "skill:law": {"max_total": 0, "alternatives": [{"max_total": 0}]},'
+            ' "skill:tact": {"alternatives": [{"max_total": 20}]},'
+            ' "skill:sincerity": {"alternatives": [{"max_total": 20, "open_roll": true},'
+            ' {"max_total": 15, "open_roll": true}]},'
+            ' "skill:odd": []}</script>'
+        )
+        found = sheet.parse_ceilings(html)
+        assert dict(found.always) == {}
+        assert dict(found.open) == {'sincerity': 15}
+
+    def test_a_page_without_formulas_says_so(self) -> None:
+        assert 'no roll formulas' in sheet.parse_ceilings('<html></html>').reason
+
+    def test_unreadable_formulas_say_so(self) -> None:
+        html = '<script type="application/json" id="roll-formulas">{nope</script>'
+        assert 'unreadable' in sheet.parse_ceilings(html).reason
+
+    def test_reads_the_public_page(self) -> None:
+        seen: list[str] = []
+
+        def get(url: str, timeout: float) -> str:
+            seen.append(url)
+            return FORMULAS_FIXTURE.read_text()
+
+        assert dict(sheet.roll_ceilings(10, get=get).always) == {'etiquette': 15}
+        assert seen == ['https://l7r-character-sheet.fly.dev/characters/10']
+
+    def test_a_failure_degrades(self) -> None:
+        def boom(url: str, timeout: float) -> str:
+            raise OSError('down')
+
+        found = sheet.roll_ceilings(10, get=boom)
+        assert found.always == {}
+        assert 'could not read the sheet' in found.reason
+
+    def test_the_page_fetch(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        class Response:
+            def __enter__(self) -> Response:
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return b'<html>sheet</html>'
+
+        monkeypatch.setattr('urllib.request.urlopen', lambda url, timeout: Response())
+        assert sheet._page('u', 1.0) == '<html>sheet</html>'
+
+    def test_the_roster_carries_the_sheet_id(self) -> None:
+        payload = {'characters': [{'id': 10, 'name': 'X', 'owner_discord_id': '5'}]}
+        assert sheet.characters(token='t', get=lambda *a: payload).characters['5'].sheet_id == 10

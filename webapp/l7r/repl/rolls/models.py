@@ -19,6 +19,7 @@ from l7r.repl.gmrolls import GmRoll
 
 if TYPE_CHECKING:
     from l7r.repl.honor import Record
+    from l7r.repl.rolls.sheet import Ceilings
 
 #: Where a roll came from. `recorded` means it was joined to a row in the
 #: character-sheet app's roll history and is therefore exact; `typed` means a
@@ -78,6 +79,15 @@ class Roll:
     #: Feature 207. The GM was asked for this roll's rank and had none to give, so
     #: `annotate()` stops asking. Only meaningful while `rank` is None.
     rank_settled: bool = False
+    #: The ROLLER's own ceiling on this skill, read off their character sheet when the
+    #: roll is collected (`sheet.roll_ceilings`). Withdrawn (`rules/08-disadvantages.md`):
+    #: *"your etiquette and open sincerity rolls are never considered to be higher than
+    #: 15"*. The GM (2026-09-29) wants it applied without the player having to say so,
+    #: so a typed `34 Etiquette` is written as 15 whatever the parser read. `ceiling`
+    #: holds on every roll of the skill; `open_ceiling` only on an OPEN roll, which is
+    #: how the sheet itself scopes Withdrawn's sincerity half. The raw `total` is kept.
+    ceiling: int | None = None
+    open_ceiling: int | None = None
 
     @property
     def annotated(self) -> bool:
@@ -224,6 +234,13 @@ class Conversation:
     #: reported yet, so an unreachable app complains once and not every 20 seconds.
     discern_groups: tuple[int, ...] = ()
     discern_complained: bool = False
+    #: Recorded rolls (character, skill, total, time) already joined to a Discord
+    #: image. A recorded roll backs AT MOST ONE message: measured 2026-09-29, a player
+    #: posted a paw-print picture 90 s after their `/etiquette` card, the join's 300 s
+    #: window matched the same recorded roll again, and Yudai was written twice.
+    joined: set[tuple[str, str, int, str]] = field(default_factory=set)
+    #: Each roller's sheet ceilings, by sheet id, fetched once per conversation.
+    ceilings: dict[int, Ceilings] = field(default_factory=dict)
 
     def planned(self, pc: str) -> Record | None:
         """What `pc` (a given name, any case) is told in this conversation, if decided."""

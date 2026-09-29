@@ -335,6 +335,17 @@ def record(total: int, skill: str, rule: RecordingRule = DEFAULT_RULE) -> int:
     return round_down(capped, rule.increment)
 
 
+def held(roll: Roll, total: int) -> int:
+    """`total` for an OPEN roll, held to the roller's own sheet ceilings (Withdrawn).
+
+    Applied before `record`, so a Withdrawn 34 is capped to 15 and then rounded. Only
+    the open lines call this: Withdrawn caps etiquette, which is never contested, and
+    OPEN sincerity - so a contested line has no ceiling to apply.
+    """
+    caps = [c for c in (roll.ceiling, roll.open_ceiling) if c is not None]
+    return min([total, *caps])
+
+
 def personal_name(name: str) -> str:
     """The part of a character's name the GM writes down: `Tsuruchi Jimen` -> `Jimen`.
 
@@ -420,9 +431,9 @@ def render_open(rolls: Sequence[Roll], rule: RecordingRule = DEFAULT_RULE) -> st
     # land on by chance about once in 120 times - against the competing reading that
     # the names were in a habitual party order. The inference was right; this is now
     # an instruction, not a guess, so do not "restore" posting order.
-    usable = sorted(usable, key=lambda r: record(r.total, r.skill, rule), reverse=True)
+    usable = sorted(usable, key=lambda r: record(held(r, r.total), r.skill, rule), reverse=True)
     names = ' / '.join(personal_name(r.character) for r in usable)
-    totals = ' / '.join(str(record(r.total, r.skill, rule)) for r in usable)
+    totals = ' / '.join(str(record(held(r, r.total), r.skill, rule)) for r in usable)
     return f'{names} {usable[0].skill.lower()}: {totals}'
 
 
@@ -566,7 +577,7 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
         tail = f' - {roll.note}: {outcome_text(roll)}' if roll.annotated else ''
         return f'acting: {roll.total}{rank} {who}{tail}'
     if roll.opposed_total is None:
-        shown = record(roll.total + roll.bonus_self, roll.skill, rule)
+        shown = record(held(roll, roll.total + roll.bonus_self), roll.skill, rule)
         # The open line separates its note with ` - ` (GM 2026-09-09, reversing
         # 2026-09-02); the contested line below still does not, because its `wins`
         # verb is the separator there. See the module docstring.

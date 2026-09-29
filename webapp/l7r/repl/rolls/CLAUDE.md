@@ -374,6 +374,22 @@ Needs `[character_sheet] gm_write_token` in `development-secrets.ini` (the sheet
 alternatives and three rounds of review: `specs/212-discern-honor-command/`. The sheet app's half
 and its exact replies: `discord-design/discern-honor-requirements.md` in that repository.
 
+## A roller's own sheet caps apply without being said (Withdrawn)
+
+The GM (2026-09-29): a Withdrawn character's etiquette is written as at most 15 even when the
+player types `34 Etiquette so 15` and the parser reads 34. `sheet.roll_ceilings` reads the ceilings
+off the character's PUBLIC sheet page, from its `roll-formulas` JSON (`/api/characters` has no
+disadvantages), once per character per conversation. `collect` stores them on the roll as
+`ceiling` / `open_ceiling`, and `rules.held` applies them on the OPEN lines before the GM's own cap
+and rounding. The raw total is kept, and the watcher prints `etiquette 34 (counts as 15)`. Because
+the caps come from the sheet and not from a list kept here, a cap the sheet app adds later is picked
+up with no change on this side. An unreadable sheet is reported, and the roll is written uncapped.
+
+**One recorded roll backs one Discord message.** `Conversation.joined` records every recorded roll
+already joined to an image. Without it, a picture the same player posted inside
+`MATCH_WINDOW_SECONDS` re-joined their last roll. On 2026-09-28 a paw-print picture 90 s after
+Yudai's `/etiquette` card wrote Yudai twice.
+
 ## Two things that will bite you
 
 **A pasted dice card cannot be recognized as one.** Clipboard pastes arrive as `image.png` and so

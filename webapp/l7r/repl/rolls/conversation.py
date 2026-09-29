@@ -232,6 +232,7 @@ def collect(
     recorded: Callable[..., sheet.SheetResult] = sheet.recorded_rolls,
     roster: Callable[..., sheet.SheetResult] = sheet.characters,
     vocabulary: tuple[str, ...] | None = None,
+    ceilings: Callable[[int], sheet.Ceilings] = sheet.roll_ceilings,
 ) -> Conversation:
     """Read everything posted since the last poll and fold it into the conversation."""
     conv = conversation or _require()
@@ -254,7 +255,9 @@ def collect(
     messages.sort(key=lambda m: discord.parse_timestamp(m['timestamp']))
 
     from_sheet = recorded(conv.opened_at)
-    who = _players(roster())
+    cast = roster()
+    who = _players(cast)
+    sheet_ids = {c.name.strip().lower(): c.sheet_id for c in cast.characters.values() if c.sheet_id}
     if not from_sheet.available:
         note = f'recorded rolls unavailable ({from_sheet.reason})'
         if note not in conv.unresolved:
@@ -273,7 +276,7 @@ def collect(
         )
         conv.unresolved.extend(problems)
         if discord.has_image(message):
-            joined = _join(message, from_sheet.rolls, at)
+            joined = _join(message, from_sheet.rolls, at, taken=conv.joined)
             if joined is not None:
                 found = [joined] + [f for f in found if f.skill != joined.skill]
             elif from_sheet.available:
@@ -294,7 +297,8 @@ def collect(
                     'character known for that Discord account'
                 )
                 continue
-            conv.rolls.append(attach(conv, roll))
+            sheet_id = sheet_ids.get(roll.character.strip().lower(), 0)
+            conv.rolls.append(attach(conv, _held(conv, roll, sheet_id, ceilings)))
             if oppose.is_oppose(roll):
                 # Feature 208. HERE rather than in `_tick`, because
                 # `new_line_of_questioning` collects too and the GM's rolls must be
@@ -326,14 +330,53 @@ def attach(conv: Conversation, roll: Roll) -> Roll:
     return replace(roll, line=line.id, note=line.description, grilling=line.grilling)
 
 
+def _held(
+    conv: Conversation, roll: Roll, sheet_id: int, lookup: Callable[[int], sheet.Ceilings]
+) -> Roll:
+    """`roll` carrying its roller's sheet ceilings (Withdrawn), fetched once per sheet.
+
+    A sheet that cannot be read is reported once and the roll is written uncapped -
+    the same degradation as every other sheet-app failure here.
+    """
+    if not sheet_id:
+        return roll
+    if sheet_id not in conv.ceilings:
+        found = lookup(sheet_id)
+        conv.ceilings[sheet_id] = found
+        if found.reason:
+            conv.unresolved.append(
+                f'{roll.character}: {found.reason} - sheet caps such as Withdrawn not applied'
+            )
+    found = conv.ceilings[sheet_id]
+    skill = roll.skill.lower()
+    return replace(roll, ceiling=found.always.get(skill), open_ceiling=found.open.get(skill))
+
+
+def _recorded_key(roll: sheet.RecordedRoll) -> tuple[str, str, int, str]:
+    return (roll.character, roll.skill, roll.total, roll.at.isoformat())
+
+
 def _join(
     message: Mapping[str, Any],
     candidates: Sequence[sheet.RecordedRoll],
     at: datetime,
+    *,
+    taken: set[tuple[str, str, int, str]] | None = None,
 ) -> Roll | None:
-    """Find the recorded roll a pasted dice card was rendered from."""
+    """Find the recorded roll a pasted dice card was rendered from.
+
+    `taken` holds the recorded rolls already joined in this conversation; a match is
+    added to it, so the same recorded roll never backs a second message. Without that,
+    any picture the same player posts inside `MATCH_WINDOW_SECONDS` re-joins the roll
+    and it is written twice (measured 2026-09-29 - see `Conversation.joined`).
+    """
     poster = discord.author_id(message)
-    in_window = [r for r in candidates if abs((at - r.at).total_seconds()) <= MATCH_WINDOW_SECONDS]
+    in_window = [
+        r
+        for r in candidates
+        if abs((at - r.at).total_seconds()) <= MATCH_WINDOW_SECONDS
+        and (taken is None or _recorded_key(r) not in taken)
+    ]
     named = bot_roll_character(message)
     if named:
         # A slash-command roll: the bot posted it, so the author id is the bot's and
@@ -344,6 +387,8 @@ def _join(
     if not near:
         return None
     best = min(near, key=lambda r: abs((at - r.at).total_seconds()))
+    if taken is not None:
+        taken.add(_recorded_key(best))
     return Roll(
         character=best.character,
         skill=best.skill,
@@ -390,7 +435,9 @@ def _tick(
     if announce:
         for roll in conv.rolls[before:]:
             rank = f' @{roll.rank}' if roll.rank is not None else ''
-            say(f'  + {roll.character}: {roll.skill} {roll.total}{rank}')
+            cap = roll.ceiling
+            counts = f' (counts as {cap})' if cap is not None and roll.total > cap else ''
+            say(f'  + {roll.character}: {roll.skill} {roll.total}{rank}{counts}')
             announce_comparison(conv, roll)
             announce_oppose(conv, roll)
     lines = tuple(

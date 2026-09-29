@@ -65,6 +65,25 @@ class SheetCharacter:
     discord_id: str
     group: str = ''
     skills: Mapping[str, int] = field(default_factory=dict)
+    #: The character's id on the sheet app - its public page is `/characters/<id>`.
+    #: 0 when unknown, which skips everything that needs the page.
+    sheet_id: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class Ceilings:
+    """The most a character's roll of each skill may count for, per their sheet.
+
+    `always` caps every roll of a skill, `open` only an open one - the sheet's own
+    split, in its `roll-formulas` JSON: Withdrawn puts `max_total: 15` on etiquette
+    and a `max_total: 15, open_roll: true` alternative on sincerity. Read from the
+    sheet rather than from a list of disadvantages kept here, so a cap the sheet app
+    learns later is applied with no change on this side.
+    """
+
+    always: Mapping[str, int] = field(default_factory=dict)
+    open: Mapping[str, int] = field(default_factory=dict)
+    reason: str = ''
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,8 +204,64 @@ def characters(
             discord_id=owner,
             group=str(entry.get('gaming_group_name') or ''),
             skills={str(k).lower(): int(v) for k, v in (entry.get('skills') or {}).items()},
+            sheet_id=int(entry.get('id') or 0),
         )
     return SheetResult(characters=found)
+
+
+_FORMULAS = re.compile(r'<script type="application/json" id="roll-formulas">(.*?)</script>', re.S)
+
+
+def parse_ceilings(html: str) -> Ceilings:
+    """The skill ceilings in a sheet page's `roll-formulas` JSON (see `Ceilings`).
+
+    Only `skill:<name>` entries: a knack rolled AS a skill (`knack:pontificate:as:
+    etiquette`) is recorded under the knack's name, not the skill's. `max_total: 0`
+    is the sheet's "no cap".
+    """
+    found = _FORMULAS.search(html)
+    if not found:
+        return Ceilings(reason='no roll formulas on the sheet page')
+    try:
+        formulas = json.loads(found.group(1))
+    except ValueError:
+        return Ceilings(reason='unreadable roll formulas on the sheet page')
+    always: dict[str, int] = {}
+    opened: dict[str, int] = {}
+    for key, formula in formulas.items():
+        if not key.startswith('skill:') or not isinstance(formula, dict):
+            continue
+        skill = key.removeprefix('skill:').lower()
+        if cap := int(formula.get('max_total') or 0):
+            always[skill] = cap
+        for alternative in formula.get('alternatives') or ():
+            cap = int(alternative.get('max_total') or 0)
+            if cap and alternative.get('open_roll'):
+                opened[skill] = min(cap, opened.get(skill, cap))
+    return Ceilings(always=always, open=opened)
+
+
+def _page(url: str, timeout: float) -> str:
+    with urllib.request.urlopen(url, timeout=timeout) as response:
+        return str(response.read().decode())
+
+
+def roll_ceilings(
+    sheet_id: int,
+    *,
+    get: Callable[[str, float], str] = _page,
+    timeout: float = 20.0,
+) -> Ceilings:
+    """A character's skill ceilings, off their PUBLIC sheet page (no token needed).
+
+    The page, because `/api/characters` carries skills and knacks but not
+    disadvantages. Empty, with a reason, on any failure - never raises.
+    """
+    url = f'{BASE_URL}/characters/{sheet_id}'
+    try:
+        return parse_ceilings(get(url, timeout))
+    except Exception as exc:  # noqa: BLE001 - every failure degrades identically
+        return Ceilings(reason=f'could not read the sheet at {url}: {exc}')
 
 
 #: The sheet app labels a roll with its ring: `etiquette (air)`, `underworld
