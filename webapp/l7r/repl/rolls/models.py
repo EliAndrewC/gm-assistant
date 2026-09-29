@@ -79,6 +79,11 @@ class Roll:
     #: Feature 207. The GM was asked for this roll's rank and had none to give, so
     #: `annotate()` stops asking. Only meaningful while `rank` is None.
     rank_settled: bool = False
+    #: The GM has said what this hidden-opposition roll got the players - in
+    #: `annotate()` (Enter keeps the default) or with `detected()`. Until then an
+    #: interrogation roll the tool reckons DETECTED waits, like an unannotated roll
+    #: (GM 2026-09-29: the default was being written with no chance to say otherwise).
+    outcome_settled: bool = False
     #: The ROLLER's own ceiling on this skill, read off their character sheet when the
     #: roll is collected (`sheet.roll_ceilings`). Withdrawn (`rules/08-disadvantages.md`):
     #: *"your etiquette and open sincerity rolls are never considered to be higher than

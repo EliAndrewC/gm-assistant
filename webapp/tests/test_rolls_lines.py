@@ -209,7 +209,10 @@ class TestComparison:
         assert found is not None
         assert (found.bonus, found.casual, found.npc_bonus) == (10, 10, 0)
         assert found.detected
-        assert found.describe() == 'Jimen 20 (+10) vs sincerity 18 (+10 not grilling): DETECTED'
+        assert (
+            found.describe() == 'Jimen 20 (+10) vs sincerity 18 (+10 not grilling): DETECTED'
+            ' - annotate() to say what they got'
+        )
 
     def test_the_npc_s_free_raises_and_a_tie(self) -> None:
         c = talking()
@@ -218,7 +221,10 @@ class TestComparison:
         assert found is not None
         assert found.theirs == 33
         assert found.detected
-        assert found.describe() == 'Jimen 33 vs sincerity 18 (+15 free raises): DETECTED'
+        assert (
+            found.describe() == 'Jimen 33 vs sincerity 18 (+15 free raises): DETECTED'
+            ' - annotate() to say what they got'
+        )
         lost = hidden.compare(c, c.lines[0], roll('Jimen', 32, rank=2))
         assert lost is not None
         assert not lost.detected
@@ -374,3 +380,88 @@ class TestLooseEnds:
         c.rolls.append(conv.attach(c, roll('Jimen', 30, minute=2)))
         c.rolls.append(replace(conv.attach(c, roll('Jimen', 35, minute=3)), discarded=True))
         assert lines.candidates(c) == []
+
+
+class TestAWinIsAsked:
+    """GM 2026-09-29: lines said "nothing hidden detected" even when the PC won, with
+    no chance to say what they detected. A win now waits for the GM's answer."""
+
+    def on_line(self, total: int, *, rank: int | None = 2) -> Conversation:
+        c = talking()
+        declare('the treasury', 18, grilling=True)
+        c.rolls.append(conv.attach(c, roll('Tsuruchi Jimen', total, rank=rank, minute=1)))
+        return c
+
+    def script(self, *answers: str) -> Any:
+        asked: list[str] = []
+        queue = list(answers)
+
+        def ask(question: str) -> str:
+            asked.append(question)
+            return queue.pop(0)
+
+        ask.asked = asked  # type: ignore[attr-defined]
+        return ask
+
+    def test_a_win_asks_what_was_detected(self, capsys: pytest.CaptureFixture[str]) -> None:
+        c = self.on_line(20)
+        assert hidden.awaiting_outcome(c, c.rolls[0])
+        ask = self.script('he is lying about the hour')
+        ann.annotate(c, ask=ask)
+        assert ask.asked == ['  What did Jimen detect? [nothing hidden detected] > ']
+        assert 'Jimen 20 vs sincerity 18: DETECTED - annotate()' in capsys.readouterr().out
+        assert c.rolls[0].outcome == 'he is lying about the hour'
+        assert rules.render_lines(c.rolls) == [
+            'interrogation (grilling): 20@2 Jimen - the treasury: he is lying about the hour'
+        ]
+
+    def test_enter_keeps_the_default_and_is_not_asked_again(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        c = self.on_line(20)
+        ann.annotate(c, ask=self.script(''))
+        assert (c.rolls[0].outcome, c.rolls[0].outcome_settled) == ('', True)
+        assert not hidden.awaiting_outcome(c, c.rolls[0])
+        ann.annotate(c, ask=self.script())
+        assert 'Nothing waiting' in capsys.readouterr().out
+
+    def test_a_loss_is_not_asked_about(self, capsys: pytest.CaptureFixture[str]) -> None:
+        c = self.on_line(17)
+        assert not hidden.awaiting_outcome(c, c.rolls[0])
+        ann.annotate(c, ask=self.script())
+        assert 'Nothing waiting' in capsys.readouterr().out
+
+    def test_the_rank_is_asked_first_when_missing(self) -> None:
+        c = self.on_line(20, rank=None)
+        ask = self.script('2', 'nervous about the ledger')
+        ann.annotate(c, ask=ask)
+        assert ask.asked[0] == "  Jimen's interrogation rank? [none] > "
+        assert (c.rolls[0].rank, c.rolls[0].outcome) == (2, 'nervous about the ledger')
+
+    def test_a_roll_joining_a_line_is_asked_too(self) -> None:
+        c = talking(roll('Tsuruchi Jimen', 20))
+        declare('the treasury', 18, grilling=True, replies=('d',))
+        c.rolls[0] = replace(c.rolls[0], discarded=False, line=None)
+        ask = self.script('1', 'the hour')
+        ann.annotate(c, ask=ask)
+        assert ask.asked[-1] == '  What did Jimen detect? [nothing hidden detected] > '
+        assert (c.rolls[0].line, c.rolls[0].outcome) == (c.lines[0].id, 'the hour')
+
+    def test_detected_settles_it(self) -> None:
+        c = self.on_line(20)
+        lines.detected('Jimen', 'the hour')
+        assert not hidden.awaiting_outcome(c, c.rolls[0])
+        found = hidden.compare(c, c.lines[0], c.rolls[0])
+        assert found is not None
+        assert found.describe() == 'Jimen 20 vs sincerity 18: DETECTED'
+
+    def test_the_conversation_does_not_close_over_it(self) -> None:
+        self.on_line(20)
+        with pytest.raises(conv.NotAnnotated, match='needs what they detected'):
+            conv.end_conversation()
+
+    def test_only_an_interrogation_roll_on_a_known_line(self) -> None:
+        c = self.on_line(20)
+        assert not hidden.awaiting_outcome(c, roll('Jimen', 40, skill='law'))
+        assert not hidden.awaiting_outcome(c, replace(c.rolls[0], line=99))
+        assert not hidden.awaiting_outcome(c, replace(c.rolls[0], discarded=True))

@@ -308,6 +308,7 @@ class TestTheLineInProgress:
         assert (after.theirs, after.detected) == (49, True)
         assert after.describe() == (
             'Jimen 50 vs sincerity 48 (+10 not grilling, -9 oppose social): DETECTED'
+            ' - annotate() to say what they got'
         )
         assert hidden.entries(c) == (
             "- 2026-01-01 sincerity 48 (+10 not grilling, -9 oppose social) - Chizuru's death: "

@@ -673,7 +673,11 @@ def end_conversation(
     """Close, format, and write. No confirmation step (FR-019)."""
     global _open
     conv = _require()
-    waiting = [roll for roll in conv.rolls if rules.needs_annotation(roll) and roll.attributed]
+    waiting = [
+        roll
+        for roll in conv.rolls
+        if roll.attributed and (rules.needs_annotation(roll) or hidden.awaiting_outcome(conv, roll))
+    ]
     if waiting and not force:
         listing = '\n'.join(f'  - {roll.character} {roll.skill} {roll.total}' for roll in waiting)
         raise NotAnnotated(
@@ -683,7 +687,13 @@ def end_conversation(
             + (
                 '\nAn interrogation roll joins a line of questioning: '
                 'new_line_of_questioning("...") declares one.'
-                if any(rules.is_interrogation(roll) for roll in waiting)
+                if any(rules.is_interrogation(r) and r.line is None for r in waiting)
+                else ''
+            )
+            + (
+                '\nAn interrogation roll that beat the Sincerity roll needs what they '
+                'detected (Enter keeps "nothing hidden detected").'
+                if any(r.line is not None for r in waiting if rules.is_interrogation(r))
                 else ''
             )
         )

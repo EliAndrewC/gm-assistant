@@ -124,6 +124,15 @@ class Decision:
     #: This decision ONLY supplies a rank - an interrogation roll that was already on
     #: its line when the menu reached it.
     rank_only: bool = False
+    #: The GM was asked what an interrogation roll detected; `outcome` is the answer
+    #: ('' keeps the default). Only then is the roll's outcome touched.
+    outcome_asked: bool = False
+
+
+def _outcome(roll: Roll, decision: Decision) -> Roll:
+    if not decision.outcome_asked:
+        return roll
+    return replace(roll, outcome=decision.outcome, outcome_settled=True)
 
 
 def _apply(roll: Roll, decision: Decision) -> Roll:
@@ -131,11 +140,11 @@ def _apply(roll: Roll, decision: Decision) -> Roll:
     if decision.discard:
         return replace(roll, discarded=True)
     if decision.rank_only:
-        return replace(roll, rank=decision.rank, rank_settled=True)
+        return _outcome(replace(roll, rank=decision.rank, rank_settled=True), decision)
     if decision.line is not None:
         # An interrogation roll: note, line, grilling, rank - and NOTHING about an
         # opposing side or a bonus, which is the leak feature 206 closes.
-        return replace(
+        joined = replace(
             roll,
             note=decision.note,
             line=decision.line,
@@ -143,6 +152,7 @@ def _apply(roll: Roll, decision: Decision) -> Roll:
             rank=decision.rank,
             rank_settled=True,
         )
+        return _outcome(joined, decision)
     if roll.skill.lower() == rules.ACTING:
         # The opposing investigation roll is KEPT on the roll - `hidden.entries` reads
         # it for the GM-only notes - and never rendered (`rules.render_annotated`).
@@ -179,7 +189,10 @@ def pending(conv: Conversation) -> list[tuple[int, Roll]]:
     return [
         (index, roll)
         for index, roll in enumerate(conv.rolls)
-        if roll.attributed and (rules.needs_annotation(roll) or _needs_rank(roll))
+        if roll.attributed
+        and (
+            rules.needs_annotation(roll) or _needs_rank(roll) or hidden.awaiting_outcome(conv, roll)
+        )
     ]
 
 
@@ -320,8 +333,11 @@ def _interrogate(ask: Ask, roll: Roll, conv: Conversation) -> Decision | None:
     """
     who = rules.personal_name(roll.character)
     if roll.line is not None:
-        rank = _optional_number(ask, f"  {who}'s interrogation rank? [none] > ")
-        return Decision(rank=rank, rank_only=True)
+        rank = roll.rank
+        if _needs_rank(roll):
+            rank = _optional_number(ask, f"  {who}'s interrogation rank? [none] > ")
+        decision = Decision(rank=rank, rank_only=True)
+        return _ask_detected(ask, conv, _apply(roll, decision), decision)
     if conv.lines:
         rows = _listed(
             ask,
@@ -351,7 +367,32 @@ def _interrogate(ask: Ask, roll: Roll, conv: Conversation) -> Decision | None:
     rank = roll.rank
     if rank is None:
         rank = _optional_number(ask, f"  {who}'s interrogation rank? [none] > ")
-    return Decision(note=chosen.description, line=chosen.id, grilling=chosen.grilling, rank=rank)
+    decision = Decision(
+        note=chosen.description, line=chosen.id, grilling=chosen.grilling, rank=rank
+    )
+    return _ask_detected(ask, conv, _apply(roll, decision), decision)
+
+
+def _ask_detected(ask: Ask, conv: Conversation, staged: Roll, decision: Decision) -> Decision:
+    """When the staged roll beats its line's Sincerity roll, ask what it detected.
+
+    The GM (2026-09-29): interrogation lines *"always say 'nothing hidden detected'
+    even when the PC won the roll and I wasn't given a chance to say what was
+    detected"*. The comparison is still advisory - Enter keeps the default, and
+    `detected()` still changes an outcome at any time - but a win no longer passes
+    without a question. The comparison is printed first so the answer is informed.
+    """
+    if not hidden.awaiting_outcome(conv, staged):
+        return decision
+    for line in conv.lines:
+        if line.id == staged.line:
+            found = hidden.compare(conv, line, staged)
+            if found is not None:
+                print(f'  = {found.describe()}')
+    default = modes.default_outcome(staged.skill)
+    who = rules.personal_name(staged.character)
+    outcome = _prompt(ask, f'  What did {who} detect? [{default}] > ')
+    return replace(decision, outcome=outcome, outcome_asked=True)
 
 
 def _their_rank(conv: Conversation, skill: str, entry: gmrolls.GmRoll | None) -> int | None:
@@ -869,8 +910,8 @@ def annotate(
 def _compare_privately(conv: Conversation, roll: Roll, decision: Decision) -> None:
     """A roll joining a line here gets the same private comparison the watcher gives
     one that lands on a line by itself (`conversation.announce_comparison`)."""
-    if decision.line is None or decision.discard:
-        return
+    if decision.line is None or decision.discard or decision.outcome_asked:
+        return  # `_ask_detected` already printed it, before its question
     for line in conv.lines:
         if line.id == decision.line:
             found = hidden.compare(conv, line, _apply(roll, decision))

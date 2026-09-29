@@ -277,7 +277,7 @@ def _set_outcome(pc: str, outcome: str, line: int | None) -> None:
             f'{pc} has no interrogation roll on "{target.description}". Rolls there: {who}.'
         )
     for index in hits:
-        conv.rolls[index] = replace(conv.rolls[index], outcome=outcome)
+        conv.rolls[index] = replace(conv.rolls[index], outcome=outcome, outcome_settled=True)
     group = [conv.rolls[index] for index, _ in on_line]
     for rolls in rules.by_outcome(group):
         print(f'  {rules.render_interrogation(rolls)}')

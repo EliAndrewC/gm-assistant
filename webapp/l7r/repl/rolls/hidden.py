@@ -78,7 +78,27 @@ class Comparison:
             extras.append(f'-{self.opposed} {self.opposed_by}')
         theirs = f'{self.sincerity}' + (f' ({", ".join(extras)})' if extras else '')
         verdict = 'DETECTED' if self.detected else 'not detected'
-        return f'{who} {mine} vs sincerity {theirs}: {verdict}'
+        ask = ' - annotate() to say what they got' if self.awaiting else ''
+        return f'{who} {mine} vs sincerity {theirs}: {verdict}{ask}'
+
+    @property
+    def awaiting(self) -> bool:
+        """The tool reckons this roll detected something and the GM has not yet
+        said what. The reckoning is still ADVISORY - Enter at the question keeps the
+        default outcome - but it is no longer silent (GM 2026-09-29)."""
+        return self.detected and not self.roll.outcome_settled and not self.roll.discarded
+
+
+def awaiting_outcome(conv: Conversation, roll: Roll) -> bool:
+    """True when `roll` is an interrogation roll on a line whose Sincerity roll it
+    beats, and the GM has not yet said what it got. See `Comparison.awaiting`."""
+    if not rules.is_interrogation(roll) or roll.line is None:
+        return False
+    for line in conv.lines:
+        if line.id == roll.line:
+            found = compare(conv, line, roll)
+            return found is not None and found.awaiting
+    return False
 
 
 def sincerity_rank(conv: Conversation, sincerity: GmRoll | int | None) -> int | None:

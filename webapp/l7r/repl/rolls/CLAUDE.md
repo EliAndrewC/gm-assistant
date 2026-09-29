@@ -202,6 +202,15 @@ is the point and `test_the_line_reads_the_same_with_and_without_a_sincerity_roll
 GM hands out as a line of questioning goes on are not known to the tool. `detected()` is how the
 public outcome changes.
 
+**A DETECTED verdict now waits for the GM** (2026-09-29). The GM reported that lines kept saying
+"nothing hidden detected" even when the PC won, with no chance to say otherwise. Rolls that land on a
+declared line never reach `annotate()`, so nothing ever asked. Now a roll the tool reckons DETECTED
+is pending, like an unannotated roll: the watcher's line ends `- annotate() to say what they got`,
+`annotate()` asks `What did Jimen detect? [nothing hidden detected]`, and `end_conversation()`
+refuses to close until it is answered (`force=True` still overrides). Enter keeps the default and
+marks it answered (`Roll.outcome_settled`), as `detected()` does. The verdict is still only
+advisory: it decides whether to ASK, never what is written.
+
 **Only the tool applies the casual +10**, from the line's grilling flag; `grilling()` takes it back
 retroactively. Whatever the GM adds to a roll by hand is never adjusted.
 
