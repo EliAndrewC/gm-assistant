@@ -186,16 +186,24 @@ def perceived(gm_info: str) -> str:
     return 'normal'
 
 
+#: The knack never tells a value outside the Honor scale (GM 2026-09-29): Honor
+#: runs 1.0 .. 5.0 (``rules/01-character_creation.md``), so a first guess that
+#: the formula pushes past either end is reported AT that end. Without this an
+#: Unconventional 2.0 NPC told a PC "0.0". Only the first guess needs clamping:
+#: `refine` moves toward the true Honor, which is itself on the scale.
+MIN_TOLD, MAX_TOLD = 1.0, 5.0
+
+
 def first_guess(honor: float, die: int, reads: str = 'normal') -> float:
-    """``honor + 0.5 * (die - 5)``: -2.0 .. +2.5 on a flat d10. An
-    Unconventional target always reads low (``- |adjust|``), a Virtue target
-    always high (``+ |adjust|``)."""
+    """``honor + 0.5 * (die - 5)``: -2.0 .. +2.5 on a flat d10, clamped to
+    ``MIN_TOLD .. MAX_TOLD``. An Unconventional target always reads low
+    (``- |adjust|``), a Virtue target always high (``+ |adjust|``)."""
     adjust = 0.5 * (die - 5)
     if reads == 'low':
         adjust = -abs(adjust)
     elif reads == 'high':
         adjust = abs(adjust)
-    return round(honor + adjust, 1)
+    return round(min(MAX_TOLD, max(MIN_TOLD, honor + adjust)), 1)
 
 
 def refine(told: float, honor: float, rank: int) -> float:

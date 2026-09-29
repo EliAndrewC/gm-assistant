@@ -264,7 +264,7 @@ class TestOpen:
             'group': 2,
             'npc_ref': 'otsuki-id',
             'opened_at': '2026-09-21T23:10:00+00:00',
-            'discern_honor': [{'character_id': 3, 'told': 5.2}, {'character_id': 18, 'told': 2.7}],
+            'discern_honor': [{'character_id': 3, 'told': 5.0}, {'character_id': 18, 'told': 2.7}],
         }
 
     def test_a_later_conversation_refines_and_needs_no_die(self) -> None:

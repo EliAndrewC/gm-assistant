@@ -63,18 +63,21 @@ class TestMath:
     def test_first_guess_range(self) -> None:
         assert first_guess(3.0, 1) == 1.0
         assert first_guess(3.0, 5) == 3.0
-        assert first_guess(3.0, 10) == 5.5
+        assert first_guess(3.0, 10) == 5.0
+        assert first_guess(1.5, 1) == 1.0
+        assert first_guess(4.5, 10) == 5.0
 
     def test_unconventional_reads_low_and_virtue_reads_high(self) -> None:
-        assert first_guess(3.0, 10, 'low') == 0.5
+        assert first_guess(3.0, 10, 'low') == 1.0
+        assert first_guess(2.0, 1, 'low') == 1.0
         assert first_guess(3.0, 1, 'low') == 1.0
         assert first_guess(3.0, 5, 'low') == 3.0
         assert first_guess(3.0, 1, 'high') == 5.0
-        assert first_guess(3.0, 10, 'high') == 5.5
+        assert first_guess(3.0, 10, 'high') == 5.0
         assert perceived('XP: 65\nHonor: 3.0\n\nUnconventional\nboisterous\n') == 'low'
         assert perceived('Honor: 3.0\n\nVirtue\nscarred\n') == 'high'
         assert perceived('Honor: 3.0\nan unconventional fellow of virtue\n') == 'normal'
-        assert advance(None, 'Jimen', 3.0, 2, 10, 'low').told == 0.5
+        assert advance(None, 'Jimen', 3.0, 2, 10, 'low').told == 1.0
 
     def test_advance_first_needs_rank(self) -> None:
         with pytest.raises(ValueError, match='pass rank='):
@@ -171,7 +174,7 @@ class TestDiscernHonor:
             assert rec.pc == 'Jimen'
             assert rec.rank == 4
         assert rec.conversations == 3
-        assert rec.told == 0.5 + 0.4 + 0.4  # Unconventional first guess, then 0.4 closer twice
+        assert rec.told == 1.8  # Unconventional first guess clamped to 1.0, then 0.4 closer twice
         out = capsys.readouterr().out
         assert 'Jimen: Discern Honor rank 4 (character sheet https://l7r-character-sheet' in out
         assert '(Unconventional: reads low)' in out
