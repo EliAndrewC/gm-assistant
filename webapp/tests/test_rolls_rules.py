@@ -375,3 +375,12 @@ class TestSheetCeilings:
             roll('Tsuruchi Makoto', 32, 'sincerity'), open_ceiling=15, opposed_total=20, note='x'
         )
         assert '32 vs 20' in render_annotated(rolled, 'Okuni')
+
+
+def test_a_conversation_title_is_an_h4_heading() -> None:
+    from l7r.repl.rolls.rules import render_heading
+
+    assert (
+        render_heading('confrontation on  the Imperial road')
+        == 'h4. Confrontation on the Imperial road'
+    )

@@ -110,7 +110,8 @@ COMMANDS: tuple[tuple[str, str], ...] = (
     ('Jimen / TSURUCHI_JIMEN', 'the PCs with the knack, as constants or "strings"; PCS lists them'),
     (
         'begin_conversation("Otsuki")',
-        'watch every channel for rolls and record them against that NPC',
+        'watch every channel for rolls and record them against that NPC; a second argument '
+        'titles the section ("confrontation on the Imperial road")',
     ),
     ('annotate()', 'say what each roll was for; only Etiquette is saved without it'),
     (

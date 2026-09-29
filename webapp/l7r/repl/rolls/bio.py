@@ -21,6 +21,7 @@ and returns the whole body.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from collections.abc import Sequence
 
 #: The Textile file embed. Obsidian Portal writes it with irregular internal
@@ -51,8 +52,15 @@ def already_present(bio: str, line: str) -> bool:
 
 
 def remove_lines(bio: str, lines: Sequence[str]) -> str:
-    """Drop each of `lines` from the body, leaving everything else untouched."""
-    targets = {line.strip() for line in lines if line.strip()}
+    """Drop each of `lines` from the body ONCE, leaving everything else untouched.
+
+    Once, and the FIRST occurrence: the lines being removed are the open
+    conversation's own block, which always sits directly under the portrait, above
+    every earlier conversation. An earlier conversation can hold an identical line -
+    the same heading, or `Jimen etiquette: 25` twice - and removing every copy would
+    delete it from that conversation's record.
+    """
+    targets = Counter(line.strip() for line in lines if line.strip())
     if not targets:
         return bio
     # Each line was spliced WITH a blank line after it, so removing only the line
@@ -62,7 +70,8 @@ def remove_lines(bio: str, lines: Sequence[str]) -> str:
     kept: list[str] = []
     index = 0
     while index < len(source):
-        if source[index].strip() in targets:
+        if targets[source[index].strip()] > 0:
+            targets[source[index].strip()] -= 1
             index += 1
             if index < len(source) and not source[index].strip():
                 index += 1
@@ -81,12 +90,17 @@ def rewrite(bio: str, previous: Sequence[str], lines: Sequence[str]) -> str:
     conversation's lines under the portrait, with everything else in the bio
     untouched.
 
-    Lines are spliced in reverse because `splice` always inserts directly under the
-    embed, so the last one spliced ends up first.
+    Lines are inserted in reverse because `insert` always puts a line directly under
+    the embed, so the last one inserted ends up first.
+
+    `insert`, not `splice`: a line an EARLIER conversation already wrote is still
+    this conversation's line to write. Measured 2026-09-29: with `splice`'s "already
+    present" check, a second conversation's `h4.` heading of the same name, or its
+    own `Jimen etiquette: 25`, was silently never written.
     """
     body = remove_lines(bio, previous)
     for line in reversed([x for x in lines if x.strip()]):
-        body = splice(body, line)
+        body = insert(body, line)
     return body
 
 
@@ -100,6 +114,13 @@ def splice(bio: str, line: str) -> str:
         raise ValueError('refusing to splice an empty line into a bio')
     if already_present(bio, line):
         return bio
+    return insert(bio, line)
+
+
+def insert(bio: str, line: str) -> str:
+    """`splice` without the idempotency check: `line` goes in even if present."""
+    if not line.strip():
+        raise ValueError('refusing to splice an empty line into a bio')
     if not bio.strip():
         return line
 

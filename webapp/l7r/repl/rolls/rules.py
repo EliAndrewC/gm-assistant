@@ -346,6 +346,19 @@ def held(roll: Roll, total: int) -> int:
     return min([total, *caps])
 
 
+def render_heading(title: str) -> str:
+    """The divider over one conversation's lines (GM 2026-09-29).
+
+        h4. Confrontation on the Imperial road
+
+    A Textile heading, so it renders as a section break on the record. h4 because the
+    records' own sections (`h3. Wish Lists and Goals`) are h3, and a conversation is
+    smaller than those. The first letter is capitalized; the rest is the GM's words.
+    """
+    text = ' '.join(title.split())
+    return f'h4. {text[:1].upper()}{text[1:]}'
+
+
 def personal_name(name: str) -> str:
     """The part of a character's name the GM writes down: `Tsuruchi Jimen` -> `Jimen`.
 

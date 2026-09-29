@@ -55,7 +55,9 @@ def message(
 
 
 def open_one(channel: str | None = 'tuesday') -> Any:
-    return conv.begin_conversation('Otsuki', channel, characters=lambda: CAST, now=lambda: OPENED)
+    return conv.begin_conversation(
+        'Otsuki', channel=channel, characters=lambda: CAST, now=lambda: OPENED
+    )
 
 
 def collect_with(
@@ -91,12 +93,12 @@ class TestBeginConversation:
 
     def test_refuses_an_ambiguous_name_and_lists_the_candidates(self) -> None:
         with pytest.raises(ValueError, match='matches several characters'):
-            conv.begin_conversation('Reiji', 'tuesday', characters=lambda: CAST)
+            conv.begin_conversation('Reiji', channel='tuesday', characters=lambda: CAST)
         assert conv._open is None
 
     def test_refuses_an_unknown_name(self) -> None:
         with pytest.raises(ValueError, match='no character called'):
-            conv.begin_conversation('Nobody', 'tuesday', characters=lambda: CAST)
+            conv.begin_conversation('Nobody', channel='tuesday', characters=lambda: CAST)
 
     def test_refuses_a_second_conversation_and_names_the_open_one(self) -> None:
         open_one()
@@ -111,7 +113,7 @@ class TestBeginConversation:
 
     def test_an_empty_channel_string_is_refused(self) -> None:
         with pytest.raises(ValueError, match='name a channel'):
-            conv.begin_conversation('Otsuki', '  ', characters=lambda: CAST)
+            conv.begin_conversation('Otsuki', channel='  ', characters=lambda: CAST)
 
 
 class TestCollect:
@@ -535,3 +537,41 @@ class TestLastNightsEtiquette:
             debounce=0.0,
         )
         assert 'etiquette 34 (counts as 15)' in capsys.readouterr().out
+
+
+class TestTitledConversation:
+    """GM 2026-09-29: `begin_conversation("Otsuki", "confrontation on the Imperial road")`."""
+
+    def begin(self, title: str | None) -> Any:
+        return conv.begin_conversation(
+            'Otsuki', title, channel='tuesday', characters=lambda: CAST, now=lambda: OPENED
+        )
+
+    def test_the_title_heads_the_written_lines(self, words: tuple[str, ...], capsys: Any) -> None:
+        opened = self.begin('confrontation on the Imperial road')
+        assert 'Talking to Otsuki - confrontation on the Imperial road' in capsys.readouterr().out
+        collect_with([message('1', '1', '38 Etiquette @3')], words, who=PLAYERS)
+        assert conv.written_lines(opened) == (
+            'h4. Confrontation on the Imperial road',
+            'Jimen etiquette: 35',
+        )
+        conv.conversation_status()
+        assert 'h4. Confrontation on the Imperial road' in capsys.readouterr().out
+
+    def test_no_rolls_no_heading(self) -> None:
+        assert conv.written_lines(self.begin('an empty talk')) == ()
+
+    def test_untitled_writes_no_heading(self, words: tuple[str, ...]) -> None:
+        opened = self.begin(None)
+        collect_with([message('1', '1', '38 Etiquette @3')], words, who=PLAYERS)
+        assert conv.written_lines(opened) == ('Jimen etiquette: 35',)
+
+    def test_a_blank_title_is_refused(self) -> None:
+        with pytest.raises(ValueError, match='say what the conversation is about'):
+            self.begin('   ')
+        assert conv._open is None
+
+    def test_the_second_argument_is_the_title_not_a_channel(self) -> None:
+        opened = conv.begin_conversation('Otsuki', 'test', characters=lambda: CAST)
+        assert opened.title == 'test'
+        assert set(opened.channels) == set(discord_mod.CHANNELS.values())

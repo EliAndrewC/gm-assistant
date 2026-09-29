@@ -241,6 +241,10 @@ class Conversation:
     joined: set[tuple[str, str, int, str]] = field(default_factory=set)
     #: Each roller's sheet ceilings, by sheet id, fetched once per conversation.
     ceilings: dict[int, Ceilings] = field(default_factory=dict)
+    #: What the GM said the conversation is about - `begin_conversation("Otsuki",
+    #: "confrontation on the Imperial road")` - written as a heading over its lines so
+    #: one conversation's rolls can be told from the next one's. Empty for none.
+    title: str = ''
 
     def planned(self, pc: str) -> Record | None:
         """What `pc` (a given name, any case) is told in this conversation, if decided."""

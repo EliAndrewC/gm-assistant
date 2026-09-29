@@ -142,8 +142,9 @@ def _no_match(npc: str, match: MatchResult) -> str:
 
 def begin_conversation(
     npc: str,
-    channel: str | None = None,
+    title: str | None = None,
     *,
+    channel: str | None = None,
     characters: Callable[[], Sequence[Mapping[str, object]]] = op.existing_characters,
     now: Callable[[], datetime] | None = None,
     watch: bool = True,
@@ -157,7 +158,14 @@ def begin_conversation(
     whole name tokens only, and an ambiguous name raises listing the candidates
     rather than picking one. Which record gets written to is not a guess we make.
 
-    `channel` is OPTIONAL and normally omitted. With no channel, the conversation
+    `title` is what the conversation is about - `begin_conversation("Otsuki",
+    "confrontation on the Imperial road")` - and is written as an `h4.` heading over
+    this conversation's lines, so the record shows where one conversation ended and
+    the next began (GM 2026-09-29). Optional; with none, no heading is written.
+
+    `channel` is OPTIONAL, KEYWORD-ONLY, and normally omitted. It was the second
+    positional argument until 2026-09-29, when the GM gave that place to the title.
+    With no channel, the conversation
     watches EVERY monitored channel, which is what the GM asked for: one argument,
     and a roll posted anywhere lands. Naming a channel narrows it to that one -
     useful for the scratch server, rarely otherwise. The two live game channels
@@ -176,14 +184,24 @@ def begin_conversation(
                 f'already talking to {_open.npc_name}. end_conversation() to write it, '
                 'or abandon_conversation() to throw it away.'
             )
+        if title is not None and not title.strip():
+            raise ValueError('say what the conversation is about, or leave the title out')
         match = match_character(npc, characters())
         if match.kind != 'unique':
             raise ValueError(_no_match(npc, match))
         channels = resolve_channels(channel)
         clock = now or (lambda: datetime.now(UTC))
-        _open = Conversation(npc=match.character, opened_at=clock(), channels=channels)
+        _open = Conversation(
+            npc=match.character,
+            opened_at=clock(),
+            channels=channels,
+            title=' '.join((title or '').split()),
+        )
         where = 'every monitored channel' if channel is None else _label(channels[0])
-        print(f'Talking to {_open.npc_name}, watching {where}. Rolls until end_conversation().')
+        about = f' - {_open.title}' if _open.title else ''
+        print(
+            f'Talking to {_open.npc_name}{about}, watching {where}. Rolls until end_conversation().'
+        )
         # Feature 208: a CHECK of the oppose knacks against the rules text. Whatever
         # it says, the penalties apply as the GM stated them - this only makes a
         # rules edit that the tool has not followed visible instead of silent.
@@ -330,6 +348,15 @@ def attach(conv: Conversation, roll: Roll) -> Roll:
     return replace(roll, line=line.id, note=line.description, grilling=line.grilling)
 
 
+def written_lines(conv: Conversation, *, include_unannotated: bool = False) -> tuple[str, ...]:
+    """Everything this conversation writes to the bio: its title's heading, then its
+    lines. No lines, no heading - a conversation with nothing recorded writes nothing."""
+    lines = rules.render_lines(conv.rolls, conv.npc_name, include_unannotated=include_unannotated)
+    if lines and conv.title:
+        lines.insert(0, rules.render_heading(conv.title))
+    return tuple(lines)
+
+
 def _held(
     conv: Conversation, roll: Roll, sheet_id: int, lookup: Callable[[int], sheet.Ceilings]
 ) -> Roll:
@@ -440,9 +467,7 @@ def _tick(
             say(f'  + {roll.character}: {roll.skill} {roll.total}{rank}{counts}')
             announce_comparison(conv, roll)
             announce_oppose(conv, roll)
-    lines = tuple(
-        rules.render_lines(conv.rolls, conv.npc_name, include_unannotated=include_unannotated)
-    )
+    lines = written_lines(conv, include_unannotated=include_unannotated)
     # Feature 207: the GM-only half. It can change with no player roll at all - a
     # tagged `xky` records a rank - so it is weighed beside the bio, not under it.
     secret = hidden.entries(conv)
@@ -770,7 +795,7 @@ def conversation_status() -> Conversation | None:
         return None
     print(f'Talking to {_open.npc_name} since {_open.opened_at:%H:%M:%S}.')
     if _open.rolls:
-        for line in rules.render_lines(_open.rolls, _open.npc_name):
+        for line in written_lines(_open):
             print(f'  {line}')
     else:
         print('  no rolls yet')

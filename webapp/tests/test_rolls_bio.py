@@ -81,3 +81,34 @@ class TestAlreadyPresent:
 
     def test_false_when_absent(self) -> None:
         assert not already_present(REAL, LINE)
+
+
+class TestRewriteBesideAnEarlierConversation:
+    """A second conversation may write lines identical to an earlier one's."""
+
+    EARLIER = (
+        '[[File:1 | portrait.png]]\r\n\r\nh4. Introductions\r\n\r\nJimen etiquette: 25\r\n\r\n'
+    )
+
+    def test_an_identical_line_is_still_written(self) -> None:
+        from l7r.repl.rolls.bio import rewrite
+
+        out = rewrite(self.EARLIER, (), ('h4. Introductions', 'Jimen etiquette: 25'))
+        assert out.count('h4. Introductions') == 2
+        assert out.count('Jimen etiquette: 25') == 2
+
+    def test_a_rewrite_replaces_only_its_own_copy(self) -> None:
+        from l7r.repl.rolls.bio import rewrite
+
+        mine = ('h4. Introductions', 'Jimen etiquette: 25')
+        once = rewrite(self.EARLIER, (), mine)
+        again = rewrite(once, mine, ('h4. Introductions', 'Jimen / Moriko etiquette: 25 / 20'))
+        assert again.count('h4. Introductions') == 2
+        assert again.count('Jimen etiquette: 25') == 1, "the earlier conversation's line stays"
+        assert again.index('Jimen / Moriko') < again.index('Jimen etiquette: 25')
+
+    def test_insert_refuses_an_empty_line(self) -> None:
+        from l7r.repl.rolls.bio import insert
+
+        with pytest.raises(ValueError, match='refusing to splice an empty line'):
+            insert(REAL, ' ')

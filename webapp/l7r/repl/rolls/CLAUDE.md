@@ -13,7 +13,7 @@ Otsuki: Sadakichi / Moriko / Jimen / Tetsuro / Toshihiro etiquette: 35 / 25 / 25
 **One argument is the whole interface.** With no channel named, a conversation watches EVERY
 monitored channel, so a roll posted anywhere lands - the two live game channels belong to groups
 that play on different nights, so watching both cannot mix two sessions in practice. Pass a channel
-(`begin_conversation("Otsuki", "test")`) only to narrow it, which is really for the scratch server.
+(`begin_conversation("Otsuki", channel="test")`) only to narrow it, which is really for the scratch server.
 Cursors are kept PER CHANNEL, and one unreadable channel never hides another's rolls.
 
 Which NPC the players are talking to is the ONE thing that cannot be inferred, so it is the one
@@ -374,6 +374,19 @@ Needs `[character_sheet] gm_write_token` in `development-secrets.ini` (the sheet
 alternatives and three rounds of review: `specs/212-discern-honor-command/`. The sheet app's half
 and its exact replies: `discord-design/discern-honor-requirements.md` in that repository.
 
+## A title divides one conversation from the next
+
+`begin_conversation("Otsuki", "confrontation on the Imperial road")` (GM 2026-09-29) writes
+`h4. Confrontation on the Imperial road` over that conversation's lines. It is h4 because the records'
+own sections are h3, and a conversation with no lines writes no heading. The title took the second
+positional place, so `channel` is keyword-only now (`channel="test"` for the scratch server).
+
+Titles repeat and so do lines, so the bio writer no longer refuses a line already in the bio. That
+check, from the first version, silently dropped a second conversation's identical
+`Jimen etiquette: 25`. `bio.rewrite` now `insert`s unconditionally, and `remove_lines` removes only
+the FIRST copy of each line, which is always the open conversation's own. The newest block always
+sits directly under the portrait.
+
 ## A roller's own sheet caps apply without being said (Withdrawn)
 
 The GM (2026-09-29): a Withdrawn character's etiquette is written as at most 15 even when the
@@ -447,5 +460,5 @@ roll that was being counted twice.
 Hand-check against the live channels (read-only, safe):
 
 ```
-./scripts/repl.py 'begin_conversation("Otsuki", "tuesday"); conversation_status()'
+./scripts/repl.py 'begin_conversation("Otsuki", channel="tuesday"); conversation_status()'
 ```
