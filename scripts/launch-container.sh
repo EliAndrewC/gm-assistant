@@ -163,10 +163,13 @@ PREFIX="${CONTAINER_PREFIX:-claude}"
 # Shared ceiling went 11G/12G -> 9G/10G on 2026-09-28: with 3 containers full, the desktop
 # had ~3.4 GB left, got swapped out, and crawled for 10 min (keys took minutes) until a
 # hard reset. The swap bet does not hold once you use the desktop. See ~/this-laptop/docs/memory/.
+# 2026-09-29: 9G/10G -> 9G/9G. The diagram container sat at the 9G throttle for 3 min, re-reading
+# its evicted files nonstop; the disk stall froze the desktop (1.8 GB RAM still free) until another
+# hard reset. With HIGH == MAX the kernel OOM-kills inside the container instead of throttling it.
 MEMORY="${CONTAINER_MEMORY:-10g}"
 SLICE="${CONTAINER_SLICE-claude-containers.slice}"
 SLICE_HIGH="${CONTAINER_SLICE_HIGH:-9G}"
-SLICE_MAX="${CONTAINER_SLICE_MAX:-10G}"
+SLICE_MAX="${CONTAINER_SLICE_MAX:-9G}"
 
 die() { echo "error: $*" >&2; exit 1; }
 
