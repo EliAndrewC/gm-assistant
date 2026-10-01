@@ -148,7 +148,7 @@
 # repos: run from any repo root; it reads the CURRENT repo's CLAUDE.md. Override
 # the name prefix with CONTAINER_PREFIX, the image with CONTAINER_IMAGE, the
 # per-container cap with CONTAINER_MEMORY, the shared ceiling with
-# CONTAINER_SLICE_HIGH / CONTAINER_SLICE_MAX, and the parent slice's name with
+# CONTAINER_SLICE_HIGH / CONTAINER_SLICE_MAX / CONTAINER_SLICE_SWAP_MAX, and the parent slice's name with
 # CONTAINER_SLICE (empty = no shared ceiling, each container on its own cap).
 
 set -euo pipefail
@@ -166,10 +166,14 @@ PREFIX="${CONTAINER_PREFIX:-claude}"
 # 2026-09-29: 9G/10G -> 9G/9G. The diagram container sat at the 9G throttle for 3 min, re-reading
 # its evicted files nonstop; the disk stall froze the desktop (1.8 GB RAM still free) until another
 # hard reset. With HIGH == MAX the kernel OOM-kills inside the container instead of throttling it.
+# 2026-09-30: 9G/9G -> 10G/10G, swap 0. With no throttle band the extra gig costs no thrashing, and
+# the desktop keeps the ~5.4 GB it had under 9G/10G. SWAP_MAX=0 stops the kernel from pushing the
+# containers' memory into host swap at the cap (the same disk thrash by another road).
 MEMORY="${CONTAINER_MEMORY:-10g}"
 SLICE="${CONTAINER_SLICE-claude-containers.slice}"
-SLICE_HIGH="${CONTAINER_SLICE_HIGH:-9G}"
-SLICE_MAX="${CONTAINER_SLICE_MAX:-9G}"
+SLICE_HIGH="${CONTAINER_SLICE_HIGH:-10G}"
+SLICE_MAX="${CONTAINER_SLICE_MAX:-10G}"
+SLICE_SWAP_MAX="${CONTAINER_SLICE_SWAP_MAX:-0}"
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -302,9 +306,9 @@ if [ -n "$SLICE" ]; then
   cg_info="$cg_mgr $cg_ver"
   case "$cg_info" in
     systemd\ v2)
-      if systemctl --user set-property "$SLICE" "MemoryHigh=$SLICE_HIGH" "MemoryMax=$SLICE_MAX"; then
+      if systemctl --user set-property "$SLICE" "MemoryHigh=$SLICE_HIGH" "MemoryMax=$SLICE_MAX" "MemorySwapMax=$SLICE_SWAP_MAX"; then
         CGROUP_PARENT=( --cgroup-parent "$SLICE" )
-        echo ">> memory: $MEMORY per container; all containers under $SLICE (high $SLICE_HIGH, max $SLICE_MAX)"
+        echo ">> memory: $MEMORY per container; all containers under $SLICE (high $SLICE_HIGH, max $SLICE_MAX, swap $SLICE_SWAP_MAX)"
       else
         echo ">> warning: 'systemctl --user set-property $SLICE' failed (no user systemd manager?);" >&2
         echo "   no shared ceiling - each container keeps only its own --memory cap ($MEMORY)." >&2
@@ -497,6 +501,12 @@ RUN_ARGS=(
   ${CGROUP_PARENT[@]+"${CGROUP_PARENT[@]}"}
   --volume "${REPO_ROOT}:${WORKDIR}:Z"
 )
+
+# The host's time zone, so Claude Code's timestamps ("done 10:45 AM") and `date` show local time
+# instead of the image's UTC. Every `podman exec` inherits it. Override with CONTAINER_TZ.
+HOST_TZ="${CONTAINER_TZ:-$(timedatectl show -p Timezone --value 2>/dev/null || true)}"
+[ -n "$HOST_TZ" ] || HOST_TZ="$(readlink /etc/localtime 2>/dev/null | sed -n 's|.*/zoneinfo/||p')"
+[ -n "$HOST_TZ" ] && RUN_ARGS+=( --env "TZ=$HOST_TZ" )
 
 # Host sound devices, so Claude Code's /voice can record (see "Audio" above).
 # Access comes from the uidmap: container uid 1000 IS the invoking user, and
