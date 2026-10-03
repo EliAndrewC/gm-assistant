@@ -1,0 +1,4 @@
+{
+  "agent": "gm-assistant",
+  "token": {"ini": "webapp/development-secrets.ini", "section": "github", "key": "push_pat"}
+}
