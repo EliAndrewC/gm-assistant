@@ -5,7 +5,6 @@ This project is a Legend of the Five Rings tabletop RPG worldbuilding environmen
 <!-- Dev-container config consumed by launch-container (lives in the this-laptop repo: ~/this-laptop/host-scripts/, /host-scripts in the container). Format is HOST:CONTAINER. -->
 <!-- container-ports: 8080:8080 8091:8090 -->
 <!-- container-mounts: ..:/host-l7r-repo -->
-<!-- container-workdir: /gm-assistant -->
 <!-- container-setup: container-scripts/setup-dev-env.sh -->
 <!-- (distinct mount path per repo so Claude memory under ~/.claude/projects/ stays separate across sibling repos) -->
 
