@@ -4,6 +4,8 @@ GitHub issue, without polling on model tokens and without interrupting each othe
 INSTALLED, NOT IMPORTED. This file is copied to the shared `~/.claude/hooks/issue_watch.py` by
 `scripts/install-issue-watch.sh` and run there by every container's sessions, so it is ONE
 stdlib-only file that imports nothing from this repository. Its tests live here.
+The host's Claude Code sessions run it too, under Ubuntu 22.04's Python 3.10, so no syntax newer
+than 3.10 (2026-10-03: `except A, B:` without parentheses broke every host Stop hook).
 
     python3 ~/.claude/hooks/issue_watch.py start EliAndrewC/character-sheet#12
     python3 ~/.claude/hooks/issue_watch.py post EliAndrewC/character-sheet#12 < reply.md
@@ -298,7 +300,7 @@ def process_key(proc: Path = Path('/proc'), start: int | None = None) -> str:
             if stat[stat.index('(') + 1 : stat.rindex(')')] == 'claude':
                 return f'pid:{namespace}:{pid}'
             pid = int(stat[stat.rindex(')') + 2 :].split()[1])
-    except OSError, ValueError, IndexError:
+    except (OSError, ValueError, IndexError):
         return ''
     return ''
 
@@ -320,7 +322,7 @@ def adopt(sid: str, process: Callable[[], str] = process_key) -> bool:
     for path in others:
         try:
             raw = json.loads(path.read_text())
-        except OSError, ValueError:
+        except (OSError, ValueError):
             continue
         if raw.get('process') == mine:
             raw['sid'] = sid

@@ -7,6 +7,9 @@ requires-python = ">=3.14"
 [tool.ruff]
 line-length = 100
 target-version = "py314"
+# issuewatch.py is installed into the shared ~/.claude/hooks/ and the HOST runs it with Ubuntu
+# 22.04's Python 3.10; at py314 the formatter strips `except (A, B):` to the 3.14-only bare form.
+per-file-target-version = { "l7r/issuewatch.py" = "py310" }
 
 [tool.ruff.lint]
 # Ruff is the single canonical lint tool per Principle X.

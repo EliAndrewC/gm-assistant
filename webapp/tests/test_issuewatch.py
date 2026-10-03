@@ -3,6 +3,7 @@ is exercised; nothing here touches the network or the real `~/.claude`."""
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import io
 import json
@@ -523,3 +524,15 @@ class TestInstall:
         home = tmp_path / 'bare'
         assert self._main(['install'], home)[0] == 0
         assert 'hooks' in json.loads((home / '.claude' / 'settings.json').read_text())
+
+
+def test_parses_on_the_hosts_python_3_10() -> None:
+    """The host runs this hook with Python 3.10; the containers' 3.14 accepts syntax it rejects."""
+    src = Path(iw.__file__).read_text()
+    try:
+        ast.parse(src, feature_version=(3, 10))
+    except SyntaxError as e:
+        pytest.fail(
+            f'issuewatch.py line {e.lineno} needs Python > 3.10 ({e.msg}); the host runs it '
+            'with 3.10. Rewrite it the 3.10 way, e.g. `except (A, B):` with parentheses.'
+        )
