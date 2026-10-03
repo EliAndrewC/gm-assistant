@@ -93,6 +93,13 @@ class Roll:
     #: how the sheet itself scopes Withdrawn's sincerity half. The raw `total` is kept.
     ceiling: int | None = None
     open_ceiling: int | None = None
+    #: Feature 214. An Isawa Ishi 3rd Dan boost on this roll, ALREADY FOLDED INTO
+    #: `total`, and who made it. Folded in because every recording rule - rounding,
+    #: the Etiquette cap, ceilings, the contest margin - reads `total` at render
+    #: time, so a 13 boosted by 8 renders from 21 even after a 10 was written (the
+    #: GM's own example). Kept beside it for once-per-roll and `cancel_boost()`.
+    boost: int = 0
+    boosted_by: str = ''
 
     @property
     def annotated(self) -> bool:
@@ -123,6 +130,30 @@ class Roll:
         total has nowhere to go.
         """
         return bool(self.character.strip())
+
+
+@dataclass(slots=True)
+class Boost:
+    """An Isawa Ishi 3rd Dan roll (feature 214): Xk1 added to ANOTHER character's roll.
+
+    `target_message_id` is the Discord message it was aimed at - by the sheet bot's
+    message command, or by posting it as a reply - and is empty for a free-floating
+    one. `applied_to` is the index into `Conversation.rolls` once it has been added;
+    until then it is HELD, `held_because` says why, and `annotate()` asks.
+    """
+
+    character: str
+    total: int
+    message_id: str
+    at: datetime
+    target_message_id: str = ''
+    applied_to: int | None = None
+    held_because: str = ''
+    discarded: bool = False
+
+    @property
+    def held(self) -> bool:
+        return self.applied_to is None and not self.discarded
 
 
 @dataclass(frozen=True, slots=True)
@@ -250,6 +281,8 @@ class Conversation:
     #: "confrontation on the Imperial road")` - written as a heading over its lines so
     #: one conversation's rolls can be told from the next one's. Empty for none.
     title: str = ''
+    #: Feature 214. Every Isawa Ishi 3rd Dan boost seen, applied or held.
+    boosts: list[Boost] = field(default_factory=list)
 
     def planned(self, pc: str) -> Record | None:
         """What `pc` (a given name, any case) is told in this conversation, if decided."""

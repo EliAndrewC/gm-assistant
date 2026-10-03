@@ -11,16 +11,16 @@ Mark a task done only when verified.
 
 ## Phase 1 - gm-assistant
 
-- [ ] T101 `models.py`: `Roll.boost`, `Roll.boosted_by`; `Conversation.boosts`.
-- [ ] T102 `sheet.py`: `RecordedRoll.roll_key`, `RecordedRoll.target_message_id`.
-- [ ] T103 `boost.py`: recognition (bot message, typed, recorded row), reply reference, place /
+- [x] T101 `models.py`: `Roll.boost`, `Roll.boosted_by`; `Conversation.boosts`.
+- [x] T102 `sheet.py`: `RecordedRoll.roll_key`, `RecordedRoll.target_message_id`.
+- [x] T103 `boost.py`: recognition (bot message, typed, recorded row), reply reference, place /
       apply / hold, un-apply. Tests in `tests/test_rolls_boost.py`.
-- [ ] T104 `conversation.py` collect: route boosts, no roll from a boost message, re-settle /
+- [x] T104 `conversation.py` collect: route boosts, no roll from a boost message, re-settle /
       re-compare after applying; the LOADING fix with its own test.
-- [ ] T105 `end_conversation` refuses with a held boost; force names it. `cancel_boost()`.
-- [ ] T106 `annotate.py`: held boosts in the list, the target picker, staging, Ctrl-C.
-- [ ] T107 `cancel_boost` at the prompt; `rolls/CLAUDE.md` section.
-- [ ] T108 `make done` green; no regression against T000c.
+- [x] T105 `end_conversation` refuses with a held boost; force names it. `cancel_boost()`.
+- [x] T106 `annotate.py`: held boosts in the list, the target picker, staging, Ctrl-C.
+- [x] T107 `cancel_boost` at the prompt; `rolls/CLAUDE.md` section.
+- [x] T108 `make done` green; no regression against T000c.
 
 ## Phase 2 - ship gm-assistant's half
 

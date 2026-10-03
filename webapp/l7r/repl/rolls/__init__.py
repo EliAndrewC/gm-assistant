@@ -11,6 +11,7 @@ from l7r.repl.rolls.annotate import annotate
 from l7r.repl.rolls.conversation import (
     abandon_conversation,
     begin_conversation,
+    cancel_boost,
     cancel_oppose,
     close_open_conversation,
     collect,
@@ -37,6 +38,7 @@ __all__ = [
     'annotate',
     'begin_conversation',
     'build_tags',
+    'cancel_boost',
     'cancel_detected',
     'cancel_grilling',
     'cancel_oppose',

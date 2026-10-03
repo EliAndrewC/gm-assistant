@@ -49,6 +49,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `menu.py` | Feature 210: the arrow-key list every CHOICE prompt uses (`ask_choice`). `Picker` is the pure state and drawing; `choose` is the key loop; `interactive(ask)` decides whether a prompt is a menu at all. An `Option.key` is the answer the GM would have TYPED, which is why call sites have no second code path. |
 | `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
 | `discern.py` | Feature 212: `/discern-honor`. Decides at open what each PC with the knack is told (`plan`), hands the sheet app ONLY those told values (`payloads`), learns who asked (`poll`), records only them (`commit`), and undoes it on abandon (`roll_back`). Section below. |
+| `boost.py` | Feature 214: the Isawa Ishi 3rd Dan boost. Recognizes one (the sheet bot's two commands, a pasted card whose row is `spend_vp_xk1:isawa_ishi`, or typed `8 ishi`), aims it (the message command's jump link or row, else the Discord reply), and folds it into the target's RAW total or holds it. Section below. |
 | `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
 ## What a written line looks like, and the two orders that must stay different
@@ -383,6 +384,45 @@ Needs `[character_sheet] gm_write_token` in `development-secrets.ini` (the sheet
 alternatives and three rounds of review: `specs/212-discern-honor-command/`. The sheet app's half
 and its exact replies: `discord-design/discern-honor-requirements.md` in that repository.
 
+## Feature 214: the Isawa Ishi 3rd Dan boost lands on the roll it boosts
+
+```
+  + Tsuruchi Jimen: etiquette 13
+  + Tadashi's Ishi 3rd Dan +8 to Jimen etiquette (13 -> 21)      <- written as 20
+  ? Tadashi's Ishi 3rd Dan +6 is waiting for annotate(): it was not aimed at a roll
+>>> cancel_boost()            # the latest applied boost comes back off and waits again
+```
+
+**Added BEFORE rounding, by construction** (GM 2026-10-03: *"if he were to add plus eight to a role
+that had already been rounded down to 10, then that would make the role a 15. But the role would
+actually be a 20"*). The boost is folded into `Roll.total`, which every recording rule reads at
+render time, and each write replaces the conversation's earlier lines - so a boost that lands after
+a write re-renders from the raw total. `Roll.boost` / `boosted_by` keep the amount beside it for
+once-per-roll and `cancel_boost()`. Do not move the boost into a separate field added at render
+sites: it would have to be remembered at every new one.
+
+**Aiming.** The sheet app's MESSAGE command ("Ishi 3rd Dan boost", run on the roll) posts
+`**Name**: **8** Isawa Ishi 3rd Dan, boosting <jump link>`; its recorded row also carries
+`target_message_id`. A card or typed boost posted as a Discord REPLY is aimed at the replied-to
+message. A slash command cannot be a reply - Discord drops the reference - so
+`/ishi-3rd-dan-technique` is always free-floating. A target is a message id: exactly one collected
+roll on it, by another character, unboosted, is boosted with no GM input. Anything else is HELD with
+its reason; `annotate()` lists held boosts beside the waiting rolls and, for each, every roll in the
+conversation, annotated or not, except those already boosted. A held boost keeps
+`end_conversation()` open; the forced exit names each one it drops.
+
+**A message carrying a boost contributes no roll** - `8 ishi for Jimen's etiquette` names a skill.
+"3rd Dan" alone is not a boost: the Ide Diplomat's 3rd Dan subtracts, and is not built.
+
+**Accepted limitation**: a boost posted after `end_conversation()` is not seen (nothing is
+collecting, and raw totals are not kept). The GM adds it by hand. Spec and declined alternatives:
+`specs/214-ishi-boost/`. The sheet app's half: `discord-design/ishi-boost-requirements.md` there.
+
+**A deferred bot reply is read only once it is filled in** (found in 214). Every sheet-bot roll is
+an empty LOADING message until its dice card is edited in; a poll in that window used to move the
+cursor past it and lose the roll. `conversation.settled` stops a channel at its first loading
+message, and gives up on one older than an interaction token lives (15 minutes).
+
 ## A title divides one conversation from the next
 
 `begin_conversation("Otsuki", "confrontation on the Imperial road")` (GM 2026-09-29) writes
@@ -454,7 +494,7 @@ deleted rather than left to drift.
     tests/test_rolls_interrogation.py tests/test_rolls_modes.py tests/test_rolls_npcnumbers.py \
     tests/test_rolls_npcskills.py tests/test_rolls_lines.py tests/test_rolls_hidden.py \
     tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py tests/test_rolls_oppose.py \
-    tests/test_rolls_menu.py tests/test_rolls_discern.py )
+    tests/test_rolls_menu.py tests/test_rolls_discern.py tests/test_rolls_boost.py )
 ```
 
 `test_rolls_keys.py` drives a REAL pseudo-terminal. The undo keys must be written to it AFTER it is

@@ -30,6 +30,7 @@ from chargen.opsynth import MatchResult, match_character
 from l7r.repl import gmrolls
 from l7r.repl import honor as honormod
 from l7r.repl.rolls import bio as biomod
+from l7r.repl.rolls import boost as boostmod
 from l7r.repl.rolls import (
     console,
     discern,
@@ -68,6 +69,16 @@ WRITE_DEBOUNCE_SECONDS = 120.0
 SHEET_BOT_ID = '1490400739934212116'
 
 _BOT_ROLL = re.compile(r'^\s*\*\*(?P<character>[^*]{1,60})\*\*\s*:')
+
+#: Discord's LOADING message flag. Every sheet-bot roll is a DEFERRED interaction
+#: response: an empty "thinking..." message, filled in by an edit once the dice card
+#: renders. A poll landing in that window used to read the empty message, move the
+#: channel's cursor past it, and never see the roll (found in feature 214). A
+#: channel is now read only up to its first loading message, which the next poll
+#: reads again - unless it is older than an interaction token lives, in which case
+#: the edit is never coming and it is passed over.
+LOADING = 1 << 7
+LOADING_GIVE_UP_SECONDS = 15 * 60
 
 _lock = threading.Lock()
 #: Feature 207: `new_line_of_questioning` collects synchronously, so for the first
@@ -251,6 +262,7 @@ def collect(
     roster: Callable[..., sheet.SheetResult] = sheet.characters,
     vocabulary: tuple[str, ...] | None = None,
     ceilings: Callable[[int], sheet.Ceilings] = sheet.roll_ceilings,
+    now: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> Conversation:
     """Read everything posted since the last poll and fold it into the conversation."""
     conv = conversation or _require()
@@ -264,6 +276,7 @@ def collect(
             if note not in conv.unresolved:
                 conv.unresolved.append(note)
             continue
+        page = settled(page, now())
         for message in page:
             message['_channel_id'] = channel_id
         messages.extend(page)
@@ -293,14 +306,39 @@ def collect(
             at=at,
         )
         conv.unresolved.extend(problems)
+        # Feature 214. A boost is never a roll of some skill, and a message carrying
+        # one contributes no roll: `8 ishi, for Jimen's etiquette` names a skill too.
+        boosted = boostmod.from_bot(message, at, bot_id=SHEET_BOT_ID)
+        if boosted is None and who_posted:
+            boosted = boostmod.typed(message, who_posted, at)
+        if boosted is not None:
+            found = []
         if discord.has_image(message):
-            joined = _join(message, from_sheet.rolls, at, taken=conv.joined)
-            if joined is not None:
+            row = _match(
+                message,
+                from_sheet.rolls,
+                at,
+                taken=conv.joined,
+                boost_only=boosted is not None,
+            )
+            if row is not None and row.roll_key == boostmod.ROLL_KEY:
+                # A pasted sheet card of the technique, or the bot's own card - whose
+                # recorded row carries the message command's target.
+                if boosted is None:
+                    boosted = boostmod.from_recorded(
+                        row.character, row.total, row.target_message_id, message, at
+                    )
+                elif not boosted.target_message_id:
+                    boosted.target_message_id = row.target_message_id
+                found = []
+            elif row is not None:
+                joined = _as_roll(row, message, at)
                 found = [joined] + [f for f in found if f.skill != joined.skill]
-            elif from_sheet.available:
+            elif boosted is not None or from_sheet.available:
                 # An image with no recorded roll behind it is a picture, not a roll
                 # (research.md R1). Silence is correct here and is NOT a dropped
-                # roll - it is the detector answering "no".
+                # roll - it is the detector answering "no". A boost already read from
+                # the text needs no row: the GM's pinned test character is not recorded.
                 pass
             else:
                 conv.unresolved.append(
@@ -325,7 +363,60 @@ def collect(
                 # this penalty without the tool knowing - `settle` prices those now.
                 for change in oppose.settle(conv, gmrolls.recent()):
                     say(f'  = {change.describe(conv.npc_name)}')
+        if boosted is not None:
+            say(boostmod.place(conv, boosted))
+            if boosted.applied_to is not None:
+                after_boost(conv, boosted.applied_to)
     return conv
+
+
+def settled(page: list[dict[str, Any]], now: datetime) -> list[dict[str, Any]]:
+    """`page` up to (not including) its first message still LOADING - see `LOADING`."""
+    for position, message in enumerate(page):
+        if not int(message.get('flags') or 0) & LOADING:
+            continue
+        age = (now - discord.parse_timestamp(message['timestamp'])).total_seconds()
+        if age < LOADING_GIVE_UP_SECONDS:
+            return page[:position]
+    return page
+
+
+def after_boost(conv: Conversation, index: int) -> None:
+    """What a boost changes beyond its own roll (feature 214, FR-010 / FR-011), and
+    what taking one back changes: an oppose roll's penalty is re-derived from the
+    new total, and an interrogation roll's private comparison is re-run - the same
+    calls a newly collected roll of either kind gets."""
+    roll = conv.rolls[index]
+    if oppose.is_oppose(roll):
+        announce_oppose(conv, roll)
+        for change in oppose.settle(conv, gmrolls.recent()):
+            say(f'  = {change.describe(conv.npc_name)}')
+    announce_comparison(conv, roll)
+
+
+def cancel_boost(pc: str | None = None) -> None:
+    """Take back an Isawa Ishi 3rd Dan boost that landed on the wrong roll (feature 214).
+
+    The most recent applied boost, or the most recent one `pc` made. It is not
+    thrown away: it is held again, so `annotate()` asks where it goes - or discards
+    it, if it was a mistake altogether.
+    """
+    conv = _require()
+    applied = [b for b in conv.boosts if b.applied_to is not None]
+    if pc is not None:
+        applied = [b for b in applied if boostmod.same_character(b.character, pc)]
+    if not applied:
+        who = f' by {pc}' if pc is not None else ''
+        raise ValueError(f'no boost{who} has been applied in this conversation.')
+    boost = max(applied, key=lambda b: b.at)
+    index = boost.applied_to
+    assert index is not None
+    restored = boostmod.unapply(conv, boost)
+    print(
+        f'Took {boostmod.describe(boost)} back off {rules.personal_name(restored.character)} '
+        f'{restored.skill} (now {restored.total}). annotate() will ask where it goes.'
+    )
+    after_boost(conv, index)
 
 
 def attach(conv: Conversation, roll: Roll) -> Roll:
@@ -390,12 +481,28 @@ def _join(
     *,
     taken: set[tuple[str, str, int, str]] | None = None,
 ) -> Roll | None:
+    """Find the recorded roll a pasted dice card was rendered from, as a `Roll`."""
+    row = _match(message, candidates, at, taken=taken)
+    return None if row is None else _as_roll(row, message, at)
+
+
+def _match(
+    message: Mapping[str, Any],
+    candidates: Sequence[sheet.RecordedRoll],
+    at: datetime,
+    *,
+    taken: set[tuple[str, str, int, str]] | None = None,
+    boost_only: bool = False,
+) -> sheet.RecordedRoll | None:
     """Find the recorded roll a pasted dice card was rendered from.
 
     `taken` holds the recorded rolls already joined in this conversation; a match is
     added to it, so the same recorded roll never backs a second message. Without that,
     any picture the same player posts inside `MATCH_WINDOW_SECONDS` re-joins the roll
     and it is written twice (measured 2026-09-29 - see `Conversation.joined`).
+    `boost_only` (feature 214): the message is already known to be an Isawa Ishi 3rd
+    Dan boost, so only that technique's rows may back it - never the booster's own
+    skill roll from a minute earlier.
     """
     poster = discord.author_id(message)
     in_window = [
@@ -403,6 +510,7 @@ def _join(
         for r in candidates
         if abs((at - r.at).total_seconds()) <= MATCH_WINDOW_SECONDS
         and (taken is None or _recorded_key(r) not in taken)
+        and (not boost_only or r.roll_key == boostmod.ROLL_KEY)
     ]
     named = bot_roll_character(message)
     if named:
@@ -416,14 +524,18 @@ def _join(
     best = min(near, key=lambda r: abs((at - r.at).total_seconds()))
     if taken is not None:
         taken.add(_recorded_key(best))
+    return best
+
+
+def _as_roll(row: sheet.RecordedRoll, message: Mapping[str, Any], at: datetime) -> Roll:
     return Roll(
-        character=best.character,
-        skill=best.skill,
-        total=best.total,
+        character=row.character,
+        skill=row.skill,
+        total=row.total,
         source='recorded',
         message_id=str(message['id']),
         at=at,
-        rank=best.rank,
+        rank=row.rank,
     )
 
 
@@ -678,6 +790,17 @@ def end_conversation(
         for roll in conv.rolls
         if roll.attributed and (rules.needs_annotation(roll) or hidden.awaiting_outcome(conv, roll))
     ]
+    held = boostmod.held(conv)
+    if held and not force:
+        listing = '\n'.join(f'  - {boostmod.describe(b)}: {b.held_because}' for b in held)
+        raise NotAnnotated(
+            f'{len(held)} Isawa Ishi 3rd Dan boost(s) are not on a roll yet:\n{listing}\n'
+            'Run annotate() to say which roll each one boosts, or to discard it. '
+            'The conversation is still open.'
+        )
+    if held and force:
+        for b in held:
+            say(f'Dropping {boostmod.describe(b)} - it never found its roll ({b.held_because}).')
     if waiting and not force:
         listing = '\n'.join(f'  - {roll.character} {roll.skill} {roll.total}' for roll in waiting)
         raise NotAnnotated(

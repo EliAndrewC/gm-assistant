@@ -55,6 +55,11 @@ class RecordedRoll:
     actor_discord_id: str
     at: datetime
     rank: int | None = None
+    #: The sheet's own key (`skill:etiquette`, `spend_vp_xk1:isawa_ishi`, ...). Feature
+    #: 214 reads it to tell an Isawa Ishi 3rd Dan boost from a roll of some skill.
+    roll_key: str = ''
+    #: Feature 214: the Discord message a boost was aimed at by the message command.
+    target_message_id: str = ''
 
 
 @dataclass(frozen=True, slots=True)
@@ -296,6 +301,8 @@ def _as_roll(raw: Mapping[str, Any]) -> RecordedRoll:
         actor_discord_id=str(raw.get('actor_discord_id') or ''),
         at=parse_timestamp(str(raw.get('created_at') or raw.get('updated_at') or '')),
         rank=None if raw.get('skill_rank') is None else int(raw['skill_rank']),
+        roll_key=str(raw.get('roll_key') or ''),
+        target_message_id=str(raw.get('target_message_id') or ''),
     )
 
 

@@ -42,9 +42,10 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 
 from l7r.repl import gmrolls
+from l7r.repl.rolls import boost as boostmod
 from l7r.repl.rolls import console, hidden, keys, menu, modes, oppose, rules
 from l7r.repl.rolls.menu import Option
-from l7r.repl.rolls.models import Conversation, Roll
+from l7r.repl.rolls.models import Boost, Conversation, Roll
 
 Ask = Callable[[str], str]
 #: `(question, ask) -> (undone, answer)` - `keys.ask_with_undo`, or a test's script.
@@ -850,35 +851,54 @@ def annotate(
     on it (GM 2026-09-09: *"I do a double take sometimes when I see it to figure out
     what was happening there"*). Everything worth knowing is printed.
     """
-    from l7r.repl.rolls.conversation import require_open
+    from l7r.repl.rolls.conversation import after_boost, require_open
 
     conv = conversation if conversation is not None else require_open()
     waiting = pending(conv)
-    if not waiting:
+    if not waiting and not boostmod.held(conv):
         print('Nothing waiting to be annotated.')
         return
 
     staged: dict[int, Decision] = {}
+    #: Feature 214: held boost (index into conv.boosts) -> the roll it goes on, or
+    #: None for discard. Staged like everything else, so Ctrl-C drops these too.
+    aimed: dict[int, int | None] = {}
     menu = _Menu(ask=ask, undoable=undoable, conv=conv, mine=list(mine()), used=set())
     try:
         while True:
             waiting = [item for item in pending(conv) if item[0] not in staged]
-            if not waiting:
+            boosts = [
+                (number, b)
+                for number, b in enumerate(conv.boosts)
+                if b.held and number not in aimed
+            ]
+            if not waiting and not boosts:
                 break
-            if len(waiting) == 1:
-                index, roll = waiting[0]
+            if len(waiting) + len(boosts) == 1:
+                choice = 0
             else:
                 heading = f'Rolls waiting to be annotated for {conv.npc_name}:'
-                choice = _choose(
+                rows = [_describe(c) for _, c in waiting] + [
+                    f'{boostmod.describe(b)} - which roll?  ({b.at:%H:%M:%S})' for _, b in boosts
+                ]
+                picked = _choose(
                     ask,
                     'Which roll? (number, or blank to finish) > ',
                     heading,
-                    _listed(ask, heading, [_describe(c) for _, c in waiting], indent='  '),
+                    _listed(ask, heading, rows, indent='  '),
                     allow_blank=True,
                 )
-                if choice is None:
+                if picked is None:
                     break
-                index, roll = waiting[choice]
+                choice = picked
+            if choice >= len(waiting):
+                number, held = boosts[choice - len(waiting)]
+                target = _aim(ask, conv, held, taken={t for t in aimed.values() if t is not None})
+                aimed[number] = target
+                where = 'discarded' if target is None else _describe(conv.rolls[target])
+                print(f'  staged: {boostmod.describe(held)} -> {where}')
+                continue
+            index, roll = waiting[choice]
             print(f'  {_describe(roll)}')
             decision = _decide(menu, roll)
             if decision is None:
@@ -890,13 +910,30 @@ def annotate(
         # "discarded" would read as the roll-discard feature, which this is not:
         # the rolls are all still there, unannotated, and annotate() can be re-run.
         print(
-            f'\nCtrl-C - nothing saved ({len(staged)} choice(s) abandoned). '
+            f'\nCtrl-C - nothing saved ({len(staged) + len(aimed)} choice(s) abandoned). '
             'The rolls are untouched; run annotate() again when you are ready.'
         )
         return
 
     for index, decision in staged.items():
         conv.rolls[index] = _apply(conv.rolls[index], decision)
+    # AFTER the decisions: `_apply` rebuilds a roll from the staged decision, and a
+    # boost is folded into the total of the roll as it stands at the end.
+    for number, target in aimed.items():
+        held = conv.boosts[number]
+        if target is None:
+            held.discarded = True
+            print(f'Discarded {boostmod.describe(held)}.')
+            continue
+        before = conv.rolls[target].total
+        after = boostmod.apply(conv, held, target)
+        print(
+            f'{boostmod.describe(held)} on {rules.personal_name(after.character)} '
+            f'{after.skill}: {before} -> {after.total}.'
+        )
+        after_boost(conv, target)
+    if aimed and not staged:
+        return
     used = {decision.opponent for decision in staged.values() if decision.opponent is not None}
     for entry in menu.mine:
         if entry.seq in used:
@@ -905,6 +942,36 @@ def annotate(
     kept = len(staged) - discarded
     tail = f', {discarded} discarded' if discarded else ''
     print(f'Annotated {kept} roll(s){tail}.')
+
+
+def _aim(ask: Ask, conv: Conversation, held: Boost, *, taken: set[int]) -> int | None:
+    """Which roll a held boost goes on (feature 214), or None to discard it.
+
+    Every roll in the conversation, annotated or not - the GM's words - except those
+    already boosted (once per roll) and those another boost in this run is staged on.
+    """
+    print(f'  {boostmod.describe(held)} ({held.held_because})')
+    candidates = boostmod.eligible(conv, exclude=taken)
+    heading = 'Which roll does it boost?'
+    rows = [
+        _describe(conv.rolls[i]) + (f' - {conv.rolls[i].note}' if conv.rolls[i].annotated else '')
+        for i in candidates
+    ]
+    options = [*_listed(ask, heading, rows), Option('d', 'discard this boost', ('discard',))]
+    count = len(candidates)
+    while True:
+        answer = _select(
+            ask, 'Which roll does it boost? (number, or d to discard) > ', heading, options
+        )
+        if answer.lower() in ('d', 'discard'):
+            return None
+        if answer.isdigit() and 1 <= int(answer) <= count:
+            return candidates[int(answer) - 1]
+        print(
+            f'  ? enter a number from 1 to {count}, or d'
+            if count
+            else '  ? only d: nothing to boost'
+        )
 
 
 def _compare_privately(conv: Conversation, roll: Roll, decision: Decision) -> None:
