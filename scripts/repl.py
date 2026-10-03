@@ -9,7 +9,7 @@ Works from either side of the container:
     (the name ``launch-container.sh`` derives: ``$CONTAINER_PREFIX``,
     default ``claude``, plus the repo directory name) and runs this same
     script there. If that container is not running, it is started first by
-    handing off to ``scripts/launch-container.sh --no-shell`` - so a cold
+    handing off to ``launch-container --no-shell`` - so a cold
     host needs no separate launch step, and the container the REPL leaves
     behind is exactly the one a hand launch would have built (same mounts,
     ports, packages, Claude config).
@@ -30,7 +30,11 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 WEBAPP = REPO / "webapp"
-LAUNCHER = REPO / "scripts" / "launch-container.sh"
+# The launcher lives in the this-laptop repo (moved out of scripts/ 2026-10-03), on PATH as launch-container.
+LAUNCHER = Path(
+    shutil.which("launch-container")
+    or Path.home() / "this-laptop" / "host-scripts" / "launch-container.sh"
+)
 SETUP = REPO / "container-scripts" / "setup-dev-env.sh"
 
 
@@ -70,7 +74,10 @@ def start_container() -> int:
     run with the repo as its cwd, not wherever the GM typed ``repl``.
     """
     if not LAUNCHER.is_file():
-        sys.stderr.write(f"{LAUNCHER} is missing; start the container by hand\n")
+        sys.stderr.write(
+            f"{LAUNCHER} is missing (it lives in the this-laptop repo's host-scripts/); "
+            "start the container by hand\n"
+        )
         return 1
     sys.stderr.write(f">> {container_name()} is not running; starting it\n")
     return subprocess.call([str(LAUNCHER), "--no-shell"], cwd=str(REPO))

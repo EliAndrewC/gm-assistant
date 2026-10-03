@@ -20,7 +20,7 @@ Design notes:
 
 - **From the host, `repl` starts the container if it has to** (2026-08-30). `scripts/repl.py` run
   outside the container `podman exec`s into `claude-<repo-dir>`; when no such container is up it
-  first hands off to `scripts/launch-container.sh --no-shell`, which does the whole normal launch
+  first hands off to `launch-container --no-shell` (this-laptop's `host-scripts/launch-container.sh`), which does the whole normal launch
   (pull, mounts, ports, packages, `claude update`, the repo's `setup-dev-env.sh`) and returns
   instead of opening a bash shell. The launcher did not run `setup-dev-env.sh` until 2026-09-08,
   when the GM's `repl` on a rebuilt container died with `No module named 'configobj'`: a rebuild

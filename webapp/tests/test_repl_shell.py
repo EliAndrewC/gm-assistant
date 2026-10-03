@@ -235,10 +235,16 @@ class TestLauncher:
         assert launcher.container_running() is False
 
     def test_start_container_runs_the_launcher_from_the_repo(
-        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        tmp_path: Path,
     ) -> None:
         """--no-shell, and cwd = the repo, which is how the launcher finds its config."""
         launcher = _load_launcher()
+        # The real launcher is on the host (this-laptop's host-scripts/), not in this repo.
+        monkeypatch.setattr(launcher, 'LAUNCHER', tmp_path / 'launch-container.sh')
+        launcher.LAUNCHER.write_text('')
         seen: list[tuple[list[str], str | None]] = []
 
         def record(cmd: list[str], cwd: str | None = None) -> int:
