@@ -24,7 +24,7 @@ Mark a task done only when verified.
 
 ## Phase 2 - ship gm-assistant's half
 
-- [ ] T201 Commit, `sync-with-main.sh done`.
+- [x] T201 Commit, `sync-with-main.sh done`. Landed 2026-10-03 (main and GitHub).
 
 ## Phase 3 - after the character-sheet session deploys (not this session's to start)
 
