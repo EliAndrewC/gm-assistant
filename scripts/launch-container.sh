@@ -148,8 +148,9 @@
 # repos: run from any repo root; it reads the CURRENT repo's CLAUDE.md. Override
 # the name prefix with CONTAINER_PREFIX, the image with CONTAINER_IMAGE, the
 # per-container cap with CONTAINER_MEMORY, the shared ceiling with
-# CONTAINER_SLICE_HIGH / CONTAINER_SLICE_MAX / CONTAINER_SLICE_SWAP_MAX, and the parent slice's name with
-# CONTAINER_SLICE (empty = no shared ceiling, each container on its own cap).
+# CONTAINER_SLICE_HIGH / CONTAINER_SLICE_MAX / CONTAINER_SLICE_SWAP_MAX, the CPU/disk priority with
+# CONTAINER_SLICE_CPU_WEIGHT / CONTAINER_SLICE_IO_WEIGHT (empty = don't set), and the parent slice's
+# name with CONTAINER_SLICE (empty = no shared ceiling, each container on its own cap).
 
 set -euo pipefail
 
@@ -174,6 +175,15 @@ SLICE="${CONTAINER_SLICE-claude-containers.slice}"
 SLICE_HIGH="${CONTAINER_SLICE_HIGH:-10G}"
 SLICE_MAX="${CONTAINER_SLICE_MAX:-10G}"
 SLICE_SWAP_MAX="${CONTAINER_SLICE_SWAP_MAX:-0}"
+# 2026-10-02: the desktop also gets priority over the containers for disk and CPU. These are weights,
+# not limits, so the containers still get everything the desktop isn't using. That day the diagram
+# container thrashed at the cap, and the desktop waited 18 min behind its disk reads (hard reset).
+# Default weight is 100, so the desktop's app.slice and session.slice each outweigh the containers
+# 5x for CPU and 10x for disk. Set on the TOP slice (claude.slice for claude-containers.slice),
+# because weights only compete among siblings. They do nothing until cpu+io are delegated to the
+# user manager and the disk runs BFQ: ~/this-laptop/docs/memory/fix-memory-priority.sh (one-time, sudo).
+SLICE_CPU_WEIGHT="${CONTAINER_SLICE_CPU_WEIGHT-20}"
+SLICE_IO_WEIGHT="${CONTAINER_SLICE_IO_WEIGHT-10}"
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -309,6 +319,17 @@ if [ -n "$SLICE" ]; then
       if systemctl --user set-property "$SLICE" "MemoryHigh=$SLICE_HIGH" "MemoryMax=$SLICE_MAX" "MemorySwapMax=$SLICE_SWAP_MAX"; then
         CGROUP_PARENT=( --cgroup-parent "$SLICE" )
         echo ">> memory: $MEMORY per container; all containers under $SLICE (high $SLICE_HIGH, max $SLICE_MAX, swap $SLICE_SWAP_MAX)"
+        top_slice="${SLICE%%-*}"; top_slice="${top_slice%.slice}.slice"
+        weights=()
+        [ -n "$SLICE_CPU_WEIGHT" ] && weights+=( "CPUWeight=$SLICE_CPU_WEIGHT" )
+        [ -n "$SLICE_IO_WEIGHT" ] && weights+=( "IOWeight=$SLICE_IO_WEIGHT" )
+        if [ ${#weights[@]} -gt 0 ]; then
+          if systemctl --user set-property "$top_slice" "${weights[@]}"; then
+            echo ">> priority: $top_slice ${weights[*]} (the desktop's slices have 100)"
+          else
+            echo ">> warning: could not set ${weights[*]} on $top_slice; the containers compete with the desktop as equals." >&2
+          fi
+        fi
       else
         echo ">> warning: 'systemctl --user set-property $SLICE' failed (no user systemd manager?);" >&2
         echo "   no shared ceiling - each container keeps only its own --memory cap ($MEMORY)." >&2
