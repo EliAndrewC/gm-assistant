@@ -37,3 +37,7 @@ markers so each side skips its own comments; the live test is the feature 214 ha
 
 Also, I've noticed that my voice-to-text puts a trailing "Uh," at the end of a lot of my messages, which I'm not really sure what that is because I don't think I am trailing with an uh, but can you maybe add something on the Claude.md voice transcription table that explains that a trailing uh such as that should just always be ignored. It does not mean that my message was incomplete.
 I can confirm that the hooks directory is shared between containers for what it's worth. I mean, you can check the launch container script, but the launch container script just volumes in my host dot claud directory and such.
+
+## Message 4 (2026-10-04, after the first issue was opened)
+
+I would like to be able to just say something like `please implement https://github.com/EliAndrewC/character-sheet/issues/2` have have its instructions know what to od about it.  Can you make sure the CLAUDE.md is good enough to instruct it what to do in cases like this?  Where working on an issue means you're watching it until it's done?

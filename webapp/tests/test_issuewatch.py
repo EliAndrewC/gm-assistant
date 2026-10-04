@@ -62,6 +62,7 @@ class FakeGithub:
             'id': self.next_id,
             'body': body,
             'updated_at': f'2026-10-03T02:{self.next_id % 60:02d}:00Z',
+            'created_at': f'2026-10-03T02:{self.next_id % 60:02d}:00Z',
             'html_url': f'https://github.com/x#c{self.next_id}',
             'user': {'login': login},
         }
@@ -76,6 +77,9 @@ class FakeGithub:
         parts = url.split('?')[0].split('/')
         repo, number = f'{parts[2]}/{parts[3]}', parts[5] if len(parts) > 5 else ''
         key = f'{repo}#{number}'
+        if request.get_method() == 'PATCH':
+            self.issues[key].update(json.loads(request.data or b'{}'))  # type: ignore[arg-type]
+            return Reply(200, {'state': self.issues[key]['state']}, '')
         if request.get_method() == 'POST':
             data = json.loads(request.data or b'{}')  # type: ignore[arg-type]
             if url.endswith('/comments'):
@@ -536,3 +540,79 @@ def test_parses_on_the_hosts_python_3_10() -> None:
             f'issuewatch.py line {e.lineno} needs Python > 3.10 ({e.msg}); the host runs it '
             'with 3.10. Rewrite it the 3.10 way, e.g. `except (A, B):` with parentheses.'
         )
+
+
+URL_12 = 'https://github.com/EliAndrewC/character-sheet/issues/12'
+
+
+class TestWorkingAnIssue:
+    """GM 2026-10-04: 'please implement <issue URL>' is enough; working an issue means watching
+    it until it is done, and done is closed."""
+
+    def _nudge(self, gh: FakeGithub, repo: Path | None, prompt: str, sid: str = 'sid-1') -> str:
+        payload = {'prompt': prompt, 'cwd': '/anywhere'}
+        return hook('deliver', gh, sid=sid, payload=payload, root_of=lambda cwd: repo)[1]
+
+    def test_a_linked_issue_is_a_reminder_to_watch_it(self, repo: Path, gh: FakeGithub) -> None:
+        out = self._nudge(gh, repo, f'please implement {URL_12}')
+        text = json.loads(out)['hookSpecificOutput']['additionalContext']
+        assert 'Working an issue means watching it until it is closed' in text
+        assert f'issue_watch.py start {KEY}' in text
+        assert f'issue_watch.py show {KEY}' in text
+        assert gh.calls == []
+
+    def test_no_reminder_once_watching(self, repo: Path, gh: FakeGithub) -> None:
+        run(['start', URL_12], gh, repo)
+        assert self._nudge(gh, repo, f'how is {URL_12} going?') == ''
+
+    def test_no_reminder_outside_a_participating_repository(
+        self, repo: Path, gh: FakeGithub, tmp_path: Path
+    ) -> None:
+        assert self._nudge(gh, tmp_path, f'please implement {URL_12}') == ''
+        assert self._nudge(gh, None, f'please implement {URL_12}') == ''
+        assert hook('deliver', gh, payload={'prompt': URL_12}) == (0, '', '')
+
+    def test_no_reminder_without_a_link(self, repo: Path, gh: FakeGithub) -> None:
+        assert self._nudge(gh, repo, 'please implement issue 12') == ''
+
+    def test_the_reminder_rides_with_a_delivery(self, repo: Path, gh: FakeGithub) -> None:
+        run(['start', KEY], gh, repo)
+        gh.add_issue('EliAndrewC/character-sheet#13')
+        other(gh)
+        out = self._nudge(gh, repo, 'also https://github.com/EliAndrewC/character-sheet/issues/13')
+        text = json.loads(out)['hookSpecificOutput']['additionalContext']
+        assert 'start EliAndrewC/character-sheet#13' in text
+        assert 'Built B1-B4' in text
+
+    def test_show_reads_the_issue_and_its_thread(self, repo: Path, gh: FakeGithub) -> None:
+        other(gh, 'deployed')
+        gh.comment(KEY, 'thanks')
+        code, out, _ = run(['show', URL_12], gh, repo)
+        assert code == 0
+        assert out.startswith(f'{KEY} [open] Feature 214')
+        assert 'the doc' in out
+        assert '--- character-sheet,' in out
+        assert '--- EliAndrewC,' in out
+        assert '<!-- issue-watch' not in out
+
+    def test_close_comments_closes_and_stops_watching(self, repo: Path, gh: FakeGithub) -> None:
+        run(['start', KEY], gh, repo)
+        code, out, _ = run(['close', KEY, 'Verified', 'live.'], gh, repo)
+        assert code == 0
+        assert out == f'Closed {KEY}. Stopped. Still watching: nothing.'
+        assert gh.issues[KEY]['state'] == 'closed'
+        assert gh.issues[KEY]['comments'][-1]['body'].startswith(
+            '**[gm-assistant]** Verified live.'
+        )
+
+    def test_close_without_a_comment(self, repo: Path, gh: FakeGithub) -> None:
+        run(['close', KEY], gh, repo)
+        assert gh.issues[KEY]['comments'] == []
+
+    def test_the_watch_ends_when_someone_else_closes_it(self, repo: Path, gh: FakeGithub) -> None:
+        run(['start', KEY], gh, repo)
+        gh.issues[KEY]['state'] = 'closed'
+        text = json.loads(hook('deliver', gh)[1])['hookSpecificOutput']['additionalContext']
+        assert 'issue closed' in text
+        assert 'is closed, so the watch on it has ended' in text
+        assert not iw.exists('sid-1')

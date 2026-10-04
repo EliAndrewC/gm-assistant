@@ -67,6 +67,22 @@ Conditional requests (ETag) make an unchanged check free of rate limit.
 - **FR-014 Nothing is dropped unseen**: when more than five items are waiting, the newest five are
   shown in full and every older one is listed by its one-line heading and link.
 
+### Amendment - message 4 (2026-10-04)
+
+- **FR-015 An issue may be named by its URL** wherever `OWNER/REPO#N` is accepted.
+- **FR-016 The procedure is written where every participating session reads it**: "Working a GitHub
+  issue" in the user-level `~/.claude/CLAUDE.md`, which both containers load - watch first, read,
+  acknowledge on the issue, work under the repository's rules, report at milestones, keep watching
+  until closed, and who closes it (the side that asked, once verified; the implementer when Eli
+  filed it alone).
+- **FR-017 A linked issue is a reminder, by hook**: when the GM's message links an issue in a
+  participating repository that this session is not watching, the prompt hook adds a reminder with
+  the `start` and `show` commands. No network call; outside a participating repository, nothing.
+- **FR-018 `show`** prints the issue and its whole thread; **`close`** optionally comments, closes
+  the issue, and stops the watch.
+- **FR-019 A watch ends when its issue closes** ("watching it until it's done"), with a delivered
+  line saying so.
+
 ## Decisions (each made by the session, each cheap to change)
 
 1. **No daemon.** The GM's message 1 imagined "a script running in the background". The background
@@ -88,6 +104,12 @@ Conditional requests (ETag) make an unchanged check free of rate limit.
 4. **Token per repository, read from where that repository already keeps secrets.** No new secret
    store. Which repository holds a given issue is the participants' choice; both tokens get Issues
    read/write on both repositories (the GM's change), so either works.
+
+5. **The procedure lives in the user-level `CLAUDE.md`, not in each repository's** (message 4): it
+   is the one file both containers load, so one copy serves both repositories and cannot drift; its
+   trigger names the opt-in file, so it is inert elsewhere. Declined: a copy in each repository's
+   `CLAUDE.md` (two copies to keep in step, one of them in a repository this session does not
+   commit to).
 
 ## Accepted limitations
 
