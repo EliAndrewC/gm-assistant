@@ -249,6 +249,11 @@ class TestCommands:
         assert body.startswith('**[gm-assistant]** Requirements are ready.')
         assert '<!-- issue-watch agent=gm-assistant -->' in body
 
+    def test_a_typed_lead_is_not_doubled(self) -> None:
+        signed = iw.sign('character-sheet', '**[character-sheet]** Picked up.')
+        assert signed.startswith('**[character-sheet]** Picked up.')
+        assert signed.count('**[character-sheet]**') == 1
+
     def test_open_creates_and_watches(self, repo: Path, gh: FakeGithub) -> None:
         code, out, _ = run(
             ['open', 'EliAndrewC/character-sheet', 'Ishi boost'], gh, repo, stdin='See the doc.'

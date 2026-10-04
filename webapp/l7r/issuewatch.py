@@ -566,7 +566,10 @@ def _session(process: Callable[[], str] = process_key) -> str:
 
 
 def sign(agent: str, body: str) -> str:
-    return f'**[{agent}]** {body.strip()}\n\n<!-- issue-watch agent={agent} -->\n'
+    """The visible lead and the hidden marker. A lead the author already typed is not doubled -
+    seen on character-sheet#2, whose first comment opened with the lead twice."""
+    text = body.strip().removeprefix(f'**[{agent}]**').strip()
+    return f'**[{agent}]** {text}\n\n<!-- issue-watch agent={agent} -->\n'
 
 
 def start(sid: str, settings: Settings, key: str, gh: Github, now: float, process: str = '') -> str:
