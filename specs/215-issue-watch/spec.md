@@ -139,3 +139,6 @@ Conditional requests (ETag) make an unchanged check free of rate limit.
 - **Round 2 - FAITHFUL** (2026-10-03). Both round-1 changes confirmed; FR-013 and FR-014 found in
   scope (both serve "don't just ignore it"); no new findings. Its one wording note - FR-006 still
   said "a link for the rest" - is aligned with FR-014.
+- **Round 3 (amendment, message 4) - FAITHFUL** (2026-10-04). FR-015 to FR-019 and Decision 5
+  traced to message 4; the prompt-hook reminder, `show` / `close`, the watch ending on close and
+  the procedure's who-closes rule all found in scope; no carve-outs.
