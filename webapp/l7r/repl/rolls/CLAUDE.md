@@ -416,7 +416,8 @@ conversation, annotated or not, except those already boosted. A held boost keeps
 
 **Accepted limitation**: a boost posted after `end_conversation()` is not seen (nothing is
 collecting, and raw totals are not kept). The GM adds it by hand. Spec and declined alternatives:
-`specs/214-ishi-boost/`. The sheet app's half: `discord-design/ishi-boost-requirements.md` there.
+`specs/214-ishi-boost/`. The sheet app's half, and the two
+sessions' conversation about it: <https://github.com/EliAndrewC/character-sheet/issues/2>.
 
 **A deferred bot reply is read only once it is filled in** (found in 214). Every sheet-bot roll is
 an empty LOADING message until its dice card is edited in; a poll in that window used to move the

@@ -16,7 +16,7 @@ THREE WAYS IN, ONE PLACE TO AIM:
 
 - the character-sheet bot's message for its two commands - `**Isawa Tadashi**:
   **8** Isawa Ishi 3rd Dan[, boosting <jump link>]` (the contract is that app's
-  `discord-design/ishi-boost-requirements.md`). The jump link is the MESSAGE
+  https://github.com/EliAndrewC/character-sheet/issues/2). The jump link is the MESSAGE
   command's target;
 - a dice card the player rolled on the sheet and pasted - an image whose recorded
   row is `spend_vp_xk1:isawa_ishi`;

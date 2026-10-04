@@ -1,7 +1,8 @@
 # Plan: feature 214 - the Isawa Ishi 3rd Dan boost
 
 **THIS SESSION WRITES NO CODE IN THE CHARACTER-SHEET TREE.** Its one file there is the handoff
-document `discord-design/ishi-boost-requirements.md`, left uncommitted for that repository's
+document - since 2026-10-04 the issue <https://github.com/EliAndrewC/character-sheet/issues/2>, which replaced the uncommitted
+`discord-design/ishi-boost-requirements.md` - for that repository's
 session (the 211 / 212 pattern). gm-assistant's half is built against that document's contract and
 verified live once the sheet app deploys it (tasks Phase 3).
 

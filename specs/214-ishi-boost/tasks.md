@@ -5,7 +5,8 @@ Mark a task done only when verified.
 ## Phase 0 - specify and hand off
 
 - [x] T000a GM request recorded verbatim; spec written and reviewed by `spec-fidelity`.
-- [x] T000b Handoff document `discord-design/ishi-boost-requirements.md` written into the
+- [x] T000b Handoff document written into the character-sheet tree; REPLACED 2026-10-04 by issue
+      <https://github.com/EliAndrewC/character-sheet/issues/2> (feature 215's issue watch), the markdown file deleted. Originally
       character-sheet working tree, uncommitted.
 - [x] T000c Baseline `make done` on the unmodified clone.
 

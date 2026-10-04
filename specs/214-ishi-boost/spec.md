@@ -27,7 +27,8 @@ roll it goes on, from a list of every roll in the conversation, annotated or not
   conversation's close rules. FR-001 to FR-012.
 - **character-sheet** (<https://github.com/EliAndrewC/character-sheet>), by that repository's own
   Claude Code session, from a requirements document this session writes at
-  `discord-design/ishi-boost-requirements.md` and leaves uncommitted (the 211 / 212 pattern).
+  `discord-design/ishi-boost-requirements.md` and leaves uncommitted (the 211 / 212 pattern) -
+  since 2026-10-04 the issue <https://github.com/EliAndrewC/character-sheet/issues/2> instead, where the two sessions coordinate.
   This session cannot deploy that app. FR-013 to FR-018 (FR-017 deleted).
 
 ## User Scenarios & Testing
