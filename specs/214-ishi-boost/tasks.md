@@ -29,5 +29,5 @@ Mark a task done only when verified.
 
 ## Phase 3 - after the character-sheet session deploys (not this session's to start)
 
-- [ ] T301 Run the handoff document's Part 4 against the deployed app. A missing requirement is
+- [x] T301 (2026-10-04, accepted complete by the GM on his live test; results on character-sheet#2) Run the handoff document's Part 4 against the deployed app. A missing requirement is
       REPORTED, not worked around.
