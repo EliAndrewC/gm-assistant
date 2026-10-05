@@ -164,6 +164,11 @@ def open_(
     if found.reason:
         print(f'  Discern Honor: {found.reason} - /discern-honor will not answer.')
         return
+    if found.ungrouped:
+        print(
+            f'  Discern Honor: {", ".join(found.ungrouped)} - in no gaming group, so '
+            '/discern-honor tells them "No conversation is open".'
+        )
     if not found.holders:
         return
     served: dict[int, float] = {}

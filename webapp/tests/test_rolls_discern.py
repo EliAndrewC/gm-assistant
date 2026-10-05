@@ -299,6 +299,16 @@ class TestOpen:
         if not expected:
             assert 'Discern Honor' not in out
 
+    def test_holders_in_no_group_are_named(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """The GM's own account is pinned to the ungrouped Roll Tester (2026-10-04)."""
+        holders = sheet.HoldersResult(holders=HOLDERS, ungrouped=('Roll Tester', 'Tsuruchi Makoto'))
+        opened = begin(FakeOP(), FakeSheet(), holders=holders)
+        assert opened.discern
+        assert (
+            '  Discern Honor: Roll Tester, Tsuruchi Makoto - in no gaming group, so '
+            '/discern-honor tells them "No conversation is open".'
+        ) in capsys.readouterr().out
+
     def test_an_unreadable_sheet_conversation_still_opens(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -592,7 +602,19 @@ class TestSheetClient:
 
     def test_knack_holders_are_grouped_characters_with_the_knack(self) -> None:
         found = sheet.knack_holders(token='t', get=lambda url, token, timeout: self.PAYLOAD)
-        assert found == sheet.HoldersResult(holders=(sheet.KnackHolder(3, 'Tsuruchi Jimen', 2, 4),))
+        assert found == sheet.HoldersResult(
+            holders=(sheet.KnackHolder(3, 'Tsuruchi Jimen', 2, 4),),
+            ungrouped=('Tsuruchi Yabane',),
+        )
+
+    def test_an_ungrouped_holder_s_kanji_is_dropped(self) -> None:
+        payload = {
+            'characters': [
+                {'id': 16, 'name': 'Tsuruchi Makoto 鶴知誠', 'knacks': {'discern_honor': 4}}
+            ]
+        }
+        found = sheet.knack_holders(token='t', get=lambda url, token, timeout: payload)
+        assert found.ungrouped == ('Tsuruchi Makoto',)
 
     def test_knack_holders_degrade(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         def boom(url: str, token: str, timeout: float) -> Any:

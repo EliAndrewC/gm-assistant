@@ -332,6 +332,11 @@ class KnackHolder:
 class HoldersResult:
     holders: tuple[KnackHolder, ...] = ()
     reason: str = ''
+    #: Characters WITH the knack but in no gaming group, by name (kanji dropped).
+    #: The sheet's command answers them "No conversation is open right now", so
+    #: `begin_conversation` names them rather than leaving that a mystery
+    #: (2026-10-04: the GM's own account is pinned to the ungrouped Roll Tester).
+    ungrouped: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -379,14 +384,16 @@ def knack_holders(
     except Exception as exc:  # noqa: BLE001 - every failure degrades identically
         return HoldersResult(reason=_unavailable(exc))
     found = []
+    ungrouped = []
     for entry in payload.get('characters') or ():
         rank = int((entry.get('knacks') or {}).get(knack) or 0)
         group = entry.get('gaming_group_id')
-        if rank >= 1 and group is not None:
-            found.append(
-                KnackHolder(int(entry['id']), str(entry.get('name') or ''), int(group), rank)
-            )
-    return HoldersResult(holders=tuple(found))
+        name = str(entry.get('name') or '')
+        if rank >= 1 and group is None:
+            ungrouped.append(' '.join(t for t in name.split() if t.isascii()))
+        elif rank >= 1:
+            found.append(KnackHolder(int(entry['id']), name, int(group), rank))
+    return HoldersResult(holders=tuple(found), ungrouped=tuple(ungrouped))
 
 
 def get_conversation(

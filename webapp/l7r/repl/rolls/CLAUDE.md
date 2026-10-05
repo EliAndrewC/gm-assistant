@@ -388,6 +388,10 @@ incrementing them closer"* - nothing is computed at ask time, so it cannot.
   and no first read is re-rolled. `begin_conversation("Otsuki", new=True)` says "that one is over".
 - **Every group with a knack-holder is sent the conversation**, because one argument does not say
   which group is at the table. The accepted cost is in `discern.py`'s docstring.
+- **A knack-holder in NO gaming group is named at open** (2026-10-04). The sheet app finds the
+  conversation by the ASKER's group, so they get "No conversation is open right now - ask the GM"
+  however well the open went. The GM hit it testing from their own account, which the sheet app
+  pins to the ungrouped Roll Tester. The fix for a real PC is putting them in a group on the sheet.
 - **Nothing here can stop a conversation opening.** No `Honor:` line, no write token, the app down:
   each is one printed line, and roll capture and the manual `discern_honor()` carry on.
 - **All GM-only-notes writes share `honor.NOTES_LOCK`** and re-read before rendering - the watcher's
