@@ -251,6 +251,13 @@ class TestPlacing:
         assert reason in held.held_because
         assert boostmod.held(c) == [held]
 
+    def test_two_characters_sharing_a_given_name_are_two_people(self) -> None:
+        c = conversation(roll('Kakita Tadashi', 'etiquette', 13))
+        boostmod.place(c, boost())
+        assert c.rolls[0].total == 21
+        assert boostmod.same_character('Tadashi', 'Isawa Tadashi')
+        assert not boostmod.same_character('Roll Tester', 'Other Tester')
+
     def test_a_discarded_roll_is_not_a_target(self) -> None:
         c = conversation(roll('Jimen', 'etiquette', 13))
         c.rolls[0] = replace(c.rolls[0], discarded=True)

@@ -124,10 +124,16 @@ def from_recorded(
 
 
 def same_character(one: str, other: str) -> bool:
-    """`Isawa Tadashi` and `Tadashi` are one character - names here are full on one
-    path (the sheet) and given on another (a typed roll's roster lookup)."""
+    """Whether two names are one character. Full names must match exactly when BOTH sides have
+    one: "Isawa Tadashi" and "Kakita Tadashi" are two people (measured 2026-10-04 - comparing
+    given names alone held a real boost between "Roll Tester" and "Other Tester"). Given names are
+    compared only when a side is a bare given name, as in `cancel_boost("Tadashi")`."""
     a, b = one.strip().lower(), other.strip().lower()
-    return a == b or rules.personal_name(one).lower() == rules.personal_name(other).lower()
+    if a == b:
+        return True
+    if ' ' in a and ' ' in b:
+        return False
+    return rules.personal_name(one).lower() == rules.personal_name(other).lower()
 
 
 def describe(boost: Boost) -> str:
