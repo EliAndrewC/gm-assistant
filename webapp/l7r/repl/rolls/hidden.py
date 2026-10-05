@@ -16,6 +16,25 @@ NOTHING HERE MAY REACH THE BIO. The entries are built from the same rolls the pu
 lines are, so `tests/test_rolls_hidden.py` renders both for one conversation and
 asserts that no hidden total appears in the public half.
 
+EVERY SINCERITY ROLL IS KEPT, not only the one handed to `new_line_of_questioning`
+(GM 2026-10-04: *"sincerity rolls made by NPCs in contested interrogation should be
+saved to the GM-only section for my own later review, but aren't currently"*). A
+roll made on its own - `sincerity()`, `xky(8, 3) - sincerity` - is noted on the
+conversation with the line current when it was rolled (`npcskills`), and is then:
+
+- that line's opposing roll, when the line was declared without one (`line_roll`).
+  A roll made before ANY line was declared belongs to the first line;
+- otherwise an entry of its own, naming its line and the interrogation roll it came
+  after, so a second roll on one line is never silently dropped:
+
+    - 2026-10-04 sincerity 33 - debts to the Mantis (another sincerity roll on this
+      line): after Sadakichi 57@1   <- one line in the notes
+
+Derived at render time rather than settled into `Line.sincerity`, so the one race
+there could be - `new_line_of_questioning("x", sincerity())` evaluates the roll
+while the PREVIOUS line is still current - cannot misfile it: the declaration
+`claim`s the roll before anything reads the list.
+
 The WHO-WON on each entry is the tool's arithmetic and is ADVISORY: it knows the
 dice, the ranks and whether the line was grilling, and nothing of the situational
 raises the GM hands out as the questioning goes. The PUBLIC outcome stays the GM's
@@ -101,6 +120,61 @@ def awaiting_outcome(conv: Conversation, roll: Roll) -> bool:
     return False
 
 
+def claim(conv: Conversation, entry: GmRoll) -> None:
+    """`entry` was handed to a declaration: it is that line's, and no longer loose."""
+    conv.sincerity_rolls = [(e, on) for e, on in conv.sincerity_rolls if e is not entry]
+
+
+def _usable(entry: GmRoll) -> bool:
+    """A roll the GM called a mistake, or spent as the open side of a contest, is
+    not a hidden Sincerity roll."""
+    return not entry.mistake and not entry.paired
+
+
+def line_roll(conv: Conversation, line: Line) -> GmRoll | int | None:
+    """The Sincerity roll opposing `line`: the one it was declared with, else the
+    first kept roll made while it was current (or before any line, for the first)."""
+    if line.sincerity is not None:
+        return line.sincerity
+    first = conv.lines[0].id if conv.lines else None
+    for entry, on in conv.sincerity_rolls:
+        if _usable(entry) and (on == line.id or (on is None and line.id == first)):
+            return entry
+    return None
+
+
+def extra_rolls(conv: Conversation) -> list[tuple[GmRoll, int | None]]:
+    """The kept Sincerity rolls that oppose no line - written as entries of their own."""
+    used = [line_roll(conv, line) for line in conv.lines]
+    return [
+        (entry, on)
+        for entry, on in conv.sincerity_rolls
+        if _usable(entry) and not any(entry is u for u in used)
+    ]
+
+
+def _came_after(conv: Conversation, entry: GmRoll) -> Roll | None:
+    """The latest interrogation roll at or before `entry` - what it most likely answered."""
+    found = [r for r in conv.rolls if rules.is_interrogation(r) and not r.discarded]
+    found = [r for r in found if r.attributed and r.at <= entry.at]
+    return max(found, key=lambda r: r.at, default=None)
+
+
+def describe_extra(conv: Conversation, entry: GmRoll, on: int | None) -> str:
+    """Where a Sincerity roll that opposes no line belongs, in words."""
+    topic = next((line.description for line in conv.lines if line.id == on), None)
+    where = (
+        f'{topic} (another sincerity roll on this line)'
+        if topic is not None
+        else 'before any line of questioning'
+    )
+    after = _came_after(conv, entry)
+    if after is None:
+        return where
+    rank = '' if after.rank is None else f'@{after.rank}'
+    return f'{where}: after {rules.personal_name(after.character)} {after.total}{rank}'
+
+
 def sincerity_rank(conv: Conversation, sincerity: GmRoll | int | None) -> int | None:
     """The NPC's Sincerity rank: recorded if known, else read off the dice.
 
@@ -117,10 +191,11 @@ def sincerity_rank(conv: Conversation, sincerity: GmRoll | int | None) -> int | 
 
 def compare(conv: Conversation, line: Line, roll: Roll) -> Comparison | None:
     """How `roll` stands against `line`'s Sincerity roll; None when there is none."""
-    if line.sincerity is None:
+    sincerity = line_roll(conv, line)
+    if sincerity is None:
         return None
-    total = _sincerity_total(line)
-    bonus, npc_bonus = rules.free_raises(roll.rank, sincerity_rank(conv, line.sincerity))
+    total = _sincerity_total(sincerity)
+    bonus, npc_bonus = rules.free_raises(roll.rank, sincerity_rank(conv, sincerity))
     casual = 0 if line.grilling else CASUAL_RAISES
     taxed = oppose.for_line(conv, line)
     if taxed is None:
@@ -128,7 +203,7 @@ def compare(conv: Conversation, line: Line, roll: Roll) -> Comparison | None:
     return Comparison(roll, bonus, total, casual, npc_bonus, taxed.amount, taxed.knack)
 
 
-def _sincerity_total(line: Line) -> int:
+def _sincerity_total(sincerity: GmRoll | int) -> int:
     """The line's Sincerity roll BEFORE any oppose penalty (feature 208).
 
     `unpenalized`, not `total`: a Sincerity roll tagged after an Oppose Social has
@@ -136,10 +211,9 @@ def _sincerity_total(line: Line) -> int:
     (`oppose.for_line`, which also covers the retroactive case). Reading `total`
     here would charge the NPC twice.
     """
-    assert line.sincerity is not None
-    if isinstance(line.sincerity, GmRoll):
-        return line.sincerity.unpenalized
-    return int(line.sincerity)
+    if isinstance(sincerity, GmRoll):
+        return sincerity.unpenalized
+    return int(sincerity)
 
 
 def _on_line(conv: Conversation, line: Line) -> list[Roll]:
@@ -155,9 +229,10 @@ def entries(conv: Conversation) -> tuple[str, ...]:
     day = f'{conv.opened_at:%Y-%m-%d}'
     out: list[str] = []
     for line in conv.lines:
-        if line.sincerity is None:
+        sincerity = line_roll(conv, line)
+        if sincerity is None:
             continue
-        total = _sincerity_total(line)
+        total = _sincerity_total(sincerity)
         extras = [] if line.grilling else [f'+{CASUAL_RAISES} not grilling']
         taxed = oppose.for_line(conv, line)
         if taxed is not None:
@@ -174,6 +249,8 @@ def entries(conv: Conversation) -> tuple[str, ...]:
             results.append(f'{who} {roll.total}{rank}{bonus} {verdict}')
         tail = f': {", ".join(results)}' if results else ''
         out.append(f'- {day} sincerity {total}{casual} - {line.description}{tail}')
+    for entry, on in extra_rolls(conv):
+        out.append(f'- {day} sincerity {entry.total} - {describe_extra(conv, entry, on)}')
     for roll in conv.rolls:
         if roll.skill.lower() != 'acting' or roll.opposed_total is None:
             continue

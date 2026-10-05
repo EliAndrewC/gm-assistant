@@ -283,6 +283,15 @@ class Conversation:
     title: str = ''
     #: Feature 214. Every Isawa Ishi 3rd Dan boost seen, applied or held.
     boosts: list[Boost] = field(default_factory=list)
+    #: EVERY Sincerity roll the GM made for the NPC while this conversation was open,
+    #: with the id of the line of questioning current when it was rolled (None before
+    #: the first) - not only the one handed to `new_line_of_questioning`. The GM
+    #: (2026-10-04): a roll made on its own was being written nowhere. A roll handed
+    #: to a declaration leaves this list (`hidden.claim`); `hidden.line_roll` derives
+    #: which of the rest opposes each line, and `hidden.entries` writes them all.
+    sincerity_rolls: list[tuple[GmRoll, int | None]] = field(default_factory=list)
+    #: The `GmRoll.seq` of each of those the watcher has already told the GM about.
+    sincerity_announced: set[int] = field(default_factory=set)
 
     def planned(self, pc: str) -> Record | None:
         """What `pc` (a given name, any case) is told in this conversation, if decided."""

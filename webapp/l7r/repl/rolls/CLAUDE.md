@@ -212,6 +212,20 @@ refuses to close until it is answered (`force=True` still overrides). Enter keep
 marks it answered (`Roll.outcome_settled`), as `detected()` does. The verdict is still only
 advisory: it decides whether to ASK, never what is written.
 
+**EVERY Sincerity roll made in a conversation is kept** (2026-10-04). The GM: *"sincerity rolls
+made by NPCs in contested interrogation should be saved to the GM-only section for my own later
+review, but aren't currently"*. Only a roll HANDED to `new_line_of_questioning` used to be written;
+`sincerity()` or `xky(8, 3) - sincerity` on its own went nowhere (measured: Fumitake had two lines,
+`sincerity 0` in his numbers and no `Hidden rolls:` block). Now `npcskills` notes each one on
+`Conversation.sincerity_rolls` with the line current when it was rolled, and `hidden.line_roll`
+DERIVES which opposes each line: the declared one, else the first made during the line (or before
+any line, for the first). Any other roll is written as its own entry naming its line and the
+interrogation roll it followed - `- ... sincerity 24 - the monks (another sincerity roll on this
+line): after Yudai 7@2`. Derived rather than written into `Line.sincerity` because
+`new_line_of_questioning("x", sincerity())` rolls while the OLD line is current; the declaration
+`claim`s it first. For the same reason the watcher, not the roll, says where it went
+(`announce_sincerity`, up to one poll later). Tests: `tests/test_rolls_sincerity_kept.py`.
+
 **Only the tool applies the casual +10**, from the line's grilling flag; `grilling()` takes it back
 retroactively. Whatever the GM adds to a roll by hand is never adjusted.
 
@@ -495,7 +509,8 @@ deleted rather than left to drift.
     tests/test_rolls_interrogation.py tests/test_rolls_modes.py tests/test_rolls_npcnumbers.py \
     tests/test_rolls_npcskills.py tests/test_rolls_lines.py tests/test_rolls_hidden.py \
     tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py tests/test_rolls_oppose.py \
-    tests/test_rolls_menu.py tests/test_rolls_discern.py tests/test_rolls_boost.py )
+    tests/test_rolls_menu.py tests/test_rolls_discern.py tests/test_rolls_boost.py \
+    tests/test_rolls_sincerity_kept.py )
 ```
 
 `test_rolls_keys.py` drives a REAL pseudo-terminal. The undo keys must be written to it AFTER it is

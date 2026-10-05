@@ -157,6 +157,10 @@ def new_line_of_questioning(
         sincerity=secret,
     )
     conv.lines.append(line)
+    if isinstance(secret, GmRoll):
+        # Noted on the conversation when it was rolled - while the PREVIOUS line was
+        # current - so it must leave that list or it would oppose that line too.
+        hidden.claim(conv, secret)
     for index in discarding:
         conv.rolls[index] = replace(conv.rolls[index], discarded=True)
     for index in joining:

@@ -579,6 +579,7 @@ def _tick(
             say(f'  + {roll.character}: {roll.skill} {roll.total}{rank}{counts}')
             announce_comparison(conv, roll)
             announce_oppose(conv, roll)
+        announce_sincerity(conv)
     lines = written_lines(conv, include_unannotated=include_unannotated)
     # Feature 207: the GM-only half. It can change with no player roll at all - a
     # tagged `xky` records a rank - so it is weighed beside the bio, not under it.
@@ -648,6 +649,28 @@ def announce_comparison(conv: Conversation, roll: Roll) -> None:
             found = hidden.compare(conv, line, roll)
             if found is not None:
                 say(f'  = {found.describe()}')
+
+
+def announce_sincerity(conv: Conversation) -> None:
+    """Say, once each, where a Sincerity roll made on its own was kept.
+
+    On the watcher's tick rather than when it is rolled: `new_line_of_questioning("x",
+    sincerity())` rolls while the PREVIOUS line is current, and only by the next tick
+    has the declaration claimed it - announcing at roll time would name the wrong line.
+    """
+    for entry, on in list(conv.sincerity_rolls):
+        if entry.seq in conv.sincerity_announced or entry.mistake or entry.paired:
+            continue
+        conv.sincerity_announced.add(entry.seq)
+        line = next((ln for ln in conv.lines if hidden.line_roll(conv, ln) is entry), None)
+        if line is None:
+            where = hidden.describe_extra(conv, entry, on)
+            say(f'  sincerity {entry.total} kept in the GM-only notes - {where}')
+            continue
+        say(f'  sincerity {entry.total} kept in the GM-only notes against "{line.description}"')
+        for roll in conv.rolls:
+            if roll.line == line.id and roll.attributed and not roll.discarded:
+                announce_comparison(conv, roll)
 
 
 def announce_oppose(conv: Conversation, roll: Roll) -> None:

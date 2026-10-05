@@ -49,6 +49,10 @@ from l7r.repl.rolls.skills import advanced_skills, load_skills, rules_skills, sk
 
 Ask = Callable[[str], str]
 
+#: The NPC skill whose rolls are hidden from the players and kept in the GM-only
+#: notes however they were made - Interrogation's opposing skill (`hidden.py`).
+HIDDEN_SKILL = 'sincerity'
+
 RANKS = (0, 5)
 RING_VALUES = (2, 6)
 
@@ -226,7 +230,15 @@ class SkillTag:
             return total
         self._check(conv, entry, ask or _ask)
         # AFTER the check: a roll the GM called a mistake there pays nothing.
-        return taxed(conv, total, self.name)
+        return self._kept(conv, taxed(conv, total, self.name))
+
+    def _kept(self, conv: Conversation, total: dice.DiceTotal) -> dice.DiceTotal:
+        """Note a Sincerity roll on the conversation, with the line it was rolled
+        during, so it reaches the GM-only notes however it was made (`hidden.py`)."""
+        if self.name == HIDDEN_SKILL and not total.entry.mistake:
+            line = conv.lines[-1].id if conv.lines else None
+            conv.sincerity_rolls.append((total.entry, line))
+        return total
 
     def __rsub__(self, other: object) -> object:
         """A plain number minus a tag: there is no roll behind it to tag."""
@@ -265,7 +277,7 @@ class SkillTag:
             self._record_only(conv, numbers, spent, asker)
             return None
         if len(numbers) == 2:
-            return self._pool(conv, numbers[0], numbers[1], spent, asker)
+            return self._kept(conv, self._pool(conv, numbers[0], numbers[1], spent, asker))
         rank = self._rank(conv, numbers[0] if numbers else None, asker)
         if rank is None:
             return None
@@ -280,7 +292,8 @@ class SkillTag:
             conv.numbers[self.ring_name] = ring
             print(f'  recorded for {conv.npc_name}: {self.ring_name.capitalize()} {ring}')
         extra, _ = extra_dice(self.name, conv.schools)
-        return self._roll(conv, ring + rank + extra + spent, ring + spent, rank, spent)
+        total = self._roll(conv, ring + rank + extra + spent, ring + spent, rank, spent)
+        return self._kept(conv, total)
 
     def _rank(self, conv: Conversation, stated: int | None, ask: Ask) -> int | None:
         """The rank to roll: stated, recorded, or asked for. None cancels the roll."""
