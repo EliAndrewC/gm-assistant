@@ -42,6 +42,9 @@
     var dom = {};
     var currentCharacter = null;
     var currentImageData = null;
+    // The backstory most recently appended to #private, so a re-roll replaces
+    // it instead of stacking a second copy underneath.
+    var lastAppendedBackstory = null;
     var lastUploadedArtUrl = null;
     var cropper = null;
     // Tagify state: whitelist is the campaign-wide tag pool fetched on page
@@ -51,7 +54,7 @@
     var tagify = null;
 
     $(function () {
-        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'show_players', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit', 'show_players_uploaded', 'synthesize', 'synthesis_section', 'synthesis_notes', 'synthesis_loading', 'synthesis_result', 'synthesis_text', 'synthesis_copy', 'synthesis_copied', 'synthesis_context'], function (i, s) {
+        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'show_players', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit', 'show_players_uploaded', 'synthesize', 'synthesis_section', 'synthesis_notes', 'synthesis_loading', 'synthesis_result', 'synthesis_text', 'synthesis_context'], function (i, s) {
             dom['$' + s] = $('#' + s);
         });
         // The two Upload buttons (top of form + next to Generate Art) act as
@@ -405,6 +408,7 @@
                 } else {
                     currentCharacter = character;
                     currentImageData = null;
+                    lastAppendedBackstory = null;
                     if (cropper) {
                         cropper.destroy();
                         cropper = null;
@@ -466,8 +470,11 @@
                         traits: (character.traits || []).join(', '),
                         collects_art: character.collects_art || ''
                     }, function(resp) {
+                        if (currentCharacter !== character) { return; }
                         dom.$art_prompt.val(resp.prompt);
-                        dom.$generate_art.prop('disabled', false);
+                        // The GM always wants art, so generate it unasked;
+                        // the button stays for re-rolls with an edited prompt.
+                        dom.$generate_art.prop('disabled', false).click();
                     });
                 }
             });
@@ -475,6 +482,7 @@
 
         dom.$synthesize.on('click', function () {
             if (!currentCharacter) { return; }
+            var forCharacter = currentCharacter;
             dom.$synthesize.prop('disabled', true);
             dom.$synthesis_loading.show();
             $.post('/chargen/synthesize', {
@@ -489,6 +497,11 @@
             }, function (resp) {
                 dom.$synthesis_loading.hide();
                 dom.$synthesize.prop('disabled', false);
+                if (currentCharacter !== forCharacter) {
+                    // A new character was generated (or this one uploaded)
+                    // while synthesizing; never append to the wrong record.
+                    return;
+                }
                 if (!resp.ok) {
                     alert('Backstory synthesis failed: ' + resp.error);
                 } else {
@@ -497,7 +510,16 @@
                     dom.$synthesis_context.text(
                         (n === 1 ? '1 campaign character' : n + ' campaign characters') + ' in context'
                     );
-                    dom.$synthesis_copied.hide();
+                    // Append to the end of the GM-only (private) section
+                    // automatically, with at least one blank line between it
+                    // and whatever came before. A re-roll replaces the previous
+                    // backstory if it is still the tail of the notes untouched.
+                    var existing = $('#private').val().replace(/\s+$/, '');
+                    if (lastAppendedBackstory && existing.endsWith(lastAppendedBackstory)) {
+                        existing = existing.slice(0, -lastAppendedBackstory.length).replace(/\s+$/, '');
+                    }
+                    $('#private').val(existing ? (existing + '\n\n' + resp.backstory) : resp.backstory);
+                    lastAppendedBackstory = resp.backstory;
                     dom.$synthesis_result.show();
                 }
             }, 'json').fail(function () {
@@ -505,17 +527,6 @@
                 dom.$synthesize.prop('disabled', false);
                 alert('Backstory synthesis request failed.');
             });
-        });
-
-        dom.$synthesis_copy.on('click', function () {
-            var bs = dom.$synthesis_text.text();
-            if (!bs) { return; }
-            // Append to the end of the GM-only (private) section, with at least
-            // one blank line between it and whatever came before.
-            var existing = $('#private').val().replace(/\s+$/, '');
-            $('#private').val(existing ? (existing + '\n\n' + bs) : bs);
-            dom.$synthesis_copied.show();
-            setTimeout(function () { dom.$synthesis_copied.hide(); }, 1500);
         });
 
         // Stash the current portrait for the standalone viewer (same origin) and
@@ -544,7 +555,10 @@
                 cropper = null;
             }
 
+            var forCharacter = currentCharacter;
             $.getJSON('/chargen/generate_art', {prompt: prompt}, function(resp) {
+                // Art for a character that has since been replaced or uploaded.
+                if (currentCharacter !== forCharacter) { return; }
                 dom.$art_loading.hide();
                 dom.$generate_art.prop('disabled', false);
 
@@ -587,6 +601,11 @@
                         });
                     });
                 }
+            }).fail(function () {
+                if (currentCharacter !== forCharacter) { return; }
+                dom.$art_loading.hide();
+                dom.$generate_art.prop('disabled', false);
+                alert('Art generation request failed.');
             });
         });
 
@@ -752,14 +771,13 @@
       <label for="synthesis_notes" style="display: block; margin-bottom: 4px;">Optional steering notes (e.g. "a reluctant duelist who lost a sibling"):</label>
       <textarea id="synthesis_notes" rows="2" style="width: 100%; max-width: 600px; box-sizing: border-box;"></textarea>
       <div style="margin-top: 8px;">
-          <button id="synthesize">Synthesize Backstory</button>
+          <button id="synthesize" class="chargen-button">Synthesize Backstory</button>
           <span id="synthesis_loading" style="display: none; margin-left: 10px;">Synthesizing, please wait...</span>
       </div>
       <div id="synthesis_result" style="margin-top: 14px; display: none; border-top: 1px solid #ccc; padding-top: 10px;">
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 6px;">
               <strong>Backstory</strong>
-              <button id="synthesis_copy" type="button">Copy to form</button>
-              <span id="synthesis_copied" style="display: none; color: #2a7a2a;">Added to GM notes</span>
+              <span style="color: #1f6b1f; font-weight: 600;">&#10003; Added to the end of the GM-only notes box above (a re-roll replaces it)</span>
               <span id="synthesis_context" style="margin-left: auto; color: #4a443b;"></span>
           </div>
           <div id="synthesis_text" style="white-space: pre-wrap; max-width: 700px; line-height: 1.6;"></div>
@@ -768,7 +786,7 @@
 
   <div id="art_section" style="margin-top: 20px; display: none;">
       <h3>Character Art</h3>
-      <p>Edit the prompt below if desired, then click Generate Art:</p>
+      <p>Art is generated automatically from the prompt below.</p>
       <textarea id="art_prompt" rows="8" style="width: 100%; max-width: 600px;"></textarea>
       <br/>
       <button id="generate_art">Generate Art</button>
