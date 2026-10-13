@@ -194,7 +194,11 @@ class Character:
 
     def _trait_pool(self) -> dict:
         """Returns the pool of possible traits for this character type."""
-        return dict(c.TRAITS, **c.GENDER_TRAITS[self.gender])
+        pool = dict(c.TRAITS, **c.GENDER_TRAITS[self.gender])
+        youngest, oldest = c.PREGNANCY_AGES
+        if not youngest <= self.age <= oldest:
+            pool.pop('pregnant', None)
+        return pool
 
     def _roll_traits(self, pool: dict) -> list[str]:
         """Roll for traits from a given pool, returning those that were selected."""

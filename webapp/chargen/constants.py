@@ -209,6 +209,15 @@ Some traits are gender-specific, e.g. 'mustachioed' or 'pregnant'.  This uses
 the same format as TRAITS above, indexed by gender.
 """
 
+PREGNANCY_AGES = (16, 44)
+"""
+The ages at which 'pregnant' can be rolled; outside them the trait is dropped
+from the pool.  Pre-modern fertility falls to near zero by the mid-40s (Edo
+village registers show almost no births to mothers past 45), and a 15% flat
+chance had put pregnancies on women of 47 and 49 in consecutive rolls
+(2026-10-13, two Imperial magistrates for the Family Reckoning).
+"""
+
 CLAN_COLORS = {
     'Crab': 'dark blue and light gray',
     'Crane': 'light blue and white / silver',

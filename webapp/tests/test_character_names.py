@@ -85,3 +85,19 @@ def test_name_meaning_comes_from_the_pool_explanation(roster: Path) -> None:
     pool = namepool.load_pool(namepool.pool_dir())
     by_name = {e.name: e.explanation for e in pool[s.gender]}
     assert s.name_meaning == by_name[s.personal_name]
+
+
+def test_pregnant_is_rolled_only_at_childbearing_ages(roster: Path) -> None:
+    youngest, oldest = c.PREGNANCY_AGES
+    for age, allowed in (
+        (youngest - 1, False),
+        (youngest, True),
+        (oldest, True),
+        (oldest + 1, False),
+    ):
+        woman = _Peasant(gender='female')
+        woman.age = age
+        assert ('pregnant' in woman._trait_pool()) is allowed, age
+    man = _Peasant(gender='male')
+    man.age = youngest
+    assert 'pregnant' not in man._trait_pool()
