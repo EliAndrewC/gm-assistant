@@ -93,10 +93,13 @@ def places_dir() -> Path:
     env_override = os.environ.get('L7R_PLACES_DIR')
     if env_override:
         return Path(env_override)
-    bundled = _WEBAPP / 'skills' / 'place-names'
-    if bundled.is_dir():
-        return bundled
-    return (_WEBAPP.parent / '.claude' / 'skills' / 'place-names').resolve()
+    # The repo's curated pool first, the gitignored deploy bundle only when it
+    # is absent (the image): a stale bundle must never shadow the pool - see
+    # chargen.namepool.pool_dir.
+    repo = (_WEBAPP.parent / '.claude' / 'skills' / 'place-names').resolve()
+    if repo.is_dir():
+        return repo
+    return _WEBAPP / 'skills' / 'place-names'
 
 
 def warm_caches(max_age: float = MAX_AGE) -> str:

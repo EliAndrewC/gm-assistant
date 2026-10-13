@@ -249,8 +249,15 @@ class TestPlace:
         with pytest.raises(ValueError, match='no unused place names'):
             place()
 
-    def test_places_dir_bundled(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.setattr(mod, '_WEBAPP', tmp_path)
-        assert places_dir() == (tmp_path.parent / '.claude' / 'skills' / 'place-names').resolve()
-        (tmp_path / 'skills' / 'place-names').mkdir(parents=True)
-        assert places_dir() == tmp_path / 'skills' / 'place-names'
+    def test_places_dir_prefers_repo_pool_over_stale_bundle(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.delenv('L7R_PLACES_DIR', raising=False)
+        webapp = tmp_path / 'webapp'
+        monkeypatch.setattr(mod, '_WEBAPP', webapp)
+        (webapp / 'skills' / 'place-names').mkdir(parents=True)
+        # No repo pool (the deploy image): the bundle is used.
+        assert places_dir() == webapp / 'skills' / 'place-names'
+        # A dev tree with both: the curated repo pool wins over the leftover bundle.
+        (tmp_path / '.claude' / 'skills' / 'place-names').mkdir(parents=True)
+        assert places_dir() == (tmp_path / '.claude' / 'skills' / 'place-names').resolve()

@@ -35,15 +35,23 @@ class NamePoolExhausted(RuntimeError):
 
 
 def pool_dir() -> Path:
-    """Where the pool files live: ``L7R_NAMES_DIR`` if set; the deploy bundle
-    ``webapp/skills/name`` if present; else the skill dir in the repo."""
+    """Where the pool files live: ``L7R_NAMES_DIR`` if set; else the skill dir
+    in the repo when it exists; else the deploy bundle ``webapp/skills/name``.
+
+    The repo copy wins because it is the curated source. The bundle is a
+    gitignored ``make deploy`` artifact that goes stale the moment the pool is
+    edited, and checking it first let a leftover one shadow the real pool:
+    measured 2026-10-13, a 2026-07-20 bundle of 103 male names in main's tree
+    stood in for the 564-name pool and handed /chargen names the pool had
+    since dropped. The deploy image has no ``.claude/``, so it falls through
+    to the bundle."""
     env_override = os.environ.get('L7R_NAMES_DIR')
     if env_override:
         return Path(env_override)
-    bundled = _WEBAPP / 'skills' / 'name'
-    if bundled.is_dir():
-        return bundled
-    return (_WEBAPP.parent / '.claude' / 'skills' / 'name').resolve()
+    repo = (_WEBAPP.parent / '.claude' / 'skills' / 'name').resolve()
+    if repo.is_dir():
+        return repo
+    return _WEBAPP / 'skills' / 'name'
 
 
 @lru_cache(maxsize=8)

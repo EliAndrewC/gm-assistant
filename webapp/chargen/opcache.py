@@ -152,13 +152,15 @@ def refresh_if_stale(max_age_seconds: float = 3600.0, path: Path = _CACHE_PATH) 
 #: campaign's overlay on a campaign-agnostic pool: the pool is NEVER depleted
 #: by use (GM 2026-08-26) - a name picked for this campaign stays in the pool
 #: for the next one, and exclusion happens here and in the roster cache.
-#: Resolved like ``namepool.pool_dir``: the deploy bundle ``webapp/skills/name``
-#: when present (the image has no ``.claude/``), else the skill dir in the repo.
-_EXTRA_BUNDLED = _OPCACHE_DIR.parent / 'skills' / 'name' / 'used-names-extra.txt'
+#: Resolved like ``namepool.pool_dir``: the skill dir in the repo when present,
+#: else the deploy bundle ``webapp/skills/name`` (the image has no ``.claude/``).
+#: Repo first, because a stale bundle left in a dev tree would otherwise hide
+#: every name added to this file since the last deploy.
+_EXTRA_REPO = _OPCACHE_DIR.parent.parent / '.claude' / 'skills' / 'name' / 'used-names-extra.txt'
 EXTRA_USED_PATH = (
-    _EXTRA_BUNDLED
-    if _EXTRA_BUNDLED.is_file()
-    else _OPCACHE_DIR.parent.parent / '.claude' / 'skills' / 'name' / 'used-names-extra.txt'
+    _EXTRA_REPO
+    if _EXTRA_REPO.is_file()
+    else _OPCACHE_DIR.parent / 'skills' / 'name' / 'used-names-extra.txt'
 )
 
 _used_key: tuple[tuple[Path, int, int] | None, ...] | None = None

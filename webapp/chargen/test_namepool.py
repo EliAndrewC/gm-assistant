@@ -147,12 +147,18 @@ def test_pool_dir_env_override(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) 
     assert namepool.pool_dir() == tmp_path
 
 
-def test_pool_dir_prefers_deploy_bundle(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_pool_dir_prefers_repo_pool_over_stale_bundle(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.delenv('L7R_NAMES_DIR', raising=False)
-    monkeypatch.setattr(namepool, '_WEBAPP', tmp_path)
-    assert namepool.pool_dir() == (tmp_path.parent / '.claude' / 'skills' / 'name').resolve()
-    (tmp_path / 'skills' / 'name').mkdir(parents=True)
-    assert namepool.pool_dir() == tmp_path / 'skills' / 'name'
+    webapp = tmp_path / 'webapp'
+    monkeypatch.setattr(namepool, '_WEBAPP', webapp)
+    (webapp / 'skills' / 'name').mkdir(parents=True)
+    # No repo pool (the deploy image): the bundle is used.
+    assert namepool.pool_dir() == webapp / 'skills' / 'name'
+    # A dev tree with both: the curated repo pool wins over the leftover bundle.
+    (tmp_path / '.claude' / 'skills' / 'name').mkdir(parents=True)
+    assert namepool.pool_dir() == (tmp_path / '.claude' / 'skills' / 'name').resolve()
 
 
 def test_real_pool_loads_both_genders() -> None:
