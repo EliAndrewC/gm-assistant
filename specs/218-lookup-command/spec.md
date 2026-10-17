@@ -1,7 +1,7 @@
 # Feature 218: `/look-up`, a private Discord lookup for the Wasp campaign
 
-**Request**: [gm-request.md](gm-request.md) (2026-10-17, three messages). **Status**: approved for
-implementation.
+**Request**: [gm-request.md](gm-request.md) (2026-10-17, three messages). **Status**: implemented
+2026-10-17 (deployed; awaiting the dedicated Gemini key).
 
 **Fidelity review** (constitution XVI, `spec-fidelity` subagent, Mode 2): round 1 CHANGES (SC-003
 working target, no per-person rate limit, full-name instruction); round 2 CHANGES (GM-only roster

@@ -57,7 +57,7 @@ Each task is marked done only when its verification has run.
       the Story 7 rule; set it in `development-defaults.ini`.
 - [x] T019 `l7r/lookup/CLAUDE.md` (index, glossary refresh procedure, how to test), the mention
       `CLAUDE.md` deployment notes, and the root `CLAUDE.md` key paths.
-- [ ] T020 `make done` green; stop-work procedure.
+- [x] T020 `make done` green; stop-work procedure.
 
 ## Notes
 
