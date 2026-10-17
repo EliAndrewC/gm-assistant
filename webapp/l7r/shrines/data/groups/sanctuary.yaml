@@ -45,7 +45,7 @@ categories:
         ja: 神明造
         romaji: shinmei-zukuri
         text: >-
-          The oldest building form: a raised storehouse shape with a straight, unbent roof,
+          One of the oldest building forms: a raised storehouse shape with a straight, unbent roof,
           round pillars sunk in the earth and crossed finials at the ridge.
         appeal: >-
           Severe and archaic, it makes the shrine feel as if it has stood in the forest since the
@@ -67,8 +67,8 @@ categories:
         ja: 神籬
         romaji: himorogi
         text: >-
-          The kami dwells not in a house but in the living forest itself, in a place bound with
-          sacred rope and purified, under the open sky.
+          The kami is called not into a house but down into a space under the open sky, bound with
+          sacred rope and purified.
         wording:
           memorial:
             text: >-
@@ -116,8 +116,7 @@ categories:
         ja: 磐座
         romaji: iwakura
         text: >-
-          A great boulder long held to be a seat of the divine, ringed with rope and swept clean -
-          for Shoda, the stone where he sat to teach.
+          A great boulder long held to be a seat of the divine, ringed with rope and swept clean.
         appeal: >-
           The kami of this place is honored on a seat of stone older than any building, and those
           who come can sit before it.
@@ -126,6 +125,9 @@ categories:
             appeal: >-
               The spirit is called to a seat the dead knew in life, and those who knew them can sit
               before it as they once did.
+            text: >-
+              A boulder the dead knew in life, ringed with rope and swept clean - for Shoda, the
+              stone where he sat to teach.
           fortune:
             appeal: >-
               The Fortune is called to a seat of stone that has known this place for ages, and
@@ -161,13 +163,12 @@ categories:
 
   - key: ground
     label: The ground before it
-    prompt: How is the ground before the kami's dwelling laid?
+    prompt: How is the ground at the heart of the shrine laid?
     wording:
       memorial:
         prompt: How is the ground at the heart of the shrine laid?
       fortune:
-        prompt: >-
-          How is the ground before the Fortune's seat laid?
+        prompt: How is the ground where the Fortune is called laid?
     when: {form: [himorogi]}
     reference: gravel
     options:
@@ -237,8 +238,8 @@ categories:
         text: >-
           Trees felled from the shrine's own woods and sawn on the spot: straight, reddish and soft.
         appeal: >-
-          The shrine is literally made of the place it honors, from the very trees that stand around
-          it.
+          The shrine is made of the very trees that stand around it, and belongs to its ground as
+          they do.
         lines: [{contract: carpentry, koku: 2}]
       - key: hinoki
         label: Hinoki cypress
@@ -303,7 +304,7 @@ categories:
         ja: 銅板葺
         romaji: dobanbuki
         text: >-
-          Copper plates seamed over boards: bright as a new coin at first, then brown, and
+          Copper plates seamed over boards: bright as a polished mirror at first, then brown, and
           finally blue-green.
         appeal: >-
           That green is the mark of an old shrine, and it outlasts every other roof by
@@ -389,8 +390,16 @@ categories:
       - key: panels
         label: Relief panels
         text: >-
-          The transoms are carved in relief with pictures from the story the shrine keeps - for
-          Shoda, foxes among autumn grasses and a hermit under a tree.
+          The transoms are carved in relief with scenes from the legend of the place and its kami.
         appeal: >-
           Visitors stop to read them like a story, and children are told the tale panel by panel.
         lines: [{contract: finishing, koku: 20}]
+        wording:
+
+          fortune:
+            text: >-
+              The transoms are carved in relief with scenes from the tales of the Fortune.
+          memorial:
+            text: >-
+              The transoms are carved in relief with scenes from the life and death of the one
+              honored here - for Shoda, foxes among autumn grasses and a hermit under a tree.

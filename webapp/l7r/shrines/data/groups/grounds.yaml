@@ -26,15 +26,16 @@ categories:
         text: >-
           Two round posts and two straight crossbeams, nothing more.
         appeal: >-
-          The oldest torii, stark and serene, it frames the path like a brushstroke.
+          The oldest form of torii, the shrine gate, stark and serene, it frames the path like a
+          brushstroke.
         units: 1
       - key: myojin
         label: Upswept gate
         ja: 明神鳥居
         romaji: myojin torii
         text: >-
-          A top beam that curves up at the ends like a bow, over a straight tie beam, with a
-          tablet between. One of the most common gates.
+          A top beam that curves up at the ends like a bow, over a straight tie beam, with a plaque
+          bearing the shrine's name between them. One of the most common gates.
         units: 1.2
       - key: row
         label: A tunnel of small gates
@@ -61,7 +62,8 @@ categories:
       - key: vermilion
         label: Vermilion-painted wood
         text: >-
-          Timber painted the red-orange of shrine gates.
+          Timber painted vermilion, the red-orange long held to ward off evil and to preserve the
+          wood.
         appeal: >-
           The color shows through the trees long before the shrine does, a promise of what lies
           ahead.
@@ -178,27 +180,27 @@ categories:
         wording:
           memorial:
             appeal: >-
-              Its guardians are the living creatures of the place - and for one who loved them, as
-              Shoda died for its foxes, the guardians are real ones.
+              Its guardians are the living creatures of the place, which suits a shrine to one whose
+              life was bound up with them - for Shoda, the foxes he died defending.
       - key: komainu
         label: Stone lion-dogs
         ja: 狛犬
         romaji: komainu
         text: >-
-          A pair of stone lion-dogs on pedestals, one with its mouth open and one closed, sounding
-          the first and last syllables - the beginning and end of all things. One of the most common
-          guardians.
+          A pair of stone lion-dogs on pedestals, one with its mouth open to say 'a' and one closed
+          to say 'un', the first and last sounds of the sacred syllabary, standing for the beginning
+          and end of all things. One of the most common guardians.
         lines: [{contract: stonework, koku: 10, heavy: 8}]
       - key: foxes
         label: Stone foxes
         ja: 狐
         romaji: kitsune
         text: >-
-          A pair of stone foxes, messengers of Inari, one holding a jewel, one a key or a scroll
-          in its mouth.
+          A pair of stone foxes, messengers of Inari, Fortune of rice and of foxes, one holding a
+          jewel and one a key or a scroll in its mouth.
         appeal: >-
-          Inari's messengers keep watch here, and visitors dress them in red bibs in thanks for
-          favors granted.
+          Fitting wherever foxes are honored or Inari's favor is sought, and visitors dress them in
+          red bibs in thanks for favors granted.
         lines: [{contract: stonework, koku: 11, heavy: 8}]
       - key: wooden
         label: Carved wooden guardians
@@ -237,12 +239,15 @@ categories:
         ja: 常夜灯
         romaji: joyato
         text: >-
-          A single tall stone lantern at the foot of the path, meant to be lit every night.
+          A single tall stone lantern at the foot of the path, lit whenever someone tends the shrine
+          or keeps a night vigil there.
         appeal: >-
-          A beacon that tells anyone lost in the forest where the shrine stands.
+          Standing tall at the foot of the path, it marks the way in from far off, and on a lit
+          night it can be seen through the trees.
         lines: [{contract: stonework, koku: 5, heavy: 5}]
       - key: hanging
         label: Hanging metal lanterns
+        when: {form: {not: [himorogi]}}
         ja: 釣灯籠
         romaji: tsuridoro
         text: >-
@@ -267,8 +272,9 @@ categories:
         wording:
           memorial:
             appeal: >-
-              Running water is the purest of all - and for Shoda, who washed his hands in that
-              stream each morning, every visitor shares his morning.
+              Running water is the purest of all, and a stream the dead knew in life is a fitting
+              place to make oneself clean before calling on them - for Shoda, the stream where he
+              washed his hands each morning.
       - key: basin
         label: Stone basin with a bamboo spout
         ja: 手水鉢
@@ -284,8 +290,8 @@ categories:
         ja: 手水舎
         romaji: temizuya
         text: >-
-          A stone basin fed by a bamboo spout, sheltered by a small roof on four posts.
+          A small open-sided pavilion on four posts over a long stone trough, with a rack of dippers
+          along its edge.
         appeal: >-
-          It neither freezes over nor fills with leaves, and offers a dry pause on a rainy
-          climb.
+          It gives shelter from rain and snow and a dry place to pause on the climb.
         lines: [{contract: stonework, koku: 4, heavy: 4}, {contract: carpentry, koku: 6}, {contract: roofing, koku: 2}]

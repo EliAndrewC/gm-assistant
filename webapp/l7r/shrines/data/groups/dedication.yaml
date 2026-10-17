@@ -3,7 +3,7 @@ key: dedication
 label: Name and dedication
 intro: >-
   How the shrine is named, how its story is told to those who come after, and how the kami is
-  installed.
+  invited to dwell in it.
 wording:
   memorial:
     intro: >-
@@ -35,15 +35,16 @@ categories:
         ja: 扁額
         romaji: hengaku
         text: >-
-          The shrine's name brushed by a local hand, then carved and painted on a wooden tablet.
+          The shrine's name brushed by a local hand, then carved and painted on a wooden tablet over
+          the gate or the shrine's front.
         appeal: >-
-          It hangs over the gate where every visitor passes beneath the name.
+          It hangs where every visitor passes beneath the name.
         lines: [{contract: finishing, koku: 1}]
       - key: calligrapher
         label: Calligraphy by a noted master
         text: >-
           The name written by a calligrapher of reputation, then carved and gilded on a plaque over
-          the gate.
+          the gate or the shrine's front.
         appeal: >-
           Visitors who know brushwork will recognize the hand and stop to admire it.
         lines: [{contract: finishing, koku: 6}]
@@ -51,7 +52,7 @@ categories:
         label: In the founder's own hand
         text: >-
           The name written by the person who commissioned the shrine, and carved from their
-          brushwork on a plaque over the gate.
+          brushwork on a plaque over the gate or the shrine's front.
         appeal: >-
           Whatever the hand, it is theirs, and it ties the founder to the shrine forever.
         lines: [{contract: finishing, koku: 0.5}]
@@ -82,15 +83,15 @@ categories:
         ja: 縁起
         romaji: engi
         text: >-
-          The shrine's origin story (engi) brushed on a wooden board under a little roof,
-          repainted when it fades.
+          The shrine's origin story brushed on a wooden board under a little roof, repainted when it
+          fades.
         appeal: >-
           Each repainting is a chance to retell the story, so it never grows stale.
         lines: [{contract: carpentry, koku: 1}, {contract: finishing, koku: 0.5}]
 
   - key: rite
     label: Consecration
-    prompt: How is the kami installed in the shrine?
+    prompt: How is the kami invited into the shrine?
     wording:
       memorial:
         prompt: How is the shrine consecrated?
@@ -102,42 +103,41 @@ categories:
       - key: monk
         label: A dedication by the country monk
         text: >-
-          The district's country monk comes out, purifies the ground, says the words and moves
-          the sacred object into place.
+          The district's country monk comes out, purifies the ground, says the words and seals the
+          sacred object chosen for the shrine into place.
         wording:
           memorial:
             text: >-
               The district's country monk comes out, purifies the ground, says the words and calls
-              the spirit of the dead to the place where the remains lie.
+              the spirit of the dead to the shrine.
             appeal: >-
-              A rite among the people who knew the dead, led by a monk they trust.
+              A rite among the locals who will keep the shrine, led by a monk they trust.
         appeal: >-
-          A rite performed by the monk who already tends the district's spirits, among the locals
-          who will keep the shrine.
+          A rite performed by the monk who already tends the district's shrines, among the locals
+          who will keep this one.
         lines: [{contract: rites, koku: 1}]
       - key: full
         label: A night enshrinement
         text: >-
-          Priests come out from the county's shrine for a night rite: the sacred object is
-          carried in darkness, behind white curtains, to drums and the calling-out of the kami.
+          Priests come out from the county's shrine for a night rite: the sacred object chosen for
+          the shrine is carried in darkness, behind white curtains, to drums and the calling-out of
+          the kami.
         appeal: >-
           Those who witness it never forget the moment the kami arrives in the dark.
         wording:
           memorial:
             text: >-
-              Priests come out from the county's shrine for a night rite: the sacred object is
-              carried in darkness, behind white curtains, to drums and the calling-out of the
-              spirit.
+              Priests come out from the county's shrine for a night rite in darkness, behind white
+              curtains, to drums and the calling-out of the spirit.
             appeal: >-
-              Those who witness it never forget the moment the spirit is called home in the dark.
+              Those who witness it never forget the moment the spirit answers the call in the dark.
           fortune:
             text: >-
-              Priests come out from the county's shrine for a night rite: the sacred object is
-              carried in darkness, behind white curtains, to drums and the calling-out of the
-              Fortune.
+              Priests come out from the county's shrine for a night rite: the sacred object chosen
+              for the shrine is carried in darkness, behind white curtains, to drums and the
+              calling-out of the Fortune.
             appeal: >-
-              Those who witness it never forget the moment the Fortune's presence arrives in the
-              dark.
+              Those who witness it never forget the moment the Fortune is called in the dark.
         lines: [{contract: rites, koku: 4}]
       - key: festival
         label: A pacification festival

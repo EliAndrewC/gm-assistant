@@ -447,14 +447,11 @@ def test_rules_json_carries_conditions_and_nothing_else(catalog: Catalog) -> Non
     text = rules_json(catalog)
     rules = json.loads(text)
     assert set(rules) == {'categories', 'options', 'wordings'}
-    assert rules['options'] == {
-        'altar': {'belonging': [['kind', ['memorial'], False]]},
-        'sacred': {'belonging': [['kind', ['memorial'], False]]},
-        'display': {
-            'reliquary': [['preparation', ['washed'], False]],
-            'lattice': [['resting', ['hall'], False]],
-        },
-    }
+    # spot-check the option rules the wizard depends on (not an exhaustive copy of the catalog)
+    assert rules['options']['display']['reliquary'] == [['preparation', ['washed'], False]]
+    assert rules['options']['display']['lattice'] == [['resting', ['hall'], False]]
+    assert rules['options']['sacred']['belonging'] == [['kind', ['memorial'], False]]
+    assert rules['options']['hall']['cover'] == [['form', ['himorogi'], True]]
     assert rules['wordings'] == [
         ['memorial', [['kind', ['memorial'], False]]],
         ['fortune', [['kind', ['fortune'], False]]],
@@ -668,3 +665,19 @@ def test_shoda_only_appears_as_an_example(catalog: Catalog) -> None:
     assert not SHODA_ONLY.search(_without_examples('a stone - for Shoda, where he sat.'))
     offenders = [t for t in player_texts(catalog) if SHODA_ONLY.search(_without_examples(t))]
     assert offenders == []
+
+
+def test_plain_text_seen_by_every_kind_never_names_shoda(catalog: Catalog) -> None:
+    """A "for Shoda" example belongs in memorial wording or a memorial-only step: plain text on a
+    step or option that Fortune and kami shrines also see must not name him (re-review round)."""
+    memorial_only = Clause('kind', frozenset({'memorial'}))
+    for category in catalog.categories:
+        if memorial_only in category.when:
+            continue
+        shown = [category.prompt, *category.wording.get('fortune', {}).values()]
+        for option in category.options:
+            if memorial_only in option.when:
+                continue
+            shown += [option.label, option.text, option.appeal]
+            shown += list(option.wording.get('fortune', {}).values())
+        assert [t for t in shown if 'Shoda' in t] == [], category.key

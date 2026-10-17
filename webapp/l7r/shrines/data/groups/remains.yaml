@@ -4,9 +4,9 @@
 key: remains
 label: The remains
 intro: >-
-  The remains are brought out from wherever they were first laid - for Shoda, a pauper's mound, and
-  the salt in which his head was kept - by monks, and by burakumin, who handle the dead. What is
-  done with them after that is for the founder to decide.
+  Monks, and the burakumin who handle the dead, bring the remains out from wherever they were first
+  laid - for Shoda, a pauper's mound, and the salt in which his head was kept. What is done with
+  them after that is for the founder to decide.
 categories:
   - key: heart
     label: The heart of the shrine
@@ -34,13 +34,14 @@ categories:
           who come, without asking any ministry's leave; the remains rest apart in a tomb of their
           own.
         appeal: >-
-          The shrine belongs wholly to the people who honor the dead, and answers to no one else.
+          The rites stay in the hands of those who knew the dead, with no priest sent from outside
+          to keep them.
       - key: bones
         label: The remains themselves
         text: >-
-          The shrine is built around the remains, as halls are built around the relics of revered
-          priests; visitors pray before the bones themselves rather than before a spirit called by
-          rites.
+          The remains themselves are the heart of the shrine, as halls are raised over the relics of
+          revered priests; visitors pray before the bones rather than before a spirit called by
+          rites, and those who come keep what rites there are.
         appeal: >-
           Every visitor prays in the presence of what is left of the dead.
 
@@ -67,8 +68,8 @@ categories:
       - key: wrapped
         label: Laid to rest as they are
         text: >-
-          The remains are lifted as they lie, with the ash and earth around them, wrapped in white
-          cloth with incense, and never handled again.
+          The remains are lifted as they lie, with the ash and earth around them, and wrapped in
+          white cloth with incense; the bones themselves are never picked clean or washed.
         appeal: >-
           The dead are disturbed as little as possible, and every trace of them leaves the place
           they were first laid.
@@ -94,8 +95,9 @@ categories:
         ja: 首塚
         romaji: kubizuka
         text: >-
-          If the head was severed - as for a bounty or a trophy - it is buried apart under its own
-          mound and stone, as the heads of those who died by violence have long been buried.
+          Where the head was severed - as for a bounty or a trophy - it is buried apart under its
+          own mound and stone within the shrine grounds, as the heads of those who died by violence
+          have long been buried.
         appeal: >-
           Long held the surest way to calm a spirit that met a hard end, and a second place for
           those who honor the dead to pray.
@@ -128,6 +130,7 @@ categories:
     options:
       - key: inner
         label: A stone coffer in the innermost precinct
+        when: {heart: {not: [bones]}}
         ja: 奥の院
         romaji: oku-no-in
         text: >-
@@ -196,8 +199,8 @@ categories:
         label: The chest behind a lattice door
         when: {resting: [hall]}
         text: >-
-          The lacquered chest in the mortuary hall stands behind a latticed door, glimpsed but never
-          touched.
+          The lacquered chest that holds the remains stands behind a latticed door, so that anyone
+          who kneels can see where the dead lie, though the chest is never opened.
         appeal: >-
           The dead are always present to anyone who kneels and looks, yet always at rest.
         lines: [{contract: carpentry, koku: 1}]
