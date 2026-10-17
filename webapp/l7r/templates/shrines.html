@@ -130,7 +130,7 @@
       </div>
     {% endif %}
 
-    <div class="shrine-design wizard" data-wizard>
+    <div class="shrine-design wizard" data-wizard data-phases="{{ catalog.phases|length }}">
       <div class="wizard-progress" aria-live="polite">
         <div class="wizard-progress__text">
           <span class="wizard-progress__chapter" data-chapter-label></span>
@@ -144,7 +144,7 @@
         <p class="shrine-notice" role="status">{{ n }} choice{{ 's' if n > 1 }} in this link could not be restored and {{ 'were' if n > 1 else 'was' }} reset: {% for key in design.dropped %}{{ catalog.category(key).label }}{{ ', ' if not loop.last }}{% endfor %}.</p>
       {% endif %}
 
-      <section class="wizard-step" id="shrine-step-name" data-step="name" data-chapter="The shrine">
+      <section class="wizard-step" id="shrine-step-name" data-step="name" data-chapter="The shrine" data-phase="1">
         <h2 class="wizard-step__title">Name the shrine</h2>
         <label class="shrine-text">
           <span class="shrine-text__label">Name of the shrine</span>
@@ -159,7 +159,7 @@
         {% for category in group.categories %}
           {% set moot = category.key in design.voided %}
           {% set chosen = design.choices.get(category.key) %}
-          <section class="wizard-step" id="shrine-step-{{ category.key }}" data-step="{{ category.key }}" data-chapter="{{ group.label }}">
+          <section class="wizard-step" id="shrine-step-{{ category.key }}" data-step="{{ category.key }}" data-chapter="{{ group.label }}" data-phase="{{ catalog.phase_number(group.key) }}">
             {% if loop.first %}<p class="wizard-step__chapter-intro">{{ t(group, 'intro') }}</p>{% endif %}
             <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}" {% if moot %}disabled{% endif %}>
               <legend class="shrine-cat__legend">
@@ -202,7 +202,7 @@
         {% endfor %}
       {% endfor %}
 
-      <section class="wizard-step shrine-share" id="shrine-step-review" data-step="review" data-chapter="Your shrine" aria-labelledby="shrine-share-title">
+      <section class="wizard-step shrine-share" id="shrine-step-review" data-step="review" data-chapter="Your shrine" data-phase="{{ catalog.phases|length }}" aria-labelledby="shrine-share-title">
         <h2 class="wizard-step__title" id="shrine-share-title" data-name-echo>{{ design.text.get('shrine_name', 'Your shrine') }}</h2>
         <p class="shrine-share__lede" data-open-note{% if not missing %} hidden{% endif %}><strong data-open-count>{{ missing }} choice{{ 's' if missing != 1 }} still open.</strong> Select a line marked "choose" to go back to it.</p>
         <p class="shrine-share__lede">Every choice in one link. Send it to your GM; opening it again brings the design back exactly. Select any line to go back and change it.</p>

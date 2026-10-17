@@ -65,9 +65,6 @@
         var failing = (rules.categories[key] || []).filter(function (c) { return !holds(c, choices); })[0];
         fs.classList.toggle('is-moot', !!failing);
         fs.disabled = !!failing;
-        // "Skipped" only when an actual choice ruled the step out; a step waiting on an earlier
-        // step that is still unanswered is just not in play yet.
-        fs.dataset.skipped = failing && choices[failing[0]] !== undefined ? '1' : '';
         if (failing) return;
         var optionRules = rules.options[key] || {};
         fs.querySelectorAll('input[type=radio]').forEach(function (input) {
@@ -100,8 +97,7 @@
 
     // FR-040: the same simulation as design.option_effects(). For each option on a step, resolve
     // the wizard with it picked and with the step unanswered; steps that only then appear and
-    // later options only then offered are what it "makes possible", and the steps still to come
-    // after it are the count on its tag.
+    // later options only then offered are what it "makes possible"; the tag counts them (FR-041).
     var model = Array.prototype.map.call(form.querySelectorAll('fieldset.shrine-cat'), function (fs) {
       return {
         key: fs.dataset.cat,
@@ -151,7 +147,6 @@
       var base = evaluate(raw);
       var baseOffered = offeredSet(base);
       var keys = model.map(function (st) { return st.key; });
-      var later = keys.slice(keys.indexOf(key) + 1);
       var cells = fs.querySelectorAll('.shrine-opt-cell');
       var any = false;
       cells.forEach(function (cell) {
@@ -170,13 +165,15 @@
           made.push(shownText(title));
         });
         // counted as the header counts: the final summary step included
-        var remaining = later.filter(function (k) { return !ev.inactive[k]; }).length + 1;
         var effect = cell.querySelector('[data-effect]');
         var has = made.length > 0;
         any = any || has;
         effect.classList.toggle('is-empty', !has);
         effect.tabIndex = has ? 0 : -1;
-        effect.querySelector('[data-effect-tag]').textContent = has ? 'If chosen: ' + remaining + ' more step' + (remaining === 1 ? '' : 's') : '';
+        // FR-041: count the choices that exist because of this option
+        var steps = keys.filter(function (k) { return base.inactive[k] && !ev.inactive[k]; }).length;
+        var n = steps || made.length;
+        effect.querySelector('[data-effect-tag]').textContent = has ? n + ' custom choice' + (n === 1 ? '' : 's') : '';
         var tip = effect.querySelector('[data-effect-tip]');
         tip.innerHTML = '';
         if (has) {
@@ -311,15 +308,8 @@
       var list = live();
       var index = list.indexOf(step);
       wizard.querySelector('[data-chapter-label]').textContent = step.dataset.chapter;
-      // Count only steps an actual choice removed (resolve() marks them); steps that are not
-      // in play are simply absent, so step 1 never claims something was already skipped.
-      var skipped = steps.filter(function (s) {
-        var fs = s.querySelector('fieldset.shrine-cat');
-        return fs && fs.disabled && fs.dataset.skipped === '1';
-      }).length;
-      var total = list.length;
-      wizard.querySelector('[data-count]').textContent = 'Step ' + (index + 1) + ' of ' + total +
-        (skipped ? ' \u00b7 ' + skipped + ' skipped' : '');
+      // FR-042: a fixed number of phases, never a step count that moves with the choices.
+      wizard.querySelector('[data-count]').textContent = 'Part ' + step.dataset.phase + ' of ' + wizard.dataset.phases;
       document.documentElement.classList.toggle('wizard-deep', step.dataset.step !== 'name');
       wizard.querySelector('[data-bar]').style.width = ((index + 1) / list.length * 100) + '%';
       backBtn.style.visibility = index > 0 ? 'visible' : 'hidden';

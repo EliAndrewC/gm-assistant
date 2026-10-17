@@ -107,3 +107,15 @@ Thanks, much better.  Now, a formatting thing: when we have a middle block like
 > Makes possible later: A table that belonged to the dead, Something that belonged to the dead.
 
 that I think instead of having that text in the middle of the block, we should have like a label or something above the box indicating like how many more steps there will be if we select this option. And then I think that if there's one choice that makes certain things possible later, then kind of like hovering over that should pull up a tooltip that explains like what is made possible later by selecting this option. Does that make sense?
+
+---
+
+# Message 8, verbatim (2026-10-17)
+
+Context: the session had pitched five labels for the tag (unlocks / of its own / opens / name the steps / N steps in all) and recommended "Unlocks N steps".
+
+Thanks, that's great. However, I now realize that the wording could use a little work, because as worded now, it makes it look like there are 26 extra steps if we select the memorial where remains are interred. [...] (the request for label pitches; see the conversation)
+
+I guess along the same lines, I don't think it's correct to say "5 skipped" on the top right counter. Because it's not that we skipped them, it's that they just didn't apply. Like, if I walk around my house to go from my front yard to my backyard, taking the left gate, I didn't skip the right gate. I just didn't take that one. And honestly, trying to give a single denominator here is probably bad, but I wonder if the way that we do this is to break this into like phases, where there's always the same number of phases, because extra steps get like added into whatever phase it is that like the extra steps are added in, and then that way the denominator kind of never changes and we don't have to list like a number that was skipped.
+
+I do like "unlocks", but it's not quite right, and nor is "opens", so I'm a little tempted to do the X steps in all option, but the problem is I think that that's going to be variable as well, because I think we will end up with, after making more iterations and work, kind of different steps that affect future steps, and so we don't know how many total steps there are. Why don't we say "5 custom choices" which to be honest is probably more descriptive than the word steps anyway.
