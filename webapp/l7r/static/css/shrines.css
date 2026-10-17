@@ -118,7 +118,8 @@
 }
 
 .shrine-cat.is-moot .shrine-cat__moot { display: block; }
-.shrine-cat.is-moot .shrine-opts { opacity: 0.4; }
+/* A category that does not apply collapses to its heading and the note - no screens of dead cards. */
+.shrine-cat.is-moot .shrine-opts { display: none; }
 
 /* A choice in a category that does not apply is not part of the design: drop its selected look. */
 .shrine-cat.is-moot .shrine-opt input:checked + .shrine-opt__body {
@@ -329,6 +330,8 @@
 
 @media (max-width: 520px) {
   .shrine-share__row { flex-direction: column; }
+  /* In a column, flex: 1 would set the box's height from the flex basis and clip the last line. */
+  .shrine-share__url { flex: none; }
 }
 
 /* --- GM ledger --------------------------------------------------------- */
@@ -347,8 +350,30 @@
   padding: 1.1rem 1.2rem 1.3rem;
 }
 
+/* On narrow screens the ledger is a normal block above the design; its totals stick under the nav
+   while the ledger is on screen, so "Tadashi keeps" stays visible while rolls go in below. */
 @media (max-width: 1100px) {
   .shrine-ledger { position: static; max-height: none; overflow: visible; }
+  .shrine-totals {
+    position: sticky;
+    top: 3.6rem;
+    z-index: 5;
+    box-shadow: 0 2px 6px var(--shadow-ink);
+  }
+}
+
+/* A fade at the bottom of the wide, internally scrolling ledger says there is more below. */
+@media (min-width: 1101px) {
+  .shrine-ledger::after {
+    content: '';
+    position: sticky;
+    bottom: -1.3rem;
+    display: block;
+    height: 2.2rem;
+    margin: -2.2rem -1.2rem -1.3rem;
+    background: linear-gradient(to bottom, rgba(236, 223, 183, 0), var(--paper-deep));
+    pointer-events: none;
+  }
 }
 
 .shrine-ledger__title {
@@ -516,7 +541,8 @@
 
 .shrine-summary span {
   font-variant-caps: all-small-caps;
-  letter-spacing: 0.12em;
-  color: var(--ink-faded);
+  font-size: 1.08em;
+  letter-spacing: 0.06em;
+  color: var(--vermillion-deep);
   margin-right: 0.35em;
 }

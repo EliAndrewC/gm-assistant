@@ -118,6 +118,8 @@
     if (share) share.value = window.location.origin + share.dataset.base + '?' + designQuery();
     fitShare();
     window.addEventListener('resize', fitShare);
+    window.addEventListener('load', fitShare);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitShare);
   }
 
   if (document.readyState === 'loading') {
