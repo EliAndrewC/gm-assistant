@@ -1,6 +1,6 @@
 # Feature 217: void points an NPC spends in a conversation, kept in the GM-only notes
 
-**Request**: [gm-request.md](gm-request.md) (2026-10-17). **Status**: specified.
+**Request**: [gm-request.md](gm-request.md) (2026-10-17). **Status**: implemented 2026-10-17.
 
 ## Why
 
@@ -19,14 +19,20 @@ conversations already used the NPC's void points.
 watcher's next write, Otsuki's GM-only notes carry:
 
     Void points spent:
-    - 2026-10-17 1 void point on tact 34 - confrontation on the Imperial road
+    - 2026-10-17 1 void point on tact - confrontation on the Imperial road
 
 `sincerity(vp * 2)` in the same conversation adds
-`- 2026-10-17 2 void points on sincerity 41 - confrontation on the Imperial road`.
+`- 2026-10-17 2 void points on sincerity - confrontation on the Imperial road`.
 
-**Acceptance**: both spend forms (called `vp`, and `[v]` at the disagreement prompt) produce an
-entry; the entry names the date the conversation opened, the count, the skill and the roll's
-total, and the conversation title when there is one (no ` - ...` tail when there is none).
+The `[v]` answer comes in two wordings. "This roll spent a void point" is a spend on the roll
+just made. "The previous roll spent 2 void points" says the roll the record was read from spent
+them; that roll may be this conversation's or an older one's, so its entry says so:
+`- 2026-10-17 2 void points on an earlier tact roll - confrontation on the Imperial road`.
+
+**Acceptance**: both spend forms (called `vp`, and either `[v]` wording) produce an entry; the
+entry names the date the conversation opened, the count, the skill, and the conversation title
+when there is one (no ` - ...` tail when there is none). A conversation with no player rolls but
+a spend still writes the block.
 
 ### Story 2 - the block is a log across conversations (P1)
 
@@ -43,26 +49,19 @@ created for a conversation that spent none.
 The GM answers `[m]` (or Ctrl-C) at the disagreement prompt for a `tact(5, 3, vp)` roll: the roll
 is a mistake and will be rolled again. That roll's void point is NOT logged; the re-roll's is.
 
-### Story 4 - the GM sees the total at the close (P2)
-
-`end_conversation()` prints, when the NPC spent any, `Otsuki spent 3 void points this
-conversation (GM-only notes).` A conversation with no player rolls but a spend still writes the
-block.
-
 ### Edge cases
 
-- The sincerity roll that spends void stays in `Hidden rolls:` as well; the void block is about
-  void, not about hiding the number, so its total appears in both GM-only places. Neither reaches
-  the bio.
-- `abandon_conversation()` writes nothing, as today; spends made in an abandoned conversation are
-  thrown away with it (it is the wrong-NPC exit).
-- A spend's total changes after it is logged (`_ + 5`, an oppose penalty): the entry shows the
-  roll's current total, re-rendered each write.
+- A sincerity roll that spends void appears in both `Hidden rolls:` and `Void points spent:`;
+  neither reaches the bio.
+- `abandon_conversation()` adds no final flush and no rollback: void lines the watcher has already
+  written stay, exactly as `Hidden rolls:` and `NPC numbers:` lines do today.
 
 ## Requirements
 
-- **FR-001** Every GM roll whose `void_points` is set while a conversation is open is noted on
-  that conversation (both spend forms).
+- **FR-001** Every void spend the GM marks while a conversation is open is noted on that
+  conversation: the called `vp` form, the `[v]` "This roll spent ..." answer, and the `[v]` "The
+  previous roll spent ..." answer (count = `abs(found.void_points)`, entry worded "on an earlier
+  <skill> roll" per Story 1).
 - **FR-002** The GM-only notes carry a `Void points spent:` block with one entry per such roll
   that is not marked a mistake, in the format of Story 1.
 - **FR-003** The block is written by the same tick that writes `NPC numbers:` and `Hidden rolls:`
@@ -70,9 +69,19 @@ block.
   write.
 - **FR-004** A conversation replaces only its own earlier entries; other entries are untouched
   (Story 2).
-- **FR-005** `end_conversation()` reports the conversation's void total when it is non-zero.
 
 Out of scope (not asked): tracking void recovery, the NPC's void maximum, or a REPL syntax for
 spending void outside a roll.
 
 ## Review history
+
+- **Round 1 (spec-fidelity, 2026-10-17): CHANGES REQUIRED.** Struck an unrequested close-time
+  console report (old FR-005 / Story 4) and the roll's total in each entry (the approved line was
+  date, title, skill and count); corrected the abandon edge case, which implied a rollback. Judged
+  the mistake carve-out (Story 3) LEGITIMATE: `[m]` means the roll is redone, so its void point was
+  never spent, matching `hidden._usable`. Round 1 also covered both spend forms; the "previous
+  roll" `[v]` wording is now spelled out in Story 1 for round 2.
+- **Round 2 (spec-fidelity, 2026-10-17): CHANGES REQUIRED.** Round 1 fixes confirmed. Logging the
+  "previous roll" answer judged WITHIN the request (it is the only point an unmarked spend comes to
+  light). FR-001 reworded to name all three spend forms, since the old wording ("whose
+  `void_points` is set") missed the previous-roll branch, which never sets it.

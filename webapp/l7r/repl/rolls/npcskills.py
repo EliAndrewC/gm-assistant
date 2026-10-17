@@ -43,7 +43,7 @@ import importlib
 from collections.abc import Callable
 
 from l7r.repl import dice, gmrolls
-from l7r.repl.rolls import menu, npcnumbers, oppose
+from l7r.repl.rolls import menu, npcnumbers, oppose, voidspent
 from l7r.repl.rolls.models import Conversation
 from l7r.repl.rolls.skills import advanced_skills, load_skills, rules_skills, skill_rings
 
@@ -170,9 +170,12 @@ def resolve(
         print(f'  record corrected: {ring} {reading.ring}, {reading.skill} {reading.rank}')
     elif found.void_points > 0:
         entry.void_points = found.void_points
+        voidspent.note(conv, entry, found.void_points)
         npcnumbers.fill(conv.numbers, reading_without(reading, found.void_points))
         print('  noted - the record is unchanged.')
     else:
+        # The roll the record came from spent them; logged as an earlier roll (217).
+        voidspent.note(conv, entry, found.void_points)
         npcnumbers.accept(conv.numbers, reading)
         print(f'  record corrected: {reading.ring_name.capitalize()} {reading.ring}')
 
@@ -374,6 +377,7 @@ class SkillTag:
         total = dice.xky(rolled, kept, reroll=rank > 0)
         total.entry.tagged = self.name
         total.entry.void_points = spent
+        voidspent.note(conv, total.entry, spent)
         if rank == 0 and self.advanced:
             total = total + -10
             print('  -10: an advanced skill at rank 0')

@@ -41,6 +41,7 @@ from l7r.repl.rolls import (
     oppose,
     rules,
     sheet,
+    voidspent,
 )
 from l7r.repl.rolls.models import Conversation, RecordingRule, Roll
 from l7r.repl.rolls.parse import parse_message
@@ -584,8 +585,13 @@ def _tick(
     # Feature 207: the GM-only half. It can change with no player roll at all - a
     # tagged `xky` records a rank - so it is weighed beside the bio, not under it.
     secret = hidden.entries(conv)
+    spends = voidspent.entries(conv)
     bio_changed = bool(lines) and lines != conv.written
-    notes_changed = conv.numbers != conv.numbers_written or secret != conv.hidden_written
+    notes_changed = (
+        conv.numbers != conv.numbers_written
+        or secret != conv.hidden_written
+        or spends != conv.void_written
+    )
     if not bio_changed and not notes_changed:
         return False
     # `debounce > 0` guards the guard: end_conversation and the exit hook pass 0.0
@@ -602,7 +608,7 @@ def _tick(
         update(conv.npc_id, bio=biomod.rewrite(body, conv.written, lines))
         conv.written = lines
     if notes_changed:
-        _write_notes(conv, update, get_body, secret)
+        _write_notes(conv, update, get_body, secret, spends)
     conv.written_at = clock()
     if announce and bio_changed:
         for line in lines:
@@ -615,6 +621,7 @@ def _write_notes(
     update: Callable[..., object],
     get_body: Callable[[str], Mapping[str, object] | None],
     secret: tuple[str, ...],
+    spends: tuple[str, ...] = (),
 ) -> None:
     """The GM-only half of a tick's write, under the notes lock and from a FRESH read:
     the GM's thread may have recorded a Discern Honor answer in these same notes
@@ -627,13 +634,16 @@ def _write_notes(
         # first because the GM's thread can tag a roll while this one is writing.
         numbers = dict(conv.numbers)
         notes = npcnumbers.render(str(record.get('game_master_info') or ''), numbers)
+        notes = hidden.rewrite(notes, conv.hidden_written, secret)
+        notes = hidden.rewrite(notes, conv.void_written, spends, voidspent.HEADING)
         try:
-            update(conv.npc_id, game_master_info=hidden.rewrite(notes, conv.hidden_written, secret))
+            update(conv.npc_id, game_master_info=notes)
         except Exception as exc:  # noqa: BLE001 - reported, never fatal to the bio write
             say(f"  ! could not update {conv.npc_name}'s GM-only notes: {exc}")
         else:
             conv.numbers_written = numbers
             conv.hidden_written = secret
+            conv.void_written = spends
 
 
 def announce_comparison(conv: Conversation, roll: Roll) -> None:

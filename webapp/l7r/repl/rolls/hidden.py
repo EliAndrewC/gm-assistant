@@ -43,6 +43,7 @@ call - the default until they mark a detection.
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -268,10 +269,10 @@ def entries(conv: Conversation) -> tuple[str, ...]:
     return tuple(out)
 
 
-def _split(gm_info: str) -> tuple[list[str], int, int]:
+def _split(gm_info: str, heading: str) -> tuple[list[str], int, int]:
     lines = gm_info.replace('\r\n', '\n').split('\n')
     try:
-        start = next(i for i, text in enumerate(lines) if text.strip() == HEADING)
+        start = next(i for i, text in enumerate(lines) if text.strip() == heading)
     except StopIteration:
         return lines, -1, -1
     end = start + 1
@@ -280,22 +281,34 @@ def _split(gm_info: str) -> tuple[list[str], int, int]:
     return lines, start, end
 
 
-def rewrite(gm_info: str, previous: Sequence[str], current: Sequence[str]) -> str:
+def rewrite(
+    gm_info: str, previous: Sequence[str], current: Sequence[str], heading: str = HEADING
+) -> str:
     """Swap this conversation's earlier entries for its current ones.
 
     Entries from OLDER conversations stay exactly where they are: the block is a
     log across sessions, and this conversation only ever owns the lines it wrote.
-    A block left empty loses its heading too.
+    A block left empty loses its heading too. `heading` lets another GM-only log
+    share the logic - the `Void points spent:` block (feature 217).
     """
-    lines, start, end = _split(gm_info)
+    lines, start, end = _split(gm_info, heading)
     if start < 0:
         if not current:
             return gm_info
         while lines and not lines[-1].strip():
             lines.pop()
-        return '\n'.join([*lines, '', HEADING, *current] if lines else [HEADING, *current])
-    gone = set(previous)
-    kept = [text for text in lines[start + 1 : end] if text not in gone]
-    block = [HEADING, *kept, *current] if kept or current else []
+        return '\n'.join([*lines, '', heading, *current] if lines else [heading, *current])
+    # Remove this conversation's earlier lines as a MULTISET, newest first: they are
+    # always the block's tail, and an older conversation's line can read identically
+    # (same day, same untitled spend). A set would delete every copy (feature 217).
+    gone = Counter(previous)
+    kept = []
+    for text in reversed(lines[start + 1 : end]):
+        if gone[text] > 0:
+            gone[text] -= 1
+        else:
+            kept.append(text)
+    kept.reverse()
+    block = [heading, *kept, *current] if kept or current else []
     lines[start:end] = block
     return '\n'.join(lines)

@@ -45,6 +45,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `npcskills.py` | `tact`, `sincerity`, ... at the prompt: `xky(5, 3) - tact` tags a roll, `tact()` / `tact(2)` / `tact(5, 3)` / `tact(vp)` roll for the NPC. The disagreement prompt, where Ctrl-C is an ANSWER (the roll was a mistake). `acting(2)` and `history(3)` record and never roll. |
 | `lines.py` | `new_line_of_questioning`, `grilling`, `detected`, and `cancel_grilling` / `cancel_detected` (feature 208). Replaces 206's join-or-new menu. |
 | `hidden.py` | PURE. The `Hidden rolls:` block in the GM-only notes - each line's Sincerity roll, each acting roll's opposing investigation - and the advisory who-won arithmetic. **Nothing here may reach the bio**; `tests/test_rolls_hidden.py` renders both halves from one conversation and checks. |
+| `voidspent.py` | PURE. Feature 217: the `Void points spent:` block in the GM-only notes - one line per void point the GM marks in a conversation (`tact(vp)`, or either `[v]` answer), so a later fight starts the NPC with what they have left. Section below. |
 | `oppose.py` | PURE. Feature 208: a player's Oppose Social / Oppose Knowledge taxes the NPC's later Air / Water rolls. The penalty in effect is DERIVED from the conversation's rolls (highest live oppose roll at or before the moment - never stored, never summed); `for_line` is the one retroactive case; `settle` re-prices tagged GM rolls when an oppose roll is collected late. |
 | `menu.py` | Feature 210: the arrow-key list every CHOICE prompt uses (`ask_choice`). `Picker` is the pure state and drawing; `choose` is the key loop; `interactive(ask)` decides whether a prompt is a menu at all. An `Option.key` is the answer the GM would have TYPED, which is why call sites have no second code path. |
 | `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
@@ -442,6 +443,29 @@ an empty LOADING message until its dice card is edited in; a poll in that window
 cursor past it and lose the roll. `conversation.settled` stops a channel at its first loading
 message, and gives up on one older than an interaction token lives (15 minutes).
 
+## Feature 217: the void points an NPC spent are logged
+
+```
+Void points spent:
+- 2026-10-17 1 void point on tact - confrontation on the Imperial road
+- 2026-10-17 2 void points on an earlier tact roll - confrontation on the Imperial road
+```
+
+The GM (2026-10-17): *"if a fight breaks out, then I have recorded all of the conversations in
+which the NPC has spent void points"*. Before, a marked void point lived only on the `GmRoll`, to
+keep the extra die from reading as a bigger ring, and was written nowhere. Now `npcskills` notes
+each one on `Conversation.void_spends` at the three places the GM marks one - the called `vp`, the
+`[v]` "This roll spent" answer and the `[v]` "The previous roll spent" answer (an EARLIER roll,
+possibly an older conversation's, which is why its line says so) - and the tick writes the block
+beside `Hidden rolls:`, with the same `hidden.rewrite`. Date, count, skill and title only: the
+roll's total was struck by the fidelity review. **A roll marked a MISTAKE spent nothing** (it is
+rolled again; filtered at render time). `abandon_conversation()` neither flushes nor rolls back,
+as for the other GM-only blocks.
+
+`hidden.rewrite` removes the conversation's earlier lines as a MULTISET from the block's tail. It
+used a set, which deleted every identical copy - an older conversation's same-day untitled line
+included. Spec: `specs/217-void-spent-log/`.
+
 ## A title divides one conversation from the next
 
 `begin_conversation("Otsuki", "confrontation on the Imperial road")` (GM 2026-09-29) writes
@@ -514,7 +538,7 @@ deleted rather than left to drift.
     tests/test_rolls_npcskills.py tests/test_rolls_lines.py tests/test_rolls_hidden.py \
     tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py tests/test_rolls_oppose.py \
     tests/test_rolls_menu.py tests/test_rolls_discern.py tests/test_rolls_boost.py \
-    tests/test_rolls_sincerity_kept.py )
+    tests/test_rolls_sincerity_kept.py tests/test_rolls_voidspent.py )
 ```
 
 `test_rolls_keys.py` drives a REAL pseudo-terminal. The undo keys must be written to it AFTER it is

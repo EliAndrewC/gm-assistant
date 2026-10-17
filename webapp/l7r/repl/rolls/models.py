@@ -206,6 +206,19 @@ class Line:
 
 
 @dataclass(slots=True)
+class VoidSpend:
+    """One void point answer the GM gave while a conversation was open (feature 217).
+
+    `earlier` is the disagreement prompt's "The previous roll spent N": the roll the
+    record was read from spent them, not `entry`, so `entry` only says which skill.
+    """
+
+    entry: GmRoll
+    count: int
+    earlier: bool = False
+
+
+@dataclass(slots=True)
 class DiscernEntry:
     """One PC's Discern Honor answer for one conversation (feature 212).
 
@@ -292,6 +305,12 @@ class Conversation:
     sincerity_rolls: list[tuple[GmRoll, int | None]] = field(default_factory=list)
     #: The `GmRoll.seq` of each of those the watcher has already told the GM about.
     sincerity_announced: set[int] = field(default_factory=set)
+    #: Feature 217. Every void point the GM marked while this conversation was open -
+    #: `tact(vp)` or the `[v]` answer - and the `Void points spent:` entries last
+    #: written for them. The GM (2026-10-17): before a fight they need *"all of the
+    #: conversations in which the NPC has spent void points"*.
+    void_spends: list[VoidSpend] = field(default_factory=list)
+    void_written: tuple[str, ...] = ()
 
     def planned(self, pc: str) -> Record | None:
         """What `pc` (a given name, any case) is told in this conversation, if decided."""
