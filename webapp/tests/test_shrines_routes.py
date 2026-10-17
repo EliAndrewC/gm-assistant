@@ -194,10 +194,12 @@ def test_kind_step_comes_right_after_the_name(root: Root) -> None:
 
 def test_alt_wording_renders_and_switches(root: Root) -> None:
     plain = root.shrines(kind='kami').decode('utf-8')
-    assert 'class="when-alt">How is the shrine consecrated?' in plain
-    assert 'is-alt' not in plain.split('id="shrine-form"')[0].rsplit('<form', 1)[1]
-    alt = root.shrines(kind='memorial').decode('utf-8')
-    assert 'shrine-form is-alt' in alt
+    assert 'class="w-memorial">How is the shrine consecrated?' in plain
+    assert 'class="w-fortune">How is the Fortune called to the shrine?' in plain
+    assert 'wording-plain" id="shrine-form"' in plain
+    assert 'wording-memorial" id="shrine-form"' in root.shrines(kind='memorial').decode('utf-8')
+    assert 'wording-fortune" id="shrine-form"' in root.shrines(kind='fortune').decode('utf-8')
+    assert '.shrine-form:not(.wording-fortune) .w-fortune' in plain
 
 
 def test_memorial_path_reaches_summary_and_ledger(root: Root, as_user: object) -> None:

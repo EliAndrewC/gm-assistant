@@ -92,8 +92,8 @@ class Option:
     romaji: str = ''
     appeal: str = ''
     lines: tuple[Line, ...] = ()
-    # Alternative wording used when the catalog's `alt_when` holds (FR-030).
-    alt: dict[str, str] = field(default_factory=dict)
+    # Replacement text per named wording (FR-030/FR-032/FR-037): {wording: {field: text}}.
+    wording: dict[str, dict[str, str]] = field(default_factory=dict)
     # Offered only when this holds (FR-036).
     when: Condition = ()
     units: float = 1.0
@@ -108,7 +108,7 @@ class Category:
     options: tuple[Option, ...]
     # The step appears only when this holds.
     when: Condition = ()
-    alt: dict[str, str] = field(default_factory=dict)
+    wording: dict[str, dict[str, str]] = field(default_factory=dict)
     # FR-036: one sentence saying which later choice this step's answer decides, if any.
     decides: str = ''
 
@@ -125,7 +125,7 @@ class Group:
     label: str
     intro: str
     categories: tuple[Category, ...]
-    alt: dict[str, str] = field(default_factory=dict)
+    wording: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,7 +157,8 @@ class Catalog:
     site_lines: tuple[SiteLine, ...]
     budget_padding: float
     default_name: str = ''
-    alt_when: Condition = ()
+    # Named wordings, in priority order: the first whose condition holds is used.
+    wordings: tuple[tuple[str, Condition], ...] = ()
 
     @property
     def categories(self) -> tuple[Category, ...]:
@@ -180,13 +181,16 @@ def _squash(value: object) -> str:
     return ' '.join(str(value).split())
 
 
-def _alt(raw: Mapping[str, Any], allowed: set[str]) -> dict[str, str]:
-    alt = {str(k): _squash(v) for k, v in raw.get('alt', {}).items()}
-    if set(alt) - allowed:
-        raise CatalogError(
-            f'alt may only replace {sorted(allowed)}, not {sorted(set(alt) - allowed)}'
-        )
-    return alt
+def _wording(raw: Mapping[str, Any], allowed: set[str]) -> dict[str, dict[str, str]]:
+    wording: dict[str, dict[str, str]] = {}
+    for name, fields in raw.get('wording', {}).items():
+        texts = {str(k): _squash(v) for k, v in fields.items()}
+        if set(texts) - allowed:
+            raise CatalogError(
+                f'wording may only replace {sorted(allowed)}, not {sorted(set(texts) - allowed)}'
+            )
+        wording[str(name)] = texts
+    return wording
 
 
 def _condition(raw: Mapping[str, Any] | None) -> Condition:
@@ -218,7 +222,7 @@ def _option(raw: Mapping[str, Any]) -> Option:
         romaji=str(raw.get('romaji', '')),
         appeal=_squash(raw.get('appeal', '')),
         lines=tuple(_line(x) for x in raw.get('lines', ())),
-        alt=_alt(raw, {'label', 'text', 'appeal'}),
+        wording=_wording(raw, {'label', 'text', 'appeal'}),
         when=_condition(raw.get('when')),
         units=float(raw.get('units', 1)),
     )
@@ -232,7 +236,7 @@ def _category(raw: Mapping[str, Any]) -> Category:
         reference=str(raw['reference']),
         options=tuple(_option(x) for x in raw['options']),
         when=_condition(raw.get('when')),
-        alt=_alt(raw, {'label', 'prompt'}),
+        wording=_wording(raw, {'label', 'prompt'}),
         decides=_squash(raw.get('decides', '')),
     )
 
@@ -246,7 +250,7 @@ def parse_catalog(data: Mapping[str, Any]) -> Catalog:
                 label=str(g['label']),
                 intro=_squash(g['intro']),
                 categories=tuple(_category(c) for c in g['categories']),
-                alt=_alt(g, {'label', 'intro'}),
+                wording=_wording(g, {'label', 'intro'}),
             )
             for g in data['groups']
         ),
@@ -262,7 +266,7 @@ def parse_catalog(data: Mapping[str, Any]) -> Catalog:
         ),
         budget_padding=float(data['budget_padding']),
         default_name=str(data.get('default_name', '')),
-        alt_when=_condition(data.get('alt_when')),
+        wordings=tuple((str(w['name']), _condition(w['when'])) for w in data.get('wordings', ())),
     )
     _validate(catalog)
     return catalog
@@ -293,7 +297,15 @@ def _validate(catalog: Catalog) -> None:
         raise CatalogError('the catalog needs a porterage contract for heavy lines')
     if catalog.default_remoteness not in {r.key for r in catalog.remoteness}:
         raise CatalogError(f'unknown default remoteness {catalog.default_remoteness!r}')
-    _check_condition(catalog, 'alt_when', catalog.alt_when, keys)
+    names = {name for name, _ in catalog.wordings}
+    for name, condition in catalog.wordings:
+        _check_condition(catalog, f'wording {name}', condition, keys)
+    owners: list[Any] = [*catalog.groups, *catalog.categories]
+    owners += [o for c in catalog.categories for o in c.options]
+    for owner in owners:
+        unknown = set(owner.wording) - names
+        if unknown:
+            raise CatalogError(f'{owner.key}: unknown wording {sorted(unknown)}')
     for site in catalog.site_lines:
         if site.contract not in contracts:
             raise CatalogError(f'site line uses unknown contract {site.contract!r}')

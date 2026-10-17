@@ -111,15 +111,19 @@ def price_words(text: str) -> list[str]:
     return [m.group(0) for m in PRICE_WORDS.finditer(text)]
 
 
+def worded(owner: Any) -> list[str]:
+    """Every replacement text an owner carries, across all wordings."""
+    return [t for fields in owner.wording.values() for t in fields.values()]
+
+
 def player_texts(catalog: Catalog) -> list[str]:
     texts: list[str] = []
     for group in catalog.groups:
-        texts += [group.label, group.intro, *group.alt.values()]
+        texts += [group.label, group.intro, *worded(group)]
         for category in group.categories:
-            texts += [category.label, category.prompt, category.decides, *category.alt.values()]
+            texts += [category.label, category.prompt, category.decides, *worded(category)]
             for option in category.options:
-                texts += [option.label, option.text, option.romaji, option.appeal]
-                texts += list(option.alt.values())
+                texts += [option.label, option.text, option.romaji, option.appeal, *worded(option)]
     return [t for t in texts if t]
 
 
@@ -144,10 +148,10 @@ def test_player_text_never_mentions_price(catalog: Catalog) -> None:
 def test_no_option_is_an_absence(catalog: Catalog) -> None:
     """FR-020: every option is a positive form; prompts ask what or how."""
     for category in catalog.categories:
-        prompts = [category.prompt, *category.alt.values()]
+        prompts = [category.prompt, *worded(category)]
         assert not any(YES_NO_PROMPT.search(p) for p in prompts), category.key
         for option in category.options:
-            for text in (option.label, option.text, option.appeal, *option.alt.values()):
+            for text in (option.label, option.text, option.appeal, *worded(option)):
                 assert not ABSENCE.search(text), text
 
 
@@ -228,12 +232,16 @@ def _forward_option_rule(d: dict[str, Any]) -> None:
     _option_raw(d, 'display', 'reliquary')['when'] = {'rite': ['full']}
 
 
-def _bad_alt_when(d: dict[str, Any]) -> None:
-    d['alt_when'] = {'heart': ['ghost']}
+def _bad_wording_rule(d: dict[str, Any]) -> None:
+    d['wordings'] = [{'name': 'memorial', 'when': {'heart': ['ghost']}}]
 
 
-def _bad_alt_field(d: dict[str, Any]) -> None:
-    _category_raw(d, 'form')['alt'] = {'reference': 'x'}
+def _bad_wording_field(d: dict[str, Any]) -> None:
+    _category_raw(d, 'form')['wording'] = {'memorial': {'reference': 'x'}}
+
+
+def _unknown_wording(d: dict[str, Any]) -> None:
+    _category_raw(d, 'form')['wording'] = {'elegiac': {'prompt': 'x'}}
 
 
 def _forward_per(d: dict[str, Any]) -> None:
@@ -267,8 +275,9 @@ def _bad_contract(d: dict[str, Any]) -> None:
         (_self_rule, 'not an earlier step'),
         (_unknown_rule_option, 'unknown option'),
         (_forward_option_rule, 'not an earlier step'),
-        (_bad_alt_when, 'unknown option'),
-        (_bad_alt_field, 'alt may only replace'),
+        (_bad_wording_rule, 'unknown option'),
+        (_bad_wording_field, 'wording may only replace'),
+        (_unknown_wording, 'unknown wording'),
         (_forward_per, 'not an earlier step'),
         (_bad_contract, 'unknown contract'),
     ],
@@ -360,25 +369,39 @@ def test_remains_at_the_heart_means_no_kami(catalog: Catalog) -> None:
     assert 'dwelling' not in spirit.voided
 
 
-def test_memorial_wording_replaces_kami_wording(catalog: Catalog) -> None:
-    """FR-030/FR-032: for any memorial the dead are honored ancestors, so `alt` wording applies."""
-    assert parse_design(catalog, {'kind': 'memorial'}).alt is True
-    assert parse_design(catalog, {'kind': 'kami'}).alt is False
-    alt_texts = [
-        v
-        for g in catalog.groups
-        for v in [
-            *g.alt.values(),
-            *(x for c in g.categories for x in c.alt.values()),
-            *(x for c in g.categories for o in c.options for x in o.alt.values()),
-        ]
-    ]
-    assert alt_texts
-    assert [v for v in alt_texts if 'kami' in v] == []
-    # every kami mention in a step a memorial can reach has an alt replacement
+def test_kind_has_three_distinct_kinds(catalog: Catalog) -> None:
+    """FR-037: memorial, Fortune and kami are distinct, and none folds in another."""
+    kind = catalog.category('kind')
+    assert kind is not None
+    assert [o.key for o in kind.options] == ['memorial', 'fortune', 'kami']
+    kami = kind.option('kami')
+    assert kami is not None
+    assert 'dead' not in kami.text
+    assert 'ancestor' not in kami.text
+
+
+def test_no_modern_grave_visit_framing(catalog: Catalog) -> None:
+    """FR-038: people went to shrines for wisdom, guidance and aid, not to process grief."""
+    modern = re.compile(r'\b(grief|grieve|closure|mourn\w*|their thanks)\b', re.IGNORECASE)
+    assert [t for t in player_texts(catalog) if modern.search(t)] == []
+
+
+def test_wording_follows_the_kind(catalog: Catalog) -> None:
+    """FR-030/FR-032/FR-037: memorial and Fortune shrines each get their own words for "kami"."""
+    assert parse_design(catalog, {'kind': 'memorial'}).wording == 'memorial'
+    assert parse_design(catalog, {'kind': 'fortune'}).wording == 'fortune'
+    assert parse_design(catalog, {'kind': 'kami'}).wording == ''
+    assert parse_design(catalog, {}).wording == ''
+    owners: list[Any] = [*catalog.groups, *catalog.categories]
+    owners += [o for c in catalog.categories for o in c.options]
+    replacements = [t for owner in owners for t in worded(owner)]
+    assert replacements
+    assert [t for t in replacements if 'kami' in t] == []
+    # every prompt that speaks of the kami has a memorial AND a Fortune replacement
     for category in catalog.categories:
-        if category.key not in {'kind', *MEMORIAL_STEPS} and 'kami' in category.prompt:
-            assert 'prompt' in category.alt, category.key
+        if 'kami' in category.prompt and category.key != 'kind':
+            for name in ('memorial', 'fortune'):
+                assert 'prompt' in category.wording.get(name, {}), (category.key, name)
 
 
 def test_reliquary_needs_washed_bones(catalog: Catalog) -> None:
@@ -423,9 +446,12 @@ def test_moot_notes_come_from_the_rules(catalog: Catalog) -> None:
 def test_rules_json_carries_conditions_and_nothing_else(catalog: Catalog) -> None:
     text = rules_json(catalog)
     rules = json.loads(text)
-    assert set(rules) == {'categories', 'options', 'alt'}
+    assert set(rules) == {'categories', 'options', 'wordings'}
     assert rules['options'] == {'display': {'reliquary': [['preparation', ['washed'], False]]}}
-    assert rules['alt'] == [['kind', ['memorial'], False]]
+    assert rules['wordings'] == [
+        ['memorial', [['kind', ['memorial'], False]]],
+        ['fortune', [['kind', ['fortune'], False]]],
+    ]
     for word in ('koku', 'heavy', 'contract', 'lines', 'label'):
         assert word not in text
 
@@ -596,3 +622,25 @@ def test_format_koku(value: float, text: str) -> None:
 def test_format_number() -> None:
     assert format_number(12.0) == '12'
     assert format_number(12.5) == '12.5'
+
+
+# --- review inputs (FR-039) -----------------------------------------------------------------------
+
+
+def test_review_sections_are_player_text_only(catalog: Catalog, tmp_path: Any) -> None:
+    from l7r.shrines.review import main, section_text
+
+    remains = next(g for g in catalog.groups if g.key == 'remains')
+    text = section_text(catalog, remains)
+    assert 'STEP preparation' in text
+    assert "offered only when: preparation in ['washed']" in text
+    assert 'appears only when: Only for "A memorial where remains rest" (Kind of shrine).' in text
+    sanctuary = next(g for g in catalog.groups if g.key == 'sanctuary')
+    assert '[fortune wording] intro:' in section_text(catalog, sanctuary)
+    for word in ('koku', 'heavy', 'contract', 'lines'):
+        assert word not in text
+    assert main([str(tmp_path)]) == 0
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted(
+        f'{g.key}.txt' for g in catalog.groups
+    )
+    assert main([]) == 2

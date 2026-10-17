@@ -45,8 +45,8 @@ class Design:
     inactive: dict[str, Clause]
     text: dict[str, str]
     dropped: tuple[str, ...] = ()
-    # True when the catalog's `alt_when` holds: the page uses the `alt:` wording (FR-030).
-    alt: bool = False
+    # The named wording in force ('' = the plain wording), FR-030/FR-032/FR-037.
+    wording: str = ''
 
     @property
     def voided(self) -> frozenset[str]:
@@ -101,7 +101,7 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
         inactive=inactive,
         text=text,
         dropped=tuple(d for d in dropped if d not in inactive),
-        alt=bool(catalog.alt_when) and holds_all(catalog.alt_when, choices),
+        wording=next((n for n, cond in catalog.wordings if holds_all(cond, choices)), ''),
     )
 
 
@@ -148,7 +148,7 @@ def rules_json(catalog: Catalog) -> str:
             for c in catalog.categories
             if any(o.when for o in c.options)
         },
-        'alt': _clauses(catalog.alt_when),
+        'wordings': [[name, _clauses(cond)] for name, cond in catalog.wordings],
     }
     return json.dumps(rules, separators=(',', ':')).replace('</', '<\\/')
 

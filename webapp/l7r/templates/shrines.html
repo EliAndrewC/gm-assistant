@@ -4,6 +4,10 @@
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ static_url('css/shrines.css') }}" />
+<style>
+  {% for name in ['plain'] + catalog.wordings|map('first')|list %}.shrine-form:not(.wording-{{ name }}) .w-{{ name }}{% if not loop.last %},{% endif %}
+  {% endfor %} { display: none; }
+</style>
 <script src="{{ static_url('js/shrines.js') }}" defer></script>
 {% endblock %}
 
@@ -17,11 +21,15 @@
   for a GM session (FR-007).
 #}
 
-{# Text with FR-030 alternative wording renders both versions; the form's is-alt class (set here
-   from the design, toggled by shrines.js) shows one. #}
+{# Text with named wordings (FR-030/FR-032/FR-037) renders once per wording - its own replacement or
+   the plain text - and the form's wording-<name> class (set here, switched by shrines.js) shows
+   one. The CSS for that is generated from the catalog's wording names below. #}
 {% macro t(obj, field) -%}
-  {%- if obj.alt.get(field) -%}
-    <span class="when-plain">{{ obj[field] }}</span><span class="when-alt">{{ obj.alt[field] }}</span>
+  {%- if obj.wording.values()|selectattr(field, 'defined')|list -%}
+    <span class="w-plain">{{ obj[field] }}</span>
+    {%- for name, _ in catalog.wordings -%}
+      <span class="w-{{ name }}">{{ obj.wording.get(name, {}).get(field, obj[field]) }}</span>
+    {%- endfor -%}
   {%- else -%}
     {{ obj[field] }}
   {%- endif -%}
@@ -42,7 +50,7 @@
   </div>
 </section>
 
-<form class="container shrine-form{% if is_gm %} shrine-form--gm{% endif %}{% if design.alt %} is-alt{% endif %}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}">
+<form class="container shrine-form{% if is_gm %} shrine-form--gm{% endif %} wording-{{ design.wording or 'plain' }}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}">
   {# The applicability rules for shrines.js: conditions only, never a price (tested). #}
   <script type="application/json" id="shrine-rules">{{ rules_json|safe }}</script>
   <div class="shrine-layout">

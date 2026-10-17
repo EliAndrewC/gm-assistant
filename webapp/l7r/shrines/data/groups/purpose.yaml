@@ -2,8 +2,9 @@
 key: purpose
 label: The shrine
 intro: >-
-  Before anything is built, what the shrine is for: a resting place for someone who has died, or
-  a dwelling for a kami. A memorial adds six steps about the remains.
+  Before anything is built, what the shrine is for: a resting place for one of the honored dead,
+  a place to call upon a Fortune, or a dwelling for a kami of the place. A memorial adds steps
+  about the remains, and the kind decides how the rest of the shrine is spoken of.
 categories:
   - key: kind
     label: Kind of shrine
@@ -13,16 +14,24 @@ categories:
       - key: memorial
         label: A memorial where remains rest
         text: >-
-          A shrine for one who has died, where his remains are brought and laid to rest, and his
-          spirit honored.
+          A shrine raised where the remains of one who has died are laid to rest, and his spirit
+          honored as an ancestor.
         appeal: >-
-          The dead are near enough to visit, and those who loved him have a place to bring their
-          grief and their thanks.
+          Those who come can ask the honored dead for guidance and aid, and a spirit that died hard
+          is given a place to be settled and honored.
+      - key: fortune
+        label: A shrine to a Fortune
+        text: >-
+          A shrine where one of the Fortunes - Inari, Bishamon, Benten or another - is called upon,
+          with no remains interred.
+        appeal: >-
+          Petitioners come seeking the Fortune's favor and the signs of its will, and a Fortune well
+          honored looks kindly on the place and its founder.
       - key: kami
         label: A shrine to a kami
         text: >-
-          A dwelling for a kami - a Fortune, a spirit of the place, or one of the honored dead -
-          with no remains interred.
+          A shrine to a kami of this place - the spirit of a great tree, a spring, a stone or the
+          mountain itself - with no remains interred.
         appeal: >-
-          The shrine is kept entirely pure, free of any touch of death, a place only of the
-          living and the divine.
+          The spirit of the place is honored and kept content, and those who live and travel nearby
+          go under its protection.

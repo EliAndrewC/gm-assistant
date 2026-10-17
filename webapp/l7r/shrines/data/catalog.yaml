@@ -23,8 +23,10 @@
 # itself not in play counts as "no value": a plain list fails, a {not: ...} passes. So timber
 # shows before a form is picked, and the remains steps wait until a memorial is chosen.
 #
-# `alt_when` (same grammar, any category) switches every `alt:` text on: for a memorial the dead
-# are honored ancestors, not kami (FR-030/FR-032), so the kami wording gives way.
+# `wordings` (same `when` grammar) name alternative wordings; the first whose rule holds is used.
+# Any group/category/option may carry `wording: {<name>: {<field>: text}}` to replace its plain
+# text under that wording. The plain text speaks of a kami; for a memorial the dead are honored
+# ancestors (FR-030/FR-032), and a Fortune is not a kami (FR-037), so each gets its own words.
 #
 # `decides`: on a category, one sentence saying which later choice its answer decides (FR-036).
 #
@@ -85,7 +87,11 @@ site_lines:
 # FR-030: when this choice is made the shrine has no kami - the remains are its heart - so every
 # group/category/option `alt:` text replaces its plain wording (the kami's dwelling becomes the
 # place where he rests).
-alt_when: {kind: [memorial]}
+wordings:
+  - name: memorial
+    when: {kind: [memorial]}
+  - name: fortune
+    when: {kind: [fortune]}
 
 budget_padding: 1.2   # Tadashi won the budget negotiation by 10+ (research.md R6)
 

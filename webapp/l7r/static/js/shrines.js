@@ -79,8 +79,15 @@
         var checked = fs.querySelector('input[type=radio]:checked');
         if (checked) choices[key] = checked.value;
       });
-      // FR-030/FR-032: the honored-dead wording replaces the kami wording for a memorial.
-      form.classList.toggle('is-alt', rules.alt.length > 0 && rules.alt.every(function (c) { return holds(c, choices); }));
+      // FR-030/FR-032/FR-037: the first named wording whose rule holds replaces the plain wording.
+      var wording = 'plain';
+      for (var w = 0; w < rules.wordings.length; w++) {
+        if (rules.wordings[w][1].every(function (c) { return holds(c, choices); })) { wording = rules.wordings[w][0]; break; }
+      }
+      Array.prototype.slice.call(form.classList).forEach(function (cls) {
+        if (cls.indexOf('wording-') === 0) form.classList.remove(cls);
+      });
+      form.classList.add('wording-' + wording);
     }
 
     function designQuery() {
@@ -115,12 +122,12 @@
           a.href = '#shrine-step-' + fs.dataset.cat;
           a.dataset.goto = fs.dataset.cat;
           var label = document.createElement('span');
-          label.textContent = fs.querySelector('.shrine-cat__label').textContent;
+          label.textContent = fs.querySelector('.shrine-cat__label').innerText;
           a.appendChild(label);
           a.appendChild(document.createTextNode(' '));
           var answer = document.createElement('em');
           if (checked) {
-            answer.textContent = checked.closest('.shrine-opt').querySelector('.shrine-opt__title').textContent;
+            answer.textContent = checked.closest('.shrine-opt').querySelector('.shrine-opt__title').innerText;
           } else {
             answer.textContent = 'not chosen yet';
             answer.className = 'is-open';

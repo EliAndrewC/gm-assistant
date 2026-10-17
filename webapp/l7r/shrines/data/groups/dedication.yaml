@@ -4,10 +4,15 @@ label: Name and dedication
 intro: >-
   How the shrine is named, how the hermit's story is told to those who come after, and how the
   kami is installed.
-alt:
-  intro: >-
-    How the shrine is named, how the hermit's story is told to those who come after, and how the
-    shrine is consecrated.
+wording:
+  memorial:
+    intro: >-
+      How the shrine is named, how the hermit's story is told to those who come after, and how the
+      shrine is consecrated.
+  fortune:
+    intro: >-
+      How the shrine is named, how its story is told to those who come after, and how the Fortune
+      is called to the shrine.
 categories:
   - key: plaque
     label: The name
@@ -86,8 +91,12 @@ categories:
   - key: rite
     label: Consecration
     prompt: How is the kami installed in the shrine?
-    alt:
-      prompt: How is the shrine consecrated?
+    wording:
+      memorial:
+        prompt: How is the shrine consecrated?
+      fortune:
+        prompt: >-
+          How is the Fortune called to the shrine?
     reference: full
     options:
       - key: monk
@@ -95,10 +104,11 @@ categories:
         text: >-
           The district's country monk comes out, purifies the ground, says the words and moves
           the sacred object into place.
-        alt:
-          text: >-
-            The district's country monk comes out, purifies the ground, says the words and lays
-            the remains in their place.
+        wording:
+          memorial:
+            text: >-
+              The district's country monk comes out, purifies the ground, says the words and lays
+              the remains in their place.
         appeal: >-
           Quiet and intimate, a rite among the people who knew him.
         lines: [{contract: rites, koku: 1}]
@@ -109,22 +119,39 @@ categories:
           carried in darkness, behind white curtains, to drums and the calling-out of the kami.
         appeal: >-
           Those who witness it never forget the moment the kami arrives in the dark.
-        alt:
-          text: >-
-            Priests come out from the county's shrine for a night rite: his remains are carried
-            in darkness, behind white curtains, to drums and chanting.
-          appeal: >-
-            Those who witness it never forget the moment he is laid to rest in the dark.
+        wording:
+          memorial:
+            text: >-
+              Priests come out from the county's shrine for a night rite: his remains are carried
+              in darkness, behind white curtains, to drums and chanting.
+            appeal: >-
+              Those who witness it never forget the moment he is laid to rest in the dark.
+          fortune:
+            text: >-
+              Priests come out from the county's shrine for a night rite: the sacred object is
+              carried in darkness, behind white curtains, to drums and the calling-out of the
+              Fortune.
+            appeal: >-
+              Those who witness it never forget the moment the Fortune's presence arrives in the
+              dark.
         lines: [{contract: rites, koku: 4}]
       - key: festival
         label: A pacification festival
         text: >-
           A day of music, dance and offerings, with food for the disciples and the villages
           nearby; the kami is installed at its height.
-        alt:
-          text: >-
-            A day of music, dance and offerings, with food for the disciples and the villages
-            nearby; his remains are laid to rest at its height.
+        wording:
+          memorial:
+            text: >-
+              A day of music, dance and offerings, with food for the disciples and the villages
+              nearby; his remains are laid to rest at its height.
+          fortune:
+            text: >-
+              A day of music, dance and offerings, with food for the villages nearby; the Fortune
+              is called down at its height.
+            appeal: >-
+              The villages will remember the day for years, and the Fortune is welcomed with joy
+              rather than with a single priest's words.
         appeal: >-
           Held to calm a spirit that met a hard end so that it may rest and bear no grudge, and
           the villages will remember the day for years.

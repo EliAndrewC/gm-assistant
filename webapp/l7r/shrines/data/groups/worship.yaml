@@ -4,10 +4,15 @@ label: Worship and offerings
 intro: >-
   What a visitor touches: where they stand, how they announce themselves to the kami, where they
   leave their coins and offerings, and what dwells inside.
-alt:
-  intro: >-
-    What a visitor touches: where they stand, how they announce themselves, and where they leave
-    their coins and offerings.
+wording:
+  memorial:
+    intro: >-
+      What a visitor touches: where they stand, how they announce themselves, and where they leave
+      their coins and offerings.
+  fortune:
+    intro: >-
+      What a visitor touches: where they stand, how they announce themselves to the Fortune, where
+      they leave their coins and offerings, and what is enshrined inside.
 categories:
   - key: hall
     label: Worship space
@@ -43,8 +48,12 @@ categories:
   - key: altar
     label: Altar
     prompt: Where are offerings set out before the kami?
-    alt:
-      prompt: Where are offerings set out before him?
+    wording:
+      memorial:
+        prompt: Where are offerings set out before him?
+      fortune:
+        prompt: >-
+          Where are offerings set out before the Fortune?
     reference: table
     options:
       - key: table
@@ -81,8 +90,12 @@ categories:
   - key: sacred
     label: Sacred object
     prompt: What object, sealed inside the sanctuary, does the kami dwell in?
-    alt:
-      prompt: What object, sealed inside the sanctuary, is his spirit called to?
+    wording:
+      memorial:
+        prompt: What object, sealed inside the sanctuary, is his spirit called to?
+      fortune:
+        prompt: >-
+          What object, sealed inside the sanctuary, is the Fortune called to?
     when: {form: {not: [himorogi]}, heart: {not: [bones]}}
     reference: belonging
     options:
@@ -94,10 +107,11 @@ categories:
         appeal: >-
           The kami lives in something his hands wore smooth, and his disciples know exactly
           what it is.
-        alt:
-          appeal: >-
-            His spirit is called to something his hands wore smooth, and his disciples know exactly
-            what it is.
+        wording:
+          memorial:
+            appeal: >-
+              His spirit is called to something his hands wore smooth, and his disciples know exactly
+              what it is.
       - key: stone
         label: A stone from where he sat
         text: >-
@@ -105,10 +119,15 @@ categories:
         appeal: >-
           Stones are among the oldest dwelling places of kami, and this one heard every lesson he
           gave.
-        alt:
-          appeal: >-
-            Stones are among the oldest places the spirits are called to, and this one heard every
-            lesson he gave.
+        wording:
+          memorial:
+            appeal: >-
+              Stones are among the oldest places the spirits are called to, and this one heard every
+              lesson he gave.
+          fortune:
+            appeal: >-
+              Stones are among the oldest seats of the divine, and this one is of the place
+              itself.
       - key: mirror
         label: A bronze mirror
         ja: 鏡
@@ -125,10 +144,15 @@ categories:
           A wand hung with folded white paper streamers.
         appeal: >-
           The purest vessel for a kami, renewed by the disciples so the shrine is always fresh.
-        alt:
-          appeal: >-
-            The purest vessel for a spirit called down, renewed by the disciples so the shrine is
-            always fresh.
+        wording:
+          memorial:
+            appeal: >-
+              The purest vessel for a spirit called down, renewed by the disciples so the shrine is
+              always fresh.
+          fortune:
+            appeal: >-
+              The purest vessel for a divine presence called down, renewed by the keepers so the
+              shrine is always fresh.
         lines: [{contract: rites, koku: 0.1}]
 
   - key: box
@@ -167,8 +191,12 @@ categories:
   - key: bell
     label: Bell
     prompt: How does a visitor announce themselves to the kami?
-    alt:
-      prompt: How does a visitor announce themselves?
+    wording:
+      memorial:
+        prompt: How does a visitor announce themselves?
+      fortune:
+        prompt: >-
+          How does a visitor announce themselves to the Fortune?
     reference: suzu
     options:
       - key: clap
@@ -185,10 +213,15 @@ categories:
           A round rattle-bell hung from the eaves on a thick braided rope, shaken before praying.
         appeal: >-
           Its bright jingle is said to please and summon the kami, and children love to ring it.
-        alt:
-          appeal: >-
-            Its bright jingle carries through the trees ahead of every prayer, and children love
-            to ring it.
+        wording:
+          memorial:
+            appeal: >-
+              Its bright jingle carries through the trees ahead of every prayer, and children love
+              to ring it.
+          fortune:
+            appeal: >-
+              Its bright jingle is said to please and summon the Fortune, and children love to
+              ring it.
         lines: [{contract: metalwork, koku: 1}]
       - key: gong
         label: Hanging gong

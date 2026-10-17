@@ -553,10 +553,6 @@
   margin-right: 0.35em;
 }
 
-/* FR-030 wording: one version shows, chosen by whether the remains are the heart of the shrine. */
-.shrine-form:not(.is-alt) .when-alt,
-.shrine-form.is-alt .when-plain { display: none; }
-
 /* --- wizard ------------------------------------------------------------ */
 /* Without JavaScript every step shows, stacked; shrines.js adds .js-wizard to <html> and then only
    the current step shows, with progress above and Back / Next below. */

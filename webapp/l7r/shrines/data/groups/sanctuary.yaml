@@ -4,11 +4,17 @@ label: The sanctuary
 intro: >-
   The sanctuary (honden) is the innermost building: the dwelling of the kami, or the house that
   keeps what is most sacred. Nobody goes inside it; its doors are opened only for rites.
-alt:
-  intro: >-
-    The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
-    here, the place his spirit is called to, or his remains. Nobody goes inside it; its doors are
-    opened only for rites.
+wording:
+  memorial:
+    intro: >-
+      The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
+      here, the place his spirit is called to, or his remains. Nobody goes inside it; its doors are
+      opened only for rites.
+  fortune:
+    intro: >-
+      The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
+      here, the seat to which the Fortune is called. Nobody goes inside it; its doors are opened
+      only for rites.
 categories:
   - key: form
     label: Form
@@ -63,10 +69,15 @@ categories:
         text: >-
           The kami dwells not in a house but in the living forest itself, in a place bound with
           sacred rope and purified, under the open sky.
-        alt:
-          text: >-
-            The heart of the shrine is left open to the forest and the sky, its ground bound
-            with sacred rope and purified.
+        wording:
+          memorial:
+            text: >-
+              The heart of the shrine is left open to the forest and the sky, its ground bound
+              with sacred rope and purified.
+          fortune:
+            text: >-
+              The Fortune is called not to a house but to the living forest itself, to a place
+              bound with sacred rope and purified, under the open sky.
         appeal: >-
           The most ancient form of worship, still kept at some of the greatest shrines in the
           Empire, and the closest of all to the way the hermit lived.
@@ -75,9 +86,15 @@ categories:
   - key: dwelling
     label: The kami's dwelling
     prompt: What does the kami dwell in?
-    alt:
-      label: Where his spirit is called
-      prompt: Where is his spirit called to?
+    wording:
+      memorial:
+        label: Where his spirit is called
+        prompt: Where is his spirit called to?
+      fortune:
+        label: >-
+          Where the Fortune is called
+        prompt: >-
+          Where is the Fortune called to?
     when: {form: [himorogi], heart: {not: [bones]}}
     reference: tree
     options:
@@ -101,10 +118,15 @@ categories:
         appeal: >-
           The kami takes the very seat the hermit took, and his disciples can sit before it as
           they once sat before him.
-        alt:
-          appeal: >-
-            His spirit is called to the very seat he took, and his disciples can sit before it as
-            they once sat before him.
+        wording:
+          memorial:
+            appeal: >-
+              His spirit is called to the very seat he took, and his disciples can sit before it as
+              they once sat before him.
+          fortune:
+            appeal: >-
+              The Fortune is called to a seat of stone that has known this place for ages, and
+              those who come can sit before it.
         lines: [{contract: earthwork, koku: 0.5}]
       - key: standing
         label: A standing stone
@@ -123,10 +145,14 @@ categories:
         text: >-
           The entire grove where the hermit lived is held to be the kami's body, its edges
           marked with rope.
-        alt:
-          text: >-
-            The entire grove where the hermit lived is where his spirit is called, its edges marked
-            with rope.
+        wording:
+          memorial:
+            text: >-
+              The entire grove where the hermit lived is where his spirit is called, its edges marked
+              with rope.
+          fortune:
+            text: >-
+              The entire grove is where the Fortune is called, its edges marked with rope.
         appeal: >-
           Every step taken among those trees is a step inside the shrine, and the forest itself
           becomes the hermit's memorial.
@@ -135,8 +161,12 @@ categories:
   - key: ground
     label: The ground before it
     prompt: How is the ground before the kami's dwelling laid?
-    alt:
-      prompt: How is the ground at the heart of the shrine laid?
+    wording:
+      memorial:
+        prompt: How is the ground at the heart of the shrine laid?
+      fortune:
+        prompt: >-
+          How is the ground before the Fortune's seat laid?
     when: {form: [himorogi]}
     reference: gravel
     options:
@@ -146,9 +176,14 @@ categories:
           A level court of pale gravel, raked in lines, spread before the dwelling for rites.
         appeal: >-
           It glows in moonlight, and the sound of each footstep tells the kami someone has come.
-        alt:
-          appeal: >-
-            It glows in moonlight, and the sound of each footstep tells him someone has come.
+        wording:
+          memorial:
+            appeal: >-
+              It glows in moonlight, and the sound of each footstep tells him someone has come.
+          fortune:
+            appeal: >-
+              It glows in moonlight, and the sound of each footstep tells the Fortune someone has
+              come.
         lines: [{contract: earthwork, koku: 2, heavy: 3}]
       - key: moss
         label: Moss left to grow
@@ -168,10 +203,15 @@ categories:
         appeal: >-
           The oldest way of marking ground for a kami to descend into, and renewing the bamboo
           each year gives the disciples a rite of their own.
-        alt:
-          appeal: >-
-            The oldest way of marking holy ground, and renewing the bamboo each year gives the
-            disciples a rite of their own.
+        wording:
+          memorial:
+            appeal: >-
+              The oldest way of marking holy ground, and renewing the bamboo each year gives the
+              disciples a rite of their own.
+          fortune:
+            appeal: >-
+              The oldest way of marking ground for the divine to descend into, and renewing the
+              bamboo each year gives the keepers a rite of their own.
         lines: [{contract: rites, koku: 0.5}]
       - key: stones
         label: A ring of river stones

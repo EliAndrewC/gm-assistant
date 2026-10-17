@@ -213,6 +213,25 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   option says so (for example, if how the bones are prepared decides whether visitors can see
   them). This is not a requirement to list every effect of every option.
 
+## Amendment 5 (GM message 6, 2026-10-17)
+
+- **FR-037**: the kind-of-shrine step distinguishes three kinds: a memorial where remains rest, a
+  shrine to a Fortune, and a shrine to a kami (Fortunes and kami are different in this setting).
+  No kind's description folds in another kind (the kami option does not mention the honored dead).
+  Wording elsewhere in the wizard follows the kind (a Fortune shrine does not speak of "the kami").
+- **FR-038**: option text does not project modern sensibilities onto the setting. Why people go to
+  a shrine is described as they went: to seek wisdom, guidance, favor or supernatural aid, to
+  honor and placate spirits - not as a modern grave-visit for grief and thanks.
+- **FR-039**: the player-facing text is checked by independent review subagents. The shared
+  criteria are generic, as the GM asked: whether the text is confusing, and whether it is
+  inaccurate to the category it describes (the kind of shrine, or the option's category),
+  including modern sensibilities projected onto the setting (FR-038). The shared criteria and
+  setting context live in the reviewer's system prompt (its agent definition, kept in the
+  repository); each call's message has an identical opening and differs only in the text under
+  review at the end, so the shared part is cached. Harness limit: agent definitions register only
+  at session start, so in the session that creates the definition the identical text leads each
+  message instead, which caches as a prefix the same way. Findings are applied to the catalog.
+
 ## Review history
 
 - **Round 1 - CHANGES REQUIRED** (2026-10-17, `spec-fidelity`, Mode 2, against `gm-request.md`).
@@ -246,3 +265,10 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   shrine; (2) FR-036 narrowed to "say so where the answer decides a later choice", explicitly not a
   list of every effect.
 - **Round 10 (amendment 4) - FAITHFUL** (2026-10-17). Both changes confirmed.
+- **Round 11 (amendment 5, message 6) - CHANGES REQUIRED** (2026-10-17). FR-037 last sentence and
+  the six-reviewer plan judged faithful. Changes: (1) FR-039 now states the generic criteria;
+  (2) FR-039 names the system prompt (agent definition) as the home of the shared part; the
+  session added the harness limit note (definitions register only at session start).
+- **Round 12 (amendment 5) - FAITHFUL** (2026-10-17). Both changes confirmed; the first-session
+  prefix fallback judged a legitimate exception (registration at session start is a hard harness
+  limit; the caching purpose survives). To be mentioned to the GM.
