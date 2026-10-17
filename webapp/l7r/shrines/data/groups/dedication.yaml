@@ -1,0 +1,131 @@
+# Shrine builder catalog, group "dedication". See ../catalog.yaml for the format and the rules.
+key: dedication
+label: Name and dedication
+intro: >-
+  How the shrine is named, how the hermit's story is told to those who come after, and how the
+  kami is installed.
+alt:
+  intro: >-
+    How the shrine is named, how the hermit's story is told to those who come after, and how the
+    shrine is consecrated.
+categories:
+  - key: plaque
+    label: The name
+    prompt: How is the shrine's name shown?
+    reference: painted
+    options:
+      - key: none
+        label: A name-stone by the path
+        ja: 社号標
+        romaji: shagohyo
+        text: >-
+          A squared stone pillar at the foot of the path, the shrine's name cut deep into its
+          face.
+        appeal: >-
+          It greets travelers before they reach the trees, and will read clearly in a hundred
+          years.
+        lines: [{contract: stonework, koku: 3, heavy: 3}]
+      - key: painted
+        label: A painted wooden plaque
+        ja: 扁額
+        romaji: hengaku
+        text: >-
+          The shrine's name brushed by a local hand, then carved and painted on a wooden tablet.
+        appeal: >-
+          It hangs over the gate where every visitor passes beneath the name.
+        lines: [{contract: finishing, koku: 1}]
+      - key: calligrapher
+        label: Calligraphy by a noted master
+        text: >-
+          The name written by a calligrapher of reputation, then carved and gilded.
+        appeal: >-
+          Visitors who know brushwork will recognize the hand and stop to admire it.
+        lines: [{contract: finishing, koku: 6}]
+      - key: patron
+        label: In the founder's own hand
+        text: >-
+          The name written by the person who commissioned the shrine, and carved from their
+          brushwork.
+        appeal: >-
+          Whatever the hand, it is theirs, and it ties the founder to the shrine forever.
+        lines: [{contract: finishing, koku: 0.5}]
+
+  - key: stele
+    label: Telling the story
+    prompt: How is the hermit's story kept?
+    reference: stele
+    options:
+      - key: none
+        label: Told by the disciples
+        text: >-
+          The disciples recount the story to whoever they find at the shrine, and teach it to
+          those who come after.
+        appeal: >-
+          The story lives in the telling, and grows a little with every teller.
+      - key: stele
+        label: An inscribed stone
+        ja: 石碑
+        romaji: sekihi
+        text: >-
+          An upright stone carved with the hermit's story and the names of those who founded the
+          shrine.
+        appeal: >-
+          It will outlast everyone involved, and the founders' names with it.
+        lines: [{contract: stonework, koku: 6, heavy: 5}]
+      - key: board
+        label: A painted signboard
+        ja: 縁起
+        romaji: engi
+        text: >-
+          The shrine's origin story (engi) brushed on a wooden board under a little roof,
+          repainted when it fades.
+        appeal: >-
+          Each repainting is a chance to retell the story, so it never grows stale.
+        lines: [{contract: carpentry, koku: 1}, {contract: finishing, koku: 0.5}]
+
+  - key: rite
+    label: Consecration
+    prompt: How is the kami installed in the shrine?
+    alt:
+      prompt: How is the shrine consecrated?
+    reference: full
+    options:
+      - key: monk
+        label: A dedication by the country monk
+        text: >-
+          The district's country monk comes out, purifies the ground, says the words and moves
+          the sacred object into place.
+        alt:
+          text: >-
+            The district's country monk comes out, purifies the ground, says the words and lays
+            the remains in their place.
+        appeal: >-
+          Quiet and intimate, a rite among the people who knew him.
+        lines: [{contract: rites, koku: 1}]
+      - key: full
+        label: A night enshrinement
+        text: >-
+          Priests come out from the county's shrine for a night rite: the sacred object is
+          carried in darkness, behind white curtains, to drums and the calling-out of the kami.
+        appeal: >-
+          Those who witness it never forget the moment the kami arrives in the dark.
+        alt:
+          text: >-
+            Priests come out from the county's shrine for a night rite: his remains are carried
+            in darkness, behind white curtains, to drums and chanting.
+          appeal: >-
+            Those who witness it never forget the moment he is laid to rest in the dark.
+        lines: [{contract: rites, koku: 4}]
+      - key: festival
+        label: A pacification festival
+        text: >-
+          A day of music, dance and offerings, with food for the disciples and the villages
+          nearby; the kami is installed at its height.
+        alt:
+          text: >-
+            A day of music, dance and offerings, with food for the disciples and the villages
+            nearby; his remains are laid to rest at its height.
+        appeal: >-
+          Held to calm a spirit that met a hard end so that it may rest and bear no grudge, and
+          the villages will remember the day for years.
+        lines: [{contract: rites, koku: 10}]

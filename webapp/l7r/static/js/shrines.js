@@ -45,39 +45,42 @@
 
     function live() { return steps.filter(applies); }
 
-    function applyMoot() {
-      var voided = {};
-      form.querySelectorAll('input[type=radio][data-voids]:checked').forEach(function (input) {
-        if (input.closest('fieldset.is-moot')) return;
-        input.dataset.voids.split(' ').forEach(function (key) { voided[key] = true; });
-      });
-      // `only_with`: a category that applies only when another has one of the listed options.
-      form.querySelectorAll('fieldset[data-only-with]').forEach(function (fs) {
-        var parts = fs.dataset.onlyWith.split(':');
-        var picked = form.querySelector('fieldset[data-cat="' + parts[0] + '"]:not(:disabled) input:checked');
-        if (!picked || parts[1].split('|').indexOf(picked.value) < 0) voided[fs.dataset.cat] = true;
-      });
+    // The applicability rules (data/catalog.yaml `when`), sent by the server as JSON - conditions
+    // only. resolve() is design.py's _resolve() in JavaScript: ONE forward pass in wizard order;
+    // a step is in play if its rule holds against the choices already resolved, and a picked option
+    // is kept only if its own rule holds. Every clause names an earlier step, so one pass is final.
+    var rules = JSON.parse(document.getElementById('shrine-rules').textContent);
+
+    // [key, options, negate]: an unchosen or not-in-play step is "no value" - a plain clause fails,
+    // a negated one passes.
+    function holds(clause, choices) {
+      var present = clause[1].indexOf(choices[clause[0]]) >= 0;
+      return clause[2] ? !present : present;
+    }
+
+    function resolve() {
+      var choices = {};
       form.querySelectorAll('fieldset.shrine-cat').forEach(function (fs) {
-        var moot = !!voided[fs.dataset.cat];
-        fs.classList.toggle('is-moot', moot);
-        fs.disabled = moot;
+        var key = fs.dataset.cat;
+        var failing = (rules.categories[key] || []).filter(function (c) { return !holds(c, choices); })[0];
+        fs.classList.toggle('is-moot', !!failing);
+        fs.disabled = !!failing;
+        // "Skipped" only when an actual choice ruled the step out; a step waiting on an earlier
+        // step that is still unanswered is just not in play yet.
+        fs.dataset.skipped = failing && choices[failing[0]] !== undefined ? '1' : '';
+        if (failing) return;
+        var optionRules = rules.options[key] || {};
+        fs.querySelectorAll('input[type=radio]').forEach(function (input) {
+          var ok = (optionRules[input.value] || []).every(function (c) { return holds(c, choices); });
+          input.closest('.shrine-opt').classList.toggle('is-unavailable', !ok);
+          input.disabled = !ok;
+          if (!ok) input.checked = false;
+        });
+        var checked = fs.querySelector('input[type=radio]:checked');
+        if (checked) choices[key] = checked.value;
       });
-      // FR-036: an option that needs an earlier choice is hidden (and unpicked) without it.
-      form.querySelectorAll('.shrine-opt[data-needs]').forEach(function (card) {
-        var need = card.dataset.needs.split(':');
-        var have = form.querySelector('fieldset[data-cat="' + need[0] + '"]:not(:disabled) input:checked');
-        var ok = !!have && need[1].split('|').indexOf(have.value) >= 0;
-        var input = card.querySelector('input');
-        card.classList.toggle('is-unavailable', !ok);
-        input.disabled = !ok;
-        if (!ok) input.checked = false;
-      });
-      // FR-030: switch to the no-kami wording when the remains are the heart of the shrine.
-      if (form.dataset.altWhen) {
-        var cond = form.dataset.altWhen.split(':');
-        var pick = form.querySelector('fieldset[data-cat="' + cond[0] + '"]:not(:disabled) input:checked');
-        form.classList.toggle('is-alt', !!pick && cond[1].split('|').indexOf(pick.value) >= 0);
-      }
+      // FR-030/FR-032: the honored-dead wording replaces the kami wording for a memorial.
+      form.classList.toggle('is-alt', rules.alt.length > 0 && rules.alt.every(function (c) { return holds(c, choices); }));
     }
 
     function designQuery() {
@@ -170,11 +173,11 @@
       var list = live();
       var index = list.indexOf(step);
       wizard.querySelector('[data-chapter-label]').textContent = step.dataset.chapter;
-      // Count only steps an actual choice removed; form-specific steps (data-only-with) that are not
+      // Count only steps an actual choice removed (resolve() marks them); steps that are not
       // in play are simply absent, so step 1 never claims something was already skipped.
       var skipped = steps.filter(function (s) {
         var fs = s.querySelector('fieldset.shrine-cat');
-        return fs && fs.disabled && !fs.dataset.onlyWith;
+        return fs && fs.disabled && fs.dataset.skipped === '1';
       }).length;
       var total = list.length;
       wizard.querySelector('[data-count]').textContent = 'Step ' + (index + 1) + ' of ' + total +
@@ -262,7 +265,7 @@
         form.submit();
         return;
       }
-      applyMoot();
+      resolve();
       syncSummary();
       writeAddress();
       gateNext();
@@ -315,6 +318,7 @@
       });
     });
 
+    resolve();
     var fromHash = window.location.hash.indexOf('#step-') === 0
       ? stepByKey(window.location.hash.slice('#step-'.length)) : null;
     var first = (fromHash && applies(fromHash)) ? fromHash : stepByKey(isGm ? 'review' : 'name');

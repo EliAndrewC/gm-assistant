@@ -1,0 +1,28 @@
+# Shrine builder catalog, group "purpose". See ../catalog.yaml for the format and the rules.
+key: purpose
+label: The shrine
+intro: >-
+  Before anything is built, what the shrine is for: a resting place for someone who has died, or
+  a dwelling for a kami. A memorial adds six steps about the remains.
+categories:
+  - key: kind
+    label: Kind of shrine
+    prompt: What kind of shrine is this?
+    reference: memorial
+    options:
+      - key: memorial
+        label: A memorial where remains rest
+        text: >-
+          A shrine for one who has died, where his remains are brought and laid to rest, and his
+          spirit honored.
+        appeal: >-
+          The dead are near enough to visit, and those who loved him have a place to bring their
+          grief and their thanks.
+      - key: kami
+        label: A shrine to a kami
+        text: >-
+          A dwelling for a kami - a Fortune, a spirit of the place, or one of the honored dead -
+          with no remains interred.
+        appeal: >-
+          The shrine is kept entirely pure, free of any touch of death, a place only of the
+          living and the divine.

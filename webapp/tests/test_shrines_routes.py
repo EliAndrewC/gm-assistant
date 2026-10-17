@@ -77,7 +77,7 @@ def test_moot_category_is_disabled(root: Root) -> None:
     page = root.shrines(form='himorogi').decode('utf-8')
     fieldset = re.search(r'<fieldset class="shrine-cat is-moot" data-cat="roof" disabled>', page)
     assert fieldset is not None
-    assert 'Does not apply with this form.' in page
+    assert 'Not with &#34;Stone shrine-house&#34; or &#34;Open to the sky&#34; (Form).' in page
 
 
 def test_dropped_choice_notice(root: Root) -> None:
@@ -130,7 +130,7 @@ def test_chosen_option_with_voids_stays_checked(root: Root) -> None:
     """A whitespace slip once glued `checked` onto `data-voids` ("checkeddata-voids"), so the
     browser saw no checked form and dropped it from the share link."""
     page = root.shrines(form='himorogi').decode('utf-8')
-    assert re.search(r'value="himorogi" checked data-voids="', page) is not None
+    assert re.search(r'value="himorogi" checked />', page) is not None
     assert 'checkeddata' not in page
 
 
@@ -182,8 +182,8 @@ def test_complete_design_has_no_open_note(root: Root, catalog: Catalog) -> None:
 def test_appeal_and_only_with_render(root: Root) -> None:
     page = root.shrines().decode('utf-8')
     assert 'class="shrine-opt__appeal">The purest finish in the old view' in page
-    assert 'data-only-with="form:himorogi"' in page
-    assert 'Only for the "Open to the sky" form.' in page
+    assert '<script type="application/json" id="shrine-rules">' in page
+    assert 'Only for &#34;Open to the sky&#34; (Form).' in page
 
 
 def test_kind_step_comes_right_after_the_name(root: Root) -> None:
@@ -193,30 +193,52 @@ def test_kind_step_comes_right_after_the_name(root: Root) -> None:
 
 
 def test_alt_wording_renders_and_switches(root: Root) -> None:
-    plain = root.shrines(kind='memorial', heart='spirit').decode('utf-8')
+    plain = root.shrines(kind='kami').decode('utf-8')
     assert 'class="when-alt">How is the shrine consecrated?' in plain
-    assert 'data-alt-when="heart:bones"' in plain
     assert 'is-alt' not in plain.split('id="shrine-form"')[0].rsplit('<form', 1)[1]
-    alt = root.shrines(kind='memorial', heart='bones').decode('utf-8')
+    alt = root.shrines(kind='memorial').decode('utf-8')
     assert 'shrine-form is-alt' in alt
 
 
 def test_memorial_path_reaches_summary_and_ledger(root: Root, as_user: object) -> None:
     params = {
         'kind': 'memorial',
-        'heart': 'spirit',
+        'heart': 'registered',
         'preparation': 'washed',
-        'head': 'temple',
-        'sharing': 'ebisu',
+        'sharing': 'temple',
         'resting': 'gorinto',
         'display': 'reliquary',
     }
     page = root.shrines(**params).decode('utf-8')
-    assert 'data-goto="head"><span>The head</span> <em>Given to the Temple of Ebisu</em>' in page
+    assert (
+        'data-goto="sharing"><span>Dividing the remains</span> '
+        '<em>A portion to a temple he was close to</em>'
+    ) in page
+    assert (
+        'data-goto="display"><span>Showing the remains</span> <em>One bone in a reliquary' in page
+    )
     assert (
         'data-goto="preparation"><span>Preparing the remains</span> <em>Washed clean</em>' in page
     )
     as_user('gm')  # type: ignore[operator]
     gm = root.shrines(**params).decode('utf-8')
     assert 'Burakumin (retrieving and preparing the remains)' in gm
-    assert 'The head: Given to the Temple of Ebisu' in gm
+    assert 'Dividing the remains: A portion to a temple he was close to' in gm
+
+
+def test_rules_script_in_player_page_carries_no_prices(root: Root, catalog: Catalog) -> None:
+    """The browser gets the rules (conditions only); the whole-page test above covers the rest."""
+    page = root.shrines(**most_expensive(catalog)).decode('utf-8')
+    found = re.search(r'id="shrine-rules">(.*?)</script>', page, re.S)
+    assert found is not None
+    blob = found.group(1)
+    for word in ('koku', 'heavy', 'contract', 'lines', 'porter'):
+        assert word not in blob
+
+
+def test_preparation_says_what_it_decides(root: Root) -> None:
+    """FR-036: the step explains why it is asked, and the washed card names what it opens."""
+    page = root.shrines(kind='memorial').decode('utf-8')
+    assert 'class="shrine-cat__decides">A village pyre leaves more than ash' in page
+    assert 'Makes possible later: One bone in a reliquary.' in page
+    assert 'shrine-opt is-unavailable' in page  # the reliquary, until bones are washed

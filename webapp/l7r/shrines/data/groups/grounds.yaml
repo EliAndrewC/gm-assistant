@@ -1,0 +1,279 @@
+# Shrine builder catalog, group "grounds". See ../catalog.yaml for the format and the rules.
+key: grounds
+label: The grounds
+intro: >-
+  How the place is marked off from the forest, and what a visitor passes on the way in.
+categories:
+  - key: gate_form
+    label: Gate
+    prompt: What marks the threshold of the sacred ground?
+    reference: myojin
+    options:
+      - key: trees
+        label: Two trees bound with rope
+        text: >-
+          Two great trees on either side of the path are joined by a sacred rope hung with paper
+          streamers.
+        appeal: >-
+          The forest itself makes the gate, and passing between living trunks feels like being
+          admitted by them.
+        units: 0
+        lines: [{contract: rites, koku: 0.3}]
+      - key: shinmei
+        label: Straight gate
+        ja: 神明鳥居
+        romaji: shinmei torii
+        text: >-
+          Two round posts and two straight crossbeams, nothing more.
+        appeal: >-
+          The oldest torii, stark and serene, it frames the path like a brushstroke.
+        units: 1
+      - key: myojin
+        label: Upswept gate
+        ja: 明神鳥居
+        romaji: myojin torii
+        text: >-
+          A top beam that curves up at the ends like a bow, over a straight tie beam, with a
+          tablet between. One of the most common gates.
+        units: 1.2
+      - key: row
+        label: A tunnel of small gates
+        text: >-
+          Small torii set close together along the path so it runs through them like a tunnel.
+        appeal: >-
+          A custom of Inari shrines, where grateful visitors add more over the years until the
+          line runs up the hill.
+        units: 2
+
+  - key: gate_material
+    label: Gate material
+    prompt: What is the gate made of?
+    when: {gate_form: {not: [trees]}}
+    reference: vermilion
+    options:
+      - key: wood
+        label: Bare wood
+        text: >-
+          Timber left its own color, renewed every generation as the posts weather.
+        appeal: >-
+          Quiet and of a piece with the forest, it seems to have grown where it stands.
+        lines: [{contract: carpentry, koku: 4, per: gate_form}]
+      - key: vermilion
+        label: Vermilion-painted wood
+        text: >-
+          Timber painted the red-orange of shrine gates.
+        appeal: >-
+          The color shows through the trees long before the shrine does, a promise of what lies
+          ahead.
+        lines: [{contract: carpentry, koku: 4, per: gate_form}, {contract: finishing, koku: 1.5, per: gate_form}]
+      - key: stone
+        label: Stone
+        text: >-
+          Cut granite, gray and permanent, often given by a patron whose name is carved on a
+          post.
+        appeal: >-
+          It will stand unchanged for a thousand years, a monument in its own right.
+        lines: [{contract: stonework, koku: 12, heavy: 8, per: gate_form}]
+
+  - key: path
+    label: Approach path
+    prompt: What is the approach (sando) to the shrine like?
+    reference: stepping
+    options:
+      - key: earth
+        label: Swept earth
+        text: >-
+          A cleared path of beaten earth, swept by the disciples, with roots for steps.
+        appeal: >-
+          Visitors walk the very trail the hermit walked, worn by his own feet.
+        lines: [{contract: earthwork, koku: 1}]
+      - key: gravel
+        label: White gravel
+        text: >-
+          Raked pale gravel, which crunches underfoot.
+        appeal: >-
+          Walking on it is itself a small purification, and the sound announces every visitor.
+        lines: [{contract: earthwork, koku: 2, heavy: 3}]
+      - key: stepping
+        label: Stepping stones
+        text: >-
+          Flat stones set in moss a stride apart, leading through the trees.
+        appeal: >-
+          They set an unhurried pace, so visitors arrive calm and attentive.
+        lines: [{contract: stonework, koku: 3, heavy: 4}]
+      - key: steps
+        label: Stone stairway
+        text: >-
+          A flight of cut stone steps climbing to the shrine.
+        appeal: >-
+          The shrine is always approached from below and seen against the sky, and the climb
+          itself becomes an act of devotion.
+        lines: [{contract: stonework, koku: 8, heavy: 8}]
+
+  - key: enclosure
+    label: Enclosure
+    prompt: What marks the sacred ground around the sanctuary?
+    reference: fence
+    options:
+      - key: none
+        label: The forest itself
+        text: >-
+          The trees stand close around the sanctuary and are its boundary; moss and roots mark
+          where the sacred ground begins.
+        appeal: >-
+          The shrine seems to have grown out of the woods rather than been placed in them.
+      - key: rope
+        label: Sacred rope
+        ja: 注連縄
+        romaji: shimenawa
+        text: >-
+          A twisted rice-straw rope hung with zigzag paper streamers (shide), strung between
+          posts or trees around the sacred ground and renewed each year.
+        appeal: >-
+          Its white streamers stir in every breeze, and the yearly renewal gives the disciples a
+          festival day.
+        lines: [{contract: rites, koku: 0.3}]
+      - key: fence
+        label: Low wooden fence
+        ja: 玉垣
+        romaji: tamagaki
+        text: >-
+          A knee-high fence of square posts and rails around the sanctuary.
+        appeal: >-
+          It says plainly where the sacred ground begins, and gives the space a tended, orderly
+          calm.
+        lines: [{contract: carpentry, koku: 4}]
+      - key: posts
+        label: Stone posts
+        text: >-
+          Squat stone posts linked by stone or iron rails.
+        appeal: >-
+          Donors' names can be carved on them one family to a post, binding the villages to the
+          shrine for generations.
+        lines: [{contract: stonework, koku: 5, heavy: 5}]
+      - key: hedge
+        label: Sakaki hedge
+        ja: 榊
+        romaji: sakaki
+        text: >-
+          A planted hedge of sakaki, the glossy evergreen whose branches are offered at every
+          rite.
+        appeal: >-
+          Living, and it grows thicker every year, a boundary that renews itself.
+        lines: [{contract: earthwork, koku: 1}]
+
+  - key: guardians
+    label: Guardians
+    prompt: What guards the shrine?
+    reference: foxes
+    options:
+      - key: none
+        label: The forest itself
+        text: >-
+          The old trees and whatever lives among them keep the shrine; foxes come and go at
+          their own pace.
+        appeal: >-
+          Fitting for a man who gave his life for the foxes: the guardians are real ones.
+      - key: komainu
+        label: Stone lion-dogs
+        ja: 狛犬
+        romaji: komainu
+        text: >-
+          A pair of stone lion-dogs on pedestals, one with its mouth open, one closed - the
+          first and last sounds. One of the most common guardians.
+        lines: [{contract: stonework, koku: 10, heavy: 8}]
+      - key: foxes
+        label: Stone foxes
+        ja: 狐
+        romaji: kitsune
+        text: >-
+          A pair of stone foxes, messengers of Inari, one holding a jewel, one a key or a scroll
+          in its mouth.
+        appeal: >-
+          Visitors wrap them in red bibs, and every fox in the forest has a pair of watchful
+          cousins.
+        lines: [{contract: stonework, koku: 11, heavy: 8}]
+      - key: wooden
+        label: Carved wooden guardians
+        text: >-
+          A small pair of carved and painted wooden lion-dogs that sit on the sanctuary's porch,
+          out of the weather.
+        appeal: >-
+          The oldest form, from before guardians moved outdoors, and their painted faces reward
+          anyone who comes close.
+        lines: [{contract: finishing, koku: 4}]
+
+  - key: lanterns
+    label: Light
+    prompt: How is the path lit?
+    reference: pair
+    options:
+      - key: none
+        label: A clearing open to the sky
+        text: >-
+          The canopy is opened above the path and the sanctuary, so sunlight falls on them by
+          day and moonlight by night.
+        appeal: >-
+          On a full-moon night the whole shrine stands silver in the dark forest.
+        lines: [{contract: earthwork, koku: 1}]
+      - key: pair
+        label: A pair of stone lanterns
+        ja: 石灯籠
+        romaji: ishidoro
+        text: >-
+          Two stone lanterns flanking the path, each a firebox on a tall shaft.
+        appeal: >-
+          Lit for festivals and night visits, they turn the approach into a ceremony.
+        lines: [{contract: stonework, koku: 6, heavy: 6}]
+      - key: tall
+        label: One tall night-lantern
+        ja: 常夜灯
+        romaji: joyato
+        text: >-
+          A single tall stone lantern at the foot of the path, meant to be lit every night.
+        appeal: >-
+          A beacon that tells anyone lost in the forest where the hermit's shrine stands.
+        lines: [{contract: stonework, koku: 5, heavy: 5}]
+      - key: hanging
+        label: Hanging metal lanterns
+        ja: 釣灯籠
+        romaji: tsuridoro
+        text: >-
+          Two pierced bronze or iron lanterns hung from the eaves.
+        appeal: >-
+          They throw patterned light across the steps, like stars caught in the shrine.
+        lines: [{contract: metalwork, koku: 3}]
+
+  - key: water
+    label: Purification water
+    prompt: Where do visitors rinse their hands and mouths before approaching?
+    reference: basin
+    options:
+      - key: stream
+        label: The stream
+        text: >-
+          Just as the hermit washed his hands in the stream each morning, so visitors kneel at
+          the water's edge and purify themselves there.
+        appeal: >-
+          Running water is the purest of all, and every visitor shares the hermit's morning.
+        lines: [{contract: earthwork, koku: 0.3}]
+      - key: basin
+        label: Stone basin with a bamboo spout
+        ja: 手水鉢
+        romaji: chozubachi
+        text: >-
+          A carved stone basin fed by a bamboo pipe from a spring, with a long-handled dipper
+          resting across it.
+        appeal: >-
+          The water never stops running, and its trickle is the first sound a visitor hears.
+        lines: [{contract: stonework, koku: 4, heavy: 4}, {contract: carpentry, koku: 0.5}]
+      - key: pavilion
+        label: Basin under a roofed pavilion
+        ja: 手水舎
+        romaji: temizuya
+        text: >-
+          A stone basin sheltered by a small roof on four posts.
+        appeal: >-
+          It neither freezes over nor fills with leaves, and offers a dry pause on a rainy
+          climb.
+        lines: [{contract: stonework, koku: 4, heavy: 4}, {contract: carpentry, koku: 6}, {contract: roofing, koku: 2}]

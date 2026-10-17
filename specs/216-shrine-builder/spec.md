@@ -245,3 +245,4 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   the heart question judged right. Changes: (1) FR-033 registers HIM (the honored dead), not the
   shrine; (2) FR-036 narrowed to "say so where the answer decides a later choice", explicitly not a
   list of every effect.
+- **Round 10 (amendment 4) - FAITHFUL** (2026-10-17). Both changes confirmed.

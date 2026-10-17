@@ -1,0 +1,198 @@
+# Shrine builder catalog, group "remains". See ../catalog.yaml for the format and the rules.
+# Every step here applies only to a memorial (`when: {kind: [memorial]}`), and the options are
+# written generically; Shoda (the first use) appears only as an example.
+key: remains
+label: The remains
+intro: >-
+  The remains are brought out from wherever they were first laid - for Shoda, a pauper's mound and
+  a bag of salt - by monks, and by burakumin, who handle the dead. What is done with them after
+  that is for the founder to decide.
+categories:
+  - key: heart
+    label: The heart of the shrine
+    prompt: What lies at the heart of the shrine?
+    when: {kind: [memorial]}
+    reference: registered
+    # FR-032/FR-033: the human dead are honored ancestors, not kami, and whether he is entered on
+    # the Ministry of Rites' rolls is part of this same question (GM 2026-10-17).
+    options:
+      - key: registered
+        label: His spirit, honored as an ancestor and registered
+        text: >-
+          His spirit is honored here as an ancestor - called to the shrine by its rites, not taken
+          out of Yomi - and he is entered on the rolls of the domain's Ministry of Rites (for Shoda,
+          the Kitsune), whose priests then serve the shrine's great rites. The remains rest apart in
+          a tomb of their own.
+        appeal: >-
+          He is honored with the full weight of the Empire's rites behind him, and no one can say
+          the shrine is anything less than proper.
+        lines: [{contract: rites, koku: 4}]
+      - key: disciples
+        label: His spirit, honored by those who knew him
+        text: >-
+          His spirit is honored here as an ancestor by his disciples and the people who come,
+          without asking any ministry's leave; the remains rest apart in a tomb of their own.
+        appeal: >-
+          The shrine belongs wholly to the people who loved him, and answers to no one else.
+      - key: bones
+        label: The remains themselves
+        text: >-
+          The shrine is built around his remains, as halls are built around the relics of revered
+          priests; visitors come to the man himself rather than to a spirit called down.
+        appeal: >-
+          Every visitor stands before him, with nothing in between.
+
+  - key: preparation
+    label: Preparing the remains
+    prompt: How are the remains prepared once they are brought out?
+    when: {kind: [memorial]}
+    decides: >-
+      A village pyre leaves more than ash, and how the bones are prepared decides whether any of
+      them can later be shown to visitors.
+    reference: washed
+    options:
+      - key: washed
+        label: Washed clean
+        ja: 洗骨
+        romaji: senkotsu
+        text: >-
+          What the fire left on the bones is taken off by hand, and each bone is washed in sake
+          until it is white.
+        appeal: >-
+          He is made clean of the death he was given, and goes to his rest as white and whole as
+          his bones allow.
+        lines: [{contract: remains, koku: 2}, {contract: rites, koku: 0.5}]
+      - key: wrapped
+        label: Laid to rest as they are
+        text: >-
+          The remains are lifted as they lie, with the ash and earth around them, wrapped in white
+          cloth with incense, and never handled again.
+        appeal: >-
+          He is disturbed as little as possible, and every trace of him leaves the place he was
+          first laid.
+        lines: [{contract: remains, koku: 0.8}]
+
+  - key: sharing
+    label: Dividing the remains
+    prompt: How are his remains kept - together, or divided?
+    when: {kind: [memorial]}
+    reference: together
+    # FR-034: the head is part of this question, not a step of its own. A head is treated apart
+    # only when it was taken from the body (the dead of battle, the beheaded), hence "if".
+    options:
+      - key: together
+        label: Kept together
+        text: >-
+          Every bone that can be recovered - and the head, if it was taken - is laid to rest
+          together at the shrine.
+        appeal: >-
+          He is made whole again in death, and the place where he lived keeps all of him.
+      - key: headmound
+        label: The head under a mound of its own
+        ja: 首塚
+        romaji: kubizuka
+        text: >-
+          If the head was taken from him, it is buried apart under its own mound and stone, as the
+          heads of those who died by violence have long been buried.
+        appeal: >-
+          The surest way to calm a spirit that met a hard end, and a second place for those who
+          loved him to pray.
+        lines: [{contract: earthwork, koku: 2}, {contract: stonework, koku: 2, heavy: 2}, {contract: rites, koku: 1}]
+      - key: temple
+        label: A portion to a temple he was close to
+        ja: 分骨
+        romaji: bunkotsu
+        text: >-
+          A bone, or the head, is given to a temple he had a bond with - for Shoda, the Temple of
+          Ebisu that sheltered him - as great men's remains have been divided among the temples
+          that honored them.
+        appeal: >-
+          The temple shares in his rest, and the two places are bound together through him.
+        lines: [{contract: rites, koku: 3}]
+      - key: mountain
+        label: A portion to a mountain temple
+        text: >-
+          A portion of his bones is carried to a great temple on a holy mountain, where the
+          faithful send a part of their dead to rest near the saints.
+        appeal: >-
+          Some part of him rests among the holiest dead of the Empire.
+        lines: [{contract: rites, koku: 3}]
+
+  - key: resting
+    label: Storing the remains
+    prompt: What holds the remains, and where does it rest?
+    when: {kind: [memorial]}
+    reference: gorinto
+    options:
+      - key: inner
+        label: A stone coffer in an inner tomb
+        ja: 奥の院
+        romaji: oku-no-in
+        text: >-
+          The remains are sealed in a stone coffer inside a tomb set apart behind the sanctuary
+          and above it, reached by a flight of steps through the trees.
+        appeal: >-
+          Visitors climb to him last, as to the innermost place of the shrine.
+        lines: [{contract: stonework, koku: 6, heavy: 6}, {contract: earthwork, koku: 2}]
+      - key: gorinto
+        label: An urn beneath a five-ring pagoda
+        ja: 五輪塔
+        romaji: gorinto
+        text: >-
+          A glazed urn buried beneath a stone pagoda of five stacked shapes - earth, water, fire,
+          wind and void.
+        appeal: >-
+          The five elements stand over him, and the pagoda's quiet silhouette reads at once as a
+          holy grave.
+        lines: [{contract: stonework, koku: 5, heavy: 5}]
+      - key: hall
+        label: A lacquered chest in a mortuary hall
+        ja: 霊屋
+        romaji: tamaya
+        text: >-
+          The remains lie in a lacquered chest on a dais inside a small hall of their own, closed
+          with doors.
+        appeal: >-
+          He is given a house of his own in death, a place where the disciples can kneel out of
+          the rain.
+        lines: [{contract: carpentry, koku: 15}, {contract: roofing, koku: 4}, {contract: finishing, koku: 3}]
+      - key: mound
+        label: A clay jar under an earthen mound
+        ja: 塚
+        romaji: tsuka
+        text: >-
+          The remains go into an unglazed clay jar, and the disciples heap a mound of earth over it
+          with their own hands, crowned with a single stone.
+        appeal: >-
+          The oldest kind of grave there is, raised by those who loved him.
+        lines: [{contract: earthwork, koku: 2}]
+
+  - key: display
+    label: Showing the remains
+    prompt: How are the remains shown to those who come?
+    when: {kind: [memorial]}
+    reference: sealed
+    options:
+      - key: sealed
+        label: Sealed, and left in peace
+        text: >-
+          The remains are sealed in their resting place and not shown; visitors pray before the
+          place, not the bones. One of the most common ways to keep the dead.
+      - key: reliquary
+        label: One bone in a reliquary
+        ja: 舎利塔
+        romaji: sharito
+        when: {preparation: [washed]}
+        text: >-
+          A single washed bone is kept apart in a small pagoda-shaped reliquary with crystal sides,
+          shown to visitors on festival days, as the relics of revered priests are shown.
+        appeal: >-
+          Those who come on those days see him with their own eyes, and the festival gains a heart.
+        lines: [{contract: metalwork, koku: 3}]
+      - key: lattice
+        label: The urn behind a lattice door
+        text: >-
+          The vessel holding the remains stands behind a latticed door, glimpsed but never touched.
+        appeal: >-
+          He is always present to anyone who kneels and looks, yet always at rest.
+        lines: [{contract: carpentry, koku: 1}]

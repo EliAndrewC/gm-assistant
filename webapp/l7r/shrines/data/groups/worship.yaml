@@ -1,0 +1,202 @@
+# Shrine builder catalog, group "worship". See ../catalog.yaml for the format and the rules.
+key: worship
+label: Worship and offerings
+intro: >-
+  What a visitor touches: where they stand, how they announce themselves to the kami, where they
+  leave their coins and offerings, and what dwells inside.
+alt:
+  intro: >-
+    What a visitor touches: where they stand, how they announce themselves, and where they leave
+    their coins and offerings.
+categories:
+  - key: hall
+    label: Worship space
+    prompt: Where do visitors stand to pray?
+    reference: pavilion
+    options:
+      - key: open
+        label: Before the sanctuary, in the open
+        text: >-
+          Visitors pray standing on the earth before the steps, under the trees and the sky. One
+          of the most common arrangements at small shrines.
+      - key: cover
+        label: A cover-shed over the sanctuary
+        ja: 覆屋
+        romaji: ooiya
+        text: >-
+          A roofed shed built right over the small sanctuary to shield it from snow and rot;
+          visitors pray at its open front.
+        appeal: >-
+          Common in forests and snowy country, it keeps a small sanctuary safe for centuries, and
+          the sanctuary glimmers within like a treasure in its case.
+        lines: [{contract: carpentry, koku: 7}, {contract: roofing, koku: 3}]
+      - key: pavilion
+        label: Open worship pavilion
+        ja: 拝殿
+        romaji: haiden
+        text: >-
+          A separate roofed platform in front of the sanctuary, open on all sides.
+        appeal: >-
+          A dry place to kneel in the rain, with room for a rite with a dozen disciples.
+        lines: [{contract: carpentry, koku: 9}, {contract: roofing, koku: 3}]
+
+  - key: altar
+    label: Altar
+    prompt: Where are offerings set out before the kami?
+    alt:
+      prompt: Where are offerings set out before him?
+    reference: table
+    options:
+      - key: table
+        label: Eight-legged offering table
+        ja: 八足案
+        romaji: hassokuan
+        text: >-
+          A low table of unpainted wood on eight slender legs, set before the sanctuary doors;
+          rice, salt, water and sake go on it in little stands (sanbo). One of the most common
+          altars.
+        lines: [{contract: carpentry, koku: 1}]
+      - key: slab
+        label: Stone offering table
+        text: >-
+          A dressed stone slab on two stone legs before the sanctuary.
+        appeal: >-
+          It stays out in all weathers, steady as the mountains, and never needs bringing in.
+        lines: [{contract: stonework, koku: 3, heavy: 3}]
+      - key: natural
+        label: A flat stone from the site
+        text: >-
+          A naturally flat stone from the forest floor, moved into place and purified.
+        appeal: >-
+          The offerings rest on the place itself, as they did before there were shrines at all.
+        lines: [{contract: earthwork, koku: 0.3}]
+      - key: belonging
+        label: The hermit's own table
+        text: >-
+          A low table or tray that belonged to the hermit, refinished and consecrated.
+        appeal: >-
+          Offerings are set where he once set his own bowl, a quiet reminder of the man himself.
+        lines: [{contract: carpentry, koku: 0.3}]
+
+  - key: sacred
+    label: Sacred object
+    prompt: What object, sealed inside the sanctuary, does the kami dwell in?
+    alt:
+      prompt: What object, sealed inside the sanctuary, is his spirit called to?
+    when: {form: {not: [himorogi]}, heart: {not: [bones]}}
+    reference: belonging
+    options:
+      - key: belonging
+        label: Something that was his
+        text: >-
+          A possession of the hermit - his staff, his bowl, a tool he worked with - wrapped in
+          silk and sealed in a box.
+        appeal: >-
+          The kami lives in something his hands wore smooth, and his disciples know exactly
+          what it is.
+        alt:
+          appeal: >-
+            His spirit is called to something his hands wore smooth, and his disciples know exactly
+            what it is.
+      - key: stone
+        label: A stone from where he sat
+        text: >-
+          A stone taken from the place where the hermit meditated and taught.
+        appeal: >-
+          Stones are among the oldest dwelling places of kami, and this one heard every lesson he
+          gave.
+        alt:
+          appeal: >-
+            Stones are among the oldest places the spirits are called to, and this one heard every
+            lesson he gave.
+      - key: mirror
+        label: A bronze mirror
+        ja: 鏡
+        romaji: kagami
+        text: >-
+          A round bronze mirror, newly cast and polished, that shows the worshiper themselves.
+          One of the most common sacred objects.
+        lines: [{contract: metalwork, koku: 4}]
+      - key: gohei
+        label: A paper wand
+        ja: 御幣
+        romaji: gohei
+        text: >-
+          A wand hung with folded white paper streamers.
+        appeal: >-
+          The purest vessel for a kami, renewed by the disciples so the shrine is always fresh.
+        alt:
+          appeal: >-
+            The purest vessel for a spirit called down, renewed by the disciples so the shrine is
+            always fresh.
+        lines: [{contract: rites, koku: 0.1}]
+
+  - key: box
+    label: Offering box
+    prompt: Where do visitors leave their coins?
+    reference: banded
+    options:
+      - key: banded
+        label: Wooden chest with an iron lock
+        ja: 賽銭箱
+        romaji: saisenbako
+        text: >-
+          A wooden chest with a slatted top that coins drop through, bound in iron and locked;
+          the disciples carry the key.
+        appeal: >-
+          The ring of a coin on its slats carries through the clearing, and the offerings are
+          safe in a place nobody watches.
+        lines: [{contract: carpentry, koku: 0.5}, {contract: metalwork, koku: 1}]
+      - key: bamboo
+        label: A bamboo tube
+        text: >-
+          A thick section of green bamboo bound upright to a post, with a slot cut near the top;
+          the disciples split a new one to empty it.
+        appeal: >-
+          Of a piece with the woods, it looks as if the forest grew its own offering box.
+        lines: [{contract: carpentry, koku: 0.2}]
+      - key: stone
+        label: Box set in stone
+        text: >-
+          A hollowed stone block with a slot and an iron-bound lid.
+        appeal: >-
+          Far too heavy to carry off, it will receive coins long after everyone who built it is
+          gone.
+        lines: [{contract: stonework, koku: 2, heavy: 2}, {contract: metalwork, koku: 0.5}]
+
+  - key: bell
+    label: Bell
+    prompt: How does a visitor announce themselves to the kami?
+    alt:
+      prompt: How does a visitor announce themselves?
+    reference: suzu
+    options:
+      - key: clap
+        label: Two claps
+        text: >-
+          The visitor bows twice and claps twice.
+        appeal: >-
+          In the forest's quiet the sound carries far through the trees, sharp and clean.
+      - key: suzu
+        label: Bell and rope
+        ja: 鈴
+        romaji: suzu
+        text: >-
+          A round rattle-bell hung from the eaves on a thick braided rope, shaken before praying.
+        appeal: >-
+          Its bright jingle is said to please and summon the kami, and children love to ring it.
+        alt:
+          appeal: >-
+            Its bright jingle carries through the trees ahead of every prayer, and children love
+            to ring it.
+        lines: [{contract: metalwork, koku: 1}]
+      - key: gong
+        label: Hanging gong
+        ja: 鰐口
+        romaji: waniguchi
+        text: >-
+          A flat, hollow bronze gong, struck with a rope-hung beam.
+        appeal: >-
+          Its deep note hangs in the air long after it is struck, and can be heard from the foot
+          of the path.
+        lines: [{contract: metalwork, koku: 2.5}]

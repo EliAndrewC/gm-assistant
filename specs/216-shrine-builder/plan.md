@@ -45,6 +45,18 @@ a GM session; for everyone else the template never receives a cost.
    script restores scroll position so a reload does not jump to the top. Player changes only update
    the address bar and moot markers, no reload.
 
+8. **One rule grammar, forward-only (refactor after amendment 4, GM invited it).** By amendment 4
+   the builder had grown four applicability mechanisms (an option's `voids`, a category's
+   `only_with`, an option's `only_with`, and `alt_when`), each implemented twice (Python and the
+   browser script). Replaced by ONE `when` condition on categories and options (same grammar for
+   `alt_when`), whose every clause must name an EARLIER category - validated. That makes
+   resolution a single forward pass in wizard order (no fixpoint), and it rules out by
+   construction two rules that flip each other forever, which a fixpoint over negated conditions
+   can do. The browser no longer reads per-element data attributes: the server inlines the rules
+   as JSON (conditions only; a test asserts no price word appears in it) and shrines.js runs the
+   same pass. The catalog split into `data/catalog.yaml` plus one file per group, and the module
+   into `catalog.py` / `design.py` / `pricing.py`, keeping files at human scale.
+
 ## Constitution Check
 
 - **I. Viewports**: UI added; screenshot contact sheets at all four viewports and a zero-issue DOM

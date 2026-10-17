@@ -42,7 +42,9 @@
   </div>
 </section>
 
-<form class="container shrine-form{% if is_gm %} shrine-form--gm{% endif %}{% if design.alt %} is-alt{% endif %}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}"{% if catalog.alt_when %} data-alt-when="{{ catalog.alt_when[0] }}:{{ catalog.alt_when[1]|join('|') }}"{% endif %}>
+<form class="container shrine-form{% if is_gm %} shrine-form--gm{% endif %}{% if design.alt %} is-alt{% endif %}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}">
+  {# The applicability rules for shrines.js: conditions only, never a price (tested). #}
+  <script type="application/json" id="shrine-rules">{{ rules_json|safe }}</script>
   <div class="shrine-layout">
     {% if is_gm %}
       <div class="shrine-ledger-col">
@@ -151,24 +153,19 @@
           {% set chosen = design.choices.get(category.key) %}
           <section class="wizard-step" id="shrine-step-{{ category.key }}" data-step="{{ category.key }}" data-chapter="{{ group.label }}">
             {% if loop.first %}<p class="wizard-step__chapter-intro">{{ t(group, 'intro') }}</p>{% endif %}
-            <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}"{% if category.only_with %} data-only-with="{{ category.only_with[0] }}:{{ category.only_with[1]|join('|') }}"{% endif %} {% if moot %}disabled{% endif %}>
+            <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}" {% if moot %}disabled{% endif %}>
               <legend class="shrine-cat__legend">
                 <span class="shrine-cat__label">{{ category.label }}</span>
                 <span class="wizard-step__title">{{ t(category, 'prompt') }}</span>
               </legend>
               {% if category.decides %}<p class="shrine-cat__decides">{{ category.decides }}</p>{% endif %}
-              {% if category.only_with %}
-                {% set needs = catalog.category(category.only_with[0]) %}
-                <p class="shrine-cat__moot" data-moot-note role="note">Only for the {% for k in category.only_with[1] %}"{{ needs.option(k).label }}"{{ ', ' if not loop.last }}{% endfor %} {{ needs.label|lower }}.</p>
-              {% else %}
-                <p class="shrine-cat__moot" data-moot-note role="note">Does not apply{% if moot %} with this {{ voided_by[category.key]|lower }}{% endif %}.</p>
-              {% endif %}
+              {% if category.when %}<p class="shrine-cat__moot" role="note">{{ moot_note(catalog, category) }}</p>{% endif %}
               <div class="shrine-opts shrine-opts--n{{ category.options|length }}">
                 {% for option in category.options %}
                   {% set opens = enables(catalog, category, option) %}
-                  {% set needs_met = option.only_with is none or design.choices.get(option.only_with[0]) in option.only_with[1] %}
-                  <label class="shrine-opt{% if not needs_met %} is-unavailable{% endif %}"{% if option.only_with %} data-needs="{{ option.only_with[0] }}:{{ option.only_with[1]|join('|') }}"{% endif %}>
-                    <input type="radio" name="{{ category.key }}" value="{{ option.key }}"{% if option.key == chosen %} checked{% endif %}{% if option.voids %} data-voids="{{ option.voids|join(' ') }}"{% endif %}{% if not needs_met %} disabled{% endif %} />
+                  {% set offered = option_offered(option, design) %}
+                  <label class="shrine-opt{% if not offered %} is-unavailable{% endif %}">
+                    <input type="radio" name="{{ category.key }}" value="{{ option.key }}"{% if option.key == chosen %} checked{% endif %}{% if not offered %} disabled{% endif %} />
                     <span class="shrine-opt__body">
                       <span class="shrine-opt__title">{{ t(option, 'label') }}</span>
                       {% if option.ja or option.romaji %}

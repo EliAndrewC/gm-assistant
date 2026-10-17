@@ -1,0 +1,94 @@
+# Shrine builder catalog (feature 216). Read by l7r/shrines/__init__.py; never served as a file.
+#
+# WHAT IS SECRET: every `lines` entry, the contracts, the remoteness rates and the site lines are
+# GM-only. The player view renders labels, prompts and option text and nothing else. Option text
+# must never state or imply price - tests/test_shrines.py enforces a word list over it.
+#
+# HOW PRICES WORK (the why lives in l7r/shrines/CLAUDE.md, "Historical grounding"):
+#   - koku = Edo ryo, 1:1, both pinned to a koku of rice.
+#   - Each option has `lines`: {contract, koku, heavy, per}. `heavy` is porterage weight in units,
+#     charged at the GM's remoteness rate. `per: <category>` multiplies the line (koku and heavy)
+#     by the `units` of the option chosen in that category - gate form scales the gate material.
+#   - Anchors (Tama district village ledgers, 1749-1805): copper re-roofing a LARGE one-bay
+#     sanctuary ~43 ryo; carving and polychrome on the same ~62 ryo; small repairs ~10 ryo.
+#     Stone items (torii, guardians, lanterns) have no ledger: mason labor plus porterage, estimates.
+#   - `reference` marks the "fairly nice small forest shrine" the default budget is built from.
+#     It is NOT a pre-selection: the player starts every step with nothing chosen.
+#
+# `when` - THE one rule for what applies (refactor, GM 2026-10-17). On a category it decides
+# whether that step appears; on an option, whether that option is offered. Each key names an
+# EARLIER category (validated: so the wizard can resolve every step in one forward pass, and no
+# two rules can flip each other forever); its value lists the options that satisfy it, or
+# {not: [...]} for the options that do not. All keys must hold. A category that is unchosen or
+# itself not in play counts as "no value": a plain list fails, a {not: ...} passes. So timber
+# shows before a form is picked, and the remains steps wait until a memorial is chosen.
+#
+# `alt_when` (same grammar, any category) switches every `alt:` text on: for a memorial the dead
+# are honored ancestors, not kami (FR-030/FR-032), so the kami wording gives way.
+#
+# `decides`: on a category, one sentence saying which later choice its answer decides (FR-036).
+#
+# `appeal`: one sentence on what makes the option good to choose (FR-026), rendered after `text`.
+# Required on every option EXCEPT one whose text says "one of the most common" (that IS its
+# appeal); tests enforce exactly that.
+#
+# WORDING RULES (GM 2026-10-17, spec FR-019 to FR-021; tests enforce what can be counted):
+#   - No option is another option plus more ("vermilion" beside "black lacquer with vermilion"),
+#     and no category is a lesser/greater pair (that is why there is no sanctuary-size category).
+#   - No option is an absence. "None" / "No gate" become a real form: the forest guards the shrine,
+#     a clearing lights the path, visitors wash in the stream as the hermit did.
+#   - Prompts ask "what" or "how", never "is there a...?". Nothing is "the usual" or "the
+#     standard"; say "one of the most common".
+
+# Pre-filled shrine name (FR-017, wording the GM's own, FR-022).
+default_name: The memorial hermitage of Shoda the Fox-forest Guardian
+
+contracts:
+  - key: carpentry
+    label: Carpentry and timber
+  - key: roofing
+    label: Roofing
+  - key: stonework
+    label: Stonemasons
+  - key: metalwork
+    label: Metalwork and casting
+  - key: finishing
+    label: Lacquer, carving and lettering
+  - key: earthwork
+    label: Laborers and site work
+  - key: rites
+    label: Priests and rites
+  - key: remains
+    label: Burakumin (retrieving and preparing the remains)
+  - key: porterage
+    label: Porters
+
+remoteness:
+  default: trail
+  options:
+    - key: road
+      label: Near a cart road
+      rate: 0.25
+    - key: trail
+      label: Half a day in on a foot trail
+      rate: 0.6
+    - key: deep
+      label: Deep forest, no trail worth the name
+      rate: 1.0
+
+# Always paid, whatever the design: clearing and leveling the ground and setting foundation
+# stones, and the ground-purification rite (jichinsai) held before any building starts.
+site_lines:
+  - {label: Clearing, leveling and foundation stones, contract: earthwork, koku: 3}
+  - {label: Ground-purification rite before building, contract: rites, koku: 0.5}
+
+# FR-030: when this choice is made the shrine has no kami - the remains are its heart - so every
+# group/category/option `alt:` text replaces its plain wording (the kami's dwelling becomes the
+# place where he rests).
+alt_when: {kind: [memorial]}
+
+budget_padding: 1.2   # Tadashi won the budget negotiation by 10+ (research.md R6)
+
+# The wizard's sections, in order; each is data/groups/<key>.yaml. Order matters: a `when`
+# condition may only refer to a category in an EARLIER group (or earlier in the same group).
+groups: [purpose, remains, sanctuary, worship, grounds, dedication]

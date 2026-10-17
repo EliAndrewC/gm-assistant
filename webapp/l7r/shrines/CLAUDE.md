@@ -9,11 +9,24 @@ contract down. What is left of the budget is what he keeps.
 
 | file | what |
 |---|---|
-| `catalog.yaml` | categories, options, player text, and the GM-only price `lines`. Edit prices and options here |
-| `__init__.py` | load/validate the catalog, read a design and the GM's `gm_*` settings from query params, price, negotiate |
-| `../templates/shrines.html`, `../static/css/shrines.css`, `../static/js/shrines.js` | the page |
-| `../../tests/test_shrines.py`, `../../tests/test_shrines_routes.py` | logic; what each viewer can see |
-| `specs/216-shrine-builder/` (repo root) | spec, research trail with sources, plan |
+| `data/catalog.yaml` | contracts, remoteness, site lines, `alt_when`, the order of groups - and the format notes for everything below |
+| `data/groups/<key>.yaml` | one wizard section each: its steps, options, player text, GM-only price `lines`, and `when` rules |
+| `catalog.py` | the data model, the one `when` grammar (`Clause`), loading (`load_raw` merges the files) and validation |
+| `design.py` | resolving a design in one forward pass, links, moot notes, `enables`, and `rules_json` for the browser |
+| `pricing.py` | fair prices, porterage, Tadashi's per-contract haggling, number formatting (GM only) |
+| `../templates/shrines.html`, `../static/css/shrines.css`, `../static/js/shrines.js` | the page; the script's `resolve()` mirrors `design._resolve` |
+| `../../tests/test_shrines.py`, `../../tests/test_shrines_routes.py` | logic and rules; what each viewer can see |
+| `specs/216-shrine-builder/` (repo root) | spec with every amendment, the GM's messages verbatim, research with sources, plan |
+
+## The one rule: `when`
+
+Every step and every option may carry `when: {<earlier step>: [options]}` or
+`{<earlier step>: {not: [options]}}`; all keys must hold, and an unanswered step counts as "no
+value" (a plain list fails, a `not` passes). Clauses may only look BACKWARD - validation rejects a
+forward or self reference - so `design._resolve` and the browser's `resolve()` settle the whole
+wizard in one pass. Don't reintroduce `voids`/`only_with`-style side channels: express it as a
+`when` on the thing that appears or disappears. `alt_when` uses the same grammar to switch the
+`alt:` wording (for a memorial the dead are honored ancestors, not kami).
 
 ## Rules that hold this together
 
@@ -40,17 +53,21 @@ contract down. What is left of the budget is what he keeps.
 - **Nothing pre-selected, and no fixed order** (FR-023): every step starts empty, Next waits for a
   choice, and `shrines.js` shuffles the cards each time a step is shown. Catalog order means
   nothing to the player.
+- **Cards** (FR-035): every card in a row has the same height and its italic appeal line sits at
+  the bottom.
 - **Every option says why it is worth choosing** (FR-026): `appeal:` in the catalog, one sentence,
   required on every option except one described as "one of the most common". Tested.
-- **Form-specific decisions** (FR-025): a category with `only_with: {form: [himorogi]}` applies
-  only to that form (the kami's dwelling; the ground before it). `_voided` handles it server-side,
-  `data-only-with` client-side.
-- **Memorial or kami shrine** (FR-028 to FR-031): the step after the name picks the kind. A
-  memorial adds the remains steps (`only_with: {kind: [memorial]}`): the heart of the shrine, how
-  the remains are prepared, the salted head, sharing them (the Temple of Ebisu), storing them, and
-  showing them. Remains at the heart means no kami: `catalog.alt_when` switches every `alt:` text
-  (the "kami's dwelling" wording becomes the place where he rests) and voids the sacred object and
-  the open-sky dwelling step. No boiling of bones - no East Asian record (research.md R7).
+- **Form-specific decisions** (FR-025): `when: {form: [himorogi]}` puts the kami's dwelling and
+  the ground before it in play only for the open-to-the-sky form.
+- **Memorial or kami shrine** (FR-028 to FR-036): the step after the name picks the kind. A
+  memorial adds the remains steps: the heart of the shrine (his spirit honored as an ancestor and
+  registered with the domain's Ministry of Rites, honored by those who knew him, or the remains
+  themselves), preparing them, dividing them (the head is part of this, not its own step), storing
+  them, and showing them. Options stay generic; Shoda and the Temple of Ebisu appear only as
+  examples. For any memorial `alt_when` switches the kami wording to honored-ancestor wording;
+  remains at the heart also switch off the sacred object and the open-sky dwelling step. Only
+  washed bones can be shown in a reliquary, and the preparation step says so (`decides`). No
+  boiling of bones - no East Asian record (research.md R7).
 - **Browser Back = wizard Back** (FR-024): Next and summary jumps push a history entry; on
   popstate going back, the wizard shows the previous APPLICABLE step (what its own Back does), not
   merely the last page visited. The wizard's Back calls `history.back()` when there is a wizard
@@ -79,7 +96,8 @@ contract down. What is left of the budget is what he keeps.
   Culture gift rule's shape: max(0, roll - baseline) percent off, baseline 25 by default. The GM can
   type a contractor's contested roll into the baseline instead.
 - **Suggested budget**: the reference design (`reference:` in each category - a "fairly nice small
-  forest shrine", ~121 koku at the default remoteness) x 1.2, rounded up to 5 = **145 koku**. The
+  memorial in the forest", ~135 koku at the default remoteness) x 1.2, rounded up to 5 =
+  **165 koku**. The
   1.2 is Tadashi's budget negotiation won by more than 10. Computed, so it moves with the prices.
 
 ## Testing it

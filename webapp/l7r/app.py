@@ -64,17 +64,19 @@ from l7r.sections import SECTIONS
 from l7r.shrines import (
     TEXT_FIELDS,
     Catalog,
-    enables,
     default_budget,
+    enables,
     format_koku,
     format_number,
     gm_query,
     load_catalog,
+    moot_note,
     negotiate,
+    option_offered,
     parse_design,
     parse_negotiation,
+    rules_json,
     share_query,
-    voided_by,
 )
 from l7r.slugs import find_relic_by_slug, neighbors_in_fortune, relics_for_fortune
 
@@ -372,7 +374,9 @@ class Root:
             enables=enables,
             catalog=catalog,
             design=design,
-            voided_by=voided_by(catalog, design),
+            moot_note=moot_note,
+            option_offered=option_offered,
+            rules_json=rules_json(catalog),
             text_fields=TEXT_FIELDS,
             share_query=share_query(catalog, design),
             is_gm=is_gm,

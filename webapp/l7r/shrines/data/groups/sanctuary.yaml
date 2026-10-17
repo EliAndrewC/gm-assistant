@@ -1,0 +1,355 @@
+# Shrine builder catalog, group "sanctuary". See ../catalog.yaml for the format and the rules.
+key: sanctuary
+label: The sanctuary
+intro: >-
+  The sanctuary (honden) is the innermost building: the dwelling of the kami, or the house that
+  keeps what is most sacred. Nobody goes inside it; its doors are opened only for rites.
+alt:
+  intro: >-
+    The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
+    here, the place his spirit is called to, or his remains. Nobody goes inside it; its doors are
+    opened only for rites.
+categories:
+  - key: form
+    label: Form
+    prompt: What form does the sanctuary take?
+    reference: nagare
+    options:
+      - key: nagare
+        label: Flowing roof
+        ja: 流造
+        romaji: nagare-zukuri
+        text: >-
+          A gabled roof whose front slope runs long and low over the steps, so that worshipers
+          stand under the eaves. One of the most common forms in the Empire.
+        lines: [{contract: carpentry, koku: 16}]
+      - key: kasuga
+        label: Gable-entry
+        ja: 春日造
+        romaji: kasuga-zukuri
+        text: >-
+          A compact box entered from the gable end under a small curved porch roof, neat and
+          upright, traditionally painted.
+        appeal: >-
+          It has the poise of a jewel box set down among the trees, and draws the eye straight
+          to its doors.
+        lines: [{contract: carpentry, koku: 15}]
+      - key: shinmei
+        label: Straight roof on posts
+        ja: 神明造
+        romaji: shinmei-zukuri
+        text: >-
+          The oldest building form: a raised storehouse shape with a straight, unbent roof,
+          round pillars sunk in the earth and crossed finials at the ridge.
+        appeal: >-
+          Severe and archaic, it makes the shrine feel as if it has stood in the forest since the
+          age of the gods.
+        lines: [{contract: carpentry, koku: 14}]
+      - key: hokora
+        label: Stone shrine-house
+        ja: 祠
+        romaji: hokora
+        text: >-
+          A small house of carved stone, chest high, on a stone plinth, the kind found along
+          roadsides and in groves all over the countryside.
+        appeal: >-
+          Moss and lichen claim it within a few years, and it will still be standing when every
+          timber in the province has rotted away.
+        lines: [{contract: stonework, koku: 6, heavy: 4}]
+      - key: himorogi
+        label: Open to the sky
+        ja: 神籬
+        romaji: himorogi
+        text: >-
+          The kami dwells not in a house but in the living forest itself, in a place bound with
+          sacred rope and purified, under the open sky.
+        alt:
+          text: >-
+            The heart of the shrine is left open to the forest and the sky, its ground bound
+            with sacred rope and purified.
+        appeal: >-
+          The most ancient form of worship, still kept at some of the greatest shrines in the
+          Empire, and the closest of all to the way the hermit lived.
+        lines: [{contract: carpentry, koku: 1}]
+
+  - key: dwelling
+    label: The kami's dwelling
+    prompt: What does the kami dwell in?
+    alt:
+      label: Where his spirit is called
+      prompt: Where is his spirit called to?
+    when: {form: [himorogi], heart: {not: [bones]}}
+    reference: tree
+    options:
+      - key: tree
+        label: A great tree
+        ja: 神木
+        romaji: shinboku
+        text: >-
+          The oldest tree in the hermit's woods, its trunk bound with a thick straw rope and
+          paper streamers.
+        appeal: >-
+          A living pillar between earth and heaven, it will keep growing for centuries, and every
+          visitor finds themselves looking up.
+        lines: [{contract: earthwork, koku: 0.5}, {contract: rites, koku: 0.5}]
+      - key: rock
+        label: A rock seat
+        ja: 磐座
+        romaji: iwakura
+        text: >-
+          A great boulder where the hermit sat to teach, ringed with rope and swept clean.
+        appeal: >-
+          The kami takes the very seat the hermit took, and his disciples can sit before it as
+          they once sat before him.
+        alt:
+          appeal: >-
+            His spirit is called to the very seat he took, and his disciples can sit before it as
+            they once sat before him.
+        lines: [{contract: earthwork, koku: 0.5}]
+      - key: standing
+        label: A standing stone
+        ja: 立石
+        romaji: tateishi
+        text: >-
+          A tall stone raised upright at the heart of the clearing, rough and unworked.
+        appeal: >-
+          It reads from far off as a figure waiting among the trees, and holds the morning light
+          on its face.
+        lines: [{contract: stonework, koku: 3, heavy: 3}]
+      - key: grove
+        label: The whole grove
+        ja: 神奈備
+        romaji: kannabi
+        text: >-
+          The entire grove where the hermit lived is held to be the kami's body, its edges
+          marked with rope.
+        alt:
+          text: >-
+            The entire grove where the hermit lived is where his spirit is called, its edges marked
+            with rope.
+        appeal: >-
+          Every step taken among those trees is a step inside the shrine, and the forest itself
+          becomes the hermit's memorial.
+        lines: [{contract: rites, koku: 1}]
+
+  - key: ground
+    label: The ground before it
+    prompt: How is the ground before the kami's dwelling laid?
+    alt:
+      prompt: How is the ground at the heart of the shrine laid?
+    when: {form: [himorogi]}
+    reference: gravel
+    options:
+      - key: gravel
+        label: A court of white gravel
+        text: >-
+          A level court of pale gravel, raked in lines, spread before the dwelling for rites.
+        appeal: >-
+          It glows in moonlight, and the sound of each footstep tells the kami someone has come.
+        alt:
+          appeal: >-
+            It glows in moonlight, and the sound of each footstep tells him someone has come.
+        lines: [{contract: earthwork, koku: 2, heavy: 3}]
+      - key: moss
+        label: Moss left to grow
+        text: >-
+          The forest floor is cleared of brush and left to the moss, which the disciples tend by
+          hand.
+        appeal: >-
+          Soft and green as velvet, it hushes every step and makes the place feel untouched.
+        lines: [{contract: earthwork, koku: 0.5}]
+      - key: bamboo
+        label: Four green bamboo and a rope
+        ja: 斎竹
+        romaji: imidake
+        text: >-
+          Four freshly cut green bamboo stand at the corners of a square, joined by a sacred rope
+          hung with paper streamers.
+        appeal: >-
+          The oldest way of marking ground for a kami to descend into, and renewing the bamboo
+          each year gives the disciples a rite of their own.
+        alt:
+          appeal: >-
+            The oldest way of marking holy ground, and renewing the bamboo each year gives the
+            disciples a rite of their own.
+        lines: [{contract: rites, koku: 0.5}]
+      - key: stones
+        label: A ring of river stones
+        text: >-
+          Smooth stones carried up from the stream and set in a circle around the dwelling.
+        appeal: >-
+          The stream the hermit drank from is brought to his door, stone by stone.
+        lines: [{contract: earthwork, koku: 1.5, heavy: 2}]
+
+  - key: timber
+    label: Timber
+    prompt: What wood is it built from?
+    when: {form: {not: [hokora, himorogi]}}
+    reference: hinoki
+    options:
+      - key: sugi
+        label: Cedar from the forest itself
+        ja: 杉
+        romaji: sugi
+        text: >-
+          Trees felled from the hermit's own woods and sawn on the spot: straight, reddish and
+          soft.
+        appeal: >-
+          The shrine is literally made of the place it honors, from the same trees he walked
+          among.
+        lines: [{contract: carpentry, koku: 2}]
+      - key: hinoki
+        label: Hinoki cypress
+        ja: 檜
+        romaji: hinoki
+        text: >-
+          Pale, close-grained and fragrant, brought in from outside the forest; it weathers to
+          silver and resists rot.
+        appeal: >-
+          The timber most associated with shrines, and its clean scent greets every visitor at
+          the steps.
+        lines: [{contract: carpentry, koku: 8, heavy: 4}]
+      - key: keyaki
+        label: Zelkova
+        ja: 欅
+        romaji: keyaki
+        text: >-
+          A hard, dense hardwood with a strong figure that darkens with age, brought in from
+          outside the forest.
+        appeal: >-
+          It holds a carved edge for centuries and gives the building a dark, formal weight.
+        lines: [{contract: carpentry, koku: 10, heavy: 4}]
+
+  - key: roof
+    label: Roof covering
+    prompt: What is the roof made of?
+    when: {form: {not: [hokora, himorogi]}}
+    reference: hiwada
+    options:
+      - key: thatch
+        label: Thatch
+        ja: 茅葺
+        romaji: kayabuki
+        text: >-
+          Thick bundles of reed and grass, soft-edged and deep; the disciples can rethatch it
+          themselves every twenty years or so.
+        appeal: >-
+          The oldest roof there is, and under snow it looks like part of the hillside.
+        lines: [{contract: roofing, koku: 3}]
+      - key: kokera
+        label: Wooden shingles
+        ja: 杮葺
+        romaji: kokerabuki
+        text: >-
+          Thin hand-split boards laid in many overlapping courses, giving crisp, finely ribbed
+          lines.
+        appeal: >-
+          Light and precise, it shows off the carpenter's eye in every course.
+        lines: [{contract: roofing, koku: 5}]
+      - key: hiwada
+        label: Cypress bark
+        ja: 檜皮葺
+        romaji: hiwadabuki
+        text: >-
+          Layer upon layer of bark stripped from living cypress, pressed into smooth, dark,
+          sweeping curves.
+        appeal: >-
+          The classic roof of courtly shrines, its curves seem to flow down like water.
+        lines: [{contract: roofing, koku: 8}]
+      - key: copper
+        label: Copper sheet
+        ja: 銅板葺
+        romaji: dobanbuki
+        text: >-
+          Copper plates seamed over boards: bright as a new coin at first, then brown, and
+          finally blue-green.
+        appeal: >-
+          That green is the mark of an old shrine, and it outlasts every other roof by
+          generations.
+        lines: [{contract: roofing, koku: 22, heavy: 1}]
+
+  - key: finish
+    label: Finish
+    prompt: How is the wood finished?
+    when: {form: {not: [hokora, himorogi]}}
+    reference: shiraki
+    options:
+      - key: shiraki
+        label: Bare wood
+        ja: 白木
+        romaji: shiraki
+        text: >-
+          The wood as the carpenter left it, going silver-gray in the weather and showing every
+          line of its grain.
+        appeal: >-
+          The purest finish in the old view, honest to the forest it came from.
+      - key: kakishibu
+        label: Persimmon stain
+        ja: 柿渋
+        romaji: kakishibu
+        text: >-
+          Fermented persimmon juice brushed on and darkened in the sun to a warm brown that sheds
+          rain and keeps insects off.
+        appeal: >-
+          A deep country warmth, like old farmhouse beams glowing in lamplight.
+        lines: [{contract: finishing, koku: 1}]
+      - key: vermilion
+        label: Vermilion
+        ja: 丹塗
+        romaji: ninuri
+        text: >-
+          The red-orange of shrine gates, said to ward off evil and to preserve the wood.
+        appeal: >-
+          Strongly associated with Inari, the Fortune of rice and of foxes, it flares through the
+          green like a signal fire.
+        lines: [{contract: finishing, koku: 5}]
+      - key: lacquer
+        label: Black lacquer
+        ja: 漆
+        romaji: urushi
+        text: >-
+          Lacquer built up coat by coat to a deep, glossy black.
+        appeal: >-
+          Dark among dark trees, it gleams like still water whenever a lantern or a shaft of sun
+          catches it.
+        lines: [{contract: finishing, koku: 8}]
+
+  - key: carving
+    label: Ornament
+    prompt: How are the beams and transoms worked?
+    when: {form: {not: [hokora, himorogi]}}
+    reference: accents
+    options:
+      - key: plain
+        label: Exposed joinery
+        text: >-
+          Squared posts and beams fitted without a nail, every joint left in view.
+        appeal: >-
+          The carpenter's craft is the ornament, and those who know joinery will linger over it.
+      - key: accents
+        label: Gable pendant and bracket ends
+        ja: 懸魚
+        romaji: gegyo
+        text: >-
+          A carved pendant hangs from the gable peak and the beam ends are shaped into curling
+          clouds or animal heads (kibana). One of the most common types of decoration.
+        lines: [{contract: finishing, koku: 5}]
+      - key: lattice
+        label: Openwork lattice transoms
+        ja: 欄間
+        romaji: ranma
+        text: >-
+          The transoms above the doors are filled with geometric latticework, so light and air
+          pass through.
+        appeal: >-
+          The sanctuary seems to breathe, and at dawn it casts patterned light across the steps.
+        lines: [{contract: finishing, koku: 8}]
+      - key: panels
+        label: Relief panels
+        text: >-
+          The transoms are carved in relief with pictures - foxes among autumn grasses, a hermit
+          under a tree.
+        appeal: >-
+          Visitors stop to read them like a story, and children are told the hermit's tale
+          panel by panel.
+        lines: [{contract: finishing, koku: 20}]
