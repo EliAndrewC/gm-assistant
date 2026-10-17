@@ -26,6 +26,18 @@ def test_parse_index_takes_grouped_characters_only() -> None:
     assert parse_index('<html></html>') == []
 
 
+def test_cache_age_reads_the_stamp_not_the_mtime(tmp_path: Path) -> None:
+    """A copy into a session clone resets the mtime; the age must survive it."""
+    cache = tmp_path / 'sheet.json'
+    cache.write_text(json.dumps({'names': [], 'npcs': [], 'refreshed_at': 0}))
+    age = cache_age(cache)
+    assert age is not None
+    assert age > 86400
+    cache.write_text('{"names": []}')  # written before the stamp existed
+    assert cache_age(cache) == float('inf')
+    assert refresh_if_stale(3600, cache, lambda: '<html></html>') is False  # tried, kept
+
+
 def test_refresh_writes_and_respects_age(tmp_path: Path) -> None:
     cache = tmp_path / 'sheet.json'
     fetches = 0

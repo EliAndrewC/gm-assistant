@@ -6,6 +6,7 @@ no network, no transport mocks (Principle X.5).
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import pytest
@@ -341,6 +342,25 @@ def test_cache_age_none_when_missing_and_small_when_fresh(tmp_path: Path) -> Non
     age = opcache.cache_age(p)
     assert age is not None
     assert age < 5
+
+
+def test_cache_age_ignores_mtime_so_a_copied_cache_keeps_its_age(tmp_path: Path) -> None:
+    """The Eijuko case (2026-10-17): copying main's opcache/ into a clone gives
+    the file a fresh mtime, and an mtime-based age called a 4-day-old roster
+    fresh. The age comes from the stamp's content, which a copy preserves."""
+    p = tmp_path / 'characters.json'
+    opcache.save_cache({'1': {'name': 'Otomo Eijuko'}}, p)
+    (tmp_path / 'characters.json.refreshed').write_text(str(time.time() - 4 * 86400))
+    p.touch()  # what the copy does to the mtime
+    age = opcache.cache_age(p)
+    assert age is not None
+    assert age > 3 * 86400
+    # No stamp (a cache written before the sidecar existed) or a garbled one:
+    # infinitely old, so the next refresh_if_stale call pulls from OP.
+    (tmp_path / 'characters.json.refreshed').write_text('garbled')
+    assert opcache.cache_age(p) == float('inf')
+    (tmp_path / 'characters.json.refreshed').unlink()
+    assert opcache.cache_age(p) == float('inf')
 
 
 def test_refresh_if_stale_skips_a_fresh_file(

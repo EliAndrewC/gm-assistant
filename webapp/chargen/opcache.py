@@ -106,14 +106,30 @@ def save_cache(cache: dict[str, JsonObj], path: Path = _CACHE_PATH) -> None:
     with open(tmp, 'w', encoding='utf-8') as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
     os.replace(tmp, path)
+    _stamp_path(path).write_text(str(time.time()), encoding='utf-8')
+
+
+def _stamp_path(path: Path) -> Path:
+    """Sidecar holding the epoch time of the last write (see :func:`cache_age`)."""
+    return path.with_name(path.name + '.refreshed')
 
 
 def cache_age(path: Path = _CACHE_PATH) -> float | None:
-    """Seconds since the cache file was last written; ``None`` if absent."""
-    try:
-        return max(0.0, time.time() - path.stat().st_mtime)
-    except FileNotFoundError:
+    """Seconds since the cache was last refreshed; ``None`` if absent.
+
+    Read from the ``.refreshed`` sidecar's CONTENT, never the file's mtime: the
+    documented way to give a session clone its roster is to copy main's
+    ``opcache/``, and a copy gets a fresh mtime. Measured 2026-10-17: a 4-day-old
+    cache copied into a clone looked fresh, the refresh was skipped, and the
+    engine rolled a given name (Eijuko) already on a character added since. A
+    missing or unreadable stamp is infinitely old, so the next call refreshes."""
+    if not path.exists():
         return None
+    try:
+        stamp = float(_stamp_path(path).read_text(encoding='utf-8'))
+    except OSError, ValueError:
+        return float('inf')
+    return max(0.0, time.time() - stamp)
 
 
 def refresh_if_stale(max_age_seconds: float = 3600.0, path: Path = _CACHE_PATH) -> bool:

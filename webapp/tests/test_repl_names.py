@@ -119,6 +119,11 @@ class TestUsedNames:
         used_names()
         assert 'every name looks free' in capsys.readouterr().out
 
+    def test_unstamped_cache_reports_stale(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(mod.opcache, 'refresh_if_stale', lambda age: False)
+        monkeypatch.setattr(mod.opcache, 'cache_age', lambda: float('inf'))
+        assert mod.warm_caches() == 'stale (no refresh time recorded)'
+
 
 class TestNames:
     def test_pick_strips_a_leading_name(self) -> None:

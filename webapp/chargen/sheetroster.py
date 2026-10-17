@@ -92,10 +92,17 @@ def fetch_npc_names() -> list[str]:
 
 
 def cache_age(path: Path = CACHE_PATH) -> float | None:
-    try:
-        return time.time() - path.stat().st_mtime
-    except FileNotFoundError:
+    """Seconds since the last refresh, read from the cache's own
+    ``refreshed_at`` field rather than the file's mtime, which a copy into a
+    session clone resets (see ``opcache.cache_age``). A cache without the field
+    is infinitely old; ``None`` when the file is absent."""
+    if not path.exists():
         return None
+    try:
+        stamp = float(json.loads(path.read_text(encoding='utf-8'))['refreshed_at'])
+    except OSError, ValueError, TypeError, KeyError:
+        return float('inf')
+    return time.time() - stamp
 
 
 def refresh_if_stale(
@@ -134,7 +141,10 @@ def refresh_if_stale(
         logger.warning('sheetroster: could not fetch NPCs from %s: %s', API_URL, e)
         npcs = npc_names(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({'names': names, 'npcs': npcs}, indent=2), encoding='utf-8')
+    path.write_text(
+        json.dumps({'names': names, 'npcs': npcs, 'refreshed_at': time.time()}, indent=2),
+        encoding='utf-8',
+    )
     logger.info('sheetroster: refreshed %s (%d characters, %d NPCs)', path, len(names), len(npcs))
     return True
 

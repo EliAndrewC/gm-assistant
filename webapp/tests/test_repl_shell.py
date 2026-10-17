@@ -389,7 +389,10 @@ class TestBannerAndShortcuts:
 
     def test_the_shortcuts_actually_drive_names(self) -> None:
         ns = namespace()
-        picked = ns['name'](ns['f'])
+        # refresh=False: an offline read. The default refreshes the REAL campaign
+        # cache against Obsidian Portal, so this test was writing the repo's
+        # opcache/ (found 2026-10-17, once a copied cache stopped looking fresh).
+        picked = ns['name'](ns['f'], refresh=False)
         assert isinstance(picked, str)
         assert picked
 
