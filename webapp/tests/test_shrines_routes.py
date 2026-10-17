@@ -154,7 +154,7 @@ def test_name_is_prefilled_and_no_homework_fields(root: Root, catalog: Catalog) 
     """FR-017: one free-text field, pre-filled; no sacred-object notes, no inscription box."""
     page = root.shrines().decode('utf-8')
     assert (
-        f'name="shrine_name" rows="2" maxlength="120" data-one-line>{catalog.default_name}<' in page
+        f'name="shrine_name" rows="1" maxlength="120" data-one-line>{catalog.default_name}<' in page
     )
     assert page.count('<textarea name=') == 1
     for gone in ('enshrined', 'sacred_note', 'inscription'):
@@ -184,3 +184,39 @@ def test_appeal_and_only_with_render(root: Root) -> None:
     assert 'class="shrine-opt__appeal">The purest finish in the old view' in page
     assert 'data-only-with="form:himorogi"' in page
     assert 'Only for the "Open to the sky" form.' in page
+
+
+def test_kind_step_comes_right_after_the_name(root: Root) -> None:
+    page = root.shrines().decode('utf-8')
+    steps = re.findall(r'class="wizard-step[^"]*" id="shrine-step-([a-z_]+)"', page)
+    assert steps[:3] == ['name', 'kind', 'heart']
+
+
+def test_alt_wording_renders_and_switches(root: Root) -> None:
+    plain = root.shrines(kind='memorial', heart='spirit').decode('utf-8')
+    assert 'class="when-alt">How is the shrine consecrated?' in plain
+    assert 'data-alt-when="heart:bones"' in plain
+    assert 'is-alt' not in plain.split('id="shrine-form"')[0].rsplit('<form', 1)[1]
+    alt = root.shrines(kind='memorial', heart='bones').decode('utf-8')
+    assert 'shrine-form is-alt' in alt
+
+
+def test_memorial_path_reaches_summary_and_ledger(root: Root, as_user: object) -> None:
+    params = {
+        'kind': 'memorial',
+        'heart': 'spirit',
+        'preparation': 'washed',
+        'head': 'temple',
+        'sharing': 'ebisu',
+        'resting': 'gorinto',
+        'display': 'reliquary',
+    }
+    page = root.shrines(**params).decode('utf-8')
+    assert 'data-goto="head"><span>The head</span> <em>Given to the Temple of Ebisu</em>' in page
+    assert (
+        'data-goto="preparation"><span>Preparing the remains</span> <em>Washed clean</em>' in page
+    )
+    as_user('gm')  # type: ignore[operator]
+    gm = root.shrines(**params).decode('utf-8')
+    assert 'Burakumin (retrieving and preparing the remains)' in gm
+    assert 'The head: Given to the Temple of Ebisu' in gm

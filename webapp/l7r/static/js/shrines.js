@@ -62,6 +62,12 @@
         fs.classList.toggle('is-moot', moot);
         fs.disabled = moot;
       });
+      // FR-030: switch to the no-kami wording when the remains are the heart of the shrine.
+      if (form.dataset.altWhen) {
+        var cond = form.dataset.altWhen.split(':');
+        var pick = form.querySelector('fieldset[data-cat="' + cond[0] + '"]:not(:disabled) input:checked');
+        form.classList.toggle('is-alt', !!pick && cond[1].split('|').indexOf(pick.value) >= 0);
+      }
     }
 
     function designQuery() {
@@ -74,10 +80,15 @@
       return params.toString();
     }
 
+    function fitBox(box) {
+      if (!box) return;
+      box.style.height = 'auto';
+      box.style.height = box.scrollHeight + 2 + 'px';
+    }
+
     function fitShare() {
-      if (!share) return;
-      share.style.height = 'auto';
-      share.style.height = share.scrollHeight + 2 + 'px';
+      fitBox(share);
+      fitBox(form.querySelector('[data-one-line]'));
     }
 
     function syncSummary() {
@@ -251,6 +262,7 @@
       }
     });
     form.addEventListener('input', function (event) {
+      if (event.target.matches('[data-one-line]')) fitBox(event.target);
       if (!isGm && event.target.matches('[name=shrine_name]')) { syncSummary(); writeAddress(); }
     });
     // The name box wraps but is one line: Enter moves on instead of breaking it.

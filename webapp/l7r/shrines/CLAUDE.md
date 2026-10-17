@@ -45,6 +45,12 @@ contract down. What is left of the budget is what he keeps.
 - **Form-specific decisions** (FR-025): a category with `only_with: {form: [himorogi]}` applies
   only to that form (the kami's dwelling; the ground before it). `_voided` handles it server-side,
   `data-only-with` client-side.
+- **Memorial or kami shrine** (FR-028 to FR-031): the step after the name picks the kind. A
+  memorial adds the remains steps (`only_with: {kind: [memorial]}`): the heart of the shrine, how
+  the remains are prepared, the salted head, sharing them (the Temple of Ebisu), storing them, and
+  showing them. Remains at the heart means no kami: `catalog.alt_when` switches every `alt:` text
+  (the "kami's dwelling" wording becomes the place where he rests) and voids the sacred object and
+  the open-sky dwelling step. No boiling of bones - no East Asian record (research.md R7).
 - **Browser Back = wizard Back** (FR-024): Next and summary jumps push a history entry; on
   popstate going back, the wizard shows the previous APPLICABLE step (what its own Back does), not
   merely the last page visited. The wizard's Back calls `history.back()` when there is a wizard

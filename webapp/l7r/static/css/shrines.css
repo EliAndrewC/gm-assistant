@@ -235,7 +235,7 @@
   min-width: 0;
 }
 
-.shrine-text textarea { resize: none; line-height: 1.45; }
+.shrine-text textarea { resize: none; line-height: 1.45; overflow: hidden; }
 
 /* --- share ------------------------------------------------------------- */
 
@@ -531,6 +531,10 @@
   margin-right: 0.35em;
 }
 
+/* FR-030 wording: one version shows, chosen by whether the remains are the heart of the shrine. */
+.shrine-form:not(.is-alt) .when-alt,
+.shrine-form.is-alt .when-plain { display: none; }
+
 /* --- wizard ------------------------------------------------------------ */
 /* Without JavaScript every step shows, stacked; shrines.js adds .js-wizard to <html> and then only
    the current step shows, with progress above and Back / Next below. */
@@ -654,6 +658,8 @@ body.page-shrines { min-height: 100vh; }
 .wizard-nav__next { min-width: 8rem; }
 
 .js-wizard .shrine-share { border-top: 0; padding-top: 0; }
+/* Keep the Copy link row clear of the sticky Back bar on the last step. */
+.js-wizard .shrine-share.is-current { padding-bottom: 4rem; }
 
 .shrine-summary a { color: inherit; text-decoration: none; }
 
@@ -680,7 +686,13 @@ body.page-shrines { min-height: 100vh; }
   font-style: italic;
   text-decoration: none;
 }
-.shrine-summary em.is-open::after { content: 'choose'; margin-left: 0.6em; }
+.shrine-summary em.is-open::after {
+  content: 'choose';
+  margin-left: 0.6em;
+  font-style: normal;
+  font-size: 1em;
+  color: var(--vermillion-deep);
+}
 .shrine-summary em::after { text-decoration: underline; }
 
 .shrine-summary a:hover em,

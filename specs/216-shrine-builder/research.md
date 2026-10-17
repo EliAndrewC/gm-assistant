@@ -103,3 +103,38 @@ Tadashi already won the budget negotiation by more than 10 (two raises). **Decis
 suggested budget is the fair price of a "fairly nice" reference design at the default remoteness,
 plus 20%, rounded up to 5 koku - computed from the catalog, not hard-coded, so it moves with the
 prices. The GM can type over it.
+
+## R7. Remains, heads, and a deified person's tomb (amendment 3)
+
+- **Shrine and tomb together, kept apart.** Death pollutes (*kegare*), so a shrine does not hold
+  remains; when a person is deified the spirit is enshrined and the body rests in a tomb set apart.
+  Tokugawa Ieyasu, deified at Nikko Toshogu, lies in a bronze pagoda-shaped tomb (*hoto*) in the
+  Okumiya, up some 200 steps behind the main shrine. Date Masamune's Zuihoden is a mausoleum whose
+  occupant is listed as its deity. -> the "heart of the shrine" choice and the inner-tomb option.
+  https://eastasia.digitalscholarship.emory.edu/items/show/547 ;
+  https://www.nippon.com/en/guide-to-japan/gu900154/
+- **Head mounds.** *Kubizuka*: heads of those who died violently were buried under their own
+  mound with memorial rites to pacify the spirit; Taira no Masakado's head mound (Otemachi) is
+  tied to Kanda Myojin, where he is a deity. Heads of named warriors were salted (*shiozuke*) for
+  transport after the head inspection. -> the head step, and the GM's salted head is accurate.
+  https://en.wikipedia.org/wiki/Kubizuka ; https://northernearth.co.uk/taira-no-masakado-rebel-god-of-tokyo/
+- **Dividing remains (*bunkotsu*).** Takeda Shingen's remains went to Erin-ji, Koyasan and
+  Myoshin-ji; Koya hijiri carried portions of the dead to Koyasan; the Buddha's relics were split
+  among eight kingdoms. -> the "sharing the remains" step, including the Temple of Ebisu.
+  https://ohakakiwame.jp/column/memorial-service/great-man-grave-takeda-shingen.html
+- **Washing bones (*senkotsu*).** In Okinawa (from southern Chinese practice) leftover flesh was
+  removed by hand and the bones washed with sake before going into an urn. -> "washed clean".
+  https://samurai-archives.com/wiki/Okinawan_tombs
+- **Bone-gathering (*kotsuage*).** Bones survive cremation and are picked into an urn with
+  chopsticks, feet first and skull last; a low village pyre leaves even more. -> "gathered bone by
+  bone", and the GM's expectation that bones and tissue remain is right.
+- **Relics shown.** From the Heian period, pagoda-shaped reliquaries (*sharito*) holding the ashes
+  of revered priests were displayed for veneration; relic halls (*shariden*) such as Toshodaiji's
+  hold founders' relics. -> "one bone in a reliquary" and the "remains at the heart" option.
+  https://projects.mcah.columbia.edu/jaanus/record/bussharito
+- **Graves.** Five-ring stone pagodas (*gorinto*) became common grave markers from the Heian
+  period. https://onmarkproductions.com/html/5-elements-pagoda-gravestone.html
+- **Boiling the body (mos teutonicus): not found** in Japanese or Chinese practice; excluded
+  (FR-031). Washing is the attested East Asian way to clean bones.
+- **Burakumin** are the setting's cremators and handle the dead (`l7r.md`, castes), so retrieval
+  and preparation are a burakumin contract in the GM ledger.

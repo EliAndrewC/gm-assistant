@@ -17,6 +17,16 @@
   for a GM session (FR-007).
 #}
 
+{# Text with FR-030 alternative wording renders both versions; the form's is-alt class (set here
+   from the design, toggled by shrines.js) shows one. #}
+{% macro t(obj, field) -%}
+  {%- if obj.alt.get(field) -%}
+    <span class="when-plain">{{ obj[field] }}</span><span class="when-alt">{{ obj.alt[field] }}</span>
+  {%- else -%}
+    {{ obj[field] }}
+  {%- endif -%}
+{%- endmacro %}
+
 {% block content %}
 <section class="container">
   <div class="masthead">
@@ -32,7 +42,7 @@
   </div>
 </section>
 
-<form class="container shrine-form{% if is_gm %} shrine-form--gm{% endif %}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}">
+<form class="container shrine-form{% if is_gm %} shrine-form--gm{% endif %}{% if design.alt %} is-alt{% endif %}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}"{% if catalog.alt_when %} data-alt-when="{{ catalog.alt_when[0] }}:{{ catalog.alt_when[1]|join('|') }}"{% endif %}>
   <div class="shrine-layout">
     {% if is_gm %}
       <div class="shrine-ledger-col">
@@ -66,7 +76,7 @@
                 <option value="{{ r.key }}" {% if r.key == negotiation.remoteness %}selected{% endif %}>{{ r.label }}</option>
               {% endfor %}
             </select>
-            <small>Porters charge {{ format_koku(ledger.pricing.rate) }} per load; this design is {{ format_number(ledger.pricing.heavy) }} loads.</small>
+            <small>Porters charge {{ format_koku(ledger.pricing.rate) }} per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</small>
           </label>
         </div>
 
@@ -128,8 +138,9 @@
         <h2 class="wizard-step__title">Name the shrine</h2>
         <label class="shrine-text">
           <span class="shrine-text__label">Name of the shrine</span>
-          {# A wrapping box, not <input>: the default name is long and would scroll out of a one-line field on a phone. #}
-          <textarea name="shrine_name" rows="2" maxlength="{{ text_fields['shrine_name'] }}" data-one-line>{{ design.text.get('shrine_name', '') }}</textarea>
+          {# One line tall like any text field (FR-027); shrines.js grows it only when a long name does not
+             fit the width (a phone), where an <input> would scroll the name out of sight. #}
+          <textarea name="shrine_name" rows="1" maxlength="{{ text_fields['shrine_name'] }}" data-one-line>{{ design.text.get('shrine_name', '') }}</textarea>
         </label>
         <p class="wizard-step__intro">Every shrine begins with a name. Here is one to start from; keep it, or change it to suit.</p>
       </section>
@@ -139,11 +150,11 @@
           {% set moot = category.key in design.voided %}
           {% set chosen = design.choices.get(category.key) %}
           <section class="wizard-step" id="shrine-step-{{ category.key }}" data-step="{{ category.key }}" data-chapter="{{ group.label }}">
-            {% if loop.first %}<p class="wizard-step__chapter-intro">{{ group.intro }}</p>{% endif %}
+            {% if loop.first %}<p class="wizard-step__chapter-intro">{{ t(group, 'intro') }}</p>{% endif %}
             <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}"{% if category.only_with %} data-only-with="{{ category.only_with[0] }}:{{ category.only_with[1]|join('|') }}"{% endif %} {% if moot %}disabled{% endif %}>
               <legend class="shrine-cat__legend">
                 <span class="shrine-cat__label">{{ category.label }}</span>
-                <span class="wizard-step__title">{{ category.prompt }}</span>
+                <span class="wizard-step__title">{{ t(category, 'prompt') }}</span>
               </legend>
               {% if category.only_with %}
                 {% set needs = catalog.category(category.only_with[0]) %}
@@ -156,12 +167,12 @@
                   <label class="shrine-opt">
                     <input type="radio" name="{{ category.key }}" value="{{ option.key }}"{% if option.key == chosen %} checked{% endif %}{% if option.voids %} data-voids="{{ option.voids|join(' ') }}"{% endif %} />
                     <span class="shrine-opt__body">
-                      <span class="shrine-opt__title">{{ option.label }}</span>
+                      <span class="shrine-opt__title">{{ t(option, 'label') }}</span>
                       {% if option.ja or option.romaji %}
                         <span class="shrine-opt__term">{% if option.ja %}<span lang="ja">{{ option.ja }}</span> {% endif %}<em>{{ option.romaji }}</em></span>
                       {% endif %}
-                      <span class="shrine-opt__text">{{ option.text }}</span>
-                      {% if option.appeal %}<span class="shrine-opt__appeal">{{ option.appeal }}</span>{% endif %}
+                      <span class="shrine-opt__text">{{ t(option, 'text') }}</span>
+                      {% if option.appeal %}<span class="shrine-opt__appeal">{{ t(option, 'appeal') }}</span>{% endif %}
                     </span>
                   </label>
                 {% endfor %}

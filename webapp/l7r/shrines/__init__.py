@@ -57,6 +57,8 @@ class Option:
     romaji: str = ''
     appeal: str = ''
     lines: tuple[Line, ...] = ()
+    # FR-030 alternative wording, used when the catalog's `alt_when` condition holds.
+    alt: dict[str, str] = field(default_factory=dict)
     voids: tuple[str, ...] = ()
     units: float = 1.0
 
@@ -70,6 +72,7 @@ class Category:
     options: tuple[Option, ...]
     # Applies only when category `only_with[0]` has one of the options in `only_with[1]` (FR-025).
     only_with: tuple[str, tuple[str, ...]] | None = None
+    alt: dict[str, str] = field(default_factory=dict)
 
     def option(self, key: str) -> Option | None:
         for option in self.options:
@@ -84,6 +87,7 @@ class Group:
     label: str
     intro: str
     categories: tuple[Category, ...]
+    alt: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,6 +119,7 @@ class Catalog:
     site_lines: tuple[SiteLine, ...]
     budget_padding: float
     default_name: str = ''
+    alt_when: tuple[str, tuple[str, ...]] | None = None
 
     @property
     def categories(self) -> tuple[Category, ...]:
@@ -131,6 +136,20 @@ class Catalog:
 
 
 # --- loading ------------------------------------------------------------------------------------
+
+
+def _alt(raw: Mapping[str, Any], allowed: set[str]) -> dict[str, str]:
+    alt = {str(k): ' '.join(str(v).split()) for k, v in raw.get('alt', {}).items()}
+    if set(alt) - allowed:
+        raise CatalogError(
+            f'alt may only replace {sorted(allowed)}, not {sorted(set(alt) - allowed)}'
+        )
+    return alt
+
+
+def _condition(raw: Mapping[str, Any]) -> tuple[str, tuple[str, ...]]:
+    ((key, values),) = raw.items()
+    return (str(key), tuple(str(v) for v in values))
 
 
 def _line(raw: Mapping[str, Any]) -> Line:
@@ -152,16 +171,14 @@ def _option(raw: Mapping[str, Any]) -> Option:
         romaji=str(raw.get('romaji', '')),
         appeal=' '.join(str(raw.get('appeal', '')).split()),
         lines=tuple(_line(x) for x in raw.get('lines', ())),
+        alt=_alt(raw, {'label', 'text', 'appeal'}),
         voids=tuple(str(x) for x in raw.get('voids', ())),
         units=float(raw.get('units', 1)),
     )
 
 
 def _category(raw: Mapping[str, Any]) -> Category:
-    only_with = None
-    if 'only_with' in raw:
-        ((key, values),) = raw['only_with'].items()
-        only_with = (str(key), tuple(str(v) for v in values))
+    only_with = _condition(raw['only_with']) if 'only_with' in raw else None
     return Category(
         key=str(raw['key']),
         label=str(raw['label']),
@@ -169,6 +186,7 @@ def _category(raw: Mapping[str, Any]) -> Category:
         reference=str(raw['reference']),
         options=tuple(_option(x) for x in raw['options']),
         only_with=only_with,
+        alt=_alt(raw, {'label', 'prompt'}),
     )
 
 
@@ -181,6 +199,7 @@ def parse_catalog(data: Mapping[str, Any]) -> Catalog:
                 label=str(g['label']),
                 intro=' '.join(str(g['intro']).split()),
                 categories=tuple(_category(c) for c in g['categories']),
+                alt=_alt(g, {'label', 'intro'}),
             )
             for g in data['groups']
         ),
@@ -196,6 +215,7 @@ def parse_catalog(data: Mapping[str, Any]) -> Catalog:
         ),
         budget_padding=float(data['budget_padding']),
         default_name=str(data.get('default_name', '')),
+        alt_when=_condition(data['alt_when']) if 'alt_when' in data else None,
     )
     _validate(catalog)
     return catalog
@@ -208,6 +228,10 @@ def _validate(catalog: Catalog) -> None:
         raise CatalogError('duplicate category key')
     if any(k.startswith(GM_PREFIX) for k in keys) or set(keys) & set(TEXT_FIELDS):
         raise CatalogError('a category key collides with a text field or the gm_ prefix')
+    if catalog.alt_when is not None:
+        target = catalog.category(catalog.alt_when[0])
+        if target is None or any(target.option(v) is None for v in catalog.alt_when[1]):
+            raise CatalogError('alt_when names an unknown category or option')
     if 'porterage' not in contracts:
         raise CatalogError('the catalog needs a porterage contract for heavy lines')
     if catalog.default_remoteness not in {r.key for r in catalog.remoteness}:
@@ -259,6 +283,8 @@ class Design:
     voided: frozenset[str]
     text: dict[str, str]
     dropped: tuple[str, ...] = ()
+    # True when the catalog's `alt_when` choice is made: the page uses the `alt:` wording (FR-030).
+    alt: bool = False
 
 
 def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
@@ -286,11 +312,14 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
     # A blank or missing name falls back to the catalog's, so the field is never empty.
     if 'shrine_name' not in text and catalog.default_name:
         text['shrine_name'] = catalog.default_name
+    choices = {k: v for k, v in chosen.items() if k not in voided}
+    alt = catalog.alt_when is not None and choices.get(catalog.alt_when[0]) in catalog.alt_when[1]
     return Design(
-        choices={k: v for k, v in chosen.items() if k not in voided},
+        choices=choices,
         voided=voided,
         text=text,
         dropped=tuple(d for d in dropped if d not in voided),
+        alt=alt,
     )
 
 

@@ -97,11 +97,12 @@ def price_words(text: str) -> list[str]:
 def player_texts(catalog: Catalog) -> list[str]:
     texts: list[str] = []
     for group in catalog.groups:
-        texts += [group.label, group.intro]
+        texts += [group.label, group.intro, *group.alt.values()]
         for category in group.categories:
-            texts += [category.label, category.prompt]
+            texts += [category.label, category.prompt, *category.alt.values()]
             for option in category.options:
                 texts += [option.label, option.text, option.romaji, option.appeal]
+                texts += list(option.alt.values())
     return texts
 
 
@@ -138,8 +139,10 @@ def test_no_lesser_greater_pairs(catalog: Catalog) -> None:
                 assert a == b or a not in b, (category.key, a, b)
 
 
+MEMORIAL_STEPS = {'heart', 'preparation', 'head', 'sharing', 'resting', 'display'}
+
 ABSENCE = re.compile(r'^(none|nothing|no)\b', re.IGNORECASE)
-YES_NO_PROMPT = re.compile(r'^(is|are|do|does) ', re.IGNORECASE)
+YES_NO_PROMPT = re.compile(r'^(is|are|do|does|can|will) ', re.IGNORECASE)
 DEFAULT_FRAMING = re.compile(r'\b(the usual|standard|ordinary|typical)\b', re.IGNORECASE)
 
 
@@ -176,9 +179,18 @@ def test_real_catalog_loads_with_porterage(catalog: Catalog) -> None:
 # --- catalog validation ---------------------------------------------------------------------------
 
 
+def _category_raw(data: dict[str, Any], key: str) -> dict[str, Any]:
+    for group in data['groups']:
+        for category in group['categories']:
+            if category['key'] == key:
+                found: dict[str, Any] = category
+                return found
+    raise KeyError(key)
+
+
 def _first_category(data: dict[str, Any]) -> dict[str, Any]:
-    category: dict[str, Any] = data['groups'][0]['categories'][0]
-    return category
+    """The `form` category (the tests mutate it; it has lines, voids and many options)."""
+    return _category_raw(data, 'form')
 
 
 def _first_option(data: dict[str, Any]) -> dict[str, Any]:
@@ -220,7 +232,9 @@ def test_empty_params_choose_nothing(catalog: Catalog) -> None:
     """Nothing is pre-selected: an option already picked on arrival biases the player."""
     design = parse_design(catalog, {})
     assert design.choices == {}
-    assert design.voided == {'dwelling', 'ground'}  # only_with form=himorogi, form unchosen
+    # only_with steps wait for the choice they depend on: the open-sky steps for the form, the
+    # remains steps for the kind of shrine.
+    assert design.voided == {'dwelling', 'ground', *MEMORIAL_STEPS}
     assert price_design(catalog, design, 'road').total == pytest.approx(3.5)  # site work only
     assert design.text == {'shrine_name': catalog.default_name}
     assert design.dropped == ()
@@ -245,8 +259,8 @@ def test_dropped_category_that_is_moot_is_not_reported(catalog: Catalog) -> None
 
 
 def test_voids(catalog: Catalog) -> None:
-    design = parse_design(catalog, {'form': 'himorogi', 'gate_form': 'trees'})
-    assert design.voided == {
+    design = parse_design(catalog, {'kind': 'kami', 'form': 'himorogi', 'gate_form': 'trees'})
+    assert design.voided - MEMORIAL_STEPS == {
         'timber',
         'roof',
         'finish',
@@ -292,9 +306,9 @@ def test_share_query_round_trips_and_carries_no_gm_figure(catalog: Catalog) -> N
 
 def test_reference_design_and_default_budget(catalog: Catalog) -> None:
     pricing = price_design(catalog, reference_design(catalog), catalog.default_remoteness)
-    assert pricing.total == pytest.approx(120.7)
-    assert pricing.heavy == pytest.approx(31)
-    assert default_budget(catalog) == 145.0
+    assert pricing.total == pytest.approx(130.7)
+    assert pricing.heavy == pytest.approx(36)
+    assert default_budget(catalog) == 160.0
 
 
 def test_porterage_is_heavy_times_rate(catalog: Catalog) -> None:
@@ -323,7 +337,7 @@ def test_per_category_that_is_moot_counts_as_one(raw: dict[str, Any]) -> None:
     form = _first_category(data)
     hokora = next(o for o in form['options'] if o['key'] == 'hokora')
     hokora['lines'] = [{'contract': 'stonework', 'koku': 6, 'per': 'timber'}]
-    timber = next(c for c in data['groups'][0]['categories'] if c['key'] == 'timber')
+    timber = _category_raw(data, 'timber')
     timber['options'][2]['units'] = 3
     catalog = parse_catalog(data)
     design = parse_design(catalog, {'form': 'hokora', 'timber': timber['options'][2]['key']})
@@ -336,7 +350,7 @@ def test_per_category_that_is_moot_counts_as_one(raw: dict[str, Any]) -> None:
 
 def test_parse_negotiation_defaults(catalog: Catalog) -> None:
     negotiation = parse_negotiation(catalog, {})
-    assert negotiation == Negotiation(145.0, 'trail', {}, {})
+    assert negotiation == Negotiation(160.0, 'trail', {}, {})
 
 
 @pytest.mark.parametrize(
@@ -346,8 +360,8 @@ def test_parse_negotiation_defaults(catalog: Catalog) -> None:
         (' 99.5 ', 99.5),
         ('-4', 0.0),
         ('1e9', 100_000.0),
-        ('lots', 145.0),
-        ('inf', 145.0),
+        ('lots', 160.0),
+        ('inf', 160.0),
     ],
 )
 def test_parse_budget(catalog: Catalog, raw_budget: str, expected: float) -> None:
@@ -382,7 +396,7 @@ def test_saving_percent(roll: int | None, baseline: int, pct: int) -> None:
 
 def test_negotiate_reference(catalog: Catalog) -> None:
     design = reference_design(catalog)
-    negotiation = Negotiation(145.0, 'trail', {'carpentry': 45, 'stonework': 40}, {'stonework': 30})
+    negotiation = Negotiation(160.0, 'trail', {'carpentry': 45, 'stonework': 40}, {'stonework': 30})
     ledger = negotiate(catalog, design, negotiation)
     by_key = {c.key: c for c in ledger.contracts}
     assert by_key['carpentry'].saving_pct == 20
@@ -391,8 +405,8 @@ def test_negotiate_reference(catalog: Catalog) -> None:
     assert by_key['stonework'].saving_pct == 10
     assert by_key['roofing'].roll is None
     assert by_key['roofing'].baseline == DEFAULT_BASELINE
-    assert ledger.fair_total == pytest.approx(120.7)
-    assert ledger.remainder == pytest.approx(145.0 - ledger.paid_total)
+    assert ledger.fair_total == pytest.approx(130.7)
+    assert ledger.remainder == pytest.approx(160.0 - ledger.paid_total)
     assert all(i.contract == 'carpentry' for i in by_key['carpentry'].items)
 
 
@@ -486,7 +500,7 @@ def _only_with_self(d: dict[str, Any]) -> None:
 
 
 def _only_with_unknown_option(d: dict[str, Any]) -> None:
-    d['groups'][0]['categories'][1]['only_with'] = {'form': ['pagoda']}
+    _category_raw(d, 'dwelling')['only_with'] = {'form': ['pagoda']}
 
 
 @pytest.mark.parametrize(
@@ -498,6 +512,66 @@ def _only_with_unknown_option(d: dict[str, Any]) -> None:
     ],
 )
 def test_only_with_validation(raw: dict[str, Any], mutate: Any, message: str) -> None:
+    data = copy.deepcopy(raw)
+    mutate(data)
+    with pytest.raises(CatalogError, match=message):
+        parse_catalog(data)
+
+
+def test_memorial_brings_the_remains_steps(catalog: Catalog) -> None:
+    """FR-028/FR-029: the remains steps appear for a memorial and never for a kami shrine."""
+    kami = parse_design(catalog, {'kind': 'kami'})
+    assert kami.voided >= MEMORIAL_STEPS
+    memorial = parse_design(catalog, {'kind': 'memorial'})
+    assert not (memorial.voided & MEMORIAL_STEPS)
+    head = parse_design(catalog, {'kind': 'memorial', 'head': 'mound'})
+    priced = price_design(catalog, head, 'road')
+    assert (
+        priced.by_contract['earthwork']
+        > price_design(catalog, memorial, 'road').by_contract['earthwork']
+    )
+
+
+def test_remains_at_the_heart_means_no_kami(catalog: Catalog) -> None:
+    """FR-030: no sacred object, no kami's dwelling, and the alternative wording."""
+    bones = parse_design(catalog, {'kind': 'memorial', 'heart': 'bones', 'form': 'himorogi'})
+    assert {'sacred', 'dwelling'} <= bones.voided
+    assert 'ground' not in bones.voided  # the open-sky form keeps a decision of its own
+    assert bones.alt is True
+    spirit = parse_design(catalog, {'kind': 'memorial', 'heart': 'spirit'})
+    assert spirit.alt is False
+    rite = catalog.category('rite')
+    assert rite is not None
+    assert rite.alt['prompt'] == 'How is the shrine consecrated?'
+    no_kami = [t for t in player_texts(catalog) if t and 'kami' in t]
+    alt_texts = [
+        v
+        for g in catalog.groups
+        for v in [*g.alt.values(), *(x for c in g.categories for x in c.alt.values())]
+    ]
+    assert all('kami' not in v for v in alt_texts), no_kami
+
+
+def test_no_boiled_bones(catalog: Catalog) -> None:
+    """FR-031: the European boiling practice has no East Asian record and is not offered."""
+    texts = ' '.join(player_texts(catalog)).lower()
+    assert 'boil' not in texts
+    assert 'vinegar' not in texts
+
+
+def _bad_alt_field(d: dict[str, Any]) -> None:
+    _first_category(d)['alt'] = {'reference': 'x'}
+
+
+def _bad_alt_when(d: dict[str, Any]) -> None:
+    d['alt_when'] = {'heart': ['ghost']}
+
+
+@pytest.mark.parametrize(
+    ('mutate', 'message'),
+    [(_bad_alt_field, 'alt may only replace'), (_bad_alt_when, 'alt_when names')],
+)
+def test_alt_validation(raw: dict[str, Any], mutate: Any, message: str) -> None:
     data = copy.deepcopy(raw)
     mutate(data)
     with pytest.raises(CatalogError, match=message):
