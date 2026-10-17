@@ -22,7 +22,6 @@ from pathlib import Path
 import pytest
 from configobj import ConfigObj
 
-from chargen import config
 from chargen import website as chargen_website
 from chargen.website import Root
 from l7r.jinja_env import build_environment
@@ -72,17 +71,18 @@ def _string_leaves(value: object) -> Iterator[str]:
 
 
 def _live_secret_values() -> list[str]:
-    """Harvest live secret values from config at runtime.
+    """Harvest live secret values from development-secrets.ini at runtime.
 
-    Pulling these from the parsed config means the test file itself
+    Pulling these from the file means the test file itself
     contains no credentials, and the assertion still adapts to whatever
     the deployed ``development-secrets.ini`` actually holds.
     """
-    out: list[str] = []
-    for section in _expected_secret_sections():
-        if section in config:
-            out.extend(_string_leaves(config[section]))
-    return out
+    # Read the secrets FILE, not the merged config: a section can hold both a
+    # secret and ordinary settings from development-defaults.ini ([lookup] has
+    # the bot's key beside its model name, which [lookup_models] rightly shows).
+    if not _SECRETS_FILE.exists():  # pragma: no cover - present in every dev tree
+        return []
+    return list(_string_leaves(ConfigObj(str(_SECRETS_FILE), encoding='utf-8')))
 
 
 def _render(method_name: str) -> str:
