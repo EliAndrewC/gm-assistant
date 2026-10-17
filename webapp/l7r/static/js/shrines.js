@@ -27,6 +27,9 @@
     var backBtn = wizard.querySelector('[data-back]');
     var nextBtn = wizard.querySelector('[data-next]');
     var current = null;
+    // History depth of the current entry: every Next or summary jump pushes one entry, so the
+    // browser's Back has somewhere to go inside the wizard (FR-024).
+    var depth = 0;
 
     document.documentElement.classList.add('js-wizard');
 
@@ -47,6 +50,12 @@
       form.querySelectorAll('input[type=radio][data-voids]:checked').forEach(function (input) {
         if (input.closest('fieldset.is-moot')) return;
         input.dataset.voids.split(' ').forEach(function (key) { voided[key] = true; });
+      });
+      // `only_with`: a category that applies only when another has one of the listed options.
+      form.querySelectorAll('fieldset[data-only-with]').forEach(function (fs) {
+        var parts = fs.dataset.onlyWith.split(':');
+        var picked = form.querySelector('fieldset[data-cat="' + parts[0] + '"]:not(:disabled) input:checked');
+        if (!picked || parts[1].split('|').indexOf(picked.value) < 0) voided[fs.dataset.cat] = true;
       });
       form.querySelectorAll('fieldset.shrine-cat').forEach(function (fs) {
         var moot = !!voided[fs.dataset.cat];
@@ -105,30 +114,49 @@
           open + ' choice' + (open === 1 ? '' : 's') + ' still open.';
       }
       var echo = wizard.querySelector('[data-name-echo]');
-      var name = form.querySelector('input[name=shrine_name]');
+      var name = form.querySelector('[name=shrine_name]');
       if (echo && name) echo.textContent = name.value.trim() || 'Your shrine';
     }
 
+    function urlFor(step) {
+      var hash = step ? '#step-' + step.dataset.step : '';
+      if (isGm) return window.location.pathname + window.location.search + hash;
+      return share.dataset.base + '?' + designQuery() + hash;
+    }
+
     function writeAddress() {
-      var query = designQuery();
-      if (share) share.value = window.location.origin + share.dataset.base + '?' + query;
-      var hash = current ? '#step-' + current.dataset.step : '';
-      if (isGm) {
-        history.replaceState(null, '', window.location.pathname + window.location.search + hash);
-      } else {
-        history.replaceState(null, '', share.dataset.base + '?' + query + hash);
+      if (share) share.value = window.location.origin + share.dataset.base + '?' + designQuery();
+      history.replaceState({ step: current ? current.dataset.step : null, depth: depth }, '', urlFor(current));
+    }
+
+    // FR-023: a fresh random order every time a step is shown, so position biases no choice.
+    function shuffle(step) {
+      var grid = step.querySelector('.shrine-opts');
+      if (!grid) return;
+      var cards = Array.prototype.slice.call(grid.children);
+      for (var i = cards.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = cards[i]; cards[i] = cards[j]; cards[j] = t;
       }
+      cards.forEach(function (card) { grid.appendChild(card); });
     }
 
     function show(step, scroll) {
       if (!step || !applies(step)) return;
+      if (step !== current) shuffle(step);
       current = step;
       steps.forEach(function (s) { s.classList.toggle('is-current', s === step); });
       var list = live();
       var index = list.indexOf(step);
       wizard.querySelector('[data-chapter-label]').textContent = step.dataset.chapter;
-      var skipped = steps.length - list.length;
-      wizard.querySelector('[data-count]').textContent = 'Step ' + (index + 1) + ' of ' + list.length +
+      // Count only steps an actual choice removed; form-specific steps (data-only-with) that are not
+      // in play are simply absent, so step 1 never claims something was already skipped.
+      var skipped = steps.filter(function (s) {
+        var fs = s.querySelector('fieldset.shrine-cat');
+        return fs && fs.disabled && !fs.dataset.onlyWith;
+      }).length;
+      var total = list.length;
+      wizard.querySelector('[data-count]').textContent = 'Step ' + (index + 1) + ' of ' + total +
         (skipped ? ' \u00b7 ' + skipped + ' skipped' : '');
       document.documentElement.classList.toggle('wizard-deep', step.dataset.step !== 'name');
       wizard.querySelector('[data-bar]').style.width = ((index + 1) / list.length * 100) + '%';
@@ -152,20 +180,58 @@
       wizard.querySelector('[data-hint]').hidden = !open;
     }
 
-    function move(delta) {
+    function neighbor(step, delta) {
       var list = live();
-      var index = list.indexOf(current) + delta;
-      if (index >= 0 && index < list.length) show(list[index], true);
+      var index = list.indexOf(step) + delta;
+      return index >= 0 && index < list.length ? list[index] : null;
     }
 
-    backBtn.addEventListener('click', function () { move(-1); });
-    nextBtn.addEventListener('click', function () { move(1); });
+    // Forward moves (Next, a summary jump) push a history entry.
+    function advance(step) {
+      if (!step || !applies(step)) return;
+      depth += 1;
+      history.pushState({ step: step.dataset.step, depth: depth }, '', urlFor(step));
+      show(step, true);
+    }
+
+    // The wizard's Back goes to the previous step that applies. When there is a wizard entry behind
+    // this one it does so THROUGH the browser history, so the two Backs stay one and the same; the
+    // popstate handler below does the actual move.
+    function back() {
+      var prev = neighbor(current, -1);
+      if (!prev) return;
+      if (depth > 0) {
+        history.back();
+      } else {
+        show(prev, true);
+      }
+    }
+
+    // FR-024: the browser's Back does exactly what the wizard's Back does - the previous step that
+    // applies (not merely the last page visited, which after a summary jump would differ). Forward
+    // restores the step that entry recorded.
+    window.addEventListener('popstate', function (event) {
+      var state = event.state;
+      if (!state || typeof state.depth !== 'number') return;
+      var target;
+      if (state.depth < depth) {
+        target = neighbor(current, -1) || stepByKey(state.step);
+      } else {
+        target = stepByKey(state.step);
+        if (!target || !applies(target)) target = neighbor(current, 1) || current;
+      }
+      depth = state.depth;
+      show(target, true);
+    });
+
+    backBtn.addEventListener('click', back);
+    nextBtn.addEventListener('click', function () { advance(neighbor(current, 1)); });
 
     wizard.addEventListener('click', function (event) {
       var link = event.target.closest('[data-goto]');
       if (!link) return;
       event.preventDefault();
-      show(stepByKey(link.dataset.goto), true);
+      advance(stepByKey(link.dataset.goto));
     });
 
     form.addEventListener('change', function () {
@@ -185,13 +251,24 @@
       }
     });
     form.addEventListener('input', function (event) {
-      if (!isGm && event.target.matches('input[type=text]')) { syncSummary(); writeAddress(); }
+      if (!isGm && event.target.matches('[name=shrine_name]')) { syncSummary(); writeAddress(); }
     });
+    // The name box wraps but is one line: Enter moves on instead of breaking it.
+    var nameBox = form.querySelector('[data-one-line]');
+    if (nameBox) {
+      nameBox.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          if (isGm) form.requestSubmit(); else advance(neighbor(current, 1));
+        }
+      });
+    }
+
     form.addEventListener('submit', function (event) {
       if (!isGm) {
         // Enter in the name field means "next", not "reload".
         event.preventDefault();
-        move(1);
+        advance(neighbor(current, 1));
         return;
       }
       try { sessionStorage.setItem(SCROLL_KEY, String(window.scrollY)); } catch (e) { /* ignore */ }

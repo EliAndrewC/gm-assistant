@@ -153,8 +153,10 @@ def test_wizard_has_a_step_per_category_plus_name_and_review(root: Root, catalog
 def test_name_is_prefilled_and_no_homework_fields(root: Root, catalog: Catalog) -> None:
     """FR-017: one free-text field, pre-filled; no sacred-object notes, no inscription box."""
     page = root.shrines().decode('utf-8')
-    assert f'name="shrine_name" maxlength="120" value="{catalog.default_name}"' in page
-    assert '<textarea name=' not in page
+    assert (
+        f'name="shrine_name" rows="2" maxlength="120" data-one-line>{catalog.default_name}<' in page
+    )
+    assert page.count('<textarea name=') == 1
     for gone in ('enshrined', 'sacred_note', 'inscription'):
         assert f'name="{gone}"' not in page
 
@@ -175,3 +177,10 @@ def test_open_choices_are_flagged_on_the_summary_and_ledger(root: Root, as_user:
 def test_complete_design_has_no_open_note(root: Root, catalog: Catalog) -> None:
     page = root.shrines(**{c.key: c.reference for c in catalog.categories}).decode('utf-8')
     assert 'data-open-note hidden' in page
+
+
+def test_appeal_and_only_with_render(root: Root) -> None:
+    page = root.shrines().decode('utf-8')
+    assert 'class="shrine-opt__appeal">The purest finish in the old view' in page
+    assert 'data-only-with="form:himorogi"' in page
+    assert 'Only for the "Open to the sky" form.' in page

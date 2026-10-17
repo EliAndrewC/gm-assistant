@@ -153,6 +153,22 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   be reworded to "one of the most common ..." (or the same idea in the same form), not deleted:
   the commonness is kept, only the default framing goes.
 
+## Amendment 2 (GM message 3, 2026-10-17)
+
+- **FR-022** (amends FR-017): the pre-filled shrine name is "The memorial hermitage of Shoda the
+  Fox-forest Guardian".
+- **FR-023**: on every step the options appear in a random order, drawn afresh each time a step is
+  shown, including when the player returns to a step with Back, so placement biases no choice.
+- **FR-024**: the browser's Back button steps back through the wizard exactly as the wizard's own
+  Back button does.
+- **FR-025**: the open-to-the-sky form (sacred tree or rock) has at least one decision of its own
+  that no other form shows. Two are provided: what the kami dwells in (a great tree, a rock seat,
+  a standing stone, the whole grove) and how the ground before it is laid (white gravel, moss,
+  four green bamboo with a rope, a ring of river stones). They apply only to that form.
+- **FR-026**: every option ends with one sentence saying what makes it good to choose - what it
+  suits, the feeling it evokes, how it moves visitors - EXCEPT an option described as "one of the
+  most common", which gets no such sentence.
+
 ## Review history
 
 - **Round 1 - CHANGES REQUIRED** (2026-10-17, `spec-fidelity`, Mode 2, against `gm-request.md`).
@@ -169,3 +185,7 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   single shrine name.
 - **Round 4 (amendment 1) - FAITHFUL** (2026-10-17). Both changes confirmed; "option text may refer
   to the hermit" judged to follow from the GM's own stream example.
+- **Round 5 (amendment 2, message 3) - CHANGES REQUIRED** (2026-10-17). (1) FR-023 "each time the
+  page is loaded" could mean a full reload only: now each time a step is shown. (2) FR-024's
+  parenthetical made the browser the reference too, licensing a change to the wizard's Back: struck.
+- **Round 6 (amendment 2) - FAITHFUL** (2026-10-17). Both changes confirmed.

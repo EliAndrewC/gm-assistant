@@ -101,7 +101,7 @@ def player_texts(catalog: Catalog) -> list[str]:
         for category in group.categories:
             texts += [category.label, category.prompt]
             for option in category.options:
-                texts += [option.label, option.text, option.romaji]
+                texts += [option.label, option.text, option.romaji, option.appeal]
     return texts
 
 
@@ -159,6 +159,7 @@ def test_no_option_is_an_absence(catalog: Catalog) -> None:
         for option in category.options:
             assert not ABSENCE.search(option.label), option.label
             assert not ABSENCE.search(option.text), option.text
+            assert not ABSENCE.search(option.appeal), option.appeal
 
 
 def test_nothing_frames_itself_as_the_default(catalog: Catalog) -> None:
@@ -219,7 +220,7 @@ def test_empty_params_choose_nothing(catalog: Catalog) -> None:
     """Nothing is pre-selected: an option already picked on arrival biases the player."""
     design = parse_design(catalog, {})
     assert design.choices == {}
-    assert design.voided == frozenset()
+    assert design.voided == {'dwelling', 'ground'}  # only_with form=himorogi, form unchosen
     assert price_design(catalog, design, 'road').total == pytest.approx(3.5)  # site work only
     assert design.text == {'shrine_name': catalog.default_name}
     assert design.dropped == ()
@@ -265,7 +266,7 @@ def test_shrine_name_is_trimmed_capped_and_defaulted(catalog: Catalog) -> None:
     assert len(parse_design(catalog, {'shrine_name': 'x' * 500}).text['shrine_name']) == 120
     blank = parse_design(catalog, {'shrine_name': '   '})
     assert blank.text['shrine_name'] == catalog.default_name
-    assert 'Kitsunemori' in catalog.default_name
+    assert catalog.default_name == 'The memorial hermitage of Shoda the Fox-forest Guardian'
 
 
 def test_only_free_text_field_is_the_name() -> None:
@@ -443,3 +444,61 @@ def test_format_koku(value: float, text: str) -> None:
 def test_format_number() -> None:
     assert format_number(12.0) == '12'
     assert format_number(12.5) == '12.5'
+
+
+def test_every_option_says_why_unless_it_is_common(catalog: Catalog) -> None:
+    """FR-026: an appeal sentence on every option, except "one of the most common" ones."""
+    for category in catalog.categories:
+        for option in category.options:
+            common = 'one of the most common' in option.text.lower()
+            assert bool(option.appeal) != common, (category.key, option.key)
+            if option.appeal:
+                assert option.appeal.endswith('.'), option.key
+                assert option.appeal.count('. ') == 0, ('one sentence', option.key)
+
+
+def test_open_sky_form_has_decisions_of_its_own(catalog: Catalog) -> None:
+    """FR-025: dwelling and ground apply to the open-to-the-sky form and to no other."""
+    for form in catalog.category('form').options:  # type: ignore[union-attr]
+        design = parse_design(catalog, {'form': form.key, 'dwelling': 'rock', 'ground': 'moss'})
+        if form.key == 'himorogi':
+            assert design.choices['dwelling'] == 'rock'
+            assert design.choices['ground'] == 'moss'
+            assert 'sacred' in design.voided
+        else:
+            assert {'dwelling', 'ground'} <= design.voided
+            assert voided_by(catalog, design)['dwelling'] == 'Form'
+    open_sky = parse_design(catalog, {'form': 'himorogi', 'dwelling': 'standing'})
+    lines = [
+        i
+        for i in price_design(catalog, open_sky, 'road').items
+        if i.category == "The kami's dwelling"
+    ]
+    assert [i.koku for i in lines] == [3]
+
+
+def _only_with_unknown_category(d: dict[str, Any]) -> None:
+    _first_category(d)['only_with'] = {'nowhere': ['x']}
+
+
+def _only_with_self(d: dict[str, Any]) -> None:
+    _first_category(d)['only_with'] = {'form': ['nagare']}
+
+
+def _only_with_unknown_option(d: dict[str, Any]) -> None:
+    d['groups'][0]['categories'][1]['only_with'] = {'form': ['pagoda']}
+
+
+@pytest.mark.parametrize(
+    ('mutate', 'message'),
+    [
+        (_only_with_unknown_category, 'only_with names unknown category'),
+        (_only_with_self, 'only_with names unknown category'),
+        (_only_with_unknown_option, 'only_with names an unknown option'),
+    ],
+)
+def test_only_with_validation(raw: dict[str, Any], mutate: Any, message: str) -> None:
+    data = copy.deepcopy(raw)
+    mutate(data)
+    with pytest.raises(CatalogError, match=message):
+        parse_catalog(data)

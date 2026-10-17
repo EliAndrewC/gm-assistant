@@ -367,6 +367,7 @@ class Root:
         return self._render(
             'shrines.html',
             current_section='shrines',
+            body_class='page-shrines',
             catalog=catalog,
             design=design,
             voided_by=voided_by(catalog, design),

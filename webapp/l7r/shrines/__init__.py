@@ -55,6 +55,7 @@ class Option:
     text: str
     ja: str = ''
     romaji: str = ''
+    appeal: str = ''
     lines: tuple[Line, ...] = ()
     voids: tuple[str, ...] = ()
     units: float = 1.0
@@ -67,6 +68,8 @@ class Category:
     prompt: str
     reference: str
     options: tuple[Option, ...]
+    # Applies only when category `only_with[0]` has one of the options in `only_with[1]` (FR-025).
+    only_with: tuple[str, tuple[str, ...]] | None = None
 
     def option(self, key: str) -> Option | None:
         for option in self.options:
@@ -147,6 +150,7 @@ def _option(raw: Mapping[str, Any]) -> Option:
         text=' '.join(str(raw['text']).split()),
         ja=str(raw.get('ja', '')),
         romaji=str(raw.get('romaji', '')),
+        appeal=' '.join(str(raw.get('appeal', '')).split()),
         lines=tuple(_line(x) for x in raw.get('lines', ())),
         voids=tuple(str(x) for x in raw.get('voids', ())),
         units=float(raw.get('units', 1)),
@@ -154,12 +158,17 @@ def _option(raw: Mapping[str, Any]) -> Option:
 
 
 def _category(raw: Mapping[str, Any]) -> Category:
+    only_with = None
+    if 'only_with' in raw:
+        ((key, values),) = raw['only_with'].items()
+        only_with = (str(key), tuple(str(v) for v in values))
     return Category(
         key=str(raw['key']),
         label=str(raw['label']),
         prompt=str(raw['prompt']),
         reference=str(raw['reference']),
         options=tuple(_option(x) for x in raw['options']),
+        only_with=only_with,
     )
 
 
@@ -208,6 +217,12 @@ def _validate(catalog: Catalog) -> None:
             raise CatalogError(f'site line uses unknown contract {site.contract!r}')
     for category in catalog.categories:
         option_keys = {o.key for o in category.options}
+        if category.only_with is not None:
+            target = catalog.category(category.only_with[0])
+            if target is None or target.key == category.key:
+                raise CatalogError(f'{category.key}: only_with names unknown category')
+            if any(target.option(v) is None for v in category.only_with[1]):
+                raise CatalogError(f'{category.key}: only_with names an unknown option')
         if category.reference not in option_keys:
             raise CatalogError(f'{category.key}: {category.reference!r} is not one of its options')
         for option in category.options:
@@ -267,7 +282,7 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
     for name, cap in TEXT_FIELDS.items():
         raw = _first(params.get(name))
         if raw is not None and raw.strip():
-            text[name] = raw.strip()[:cap]
+            text[name] = ' '.join(raw.split())[:cap]  # one line: the name box wraps, never breaks
     # A blank or missing name falls back to the catalog's, so the field is never empty.
     if 'shrine_name' not in text and catalog.default_name:
         text['shrine_name'] = catalog.default_name
@@ -280,18 +295,24 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
 
 
 def _voided(catalog: Catalog, chosen: Mapping[str, str]) -> frozenset[str]:
-    """Categories made moot by other choices, to a fixpoint: a voided category voids nothing."""
+    """Categories made moot by other choices, to a fixpoint: a voided category voids nothing.
+
+    Two sources: a chosen option's `voids`, and a category's `only_with` condition not being met
+    (including when the category it depends on is unchosen or itself moot).
+    """
     voided: frozenset[str] = frozenset()
     while True:
-        nxt = frozenset(
-            v
-            for category in catalog.categories
-            if category.key not in voided and category.key in chosen
-            for v in _chosen_option(category, chosen).voids
-        )
-        if nxt == voided:
+        nxt: set[str] = set()
+        for category in catalog.categories:
+            if category.only_with is not None:
+                key, allowed = category.only_with
+                if key in voided or chosen.get(key) not in allowed:
+                    nxt.add(category.key)
+            if category.key in chosen and category.key not in voided:
+                nxt.update(_chosen_option(category, chosen).voids)
+        if frozenset(nxt) == voided:
             return voided
-        voided = nxt
+        voided = frozenset(nxt)
 
 
 def _chosen_option(category: Category, chosen: Mapping[str, str]) -> Option:
@@ -302,12 +323,18 @@ def _chosen_option(category: Category, chosen: Mapping[str, str]) -> Option:
 
 def voided_by(catalog: Catalog, design: Design) -> dict[str, str]:
     """For each moot category, the label of the category whose choice made it moot."""
-    return {
+    found = {
         void: category.label
         for category in catalog.categories
         if category.key in design.choices
         for void in _chosen_option(category, design.choices).voids
     }
+    for category in catalog.categories:
+        if category.only_with is not None and category.key in design.voided:
+            target = catalog.category(category.only_with[0])
+            assert target is not None  # _validate checked only_with
+            found.setdefault(category.key, target.label)
+    return found
 
 
 def share_query(catalog: Catalog, design: Design) -> str:

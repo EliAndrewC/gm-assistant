@@ -91,6 +91,9 @@
 }
 .shrine-cat.is-moot .shrine-opt input:checked + .shrine-opt__body .shrine-opt__title::before { display: none; }
 
+/* Cards size to their own content, so one without an appeal line is not a half-empty box. */
+.shrine-opts { align-items: start; }
+
 /* Columns follow the option count so a row never strands one card (3+1): one column on phones,
    two at mid widths, three for 3- and 5-option sets, four for 4-option sets on wide screens. */
 .shrine-opts {
@@ -180,6 +183,15 @@
   margin-right: 0.2em;
 }
 
+.shrine-opt__appeal {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: var(--vermillion-deep);
+  margin-top: 0.35rem;
+}
+
 .shrine-opt__text {
   font-family: var(--font-body);
   font-size: 0.98rem;
@@ -223,7 +235,7 @@
   min-width: 0;
 }
 
-.shrine-text textarea { resize: vertical; line-height: 1.45; }
+.shrine-text textarea { resize: none; line-height: 1.45; }
 
 /* --- share ------------------------------------------------------------- */
 
@@ -631,11 +643,13 @@
 .wizard { scroll-margin-top: 4.5rem; }
 @media (max-width: 900px) { .wizard { scroll-margin-top: 5.5rem; } }
 
-/* Past the first step the masthead shrinks to a slim title, so each step's options get the screen. */
-.wizard-deep .masthead { padding: 0.6rem 0 0.5rem; }
-.wizard-deep .masthead__lede,
-.wizard-deep .masthead__watermark { display: none; }
-.wizard-deep .masthead__title { font-size: clamp(1.4rem, 2.6vw, 2rem); margin: 0; }
+/* Past the first step the masthead goes entirely (the nav already says Shrines), so each step's
+   question and options get the screen. */
+.wizard-deep .masthead { display: none; }
+.wizard-deep .shrine-form { padding-top: 1rem; }
+
+/* Short steps: the paper fills the window instead of ending in a band of the darker surface. */
+body.page-shrines { min-height: 100vh; }
 
 .wizard-nav__next { min-width: 8rem; }
 
@@ -660,12 +674,14 @@
   margin-left: 0.25em;
 }
 
-/* Not chosen yet: muted, not alarming, and the mark says "choose". */
+/* Not chosen yet: a muted status, then a separate "choose" link-mark. */
 .shrine-summary em.is-open {
   color: var(--ink-faded);
-  text-decoration-color: var(--ink-ghost);
+  font-style: italic;
+  text-decoration: none;
 }
-.shrine-summary em.is-open::after { content: ' choose'; }
+.shrine-summary em.is-open::after { content: 'choose'; margin-left: 0.6em; }
+.shrine-summary em::after { text-decoration: underline; }
 
 .shrine-summary a:hover em,
 .shrine-summary a:focus-visible em { text-decoration-thickness: 2px; }

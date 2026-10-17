@@ -126,11 +126,12 @@
 
       <section class="wizard-step" id="shrine-step-name" data-step="name" data-chapter="The shrine">
         <h2 class="wizard-step__title">Name the shrine</h2>
-        <p class="wizard-step__intro">Every shrine begins with a name. Here is one to start from; keep it, or change it to suit.</p>
         <label class="shrine-text">
           <span class="shrine-text__label">Name of the shrine</span>
-          <input type="text" name="shrine_name" maxlength="{{ text_fields['shrine_name'] }}" value="{{ design.text.get('shrine_name', '') }}" />
+          {# A wrapping box, not <input>: the default name is long and would scroll out of a one-line field on a phone. #}
+          <textarea name="shrine_name" rows="2" maxlength="{{ text_fields['shrine_name'] }}" data-one-line>{{ design.text.get('shrine_name', '') }}</textarea>
         </label>
+        <p class="wizard-step__intro">Every shrine begins with a name. Here is one to start from; keep it, or change it to suit.</p>
       </section>
 
       {% for group in catalog.groups %}
@@ -139,12 +140,17 @@
           {% set chosen = design.choices.get(category.key) %}
           <section class="wizard-step" id="shrine-step-{{ category.key }}" data-step="{{ category.key }}" data-chapter="{{ group.label }}">
             {% if loop.first %}<p class="wizard-step__chapter-intro">{{ group.intro }}</p>{% endif %}
-            <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}" {% if moot %}disabled{% endif %}>
+            <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}"{% if category.only_with %} data-only-with="{{ category.only_with[0] }}:{{ category.only_with[1]|join('|') }}"{% endif %} {% if moot %}disabled{% endif %}>
               <legend class="shrine-cat__legend">
                 <span class="shrine-cat__label">{{ category.label }}</span>
                 <span class="wizard-step__title">{{ category.prompt }}</span>
               </legend>
-              <p class="shrine-cat__moot" data-moot-note role="note">Does not apply{% if moot %} with this {{ voided_by[category.key]|lower }}{% endif %}.</p>
+              {% if category.only_with %}
+                {% set needs = catalog.category(category.only_with[0]) %}
+                <p class="shrine-cat__moot" data-moot-note role="note">Only for the {% for k in category.only_with[1] %}"{{ needs.option(k).label }}"{{ ', ' if not loop.last }}{% endfor %} {{ needs.label|lower }}.</p>
+              {% else %}
+                <p class="shrine-cat__moot" data-moot-note role="note">Does not apply{% if moot %} with this {{ voided_by[category.key]|lower }}{% endif %}.</p>
+              {% endif %}
               <div class="shrine-opts shrine-opts--n{{ category.options|length }}">
                 {% for option in category.options %}
                   <label class="shrine-opt">
@@ -155,6 +161,7 @@
                         <span class="shrine-opt__term">{% if option.ja %}<span lang="ja">{{ option.ja }}</span> {% endif %}<em>{{ option.romaji }}</em></span>
                       {% endif %}
                       <span class="shrine-opt__text">{{ option.text }}</span>
+                      {% if option.appeal %}<span class="shrine-opt__appeal">{{ option.appeal }}</span>{% endif %}
                     </span>
                   </label>
                 {% endfor %}
@@ -183,7 +190,7 @@
 
       <div class="wizard-nav">
         <button class="shrine-button shrine-button--quiet wizard-nav__back" type="button" data-back>Back</button>
-        <span class="wizard-nav__hint" data-hint hidden>Choose one to continue</span>
+        <span class="wizard-nav__hint" data-hint hidden>Choose one</span>
         <button class="shrine-button wizard-nav__next" type="button" data-next>Next</button>
       </div>
     </div>

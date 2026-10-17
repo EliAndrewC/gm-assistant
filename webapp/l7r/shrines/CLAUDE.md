@@ -35,7 +35,20 @@ contract down. What is left of the budget is what he keeps.
   "what"/"how", never "is there a...?". Nothing is "the usual"; say "one of the most common".
   Tests enforce each of these.
 - **No homework** (FR-017): the only free-text field is the shrine's name, pre-filled
-  (`default_name` in the catalog). Don't add notes or inscription boxes.
+  (`default_name` in the catalog: "The memorial hermitage of Shoda the Fox-forest Guardian", the
+  GM's wording). Don't add notes or inscription boxes.
+- **Nothing pre-selected, and no fixed order** (FR-023): every step starts empty, Next waits for a
+  choice, and `shrines.js` shuffles the cards each time a step is shown. Catalog order means
+  nothing to the player.
+- **Every option says why it is worth choosing** (FR-026): `appeal:` in the catalog, one sentence,
+  required on every option except one described as "one of the most common". Tested.
+- **Form-specific decisions** (FR-025): a category with `only_with: {form: [himorogi]}` applies
+  only to that form (the kami's dwelling; the ground before it). `_voided` handles it server-side,
+  `data-only-with` client-side.
+- **Browser Back = wizard Back** (FR-024): Next and summary jumps push a history entry; on
+  popstate going back, the wizard shows the previous APPLICABLE step (what its own Back does), not
+  merely the last page visited. The wizard's Back calls `history.back()` when there is a wizard
+  entry behind it, so the two never drift apart.
 
 ## Historical grounding (why the numbers are what they are)
 

@@ -43,3 +43,17 @@ And then same thing with the guardians. Like, we wouldn't present it with a lack
 and then with the basin, we wouldn't label that as no basin. But we would be emphasizing the feral nature of the shrine and the forest and that just as Shota washed his hands, in the stream, so too visitors shall purify themselves, etc.
 
 Anyway, I think that's enough changes for now. Uh, if you can make all of that and then push it out, then I will take another look and I will talk to you about further refinements that we can make.
+
+---
+
+# Message 3, verbatim (2026-10-17, after reviewing the wizard)
+
+Thanks, though let's make the default name `The memorial hermitage of Shoda the Fox-forest Guardian`.
+
+I think I would also like it if on every page, the options were randomized every time. That way, we're not biasing towards any particular thing with the placement order.
+
+I would also like for the browser back button to take us back in the wizard process so that like clicking the back button in my browser is the same as clicking the back button like that is the link in the bottom left of the wizard.
+
+I also wonder whether the uh, kind of like sacred rock option would have its own like kind of interesting choices there. Uh, you know, I feel like there would be at least one kind of set of choices that you would make for like the open to the sky shrine or hermitage that you wouldn't see on any other form. that's something to think about.
+
+I also think that we should have a sort of like what makes this option like good to select sentence at the end of each choice on every screen. Now, one of the most common options is just that. So we don't need any extra superlative or, you know, kind of what makes this cool or this is appropriate in cases where or this invokes this sense of feeling or good for engendering this response in visitors uh, sentence there, but we do want that kind of sentence for kind of every other option. You know, the point is to make everything sound really cool.
