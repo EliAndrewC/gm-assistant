@@ -85,6 +85,11 @@ proxy, the block dropped to 75KB (user + main CLAUDE.md only) in both the sessio
 general-purpose subagent. The cost: a session reads MAIN's CLAUDE.md, so an edit to it in a clone
 reaches sessions only after it is pushed.
 
+**After the trim and the exclude** (same proxy, a session started in `/gm-assistant` like the GM's
+usual sessions, 2026-10-17): the CLAUDE.md block is 31KB (user CLAUDE.md + the trimmed project
+CLAUDE.md + MEMORY.md); the session's first request is 54k tokens in all, and a general-purpose
+subagent's first request writes 46.6k (was ~58.9k from main, ~86.9k from a clone).
+
 **Not reproduced:** two earlier general-purpose launches with different prompts both read exactly
 48,505 and wrote 10,413. The structure above does not explain an intermediate match; the probe runs
 did not show one again.
