@@ -1,7 +1,9 @@
 # Shrine builder (`/shrines`, feature 216)
 
-A player designs a small, remote, unstaffed shrine by choosing one option per category. The design
-lives entirely in the link. The GM opens the same link while signed in as GM and sees the fair price
+A player designs a small, remote, unstaffed shrine in a step-by-step wizard, one decision per page
+(the name first, a summary and the share link last; steps that do not apply are skipped). The
+design lives entirely in the link; the current step rides in the `#step-...` hash, which the share
+link never carries. The GM opens the same link while signed in as GM and sees the fair price
 of every choice, grouped into contracts, and a ledger where Tadashi's Commerce rolls bring each
 contract down. What is left of the budget is what he keeps.
 
@@ -25,8 +27,15 @@ contract down. What is left of the budget is what he keeps.
 - **Distinct forms, not a quality ladder** (spec FR-003, constitution XII). Where history did a
   thing several ways, each way is an option with its own meaning. Don't collapse a category into
   good/better/best.
-- **Unstaffed and remote** (FR-002a): no option adds living quarters, lodging or an office, and the
-  sanctuary stays one bay. Tests check both.
+- **Unstaffed and remote** (FR-002a): no option adds living quarters, lodging or an office.
+- **No upgrades, no absences, no defaults** (GM 2026-10-17, FR-019 to FR-021). No option is
+  another plus more (the old "vermilion" beside "black lacquer with vermilion"), so there is no
+  size category - the sanctuary is one small bay. No option is a "None": the forest guards the
+  shrine, a clearing lights the path, visitors wash in the stream as the hermit did. Prompts ask
+  "what"/"how", never "is there a...?". Nothing is "the usual"; say "one of the most common".
+  Tests enforce each of these.
+- **No homework** (FR-017): the only free-text field is the shrine's name, pre-filled
+  (`default_name` in the catalog). Don't add notes or inscription boxes.
 
 ## Historical grounding (why the numbers are what they are)
 
@@ -38,9 +47,9 @@ contract down. What is left of the budget is what he keeps.
 - **Anchors** (village ledgers from Tama district, 1749-1805, AIJ paper No. 420): copper re-roofing
   of a LARGE one-bay sanctuary ~43 ryo, mostly copper bought in Edo; carved front panels and
   painting on the same building ~62 ryo, mostly labor; a small sanctuary's repair and repainting
-  ~10 ryo; a whole village temple hall ~250 ryo. So copper roofing a small sanctuary is 22 koku and
-  full carving 20; "generous" size multiplies sanctuary lines by 1.8 (a 7.8-shaku bay against
-  4.2). A craftsman earned about 1 ryo per 30-40 days.
+  ~10 ryo; a whole village temple hall ~250 ryo. So copper roofing a small (4.2-shaku bay)
+  sanctuary is 22 koku and relief panels 20 (the ledger's large building had a 7.8-shaku bay). A
+  craftsman earned about 1 ryo per 30-40 days.
 - **Estimates, not ledger figures**: stone torii, guardians, lanterns, steles. They are mason labor
   plus **porterage**: every heavy line carries `heavy` loads, charged at the remoteness rate (cart
   road 0.25, foot trail 0.6, no trail 1.0 koku per load). Remoteness changes porterage and nothing
@@ -61,8 +70,9 @@ contract down. What is left of the budget is what he keeps.
 ( cd webapp && cherryd --import l7r.app )    # then open http://localhost:8080/shrines
 ```
 
-- Signed out: pick options; the address bar and the "Your design" link follow every change. Choose
-  "Sacred tree or rock" and the roof, timber, finish, carving, size and sacred-object sections grey
-  out. View source: no `koku` anywhere.
+- Signed out: step through with Next; the address bar follows every change. Choose "Sacred tree or
+  rock" on the Form step and the step count drops from 22 to 17 (timber, roof, finish, ornament and
+  sacred object are skipped). The last step lists every pick (each line jumps back to its step) and
+  holds the link. View source: no `koku` anywhere.
 - Signed in as GM, open the same link: the GM ledger appears on the right (below on narrow screens).
   Type a roll into a contract; the page recalculates and the "Tadashi keeps" line moves.

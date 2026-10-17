@@ -7,23 +7,26 @@
 <script src="{{ static_url('js/shrines.js') }}" defer></script>
 {% endblock %}
 
-{% macro text_field(name, label, hint, rows=0) -%}
-  <label class="shrine-text">
-    <span class="shrine-text__label">{{ label }}</span>
-    {% if rows %}
-      <textarea name="{{ name }}" rows="{{ rows }}" maxlength="{{ text_fields[name] }}" placeholder="{{ hint }}">{{ design.text.get(name, '') }}</textarea>
-    {% else %}
-      <input type="text" name="{{ name }}" maxlength="{{ text_fields[name] }}" placeholder="{{ hint }}" value="{{ design.text.get(name, '') }}" />
-    {% endif %}
-  </label>
-{%- endmacro %}
+{#
+  Step sections are id="shrine-step-...", NOT "step-...": the address bar carries #step-<key>, and a
+  matching id would make the browser scroll there itself and tuck the question under the sticky nav.
+
+  A wizard, one decision per step (spec FR-018). The server renders every step; shrines.js shows one
+  at a time, skips steps whose category does not apply, and keeps the link in sync. Without
+  JavaScript every step shows at once and the form still works. The GM ledger is rendered only
+  for a GM session (FR-007).
+#}
 
 {% block content %}
 <section class="container">
   <div class="masthead">
     <div class="masthead__copy">
       <h1 class="masthead__title">Shrines</h1>
-      <p class="masthead__lede">Design a small shrine in the woods - one nobody lives at, kept by those who come to sweep it. Choose its form, its materials and its dedication, then send the link to your GM. Every choice starts on a common one; change anything you like.</p>
+      {% if is_gm %}
+        <p class="masthead__lede">A player's shrine, step by step, with what each choice costs in the ledger.</p>
+      {% else %}
+        <p class="masthead__lede">Build a small shrine in the woods - one nobody lives at, kept by those who come to sweep it. One choice at a time; at the end, send the link to your GM.</p>
+      {% endif %}
     </div>
     <span class="masthead__watermark" lang="ja" aria-hidden="true">社</span>
   </div>
@@ -35,6 +38,8 @@
       <div class="shrine-ledger-col">
       <aside class="shrine-ledger" aria-labelledby="shrine-ledger-title">
         <h2 class="shrine-ledger__title" id="shrine-ledger-title">GM ledger</h2>
+        <p class="shrine-ledger__subject">Pricing <strong>{{ design.text.get('shrine_name', 'this shrine') }}</strong>{% if missing %}, {{ missing }} choice{{ 's' if missing != 1 }} still open{% endif %}.</p>
+        <p class="shrine-ledger__pin" aria-hidden="true">{% if ledger.remainder >= 0 %}Tadashi keeps{{ ' so far' if missing }} <strong>{{ format_koku(ledger.remainder) }}</strong>{% else %}Shortfall <strong>{{ format_koku(-ledger.remainder) }}</strong>{% endif %}</p>
         <p class="shrine-ledger__lede">Only a GM sees this panel. Enter Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract. Totals update when you leave a field or press Enter.</p>
 
         <dl class="shrine-totals">
@@ -42,7 +47,7 @@
           <div><dt>Paid after haggling</dt><dd>{{ format_koku(ledger.paid_total) }}</dd></div>
           <div><dt>Budget</dt><dd>{{ format_koku(ledger.budget) }}</dd></div>
           {% if ledger.remainder >= 0 %}
-            <div class="shrine-totals__keep"><dt>Tadashi keeps</dt><dd>{{ format_koku(ledger.remainder) }}</dd></div>
+            <div class="shrine-totals__keep"><dt>Tadashi keeps{{ ' so far' if missing }}</dt><dd>{{ format_koku(ledger.remainder) }}</dd></div>
           {% else %}
             <div class="shrine-totals__short"><dt>Shortfall</dt><dd>{{ format_koku(-ledger.remainder) }}</dd></div>
           {% endif %}
@@ -97,7 +102,6 @@
           {% endfor %}
         </ol>
 
-
         <div class="shrine-ledger__actions">
           <button class="shrine-button" type="submit">Update totals</button>
           <a class="shrine-ledger__gmlink" href="/shrines?{{ gm_query }}">Link with these GM figures</a>
@@ -105,37 +109,40 @@
       </aside>
       </div>
     {% endif %}
-    <div class="shrine-design">
+
+    <div class="shrine-design wizard" data-wizard>
+      <div class="wizard-progress" aria-live="polite">
+        <div class="wizard-progress__text">
+          <span class="wizard-progress__chapter" data-chapter-label></span>
+          <span class="wizard-progress__count" data-count></span>
+        </div>
+        <div class="wizard-progress__bar"><span data-bar></span></div>
+      </div>
+
       {% if design.dropped %}
         {% set n = design.dropped|length %}
         <p class="shrine-notice" role="status">{{ n }} choice{{ 's' if n > 1 }} in this link could not be restored and {{ 'were' if n > 1 else 'was' }} reset: {% for key in design.dropped %}{{ catalog.category(key).label }}{{ ', ' if not loop.last }}{% endfor %}.</p>
       {% endif %}
 
-      <section class="shrine-group">
-        <header class="shrine-group__head">
-          <h2 class="shrine-group__title">The shrine</h2>
-          <p class="shrine-group__intro">Who it is for, and what it is called.</p>
-        </header>
-        <div class="shrine-texts">
-          {{ text_field('enshrined', 'Enshrined', 'e.g. Shoda the hermit') }}
-          {{ text_field('shrine_name', 'Name of the shrine', 'e.g. the Shrine of the Fox-Keeper') }}
-        </div>
+      <section class="wizard-step" id="shrine-step-name" data-step="name" data-chapter="The shrine">
+        <h2 class="wizard-step__title">Name the shrine</h2>
+        <p class="wizard-step__intro">Every shrine begins with a name. Here is one to start from; keep it, or change it to suit.</p>
+        <label class="shrine-text">
+          <span class="shrine-text__label">Name of the shrine</span>
+          <input type="text" name="shrine_name" maxlength="{{ text_fields['shrine_name'] }}" value="{{ design.text.get('shrine_name', '') }}" />
+        </label>
       </section>
 
       {% for group in catalog.groups %}
-        <section class="shrine-group">
-          <header class="shrine-group__head">
-            <h2 class="shrine-group__title">{{ group.label }}</h2>
-            <p class="shrine-group__intro">{{ group.intro }}</p>
-          </header>
-
-          {% for category in group.categories %}
-            {% set moot = category.key in design.voided %}
-            {% set chosen = design.choices.get(category.key, category.default) %}
+        {% for category in group.categories %}
+          {% set moot = category.key in design.voided %}
+          {% set chosen = design.choices.get(category.key) %}
+          <section class="wizard-step" id="shrine-step-{{ category.key }}" data-step="{{ category.key }}" data-chapter="{{ group.label }}">
+            {% if loop.first %}<p class="wizard-step__chapter-intro">{{ group.intro }}</p>{% endif %}
             <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}" {% if moot %}disabled{% endif %}>
               <legend class="shrine-cat__legend">
                 <span class="shrine-cat__label">{{ category.label }}</span>
-                <span class="shrine-cat__prompt">{{ category.prompt }}</span>
+                <span class="wizard-step__title">{{ category.prompt }}</span>
               </legend>
               <p class="shrine-cat__moot" data-moot-note role="note">Does not apply{% if moot %} with this {{ voided_by[category.key]|lower }}{% endif %}.</p>
               <div class="shrine-opts shrine-opts--n{{ category.options|length }}">
@@ -153,22 +160,17 @@
                 {% endfor %}
               </div>
             </fieldset>
-
-            {% if category.key == 'sacred' %}
-              {{ text_field('sacred_note', 'About the sacred object', 'What exactly it is, and where it came from.', 3) }}
-            {% elif category.key == 'stele' %}
-              {{ text_field('inscription', 'Inscription or story', 'What the stone or board says, and whose names are on it.', 4) }}
-            {% endif %}
-          {% endfor %}
-        </section>
+          </section>
+        {% endfor %}
       {% endfor %}
 
-      <section class="shrine-share" aria-labelledby="shrine-share-title">
-        <h2 class="shrine-share__title" id="shrine-share-title">Your design</h2>
-        <p class="shrine-share__lede">This link holds every choice above. Send it to your GM; opening it again brings the design back exactly.</p>
+      <section class="wizard-step shrine-share" id="shrine-step-review" data-step="review" data-chapter="Your shrine" aria-labelledby="shrine-share-title">
+        <h2 class="wizard-step__title" id="shrine-share-title" data-name-echo>{{ design.text.get('shrine_name', 'Your shrine') }}</h2>
+        <p class="shrine-share__lede" data-open-note{% if not missing %} hidden{% endif %}><strong data-open-count>{{ missing }} choice{{ 's' if missing != 1 }} still open.</strong> Select a line marked "choose" to go back to it.</p>
+        <p class="shrine-share__lede">Every choice in one link. Send it to your GM; opening it again brings the design back exactly. Select any line to go back and change it.</p>
         <ul class="shrine-summary" data-summary>
-          {% for category in catalog.categories if category.key in design.choices %}
-            <li><span>{{ category.label }}</span> {{ category.option(design.choices[category.key]).label }}</li>
+          {% for category in catalog.categories if category.key not in design.voided %}
+            <li><a href="#shrine-step-{{ category.key }}" data-goto="{{ category.key }}"><span>{{ category.label }}</span> {% if category.key in design.choices %}<em>{{ category.option(design.choices[category.key]).label }}</em>{% else %}<em class="is-open">not chosen yet</em>{% endif %}</a></li>
           {% endfor %}
         </ul>
         <div class="shrine-share__row">
@@ -178,8 +180,13 @@
         </div>
         <noscript><button class="shrine-button shrine-button--quiet" type="submit">Update the link</button></noscript>
       </section>
-    </div>
 
+      <div class="wizard-nav">
+        <button class="shrine-button shrine-button--quiet wizard-nav__back" type="button" data-back>Back</button>
+        <span class="wizard-nav__hint" data-hint hidden>Choose one to continue</span>
+        <button class="shrine-button wizard-nav__next" type="button" data-next>Next</button>
+      </div>
+    </div>
   </div>
 </form>
 {% endblock %}

@@ -45,7 +45,7 @@ def most_expensive(catalog: Catalog) -> dict[str, str]:
     }
 
 
-GM_PARAMS = {'gm_budget': '77', 'gm_remote': 'deep', 'gm_roll_carpentry': '40'}
+GM_PARAMS = {'gm_budget': '7', 'gm_remote': 'deep', 'gm_roll_carpentry': '40'}
 
 
 @pytest.mark.parametrize('role', [None, 'player'])
@@ -93,7 +93,7 @@ def test_share_link_round_trips(root: Root, catalog: Catalog) -> None:
         'form': 'kasuga',
         'roof': 'kokera',
         'guardians': 'komainu',
-        'enshrined': 'Shoda <the> hermit',
+        'shrine_name': 'Shoda <the> hermit',
     }
     page = root.shrines(**params).decode('utf-8')
     value = re.search(r'id="shrine-share-url"[^>]*>([^<]*)</textarea>', page)
@@ -115,13 +115,14 @@ def test_gm_view_sums_match_the_ledger(root: Root, catalog: Catalog, as_user: ob
     for contract in ledger.contracts:
         assert contract.label in page
     assert 'name="gm_roll_carpentry" min="0" max="200" value="40"' in page
-    assert 'gm_budget=77' in page  # the GM's own link keeps the figures
+    assert 'gm_budget=7' in page
+    assert 'choices still open' in page  # the GM's own link keeps the figures
 
 
 def test_gm_view_shows_what_tadashi_keeps(root: Root, as_user: object) -> None:
     as_user('gm')  # type: ignore[operator]
     page = root.shrines(form='himorogi').decode('utf-8')
-    assert re.search(r'Tadashi keeps</dt><dd>[^<]*koku', page) is not None
+    assert re.search(r'Tadashi keeps so far</dt><dd>[^<]*koku', page) is not None
     assert 'not yet negotiated' in page
 
 
@@ -135,5 +136,42 @@ def test_chosen_option_with_voids_stays_checked(root: Root) -> None:
 
 def test_summary_lists_the_picks(root: Root) -> None:
     page = root.shrines(form='kasuga', roof='copper').decode('utf-8')
-    assert '<li><span>Form</span> Gable-entry</li>' in page
-    assert '<li><span>Roof covering</span> Copper sheet</li>' in page
+    assert 'data-goto="form"><span>Form</span> <em>Gable-entry</em></a>' in page
+    assert 'data-goto="roof"><span>Roof covering</span> <em>Copper sheet</em></a>' in page
+    assert 'data-goto="bell"><span>Bell</span> <em class="is-open">not chosen yet</em></a>' in page
+
+
+def test_wizard_has_a_step_per_category_plus_name_and_review(root: Root, catalog: Catalog) -> None:
+    """FR-018: one decision per step; the name first, the summary and link last."""
+    page = root.shrines().decode('utf-8')
+    steps = re.findall(r'class="wizard-step[^"]*" id="shrine-step-([a-z_]+)"', page)
+    assert steps == ['name', *(c.key for c in catalog.categories), 'review']
+    assert 'data-next' in page
+    assert 'data-back' in page
+
+
+def test_name_is_prefilled_and_no_homework_fields(root: Root, catalog: Catalog) -> None:
+    """FR-017: one free-text field, pre-filled; no sacred-object notes, no inscription box."""
+    page = root.shrines().decode('utf-8')
+    assert f'name="shrine_name" maxlength="120" value="{catalog.default_name}"' in page
+    assert '<textarea name=' not in page
+    for gone in ('enshrined', 'sacred_note', 'inscription'):
+        assert f'name="{gone}"' not in page
+
+
+def test_nothing_is_preselected(root: Root) -> None:
+    page = root.shrines().decode('utf-8')
+    assert ' checked' not in page
+
+
+def test_open_choices_are_flagged_on_the_summary_and_ledger(root: Root, as_user: object) -> None:
+    page = root.shrines(form='hokora').decode('utf-8')
+    assert re.search(r'<strong data-open-count>\d+ choices still open\.</strong>', page)
+    as_user('gm')  # type: ignore[operator]
+    gm = root.shrines(form='hokora').decode('utf-8')
+    assert 'Tadashi keeps so far' in gm
+
+
+def test_complete_design_has_no_open_note(root: Root, catalog: Catalog) -> None:
+    page = root.shrines(**{c.key: c.reference for c in catalog.categories}).decode('utf-8')
+    assert 'data-open-note hidden' in page

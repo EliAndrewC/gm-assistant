@@ -13,3 +13,33 @@ I have basically no idea what a forest shrine costs. And so I would like for you
 Now, Tadashi is familiar with these things, and so as a result, he has done a single commerce negotiation already for the overall budget of the shrine. And he won this negotiation handily by exceeding his opponent's contested commerce roll by more than 10. So I assume that given the circumstances, this will be a fairly nice forest shrine, though it is remote, so that does, you know, kind of cap the type of building it is. Um, I think the intention is that this is the kind of shrine that is, like, unstaffed. Like, nobody lives there. Uh, you know, this is a place where there would be a donation box that visitors could drop money into. But other than Shota's disciples coming to occasionally sweep the shrine, clean it, collect the donations, etc., then... You know, there wouldn't be anyone there most of the time. So that is the type of shrine that we are talking about, which, to be clear, I'm not even 100% sure is a real thing. Uh, all I know is that I have seen this type of shrine in anime. Haha.
 
 What do you think about all of this? Although I could theoretically talk more about various ideas and stuff, I'd be interested to know whether this is enough for you to kind of just take it and run with it as a, like, make a shrine builder and then come up with the numbers and then, you know, we can adjust it later. [...] treat me as the customer and, uh, you know, you're the engineer here.
+
+---
+
+# Message 2, verbatim (2026-10-17, after reviewing the deployed page)
+
+Substitutions: "Shota" = Shoda; "Shizu" = Tsuruchi Shizukanaken.
+
+Thanks, I like what I'm seeing so far, and I think this is a really good baseline. In particular, I'm glad that your means of persisting was a copyable link, because that is exactly what I was going to ask for. Because then the player can create the thing and then they can link it to me. And then I can look at the amount of money involved, etc.
+
+Uh, I would like to iterate on it though in a couple of ways. First, Let's combine the enshrined and the name of the shrine into a single shrine name and then let's pre-populate that with a like cool name for this specific shrine. You know, I mean, it can still be editable, but since this is initially for this one purpose, then I think it would be nice to kind of like have that option filled in by default.
+
+I think I would also like it if this could be a more of like a wizard kind of thing where we're going step by step uh, and then each page denotes a different choice. And I think that will make it easier to make some of the other changes that I want to make.
+
+Initially, though, a few of the changes that I can see is that I think there are a few places where we have made some of the choices just kind of obviously better or fancier than the others. So, for example, the small one bay versus a generous one bay uh, is something that is not an interesting choice to make because, like, Shizu would just pick the generous one bay because why wouldn't he?
+
+similarly, When one option is vermilion and then another option is black lacquer with vermilion, then it really does just sound like one of those is better or, you know, the, the upgraded version of the other. And so we should avoid anything like that. I mean, we could have black lacquer with a different thing than vermilion, but like anytime there's an option that's just a different option with more stuff, then that is the kind of choice that we are trying to avoid.
+
+Similarly, I think that we should not present a lack of carved decoration as "none". because then that just makes it sound like the absence of something, rather the category should not be called carving, but should rather refer to like the style of transom or panels or whatever. And that way, I mean, look, it's not that we're trying to trick anyone into not realizing what's more or less expensive, but it's just that we want to display everything as if it is, you know, a valid choice, because, like, these are all options that real shrines have, especially real forest shrines of this type.
+
+Along those same lines, I don't think that we should present anything as being "The usual measure of decoration" because that makes it sound like the default. Now, given that some things are more common than others, then I think that we should replace a phrase like that with just saying "One of the most common types of decoration." because that kind of conveys the general sense of something being a thing that you would see in a lot of places. But then it does not bias the person filling out the form by kind of framing things as saying, oh, do you want the usual or not? Or do you want to do a thing that is unusual.
+
+We should also get rid of the section for about the sacred object because I would like this to not have fields where we are kind of by default prompting the player to fill something in. Uh, I mean, I think that there might be, in a later round of revisions, some notion of allowing a player to select an "other" where they do fill something in, but in general, the point of this is not to assign homework, where someone has to like think of something and then type something out, you know? It's to be like, hey, here's a fun like wizard you can play with to build a shrine. We should also get rid of the description or story box for the same reason.
+
+And then finally, I think we want to reframe the questions about guardians and lanterns. Because asking whether they shrine has these things makes it seem stingy or like you're failing to provide something if you say that they're not. So instead, we could do something like have a You know, for the lanterns, we could say, how is the path lit? And then one of the options is that a clearing is created, allowing natural sunlight and moonlight to illuminate the path.
+
+And then same thing with the guardians. Like, we wouldn't present it with a lack of guardians, per se. Uh, but it would be more like what guards the shrine. And then the option is the forest itself.
+
+and then with the basin, we wouldn't label that as no basin. But we would be emphasizing the feral nature of the shrine and the forest and that just as Shota washed his hands, in the stream, so too visitors shall purify themselves, etc.
+
+Anyway, I think that's enough changes for now. Uh, if you can make all of that and then push it out, then I will take another look and I will talk to you about further refinements that we can make.

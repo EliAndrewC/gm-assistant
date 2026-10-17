@@ -42,35 +42,6 @@
   color: var(--ink);
 }
 
-/* --- groups ------------------------------------------------------------ */
-
-.shrine-group { margin: 0 0 2.75rem; }
-
-.shrine-group__head {
-  border-bottom: 1px solid var(--hairline);
-  padding-bottom: 0.6rem;
-  margin-bottom: 1.4rem;
-}
-
-.shrine-group__title {
-  font-family: var(--font-display);
-  font-variation-settings: 'opsz' 96, 'SOFT' 0, 'wght' 500;
-  font-weight: 500;
-  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
-  line-height: 1.05;
-  margin: 0 0 0.35rem;
-  color: var(--ink);
-}
-
-.shrine-group__intro {
-  font-family: var(--font-body);
-  font-size: 1.02rem;
-  line-height: 1.5;
-  color: var(--ink-soft);
-  margin: 0;
-  max-width: var(--reading-max);
-}
-
 /* --- categories -------------------------------------------------------- */
 
 .shrine-cat {
@@ -82,11 +53,10 @@
 
 .shrine-cat__legend {
   padding: 0;
-  margin-bottom: 0.7rem;
+  margin-bottom: 1rem;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 0.9rem;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .shrine-cat__label {
@@ -96,14 +66,6 @@
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--vermillion-deep);
-}
-
-.shrine-cat__prompt {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-variation-settings: 'opsz' 24, 'SOFT' 60, 'wght' 400;
-  color: var(--ink-soft);
-  font-size: 1rem;
 }
 
 .shrine-cat__moot {
@@ -227,12 +189,6 @@
 
 /* --- free text --------------------------------------------------------- */
 
-.shrine-texts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1rem 1.5rem;
-}
-
 .shrine-text {
   display: flex;
   flex-direction: column;
@@ -240,7 +196,6 @@
   margin: 0 0 1.75rem;
 }
 
-.shrine-texts .shrine-text { margin: 0; }
 
 .shrine-text__label,
 .shrine-field > span {
@@ -350,16 +305,33 @@
   padding: 1.1rem 1.2rem 1.3rem;
 }
 
-/* On narrow screens the ledger is a normal block above the design; its totals stick under the nav
-   while the ledger is on screen, so "Tadashi keeps" stays visible while rolls go in below. */
+/* On narrow screens the ledger is a normal block above the design. A ONE-LINE pin with what
+   Tadashi keeps sticks under the nav while the ledger is on screen; the full totals box would
+   cover the contract being typed into (review 2026-10-17). */
+.shrine-ledger__pin { display: none; }
+
 @media (max-width: 1100px) {
   .shrine-ledger { position: static; max-height: none; overflow: visible; }
-  .shrine-totals {
+  .shrine-ledger.totals-hidden .shrine-ledger__pin {
+    display: block;
     position: sticky;
-    top: 3.6rem;
+    top: 3.3rem;
     z-index: 5;
-    box-shadow: 0 2px 6px var(--shadow-ink);
+    margin: 0 -1.2rem 0.8rem;
+    padding: 0.4rem 1.2rem;
+    background: var(--paper-raised);
+    border-bottom: 1px solid var(--paper-fold);
+    box-shadow: 0 2px 4px var(--shadow-ink);
+    font-family: var(--font-body);
+    color: var(--ink);
   }
+  .shrine-ledger__pin strong { color: var(--vermillion-deep); }
+}
+
+.shrine-ledger__subject {
+  font-family: var(--font-body);
+  color: var(--ink);
+  margin: 0 0 0.6rem;
 }
 
 /* A fade at the bottom of the wide, internally scrolling ledger says there is more below. */
@@ -541,8 +513,159 @@
 
 .shrine-summary span {
   font-variant-caps: all-small-caps;
-  font-size: 1.08em;
+  font-size: 1.18em;
   letter-spacing: 0.06em;
   color: var(--vermillion-deep);
   margin-right: 0.35em;
 }
+
+/* --- wizard ------------------------------------------------------------ */
+/* Without JavaScript every step shows, stacked; shrines.js adds .js-wizard to <html> and then only
+   the current step shows, with progress above and Back / Next below. */
+
+.wizard-step { margin: 0 0 2.75rem; }
+.wizard-progress,
+.wizard-nav { display: none; }
+
+.js-wizard .wizard-step { display: none; margin: 0; }
+.js-wizard .wizard-step.is-current { display: block; }
+
+.js-wizard .wizard-progress {
+  display: block;
+  margin: 0 0 1.6rem;
+}
+
+.wizard-progress__text {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.45rem;
+  font-family: var(--font-body);
+}
+
+.wizard-progress__chapter {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.22em;
+  font-weight: 600;
+  color: var(--vermillion-deep);
+}
+
+.wizard-progress__count { color: var(--ink-faded); white-space: nowrap; }
+
+.wizard-progress__bar {
+  height: 3px;
+  background: var(--hairline);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.wizard-progress__bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--vermillion);
+  transition: width 200ms ease;
+}
+
+.wizard-step__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 72, 'SOFT' 30, 'wght' 500;
+  font-weight: 500;
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  line-height: 1.15;
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+
+.wizard-step__intro,
+.wizard-step__chapter-intro {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: var(--reading-max);
+  margin: 0 0 1.2rem;
+}
+
+.wizard-step__chapter-intro {
+  font-style: italic;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--paper-fold);
+}
+
+/* Same translucent paper as the site nav, so it reads as a bar over the page, not a pale patch. */
+.js-wizard .wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin-top: 1.8rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--hairline);
+  background: rgba(244, 232, 204, 0.94);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+}
+
+.wizard-nav__next:disabled {
+  background: var(--paper-fold);
+  border-color: var(--ink-ghost);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
+.wizard-nav__hint {
+  align-self: center;
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.wizard-nav__hint[hidden] { display: none; }
+
+/* The wizard scrolls itself under the sticky site nav on every step change. */
+.wizard { scroll-margin-top: 4.5rem; }
+@media (max-width: 900px) { .wizard { scroll-margin-top: 5.5rem; } }
+
+/* Past the first step the masthead shrinks to a slim title, so each step's options get the screen. */
+.wizard-deep .masthead { padding: 0.6rem 0 0.5rem; }
+.wizard-deep .masthead__lede,
+.wizard-deep .masthead__watermark { display: none; }
+.wizard-deep .masthead__title { font-size: clamp(1.4rem, 2.6vw, 2rem); margin: 0; }
+
+.wizard-nav__next { min-width: 8rem; }
+
+.js-wizard .shrine-share { border-top: 0; padding-top: 0; }
+
+.shrine-summary a { color: inherit; text-decoration: none; }
+
+/* The answer is the link: underlined, with a small "change" mark, so it reads as clickable. */
+.shrine-summary em {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-color: var(--vermillion);
+  text-underline-offset: 0.18em;
+}
+
+.shrine-summary em::after {
+  content: ' change';
+  font-size: 0.9em;
+  color: var(--vermillion-deep);
+  text-decoration: none;
+  display: inline-block;
+  margin-left: 0.25em;
+}
+
+/* Not chosen yet: muted, not alarming, and the mark says "choose". */
+.shrine-summary em.is-open {
+  color: var(--ink-faded);
+  text-decoration-color: var(--ink-ghost);
+}
+.shrine-summary em.is-open::after { content: ' choose'; }
+
+.shrine-summary a:hover em,
+.shrine-summary a:focus-visible em { text-decoration-thickness: 2px; }

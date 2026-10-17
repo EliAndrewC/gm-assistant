@@ -373,6 +373,11 @@ class Root:
             text_fields=TEXT_FIELDS,
             share_query=share_query(catalog, design),
             is_gm=is_gm,
+            missing=sum(
+                1
+                for c in catalog.categories
+                if c.key not in design.choices and c.key not in design.voided
+            ),
             **context,
         )
 

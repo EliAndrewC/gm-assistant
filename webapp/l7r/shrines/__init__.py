@@ -24,14 +24,9 @@ import yaml
 
 CATALOG_PATH = Path(__file__).with_name('catalog.yaml')
 
-# Free-text fields a player can fill in, with their length caps (a hand-edited link cannot make
-# the page arbitrarily large).
-TEXT_FIELDS: dict[str, int] = {
-    'shrine_name': 120,
-    'enshrined': 120,
-    'sacred_note': 600,
-    'inscription': 2000,
-}
+# Free-text fields, with their length caps (a hand-edited link cannot make the page arbitrarily
+# large). Just the one, pre-filled from the catalog: the page never assigns homework (spec FR-017).
+TEXT_FIELDS: dict[str, int] = {'shrine_name': 120}
 
 GM_PREFIX = 'gm_'
 DEFAULT_BASELINE = 25  # the Culture gift rule's "roll minus 25" (rules/02-skills.md)
@@ -40,7 +35,7 @@ BUDGET_MAX = 100_000.0
 
 
 class CatalogError(ValueError):
-    """The catalog file is inconsistent (an unknown contract, a default that is no option...)."""
+    """The catalog file is inconsistent (an unknown contract, a reference that is no option...)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +65,6 @@ class Category:
     key: str
     label: str
     prompt: str
-    default: str
     reference: str
     options: tuple[Option, ...]
 
@@ -117,6 +111,7 @@ class Catalog:
     default_remoteness: str
     site_lines: tuple[SiteLine, ...]
     budget_padding: float
+    default_name: str = ''
 
     @property
     def categories(self) -> tuple[Category, ...]:
@@ -163,7 +158,6 @@ def _category(raw: Mapping[str, Any]) -> Category:
         key=str(raw['key']),
         label=str(raw['label']),
         prompt=str(raw['prompt']),
-        default=str(raw['default']),
         reference=str(raw['reference']),
         options=tuple(_option(x) for x in raw['options']),
     )
@@ -192,6 +186,7 @@ def parse_catalog(data: Mapping[str, Any]) -> Catalog:
             for s in data['site_lines']
         ),
         budget_padding=float(data['budget_padding']),
+        default_name=str(data.get('default_name', '')),
     )
     _validate(catalog)
     return catalog
@@ -213,9 +208,8 @@ def _validate(catalog: Catalog) -> None:
             raise CatalogError(f'site line uses unknown contract {site.contract!r}')
     for category in catalog.categories:
         option_keys = {o.key for o in category.options}
-        for which in (category.default, category.reference):
-            if which not in option_keys:
-                raise CatalogError(f'{category.key}: {which!r} is not one of its options')
+        if category.reference not in option_keys:
+            raise CatalogError(f'{category.key}: {category.reference!r} is not one of its options')
         for option in category.options:
             for void in option.voids:
                 if void not in keys or void == category.key:
@@ -253,7 +247,9 @@ class Design:
 
 
 def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
-    """Read a design from query parameters; anything missing or unknown falls back to the default.
+    """Read a design from query parameters. Only real choices are kept: nothing is pre-selected
+    (an option already picked on arrival biases the player - GM 2026-10-17), so a category the
+    player has not reached yet is simply absent and costs nothing.
 
     `dropped` names categories whose value was present but not a current option (an old link, or a
     hand-edited one), so the page can say a choice could not be restored.
@@ -264,16 +260,17 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
         raw = _first(params.get(category.key))
         if raw is not None and category.option(raw) is not None:
             chosen[category.key] = raw
-        else:
-            if raw is not None:
-                dropped.append(category.key)
-            chosen[category.key] = category.default
+        elif raw is not None:
+            dropped.append(category.key)
     voided = _voided(catalog, chosen)
     text = {}
     for name, cap in TEXT_FIELDS.items():
         raw = _first(params.get(name))
         if raw is not None and raw.strip():
             text[name] = raw.strip()[:cap]
+    # A blank or missing name falls back to the catalog's, so the field is never empty.
+    if 'shrine_name' not in text and catalog.default_name:
+        text['shrine_name'] = catalog.default_name
     return Design(
         choices={k: v for k, v in chosen.items() if k not in voided},
         voided=voided,
@@ -289,7 +286,7 @@ def _voided(catalog: Catalog, chosen: Mapping[str, str]) -> frozenset[str]:
         nxt = frozenset(
             v
             for category in catalog.categories
-            if category.key not in voided
+            if category.key not in voided and category.key in chosen
             for v in _chosen_option(category, chosen).voids
         )
         if nxt == voided:

@@ -29,7 +29,7 @@ Shizu's player opens a link the GM sent and walks through the decisions that go 
 **Acceptance Scenarios**:
 
 1. **Given** a visitor who is not the GM, **When** they open the builder, **Then** they see every decision category with its options, descriptions and a sensible default selected, and no cost information anywhere in the page (visible or in the source).
-2. **Given** a design in progress, **When** the player changes a choice, **Then** the share link updates to encode that choice, and opening the link elsewhere restores the full design including free-text fields.
+2. **Given** a design in progress, **When** the player changes a choice, **Then** the share link updates to encode that choice, and opening the link elsewhere restores the full design including the shrine name (FR-017).
 3. **Given** a choice whose option makes another category moot (for example, no sanctuary building at all makes the roof choice meaningless), **When** the player selects it, **Then** the moot category is visibly marked as not applying and contributes nothing to the design.
 
 ---
@@ -107,7 +107,7 @@ For each contract the GM enters Tadashi's Commerce roll (and, when a contractor 
 
 - **SC-001**: A player can make a choice in every category and copy the share link in under ten minutes without outside help.
 - **SC-002**: Zero cost figures or price words appear in the player view's source for any design (verified automatically).
-- **SC-003**: Opening a share link reproduces 100% of the selections and free text.
+- **SC-003**: Opening a share link reproduces 100% of the selections and the shrine name (FR-017).
 - **SC-004**: At least two thirds of the categories offer options that differ in form or meaning, not only in quality.
 - **SC-005**: For any design and any rolls, the GM view's totals match a hand calculation from the documented prices and formula.
 - **SC-006**: The page passes the project's layout audit with zero issues at GM, tablet and mobile widths.
@@ -116,7 +116,7 @@ For each contract the GM enters Tadashi's Commerce roll (and, when a contractor 
 
 - The page is reachable without logging in, like the rest of the toolkit's catalog pages, so the GM can simply send the player a link; the GM's figures depend on the GM being logged in.
 - There is no server-side storage: designs live in links. The fly.io app scales to zero and the toolkit has no database.
-- The catalog serves any small unstaffed shrine, not only Shoda's; the person enshrined is a free-text field (Shoda's is the first use).
+- The catalog serves any small unstaffed shrine, not only Shoda's; the shrine's name is the only free-text field, pre-filled for Shoda's shrine (FR-017), and option text may refer to "the hermit" since Shoda's is the first use.
 - Historical currency converts to koku at roughly 1 ryo = 1 koku, since both are anchored to a koku of rice and the Edo rice price hovered near one ryo per koku; this is recorded with the prices.
 - The negotiation formula borrows the shape of the existing rule for buying gifts (Culture skill: spend X percent less, X = roll minus 25), since Commerce itself has no pricing formula. The GM can override any baseline.
 - Recording the campaign facts (Shoda's death, the Ubame County magistrate funding the shrine) in `l7r.md` or Obsidian Portal is NOT part of this feature.
@@ -126,6 +126,32 @@ For each contract the GM enters Tadashi's Commerce roll (and, when a contractor 
 - Saving designs on the server, listing past designs, or multiple shrines per page.
 - Pictures or diagrams of the shrine.
 - Writing anything to Obsidian Portal or `l7r.md`.
+
+## Amendment 1 (GM message 2, 2026-10-17)
+
+The GM reviewed the deployed page. These requirements supersede the ones they name.
+
+- **FR-017** (supersedes FR-005): there is exactly ONE free-text field, the shrine's name, which
+  merges the old "enshrined" and "name" fields. It is pre-filled with a name made for Shoda's
+  shrine and stays editable. There is no field for notes on the sacred object and none for an
+  inscription or story: the page never prompts the player to write something.
+- **FR-018**: the builder is a step-by-step wizard, one decision per page, with a way back and
+  forward and a final page holding the summary and the share link. Steps for categories that do
+  not apply are skipped. The share link still reproduces the whole design.
+- **FR-019** (amends FR-003): no option may be another option plus more (no "X" beside "X with
+  Y"), and no category may be a choice between a lesser and a greater version of the same thing.
+  The sanctuary-size category is removed for this reason (the sanctuary is one small bay, the size
+  a remote site holds), and FR-002's "its size" is struck.
+- **FR-020**: no option is presented as an absence ("None", "No gate", "Nothing", "No basin").
+  Each such option is a positive form a real forest shrine has, described as what it is: the
+  forest itself guards the shrine; a clearing lets sun and moon light the path; visitors purify
+  themselves in the stream as the hermit did. Categories are named for what is chosen ("Ornament"
+  / the working of beams and transoms, not "Carving"), and prompts ask "what" or "how" ("What
+  guards the shrine?", "How is the path lit?"), never "is there a ...?".
+- **FR-021**: no option text frames itself as the default or the norm ("the usual", "the
+  standard", "ordinary"). Where an option's text says it is the usual or standard choice, it MUST
+  be reworded to "one of the most common ..." (or the same idea in the same form), not deleted:
+  the commonness is kept, only the default framing goes.
 
 ## Review history
 
@@ -137,3 +163,9 @@ For each contract the GM enters Tadashi's Commerce roll (and, when a contractor 
   and not only price.
 - **Round 2 - FAITHFUL** (2026-10-17). Both changes confirmed; FR-002a's "lodging"/"overnight
   staff" judged to follow from "nobody lives there", and the worship hall judged consistent with it.
+- **Round 3 (amendment 1, message 2) - CHANGES REQUIRED** (2026-10-17). (1) FR-021 made the
+  "one of the most common" rewording optional where the GM required it: now MUST. (2) User Story 1
+  scenario 2, SC-003 and an Assumption still described the removed free-text fields: amended to the
+  single shrine name.
+- **Round 4 (amendment 1) - FAITHFUL** (2026-10-17). Both changes confirmed; "option text may refer
+  to the hermit" judged to follow from the GM's own stream example.

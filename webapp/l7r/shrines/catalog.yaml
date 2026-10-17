@@ -8,14 +8,26 @@
 #   - koku = Edo ryo, 1:1, both pinned to a koku of rice.
 #   - Each option has `lines`: {contract, koku, heavy, per}. `heavy` is porterage weight in units,
 #     charged at the GM's remoteness rate. `per: <category>` multiplies the line (koku and heavy)
-#     by the `units` of the option chosen in that category - size scales the sanctuary, gate form
-#     scales the gate material.
+#     by the `units` of the option chosen in that category - gate form scales the gate material.
 #   - Anchors (Tama district village ledgers, 1749-1805): copper re-roofing a LARGE one-bay
 #     sanctuary ~43 ryo; carving and polychrome on the same ~62 ryo; small repairs ~10 ryo.
 #     Stone items (torii, guardians, lanterns) have no ledger: mason labor plus porterage, estimates.
 #   - `reference` marks the "fairly nice small forest shrine" the default budget is built from.
+#     It is NOT a pre-selection: the player starts every step with nothing chosen.
 #
 # `voids` lists categories that stop applying when this option is chosen (FR-015).
+#
+# WORDING RULES (GM 2026-10-17, spec FR-019 to FR-021; tests enforce what can be counted):
+#   - No option is another option plus more ("vermilion" beside "black lacquer with vermilion"),
+#     and no category is a lesser/greater pair (that is why there is no sanctuary-size category).
+#   - No option is an absence. "None" / "No gate" become a real form: the forest guards the shrine,
+#     a clearing lights the path, visitors wash in the stream as the hermit did.
+#   - Prompts ask "what" or "how", never "is there a...?". Nothing is "the usual" or "the
+#     standard"; say "one of the most common".
+
+# Pre-filled shrine name (FR-017). Kitsunemori: 狐 kitsune "fox" + 守 mori "guardian", which also
+# sounds like 森 mori "forest" - the hermit died defending foxes in the Kitsune forest.
+default_name: Kitsunemori Shrine, the Shrine of the Fox Guardian
 
 contracts:
   - key: carpentry
@@ -65,8 +77,7 @@ groups:
     categories:
       - key: form
         label: Form
-        prompt: What shape does the sanctuary take - or is there a building at all?
-        default: nagare
+        prompt: What form does the sanctuary take?
         reference: nagare
         options:
           - key: nagare
@@ -75,9 +86,8 @@ groups:
             romaji: nagare-zukuri
             text: >-
               A gabled roof whose front slope runs long and low over the steps, so that worshipers
-              stand under the eaves. The most common form in the Empire; it reads as an ordinary,
-              proper shrine.
-            lines: [{contract: carpentry, koku: 16, per: size}]
+              stand under the eaves. One of the most common forms in the Empire.
+            lines: [{contract: carpentry, koku: 16}]
           - key: kasuga
             label: Gable-entry
             ja: 春日造
@@ -85,7 +95,7 @@ groups:
             text: >-
               A compact box entered from the gable end under a small curved porch roof. Neat and
               upright, traditionally painted, and suited to a very small sanctuary.
-            lines: [{contract: carpentry, koku: 15, per: size}]
+            lines: [{contract: carpentry, koku: 15}]
           - key: shinmei
             label: Straight roof on posts
             ja: 神明造
@@ -94,51 +104,31 @@ groups:
               The oldest building form: a raised storehouse shape with a straight, unbent roof,
               round pillars sunk in the earth and crossed finials at the ridge. Severe and archaic;
               it traditionally goes with thatch and bare wood.
-            lines: [{contract: carpentry, koku: 14, per: size}]
+            lines: [{contract: carpentry, koku: 14}]
           - key: hokora
             label: Stone shrine-house
             ja: 祠
             romaji: hokora
             text: >-
-              No timber building: a small house of carved stone, chest high, on a stone plinth, the
-              kind found along roadsides and in groves all over the countryside. Plain, durable and
-              unpretentious.
+              A small house of carved stone, chest high, on a stone plinth, the
+              kind found along roadsides and in groves all over the countryside. Weathers to moss and
+              lichen and will stand for centuries.
             lines: [{contract: stonework, koku: 6, heavy: 4}]
-            voids: [size, timber, roof, finish, carving]
+            voids: [timber, roof, finish, carving]
           - key: himorogi
             label: Sacred tree or rock
             ja: 神籬
             romaji: himorogi
             text: >-
-              No building at all. A tree or a rock where the hermit sat is bound with a sacred rope
-              and the ground before it purified, and the kami is understood to dwell there. The most
-              ancient form of worship, still kept at some of the greatest shrines.
+              The kami dwells in a living tree or a rock where the hermit sat, bound with a sacred
+              rope, the ground before it purified. The most ancient form of worship, still kept at
+              some of the greatest shrines in the Empire.
             lines: [{contract: carpentry, koku: 1}]
-            voids: [size, timber, roof, finish, carving, sacred]
-
-      - key: size
-        label: Size
-        prompt: How large is the sanctuary? A remote site holds only a one-bay building.
-        default: small
-        reference: small
-        options:
-          - key: small
-            label: Small one-bay
-            text: >-
-              About four feet between its two front posts: waist-high floor, doors a person must
-              kneel to open. The usual size for a shrine in the woods.
-            units: 1
-          - key: generous
-            label: Generous one-bay
-            text: >-
-              About eight feet across, as large as a one-bay sanctuary is ever built. It stands
-              well above head height and is seen from far down the path.
-            units: 1.8
+            voids: [timber, roof, finish, carving, sacred]
 
       - key: timber
         label: Timber
         prompt: What wood is it built from?
-        default: hinoki
         reference: hinoki
         options:
           - key: sugi
@@ -148,7 +138,7 @@ groups:
             text: >-
               Trees felled from the hermit's own woods and sawn on the spot. Straight, reddish and
               soft; the shrine is literally made of the place.
-            lines: [{contract: carpentry, koku: 2, per: size}]
+            lines: [{contract: carpentry, koku: 2}]
           - key: hinoki
             label: Hinoki cypress
             ja: 檜
@@ -156,7 +146,7 @@ groups:
             text: >-
               Pale, close-grained and fragrant, the timber most associated with shrines. It weathers
               to silver and resists rot. Brought in from outside the forest.
-            lines: [{contract: carpentry, koku: 8, heavy: 4, per: size}]
+            lines: [{contract: carpentry, koku: 8, heavy: 4}]
           - key: keyaki
             label: Zelkova
             ja: 欅
@@ -164,12 +154,11 @@ groups:
             text: >-
               A hard, dense hardwood with a strong figure that darkens with age and holds sharp
               carving. Heavier and more formal in feeling. Brought in from outside the forest.
-            lines: [{contract: carpentry, koku: 10, heavy: 4, per: size}]
+            lines: [{contract: carpentry, koku: 10, heavy: 4}]
 
       - key: roof
         label: Roof covering
         prompt: What is the roof made of?
-        default: hiwada
         reference: hiwada
         options:
           - key: thatch
@@ -177,9 +166,9 @@ groups:
             ja: 茅葺
             romaji: kayabuki
             text: >-
-              Thick bundles of reed and grass, soft-edged and deep. Farmhouse-humble and very old;
-              needs rethatching every twenty years or so, which the disciples could learn to do.
-            lines: [{contract: roofing, koku: 3, per: size}]
+              Thick bundles of reed and grass, soft-edged and deep, the oldest roof there is. The
+              disciples can rethatch it themselves every twenty years or so.
+            lines: [{contract: roofing, koku: 3}]
           - key: kokera
             label: Wooden shingles
             ja: 杮葺
@@ -187,7 +176,7 @@ groups:
             text: >-
               Thin hand-split boards laid in many overlapping courses, giving crisp, finely ribbed
               lines. Light and precise.
-            lines: [{contract: roofing, koku: 5, per: size}]
+            lines: [{contract: roofing, koku: 5}]
           - key: hiwada
             label: Cypress bark
             ja: 檜皮葺
@@ -195,7 +184,7 @@ groups:
             text: >-
               Layer upon layer of bark stripped from living cypress, pressed into smooth, dark,
               sweeping curves. The classic roof of courtly shrines.
-            lines: [{contract: roofing, koku: 8, per: size}]
+            lines: [{contract: roofing, koku: 8}]
           - key: copper
             label: Copper sheet
             ja: 銅板葺
@@ -204,12 +193,11 @@ groups:
               Copper plates seamed over boards. Bright as a new coin at first, then brown, and
               finally the blue-green that marks an old shrine. Outlasts every other roof by
               generations.
-            lines: [{contract: roofing, koku: 22, heavy: 1, per: size}]
+            lines: [{contract: roofing, koku: 22, heavy: 1}]
 
       - key: finish
         label: Finish
-        prompt: Is the wood left bare, stained or lacquered?
-        default: shiraki
+        prompt: How is the wood finished?
         reference: shiraki
         options:
           - key: shiraki
@@ -217,8 +205,8 @@ groups:
             ja: 白木
             romaji: shiraki
             text: >-
-              Nothing applied. The purest finish in the old view; the wood goes silver-gray in the
-              weather and shows its grain.
+              The wood as the carpenter left it. The purest finish in the old view; it goes
+              silver-gray in the weather and shows every line of its grain.
           - key: kakishibu
             label: Persimmon stain
             ja: 柿渋
@@ -226,7 +214,7 @@ groups:
             text: >-
               Fermented persimmon juice brushed on and darkened in the sun to a warm brown. A
               country finish that sheds rain and keeps insects off.
-            lines: [{contract: finishing, koku: 1, per: size}]
+            lines: [{contract: finishing, koku: 1}]
           - key: vermilion
             label: Vermilion
             ja: 丹塗
@@ -234,42 +222,48 @@ groups:
             text: >-
               The red-orange of shrine gates, said to ward off evil and to preserve the wood. Strongly
               associated with Inari, the Fortune of rice and of foxes.
-            lines: [{contract: finishing, koku: 5, per: size}]
+            lines: [{contract: finishing, koku: 5}]
           - key: lacquer
-            label: Black lacquer with vermilion
+            label: Black lacquer
             ja: 漆
             romaji: urushi
             text: >-
-              Black lacquer on the walls and doors, vermilion on the posts and beams: formal,
-              glossy, and striking against green woods.
-            lines: [{contract: finishing, koku: 8, per: size}]
+              Lacquer built up coat by coat to a deep, glossy black. Dark among dark trees, it
+              gleams when a lantern or a shaft of sun catches it.
+            lines: [{contract: finishing, koku: 8}]
 
       - key: carving
-        label: Carving
-        prompt: How much carved decoration?
-        default: accents
+        label: Ornament
+        prompt: How are the beams and transoms worked?
         reference: accents
         options:
           - key: plain
-            label: None
+            label: Exposed joinery
             text: >-
-              Square posts and plain beams, every joint visible. Nothing to distract from the
-              timber and the form.
+              Squared posts and beams fitted without a nail, every joint left in view. The
+              carpenter's craft is the ornament.
           - key: accents
             label: Gable pendant and bracket ends
             ja: 懸魚
             romaji: gegyo
             text: >-
               A carved pendant hangs from the gable peak and the beam ends are shaped into curling
-              clouds or animal heads (kibana). The usual measure of decoration.
-            lines: [{contract: finishing, koku: 5, per: size}]
-          - key: panels
-            label: Carved panels
+              clouds or animal heads (kibana). One of the most common types of decoration.
+            lines: [{contract: finishing, koku: 5}]
+          - key: lattice
+            label: Openwork lattice transoms
+            ja: 欄間
+            romaji: ranma
             text: >-
-              Every transom and the panels between the brackets carved in relief - scenes of the
-              enshrined person's life, foxes among grasses, whatever is chosen. The fashion of the
-              finest country shrines; visitors stop to read them.
-            lines: [{contract: finishing, koku: 20, per: size}]
+              The transoms above the doors are filled with geometric latticework, so light and air
+              pass through and the sanctuary seems to breathe.
+            lines: [{contract: finishing, koku: 8}]
+          - key: panels
+            label: Relief panels
+            text: >-
+              The transoms are carved in relief with pictures - foxes among autumn grasses, a hermit
+              under a tree. Visitors stop to read them like a story.
+            lines: [{contract: finishing, koku: 20}]
 
   - key: worship
     label: Worship and offerings
@@ -280,20 +274,19 @@ groups:
       - key: hall
         label: Worship space
         prompt: Where do visitors stand to pray?
-        default: pavilion
         reference: pavilion
         options:
           - key: open
             label: Before the sanctuary, in the open
             text: >-
-              Visitors pray standing on the ground before the steps, under the trees and the sky.
-              Most small shrines are like this.
+              Visitors pray standing on the earth before the steps, under the trees and the sky. One
+              of the most common arrangements at small shrines.
           - key: cover
             label: A cover-shed over the sanctuary
             ja: 覆屋
             romaji: ooiya
             text: >-
-              A plain roofed shed built right over the small sanctuary to shield it from snow and
+              A roofed shed built right over the small sanctuary to shield it from snow and
               rot; visitors pray at its open front. Common in forests and snowy country, and it
               makes a small sanctuary last for centuries.
             lines: [{contract: carpentry, koku: 7}, {contract: roofing, koku: 3}]
@@ -305,17 +298,10 @@ groups:
               A separate roofed platform in front of the sanctuary, open on all sides: a dry place
               to kneel in the rain, and room for a rite with a dozen disciples.
             lines: [{contract: carpentry, koku: 9}, {contract: roofing, koku: 3}]
-          - key: hall
-            label: Enclosed worship hall
-            text: >-
-              A worship hall with walls, sliding doors and a plank floor, latched but unlocked.
-              Sheltered enough for a winter vigil, though nobody lives there.
-            lines: [{contract: carpentry, koku: 22}, {contract: roofing, koku: 6}]
 
       - key: altar
         label: Altar
         prompt: Where are offerings set out before the kami?
-        default: table
         reference: table
         options:
           - key: table
@@ -324,8 +310,8 @@ groups:
             romaji: hassokuan
             text: >-
               A low table of unpainted wood on eight slender legs, set before the sanctuary doors;
-              rice, salt, water and sake go on it in little stands (sanbo). The standard shrine
-              altar.
+              rice, salt, water and sake go on it in little stands (sanbo). One of the most common
+              altars.
             lines: [{contract: carpentry, koku: 1}]
           - key: slab
             label: Stone offering table
@@ -349,14 +335,13 @@ groups:
       - key: sacred
         label: Sacred object
         prompt: What object, sealed inside the sanctuary, does the kami dwell in?
-        default: belonging
         reference: belonging
         options:
           - key: belonging
             label: Something that was theirs
             text: >-
-              A possession of the person enshrined - a staff, a bowl, a tool, a robe - wrapped in
-              silk and sealed in a box. Describe it in the notes below.
+              A possession of the hermit - his staff, his bowl, a tool he worked with - wrapped in
+              silk and sealed in a box.
           - key: stone
             label: A stone from where they sat
             text: >-
@@ -367,7 +352,7 @@ groups:
             ja: 鏡
             romaji: kagami
             text: >-
-              A round bronze mirror, newly cast and polished, the most common sacred object of all.
+              A round bronze mirror, newly cast and polished, one of the most common sacred objects.
               It shows the worshiper themselves.
             lines: [{contract: metalwork, koku: 4}]
           - key: gohei
@@ -382,23 +367,22 @@ groups:
       - key: box
         label: Offering box
         prompt: Where do visitors leave their coins?
-        default: banded
         reference: banded
         options:
-          - key: plain
-            label: Slatted wooden box
+          - key: banded
+            label: Wooden chest with an iron lock
             ja: 賽銭箱
             romaji: saisenbako
             text: >-
               A wooden chest with a slatted top that coins drop through and hands cannot reach into,
-              closed with a peg. The disciples empty it when they come to sweep.
-            lines: [{contract: carpentry, koku: 0.5}]
-          - key: banded
-            label: Iron-banded box with a lock
-            text: >-
-              The same slatted chest bound with iron straps and closed with an iron lock. In a place
-              where nobody watches, a lock says the offerings are meant to stay.
+              bound in iron and locked. The disciples carry the key when they come to sweep.
             lines: [{contract: carpentry, koku: 0.5}, {contract: metalwork, koku: 1}]
+          - key: bamboo
+            label: A bamboo tube
+            text: >-
+              A thick section of green bamboo bound upright to a post, with a slot cut near the top.
+              Of a piece with the woods; the disciples split a new one to empty it.
+            lines: [{contract: carpentry, koku: 0.2}]
           - key: stone
             label: Box set in stone
             text: >-
@@ -408,13 +392,13 @@ groups:
       - key: bell
         label: Bell
         prompt: How does a visitor announce themselves to the kami?
-        default: suzu
         reference: suzu
         options:
           - key: clap
-            label: Hands only
+            label: Two claps
             text: >-
-              No bell. The visitor bows and claps twice, and the clap carries through the trees.
+              The visitor bows twice and claps twice, and the sound carries through the trees to the
+              kami.
           - key: suzu
             label: Bell and rope
             ja: 鈴
@@ -439,16 +423,17 @@ groups:
     categories:
       - key: gate_form
         label: Gate
-        prompt: Is there a gate (torii) marking the boundary of the sacred ground?
-        default: myojin
+        prompt: What marks the threshold of the sacred ground?
         reference: myojin
         options:
-          - key: none
-            label: No gate
+          - key: trees
+            label: Two trees bound with rope
             text: >-
-              The path simply arrives. The sacred rope and the trees mark the boundary.
+              Two great trees on either side of the path are joined by a sacred rope hung with paper
+              streamers. The forest itself makes the gate.
             units: 0
             voids: [gate_material]
+            lines: [{contract: rites, koku: 0.3}]
           - key: shinmei
             label: Straight gate
             ja: 神明鳥居
@@ -461,28 +446,28 @@ groups:
             ja: 明神鳥居
             romaji: myojin torii
             text: >-
-              The familiar torii: a top beam that curves up at the ends like a bow, over a straight
-              tie beam, with a tablet between. Graceful and recognizable from far down the path.
+              A top beam that curves up at the ends like a bow, over a straight tie beam, with a
+              tablet between. One of the most common gates; graceful, and recognizable from far down
+              the path.
             units: 1.2
           - key: row
-            label: A line of small gates
+            label: A tunnel of small gates
             text: >-
-              Five small torii set close together along the path so it runs through them like a
-              tunnel. A custom of Inari shrines, where grateful visitors donate more over the years
-              until the line runs up the hill.
+              Small torii set close together along the path so it runs through them like a tunnel.
+              A custom of Inari shrines, where grateful visitors add more over the years until the
+              line runs up the hill.
             units: 2
 
       - key: gate_material
         label: Gate material
         prompt: What is the gate made of?
-        default: vermilion
         reference: vermilion
         options:
           - key: wood
             label: Bare wood
             text: >-
-              Unpainted timber. Quiet, in keeping with a forest, and replaced every generation or so
-              as the posts rot.
+              Timber left its own color. Quiet, of a piece with the forest, and renewed every
+              generation as the posts weather.
             lines: [{contract: carpentry, koku: 4, per: gate_form}]
           - key: vermilion
             label: Vermilion-painted wood
@@ -500,7 +485,6 @@ groups:
       - key: path
         label: Approach path
         prompt: What is the approach (sando) to the shrine like?
-        default: stepping
         reference: stepping
         options:
           - key: earth
@@ -528,14 +512,14 @@ groups:
 
       - key: enclosure
         label: Enclosure
-        prompt: How is the sacred ground around the sanctuary marked?
-        default: fence
+        prompt: What marks the sacred ground around the sanctuary?
         reference: fence
         options:
           - key: none
-            label: Nothing
+            label: The forest itself
             text: >-
-              The forest comes right up to the sanctuary.
+              The trees stand close around the sanctuary and are its boundary; moss and roots mark
+              where the sacred ground begins.
           - key: rope
             label: Sacred rope
             ja: 注連縄
@@ -569,21 +553,21 @@ groups:
 
       - key: guardians
         label: Guardians
-        prompt: Do guardian statues flank the approach?
-        default: foxes
+        prompt: What guards the shrine?
         reference: foxes
         options:
           - key: none
-            label: None
+            label: The forest itself
             text: >-
-              No guardians. The place guards itself.
+              The old trees and whatever lives among them keep the shrine; foxes come and go at
+              their own pace.
           - key: komainu
             label: Stone lion-dogs
             ja: 狛犬
             romaji: komainu
             text: >-
               A pair of stone lion-dogs on pedestals, one with its mouth open, one closed - the
-              first and last sounds. The usual guardians of a shrine.
+              first and last sounds. One of the most common guardians.
             lines: [{contract: stonework, koku: 10, heavy: 8}]
           - key: foxes
             label: Stone foxes
@@ -601,22 +585,23 @@ groups:
             lines: [{contract: finishing, koku: 4}]
 
       - key: lanterns
-        label: Lanterns
-        prompt: Are there lanterns?
-        default: pair
+        label: Light
+        prompt: How is the path lit?
         reference: pair
         options:
           - key: none
-            label: None
+            label: A clearing open to the sky
             text: >-
-              No lanterns. The shrine is dark at night, as the forest is.
+              The canopy is opened above the path and the sanctuary, so sunlight falls on them by
+              day and moonlight by night.
+            lines: [{contract: earthwork, koku: 1}]
           - key: pair
             label: A pair of stone lanterns
             ja: 石灯籠
             romaji: ishidoro
             text: >-
-              Two stone lanterns flanking the path, each a firebox on a tall shaft. Lit for
-              festivals; otherwise moss gathers on them.
+              Two stone lanterns flanking the path, each a firebox on a tall shaft, lit for festivals
+              and for visits by night.
             lines: [{contract: stonework, koku: 6, heavy: 6}]
           - key: tall
             label: One tall night-lantern
@@ -638,14 +623,13 @@ groups:
       - key: water
         label: Purification water
         prompt: Where do visitors rinse their hands and mouths before approaching?
-        default: basin
         reference: basin
         options:
           - key: stream
             label: The stream
             text: >-
-              No basin. Visitors purify themselves in the running water of a nearby stream, as was
-              done before there were basins - running water is the purest of all.
+              Just as the hermit washed his hands in the stream each morning, so visitors kneel at
+              the water's edge and purify themselves there. Running water is the purest of all.
             lines: [{contract: earthwork, koku: 0.3}]
           - key: basin
             label: Stone basin with a bamboo spout
@@ -671,15 +655,18 @@ groups:
       after, and how the kami is installed.
     categories:
       - key: plaque
-        label: Name plaque
-        prompt: Is the shrine's name written on a plaque over the gate or the doors?
-        default: painted
+        label: The name
+        prompt: How is the shrine's name shown?
         reference: painted
         options:
           - key: none
-            label: No plaque
+            label: A name-stone by the path
+            ja: 社号標
+            romaji: shagohyo
             text: >-
-              The shrine has a name but does not display it; those who come know where they are.
+              A squared stone pillar at the foot of the path, the shrine's name cut deep into its
+              face.
+            lines: [{contract: stonework, koku: 3, heavy: 3}]
           - key: painted
             label: A painted wooden plaque
             ja: 扁額
@@ -703,21 +690,21 @@ groups:
 
       - key: stele
         label: Telling the story
-        prompt: Is the enshrined person's story recorded at the shrine?
-        default: stele
+        prompt: How is the hermit's story kept?
         reference: stele
         options:
           - key: none
-            label: No record
+            label: Told by the disciples
             text: >-
-              The story is carried by the disciples and told by word of mouth.
+              The story lives in the telling: the disciples recount it to whoever they find at the
+              shrine, and teach it to those who come after.
           - key: stele
             label: An inscribed stone
             ja: 石碑
             romaji: sekihi
             text: >-
-              An upright stone carved with the story of the person enshrined and the names of
-              those who founded the shrine. It will outlast everyone involved.
+              An upright stone carved with the hermit's story and the names of those who founded
+              the shrine. It will outlast everyone involved.
             lines: [{contract: stonework, koku: 6, heavy: 5}]
           - key: board
             label: A painted signboard
@@ -731,7 +718,6 @@ groups:
       - key: rite
         label: Consecration
         prompt: How is the kami installed in the shrine?
-        default: full
         reference: full
         options:
           - key: monk
@@ -741,16 +727,16 @@ groups:
               the sacred object into the sanctuary. Quiet and short.
             lines: [{contract: rites, koku: 1}]
           - key: full
-            label: A full enshrinement
+            label: A night enshrinement
             text: >-
               Priests come out from the county's shrine for a night rite: the sacred object is
               carried into the sanctuary in darkness, behind white curtains, to drums and the
               calling-out of the kami.
             lines: [{contract: rites, koku: 4}]
           - key: festival
-            label: Enshrinement and a pacification festival
+            label: A pacification festival
             text: >-
-              The full enshrinement, then a festival to calm a spirit that met a hard end: music,
-              dance, offerings and food for the disciples and the villages nearby, held so that the
-              dead may rest and bear no grudge.
+              A day of music, dance and offerings, with food for the disciples and the villages
+              nearby, held to calm a spirit that met a hard end so that it may rest and bear no
+              grudge; the kami is installed at its height.
             lines: [{contract: rites, koku: 10}]

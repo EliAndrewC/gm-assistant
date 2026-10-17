@@ -49,7 +49,6 @@ def catalog() -> Catalog:
 # FR-002's list, by key. A category the GM asked for cannot silently disappear from the catalog.
 REQUIRED_CATEGORIES = {
     'form',
-    'size',
     'hall',
     'roof',
     'timber',
@@ -128,11 +127,44 @@ def test_no_option_adds_living_quarters(catalog: Catalog) -> None:
             assert hit is None or 'nobody lives there' in option.text, option.key
 
 
-def test_size_stays_one_bay(catalog: Catalog) -> None:
-    """FR-002a: a remote site holds only a one-bay sanctuary."""
-    size = catalog.category('size')
-    assert size is not None
-    assert all(o.units <= 2 for o in size.options)
+def test_no_lesser_greater_pairs(catalog: Catalog) -> None:
+    """FR-019: no size category, and no option label is another option's label plus more
+    ("Vermilion" beside "Black lacquer with vermilion")."""
+    assert catalog.category('size') is None
+    for category in catalog.categories:
+        labels = [o.label.lower() for o in category.options]
+        for a in labels:
+            for b in labels:
+                assert a == b or a not in b, (category.key, a, b)
+
+
+ABSENCE = re.compile(r'^(none|nothing|no)\b', re.IGNORECASE)
+YES_NO_PROMPT = re.compile(r'^(is|are|do|does) ', re.IGNORECASE)
+DEFAULT_FRAMING = re.compile(r'\b(the usual|standard|ordinary|typical)\b', re.IGNORECASE)
+
+
+def test_absence_and_default_guards_fire() -> None:
+    assert ABSENCE.search('None')
+    assert ABSENCE.search('No gate')
+    assert not ABSENCE.search('Nonesuch lantern')
+    assert YES_NO_PROMPT.search('Are there lanterns?')
+    assert DEFAULT_FRAMING.search('The usual measure of decoration.')
+    assert not DEFAULT_FRAMING.search('One of the most common types of decoration.')
+
+
+def test_no_option_is_an_absence(catalog: Catalog) -> None:
+    """FR-020: every option is a positive form; prompts ask what or how."""
+    for category in catalog.categories:
+        assert not YES_NO_PROMPT.search(category.prompt), category.key
+        for option in category.options:
+            assert not ABSENCE.search(option.label), option.label
+            assert not ABSENCE.search(option.text), option.text
+
+
+def test_nothing_frames_itself_as_the_default(catalog: Catalog) -> None:
+    """FR-021: "one of the most common", never "the usual" or "the standard"."""
+    offenders = [t for t in player_texts(catalog) if DEFAULT_FRAMING.search(t)]
+    assert offenders == []
 
 
 def test_real_catalog_loads_with_porterage(catalog: Catalog) -> None:
@@ -162,11 +194,11 @@ def _drop_porterage(data: dict[str, Any]) -> None:
     [
         (lambda d: d['groups'][0]['categories'].append(_first_category(d)), 'duplicate'),
         (lambda d: _first_category(d).update(key='gm_form'), 'collides'),
-        (lambda d: _first_category(d).update(key='enshrined'), 'collides'),
+        (lambda d: _first_category(d).update(key='shrine_name'), 'collides'),
         (_drop_porterage, 'porterage'),
         (lambda d: d['remoteness'].update(default='moon'), 'remoteness'),
         (lambda d: d['site_lines'][0].update(contract='bribes'), 'site line'),
-        (lambda d: _first_category(d).update(default='pagoda'), 'not one of its options'),
+        (lambda d: _first_category(d).update(reference='pagoda'), 'not one of its options'),
         (lambda d: _first_option(d).update(voids=['nowhere']), 'voids unknown'),
         (lambda d: _first_option(d).update(voids=['form']), 'voids unknown'),
         (lambda d: _first_option(d)['lines'][0].update(contract='bribes'), 'unknown contract'),
@@ -183,12 +215,13 @@ def test_catalog_validation_rejects(raw: dict[str, Any], mutate: Any, message: s
 # --- design ---------------------------------------------------------------------------------------
 
 
-def test_empty_params_give_defaults(catalog: Catalog) -> None:
+def test_empty_params_choose_nothing(catalog: Catalog) -> None:
+    """Nothing is pre-selected: an option already picked on arrival biases the player."""
     design = parse_design(catalog, {})
-    for category in catalog.categories:
-        if category.key not in design.voided:
-            assert design.choices[category.key] == category.default
-    assert design.text == {}
+    assert design.choices == {}
+    assert design.voided == frozenset()
+    assert price_design(catalog, design, 'road').total == pytest.approx(3.5)  # site work only
+    assert design.text == {'shrine_name': catalog.default_name}
     assert design.dropped == ()
 
 
@@ -196,12 +229,12 @@ def test_valid_choice_and_list_values(catalog: Catalog) -> None:
     design = parse_design(catalog, {'roof': 'copper', 'timber': ['keyaki', 'sugi'], 'bell': []})
     assert design.choices['roof'] == 'copper'
     assert design.choices['timber'] == 'keyaki'
-    assert design.choices['bell'] == 'suzu'
+    assert 'bell' not in design.choices
 
 
 def test_unknown_option_is_dropped_and_reported(catalog: Catalog) -> None:
     design = parse_design(catalog, {'roof': 'gold-leaf', 'lanterns': 'neon'})
-    assert design.choices['roof'] == catalog.category('roof').default  # type: ignore[union-attr]
+    assert 'roof' not in design.choices
     assert design.dropped == ('roof', 'lanterns')
 
 
@@ -211,9 +244,8 @@ def test_dropped_category_that_is_moot_is_not_reported(catalog: Catalog) -> None
 
 
 def test_voids(catalog: Catalog) -> None:
-    design = parse_design(catalog, {'form': 'himorogi', 'gate_form': 'none'})
+    design = parse_design(catalog, {'form': 'himorogi', 'gate_form': 'trees'})
     assert design.voided == {
-        'size',
         'timber',
         'roof',
         'finish',
@@ -226,20 +258,27 @@ def test_voids(catalog: Catalog) -> None:
     assert voided_by(catalog, design)['gate_material'] == 'Gate'
 
 
-def test_text_is_trimmed_capped_and_blank_dropped(catalog: Catalog) -> None:
-    design = parse_design(
-        catalog,
-        {'enshrined': '  Shoda the hermit ', 'shrine_name': '   ', 'inscription': 'x' * 5000},
-    )
-    assert design.text['enshrined'] == 'Shoda the hermit'
-    assert 'shrine_name' not in design.text
-    assert len(design.text['inscription']) == 2000
+def test_shrine_name_is_trimmed_capped_and_defaulted(catalog: Catalog) -> None:
+    assert parse_design(catalog, {'shrine_name': '  Fox Hill  '}).text == {
+        'shrine_name': 'Fox Hill'
+    }
+    assert len(parse_design(catalog, {'shrine_name': 'x' * 500}).text['shrine_name']) == 120
+    blank = parse_design(catalog, {'shrine_name': '   '})
+    assert blank.text['shrine_name'] == catalog.default_name
+    assert 'Kitsunemori' in catalog.default_name
+
+
+def test_only_free_text_field_is_the_name() -> None:
+    """FR-017: no field prompts the player to write something beyond the shrine's name."""
+    from l7r.shrines import TEXT_FIELDS
+
+    assert set(TEXT_FIELDS) == {'shrine_name'}
 
 
 def test_share_query_round_trips_and_carries_no_gm_figure(catalog: Catalog) -> None:
     from urllib.parse import parse_qsl
 
-    params = {'form': 'kasuga', 'roof': 'copper', 'enshrined': 'Shoda & co', 'gm_budget': '99'}
+    params = {'form': 'kasuga', 'roof': 'copper', 'shrine_name': 'Shoda & co', 'gm_budget': '99'}
     design = parse_design(catalog, params)
     query = share_query(catalog, design)
     assert 'gm_' not in query
@@ -255,15 +294,6 @@ def test_reference_design_and_default_budget(catalog: Catalog) -> None:
     assert pricing.total == pytest.approx(120.7)
     assert pricing.heavy == pytest.approx(31)
     assert default_budget(catalog) == 145.0
-
-
-def test_size_scales_the_sanctuary_lines(catalog: Catalog) -> None:
-    small = price_design(catalog, parse_design(catalog, {'size': 'small'}), 'road')
-    large = price_design(catalog, parse_design(catalog, {'size': 'generous'}), 'road')
-    # nagare 16 + hinoki 8 per size step on carpentry; hinoki's 4 heavy loads scale too
-    carpentry = large.by_contract['carpentry'] - small.by_contract['carpentry']
-    assert carpentry == pytest.approx(24 * 0.8)
-    assert large.heavy - small.heavy == pytest.approx(4 * 0.8)
 
 
 def test_porterage_is_heavy_times_rate(catalog: Catalog) -> None:
@@ -291,9 +321,11 @@ def test_per_category_that_is_moot_counts_as_one(raw: dict[str, Any]) -> None:
     data = copy.deepcopy(raw)
     form = _first_category(data)
     hokora = next(o for o in form['options'] if o['key'] == 'hokora')
-    hokora['lines'] = [{'contract': 'stonework', 'koku': 6, 'per': 'size'}]
+    hokora['lines'] = [{'contract': 'stonework', 'koku': 6, 'per': 'timber'}]
+    timber = next(c for c in data['groups'][0]['categories'] if c['key'] == 'timber')
+    timber['options'][2]['units'] = 3
     catalog = parse_catalog(data)
-    design = parse_design(catalog, {'form': 'hokora', 'size': 'generous'})
+    design = parse_design(catalog, {'form': 'hokora', 'timber': timber['options'][2]['key']})
     items = [i for i in price_design(catalog, design, 'road').items if i.category == 'Form']
     assert [i.koku for i in items] == [6]
 
@@ -371,7 +403,7 @@ def test_negotiate_skips_empty_contracts_and_reports_shortfall(catalog: Catalog)
             'guardians': 'none',
             'lanterns': 'none',
             'bell': 'clap',
-            'box': 'plain',
+            'box': 'bamboo',
             'sacred': 'stone',
         },
     )
