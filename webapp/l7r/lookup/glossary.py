@@ -51,10 +51,13 @@ SCOPES = frozenset(
         'wasp',
         'world',
         'damasu',
+        'dark-moto',
         'first-toshi-ranbo',
         'hidden-way',
+        'kaiu-wall',
         'karmic-inquisitors',
         'peasant',
+        'takaba',
     }
 )
 

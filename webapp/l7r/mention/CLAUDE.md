@@ -28,6 +28,7 @@ its users will intuitively expect it to work."* Answering under the wrong name b
 | `bots.py` | The fleet - which application ids this process can speak as, and which one holds the socket. Split by sensitivity: tokens from the gitignored secrets, the listener's public application id from the checked-in defaults. |
 | `gateway.py` | The only module that touches the network: the websocket protocol constants, `IDENTIFY`/`RESUME`, the heartbeat, and the REST call that posts a reply. Its docstring summarizes the protocol so a reader need not go and look it up. |
 | `responder.py` | The loop. `handle` answers one message (synchronous, injectable); `pump` runs one connection; `run_forever` reconnects with backoff. |
+| (`/look-up`) | Feature 218: `gateway.defer_ephemeral`/`edit_original`/`register_commands` and `responder.answer_interaction` answer the slash command privately; the logic is in `l7r/lookup/` (see its CLAUDE.md). |
 
 ## The guard that matters
 
@@ -207,7 +208,7 @@ as the systemd user service `l7r-mention`, resident at ~18 MB of the box's 512 M
 Idempotent: re-run it after any change. It syncs, rebuilds the venv if needed, and restarts the
 systemd user service, so there is no separate update path to get wrong.
 
-**The box gets the two bot tokens and nothing else.** The deploy script writes a minimal
+**The box gets the two bot tokens, plus the dedicated `[lookup] gemini_api_key` if present (feature 218), and nothing else** - never the main `[gemini] api_key`. The deploy script writes a minimal
 `development-secrets.ini` containing only `[mention_bots]`; it does not copy the real one, which
 also holds AWS keys, a GitHub PAT, the Gemini key and the Obsidian Portal credentials. A joke bot on
 an internet-facing box has no business holding any of those.

@@ -67,6 +67,20 @@
 {"id": "b-list", "question": "list of open bounties?", "asker": null, "must": [], "links": [["imperial-bulletin"]], "answerable": true, "note": ""}
 {"id": "v-bear", "question": "what's the bear that never found a den called", "asker": null, "must": [["anamotazu"]], "links": [], "answerable": true, "note": ""}
 {"id": "v-bell", "question": "which of tatsukis amulets was the bell", "asker": null, "must": [["junrei-suzu", "pilgrim"]], "links": [], "answerable": true, "note": ""}
+{"id": "r-tn", "question": "what does TN stand for", "asker": null, "must": [["target number"]], "links": [], "answerable": true, "note": ""}
+{"id": "r-kept", "question": "what's the difference between rolled and kept dice?", "asker": null, "must": [["keep", "kept"]], "links": [], "answerable": true, "note": "XkY"}
+{"id": "r-feint", "question": "what does a feint do?", "asker": null, "must": [["void point", "void"]], "links": [], "answerable": true, "note": ""}
+{"id": "r-void", "question": "how many void points can i spend on a roll?", "asker": null, "must": [["lowest ring", "lowest Ring"]], "links": [], "answerable": true, "note": ""}
+{"id": "r-dan", "question": "how is my dan determined?", "asker": null, "must": [["lowest school knack", "lowest knack", "lowest"]], "links": [], "answerable": true, "note": ""}
+{"id": "r-raise", "question": "how much is a free raise worth", "asker": null, "must": [["+5", " 5", "five"]], "links": [], "answerable": true, "note": ""}
+{"id": "r-impaired", "question": "when am i impaired", "asker": null, "must": [["Earth", "earth"]], "links": [], "answerable": true, "note": ""}
+{"id": "x-obon", "question": "when is the festival where the ancestors come back", "asker": null, "must": [["Obon"]], "links": [], "answerable": true, "note": ""}
+{"id": "x-thunder", "question": "what was the day of thunder?", "asker": null, "must": [["moon", "Lord Moon", "Jotsu"]], "links": [], "answerable": true, "note": ""}
+{"id": "x-koku", "question": "how many bu in a koku", "asker": null, "must": [["10", "ten"]], "links": [], "answerable": true, "note": ""}
+{"id": "x-rat-hour", "question": "what time is the hour of the rat", "asker": null, "must": [["midnight", "0000", "12", "2am", "2 am"]], "links": [], "answerable": true, "note": ""}
+{"id": "x-jotsu", "question": "who was shinjo jotsu", "asker": null, "must": [["moon", "Day of Thunder"]], "links": [], "answerable": true, "note": ""}
+{"id": "x-emerald", "question": "who writes the rules for imperial magistrates", "asker": null, "must": [["Emerald Charter", "Saibankan"]], "links": [], "answerable": true, "note": ""}
+{"id": "x-four", "question": "why do people avoid the number four", "asker": null, "must": [["death"]], "links": [], "answerable": true, "note": ""}
 {"id": "u-secret", "question": "what is Hideki hiding?", "asker": null, "must": [], "links": [], "answerable": false, "note": ""}
 {"id": "u-horse", "question": "what is the name of Kyoma's horse?", "asker": null, "must": [], "links": [], "answerable": false, "note": ""}
 {"id": "u-dinner", "question": "what did we eat at the inn last session?", "asker": null, "must": [], "links": [], "answerable": false, "note": ""}

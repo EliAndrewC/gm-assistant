@@ -440,6 +440,10 @@ class TestLookup:
         bad = service.Lookup(SETTINGS, ENTRIES, PEOPLE, book, generate=fake('', fail=True))
         assert bad.answer('q').text == service.FAILED
 
+    def test_hyphenate(self) -> None:
+        em, en = chr(0x2014), chr(0x2013)
+        assert service.hyphenate(f'a {em} b, c{em}d, 3{en}5') == 'a - b, c - d, 3-5'
+
     def test_trim_cuts_at_a_line(self) -> None:
         assert service.trim('short') == 'short'
         assert service.trim('aaaa\nbbbb\ncccc', 11) == 'aaaa\nbbbb'

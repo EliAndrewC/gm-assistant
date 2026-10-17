@@ -111,6 +111,15 @@ class Answer:
     dropped: tuple[str, ...] = ()
 
 
+def hyphenate(text: str) -> str:
+    """The project's house style (hyphens only) applied to the model's prose.
+
+    Gemini writes em and en dashes freely; a spaced em dash becomes " - ", a bare
+    one or an en dash (number ranges) becomes "-"."""
+    em, en = chr(0x2014), chr(0x2013)
+    return text.replace(f' {em} ', ' - ').replace(em, ' - ').replace(en, '-')
+
+
 def trim(text: str, limit: int = LIMIT) -> str:
     if len(text) <= limit:
         return text
@@ -161,7 +170,7 @@ class Lookup:
             if self.ledger is not None:
                 self.ledger.log({'asker': asker, 'question': question, 'error': str(exc)})
             return Answer(FAILED, ok=False)
-        text, dropped = links.scrub(reply.text, self._allowed)
+        text, dropped = links.scrub(hyphenate(reply.text), self._allowed)
         text = trim(links.linkify(text, self.people))
         cost = reply.usage.cost(self.settings.price)
         if self.ledger is not None:
