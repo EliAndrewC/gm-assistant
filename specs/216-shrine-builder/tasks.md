@@ -14,5 +14,5 @@
 - [x] T008 Add the page to `tests/screenshot.py` and `tests/dom_audit.py` PAGES (player and GM).
 - [x] T009 Reference artifact: render one design player + GM, read the page.
 - [x] T010 Screenshots at four viewports, DOM audit zero issues, `frontend-review`.
-- [ ] T011 `make done` green; commit; `sync-with-main.sh done`; deploy if the deploy path is
+- [x] T011 `make done` green; commit; `sync-with-main.sh done`; deploy if the deploy path is
       available.
