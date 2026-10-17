@@ -157,14 +157,27 @@ engine's tested instructions - keep honoring them):
 - Commit to concrete, plausible specifics - a belief, habit, grudge, fear,
   relationship, or episode - never hedge or stay abstract.
 - Prefer setting-grounded times over "a few years ago" where it fits
-  naturally - and the best anchor is a significant DAY, not a bare month: a
-  named festival or calendar observance ("a few days after the Haru Higan
-  festival", "on Nyuubai"), falling back to a month or season only when no
-  observance fits. Pick the day from l7r.md - grep `### The Festival Calendar`
-  and `### The Twelve Months`. Whenever you name a month, gloss its place in
-  the season in parentheses: "the Month of the Goat (the 2nd month of summer)".
-  The year starts on the 1st day of spring, so months 1-3 are spring, 4-6
-  summer, 7-9 autumn, 10-12 winter.
+  naturally. **When you date an event, anchor it to a NAMED day of the
+  calendar, never to a bare day number** (GM 2026-10-17). Not "on the 5th day
+  of the Month of the Goat" but "on the Iris Festival"; not "the 7th day of
+  Yayoi" but "four days after the Doll Festival". Placing an event RELATIVE to
+  a named day is as good as placing it on one, and often better: "the night
+  before the Iris Festival", "two days after the Doll Festival", "the day
+  before the Vernal Equinox", "during Haru Higan" (several observances run for
+  days). Named days are not only festivals - solar terms (Shousetsu, lesser
+  snow), farming days (Haru no douyou, preparing the ground for spring), court
+  days (Joui, the bestowal of ranks) - so every month has several and one is
+  nearly always close enough. **Then give the number in parentheses as a
+  reminder**, because nobody remembers when the Chrysanthemum Festival falls:
+  "two days after the Doll Festival (the 3rd day of the Month of the Serpent,
+  the 3rd month of spring)". The parenthetical is the only place a day number
+  belongs. Fall back to a bare month or season only when no named day is near
+  enough to fit. Every named day with its month and day number:
+  `python3 .claude/skills/weather/calendar_data.py` (it parses the `/calendar`
+  skill's GM-written breakdown). Whenever you name a month, gloss its place in
+  the season: "the Month of the Goat (the 2nd month of summer)". The year
+  starts on the 1st day of spring, so months 1-3 are spring, 4-6 summer, 7-9
+  autumn, 10-12 winter.
 - **Illness, injury and death: name it, and make the course pre-modern.** If a
   character is ailing, crippled, scarred, or dying, decide what they actually
   have before you write the sentence - "specificity is the soul of narrative"

@@ -154,6 +154,27 @@ the GM catches something new.
   title: "Guardian of the Temple Treasury for the Sovereign Temple of Bishamon in
   Shiro Reiji".)
 
+- **Dates are anchored to a NAMED calendar day, never a bare day number (GM
+  2026-10-17).** Any sentence that dates an event by day number alone - "on the
+  7th day of the Month of the Serpent", "the fifth day of Satsuki", "the 9th day
+  of the Month of the Boar" - FLAGS. The wanted form names a day from the
+  Festival Calendar (a festival, a solar term, a farming or court day) and
+  either places the event ON it or RELATIVE to it ("the night before the Iris
+  Festival", "two days after the Doll Festival", "during Haru Higan"), with the
+  numbered date only as a parenthetical reminder after it: "four days after the
+  Doll Festival (the 7th day of the Month of the Serpent, the 3rd month of
+  spring)". Why: a named day carries color a number does not, and the GM wants
+  the number only because nobody remembers where the festivals fall. Also FLAG
+  a named day whose parenthetical number is wrong - check it with `python3
+  .claude/skills/weather/calendar_data.py`, which lists every named day with its
+  month and day. A bare month or season with no day ("in the Month of the Goat")
+  passes; it is the fallback when no named day is near. (Validated example,
+  2026-10-17: Koharu's published backstory said his tenure "was violently
+  interrupted on the seventh day of Yayoi last year". The rule above fired on
+  that UNFIXED prose without the instance being named in it, and proposed "four
+  days after the Doll Festival last year (the 7th day of the Month of the
+  Serpent, the 3rd month of spring)", which is what the record now says.)
+
 <!-- Append new GM-caught corrections above this line, newest last, each with its
      general rule + the why + a validated example once TDD-confirmed. -->
 

@@ -64,13 +64,21 @@ Write 1 to 3 short paragraphs of prose that:
   character's generated details.
 - When you place an event in the character's past, prefer a specific,
   setting-grounded time over a vague reference like "a few years ago," wherever
-  the brief gives you the detail to do so and it fits naturally. The best anchor
-  is a significant DAY from the brief's Festival Calendar - "a few days after
-  the Haru Higan festival," "on Nyuubai" - with a bare month or season as the
-  fallback when no named observance fits. Whenever you name a month, follow it
-  with its place in the season in parentheses: "the Month of the Goat (the 2nd
-  month of summer)." The Rokugani year starts on the 1st day of spring, so
-  months 1-3 are spring, 4-6 are summer, 7-9 are autumn, and 10-12 are winter.
+  the brief gives you the detail to do so and it fits naturally. Anchor a date
+  to a NAMED day from the brief's Festival Calendar, never to a bare day
+  number: not "on the 5th day of the Month of the Goat" but "on the Iris
+  Festival." Placing an event relative to a named day is just as good - "the
+  night before the Iris Festival," "two days after the Doll Festival," "the day
+  before the Vernal Equinox," "during Haru Higan" - and named days include
+  solar terms and farming days as well as festivals, so one is nearly always
+  close enough. Then give the numbered date in parentheses as a reminder: "two
+  days after the Doll Festival (the 3rd day of the Month of the Serpent, the
+  3rd month of spring)." The parenthetical is the only place a day number
+  belongs. Fall back to a bare month or season only when no named day is near
+  enough. Whenever you name a month, follow it with its place in the season in
+  parentheses: "the Month of the Goat (the 2nd month of summer)." The Rokugani
+  year starts on the 1st day of spring, so months 1-3 are spring, 4-6 are
+  summer, 7-9 are autumn, and 10-12 are winter.
   Specificity is the soul of a backstory; do not invent dates that contradict
   the brief.
 - Stay grounded and mundane by default. The supernatural is real but rare and
