@@ -113,12 +113,14 @@ with open(pub, 'w') as fh:
     fh.write('[mention_bots]\n')
     fh.write(f'listener = {listener}\n')
 # The public /look-up settings, copied whole (model, prices, thinking, ceiling).
-lookup_sections = ConfigObj(encoding='utf-8')
-for name in ('lookup', 'lookup_models', 'lookup_prices'):
-    lookup_sections[name] = defaults[name]
-lookup_sections.filename = None
+# Written by hand rather than with ConfigObj.write(), which returns BYTES once an
+# encoding is set (a TypeError here aborted the first deploy, 2026-10-17).
 with open(pub, 'a', encoding='utf-8') as fh:
-    fh.write('\n'.join(lookup_sections.write()) + '\n')
+    for name in ('lookup', 'lookup_models', 'lookup_prices'):
+        fh.write(f'\n[{name}]\n')
+        for key, value in defaults[name].items():
+            text = ', '.join(value) if isinstance(value, list) else value
+            fh.write(f'{key} = {text}\n')
 
 print(f'  payload: {len(tokens)} bot token(s), listener {listener}, '
       f'/look-up key {"present" if lookup_key else "ABSENT (it will say it is not set up)"}')
