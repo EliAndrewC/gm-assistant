@@ -98,6 +98,99 @@ def send_message(
         return
 
 
+#: Feature 218: the `/look-up` slash command. Its events arrive over this same
+#: gateway as INTERACTION_CREATE, because the application has no interactions
+#: endpoint URL configured - which is also why no web server is needed for it.
+LOOKUP = 'look-up'
+LOOKUP_COMMAND: dict[str, Any] = {
+    'name': LOOKUP,
+    'type': 1,
+    'description': 'Ask about the campaign - a term, a person, a place. Only you see the answer.',
+    'options': [
+        {
+            'type': 3,
+            'name': 'question',
+            'description': 'What do you want to know? Vague is fine.',
+            'required': True,
+            'max_length': 300,
+        }
+    ],
+}
+
+#: Message flags. EPHEMERAL is "only you can see this"; SUPPRESS_EMBEDS stops the
+#: links in a reply unfolding into previews that would bury a five-line answer.
+EPHEMERAL = 1 << 6
+SUPPRESS_EMBEDS = 1 << 2
+DEFERRED_CHANNEL_MESSAGE = 5
+
+
+def _send_json(
+    url: str,
+    method: str,
+    payload: Any,
+    opener: Callable[..., Any],
+    token: str | None = None,
+) -> None:
+    headers = {'User-Agent': USER_AGENT, 'Content-Type': 'application/json'}
+    if token:
+        headers['Authorization'] = f'Bot {token}'
+    request = urllib.request.Request(
+        url, data=json.dumps(payload).encode(), headers=headers, method=method
+    )
+    with opener(request, timeout=20):
+        return
+
+
+def defer_ephemeral(
+    interaction_id: str, token: str, opener: Callable[..., Any] = urllib.request.urlopen
+) -> None:
+    """Acknowledge an interaction privately, within Discord's 3-second limit.
+
+    The player sees "thinking..." that only they can see; `edit_original` later
+    replaces it with the answer. The interaction token authorizes this, so no bot
+    token is sent."""
+    _send_json(
+        f'{API}/interactions/{interaction_id}/{token}/callback',
+        'POST',
+        {'type': DEFERRED_CHANNEL_MESSAGE, 'data': {'flags': EPHEMERAL}},
+        opener,
+    )
+
+
+def edit_original(
+    application_id: str,
+    token: str,
+    content: str,
+    opener: Callable[..., Any] = urllib.request.urlopen,
+) -> None:
+    """Replace the private "thinking..." with the answer. Pings nobody, previews nothing."""
+    _send_json(
+        f'{API}/webhooks/{application_id}/{token}/messages/@original',
+        'PATCH',
+        {'content': content, 'flags': SUPPRESS_EMBEDS, 'allowed_mentions': {'parse': []}},
+        opener,
+    )
+
+
+def register_commands(
+    application_id: str,
+    guild_id: str,
+    bot_token: str,
+    commands: list[dict[str, Any]],
+    opener: Callable[..., Any] = urllib.request.urlopen,
+) -> None:
+    """Set this application's commands in one server (idempotent; replaces the set).
+
+    A guild command appears at once; a global one can take an hour to propagate."""
+    _send_json(
+        f'{API}/applications/{application_id}/guilds/{guild_id}/commands',
+        'PUT',
+        commands,
+        opener,
+        token=bot_token,
+    )
+
+
 def backoff(attempt: int, jitter: Callable[[], float] = random.random) -> float:
     """Seconds to wait before retry `attempt`, doubling to a cap, with jitter."""
     base: float = min(BACKOFF_START * (2**attempt), BACKOFF_CAP)

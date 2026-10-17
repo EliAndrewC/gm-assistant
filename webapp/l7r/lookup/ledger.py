@@ -44,7 +44,7 @@ class Ledger:
         """Dollars spent today. A missing, unreadable or yesterday's file is zero."""
         try:
             data = json.loads(self.spend_path.read_text(encoding='utf-8'))
-        except OSError, ValueError:
+        except (OSError, ValueError):
             return 0.0
         if not isinstance(data, dict) or data.get('day') != self._today():
             return 0.0

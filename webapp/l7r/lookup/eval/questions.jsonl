@@ -1,0 +1,74 @@
+{"id": "gm-minions", "question": "what are our minions called?", "asker": 2, "must": [["Inspector", "metsuke"], ["Escort", "gosonin"]], "links": [], "answerable": true, "note": "GM example: the rank terms under the marshals"}
+{"id": "gm-boss", "question": "Who is our boss?", "asker": 10, "must": [["Tsuruchi Kyoma"]], "links": [], "answerable": true, "note": "GM example"}
+{"id": "gm-crab-fortunes", "question": "who are the fortunes that the crab worship?", "asker": 10, "must": [["Bishamon"], ["Ebisu"]], "links": [], "answerable": true, "note": "GM example: the two patron Fortunes, not \"all of them\""}
+{"id": "gm-imperial-bounties", "question": "what are the imperial bounties?", "asker": 14, "must": [], "links": [["imperial-bounties", "imperial-bulletin"]], "answerable": true, "note": "GM example: link the page"}
+{"id": "gm-org-chart", "question": "what is the WASP org chart?", "asker": 8, "must": [], "links": [["wasp-hierarchy"]], "answerable": true, "note": "GM example: link the page"}
+{"id": "t-carry-prisoners", "question": "what's the word for the guys who haul fugitives back for the reward?", "asker": null, "must": [["gosonin"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-our-title", "question": "what's our title in Japanese?", "asker": 2, "must": [["haribugyo"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-metsuke", "question": "what does metsuke mean?", "asker": null, "must": [["directs their eye", "direct their eye"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-haribugyo", "question": "what does haribugyo literally mean", "asker": null, "must": [["sting"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-gosonin", "question": "gosonin literally means what?", "asker": null, "must": [["transport guard"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-chancellery", "question": "what do people call the wasp chancellery?", "asker": null, "must": [["crane wives"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-peasant-lineage", "question": "what's the name of the lineage for the wasp who used to be peasants?", "asker": null, "must": [["Ami"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-overseer", "question": "what are the sparrow samurai who live in the villages called?", "asker": null, "must": [["village overseer"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-kyoma-title", "question": "what's Kyoma's official title again", "asker": null, "must": [["Plenipotentiary"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-chain", "question": "who reports to who in the wasp?", "asker": null, "must": [["Marshal", "haribugyo"], ["Inspector", "metsuke"], ["Escort", "gosonin"]], "links": [["wasp-hierarchy"]], "answerable": true, "note": ""}
+{"id": "t-motto", "question": "what's the wasp founder's saying, the single arrow thing?", "asker": null, "must": [["single life"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-sword", "question": "what was the name of the sword tsuruchi broke?", "asker": null, "must": [["Isshin"]], "links": [], "answerable": true, "note": ""}
+{"id": "t-yoriki", "question": "what does yoriki mean", "asker": null, "must": [["assistant"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-reiji-inspector", "question": "who is our inspector in the Reiji domain?", "asker": 14, "must": [["Fumitake"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-sparrow-inspector", "question": "which inspector covers the sparrow lands", "asker": null, "must": [["Riku"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-kakita-magistrate", "question": "who is the imperial magistrate for kakita lands?", "asker": null, "must": [["Seppun Shogo"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-fox-daimyo", "question": "who runs the fox clan", "asker": null, "must": [["Ryosei"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-sparrow-daimyo", "question": "who's the sparrow daimyo?", "asker": null, "must": [["Mukashino"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-founder", "question": "who founded the wasp clan", "asker": null, "must": [["Tsuruchi"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-chancellor", "question": "who is the imperial chancellor", "asker": null, "must": [["Kakita Yoshi"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-byakuya", "question": "who runs kyomas house in sparrow lands?", "asker": null, "must": [["Byakuya"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-tatsuki", "question": "who's the superstitious lady who gave us the anti-fox charms?", "asker": null, "must": [["Tatsuki"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-kyoma-wife", "question": "what's Kyoma's wife's name", "asker": null, "must": [["Hitomi"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-tsuruchi-wife", "question": "who is the wasp daimyo's wife?", "asker": null, "must": [["Naomi"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-previous", "question": "who had our job before us?", "asker": null, "must": [["Kaminari"], ["Danji"], ["Okihito"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-hideki", "question": "who is Hideki?", "asker": 18, "must": [["Escort", "gosonin"], ["Reiji"]], "links": [], "answerable": true, "note": "the motivating case"}
+{"id": "p-gorou", "question": "who is seppun gorou", "asker": null, "must": [["Imperial magistrate"], ["Fox", "Kitsune"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-avengers", "question": "who's coming after us for the teahouse thing?", "asker": 3, "must": [["Wataemon"], ["Naohira"], ["Ietsugu"]], "links": [], "answerable": true, "note": ""}
+{"id": "p-shoda-victim", "question": "who did the hermit attack?", "asker": null, "must": [["Koharu"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-domains", "question": "which domains do we cover?", "asker": 2, "must": [["Fox"], ["Sparrow"], ["Kakita"], ["Etsuko"], ["Reiji"], ["Daika"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-crane-domains", "question": "which of our domains are crane?", "asker": 10, "must": [["Kakita"], ["Etsuko"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-province", "question": "what province does the wasp clan hold?", "asker": null, "must": [["Hachinaga"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-alliance", "question": "what's the alliance of the three little clans called?", "asker": null, "must": [["Three Man Alliance"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-alliance-members", "question": "who's in the three man alliance?", "asker": null, "must": [["Fox"], ["Sparrow"], ["Wasp"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-forest", "question": "what's the big fox forest called?", "asker": null, "must": [["Kitsune Mori"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-retainers", "question": "what does the ministry of retainers do?", "asker": null, "must": [["stipend"]], "links": [], "answerable": true, "note": "GM: the Ministry of Retainers should be in the glossary"}
+{"id": "w-stipends", "question": "which ministry pays samurai their stipends?", "asker": null, "must": [["Ministry of Retainers"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-emerald", "question": "what is the emerald champion?", "asker": null, "must": [["Justice"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-shogun", "question": "what is the shogun?", "asker": null, "must": [["Minister of War"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-our-rank", "question": "what rank are we?", "asker": 8, "must": [["seventh", "7th", " 7"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-cm-rank", "question": "what rank is a county magistrate?", "asker": null, "must": [["fifth", "5th", " 5"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-three-steps", "question": "what is the doctrine of three steps", "asker": null, "must": [["rank", "standing"]], "links": [["doctrine-of-three-steps"]], "answerable": true, "note": ""}
+{"id": "w-blood-feud", "question": "how far does a blood feud reach?", "asker": null, "must": [["great-grandfather"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-family-reckoning", "question": "what was the family reckoning?", "asker": null, "must": [["Tsai", "shugenja"]], "links": [["the-family-reckoning"]], "answerable": true, "note": ""}
+{"id": "w-righteous", "question": "what does righteous sting mean?", "asker": null, "must": [["honorabl"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-peasantborn", "question": "what does the peasantborn disadvantage do", "asker": null, "must": [["peer standing"]], "links": [], "answerable": true, "note": ""}
+{"id": "w-bounty-share", "question": "how much of a bounty do we keep?", "asker": null, "must": [["half", "50%"]], "links": [], "answerable": true, "note": ""}
+{"id": "f-honest-work", "question": "who is the fortune of honest work", "asker": null, "must": [["Ebisu"]], "links": [], "answerable": true, "note": ""}
+{"id": "f-love", "question": "what's the love fortune called", "asker": null, "must": [["Benten"]], "links": [], "answerable": true, "note": ""}
+{"id": "f-dragon", "question": "what fortunes do the dragon pray to", "asker": null, "must": [["Hotei"], ["Ebisu"]], "links": [], "answerable": true, "note": ""}
+{"id": "f-lion-mine", "question": "what are my old clan's patron fortunes?", "asker": 8, "must": [["Bishamon"], ["Daikoku"]], "links": [], "answerable": true, "note": "Akodo Bushi: Lion"}
+{"id": "f-crab-temples", "question": "which temples would my birth clan build in every city?", "asker": 10, "must": [["Bishamon"], ["Ebisu"]], "links": [], "answerable": true, "note": "Hiruma Scout: Crab"}
+{"id": "f-fox-rice", "question": "which fortune is the fox and rice one", "asker": null, "must": [["Inari"]], "links": [], "answerable": true, "note": ""}
+{"id": "me-clan-tadashi", "question": "what clan was I originally from?", "asker": 14, "must": [["Phoenix"]], "links": [], "answerable": true, "note": "Isawa Ishi"}
+{"id": "me-clan-hidemasa", "question": "what clan did I come from?", "asker": 2, "must": [["Scorpion"]], "links": [], "answerable": true, "note": "Yogo Warden"}
+{"id": "me-school", "question": "what school am I?", "asker": 1, "must": [["Mantis Wave-Treader"]], "links": [], "answerable": true, "note": ""}
+{"id": "me-bounty", "question": "is there a bounty on me?", "asker": 17, "must": [["50", "fifty"]], "links": [], "answerable": true, "note": "Kitsune Moriko"}
+{"id": "b-goiter", "question": "who was the guy on the bulletin with the goiter?", "asker": null, "must": [["Shoda"]], "links": [], "answerable": true, "note": ""}
+{"id": "b-opium", "question": "which bounty is the opium smuggler", "asker": null, "must": [["Hiruma Kojiro"]], "links": [], "answerable": true, "note": ""}
+{"id": "b-river", "question": "the bandits that wait in the river ford, what are they called?", "asker": null, "must": [["heron"]], "links": [], "answerable": true, "note": ""}
+{"id": "b-charcoal", "question": "who's the fake charcoal guy", "asker": null, "must": [["Denhei"]], "links": [], "answerable": true, "note": ""}
+{"id": "b-list", "question": "list of open bounties?", "asker": null, "must": [], "links": [["imperial-bulletin"]], "answerable": true, "note": ""}
+{"id": "v-bear", "question": "what's the bear that never found a den called", "asker": null, "must": [["anamotazu"]], "links": [], "answerable": true, "note": ""}
+{"id": "v-bell", "question": "which of tatsukis amulets was the bell", "asker": null, "must": [["junrei-suzu", "pilgrim"]], "links": [], "answerable": true, "note": ""}
+{"id": "u-secret", "question": "what is Hideki hiding?", "asker": null, "must": [], "links": [], "answerable": false, "note": ""}
+{"id": "u-horse", "question": "what is the name of Kyoma's horse?", "asker": null, "must": [], "links": [], "answerable": false, "note": ""}
+{"id": "u-dinner", "question": "what did we eat at the inn last session?", "asker": null, "must": [], "links": [], "answerable": false, "note": ""}
+{"id": "u-poet", "question": "who is the emperor's favorite poet?", "asker": null, "must": [], "links": [], "answerable": false, "note": ""}
+{"id": "u-budget", "question": "how many koku is a county magistrate's budget?", "asker": null, "must": [], "links": [], "answerable": false, "note": "GM: hyper-specific numbers are out of the glossary"}

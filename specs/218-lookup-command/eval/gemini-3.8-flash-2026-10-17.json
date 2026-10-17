@@ -1,0 +1,758 @@
+{
+ "model": "gemini-3.8-flash",
+ "summary": {
+  "questions": 74,
+  "correct_pct": 100.0,
+  "facts_pct": 100.0,
+  "links_pct": 100.0,
+  "abstained_when_unanswerable_pct": 100.0,
+  "brief_pct": 98.6,
+  "errors": 0,
+  "median_usd": 0.00302,
+  "mean_usd": 0.00493,
+  "median_seconds": 2.55,
+  "p95_seconds": 5.35
+ },
+ "results": [
+  {
+   "id": "gm-minions",
+   "question": "what are our minions called?",
+   "reply": "The ranks serving under you Marshals are:\n- Inspector (*metsuke*, \"one who directs their eye\"): one assigned to each domain, of the lower 7th rank.\n- Escort (*gosonin*, \"transport guard\"): small teams serving under each Inspector to bring in fugitives.\nYou can review the chain of command on the [Wasp hierarchy](https://waspbountyhunters.obsidianportal.com/wikis/wasp-hierarchy) page.",
+   "passed": true,
+   "missing": [],
+   "lines": 4,
+   "usd": 0.003245,
+   "seconds": 3.79
+  },
+  {
+   "id": "gm-boss",
+   "question": "Who is our boss?",
+   "reply": "Your boss is [Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma), Distinguished Plenipotentiary to the Southern Allies of the Wasp. \n\nYou serve as his yoriki (assistants), running his office and reporting to him a few times a week.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.003022,
+   "seconds": 3.24
+  },
+  {
+   "id": "gm-crab-fortunes",
+   "question": "who are the fortunes that the crab worship?",
+   "reply": "The Crab Clan's two patron Fortunes are:\n- Bishamon, the Fortune of strength\n- Ebisu, the Fortune of honest work\n\nEvery Crab city has a temple dedicated to each of them.",
+   "passed": true,
+   "missing": [],
+   "lines": 4,
+   "usd": 0.003002,
+   "seconds": 2.5
+  },
+  {
+   "id": "gm-imperial-bounties",
+   "question": "what are the imperial bounties?",
+   "reply": "An [Imperial bounty](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bounties) is a reward registered with an Imperial magistrate for delivering a fugitive or summoned witness.\nUnder the Wasp Clan charter, every Wasp samurai has authority to act as an Imperial magistrate to pursue them.\nBounty payouts are split: half to the collector, a tenth to their superior, and the rest to the daimyo.\nCurrent open bounties are tracked on the [Imperial bulletin](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bulletin).",
+   "passed": true,
+   "missing": [],
+   "lines": 4,
+   "usd": 0.00331,
+   "seconds": 2.41
+  },
+  {
+   "id": "gm-org-chart",
+   "question": "what is the WASP org chart?",
+   "reply": "[Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma) (Distinguished Plenipotentiary to the Southern Allies)\nThe PCs as Marshals (*haribugyo*, upper 7th rank)\nOne Inspector (*metsuke*, lower 7th rank) per domain\nA small team of Escorts (*gosonin*) under each Inspector\nThe org chart and chain of command can be viewed on the [Wasp hierarchy](https://waspbountyhunters.obsidianportal.com/wikis/wasp-hierarchy) page.",
+   "passed": true,
+   "missing": [],
+   "lines": 5,
+   "usd": 0.003232,
+   "seconds": 3.08
+  },
+  {
+   "id": "t-carry-prisoners",
+   "question": "what's the word for the guys who haul fugitives back for the reward?",
+   "reply": "An **Escort** (*gosonin*, \"transport guard\"). \n\nThey serve on an Inspector's small team to help collect bounties and deliver the captive or head to claim the reward. See the [Wasp hierarchy](https://waspbountyhunters.obsidianportal.com/wikis/wasp-hierarchy) org chart.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.014788,
+   "seconds": 2.66
+  },
+  {
+   "id": "t-our-title",
+   "question": "what's our title in Japanese?",
+   "reply": "Your title as Wasp Marshals is *haribugyo* (\"magistrates of the sting\").",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.00295,
+   "seconds": 2.49
+  },
+  {
+   "id": "t-metsuke",
+   "question": "what does metsuke mean?",
+   "reply": "*Metsuke* means \"one who directs their eye.\" \nIn your organization, it is the title for an Inspector (the Wasp officers of the lower 7th rank assigned to each domain under you). \nSee the [Wasp hierarchy](https://waspbountyhunters.obsidianportal.com/wikis/wasp-hierarchy) for details on their place in the chain of command.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.014837,
+   "seconds": 2.35
+  },
+  {
+   "id": "t-haribugyo",
+   "question": "what does haribugyo literally mean",
+   "reply": "*Haribugyo* literally means \"magistrates of the sting.\"",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002895,
+   "seconds": 2.14
+  },
+  {
+   "id": "t-gosonin",
+   "question": "gosonin literally means what?",
+   "reply": "*Gosonin* (Escort) literally means \"transport guard.\"",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002886,
+   "seconds": 1.94
+  },
+  {
+   "id": "t-chancellery",
+   "question": "what do people call the wasp chancellery?",
+   "reply": "They are called [the Crane wives](https://waspbountyhunters.obsidianportal.com/wikis/the-crane-wives), alluding to the fable of the crane wife. \nThe chancellery consists of three Crane courtiers married to [Tsuruchi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi) and his two most loyal retainers:\n- [Tsuruchi Naomi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-naomi) (head of the Tsuruchi lineage)\n- [Tsuruchi Ami](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-ami) (head of the Ami lineage)\n- [Tsuruchi Hitomi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-hitomi) (head of the Kyoma lineage)",
+   "passed": true,
+   "missing": [],
+   "lines": 5,
+   "usd": 0.003245,
+   "seconds": 1.99
+  },
+  {
+   "id": "t-peasant-lineage",
+   "question": "what's the name of the lineage for the wasp who used to be peasants?",
+   "reply": "The Ami lineage (often called the \"peasantborn\" lineage).",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002891,
+   "seconds": 1.87
+  },
+  {
+   "id": "t-overseer",
+   "question": "what are the sparrow samurai who live in the villages called?",
+   "reply": "They are called **village overseers**. \nThese Sparrow Clan samurai manage farming villages in place of peasant headsmen and are sworn to a vow of poverty before Daikoku. \nYou can read more on the [Sparrow Clan](https://waspbountyhunters.obsidianportal.com/wikis/sparrow-clan) page.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.003105,
+   "seconds": 4.49
+  },
+  {
+   "id": "t-kyoma-title",
+   "question": "what's Kyoma's official title again",
+   "reply": "[Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma)'s official title is Distinguished Plenipotentiary to the Southern Allies of the Wasp.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002923,
+   "seconds": 3.91
+  },
+  {
+   "id": "t-chain",
+   "question": "who reports to who in the wasp?",
+   "reply": "The chain of command for Wasp bounty hunting in the southeast is:\n- [Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma) (Distinguished Plenipotentiary to the Southern Allies)\n- The Marshals (*haribugyo*, the PCs, reporting directly to Kyoma)\n- The Inspectors (*metsuke*, one per domain, reporting to the Marshals)\n- The Escorts (*gosonin*, small teams reporting to each Inspector)\nThe org chart can be viewed on the [Wasp hierarchy](https://waspbountyhunters.obsidianportal.com/wikis/wasp-hierarchy) page.",
+   "passed": true,
+   "missing": [],
+   "lines": 6,
+   "usd": 0.0033,
+   "seconds": 3.66
+  },
+  {
+   "id": "t-motto",
+   "question": "what's the wasp founder's saying, the single arrow thing?",
+   "reply": "The motto of [Tsuruchi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi), founder of the Wasp Clan, is:\n\"A single arrow, a single life.\"",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.002936,
+   "seconds": 2.7
+  },
+  {
+   "id": "t-sword",
+   "question": "what was the name of the sword tsuruchi broke?",
+   "reply": "The ancestral sword of the Shin lineage was Isshin. \n\n[Tsuruchi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi) snapped its blade in the floor of the great hall of Hachinaga Keep when executing his uncle Ginjiro in 1115.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.003009,
+   "seconds": 3.72
+  },
+  {
+   "id": "t-yoriki",
+   "question": "what does yoriki mean",
+   "reply": "*Yoriki* means \"assistant.\"\n\nIn Rokugan, it refers to an assistant to a magistrate or other official. The player characters serve as yoriki to [Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma).",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.002987,
+   "seconds": 2.19
+  },
+  {
+   "id": "p-reiji-inspector",
+   "question": "who is our inspector in the Reiji domain?",
+   "reply": "Your Inspector (*metsuke*) in the Reiji domain is [Tsuruchi Fumitake](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-fumitake), stationed at Shiro Reiji.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.014651,
+   "seconds": 2.25
+  },
+  {
+   "id": "p-sparrow-inspector",
+   "question": "which inspector covers the sparrow lands",
+   "reply": "The Wasp Inspector (*metsuke*) for the Sparrow domain is [Tsuruchi Riku](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-riku), stationed at Shiro Suzume.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.014611,
+   "seconds": 2.25
+  },
+  {
+   "id": "p-kakita-magistrate",
+   "question": "who is the imperial magistrate for kakita lands?",
+   "reply": "The Imperial magistrate for Kakita lands is [Seppun Shogo](https://waspbountyhunters.obsidianportal.com/characters/seppun-shogo), stationed at Kyuden Kakita.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002915,
+   "seconds": 2.05
+  },
+  {
+   "id": "p-fox-daimyo",
+   "question": "who runs the fox clan",
+   "reply": "The daimyo of the Fox Clan is [Kitsune Ryosei](https://waspbountyhunters.obsidianportal.com/characters/kitsune-ryosei). \nSee the [Fox Clan](https://waspbountyhunters.obsidianportal.com/wikis/fox-clan) wiki page for an overview of the clan.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.014701,
+   "seconds": 2.15
+  },
+  {
+   "id": "p-sparrow-daimyo",
+   "question": "who's the sparrow daimyo?",
+   "reply": "The daimyo (clan lord) of the Sparrow Clan is [Suzume Mukashino](https://waspbountyhunters.obsidianportal.com/characters/suzume-mukashino).",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002898,
+   "seconds": 3.07
+  },
+  {
+   "id": "p-founder",
+   "question": "who founded the wasp clan",
+   "reply": "The Wasp Clan was founded in 1116 by [Tsuruchi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi), first of his name (born Bayushi no Kyo Tsuruchi), with backing from the Crane Clan.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002979,
+   "seconds": 1.84
+  },
+  {
+   "id": "p-chancellor",
+   "question": "who is the imperial chancellor",
+   "reply": "The Imperial Chancellor is Kakita Yoshi of the Crane Clan.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002878,
+   "seconds": 4.93
+  },
+  {
+   "id": "p-byakuya",
+   "question": "who runs kyomas house in sparrow lands?",
+   "reply": "[Tsuruchi Byakuya](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-byakuya), an old friend of [Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma) from the Kyo house, serves as the household steward managing his residence in Shiro Suzume.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002971,
+   "seconds": 1.72
+  },
+  {
+   "id": "p-tatsuki",
+   "question": "who's the superstitious lady who gave us the anti-fox charms?",
+   "reply": "That is [Tsuruchi Tatsuki](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-tatsuki), the superstitious household steward of your boss [Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma)'s residence in the Fox Clan lands. \nHe gave you charms and amulets against fox mischief for entering the Kitsune Mori.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.003018,
+   "seconds": 3.98
+  },
+  {
+   "id": "p-kyoma-wife",
+   "question": "what's Kyoma's wife's name",
+   "reply": "[Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma)'s wife is [Tsuruchi Hitomi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-hitomi). \n\nShe is one of the three Crane wives and serves as head of the Kyoma lineage.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.002966,
+   "seconds": 1.93
+  },
+  {
+   "id": "p-tsuruchi-wife",
+   "question": "who is the wasp daimyo's wife?",
+   "reply": "[Tsuruchi Naomi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-naomi), youngest daughter of the Crane Clan Champion Doji Kuwanen.\nShe heads the Tsuruchi lineage on the clan chancellery and is one of the \"Crane wives.\"\nTogether they have a 12-year-old son and heir, Ichiro.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.003058,
+   "seconds": 8.41
+  },
+  {
+   "id": "p-previous",
+   "question": "who had our job before us?",
+   "reply": "You replaced three previous Marshals (*haribugyo*) who were promoted in 1130 to serve in the Yasuki Estates:\n- [Tsuruchi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi) Kaminari\n- Tsuruchi Danji\n- Tsuruchi Okihito",
+   "passed": true,
+   "missing": [],
+   "lines": 4,
+   "usd": 0.00303,
+   "seconds": 4.72
+  },
+  {
+   "id": "p-hideki",
+   "question": "who is Hideki?",
+   "reply": "[Tsuruchi Hideki](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-hideki) is a Wasp Escort (*gosonin*) of the Ami Lineage.\nHe is stationed in Shiro Reiji under the Inspector [Tsuruchi Fumitake](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-fumitake), helping collect bounties and transport fugitives.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.003052,
+   "seconds": 1.97
+  },
+  {
+   "id": "p-gorou",
+   "question": "who is seppun gorou",
+   "reply": "[Seppun Gorou](https://waspbountyhunters.obsidianportal.com/characters/seppun-gorou) is the Imperial magistrate for the Fox Clan, based in the capital of Shinden Kitsune.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002923,
+   "seconds": 1.53
+  },
+  {
+   "id": "p-avengers",
+   "question": "who's coming after us for the teahouse thing?",
+   "reply": "The Ikoma family members pursuing the blood feud from the Family Reckoning are:\n* [Ikoma Wataemon](https://waspbountyhunters.obsidianportal.com/characters/ikoma-wataemon), father of the slain [Ikoma Tsai](https://waspbountyhunters.obsidianportal.com/characters/ikoma-tsai)\n* [Ikoma Naohira](https://waspbountyhunters.obsidianportal.com/characters/ikoma-naohira), Tsai's brother\n* [Ikoma Ietsugu](https://waspbountyhunters.obsidianportal.com/characters/ikoma-ietsugu), Tsai's brother\n\nAll three declared a blood feud on the Wasp present and are currently heading south.",
+   "passed": true,
+   "missing": [],
+   "lines": 5,
+   "usd": 0.00315,
+   "seconds": 2.92
+  },
+  {
+   "id": "p-shoda-victim",
+   "question": "who did the hermit attack?",
+   "reply": "[Shoda](https://waspbountyhunters.obsidianportal.com/characters/shoda) the hermit struck the county magistrate [Bayushi no Daika Koharu](https://waspbountyhunters.obsidianportal.com/characters/bayushi-no-daika-koharu) from behind with an axe in the Kitsune forest, accusing him of hunting foxes.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002954,
+   "seconds": 2.25
+  },
+  {
+   "id": "w-domains",
+   "question": "which domains do we cover?",
+   "reply": "You oversee Wasp bounty hunting across six domains:\n- Fox domain (Fox Clan)\n- Sparrow domain (Sparrow Clan)\n- Kakita domain (Crane Clan)\n- Etsuko domain (Crane Clan)\n- Reiji domain (Crab Clan)\n- Daika domain (Scorpion Clan)",
+   "passed": true,
+   "missing": [],
+   "lines": 7,
+   "usd": 0.00312,
+   "seconds": 9.42
+  },
+  {
+   "id": "w-crane-domains",
+   "question": "which of our domains are crane?",
+   "reply": "Two of the six domains you oversee are Crane Clan domains:\nKakita domain (capital Kyuden Kakita)\nEtsuko domain (capital Shiro Etsuko, ruled by the Daidoji)",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.003001,
+   "seconds": 2.15
+  },
+  {
+   "id": "w-province",
+   "question": "what province does the wasp clan hold?",
+   "reply": "The Wasp Clan's entire territory is the mountainous province of Hachinaga (Hachinaga province), which guards the Hachinaga pass. \n\nFor more details, see the [Wasp Clan](https://waspbountyhunters.obsidianportal.com/wikis/wasp-clan) page.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.003093,
+   "seconds": 2.35
+  },
+  {
+   "id": "w-alliance",
+   "question": "what's the alliance of the three little clans called?",
+   "reply": "It is called the [Three Man Alliance](https://waspbountyhunters.obsidianportal.com/wikis/three-man-alliance). \n\nIt is a mutual defense pact and voting caucus formed in 1117 between three minor clans:\n- The Wasp Clan (leading the alliance)\n- The Fox Clan (Kitsune Family)\n- The Sparrow Clan (Suzume Family)",
+   "passed": true,
+   "missing": [],
+   "lines": 5,
+   "usd": 0.003159,
+   "seconds": 2.46
+  },
+  {
+   "id": "w-alliance-members",
+   "question": "who's in the three man alliance?",
+   "reply": "The [Three Man Alliance](https://waspbountyhunters.obsidianportal.com/wikis/three-man-alliance) includes three minor clans:\n- The Wasp Clan (leading the alliance)\n- The Fox Clan (Kitsune Family)\n- The Sparrow Clan (Suzume Family)",
+   "passed": true,
+   "missing": [],
+   "lines": 4,
+   "usd": 0.003078,
+   "seconds": 2.97
+  },
+  {
+   "id": "w-forest",
+   "question": "what's the big fox forest called?",
+   "reply": "It is the Kitsune Mori (\"fox forest\"), the third largest forest in the Empire, held by the Fox Clan.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002923,
+   "seconds": 2.15
+  },
+  {
+   "id": "w-retainers",
+   "question": "what does the ministry of retainers do?",
+   "reply": "The Ministry of Retainers is one of the Six Ministries.\nIt oversees samurai stipends, ranks, civil service exams, and promotions.\nAt the Imperial level, it also awards honors and commendations.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.002995,
+   "seconds": 2.25
+  },
+  {
+   "id": "w-stipends",
+   "question": "which ministry pays samurai their stipends?",
+   "reply": "The Ministry of Retainers handles samurai stipends, as well as ranks, civil service exams, and promotions.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.00292,
+   "seconds": 5.35
+  },
+  {
+   "id": "w-emerald",
+   "question": "what is the emerald champion?",
+   "reply": "The Emerald Champion is the title of the Imperial Minister of Justice, who is chosen by a dueling tournament to be the finest duelist in the Empire and to duel on the Emperor's behalf.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002983,
+   "seconds": 3.55
+  },
+  {
+   "id": "w-shogun",
+   "question": "what is the shogun?",
+   "reply": "The Shogun is the title of the Imperial Minister of War, one of the Six Ministries.\nThey oversee the Imperial legions, as well as the Empire's armies, weapons, armor, horses, and maps.\nAt the Imperial level, the office is of the 13th samurai rank.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.014746,
+   "seconds": 2.56
+  },
+  {
+   "id": "w-our-rank",
+   "question": "what rank are we?",
+   "reply": "As Wasp Marshals (*haribugyo*), you and your fellow PCs hold the upper 7th rank (7.5). \n\nThis places you on par with a Provincial Minister in the samurai hierarchy.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.003042,
+   "seconds": 2.25
+  },
+  {
+   "id": "w-cm-rank",
+   "question": "what rank is a county magistrate?",
+   "reply": "A County Magistrate is rank 5 in the samurai hierarchy.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.00288,
+   "seconds": 4.46
+  },
+  {
+   "id": "w-three-steps",
+   "question": "what is the doctrine of three steps",
+   "reply": "The [Doctrine of Three Steps](https://waspbountyhunters.obsidianportal.com/wikis/doctrine-of-three-steps) sets the Measure of Standing rules for conduct between samurai of differing ranks.\nIt defines when samurai share \"peer standing\" (where merits like advantages can alter perceived rank).\nThese standing rules govern social propriety, bounties, duel challenges, and arrests.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.003141,
+   "seconds": 4.97
+  },
+  {
+   "id": "w-blood-feud",
+   "question": "how far does a blood feud reach?",
+   "reply": "A [blood feud](https://waspbountyhunters.obsidianportal.com/wikis/blood-feuds) extends to every descendant of each named person's paternal great-grandfather on both sides.\nAnyone included under that line may lawfully kill anyone on the opposing side.\nOutsiders gain nothing from participating in the feud.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.0031,
+   "seconds": 3.89
+  },
+  {
+   "id": "w-family-reckoning",
+   "question": "what was the family reckoning?",
+   "reply": "The Family Reckoning was a messy Wasp bounty job serving an Imperial summons to [Ikoma Yuan](https://waspbountyhunters.obsidianportal.com/characters/ikoma-yuan) at a teahouse.\nThe encounter ended with the Ikoma shugenja [Ikoma Tsai](https://waspbountyhunters.obsidianportal.com/characters/ikoma-tsai) being killed.\nTsai's father [Ikoma Wataemon](https://waspbountyhunters.obsidianportal.com/characters/ikoma-wataemon) and brothers [Ikoma Naohira](https://waspbountyhunters.obsidianportal.com/characters/ikoma-naohira) and [Ikoma Ietsugu](https://waspbountyhunters.obsidianportal.com/characters/ikoma-ietsugu) declared a blood feud on all Wasp present and their relatives.\nIt is the campaign event behind the Righteous Sting advantage and Venomous Sting disadvantage.\nThe wiki details the event at [the Family Reckoning](https://waspbountyhunters.obsidianportal.com/wikis/the-family-reckoning).",
+   "passed": true,
+   "missing": [],
+   "lines": 5,
+   "usd": 0.003333,
+   "seconds": 2.97
+  },
+  {
+   "id": "w-righteous",
+   "question": "what does righteous sting mean?",
+   "reply": "It is a custom advantage tied to the Family Reckoning teahouse incident.\nIt means your relative at the teahouse acted honorably, so your Rank counts higher, as does the party's.\nSee the wiki page on [custom advantages and disadvantages](https://waspbountyhunters.obsidianportal.com/wikis/custom-advantages-and-disadvantages).",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.003133,
+   "seconds": 6.96
+  },
+  {
+   "id": "w-peasantborn",
+   "question": "what does the peasantborn disadvantage do",
+   "reply": "Peasantborn is a custom disadvantage for a character whose parents were peasants raised to samurai by [Tsuruchi](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi).\nUnder its rules, you are never considered to be of peer standing with samurai-born samurai.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.002991,
+   "seconds": 1.84
+  },
+  {
+   "id": "w-bounty-share",
+   "question": "how much of a bounty do we keep?",
+   "reply": "Traditionally, the bounty split is:\n- The collector keeps half (50%)\n- Their superior takes a tenth (10%)\n- The remaining four-tenths (40%) goes to the daimyo's treasury\n(If an informant helps, their finder's fee is usually a tithe of the bounty once collected.)\nThe campaign wiki explains the process on the [Imperial bounties](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bounties) page.",
+   "passed": true,
+   "missing": [],
+   "lines": 6,
+   "usd": 0.003236,
+   "seconds": 2.35
+  },
+  {
+   "id": "f-honest-work",
+   "question": "who is the fortune of honest work",
+   "reply": "Ebisu is the Fortune of honest work, one of the Seven Fortunes of Good Luck and a patron Fortune of the Crab and Dragon clans.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002942,
+   "seconds": 1.82
+  },
+  {
+   "id": "f-love",
+   "question": "what's the love fortune called",
+   "reply": "Benten is the Fortune of romantic love, one of the Seven Fortunes of Good Luck. She is a patron Fortune of both the Crane Clan and the Scorpion Clan.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002961,
+   "seconds": 2.99
+  },
+  {
+   "id": "f-dragon",
+   "question": "what fortunes do the dragon pray to",
+   "reply": "The patron Fortunes of the Dragon Clan are:\nHotei, the Fortune of contentment\nEbisu, the Fortune of honest work",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.002938,
+   "seconds": 2.66
+  },
+  {
+   "id": "f-lion-mine",
+   "question": "what are my old clan's patron fortunes?",
+   "reply": "The Lion Clan's two patron Fortunes are:\nBishamon, the Fortune of strength\nDaikoku, the Fortune of wealth",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.002984,
+   "seconds": 2.25
+  },
+  {
+   "id": "f-crab-temples",
+   "question": "which temples would my birth clan build in every city?",
+   "reply": "Your birth clan, the Crab Clan, builds temples in every city to its two patron Fortunes:\nBishamon, the Fortune of strength\nEbisu, the Fortune of honest work",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.014703,
+   "seconds": 3.89
+  },
+  {
+   "id": "f-fox-rice",
+   "question": "which fortune is the fox and rice one",
+   "reply": "Inari is the Fortune of rice and of foxes.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.014557,
+   "seconds": 1.88
+  },
+  {
+   "id": "me-clan-tadashi",
+   "question": "what clan was I originally from?",
+   "reply": "You were originally of the Phoenix Clan, of the Asako Family.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002924,
+   "seconds": 2.62
+  },
+  {
+   "id": "me-clan-hidemasa",
+   "question": "what clan did I come from?",
+   "reply": "You originally came from the Scorpion Clan.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002868,
+   "seconds": 2.35
+  },
+  {
+   "id": "me-school",
+   "question": "what school am I?",
+   "reply": "You are trained in the Mantis Wave-Treader school (3rd Dan).",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002906,
+   "seconds": 2.54
+  },
+  {
+   "id": "me-bounty",
+   "question": "is there a bounty on me?",
+   "reply": "Yes: an Imperial bounty of 50 koku is posted for you, [Kitsune Moriko](https://l7r-character-sheet.fly.dev/characters/17).\nIt was placed after you accepted Bayushi no Daika Isoshi's duel challenge and left to \"meditate.\"\nThe Fox Clan daimyo has refused to compel your return.\nYou can view the listing on the [Imperial bulletin](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bulletin).",
+   "passed": true,
+   "missing": [],
+   "lines": 4,
+   "usd": 0.014895,
+   "seconds": 2.72
+  },
+  {
+   "id": "b-goiter",
+   "question": "who was the guy on the bulletin with the goiter?",
+   "reply": "That is [Shoda](https://waspbountyhunters.obsidianportal.com/characters/shoda) the hermit, a 100-koku bounty target on the [Imperial bulletin](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bulletin).\nHe is an old hermit with long gray hair, disciples, and a goiter on the right side of his neck.\nHe is wanted for striking County Magistrate [Bayushi no Daika Koharu](https://waspbountyhunters.obsidianportal.com/characters/bayushi-no-daika-koharu) from behind with an axe for hunting foxes.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.014867,
+   "seconds": 2.17
+  },
+  {
+   "id": "b-opium",
+   "question": "which bounty is the opium smuggler",
+   "reply": "That is Hiruma Kojiro (100 koku bounty), who runs an Empire-wide opium cartel.\nHe is an outstanding duelist traveling with Yasuki caravans, summoned by an Imperial magistrate in northern Otaku lands.\nOpen bounties are listed on the [Imperial bulletin](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bulletin).",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.014815,
+   "seconds": 3.07
+  },
+  {
+   "id": "b-river",
+   "question": "the bandits that wait in the river ford, what are they called?",
+   "reply": "They are the heron bandits, tall and thin bandits who rob travelers mid-ford in the Mugi-arai-gawa between Fox and Daidoji lands. \nThey have an open [Imperial bulletin](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bulletin) bounty of 30 koku.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.003105,
+   "seconds": 4.51
+  },
+  {
+   "id": "b-charcoal",
+   "question": "who's the fake charcoal guy",
+   "reply": "That refers to the open bounty target \"Kitsune Denhei\".\nThere is a 40 koku Imperial bounty to uncover whoever is selling counterfeit Fox Clan white charcoal in Kakita and Etsuko lands under that nonexistent name.\nYou can view the listing on the [Imperial bulletin](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bulletin).",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.003137,
+   "seconds": 2.75
+  },
+  {
+   "id": "b-list",
+   "question": "list of open bounties?",
+   "reply": "The active bounties distributed to local authorities are tracked on the [Imperial bulletin](https://waspbountyhunters.obsidianportal.com/wikis/imperial-bulletin).\n100 koku: Hiruma Kojiro, Shione Budi, [Shoda](https://waspbountyhunters.obsidianportal.com/characters/shoda) the hermit, the many-colored Yasuki, the oxbow river gang.\n75 koku: Kage the shadow-bandit, Shinjiro the obsidian merchant, Recovery of the Singing Branch.\n50 koku: Shione Agus, the Silk-Stained Three, Daidoji Maku, Togashi Miyuki, [Kitsune Moriko](https://l7r-character-sheet.fly.dev/characters/17).\n40 to 5 koku: the stuttering bandit gang, \"Kitsune Denhei\", the heron bandits, the Fox Road footpads, Roku the porter, the tide-trap gang, Doji no Tsume Hariya, [Bayushi no Daika Rentaro](https://waspbountyhunters.obsidianportal.com/characters/bayushi-no-daika-rentaro), Iwao the ashigaru, Saburo three-towns, the red-ear fugitive, Genichi the gambler.",
+   "passed": true,
+   "missing": [],
+   "lines": 5,
+   "usd": 0.015324,
+   "seconds": 3.01
+  },
+  {
+   "id": "v-bear",
+   "question": "what's the bear that never found a den called",
+   "reply": "The bear that never denned is called the *anamotazu* (\"the one with no den\"). \nIt is a dangerous variety of the Kitsune Mori's moon bear (*tsukinowaguma*) that hunts hungry through the winter.",
+   "passed": true,
+   "missing": [],
+   "lines": 2,
+   "usd": 0.003028,
+   "seconds": 2.64
+  },
+  {
+   "id": "v-bell",
+   "question": "which of tatsukis amulets was the bell",
+   "reply": "The pilgrim's bell (*junrei-suzu*). \nIt is a small brass bell carried on a staff or pack. \nWhile it rings on the path, fox-illusions cannot easily replace the way back.",
+   "passed": true,
+   "missing": [],
+   "lines": 3,
+   "usd": 0.003016,
+   "seconds": 2.11
+  },
+  {
+   "id": "u-secret",
+   "question": "what is Hideki hiding?",
+   "reply": "The notes do not cover what [Tsuruchi Hideki](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-hideki) might be hiding, so you should ask the GM.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002916,
+   "seconds": 2.02
+  },
+  {
+   "id": "u-horse",
+   "question": "what is the name of Kyoma's horse?",
+   "reply": "The notes do not cover the name of [Tsuruchi Kyoma](https://waspbountyhunters.obsidianportal.com/characters/tsuruchi-kyoma)'s horse; you should ask the GM.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002923,
+   "seconds": 2.1
+  },
+  {
+   "id": "u-dinner",
+   "question": "what did we eat at the inn last session?",
+   "reply": "The campaign notes do not cover what was eaten at the inn last session; you should ask the GM.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002915,
+   "seconds": 2.69
+  },
+  {
+   "id": "u-poet",
+   "question": "who is the emperor's favorite poet?",
+   "reply": "The campaign notes do not cover the Emperor's favorite poet; you should ask the GM.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002907,
+   "seconds": 5.8
+  },
+  {
+   "id": "u-budget",
+   "question": "how many koku is a county magistrate's budget?",
+   "reply": "The campaign notes do not cover the budget for a county magistrate, so you should ask the GM.",
+   "passed": true,
+   "missing": [],
+   "lines": 1,
+   "usd": 0.002911,
+   "seconds": 2.25
+  }
+ ]
+}

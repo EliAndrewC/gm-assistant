@@ -134,6 +134,7 @@ def _ordinal(n: int) -> str:
     return f'{n}{suffix}'
 
 
+_CJK = re.compile(r'[\u3000-\u9fff\uf900-\ufaff]+')
 _SCHOOL = re.compile(r'<h2 class="text-xl font-bold text-accent shrink-0">\s*([^<]+?)\s*</h2>')
 _DAN = re.compile(r'>\s*(\d+)(?:st|nd|rd|th) Dan\s*<')
 _HEADER = re.compile(r'<p class="text-ink/60">(.*?)</p>', re.DOTALL)
@@ -179,7 +180,9 @@ def build(
         base = Profile(
             discord_id=str(c['owner_discord_id']),
             sheet_id=int(c['id']),
-            name=' '.join(str(c['name']).split()),
+            # Some sheets add the name in kanji ("Tsuruchi Yudai 勇大"); the reply is
+            # written in romaji, so the linker matches the romaji alone.
+            name=' '.join(_CJK.sub(' ', str(c['name'])).split()),
             group=str(c['gaming_group_name']),
         )
         # Without the page the profile is still useful: name and group answer "our".

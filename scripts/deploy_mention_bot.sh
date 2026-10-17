@@ -50,6 +50,14 @@ STAGE="$(mktemp -d)"
 chmod 700 "$STAGE"
 trap 'rm -rf "$STAGE"' EXIT
 
+# --- the /look-up data (feature 218) ------------------------------------------
+# The roster, the player profiles and the people entries are baked HERE, where
+# the Obsidian Portal and character-sheet credentials live, because the box must
+# never hold them. A failed bake ships whatever was baked last; the bot still
+# answers, just with an older roster.
+echo '==> baking the /look-up roster and profiles'
+( cd "$REPO/webapp" && python3 -m l7r.lookup.bake ) || echo '    (bake failed; shipping the previous data, if any)'
+
 # --- the payload ------------------------------------------------------------
 mkdir -p "$STAGE/webapp/l7r" "$STAGE/scripts"
 # COPY THE TREE, not a glob of *.py. This was `cp .../mention/*.py` and it silently
@@ -57,6 +65,10 @@ mkdir -p "$STAGE/webapp/l7r" "$STAGE/scripts"
 # descend, so the box got an l7r/mention with a missing import and crash-looped on
 # a green gate and a clean push. Anything under mention/ ships, always.
 cp -r "$REPO/webapp/l7r/mention" "$STAGE/webapp/l7r/mention"
+# The lookup package, its glossary and its baked data - but never the local
+# spend ledger or query log, which belong to whichever machine wrote them.
+cp -r "$REPO/webapp/l7r/lookup" "$STAGE/webapp/l7r/lookup"
+rm -f "$STAGE/webapp/l7r/lookup/data/spend.json" "$STAGE/webapp/l7r/lookup/data/log.jsonl"
 find "$STAGE/webapp" -name '__pycache__' -type d -prune -exec rm -rf {} +
 cp "$REPO"/scripts/mention_bot.py "$STAGE/scripts/"
 chmod +x "$STAGE/scripts/mention_bot.py"
@@ -88,14 +100,28 @@ with open(os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as fh
     fh.write('[mention_bots]\n')
     for app_id, token in tokens.items():
         fh.write(f'{app_id} = {token}\n')
+    # Feature 218: the /look-up bot's OWN Gemini key, and only that. Never a
+    # fallback to [gemini] api_key, which also pays for portraits and backstories.
+    lookup_key = str((secrets.get('lookup') or {}).get('gemini_api_key', '')).strip()
+    if lookup_key:
+        fh.write('[lookup]\n')
+        fh.write(f'gemini_api_key = {lookup_key}\n')
 
 pub = os.path.join(stage, 'webapp', 'development-defaults.ini')
 with open(pub, 'w') as fh:
     fh.write('# The listener application id is public; see l7r/mention/bots.py.\n')
     fh.write('[mention_bots]\n')
     fh.write(f'listener = {listener}\n')
+# The public /look-up settings, copied whole (model, prices, thinking, ceiling).
+lookup_sections = ConfigObj(encoding='utf-8')
+for name in ('lookup', 'lookup_models', 'lookup_prices'):
+    lookup_sections[name] = defaults[name]
+lookup_sections.filename = None
+with open(pub, 'a', encoding='utf-8') as fh:
+    fh.write('\n'.join(lookup_sections.write()) + '\n')
 
-print(f'  payload: {len(tokens)} bot token(s), listener {listener}')
+print(f'  payload: {len(tokens)} bot token(s), listener {listener}, '
+      f'/look-up key {"present" if lookup_key else "ABSENT (it will say it is not set up)"}')
 PYEOF
 
 cat > "$STAGE/$SERVICE.service" <<EOF
@@ -127,6 +153,7 @@ ssh_run "$TARGET" "mkdir -p ~/$REMOTE_DIR"
 rsync -az --delete \
     -e "$(printf '%q ' "${SSH_CMD[@]}")" \
     --exclude '__pycache__' \
+    --exclude 'spend.json' --exclude 'log.jsonl' \
     "$STAGE"/webapp "$STAGE"/scripts \
     "$TARGET:~/$REMOTE_DIR/"
 scp -q "${SSH_ARGS[@]}" "$STAGE/$SERVICE.service" "$TARGET:~/$REMOTE_DIR/$SERVICE.service"
@@ -161,7 +188,7 @@ systemctl --user restart $SERVICE
 REMOTE
 
 echo '==> checking it imports before we call this deployed'
-ssh_run "$TARGET" "cd ~/$REMOTE_DIR && ./env/bin/python -c 'import sys; sys.path.insert(0, \"webapp\"); import l7r.mention; print(\"    import OK\")'"
+ssh_run "$TARGET" "cd ~/$REMOTE_DIR && ./env/bin/python -c 'import sys; sys.path.insert(0, \"webapp\"); import l7r.mention, l7r.lookup.service; print(\"    import OK\")'"
 
 echo '==> waiting for it to announce itself'
 ssh_run "$TARGET" "timeout 25 journalctl --user -u $SERVICE -n 20 -f --since '-1 min' | grep -m1 'listening as' || true"

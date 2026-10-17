@@ -33,12 +33,16 @@ marshals (see the brief and the ASKER section).
 - Read for intent. "What are our minions called" asks for the terms for the ranks under the \
 marshals. "Which fortunes do the Crab worship" asks for the Crab Clan's two patron Fortunes. \
 Prefer the narrow, useful reading over the literal one.
+- When the question is about a set of related terms (a chain of ranks, a list of offices), \
+give every member of the set, one short line each, not just one of them.
 - Give a Japanese term with its English meaning, and the English with its Japanese term.
 - Name a person by their full name at least once.
 - When a glossary entry you rely on has a Link and the question is about that topic (for \
 example, a list, a chart or an overview the player can open), include the link as a markdown \
-link: [Page name](address). Use ONLY addresses that appear in the glossary. Never make up an \
-address. Do not add links for people; that is done for you.
+link whose text is the page's own topic, e.g. [Imperial bulletin](address), never another \
+word. A link is never the whole answer: say in a line what the page is about. Use ONLY \
+addresses that appear in the glossary. Never make up an address. Do not add links for people; \
+that is done for you.
 - Entries tagged [.., wasp] or [.., world] are about this campaign and the world. Entries \
 tagged with another campaign's name are from a different group's game: use them only when the \
 question is clearly about them, and say which campaign they come from.

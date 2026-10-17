@@ -141,6 +141,13 @@ SHEET_API = [
         'gaming_group_name': 'Monday Group',
     },
     {
+        'id': 20,
+        'name': 'Tsuruchi Yudai 勇大',
+        'is_npc': False,
+        'owner_discord_id': '213',
+        'gaming_group_name': 'Tuesday Group',
+    },
+    {
         'id': 3,
         'name': 'Tsuruchi Jimen',
         'is_npc': False,
@@ -184,10 +191,11 @@ class TestBuildAndRefresh:
         assert [(p.name, p.discord_id) for p in built] == [
             ('Tsuruchi Hidemasa', '832'),
             ('Asako Tadashi', '316'),
+            ('Tsuruchi Yudai', '213'),
             ('Tsuruchi Jimen', '153'),
         ]
         assert built[0].school == 'Yogo Warden'
-        assert built[2].school == ''
+        assert built[3].school == ''
 
     def test_for_discord_refreshes_hourly_and_falls_back(self) -> None:
         now = [0.0]
@@ -240,7 +248,7 @@ def opener_for(payload: dict[str, Any], seen: list[Any] | None = None) -> Any:
     return opener
 
 
-GOOD = {
+GOOD: dict[str, Any] = {
     'candidates': [
         {'content': {'parts': [{'text': 'thinking...', 'thought': True}, {'text': ' Gosonin. '}]}}
     ],
@@ -519,7 +527,7 @@ class TestSettings:
 
 class TestBake:
     def test_person_entries_from_taglines_and_tags(self) -> None:
-        op = [
+        op: list[dict[str, Any]] = [
             {
                 'name': 'Tsuruchi  Hideki',
                 'slug': 'tsuruchi-hideki',
@@ -607,6 +615,6 @@ class TestBake:
             sources=lambda: ([], SHEET_API, {}), fetch_page=pages, data=tmp_path, out=said.append
         )
         assert code == 0
-        assert said[0].startswith('roster: 3 people; profiles: 3 PCs')
+        assert said[0].startswith('roster: 4 people; profiles: 4 PCs')
         assert any('Yogo Warden 3 Dan, Scorpion' in s for s in said)
         assert any('Tsuruchi Jimen: ? ? Dan, no clan' in s for s in said)
