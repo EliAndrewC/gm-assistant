@@ -247,5 +247,6 @@ def test_preparation_says_what_it_decides(root: Root) -> None:
     assert (
         'class="shrine-cat__decides">Burned or buried, what is left is more than clean bone' in page
     )
-    assert 'Makes possible later: One bone in a reliquary.' in page
-    assert 'shrine-opt is-unavailable' in page  # the reliquary, until bones are washed
+    assert '<b>Makes possible later:</b> One bone in a reliquary' in page
+    assert 'data-effect-tag>If chosen: 24 more steps</span>' in page
+    assert 'shrine-opt-cell is-unavailable' in page  # the reliquary, until bones are washed

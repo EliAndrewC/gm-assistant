@@ -163,16 +163,27 @@
             {% if loop.first %}<p class="wizard-step__chapter-intro">{{ t(group, 'intro') }}</p>{% endif %}
             <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}" {% if moot %}disabled{% endif %}>
               <legend class="shrine-cat__legend">
-                <span class="shrine-cat__label">{{ category.label }}</span>
+                <span class="shrine-cat__label">{{ t(category, 'label') }}</span>
                 <span class="wizard-step__title">{{ t(category, 'prompt') }}</span>
               </legend>
               {% if category.decides %}<p class="shrine-cat__decides">{{ category.decides }}</p>{% endif %}
               {% if category.when %}<p class="shrine-cat__moot" role="note">{{ moot_note(catalog, category) }}</p>{% endif %}
               <div class="shrine-opts shrine-opts--n{{ category.options|length }}">
+                {% set effects = option_effects(catalog, design, category) %}
+                {% set has_tags = effects.values()|selectattr('tag')|list %}
                 {% for option in category.options %}
-                  {% set opens = enables(catalog, category, option) %}
+                  {% set fx = effects[option.key] %}
                   {% set offered = option_offered(option, design) %}
-                  <label class="shrine-opt{% if not offered %} is-unavailable{% endif %}">
+                  <div class="shrine-opt-cell{% if not offered %} is-unavailable{% endif %}" data-option="{{ option.key }}">
+                  {# FR-040: what picking this does to the rest of the wizard, as a tag above the card with a
+                     tooltip; shrines.js recomputes both as earlier choices change. #}
+                  <span class="shrine-opt__effect{% if not fx.tag %} is-empty{% endif %}{% if not has_tags %} is-none{% endif %}" tabindex="{{ 0 if fx.tag else -1 }}" data-effect>
+                    <span class="shrine-opt__effect-tag" data-effect-tag>{{ fx.tag }}</span>
+                    <span class="shrine-opt__tip" role="tooltip" data-effect-tip>
+                      <b>Makes possible later:</b> {{ (fx.added + fx.opens)|join(', ') }}
+                    </span>
+                  </span>
+                  <label class="shrine-opt">
                     <input type="radio" name="{{ category.key }}" value="{{ option.key }}"{% if option.key == chosen %} checked{% endif %}{% if not offered %} disabled{% endif %} />
                     <span class="shrine-opt__body">
                       <span class="shrine-opt__title">{{ t(option, 'label') }}</span>
@@ -180,10 +191,10 @@
                         <span class="shrine-opt__term">{% if option.ja %}<span lang="ja">{{ option.ja }}</span> {% endif %}<em>{{ option.romaji }}</em></span>
                       {% endif %}
                       <span class="shrine-opt__text">{{ t(option, 'text') }}</span>
-                      {% if opens %}<span class="shrine-opt__note">Makes possible later: {{ opens|join(', ') }}.</span>{% endif %}
                       {% if option.appeal %}<span class="shrine-opt__appeal">{{ t(option, 'appeal') }}</span>{% endif %}
                     </span>
                   </label>
+                  </div>
                 {% endfor %}
               </div>
             </fieldset>

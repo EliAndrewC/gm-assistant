@@ -72,7 +72,7 @@
         var optionRules = rules.options[key] || {};
         fs.querySelectorAll('input[type=radio]').forEach(function (input) {
           var ok = (optionRules[input.value] || []).every(function (c) { return holds(c, choices); });
-          input.closest('.shrine-opt').classList.toggle('is-unavailable', !ok);
+          input.closest('.shrine-opt-cell').classList.toggle('is-unavailable', !ok);
           input.disabled = !ok;
           if (!ok) input.checked = false;
         });
@@ -89,6 +89,137 @@
       });
       form.classList.add('wording-' + wording);
     }
+
+    // The text of an element as the current wording shows it (a hidden step's innerText would
+    // run every wording's variant together).
+    function shownText(el) {
+      var m = form.className.match(/wording-([\w-]+)/);
+      var variant = m ? el.querySelector('.w-' + m[1]) : null;
+      return (variant || el).textContent.replace(/\s+/g, ' ').trim();
+    }
+
+    // FR-040: the same simulation as design.option_effects(). For each option on a step, resolve
+    // the wizard with it picked and with the step unanswered; steps that only then appear and
+    // later options only then offered are what it "makes possible", and the steps still to come
+    // after it are the count on its tag.
+    var model = Array.prototype.map.call(form.querySelectorAll('fieldset.shrine-cat'), function (fs) {
+      return {
+        key: fs.dataset.cat,
+        options: Array.prototype.map.call(fs.querySelectorAll('input[type=radio]'), function (i) { return i.value; })
+      };
+    });
+
+    function evaluate(raw) {
+      var choices = {};
+      var inactive = {};
+      model.forEach(function (st) {
+        var failing = (rules.categories[st.key] || []).some(function (c) { return !holds(c, choices); });
+        if (failing) { inactive[st.key] = true; return; }
+        var v = raw[st.key];
+        var oc = v === undefined ? null : ((rules.options[st.key] || {})[v] || []);
+        if (oc && oc.every(function (c) { return holds(c, choices); })) choices[st.key] = v;
+      });
+      return { choices: choices, inactive: inactive };
+    }
+
+    function offeredSet(ev) {
+      var out = {};
+      model.forEach(function (st) {
+        if (ev.inactive[st.key]) return;
+        var orules = rules.options[st.key] || {};
+        st.options.forEach(function (o) {
+          if (orules[o] && orules[o].every(function (c) { return holds(c, ev.choices); })) out[st.key + '.' + o] = true;
+        });
+      });
+      return out;
+    }
+
+    function currentRaw() {
+      var raw = {};
+      form.querySelectorAll('fieldset.shrine-cat:not(:disabled) input[type=radio]:checked').forEach(function (i) {
+        raw[i.name] = i.value;
+      });
+      return raw;
+    }
+
+    function updateEffects(step) {
+      var fs = step && step.querySelector('fieldset.shrine-cat');
+      if (!fs) return;
+      var key = fs.dataset.cat;
+      var raw = currentRaw();
+      delete raw[key];
+      var base = evaluate(raw);
+      var baseOffered = offeredSet(base);
+      var keys = model.map(function (st) { return st.key; });
+      var later = keys.slice(keys.indexOf(key) + 1);
+      var cells = fs.querySelectorAll('.shrine-opt-cell');
+      var any = false;
+      cells.forEach(function (cell) {
+        var opt = cell.dataset.option;
+        var trial = Object.assign({}, raw);
+        trial[key] = opt;
+        var ev = evaluate(trial);
+        var made = keys.filter(function (k) { return base.inactive[k] && !ev.inactive[k]; }).map(function (k) {
+          return shownText(form.querySelector('fieldset[data-cat="' + k + '"] .shrine-cat__label'));
+        });
+        var offered = offeredSet(ev);
+        Object.keys(offered).forEach(function (k) {
+          var parts = k.split('.');
+          if (baseOffered[k] || base.inactive[parts[0]]) return;
+          var title = form.querySelector('fieldset[data-cat="' + parts[0] + '"] .shrine-opt-cell[data-option="' + parts[1] + '"] .shrine-opt__title');
+          made.push(shownText(title));
+        });
+        // counted as the header counts: the final summary step included
+        var remaining = later.filter(function (k) { return !ev.inactive[k]; }).length + 1;
+        var effect = cell.querySelector('[data-effect]');
+        var has = made.length > 0;
+        any = any || has;
+        effect.classList.toggle('is-empty', !has);
+        effect.tabIndex = has ? 0 : -1;
+        effect.querySelector('[data-effect-tag]').textContent = has ? 'If chosen: ' + remaining + ' more step' + (remaining === 1 ? '' : 's') : '';
+        var tip = effect.querySelector('[data-effect-tip]');
+        tip.innerHTML = '';
+        if (has) {
+          var b = document.createElement('b');
+          b.textContent = 'Makes possible later:';
+          tip.appendChild(b);
+          tip.appendChild(document.createTextNode(' ' + made.join(', ')));
+        }
+      });
+      fs.querySelectorAll('[data-effect]').forEach(function (e) { e.classList.toggle('is-none', !any); });
+      trimSpacers(fs);
+    }
+
+    // An empty tag only keeps a row's cards lined up; in a row with no tag at all it is just a gap.
+    function trimSpacers(fs) {
+      var cells = Array.prototype.slice.call(fs.querySelectorAll('.shrine-opt-cell:not(.is-unavailable)'));
+      cells.forEach(function (c) { c.querySelector('[data-effect]').classList.remove('is-row-free'); });
+      var rows = {};
+      cells.forEach(function (c) {
+        var top = Math.round(c.getBoundingClientRect().top);
+        (rows[top] = rows[top] || []).push(c);
+      });
+      Object.keys(rows).forEach(function (top) {
+        var tagged = rows[top].some(function (c) { return !c.querySelector('[data-effect]').classList.contains('is-empty'); });
+        if (!tagged) rows[top].forEach(function (c) { c.querySelector('[data-effect]').classList.add('is-row-free'); });
+      });
+    }
+
+    // Keep a tooltip on screen: one that would run off the right edge opens right-aligned.
+    function placeTip(effect) {
+      var tip = effect.querySelector('[data-effect-tip]');
+      effect.classList.remove('tip-right');
+      var room = document.documentElement.clientWidth - effect.getBoundingClientRect().left;
+      if (tip && tip.offsetWidth + 16 > room) effect.classList.add('tip-right');
+    }
+    form.addEventListener('mouseover', function (event) {
+      var effect = event.target.closest && event.target.closest('[data-effect]');
+      if (effect) placeTip(effect);
+    });
+    form.addEventListener('focusin', function (event) {
+      var effect = event.target.closest && event.target.closest('[data-effect]');
+      if (effect) placeTip(effect);
+    });
 
     function designQuery() {
       var params = new URLSearchParams();
@@ -122,12 +253,12 @@
           a.href = '#shrine-step-' + fs.dataset.cat;
           a.dataset.goto = fs.dataset.cat;
           var label = document.createElement('span');
-          label.textContent = fs.querySelector('.shrine-cat__label').innerText;
+          label.textContent = shownText(fs.querySelector('.shrine-cat__label'));
           a.appendChild(label);
           a.appendChild(document.createTextNode(' '));
           var answer = document.createElement('em');
           if (checked) {
-            answer.textContent = checked.closest('.shrine-opt').querySelector('.shrine-opt__title').innerText;
+            answer.textContent = shownText(checked.closest('.shrine-opt').querySelector('.shrine-opt__title'));
           } else {
             answer.textContent = 'not chosen yet';
             answer.className = 'is-open';
@@ -197,6 +328,7 @@
       gateNext();
       nextBtn.textContent = index === list.length - 2 ? 'See your shrine' : 'Next';
       if (step.dataset.step === 'review') { syncSummary(); fitShare(); }
+      updateEffects(step);
       writeAddress();
       if (scroll) wizard.scrollIntoView({ block: 'start' });
     }
@@ -351,6 +483,7 @@
     } catch (e) { /* storage unavailable: no scroll restore */ }
 
     window.addEventListener('resize', fitShare);
+    window.addEventListener('resize', function () { if (current) updateEffects(current); });
     window.addEventListener('load', fitShare);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitShare);
   }

@@ -232,6 +232,16 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   at session start, so in the session that creates the definition the identical text leads each
   message instead, which caches as a prefix the same way. Findings are applied to the catalog.
 
+## Amendment 6 (GM message 7, 2026-10-17)
+
+- **FR-040** (amends FR-036's "option says so"): the "makes possible later" note no longer sits
+  inside the option card. Instead, an option whose choice makes something possible later (a step
+  that only then appears, or a later option that only then is offered) carries a label ABOVE its
+  card saying how many more steps there will be if it is selected (the number of steps remaining
+  after this choice). Hovering over (or focusing, or tapping) the label shows a tooltip explaining
+  what selecting it makes possible later (including any steps it adds). Counts follow the player's
+  current choices.
+
 ## Review history
 
 - **Round 1 - CHANGES REQUIRED** (2026-10-17, `spec-fidelity`, Mode 2, against `gm-request.md`).
@@ -272,3 +282,9 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
 - **Round 12 (amendment 5) - FAITHFUL** (2026-10-17). Both changes confirmed; the first-session
   prefix fallback judged a legitimate exception (registration at session start is a hard harness
   limit; the caching purpose survives). To be mentioned to the GM.
+- **Round 13 (amendment 6, message 7) - CHANGES REQUIRED** (2026-10-17). (c) judged implied.
+  Changes: (1) the label is the number of steps remaining after the choice, not a +/- delta;
+  (2) no separate "opens N options" label; (3) the tooltip lists what is made possible (including
+  added steps), never skipped steps. Labels go on options that make something possible later.
+- **Round 14 (amendment 6) - FAITHFUL** (2026-10-17). Labels on options that make something
+  possible later (steps or options), none on options that only remove steps, judged faithful.

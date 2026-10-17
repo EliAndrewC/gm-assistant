@@ -18,7 +18,8 @@ from l7r.shrines.catalog import TEXT_FIELDS, Catalog, Category, Clause, Option, 
 
 __all__ = [
     'Design',
-    'enables',
+    'Effect',
+    'option_effects',
     'first',
     'moot_note',
     'option_offered',
@@ -121,17 +122,70 @@ def moot_note(catalog: Catalog, category: Category) -> str:
     return note[:1].upper() + note[1:] + '.' if note else ''
 
 
-def enables(catalog: Catalog, category: Category, option: Option) -> tuple[str, ...]:
-    """Labels of later OPTIONS offered only if this option is chosen (FR-036), derived from the
-    rules so a card's note cannot drift from what the wizard does."""
-    return tuple(
-        o.label
+@dataclass(frozen=True, slots=True)
+class Effect:
+    """What picking one option makes possible later, given the choices so far (FR-040)."""
+
+    # steps that only appear if this option is picked, and later options only then offered
+    added: tuple[str, ...] = ()
+    opens: tuple[str, ...] = ()
+    # decision steps still to come after this one if it is picked
+    remaining: int = 0
+
+    @property
+    def tag(self) -> str:
+        """The label above the card - only on an option that makes something possible later:
+        how many more steps there will be if it is picked, counted as the wizard's own "Step N of
+        M" counts them (the final summary step included): 'If chosen: 17 more steps'."""
+        if not (self.added or self.opens):
+            return ''
+        n = self.remaining + 1
+        return f'If chosen: {n} more step{"s" if n != 1 else ""}'
+
+
+def _offered(
+    catalog: Catalog, choices: Mapping[str, str], inactive: Mapping[str, Clause]
+) -> set[str]:
+    return {
+        f'{c.key}.{o.key}'
+        for c in catalog.categories
+        if c.key not in inactive
+        for o in c.options
+        if o.when and holds_all(o.when, choices)
+    }
+
+
+def option_effects(catalog: Catalog, design: Design, category: Category) -> dict[str, Effect]:
+    """Simulate picking each option of `category` against the current choices, and compare with
+    leaving it unanswered: which steps appear or disappear, which later options open. Derived from
+    the rules, so a card's tag cannot drift from what the wizard does. shrines.js does the same."""
+    w = design.wording
+    labels = {c.key: c.wording.get(w, {}).get('label', c.label) for c in catalog.categories}
+    option_labels = {
+        f'{c.key}.{o.key}': o.wording.get(w, {}).get('label', o.label)
         for c in catalog.categories
         for o in c.options
-        if any(
-            cl.key == category.key and not cl.negate and option.key in cl.options for cl in o.when
+    }
+    base_raw = {k: v for k, v in design.choices.items() if k != category.key}
+    base_choices, base_inactive = _resolve(catalog, base_raw)
+    base_offered = _offered(catalog, base_choices, base_inactive)
+    later = [c.key for c in catalog.categories]
+    later = later[later.index(category.key) + 1 :]
+    effects = {}
+    for option in category.options:
+        choices, inactive = _resolve(catalog, {**base_raw, category.key: option.key})
+        offered = _offered(catalog, choices, inactive)
+        effects[option.key] = Effect(
+            added=tuple(labels[k] for k in labels if k in base_inactive and k not in inactive),
+            # options inside steps that only now appear come with those steps; count the rest
+            opens=tuple(
+                option_labels[k]
+                for k in option_labels
+                if k in offered - base_offered and k.split('.')[0] not in base_inactive
+            ),
+            remaining=sum(1 for k in later if k not in inactive),
         )
-    )
+    return effects
 
 
 def _clauses(condition: tuple[Clause, ...]) -> list[list[object]]:

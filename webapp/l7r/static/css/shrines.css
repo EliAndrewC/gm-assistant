@@ -91,9 +91,65 @@
 }
 .shrine-cat.is-moot .shrine-opt input:checked + .shrine-opt__body .shrine-opt__title::before { display: none; }
 
-/* FR-035: cards in a row share one height (grid stretch); the italic appeal sits at the bottom. */
-.shrine-opt { height: 100%; }
-.shrine-opt.is-unavailable { display: none; }
+/* FR-035: cards in a row share one height (grid stretch); the italic appeal sits at the bottom.
+   Each grid cell is the effect tag (FR-040) above the card. */
+.shrine-opt-cell { display: flex; flex-direction: column; min-width: 0; }
+.shrine-opt-cell.is-unavailable { display: none; }
+.shrine-opt-cell > .shrine-opt { flex: 1; }
+
+/* FR-040: "N more steps" above a card whose choice makes something possible later; its tooltip
+   says what. Empty tags keep their height so the cards in a row still line up. */
+.shrine-opt__effect {
+  position: relative;
+  align-self: flex-start;
+  margin-bottom: 0.15rem;
+  font-family: var(--font-body);
+  font-size: 0.97rem;
+  line-height: 1.5;
+}
+.shrine-opt__effect.is-empty { visibility: hidden; }
+.shrine-opt__effect.is-none,
+.shrine-opt__effect.is-row-free { display: none; }
+.shrine-opt__effect-tag {
+  display: inline-block;
+  padding: 0.05rem 0.55rem;
+  border: 1.5px solid var(--vermillion-deep);
+  font-weight: 600;
+  border-radius: 999px;
+  color: var(--vermillion-deep);
+  background: var(--paper-raised);
+  cursor: help;
+}
+.shrine-opt__effect-tag::after { content: ' \24D8'; }
+.shrine-opt__tip {
+  display: none;
+  position: absolute;
+  z-index: 6;
+  bottom: calc(100% + 0.3rem);
+  left: 0;
+  width: max-content;
+  max-width: min(22rem, 80vw);
+  padding: 0.55rem 0.75rem;
+  background: var(--ink);
+  color: var(--paper-raised);
+  border-radius: 4px;
+  box-shadow: 0 4px 14px var(--shadow-ink);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.shrine-opt__tip b { color: var(--paper-fold); font-weight: 600; }
+.shrine-opt__effect.tip-right .shrine-opt__tip { left: auto; right: 0; }
+.shrine-opt__effect:not(.is-empty):hover .shrine-opt__tip,
+.shrine-opt__effect:not(.is-empty):focus .shrine-opt__tip,
+.shrine-opt__effect:not(.is-empty):focus-within .shrine-opt__tip { display: block; }
+.shrine-opt__effect:focus { outline: none; }
+/* Stacked in one column there is nothing to line up: drop the spacers, and give each tag room
+   above so it reads as belonging to the card below it. */
+@container (max-width: 31.99rem) {
+  .shrine-opt__effect.is-empty { display: none; }
+  .shrine-opt__effect { margin-top: 0.5rem; }
+}
+.shrine-opt__effect:focus-visible .shrine-opt__effect-tag { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 /* Columns follow the option count so a row never strands one card (3+1): one column on phones,
    two at mid widths, three for 3- and 5-option sets, four for 4-option sets on wide screens. */
@@ -194,16 +250,7 @@
   padding-top: 0.45rem;
 }
 
-/* FR-036: what this choice does to later steps, derived from the catalog. */
-.shrine-opt__note {
-  margin-top: 0.3rem;
-  padding-left: 0.6rem;
-  border-left: 2px solid var(--paper-fold);
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  line-height: 1.35;
-  color: var(--ink-soft);
-}
+
 
 /* FR-036: a step whose answer decides a later choice says so under its question. */
 .shrine-cat__decides {

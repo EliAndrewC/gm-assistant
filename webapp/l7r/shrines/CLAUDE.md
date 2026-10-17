@@ -53,6 +53,12 @@ wizard in one pass. Don't reintroduce `voids`/`only_with`-style side channels: e
 - **Nothing pre-selected, and no fixed order** (FR-023): every step starts empty, Next waits for a
   choice, and `shrines.js` shuffles the cards each time a step is shown. Catalog order means
   nothing to the player.
+- **Effect tags** (FR-040): an option that makes something possible later (a step that only
+  then appears, or a later option only then offered) has a tag above its card - "N more steps",
+  the steps left if it is picked - with a tooltip naming what it makes possible. Derived by
+  simulation, never written by hand: `design.option_effects` server-side, `updateEffects()` in
+  shrines.js live. Options that only remove steps get no tag (the GM asked about what is made
+  possible).
 - **Cards** (FR-035): every card in a row has the same height and its italic appeal line sits at
   the bottom.
 - **Every option says why it is worth choosing** (FR-026): `appeal:` in the catalog, one sentence,

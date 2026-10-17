@@ -67,6 +67,7 @@ PAGES = [
     ('shrines-step', '/shrines#step-guardians', False),
     ('shrines-review', '/shrines#step-review', False),
     ('shrines-remains', '/shrines?kind=memorial#step-sharing', False),
+    ('shrines-kind', '/shrines#step-kind', False),
     ('shrines-gm', '/shrines?form=himorogi&gm_roll_carpentry=40', True),
     ('auth-login', '/auth/login', False),
     ('terms', '/terms', False),

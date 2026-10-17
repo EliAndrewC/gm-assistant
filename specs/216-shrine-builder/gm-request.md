@@ -97,3 +97,13 @@ FWIW, this wording is also questionable:
 while that would indeed be one of the functions of the shrine, then I think that that is kind of bringing a modern sensibility to things. Like, that is why we have graves in modern times, but people visited shrines uh, in many cases to seek wisdom or to, you know, get guidance uh, or, like, apply for supernatural aid and such, you know? Uh, I feel like this characterization is kind of off.
 
 So rather than me going block by block through this page and then offering similar feedback on every square, I wonder if this is something where you could do some kind of subagent check. Where like, you know, you create a prompt and then you know like have a bunch of subagents that all share the same system prompt and then the beginning of their prompt is the same and then what's different is the like the actual text that they are being asked to evaluate and then the subagents can kind of come back with feedback or findings about these kind of general kinds of questions that I'm giving you. Uh, you know, does that make sense? Um, we can kind of keep it generic for now unless you feel like you have specific categories of things that you would prompt the subagent for, but really we're just you know, looking for things that are confusing or that like are inaccurate to this category of thing or whatnot. Um, I do want to make sure that our subagents are caching responsibly because, you know, you can run into trouble if you like begin each subagent's prompt with a different bit of text and then paste on a whole lot of context, then you'll end up just like chewing through tokens. Whereas if you kind of put information in the system prompt, then that essentially gets cached so that, you know, when you run a hundred different subagent checks all within, you know, a brief period of time, then you're not being charged the same like token allotment for all of that because you arranged your prompt in a way where the caching is able to take effect, you know?
+
+---
+
+# Message 7, verbatim (2026-10-17)
+
+Thanks, much better.  Now, a formatting thing: when we have a middle block like
+
+> Makes possible later: A table that belonged to the dead, Something that belonged to the dead.
+
+that I think instead of having that text in the middle of the block, we should have like a label or something above the box indicating like how many more steps there will be if we select this option. And then I think that if there's one choice that makes certain things possible later, then kind of like hovering over that should pull up a tooltip that explains like what is made possible later by selecting this option. Does that make sense?
