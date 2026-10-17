@@ -263,7 +263,9 @@ def test_counter_counts_phases(root: Root) -> None:
 
 def test_multi_select_step_renders_checkboxes_and_hint(root: Root) -> None:
     page = root.shrines(kind='memorial', sharing=['temple', 'mountain']).decode('utf-8')
-    assert 'class="shrine-multi__hint">Choose any that apply - or, below, keep them together' in page
+    assert (
+        'class="shrine-multi__hint">Choose any that apply - or, below, keep them together' in page
+    )
     assert page.count('type="checkbox" name="sharing"') == 4
     assert 'value="together" data-exclusive' in page
     assert 'value="temple" checked' in page
