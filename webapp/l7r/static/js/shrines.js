@@ -51,11 +51,35 @@
       return params.toString();
     }
 
+    function fitShare() {
+      if (!share) return;
+      share.style.height = 'auto';
+      share.style.height = share.scrollHeight + 2 + 'px';
+    }
+
+    function syncSummary() {
+      var list = document.querySelector('[data-summary]');
+      if (!list) return;
+      list.innerHTML = '';
+      form.querySelectorAll('fieldset.shrine-cat:not(:disabled)').forEach(function (fs) {
+        var checked = fs.querySelector('input[type=radio]:checked');
+        if (!checked) return;
+        var li = document.createElement('li');
+        var label = document.createElement('span');
+        label.textContent = fs.querySelector('.shrine-cat__label').textContent;
+        li.appendChild(label);
+        li.appendChild(document.createTextNode(' ' + checked.closest('.shrine-opt').querySelector('.shrine-opt__title').textContent));
+        list.appendChild(li);
+      });
+    }
+
     function sync() {
       applyMoot();
       var query = designQuery();
       if (share) share.value = window.location.origin + share.dataset.base + '?' + query;
       if (!isGm) history.replaceState(null, '', share.dataset.base + '?' + query);
+      syncSummary();
+      fitShare();
     }
 
     form.addEventListener('change', function () {
@@ -92,6 +116,8 @@
     });
 
     if (share) share.value = window.location.origin + share.dataset.base + '?' + designQuery();
+    fitShare();
+    window.addEventListener('resize', fitShare);
   }
 
   if (document.readyState === 'loading') {

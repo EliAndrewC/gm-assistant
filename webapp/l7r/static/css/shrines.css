@@ -21,13 +21,17 @@
   grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
 }
 
+/* The ledger comes first in the DOM (so it leads on narrow screens) but sits on the right. */
+.shrine-form--gm .shrine-design { grid-column: 1; grid-row: 1; }
+.shrine-form--gm .shrine-ledger-col { grid-column: 2; grid-row: 1; }
+
 /* Narrow screens: one column, the ledger after the design. Block, not a one-column grid. */
 @media (max-width: 1100px) {
   .shrine-form--gm .shrine-layout { display: block; }
-  .shrine-ledger-col { margin-top: 2.5rem; }
+  .shrine-ledger-col { margin-bottom: 2.5rem; }
 }
 
-.shrine-design { min-width: 0; }
+.shrine-design { min-width: 0; container-type: inline-size; }
 
 .shrine-notice {
   margin: 0 0 1.5rem;
@@ -104,19 +108,41 @@
 
 .shrine-cat__moot {
   display: none;
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.7rem;
+  padding: 0.45rem 0.8rem;
+  border-left: 3px solid var(--ink-ghost);
+  background: var(--paper-deep);
   font-family: var(--font-body);
-  font-style: italic;
-  color: var(--ink-faded);
+  font-size: 1.02rem;
+  color: var(--ink);
 }
 
 .shrine-cat.is-moot .shrine-cat__moot { display: block; }
-.shrine-cat.is-moot .shrine-opts { opacity: 0.38; }
+.shrine-cat.is-moot .shrine-opts { opacity: 0.4; }
 
+/* A choice in a category that does not apply is not part of the design: drop its selected look. */
+.shrine-cat.is-moot .shrine-opt input:checked + .shrine-opt__body {
+  border-color: var(--hairline);
+  box-shadow: none;
+  background: var(--paper-raised);
+}
+.shrine-cat.is-moot .shrine-opt input:checked + .shrine-opt__body .shrine-opt__title::before { display: none; }
+
+/* Columns follow the option count so a row never strands one card (3+1): one column on phones,
+   two at mid widths, three for 3- and 5-option sets, four for 4-option sets on wide screens. */
 .shrine-opts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
+}
+@container (min-width: 32rem) {
+  .shrine-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 44rem) {
+  .shrine-opts--n3, .shrine-opts--n5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@container (min-width: 62rem) {
+  .shrine-opts--n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 .shrine-opt {
@@ -148,8 +174,8 @@
 
 .shrine-opt input:checked + .shrine-opt__body {
   border-color: var(--vermillion);
-  box-shadow: inset 0 0 0 1px var(--vermillion), 0 2px 8px var(--shadow-ink);
-  background: #FFFBF1;
+  box-shadow: inset 0 0 0 2px var(--vermillion), 0 2px 8px var(--shadow-ink);
+  background: #F9E3D2;
 }
 
 .shrine-opt input:focus-visible + .shrine-opt__body {
@@ -307,10 +333,12 @@
 
 /* --- GM ledger --------------------------------------------------------- */
 
+/* Sticks below the sticky site nav; scrolls inside itself when taller than the screen. The totals
+   sit at its top so they are always in view. */
 .shrine-ledger {
   position: sticky;
-  top: 1rem;
-  max-height: calc(100vh - 2rem);
+  top: 4.5rem;
+  max-height: calc(100vh - 5.5rem);
   overflow-y: auto;
   background: var(--paper-deep);
   border: 1px solid var(--paper-fold);
@@ -429,7 +457,11 @@
 .shrine-contract__items li span:last-child { white-space: nowrap; }
 
 .shrine-totals {
-  margin: 0 0 1rem;
+  margin: 0 0 1.1rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--paper-fold);
+  border-radius: 3px;
   font-family: var(--font-body);
 }
 
@@ -465,4 +497,26 @@
 .shrine-ledger__gmlink {
   font-family: var(--font-body);
   color: var(--vermillion-deep);
+}
+
+/* --- summary of picks -------------------------------------------------- */
+
+.shrine-summary {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  columns: 2 16rem;
+  column-gap: 2rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.shrine-summary li { break-inside: avoid; padding: 0.12rem 0; }
+
+.shrine-summary span {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  color: var(--ink-faded);
+  margin-right: 0.35em;
 }

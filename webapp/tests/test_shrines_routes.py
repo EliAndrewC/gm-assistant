@@ -123,3 +123,17 @@ def test_gm_view_shows_what_tadashi_keeps(root: Root, as_user: object) -> None:
     page = root.shrines(form='himorogi').decode('utf-8')
     assert re.search(r'Tadashi keeps</dt><dd>[^<]*koku', page) is not None
     assert 'not yet negotiated' in page
+
+
+def test_chosen_option_with_voids_stays_checked(root: Root) -> None:
+    """A whitespace slip once glued `checked` onto `data-voids` ("checkeddata-voids"), so the
+    browser saw no checked form and dropped it from the share link."""
+    page = root.shrines(form='himorogi').decode('utf-8')
+    assert re.search(r'value="himorogi" checked data-voids="', page) is not None
+    assert 'checkeddata' not in page
+
+
+def test_summary_lists_the_picks(root: Root) -> None:
+    page = root.shrines(form='kasuga', roof='copper').decode('utf-8')
+    assert '<li><span>Form</span> Gable-entry</li>' in page
+    assert '<li><span>Roof covering</span> Copper sheet</li>' in page
