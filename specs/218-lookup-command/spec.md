@@ -1,6 +1,11 @@
 # Feature 218: `/look-up`, a private Discord lookup for the Wasp campaign
 
-**Request**: [gm-request.md](gm-request.md) (2026-10-17, three messages). **Status**: draft.
+**Request**: [gm-request.md](gm-request.md) (2026-10-17, three messages). **Status**: approved for
+implementation.
+
+**Fidelity review** (constitution XVI, `spec-fidelity` subagent, Mode 2): round 1 CHANGES (SC-003
+working target, no per-person rate limit, full-name instruction); round 2 CHANGES (GM-only roster
+exclusion justified by the dead link only; FR-005 aligned); round 3 **FAITHFUL** (2026-10-17).
 
 ## Why
 
@@ -68,8 +73,13 @@ proposed.
    name alone when that given name belongs to only one person in the roster (Story 2 makes "Kyoma"
    alone a likely way to answer).
 3. Link previews (embeds) are suppressed so the reply stays short.
-4. A person with no record anywhere stays plain text. There is nothing to link to, so this is not
+4. The model is instructed to name each person by their full name at least once, so the
+   mechanical linker can match them.
+5. A person with no record anywhere stays plain text. There is nothing to link to, so this is not
    an exception to the rule.
+6. Records marked GM-only on Obsidian Portal are not in the roster: a player cannot open them, so
+   a link would lead nowhere. (What the model may SAY is governed by the glossary's sources,
+   Story 6.3, not by the roster.)
 
 ### Story 4 - topic questions link to the right wiki page (P1)
 
@@ -115,7 +125,8 @@ example, a county magistrate's budget is out although "county magistrate" is in.
 2. Each entry is tagged with its scope (the world in general, the Wasp campaign, or another named
    campaign), so material from the other campaigns in `l7r.md` is available but never mistaken
    for Wasp-campaign fact.
-3. Obsidian Portal's GM-only fields (`game_master_info`) are never a source.
+3. Obsidian Portal's GM-only fields (`game_master_info`) and GM-only pages and character records
+   are never a source.
 4. The glossary records which version of each source section it was built from, and a command
    reports the sections that have changed since, so a refresh rereads only those.
 5. The glossary is checked into the repository as data; the deployed bot needs no access to the
@@ -156,9 +167,11 @@ A fixed question set measures any configuration, so model choices are made on nu
 **Acceptance**:
 1. Each question is logged locally (asker, question, reply, model, tokens, cost), so the GM can see
    what players struggle with and the log can feed new questions into the set. The log is
-   gitignored.
-2. A per-person rate limit and a daily spending ceiling keep a runaway loop or an enthusiastic
-   player from running up a bill. Hitting either gets a polite private reply, not silence.
+   gitignored. *(A safeguard the session added; raised with the GM.)*
+2. A daily spending ceiling (configurable) protects the GM's Gemini bill. Hitting it gets a polite
+   private reply, not silence. *(A safeguard the session added; raised with the GM.)* There is
+   deliberately no per-person rate limit: with a ceiling in place it adds no cost protection, and
+   refusing a player works against the point that nobody should feel they are bothering anyone.
 3. If Gemini fails or times out, the asker gets a short private apology instead of a hanging
    "thinking..." message.
 
@@ -167,9 +180,9 @@ A fixed question set measures any configuration, so model choices are made on nu
 - **Empty or one-word question**: answered as a lookup of that word.
 - **A question about secrets the notes do not record** ("what is Hideki hiding?"): the reply says
   the notes do not cover it; it never guesses.
-- **A name shared by two people** (two Tsuruchi Kyomas, or a given name used twice): link only the
-  full-name match; a bare given name shared by two people stays unlinked rather than linking the
-  wrong one.
+- **A name shared by two people**: the full-name instruction (Story 3.4) normally avoids the
+  problem. What is left over, a bare given name that two people in the roster share, stays
+  unlinked rather than linking the wrong person.
 - **Text that looks like a link but is not from the glossary or roster**: removed.
 - **The character-sheet app is unreachable**: answer without a profile, from the last cached
   roster if one exists.
@@ -188,8 +201,9 @@ A fixed question set measures any configuration, so model choices are made on nu
 - **FR-004** The asker's profile is derived from the character-sheet app by Discord account,
   limited to non-NPC characters in the Wasp campaign's gaming groups, with clan of origin
   derived from the school's clan.
-- **FR-005** Every person named in a reply who has an Obsidian Portal record or a character sheet
-  is linked, by a mechanical post-processing step.
+- **FR-005** Every person named in a reply who has a player-visible Obsidian Portal record (not
+  marked GM-only) or a character sheet is linked, by a mechanical post-processing step. *(GM-only
+  records excluded because players cannot open them; raised with the GM.)*
 - **FR-006** The model links the relevant public wiki page for topic questions, choosing only from
   addresses in the glossary; any other address is stripped.
 - **FR-007** Replies are brief (about five short lines at most) and say so plainly when the
@@ -200,8 +214,8 @@ A fixed question set measures any configuration, so model choices are made on nu
 - **FR-009** An evaluation question set and runner (Story 7), with results across at least three
   Gemini tiers recorded in this feature's directory and the default model chosen by the rule in
   Story 7, acceptance item 5.
-- **FR-010** Local query log, per-person rate limit, daily spending ceiling, and graceful failure
-  replies (Story 8).
+- **FR-010** Local query log, a configurable daily spending ceiling, and graceful failure replies
+  (Story 8).
 - **FR-011** The command runs in the existing always-on bot process, alongside the mention
   responder, rather than in a new service.
 
@@ -212,8 +226,11 @@ A fixed question set measures any configuration, so model choices are made on nu
   Imperial Bounties page, and a link to the Wasp Hierarchy page.
 - **SC-002** Across the full question set, the default model's correctness is within 5 points of
   the Pro-tier ceiling.
-- **SC-003** Median cost per question is at most 2 cents, which is under a twentieth of the
-  backstory call's 40 cents.
+- **SC-003** Cost per question is measured for every tier tested and recorded in the feature
+  directory. The GM's bar is "a fraction of" the 40-cent backstory call; the session's working
+  target is a median of 2 cents. If the default chosen under Story 7's rule costs more than 2
+  cents, the numbers go to the GM. That does not count as the feature failing, and it does not
+  justify swapping in a weaker model to hit the target.
 - **SC-004** A player gets the reply within 10 seconds for at least 95% of questions.
 - **SC-005** No reply is ever visible to anyone but the asker.
 
