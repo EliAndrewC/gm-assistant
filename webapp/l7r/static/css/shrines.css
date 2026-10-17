@@ -1,0 +1,468 @@
+/* =========================================================================
+   Shrine builder (/shrines, feature 216)
+   A field guide laid out as a form: each decision is a fieldset of option
+   "cards" (radio labels). The GM ledger is a sticky column on wide screens
+   and drops below the design on narrow ones. Tokens come from l7r.css.
+   ========================================================================= */
+
+.shrine-form { padding-top: 1.6rem; padding-bottom: 4rem; }
+
+.shrine-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem;
+}
+
+/* The ledger column stretches to the design's full height (grid's default), so the two columns
+   balance; the panel inside it is what sticks. */
+.shrine-ledger-col { min-width: 0; }
+
+.shrine-form--gm .shrine-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+}
+
+/* Narrow screens: one column, the ledger after the design. Block, not a one-column grid. */
+@media (max-width: 1100px) {
+  .shrine-form--gm .shrine-layout { display: block; }
+  .shrine-ledger-col { margin-top: 2.5rem; }
+}
+
+.shrine-design { min-width: 0; }
+
+.shrine-notice {
+  margin: 0 0 1.5rem;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--vermillion);
+  background: var(--vermillion-soft);
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+/* --- groups ------------------------------------------------------------ */
+
+.shrine-group { margin: 0 0 2.75rem; }
+
+.shrine-group__head {
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 0.6rem;
+  margin-bottom: 1.4rem;
+}
+
+.shrine-group__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 0, 'wght' 500;
+  font-weight: 500;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1.05;
+  margin: 0 0 0.35rem;
+  color: var(--ink);
+}
+
+.shrine-group__intro {
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: var(--reading-max);
+}
+
+/* --- categories -------------------------------------------------------- */
+
+.shrine-cat {
+  border: 0;
+  margin: 0 0 1.75rem;
+  padding: 0;
+  min-width: 0;
+}
+
+.shrine-cat__legend {
+  padding: 0;
+  margin-bottom: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.9rem;
+}
+
+.shrine-cat__label {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.22em;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--vermillion-deep);
+}
+
+.shrine-cat__prompt {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 24, 'SOFT' 60, 'wght' 400;
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.shrine-cat__moot {
+  display: none;
+  margin: 0 0 0.6rem;
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink-faded);
+}
+
+.shrine-cat.is-moot .shrine-cat__moot { display: block; }
+.shrine-cat.is-moot .shrine-opts { opacity: 0.38; }
+
+.shrine-opts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.shrine-opt {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.shrine-opt input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.shrine-opt__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  height: 100%;
+  padding: 0.85rem 1rem 0.95rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.shrine-opt:hover .shrine-opt__body { border-color: var(--ink-ghost); }
+
+.shrine-opt input:checked + .shrine-opt__body {
+  border-color: var(--vermillion);
+  box-shadow: inset 0 0 0 1px var(--vermillion), 0 2px 8px var(--shadow-ink);
+  background: #FFFBF1;
+}
+
+.shrine-opt input:focus-visible + .shrine-opt__body {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.shrine-cat:disabled .shrine-opt { cursor: default; }
+
+.shrine-opt__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 36, 'SOFT' 20, 'wght' 560;
+  font-weight: 560;
+  font-size: 1.12rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.shrine-opt input:checked + .shrine-opt__body .shrine-opt__title::before {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.45em;
+  border-radius: 50%;
+  background: var(--vermillion);
+  vertical-align: 0.12em;
+}
+
+.shrine-opt__term {
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--ink-faded);
+}
+
+.shrine-opt__term [lang='ja'] {
+  font-family: var(--font-jp);
+  color: var(--vermillion-deep);
+  margin-right: 0.2em;
+}
+
+.shrine-opt__text {
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* --- free text --------------------------------------------------------- */
+
+.shrine-texts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+.shrine-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 1.75rem;
+}
+
+.shrine-texts .shrine-text { margin: 0; }
+
+.shrine-text__label,
+.shrine-field > span {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: var(--vermillion-deep);
+}
+
+.shrine-text input,
+.shrine-text textarea,
+.shrine-field input,
+.shrine-field select,
+.shrine-contract input,
+.shrine-share__url {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.5rem 0.65rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.shrine-text textarea { resize: vertical; line-height: 1.45; }
+
+/* --- share ------------------------------------------------------------- */
+
+.shrine-share {
+  border-top: 2px solid var(--ink);
+  padding-top: 1.2rem;
+}
+
+.shrine-share__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 96, 'wght' 500;
+  font-size: 1.6rem;
+  margin: 0 0 0.3rem;
+}
+
+.shrine-share__lede {
+  font-family: var(--font-body);
+  color: var(--ink-soft);
+  margin: 0 0 0.8rem;
+  max-width: var(--reading-max);
+}
+
+.shrine-share__row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+.shrine-share__url {
+  flex: 1;
+  font-size: 0.92rem;
+  resize: none;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.shrine-button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: var(--paper-raised);
+  background: var(--vermillion);
+  border: 1px solid var(--vermillion-deep);
+  border-radius: 3px;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shrine-button:hover { background: var(--vermillion-deep); }
+
+.shrine-button--quiet {
+  margin-top: 0.8rem;
+  color: var(--vermillion-deep);
+  background: transparent;
+}
+
+@media (max-width: 520px) {
+  .shrine-share__row { flex-direction: column; }
+}
+
+/* --- GM ledger --------------------------------------------------------- */
+
+.shrine-ledger {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background: var(--paper-deep);
+  border: 1px solid var(--paper-fold);
+  border-top: 3px solid var(--ink);
+  border-radius: 3px;
+  padding: 1.1rem 1.2rem 1.3rem;
+}
+
+@media (max-width: 1100px) {
+  .shrine-ledger { position: static; max-height: none; overflow: visible; }
+}
+
+.shrine-ledger__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 96, 'wght' 560;
+  font-size: 1.5rem;
+  margin: 0 0 0.3rem;
+}
+
+.shrine-ledger__lede {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  margin: 0 0 1rem;
+}
+
+.shrine-ledger__settings {
+  display: grid;
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.shrine-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.shrine-field small {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--ink-faded);
+}
+
+.shrine-contracts {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.shrine-contract {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.shrine-contract__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--font-body);
+}
+
+.shrine-contract__label { font-weight: 600; color: var(--ink); }
+.shrine-contract__fair { color: var(--ink-soft); white-space: nowrap; }
+
+.shrine-contract__rolls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-top: 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--ink-faded);
+}
+
+.shrine-contract__rolls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.shrine-contract__rolls input {
+  width: 4.2rem;
+  padding: 0.25rem 0.4rem;
+}
+
+.shrine-contract__paid { flex: 1 1 100%; color: var(--ink-soft); }
+.shrine-contract.is-negotiated .shrine-contract__paid strong { color: var(--vermillion-deep); }
+
+.shrine-contract__items {
+  margin-top: 0.35rem;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--ink-faded);
+}
+
+.shrine-contract__items summary { cursor: pointer; }
+
+.shrine-contract__items ul {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+}
+
+.shrine-contract__items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.12rem 0;
+}
+
+.shrine-contract__items li span:last-child { white-space: nowrap; }
+
+.shrine-totals {
+  margin: 0 0 1rem;
+  font-family: var(--font-body);
+}
+
+.shrine-totals div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0;
+}
+
+.shrine-totals dt { color: var(--ink-soft); }
+.shrine-totals dd { margin: 0; font-weight: 600; white-space: nowrap; }
+
+.shrine-totals__keep,
+.shrine-totals__short {
+  border-top: 2px solid var(--ink);
+  margin-top: 0.3rem;
+  padding-top: 0.45rem !important;
+  font-size: 1.15rem;
+}
+
+.shrine-totals__keep dd { color: var(--vermillion-deep); }
+.shrine-totals__short dt,
+.shrine-totals__short dd { color: var(--vermillion); }
+
+.shrine-ledger__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.shrine-ledger__gmlink {
+  font-family: var(--font-body);
+  color: var(--vermillion-deep);
+}

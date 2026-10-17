@@ -61,6 +61,20 @@ from l7r.places import (
 )
 from l7r.pool import Relic, load_relics
 from l7r.sections import SECTIONS
+from l7r.shrines import (
+    TEXT_FIELDS,
+    Catalog,
+    default_budget,
+    format_koku,
+    format_number,
+    gm_query,
+    load_catalog,
+    negotiate,
+    parse_design,
+    parse_negotiation,
+    share_query,
+    voided_by,
+)
 from l7r.slugs import find_relic_by_slug, neighbors_in_fortune, relics_for_fortune
 
 logger = logging.getLogger(__name__)
@@ -254,8 +268,10 @@ class Root:
         env: Environment | None = None,
         wiki_links: dict[str, str] | None = None,
         names_token: Callable[[], str] | None = None,
+        shrine_catalog: Catalog | None = None,
     ) -> None:
         self._relics = relics
+        self._shrine_catalog = shrine_catalog if shrine_catalog is not None else load_catalog()
         # Resolved at REQUEST time (a lambda, not a bound default), so a test patching
         # `_names_token` reaches a Root built before the patch.
         self.api = NamesApi(names_token or (lambda: _names_token()))
@@ -326,6 +342,38 @@ class Root:
             'dream_detail.html',
             current_section='dreams',
             scene=scene,
+        )
+
+    # GET /shrines - the shrine builder (feature 216). The design lives in the query string. Costs
+    # reach the template ONLY for a GM session: for anyone else `ledger` is None and the `gm_*`
+    # params are never read, so neither the page nor its source can carry a price.
+    @cherrypy.expose
+    def shrines(self, **params: Any) -> bytes:
+        catalog = self._shrine_catalog
+        design = parse_design(catalog, params)
+        user = current_user()
+        is_gm = user is not None and user.role == 'gm'
+        context: dict[str, Any] = {}
+        if is_gm:
+            negotiation = parse_negotiation(catalog, params)
+            context = {
+                'ledger': negotiate(catalog, design, negotiation),
+                'negotiation': negotiation,
+                'gm_query': gm_query(catalog, design, negotiation),
+                'suggested_budget': default_budget(catalog),
+                'format_koku': format_koku,
+                'format_number': format_number,
+            }
+        return self._render(
+            'shrines.html',
+            current_section='shrines',
+            catalog=catalog,
+            design=design,
+            voided_by=voided_by(catalog, design),
+            text_fields=TEXT_FIELDS,
+            share_query=share_query(catalog, design),
+            is_gm=is_gm,
+            **context,
         )
 
     # GET /terms - public (linked from Discord OAuth consent screen)

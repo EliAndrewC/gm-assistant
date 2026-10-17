@@ -44,6 +44,8 @@ PAGES = [
     ('place-detail', '/places/owari?via=random', True),
     ('dreams', '/dreams', True),
     ('dream-detail', '/dreams/daikoku-masamune-sword-akishi', True),
+    ('shrines', '/shrines', False),
+    ('shrines-gm', '/shrines?form=himorogi&gm_roll_carpentry=40', True),
     ('auth-login', '/auth/login', False),
     ('terms', '/terms', False),
     ('privacy', '/privacy', False),
