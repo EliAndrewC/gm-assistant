@@ -169,6 +169,30 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   suits, the feeling it evokes, how it moves visitors - EXCEPT an option described as "one of the
   most common", which gets no such sentence.
 
+## Amendment 3 (GM message 4, 2026-10-17)
+
+- **FR-027**: the shrine-name box looks like a one-line field (one line tall); it may wrap only
+  when a long name does not fit the width (a phone), so nothing scrolls out of sight.
+- **FR-028**: right after the name, the player chooses what kind of shrine this is: a memorial
+  where someone's remains are interred, or a shrine to a kami. That choice decides which later
+  steps appear.
+- **FR-029**: a memorial adds steps for the remains, each with distinct historical forms
+  (Principle XII research): how the retrieved remains are prepared; what becomes of the salted
+  head; whether a portion of the remains is honored elsewhere (including the Temple of Ebisu in
+  Shiro Reiji, which sheltered him); how the remains are stored (what holds them, and where it
+  rests); and how, if at all, any of them are displayed (the not-displayed option is a positive
+  form under FR-020).
+  A shrine to a kami shows none of these.
+- **FR-030**: a memorial also chooses what is at the heart of the shrine: his spirit enshrined as a
+  kami with the remains resting apart, or the remains themselves. With the remains at the heart,
+  the kami's sacred-object step (and the open-sky form's "what the kami dwells in" step) does not
+  apply. Wherever the builder describes the sanctuary or a step as the kami's dwelling, the wording
+  MUST follow the FR-028 and FR-030 choice: for a memorial with the remains at its heart, it
+  describes the place where the remains rest.
+- **FR-031**: the medieval European practice of boiling a body to strip the bones is offered only
+  if the East Asian record supports it; the research found no such practice, so it is not an
+  option, and the closest real practice (washing the bones clean, *senkotsu*) is.
+
 ## Review history
 
 - **Round 1 - CHANGES REQUIRED** (2026-10-17, `spec-fidelity`, Mode 2, against `gm-request.md`).
@@ -189,3 +213,11 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   page is loaded" could mean a full reload only: now each time a step is shown. (2) FR-024's
   parenthetical made the browser the reference too, licensing a change to the wizard's Back: struck.
 - **Round 6 (amendment 2) - FAITHFUL** (2026-10-17). Both changes confirmed.
+- **Round 7 (amendment 3, message 4) - CHANGES REQUIRED** (2026-10-17). (a) FR-027 one-line box
+  that wraps only when needed judged faithful, not a carve-out; (b) FR-031 judged faithful.
+  Changes: (1) FR-029 storage and display reworded to "how" (vessel and place; how displayed);
+  (2) FR-030 now requires kami-dwelling wording to follow the remains-at-the-heart choice, which
+  answers the GM's first question on the page itself.
+- **Round 8 (amendment 3) - FAITHFUL** (2026-10-17). Both changes confirmed; switching off the
+  open-sky "what the kami dwells in" step when the remains are the heart judged to follow from the
+  GM's "rather than a kami".

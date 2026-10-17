@@ -49,6 +49,8 @@ contracts:
     label: Laborers and site work
   - key: rites
     label: Priests and rites
+  - key: remains
+    label: Burakumin (retrieving and preparing the remains)
   - key: porterage
     label: Porters
 
@@ -71,14 +73,263 @@ site_lines:
   - {label: Clearing, leveling and foundation stones, contract: earthwork, koku: 3}
   - {label: Ground-purification rite before building, contract: rites, koku: 0.5}
 
+# FR-030: when this choice is made the shrine has no kami - the remains are its heart - so every
+# group/category/option `alt:` text replaces its plain wording (the kami's dwelling becomes the
+# place where he rests).
+alt_when: {heart: [bones]}
+
 budget_padding: 1.2   # Tadashi won the budget negotiation by 10+ (research.md R6)
 
 groups:
+  - key: purpose
+    label: The shrine
+    intro: >-
+      Before anything is built, what the shrine is for: a resting place for someone who has died, or
+      a dwelling for a kami. A memorial adds six steps about the remains.
+    categories:
+      - key: kind
+        label: Kind of shrine
+        prompt: What kind of shrine is this?
+        reference: memorial
+        options:
+          - key: memorial
+            label: A memorial where remains rest
+            text: >-
+              A shrine for one who has died, where his remains are brought and laid to rest, and his
+              spirit honored.
+            appeal: >-
+              The dead are near enough to visit, and those who loved him have a place to bring their
+              grief and their thanks.
+          - key: kami
+            label: A shrine to a kami
+            text: >-
+              A dwelling for a kami - a Fortune, a spirit of the place, or one of the honored dead -
+              with no remains interred.
+            appeal: >-
+              The shrine is kept entirely pure, free of any touch of death, a place only of the
+              living and the divine.
+
+  - key: remains
+    label: The remains
+    intro: >-
+      His bones lie in a pauper's mound, and his head in a bag of salt. Monks and burakumin can
+      bring them out; what is done with them after that is for the founder to decide.
+    categories:
+      - key: heart
+        label: The heart of the shrine
+        prompt: What lies at the heart of the shrine?
+        only_with: {kind: [memorial]}
+        reference: spirit
+        options:
+          - key: spirit
+            label: His spirit, enshrined as a kami
+            text: >-
+              The sanctuary houses his spirit as a kami; the remains rest apart in a tomb of their
+              own, as the great lords' tombs stand behind and above the shrines where they are
+              worshiped.
+            appeal: >-
+              He is honored as something more than a man, and the kami's ground stays pure while his
+              bones lie close by.
+          - key: bones
+            label: The remains themselves
+            text: >-
+              The shrine is built around his remains, as halls are built around the relics of
+              revered priests; there is no separate kami.
+            appeal: >-
+              Every visitor stands before the man himself, nothing between them and him.
+            voids: [sacred, dwelling]
+
+      - key: preparation
+        label: Preparing the remains
+        prompt: How are the remains prepared once they are brought out of the mound?
+        only_with: {kind: [memorial]}
+        reference: picked
+        options:
+          - key: washed
+            label: Washed clean
+            ja: 洗骨
+            romaji: senkotsu
+            text: >-
+              What the pauper's fire left on the bones is taken off by hand, and each bone is washed
+              in sake until it is white.
+            appeal: >-
+              He is made clean of the death he was given, and goes to his rest as white and whole as
+              his bones allow.
+            lines: [{contract: remains, koku: 2}, {contract: rites, koku: 0.5}]
+          - key: picked
+            label: Gathered bone by bone
+            ja: 骨上げ
+            romaji: kotsuage
+            text: >-
+              Monks lift the bones from the mound one by one with long chopsticks and lay them in an
+              urn, feet first and skull last, so that he is never upside down.
+            appeal: >-
+              Each bone is handled with care by many hands, in the order the dead have always been
+              gathered.
+            lines: [{contract: remains, koku: 1}, {contract: rites, koku: 1}]
+          - key: wrapped
+            label: Taken up with the earth
+            text: >-
+              The remains are lifted as they lie, with the ash and earth of the mound around them,
+              and wrapped in white cloth.
+            appeal: >-
+              Every trace of him leaves the pauper's ground, even the soil that held him.
+            lines: [{contract: remains, koku: 0.8}]
+
+      - key: head
+        label: The head
+        prompt: What becomes of his head?
+        only_with: {kind: [memorial]}
+        reference: rejoined
+        options:
+          - key: rejoined
+            label: Rejoined with his bones
+            text: >-
+              The head is taken from the salt and laid with the rest of his remains.
+            appeal: >-
+              He is made whole again in death, as he was in life.
+          - key: mound
+            label: A head mound of its own
+            ja: 首塚
+            romaji: kubizuka
+            text: >-
+              The head is buried apart under its own mound and stone, as the heads of those who
+              died by violence have long been buried.
+            appeal: >-
+              The surest way to calm a spirit that met a hard end, and a second place for his
+              disciples to pray.
+            lines: [{contract: earthwork, koku: 2}, {contract: stonework, koku: 2, heavy: 2}, {contract: rites, koku: 1}]
+          - key: temple
+            label: Given to the Temple of Ebisu
+            text: >-
+              The head is carried to the Temple of Ebisu in Shiro Reiji, which hid and sheltered him,
+              to rest in its keeping.
+            appeal: >-
+              The temple that risked itself for him keeps the most precious part of him, and his
+              memory is honored in two places.
+            lines: [{contract: rites, koku: 3}]
+
+      - key: sharing
+        label: Sharing the remains
+        prompt: How are his remains divided?
+        only_with: {kind: [memorial]}
+        reference: here
+        options:
+          - key: here
+            label: All of him rests here
+            text: >-
+              Every bone that can be recovered is laid to rest at the shrine.
+            appeal: >-
+              The forest where he lived and taught keeps all of him, and nowhere else can claim him.
+          - key: ebisu
+            label: A portion to the Temple of Ebisu
+            ja: 分骨
+            romaji: bunkotsu
+            text: >-
+              A portion of his bones is set aside for the Temple of Ebisu in Shiro Reiji, as great
+              lords' and priests' remains have been divided among the temples that honored them.
+            appeal: >-
+              The temple that sheltered him shares in his rest, and the two places are bound
+              together through him.
+            lines: [{contract: rites, koku: 2}]
+          - key: mountain
+            label: A portion to a mountain temple
+            text: >-
+              A portion of his bones is carried to a great temple on a holy mountain, where the
+              faithful send a part of their dead to rest near the saints.
+            appeal: >-
+              Some part of him rests among the holiest dead of the Empire.
+            lines: [{contract: rites, koku: 3}]
+
+      - key: resting
+        label: Storing the remains
+        prompt: What holds the remains, and where does it rest?
+        only_with: {kind: [memorial]}
+        reference: gorinto
+        options:
+          - key: inner
+            label: A stone coffer in an inner tomb
+            ja: 奥の院
+            romaji: oku-no-in
+            text: >-
+              The remains are sealed in a stone coffer inside a tomb set apart behind the sanctuary
+              and above it, reached by a flight of steps through the trees.
+            appeal: >-
+              Visitors climb to him last, as to the innermost place of the shrine.
+            lines: [{contract: stonework, koku: 6, heavy: 6}, {contract: earthwork, koku: 2}]
+          - key: gorinto
+            label: An urn beneath a five-ring pagoda
+            ja: 五輪塔
+            romaji: gorinto
+            text: >-
+              A glazed urn buried beneath a stone pagoda of five stacked shapes - earth, water,
+              fire, wind and void.
+            appeal: >-
+              The five elements stand over him, and the pagoda's quiet silhouette reads at once as a
+              holy grave.
+            lines: [{contract: stonework, koku: 5, heavy: 5}]
+          - key: hall
+            label: A lacquered chest in a mortuary hall
+            ja: 霊屋
+            romaji: tamaya
+            text: >-
+              The remains lie in a lacquered chest on a dais inside a small hall of their own, closed
+              with doors.
+            appeal: >-
+              He is given a house of his own in death, a place where the disciples can kneel out of
+              the rain.
+            lines: [{contract: carpentry, koku: 15}, {contract: roofing, koku: 4}, {contract: finishing, koku: 3}]
+          - key: mound
+            label: A clay jar under an earthen mound
+            ja: 塚
+            romaji: tsuka
+            text: >-
+              The remains go into an unglazed clay jar, and the disciples heap a mound of earth over
+              it with their own hands, crowned with a single stone.
+            appeal: >-
+              The oldest kind of grave there is, raised by those who loved him.
+            lines: [{contract: earthwork, koku: 2}]
+
+      - key: display
+        label: Showing the remains
+        prompt: How are the remains shown to those who come?
+        only_with: {kind: [memorial]}
+        reference: sealed
+        options:
+          - key: sealed
+            label: Sealed, and left in peace
+            text: >-
+              The remains are sealed in their resting place and not shown; visitors pray before the
+              place, not the bones. One of the most common ways to keep the dead.
+          - key: reliquary
+            label: One bone in a reliquary
+            ja: 舎利塔
+            romaji: sharito
+            text: >-
+              A single bone is kept apart in a small pagoda-shaped reliquary with crystal sides,
+              shown to visitors on festival days, as the relics of revered priests are shown.
+            appeal: >-
+              Those who come on those days see him with their own eyes, and the festival gains a
+              heart.
+            lines: [{contract: metalwork, koku: 3}]
+          - key: lattice
+            label: The urn behind a lattice door
+            text: >-
+              The urn stands behind a latticed door, glimpsed but never touched.
+            appeal: >-
+              He is always present to anyone who kneels and looks, yet always at rest.
+            lines: [{contract: carpentry, koku: 1}]
+
   - key: sanctuary
     label: The sanctuary
     intro: >-
-      The sanctuary (honden) is the dwelling of the kami itself. Nobody goes inside it; its doors are
-      opened only for rites. Everything else at a shrine is arranged around it.
+      The sanctuary (honden) is the innermost building: the dwelling of the kami, or the house that
+      keeps what is most sacred. Nobody goes inside it; its doors are opened only for rites.
+    alt:
+      intro: >-
+        The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
+        here, the place where he rests. Nobody goes inside it; its doors are opened only for
+        rites.
     categories:
       - key: form
         label: Form
@@ -134,6 +385,10 @@ groups:
             text: >-
               The kami dwells not in a house but in the living forest itself, in a place bound with
               sacred rope and purified, under the open sky.
+            alt:
+              text: >-
+                The heart of the shrine is left open to the forest and the sky, its ground bound
+                with sacred rope and purified.
             appeal: >-
               The most ancient form of worship, still kept at some of the greatest shrines in the
               Empire, and the closest of all to the way the hermit lived.
@@ -192,6 +447,8 @@ groups:
       - key: ground
         label: The ground before it
         prompt: How is the ground before the kami's dwelling laid?
+        alt:
+          prompt: How is the ground at the heart of the shrine laid?
         only_with: {form: [himorogi]}
         reference: gravel
         options:
@@ -201,6 +458,9 @@ groups:
               A level court of pale gravel, raked in lines, spread before the dwelling for rites.
             appeal: >-
               It glows in moonlight, and the sound of each footstep tells the kami someone has come.
+            alt:
+              appeal: >-
+                It glows in moonlight, and the sound of each footstep tells him someone has come.
             lines: [{contract: earthwork, koku: 2, heavy: 3}]
           - key: moss
             label: Moss left to grow
@@ -220,6 +480,10 @@ groups:
             appeal: >-
               The oldest way of marking ground for a kami to descend into, and renewing the bamboo
               each year gives the disciples a rite of their own.
+            alt:
+              appeal: >-
+                The oldest way of marking holy ground, and renewing the bamboo each year gives the
+                disciples a rite of their own.
             lines: [{contract: rites, koku: 0.5}]
           - key: stones
             label: A ring of river stones
@@ -403,6 +667,10 @@ groups:
     intro: >-
       What a visitor touches: where they stand, how they announce themselves to the kami, where they
       leave their coins and offerings, and what dwells inside.
+    alt:
+      intro: >-
+        What a visitor touches: where they stand, how they announce themselves, and where they leave
+        their coins and offerings.
     categories:
       - key: hall
         label: Worship space
@@ -438,6 +706,8 @@ groups:
       - key: altar
         label: Altar
         prompt: Where are offerings set out before the kami?
+        alt:
+          prompt: Where are offerings set out before him?
         reference: table
         options:
           - key: table
@@ -545,6 +815,8 @@ groups:
       - key: bell
         label: Bell
         prompt: How does a visitor announce themselves to the kami?
+        alt:
+          prompt: How does a visitor announce themselves?
         reference: suzu
         options:
           - key: clap
@@ -561,6 +833,10 @@ groups:
               A round rattle-bell hung from the eaves on a thick braided rope, shaken before praying.
             appeal: >-
               Its bright jingle is said to please and summon the kami, and children love to ring it.
+            alt:
+              appeal: >-
+                Its bright jingle carries through the trees ahead of every prayer, and children love
+                to ring it.
             lines: [{contract: metalwork, koku: 1}]
           - key: gong
             label: Hanging gong
@@ -857,6 +1133,10 @@ groups:
     intro: >-
       How the shrine is named, how the hermit's story is told to those who come after, and how the
       kami is installed.
+    alt:
+      intro: >-
+        How the shrine is named, how the hermit's story is told to those who come after, and how the
+        shrine is consecrated.
     categories:
       - key: plaque
         label: The name
@@ -935,6 +1215,8 @@ groups:
       - key: rite
         label: Consecration
         prompt: How is the kami installed in the shrine?
+        alt:
+          prompt: How is the shrine consecrated?
         reference: full
         options:
           - key: monk
@@ -942,6 +1224,10 @@ groups:
             text: >-
               The district's country monk comes out, purifies the ground, says the words and moves
               the sacred object into place.
+            alt:
+              text: >-
+                The district's country monk comes out, purifies the ground, says the words and lays
+                the remains in their place.
             appeal: >-
               Quiet and intimate, a rite among the people who knew him.
             lines: [{contract: rites, koku: 1}]
@@ -952,12 +1238,22 @@ groups:
               carried in darkness, behind white curtains, to drums and the calling-out of the kami.
             appeal: >-
               Those who witness it never forget the moment the kami arrives in the dark.
+            alt:
+              text: >-
+                Priests come out from the county's shrine for a night rite: his remains are carried
+                in darkness, behind white curtains, to drums and chanting.
+              appeal: >-
+                Those who witness it never forget the moment he is laid to rest in the dark.
             lines: [{contract: rites, koku: 4}]
           - key: festival
             label: A pacification festival
             text: >-
               A day of music, dance and offerings, with food for the disciples and the villages
               nearby; the kami is installed at its height.
+            alt:
+              text: >-
+                A day of music, dance and offerings, with food for the disciples and the villages
+                nearby; his remains are laid to rest at its height.
             appeal: >-
               Held to calm a spirit that met a hard end so that it may rest and bear no grudge, and
               the villages will remember the day for years.
