@@ -193,6 +193,26 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   if the East Asian record supports it; the research found no such practice, so it is not an
   option, and the closest real practice (washing the bones clean, *senkotsu*) is.
 
+## Amendment 4 (GM message 5a, 2026-10-17)
+
+- **FR-032** (amends FR-030): the human dead are "honored ancestors" in this setting, not kami.
+  The memorial's spirit choice reads as his spirit honored as an ancestor (called to the shrine by
+  its rites, not taken out of Yomi), and wording that called the sanctuary the kami's dwelling
+  follows that choice. "A shrine to a kami" remains for actual kami.
+- **FR-033**: whether the honored dead is registered with the licensing authority of the domain's
+  Ministry of Rites (for Shoda, the Kitsune) is part of that same heart-of-the-shrine question, not
+  a separate step: its options combine what lies at the heart with whether he is registered.
+- **FR-034** (amends FR-029): there is no separate step for the head. What becomes of the head is
+  part of the question of whether the remains are kept together or divided. Options are generic
+  (e.g. "a temple he had a connection to"); Shoda and the Temple of Ebisu may appear only as an
+  example, never as the option itself.
+- **FR-035**: option cards in the same row are the same height, and each card's italic last
+  sentence sits at the bottom of the card.
+- **FR-036**: every preparation option differs in a way a non-expert can see and that matters.
+  Where a question is asked partly because its answer decides a later choice, the step or the
+  option says so (for example, if how the bones are prepared decides whether visitors can see
+  them). This is not a requirement to list every effect of every option.
+
 ## Review history
 
 - **Round 1 - CHANGES REQUIRED** (2026-10-17, `spec-fidelity`, Mode 2, against `gm-request.md`).
@@ -221,3 +241,7 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
 - **Round 8 (amendment 3) - FAITHFUL** (2026-10-17). Both changes confirmed; switching off the
   open-sky "what the kami dwells in" step when the remains are the heart judged to follow from the
   GM's "rather than a kami".
+- **Round 9 (amendment 4, message 5a) - CHANGES REQUIRED** (2026-10-17). (a) Registration inside
+  the heart question judged right. Changes: (1) FR-033 registers HIM (the honored dead), not the
+  shrine; (2) FR-036 narrowed to "say so where the answer decides a later choice", explicitly not a
+  list of every effect.

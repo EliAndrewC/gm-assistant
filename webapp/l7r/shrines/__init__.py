@@ -59,6 +59,8 @@ class Option:
     lines: tuple[Line, ...] = ()
     # FR-030 alternative wording, used when the catalog's `alt_when` condition holds.
     alt: dict[str, str] = field(default_factory=dict)
+    # Offered only when category `only_with[0]` has one of `only_with[1]` chosen (FR-036).
+    only_with: tuple[str, tuple[str, ...]] | None = None
     voids: tuple[str, ...] = ()
     units: float = 1.0
 
@@ -73,6 +75,8 @@ class Category:
     # Applies only when category `only_with[0]` has one of the options in `only_with[1]` (FR-025).
     only_with: tuple[str, tuple[str, ...]] | None = None
     alt: dict[str, str] = field(default_factory=dict)
+    # FR-036: one sentence saying which later choice this step's answer decides, if any.
+    decides: str = ''
 
     def option(self, key: str) -> Option | None:
         for option in self.options:
@@ -172,6 +176,7 @@ def _option(raw: Mapping[str, Any]) -> Option:
         appeal=' '.join(str(raw.get('appeal', '')).split()),
         lines=tuple(_line(x) for x in raw.get('lines', ())),
         alt=_alt(raw, {'label', 'text', 'appeal'}),
+        only_with=_condition(raw['only_with']) if 'only_with' in raw else None,
         voids=tuple(str(x) for x in raw.get('voids', ())),
         units=float(raw.get('units', 1)),
     )
@@ -187,6 +192,7 @@ def _category(raw: Mapping[str, Any]) -> Category:
         options=tuple(_option(x) for x in raw['options']),
         only_with=only_with,
         alt=_alt(raw, {'label', 'prompt'}),
+        decides=' '.join(str(raw.get('decides', '')).split()),
     )
 
 
@@ -250,6 +256,14 @@ def _validate(catalog: Catalog) -> None:
         if category.reference not in option_keys:
             raise CatalogError(f'{category.key}: {category.reference!r} is not one of its options')
         for option in category.options:
+            if option.only_with is not None:
+                target = catalog.category(option.only_with[0])
+                if (
+                    target is None
+                    or target.key == category.key
+                    or any(target.option(v) is None for v in option.only_with[1])
+                ):
+                    raise CatalogError(f'{category.key}.{option.key}: bad only_with')
             for void in option.voids:
                 if void not in keys or void == category.key:
                     raise CatalogError(f'{category.key}.{option.key} voids unknown {void!r}')
@@ -313,6 +327,13 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
     if 'shrine_name' not in text and catalog.default_name:
         text['shrine_name'] = catalog.default_name
     choices = {k: v for k, v in chosen.items() if k not in voided}
+    # An option that needs an earlier choice it does not have is not chosen (FR-036): changing
+    # the earlier step quietly takes it back, and the summary shows that step as open again.
+    for category in catalog.categories:
+        if category.key in choices:
+            need = _chosen_option(category, choices).only_with
+            if need is not None and choices.get(need[0]) not in need[1]:
+                del choices[category.key]
     alt = catalog.alt_when is not None and choices.get(catalog.alt_when[0]) in catalog.alt_when[1]
     return Design(
         choices=choices,
@@ -364,6 +385,19 @@ def voided_by(catalog: Catalog, design: Design) -> dict[str, str]:
             assert target is not None  # _validate checked only_with
             found.setdefault(category.key, target.label)
     return found
+
+
+def enables(catalog: Catalog, category: Category, option: Option) -> tuple[str, ...]:
+    """Labels of later options that exist only if this one is chosen (FR-036), derived from the
+    catalog's option-level `only_with` so a card's note cannot drift from what the wizard does."""
+    return tuple(
+        o.label
+        for c in catalog.categories
+        for o in c.options
+        if o.only_with is not None
+        and o.only_with[0] == category.key
+        and option.key in o.only_with[1]
+    )
 
 
 def share_query(catalog: Catalog, design: Design) -> str:

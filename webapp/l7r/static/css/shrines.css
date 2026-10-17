@@ -91,8 +91,9 @@
 }
 .shrine-cat.is-moot .shrine-opt input:checked + .shrine-opt__body .shrine-opt__title::before { display: none; }
 
-/* Cards size to their own content, so one without an appeal line is not a half-empty box. */
-.shrine-opts { align-items: start; }
+/* FR-035: cards in a row share one height (grid stretch); the italic appeal sits at the bottom. */
+.shrine-opt { height: 100%; }
+.shrine-opt.is-unavailable { display: none; }
 
 /* Columns follow the option count so a row never strands one card (3+1): one column on phones,
    two at mid widths, three for 3- and 5-option sets, four for 4-option sets on wide screens. */
@@ -189,7 +190,28 @@
   font-size: 0.98rem;
   line-height: 1.45;
   color: var(--vermillion-deep);
-  margin-top: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.45rem;
+}
+
+/* FR-036: what this choice does to later steps, derived from the catalog. */
+.shrine-opt__note {
+  margin-top: 0.3rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--paper-fold);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+/* FR-036: a step whose answer decides a later choice says so under its question. */
+.shrine-cat__decides {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink-soft);
+  max-width: var(--reading-max);
 }
 
 .shrine-opt__text {

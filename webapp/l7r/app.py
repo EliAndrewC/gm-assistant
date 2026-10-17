@@ -64,6 +64,7 @@ from l7r.sections import SECTIONS
 from l7r.shrines import (
     TEXT_FIELDS,
     Catalog,
+    enables,
     default_budget,
     format_koku,
     format_number,
@@ -368,6 +369,7 @@ class Root:
             'shrines.html',
             current_section='shrines',
             body_class='page-shrines',
+            enables=enables,
             catalog=catalog,
             design=design,
             voided_by=voided_by(catalog, design),

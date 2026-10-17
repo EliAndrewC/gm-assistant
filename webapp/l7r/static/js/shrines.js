@@ -62,6 +62,16 @@
         fs.classList.toggle('is-moot', moot);
         fs.disabled = moot;
       });
+      // FR-036: an option that needs an earlier choice is hidden (and unpicked) without it.
+      form.querySelectorAll('.shrine-opt[data-needs]').forEach(function (card) {
+        var need = card.dataset.needs.split(':');
+        var have = form.querySelector('fieldset[data-cat="' + need[0] + '"]:not(:disabled) input:checked');
+        var ok = !!have && need[1].split('|').indexOf(have.value) >= 0;
+        var input = card.querySelector('input');
+        card.classList.toggle('is-unavailable', !ok);
+        input.disabled = !ok;
+        if (!ok) input.checked = false;
+      });
       // FR-030: switch to the no-kami wording when the remains are the heart of the shrine.
       if (form.dataset.altWhen) {
         var cond = form.dataset.altWhen.split(':');
