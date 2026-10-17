@@ -76,7 +76,8 @@ For each contract the GM enters Tadashi's Commerce roll (and, when a contractor 
 ### Functional Requirements
 
 - **FR-001**: The toolkit MUST have a "Shrines" section reachable from its navigation, containing the shrine builder.
-- **FR-002**: The builder MUST present decision categories covering at least: the form of the sanctuary (including forms with no conventional building), its size, a worship hall, roof covering, timber, surface finish, carving, gate (form and material), guardian statues, lanterns, water basin, offering box and bell, the sacred object housed in the sanctuary, enclosure, approach path, name plaque, and the consecration rite.
+- **FR-002**: The builder MUST present decision categories covering at least: the form of the sanctuary (including forms with no conventional building), its size, a worship hall, roof covering, timber, surface finish, carving, gate (form and material), guardian statues, lanterns, water basin, offering box and bell, the altar or offering stand where offerings are set before the sanctuary (its own category, separate from the sacred object), the sacred object housed in the sanctuary, enclosure, approach path, name plaque, and the consecration rite.
+- **FR-002a**: The option catalog MUST be limited to a small, remote, unstaffed shrine: no option may add living quarters, lodging, a priest's office, or other features that assume resident or overnight staff, and the sizes and structures offered MUST be ones a remote forest site could plausibly hold. Remoteness limits which options are offered, not only what they cost (FR-010).
 - **FR-003**: Where the historical record shows a thing was done in genuinely different FORMS (not merely better and worse versions), the builder MUST offer those forms as options, each described by what it is, how it looks and what it signals; it MUST NOT reduce such a category to a cheap/expensive pair.
 - **FR-004**: Every option MUST carry a player-facing description that a player unfamiliar with Shinto architecture can choose from. Player-facing text MUST NOT state or imply price (no figures, no "cheap", "costly", "luxurious", "budget").
 - **FR-005**: The builder MUST offer free-text fields for the shrine's name, the person enshrined, and notes on the sacred object and any inscription.
@@ -125,3 +126,14 @@ For each contract the GM enters Tadashi's Commerce roll (and, when a contractor 
 - Saving designs on the server, listing past designs, or multiple shrines per page.
 - Pictures or diagrams of the shrine.
 - Writing anything to Obsidian Portal or `l7r.md`.
+
+## Review history
+
+- **Round 1 - CHANGES REQUIRED** (2026-10-17, `spec-fidelity`, Mode 2, against `gm-request.md`).
+  (1) The GM named "what kind of altar it has" and FR-002 had no altar category: added, separate
+  from the sacred object. (2) "It is remote, so that does... cap the type of building" and "that is
+  the type of shrine that we are talking about" lived only in prose: added FR-002a, which scopes the
+  catalog (no living quarters or lodging, sizes a remote site can hold) so remoteness limits options
+  and not only price.
+- **Round 2 - FAITHFUL** (2026-10-17). Both changes confirmed; FR-002a's "lodging"/"overnight
+  staff" judged to follow from "nobody lives there", and the worship hall judged consistent with it.
