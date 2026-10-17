@@ -62,6 +62,18 @@ wizard in one pass. Don't reintroduce `voids`/`only_with`-style side channels: e
 - **Progress counts phases** (FR-042): "Part 2 of 5" from `phases:` in `data/catalog.yaml`, a
   fixed list, so the denominator never moves and nothing is ever called "skipped". Steps that only
   some choices bring sit inside an existing phase (the remains steps are in phase 1).
+- **Multi-select steps** (FR-044): `multi: true` on a step makes its cards checkboxes; an
+  option with `exclusive: true` stands alone ("Kept together"), the rest combine ("Choose any that
+  apply"). Picks live in `Design.multi`, repeat their key in the link, and are priced each. A
+  multi-select step may not be named in any `when` rule (validated), so it is settled after the
+  single-choice steps and never changes what else applies.
+- **Every step keeps two options** (FR-045): at least two options on every step carry no `when`
+  of their own (tested), so no earlier choice can leave a step with one card.
+- **Japanese terms explain themselves** (FR-043): any option with `ja`/`romaji` must have a
+  `gloss` (validated); it shows as a tooltip on the term.
+- **Commonness is the closing line** (FR-046): a common option's "one of / among / perhaps the
+  most common ..." sentence is its `appeal`, styled like every other closing line, and the
+  wording varies (tested).
 - **Cards** (FR-035): every card in a row has the same height and its italic appeal line sits at
   the bottom.
 - **Every option says why it is worth choosing** (FR-026): `appeal:` in the catalog, one sentence,

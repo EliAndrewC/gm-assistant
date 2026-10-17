@@ -169,15 +169,32 @@ def test_no_lesser_greater_pairs(catalog: Catalog) -> None:
                 assert a == b or a not in b, (category.key, a, b)
 
 
-def test_every_option_says_why_unless_it_is_common(catalog: Catalog) -> None:
-    """FR-026: an appeal sentence on every option, except "one of the most common" ones."""
+COMMONNESS = re.compile(r'\b(one of|among|perhaps) the most common\b', re.IGNORECASE)
+
+
+def test_every_option_has_a_closing_sentence(catalog: Catalog) -> None:
+    """FR-026/FR-046: every option ends with one styled closing sentence; for a common option
+    that sentence IS its commonness ("one of / among / perhaps the most common"), never the body."""
     for category in catalog.categories:
         for option in category.options:
-            common = 'one of the most common' in option.text.lower()
-            assert bool(option.appeal) != common, (category.key, option.key)
-            if option.appeal:
-                assert option.appeal.endswith('.'), option.key
-                assert option.appeal.count('. ') == 0, ('one sentence', option.key)
+            assert option.appeal, (category.key, option.key)
+            assert option.appeal.endswith('.'), option.key
+            assert option.appeal.count('. ') == 0, ('one sentence', option.key)
+            assert not COMMONNESS.search(option.text), (
+                'commonness belongs in the appeal',
+                option.key,
+            )
+
+
+def test_commonness_wording_varies(catalog: Catalog) -> None:
+    """FR-046: not every common option says "one of the most common"."""
+    found = {
+        m.group(1).lower()
+        for c in catalog.categories
+        for o in c.options
+        if (m := COMMONNESS.search(o.appeal))
+    }
+    assert found >= {'one of', 'among', 'perhaps'}
 
 
 def test_no_option_adds_living_quarters(catalog: Catalog) -> None:
@@ -736,4 +753,57 @@ def test_phases_must_follow_the_groups(raw: dict[str, Any]) -> None:
     data = copy.deepcopy(raw)
     data['phases'][0]['groups'] = ['purpose']  # remains left out
     with pytest.raises(CatalogError, match='phases must list every group'):
+        parse_catalog(data)
+
+
+def test_every_japanese_term_has_a_gloss(catalog: Catalog, raw: dict[str, Any]) -> None:
+    """FR-043: each term shown on a card explains itself; the catalog refuses one without."""
+    for category in catalog.categories:
+        for option in category.options:
+            if option.ja or option.romaji:
+                assert option.gloss, option.key
+    data = copy.deepcopy(raw)
+    del _option_raw(data, 'preparation', 'washed')['gloss']
+    with pytest.raises(CatalogError, match='needs a gloss'):
+        parse_catalog(data)
+
+
+def test_every_step_keeps_at_least_two_options(catalog: Catalog) -> None:
+    """FR-045: whatever came before, no step dwindles to a single option - at least two options
+    on every step carry no condition of their own."""
+    for category in catalog.categories:
+        assert sum(1 for o in category.options if not o.when) >= 2, category.key
+
+
+def test_dividing_the_remains_is_multi_select(catalog: Catalog) -> None:
+    """FR-044: portions combine; "kept together" stands alone."""
+    sharing = catalog.category('sharing')
+    assert sharing is not None
+    assert sharing.multi
+    assert [o.key for o in sharing.options if o.exclusive] == ['together']
+    both = parse_design(catalog, {'kind': 'memorial', 'sharing': ['mountain', 'temple']})
+    assert both.multi == {'sharing': ('temple', 'mountain')}
+    assert 'sharing' not in both.choices
+    assert 'sharing=temple&sharing=mountain' in share_query(catalog, both)
+    clash = parse_design(catalog, {'kind': 'memorial', 'sharing': ['temple', 'together']})
+    assert clash.multi == {'sharing': ('together',)}
+    single = parse_design(catalog, {'kind': 'memorial', 'sharing': 'headmound'})
+    assert single.multi == {'sharing': ('headmound',)}
+    bad = parse_design(catalog, {'kind': 'memorial', 'sharing': ['temple', 'catapult']})
+    assert bad.multi == {'sharing': ('temple',)}
+    assert bad.dropped == ('sharing',)
+    assert parse_design(catalog, {'kind': 'kami', 'sharing': 'temple'}).multi == {}
+    rites = price_design(catalog, both, 'road').by_contract['rites']
+    assert rites == pytest.approx(0.5 + 3 + 3)  # site rite + both portions
+    assert option_effects(catalog, both, sharing) == {}
+
+
+def test_multi_select_validation(raw: dict[str, Any]) -> None:
+    data = copy.deepcopy(raw)
+    _option_raw(data, 'form', 'nagare')['exclusive'] = True
+    with pytest.raises(CatalogError, match='exclusive only makes sense'):
+        parse_catalog(data)
+    data = copy.deepcopy(raw)
+    _category_raw(data, 'resting')['when'] = {'kind': ['memorial'], 'sharing': ['temple']}
+    with pytest.raises(CatalogError, match='multi-select step cannot be named'):
         parse_catalog(data)

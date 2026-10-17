@@ -21,6 +21,7 @@ __all__ = [
     'Effect',
     'option_effects',
     'first',
+    'picks',
     'moot_note',
     'option_offered',
     'parse_design',
@@ -28,6 +29,12 @@ __all__ = [
     'rules_json',
     'share_query',
 ]
+
+
+def picks(value: object) -> list[str]:
+    """Every string value of a query key (a multi-select step repeats its key)."""
+    values = value if isinstance(value, list) else [value]
+    return [v for v in values if isinstance(v, str)]
 
 
 def first(value: object) -> str | None:
@@ -42,6 +49,8 @@ class Design:
     """The player's selections, resolved. `choices` holds only steps in play with real picks."""
 
     choices: dict[str, str]
+    # FR-044: multi-select steps, each with the options picked (an exclusive one stands alone).
+    multi: dict[str, tuple[str, ...]]
     # Steps not in play, each with the first clause of its `when` that failed.
     inactive: dict[str, Clause]
     text: dict[str, str]
@@ -52,6 +61,28 @@ class Design:
     @property
     def voided(self) -> frozenset[str]:
         return frozenset(self.inactive)
+
+
+def _resolve_multi(
+    catalog: Catalog,
+    picked: Mapping[str, list[str]],
+    choices: Mapping[str, str],
+    inactive: Mapping[str, Clause],
+) -> dict[str, tuple[str, ...]]:
+    """Multi-select steps (never named in a rule, so they can be settled after the single ones):
+    keep options that exist and are offered; an exclusive pick stands alone."""
+    multi: dict[str, tuple[str, ...]] = {}
+    for category in catalog.categories:
+        if not category.multi or category.key in inactive:
+            continue
+        options = [category.option(v) for v in picked.get(category.key, [])]
+        kept = [o for o in options if o is not None and holds_all(o.when, choices)]
+        exclusive = [o for o in kept if o.exclusive]
+        kept = exclusive[:1] if exclusive else kept
+        ordered = tuple(o.key for o in category.options if o in kept)
+        if ordered:
+            multi[category.key] = ordered
+    return multi
 
 
 def _resolve(
@@ -65,7 +96,7 @@ def _resolve(
             inactive[category.key] = failing
             continue
         picked = chosen.get(category.key)
-        option = category.option(picked) if picked is not None else None
+        option = None if category.multi or picked is None else category.option(picked)
         # An option that needs an earlier choice it does not have is not chosen (FR-036):
         # changing the earlier step quietly takes it back.
         if option is not None and holds_all(option.when, choices):
@@ -81,14 +112,22 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
     hand-edited link), so the page can say a choice could not be restored.
     """
     chosen: dict[str, str] = {}
+    picked: dict[str, list[str]] = {}
     dropped: list[str] = []
     for category in catalog.categories:
+        if category.multi:
+            values = picks(params.get(category.key))
+            picked[category.key] = values
+            if any(category.option(v) is None for v in values):
+                dropped.append(category.key)
+            continue
         raw = first(params.get(category.key))
         if raw is not None and category.option(raw) is not None:
             chosen[category.key] = raw
         elif raw is not None:
             dropped.append(category.key)
     choices, inactive = _resolve(catalog, chosen)
+    multi = _resolve_multi(catalog, picked, choices, inactive)
     text = {}
     for name, cap in TEXT_FIELDS.items():
         raw = first(params.get(name))
@@ -99,6 +138,7 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
         text['shrine_name'] = catalog.default_name
     return Design(
         choices=choices,
+        multi=multi,
         inactive=inactive,
         text=text,
         dropped=tuple(d for d in dropped if d not in inactive),
@@ -156,6 +196,8 @@ def option_effects(catalog: Catalog, design: Design, category: Category) -> dict
     leaving it unanswered: which steps appear or disappear, which later options open. Derived from
     the rules, so a card's tag cannot drift from what the wizard does. shrines.js does the same."""
     w = design.wording
+    if category.multi:
+        return {}  # a multi-select step is never named in a rule, so it makes nothing possible
     labels = {c.key: c.wording.get(w, {}).get('label', c.label) for c in catalog.categories}
     option_labels = {
         f'{c.key}.{o.key}': o.wording.get(w, {}).get('label', o.label)
@@ -202,7 +244,11 @@ def rules_json(catalog: Catalog) -> str:
 
 def share_query(catalog: Catalog, design: Design) -> str:
     """The query string that reproduces `design` and nothing else - never a GM figure."""
-    pairs = [(c.key, design.choices[c.key]) for c in catalog.categories if c.key in design.choices]
+    pairs = []
+    for c in catalog.categories:
+        if c.key in design.choices:
+            pairs.append((c.key, design.choices[c.key]))
+        pairs += [(c.key, v) for v in design.multi.get(c.key, ())]
     pairs += [(name, design.text[name]) for name in TEXT_FIELDS if name in design.text]
     return urlencode(pairs)
 

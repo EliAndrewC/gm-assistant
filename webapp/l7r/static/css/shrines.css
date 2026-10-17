@@ -101,7 +101,7 @@
    says what. Empty tags keep their height so the cards in a row still line up. */
 .shrine-opt__effect {
   position: relative;
-  align-self: flex-start;
+  align-self: center;
   margin-bottom: 0.15rem;
   font-family: var(--font-body);
   font-size: 0.97rem;
@@ -126,7 +126,8 @@
   position: absolute;
   z-index: 6;
   bottom: calc(100% + 0.3rem);
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: max-content;
   max-width: min(22rem, 80vw);
   padding: 0.55rem 0.75rem;
@@ -138,7 +139,75 @@
   line-height: 1.45;
 }
 .shrine-opt__tip b { color: var(--paper-fold); font-weight: 600; }
-.shrine-opt__effect.tip-right .shrine-opt__tip { left: auto; right: 0; }
+.shrine-opt__effect.tip-right .shrine-opt__tip { left: auto; right: 0; transform: none; }
+.shrine-opt__effect.tip-left .shrine-opt__tip { left: 0; transform: none; }
+
+/* FR-043: a Japanese term explains itself on hover, focus or tap. */
+.shrine-opt__term { position: relative; align-self: flex-start; cursor: help; border-bottom: 1px dotted var(--ink-ghost); }
+.shrine-term__tip {
+  display: none;
+  position: absolute;
+  z-index: 6;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: max-content;
+  max-width: min(20rem, 78vw);
+  padding: 0.5rem 0.7rem;
+  background: var(--ink);
+  color: var(--paper-raised);
+  border-radius: 4px;
+  box-shadow: 0 4px 14px var(--shadow-ink);
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  white-space: normal;
+}
+.shrine-opt__term:hover .shrine-term__tip,
+.shrine-opt__term:focus .shrine-term__tip { display: block; }
+.shrine-opt__term:focus { outline: none; }
+.shrine-opt__term:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.shrine-opt__term.tip-right .shrine-term__tip { left: auto; right: 0; }
+
+/* FR-044: a multi-select step - square check marks, a "choose any" hint, the exclusive option
+   set apart below its own "or instead". */
+.shrine-multi__hint,
+.shrine-multi__or {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  color: var(--vermillion-deep);
+}
+.shrine-multi__hint::before { content: '\2611\00a0\00a0'; letter-spacing: 0; font-size: 1.15em; }
+.shrine-multi__or { margin-top: 1.2rem; }
+.shrine-opt.shrine-opt--check .shrine-opt__title::before,
+.shrine-opt.shrine-opt--check input:checked + .shrine-opt__body .shrine-opt__title::before {
+  content: '';
+  display: inline-block;
+  box-sizing: border-box;
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.5em;
+  border: 2px solid var(--ink-soft);
+  border-radius: 3px;
+  background: var(--paper-raised);
+  vertical-align: -0.1em;
+  text-align: center;
+  line-height: 0.8em;
+  font-size: 1em;
+}
+/* a ticked box is a filled square with a check - never the round dot of a single-choice step */
+.shrine-opt.shrine-opt--check input:checked + .shrine-opt__body .shrine-opt__title::before {
+  content: '\2713';
+  color: var(--paper-raised);
+  background: var(--vermillion);
+  border-color: var(--vermillion-deep);
+  font-weight: 700;
+}
+.shrine-opts--exclusive { grid-template-columns: minmax(0, 1fr) !important; }
+.shrine-opts--exclusive .shrine-opt__body { border-style: dashed; }
 .shrine-opt__effect:not(.is-empty):hover .shrine-opt__tip,
 .shrine-opt__effect:not(.is-empty):focus .shrine-opt__tip,
 .shrine-opt__effect:not(.is-empty):focus-within .shrine-opt__tip { display: block; }

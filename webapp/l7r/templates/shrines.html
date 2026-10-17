@@ -35,6 +35,32 @@
   {%- endif -%}
 {%- endmacro %}
 
+{# One option card: its effect tag (FR-040/041) above, the card below. A multi-select step's
+   cards are checkboxes; an exclusive one clears the others in shrines.js. #}
+{% macro card(category, option, effects, has_tags) -%}
+  {%- set fx = effects.get(option.key) -%}
+  {%- set offered = option_offered(option, design) -%}
+  {%- set picked = option.key in design.multi.get(category.key, ()) if category.multi else option.key == design.choices.get(category.key) -%}
+  <div class="shrine-opt-cell{% if not offered %} is-unavailable{% endif %}" data-option="{{ option.key }}">
+    <span class="shrine-opt__effect{% if not fx or not fx.tag %} is-empty{% endif %}{% if not has_tags %} is-none{% endif %}" tabindex="{{ 0 if fx and fx.tag else -1 }}" data-effect>
+      <span class="shrine-opt__effect-tag" data-effect-tag>{{ fx.tag if fx else '' }}</span>
+      <span class="shrine-opt__tip" role="tooltip" data-effect-tip>{% if fx and fx.tag %}<b>Makes possible later:</b> {{ (fx.added + fx.opens)|join(', ') }}{% endif %}</span>
+    </span>
+    <label class="shrine-opt{% if category.multi %} shrine-opt--check{% endif %}">
+      <input type="{{ 'checkbox' if category.multi else 'radio' }}" name="{{ category.key }}" value="{{ option.key }}"{% if picked %} checked{% endif %}{% if option.exclusive %} data-exclusive{% endif %}{% if not offered %} disabled{% endif %} />
+      <span class="shrine-opt__body">
+        <span class="shrine-opt__title">{{ t(option, 'label') }}</span>
+        {% if option.ja or option.romaji %}
+          {# FR-043: the term explains itself on hover, focus or tap. #}
+          <span class="shrine-opt__term" tabindex="0" data-gloss>{% if option.ja %}<span lang="ja">{{ option.ja }}</span> {% endif %}<em>{{ option.romaji }}</em><span class="shrine-term__tip" role="tooltip">{{ option.gloss }}</span></span>
+        {% endif %}
+        <span class="shrine-opt__text">{{ t(option, 'text') }}</span>
+        {% if option.appeal %}<span class="shrine-opt__appeal">{{ t(option, 'appeal') }}</span>{% endif %}
+      </span>
+    </label>
+  </div>
+{%- endmacro %}
+
 {% block content %}
 <section class="container">
   <div class="masthead">
@@ -158,7 +184,6 @@
       {% for group in catalog.groups %}
         {% for category in group.categories %}
           {% set moot = category.key in design.voided %}
-          {% set chosen = design.choices.get(category.key) %}
           <section class="wizard-step" id="shrine-step-{{ category.key }}" data-step="{{ category.key }}" data-chapter="{{ group.label }}" data-phase="{{ catalog.phase_number(group.key) }}">
             {% if loop.first %}<p class="wizard-step__chapter-intro">{{ t(group, 'intro') }}</p>{% endif %}
             <fieldset class="shrine-cat{% if moot %} is-moot{% endif %}" data-cat="{{ category.key }}" {% if moot %}disabled{% endif %}>
@@ -168,35 +193,25 @@
               </legend>
               {% if category.decides %}<p class="shrine-cat__decides">{{ category.decides }}</p>{% endif %}
               {% if category.when %}<p class="shrine-cat__moot" role="note">{{ moot_note(catalog, category) }}</p>{% endif %}
-              <div class="shrine-opts shrine-opts--n{{ category.options|length }}">
-                {% set effects = option_effects(catalog, design, category) %}
-                {% set has_tags = effects.values()|selectattr('tag')|list %}
-                {% for option in category.options %}
-                  {% set fx = effects[option.key] %}
-                  {% set offered = option_offered(option, design) %}
-                  <div class="shrine-opt-cell{% if not offered %} is-unavailable{% endif %}" data-option="{{ option.key }}">
-                  {# FR-040: what picking this does to the rest of the wizard, as a tag above the card with a
-                     tooltip; shrines.js recomputes both as earlier choices change. #}
-                  <span class="shrine-opt__effect{% if not fx.tag %} is-empty{% endif %}{% if not has_tags %} is-none{% endif %}" tabindex="{{ 0 if fx.tag else -1 }}" data-effect>
-                    <span class="shrine-opt__effect-tag" data-effect-tag>{{ fx.tag }}</span>
-                    <span class="shrine-opt__tip" role="tooltip" data-effect-tip>
-                      <b>Makes possible later:</b> {{ (fx.added + fx.opens)|join(', ') }}
-                    </span>
-                  </span>
-                  <label class="shrine-opt">
-                    <input type="radio" name="{{ category.key }}" value="{{ option.key }}"{% if option.key == chosen %} checked{% endif %}{% if not offered %} disabled{% endif %} />
-                    <span class="shrine-opt__body">
-                      <span class="shrine-opt__title">{{ t(option, 'label') }}</span>
-                      {% if option.ja or option.romaji %}
-                        <span class="shrine-opt__term">{% if option.ja %}<span lang="ja">{{ option.ja }}</span> {% endif %}<em>{{ option.romaji }}</em></span>
-                      {% endif %}
-                      <span class="shrine-opt__text">{{ t(option, 'text') }}</span>
-                      {% if option.appeal %}<span class="shrine-opt__appeal">{{ t(option, 'appeal') }}</span>{% endif %}
-                    </span>
-                  </label>
-                  </div>
-                {% endfor %}
-              </div>
+              {% set effects = option_effects(catalog, design, category) %}
+              {% set has_tags = effects.values()|selectattr('tag')|list %}
+              {% if category.multi %}
+                {# FR-044: several may be chosen. The combinable options are grouped (and shuffled) on
+                   their own; the exclusive one stands apart, unshuffled, below them. #}
+                {% set combinable = category.options|rejectattr('exclusive')|list %}
+                <p class="shrine-multi__hint">Choose any that apply - or, below, keep them together</p>
+                <div class="shrine-opts shrine-opts--multi shrine-opts--n{{ combinable|length }}" data-shuffle>
+                  {% for option in combinable %}{{ card(category, option, effects, has_tags) }}{% endfor %}
+                </div>
+                <p class="shrine-multi__or">Or instead</p>
+                <div class="shrine-opts shrine-opts--exclusive">
+                  {% for option in category.options|selectattr('exclusive') %}{{ card(category, option, effects, has_tags) }}{% endfor %}
+                </div>
+              {% else %}
+                <div class="shrine-opts shrine-opts--n{{ category.options|length }}" data-shuffle>
+                  {% for option in category.options %}{{ card(category, option, effects, has_tags) }}{% endfor %}
+                </div>
+              {% endif %}
             </fieldset>
           </section>
         {% endfor %}
@@ -208,7 +223,8 @@
         <p class="shrine-share__lede">Every choice in one link. Send it to your GM; opening it again brings the design back exactly. Select any line to go back and change it.</p>
         <ul class="shrine-summary" data-summary>
           {% for category in catalog.categories if category.key not in design.voided %}
-            <li><a href="#shrine-step-{{ category.key }}" data-goto="{{ category.key }}"><span>{{ category.label }}</span> {% if category.key in design.choices %}<em>{{ category.option(design.choices[category.key]).label }}</em>{% else %}<em class="is-open">not chosen yet</em>{% endif %}</a></li>
+            {% set keys = design.multi.get(category.key, ()) if category.multi else ([design.choices[category.key]] if category.key in design.choices else []) %}
+            <li><a href="#shrine-step-{{ category.key }}" data-goto="{{ category.key }}"><span>{{ category.label }}</span> {% if keys %}<em>{% for k in keys %}{{ category.option(k).label }}{{ '; ' if not loop.last }}{% endfor %}</em>{% else %}<em class="is-open">not chosen yet</em>{% endif %}</a></li>
           {% endfor %}
         </ul>
         <div class="shrine-share__row">

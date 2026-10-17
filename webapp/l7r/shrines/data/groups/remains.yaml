@@ -19,10 +19,9 @@ categories:
       - key: registered
         label: Their spirit, honored as an ancestor and registered
         text: >-
-          The spirit of the dead is honored here as an ancestor - called to the shrine by its
-          rites, as honored ancestors are called home at Obon - and entered on the rolls of the
-          domain's Ministry of Rites (for Shoda, the Kitsune family's), whose priests then serve
-          the shrine's great rites. The remains rest apart in a tomb of their own.
+          The spirit of the dead is honored here as an ancestor - called to the shrine by its rites,
+          as honored ancestors are called home at Obon - and entered on the rolls of the domain's
+          Ministry of Rites. The remains rest apart in a tomb of their own.
         appeal: >-
           The dead are honored with the full weight of the Empire's rites behind them, and no one
           can say the shrine is anything less than proper.
@@ -65,6 +64,9 @@ categories:
           The dead are made clean of the death they were given, and go to their rest as white and
           whole as their bones allow.
         lines: [{contract: remains, koku: 2}, {contract: rites, koku: 0.5}]
+        gloss: >-
+          "Washing the bones." A second funeral in which bones are taken up after the first burial
+          or burning, cleaned by hand and washed, then laid in a vessel.
       - key: wrapped
         label: Laid to rest as they are
         text: >-
@@ -79,12 +81,15 @@ categories:
     label: Dividing the remains
     prompt: How are the remains kept - together, or divided?
     when: {kind: [memorial]}
+    # FR-044: several may be chosen; "together" excludes the rest (`exclusive`).
+    multi: true
     reference: together
     # FR-034: the head is part of this question, not a step of its own. A head is treated apart
     # only when it was severed (the dead of battle, a bounty, a trophy), hence the "if".
     options:
       - key: together
         label: Kept together
+        exclusive: true
         text: >-
           Every bone that can be recovered - and the head, if it was severed and kept - is laid to
           rest together at the shrine.
@@ -102,17 +107,23 @@ categories:
           Long held the surest way to calm a spirit that met a hard end, and a second place for
           those who honor the dead to pray.
         lines: [{contract: earthwork, koku: 2}, {contract: stonework, koku: 2, heavy: 2}, {contract: rites, koku: 1}]
+        gloss: >-
+          "Head mound." A mound raised over a head buried apart from its body - most often the heads
+          of warriors or the executed, buried with rites to quiet the spirit.
       - key: temple
-        label: A portion to a temple they were close to
+        label: A portion to a temple they were connected to
         ja: 分骨
         romaji: bunkotsu
         text: >-
-          A bone, or the head, is given to a temple the dead had a bond with - for Shoda, the
+          A bone, or the head, is given to a temple the dead were connected to - for Shoda, the
           Temple of Ebisu that sheltered him - as great men's remains have been divided among the
           temples that honored them.
         appeal: >-
           The temple shares in their rest, and the two places are bound together through them.
         lines: [{contract: rites, koku: 3}]
+        gloss: >-
+          "Dividing the bones." Sending part of someone's remains to rest in a second place, so that
+          more than one temple or grave honors them.
       - key: mountain
         label: A portion to a mountain temple
         text: >-
@@ -139,6 +150,9 @@ categories:
         appeal: >-
           Visitors climb to the dead last, as to the innermost place of the shrine.
         lines: [{contract: stonework, koku: 6, heavy: 6}, {contract: earthwork, koku: 2}]
+        gloss: >-
+          "The inner precinct." The deepest and holiest part of a sacred site, often set apart and
+          above the rest and reached last.
       - key: gorinto
         label: An urn beneath a five-ring pagoda
         ja: 五輪塔
@@ -150,6 +164,9 @@ categories:
           The five elements stand over the dead, and the pagoda's quiet silhouette reads at once as
           a holy grave.
         lines: [{contract: stonework, koku: 5, heavy: 5}]
+        gloss: >-
+          "Five-ring tower." A stone grave marker of five stacked shapes - cube, sphere, pyramid,
+          crescent and jewel - for earth, water, fire, air and void.
       - key: hall
         label: A lacquered chest in a mortuary hall
         ja: 霊屋
@@ -161,6 +178,9 @@ categories:
           The dead are given a house of their own, a place where those who come can kneel out of
           the rain.
         lines: [{contract: carpentry, koku: 15}, {contract: roofing, koku: 4}, {contract: finishing, koku: 3}]
+        gloss: >-
+          "Spirit house." A small hall built over or around someone's remains or memorial tablet, a
+          house for the honored dead.
       - key: mound
         label: A clay jar under an earthen mound
         ja: 塚
@@ -172,6 +192,9 @@ categories:
           The oldest kind of grave there is, raised by hand.
         lines: [{contract: earthwork, koku: 2}]
 
+        gloss: >-
+          "Mound." A heap of earth raised over something buried, from a simple grave to a great
+          tomb.
   - key: display
     label: Showing the remains
     prompt: How are the remains shown to those who come?
@@ -182,7 +205,9 @@ categories:
         label: Sealed, and left in peace
         text: >-
           The remains are sealed in their resting place and not shown; visitors pray before the
-          place, not the bones. One of the most common ways to keep the dead.
+          place, not the bones.
+        appeal: >-
+          One of the most common ways to keep the dead.
       - key: reliquary
         label: One bone in a reliquary
         ja: 舎利塔
@@ -195,6 +220,22 @@ categories:
           Those who come on those days see the dead with their own eyes, and the festival gains a
           heart.
         lines: [{contract: metalwork, koku: 3}]
+        gloss: >-
+          "Relic tower." A small pagoda-shaped vessel made to hold, and often to show, relics - the
+          bones or ashes of a revered person.
+      - key: kaicho
+        label: Unveiled on rare days
+        ja: 開帳
+        romaji: kaicho
+        text: >-
+          The vessel holding the remains is kept closed, and opened to view only on rare appointed
+          days, when people come from far around to see it.
+        appeal: >-
+          Rarity draws pilgrims, and each day of unveiling becomes an event in its own right.
+        lines: [{contract: rites, koku: 1}]
+        gloss: >-
+          "Opening the curtain." The custom of unveiling hidden sacred things to the public only
+          on rare, appointed occasions.
       - key: lattice
         label: The chest behind a lattice door
         when: {resting: [hall]}

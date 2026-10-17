@@ -30,6 +30,9 @@ categories:
           It greets travelers before they reach the trees, and will read clearly in a hundred
           years.
         lines: [{contract: stonework, koku: 3, heavy: 3}]
+        gloss: >-
+          "Shrine-name marker." A stone pillar carved with the shrine's name, set where the approach
+          begins.
       - key: painted
         label: A painted wooden plaque
         ja: 扁額
@@ -40,6 +43,8 @@ categories:
         appeal: >-
           It hangs where every visitor passes beneath the name.
         lines: [{contract: finishing, koku: 1}]
+        gloss: >-
+          "Framed plaque." A tablet bearing a name, hung high over a gate or a doorway.
       - key: calligrapher
         label: Calligraphy by a noted master
         text: >-
@@ -78,6 +83,8 @@ categories:
         appeal: >-
           It will outlast everyone involved, and the founders' names with it.
         lines: [{contract: stonework, koku: 6, heavy: 5}]
+        gloss: >-
+          "Stone monument." An upright stone carved with an inscription.
       - key: board
         label: A board telling the origin story
         ja: 縁起
@@ -89,6 +96,8 @@ categories:
           Each repainting is a chance to retell the story, so it never grows stale.
         lines: [{contract: carpentry, koku: 1}, {contract: finishing, koku: 0.5}]
 
+        gloss: >-
+          "Origins." A shrine's founding story, told on a board, a scroll or a stone.
   - key: rite
     label: Consecration
     prompt: How is the kami invited into the shrine?

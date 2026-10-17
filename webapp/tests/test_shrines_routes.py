@@ -217,7 +217,7 @@ def test_memorial_path_reaches_summary_and_ledger(root: Root, as_user: object) -
     page = root.shrines(**params).decode('utf-8')
     assert (
         'data-goto="sharing"><span>Dividing the remains</span> '
-        '<em>A portion to a temple they were close to</em>'
+        '<em>A portion to a temple they were connected to</em>'
     ) in page
     assert (
         'data-goto="display"><span>Showing the remains</span> <em>One bone in a reliquary' in page
@@ -228,7 +228,7 @@ def test_memorial_path_reaches_summary_and_ledger(root: Root, as_user: object) -
     as_user('gm')  # type: ignore[operator]
     gm = root.shrines(**params).decode('utf-8')
     assert 'Burakumin (retrieving and preparing the remains)' in gm
-    assert 'Dividing the remains: A portion to a temple they were close to' in gm
+    assert 'Dividing the remains: A portion to a temple they were connected to' in gm
 
 
 def test_rules_script_in_player_page_carries_no_prices(root: Root, catalog: Catalog) -> None:
@@ -259,3 +259,23 @@ def test_counter_counts_phases(root: Root) -> None:
     assert 'data-step="heart" data-chapter="The remains" data-phase="1"' in page
     assert 'data-step="review" data-chapter="Your shrine" data-phase="5"' in page
     assert 'skipped' not in page
+
+
+def test_multi_select_step_renders_checkboxes_and_hint(root: Root) -> None:
+    page = root.shrines(kind='memorial', sharing=['temple', 'mountain']).decode('utf-8')
+    assert 'class="shrine-multi__hint">Choose any that apply - or, below, keep them together' in page
+    assert page.count('type="checkbox" name="sharing"') == 4
+    assert 'value="together" data-exclusive' in page
+    assert 'value="temple" checked' in page
+    assert (
+        '<em>A portion to a temple they were connected to; A portion to a mountain temple</em>'
+        in page
+    )
+
+
+def test_japanese_terms_carry_tooltips(root: Root) -> None:
+    page = root.shrines(kind='memorial').decode('utf-8')
+    assert (
+        'data-gloss><span lang="ja">洗骨</span> <em>senkotsu</em><span class="shrine-term__tip"'
+        in page
+    )

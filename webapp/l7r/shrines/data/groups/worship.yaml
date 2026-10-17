@@ -23,7 +23,9 @@ categories:
         label: Before the sanctuary, in the open
         text: >-
           Visitors pray standing on the earth before the shrine's heart, under the trees and the
-          sky. One of the most common arrangements at small shrines.
+          sky.
+        appeal: >-
+          Among the most common arrangements at small shrines.
       - key: cover
         label: A cover-shed over the sanctuary
         when: {form: {not: [himorogi]}}
@@ -36,6 +38,8 @@ categories:
           Common in forests and snowy country, it keeps a small sanctuary safe for centuries, and
           the sanctuary glimmers within like a treasure in its case.
         lines: [{contract: carpentry, koku: 7}, {contract: roofing, koku: 3}]
+        gloss: >-
+          "Covering house." A plain shed built over a small sanctuary to shelter it.
       - key: pavilion
         label: Worship pavilion
         ja: 拝殿
@@ -47,6 +51,9 @@ categories:
           A dry place to kneel in the rain, with room for a rite with a dozen worshipers.
         lines: [{contract: carpentry, koku: 9}, {contract: roofing, koku: 3}]
 
+        gloss: >-
+          "Worship hall." The building in front of a sanctuary where visitors stand or kneel to
+          pray.
   - key: altar
     label: Altar
     prompt: Where are offerings set out before the kami?
@@ -64,8 +71,12 @@ categories:
         romaji: hassokuan
         text: >-
           A low table of unpainted wood on eight slender legs, set before the shrine's heart; rice,
-          salt, water and sake go on it in little stands (sanbo). One of the most common altars.
+          salt, water and sake go on it in little stands (sanbo).
+        appeal: >-
+          Among the most common altars.
         lines: [{contract: carpentry, koku: 1}]
+        gloss: >-
+          "Eight-legged table." The plain wooden table on which offerings are set before a shrine.
       - key: slab
         label: Stone offering table
         text: >-
@@ -142,9 +153,12 @@ categories:
         ja: 鏡
         romaji: kagami
         text: >-
-          A round bronze mirror, newly cast and polished, wrapped and sealed in its box. One of the
-          most common sacred objects.
+          A round bronze mirror, newly cast and polished, wrapped and sealed in its box.
+        appeal: >-
+          One of the most common sacred objects.
         lines: [{contract: metalwork, koku: 4}]
+        gloss: >-
+          "Mirror." A round polished bronze mirror, one of the oldest vessels for a divine presence.
       - key: gohei
         label: A paper wand
         ja: 御幣
@@ -165,6 +179,9 @@ categories:
               the shrine is always fresh.
         lines: [{contract: rites, koku: 0.1}]
 
+        gloss: >-
+          "Honored offering." A wand hung with zigzag folded paper streamers, used in rites and as a
+          vessel for a divine presence.
   - key: box
     label: Offering box
     prompt: Where do visitors leave their coins?
@@ -181,6 +198,8 @@ categories:
           The ring of a coin on its slats carries across the grounds, and the offerings are safe in
           a place nobody watches.
         lines: [{contract: carpentry, koku: 0.5}, {contract: metalwork, koku: 1}]
+        gloss: >-
+          "Offering-coin box." The slatted box that visitors toss coins into before praying.
       - key: bamboo
         label: A bamboo tube
         text: >-
@@ -242,6 +261,8 @@ categories:
               Its bright jingle is said to please and summon the Fortune, and children love to
               ring it.
         lines: [{contract: metalwork, koku: 1}]
+        gloss: >-
+          "Bell." A round rattle-bell, shaken by its rope to announce a visitor.
       - key: gong
         label: Hanging gong
         ja: 鰐口
@@ -253,3 +274,7 @@ categories:
           Its deep note hangs in the air long after it is struck, and can be heard from the foot
           of the path.
         lines: [{contract: metalwork, koku: 2.5}]
+
+        gloss: >-
+          "Crocodile mouth," for its wide slit: a flat, hollow bronze gong sounded by swinging a
+          rope against it.

@@ -254,6 +254,26 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   exist only for some choices belong to an existing phase (a memorial's remains steps belong to
   the first phase, "The shrine"), so the number of phases is always the same.
 
+## Amendment 8 (GM message 9, 2026-10-17)
+
+- **FR-043**: every Japanese term shown on an option (kanji and reading) has a tooltip explaining
+  what it means and what it is.
+- **FR-044**: a step may be multi-select. Dividing the remains is one: "kept together" excludes the
+  others, while the other options (portions to a temple the dead were connected to, to a mountain
+  temple, the head under its own mound) may be chosen together. The page makes it visually obvious
+  that several may be chosen ("choose any that apply"), groups the combinable options apart from
+  the exclusive one, and does not shuffle the exclusive one in among them.
+- **FR-045**: no step ever offers fewer than two options, whatever was chosen before. (Display had
+  dwindled to "sealed" alone when the bones were not washed and the remains not in a mortuary
+  hall.) An option that works with any remains is added to that step.
+- **FR-046** (amends FR-021/FR-026): an option's commonness sentence ("one of the most common
+  ...") is its closing sentence and gets the same styling and bottom placement as every other
+  option's closing sentence; the phrasing varies ("one of", "among", "perhaps the most").
+- **FR-047**: the sanctuary's description does not presume the shrine is a compound of several
+  buildings; whether it is a single structure with attached features or several buildings follows
+  from the player's other choices.
+- The effect tag of FR-041 is centered above its card.
+
 ## Review history
 
 - **Round 1 - CHANGES REQUIRED** (2026-10-17, `spec-fidelity`, Mode 2, against `gm-request.md`).
@@ -304,3 +324,7 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   steps in the first phase judged faithful. Change: no coined "custom option" label; the
   option-only case is "1 custom choice" too.
 - **Round 16 (amendment 7)** - change applied verbatim as the reviewer worded it; FR-042 unchanged.
+- **Round 17 (amendment 8, message 9) - FAITHFUL** (2026-10-17). The head mound among the
+  combinable options, the at-least-two-options rule with kaicho, and FR-047 as a wording fix (no
+  new layout step - single-structure and compound shrines both follow from existing choices) all
+  judged faithful.

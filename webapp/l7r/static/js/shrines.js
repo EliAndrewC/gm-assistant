@@ -67,13 +67,13 @@
         fs.disabled = !!failing;
         if (failing) return;
         var optionRules = rules.options[key] || {};
-        fs.querySelectorAll('input[type=radio]').forEach(function (input) {
+        fs.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(function (input) {
           var ok = (optionRules[input.value] || []).every(function (c) { return holds(c, choices); });
           input.closest('.shrine-opt-cell').classList.toggle('is-unavailable', !ok);
           input.disabled = !ok;
           if (!ok) input.checked = false;
         });
-        var checked = fs.querySelector('input[type=radio]:checked');
+        var checked = fs.querySelector('input:checked');
         if (checked) choices[key] = checked.value;
       });
       // FR-030/FR-032/FR-037: the first named wording whose rule holds replaces the plain wording.
@@ -203,20 +203,20 @@
     }
 
     // Keep a tooltip on screen: one that would run off the right edge opens right-aligned.
-    function placeTip(effect) {
-      var tip = effect.querySelector('[data-effect-tip]');
-      effect.classList.remove('tip-right');
-      var room = document.documentElement.clientWidth - effect.getBoundingClientRect().left;
-      if (tip && tip.offsetWidth + 16 > room) effect.classList.add('tip-right');
+    function placeTip(host) {
+      var tip = host.querySelector('[role=tooltip]');
+      host.classList.remove('tip-right', 'tip-left');
+      if (!tip) return;
+      var width = document.documentElement.clientWidth;
+      var r = tip.getBoundingClientRect();
+      if (r.right > width - 8) host.classList.add('tip-right');
+      else if (r.left < 8) host.classList.add('tip-left');
     }
-    form.addEventListener('mouseover', function (event) {
-      var effect = event.target.closest && event.target.closest('[data-effect]');
-      if (effect) placeTip(effect);
-    });
-    form.addEventListener('focusin', function (event) {
-      var effect = event.target.closest && event.target.closest('[data-effect]');
-      if (effect) placeTip(effect);
-    });
+    function tipHost(event) {
+      return event.target.closest && event.target.closest('[data-effect], [data-gloss]');
+    }
+    form.addEventListener('mouseover', function (event) { var h = tipHost(event); if (h) placeTip(h); });
+    form.addEventListener('focusin', function (event) { var h = tipHost(event); if (h) placeTip(h); });
 
     function designQuery() {
       var params = new URLSearchParams();
@@ -244,7 +244,8 @@
       if (list) {
         list.innerHTML = '';
         form.querySelectorAll('fieldset.shrine-cat:not(:disabled)').forEach(function (fs) {
-          var checked = fs.querySelector('input[type=radio]:checked');
+          var picked = fs.querySelectorAll('input:checked');
+          var checked = picked[0];
           var li = document.createElement('li');
           var a = document.createElement('a');
           a.href = '#shrine-step-' + fs.dataset.cat;
@@ -255,7 +256,9 @@
           a.appendChild(document.createTextNode(' '));
           var answer = document.createElement('em');
           if (checked) {
-            answer.textContent = shownText(checked.closest('.shrine-opt').querySelector('.shrine-opt__title'));
+            answer.textContent = Array.prototype.map.call(picked, function (i) {
+              return shownText(i.closest('.shrine-opt').querySelector('.shrine-opt__title'));
+            }).join('; ');
           } else {
             answer.textContent = 'not chosen yet';
             answer.className = 'is-open';
@@ -290,7 +293,8 @@
 
     // FR-023: a fresh random order every time a step is shown, so position biases no choice.
     function shuffle(step) {
-      var grid = step.querySelector('.shrine-opts');
+      // only [data-shuffle] grids: a multi-select step's exclusive option stays put (FR-044)
+      var grid = step.querySelector('.shrine-opts[data-shuffle]');
       if (!grid) return;
       var cards = Array.prototype.slice.call(grid.children);
       for (var i = cards.length - 1; i > 0; i--) {
@@ -328,9 +332,11 @@
     function gateNext() {
       if (!current) return;
       var fs = current.querySelector('fieldset.shrine-cat');
-      var open = fs && !fs.disabled && !fs.querySelector('input[type=radio]:checked');
+      var open = fs && !fs.disabled && !fs.querySelector('input:checked');
       nextBtn.disabled = !!open;
-      wizard.querySelector('[data-hint]').hidden = !open;
+      var hint = wizard.querySelector('[data-hint]');
+      hint.hidden = !open;
+      hint.textContent = fs && fs.querySelector('input[type=checkbox]') ? 'Choose at least one' : 'Choose one';
     }
 
     function neighbor(step, delta) {
@@ -387,7 +393,14 @@
       advance(stepByKey(link.dataset.goto));
     });
 
-    form.addEventListener('change', function () {
+    form.addEventListener('change', function (event) {
+      // FR-044: on a multi-select step an exclusive option and the others clear each other
+      var box = event.target;
+      if (box.type === 'checkbox' && box.checked) {
+        box.closest('fieldset').querySelectorAll('input[type=checkbox]').forEach(function (other) {
+          if (other !== box && (box.hasAttribute('data-exclusive') || other.hasAttribute('data-exclusive'))) other.checked = false;
+        });
+      }
       if (isGm) {
         try { sessionStorage.setItem(SCROLL_KEY, String(window.scrollY)); } catch (e) { /* ignore */ }
         form.action = '/shrines' + (current ? '#step-' + current.dataset.step : '');

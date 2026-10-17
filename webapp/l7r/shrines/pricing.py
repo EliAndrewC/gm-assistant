@@ -67,10 +67,17 @@ def price_design(catalog: Catalog, design: Design, remoteness: str) -> Pricing:
     items: list[LineItem] = [
         LineItem('Site preparation', s.label, s.contract, s.koku, 0.0) for s in catalog.site_lines
     ]
-    for category in catalog.categories:
-        if category.key not in design.choices:
-            continue
-        option = category.option(design.choices[category.key])
+    picked = [
+        (category, key)
+        for category in catalog.categories
+        for key in (
+            (design.choices[category.key],)
+            if category.key in design.choices
+            else design.multi.get(category.key, ())
+        )
+    ]
+    for category, key in picked:
+        option = category.option(key)
         assert option is not None  # resolve() keeps only real option keys
         for line in option.lines:
             factor = 1.0

@@ -383,7 +383,9 @@ class Root:
             missing=sum(
                 1
                 for c in catalog.categories
-                if c.key not in design.choices and c.key not in design.voided
+                if c.key not in design.choices
+                and c.key not in design.multi
+                and c.key not in design.voided
             ),
             **context,
         )

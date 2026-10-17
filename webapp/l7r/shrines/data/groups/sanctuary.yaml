@@ -2,18 +2,18 @@
 key: sanctuary
 label: The sanctuary
 intro: >-
-  The sanctuary (honden) is the innermost building: the dwelling of the kami, or the house that
-  keeps what is most sacred. Nobody goes inside it; its doors are opened only for rites.
+  The sanctuary (honden) is the heart of the shrine, the house of the kami, whether it stands alone
+  or among other buildings. Nobody goes inside it; its doors are opened only for rites.
 wording:
   memorial:
     intro: >-
-      The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
-      here, the place the honored dead are called to, or their remains. Nobody goes inside it; its
-      doors are opened only for rites.
+      The sanctuary (honden) is the heart of the shrine, the house that keeps what is most sacred -
+      here, the place the honored dead are called to, or their remains - whether it stands alone or
+      among other buildings. Nobody goes inside it; its doors are opened only for rites.
   fortune:
     intro: >-
-      The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
-      here, the seat to which the Fortune is called. Nobody goes inside it; its doors are opened
+      The sanctuary (honden) is the heart of the shrine, the seat to which the Fortune is called,
+      whether it stands alone or among other buildings. Nobody goes inside it; its doors are opened
       only for rites.
 categories:
   - key: form
@@ -26,9 +26,14 @@ categories:
         ja: 流造
         romaji: nagare-zukuri
         text: >-
-          A gabled roof whose front slope runs long and low over the steps, so that worshipers
-          stand under the eaves. One of the most common forms in the Empire.
+          A gabled roof whose front slope runs long and low over the steps, so that worshipers stand
+          under the eaves.
+        appeal: >-
+          Perhaps the most common form in the Empire.
         lines: [{contract: carpentry, koku: 16}]
+        gloss: >-
+          "Flowing style." A sanctuary whose front roof slope sweeps down long and low over the
+          steps.
       - key: kasuga
         label: Gable-entry
         ja: 春日造
@@ -40,6 +45,9 @@ categories:
           It has the poise of a jewel box set down among the trees, and draws the eye straight
           to its doors.
         lines: [{contract: carpentry, koku: 15}]
+        gloss: >-
+          "Kasuga style," named for a great old shrine: a small sanctuary entered from its gable end
+          under a curved porch.
       - key: shinmei
         label: Straight roof on posts
         ja: 神明造
@@ -51,6 +59,9 @@ categories:
           Severe and archaic, it makes the shrine feel as if it has stood in the forest since the
           age of the gods.
         lines: [{contract: carpentry, koku: 14}]
+        gloss: >-
+          "Divine light style." The ancient straight-roofed form, raised like a storehouse, with
+          crossed finials at the ridge.
       - key: hokora
         label: Stone shrine-house
         ja: 祠
@@ -62,6 +73,8 @@ categories:
           Moss and lichen claim it within a few years, and it will still be standing when every
           timber in the province has rotted away.
         lines: [{contract: stonework, koku: 6, heavy: 4}]
+        gloss: >-
+          A small shrine-house, in wood or stone, set by roads, on hills and in groves.
       - key: himorogi
         label: Open to the sky
         ja: 神籬
@@ -75,8 +88,7 @@ categories:
               The heart of the shrine is left open to the forest and the sky, its ground bound
               with sacred rope and purified.
             appeal: >-
-              The most ancient form of worship, and the closest of all to a life lived in the open -
-              for Shoda, the way he lived in the forest.
+              The most ancient form of worship, and the closest of all to a life lived in the open.
           fortune:
             text: >-
               The Fortune is called not to a house but to the living forest itself, to a place
@@ -86,6 +98,9 @@ categories:
           Empire.
         lines: [{contract: carpentry, koku: 1}]
 
+        gloss: >-
+          "Sacred fence." A space under the open sky, marked off and purified, into which a divine
+          presence is called - worship from before there were buildings.
   - key: dwelling
     label: The kami's dwelling
     prompt: What does the kami dwell in?
@@ -111,6 +126,9 @@ categories:
           A living pillar between earth and heaven, it will keep growing for centuries, and every
           visitor finds themselves looking up.
         lines: [{contract: earthwork, koku: 0.5}, {contract: rites, koku: 0.5}]
+        gloss: >-
+          "Divine tree." A tree held sacred, usually old and great, bound with a straw rope to mark
+          it.
       - key: rock
         label: A rock seat
         ja: 磐座
@@ -133,6 +151,8 @@ categories:
               The Fortune is called to a seat of stone that has known this place for ages, and
               those who come can sit before it.
         lines: [{contract: earthwork, koku: 0.5}]
+        gloss: >-
+          "Rock seat." A great boulder held to be a seat for a divine presence.
       - key: standing
         label: A standing stone
         ja: 立石
@@ -143,6 +163,8 @@ categories:
           It reads from far off as a figure waiting among the trees, and holds the morning light
           on its face.
         lines: [{contract: stonework, koku: 3, heavy: 3}]
+        gloss: >-
+          "Standing stone." A stone raised upright to mark a holy place.
       - key: grove
         label: The whole grove
         ja: 神奈備
@@ -161,6 +183,8 @@ categories:
           becomes the holy place.
         lines: [{contract: rites, koku: 1}]
 
+        gloss: >-
+          A mountain or grove held to be itself the body or home of a divine presence.
   - key: ground
     label: The ground before it
     prompt: How is the ground at the heart of the shrine laid?
@@ -215,6 +239,9 @@ categories:
               The oldest way of marking ground for the divine to descend into, and renewing the
               bamboo each year gives the keepers a rite of their own.
         lines: [{contract: rites, koku: 0.5}]
+        gloss: >-
+          "Purifying bamboo." Four fresh bamboo set at the corners of a square and joined by sacred
+          rope, marking ground made pure for a rite.
       - key: stones
         label: A ring of river stones
         text: >-
@@ -241,6 +268,8 @@ categories:
           The shrine is made of the very trees that stand around it, and belongs to its ground as
           they do.
         lines: [{contract: carpentry, koku: 2}]
+        gloss: >-
+          Japanese cedar, a tall straight forest tree with reddish, soft, fragrant wood.
       - key: hinoki
         label: Hinoki cypress
         ja: 檜
@@ -252,6 +281,8 @@ categories:
           The timber most associated with shrines, and its clean scent greets every visitor at
           the steps.
         lines: [{contract: carpentry, koku: 8, heavy: 4}]
+        gloss: >-
+          Japanese cypress, the pale, fine-grained, fragrant wood most prized for shrines.
       - key: keyaki
         label: Zelkova
         ja: 欅
@@ -263,6 +294,8 @@ categories:
           It holds a carved edge for centuries and gives the building a dark, formal weight.
         lines: [{contract: carpentry, koku: 10, heavy: 4}]
 
+        gloss: >-
+          Zelkova, a hard hardwood with a bold grain, favored for heavy beams and carving.
   - key: roof
     label: Roof covering
     prompt: What is the roof made of?
@@ -279,6 +312,8 @@ categories:
         appeal: >-
           The oldest roof there is, and under snow it looks like part of the hillside.
         lines: [{contract: roofing, koku: 3}]
+        gloss: >-
+          "Grass-roofed." A roof of thick bundled reeds and grasses.
       - key: kokera
         label: Wooden shingles
         ja: 杮葺
@@ -289,6 +324,8 @@ categories:
         appeal: >-
           Light and precise, it shows off the carpenter's eye in every course.
         lines: [{contract: roofing, koku: 5}]
+        gloss: >-
+          "Shingle-roofed." A roof of thin split wooden shingles laid in many courses.
       - key: hiwada
         label: Cypress bark
         ja: 檜皮葺
@@ -299,6 +336,8 @@ categories:
         appeal: >-
           The classic roof of courtly shrines, its curves seem to flow down like water.
         lines: [{contract: roofing, koku: 8}]
+        gloss: >-
+          "Cypress-bark roofed." A roof of layered bark stripped from living cypress trees.
       - key: copper
         label: Copper sheet
         ja: 銅板葺
@@ -311,6 +350,9 @@ categories:
           generations.
         lines: [{contract: roofing, koku: 22, heavy: 1}]
 
+        gloss: >-
+          "Copper-plate roofed." A roof of copper sheets, which weather from bright to brown to
+          blue-green.
   - key: finish
     label: Finish
     prompt: How is the wood finished?
@@ -326,6 +368,8 @@ categories:
           line of its grain.
         appeal: >-
           The purest finish in the old view, honest to the forest it came from.
+        gloss: >-
+          "White wood." Wood left bare, without paint or lacquer.
       - key: kakishibu
         label: Persimmon stain
         ja: 柿渋
@@ -336,6 +380,9 @@ categories:
         appeal: >-
           A deep country warmth, like old farmhouse beams glowing in lamplight.
         lines: [{contract: finishing, koku: 1}]
+        gloss: >-
+          "Persimmon tannin." Juice of unripe persimmons, fermented and brushed on to stain and
+          protect wood.
       - key: vermilion
         label: Vermilion
         ja: 丹塗
@@ -346,6 +393,8 @@ categories:
           Strongly associated with Inari, the Fortune of rice and of foxes, it flares through the
           green like a signal fire.
         lines: [{contract: finishing, koku: 5}]
+        gloss: >-
+          "Cinnabar coat." The red-orange paint of shrine gates and halls.
       - key: lacquer
         label: Black lacquer
         ja: 漆
@@ -357,6 +406,8 @@ categories:
           catches it.
         lines: [{contract: finishing, koku: 8}]
 
+        gloss: >-
+          Lacquer from the sap of the lacquer tree, built up in many thin coats to a hard gloss.
   - key: carving
     label: Ornament
     prompt: How are the beams and transoms worked?
@@ -375,8 +426,13 @@ categories:
         romaji: gegyo
         text: >-
           A carved pendant hangs from the gable peak and the beam ends are shaped into curling
-          clouds or animal heads (kibana). One of the most common types of decoration.
+          clouds or animal heads (kibana).
+        appeal: >-
+          One of the most common types of decoration.
         lines: [{contract: finishing, koku: 5}]
+        gloss: >-
+          "Hanging fish." The carved board hung beneath a gable peak; old belief held it guarded the
+          building from fire.
       - key: lattice
         label: Openwork lattice transoms
         ja: 欄間
@@ -387,6 +443,8 @@ categories:
         appeal: >-
           The sanctuary seems to breathe, and at dawn it casts patterned light across the steps.
         lines: [{contract: finishing, koku: 8}]
+        gloss: >-
+          "Between the beams." The openwork panel in the space above a door or between rooms.
       - key: panels
         label: Relief panels
         text: >-

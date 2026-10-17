@@ -98,6 +98,10 @@ class Option:
     # Offered only when this holds (FR-036).
     when: Condition = ()
     units: float = 1.0
+    # FR-043: what the Japanese term means, shown as a tooltip on the term.
+    gloss: str = ''
+    # FR-044: on a multi-select step, picking this one clears the others (and vice versa).
+    exclusive: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,6 +116,8 @@ class Category:
     wording: dict[str, dict[str, str]] = field(default_factory=dict)
     # FR-036: one sentence saying which later choice this step's answer decides, if any.
     decides: str = ''
+    # FR-044: several options may be chosen together (except an `exclusive` one).
+    multi: bool = False
 
     def option(self, key: str) -> Option | None:
         for option in self.options:
@@ -239,6 +245,8 @@ def _option(raw: Mapping[str, Any]) -> Option:
         wording=_wording(raw, {'label', 'text', 'appeal'}),
         when=_condition(raw.get('when')),
         units=float(raw.get('units', 1)),
+        gloss=_squash(raw.get('gloss', '')),
+        exclusive=bool(raw.get('exclusive', False)),
     )
 
 
@@ -252,6 +260,7 @@ def _category(raw: Mapping[str, Any]) -> Category:
         when=_condition(raw.get('when')),
         wording=_wording(raw, {'label', 'prompt'}),
         decides=_squash(raw.get('decides', '')),
+        multi=bool(raw.get('multi', False)),
     )
 
 
@@ -334,8 +343,18 @@ def _validate(catalog: Catalog) -> None:
         _check_condition(catalog, category.key, category.when, earlier)
         if category.option(category.reference) is None:
             raise CatalogError(f'{category.key}: {category.reference!r} is not one of its options')
+        if category.multi and any(
+            cl.key == category.key
+            for c in catalog.categories
+            for cl in (*c.when, *(x for o in c.options for x in o.when))
+        ):
+            raise CatalogError(f'{category.key}: a multi-select step cannot be named in a rule')
         for option in category.options:
             where = f'{category.key}.{option.key}'
+            if option.exclusive and not category.multi:
+                raise CatalogError(f'{where}: exclusive only makes sense on a multi-select step')
+            if (option.ja or option.romaji) and not option.gloss:
+                raise CatalogError(f'{where}: a Japanese term needs a gloss (FR-043)')
             _check_condition(catalog, where, option.when, earlier)
             for line in option.lines:
                 if line.contract not in contracts:
