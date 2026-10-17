@@ -117,6 +117,8 @@ def warm_caches(max_age: float = MAX_AGE) -> str:
     age = opcache.cache_age()
     if age is None:
         CACHE_STATUS['roster'] = 'no campaign cache - every name looks free'
+    elif age == float('inf'):
+        CACHE_STATUS['roster'] = 'stale (no refresh time recorded)'
     else:
         CACHE_STATUS['roster'] = f'{"refreshed" if written else "fresh"} ({age / 3600:.1f} h old)'
     return CACHE_STATUS['roster']
