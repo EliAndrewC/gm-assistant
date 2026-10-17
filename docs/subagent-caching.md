@@ -109,11 +109,19 @@ did not show one again.
 
 ## Parallel launches
 
-A cache entry is readable only once the request that writes it has started streaming. N identical
-launches sent at the same instant all write and none read. The `Workflow` runtime already holds
-same-prefix agents for up to 5 seconds behind the first one. For hand-launched Agent calls, the
-shared part is now only the ~4k system prompt, so staggering saves little. When launching 3 or more
-of one type, launching one first and the rest in the next turn is still the cheaper shape.
+A cache entry is readable only once the request that writes it has started streaming, so agents
+launched in one message all write the shared prefix. **Do not hand-stagger** (one now, the rest next
+turn): another session measured it as a loss, and the numbers agree. The extra main-session turn
+re-reads the whole session context, median 253k tokens here (last 30 sessions, 2026-10-17), about 25k
+token equivalents at the cache-read price; the prefix it saves is about 4k per extra typed agent.
+
+`Workflow` staggers by itself with no extra turn. Measured in julie-medical's one run (2026-10-11):
+the first agent wrote 35.5k, and the four started 0.6-1.5 s later each read 18.9k and wrote about
+16.6k. It pays for waves of 4 or more agents, launched with `agentType` set (the default workflow
+subagent loads CLAUDE.md and every tool). This repository rarely fans out (review rounds are
+sequential, `mention-context-review` must run one category at a time, and the largest batch so far
+was nine `shrine-text-review` sections), and `Workflow` still needs the GM's explicit request, so
+the default here is plain Agent calls in one message.
 
 ## The same-session fallback
 
