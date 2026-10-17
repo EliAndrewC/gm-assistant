@@ -24,3 +24,6 @@ setting/
 
 # Campaign character cache - gitignored build artifact, refreshed by `make prepare-deploy`.
 opcache/
+
+# Feature 218: the /look-up bot data baked at deploy time, its spend ledger and query log.
+l7r/lookup/data/
