@@ -4,7 +4,7 @@ label: The shrine
 intro: >-
   Before anything is built, what the shrine is for: a resting place for one of the honored dead,
   a place to call upon a Fortune, or a dwelling for a kami of the place. A memorial adds steps
-  about the remains, and the kind decides how the rest of the shrine is spoken of.
+  about the remains, and the kind changes how later steps speak of what is called to the shrine.
 categories:
   - key: kind
     label: Kind of shrine
@@ -14,7 +14,7 @@ categories:
       - key: memorial
         label: A memorial where remains rest
         text: >-
-          A shrine raised where the remains of one who has died are laid to rest, and his spirit
+          A shrine raised where the remains of one who has died are laid to rest, and their spirit
           honored as an ancestor.
         appeal: >-
           Those who come can ask the honored dead for guidance and aid, and a spirit that died hard

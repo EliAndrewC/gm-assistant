@@ -7,8 +7,8 @@ intro: >-
 wording:
   memorial:
     intro: >-
-      What a visitor touches: where they stand, how they announce themselves, and where they leave
-      their coins and offerings.
+      What a visitor touches: where they stand, how they announce themselves, where they leave their
+      coins and offerings, and what the spirit of the dead is called to inside.
   fortune:
     intro: >-
       What a visitor touches: where they stand, how they announce themselves to the Fortune, where
@@ -42,7 +42,7 @@ categories:
         text: >-
           A separate roofed platform in front of the sanctuary, open on all sides.
         appeal: >-
-          A dry place to kneel in the rain, with room for a rite with a dozen disciples.
+          A dry place to kneel in the rain, with room for a rite with a dozen worshipers.
         lines: [{contract: carpentry, koku: 9}, {contract: roofing, koku: 3}]
 
   - key: altar
@@ -50,7 +50,7 @@ categories:
     prompt: Where are offerings set out before the kami?
     wording:
       memorial:
-        prompt: Where are offerings set out before him?
+        prompt: Where are offerings set out before the honored dead?
       fortune:
         prompt: >-
           Where are offerings set out before the Fortune?
@@ -80,11 +80,13 @@ categories:
           The offerings rest on the place itself, as they did before there were shrines at all.
         lines: [{contract: earthwork, koku: 0.3}]
       - key: belonging
-        label: The hermit's own table
+        label: A table that belonged to the dead
+        when: {kind: [memorial]}
         text: >-
-          A low table or tray that belonged to the hermit, refinished and consecrated.
+          A low table or tray the dead used in life, refinished and consecrated.
         appeal: >-
-          Offerings are set where he once set his own bowl, a quiet reminder of the man himself.
+          Offerings are set where the dead once set their own bowl, so the rite returns to a place
+          they knew.
         lines: [{contract: carpentry, koku: 0.3}]
 
   - key: sacred
@@ -92,7 +94,7 @@ categories:
     prompt: What object, sealed inside the sanctuary, does the kami dwell in?
     wording:
       memorial:
-        prompt: What object, sealed inside the sanctuary, is his spirit called to?
+        prompt: What object, sealed inside the sanctuary, is the spirit of the dead called to?
       fortune:
         prompt: >-
           What object, sealed inside the sanctuary, is the Fortune called to?
@@ -100,30 +102,31 @@ categories:
     reference: belonging
     options:
       - key: belonging
-        label: Something that was his
+        label: Something that belonged to the dead
+        when: {kind: [memorial]}
         text: >-
-          A possession of the hermit - his staff, his bowl, a tool he worked with - wrapped in
-          silk and sealed in a box.
+          A possession of the dead - a staff, a bowl, a tool they worked with - wrapped in silk and
+          sealed in a box.
         appeal: >-
-          The kami lives in something his hands wore smooth, and his disciples know exactly
-          what it is.
+          The spirit is called to something its own hands wore smooth, and those who tend the shrine
+          know exactly what it is.
         wording:
           memorial:
             appeal: >-
-              His spirit is called to something his hands wore smooth, and his disciples know exactly
-              what it is.
+              The spirit is called to something its own hands wore smooth, and those who tend the
+              shrine know exactly what it is.
       - key: stone
-        label: A stone from where he sat
+        label: A stone from the heart of the place
         text: >-
-          A stone taken from the place where the hermit meditated and taught.
+          A stone taken from the place that matters most to the one enshrined - where the dead sat
+          and taught, or the heart of the kami's ground.
         appeal: >-
-          Stones are among the oldest dwelling places of kami, and this one heard every lesson he
-          gave.
+          Stones are among the oldest dwelling places of kami, and this one is of the place itself.
         wording:
           memorial:
             appeal: >-
-              Stones are among the oldest places the spirits are called to, and this one heard every
-              lesson he gave.
+              Stones are among the oldest places the spirits are called to, and this one knew the
+              dead in life.
           fortune:
             appeal: >-
               Stones are among the oldest seats of the divine, and this one is of the place
@@ -133,8 +136,8 @@ categories:
         ja: 鏡
         romaji: kagami
         text: >-
-          A round bronze mirror, newly cast and polished, that shows the worshiper themselves.
-          One of the most common sacred objects.
+          A round bronze mirror, newly cast and polished, wrapped and sealed in its box. One of the
+          most common sacred objects.
         lines: [{contract: metalwork, koku: 4}]
       - key: gohei
         label: A paper wand
@@ -143,16 +146,17 @@ categories:
         text: >-
           A wand hung with folded white paper streamers.
         appeal: >-
-          The purest vessel for a kami, renewed by the disciples so the shrine is always fresh.
+          Held to be among the purest vessels for a kami, renewed by the keepers so the shrine is
+          always fresh.
         wording:
           memorial:
             appeal: >-
-              The purest vessel for a spirit called down, renewed by the disciples so the shrine is
-              always fresh.
+              Held to be among the purest vessels for a spirit called down, renewed by the keepers
+              so the shrine is always fresh.
           fortune:
             appeal: >-
-              The purest vessel for a divine presence called down, renewed by the keepers so the
-              shrine is always fresh.
+              Held to be among the purest vessels for a divine presence, renewed by the keepers so
+              the shrine is always fresh.
         lines: [{contract: rites, koku: 0.1}]
 
   - key: box
@@ -165,17 +169,17 @@ categories:
         ja: 賽銭箱
         romaji: saisenbako
         text: >-
-          A wooden chest with a slatted top that coins drop through, bound in iron and locked;
-          the disciples carry the key.
+          A wooden chest with a slatted top that coins drop through, bound in iron and locked; the
+          keepers carry the key.
         appeal: >-
-          The ring of a coin on its slats carries through the clearing, and the offerings are
-          safe in a place nobody watches.
+          The ring of a coin on its slats carries across the grounds, and the offerings are safe in
+          a place nobody watches.
         lines: [{contract: carpentry, koku: 0.5}, {contract: metalwork, koku: 1}]
       - key: bamboo
         label: A bamboo tube
         text: >-
-          A thick section of green bamboo bound upright to a post, with a slot cut near the top;
-          the disciples split a new one to empty it.
+          A thick section of green bamboo bound upright to a post, with a slot cut near the top; the
+          keepers split a new one to empty it.
         appeal: >-
           Of a piece with the woods, it looks as if the forest grew its own offering box.
         lines: [{contract: carpentry, koku: 0.2}]
@@ -189,7 +193,7 @@ categories:
         lines: [{contract: stonework, koku: 2, heavy: 2}, {contract: metalwork, koku: 0.5}]
 
   - key: bell
-    label: Bell
+    label: Announcing
     prompt: How does a visitor announce themselves to the kami?
     wording:
       memorial:
@@ -200,11 +204,19 @@ categories:
     reference: suzu
     options:
       - key: clap
-        label: Two claps
+        label: Bows and hands alone
         text: >-
-          The visitor bows twice and claps twice.
+          The visitor announces themselves with their own hands alone, bowing twice and clapping
+          twice; nothing hangs at the front.
         appeal: >-
           In the forest's quiet the sound carries far through the trees, sharp and clean.
+        wording:
+          memorial:
+            text: >-
+              The visitor bows and claps without a sound, as is done for the dead (shinobi-te);
+              nothing hangs at the front.
+            appeal: >-
+              Only bows and hands pass between the visitor and the dead.
       - key: suzu
         label: Bell and rope
         ja: 鈴
@@ -228,7 +240,8 @@ categories:
         ja: 鰐口
         romaji: waniguchi
         text: >-
-          A flat, hollow bronze gong, struck with a rope-hung beam.
+          A flat, hollow bronze gong hung from the eaves, sounded by swinging the thick rope that
+          hangs before it against its face.
         appeal: >-
           Its deep note hangs in the air long after it is struck, and can be heard from the foot
           of the path.

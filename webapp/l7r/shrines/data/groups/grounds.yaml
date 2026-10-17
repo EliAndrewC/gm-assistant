@@ -41,8 +41,8 @@ categories:
         text: >-
           Small torii set close together along the path so it runs through them like a tunnel.
         appeal: >-
-          A custom of Inari shrines, where grateful visitors add more over the years until the
-          line runs up the hill.
+          Each gate is a thank-offering from someone whose prayer was answered, so the tunnel grows
+          longer over the years, a visible record of the shrine's favors.
         units: 2
 
   - key: gate_material
@@ -83,9 +83,9 @@ categories:
       - key: earth
         label: Swept earth
         text: >-
-          A cleared path of beaten earth, swept by the disciples, with roots for steps.
+          A cleared path of beaten earth, swept by those who tend it, with roots for steps.
         appeal: >-
-          Visitors walk the very trail the hermit walked, worn by his own feet.
+          The path stays as the forest made it, and every visitor walks it as the first visitor did.
         lines: [{contract: earthwork, koku: 1}]
       - key: gravel
         label: White gravel
@@ -130,8 +130,8 @@ categories:
           A twisted rice-straw rope hung with zigzag paper streamers (shide), strung between
           posts or trees around the sacred ground and renewed each year.
         appeal: >-
-          Its white streamers stir in every breeze, and the yearly renewal gives the disciples a
-          festival day.
+          Its white streamers stir in every breeze, and the yearly renewal gives the shrine's
+          keepers a festival day.
         lines: [{contract: rites, koku: 0.3}]
       - key: fence
         label: Low wooden fence
@@ -170,17 +170,24 @@ categories:
       - key: none
         label: The forest itself
         text: >-
-          The old trees and whatever lives among them keep the shrine; foxes come and go at
+          The old trees and the creatures that live among them keep the shrine, coming and going at
           their own pace.
         appeal: >-
-          Fitting for a man who gave his life for the foxes: the guardians are real ones.
+          Its guardians are the living creatures of the place, with no carving between the shrine
+          and its forest.
+        wording:
+          memorial:
+            appeal: >-
+              Its guardians are the living creatures of the place - and for one who loved them, as
+              Shoda died for its foxes, the guardians are real ones.
       - key: komainu
         label: Stone lion-dogs
         ja: 狛犬
         romaji: komainu
         text: >-
-          A pair of stone lion-dogs on pedestals, one with its mouth open, one closed - the
-          first and last sounds. One of the most common guardians.
+          A pair of stone lion-dogs on pedestals, one with its mouth open and one closed, sounding
+          the first and last syllables - the beginning and end of all things. One of the most common
+          guardians.
         lines: [{contract: stonework, koku: 10, heavy: 8}]
       - key: foxes
         label: Stone foxes
@@ -190,8 +197,8 @@ categories:
           A pair of stone foxes, messengers of Inari, one holding a jewel, one a key or a scroll
           in its mouth.
         appeal: >-
-          Visitors wrap them in red bibs, and every fox in the forest has a pair of watchful
-          cousins.
+          Inari's messengers keep watch here, and visitors dress them in red bibs in thanks for
+          favors granted.
         lines: [{contract: stonework, koku: 11, heavy: 8}]
       - key: wooden
         label: Carved wooden guardians
@@ -232,14 +239,15 @@ categories:
         text: >-
           A single tall stone lantern at the foot of the path, meant to be lit every night.
         appeal: >-
-          A beacon that tells anyone lost in the forest where the hermit's shrine stands.
+          A beacon that tells anyone lost in the forest where the shrine stands.
         lines: [{contract: stonework, koku: 5, heavy: 5}]
       - key: hanging
         label: Hanging metal lanterns
         ja: 釣灯籠
         romaji: tsuridoro
         text: >-
-          Two pierced bronze or iron lanterns hung from the eaves.
+          Two pierced bronze or iron lanterns hung from the sanctuary's eaves, lighting the last
+          steps of the path.
         appeal: >-
           They throw patterned light across the steps, like stars caught in the shrine.
         lines: [{contract: metalwork, koku: 3}]
@@ -252,11 +260,15 @@ categories:
       - key: stream
         label: The stream
         text: >-
-          Just as the hermit washed his hands in the stream each morning, so visitors kneel at
-          the water's edge and purify themselves there.
+          Visitors kneel at the edge of a nearby stream and purify themselves in its current.
         appeal: >-
-          Running water is the purest of all, and every visitor shares the hermit's morning.
+          Running water is the purest of all, and no vessel stands between the visitor and it.
         lines: [{contract: earthwork, koku: 0.3}]
+        wording:
+          memorial:
+            appeal: >-
+              Running water is the purest of all - and for Shoda, who washed his hands in that
+              stream each morning, every visitor shares his morning.
       - key: basin
         label: Stone basin with a bamboo spout
         ja: 手水鉢
@@ -272,7 +284,7 @@ categories:
         ja: 手水舎
         romaji: temizuya
         text: >-
-          A stone basin sheltered by a small roof on four posts.
+          A stone basin fed by a bamboo spout, sheltered by a small roof on four posts.
         appeal: >-
           It neither freezes over nor fills with leaves, and offers a dry pause on a rainy
           climb.

@@ -8,8 +8,8 @@ wording:
   memorial:
     intro: >-
       The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
-      here, the place his spirit is called to, or his remains. Nobody goes inside it; its doors are
-      opened only for rites.
+      here, the place the honored dead are called to, or their remains. Nobody goes inside it; its
+      doors are opened only for rites.
   fortune:
     intro: >-
       The sanctuary (honden) is the innermost building, the house that keeps what is most sacred:
@@ -35,7 +35,7 @@ categories:
         romaji: kasuga-zukuri
         text: >-
           A compact box entered from the gable end under a small curved porch roof, neat and
-          upright, traditionally painted.
+          upright, and often painted vermilion.
         appeal: >-
           It has the poise of a jewel box set down among the trees, and draws the eye straight
           to its doors.
@@ -74,13 +74,16 @@ categories:
             text: >-
               The heart of the shrine is left open to the forest and the sky, its ground bound
               with sacred rope and purified.
+            appeal: >-
+              The most ancient form of worship, and the closest of all to a life lived in the open -
+              for Shoda, the way he lived in the forest.
           fortune:
             text: >-
               The Fortune is called not to a house but to the living forest itself, to a place
               bound with sacred rope and purified, under the open sky.
         appeal: >-
           The most ancient form of worship, still kept at some of the greatest shrines in the
-          Empire, and the closest of all to the way the hermit lived.
+          Empire.
         lines: [{contract: carpentry, koku: 1}]
 
   - key: dwelling
@@ -88,8 +91,8 @@ categories:
     prompt: What does the kami dwell in?
     wording:
       memorial:
-        label: Where his spirit is called
-        prompt: Where is his spirit called to?
+        label: Where the spirit is called
+        prompt: Where is the spirit of the dead called to?
       fortune:
         label: >-
           Where the Fortune is called
@@ -103,8 +106,7 @@ categories:
         ja: 神木
         romaji: shinboku
         text: >-
-          The oldest tree in the hermit's woods, its trunk bound with a thick straw rope and
-          paper streamers.
+          The oldest tree in the grove, its trunk bound with a thick straw rope and paper streamers.
         appeal: >-
           A living pillar between earth and heaven, it will keep growing for centuries, and every
           visitor finds themselves looking up.
@@ -114,15 +116,16 @@ categories:
         ja: 磐座
         romaji: iwakura
         text: >-
-          A great boulder where the hermit sat to teach, ringed with rope and swept clean.
+          A great boulder long held to be a seat of the divine, ringed with rope and swept clean -
+          for Shoda, the stone where he sat to teach.
         appeal: >-
-          The kami takes the very seat the hermit took, and his disciples can sit before it as
-          they once sat before him.
+          The kami of this place is honored on a seat of stone older than any building, and those
+          who come can sit before it.
         wording:
           memorial:
             appeal: >-
-              His spirit is called to the very seat he took, and his disciples can sit before it as
-              they once sat before him.
+              The spirit is called to a seat the dead knew in life, and those who knew them can sit
+              before it as they once did.
           fortune:
             appeal: >-
               The Fortune is called to a seat of stone that has known this place for ages, and
@@ -143,19 +146,17 @@ categories:
         ja: 神奈備
         romaji: kannabi
         text: >-
-          The entire grove where the hermit lived is held to be the kami's body, its edges
-          marked with rope.
+          The entire grove is held to be the kami's body, its edges marked with rope.
         wording:
           memorial:
             text: >-
-              The entire grove where the hermit lived is where his spirit is called, its edges marked
-              with rope.
+              The entire grove is where the spirit is called, its edges marked with rope.
           fortune:
             text: >-
               The entire grove is where the Fortune is called, its edges marked with rope.
         appeal: >-
           Every step taken among those trees is a step inside the shrine, and the forest itself
-          becomes the hermit's memorial.
+          becomes the holy place.
         lines: [{contract: rites, koku: 1}]
 
   - key: ground
@@ -173,13 +174,14 @@ categories:
       - key: gravel
         label: A court of white gravel
         text: >-
-          A level court of pale gravel, raked in lines, spread before the dwelling for rites.
+          A level court of pale gravel, raked in lines, spread before the shrine's heart for rites.
         appeal: >-
           It glows in moonlight, and the sound of each footstep tells the kami someone has come.
         wording:
           memorial:
             appeal: >-
-              It glows in moonlight, and the sound of each footstep tells him someone has come.
+              It glows in moonlight, and the sound of each footstep tells the dead that someone has
+              come.
           fortune:
             appeal: >-
               It glows in moonlight, and the sound of each footstep tells the Fortune someone has
@@ -188,8 +190,7 @@ categories:
       - key: moss
         label: Moss left to grow
         text: >-
-          The forest floor is cleared of brush and left to the moss, which the disciples tend by
-          hand.
+          The forest floor is cleared of brush and left to the moss, which the keepers tend by hand.
         appeal: >-
           Soft and green as velvet, it hushes every step and makes the place feel untouched.
         lines: [{contract: earthwork, koku: 0.5}]
@@ -201,13 +202,13 @@ categories:
           Four freshly cut green bamboo stand at the corners of a square, joined by a sacred rope
           hung with paper streamers.
         appeal: >-
-          The oldest way of marking ground for a kami to descend into, and renewing the bamboo
-          each year gives the disciples a rite of their own.
+          The oldest way of marking ground for a kami to descend into, and renewing the bamboo each
+          year gives the keepers a rite of their own.
         wording:
           memorial:
             appeal: >-
               The oldest way of marking holy ground, and renewing the bamboo each year gives the
-              disciples a rite of their own.
+              keepers a rite of their own.
           fortune:
             appeal: >-
               The oldest way of marking ground for the divine to descend into, and renewing the
@@ -216,9 +217,11 @@ categories:
       - key: stones
         label: A ring of river stones
         text: >-
-          Smooth stones carried up from the stream and set in a circle around the dwelling.
+          Smooth stones carried up from a nearby stream and set in a circle around the shrine's
+          heart.
         appeal: >-
-          The stream the hermit drank from is brought to his door, stone by stone.
+          The stream is brought to the heart of the shrine stone by stone, and the stones keep the
+          cool of running water.
         lines: [{contract: earthwork, koku: 1.5, heavy: 2}]
 
   - key: timber
@@ -228,23 +231,22 @@ categories:
     reference: hinoki
     options:
       - key: sugi
-        label: Cedar from the forest itself
+        label: Cedar from the shrine's own woods
         ja: 杉
         romaji: sugi
         text: >-
-          Trees felled from the hermit's own woods and sawn on the spot: straight, reddish and
-          soft.
+          Trees felled from the shrine's own woods and sawn on the spot: straight, reddish and soft.
         appeal: >-
-          The shrine is literally made of the place it honors, from the same trees he walked
-          among.
+          The shrine is literally made of the place it honors, from the very trees that stand around
+          it.
         lines: [{contract: carpentry, koku: 2}]
       - key: hinoki
         label: Hinoki cypress
         ja: 檜
         romaji: hinoki
         text: >-
-          Pale, close-grained and fragrant, brought in from outside the forest; it weathers to
-          silver and resists rot.
+          Pale, close-grained and fragrant, brought in from elsewhere; it weathers to silver and
+          resists rot.
         appeal: >-
           The timber most associated with shrines, and its clean scent greets every visitor at
           the steps.
@@ -255,7 +257,7 @@ categories:
         romaji: keyaki
         text: >-
           A hard, dense hardwood with a strong figure that darkens with age, brought in from
-          outside the forest.
+          elsewhere.
         appeal: >-
           It holds a carved edge for centuries and gives the building a dark, formal weight.
         lines: [{contract: carpentry, koku: 10, heavy: 4}]
@@ -271,7 +273,7 @@ categories:
         ja: 茅葺
         romaji: kayabuki
         text: >-
-          Thick bundles of reed and grass, soft-edged and deep; the disciples can rethatch it
+          Thick bundles of reed and grass, soft-edged and deep; the keepers can rethatch it
           themselves every twenty years or so.
         appeal: >-
           The oldest roof there is, and under snow it looks like part of the hillside.
@@ -367,7 +369,7 @@ categories:
         appeal: >-
           The carpenter's craft is the ornament, and those who know joinery will linger over it.
       - key: accents
-        label: Gable pendant and bracket ends
+        label: Gable pendant and carved beam ends
         ja: 懸魚
         romaji: gegyo
         text: >-
@@ -387,9 +389,8 @@ categories:
       - key: panels
         label: Relief panels
         text: >-
-          The transoms are carved in relief with pictures - foxes among autumn grasses, a hermit
-          under a tree.
+          The transoms are carved in relief with pictures from the story the shrine keeps - for
+          Shoda, foxes among autumn grasses and a hermit under a tree.
         appeal: >-
-          Visitors stop to read them like a story, and children are told the hermit's tale
-          panel by panel.
+          Visitors stop to read them like a story, and children are told the tale panel by panel.
         lines: [{contract: finishing, koku: 20}]

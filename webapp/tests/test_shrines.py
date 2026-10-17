@@ -447,7 +447,14 @@ def test_rules_json_carries_conditions_and_nothing_else(catalog: Catalog) -> Non
     text = rules_json(catalog)
     rules = json.loads(text)
     assert set(rules) == {'categories', 'options', 'wordings'}
-    assert rules['options'] == {'display': {'reliquary': [['preparation', ['washed'], False]]}}
+    assert rules['options'] == {
+        'altar': {'belonging': [['kind', ['memorial'], False]]},
+        'sacred': {'belonging': [['kind', ['memorial'], False]]},
+        'display': {
+            'reliquary': [['preparation', ['washed'], False]],
+            'lattice': [['resting', ['hall'], False]],
+        },
+    }
     assert rules['wordings'] == [
         ['memorial', [['kind', ['memorial'], False]]],
         ['fortune', [['kind', ['fortune'], False]]],
@@ -644,3 +651,20 @@ def test_review_sections_are_player_text_only(catalog: Catalog, tmp_path: Any) -
         f'{g.key}.txt' for g in catalog.groups
     )
     assert main([]) == 2
+
+
+# Shoda-specific words may appear only inside a "for Shoda ..." example (FR-034, FR-037).
+SHODA_ONLY = re.compile(r'\b(hermit|disciples?|he|him|his|himself)\b', re.IGNORECASE)
+
+
+def _without_examples(text: str) -> str:
+    return re.sub(r'for Shoda[^.;]*', '', text)
+
+
+def test_shoda_only_appears_as_an_example(catalog: Catalog) -> None:
+    """Generic options: no hermit, no disciples, no he/his outside a "for Shoda" example, in any
+    field or wording (the dead are "the dead" / "they"). The guard below proves it fires."""
+    assert SHODA_ONLY.search(_without_examples('the hermit sat here'))
+    assert not SHODA_ONLY.search(_without_examples('a stone - for Shoda, where he sat.'))
+    offenders = [t for t in player_texts(catalog) if SHODA_ONLY.search(_without_examples(t))]
+    assert offenders == []

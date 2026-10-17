@@ -138,7 +138,10 @@ def test_summary_lists_the_picks(root: Root) -> None:
     page = root.shrines(form='kasuga', roof='copper').decode('utf-8')
     assert 'data-goto="form"><span>Form</span> <em>Gable-entry</em></a>' in page
     assert 'data-goto="roof"><span>Roof covering</span> <em>Copper sheet</em></a>' in page
-    assert 'data-goto="bell"><span>Bell</span> <em class="is-open">not chosen yet</em></a>' in page
+    assert (
+        'data-goto="bell"><span>Announcing</span> <em class="is-open">not chosen yet</em></a>'
+        in page
+    )
 
 
 def test_wizard_has_a_step_per_category_plus_name_and_review(root: Root, catalog: Catalog) -> None:
@@ -214,7 +217,7 @@ def test_memorial_path_reaches_summary_and_ledger(root: Root, as_user: object) -
     page = root.shrines(**params).decode('utf-8')
     assert (
         'data-goto="sharing"><span>Dividing the remains</span> '
-        '<em>A portion to a temple he was close to</em>'
+        '<em>A portion to a temple they were close to</em>'
     ) in page
     assert (
         'data-goto="display"><span>Showing the remains</span> <em>One bone in a reliquary' in page
@@ -225,7 +228,7 @@ def test_memorial_path_reaches_summary_and_ledger(root: Root, as_user: object) -
     as_user('gm')  # type: ignore[operator]
     gm = root.shrines(**params).decode('utf-8')
     assert 'Burakumin (retrieving and preparing the remains)' in gm
-    assert 'Dividing the remains: A portion to a temple he was close to' in gm
+    assert 'Dividing the remains: A portion to a temple they were close to' in gm
 
 
 def test_rules_script_in_player_page_carries_no_prices(root: Root, catalog: Catalog) -> None:
@@ -241,6 +244,8 @@ def test_rules_script_in_player_page_carries_no_prices(root: Root, catalog: Cata
 def test_preparation_says_what_it_decides(root: Root) -> None:
     """FR-036: the step explains why it is asked, and the washed card names what it opens."""
     page = root.shrines(kind='memorial').decode('utf-8')
-    assert 'class="shrine-cat__decides">A village pyre leaves more than ash' in page
+    assert (
+        'class="shrine-cat__decides">Burned or buried, what is left is more than clean bone' in page
+    )
     assert 'Makes possible later: One bone in a reliquary.' in page
     assert 'shrine-opt is-unavailable' in page  # the reliquary, until bones are washed

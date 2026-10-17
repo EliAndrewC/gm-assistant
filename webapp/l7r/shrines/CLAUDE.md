@@ -73,6 +73,24 @@ wizard in one pass. Don't reintroduce `voids`/`only_with`-style side channels: e
   merely the last page visited. The wizard's Back calls `history.back()` when there is a wizard
   entry behind it, so the two never drift apart.
 
+## Reviewing the player text (FR-039)
+
+The author of option text is not a reliable judge of it. After any substantial text change:
+
+```bash
+( cd webapp && python3 -m l7r.shrines.review /tmp/shrine-review )   # one file per section
+```
+
+then run the `shrine-text-review` agent (`.claude/agents/shrine-text-review.md`) once per file,
+two or three at a time (memory). **Caching:** the agent definition IS the shared system prompt -
+keep it identical across calls and put nothing in the message but "review <file>". In the session
+that creates or edits the definition it is not yet registered (harness gotcha in
+`docs/spec-kit-and-reviews.md`): use a `general-purpose` agent whose message starts with the
+definition's body pasted VERBATIM and ends with the file to read, so the shared part still caches
+as a prefix. Apply findings with judgment, re-run the tests, and re-review the changed sections
+once. Recurring findings become tests (as "no hermit/disciples/he outside a `for Shoda` example"
+did, in `test_shoda_only_appears_as_an_example`).
+
 ## Historical grounding (why the numbers are what they are)
 
 - **Unstaffed shrines are the normal case.** Most Japanese shrines have no priest of their own
