@@ -113,6 +113,12 @@ These were split out of this file so they are not in every session's context. Ea
 | [`docs/iteration-loop.md`](docs/iteration-loop.md) | You want the measured evidence behind a loop rule, or you are about to argue with one. |
 | [`docs/container.md`](docs/container.md) | Launching or rebuilding the container, diagnosing a "command not found" / "No module named" failure, adding a permanent dependency, or bumping Python. |
 | [`docs/spec-kit-and-reviews.md`](docs/spec-kit-and-reviews.md) | Adding a rule to a review subagent (`backstory-review`, `frontend-review`), or wiring spec-kit hooks. |
+| [`docs/subagent-caching.md`](docs/subagent-caching.md) | Writing an agent definition, launching several subagents with shared instructions or context, writing a `Workflow` script, or hitting a `subagent-cache` block. |
+
+**Subagent token cost, always-on version** (GM 2026-10-17, measured): shared instructions go in a
+`.claude/agents/*.md` definition (its body is the only part reused across launches), every
+definition sets `omitClaudeMd: true` (this cut a repeat review launch from ~34k cache-write tokens
+to ~2.6k), and putting shared text first in a launch prompt does NOT make it cache.
 
 ## Note Intake Workflow
 
@@ -297,7 +303,7 @@ The diagram skill's own dev-loop doctrine moved with it to <https://github.com/E
   Note what this is and is not for: actually WRITING in main is already caught three ways (`webapp/mainguard.py`, the Makefile's `guard`, `settlement._assert_not_main_tree`). This rule prevents the quieter failure those guards cannot see - a read-only diagnostic that confidently reports the wrong tree, which is worse than an error because it looks like an answer.
   **A hook was priced and DECLINED (GM 2026-08-17: "I can't think of a better enforcement mechanism either").** A `PreToolUse` hook is this project's usual answer to a recurring mistake, and it does not fit this one. A hook precise enough to catch the motivating case would have to demand `git -C` on EVERY git call - it fired on a command with one legitimate `cd` and no second path, so nothing structural marked it as wrong - and a hook that fires on nearly every correct command trains sessions to pattern-match past it, which degrades the guards that matter. The narrow alternative (fire only when ONE command contains both a `cd` to a non-clone path AND `.clones/`) is near-zero noise but would have caught neither instance, since neither named two trees. So this rule is deliberately unenforced and rests on habit; the cost is that it will be broken again. **Reopen only with a mechanism that would catch a single-`cd` command whose section header names the other tree** - that is the shape to beat, and neither candidate above does.
 
-**WHAT IS ENFORCED, AND WHERE** (audit 2026-08-24). Twelve guards, each with a test companion that
+**WHAT IS ENFORCED, AND WHERE** (audit 2026-08-24). Thirteen guards, each with a test companion that
 `make hooks-test` runs as a gate phase - a guard without one turns the gate red (constitution XVIII).
 
 | rule | mechanism |
@@ -310,6 +316,7 @@ The diagram skill's own dev-loop doctrine moved with it to <https://github.com/E
 | guard files are not edited casually | [`scripts/guard-file-hooks.sh`](scripts/guard-file-hooks.sh) |
 | a spec is reviewed before implementation (XVI) | [`scripts/review-gate.sh`](scripts/review-gate.sh), run by `sync-with-main.sh` at PUSH time |
 | no `-k` subset before the gate; no branches; no polling; batching | the pre-existing `gate`/`no-branch`/`no-poll`/`batching` hooks |
+| shared subagent instructions live in a definition, not repeated launch prompts | [`scripts/subagent-cache-hooks.sh`](scripts/subagent-cache-hooks.sh) (general-purpose launches, once per session); `omitClaudeMd` on every definition by `webapp/tests/test_agent_definitions.py` |
 
 **Deliberately NOT enforced**, because a guard that fires on correct work teaches a session to bypass
 every guard: the caste sense of "people" (correct in narrative and vow voice), gender-neutral

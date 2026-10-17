@@ -1,8 +1,9 @@
 ---
 name: shrine-text-review
-description: Independent review of the shrine builder's player-facing text (/shrines, feature 216), one wizard section per call. Finds text that is confusing, or inaccurate to the category it describes (the kind of shrine, or the option's category) - including modern sensibilities projected onto the setting. The author of option text is not a reliable judge of it (Principle I). Keep the definition body identical across calls so it caches; put only the section under review in the message.
+description: Independent review of the shrine builder's player-facing text (/shrines, feature 216), one wizard section per call. Finds text that is confusing, or inaccurate to the category it describes (the kind of shrine, or the option's category) - including modern sensibilities projected onto the setting. The author of option text is not a reliable judge of it (Principle I). Launch it by type and put only the section file to review in the message: the definition body is the cached system prompt, and nothing in the message caches across calls.
 model: opus
 tools: Read, Grep
+omitClaudeMd: true
 ---
 
 # Shrine builder text review

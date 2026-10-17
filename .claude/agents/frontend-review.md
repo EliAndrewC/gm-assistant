@@ -2,6 +2,7 @@
 name: frontend-review
 description: Independent design review of L7R Toolkit screenshots. Evaluates UI work from the user's perspective without access to the implementing agent's rationale. Use BEFORE declaring any UI change "done" - particularly when the same agent both wrote the design and is reviewing it (per Constitution Principle I, the author is not a reliable reviewer of their own design choices).
 tools: Read, Bash
+omitClaudeMd: true
 ---
 
 # Frontend Review

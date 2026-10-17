@@ -94,9 +94,11 @@ then run the `shrine-text-review` agent (`.claude/agents/shrine-text-review.md`)
 two or three at a time (memory). **Caching:** the agent definition IS the shared system prompt -
 keep it identical across calls and put nothing in the message but "review <file>". In the session
 that creates or edits the definition it is not yet registered (harness gotcha in
-`docs/spec-kit-and-reviews.md`): use a `general-purpose` agent whose message starts with the
-definition's body pasted VERBATIM and ends with the file to read, so the shared part still caches
-as a prefix. Apply findings with judgment, re-run the tests, and re-review the changed sections
+`docs/spec-kit-and-reviews.md`): use a `general-purpose` agent whose message is the definition's
+body pasted VERBATIM followed by the file to read. That fallback does NOT cache across calls - it
+was measured on 2026-10-17 writing ~41.7k tokens fresh per launch despite the shared body coming
+first (`docs/subagent-caching.md`) - so use it only in that one session, and put `CACHE_OK` in the
+prompt to pass `scripts/subagent-cache-hooks.sh`. Apply findings with judgment, re-run the tests, and re-review the changed sections
 once. Recurring findings become tests (as "no hermit/disciples/he outside a `for Shoda` example"
 did, in `test_shoda_only_appears_as_an_example`).
 
