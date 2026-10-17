@@ -85,3 +85,5 @@ spending void outside a roll.
   "previous roll" answer judged WITHIN the request (it is the only point an unmarked spend comes to
   light). FR-001 reworded to name all three spend forms, since the old wording ("whose
   `void_points` is set") missed the previous-roll branch, which never sets it.
+- **Round 3 (spec-fidelity, 2026-10-17): FAITHFUL.** FR-001 now names all three spend forms;
+  nothing else drifted; the mistake carve-out stands as judged in round 1.
