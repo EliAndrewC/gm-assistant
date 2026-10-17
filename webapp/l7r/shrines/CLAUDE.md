@@ -53,12 +53,15 @@ wizard in one pass. Don't reintroduce `voids`/`only_with`-style side channels: e
 - **Nothing pre-selected, and no fixed order** (FR-023): every step starts empty, Next waits for a
   choice, and `shrines.js` shuffles the cards each time a step is shown. Catalog order means
   nothing to the player.
-- **Effect tags** (FR-040): an option that makes something possible later (a step that only
-  then appears, or a later option only then offered) has a tag above its card - "N more steps",
-  the steps left if it is picked - with a tooltip naming what it makes possible. Derived by
+- **Effect tags** (FR-040/FR-041): an option that makes something possible later has a tag
+  above its card counting the choices that exist because of it - "5 custom choices" (the steps it
+  brings, or, if none, the later options it opens) - with a tooltip naming them. Derived by
   simulation, never written by hand: `design.option_effects` server-side, `updateEffects()` in
-  shrines.js live. Options that only remove steps get no tag (the GM asked about what is made
-  possible).
+  shrines.js live. Options that only remove steps get no tag. Not "N extra/more steps": the GM
+  ruled the word out (a step is specific to a choice, not extra).
+- **Progress counts phases** (FR-042): "Part 2 of 5" from `phases:` in `data/catalog.yaml`, a
+  fixed list, so the denominator never moves and nothing is ever called "skipped". Steps that only
+  some choices bring sit inside an existing phase (the remains steps are in phase 1).
 - **Cards** (FR-035): every card in a row has the same height and its italic appeal line sits at
   the bottom.
 - **Every option says why it is worth choosing** (FR-026): `appeal:` in the catalog, one sentence,
@@ -91,9 +94,11 @@ then run the `shrine-text-review` agent (`.claude/agents/shrine-text-review.md`)
 two or three at a time (memory). **Caching:** the agent definition IS the shared system prompt -
 keep it identical across calls and put nothing in the message but "review <file>". In the session
 that creates or edits the definition it is not yet registered (harness gotcha in
-`docs/spec-kit-and-reviews.md`): use a `general-purpose` agent whose message starts with the
-definition's body pasted VERBATIM and ends with the file to read, so the shared part still caches
-as a prefix. Apply findings with judgment, re-run the tests, and re-review the changed sections
+`docs/spec-kit-and-reviews.md`): use a `general-purpose` agent whose message is the definition's
+body pasted VERBATIM followed by the file to read. That fallback does NOT cache across calls - it
+was measured on 2026-10-17 writing ~41.7k tokens fresh per launch despite the shared body coming
+first (`docs/subagent-caching.md`) - so use it only in that one session, and put `CACHE_OK` in the
+prompt to pass `scripts/subagent-cache-hooks.sh`. Apply findings with judgment, re-run the tests, and re-review the changed sections
 once. Recurring findings become tests (as "no hermit/disciples/he outside a `for Shoda` example"
 did, in `test_shoda_only_appears_as_an_example`).
 

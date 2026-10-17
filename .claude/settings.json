@@ -110,6 +110,16 @@
             "command": "/gm-assistant/scripts/source-block-hooks.sh pretool"
           }
         ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/gm-assistant/scripts/subagent-cache-hooks.sh pretool  # GUARD_EDIT_OK: new guard, docs/subagent-caching.md",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [

@@ -98,3 +98,19 @@ budget_padding: 1.2   # Tadashi won the budget negotiation by 10+ (research.md R
 # The wizard's sections, in order; each is data/groups/<key>.yaml. Order matters: a `when`
 # condition may only refer to a category in an EARLIER group (or earlier in the same group).
 groups: [purpose, remains, sanctuary, worship, grounds, dedication]
+
+# FR-042: the progress counter shows phases, a FIXED number of them ("Part 2 of 5"), so it never
+# changes with choices and never speaks of steps "skipped". Steps that exist only for some choices
+# live inside a phase every shrine has: a memorial's remains steps sit in the first phase. The
+# name step belongs to the first phase and the closing summary to the last.
+phases:
+  - label: The shrine
+    groups: [purpose, remains]
+  - label: The sanctuary
+    groups: [sanctuary]
+  - label: Worship and offerings
+    groups: [worship]
+  - label: The grounds
+    groups: [grounds]
+  - label: Name and dedication
+    groups: [dedication]

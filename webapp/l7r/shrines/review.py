@@ -4,8 +4,9 @@
 
 writes OUT_DIR/<group>.txt with the section's PLAYER-FACING text only (labels, prompts, notes,
 option text, appeals and every wording replacement - never a price line). Each review call then
-sends the reviewer's identical prompt (the body of `.claude/agents/shrine-text-review.md`) with
-only "read OUT_DIR/<group>.txt" at the end, so the shared part caches across calls.
+launches the `shrine-text-review` agent by type with only "review OUT_DIR/<group>.txt" as its
+prompt: the definition body is the subagent's system prompt, the only part that caches across
+calls (docs/subagent-caching.md).
 """
 
 from __future__ import annotations

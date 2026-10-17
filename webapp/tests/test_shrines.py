@@ -426,6 +426,7 @@ def test_reliquary_needs_washed_bones(catalog: Catalog) -> None:
     assert not option_offered(reliquary, wrapped)
     effects = option_effects(catalog, parse_design(catalog, {'kind': 'memorial'}), preparation)
     assert effects['washed'].opens == ('One bone in a reliquary',)
+    assert effects['washed'].tag == '1 custom choice'
     assert effects['wrapped'].tag == ''
     assert preparation.decides  # the step explains why it is asked
 
@@ -707,18 +708,32 @@ def test_option_effects_label_what_a_choice_makes_possible(catalog: Catalog) -> 
         'A table that belonged to the dead',
         'Something that belonged to the dead',
     )
-    assert by_kind['memorial'].tag == 'If chosen: 26 more steps'
+    assert by_kind['memorial'].tag == '5 custom choices'
     assert by_kind['fortune'].tag == ''
     by_form = option_effects(catalog, parse_design(catalog, {'kind': 'memorial'}), form)
     assert by_form['himorogi'].added == ('Where the spirit is called', 'The ground before it')
-    assert by_form['himorogi'].tag == 'If chosen: 17 more steps'
+    assert by_form['himorogi'].tag == '2 custom choices'
     assert by_form['hokora'].tag == ''  # only removes steps: no tag
     bones = parse_design(catalog, {'kind': 'memorial', 'heart': 'bones'})
     assert option_effects(catalog, bones, form)['himorogi'].added == ('The ground before it',)
     assert option_effects(catalog, empty, gate)['trees'].tag == ''
-    one = option_effects(
-        catalog,
-        parse_design(catalog, {'kind': 'memorial', 'form': 'nagare', 'gate_form': 'myojin'}),
-        catalog.categories[-1],
-    )
-    assert all(e.remaining == 0 for e in one.values())
+
+
+def test_phases_are_fixed_and_cover_every_group(catalog: Catalog) -> None:
+    """FR-042: the counter counts a fixed set of phases; the remains steps sit in the first."""
+    assert [p.label for p in catalog.phases] == [
+        'The shrine',
+        'The sanctuary',
+        'Worship and offerings',
+        'The grounds',
+        'Name and dedication',
+    ]
+    assert catalog.phase_number('remains') == 1
+    assert catalog.phase_number('dedication') == 5
+
+
+def test_phases_must_follow_the_groups(raw: dict[str, Any]) -> None:
+    data = copy.deepcopy(raw)
+    data['phases'][0]['groups'] = ['purpose']  # remains left out
+    with pytest.raises(CatalogError, match='phases must list every group'):
+        parse_catalog(data)

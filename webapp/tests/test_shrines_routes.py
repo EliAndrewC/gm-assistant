@@ -248,5 +248,14 @@ def test_preparation_says_what_it_decides(root: Root) -> None:
         'class="shrine-cat__decides">Burned or buried, what is left is more than clean bone' in page
     )
     assert '<b>Makes possible later:</b> One bone in a reliquary' in page
-    assert 'data-effect-tag>If chosen: 24 more steps</span>' in page
+    assert 'data-effect-tag>1 custom choice</span>' in page
     assert 'shrine-opt-cell is-unavailable' in page  # the reliquary, until bones are washed
+
+
+def test_counter_counts_phases(root: Root) -> None:
+    """FR-042: every step carries its phase; the denominator is the fixed number of phases."""
+    page = root.shrines(kind='memorial').decode('utf-8')
+    assert 'data-phases="5"' in page
+    assert 'data-step="heart" data-chapter="The remains" data-phase="1"' in page
+    assert 'data-step="review" data-chapter="Your shrine" data-phase="5"' in page
+    assert 'skipped' not in page

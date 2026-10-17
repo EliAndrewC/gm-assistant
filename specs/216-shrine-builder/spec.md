@@ -242,6 +242,18 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   what selecting it makes possible later (including any steps it adds). Counts follow the player's
   current choices.
 
+## Amendment 7 (GM message 8, 2026-10-17)
+
+- **FR-041** (amends FR-040's label): the tag above a card counts the choices that exist because of
+  this option - "5 custom choices" (steps that appear only if it is picked). When the option opens
+  no step but makes a later option possible, the tag counts those the same way ("1 custom
+  choice"). The tooltip
+  still names everything it makes possible. No "N more steps" count remains.
+- **FR-042**: the wizard's progress counter shows a fixed number of phases ("Part 2 of 5"), never a
+  step count that changes with choices, and never says that anything was "skipped". Steps that
+  exist only for some choices belong to an existing phase (a memorial's remains steps belong to
+  the first phase, "The shrine"), so the number of phases is always the same.
+
 ## Review history
 
 - **Round 1 - CHANGES REQUIRED** (2026-10-17, `spec-fidelity`, Mode 2, against `gm-request.md`).
@@ -288,3 +300,7 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
   added steps), never skipped steps. Labels go on options that make something possible later.
 - **Round 14 (amendment 6) - FAITHFUL** (2026-10-17). Labels on options that make something
   possible later (steps or options), none on options that only remove steps, judged faithful.
+- **Round 15 (amendment 7, message 8) - CHANGES REQUIRED** (2026-10-17). Phases and the remains
+  steps in the first phase judged faithful. Change: no coined "custom option" label; the
+  option-only case is "1 custom choice" too.
+- **Round 16 (amendment 7)** - change applied verbatim as the reviewer worded it; FR-042 unchanged.

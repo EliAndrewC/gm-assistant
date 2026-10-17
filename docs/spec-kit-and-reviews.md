@@ -30,6 +30,6 @@ stops a defect two lines from a flagged one going unopened - and across nine swe
 things nobody was looking for, including fourteen replies with words missing out of the middle of
 them.
 
-**Gotcha (harness behavior)**: agent definitions are snapshotted when the session registers them - mid-session edits to `.claude/agents/*.md` do NOT reach agents launched by type, which silently invalidates the TDD run. When iterating on an agent definition, launch a `general-purpose` agent instructed to Read the definition file and adopt it; the registered type picks up the changes next session.
+**Gotcha (harness behavior)**: agent definitions are snapshotted when the session registers them - mid-session edits to `.claude/agents/*.md` do NOT reach agents launched by type, which silently invalidates the TDD run. When iterating on an agent definition, launch a `general-purpose` agent instructed to Read the definition file and adopt it; the registered type picks up the changes next session. That fallback costs ~41-69k cache-write tokens per launch against ~2.6k for the typed agent, so use it only in that session and put `CACHE_OK` in its prompt ([`subagent-caching.md`](subagent-caching.md)).
 
 **Spec-kit hooks**: `.specify/extensions.yml` defines auto-commit hooks before each spec-kit step. Under the session-clone workflow (below), spec-kit work happens inside the session's clone, where committing is the session's job - the auto-commit hooks may run there. Never run them against main `/gm-assistant` or `/host-l7r-repo`.

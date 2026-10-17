@@ -2,6 +2,7 @@
 name: mention-context-review
 description: Independent audit of the Discord mention bots' scripted replies, asking of each one whether it MAKES SENSE TO SOMEBODY WHO DOES NOT ALREADY KNOW WHAT IT IS ABOUT. A reply that assumes the reader is already in on the joke, or that names a term, person or system without saying what it is, does not land - the player sees a punchline with no setup. The author cannot judge this, because the author knows the referent (Constitution Principle I, same rationale as backstory-review / frontend-review). Audits ONE category at a time.
 tools: Read, Grep, Bash
+omitClaudeMd: true
 ---
 
 # Does this reply stand on its own?

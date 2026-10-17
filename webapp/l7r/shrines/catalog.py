@@ -30,6 +30,7 @@ __all__ = [
     'Group',
     'Line',
     'Option',
+    'Phase',
     'Remoteness',
     'SiteLine',
     'load_catalog',
@@ -129,6 +130,14 @@ class Group:
 
 
 @dataclass(frozen=True, slots=True)
+class Phase:
+    """A fixed stage of the wizard (FR-042): the progress counter counts these, not steps."""
+
+    label: str
+    groups: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class Contract:
     key: str
     label: str
@@ -159,6 +168,11 @@ class Catalog:
     default_name: str = ''
     # Named wordings, in priority order: the first whose condition holds is used.
     wordings: tuple[tuple[str, Condition], ...] = ()
+    phases: tuple[Phase, ...] = ()
+
+    def phase_number(self, group_key: str) -> int:
+        """1-based phase of a group."""
+        return next(i for i, p in enumerate(self.phases, 1) if group_key in p.groups)
 
     @property
     def categories(self) -> tuple[Category, ...]:
@@ -267,6 +281,9 @@ def parse_catalog(data: Mapping[str, Any]) -> Catalog:
         budget_padding=float(data['budget_padding']),
         default_name=str(data.get('default_name', '')),
         wordings=tuple((str(w['name']), _condition(w['when'])) for w in data.get('wordings', ())),
+        phases=tuple(
+            Phase(str(p['label']), tuple(str(g) for g in p['groups'])) for p in data['phases']
+        ),
     )
     _validate(catalog)
     return catalog
@@ -293,6 +310,9 @@ def _validate(catalog: Catalog) -> None:
         raise CatalogError('duplicate category key')
     if any(k.startswith(GM_PREFIX) for k in keys) or set(keys) & set(TEXT_FIELDS):
         raise CatalogError('a category key collides with a text field or the gm_ prefix')
+    in_order = [g for p in catalog.phases for g in p.groups]
+    if in_order != [g.key for g in catalog.groups]:
+        raise CatalogError('phases must list every group exactly once, in wizard order')
     if 'porterage' not in contracts:
         raise CatalogError('the catalog needs a porterage contract for heavy lines')
     if catalog.default_remoteness not in {r.key for r in catalog.remoteness}:

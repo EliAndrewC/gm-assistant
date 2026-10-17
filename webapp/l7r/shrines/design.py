@@ -129,18 +129,14 @@ class Effect:
     # steps that only appear if this option is picked, and later options only then offered
     added: tuple[str, ...] = ()
     opens: tuple[str, ...] = ()
-    # decision steps still to come after this one if it is picked
-    remaining: int = 0
 
     @property
     def tag(self) -> str:
-        """The label above the card - only on an option that makes something possible later:
-        how many more steps there will be if it is picked, counted as the wizard's own "Step N of
-        M" counts them (the final summary step included): 'If chosen: 17 more steps'."""
-        if not (self.added or self.opens):
-            return ''
-        n = self.remaining + 1
-        return f'If chosen: {n} more step{"s" if n != 1 else ""}'
+        """The label above the card (FR-041): the choices that exist because of this option -
+        '5 custom choices' for the steps it brings or, when it brings no step, the later options it
+        makes possible, counted the same way. No tag on an option that makes nothing possible."""
+        n = len(self.added) or len(self.opens)
+        return f'{n} custom choice{"s" if n != 1 else ""}' if n else ''
 
 
 def _offered(
@@ -169,8 +165,6 @@ def option_effects(catalog: Catalog, design: Design, category: Category) -> dict
     base_raw = {k: v for k, v in design.choices.items() if k != category.key}
     base_choices, base_inactive = _resolve(catalog, base_raw)
     base_offered = _offered(catalog, base_choices, base_inactive)
-    later = [c.key for c in catalog.categories]
-    later = later[later.index(category.key) + 1 :]
     effects = {}
     for option in category.options:
         choices, inactive = _resolve(catalog, {**base_raw, category.key: option.key})
@@ -183,7 +177,6 @@ def option_effects(catalog: Catalog, design: Design, category: Category) -> dict
                 for k in option_labels
                 if k in offered - base_offered and k.split('.')[0] not in base_inactive
             ),
-            remaining=sum(1 for k in later if k not in inactive),
         )
     return effects
 
