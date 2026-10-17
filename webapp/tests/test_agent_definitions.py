@@ -12,6 +12,7 @@ added without the flag.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -45,3 +46,10 @@ def test_no_agent_sets_a_one_hour_cache() -> None:
     ttl = re.compile(r'cacheTtl:\s*["\']?1h')
     offenders = [p.name for p in sorted(AGENTS.glob('*.md')) if ttl.search(frontmatter(p))]
     assert not offenders, f'{offenders} set a 1h cache TTL; docs/subagent-caching.md says why not'
+
+
+def test_clone_claude_md_copies_are_not_loaded() -> None:
+    # Measured 2026-10-17 (docs/subagent-caching.md): without this exclude a clone session and
+    # every general-purpose subagent load BOTH /gm-assistant/CLAUDE.md and the clone's copy.
+    settings = json.loads((AGENTS.parent / 'settings.json').read_text())
+    assert '**/.clones/*/CLAUDE.md' in settings.get('claudeMdExcludes', [])

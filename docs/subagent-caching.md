@@ -16,8 +16,10 @@ one subagent with shared instructions or context, writing a `Workflow` script, h
 2. **Every definition sets `omitClaudeMd: true`** and restates, in its own body, any project rule it
    enforces. Asserted by `webapp/tests/test_agent_definitions.py`.
 3. **Prefer a typed agent to `general-purpose` for anything launched repeatedly.** A general-purpose
-   launch writes ~41-69k tokens to the cache before it does any work; a typed agent with
-   `omitClaudeMd` writes ~2.6k on a repeat launch.
+   launch writes ~41-69k tokens to the cache before it does any work (all its tools, every
+   CLAUDE.md, a ~24KB environment block); a typed agent with `omitClaudeMd` writes ~2.6k on a
+   repeat launch. Trimming CLAUDE.md and excluding clone copies (below) shrinks the general-purpose
+   figure but does not close that gap.
 4. **Putting shared text FIRST in a launch prompt does not make it cache.** It is the right shape for
    a raw API call with your own breakpoint, and it does nothing here. Enforced for general-purpose
    launches by [`scripts/subagent-cache-hooks.sh`](../scripts/subagent-cache-hooks.sh).
@@ -57,11 +59,35 @@ session start, so a mid-session edit cannot be measured in the session that made
 
 So a typed launch went from ~34k written to ~2.6k, about 13x less.
 
-**Open question, not needed for the rules:** two general-purpose launches with different prompts
-both read exactly 48,505 and wrote 10,413. That is an intermediate match the "only the system prompt
-carries over" picture does not explain. Claude Code's breakpoint placement for subagents is
-undocumented. If it matters, log the raw request bodies through a proxy on `ANTHROPIC_BASE_URL` and
-diff two launches.
+## Why: the request a subagent actually sends (measured 2026-10-17, Claude Code 2.1.302)
+
+Captured with a logging reverse proxy on `ANTHROPIC_BASE_URL` (a small Python `ThreadingHTTPServer`
+that saves each `/v1/messages` body and streams the response through). A subagent's first request is:
+
+| position | content | cache breakpoint |
+|---|---|---|
+| tools | the agent's tool list (31 tools for general-purpose, 3 for a typed reviewer) | - |
+| `system` | billing header, SDK line, then the agent's own prompt (the definition body; ~2.7k chars for general-purpose) | yes, 5-minute TTL |
+| first user message | [CLAUDE.md block] [user context] [attribution] [the launch prompt] | **none** |
+| a system-role message | the Environment block (cwd, skills list, agents list: ~24KB general-purpose, ~3KB typed) | yes, at its end |
+
+So there is no breakpoint between the CLAUDE.md block and the launch prompt, and none before the
+launch prompt at all. The second launch's request can reuse only what an earlier request wrote at
+a breakpoint, which is the end of `system` (and the end of an entire identical first message). That
+is the whole mechanism behind every number above: the measured reads are exactly tools + system.
+
+**What the CLAUDE.md block held in a clone: both copies.** A session whose cwd is a clone loads
+`/gm-assistant/CLAUDE.md` as an ancestor AND the clone's own `CLAUDE.md`: 142KB of near-duplicate
+text in every general-purpose subagent and every clone session. A main-cwd session (the usual shape)
+picks up the clone copy as a nested file the first time it touches the clone. Fixed by
+`"claudeMdExcludes": ["**/.clones/*/CLAUDE.md"]` in `.claude/settings.json`: measured through the
+proxy, the block dropped to 75KB (user + main CLAUDE.md only) in both the session and its
+general-purpose subagent. The cost: a session reads MAIN's CLAUDE.md, so an edit to it in a clone
+reaches sessions only after it is pushed.
+
+**Not reproduced:** two earlier general-purpose launches with different prompts both read exactly
+48,505 and wrote 10,413. The structure above does not explain an intermediate match; the probe runs
+did not show one again.
 
 ## Settings priced and declined
 

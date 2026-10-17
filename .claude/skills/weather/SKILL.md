@@ -1,6 +1,7 @@
 ---
 name: weather
 description: Ground Rokugan weather in real historical data by mapping each place to a continental-US climate analog (latitude, distance from ocean, elevation), then reading actual recorded weather for a translated calendar date. Answers "what is the weather like" in a principled, plot-independent way.
+argument-hint: <place> <month> <day>
 ---
 
 # Rokugani Weather
