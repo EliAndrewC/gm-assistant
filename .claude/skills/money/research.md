@@ -52,6 +52,7 @@ what is still open.
 | Issue | Questions | Status |
 |---|---|---|
 | [EliAndrewC/diagram#1](https://github.com/EliAndrewC/diagram/issues/1) | land price in years of yield; unskilled day wages; the koku of rice; the Kyoto basket (`requests/0001-foundations.md`) | open 2026-10-18 |
+| [EliAndrewC/diagram#2](https://github.com/EliAndrewC/diagram/issues/2) | The Complete Servant (1825): archive it, check the servant wages already extracted into the ledger, add provision prices (`requests/0002-complete-servant.md`; `sources.md`) | open 2026-10-18 |
 
 ## Next candidates (not yet asked)
 

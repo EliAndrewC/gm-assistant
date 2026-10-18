@@ -67,6 +67,9 @@ Lucca) carry the `comparison` tag: they inform a Rokugani figure, they are not o
 
 - **The koku's rice mass**: the default (151.5 kg) is what the 2017 sheet used; 40 gallons of uncooked rice is ~121 kg
   (~$442 a koku). diagram#1 Q3 researches the historical koku.
+- **The pound-to-koku rate** for the English comparison rows: 145 sen per pound (the Austen sheet: 1 GBP = $80 at
+  $550/koku). Anchoring on wages instead (an English laborer's GBP 15-20 a year = a Rokugani laborer's 3.32 koku) gives
+  ~190 sen per pound, about 30% higher.
 - **The "big deal" wage**: $15/hour default; the federal minimum or a median unskilled wage are the alternatives.
 
 ## Index
@@ -75,6 +78,7 @@ Lucca) carry the `comparison` tag: they inform a Rokugani figure, they are not o
 |---|---|
 | [`research.md`](research.md) | Asking the diagram repository a question, or taking in its answer. |
 | [`updating.md`](updating.md) | Re-pricing the basket, re-taking the wage, or settling one of the open knobs. |
+| [`sources.md`](sources.md) | Pricing a household, servants or a gentleman's budget; primary sources read directly (The Complete Servant). |
 | `requests/` | The bodies of research requests already opened. |
 | [`webapp/l7r/money/CLAUDE.md`](../../../webapp/l7r/money/CLAUDE.md) | Changing the code or data files, and how to test them. |
 
