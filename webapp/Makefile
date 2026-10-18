@@ -104,6 +104,8 @@ ui-verify: screenshots dom-audit
 # Sync pool data from ../.claude/skills into the Docker build context.
 # `skills/` is gitignored - it's a build artifact, not source code.
 prepare-deploy:
+	@# GUARD_EDIT_OK: a clone must deploy main's secrets, not its own stale copy (2026-10-18).
+	@"$$(git rev-parse --show-toplevel)/scripts/deploy-secrets-hooks.sh" check .
 	@echo "[deploy] syncing pool data into webapp/skills/"
 	@rm -rf skills
 	@mkdir -p skills/relic skills/name skills/place-names skills/dream

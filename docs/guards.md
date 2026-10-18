@@ -6,7 +6,7 @@
 
 ---
 
-**WHAT IS ENFORCED, AND WHERE** (audit 2026-08-24). Thirteen guards, each with a test companion that
+**WHAT IS ENFORCED, AND WHERE** (audit 2026-08-24). Fourteen guards, each with a test companion that
 `make hooks-test` runs as a gate phase - a guard without one turns the gate red (constitution XVIII).
 
 | rule | mechanism |
@@ -20,6 +20,7 @@
 | a spec is reviewed before implementation (XVI) | [`scripts/review-gate.sh`](../scripts/review-gate.sh), run by `sync-with-main.sh` at PUSH time |
 | no `-k` subset before the gate; no branches; no polling; batching | the pre-existing `gate`/`no-branch`/`no-poll`/`batching` hooks |
 | shared subagent instructions live in a definition, not repeated launch prompts | [`scripts/subagent-cache-hooks.sh`](../scripts/subagent-cache-hooks.sh) (general-purpose launches, once per session); `omitClaudeMd` on every definition by `webapp/tests/test_agent_definitions.py` |
+| a clone deploys main's secrets, never its own stale copy | [`scripts/deploy-secrets-hooks.sh`](../scripts/deploy-secrets-hooks.sh), run by `make prepare-deploy` (2026-10-18: a stale clone copy would have shipped production without the /look-up key) |
 
 **Deliberately NOT enforced**, because a guard that fires on correct work teaches a session to bypass
 every guard: the caste sense of "people" (correct in narrative and vow voice), gender-neutral
