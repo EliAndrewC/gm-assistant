@@ -92,6 +92,7 @@ def search(rows: list[Row], words: list[str]) -> list[Row]:
     """Rows whose item, notes or tags contain every word (case-insensitive)."""
     wanted = [w.lower() for w in words]
     return [
-        r for r in rows
+        r
+        for r in rows
         if all(w in f'{r.item} {r.notes} {" ".join(r.tags)}'.lower() for w in wanted)
     ]

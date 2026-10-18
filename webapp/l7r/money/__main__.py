@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
-from typing import Protocol, TypeVar
+from typing import Protocol
 
 from l7r.money import coins, ledger
 from l7r.money.readings import (
@@ -27,12 +27,13 @@ from l7r.money.readings import (
 __all__ = ['main']
 
 
+def _say(text: str) -> None:
+    sys.stdout.write(text + '\n')
+
+
 class _Dated(Protocol):
     @property
     def date(self) -> str: ...
-
-
-_T = TypeVar('_T', bound=_Dated)
 
 
 class _Basis:
@@ -49,9 +50,12 @@ class _Basis:
 
     def lines(self) -> list[str]:
         return [
-            f'  PPP basis: basket snapshot {self.snapshot.date}, priced by {self.snapshot.priced_by}; '
-            f'koku of rice = {self.koku_kg:.1f} kg [{self.koku_label}] -> ${self.ppp:,.0f} per koku',
-            f'  "Big deal" basis: ${self.wage.hourly:.2f}/hour x {self.wage.hours_per_year:g} hours '
+            f'  PPP basis: basket snapshot {self.snapshot.date}, '
+            f'priced by {self.snapshot.priced_by}; '
+            f'koku of rice = {self.koku_kg:.1f} kg [{self.koku_label}] '
+            f'-> ${self.ppp:,.0f} per koku',
+            f'  "Big deal" basis: ${self.wage.hourly:.2f}/hour '
+            f'x {self.wage.hours_per_year:g} hours '
             f'({self.wage.date}) / {LABORER_KOKU_YEAR} koku per unskilled year '
             f'-> ${self.big:,.0f} per koku',
         ]
@@ -68,7 +72,7 @@ class _Basis:
         return f'PPP {span(self.ppp, 2)}; "big deal" {span(self.big, 0)}; {work} laborer-days'
 
 
-def _pick(items: Sequence[_T], date: str | None, what: str) -> _T:
+def _pick[T: _Dated](items: Sequence[T], date: str | None, what: str) -> T:
     if date is None:
         return items[-1]
     for item in items:
@@ -85,47 +89,52 @@ def _span(row: ledger.Row) -> str:
 
 def _convert(args: argparse.Namespace, basis: _Basis) -> None:
     sen = coins.parse(' '.join(args.amount))
-    print(f'{coins.fmt(sen)} = {coins.koku(sen):,.3f} koku = {sen:,} sen')
-    print(f'  {basis.dollars(sen)}')
-    print('\n'.join(basis.lines()))
+    _say(f'{coins.fmt(sen)} = {coins.koku(sen):,.3f} koku = {sen:,} sen')
+    _say(f'  {basis.dollars(sen)}')
+    _say('\n'.join(basis.lines()))
 
 
 def _dollars(args: argparse.Namespace, basis: _Basis) -> None:
     per = basis.big if args.big_deal else basis.ppp
     sen = round(args.dollars / per * 1000)
     kind = '"big deal"' if args.big_deal else 'PPP'
-    print(f'${args.dollars:,.2f} ({kind}) = {coins.fmt(sen)} ({coins.everyday(sen)})')
-    print('\n'.join(basis.lines()))
+    _say(f'${args.dollars:,.2f} ({kind}) = {coins.fmt(sen)} ({coins.everyday(sen)})')
+    _say('\n'.join(basis.lines()))
 
 
 def _price(args: argparse.Namespace, basis: _Basis) -> None:
     rows = ledger.load()
     found = ledger.search(rows, args.words)
     if not found:
-        print(f'no ledger row matches {" ".join(args.words)!r}: derive from neighbors, label it a guess')
+        _say(
+            f'no ledger row matches {" ".join(args.words)!r}: '
+            'derive from neighbors, label it a guess'
+        )
         return
     for row in found:
         flag = '' if row.verified else ' (unverified lead)'
-        print(f'{row.item}: {_span(row)} per {row.per}  [{row.label}{flag}]')
-        print(f'  {basis.dollars(row.low, row.high)}')
-        print(f'  source: {row.source}')
+        _say(f'{row.item}: {_span(row)} per {row.per}  [{row.label}{flag}]')
+        _say(f'  {basis.dollars(row.low, row.high)}')
+        _say(f'  source: {row.source}')
         if row.notes:
-            print(f'  notes: {row.notes}')
-    print('\n'.join(basis.lines()))
+            _say(f'  notes: {row.notes}')
+    _say('\n'.join(basis.lines()))
 
 
 def _history(args: argparse.Namespace, basis: _Basis) -> None:
     for snap in load_snapshots():
         zeni = snap.zeni(basis.koku_kg)
-        print(f'{snap.date}: basket ${snap.dollars:,.2f} = {zeni:.2f} zeni -> '
-              f'${ppp_per_koku(snap, basis.koku_kg):,.2f} per koku ({snap.priced_by})')
-    print(f'  koku of rice = {basis.koku_kg:.1f} kg [{basis.koku_label}]')
+        _say(
+            f'{snap.date}: basket ${snap.dollars:,.2f} = {zeni:.2f} zeni -> '
+            f'${ppp_per_koku(snap, basis.koku_kg):,.2f} per koku ({snap.priced_by})'
+        )
+    _say(f'  koku of rice = {basis.koku_kg:.1f} kg [{basis.koku_label}]')
 
 
 def _check(args: argparse.Namespace, basis: _Basis) -> None:
     rows = ledger.load()
     leads = sum(not r.verified for r in rows)
-    print(f'ledger ok: {len(rows)} rows, {leads} still resting on leads')
+    _say(f'ledger ok: {len(rows)} rows, {leads} still resting on leads')
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -135,7 +144,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument('--wage-date', help='wage reading date (default: newest)')
     parser.add_argument('--wage', type=float, help='override the hourly wage, in dollars')
     sub = parser.add_subparsers(dest='command', required=True)
-    p = sub.add_parser('convert', help='an amount of coin -> exact coins, koku, both dollar readings')
+    p = sub.add_parser(
+        'convert', help='an amount of coin -> exact coins, koku, both dollar readings'
+    )
     p.add_argument('amount', nargs='+')
     p.set_defaults(run=_convert)
     p = sub.add_parser('dollars', help='dollars -> coin')

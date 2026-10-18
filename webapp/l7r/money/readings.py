@@ -106,12 +106,21 @@ def load_snapshots(directory: Path = DATA / 'baskets') -> list[Snapshot]:
     for path in sorted(directory.glob('*.json')):
         raw = json.loads(path.read_text())
         goods = tuple(
-            Good(g['good'], g['unit'], g['quantity'], g['silver_g_per_unit'],
-                 g['dollars_per_unit'], g['link'])
+            Good(
+                g['good'],
+                g['unit'],
+                g['quantity'],
+                g['silver_g_per_unit'],
+                g['dollars_per_unit'],
+                g['link'],
+            )
             for g in raw['goods']
         )
-        out.append(Snapshot(raw['date'], raw['priced_by'], raw['source'],
-                            raw['rice_silver_g_per_kg'], goods))
+        out.append(
+            Snapshot(
+                raw['date'], raw['priced_by'], raw['source'], raw['rice_silver_g_per_kg'], goods
+            )
+        )
     if not out:
         raise FileNotFoundError(f'no basket snapshots in {directory}')
     return out

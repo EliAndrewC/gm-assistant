@@ -45,7 +45,7 @@ Knobs on any command: `--koku-kg sheet-2017|forty-gallons|<kg>`, `--snapshot YYY
 - **"Big deal" dollars** (~$9,400 at $15/hour): how much a windfall, a debt or a loss MATTERS. One koku is 1/3.32 of an
   unskilled laborer's year, applied to a US unskilled full-time year. (The GM's table feel is ~$10,000.)
 - **Laborer-days** is the yardstick for consistency: a new price that takes an implausible number of days of unskilled
-  work (13 sen a day) is wrong, whatever its dollar reading says.
+  work (about 13.3 sen a day) is wrong, whatever its dollar reading says.
 
 ## Answering "what does X cost?"
 

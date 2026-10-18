@@ -95,7 +95,9 @@ def test_big_deal_default_is_the_handoff_derivation() -> None:
 
 
 def test_newest_snapshot_is_last(tmp_path: Path) -> None:
-    raw = json.loads((Path(__file__).parents[1] / 'l7r/money/data/baskets/2017-04.json').read_text())
+    raw = json.loads(
+        (Path(__file__).parents[1] / 'l7r/money/data/baskets/2017-04.json').read_text()
+    )
     (tmp_path / '2017-04.json').write_text(json.dumps(raw))
     (tmp_path / '2026-10.json').write_text(json.dumps({**raw, 'date': '2026-10'}))
     assert [s.date for s in load_snapshots(tmp_path)] == ['2017-04', '2026-10']
@@ -150,7 +152,11 @@ def test_row_verification_states() -> None:
     lead = ledger.Row('x', 1, 1, 'item', 'historical', 'lead:notes')
     canon = ledger.Row('x', 1, 1, 'item', 'guess', 'canon:setting/l7r.md "Money"')
     researched = ledger.Row(
-        'x', 1, 1, 'item', 'historical',
+        'x',
+        1,
+        1,
+        'item',
+        'historical',
         'https://github.com/EliAndrewC/diagram/blob/main/research/questions/0200-x.html',
     )
     assert (lead.verified, canon.verified, researched.verified) == (False, True, True)
@@ -177,12 +183,14 @@ def test_cli_convert(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, 'convert', '1', 'koku')
     assert '1 koku = 1.000 koku = 1,000 sen' in out
     assert 'PPP $552.39; "big deal" $9,398; 75.3 laborer-days' in out
-    assert 'snapshot 2017-04' in out and '[sheet-2017]' in out
+    assert 'snapshot 2017-04' in out
+    assert '[sheet-2017]' in out
 
 
 def test_cli_knobs(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, '--koku-kg', 'forty-gallons', '--wage', '7.25', 'convert', '1 koku')
-    assert '[forty-gallons]' in out and '$7.25/hour' in out
+    assert '[forty-gallons]' in out
+    assert '$7.25/hour' in out
 
 
 def test_cli_dated_inputs(capsys: pytest.CaptureFixture[str]) -> None:
@@ -205,7 +213,8 @@ def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
     assert 'PPP $3.87 to $29.28; "big deal" $66 to $498; 0.5 to 4.0 laborer-days' in out
     assert "a samurai's wakizashi: 1 koku 5 bu per item" in out
     out = run(capsys, 'price', 'land', 'tax')
-    assert '[guess]' in out and 'notes:' in out
+    assert '[guess]' in out
+    assert 'notes:' in out
     assert 'derive from neighbors' in run(capsys, 'price', 'gladius')
 
 

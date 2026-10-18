@@ -9,5 +9,5 @@
 - [x] T007 CLI `python3 -m l7r.money` (US1, US2, US4; SC-005 via `price` with no match)
 - [x] T008 `tests/test_money.py`, 100% coverage (SC-001, SC-002)
 - [x] T009 `SKILL.md`, `research.md`, `updating.md`, package `CLAUDE.md`; `docs/key-paths.md` entry
-- [ ] T010 Gate green, commit, `sync-with-main.sh done`
+- [x] T010 Gate green, commit, `sync-with-main.sh done`
 - [ ] T011 Take in diagram#1's answer (research.md "Taking in an answer"), close the issue

@@ -1,4 +1,4 @@
-"""The `/money` skill's arithmetic and data (feature 219): coins, the two dollar readings, the ledger.
+"""The `/money` skill's arithmetic and data (feature 219): coins, two dollar readings, the ledger.
 
     python3 -m l7r.money convert "3 koku 4 bu"
     python3 -m l7r.money price sword
