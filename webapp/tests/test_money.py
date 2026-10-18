@@ -141,6 +141,7 @@ def test_every_ledger_row_carries_label_and_source() -> None:
 )
 def test_problems_refuses(change: dict[str, object], complaint: str) -> None:
     assert ledger.problems(GOOD) == []
+    assert ledger.problems({**GOOD, 'label': 'comparative'}) == []
     assert any(complaint in p for p in ledger.problems({**GOOD, **change}))
 
 
@@ -216,7 +217,7 @@ def test_cli_dollars(capsys: pytest.CaptureFixture[str]) -> None:
 def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, 'price', 'sword')
     assert 'a common sword (medieval Lucca and Marseille): 7 sen to 5 zeni 3 sen per item' in out
-    assert '[historical (unverified lead)]' in out
+    assert '[comparative (unverified lead): a yardstick from another society' in out
     assert 'PPP $3.87 to $29.28; "big deal" $66 to $498; 0.5 to 4.0 laborer-days' in out
     assert "a samurai's wakizashi: 1 koku 5 bu per item" in out
     out = run(capsys, 'price', 'land', 'tax')

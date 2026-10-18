@@ -113,6 +113,8 @@ def _price(args: argparse.Namespace, basis: _Basis) -> None:
         return
     for row in found:
         flag = '' if row.verified else ' (unverified lead)'
+        if row.label == 'comparative':
+            flag += ': a yardstick from another society, not a Rokugani price'
         _say(f'{row.item}: {_span(row)} per {row.per}  [{row.label}{flag}]')
         _say(f'  {basis.dollars(row.low, row.high)}')
         _say(f'  source: {row.source}')

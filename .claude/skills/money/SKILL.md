@@ -58,10 +58,14 @@ Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|forty
 
 ## Ledger rows (`webapp/l7r/money/data/ledger.jsonl`)
 
-Figures in whole sen; `label` is `historical`, `deviation` (departs from history on purpose) or `guess`; `source` is a
-diagram question URL, `canon:<file> "<section>"`, or `lead:<file>`. The field rules are in `webapp/l7r/money/ledger.py`'s
-docstring; `check` and the gate refuse a row without a label and source. Comparison rows (Regency England, medieval
-Lucca) carry the `comparison` tag: they inform a Rokugani figure, they are not one.
+Figures in whole sen; `label` is `historical`, `deviation` (departs from history on purpose), `guess`, or
+`comparative`; `source` is a diagram question URL, `canon:<file> "<section>"`, or `lead:<file>`. The field rules are in
+`webapp/l7r/money/ledger.py`'s docstring; `check` and the gate refuse a row without a label and source.
+
+**Comparative rows** (Regency England, medieval Lucca; GM ruling, diagram feature 391) are yardsticks players
+recognize, put through the same conversion. They never set a Rokugani price or wage, and never set the value of a koku
+(*"not because we will use it to establish the actual value of a koku"*). Quote one beside a Rokugani figure, or as a
+cross-check on a derivation that rests on Japanese or Chinese evidence; never as the basis of a Rokugani figure.
 
 ## Open for the GM
 
@@ -69,7 +73,7 @@ Lucca) carry the `comparison` tag: they inform a Rokugani figure, they are not o
   "Historical units" says ~180 L (~48 gallons) and ~150 kg as brown rice, "the canonical figure", which its yield math
   uses (0.021 koku per gallon). The 2017 sheet's 151.5 kg agrees with budgets.md within 1% ($552; `--koku-kg
   budgets-brown` gives $547); only a literal 40 gallons (~121 kg, $442) breaks from it. diagram#1 Q3 cites the history.
-- **The pound-to-koku rate** for the English comparison rows: 145 sen per pound (the Austen sheet: 1 GBP = $80 at
+- **The pound-to-koku rate** for the English comparative rows: 145 sen per pound (the Austen sheet: 1 GBP = $80 at
   $550/koku). Anchoring on wages instead (an English laborer's GBP 15-20 a year = a Rokugani laborer's 3.32 koku) gives
   ~190 sen per pound, about 30% higher.
 - **The "big deal" wage**: $15/hour default; the federal minimum or a median unskilled wage are the alternatives.

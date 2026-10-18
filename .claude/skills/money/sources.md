@@ -10,8 +10,8 @@ row's `notes`, and point `source` at its public URL. The diagram repository stil
 
 [Project Gutenberg #69487](https://www.gutenberg.org/ebooks/69487) (plain text: `.../ebooks/69487.txt.utf-8`), from
 Internet Archive scans; a second scan is in the Wellcome Collection. Late Regency, pre-industrial household practice, a
-decade after Austen. Its servant wages are in the ledger (tag `complete-servant`), converted at the Austen sheet's
-1 GBP = 145 sen. Diagram issue [#2](https://github.com/EliAndrewC/diagram/issues/2) archives it and checks them.
+decade after Austen. Its servant wages are in the ledger (label `comparative`, tag `complete-servant`), converted at
+the Austen sheet's 1 GBP = 145 sen. Diagram issue [#2](https://github.com/EliAndrewC/diagram/issues/2) archives it and checks them.
 
 **How a large income is divided** (the book's rule, "in round numbers", for a gentleman's net income): one-third
 household expenses and provisions; one-quarter servants and equipage (horses, carriages, liveries); one-quarter clothes,
@@ -34,6 +34,7 @@ A country gentleman at GBP 16,000-18,000 net spent no more than GBP 7,000 and ke
 (itemized in the book). Board wages while the family was away were 10s a week for women and 12s for men. The men got a
 pot of ale a day, the women a pint, besides table beer.
 
-**Using it for Rokugan**: this is a comparison source. It tells you the shape of a household at a given income (how many
-servants, what share goes to the stable and the table), which carries over to a samurai household on a stipend better
-than any single price does. The pound-to-koku rate is the weak link (see the GM questions in `SKILL.md`).
+**Using it for Rokugan**: this is a comparative source (diagram feature 391): never a Rokugani price or wage, never the
+value of a koku. It is a yardstick players recognize, and the shape of a household at a given income (how many
+servants, what share goes to the stable and the table) is a useful cross-check on a samurai household. The
+pound-to-koku rate is the weak link (see the GM questions in `SKILL.md`).

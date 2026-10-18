@@ -11,6 +11,9 @@ One JSON object per line of `data/ledger.jsonl`:
   departs from history on purpose, and says so), `guess` (reasoned, not attested). A canon figure
   nobody has checked against history is a `guess` with a `canon:` source; research moves it to
   `historical` or, if the GM keeps it against the history, `deviation`.
+  `comparative` (GM ruling, diagram feature 391): a figure from another society (Regency England,
+  medieval Lucca) kept as a yardstick players recognize. It is never a Rokugani price or wage and
+  never sets the value of a koku; output marks it so.
 - `source` is one of: an `https://` URL (a diagram question file once researched, or a canon file
   on GitHub), `canon:<file> "<section>"`, or `lead:<file in the GM's money folder or notes>`.
   A `historical` row whose source is still a lead is UNVERIFIED until a diagram question file
@@ -27,7 +30,7 @@ from l7r.money.readings import DATA
 
 __all__ = ['LABELS', 'LEDGER', 'Row', 'load', 'problems', 'search']
 
-LABELS = ('historical', 'deviation', 'guess')
+LABELS = ('historical', 'deviation', 'guess', 'comparative')
 LEDGER = DATA / 'ledger.jsonl'
 DIAGRAM = 'https://github.com/EliAndrewC/diagram/'
 _SOURCE_PREFIXES = ('https://', 'canon:', 'lead:')
