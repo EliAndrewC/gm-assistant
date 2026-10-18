@@ -78,6 +78,7 @@ from l7r.shrines import (
     rules_json,
     share_query,
 )
+from l7r.shrines.access import CostAccess
 from l7r.slugs import find_relic_by_slug, neighbors_in_fortune, relics_for_fortune
 
 logger = logging.getLogger(__name__)
@@ -252,6 +253,12 @@ def _json_error(status: int, message: str) -> bytes:
     return json.dumps({'error': message}).encode('utf-8')
 
 
+def _sheet_token() -> str:
+    """`[character_sheet] roll_query_token`: the sheet app's read token (FR-048); '' when unset."""
+    section = _load_secrets().get('character_sheet', {})
+    return str(section.get('roll_query_token', '')).strip()
+
+
 def _names_token() -> str:
     """`[character_sheet] names_token` from development-secrets.ini; '' when unset."""
     section = _load_secrets().get('character_sheet', {})
@@ -272,9 +279,11 @@ class Root:
         wiki_links: dict[str, str] | None = None,
         names_token: Callable[[], str] | None = None,
         shrine_catalog: Catalog | None = None,
+        cost_access: CostAccess | None = None,
     ) -> None:
         self._relics = relics
         self._shrine_catalog = shrine_catalog if shrine_catalog is not None else load_catalog()
+        self._cost_access = cost_access or CostAccess(lambda: _sheet_token())
         # Resolved at REQUEST time (a lambda, not a bound default), so a test patching
         # `_names_token` reaches a Root built before the patch.
         self.api = NamesApi(names_token or (lambda: _names_token()))
@@ -348,16 +357,19 @@ class Root:
         )
 
     # GET /shrines - the shrine builder (feature 216). The design lives in the query string. Costs
-    # reach the template ONLY for a GM session: for anyone else `ledger` is None and the `gm_*`
-    # params are never read, so neither the page nor its source can carry a price.
+    # reach the template ONLY for the GM and for a player whose grouped character has Commerce
+    # (FR-048, read-only for them): for anyone else `ledger` is None and the `gm_*` params are
+    # never read, so neither the page nor its source can carry a price. The sheet roster is
+    # consulted only for a signed-in non-GM.
     @cherrypy.expose
     def shrines(self, **params: Any) -> bytes:
         catalog = self._shrine_catalog
         design = parse_design(catalog, params)
         user = current_user()
         is_gm = user is not None and user.role == 'gm'
+        priced = is_gm or (user is not None and self._cost_access.allows(user.discord_id))
         context: dict[str, Any] = {}
-        if is_gm:
+        if priced:
             negotiation = parse_negotiation(catalog, params)
             context = {
                 'ledger': negotiate(catalog, design, negotiation),
@@ -380,6 +392,7 @@ class Root:
             text_fields=TEXT_FIELDS,
             share_query=share_query(catalog, design),
             is_gm=is_gm,
+            priced=priced,
             missing=sum(
                 1
                 for c in catalog.categories

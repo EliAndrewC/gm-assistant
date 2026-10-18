@@ -139,3 +139,9 @@ So for the question about how the remains are kept together or divided, uh, I th
 Also "Flowing roof" is missing its closing italicized special paragraph explaining why it's cool or why someone might choose it. Or rather, I am now realizing that when I told you that the final sentence indicating that something is one of the most common options would count as that closing sentence, uh, I should clarify that I still want it to get the special formatting that the others get. So like that should be floated to the bottom and then, you know, given the special like font effects. Same for any of the other descriptions that have the sort of one of the most common, or among the most common, or whatever. Also, we don't have to always say "One of the most common" - it would be good if we mix up the wording a little, and then maybe in one place we say one of the most common, and then somewhere else we might say among the most common, and then somewhere else we might say perhaps the most common, etc.
 
 And we should remove "- for Shoda, the way he lived in the forest" which is a little too specific to him, and also I suspect might bias the choice a little bit too much.  Same with " - for Shoda, the stream where he washed his hands each morning."
+
+---
+
+# Message 10, verbatim (2026-10-18)
+
+Thanks.  I would also like for Tadashi to be able to see the costs if he logs in, i.e. if Marshall logs in using his Discord auth.  Since Tadashi has commerce.  Actually... can we make it so that anyone with a character who is currently in a group has taken the commerce skill, then they can see the prices/costs and otherwise they cannot?  Since discord is linked to both this app and the character sheet app, that seems doable.

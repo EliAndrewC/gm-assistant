@@ -33,6 +33,9 @@ VIEWPORTS = [
     ('mobile', 390, 844, 2),
 ]
 
+ELI = '183026066498125825'
+COMMERCE_PLAYER = '316306960855072769'  # Marshall, who plays Asako Tadashi
+
 PAGES = [
     ('landing', '/', True),
     ('relics', '/relics', True),
@@ -50,6 +53,9 @@ PAGES = [
     ('shrines-remains', '/shrines?kind=memorial#step-sharing', False),
     ('shrines-kind', '/shrines#step-kind', False),
     ('shrines-gm', '/shrines?form=himorogi&gm_roll_carpentry=40', True),
+    # FR-048: a player whose grouped character has Commerce (Marshall / Asako Tadashi) sees the
+    # ledger read-only. Needs the live sheet roster, so the local server needs the sheet token.
+    ('shrines-commerce', '/shrines?form=himorogi&gm_roll_carpentry=40', COMMERCE_PLAYER),
     ('auth-login', '/auth/login', False),
     ('terms', '/terms', False),
     ('privacy', '/privacy', False),
@@ -96,8 +102,8 @@ def _stitch_contact_sheet(paths: list[Path], out: Path) -> None:
     sheet.save(out, optimize=True)
 
 
-def _session_cookie_for_eli() -> str | None:
-    """Build a valid session cookie for the GM Eli, or None if not configured."""
+def _session_cookie_for_eli(discord_id: str = ELI) -> str | None:
+    """Build a valid session cookie for the GM Eli (or `discord_id`), or None if not configured."""
     import configparser
     import sys
 
@@ -112,11 +118,10 @@ def _session_cookie_for_eli() -> str | None:
     secret = parser.get('auth', 'session_secret', fallback='')
     if not secret:
         return None
-    return make_session_cookie('183026066498125825', secret)
+    return make_session_cookie(discord_id, secret)
 
 
 async def shoot() -> None:
-    cookie_value = _session_cookie_for_eli()
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         for page_name, page_url, needs_auth in PAGES:
@@ -126,7 +131,10 @@ async def shoot() -> None:
                     'device_scale_factor': dsf,
                 }
                 context = await browser.new_context(**ctx_args)
-                if needs_auth and cookie_value:
+                # needs_auth: True signs in as the GM, a Discord id string as that player.
+                who = needs_auth if isinstance(needs_auth, str) else ELI
+                cookie_value = _session_cookie_for_eli(who) if needs_auth else None
+                if cookie_value:
                     domain = BASE.replace('http://', '').replace('https://', '').split('/')[0]
                     domain_host = domain.split(':')[0]
                     cookie: dict[str, Any] = {

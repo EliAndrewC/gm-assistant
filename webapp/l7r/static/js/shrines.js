@@ -6,9 +6,10 @@
      opens on the first step (the GM's view opens on the summary).
    - Player: every change rewrites the address bar and the share link from the
      form (disabled = moot categories are left out) and the summary list.
-   - GM: every change resubmits the form so the server recomputes the ledger,
+   - Ledger viewers (the GM, or a player whose character has Commerce, FR-048):
+     every change resubmits the form so the server recomputes the ledger,
      returning to the same step.
-   Nothing here knows a price - the GM ledger is rendered by the server.
+   Nothing here knows a price - the ledger is rendered by the server.
    Without this script every step shows at once and the form still works.
    ========================================================================= */
 
@@ -22,6 +23,8 @@
     var wizard = document.querySelector('[data-wizard]');
     if (!form || !wizard) return;
     var isGm = form.dataset.gm === 'true';
+    // A ledger on the page: changes go to the server, which reprices the design.
+    var priced = form.dataset.priced === 'true';
     var share = document.getElementById('shrine-share-url');
     var steps = Array.prototype.slice.call(wizard.querySelectorAll('.wizard-step'));
     var backBtn = wizard.querySelector('[data-back]');
@@ -282,7 +285,7 @@
 
     function urlFor(step) {
       var hash = step ? '#step-' + step.dataset.step : '';
-      if (isGm) return window.location.pathname + window.location.search + hash;
+      if (priced) return window.location.pathname + window.location.search + hash;
       return share.dataset.base + '?' + designQuery() + hash;
     }
 
@@ -401,7 +404,7 @@
           if (other !== box && (box.hasAttribute('data-exclusive') || other.hasAttribute('data-exclusive'))) other.checked = false;
         });
       }
-      if (isGm) {
+      if (priced) {
         try { sessionStorage.setItem(SCROLL_KEY, String(window.scrollY)); } catch (e) { /* ignore */ }
         form.action = '/shrines' + (current ? '#step-' + current.dataset.step : '');
         form.submit();
@@ -418,7 +421,7 @@
     });
     form.addEventListener('input', function (event) {
       if (event.target.matches('[data-one-line]')) fitBox(event.target);
-      if (!isGm && event.target.matches('[name=shrine_name]')) { syncSummary(); writeAddress(); }
+      if (!priced && event.target.matches('[name=shrine_name]')) { syncSummary(); writeAddress(); }
     });
     // The name box wraps but is one line: Enter moves on instead of breaking it.
     var nameBox = form.querySelector('[data-one-line]');
@@ -426,13 +429,13 @@
       nameBox.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
           event.preventDefault();
-          if (isGm) form.requestSubmit(); else advance(neighbor(current, 1));
+          if (priced) form.requestSubmit(); else advance(neighbor(current, 1));
         }
       });
     }
 
     form.addEventListener('submit', function (event) {
-      if (!isGm) {
+      if (!priced) {
         // Enter in the name field means "next", not "reload".
         event.preventDefault();
         advance(neighbor(current, 1));

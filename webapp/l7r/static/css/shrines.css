@@ -17,17 +17,17 @@
    balance; the panel inside it is what sticks. */
 .shrine-ledger-col { min-width: 0; }
 
-.shrine-form--gm .shrine-layout {
+.shrine-form--priced .shrine-layout {
   grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
 }
 
 /* The ledger comes first in the DOM (so it leads on narrow screens) but sits on the right. */
-.shrine-form--gm .shrine-design { grid-column: 1; grid-row: 1; }
-.shrine-form--gm .shrine-ledger-col { grid-column: 2; grid-row: 1; }
+.shrine-form--priced .shrine-design { grid-column: 1; grid-row: 1; }
+.shrine-form--priced .shrine-ledger-col { grid-column: 2; grid-row: 1; }
 
 /* Narrow screens: one column, the ledger after the design. Block, not a one-column grid. */
 @media (max-width: 1100px) {
-  .shrine-form--gm .shrine-layout { display: block; }
+  .shrine-form--priced .shrine-layout { display: block; }
   .shrine-ledger-col { margin-bottom: 2.5rem; }
 }
 
@@ -831,3 +831,8 @@ body.page-shrines { min-height: 100vh; }
 
 .shrine-summary a:hover em,
 .shrine-summary a:focus-visible em { text-decoration-thickness: 2px; }
+
+/* FR-048: a Commerce player's read-only ledger - the GM's figures as text, not inputs. */
+.shrine-ledger__settings--read p { margin: 0 0 0.35rem; }
+.shrine-ledger__settings--read span { font-weight: 600; margin-right: 0.35rem; }
+.shrine-contract__figure { font-variant-numeric: tabular-nums; white-space: nowrap; }

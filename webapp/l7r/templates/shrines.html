@@ -17,8 +17,10 @@
 
   A wizard, one decision per step (spec FR-018). The server renders every step; shrines.js shows one
   at a time, skips steps whose category does not apply, and keeps the link in sync. Without
-  JavaScript every step shows at once and the form still works. The GM ledger is rendered only
-  for a GM session (FR-007).
+  JavaScript every step shows at once and the form still works. The ledger is rendered only
+  for the GM, and read-only for a player whose grouped character has Commerce (`priced`, FR-007,
+  FR-048); its inputs exist only for the GM (`is_gm`). A read-only ledger keeps the link's GM
+  figures in hidden inputs, so recomputing it on a change does not drop them.
 #}
 
 {# Text with named wordings (FR-030/FR-032/FR-037) renders once per wording - its own replacement or
@@ -76,17 +78,21 @@
   </div>
 </section>
 
-<form class="container shrine-form{% if is_gm %} shrine-form--gm{% endif %} wording-{{ design.wording or 'plain' }}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}">
+<form class="container shrine-form{% if priced %} shrine-form--priced{% endif %} wording-{{ design.wording or 'plain' }}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}" data-priced="{{ 'true' if priced else 'false' }}">
   {# The applicability rules for shrines.js: conditions only, never a price (tested). #}
   <script type="application/json" id="shrine-rules">{{ rules_json|safe }}</script>
   <div class="shrine-layout">
-    {% if is_gm %}
+    {% if priced %}
       <div class="shrine-ledger-col">
       <aside class="shrine-ledger" aria-labelledby="shrine-ledger-title">
-        <h2 class="shrine-ledger__title" id="shrine-ledger-title">GM ledger</h2>
+        <h2 class="shrine-ledger__title" id="shrine-ledger-title">{{ 'GM ledger' if is_gm else 'Ledger' }}</h2>
         <p class="shrine-ledger__subject">Pricing <strong>{{ design.text.get('shrine_name', 'this shrine') }}</strong>{% if missing %}, {{ missing }} choice{{ 's' if missing != 1 }} still open{% endif %}.</p>
         <p class="shrine-ledger__pin" aria-hidden="true">{% if ledger.remainder >= 0 %}Tadashi keeps{{ ' so far' if missing }} <strong>{{ format_koku(ledger.remainder) }}</strong>{% else %}Shortfall <strong>{{ format_koku(-ledger.remainder) }}</strong>{% endif %}</p>
-        <p class="shrine-ledger__lede">Only a GM sees this panel. Enter Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract. Totals update when you leave a field or press Enter.</p>
+        {% if is_gm %}
+          <p class="shrine-ledger__lede">Players whose characters have Commerce see these figures too; only you can change them. Enter Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract. Totals update when you leave a field or press Enter.</p>
+        {% else %}
+          <p class="shrine-ledger__lede">Your character's Commerce lets you see what this shrine costs. The GM enters Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract.</p>
+        {% endif %}
 
         <dl class="shrine-totals">
           <div><dt>Fair price</dt><dd>{{ format_koku(ledger.fair_total) }}</dd></div>
@@ -99,6 +105,7 @@
           {% endif %}
         </dl>
 
+        {% if is_gm %}
         <div class="shrine-ledger__settings">
           <label class="shrine-field">
             <span>Budget (koku)</span>
@@ -115,6 +122,16 @@
             <small>Porters charge {{ format_koku(ledger.pricing.rate) }} per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</small>
           </label>
         </div>
+        {% else %}
+        <div class="shrine-ledger__settings shrine-ledger__settings--read">
+          <input type="hidden" name="gm_budget" value="{{ format_number(negotiation.budget) }}" />
+          <input type="hidden" name="gm_remote" value="{{ negotiation.remoteness }}" />
+          {% for r in catalog.remoteness if r.key == negotiation.remoteness %}
+            <p><span>Remoteness</span> {{ r.label }}</p>
+          {% endfor %}
+          <p><small>Porters charge {{ format_koku(ledger.pricing.rate) }} per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</small></p>
+        </div>
+        {% endif %}
 
         <ol class="shrine-contracts">
           {% for c in ledger.contracts %}
@@ -124,8 +141,15 @@
                 <span class="shrine-contract__fair">{{ format_koku(c.fair) }}</span>
               </div>
               <div class="shrine-contract__rolls">
-                <label>Roll <input type="number" name="gm_roll_{{ c.key }}" min="0" max="200" value="{{ c.roll if c.roll is not none else '' }}" inputmode="numeric" /></label>
-                <label>Baseline <input type="number" name="gm_base_{{ c.key }}" min="0" max="200" value="{{ c.baseline }}" inputmode="numeric" /></label>
+                {% if is_gm %}
+                  <label>Roll <input type="number" name="gm_roll_{{ c.key }}" min="0" max="200" value="{{ c.roll if c.roll is not none else '' }}" inputmode="numeric" /></label>
+                  <label>Baseline <input type="number" name="gm_base_{{ c.key }}" min="0" max="200" value="{{ c.baseline }}" inputmode="numeric" /></label>
+                {% else %}
+                  {% if c.roll is not none %}<input type="hidden" name="gm_roll_{{ c.key }}" value="{{ c.roll }}" />{% endif %}
+                  <input type="hidden" name="gm_base_{{ c.key }}" value="{{ c.baseline }}" />
+                  <span class="shrine-contract__figure">Roll {{ c.roll if c.roll is not none else '-' }}</span>
+                  <span class="shrine-contract__figure">Baseline {{ c.baseline }}</span>
+                {% endif %}
                 <span class="shrine-contract__paid">
                   {% if c.roll is none %}not yet negotiated{% else %}-{{ c.saving_pct }}% = <strong>{{ format_koku(c.paid) }}</strong>{% endif %}
                 </span>
@@ -148,10 +172,12 @@
           {% endfor %}
         </ol>
 
+        {% if is_gm %}
         <div class="shrine-ledger__actions">
           <button class="shrine-button" type="submit">Update totals</button>
           <a class="shrine-ledger__gmlink" href="/shrines?{{ gm_query }}">Link with these GM figures</a>
         </div>
+        {% endif %}
       </aside>
       </div>
     {% endif %}

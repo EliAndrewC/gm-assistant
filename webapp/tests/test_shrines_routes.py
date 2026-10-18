@@ -13,6 +13,37 @@ import pytest
 from l7r.app import Root
 from l7r.auth import CurrentUser
 from l7r.shrines import Catalog, load_catalog, negotiate, parse_design, parse_negotiation
+from l7r.shrines.access import FAILURE_TTL, TTL, CostAccess, commerce_owners
+
+#: The sheet app's `GET /api/characters` shape, trimmed to what FR-048 reads.
+ROSTER = {
+    'characters': [
+        # Commerce, in a group: sees costs.
+        {'id': 14, 'owner_discord_id': 'merchant', 'gaming_group_id': 1, 'skills': {'commerce': 3}},
+        # Commerce, but in no group.
+        {'id': 30, 'owner_discord_id': 'loner', 'gaming_group_id': None, 'skills': {'commerce': 2}},
+        # In a group, no Commerce (absent, and rank 0).
+        {'id': 10, 'owner_discord_id': 'builder', 'gaming_group_id': 1, 'skills': {'etiquette': 2}},
+        {'id': 11, 'owner_discord_id': 'zero', 'gaming_group_id': 2, 'skills': {'commerce': 0}},
+        # Merely an editor of a Commerce character.
+        {
+            'id': 3,
+            'owner_discord_id': 'other',
+            'editor_discord_ids': ['helper'],
+            'gaming_group_id': 2,
+            'skills': {'commerce': 1},
+        },
+        # A combat-tracker NPC, even if it somehow had a group.
+        {
+            'id': 40,
+            'owner_discord_id': 'npcgm',
+            'gaming_group_id': 1,
+            'is_npc': True,
+            'skills': {'commerce': 5},
+        },
+        {'id': 41, 'owner_discord_id': None, 'gaming_group_id': 1, 'skills': {'commerce': 5}},
+    ]
+}
 
 
 @pytest.fixture(scope='module')
@@ -22,17 +53,21 @@ def catalog() -> Catalog:
 
 @pytest.fixture
 def root(catalog: Catalog) -> Root:
-    return Root(relics=[], shrine_catalog=catalog)
+    # Never the network: the roster is the fixture above.
+    return Root(
+        relics=[], shrine_catalog=catalog, cost_access=CostAccess(lambda: 't', lambda t: ROSTER)
+    )
 
 
 @pytest.fixture
 def as_user() -> Iterator[object]:
-    def set_role(role: str | None) -> None:
+    def set_role(role: str | None, discord_id: str = '1') -> None:
         if role is None:
             if hasattr(cherrypy.request, 'l7r_user'):
                 del cherrypy.request.l7r_user
         else:
-            cherrypy.request.l7r_user = CurrentUser('1', 'Someone', role)  # type: ignore[arg-type]
+            user = CurrentUser(discord_id, 'Someone', role)  # type: ignore[arg-type]
+            cherrypy.request.l7r_user = user
 
     yield set_role
     set_role(None)
@@ -281,3 +316,119 @@ def test_japanese_terms_carry_tooltips(root: Root) -> None:
         'data-gloss><span lang="ja">洗骨</span> <em>senkotsu</em><span class="shrine-term__tip"'
         in page
     )
+
+
+# ---------------------------------------------------------------- FR-048: Commerce players
+
+
+def test_commerce_owners_reads_owner_group_skill_and_npc() -> None:
+    assert commerce_owners(ROSTER) == frozenset({'merchant', 'other'})
+    assert commerce_owners({}) == frozenset()
+
+
+@pytest.mark.parametrize('who', ['loner', 'builder', 'zero', 'helper', 'npcgm', '1'])
+def test_a_player_without_a_grouped_commerce_character_sees_no_cost(
+    root: Root, catalog: Catalog, as_user: object, who: str
+) -> None:
+    as_user('player', who)  # type: ignore[operator]
+    page = root.shrines(**most_expensive(catalog), **GM_PARAMS).decode('utf-8')
+    assert 'koku' not in page.lower()
+    assert 'gm_' not in page
+
+
+def test_a_commerce_player_sees_the_ledger_read_only(
+    root: Root, catalog: Catalog, as_user: object
+) -> None:
+    as_user('player', 'merchant')  # type: ignore[operator]
+    page = root.shrines(**most_expensive(catalog), **GM_PARAMS).decode('utf-8')
+    assert 'koku' in page
+    assert '>Ledger</h2>' in page
+    assert 'GM ledger' not in page
+    assert 'Only a GM' not in page
+    # The link's GM figures are shown and carried, never editable (the GM said "see").
+    assert 'type="number"' not in page
+    assert '<select name="gm_remote"' not in page
+    assert '<input type="hidden" name="gm_budget" value="7" />' in page
+    assert '<input type="hidden" name="gm_remote" value="deep" />' in page
+    assert '<input type="hidden" name="gm_roll_carpentry" value="40" />' in page
+    assert 'Roll 40' in page
+    assert 'Update totals' not in page
+    assert 'Link with these GM figures' not in page
+    assert 'data-priced="true"' in page
+    assert 'data-gm="false"' in page
+
+
+def test_the_gm_ledger_keeps_its_inputs_and_says_who_else_sees_it(
+    root: Root, catalog: Catalog, as_user: object
+) -> None:
+    as_user('gm')  # type: ignore[operator]
+    page = root.shrines(**most_expensive(catalog), **GM_PARAMS).decode('utf-8')
+    assert '<select name="gm_remote"' in page
+    assert 'name="gm_roll_carpentry"' in page
+    assert 'type="number"' in page
+    assert 'Players whose characters have Commerce see these figures too' in page
+    assert 'data-priced="true"' in page
+    assert 'data-gm="true"' in page
+
+
+def test_the_roster_is_fetched_only_for_a_signed_in_non_gm(
+    catalog: Catalog, as_user: object
+) -> None:
+    calls: list[str] = []
+
+    def fetch(token: str) -> object:
+        calls.append(token)
+        return ROSTER
+
+    root = Root(relics=[], shrine_catalog=catalog, cost_access=CostAccess(lambda: 't', fetch))
+    root.shrines()
+    as_user('gm')  # type: ignore[operator]
+    root.shrines()
+    assert calls == []
+    as_user('player', 'merchant')  # type: ignore[operator]
+    root.shrines()
+    root.shrines()
+    assert calls == ['t']  # cached
+
+
+def test_cost_access_caches_and_fails_closed() -> None:
+    now = [0.0]
+    answers: list[object] = [ROSTER, OSError('down'), ROSTER]
+
+    def fetch(token: str) -> object:
+        answer = answers.pop(0)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    access = CostAccess(lambda: 't', fetch, clock=lambda: now[0])
+    assert access.allows('merchant')
+    now[0] = TTL - 1
+    assert access.allows('merchant')  # still cached
+    now[0] = TTL
+    assert not access.allows('merchant')  # sheet down: GM only
+    now[0] = TTL + FAILURE_TTL - 1
+    assert not access.allows('merchant')  # the failure is cached briefly
+    now[0] = TTL + FAILURE_TTL
+    assert access.allows('merchant')  # back
+    assert answers == []
+
+
+def test_cost_access_without_a_token_never_fetches() -> None:
+    def fetch(token: str) -> object:
+        raise AssertionError('fetched without a token')
+
+    access = CostAccess(lambda: '', fetch)
+    assert not access.allows('merchant')
+    assert not access.allows('merchant')
+
+
+def test_the_sheet_token_comes_from_the_secrets_file(monkeypatch: pytest.MonkeyPatch) -> None:
+    import l7r.app as app
+
+    monkeypatch.setattr(
+        app, '_load_secrets', lambda: {'character_sheet': {'roll_query_token': ' r '}}
+    )
+    assert app._sheet_token() == 'r'
+    monkeypatch.setattr(app, '_load_secrets', lambda: {})
+    assert app._sheet_token() == ''

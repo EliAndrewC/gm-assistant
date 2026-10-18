@@ -5,7 +5,9 @@ A player designs a small, remote, unstaffed shrine in a step-by-step wizard, one
 design lives entirely in the link; the current step rides in the `#step-...` hash, which the share
 link never carries. The GM opens the same link while signed in as GM and sees the fair price
 of every choice, grouped into contracts, and a ledger where Tadashi's Commerce rolls bring each
-contract down. What is left of the budget is what he keeps.
+contract down. What is left of the budget is what he keeps. A signed-in player who owns a
+character on the character-sheet app that is in a gaming group and has Commerce sees the same
+ledger read-only (FR-048); its inputs stay the GM's.
 
 | file | what |
 |---|---|
@@ -13,7 +15,8 @@ contract down. What is left of the budget is what he keeps.
 | `data/groups/<key>.yaml` | one wizard section each: its steps, options, player text, GM-only price `lines`, and `when` rules |
 | `catalog.py` | the data model, the one `when` grammar (`Clause`), loading (`load_raw` merges the files) and validation |
 | `design.py` | resolving a design in one forward pass, links, moot notes, `enables`, and `rules_json` for the browser |
-| `pricing.py` | fair prices, porterage, Tadashi's per-contract haggling, number formatting (GM only) |
+| `pricing.py` | fair prices, porterage, Tadashi's per-contract haggling, number formatting (ledger viewers only) |
+| `access.py` | `CostAccess`: who besides the GM sees the ledger - owners of a grouped Commerce character on the sheet app (`GET /api/characters`, `[character_sheet] roll_query_token`), cached 10 minutes, failing closed |
 | `../templates/shrines.html`, `../static/css/shrines.css`, `../static/js/shrines.js` | the page; the script's `resolve()` mirrors `design._resolve` |
 | `../../tests/test_shrines.py`, `../../tests/test_shrines_routes.py` | logic and rules; what each viewer can see |
 | `specs/216-shrine-builder/` (repo root) | spec with every amendment, the GM's messages verbatim, research with sources, plan |
@@ -30,10 +33,13 @@ wizard in one pass. Don't reintroduce `voids`/`only_with`-style side channels: e
 
 ## Rules that hold this together
 
-- **The player never sees a price.** `catalog.yaml` is outside `static/`, and the route builds a
-  ledger only for a GM session; the `gm_*` params are not even read otherwise. A test renders the
-  costliest design with GM params forced into the link, as anonymous and as player, and asserts no
-  `koku`, no contract name and no `gm_` survives.
+- **The player never sees a price** - unless their character has Commerce (FR-048). `catalog.yaml`
+  is outside `static/`, and the route builds a ledger only for the GM (`is_gm`, with inputs) and a
+  Commerce player (`priced`, read-only: the link's GM figures ride in hidden inputs so a resubmit
+  keeps them); the `gm_*` params are not even read otherwise. A test renders the costliest design
+  with GM params forced into the link, as anonymous, as player and as each kind of non-qualifying
+  sheet owner (ungrouped, no Commerce, editor only, NPC), and asserts no `koku` and no `gm_`
+  survives. If the sheet app is down or the token unset, nobody but the GM sees costs.
 - **Player text never implies price.** `test_player_text_never_mentions_price` runs a word list
   (cheap, costly, luxury, budget, any number followed by koku/bu...) over every label, prompt and
   option text. Describe what a thing IS and what it SIGNALS, never what it is worth.
@@ -154,3 +160,6 @@ did, in `test_shoda_only_appears_as_an_example`).
   holds the link. View source: no `koku` anywhere.
 - Signed in as GM, open the same link: the GM ledger appears on the right (below on narrow screens).
   Type a roll into a contract; the page recalculates and the "Tadashi keeps" line moves.
+- Signed in as a player whose grouped character has Commerce (Marshall as Asako Tadashi, Chris as
+  Tsuruchi Jimen): the "Ledger" panel shows the same figures with no inputs; changing a choice
+  reprices it. Any other player sees no ledger. A new Commerce rank shows within 10 minutes.

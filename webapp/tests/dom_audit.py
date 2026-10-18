@@ -52,6 +52,9 @@ VIEWPORTS = [
     ('mobile', 390, 844),
 ]
 
+ELI = '183026066498125825'
+COMMERCE_PLAYER = '316306960855072769'  # Marshall, who plays Asako Tadashi
+
 PAGES = [
     ('landing', '/', True),
     ('relics', '/relics', True),
@@ -69,6 +72,8 @@ PAGES = [
     ('shrines-remains', '/shrines?kind=memorial#step-sharing', False),
     ('shrines-kind', '/shrines#step-kind', False),
     ('shrines-gm', '/shrines?form=himorogi&gm_roll_carpentry=40', True),
+    # FR-048: the read-only ledger of a player whose grouped character has Commerce.
+    ('shrines-commerce', '/shrines?form=himorogi&gm_roll_carpentry=40', COMMERCE_PLAYER),
     ('auth-login', '/auth/login', False),
     ('terms', '/terms', False),
     ('privacy', '/privacy', False),
@@ -188,7 +193,7 @@ AUDIT_SCRIPT = r"""
 """
 
 
-def _session_cookie_for_eli() -> str | None:
+def _session_cookie_for_eli(discord_id: str = ELI) -> str | None:
     import configparser
     from pathlib import Path
 
@@ -201,12 +206,11 @@ def _session_cookie_for_eli() -> str | None:
     parser = configparser.ConfigParser(interpolation=None)
     parser.read(ini, encoding='utf-8')
     secret = parser.get('auth', 'session_secret', fallback='')
-    return make_session_cookie('183026066498125825', secret) if secret else None
+    return make_session_cookie(discord_id, secret) if secret else None
 
 
 async def audit() -> int:
     total_issues = 0
-    cookie_value = _session_cookie_for_eli()
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         for page_name, page_url, needs_auth in PAGES:
@@ -222,7 +226,10 @@ async def audit() -> int:
                     'minGutter': min_gutter,
                 }
                 context = await browser.new_context(viewport={'width': w, 'height': h})
-                if needs_auth and cookie_value:
+                # needs_auth: True signs in as the GM, a Discord id string as that player.
+                who = needs_auth if isinstance(needs_auth, str) else ELI
+                cookie_value = _session_cookie_for_eli(who) if needs_auth else None
+                if cookie_value:
                     domain_host = (
                         BASE.replace('http://', '')
                         .replace('https://', '')
