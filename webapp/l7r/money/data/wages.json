@@ -1,0 +1,9 @@
+[
+ {
+  "date": "2026-10-18",
+  "hourly": 15.0,
+  "hours_per_year": 2080,
+  "basis": "$15/hour full time, the handoff default. Open for the GM: the federal minimum ($7.25) or a median unskilled wage.",
+  "source": "https://github.com/EliAndrewC/l7r/blob/master/money/HANDOFF.md"
+ }
+]
