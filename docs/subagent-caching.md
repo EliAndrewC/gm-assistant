@@ -123,7 +123,7 @@ sequential, `mention-context-review` must run one category at a time, and the la
 was nine `shrine-text-review` sections), so the default here is plain Agent calls in one message.
 If a recurring job ever needs a workflow, one line in CLAUDE.md or in its skill saying so is enough:
 the harness does not need a per-session request (tested and confirmed 2026-10-17). Ask the GM
-before adding such a line, since this repository keeps broad fan-out to his request.
+before adding such a line, since this repository keeps broad fan-out to the GM's request.
 
 ## The same-session fallback
 
