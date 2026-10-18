@@ -1,0 +1,91 @@
+{
+ "date": "2017-04",
+ "priced_by": "Chris Larkin (Amazon, April 2017)",
+ "source": "https://github.com/EliAndrewC/l7r/blob/master/money/ppp-basket.xlsx",
+ "basket": "Bassino & Ma (2005), Japan Basket A, Kyoto 1745-54 prices in grams of silver",
+ "rice_silver_g_per_kg": 1.49,
+ "note": "Exported from the shared Google Sheet 2026-10-18. The sheet ties silver to coin with 2.257575 g per zeni, which is rice at 1.49 g/kg and a koku of 151.515 kg (100 zeni / 0.66 zeni per kg).",
+ "goods": [
+  {
+   "good": "Beans",
+   "unit": "liter",
+   "quantity": 4.0,
+   "silver_g_per_unit": 0.99,
+   "dollars_per_unit": 5.72,
+   "priced_as": "Adzuki",
+   "link": "https://www.amazon.com/Food-Live-Organic-Adzuki-Pounds/dp/B00JGX94D6/ref=sr_1_13_a_it?ie=UTF8&qid=1492710226&sr=8-13&keywords=adzuki+bean"
+  },
+  {
+   "good": "Soy Beans",
+   "unit": "kg",
+   "quantity": 52.0,
+   "silver_g_per_unit": 1.49,
+   "dollars_per_unit": 3.39,
+   "priced_as": null,
+   "link": "https://www.amazon.com/Premium-Grade-Non-GMO-Soybeans-Pounds/dp/B01N05JV1E/ref=sr_1_4_a_it?ie=UTF8&qid=1492708599&sr=8-4&keywords=dried%2Bsoybeans%2Bbulk&th=1"
+  },
+  {
+   "good": "Rice",
+   "unit": "kg",
+   "quantity": 114.0,
+   "silver_g_per_unit": 1.49,
+   "dollars_per_unit": 2.09,
+   "priced_as": null,
+   "link": "https://www.amazon.com/Nishiki-Premium-Medium-Grain-15-Pound/dp/B004NRLAVY/ref=sr_1_2_a_it?ie=UTF8&qid=1492708681&sr=8-2&keywords=rice%2Bbulk&th=1"
+  },
+  {
+   "good": "Barley / Wheat",
+   "unit": "kg",
+   "quantity": 10.0,
+   "silver_g_per_unit": 0.76,
+   "dollars_per_unit": 1.98,
+   "priced_as": null,
+   "link": "https://www.amazon.com/Organic-Hard-Red-Wheat-Seed/dp/B000E7L2T2/ref=sr_1_10_a_it?ie=UTF8&qid=1492708756&sr=8-10&keywords=wheat%2Bbulk&th=1"
+  },
+  {
+   "good": "Fish",
+   "unit": "kg",
+   "quantity": 3.5,
+   "silver_g_per_unit": 2.18,
+   "dollars_per_unit": 42.93,
+   "priced_as": "Salmon",
+   "link": "https://www.amazon.com/True-North-Salmon-Fresh-Skin/dp/B00LHVSJ2M/ref=sr_1_fkmr0_2_f_f_it?s=amazonfresh&ie=UTF8&qid=1492708811&sr=1-2-fkmr0&ppw=fresh&keywords=salmon+bulk"
+  },
+  {
+   "good": "Buckwheat & others",
+   "unit": "kg",
+   "quantity": 16.0,
+   "silver_g_per_unit": 0.61,
+   "dollars_per_unit": 8.8,
+   "priced_as": null,
+   "link": "https://www.amazon.com/Organic-Buckwheat-Anthonys-Certified-Gluten-Free/dp/B00QKXVAN2/ref=sr_1_4_s_it?s=grocery&ie=UTF8&qid=1493403099&sr=1-4&keywords=buckwheat"
+  },
+  {
+   "good": "Edible Oil",
+   "unit": "liter",
+   "quantity": 1.0,
+   "silver_g_per_unit": 5.66,
+   "dollars_per_unit": 3.04,
+   "priced_as": "Soybean Oil",
+   "link": "https://www.amazon.com/Crisco-Pure-Vegetable-Oil-32/dp/B00I8G7W5E/ref=sr_1_1?srs=7301146011&ie=UTF8&qid=1492711561&sr=8-1&keywords=soybean+oil"
+  },
+  {
+   "good": "Cotton / Linen Blend",
+   "unit": "m",
+   "quantity": 5.0,
+   "silver_g_per_unit": 5.83,
+   "dollars_per_unit": 7.6,
+   "priced_as": null,
+   "link": "https://www.amazon.com/Kaufman-Essex-Linen-Natural-Fabric/dp/B015WYDEMO/ref=sr_1_6?ie=UTF8&qid=1492711857&sr=8-6&keywords=fabric+linen"
+  },
+  {
+   "good": "Lamp Oil,",
+   "unit": "liter",
+   "quantity": 2.6,
+   "silver_g_per_unit": 5.66,
+   "dollars_per_unit": 3.04,
+   "priced_as": "Soybean Oil",
+   "link": "https://www.amazon.com/Crisco-Pure-Vegetable-Oil-32/dp/B00I8G7W5E/ref=sr_1_1?srs=7301146011&ie=UTF8&qid=1492711561&sr=8-1&keywords=soybean+oil"
+  }
+ ]
+}

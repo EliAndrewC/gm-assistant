@@ -168,7 +168,7 @@ reading stays reproducible by naming its date.
 | Decision | Why | Recorded at |
 |---|---|---|
 | Research lives in diagram; the skill cites it | one checked research machinery, no copy to drift (handoff; diagram feature 389) | this spec, SKILL.md |
-| Koku rice mass and the wage are inputs with defaults (151.5 kg, $15/hour) | two supportable answers become a knob; the GM settles the default later | plan.md |
+| Koku rice mass and the wage are inputs with defaults (151.5 kg, $15/hour) | two supportable answers become a knob; both stay OPEN FOR THE GM (the handoff's open items 1-2), and the defaults only keep answers flowing meanwhile | plan.md; raised to the GM at the end of this feature |
 | Pure logic in `webapp/l7r/money/`, not in the skill directory | the gate only collects tests under `webapp/` | plan.md |
 | No webapp page | bulk and lookup needs belong in chat | plan.md |
 
@@ -177,3 +177,8 @@ reading stays reproducible by naming its date.
 - The GM starts the diagram session that works each request.
 - The money folder in the GM's l7r repository is committed by the GM; until then its files are cited by their future
   GitHub path.
+
+## Review history
+
+- **spec-fidelity round 1 (2026-10-18): FAITHFUL.** Aside: the koku rice mass and the "big deal" wage are open questions
+  for the GM, not decisions; the Decisions table now says so.
