@@ -120,8 +120,10 @@ the first agent wrote 35.5k, and the four started 0.6-1.5 s later each read 18.9
 16.6k. It pays for waves of 4 or more agents, launched with `agentType` set (the default workflow
 subagent loads CLAUDE.md and every tool). This repository rarely fans out (review rounds are
 sequential, `mention-context-review` must run one category at a time, and the largest batch so far
-was nine `shrine-text-review` sections), and `Workflow` still needs the GM's explicit request, so
-the default here is plain Agent calls in one message.
+was nine `shrine-text-review` sections), so the default here is plain Agent calls in one message.
+If a recurring job ever needs a workflow, one line in CLAUDE.md or in its skill saying so is enough:
+the harness does not need a per-session request (tested and confirmed 2026-10-17). Ask the GM
+before adding such a line, since this repository keeps broad fan-out to his request.
 
 ## The same-session fallback
 
