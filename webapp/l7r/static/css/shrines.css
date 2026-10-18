@@ -465,7 +465,9 @@
   .shrine-ledger.totals-hidden .shrine-ledger__pin {
     display: block;
     position: sticky;
-    top: 3.3rem;
+    /* The site header's height varies with the width (55-66px measured); shrines.js keeps
+       --shrine-nav-h in step with it, so the pin is never tucked under it (review 2026-10-18). */
+    top: var(--shrine-nav-h, 4.2rem);
     z-index: 5;
     margin: 0 -1.2rem 0.8rem;
     padding: 0.4rem 1.2rem;
@@ -833,6 +835,15 @@ body.page-shrines { min-height: 100vh; }
 .shrine-summary a:focus-visible em { text-decoration-thickness: 2px; }
 
 /* FR-048: a Commerce player's read-only ledger - the GM's figures as text, not inputs. */
-.shrine-ledger__settings--read p { margin: 0 0 0.35rem; }
+.shrine-ledger__settings--read p { margin: 0; font-family: var(--font-body); color: var(--ink); line-height: 1.45; }
 .shrine-ledger__settings--read span { font-weight: 600; margin-right: 0.35rem; }
-.shrine-contract__figure { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.shrine-contract__figure { font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* The player came to build, not to price: on narrow screens their wizard leads and the read-only
+   ledger follows it (review 2026-10-18; the GM's ledger still leads, the GM is pricing). */
+@media (max-width: 1100px) {
+  .shrine-form--readonly .shrine-layout { display: flex; flex-direction: column; }
+  .shrine-form--readonly .shrine-ledger-col { order: 2; margin: 1.5rem 0 0; }
+}
+/* It says why the player cannot change anything, so it reads at body size. */
+.shrine-form--readonly .shrine-ledger__lede { font-size: 1rem; color: var(--ink); }

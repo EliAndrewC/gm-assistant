@@ -351,7 +351,9 @@ def test_a_commerce_player_sees_the_ledger_read_only(
     assert '<input type="hidden" name="gm_budget" value="7" />' in page
     assert '<input type="hidden" name="gm_remote" value="deep" />' in page
     assert '<input type="hidden" name="gm_roll_carpentry" value="40" />' in page
-    assert 'Roll 40' in page
+    assert 'Roll 40 against baseline 25' in page
+    assert 'Roll -' not in page
+    assert 'Only your GM can change these figures' in page
     assert 'Update totals' not in page
     assert 'Link with these GM figures' not in page
     assert 'data-priced="true"' in page

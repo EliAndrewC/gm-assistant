@@ -463,6 +463,14 @@
       });
     });
 
+    // The ledger's sticky pin sits just under the site header, whose height changes with the width.
+    var header = document.querySelector('.app-nav');
+    function trackHeader() {
+      if (header) document.documentElement.style.setProperty('--shrine-nav-h', header.offsetHeight + 'px');
+    }
+    trackHeader();
+    window.addEventListener('resize', trackHeader);
+
     resolve();
     var fromHash = window.location.hash.indexOf('#step-') === 0
       ? stepByKey(window.location.hash.slice('#step-'.length)) : null;

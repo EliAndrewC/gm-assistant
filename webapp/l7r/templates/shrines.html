@@ -78,7 +78,7 @@
   </div>
 </section>
 
-<form class="container shrine-form{% if priced %} shrine-form--priced{% endif %} wording-{{ design.wording or 'plain' }}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}" data-priced="{{ 'true' if priced else 'false' }}">
+<form class="container shrine-form{% if priced %} shrine-form--priced{% endif %}{% if priced and not is_gm %} shrine-form--readonly{% endif %} wording-{{ design.wording or 'plain' }}" id="shrine-form" method="get" action="/shrines" data-gm="{{ 'true' if is_gm else 'false' }}" data-priced="{{ 'true' if priced else 'false' }}">
   {# The applicability rules for shrines.js: conditions only, never a price (tested). #}
   <script type="application/json" id="shrine-rules">{{ rules_json|safe }}</script>
   <div class="shrine-layout">
@@ -91,7 +91,7 @@
         {% if is_gm %}
           <p class="shrine-ledger__lede">Players whose characters have Commerce see these figures too; only you can change them. Enter Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract. Totals update when you leave a field or press Enter.</p>
         {% else %}
-          <p class="shrine-ledger__lede">Your character's Commerce lets you see what this shrine costs. The GM enters Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract.</p>
+          <p class="shrine-ledger__lede">Your character's Commerce lets you see what this shrine costs. Only your GM can change these figures: the GM enters Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract.</p>
         {% endif %}
 
         <dl class="shrine-totals">
@@ -127,9 +127,8 @@
           <input type="hidden" name="gm_budget" value="{{ format_number(negotiation.budget) }}" />
           <input type="hidden" name="gm_remote" value="{{ negotiation.remoteness }}" />
           {% for r in catalog.remoteness if r.key == negotiation.remoteness %}
-            <p><span>Remoteness</span> {{ r.label }}</p>
+            <p><span>Remoteness</span> {{ r.label }}. Porters charge {{ format_koku(ledger.pricing.rate) }} per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</p>
           {% endfor %}
-          <p><small>Porters charge {{ format_koku(ledger.pricing.rate) }} per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</small></p>
         </div>
         {% endif %}
 
@@ -147,11 +146,10 @@
                 {% else %}
                   {% if c.roll is not none %}<input type="hidden" name="gm_roll_{{ c.key }}" value="{{ c.roll }}" />{% endif %}
                   <input type="hidden" name="gm_base_{{ c.key }}" value="{{ c.baseline }}" />
-                  <span class="shrine-contract__figure">Roll {{ c.roll if c.roll is not none else '-' }}</span>
-                  <span class="shrine-contract__figure">Baseline {{ c.baseline }}</span>
+                  {% if c.roll is not none %}<span class="shrine-contract__figure">Roll {{ c.roll }} against baseline {{ c.baseline }}</span>{% endif %}
                 {% endif %}
                 <span class="shrine-contract__paid">
-                  {% if c.roll is none %}not yet negotiated{% else %}-{{ c.saving_pct }}% = <strong>{{ format_koku(c.paid) }}</strong>{% endif %}
+                  {% if c.roll is none %}not yet negotiated{% else %}{{ c.saving_pct }}% off = <strong>{{ format_koku(c.paid) }}</strong>{% endif %}
                 </span>
               </div>
               <details class="shrine-contract__items">
