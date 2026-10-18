@@ -81,6 +81,13 @@ def test_forty_gallons_of_uncooked_rice_gives_about_440() -> None:
     assert round(ppp_per_koku(snap, KOKU_KG['forty-gallons'])) == 442
 
 
+def test_budgets_koku_sits_beside_the_sheet() -> None:
+    """budgets.md's ~150 kg brown koku is within 1% of the sheet's 151.5 kg."""
+    snap = load_snapshots()[0]
+    assert round(ppp_per_koku(snap, KOKU_KG['budgets-brown'])) == 547
+    assert round(ppp_per_koku(snap, KOKU_KG['budgets-polished'])) == 496
+
+
 def test_resolve_koku_kg_takes_a_number() -> None:
     assert resolve_koku_kg('150') == (150.0, '150 kg')
     assert resolve_koku_kg(180.5) == (180.5, '180.5 kg')

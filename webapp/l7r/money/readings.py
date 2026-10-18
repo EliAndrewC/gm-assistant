@@ -9,10 +9,11 @@ WHY RE-PRICE, NEVER CPI-SCALE (handoff, 2026-10-18): rice and beans move differe
 CPI, so scaling the 2017 figure would carry 2017's relative prices forward under a new date.
 Each re-pricing is a new `data/baskets/YYYY-MM.json`; old snapshots are never edited.
 
-THE KOKU'S RICE MASS IS AN INPUT, not a constant, because it is open for the GM: the canon says
-~40 gallons; the 2017 sheet used 151.515 kg (its 2.257575 g silver per zeni is 1.49 g/kg x
-151.515 kg / 100, i.e. 40 gallons read as if a liter of rice weighed a kilogram); 40 gallons of
-uncooked rice at ~0.8 kg/L is ~121 kg. Declined: hard-coding 2.257575, which hides the question.
+THE KOKU'S RICE MASS IS AN INPUT, not a constant, because it is open for the GM: l7r.md says ~40
+gallons, while budgets.md "Historical units" says ~180 L (~48 gallons) and ~150 kg brown; the 2017
+sheet used 151.515 kg (its 2.257575 g silver per zeni is 1.49 g/kg x 151.515 kg / 100, i.e. 40
+gallons read as if a liter of rice weighed a kilogram); 40 gallons of uncooked rice at ~0.8 kg/L is
+~121 kg. Declined: hard-coding 2.257575, which hides the question.
 
 "BIG DEAL": one koku is 1/3.32 of an unskilled laborer's year (the 2017 sheet, from Bassino &
 Ma's ~2 kg rice/day), applied to a dated US unskilled full-time year. Declined: asserting the
@@ -45,6 +46,10 @@ DATA = Path(__file__).parent / 'data'
 KOKU_KG = {
     'sheet-2017': 100 / 0.66,  # the 2017 spreadsheet's basis (rice 0.66 zeni/kg): ~151.5 kg
     'forty-gallons': 151.416 * 0.8,  # 40 US gallons of uncooked rice at ~0.8 kg/L: ~121 kg
+    # budgets.md "Historical units": 1 koku ~ 180 L (~48 gallons), ~150 kg as the brown rice the
+    # kokudaka was assessed in ("the canonical figure"), ~136 kg polished, ~187 kg paddy
+    'budgets-brown': 150.0,
+    'budgets-polished': 136.0,
 }
 DEFAULT_KOKU = 'sheet-2017'
 

@@ -21,7 +21,7 @@ cd /gm-assistant/webapp && python3 -m l7r.money history              # dollars p
 cd /gm-assistant/webapp && python3 -m l7r.money check                # validate the ledger
 ```
 
-Knobs on any command: `--koku-kg sheet-2017|forty-gallons|<kg>`, `--snapshot YYYY-MM`, `--wage <dollars/hour>`,
+Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|forty-gallons|<kg>`, `--snapshot YYYY-MM`, `--wage <dollars/hour>`,
 `--wage-date`. Every output prints the basis it used; quote it with the answer.
 
 ## Coins and who uses them (canon: `setting/l7r.md` "Money")
@@ -65,8 +65,10 @@ Lucca) carry the `comparison` tag: they inform a Rokugani figure, they are not o
 
 ## Open for the GM
 
-- **The koku's rice mass**: the default (151.5 kg) is what the 2017 sheet used; 40 gallons of uncooked rice is ~121 kg
-  (~$442 a koku). diagram#1 Q3 researches the historical koku.
+- **The koku's rice mass**: `l7r.md` says ~40 gallons (twice: "Money" and "Rent and taxes"), but `budgets.md`
+  "Historical units" says ~180 L (~48 gallons) and ~150 kg as brown rice, "the canonical figure", which its yield math
+  uses (0.021 koku per gallon). The 2017 sheet's 151.5 kg agrees with budgets.md within 1% ($552; `--koku-kg
+  budgets-brown` gives $547); only a literal 40 gallons (~121 kg, $442) breaks from it. diagram#1 Q3 cites the history.
 - **The pound-to-koku rate** for the English comparison rows: 145 sen per pound (the Austen sheet: 1 GBP = $80 at
   $550/koku). Anchoring on wages instead (an English laborer's GBP 15-20 a year = a Rokugani laborer's 3.32 koku) gives
   ~190 sen per pound, about 30% higher.
