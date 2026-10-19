@@ -18,7 +18,7 @@ categories:
           The forest itself makes the gate, and passing between living trunks feels like being
           admitted by them.
         units: 0
-        lines: [{contract: rites, koku: 0.3}]
+        lines: [{contract: rites, koku: 0.12}]
       - key: shinmei
         label: Straight gate
         ja: 神明鳥居
@@ -64,7 +64,7 @@ categories:
           Timber left its own color, renewed every generation as the posts weather.
         appeal: >-
           Quiet and of a piece with the forest, it seems to have grown where it stands.
-        lines: [{contract: carpentry, koku: 4, per: gate_form}]
+        lines: [{contract: carpentry, koku: 1.18, per: gate_form}]
       - key: vermilion
         label: Vermilion-painted wood
         text: >-
@@ -73,7 +73,7 @@ categories:
         appeal: >-
           The color shows through the trees long before the shrine does, a promise of what lies
           ahead.
-        lines: [{contract: carpentry, koku: 4, per: gate_form}, {contract: finishing, koku: 1.5, per: gate_form}]
+        lines: [{contract: carpentry, koku: 1.18, per: gate_form}, {contract: finishing, koku: 0.53, per: gate_form}]
       - key: stone
         label: Stone
         text: >-
@@ -81,7 +81,7 @@ categories:
           post.
         appeal: >-
           It will stand unchanged for a thousand years, a monument in its own right.
-        lines: [{contract: stonework, koku: 12, heavy: 8, per: gate_form}]
+        lines: [{contract: stonework, koku: 4.9, heavy: 8, per: gate_form}]
 
   - key: path
     label: Approach path
@@ -94,21 +94,21 @@ categories:
           A cleared path of beaten earth, swept by those who tend it, with roots for steps.
         appeal: >-
           The path stays as the forest made it, and every visitor walks it as the first visitor did.
-        lines: [{contract: earthwork, koku: 1}]
+        lines: [{contract: earthwork, koku: 0.1}]
       - key: gravel
         label: White gravel
         text: >-
           Raked pale gravel, which crunches underfoot.
         appeal: >-
           Walking on it is itself a small purification, and the sound announces every visitor.
-        lines: [{contract: earthwork, koku: 2, heavy: 3}]
+        lines: [{contract: earthwork, koku: 0.4, heavy: 3}]
       - key: stepping
         label: Stepping stones
         text: >-
           Flat stones set in moss a stride apart, leading through the trees.
         appeal: >-
           They set an unhurried pace, so visitors arrive calm and attentive.
-        lines: [{contract: stonework, koku: 3, heavy: 4}]
+        lines: [{contract: stonework, koku: 0.62, heavy: 4}]
       - key: steps
         label: Stone stairway
         text: >-
@@ -116,7 +116,7 @@ categories:
         appeal: >-
           The shrine is always approached from below and seen against the sky, and the climb
           itself becomes an act of devotion.
-        lines: [{contract: stonework, koku: 8, heavy: 8}]
+        lines: [{contract: stonework, koku: 3.94, heavy: 8}]
 
   - key: enclosure
     label: Enclosure
@@ -140,7 +140,7 @@ categories:
         appeal: >-
           Its white streamers stir in every breeze, and the yearly renewal gives the shrine's
           keepers a festival day.
-        lines: [{contract: rites, koku: 0.3}]
+        lines: [{contract: rites, koku: 0.12}]
         gloss: >-
           A twisted rice-straw rope that marks off sacred ground, hung with zigzag paper streamers.
       - key: fence
@@ -152,7 +152,7 @@ categories:
         appeal: >-
           It says plainly where the sacred ground begins, and gives the space a tended, orderly
           calm.
-        lines: [{contract: carpentry, koku: 4}]
+        lines: [{contract: carpentry, koku: 0.9}]
         gloss: >-
           "Jewel fence." The low fence around a sanctuary.
       - key: posts
@@ -162,7 +162,7 @@ categories:
         appeal: >-
           Donors' names can be carved on them one family to a post, binding the villages to the
           shrine for generations.
-        lines: [{contract: stonework, koku: 5, heavy: 5}]
+        lines: [{contract: stonework, koku: 1.62, heavy: 5}]
       - key: hedge
         label: Sakaki hedge
         ja: 榊
@@ -172,7 +172,7 @@ categories:
           rite.
         appeal: >-
           Living, and it grows thicker every year, a boundary that renews itself.
-        lines: [{contract: earthwork, koku: 1}]
+        lines: [{contract: earthwork, koku: 0.22}]
 
         gloss: >-
           Sakaki, a glossy evergreen held sacred; its branches are offered in rites.
@@ -204,7 +204,7 @@ categories:
           and end of all things.
         appeal: >-
           Perhaps the most common guardians of all.
-        lines: [{contract: stonework, koku: 10, heavy: 8}]
+        lines: [{contract: stonework, koku: 4.45, heavy: 8}]
         gloss: >-
           "Korean dogs." Paired guardian lion-dogs that flank the approach to a shrine.
       - key: foxes
@@ -217,7 +217,7 @@ categories:
         appeal: >-
           Fitting wherever foxes are honored or Inari's favor is sought, and visitors dress them in
           red bibs in thanks for favors granted.
-        lines: [{contract: stonework, koku: 11, heavy: 8}]
+        lines: [{contract: stonework, koku: 4.78, heavy: 8}]
         gloss: >-
           "Fox." Foxes are the messengers of Inari, Fortune of rice and of foxes.
       - key: wooden
@@ -228,7 +228,7 @@ categories:
         appeal: >-
           The oldest form, from before guardians moved outdoors, and their painted faces reward
           anyone who comes close.
-        lines: [{contract: finishing, koku: 4}]
+        lines: [{contract: finishing, koku: 1.75}]
 
   - key: lanterns
     label: Light
@@ -242,7 +242,7 @@ categories:
           day and moonlight by night.
         appeal: >-
           On a full-moon night the whole shrine stands silver in the dark forest.
-        lines: [{contract: earthwork, koku: 1}]
+        lines: [{contract: earthwork, koku: 0.36}]
       - key: pair
         label: A pair of stone lanterns
         ja: 石灯籠
@@ -251,7 +251,7 @@ categories:
           Two stone lanterns flanking the path, each a firebox on a tall shaft.
         appeal: >-
           Lit for festivals and night visits, they turn the approach into a ceremony.
-        lines: [{contract: stonework, koku: 6, heavy: 6}]
+        lines: [{contract: stonework, koku: 2.3, heavy: 6}]
         gloss: >-
           "Stone lantern." A lantern of carved stone, a firebox on a tall shaft.
       - key: tall
@@ -264,7 +264,7 @@ categories:
         appeal: >-
           Standing tall at the foot of the path, it marks the way in from far off, and on a lit
           night it can be seen through the trees.
-        lines: [{contract: stonework, koku: 5, heavy: 5}]
+        lines: [{contract: stonework, koku: 1.98, heavy: 5}]
         gloss: >-
           "Always-night light." A tall lantern meant to burn through the night as a beacon.
       - key: hanging
@@ -277,7 +277,7 @@ categories:
           steps of the path.
         appeal: >-
           They throw patterned light across the steps, like stars caught in the shrine.
-        lines: [{contract: metalwork, koku: 3}]
+        lines: [{contract: metalwork, koku: 1.25}]
 
         gloss: >-
           "Hanging lantern." A pierced metal lantern hung from eaves or a beam.
@@ -292,7 +292,7 @@ categories:
           Visitors kneel at the edge of a nearby stream and purify themselves in its current.
         appeal: >-
           Running water is the purest of all, and no vessel stands between the visitor and it.
-        lines: [{contract: earthwork, koku: 0.3}]
+        lines: [{contract: earthwork, koku: 0.05}]
         wording:
           memorial:
             appeal: >-
@@ -307,7 +307,7 @@ categories:
           resting across it.
         appeal: >-
           The water never stops running, and its trickle is the first sound a visitor hears.
-        lines: [{contract: stonework, koku: 4, heavy: 4}, {contract: carpentry, koku: 0.5}]
+        lines: [{contract: stonework, koku: 1.18, heavy: 4}, {contract: carpentry, koku: 0.07}]
         gloss: >-
           "Hand-water bowl." A stone basin of water for rinsing the hands and mouth before praying.
       - key: pavilion
@@ -319,7 +319,7 @@ categories:
           along its edge.
         appeal: >-
           It gives shelter from rain and snow and a dry place to pause on the climb.
-        lines: [{contract: stonework, koku: 4, heavy: 4}, {contract: carpentry, koku: 6}, {contract: roofing, koku: 2}]
+        lines: [{contract: stonework, koku: 1.18, heavy: 4}, {contract: carpentry, koku: 1.82}, {contract: roofing, koku: 0.42}]
 
         gloss: >-
           "Hand-water house." A small roofed shelter over the purification water.

@@ -141,10 +141,13 @@ Edo sake prices retail and in taverns).
 **Shrines** (the shrine builder, feature 216; Shizu's memorial hermitage for Shoda, 2026-10-18). The builder prices at
 1 ryo = 1 koku from Tama-district village ledgers (AIJ paper No. 420), which agrees with this skill's wages: a
 craftsman at ~1 koku per 30-40 days is 25-33 sen a day, inside the skilled range, and carpenters at 2.6-4.7x the
-unskilled wage (diagram 0250). Its line prices were logged as estimates E0035-E0051 before research
-([diagram#6](https://github.com/EliAndrewC/diagram/issues/6), priority).
+unskilled wage (diagram 0250). Its first, hand-set prices (E0035-E0051) were withdrawn - they were not this
+model's - and the whole catalog was re-estimated with this recipe on 2026-10-18 (`shrine catalog ...` estimates; the
+builder's prices are their midpoints, enforced by a test). Shizu's design: 60 koku before, ~25 after (foot trail).
+Research: [diagram#6](https://github.com/EliAndrewC/diagram/issues/6) (her lines, priority),
+[#7](https://github.com/EliAndrewC/diagram/issues/7) (the rest). A LOAD of porterage is ~400 kg, ten porter trips.
 **Recipe**: craftsman-days x the skilled day + materials + workers' rice + rites, scaled from the nearest ledger;
 roof work scales with roof AREA (the square of the bay), not the bay's width; stone and earth add porter loads at the
 remoteness rate. **Check every line in labor-days**: a line that buys more craftsman-days than the work could take is
-too high, whatever its ledger ancestry. Known tension to settle with #6: the small sanctuary at 16 koku is 480-640
-craftsman-days, against spec 216's "a few carpenter-months".
+too high, whatever its ledger ancestry. The open question for #6: the small sanctuary is now 150-300 craftsman-days
+(~10.6 koku with fittings), between spec 216's "a few carpenter-months" and the ledger repair's ~190-250 days.

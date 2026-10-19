@@ -25,7 +25,7 @@ categories:
         appeal: >-
           The dead are honored with the full weight of the Empire's rites behind them, and no one
           can say the shrine is anything less than proper.
-        lines: [{contract: rites, koku: 4}]
+        lines: [{contract: rites, koku: 2.75}]
       - key: disciples
         label: Their spirit, honored by those who knew them
         text: >-
@@ -63,7 +63,7 @@ categories:
         appeal: >-
           The dead are made clean of the death they were given, and go to their rest as white and
           whole as their bones allow.
-        lines: [{contract: remains, koku: 2}, {contract: rites, koku: 0.5}]
+        lines: [{contract: remains, koku: 0.34}, {contract: rites, koku: 0.2}]
         gloss: >-
           "Washing the bones." A second funeral in which bones are taken up after the first burial
           or burning, cleaned by hand and washed, then laid in a vessel.
@@ -75,7 +75,7 @@ categories:
         appeal: >-
           The dead are disturbed as little as possible, and every trace of them leaves the place
           they were first laid.
-        lines: [{contract: remains, koku: 0.8}]
+        lines: [{contract: remains, koku: 0.28}]
 
   - key: sharing
     label: Dividing the remains
@@ -106,7 +106,7 @@ categories:
         appeal: >-
           Long held the surest way to calm a spirit that met a hard end, and a second place for
           those who honor the dead to pray.
-        lines: [{contract: earthwork, koku: 2}, {contract: stonework, koku: 2, heavy: 2}, {contract: rites, koku: 1}]
+        lines: [{contract: earthwork, koku: 0.25}, {contract: stonework, koku: 0.37, heavy: 2}, {contract: rites, koku: 0.2}]
         gloss: >-
           "Head mound." A mound raised over a head buried apart from its body - most often the heads
           of warriors or the executed, buried with rites to quiet the spirit.
@@ -120,7 +120,7 @@ categories:
           temples that honored them.
         appeal: >-
           The temple shares in their rest, and the two places are bound together through them.
-        lines: [{contract: rites, koku: 3}]
+        lines: [{contract: rites, koku: 2}]
         gloss: >-
           "Dividing the bones." Sending part of someone's remains to rest in a second place, so that
           more than one temple or grave honors them.
@@ -131,7 +131,7 @@ categories:
           send a part of their dead to rest near the great holy men buried there.
         appeal: >-
           Some part of the dead rests among the holiest dead of the Empire.
-        lines: [{contract: rites, koku: 3}]
+        lines: [{contract: rites, koku: 2.75}]
 
   - key: resting
     label: Storing the remains
@@ -149,7 +149,7 @@ categories:
           it - the shrine's innermost precinct - reached by a flight of steps through the trees.
         appeal: >-
           Visitors climb to the dead last, as to the innermost place of the shrine.
-        lines: [{contract: stonework, koku: 6, heavy: 6}, {contract: earthwork, koku: 2}]
+        lines: [{contract: stonework, koku: 2.5, heavy: 6}, {contract: earthwork, koku: 0.27}]
         gloss: >-
           "The inner precinct." The deepest and holiest part of a sacred site, often set apart and
           above the rest and reached last.
@@ -163,7 +163,7 @@ categories:
         appeal: >-
           The five elements stand over the dead, and the pagoda's quiet silhouette reads at once as
           a holy grave.
-        lines: [{contract: stonework, koku: 5, heavy: 5}]
+        lines: [{contract: stonework, koku: 2.5, heavy: 5}]
         gloss: >-
           "Five-ring tower." A stone grave marker of five stacked shapes - cube, sphere, pyramid,
           crescent and jewel - for earth, water, fire, air and void.
@@ -177,7 +177,7 @@ categories:
         appeal: >-
           The dead are given a house of their own, a place where those who come can kneel out of
           the rain.
-        lines: [{contract: carpentry, koku: 15}, {contract: roofing, koku: 4}, {contract: finishing, koku: 3}]
+        lines: [{contract: carpentry, koku: 7.05}, {contract: roofing, koku: 1.32}, {contract: finishing, koku: 1.7}]
         gloss: >-
           "Spirit house." A small hall built over or around someone's remains or memorial tablet, a
           house for the honored dead.
@@ -190,7 +190,7 @@ categories:
           earth over it with their own hands, crowned with a single stone.
         appeal: >-
           The oldest kind of grave there is, raised by hand.
-        lines: [{contract: earthwork, koku: 2}]
+        lines: [{contract: earthwork, koku: 0.31}]
 
         gloss: >-
           "Mound." A heap of earth raised over something buried, from a simple grave to a great
@@ -219,7 +219,7 @@ categories:
         appeal: >-
           Those who come on those days see the dead with their own eyes, and the festival gains a
           heart.
-        lines: [{contract: metalwork, koku: 3}]
+        lines: [{contract: metalwork, koku: 1.43}]
         gloss: >-
           "Relic tower." A small pagoda-shaped vessel made to hold, and often to show, relics - the
           bones or ashes of a revered person.
@@ -232,7 +232,7 @@ categories:
           days, when people come from far around to see it.
         appeal: >-
           Rarity draws pilgrims, and each day of unveiling becomes an event in its own right.
-        lines: [{contract: rites, koku: 1}]
+        lines: [{contract: rites, koku: 0.35}]
         gloss: >-
           "Opening the curtain." The custom of unveiling hidden sacred things to the public only
           on rare, appointed occasions.
@@ -244,4 +244,4 @@ categories:
           who kneels can see where the dead lie, though the chest is never opened.
         appeal: >-
           The dead are always present to anyone who kneels and looks, yet always at rest.
-        lines: [{contract: carpentry, koku: 1}]
+        lines: [{contract: carpentry, koku: 0.28}]

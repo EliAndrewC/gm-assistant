@@ -37,7 +37,7 @@ categories:
         appeal: >-
           Common in forests and snowy country, it keeps a small sanctuary safe for centuries, and
           the sanctuary glimmers within like a treasure in its case.
-        lines: [{contract: carpentry, koku: 7}, {contract: roofing, koku: 3}]
+        lines: [{contract: carpentry, koku: 2.95}, {contract: roofing, koku: 0.72}]
         gloss: >-
           "Covering house." A plain shed built over a small sanctuary to shelter it.
       - key: pavilion
@@ -49,7 +49,7 @@ categories:
           open on all sides.
         appeal: >-
           A dry place to kneel in the rain, with room for a rite with a dozen worshipers.
-        lines: [{contract: carpentry, koku: 9}, {contract: roofing, koku: 3}]
+        lines: [{contract: carpentry, koku: 4.4}, {contract: roofing, koku: 0.93}]
 
         gloss: >-
           "Worship hall." The building in front of a sanctuary where visitors stand or kneel to
@@ -74,7 +74,7 @@ categories:
           salt, water and sake go on it in little stands (sanbo).
         appeal: >-
           Among the most common altars.
-        lines: [{contract: carpentry, koku: 1}]
+        lines: [{contract: carpentry, koku: 0.23}]
         gloss: >-
           "Eight-legged table." The plain wooden table on which offerings are set before a shrine.
       - key: slab
@@ -83,14 +83,14 @@ categories:
           A dressed stone slab on two stone legs before the shrine's heart.
         appeal: >-
           It stays out in all weathers, steady as the mountains, and never needs bringing in.
-        lines: [{contract: stonework, koku: 3, heavy: 3}]
+        lines: [{contract: stonework, koku: 0.69, heavy: 3}]
       - key: natural
         label: A flat stone from the site
         text: >-
           A naturally flat stone from the forest floor, moved into place and purified.
         appeal: >-
           The offerings rest on the place itself, as they did before there were shrines at all.
-        lines: [{contract: earthwork, koku: 0.3}]
+        lines: [{contract: earthwork, koku: 0.06}]
       - key: belonging
         label: A table that belonged to the dead
         when: {kind: [memorial]}
@@ -99,7 +99,7 @@ categories:
         appeal: >-
           Offerings are set where the dead once set their own bowl, so the rite returns to a place
           they knew.
-        lines: [{contract: carpentry, koku: 0.3}]
+        lines: [{contract: carpentry, koku: 0.07}]
 
   - key: sacred
     label: Sacred object
@@ -156,7 +156,7 @@ categories:
           A round bronze mirror, newly cast and polished, wrapped and sealed in its box.
         appeal: >-
           One of the most common sacred objects.
-        lines: [{contract: metalwork, koku: 4}]
+        lines: [{contract: metalwork, koku: 0.9}]
         gloss: >-
           "Mirror." A round polished bronze mirror, one of the oldest vessels for a divine presence.
       - key: gohei
@@ -177,7 +177,7 @@ categories:
             appeal: >-
               Held to be among the purest vessels for a divine presence, renewed by the keepers so
               the shrine is always fresh.
-        lines: [{contract: rites, koku: 0.1}]
+        lines: [{contract: rites, koku: 0.01}]
 
         gloss: >-
           "Honored offering." A wand hung with zigzag folded paper streamers, used in rites and as a
@@ -197,7 +197,7 @@ categories:
         appeal: >-
           The ring of a coin on its slats carries across the grounds, and the offerings are safe in
           a place nobody watches.
-        lines: [{contract: carpentry, koku: 0.5}, {contract: metalwork, koku: 1}]
+        lines: [{contract: carpentry, koku: 0.25}, {contract: metalwork, koku: 0.23}]
         gloss: >-
           "Offering-coin box." The slatted box that visitors toss coins into before praying.
       - key: bamboo
@@ -207,7 +207,7 @@ categories:
           empty it, the keepers split it open and bind a fresh one in its place.
         appeal: >-
           Of a piece with the woods, it looks as if the forest grew its own offering box.
-        lines: [{contract: carpentry, koku: 0.2}]
+        lines: [{contract: carpentry, koku: 0.02}]
       - key: stone
         label: Box set in stone
         text: >-
@@ -215,7 +215,7 @@ categories:
         appeal: >-
           Far too heavy to carry off, it will receive coins long after everyone who built it is
           gone.
-        lines: [{contract: stonework, koku: 2, heavy: 2}, {contract: metalwork, koku: 0.5}]
+        lines: [{contract: stonework, koku: 0.42, heavy: 2}, {contract: metalwork, koku: 0.15}]
 
   - key: bell
     label: Announcing
@@ -260,7 +260,7 @@ categories:
             appeal: >-
               Its bright jingle is said to please and summon the Fortune, and children love to
               ring it.
-        lines: [{contract: metalwork, koku: 1}]
+        lines: [{contract: metalwork, koku: 0.39}]
         gloss: >-
           "Bell." A round rattle-bell, shaken by its rope to announce a visitor.
       - key: gong
@@ -273,7 +273,7 @@ categories:
         appeal: >-
           Its deep note hangs in the air long after it is struck, and can be heard from the foot
           of the path.
-        lines: [{contract: metalwork, koku: 2.5}]
+        lines: [{contract: metalwork, koku: 1}]
 
         gloss: >-
           "Crocodile mouth," for its wide slit: a flat, hollow bronze gong sounded by swinging a

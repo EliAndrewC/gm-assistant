@@ -125,26 +125,28 @@ did, in `test_shoda_only_appears_as_an_example`).
 - **Unstaffed shrines are the normal case.** Most Japanese shrines have no priest of their own
   (*kenmusha*, served from another shrine) and are kept by parishioners; *hokora* in groves and by
   roads are smaller still. So the catalog is built around a place nobody lives at.
-- **Currency: 1 ryo = 1 koku.** Both are pinned to a koku of rice, and the Edo rice price hovered
-  near one ryo per koku. Relative prices are the point, and this keeps them.
-- **Anchors** (village ledgers from Tama district, 1749-1805, AIJ paper No. 420): copper re-roofing
-  of a LARGE one-bay sanctuary ~43 ryo, mostly copper bought in Edo; carved front panels and
-  painting on the same building ~62 ryo, mostly labor; a small sanctuary's repair and repainting
-  ~10 ryo; a whole village temple hall ~250 ryo. So copper roofing a small (4.2-shaku bay)
-  sanctuary is 22 koku and relief panels 20 (the ledger's large building had a 7.8-shaku bay). A
-  craftsman earned about 1 ryo per 30-40 days.
-- **Estimates, not ledger figures**: stone torii, guardians, lanterns, steles. They are mason labor
-  plus **porterage**: every heavy line carries `heavy` loads, charged at the remoteness rate (cart
-  road 0.25, foot trail 0.6, no trail 1.0 koku per load). Remoteness changes porterage and nothing
-  else.
+- **Prices come from the money skill** (GM 2026-10-18, replacing the first hand-set figures). Every
+  line is the midpoint of an estimate logged in `l7r/money/data/estimates.jsonl` (item `shrine catalog
+  <category>/<option>/<contract>`), built from craftsman-days at 30-50 sen, laborer-days at 13-20 sen
+  and materials - the money skill's wage rows, with carpenters at 2.6-4.7x the unskilled day (diagram
+  0250). The method and the check-every-line-in-labor-days rule are in `.claude/skills/money/
+  questions.md` "Construction". Research requested: diagram#6 (Shizu's lines, priority) and #7 (the
+  rest); findings grade the estimates and a re-price logs a new one.
+- **The anchors** behind the days (village ledgers from Tama district, 1749-1805, AIJ paper No. 420):
+  copper re-roofing of a LARGE one-bay sanctuary ~43 ryo, more than half of it copper bought in Edo; a
+  small sanctuary's repair and repainting ~10 ryo, two-thirds labor (~190-250 craftsman-days). Roof
+  work scales with roof AREA (the square of the bay), so copper on a small sanctuary is ~9 koku, not 22.
+- **Porterage**: a LOAD is ~400 kg, about ten porter trips or a cartload. Cart road: loading plus half to
+  one cart-hire day (0.08 koku); a foot trail half a day in: ten porter round trips of a day (0.17);
+  deep forest: two days a trip (0.33). Remoteness changes porterage and nothing else.
 - **Rites**: a pacification festival is its own option because enshrining someone who died a hard,
   disputed death is the *goryo* pattern (Michizane as Tenjin): the shrine exists to calm the dead.
 - **Negotiation**: Commerce has no pricing formula in the rules, so each contract borrows the
   Culture gift rule's shape: max(0, roll - baseline) percent off, baseline 25 by default. The GM can
   type a contractor's contested roll into the baseline instead.
 - **Suggested budget**: the reference design (`reference:` in each category - a "fairly nice small
-  memorial in the forest", ~135 koku at the default remoteness) x 1.2, rounded up to 5 =
-  **165 koku**. The
+  memorial in the forest", ~54 koku at the default remoteness) x 1.2, rounded up to 5 =
+  **65 koku** (165 before the money-skill re-price). The
   1.2 is Tadashi's budget negotiation won by more than 10. Computed, so it moves with the prices.
 
 ## Testing it

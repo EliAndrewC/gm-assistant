@@ -5,13 +5,13 @@
 # must never state or imply price - tests/test_shrines.py enforces a word list over it.
 #
 # HOW PRICES WORK (the why lives in l7r/shrines/CLAUDE.md, "Historical grounding"):
-#   - koku = Edo ryo, 1:1, both pinned to a koku of rice.
-#   - Each option has `lines`: {contract, koku, heavy, per}. `heavy` is porterage weight in units,
-#     charged at the GM's remoteness rate. `per: <category>` multiplies the line (koku and heavy)
-#     by the `units` of the option chosen in that category - gate form scales the gate material.
-#   - Anchors (Tama district village ledgers, 1749-1805): copper re-roofing a LARGE one-bay
-#     sanctuary ~43 ryo; carving and polychrome on the same ~62 ryo; small repairs ~10 ryo.
-#     Stone items (torii, guardians, lanterns) have no ledger: mason labor plus porterage, estimates.
+#   - EVERY PRICE IS A MONEY-SKILL ESTIMATE (GM 2026-10-18): the midpoint of the estimate logged in
+#     webapp/l7r/money/data/estimates.jsonl as `shrine catalog <category>/<option>/<contract>`, made
+#     from craftsman-days (30-50 sen), laborer-days (13-20 sen) and materials. Re-price by logging a
+#     new estimate; test_catalog_prices_are_the_money_skills_estimates fails on a hand-typed price.
+#   - Each option has `lines`: {contract, koku, heavy, per}. `heavy` is porterage in LOADS (~400 kg,
+#     about ten porter trips or one cartload), charged at the GM's remoteness rate. `per: <category>`
+#     multiplies the line (koku and heavy) by the `units` of the option chosen in that category.
 #   - `reference` marks the "fairly nice small forest shrine" the default budget is built from.
 #     It is NOT a pre-selection: the player starts every step with nothing chosen.
 #
@@ -70,19 +70,19 @@ remoteness:
   options:
     - key: road
       label: Near a cart road
-      rate: 0.25
+      rate: 0.08
     - key: trail
       label: Half a day in on a foot trail
-      rate: 0.6
+      rate: 0.17
     - key: deep
       label: Deep forest, no trail worth the name
-      rate: 1.0
+      rate: 0.33
 
 # Always paid, whatever the design: clearing and leveling the ground and setting foundation
 # stones, and the ground-purification rite (jichinsai) held before any building starts.
 site_lines:
-  - {label: Clearing, leveling and foundation stones, contract: earthwork, koku: 3}
-  - {label: Ground-purification rite before building, contract: rites, koku: 0.5}
+  - {label: 'Clearing, leveling and foundation stones', contract: earthwork, koku: 1.08}
+  - {label: Ground-purification rite before building, contract: rites, koku: 0.2}
 
 # FR-030: when this choice is made the shrine has no kami - the remains are its heart - so every
 # group/category/option `alt:` text replaces its plain wording (the kami's dwelling becomes the

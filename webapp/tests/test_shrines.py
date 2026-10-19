@@ -65,8 +65,8 @@ def _option_raw(data: dict[str, Any], category: str, option: str) -> dict[str, A
 
 
 MEMORIAL_STEPS = {'heart', 'preparation', 'sharing', 'resting', 'display'}
-REFERENCE_TOTAL = 135.2
-SUGGESTED_BUDGET = 165.0
+REFERENCE_TOTAL = 53.622
+SUGGESTED_BUDGET = 65.0
 
 
 # --- catalog content (FR-002, FR-002a, FR-003, FR-004, FR-017 to FR-036) -------------------------
@@ -325,7 +325,7 @@ def test_empty_params_choose_nothing(catalog: Catalog) -> None:
     assert design.choices == {}
     assert design.voided == {'dwelling', 'ground', *MEMORIAL_STEPS}
     assert design.text == {'shrine_name': catalog.default_name}
-    assert price_design(catalog, design, 'road').total == pytest.approx(3.5)  # site work only
+    assert price_design(catalog, design, 'road').total == pytest.approx(1.28)  # site work only
 
 
 def test_valid_choice_and_list_values(catalog: Catalog) -> None:
@@ -513,8 +513,8 @@ def test_porterage_is_heavy_times_rate(catalog: Catalog) -> None:
     design = reference_design(catalog)
     road = price_design(catalog, design, 'road')
     deep = price_design(catalog, design, 'deep')
-    assert road.by_contract['porterage'] == pytest.approx(road.heavy * 0.25)
-    assert deep.by_contract['porterage'] == pytest.approx(deep.heavy * 1.0)
+    assert road.by_contract['porterage'] == pytest.approx(road.heavy * 0.08)
+    assert deep.by_contract['porterage'] == pytest.approx(deep.heavy * 0.33)
     # FR-010: remoteness changes porterage and nothing else
     assert {k: v for k, v in road.by_contract.items() if k != 'porterage'} == {
         k: v for k, v in deep.by_contract.items() if k != 'porterage'
@@ -526,7 +526,7 @@ def test_gate_material_scales_with_gate_form(catalog: Catalog) -> None:
     row_gate = parse_design(catalog, {'gate_form': 'row', 'gate_material': 'stone'})
     one = price_design(catalog, one_gate, 'road')
     row = price_design(catalog, row_gate, 'road')
-    assert row.by_contract['stonework'] - one.by_contract['stonework'] == pytest.approx(12)
+    assert row.by_contract['stonework'] - one.by_contract['stonework'] == pytest.approx(4.9)
 
 
 def test_per_step_that_is_unchosen_counts_as_one(catalog: Catalog) -> None:
@@ -535,7 +535,7 @@ def test_per_step_that_is_unchosen_counts_as_one(catalog: Catalog) -> None:
     items = [
         i for i in price_design(catalog, design, 'road').items if i.category == 'Gate material'
     ]
-    assert [i.koku for i in items] == [12]
+    assert [i.koku for i in items] == [4.9]
 
 
 # --- negotiation ----------------------------------------------------------------------------------
@@ -794,7 +794,7 @@ def test_dividing_the_remains_is_multi_select(catalog: Catalog) -> None:
     assert bad.dropped == ('sharing',)
     assert parse_design(catalog, {'kind': 'kami', 'sharing': 'temple'}).multi == {}
     rites = price_design(catalog, both, 'road').by_contract['rites']
-    assert rites == pytest.approx(0.5 + 3 + 3)  # site rite + both portions
+    assert rites == pytest.approx(0.2 + 2.0 + 2.75)  # site rite + both portions
     assert option_effects(catalog, both, sharing) == {}
 
 
@@ -807,3 +807,32 @@ def test_multi_select_validation(raw: dict[str, Any]) -> None:
     _category_raw(data, 'resting')['when'] = {'kind': ['memorial'], 'sharing': ['temple']}
     with pytest.raises(CatalogError, match='multi-select step cannot be named'):
         parse_catalog(data)
+
+
+def test_catalog_prices_are_the_money_skills_estimates(catalog: Catalog) -> None:
+    """Every catalog price is the midpoint of the money estimate that names it (GM 2026-10-18).
+
+    Re-price by logging a new estimate (`python3 -m l7r.money estimate`, item
+    `shrine catalog <category>/<option>/<contract>: ...`) and copying its midpoint here; the newest
+    estimate for a line wins. A hand-typed price fails this test.
+    """
+    from l7r.money import calibration as cal
+
+    latest: dict[str, cal.Estimate] = {}
+    for e in cal.load_estimates():
+        if e.item.startswith('shrine catalog '):
+            latest[e.item.split(':')[0].removeprefix('shrine catalog ')] = e
+
+    def mid(key: str) -> float:
+        e = latest[key]
+        return round((e.low + e.high) / 2000, 2)
+
+    for category in catalog.categories:
+        for option in category.options:
+            for line in option.lines:
+                key = f'{category.key}/{option.key}/{line.contract}'
+                assert line.koku == pytest.approx(mid(key)), key
+    for site in catalog.site_lines:
+        assert site.koku == pytest.approx(mid(f'site/{site.label}')), site.label
+    for remote in catalog.remoteness:
+        assert remote.rate == pytest.approx(mid(f'porterage/{remote.key}')), remote.key

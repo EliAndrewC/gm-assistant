@@ -29,7 +29,7 @@ categories:
         appeal: >-
           It greets travelers before they reach the trees, and will read clearly in a hundred
           years.
-        lines: [{contract: stonework, koku: 3, heavy: 3}]
+        lines: [{contract: stonework, koku: 0.62, heavy: 3}]
         gloss: >-
           "Shrine-name marker." A stone pillar carved with the shrine's name, set where the approach
           begins.
@@ -42,7 +42,7 @@ categories:
           the gate or the shrine's front.
         appeal: >-
           It hangs where every visitor passes beneath the name.
-        lines: [{contract: finishing, koku: 1}]
+        lines: [{contract: finishing, koku: 0.2}]
         gloss: >-
           "Framed plaque." A tablet bearing a name, hung high over a gate or a doorway.
       - key: calligrapher
@@ -52,7 +52,7 @@ categories:
           the gate or the shrine's front.
         appeal: >-
           Visitors who know brushwork will recognize the hand and stop to admire it.
-        lines: [{contract: finishing, koku: 6}]
+        lines: [{contract: finishing, koku: 3.15}]
       - key: patron
         label: In the founder's own hand
         text: >-
@@ -60,7 +60,7 @@ categories:
           brushwork on a plaque over the gate or the shrine's front.
         appeal: >-
           Whatever the hand, it is theirs, and it ties the founder to the shrine forever.
-        lines: [{contract: finishing, koku: 0.5}]
+        lines: [{contract: finishing, koku: 0.19}]
 
   - key: stele
     label: Telling the story
@@ -82,7 +82,7 @@ categories:
           An upright stone carved with the shrine's story and the names of those who founded it.
         appeal: >-
           It will outlast everyone involved, and the founders' names with it.
-        lines: [{contract: stonework, koku: 6, heavy: 5}]
+        lines: [{contract: stonework, koku: 1.7, heavy: 5}]
         gloss: >-
           "Stone monument." An upright stone carved with an inscription.
       - key: board
@@ -94,7 +94,7 @@ categories:
           fades.
         appeal: >-
           Each repainting is a chance to retell the story, so it never grows stale.
-        lines: [{contract: carpentry, koku: 1}, {contract: finishing, koku: 0.5}]
+        lines: [{contract: carpentry, koku: 0.17}, {contract: finishing, koku: 0.11}]
 
         gloss: >-
           "Origins." A shrine's founding story, told on a board, a scroll or a stone.
@@ -124,7 +124,7 @@ categories:
         appeal: >-
           A rite performed by the monk who already tends the district's shrines, among the locals
           who will keep this one.
-        lines: [{contract: rites, koku: 1}]
+        lines: [{contract: rites, koku: 0.35}]
       - key: full
         label: A night enshrinement
         text: >-
@@ -147,7 +147,7 @@ categories:
               calling-out of the Fortune.
             appeal: >-
               Those who witness it never forget the moment the Fortune is called in the dark.
-        lines: [{contract: rites, koku: 4}]
+        lines: [{contract: rites, koku: 2}]
       - key: festival
         label: A pacification festival
         text: >-
@@ -172,4 +172,4 @@ categories:
         appeal: >-
           A spirit welcomed with music and offerings is well disposed toward the place, and the
           villages will remember the day for years.
-        lines: [{contract: rites, koku: 10}]
+        lines: [{contract: rites, koku: 6.5}]
