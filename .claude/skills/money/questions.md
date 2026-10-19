@@ -30,7 +30,9 @@ post. A price made by labor is at least the labor-days in it times the wage.
 - County town: **8-13 sen** (Tsu, 1790: 130 mon). Provincial or capital city: **10-25 sen**, more at a good inn by the
   castle or a temple district (a big-city price is SILENT).
 - **Mon in sen**: the research quotes mon; convert through the laborer's day (132-200 mon, Kazusa 1842 and Edo), so
-  **1 sen is 10-15 mon**.
+  **1 sen is 10-15 mon**. Cross-checked by diagram 0277: on the Osaka market a monme of silver fetched 105-110 mon
+  (1787-1854; ~95 in the later 1850s; the law's rate was ~67 from 1700), so Kazusa's 132-mon day is ~1.26 monme, beside
+  Kyoto's 0.92-1.08 monme laborer's day. Silver monme convert through the same day (~12 sen a monme in 1851).
 - Stabling a horse: **12-20 sen** a night - its hay alone is ~10 sen (20 lb at 1 koku a ton), so a horse costs about as
   much to keep as a laborer earns. That is historically right, and why horses mark wealth.
 
@@ -182,10 +184,11 @@ SILENT.
 ## Tools
 
 **Q13. A set of chef's knives given to a peasant cook out of respect for the craft** (GM 2026-10-19). An ordinary
-kitchen knife: **15-40 sen** (half a day to a day of a country smith with a helper, plus a little iron and steel and the
-grinding; below a cheap blade weapon). A fine knife by a noted smith, laminated and polished: **8 zeni-2 bu**. A set of
-three fine ones (fish, vegetable, slicing): **2.5-6 bu**, 19-45 laborer-days - months of a cook's wages, so the cook
-could never have bought it, and a samurai's gift at the scale of *consideration* (bu). An ordinary set: 0.5-1.2 bu.
-Edo Japan's knife towns (Sakai above all) sold kitchen knives by the maker's name (research requested).
+kitchen knife: **10-45 sen** (Edo's knife wholesalers, 1851: a vegetable knife, a deba or a low-grade blade 0.7-2.75
+monme of silver, 8-33 sen, before a shop's margin; diagram 0276). A fine knife, the top grade, laminated and polished:
+**1.7-3 bu** (top-grade thin-bladed and sashimi knives 14-19 monme wholesale, 170-230 sen). A set of three fine ones
+(fish, vegetable, slicing): **5-9 bu**, 40-70 laborer-days - months of a cook's wages, so the cook could never have
+bought it, and a samurai's gift at the scale of *consideration* (bu). An ordinary set: 0.3-1.4 bu. No price by a noted
+maker (Sakai, Seki, Takefu, Tosa) survives.
 **Recipe** (worked metal): smith-days at the skilled rate + iron and steel + grinding and polish; a maker's name adds a
 premium. **Rules**: a knife >= half a skilled day; fine >= ordinary and >= two skilled days; a set >= its knives.
