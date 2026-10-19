@@ -47,23 +47,27 @@ surcharges (**about 4-7 sen a ri**), a porter ~13 mon (**about 1 sen**); private
 
 ## Arrows
 
-**Q1. A good arrow; a hundred; retrieving them.** An ordinary war arrow with a forged iron head: **4-8 sen** (bamboo and
-feathers 1-2, the head 1-3, a fletcher making ~10 a day). A fine samurai arrow (selected bamboo, hawk or eagle feathers,
-lacquer): **10-30 sen**. **A hundred war arrows: 4-8 bu**, 30-60 laborer-days - about 5-9% of a Rank 3 samurai's
-9-koku stipend. Not a fraction of a samurai's net worth, but each arrow is a third to two-thirds of a laborer's day:
-worth picking up after a fight when it is safe, not worth risking anything for. Heads were often recovered and reshafted
-(research requested: Japanese and Chinese arrow prices, arrowhead forging).
+**Q1. A good arrow; a hundred; retrieving them.** An ordinary war arrow with a forged iron head: **5-12 sen**; a fine
+samurai arrow (selected bamboo, crane or eagle feathers, lacquer): **17-52 sen**; **a hundred war arrows: 7-12 bu**,
+55-90 laborer-days - about 8-13% of a Rank 3 samurai's 9-koku stipend (diagram 0263: Qing official prices, 1650-1736;
+Japan's are SILENT). Each arrow is half a laborer's day or more: worth picking up after a fight when it is safe, not
+worth risking anything for. No source says arrows or heads were gathered after battle; the Qing made every arrow bear
+its owner's name and charged soldiers for arms lost outside battle.
 **Recipe** (weapons): material + skilled labor-days + the smith's iron; samurai-grade goods add status premium.
+**Feathers are a main cost**: the 1727 ruling priced war arrows by their fletching (eagle 8 taels the hundred, goose 5).
 **Rule**: fine >= ordinary.
+Adjusted 2026-10-19: arrows priced at about half to one laborer-day each, with feathers as a main input, because
+calibration showed weapons guesses running 1.56x low (n=3, diagram 0263).
 
 ## Posters
 
 **Q3. Wanted posters.** A large sheet of ordinary paper: **1-3 sen**; a poster with ink and paste, written by the PCs:
-**2-4 sen**; a set of ten, **2-4 zeni**. Ink is a stick that lasts months. **Paper or a board?** In Tokugawa Japan the official notice boards
-(*kosatsu*) carried edicts written in ink on wooden plaques, put up by authority; private and temporary notices were
-paper pasted up. A wanted poster put up by magistrates could plausibly be either. Drawing straight onto an outdoor board was not the practice for anything meant to last: rain
-runs ink, so writing went on paper or on a plaque made for the purpose. Village boards and what was posted on
-them: research requested.
+**2-4 sen**; a set of ten, **2-4 zeni** (a sheet of Qing placard paper was 0.01 tael, ~1-2 sen, diagram 0264; Edo paper
+SILENT). Ink is a stick that lasts months. **Paper or a board?** Edo official notices were wooden plaques (cypress, plum
+or similar) written in ink with title, text, date and issuing authority, put up by the shogunate or by the lord; re-inking
+needed permission (diagram 0190). Paper notices pasted up are attested at one 1857 lost-child pillar, set up with the
+town magistrate's leave. A magistrate's wanted notice would be a plaque; PCs pasting paper would need leave. What was
+posted on a village board, and whether anyone but the lord could post: SILENT.
 **Recipe** (paper and writing): paper by sheet and quality; labor of a calligrapher if hired (a skilled day writes many).
 **Rule**: a poster >= its paper.
 
@@ -86,15 +90,17 @@ for one, real money if he hands out dozens.
 
 ## Rentals
 
-**Q7. A remote riverside warehouse, empty, off season, for a week**: **20-60 sen** (a storehouse worth 10-30 koku
-letting at ~10% a year is 2-6 zeni a week; remote and off season, the low end; a short let carries a premium).
+**Q7. A remote riverside warehouse, empty, off season, for a week**: **10-30 sen** (a storehouse worth 10-30 koku
+letting at 3-6% a year; remote and off season, the low end; a short let carries a premium. Storehouses were let in
+Edo, rate SILENT).
 **Q12. Renting in a domain capital** (research requested: Edo row-house rents, townhouse and estate rents):
-- One room in a tenement: **15-40 sen a month** (Edo *nagaya* pattern: a month's rent for one or two laborer-days; the GM
-  notes give 2 bu per tenant for really poor housing).
-- A small standalone house: **50-150 sen a month**.
+- One room in a tenement: **20-60 sen a month** (Edo back tenements 300-600 mon a month, diagram 0265, from a popular
+  page; the GM notes give 2 bu per tenant for really poor housing).
+- A small standalone house: **1-2 bu a month** (an Edo carpenter's household paid 10 monme a month, ~1.2-1.4 bu).
 - A modest city estate, walled, several rooms and a garden: **4-17 bu a month** (5-20 koku a year).
 - Household staff separately: a menial servant ~0.7-1 koku a year plus board, a steward ~3 koku (Kanazawa rows).
-**Recipe** (land and buildings): rent is ~8-12% of a building's value a year; sale price against rent against yield
+**Recipe** (land and buildings): rent is **3-6% of a property's value a year** (Edo lots, 0265; Mitsui ~4.8% gross,
+~2.4% net of the rebuilding fund). Adjusted 2026-10-19 from 8-12%, because 0265 attests 3-6%; sale price against rent against yield
 (diagram#1 Q1). **Rules**: estate >= small house >= room.
 
 ## Clothing
@@ -127,18 +133,24 @@ SILENT; Qing bought wine ran ~2x home-brew).
 **Q11. Seeing a play, and other entertainers.** First answers by venue:
 - Peasants, street or temple-front performers: watch free, **a sen or a handful of rice** in the hat. Temple-fair
   performances were often fund-raising for the temple (*kanjin*).
-- County township: a festival play is usually paid for by the village or a patron (**1-3 koku** a run, guess) and free to
-  watch.
-- Provincial or capital playhouse: a standing place for one act **3-8 sen**, a pit place **2-5 zeni**, a box for the
-  day with food **1-3 bu** a head. A private performance for a lord: koku.
+- County township: a festival play was mostly the village's own young men, at the shrine festival, a rain prayer or Bon;
+  a bought-in local troupe cost **~1.7-3.3 koku** for three days (a Kaifeng village troupe; 0266), free to watch. A big
+  troupe for a market town's festival took far more (Hamanoichi, 1690-1737: tens of koku a run, 43 players).
+- Provincial or capital playhouse: one act from the back **1-2 sen**, a pit place **9-13 sen** (about a laborer's day),
+  a box **5-7 zeni** a head, about 5-12 zeni with the teahouse's food (Edo kabuki 1801-04: 16 mon, 132 mon, 25-35 monme a
+  box of seven; diagram 0266). Sumo was priced like the theater. A private performance for a lord: koku.
 - Troupes: in Tokugawa Japan, kabuki and noh troupes were actors and their own musicians; jugglers, acrobats,
   storytellers and performing animals were separate street acts, gathered in variety shows at temple fairs. The mixed
   traveling troupe is an L5R convention as much as a historical one (research requested). The "pass the hat before the
-  ending" story about Shakespeare-era players is doubtful as stated; research requested as a comparative footnote only.
+  ending" story about Shakespeare-era players is NOT ATTESTED (diagram 0267, comparative): money was taken at the door, even while the play went on (Norwich 1583), a penny to stand, another to sit, a third for a cushion (Platter 1599); what went round mid-play was food and drink for sale.
 - Other entertainers: street acts (jugglers, acrobats, storytellers, performing monkeys) are paid like street plays,
   a sen or less a head into the hat; a musician hired for a party or a banquet, **1-3 zeni** for an evening plus food;
   a well-known performer for a lord's banquet, bu to koku.
-**Recipe**: who pays (the audience, a patron, a temple, the village) decides the price more than the act does.
+**Recipe**: who pays (the audience, a patron, a temple, the village) decides the price more than the act does. Price a
+seat in laborer-days: one act ~0.1, the pit ~1, a box ~4-5 a head. Troupes were actors with their own or the theater's
+musicians (kabuki troupes ~43 players, puppet troupes ~26); acrobats formed their own troupes.
+Adjusted 2026-10-19: city seats priced against the laborer's day, because calibration showed entertainment guesses
+running 1.98x high (n=5, typical miss 3.2x; diagram 0266) - the first answers priced the theater as a samurai luxury.
 **Rules**: box >= pit >= standing.
 
 ## Construction
