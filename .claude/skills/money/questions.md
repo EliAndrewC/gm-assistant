@@ -143,11 +143,15 @@ Edo sake prices retail and in taverns).
 craftsman at ~1 koku per 30-40 days is 25-33 sen a day, inside the skilled range, and carpenters at 2.6-4.7x the
 unskilled wage (diagram 0250). Its first, hand-set prices (E0035-E0051) were withdrawn - they were not this
 model's - and the whole catalog was re-estimated with this recipe on 2026-10-18 (`shrine catalog ...` estimates; the
-builder's prices are the midpoints of the ledger's `shrine/...` synthesis rows that began as those estimates, enforced by a test; research moves the rows, never the estimates). Shizu's design: 60 koku before, ~25 after (foot trail).
+builder's prices are the midpoints of the ledger's `shrine/...` synthesis rows that began as those estimates, enforced by a test; research moves the rows, never the estimates). Shizu's design: 60 koku before, ~25 after (foot trail), ~30 once diagram 0255 re-priced the sanctuary (2026-10-19).
 Research: [diagram#6](https://github.com/EliAndrewC/diagram/issues/6) (her lines, priority),
 [#7](https://github.com/EliAndrewC/diagram/issues/7) (the rest). A LOAD of porterage is ~400 kg, ten porter trips.
 **Recipe**: craftsman-days x the skilled day + materials + workers' rice + rites, scaled from the nearest ledger;
 roof work scales with roof AREA (the square of the bay), not the bay's width; stone and earth add porter loads at the
 remoteness rate. **Check every line in labor-days**: a line that buys more craftsman-days than the work could take is
-too high, whatever its ledger ancestry. The open question for #6: the small sanctuary is now 150-300 craftsman-days
-(~10.6 koku with fittings), between spec 216's "a few carpenter-months" and the ledger repair's ~190-250 days.
+too high, whatever its ledger ancestry. Diagram 0255 (2026-10-19) settled the
+small sanctuary: a new 6-shaku decorated one cost over 30 ryo in 1841 (~2,000 laborer-days), so a 4.2-shaku plain one is
+12.7-18.2 koku (~300-770 craftsman-days), up from the first estimate's 4.9-16.2; the other forms moved in proportion.
+0256-0258 found no price for the bark roof, tannin, wooden torii, stone posts, stepping stones, mound, the monk's
+dedication, the ground rite or the furnishings, so those stay as estimated. A parent shrine's installation fee
+(Fushimi Inari, 0258) is not a monk's dedication.

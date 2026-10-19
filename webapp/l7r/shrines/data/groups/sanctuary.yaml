@@ -30,7 +30,7 @@ categories:
           under the eaves.
         appeal: >-
           Perhaps the most common form in the Empire.
-        lines: [{contract: carpentry, koku: 10.56}]
+        lines: [{contract: carpentry, koku: 15.45}]
         gloss: >-
           "Flowing style." A sanctuary whose front roof slope sweeps down long and low over the
           steps.
@@ -44,7 +44,7 @@ categories:
         appeal: >-
           It has the poise of a jewel box set down among the trees, and draws the eye straight
           to its doors.
-        lines: [{contract: carpentry, koku: 9.91}]
+        lines: [{contract: carpentry, koku: 14.5}]
         gloss: >-
           "Kasuga style," named for a great old shrine: a small sanctuary entered from its gable end
           under a curved porch.
@@ -58,7 +58,7 @@ categories:
         appeal: >-
           Severe and archaic, it makes the shrine feel as if it has stood in the forest since the
           age of the gods.
-        lines: [{contract: carpentry, koku: 8.54}]
+        lines: [{contract: carpentry, koku: 12.5}]
         gloss: >-
           "Divine light style." The ancient straight-roofed form, raised like a storehouse, with
           crossed finials at the ridge.
