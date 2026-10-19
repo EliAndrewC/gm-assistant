@@ -210,7 +210,7 @@ def test_real_logs_load() -> None:
 
 @pytest.fixture
 def logs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    for name in ('ESTIMATES', 'REQUESTS', 'FINDINGS'):
+    for name in ('ESTIMATES', 'REQUESTS', 'FINDINGS', 'WITHDRAWN'):
         monkeypatch.setattr(cal, name, tmp_path / f'{name.lower()}.jsonl')
     monkeypatch.setattr('l7r.money.__main__._today', lambda: '2026-10-19')
     return tmp_path
@@ -278,7 +278,7 @@ def test_cli_estimate_link_finding_calibration(
     assert 'finding 1 bu to 2 bu (ATTESTED)' in out
     assert run(capsys, 'estimates', '--open') == ''
     out = run(capsys, 'calibration')
-    assert '3 estimates logged, 3 graded by research' in out
+    assert '3 estimates logged (0 withdrawn), 3 graded by research' in out
     assert (
         'weapons: n=3, guesses run 3.00x high, typical miss 3.00x, research inside our range 0%'
         in out
@@ -351,3 +351,54 @@ def test_today_is_an_iso_date() -> None:
     from l7r.money.__main__ import _today
 
     assert len(_today()) == 10
+
+
+def test_withdrawn_estimates_are_not_graded(logs: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    for item in ('a', 'b'):
+        run(
+            capsys,
+            'estimate',
+            '--item',
+            item,
+            '--question',
+            'q',
+            '--low',
+            '1 sen',
+            '--per',
+            'x',
+            '--category',
+            'food',
+            '--method',
+            'm',
+        )
+        run(
+            capsys,
+            'finding',
+            'E0001' if item == 'a' else 'E0002',
+            '--low',
+            '2 sen',
+            '--source',
+            'https://x',
+            '--verdict',
+            'ATTESTED',
+        )
+    assert 'withdrew E0001: not from this model' in run(
+        capsys, 'withdraw', '--reason', 'not from this model', 'E0001'
+    )
+    out = run(capsys, 'calibration')
+    assert '2 estimates logged (1 withdrawn), 1 graded by research' in out
+    assert 'food: n=1' in out
+    assert 'E0001 2026-10-19 [food] a: WITHDRAWN' in run(capsys, 'estimates')
+    assert 'E0001' not in run(capsys, 'estimates', '--open')
+    with pytest.raises(SystemExit, match='no estimate E0042'):
+        main(['withdraw', '--reason', 'r', 'E0042'])
+
+
+def test_bad_withdrawals_are_refused(tmp_path: Path) -> None:
+    path = tmp_path / 'w.jsonl'
+    path.write_text(json.dumps({'estimate': 'E0009', 'date': 'd', 'reason': 'r'}) + '\n')
+    with pytest.raises(ValueError, match='no estimate'):
+        cal.load_withdrawn([est('E0001', 1, 1)], path)
+    path.write_text(json.dumps({'estimate': 'E0001', 'date': 'd', 'reason': ' '}) + '\n')
+    with pytest.raises(ValueError, match='needs a reason'):
+        cal.load_withdrawn([est('E0001', 1, 1)], path)

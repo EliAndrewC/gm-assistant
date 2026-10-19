@@ -213,12 +213,26 @@ def _finding(args: argparse.Namespace, basis: _Basis) -> None:
     _say(f'{args.id}: finding {_span(finding.low, finding.high)} ({finding.verdict}) recorded')
 
 
+def _withdraw(args: argparse.Namespace, basis: _Basis) -> None:
+    estimates = cal.load_estimates()
+    known = {e.id for e in estimates}
+    for eid in args.ids:
+        if eid not in known:
+            raise SystemExit(f'no estimate {eid}')
+        cal.append(cal.WITHDRAWN, cal.Withdrawal(eid, _today(), args.reason))
+    _say(f'withdrew {", ".join(args.ids)}: {args.reason}')
+
+
 def _estimates(args: argparse.Namespace, basis: _Basis) -> None:
     estimates = cal.load_estimates()
     links = {lk.estimate: lk.issue for lk in cal.load_links(estimates)}
     found = {f.estimate: f for f in cal.load_findings(estimates)}
+    gone = {w.estimate for w in cal.load_withdrawn(estimates)}
     for e in estimates:
-        if args.open and e.id in found:
+        if args.open and (e.id in found or e.id in gone):
+            continue
+        if e.id in gone:
+            _say(f'{e.id} {e.date} [{e.category}] {e.item}: WITHDRAWN')
             continue
         state = (
             f'finding {_span(found[e.id].low, found[e.id].high)} ({found[e.id].verdict})'
@@ -233,9 +247,13 @@ def _estimates(args: argparse.Namespace, basis: _Basis) -> None:
 def _calibration(args: argparse.Namespace, basis: _Basis) -> None:
     estimates = cal.load_estimates()
     findings = cal.load_findings(estimates)
-    grades = cal.grade(estimates, findings)
-    graded = {f.estimate for f in findings if f.counts}
-    _say(f'{len(estimates)} estimates logged, {len(graded)} graded by research')
+    gone = {w.estimate for w in cal.load_withdrawn(estimates)}
+    grades = cal.grade(estimates, findings, gone)
+    graded = {f.estimate for f in findings if f.counts} - gone
+    _say(
+        f'{len(estimates)} estimates logged ({len(gone)} withdrawn), '
+        f'{len(graded)} graded by research'
+    )
     if not grades:
         _say('  nothing graded yet: calibration needs findings (ATTESTED or ATTESTED ONLY FOR)')
         return
@@ -296,6 +314,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument('--verdict', required=True, choices=cal.VERDICTS)
     p.add_argument('--notes', default='')
     p.set_defaults(run=_finding)
+    p = sub.add_parser('withdraw', help='mark estimates never to be graded, with the reason')
+    p.add_argument('--reason', required=True)
+    p.add_argument('ids', nargs='+')
+    p.set_defaults(run=_withdraw)
     p = sub.add_parser('estimates', help='list logged estimates and their status')
     p.add_argument('--open', action='store_true', help='only those without a finding')
     p.set_defaults(run=_estimates)

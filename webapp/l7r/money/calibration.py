@@ -11,6 +11,8 @@ calibrated our model is"*. Three append-only files in `data/`:
   research arrives.
 - `requests.jsonl` - estimate id -> the diagram issue that asks for its research. Separate so
   filing an issue never touches the guess.
+- `withdrawn.jsonl` - estimates that should never be graded, with the reason: an entry logged by
+  mistake (e.g. figures that did not come from this model). The estimate line itself stays.
 - `findings.jsonl` - what the research showed for an estimate: low/high in the estimate's unit, the
   diagram question file, the verdict. Only ATTESTED and ATTESTED ONLY FOR count as measurements;
   NOT ATTESTED and SILENT are recorded but grade nothing. A comparative source (spec 219 FR-014)
@@ -47,15 +49,18 @@ __all__ = [
     'FINDINGS',
     'REQUESTS',
     'VERDICTS',
+    'WITHDRAWN',
     'Estimate',
     'Finding',
     'Grade',
     'Link',
+    'Withdrawal',
     'append',
     'grade',
     'load_estimates',
     'load_findings',
     'load_links',
+    'load_withdrawn',
     'next_id',
     'rewritten',
 ]
@@ -63,6 +68,7 @@ __all__ = [
 ESTIMATES = DATA / 'estimates.jsonl'
 REQUESTS = DATA / 'requests.jsonl'
 FINDINGS = DATA / 'findings.jsonl'
+WITHDRAWN = DATA / 'withdrawn.jsonl'
 
 CATEGORIES = (
     'wages',
@@ -108,6 +114,15 @@ class Link:
     estimate: str
     issue: str
     date: str
+
+
+@dataclass(frozen=True, slots=True)
+class Withdrawal:
+    """An estimate that should not be graded (it was not a pre-research estimate of this model)."""
+
+    estimate: str
+    date: str
+    reason: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,11 +219,24 @@ def load_findings(estimates: list[Estimate], path: Path | None = None) -> list[F
     return out
 
 
+def load_withdrawn(estimates: list[Estimate], path: Path | None = None) -> list[Withdrawal]:
+    path = path or WITHDRAWN
+    ids = {e.id for e in estimates}
+    out = []
+    for number, raw in _lines(path):
+        if raw.get('estimate') not in ids:
+            raise ValueError(f'{path.name} line {number}: no estimate {raw.get("estimate")}')
+        if not str(raw.get('reason', '')).strip():
+            raise ValueError(f'{path.name} line {number}: a withdrawal needs a reason')
+        out.append(Withdrawal(str(raw['estimate']), str(raw['date']), str(raw['reason'])))
+    return out
+
+
 def next_id(estimates: list[Estimate]) -> str:
     return f'E{max((int(e.id[1:]) for e in estimates), default=0) + 1:04d}'
 
 
-def append(path: Path, record: Estimate | Link | Finding) -> None:
+def append(path: Path, record: Estimate | Link | Finding | Withdrawal) -> None:
     raw = asdict(record)
     raw.pop('mid', None)
     with path.open('a') as f:
@@ -247,12 +275,16 @@ def _grade(group: str, pairs: list[tuple[Estimate, Finding]]) -> Grade:
     )
 
 
-def grade(estimates: list[Estimate], findings: list[Finding]) -> list[Grade]:
+def grade(
+    estimates: list[Estimate], findings: list[Finding], withdrawn: Iterable[str] = ()
+) -> list[Grade]:
     """Per category, then 'all'. The latest counted finding grades an estimate."""
     latest: dict[str, Finding] = {}
     for f in sorted(findings, key=lambda f: f.date):
         if f.counts:
             latest[f.estimate] = f
+    gone = set(withdrawn)
+    estimates = [e for e in estimates if e.id not in gone]
     pairs = [
         (e, latest[e.id])
         for e in estimates
