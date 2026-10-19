@@ -65,8 +65,8 @@ def _option_raw(data: dict[str, Any], category: str, option: str) -> dict[str, A
 
 
 MEMORIAL_STEPS = {'heart', 'preparation', 'sharing', 'resting', 'display'}
-REFERENCE_TOTAL = 58.512
-SUGGESTED_BUDGET = 75.0
+REFERENCE_TOTAL = 62.682
+SUGGESTED_BUDGET = 80.0
 
 
 # --- catalog content (FR-002, FR-002a, FR-003, FR-004, FR-017 to FR-036) -------------------------
@@ -325,7 +325,7 @@ def test_empty_params_choose_nothing(catalog: Catalog) -> None:
     assert design.choices == {}
     assert design.voided == {'dwelling', 'ground', *MEMORIAL_STEPS}
     assert design.text == {'shrine_name': catalog.default_name}
-    assert price_design(catalog, design, 'road').total == pytest.approx(1.28)  # site work only
+    assert price_design(catalog, design, 'road').total == pytest.approx(2.25)  # site work only
 
 
 def test_valid_choice_and_list_values(catalog: Catalog) -> None:

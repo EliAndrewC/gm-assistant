@@ -82,7 +82,7 @@ remoteness:
 # Always paid, whatever the design: clearing and leveling the ground and setting foundation
 # stones, and the ground-purification rite (jichinsai) held before any building starts.
 site_lines:
-  - {label: 'Clearing, leveling and foundation stones', contract: earthwork, koku: 1.08}
+  - {label: 'Clearing, leveling and foundation stones', contract: earthwork, koku: 2.05}
   - {label: Ground-purification rite before building, contract: rites, koku: 0.2}
 
 # FR-030: when this choice is made the shrine has no kami - the remains are its heart - so every

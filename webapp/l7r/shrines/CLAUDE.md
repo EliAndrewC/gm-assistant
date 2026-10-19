@@ -147,8 +147,8 @@ did, in `test_shoda_only_appears_as_an_example`).
   Culture gift rule's shape: max(0, roll - baseline) percent off, baseline 25 by default. The GM can
   type a contractor's contested roll into the baseline instead.
 - **Suggested budget**: the reference design (`reference:` in each category - a "fairly nice small
-  memorial in the forest", ~58.5 koku at the default remoteness) x 1.2, rounded up to 5 =
-  **75 koku** (165 before the money-skill re-price, 65 before diagram 0255 re-priced the sanctuary). The
+  memorial in the forest", ~62.7 koku at the default remoteness) x 1.2, rounded up to 5 =
+  **80 koku** (165 before the money-skill re-price, 65 before diagram 0255 re-priced the sanctuary, 75 before 0268/0269 re-priced the pavilion, the lanterns and the site). The
   1.2 is Tadashi's budget negotiation won by more than 10. Computed, so it moves with the prices.
 
 ## Testing it

@@ -251,7 +251,7 @@ categories:
           Two stone lanterns flanking the path, each a firebox on a tall shaft.
         appeal: >-
           Lit for festivals and night visits, they turn the approach into a ceremony.
-        lines: [{contract: stonework, koku: 2.3, heavy: 6}]
+        lines: [{contract: stonework, koku: 4.05, heavy: 6}]
         gloss: >-
           "Stone lantern." A lantern of carved stone, a firebox on a tall shaft.
       - key: tall
@@ -264,7 +264,7 @@ categories:
         appeal: >-
           Standing tall at the foot of the path, it marks the way in from far off, and on a lit
           night it can be seen through the trees.
-        lines: [{contract: stonework, koku: 1.98, heavy: 5}]
+        lines: [{contract: stonework, koku: 3.48, heavy: 5}]
         gloss: >-
           "Always-night light." A tall lantern meant to burn through the night as a beacon.
       - key: hanging

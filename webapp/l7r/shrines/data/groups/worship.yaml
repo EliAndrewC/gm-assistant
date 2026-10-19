@@ -49,7 +49,7 @@ categories:
           open on all sides.
         appeal: >-
           A dry place to kneel in the rain, with room for a rite with a dozen worshipers.
-        lines: [{contract: carpentry, koku: 4.4}, {contract: roofing, koku: 0.93}]
+        lines: [{contract: carpentry, koku: 5.85}, {contract: roofing, koku: 0.93}]
 
         gloss: >-
           "Worship hall." The building in front of a sanctuary where visitors stand or kneel to

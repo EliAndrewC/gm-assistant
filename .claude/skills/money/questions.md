@@ -160,7 +160,7 @@ running 1.98x high (n=5, typical miss 3.2x; diagram 0266) - the first answers pr
 craftsman at ~1 koku per 30-40 days is 25-33 sen a day, inside the skilled range, and carpenters at 2.6-4.7x the
 unskilled wage (diagram 0250). Its first, hand-set prices (E0035-E0051) were withdrawn - they were not this
 model's - and the whole catalog was re-estimated with this recipe on 2026-10-18 (`shrine catalog ...` estimates; the
-builder's prices are the midpoints of the ledger's `shrine/...` synthesis rows that began as those estimates, enforced by a test; research moves the rows, never the estimates). Shizu's design: 60 koku before, ~25 after (foot trail), ~30 once diagram 0255 re-priced the sanctuary (2026-10-19).
+builder's prices are the midpoints of the ledger's `shrine/...` synthesis rows that began as those estimates, enforced by a test; research moves the rows, never the estimates). Shizu's design: 60 koku before, ~25 after (foot trail), ~30 once diagram 0255 re-priced the sanctuary, ~31 once 0269 raised the site line (2026-10-19).
 Research: [diagram#6](https://github.com/EliAndrewC/diagram/issues/6) (her lines, priority),
 [#7](https://github.com/EliAndrewC/diagram/issues/7) (the rest). A LOAD of porterage is ~400 kg, ten porter trips.
 **Recipe**: craftsman-days x the skilled day + materials + workers' rice + rites, scaled from the nearest ledger;
@@ -171,7 +171,11 @@ small sanctuary: a new 6-shaku decorated one cost over 30 ryo in 1841 (~2,000 la
 12.7-18.2 koku (~300-770 craftsman-days), up from the first estimate's 4.9-16.2; the other forms moved in proportion.
 0256-0258 found no price for the bark roof, tannin, wooden torii, stone posts, stepping stones, mound, the monk's
 dedication, the ground rite or the furnishings, so those stay as estimated. A parent shrine's installation fee
-(Fushimi Inari, 0258) is not a monk's dedication.
+(Fushimi Inari, 0258) is not a monk's dedication. Diagram 0268-0271 (2026-10-19): a pair of stone lanterns 4 ryo 3 bu
+(~4 koku), a village worship hall 11 ryo 2 bu to its carpenter (scaled like the sanctuary, ~5.85 for the pavilion),
+relief panels 3 ryo each, base stones at least ~2 ryo 2 bu for a 6-shaku sanctuary (the site line now 1.5-2.6). A ryo is
+~0.85 koku through the laborer's day (60 monme, 0.92 monme a day). Every other form, finish, metal furnishing and rite:
+SILENT.
 
 ## Tools
 
