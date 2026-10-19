@@ -135,3 +135,16 @@ Edo sake prices retail and in taverns).
   a well-known performer for a lord's banquet, bu to koku.
 **Recipe**: who pays (the audience, a patron, a temple, the village) decides the price more than the act does.
 **Rules**: box >= pit >= standing.
+
+## Construction
+
+**Shrines** (the shrine builder, feature 216; Shizu's memorial hermitage for Shoda, 2026-10-18). The builder prices at
+1 ryo = 1 koku from Tama-district village ledgers (AIJ paper No. 420), which agrees with this skill's wages: a
+craftsman at ~1 koku per 30-40 days is 25-33 sen a day, inside the skilled range, and carpenters at 2.6-4.7x the
+unskilled wage (diagram 0250). Its line prices were logged as estimates E0035-E0051 before research
+([diagram#6](https://github.com/EliAndrewC/diagram/issues/6), priority).
+**Recipe**: craftsman-days x the skilled day + materials + workers' rice + rites, scaled from the nearest ledger;
+roof work scales with roof AREA (the square of the bay), not the bay's width; stone and earth add porter loads at the
+remoteness rate. **Check every line in labor-days**: a line that buys more craftsman-days than the work could take is
+too high, whatever its ledger ancestry. Known tension to settle with #6: the small sanctuary at 16 koku is 480-640
+craftsman-days, against spec 216's "a few carpenter-months".

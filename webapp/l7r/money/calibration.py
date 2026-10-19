@@ -76,6 +76,7 @@ CATEGORIES = (
     'clothing',
     'drink',
     'entertainment',
+    'construction',
     'other',
 )
 COUNTED = ('ATTESTED', 'ATTESTED ONLY FOR')

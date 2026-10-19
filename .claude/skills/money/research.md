@@ -59,6 +59,7 @@ what is still open.
 | [EliAndrewC/diagram#3](https://github.com/EliAndrewC/diagram/issues/3) | campaign costs I: inns and stabling, hired transport, cloth and kimono, sake (`requests/0003-...`; `questions.md`) | open 2026-10-18 |
 | [EliAndrewC/diagram#4](https://github.com/EliAndrewC/diagram/issues/4) | campaign costs II: arrows, notice boards and paper, rents, plays and entertainers (`requests/0004-...`; `questions.md`) | open 2026-10-18 |
 | [EliAndrewC/diagram#5](https://github.com/EliAndrewC/diagram/issues/5) | campaign costs III: fruit, salt and small offerings, skilled day wages (`requests/0005-...`) | open 2026-10-18 |
+| [EliAndrewC/diagram#6](https://github.com/EliAndrewC/diagram/issues/6) | PRIORITY: what a small forest shrine cost to build (`requests/0006-...`; estimates E0035-E0051) | open 2026-10-18, wanted by 2026-10-19 5 pm |
 
 ## Next candidates (not yet asked)
 
