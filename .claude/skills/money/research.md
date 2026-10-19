@@ -46,7 +46,8 @@ what is still open.
 3. If the history contradicts the canon, change nothing in the canon: put both to the GM. If the GM keeps the canon,
    the row becomes `deviation` with the diagram file as its source.
 4. If an answer changes a basket input or the laborer's year, follow `updating.md`.
-5. Run `check`, commit, push; then post a short verification note and close the issue
+5. Record a finding for each logged estimate the answer grades (`calibration.md` step 4).
+6. Run `check`, commit, push; then post a short verification note and close the issue
    (`python3 ~/.claude/hooks/issue_watch.py close EliAndrewC/diagram#N "what was verified"`). The asker closes.
 
 ## Requests
@@ -57,6 +58,7 @@ what is still open.
 | [EliAndrewC/diagram#2](https://github.com/EliAndrewC/diagram/issues/2) | The Complete Servant (1825): archive it, check the servant wages already extracted into the ledger, add provision prices (`requests/0002-complete-servant.md`; `sources.md`) | open 2026-10-18 |
 | [EliAndrewC/diagram#3](https://github.com/EliAndrewC/diagram/issues/3) | campaign costs I: inns and stabling, hired transport, cloth and kimono, sake (`requests/0003-...`; `questions.md`) | open 2026-10-18 |
 | [EliAndrewC/diagram#4](https://github.com/EliAndrewC/diagram/issues/4) | campaign costs II: arrows, notice boards and paper, rents, plays and entertainers (`requests/0004-...`; `questions.md`) | open 2026-10-18 |
+| [EliAndrewC/diagram#5](https://github.com/EliAndrewC/diagram/issues/5) | campaign costs III: fruit, salt and small offerings, skilled day wages (`requests/0005-...`) | open 2026-10-18 |
 
 ## Next candidates (not yet asked)
 
@@ -64,4 +66,4 @@ what is still open.
   disagree by an order of magnitude, and neither may set the Rokugani price.
 - **Swords and armor**: a common and a fine sword in Tokugawa Japan and Ming/Qing China, against smith and polisher
   labor and the steel; the 2017 working figure is 1.5 koku for a samurai wakizashi, katana open.
-- **Fruit, salt and everyday food**: fruit by the piece, salt under a monopoly, prepared street food.
+- **Prepared street food**: noodles, rice balls, grilled fish from a stall.

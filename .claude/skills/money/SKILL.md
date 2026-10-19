@@ -11,7 +11,10 @@ hand waving"*. Pre-modern price records are patchy (nobody preserved what a Roma
 reasoned from neighbors - similar goods, the metal, the labor, the same good in a comparable society. The standard is
 **internal consistency**: every figure rests on a stated basis, says how solid it is, and agrees with the others.
 
-## The tools (run from `webapp/`; read-only, fine in main's tree)
+## The tools (run from `webapp/`)
+
+The lookups below are read-only and fine in main's tree. `estimate`, `link` and `finding` WRITE the logs: run them
+in your session clone's `webapp/`, then commit and push (`calibration.md`).
 
 ```
 cd /gm-assistant/webapp && python3 -m l7r.money price sword          # ledger rows matching every word
@@ -51,9 +54,10 @@ Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|forty
 
 1. `price <words>`. If a row matches, give its figure in everyday coins, its koku value, both readings, its label and its
    source. A `historical` row resting on a `lead:` is **unverified** - say so.
-2. No row: **derive from named rows** - materials, laborer-days of skilled or unskilled work, the comparable good - show
-   the chain, label it a **guess**, and offer to add it as a row. If the price matters (it will recur at the table, or
-   other prices would lean on it), propose a research request (`research.md`).
+2. No row backed by research: **estimate** from named rows - materials, laborer-days of skilled or unskilled work, the
+   East Asian comparable - show the chain and label it a **guess**. Then, every time (feature 220): **log the
+   estimate**, add the synthesis row and its rules, **file a diagram issue** and link it. The steps and commands are in
+   `calibration.md`.
 3. Never contradict the canon silently. If history and canon disagree, show both; the GM decides.
 
 ## Ledger rows (`webapp/l7r/money/data/ledger.jsonl`)
@@ -91,6 +95,7 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 | File | Load it when |
 |---|---|
 | [`questions.md`](questions.md) | A price question comes up at the table: the campaign's questions, first answers, and the category recipes (wages, lodging, transport, weapons, paper, food, offerings, rentals, clothing, drink, entertainment). |
+| [`calibration.md`](calibration.md) | Logging an estimate, taking in a finding for one, reading the calibration report, or adjusting a recipe. |
 | [`research.md`](research.md) | Asking the diagram repository a question, or taking in its answer. |
 | [`updating.md`](updating.md) | Re-pricing the basket, re-taking the wage, or settling one of the open knobs. |
 | [`sources.md`](sources.md) | Pricing a household, servants or a gentleman's budget; primary sources read directly (The Complete Servant). |
