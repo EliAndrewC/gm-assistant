@@ -126,12 +126,14 @@ did, in `test_shoda_only_appears_as_an_example`).
   (*kenmusha*, served from another shrine) and are kept by parishioners; *hokora* in groves and by
   roads are smaller still. So the catalog is built around a place nobody lives at.
 - **Prices come from the money skill** (GM 2026-10-18, replacing the first hand-set figures). Every
-  line is the midpoint of an estimate logged in `l7r/money/data/estimates.jsonl` (item `shrine catalog
-  <category>/<option>/<contract>`), built from craftsman-days at 30-50 sen, laborer-days at 13-20 sen
-  and materials - the money skill's wage rows, with carpenters at 2.6-4.7x the unskilled day (diagram
-  0250). The method and the check-every-line-in-labor-days rule are in `.claude/skills/money/
-  questions.md` "Construction". Research requested: diagram#6 (Shizu's lines, priority) and #7 (the
-  rest); findings grade the estimates and a re-price logs a new one.
+  line is the midpoint of a synthesis row in `l7r/money/data/ledger.jsonl` (id `shrine/<category>/
+  <option>/<contract>`). Each row began as a pre-research estimate in `l7r/money/data/
+  estimates.jsonl` (its source names it), built from craftsman-days at 30-50 sen, laborer-days at
+  13-20 sen and materials - the money skill's wage rows, with carpenters at 2.6-4.7x the unskilled
+  day (diagram 0250). The method and the check-every-line-in-labor-days rule are in `.claude/skills/
+  money/questions.md` "Construction". Research (diagram#6 for Shizu's lines, #7 for the rest)
+  grades the estimate with a finding and moves the ROW; never log a post-research "estimate" to
+  re-price, because calibration would grade the model against its own answer.
 - **The anchors** behind the days (village ledgers from Tama district, 1749-1805, AIJ paper No. 420):
   copper re-roofing of a LARGE one-bay sanctuary ~43 ryo, more than half of it copper bought in Edo; a
   small sanctuary's repair and repainting ~10 ryo, two-thirds labor (~190-250 craftsman-days). Roof

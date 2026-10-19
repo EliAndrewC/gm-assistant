@@ -41,3 +41,10 @@ the published copy: https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_jap
 Settled by diagram 0248: a koku is 180 L, ~150 kg as brown rice, so the sheet's 151.5 kg stands ($552). If a later
 ruling changes it, add the value to `KOKU_KG` in `readings.py` under a name, make it `DEFAULT_KOKU`, and record the
 ruling and date in the comment; the PPP reading of every snapshot moves with it.
+
+## Taking in research on a price we estimated
+
+Record a finding against the estimate (`python3 -m l7r.money finding E.... --verdict ...`, the diagram question file
+as source), then move the synthesis ROW that answers with it - never log a new "estimate" after the research, because
+calibration would grade the model against its own answer. The shrine builder's prices are such rows (`shrine/...`);
+change the row and the catalog line together, and `tests/test_shrines.py` checks they agree.

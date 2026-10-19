@@ -12,7 +12,7 @@ The skill itself is `.claude/skills/money/SKILL.md`; spec and decisions in `spec
 | `__main__.py` | The command line the skill runs (`convert`, `dollars`, `price`, `history`, `check`). |
 | `data/baskets/YYYY-MM.json` | One dated re-pricing each. **Never edit an old one**; add a new file. |
 | `data/wages.json` | Dated US unskilled wages for the "big deal" reading; newest is the default. |
-| `data/ledger.jsonl` | The price ledger, one row per line, figures in sen. Rows with an `id` are synthesis rows. |
+| `data/ledger.jsonl` | The price ledger, one row per line, figures in sen. Rows with an `id` are synthesis rows; `shrine/...` rows price the shrine builder (feature 216). |
 | `data/rules.jsonl` | Consistency rules. |
 | `data/estimates.jsonl` | Logged guesses. **Append only**: a test fails if a committed line changes. |
 | `data/requests.jsonl`, `data/findings.jsonl` | Estimate -> diagram issue; what the research showed. |

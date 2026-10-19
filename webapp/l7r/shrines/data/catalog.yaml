@@ -5,10 +5,11 @@
 # must never state or imply price - tests/test_shrines.py enforces a word list over it.
 #
 # HOW PRICES WORK (the why lives in l7r/shrines/CLAUDE.md, "Historical grounding"):
-#   - EVERY PRICE IS A MONEY-SKILL ESTIMATE (GM 2026-10-18): the midpoint of the estimate logged in
-#     webapp/l7r/money/data/estimates.jsonl as `shrine catalog <category>/<option>/<contract>`, made
-#     from craftsman-days (30-50 sen), laborer-days (13-20 sen) and materials. Re-price by logging a
-#     new estimate; test_catalog_prices_are_the_money_skills_estimates fails on a hand-typed price.
+#   - EVERY PRICE IS A MONEY-LEDGER ROW: the midpoint of the synthesis row
+#     `shrine/<category>/<option>/<contract>` in webapp/l7r/money/data/ledger.jsonl. The rows began
+#     as the money skill's pre-research estimates (GM 2026-10-18: craftsman-days at 30-50 sen,
+#     laborer-days at 13-20 sen, materials) and move as diagram research arrives. Re-price by
+#     changing the row; test_catalog_prices_are_the_money_ledgers_rows fails on a hand-typed price.
 #   - Each option has `lines`: {contract, koku, heavy, per}. `heavy` is porterage in LOADS (~400 kg,
 #     about ten porter trips or one cartload), charged at the GM's remoteness rate. `per: <category>`
 #     multiplies the line (koku and heavy) by the `units` of the option chosen in that category.

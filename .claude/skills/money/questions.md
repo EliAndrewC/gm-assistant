@@ -143,7 +143,7 @@ Edo sake prices retail and in taverns).
 craftsman at ~1 koku per 30-40 days is 25-33 sen a day, inside the skilled range, and carpenters at 2.6-4.7x the
 unskilled wage (diagram 0250). Its first, hand-set prices (E0035-E0051) were withdrawn - they were not this
 model's - and the whole catalog was re-estimated with this recipe on 2026-10-18 (`shrine catalog ...` estimates; the
-builder's prices are their midpoints, enforced by a test). Shizu's design: 60 koku before, ~25 after (foot trail).
+builder's prices are the midpoints of the ledger's `shrine/...` synthesis rows that began as those estimates, enforced by a test; research moves the rows, never the estimates). Shizu's design: 60 koku before, ~25 after (foot trail).
 Research: [diagram#6](https://github.com/EliAndrewC/diagram/issues/6) (her lines, priority),
 [#7](https://github.com/EliAndrewC/diagram/issues/7) (the rest). A LOAD of porterage is ~400 kg, ten porter trips.
 **Recipe**: craftsman-days x the skilled day + materials + workers' rice + rites, scaled from the nearest ledger;

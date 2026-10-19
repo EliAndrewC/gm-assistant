@@ -809,30 +809,34 @@ def test_multi_select_validation(raw: dict[str, Any]) -> None:
         parse_catalog(data)
 
 
-def test_catalog_prices_are_the_money_skills_estimates(catalog: Catalog) -> None:
-    """Every catalog price is the midpoint of the money estimate that names it (GM 2026-10-18).
+def test_catalog_prices_are_the_money_ledgers_rows(catalog: Catalog) -> None:
+    """Every catalog price is the midpoint of the money ledger's synthesis row for it.
 
-    Re-price by logging a new estimate (`python3 -m l7r.money estimate`, item
-    `shrine catalog <category>/<option>/<contract>: ...`) and copying its midpoint here; the newest
-    estimate for a line wins. A hand-typed price fails this test.
+    The rows (`shrine/<category>/<option>/<contract>`, `shrine/site/<label>`,
+    `shrine/porterage/<remoteness>`) started as the money skill's pre-research estimates (GM
+    2026-10-18) and move when research arrives; the estimates themselves are never edited, because
+    calibration grades them. Re-price by changing the row and copying its midpoint here. A
+    hand-typed price fails this test, and so does a line with no row.
     """
-    from l7r.money import calibration as cal
+    from l7r.money import ledger
 
-    latest: dict[str, cal.Estimate] = {}
-    for e in cal.load_estimates():
-        if e.item.startswith('shrine catalog '):
-            latest[e.item.split(':')[0].removeprefix('shrine catalog ')] = e
+    rows = {r.id: r for r in ledger.load() if r.id.startswith('shrine/')}
 
     def mid(key: str) -> float:
-        e = latest[key]
-        return round((e.low + e.high) / 2000, 2)
+        r = rows[f'shrine/{key}']
+        return round((r.low + r.high) / 2000, 2)
 
+    keys = set()
     for category in catalog.categories:
         for option in category.options:
             for line in option.lines:
                 key = f'{category.key}/{option.key}/{line.contract}'
+                keys.add(key)
                 assert line.koku == pytest.approx(mid(key)), key
     for site in catalog.site_lines:
+        keys.add(f'site/{site.label}')
         assert site.koku == pytest.approx(mid(f'site/{site.label}')), site.label
     for remote in catalog.remoteness:
+        keys.add(f'porterage/{remote.key}')
         assert remote.rate == pytest.approx(mid(f'porterage/{remote.key}')), remote.key
+    assert {f'shrine/{k}' for k in keys} == set(rows), 'a shrine ledger row no line uses'
