@@ -21,7 +21,9 @@ checking agents, and diagram feature 389 gave it a "Money and prices" section. N
    cd /gm-assistant && tail -n +3 <clone>/.claude/skills/money/requests/NNNN-<slug>.md > <scratch>/body.md \
      && python3 ~/.claude/hooks/issue_watch.py open EliAndrewC/diagram "Money research: <title>" < <scratch>/body.md
    ```
-   `open` also starts the watch. Tell the GM: they start a diagram session to work it.
+   `open` also starts the watch. A running diagram session only sees issues it already watches, so point it at a new
+   one by commenting on an issue it watches (or the GM pastes the link there). Since 2026-10-18 the GM pre-approves on
+   the diagram side any money request he asked to be filed; it starts without a separate approval.
 3. Add the issue to the table below.
 
 ## Taking in an answer
