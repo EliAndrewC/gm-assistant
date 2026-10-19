@@ -160,3 +160,14 @@ small sanctuary: a new 6-shaku decorated one cost over 30 ryo in 1841 (~2,000 la
 0256-0258 found no price for the bark roof, tannin, wooden torii, stone posts, stepping stones, mound, the monk's
 dedication, the ground rite or the furnishings, so those stay as estimated. A parent shrine's installation fee
 (Fushimi Inari, 0258) is not a monk's dedication.
+
+## Tools
+
+**Q13. A set of chef's knives given to a peasant cook out of respect for the craft** (GM 2026-10-19). An ordinary
+kitchen knife: **15-40 sen** (half a day to a day of a country smith with a helper, plus a little iron and steel and the
+grinding; below a cheap blade weapon). A fine knife by a noted smith, laminated and polished: **8 zeni-2 bu**. A set of
+three fine ones (fish, vegetable, slicing): **2.5-6 bu**, 19-45 laborer-days - months of a cook's wages, so the cook
+could never have bought it, and a samurai's gift at the scale of *consideration* (bu). An ordinary set: 0.5-1.2 bu.
+Edo Japan's knife towns (Sakai above all) sold kitchen knives by the maker's name (research requested).
+**Recipe** (worked metal): smith-days at the skilled rate + iron and steel + grinding and polish; a maker's name adds a
+premium. **Rules**: a knife >= half a skilled day; fine >= ordinary and >= two skilled days; a set >= its knives.

@@ -97,7 +97,7 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 
 | File | Load it when |
 |---|---|
-| [`questions.md`](questions.md) | A price question comes up at the table: the campaign's questions, first answers, and the category recipes (wages, lodging, transport, weapons, paper, food, offerings, rentals, clothing, drink, entertainment). |
+| [`questions.md`](questions.md) | A price question comes up at the table: the campaign's questions, first answers, and the category recipes (wages, lodging, transport, weapons, paper, food, offerings, rentals, clothing, drink, entertainment, construction, tools). |
 | [`calibration.md`](calibration.md) | Logging an estimate, taking in a finding for one, reading the calibration report, or adjusting a recipe. |
 | [`research.md`](research.md) | Asking the diagram repository a question, or taking in its answer. |
 | [`updating.md`](updating.md) | Re-pricing the basket, re-taking the wage, or settling one of the open knobs. |

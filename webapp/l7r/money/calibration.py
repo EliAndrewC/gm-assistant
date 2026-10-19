@@ -83,6 +83,7 @@ CATEGORIES = (
     'drink',
     'entertainment',
     'construction',
+    'tools',
     'other',
 )
 COUNTED = ('ATTESTED', 'ATTESTED ONLY FOR')

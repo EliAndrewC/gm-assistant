@@ -19,3 +19,7 @@
 {"rule": "a modest estate rents for at least a small house", "row": "estate-modest-month", "at_least": [["house-small-month", 1]], "why": ""}
 {"rule": "a pit place costs at least a standing place", "row": "play-house-pit", "at_least": [["play-house-cheap", 1]], "why": ""}
 {"rule": "a box costs at least a pit place", "row": "play-house-box", "at_least": [["play-house-pit", 1]], "why": ""}
+{"rule": "an ordinary kitchen knife costs at least half a skilled day", "row": "knife-kitchen-ordinary", "at_least": [["wage-skilled-day", 0.5]], "why": "a smith forges it"}
+{"rule": "a fine kitchen knife costs at least two skilled days", "row": "knife-kitchen-fine", "at_least": [["wage-skilled-day", 2]], "why": "a master's forging, grinding and polish"}
+{"rule": "a fine knife costs at least an ordinary one", "row": "knife-kitchen-fine", "at_least": [["knife-kitchen-ordinary", 1]], "why": ""}
+{"rule": "a set of three fine knives costs at least three fine knives", "row": "knife-set-fine", "at_least": [["knife-kitchen-fine", 3]], "why": ""}
