@@ -120,3 +120,8 @@ calibration that prompted it. Estimates logged after the adjustment can then be 
 ## Assumptions
 
 - The diagram session answers in the format of feature 219's research protocol (question file, verdict per figure).
+
+## Review history
+
+- **spec-fidelity round 1 (2026-10-18): FAITHFUL.** Asides taken: log only sub-questions that got a first answer
+  (FR-008); the adjustment threshold is set in plan.md.
