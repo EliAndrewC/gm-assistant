@@ -178,7 +178,75 @@ reading stays reproducible by naming its date.
 - The money folder in the GM's l7r repository is committed by the GM; until then its files are cited by their future
   GitHub path.
 
+## Amendment 1 (2026-10-18, request.md "later the same evening")
+
+The GM scoped what the skill must answer: costs as they come up in the campaign, each with a basis in research, or a
+clear statement that research is needed - *"either way like just get something"*. The standard is verisimilitude:
+*"these things should make sense relative to each other"*. Not a comprehensive list made up front, but a category-by-
+category build as things come up.
+
+### User Story 5 - Internal consistency is checked, not hoped for (Priority: P1)
+
+The GM's example: a kimono must not cost less than the undyed silk it is made from. The ledger carries consistency rules
+(a garment costs at least its cloth; a skilled wage is at least the unskilled wage; a tavern cup of sake costs at least
+the retail sake in it).
+
+The ledger has two kinds of row. A **source row** (no `id`) records what one source says, as found; source rows may
+disagree with one another, with the reason (place, period, debased coin, unit), and the rules do not bind them. A
+**synthesis row** (has an `id`) is what the skill answers with; every price the skill gives comes from a synthesis row
+or is derived on the spot and then added as one, never straight from a source row. The prices the skill answers with
+are a SYNTHESIS of those sources - the GM: *"internal consistency that synthesizes these sources into
+various costs and prices and ranges of what things cost that produce a sensible play experience"* - and MUST satisfy
+every consistency rule. The gate checks every synthesis row a rule names; a note or a range never exempts a synthesis
+row from a rule.
+
+**Acceptance**: a rule whose rows contradict it fails the gate and names the rule and the rows.
+
+### User Story 6 - The campaign's questions and the categories they belong to (Priority: P1)
+
+The skill records the GM's twelve campaign questions (arrows, an inn night and stabling, wanted posters, apples, Otsuki's
+salt bag, hiring a horse and cart, a week's warehouse rent, ten plain kimono, silk sheets, a night of drinking, seeing a
+play or other entertainers, city rentals by size) with a first answer to each, labeled and derived from named rows,
+and sorts them into categories with a reasoning recipe each (how to derive a new item in that category, and which
+consistency rules apply), so similar questions later have a method. **Wages** is a named category, as the GM named it:
+*"one type of wage will set a floor on another"* - its recipe is the floor rule. Research the answers need is requested
+from diagram.
+
+**Acceptance**: the twelve questions are recorded as the GM asked them, sub-questions included (inn on the Imperial Road,
+in a town, in a city, and stabling; one good arrow, a hundred, and whether to retrieve them; a single poster, a large
+sheet of paper and the materials, and whether a notice was paper, a wooden board, or drawn straight on the board; a
+cup of sake, a bottle, an evening's sake for about six, and tavern against vendor; the play-venue ladder from peasants to an acting house, and how troupes were made up; a room, a
+small standalone structure, a modest city estate, staff separately). Each sub-question has a first answer with its
+label and derivation, or an explicit "open, research requested"; each belongs to a category whose recipe names its
+consistency rules.
+
+### Requirements added
+
+- **FR-011**: The ledger MUST support consistency rules between synthesis rows, checked by `check` and by the gate.
+  Source rows (no `id`) record sources as found and may disagree; synthesis rows (with an `id`) are what the skill
+  answers with, and satisfy every rule that names them; a note or range never exempts one.
+- **FR-012**: A derived row MUST say what it was derived from (a `derived:` source pointing at its derivation).
+- **FR-013**: The skill MUST keep the campaign question list (every sub-question in `request.md`) and the category recipes, wages
+  among them with the floor rule, and file research requests for what the first answers cannot support.
+- **FR-014** (GM ruling relayed by diagram on 2026-10-18, [diagram#2 comment](https://github.com/EliAndrewC/diagram/issues/2#issuecomment-6256198462),
+  diagram feature 391): a fourth label, `comparative`, for figures from other societies (Regency England, medieval
+  Europe). A comparative row never sets a Rokugani price, wage or koku value - *"not because we will use it to establish
+  the actual value of a koku"*. It serves only as a yardstick players recognize, or as a cross-check reported beside a
+  figure resting on Japanese or Chinese evidence; a disagreeing comparative row is reported, and is never the reason a
+  figure moves. This amends FR-006's three labels and the "No historical price exists" edge case: "comparable weapons
+  elsewhere" there means East Asian comparables; European ones are cross-checks only.
+
 ## Review history
 
 - **spec-fidelity round 1 (2026-10-18): FAITHFUL.** Aside: the koku rice mass and the "big deal" wage are open questions
   for the GM, not decisions; the Decisions table now says so.
+- **spec-fidelity, Amendment 1 round 1 (2026-10-18): CHANGES REQUIRED, 4 items.** (1) the GM's "synthesizes" clause:
+  a note or range never exempts a row from a rule; (2) wages as a named category with the floor rule; (3) the twelve
+  questions recorded with their sub-questions, each answered or marked open; (4) ruling 391 written into the spec as
+  FR-014. All four applied.
+- **spec-fidelity, Amendment 1 round 2 (2026-10-18): CHANGES REQUIRED, 2 items.** (1) say which rows the rules bind:
+  source rows (no `id`) against synthesis rows (with an `id`), answers only from synthesis rows; (2) the missing
+  sub-questions (a cup, a bottle, an evening's sake; a sheet of paper, the materials, drawing on the board) added, and
+  the elided questions in `request.md` restored in full. Both applied.
+- **spec-fidelity, Amendment 1 round 3 (2026-10-18): FAITHFUL.** Note: implement from `request.md`'s full questions
+  (the hat donation, other entertainers' prices, a set of posters), which FR-013 binds.

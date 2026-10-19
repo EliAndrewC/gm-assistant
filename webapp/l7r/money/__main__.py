@@ -23,6 +23,7 @@ from l7r.money.readings import (
     ppp_per_koku,
     resolve_koku_kg,
 )
+from l7r.money.rules import load_rules, violations
 
 __all__ = ['main']
 
@@ -112,9 +113,14 @@ def _price(args: argparse.Namespace, basis: _Basis) -> None:
         )
         return
     for row in found:
-        flag = '' if row.verified else ' (unverified lead)'
+        if row.source.startswith('derived:'):
+            flag = ' (derived)'
+        else:
+            flag = '' if row.verified else ' (unverified lead)'
         if row.label == 'comparative':
             flag += ': a yardstick from another society, not a Rokugani price'
+        elif not row.id:
+            flag += '; source row: synthesize before answering'
         _say(f'{row.item}: {_span(row)} per {row.per}  [{row.label}{flag}]')
         _say(f'  {basis.dollars(row.low, row.high)}')
         _say(f'  source: {row.source}')
@@ -135,8 +141,14 @@ def _history(args: argparse.Namespace, basis: _Basis) -> None:
 
 def _check(args: argparse.Namespace, basis: _Basis) -> None:
     rows = ledger.load()
+    rules = load_rules()
+    if broken := violations(rules, rows):
+        raise SystemExit('broken consistency rules:\n  ' + '\n  '.join(broken))
     leads = sum(not r.verified for r in rows)
-    _say(f'ledger ok: {len(rows)} rows, {leads} still resting on leads')
+    _say(
+        f'ledger ok: {len(rows)} rows, {len(rules)} consistency rules hold, '
+        f'{leads} rows still resting on leads or derivations'
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:

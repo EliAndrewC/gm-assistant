@@ -53,12 +53,13 @@ what is still open.
 |---|---|---|
 | [EliAndrewC/diagram#1](https://github.com/EliAndrewC/diagram/issues/1) | land price in years of yield; unskilled day wages; the koku of rice; the Kyoto basket (`requests/0001-foundations.md`) | open 2026-10-18 |
 | [EliAndrewC/diagram#2](https://github.com/EliAndrewC/diagram/issues/2) | The Complete Servant (1825): archive it, check the servant wages already extracted into the ledger, add provision prices (`requests/0002-complete-servant.md`; `sources.md`) | open 2026-10-18 |
+| [EliAndrewC/diagram#3](https://github.com/EliAndrewC/diagram/issues/3) | campaign costs I: inns and stabling, hired transport, cloth and kimono, sake (`requests/0003-...`; `questions.md`) | open 2026-10-18 |
+| [EliAndrewC/diagram#4](https://github.com/EliAndrewC/diagram/issues/4) | campaign costs II: arrows, notice boards and paper, rents, plays and entertainers (`requests/0004-...`; `questions.md`) | open 2026-10-18 |
 
 ## Next candidates (not yet asked)
 
-- **Swords and armor**: what a common and a fine sword cost in Tokugawa Japan (and Ming/Qing China), against the
-  smith's and polisher's labor and the steel; the 2017 working figure is 1.5 koku for a samurai wakizashi, katana open.
-- **Horses**: a farm horse, a packhorse, a warhorse - the medieval (0.33-2 koku) and Regency (14.5 koku) rows disagree
-  by an order of magnitude.
-- **Housing**: rent for a city tenement room and a shop-house, and the sale price of a townhouse.
-- **Cloth and clothing**: a cotton kimono, a silk one, formal court dress.
+- **Horses**: a farm horse, a packhorse, a warhorse - the medieval (0.33-2 koku) and Regency (14.5 koku) comparative rows
+  disagree by an order of magnitude, and neither may set the Rokugani price.
+- **Swords and armor**: a common and a fine sword in Tokugawa Japan and Ming/Qing China, against smith and polisher
+  labor and the steel; the 2017 working figure is 1.5 koku for a samurai wakizashi, katana open.
+- **Fruit, salt and everyday food**: fruit by the piece, salt under a monopoly, prepared street food.

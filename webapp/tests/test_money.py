@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from l7r.money import coins, ledger
+from l7r.money import coins, ledger, rules
 from l7r.money.__main__ import main
 from l7r.money.readings import (
     KOKU_KG,
@@ -229,3 +229,52 @@ def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
 def test_cli_history_and_check(capsys: pytest.CaptureFixture[str]) -> None:
     assert '2017-04: basket $797.22 = 144.32 zeni -> $552.39 per koku' in run(capsys, 'history')
     assert 'ledger ok:' in run(capsys, 'check')
+
+
+# --- consistency rules ---------------------------------------------------------------------------
+
+
+def test_real_rules_hold() -> None:
+    """FR-011 at the standard: every rule over the real ledger holds."""
+    assert rules.violations(rules.load_rules(), ledger.load()) == []
+    assert len(rules.load_rules()) >= 15
+
+
+def test_violations_name_the_rule_and_rows() -> None:
+    silk = ledger.Row('silk', 2000, 3000, 'length', 'guess', 'lead:x', id='silk')
+    kimono = ledger.Row('kimono', 1500, 4000, 'item', 'guess', 'lead:x', id='kimono')
+    rule = rules.Rule('a kimono costs at least its silk', 'kimono', (('silk', 1.0),))
+    assert rules.violations([rule], [silk, kimono]) == [
+        'a kimono costs at least its silk: kimono starts at 1500 sen, below its floor of 2000 sen'
+    ]
+    ghost = rules.Rule('needs a ghost', 'kimono', (('ghost', 1.0),))
+    assert rules.violations([ghost], [kimono]) == ['needs a ghost: no row with id ghost']
+
+
+def test_duplicate_ids_are_refused(tmp_path: Path) -> None:
+    path = tmp_path / 'ledger.jsonl'
+    path.write_text(json.dumps({**GOOD, 'id': 'a'}) + '\n' + json.dumps({**GOOD, 'id': 'a'}) + '\n')
+    with pytest.raises(ValueError, match="line 2: duplicate id 'a'"):
+        ledger.load(path)
+
+
+def test_derived_rows_are_not_verified() -> None:
+    row = ledger.Row('x', 1, 1, 'item', 'guess', 'derived:questions.md#arrows', id='x')
+    assert ledger.problems({**GOOD, 'source': 'derived:questions.md#arrows'}) == []
+    assert not row.verified
+
+
+def test_cli_check_fails_on_a_broken_rule(monkeypatch: pytest.MonkeyPatch) -> None:
+    broken = rules.Rule('always broken', 'wage-unskilled-day', (('wage-skilled-day', 100.0),))
+    monkeypatch.setattr('l7r.money.__main__.load_rules', lambda: [broken])
+    with pytest.raises(SystemExit, match='broken consistency rules:\n  always broken'):
+        main(['check'])
+
+
+def test_cli_marks_source_and_synthesis_rows(capsys: pytest.CaptureFixture[str]) -> None:
+    out = run(capsys, 'price', 'valet', 'kanazawa')
+    assert 'source row: synthesize before answering' in out
+    out = run(capsys, 'price', 'stabling')
+    assert (
+        'stabling a horse for the night: 1 zeni 2 sen to 2 zeni per night  [guess (derived)]' in out
+    )

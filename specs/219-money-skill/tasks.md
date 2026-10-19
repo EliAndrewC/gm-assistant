@@ -11,3 +11,11 @@
 - [x] T009 `SKILL.md`, `research.md`, `updating.md`, package `CLAUDE.md`; `docs/key-paths.md` entry
 - [x] T010 Gate green, commit, `sync-with-main.sh done`
 - [ ] T011 Take in diagram#1's answer (research.md "Taking in an answer"), close the issue
+
+## Amendment 1
+
+- [x] T012 request.md: the GM's scope message and the 12th question, verbatim; spec Amendment 1 (US5, US6, FR-011..014); spec-fidelity FAITHFUL in round 3
+- [x] T013 Source vs synthesis rows (`id`), `derived:` sources, `rules.py` + `data/rules.jsonl` (21 rules), `check` and the gate fail on a broken rule
+- [x] T014 Synthesis rows for all twelve questions; `questions.md` with first answers by category and the recipes
+- [x] T015 Research requests diagram#3 and diagram#4, watched
+- [ ] T016 Take in diagram#1-#4 answers; replace guesses with cited figures; close each issue

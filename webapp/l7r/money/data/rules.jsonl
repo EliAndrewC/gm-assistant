@@ -1,0 +1,21 @@
+{"rule": "a skilled day wage is at least the unskilled day wage", "row": "wage-skilled-day", "at_least": [["wage-unskilled-day", 1]], "why": "the GM: one type of wage sets a floor on another"}
+{"rule": "a horse eats at least its hay", "row": "horse-feed-day", "at_least": [["hay-ton", 0.01]], "why": "~20 lb of hay a day"}
+{"rule": "stabling costs at least the feed", "row": "stabling-night", "at_least": [["horse-feed-day", 1]], "why": ""}
+{"rule": "an inn night with two meals costs at least the rice in them", "row": "inn-road-night", "at_least": [["meal-rice", 2]], "why": ""}
+{"rule": "an inn costs at least cheap lodging", "row": "inn-road-night", "at_least": [["lodging-cheap-night", 1]], "why": ""}
+{"rule": "a city inn costs at least a road inn", "row": "inn-city-night", "at_least": [["inn-road-night", 1]], "why": "city rents and food"}
+{"rule": "hiring a cart costs at least the driver and the horse feed", "row": "cart-hire-day", "at_least": [["wage-unskilled-day", 1], ["horse-feed-day", 1]], "why": ""}
+{"rule": "a fine arrow costs at least an ordinary one", "row": "arrow-fine", "at_least": [["arrow-war", 1]], "why": ""}
+{"rule": "a wanted poster costs at least its paper", "row": "wanted-poster", "at_least": [["paper-large-sheet", 1]], "why": ""}
+{"rule": "Otsuki's bag costs at least its salt, bag and paper", "row": "otsuki-salt-bag", "at_least": [["salt-cup", 1], ["hemp-bag-small", 1], ["paper-sheet-shrine", 1]], "why": ""}
+{"rule": "a kimono length of cotton costs at least 12 m of cotton", "row": "cloth-cotton-kimono-length", "at_least": [["cloth-cotton-m", 12]], "why": ""}
+{"rule": "silk costs at least cotton", "row": "cloth-silk-kimono-length", "at_least": [["cloth-cotton-kimono-length", 1]], "why": ""}
+{"rule": "a plain cotton kimono costs at least its cloth", "row": "kimono-cotton", "at_least": [["cloth-cotton-kimono-length", 1]], "why": "the GM example: never less than the cloth it is made from"}
+{"rule": "a plain silk kimono costs at least its silk", "row": "kimono-silk", "at_least": [["cloth-silk-kimono-length", 1]], "why": "the GM example"}
+{"rule": "silk sheets cost at least two kimono lengths of silk", "row": "silk-sheets", "at_least": [["cloth-silk-kimono-length", 2]], "why": ""}
+{"rule": "tavern sake costs at least retail sake", "row": "sake-cup-tavern", "at_least": [["sake-cup-retail", 1]], "why": ""}
+{"rule": "a night of drinking for six covers fifteen tavern cups", "row": "sake-evening-six", "at_least": [["sake-cup-tavern", 15]], "why": ""}
+{"rule": "a small house rents for at least a room", "row": "house-small-month", "at_least": [["room-capital-month", 1]], "why": ""}
+{"rule": "a modest estate rents for at least a small house", "row": "estate-modest-month", "at_least": [["house-small-month", 1]], "why": ""}
+{"rule": "a pit place costs at least a standing place", "row": "play-house-pit", "at_least": [["play-house-cheap", 1]], "why": ""}
+{"rule": "a box costs at least a pit place", "row": "play-house-box", "at_least": [["play-house-pit", 1]], "why": ""}

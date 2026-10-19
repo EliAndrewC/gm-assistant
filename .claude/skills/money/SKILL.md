@@ -58,6 +58,14 @@ Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|forty
 
 ## Ledger rows (`webapp/l7r/money/data/ledger.jsonl`)
 
+**Two kinds of row.** A *source row* (no `id`) records what one source says, as found; sources may disagree (place,
+period, debased coin, a different koku). A *synthesis row* (with an `id`) is what you answer with. Answers are a
+synthesis: derive a synthesis row from the sources, add it, and never answer straight from a source row.
+**Consistency rules** (`data/rules.jsonl`) bind synthesis rows - a kimono costs at least its cloth, a skilled wage is at
+least the unskilled one, tavern sake at least retail - and `check` and the gate fail on a broken one. A note or a range
+never exempts a row; when sources disagree, widen the synthesis range or explain it, never drop the rule. When you add
+a row, add the rules that tie it to its inputs.
+
 Figures in whole sen; `label` is `historical`, `deviation` (departs from history on purpose), `guess`, or
 `comparative`; `source` is a diagram question URL, `canon:<file> "<section>"`, or `lead:<file>`. The field rules are in
 `webapp/l7r/money/ledger.py`'s docstring; `check` and the gate refuse a row without a label and source.
@@ -82,6 +90,7 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 
 | File | Load it when |
 |---|---|
+| [`questions.md`](questions.md) | A price question comes up at the table: the campaign's questions, first answers, and the category recipes (wages, lodging, transport, weapons, paper, food, offerings, rentals, clothing, drink, entertainment). |
 | [`research.md`](research.md) | Asking the diagram repository a question, or taking in its answer. |
 | [`updating.md`](updating.md) | Re-pricing the basket, re-taking the wage, or settling one of the open knobs. |
 | [`sources.md`](sources.md) | Pricing a household, servants or a gentleman's budget; primary sources read directly (The Complete Servant). |
