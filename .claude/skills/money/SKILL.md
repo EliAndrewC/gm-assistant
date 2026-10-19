@@ -24,7 +24,7 @@ cd /gm-assistant/webapp && python3 -m l7r.money history              # dollars p
 cd /gm-assistant/webapp && python3 -m l7r.money check                # validate the ledger
 ```
 
-Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|forty-gallons|<kg>`, `--snapshot YYYY-MM`, `--wage <dollars/hour>`,
+Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|<kg>`, `--snapshot YYYY-MM`, `--wage <dollars/hour>`,
 `--wage-date`. Every output prints the basis it used; quote it with the answer.
 
 ## Coins and who uses them (canon: `setting/l7r.md` "Money")
@@ -81,10 +81,13 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 
 ## Open for the GM
 
-- **The koku's rice mass**: `l7r.md` says ~40 gallons (twice: "Money" and "Rent and taxes"), but `budgets.md`
-  "Historical units" says ~180 L (~48 gallons) and ~150 kg as brown rice, "the canonical figure", which its yield math
-  uses (0.021 koku per gallon). The 2017 sheet's 151.5 kg agrees with budgets.md within 1% ($552; `--koku-kg
-  budgets-brown` gives $547); only a literal 40 gallons (~121 kg, $442) breaks from it. diagram#1 Q3 cites the history.
+- **The koku's rice mass: settled by research** ([diagram 0248](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0248-how-much-rice-was-a-koku.html)):
+  180 L, ~150 kg as brown rice; the canon's "about 40 gallons" holds in imperial gallons. The sheet's 151.5 kg and
+  $552 stand. Open for the GM: only whether to restate "40 gallons" as imperial gallons or liters, and two budgets.md
+  figures research does not support (a ~187 kg paddy koku; ~1.5 koku of grain a person a year against history's 1
+  koku convention and 1.8 Edo ration).
+- **The 50-koku family farm**: research found no farmland multiple (0251); the nearest history, Qing Fujian rent rights,
+  ran ~8 years of rent, while 50 koku against the landlord's 2.5 is 20 years beside 15-25% interest.
 - **The pound-to-koku rate** for the English comparative rows: 145 sen per pound (the Austen sheet: 1 GBP = $80 at
   $550/koku). Anchoring on wages instead (an English laborer's GBP 15-20 a year = a Rokugani laborer's 3.32 koku) gives
   ~190 sen per pound, about 30% higher.

@@ -76,9 +76,9 @@ def test_2017_snapshot_reproduces_the_spreadsheet() -> None:
     assert round(ppp_per_koku(snap, kg)) == 552
 
 
-def test_forty_gallons_of_uncooked_rice_gives_about_440() -> None:
-    snap = load_snapshots()[0]
-    assert round(ppp_per_koku(snap, KOKU_KG['forty-gallons'])) == 442
+def test_the_withdrawn_forty_us_gallon_koku_is_gone() -> None:
+    """diagram 0248: 'about 40 gallons' holds only in imperial gallons; 121 kg is not a koku."""
+    assert 'forty-gallons' not in KOKU_KG
 
 
 def test_budgets_koku_sits_beside_the_sheet() -> None:
@@ -196,8 +196,8 @@ def test_cli_convert(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_cli_knobs(capsys: pytest.CaptureFixture[str]) -> None:
-    out = run(capsys, '--koku-kg', 'forty-gallons', '--wage', '7.25', 'convert', '1 koku')
-    assert '[forty-gallons]' in out
+    out = run(capsys, '--koku-kg', 'budgets-polished', '--wage', '7.25', 'convert', '1 koku')
+    assert '[budgets-polished]' in out
     assert '$7.25/hour' in out
 
 

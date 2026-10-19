@@ -25,12 +25,19 @@ newest is the default; `--wage-date` reaches older ones.
 
 ## The laborer's year
 
-`LABORER_KOKU_YEAR` (3.32) and `WORKING_DAYS` (250) in `webapp/l7r/money/readings.py` are the 2017 sheet's figures. When
-diagram#1 Q2 answers, change them there with the question file in the comment, and update the two wage rows in the
-ledger. Every "big deal" figure and every laborer-days count moves with them.
+`LABORER_KOKU_YEAR` (3.32) and `WORKING_DAYS` (250) in `webapp/l7r/money/readings.py` are the 2017 sheet's figures.
+Diagram 0250: ~2 kg of rice a day is attested; the 250-day year is a modern convention. A future count of working days
+would change them; the two wage rows cite 0250. Every "big deal" figure and every laborer-days count moves with them.
+
+## The basket against its source
+
+Diagram 0249 checked the 2017 snapshot against Bassino & Ma's Tables 1 and 3: every quantity and silver price matches
+(325.816 g). The paper's labels are "Beans (excluding soybeans)" and "Linen (m)" (the snapshot says adzuki and
+cotton), and only rice and lamp oil were recorded in Kyoto 1745-54; the rest are the paper's reconstructions. Cite
+the published copy: https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf
 
 ## Settling the koku's rice mass
 
-When the GM decides what a koku of rice weighs, add it to `KOKU_KG` in `readings.py` under a name, make it
-`DEFAULT_KOKU`, and record the GM's ruling and date in the comment. The PPP reading of every snapshot moves (151.5 kg
-gives $552; 121 kg gives $442).
+Settled by diagram 0248: a koku is 180 L, ~150 kg as brown rice, so the sheet's 151.5 kg stands ($552). If a later
+ruling changes it, add the value to `KOKU_KG` in `readings.py` under a name, make it `DEFAULT_KOKU`, and record the
+ruling and date in the comment; the PPP reading of every snapshot moves with it.

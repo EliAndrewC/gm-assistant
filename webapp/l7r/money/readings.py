@@ -9,7 +9,8 @@ WHY RE-PRICE, NEVER CPI-SCALE (handoff, 2026-10-18): rice and beans move differe
 CPI, so scaling the 2017 figure would carry 2017's relative prices forward under a new date.
 Each re-pricing is a new `data/baskets/YYYY-MM.json`; old snapshots are never edited.
 
-THE KOKU'S RICE MASS IS AN INPUT, not a constant, because it is open for the GM: l7r.md says ~40
+THE KOKU'S RICE MASS IS AN INPUT, not a constant. Settled by research (diagram 0248), it stays an input so a
+snapshot can be read at other masses: l7r.md says ~40
 gallons, while budgets.md "Historical units" says ~180 L (~48 gallons) and ~150 kg brown; the 2017
 sheet used 151.515 kg (its 2.257575 g silver per zeni is 1.49 g/kg x 151.515 kg / 100, i.e. 40
 gallons read as if a liter of rice weighed a kilogram); 40 gallons of uncooked rice at ~0.8 kg/L is
@@ -45,15 +46,21 @@ DATA = Path(__file__).parent / 'data'
 
 KOKU_KG = {
     'sheet-2017': 100 / 0.66,  # the 2017 spreadsheet's basis (rice 0.66 zeni/kg): ~151.5 kg
-    'forty-gallons': 151.416 * 0.8,  # 40 US gallons of uncooked rice at ~0.8 kg/L: ~121 kg
     # budgets.md "Historical units": 1 koku ~ 180 L (~48 gallons), ~150 kg as the brown rice the
     # kokudaka was assessed in ("the canonical figure"), ~136 kg polished, ~187 kg paddy
     'budgets-brown': 150.0,
+    # 0248: ~136 kg is the MILLED YIELD of a koku of brown rice, not the weight of a koku-volume
     'budgets-polished': 136.0,
 }
+# diagram 0248 (2026-10-18): a koku is 180.39 L (ATTESTED), ~150 kg as brown rice (ATTESTED ONLY FOR modern
+# reckoning, ~0.83 kg/L); the canon's "about 40 gallons" holds in IMPERIAL gallons (~180 L). The 40-US-gallon
+# reading (~121 kg) is withdrawn, so the sheet's 151.5 kg stands.
+# https://github.com/EliAndrewC/diagram/blob/main/research/questions/0248-how-much-rice-was-a-koku.html
 DEFAULT_KOKU = 'sheet-2017'
 
-LABORER_KOKU_YEAR = 3.32  # lead until diagram#1 Q2 answers: Bassino & Ma via the 2017 sheet
+# diagram 0250: ~1.9-2 kg of rice a day (Kyoto 1745-54) is ATTESTED; the 250-day year is a modern economists'
+# convention, NOT ATTESTED. 3.32 = 2 kg x 250 days / ~150 kg.
+LABORER_KOKU_YEAR = 3.32
 WORKING_DAYS = 250  # the 2017 sheet's working year
 
 

@@ -10,7 +10,7 @@
 - [x] T008 `tests/test_money.py`, 100% coverage (SC-001, SC-002)
 - [x] T009 `SKILL.md`, `research.md`, `updating.md`, package `CLAUDE.md`; `docs/key-paths.md` entry
 - [x] T010 Gate green, commit, `sync-with-main.sh done`
-- [ ] T011 Take in diagram#1's answer (research.md "Taking in an answer"), close the issue
+- [x] T011 Take in diagram#1 (2026-10-18; #2 still open)'s answer (research.md "Taking in an answer"), close the issue
 
 ## Amendment 1
 

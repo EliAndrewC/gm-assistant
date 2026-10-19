@@ -253,7 +253,9 @@ def _calibration(args: argparse.Namespace, basis: _Basis) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog='python3 -m l7r.money', description=__doc__)
-    parser.add_argument('--koku-kg', help='sheet-2017 (default), forty-gallons, or a number of kg')
+    parser.add_argument(
+        '--koku-kg', help='sheet-2017 (default), budgets-brown, budgets-polished, or a number of kg'
+    )
     parser.add_argument('--snapshot', help='basket snapshot date (default: newest)')
     parser.add_argument('--wage-date', help='wage reading date (default: newest)')
     parser.add_argument('--wage', type=float, help='override the hourly wage, in dollars')
