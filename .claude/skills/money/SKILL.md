@@ -36,7 +36,7 @@ Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|<kg>`
 - **Gold koku** belongs to landlords, merchant houses, officials and treasuries. *"Very few people would buy things with
   Koku ... Player characters who do are exceptionally wealthy in a way which is noteworthy."* Any answer of a koku or
   more says who would pay that in gold, and that paying it marks the payer.
-- The **Imperial rate** fixes 1 koku = 40 gallons of rice for taxes, rent and stipends; market rice floats with harvest
+- The **Imperial rate** fixes 1 koku = 48 gallons (180 liters) of rice for taxes, rent and stipends; market rice floats with harvest
   and place, and the Ministry of Retainers' mix of rice and coin is soft power.
 - Canon money rules to apply, not re-derive: stipend = rank squared; gifts by highest rank involved (token = that many
   zeni, consideration = bu, compensatory = koku); tariffs typically ~15% of declared sales value; interest (GM 2013)
@@ -81,13 +81,13 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 
 ## Open for the GM
 
-- **The koku's rice mass: settled by research** ([diagram 0248](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0248-how-much-rice-was-a-koku.html)):
-  180 L, ~150 kg as brown rice; the canon's "about 40 gallons" holds in imperial gallons. The sheet's 151.5 kg and
-  $552 stand. Open for the GM: only whether to restate "40 gallons" as imperial gallons or liters, and two budgets.md
-  figures research does not support (a ~187 kg paddy koku; ~1.5 koku of grain a person a year against history's 1
-  koku convention and 1.8 Edo ration).
-- **The 50-koku family farm**: research found no farmland multiple (0251); the nearest history, Qing Fujian rent rights,
-  ran ~8 years of rent, while 50 koku against the landlord's 2.5 is 20 years beside 15-25% interest.
+- **The koku's rice mass: settled** ([diagram 0248](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0248-how-much-rice-was-a-koku.html)):
+  180 L (48 US gallons), ~150 kg as brown rice; `l7r.md` and `budgets.md` now say so (GM, 2026-10-18). The sheet's
+  151.5 kg and $552 stand.
+- **The 50-koku family farm** (GM 2026-10-18: *"not married to the 50 koku number"*): revisit when research gives a
+  farmland price. So far: no farmland multiple in Japan or China (0251); Qing Fujian rent rights ran ~8 years of rent.
+  Unread leads: Takeyasu 1966 and Uemura 1987 on Japanese land capitalization (diagram's list). When a figure lands,
+  propose a new number to the GM with its basis.
 - **The pound-to-koku rate** for the English comparative rows: 145 sen per pound (the Austen sheet: 1 GBP = $80 at
   $550/koku). Anchoring on wages instead (an English laborer's GBP 15-20 a year = a Rokugani laborer's 3.32 koku) gives
   ~190 sen per pound, about 30% higher.
