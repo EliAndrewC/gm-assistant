@@ -17,7 +17,7 @@ The yardstick throughout is the unskilled laborer's day, ~13 sen.
 
 **Recipe.** One wage sets a floor on another (the GM: *"if you can earn more money doing a different thing that is
 unskilled labor ... people will tend to move to the more lucrative profession"*). Unskilled ~13 sen a day is the floor;
-a skilled craftsman 20-40 sen (1.5-3x); a household servant is paid less in coin because board and lodging come with the
+a skilled craftsman 17-34 sen (1.3-2.6x the unskilled day: Osaka carpenters ~1.8x their helpers, a village carpenter 2.6x the farm rate, Beijing ~2x; diagram 0275); a household servant is paid less in coin because board and lodging come with the
 post. A price made by labor is at least the labor-days in it times the wage.
 **Rules**: skilled >= unskilled. Every craft good's price >= its labor share.
 
@@ -73,17 +73,19 @@ posted on a village board, and whether anyone but the lord could post: SILENT.
 
 ## Apples
 
-**Q4. Apples in season from a cart**: **about 1 sen for two to four** (an Apple Cart Donut costs less than a bowl of
-rice). Dearer out of season or in a capital. Japan's native apples were small; persimmons, pears and citrus were the
-common fruit (research requested: fruit prices).
+**Q4. Apples in season from a cart**: **2-6 sen for three** (about 1-2 sen an apple). No Japanese apple price survives
+(diagram 0272); a persimmon cost 6 mon in Kanto villages (~0.5 sen, so two for a sen), and the Qing court paid nearly
+four times as much for an apple as for a persimmon. Dearer out of season or in a capital. Japan's native apples were
+small and scarce; persimmons, pears and citrus were the common fruit.
 **Recipe** (food): staple rice at ~1 sen a meal is the anchor; fresh produce in season is cheap, prepared food adds
 labor; anything carried far or out of season costs more.
 
 ## Offerings
 
-**Q5. Otsuki's salt bag** (undyed hemp, lined with shrine paper, filled with salt): **3-5 sen** - a cup of salt 1-2
-(the Imperial salt monopoly keeps salt above its cost), a small hemp bag 1-2, a sheet of shrine paper about 1, often
-given rather than sold. He is out about a third of a laborer's day per bag: nothing to a monk with a temple behind him
+**Q5. Otsuki's salt bag** (undyed hemp, lined with shrine paper, filled with salt): **3-5 sen** - a cup of salt 1
+(0.5-0.9 sen at inland prices, 4-7 sen a sho; diagram 0273; the Imperial salt monopoly keeps salt above its cost), a small hemp bag 1-2, a sheet of shrine paper about 1, often
+given rather than sold (no price for hemp by the *tan* or for one amulet survives, diagram 0274: an Ise priest's 1813 round
+took ~0.02 ryo a household for the talisman, the calendar and gifts together). He is out about a third of a laborer's day per bag: nothing to a monk with a temple behind him
 for one, real money if he hands out dozens.
 **Recipe** (religious goods): materials and labor, plus a donation that is customary rather than priced.
 **Rule**: the bag >= its salt, bag and paper.
