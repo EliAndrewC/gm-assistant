@@ -11,7 +11,11 @@ row's `notes`, and point `source` at its public URL. The diagram repository stil
 [Project Gutenberg #69487](https://www.gutenberg.org/ebooks/69487) (plain text: `.../ebooks/69487.txt.utf-8`), from
 Internet Archive scans; a second scan is in the Wellcome Collection. Late Regency, pre-industrial household practice, a
 decade after Austen. Its servant wages are in the ledger (label `comparative`, tag `complete-servant`), converted at
-the Austen sheet's 1 GBP = 145 sen. Diagram issue [#2](https://github.com/EliAndrewC/diagram/issues/2) archives it and checks them.
+the Austen sheet's 1 GBP = 145 sen, citing diagram's checked questions:
+[0252](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0252-what-did-a-regency-english-household-pay-its-servants.html) (wages by post),
+[0253](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0253-how-did-a-regency-english-household-divide-its-income.html) (the income division and servants by income),
+[0254](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0254-what-did-provisions-and-household-goods-cost-in-regency-england.html) (provisions: mostly SILENT; post-chaise hire, gold and silver, the book's price).
+The wages are cash on top of board, lodging, livery and perquisites; the book gives no London-country split.
 
 **How a large income is divided** (the book's rule, "in round numbers", for a gentleman's net income): one-third
 household expenses and provisions; one-quarter servants and equipage (horses, carriages, liveries); one-quarter clothes,
