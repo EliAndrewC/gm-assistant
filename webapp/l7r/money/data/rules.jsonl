@@ -8,7 +8,7 @@
 {"rule": "a fine arrow costs at least an ordinary one", "row": "arrow-fine", "at_least": [["arrow-war", 1]], "why": ""}
 {"rule": "a wanted poster costs at least its paper", "row": "wanted-poster", "at_least": [["paper-large-sheet", 1]], "why": ""}
 {"rule": "Otsuki's bag costs at least its salt, bag and paper", "row": "otsuki-salt-bag", "at_least": [["salt-cup", 1], ["hemp-bag-small", 1], ["paper-sheet-shrine", 1]], "why": ""}
-{"rule": "a kimono length of cotton costs at least 12 m of cotton", "row": "cloth-cotton-kimono-length", "at_least": [["cloth-cotton-m", 12]], "why": ""}
+{"rule": "a kimono length of cotton costs at least 10 m of cotton", "row": "cloth-cotton-kimono-length", "at_least": [["cloth-cotton-m", 10]], "why": "a tan is 9.85-10.6 m (diagram 0261)"}
 {"rule": "silk costs at least cotton", "row": "cloth-silk-kimono-length", "at_least": [["cloth-cotton-kimono-length", 1]], "why": ""}
 {"rule": "a plain cotton kimono costs at least its cloth", "row": "kimono-cotton", "at_least": [["cloth-cotton-kimono-length", 1]], "why": "the GM example: never less than the cloth it is made from"}
 {"rule": "a plain silk kimono costs at least its silk", "row": "kimono-silk", "at_least": [["cloth-silk-kimono-length", 1]], "why": "the GM example"}

@@ -15,3 +15,4 @@
 {"estimate": "E0049", "date": "2026-10-18", "reason": "The shrine builder's catalog prices (feature 216), set before the money skill existed; not this model's estimates (GM, 2026-10-18). Re-estimated with the skill."}
 {"estimate": "E0050", "date": "2026-10-18", "reason": "The shrine builder's catalog prices (feature 216), set before the money skill existed; not this model's estimates (GM, 2026-10-18). Re-estimated with the skill."}
 {"estimate": "E0051", "date": "2026-10-18", "reason": "The shrine builder's catalog prices (feature 216), set before the money skill existed; not this model's estimates (GM, 2026-10-18). Re-estimated with the skill."}
+{"estimate": "E0014", "date": "2026-10-19", "reason": "Logged as 50-100 sen, but the answer the skill gave (questions.md Q10) was 5-10 sen for a flask of two or three cups: a units slip in the log, not the model's estimate. Found when diagram#3 (0262) was graded."}

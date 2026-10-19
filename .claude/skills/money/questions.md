@@ -24,11 +24,13 @@ post. A price made by labor is at least the labor-days in it times the wage.
 ## Lodging
 
 **Q2. An inn night, room and board, and stabling a horse.**
-- Imperial Road inn, supper and breakfast: **7-13 sen** (half to one laborer-day; the Edo post-town *hatago* pattern,
-  research requested). Cheap lodging, floor space only, bring your own rice and pay for firewood: **2-3 sen**.
-  Waystations host officials on business, not paying travelers.
-- County town: **7-15 sen**. Provincial or capital city: **10-25 sen**, more at a good inn by the castle or a temple
-  district.
+- Imperial Road inn, supper and breakfast: **8-20 sen** (diagram 0259: a Tokaido *hatago* 120-200 mon, about one
+  laborer-day). Cheap lodging, floor space only, bring your own rice and pay for firewood: **2-5 sen** (a *kichin-yado*,
+  ~50 mon or less, a fifth of a hatago). Waystations host officials on business, not paying travelers.
+- County town: **8-13 sen** (Tsu, 1790: 130 mon). Provincial or capital city: **10-25 sen**, more at a good inn by the
+  castle or a temple district (a big-city price is SILENT).
+- **Mon in sen**: the research quotes mon; convert through the laborer's day (132-200 mon, Kazusa 1842 and Edo), so
+  **1 sen is 10-15 mon**.
 - Stabling a horse: **12-20 sen** a night - its hay alone is ~10 sen (20 lb at 1 koku a ton), so a horse costs about as
   much to keep as a laborer earns. That is historically right, and why horses mark wealth.
 
@@ -38,8 +40,9 @@ meals and >= cheap lodging; a city inn >= a road inn; stabling >= the horse's fe
 ## Transport
 
 **Q6. Hiring a horse, cart and driver for a few days**: **35-55 sen a day** (driver 13-20, feed 10-15, wear and the
-owner's profit), and you pay the driver's days home as well. A three-day trip is about 2-3 bu with the return. Edo
-post stations set fixed per-ri rates for pack horses and porters (research requested).
+owner's profit), and you pay the driver's days home as well. A three-day trip is about 2-3 bu with the return. A
+day hire is SILENT (0260). Post stations charged per stage: a pack horse ~27-30 mon a ri in 1665, ~67 with the 1820s
+surcharges (**about 4-7 sen a ri**), a porter ~13 mon (**about 1 sen**); private fares ran about twice the official.
 **Recipe**: driver's wage + the animal's keep + wear + return trip. **Rule**: >= driver's wage + horse feed.
 
 ## Arrows
@@ -97,24 +100,26 @@ letting at ~10% a year is 2-6 zeni a week; remote and off season, the low end; a
 ## Clothing
 
 **Q8. Ten plain kimono for low-to-mid ranking samurai**, simply dyed in clan colors, no mon or embroidery:
-- Cotton, the cloth alone: **~3 bu a kimono** - from our own basket: Kyoto cotton cloth at 5.83 g silver a meter is
-  ~26 sen, and a kimono takes one *tan*, ~12 m of narrow cloth. Dyed and sewn: **3.5-4.5 bu**. **Ten: 3.5-4.5 koku.**
-- Plain silk or pongee, as a mid-rank samurai would wear: **1.3-3.3 koku each; ten: 13-33 koku.**
-- Against a Rank 3 stipend of 9 koku, ten cotton kimono are five months of it: clothing is expensive, as the GM
-  remembers. Most commoners and poor samurai bought used clothes (research requested: cloth by the *tan*, new and used
-  kimono, tailoring).
+- Cotton, the cloth alone: **65-145 sen a kimono** - one *tan* (~36 cm by ~10 m) cost 4-9 monme of silver in Ako,
+  1781-90, 5-11 laborer-days (diagram 0261). Dyed and sewn: **110-290 sen**. **Ten: 1.1-2.9 koku.** (The first answer,
+  3.5-4.5 koku, used Bassino and Ma's Osaka 1840s cloth price, 2-5x Ako's.)
+- Plain silk, as a mid-rank samurai would wear: **4.5-10.5 bu each; ten: 4.5-10.5 koku.** Silk ran ~3-7x cotton; the
+  one Japanese price is from fiction (habutae 45 monme a tan, 1692).
+- Against a Rank 3 stipend of 9 koku, ten cotton kimono are two to four months of it: clothing is expensive, as the GM
+  remembers. Most commoners and poor samurai bought used clothes (used clothing and tailoring: SILENT).
 
-**Q9. Silk sheets**: **2.5-6 koku a set** (about two kimono lengths of silk). Worth a thief's trouble and a magistrate's
+**Q9. Silk sheets**: **0.85-2 koku a set** (about two kimono lengths of silk). Worth a thief's trouble and a magistrate's
 attention.
 **Recipe** (cloth and clothing): fiber -> cloth by the *tan* -> dyeing -> sewing. Silk is several times cotton; hemp
 below cotton. **Rules**: a kimono >= its cloth (the GM's example); silk >= cotton; sheets >= their silk.
 
 ## Drink
 
-**Q10. Sake.** Ordinary sake from a brewer or shop: **1-2 sen a cup** (one *go*, 180 ml); in a tavern, warmed: **2-4
-sen**; a flask of two or three cups, **5-10 sen**; good sake 2-3x. A night for six with snacks, ~15-20 cups: **4-8
-zeni**. The tavern markup is ~1.5-2x, not a modern bar's 4-5x, because labor and rent are cheap (research requested:
-Edo sake prices retail and in taverns).
+**Q10. Sake.** Ordinary sake from a brewer or shop: **1-3 sen a cup** (one *go*, 180 ml; diagram 0262: Kazusa 1842,
+100 mon a sho of local sake against a man's day of 132 mon); in a tavern, warmed: **2-4 sen** (Edo 8-24 mon, a soba shop
+40); a flask of two or three cups, **5-10 sen**; good sake 2-3x. A night for six with snacks, ~15-20 cups: **4-8
+zeni**. The tavern markup is ~1.5-2x, not a modern bar's 4-5x, because labor and rent are cheap (Japan's markup is
+SILENT; Qing bought wine ran ~2x home-brew).
 **Recipe**: retail price + the tavern's labor, warming and rent. **Rules**: tavern >= retail; an evening >= its cups.
 
 ## Entertainment
