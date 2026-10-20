@@ -57,11 +57,11 @@ The above numbers all talk about households who work plots of land.  We occasion
 
 -> The land is taxed at 1/3 of the estimated production.  This is a set amount, such as 5 koku per year, rather than 1/3 of whatever happens to be grown this year.  Thus, farmers who produce more food get to keep all of the excess for themselves.
 
--> When land is owned by landlords and worked by tenant farmers, the rent is 1/6 the total value of the land.  This means that rent and taxes add up to 1/2 the value produced.
+-> When land is owned by landlords and worked by tenant farmers, the rent is 1/6 of what the land is expected to produce in a year.  This means that rent and taxes add up to 1/2 the value produced.
 
 -> Crucially, taxes are paid by the landowner regardless of what they have been able to collect from the tenant farmers.  If the year is so bad that little could be collected, the full tax amount is still owed.
 
-Remember that 1 koku is "the amount of rice needed to feed someone for a year" (about 40 gallons).  This doesn't make up all of a human's nutritional needs, or account for costs of living other than food, so someone is generally assumed to "need" about 2 koku/year to meet the bare minimum.  The above numbers mean that an "average" family of 5 only has 7.5 koku/year, which means that they must provide for themselves in non-farming ways as well, e.g. making their own clothes, spinning their own rope, etc.
+Remember that 1 koku is "the amount of rice needed to feed someone for a year" (about 40 imperial gallons, or 180 liters).  This doesn't make up all of a human's nutritional needs, or account for costs of living other than food, so someone is generally assumed to "need" about 2 koku/year to meet the bare minimum.  The above numbers mean that an "average" family of 5 only has 7.5 koku/year, which means that they must provide for themselves in non-farming ways as well, e.g. making their own clothes, spinning their own rope, etc.
 
 Dynamic family sizes and farm plots:
 
