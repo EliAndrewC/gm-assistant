@@ -54,11 +54,11 @@ what is still open.
 
 | Issue | Questions | Status |
 |---|---|---|
-| [EliAndrewC/diagram#1](https://github.com/EliAndrewC/diagram/issues/1) | land price in years of yield; unskilled day wages; the koku of rice; the Kyoto basket (`requests/0001-foundations.md`) | open 2026-10-18 |
+| [EliAndrewC/diagram#1](https://github.com/EliAndrewC/diagram/issues/1) | land price in years of yield; unskilled day wages; the koku of rice; the Kyoto basket (`requests/0001-foundations.md`) | closed, answered by 0248-0251 |
 | [EliAndrewC/diagram#2](https://github.com/EliAndrewC/diagram/issues/2) | The Complete Servant (1825): archive it, check the servant wages already extracted into the ledger, add provision prices (`requests/0002-complete-servant.md`; `sources.md`) | closed 2026-10-19 |
 | [EliAndrewC/diagram#3](https://github.com/EliAndrewC/diagram/issues/3) | campaign costs I: inns and stabling, hired transport, cloth and kimono, sake (`requests/0003-...`; `questions.md`) | answered 2026-10-19 by 0259-0262: 11 graded or SILENT, E0014 withdrawn (units slip); inns, cheap lodging, cloth, kimono, silk and sake rows moved; copper-to-silver rate asked as a new question; closed |
 | [EliAndrewC/diagram#4](https://github.com/EliAndrewC/diagram/issues/4) | campaign costs II: arrows, notice boards and paper, rents, plays and entertainers (`requests/0004-...`; `questions.md`) | answered 2026-10-19 by 0263-0267 and 0190: 16 findings; weapons and entertainment recipes adjusted; rent at 3-6% of value; closed |
-| [EliAndrewC/diagram#5](https://github.com/EliAndrewC/diagram/issues/5) | campaign costs III: fruit, salt and small offerings, skilled day wages (`requests/0005-...`) | open 2026-10-18 |
+| [EliAndrewC/diagram#5](https://github.com/EliAndrewC/diagram/issues/5) | campaign costs III: fruit, salt and small offerings, skilled day wages (`requests/0005-...`) | closed 2026-10-19 by 0272-0275: 3 graded (apples from a Qing court price), the salt bag SILENT; skilled day 17-34 sen |
 | [EliAndrewC/diagram#6](https://github.com/EliAndrewC/diagram/issues/6) | PRIORITY: what a small forest shrine cost to build (`requests/0006-...`; estimates E0035-E0051) | answered 2026-10-19 by 0255-0258: E0052 graded (1.46x low), 15 SILENT; sanctuary re-priced; closed |
 | [EliAndrewC/diagram#7](https://github.com/EliAndrewC/diagram/issues/7) | the rest of the shrine builder's options (`requests/0007-...`; 84 `shrine catalog` estimates) | answered 2026-10-19 by 0268-0271: 3 graded, 28 SILENT; lanterns, pavilion, tall lantern and site line re-priced; reference 62.7, budget 80; closed |
 | [EliAndrewC/diagram#8](https://github.com/EliAndrewC/diagram/issues/8) | kitchen knives (E0156-E0158) and the copper-to-silver rate (`requests/0008-...`) | closed 2026-10-19 (0276-0277) |
