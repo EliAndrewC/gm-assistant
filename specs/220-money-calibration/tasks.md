@@ -7,4 +7,4 @@
 - [x] T005 Backfill: the 34 first answers to the twelve campaign questions as E0001-E0034, linked to diagram#3, #4 and the new #5 (FR-008)
 - [x] T006 `calibration.md`, SKILL.md answer path, package CLAUDE.md, research.md
 - [x] T007 `tests/test_money_calibration.py`, 100% coverage; gate
-- [ ] T008 Record findings as diagram#1-#5 answer; first calibration reading
+- [x] T008 Record findings as diagram#1-#8 answer; first calibration reading (26 graded, 2026-10-20)

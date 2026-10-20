@@ -18,4 +18,4 @@
 - [x] T013 Source vs synthesis rows (`id`), `derived:` sources, `rules.py` + `data/rules.jsonl` (21 rules), `check` and the gate fail on a broken rule
 - [x] T014 Synthesis rows for all twelve questions; `questions.md` with first answers by category and the recipes
 - [x] T015 Research requests diagram#3 and diagram#4, watched
-- [ ] T016 Take in diagram#1-#4 answers; replace guesses with cited figures; close each issue
+- [x] T016 Take in diagram#1-#8 answers; replace guesses with cited figures; close each issue (all closed 2026-10-19)
