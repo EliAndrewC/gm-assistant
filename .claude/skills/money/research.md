@@ -61,7 +61,8 @@ what is still open.
 | [EliAndrewC/diagram#5](https://github.com/EliAndrewC/diagram/issues/5) | campaign costs III: fruit, salt and small offerings, skilled day wages (`requests/0005-...`) | open 2026-10-18 |
 | [EliAndrewC/diagram#6](https://github.com/EliAndrewC/diagram/issues/6) | PRIORITY: what a small forest shrine cost to build (`requests/0006-...`; estimates E0035-E0051) | answered 2026-10-19 by 0255-0258: E0052 graded (1.46x low), 15 SILENT; sanctuary re-priced; closed |
 | [EliAndrewC/diagram#7](https://github.com/EliAndrewC/diagram/issues/7) | the rest of the shrine builder's options (`requests/0007-...`; 84 `shrine catalog` estimates) | answered 2026-10-19 by 0268-0271: 3 graded, 28 SILENT; lanterns, pavilion, tall lantern and site line re-priced; reference 62.7, budget 80; closed |
-| [EliAndrewC/diagram#8](https://github.com/EliAndrewC/diagram/issues/8) | kitchen knives (E0156-E0158) and the copper-to-silver rate (`requests/0008-...`) | open 2026-10-19, not urgent |
+| [EliAndrewC/diagram#8](https://github.com/EliAndrewC/diagram/issues/8) | kitchen knives (E0156-E0158) and the copper-to-silver rate (`requests/0008-...`) | closed 2026-10-19 (0276-0277) |
+| [EliAndrewC/diagram#10](https://github.com/EliAndrewC/diagram/issues/10) | the shrine builder's small lines #6 and #7 never asked (48 estimates; `requests/0009-...`) | open 2026-10-20, low priority |
 
 ## Next candidates (not yet asked)
 
