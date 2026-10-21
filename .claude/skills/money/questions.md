@@ -27,12 +27,12 @@ post. A price made by labor is at least the labor-days in it times the wage.
 - Imperial Road inn, supper and breakfast: **8-20 sen** (diagram 0259: a Tokaido *hatago* 120-200 mon, about one
   laborer-day). Cheap lodging, floor space only, bring your own rice and pay for firewood: **2-5 sen** (a *kichin-yado*,
   ~50 mon or less, a fifth of a hatago). Waystations host officials on business, not paying travelers.
-- County town: **8-13 sen** (Tsu, 1790: 130 mon). Provincial or capital city: **10-25 sen**, more at a good inn by the
-  castle or a temple district (a big-city price is SILENT).
+- County town: **8-13 sen** (Tsu, 1790: 130 mon). Provincial or capital city: **9-17 sen** (Morisada, 1837-53: Edo ~248 mon with two meals, Kyoto's lesser inns
+  200-250 mon, first-class 3 monme 5 bu; diagram 0259), more at a great house's inn by the castle.
 - **Mon in sen**: the research quotes mon; convert through the laborer's day (132-200 mon, Kazusa 1842 and Edo), so
   **1 sen is 10-15 mon**. Cross-checked by diagram 0277: on the Osaka market a monme of silver fetched 105-110 mon
   (1787-1854; ~95 in the later 1850s; the law's rate was ~67 from 1700), so Kazusa's 132-mon day is ~1.26 monme, beside
-  Kyoto's 0.92-1.08 monme laborer's day. Silver monme convert through the same day (~12 sen a monme in 1851).
+  Kyoto's 0.92-1.08 monme laborer's day. Silver monme convert through the same day (~12 sen a monme in 1851). Edo's own market (Oishi, 1781-1842; diagram 0277) ran ~5,900-6,900 mon a ryo, beside Osaka's.
 - Stabling a horse: **12-20 sen** a night - its hay alone is ~10 sen (20 lb at 1 koku a ton), so a horse costs about as
   much to keep as a laborer earns. That is historically right, and why horses mark wealth.
 
