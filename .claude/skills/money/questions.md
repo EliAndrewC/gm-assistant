@@ -180,6 +180,10 @@ dedication, the ground rite or the furnishings, so those stay as estimated. A pa
 relief panels 3 ryo each, base stones at least ~2 ryo 2 bu for a 6-shaku sanctuary (the site line now 1.5-2.6). A ryo is
 ~0.85 koku through the laborer's day (60 monme, 0.92 monme a day). Every other form, finish, metal furnishing and rite:
 SILENT.
+Diagram#10 (feature 408, 2026-10-21) asked the 48 small lines: Japan is SILENT or has only a nearest figure for all
+but the swept path (a 1704 road-sweeping crew, 7 laborer-days, inside 39-160 sen), so no shrine price moved. A
+woodcarver earned 3.6 monme a day, 1.4-2.4x a carpenter (row `wage-carver-day`, 45-80 sen). The Qing porter rates
+(0278) bracket the trail's 10 porter-days a load, so porterage stands.
 
 ## Tools
 
