@@ -12,6 +12,7 @@ than 3.10 (2026-10-03: `except A, B:` without parentheses broke every host Stop 
     python3 ~/.claude/hooks/issue_watch.py open EliAndrewC/character-sheet "title" < body.md
     python3 ~/.claude/hooks/issue_watch.py show EliAndrewC/character-sheet#12   # issue + thread
     python3 ~/.claude/hooks/issue_watch.py close EliAndrewC/character-sheet#12 "Verified live."
+    python3 ~/.claude/hooks/issue_watch.py edit EliAndrewC/character-sheet#12 "why" < body.md
     python3 ~/.claude/hooks/issue_watch.py status | stop [OWNER/REPO#N]
 
 An issue may be named as OWNER/REPO#N or by its URL. WORKING AN ISSUE MEANS WATCHING IT UNTIL IT
@@ -645,6 +646,31 @@ def close_issue(settings: Settings, key: str, note: str, gh: Github) -> str:
     return f'Closed {repo}#{number}.'
 
 
+def edit_issue(settings: Settings, key: str, args: list[str], body: str, gh: Github) -> str:
+    """Replace the issue's description (and its title, with `--title "..."`), then say so in a
+    comment. The comment is not optional: a watch reports comments, not edits to the description,
+    so without it the other side would never learn the question had changed."""
+    repo, number = parse_issue(key)
+    title = ''
+    if '--title' in args:
+        at = args.index('--title')
+        if at + 1 >= len(args):
+            raise Refused('edit: --title needs the new title after it.')
+        title, args = args[at + 1], args[:at] + args[at + 2 :]
+    if not body.strip():
+        raise Refused(
+            'edit: give the new description on stdin (`edit OWNER/REPO#N "why" < body.md`).'
+        )
+    change: dict[str, str] = {'body': sign(settings.agent, body)}
+    if title:
+        change['title'] = title
+    gh.call('PATCH', f'/repos/{repo}/issues/{number}', change)
+    why = ' '.join(args).strip()
+    said = 'Edited the description' + (' and the title' if title else '') + ' above.'
+    post(settings, f'{repo}#{number}', f'{said} {why}'.strip(), gh)
+    return f'Edited {repo}#{number}.'
+
+
 def open_issue(settings: Settings, repo: str, title: str, body: str, gh: Github) -> str:
     made = gh.call(
         'POST', f'/repos/{repo}/issues', {'title': title, 'body': sign(settings.agent, body)}
@@ -737,9 +763,9 @@ def main(
         if command in ('status', 'stop'):
             sid = _session(process)
             return 0, (status(sid) if command == 'status' else stop(sid, *rest[:1])), ''
-        if command not in ('start', 'post', 'open', 'show', 'close'):
+        if command not in ('start', 'post', 'open', 'show', 'close', 'edit'):
             raise Refused(
-                'commands: start | show | post | close | open | stop | status | install '
+                'commands: start | show | post | edit | close | open | stop | status | install '
                 '(see the docstring).'
             )
         root = root_of(cwd())
@@ -758,6 +784,8 @@ def main(
             done = close_issue(settings, rest[0], ' '.join(rest[1:]), gh)
             repo, number = parse_issue(rest[0])
             return 0, done + ' ' + stop(_session(process), f'{repo}#{number}'), ''
+        if command == 'edit' and rest:
+            return 0, edit_issue(settings, rest[0], rest[1:], stdin(), gh), ''
         if command == 'open' and len(rest) >= 2:
             made = open_issue(settings, rest[0], rest[1], stdin(), gh)
             key = made.split()[0]

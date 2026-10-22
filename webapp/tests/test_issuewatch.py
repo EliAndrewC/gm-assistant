@@ -610,6 +610,38 @@ class TestWorkingAnIssue:
             '**[gm-assistant]** Verified live.'
         )
 
+    def test_edit_replaces_the_description_and_says_so(self, repo: Path, gh: FakeGithub) -> None:
+        code, out, _ = run(['edit', KEY, 'The GM widened it.'], gh, repo, stdin='New questions.')
+        assert code == 0
+        assert out == f'Edited {KEY}.'
+        assert gh.issues[KEY]['body'].startswith('**[gm-assistant]** New questions.')
+        assert gh.issues[KEY]['title'] == 'Feature 214'
+        assert gh.issues[KEY]['comments'][-1]['body'].startswith(
+            '**[gm-assistant]** Edited the description above. The GM widened it.'
+        )
+
+    def test_edit_can_retitle(self, repo: Path, gh: FakeGithub) -> None:
+        run(['edit', KEY, '--title', 'Shipping'], gh, repo, stdin='Body.')
+        assert gh.issues[KEY]['title'] == 'Shipping'
+        assert gh.issues[KEY]['comments'][-1]['body'].startswith(
+            '**[gm-assistant]** Edited the description and the title above.'
+        )
+
+    @pytest.mark.parametrize(
+        ('argv', 'stdin', 'message'),
+        [
+            (['edit', KEY], '  ', 'give the new description on stdin'),
+            (['edit', KEY, '--title'], 'Body.', '--title needs the new title'),
+        ],
+    )
+    def test_edit_refusals(
+        self, repo: Path, gh: FakeGithub, argv: list[str], stdin: str, message: str
+    ) -> None:
+        code, _, err = run(argv, gh, repo, stdin=stdin)
+        assert code == 1
+        assert message in err
+        assert gh.issues[KEY]['body'] == 'the doc'
+
     def test_close_without_a_comment(self, repo: Path, gh: FakeGithub) -> None:
         run(['close', KEY], gh, repo)
         assert gh.issues[KEY]['comments'] == []
