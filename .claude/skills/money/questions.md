@@ -45,6 +45,12 @@ meals and >= cheap lodging; a city inn >= a road inn; stabling >= the horse's fe
 owner's profit), and you pay the driver's days home as well. A three-day trip is about 2-3 bu with the return. A
 day hire is SILENT (0260). Post stations charged per stage: a pack horse ~27-30 mon a ri in 1665, ~67 with the 1820s
 surcharges (**about 4-7 sen a ri**), a porter ~13 mon (**about 1 sen**); private fares ran about twice the official.
+**Freight** (goods, not a traveler's hire) ran well under those fares: a tax-rice pack horse beyond 5 ri paid 24 mon a ri
+for two bales (0281), and a Qing pack mule comes to ~2 sen a horse-load a ri (Cheng, 0280): **about 1.3-2.4 sen a
+horse-load (~120 kg) a ri**. Per 100 kg over 100 km (Cheng, late 1600s): river ~4-5 sen, cart ~17, pack mule ~46, porter
+~345; water ran about a tenth of pack carriage. Cheap heavy goods stay home (the Han rule: firewood is not sold beyond
+100 li, grain not beyond 1,000; 0281); a costly light good goes far, carriage adding a third (Wuyi tea to Canton, 0283)
+and the price 2.5-4x at the far end (brick tea at Lhasa, 0282).
 **Recipe**: driver's wage + the animal's keep + wear + return trip. **Rule**: >= driver's wage + horse feed.
 
 ## Arrows
@@ -206,14 +212,14 @@ premium. **Rules**: a knife >= half a skilled day; fine >= ordinary and >= two s
 | ordinary black | 1-2 sen | 5-8 sen | 1.5-2 zeni (1.1-1.6 laborer-days) | 4.5-7 bu |
 | Fox white, near the kilns | 2-5 sen | 1.1-2 zeni | 3.5-6 zeni | 1.1-1.9 koku |
 | Fox white, neighboring clans (Kakita, Etsuko) | 5 sen-1 zeni | 2-4 zeni | 6 zeni-1.1 bu | 2-3.5 koku |
-| Fox white, Ryoko Owari (~200 ri overland) | 2-5 zeni | 0.8-2 bu | 2.5-6 bu (12-30x black) | not carried |
+| Fox white, Ryoko Owari (~205 ri overland) | 1-3 zeni | 4 zeni-1.2 bu | 1.1-3.2 bu (6-18x black) | not carried |
 
 Black rests on Edo's 1842 bale prices (342-466 mon by grade) and Beijing's 1736 official list, which agree on a bale at
 1.1-1.6 laborer-days. Shrine-grade is 2-3x black: generic white ran ~2x black (Beijing), a famous white (Kumano, 1716)
 2.2-2.5x a local white; no Japanese black-against-white price survives. First guesses ran high (white 3-4x).
 Fox white is the Kumano of Rokugan (a famous white from a special oak, sold far away): in neighboring clans ~4-6x
-local black, as Kumano in Edo; carriage is ~0.5-1 sen a bale a ri by pack horse, plus a 15% tariff per border and a
-merchant's margin, so at Ryoko Owari (~205 ri overland) a bale is 2.5-6 bu. Ordinary charcoal is burned locally
+local black, as Kumano in Edo; carriage is ~0.15-0.3 sen a bale a ri by pack horse (Transport, freight), plus a 15%
+tariff per border and a merchant's margin, so at Ryoko Owari (~205 ri overland) a bale is 1.1-3.2 bu, 3-5x the kiln price. Ordinary charcoal is burned locally
 everywhere; only a temple's few bales travel that far (GM 2026-10-22; E0167-E0168, asked in diagram#12).
 A household brazier burns about a small bag a day or two; a bale lasts it two to four weeks of winter.
 A cartload of white charcoal is paid in gold by a merchant or a great shrine (the Fox Road footpads took one).
@@ -228,3 +234,6 @@ laborer-days.
 Adjusted 2026-10-22: the white premium cut from 3-4x to 2-3x black, and black's dealer margin read as the low end, because
 calibration showed "other: n=8, guesses run 1.57x high" (all eight are the charcoal estimates; white ran 2.2-2.6x high,
 black 1.3-1.6x high except the cartload, 0.76x).
+Adjusted 2026-10-22: long-haul carriage cut from 0.5-1 to 0.15-0.3 sen a bale a ri and the Ryoko Owari tier from 2.5-6
+bu to 1.1-3.2 bu a bale, because diagram 0280-0283 (feature 411) gave freight rates (tax rice 24 mon a horse-load a ri,
+Qing mule ~2 sen) a third to a sixth of the post-station fares the guess used; E0167-E0168 themselves are SILENT.

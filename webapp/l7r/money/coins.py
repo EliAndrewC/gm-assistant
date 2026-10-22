@@ -21,11 +21,15 @@ _PART = re.compile(r'\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*(koku|bu|zeni|sen)\b', re.
 def parse(text: str) -> int:
     """'3 koku 2 bu', '1.5 koku', '13 sen' -> sen. Raises ValueError on anything else."""
     pos, total, seen = 0, Decimal(0), False
+    bad = (
+        f'not an amount of koku/bu/zeni/sen: {text!r} '
+        '(every number needs its coin, e.g. "13 sen"; nothing found is "0 sen")'
+    )
     text = text.strip()
     while pos < len(text):
         m = _PART.match(text, pos)
         if not m:
-            raise ValueError(f'not an amount of koku/bu/zeni/sen: {text!r}')
+            raise ValueError(bad)
         try:
             number = Decimal(m.group(1).replace(',', ''))
         except InvalidOperation as exc:  # pragma: no cover - the regex admits only numbers
@@ -35,7 +39,7 @@ def parse(text: str) -> int:
         while pos < len(text) and text[pos] in ' ,+':
             pos += 1
     if not seen:
-        raise ValueError(f'not an amount of koku/bu/zeni/sen: {text!r}')
+        raise ValueError(bad)
     return int(total.quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
 

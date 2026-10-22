@@ -278,3 +278,9 @@ def test_cli_marks_source_and_synthesis_rows(capsys: pytest.CaptureFixture[str])
     assert (
         'stabling a horse for the night: 1 zeni 2 sen to 2 zeni per night  [guess (derived)]' in out
     )
+
+
+def test_parse_names_the_missing_coin() -> None:
+    # A SILENT finding typed as "--low 0" failed with no hint that a coin was missing.
+    with pytest.raises(ValueError, match='nothing found is "0 sen"'):
+        coins.parse('0')
