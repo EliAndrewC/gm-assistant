@@ -23,3 +23,11 @@
 {"rule": "a fine kitchen knife costs at least two skilled days", "row": "knife-kitchen-fine", "at_least": [["wage-skilled-day", 2]], "why": "a master's forging, grinding and polish"}
 {"rule": "a fine knife costs at least an ordinary one", "row": "knife-kitchen-fine", "at_least": [["knife-kitchen-ordinary", 1]], "why": ""}
 {"rule": "a set of three fine knives costs at least three fine knives", "row": "knife-set-fine", "at_least": [["knife-kitchen-fine", 3]], "why": ""}
+{"rule": "a bale of black charcoal costs at least 0.6 laborer-days", "row": "charcoal-bale", "at_least": [["wage-unskilled-day", 0.6]], "why": "cutting, burning and baling"}
+{"rule": "10 lb of black charcoal costs at least a quarter of a bale", "row": "charcoal-10lb", "at_least": [["charcoal-bale", 0.25]], "why": "a third of a bale by weight, sold small"}
+{"rule": "an ox-cart of black charcoal costs at least 20 bales", "row": "charcoal-cart", "at_least": [["charcoal-bale", 20]], "why": "33 bales, less the shop margin"}
+{"rule": "white charcoal costs at least twice black, by the bale", "row": "charcoal-white-bale", "at_least": [["charcoal-bale", 2]], "why": "lower yield, more labor, a specialist trade"}
+{"rule": "white charcoal costs at least twice black, by 10 lb", "row": "charcoal-white-10lb", "at_least": [["charcoal-10lb", 2]], "why": ""}
+{"rule": "white charcoal costs at least black, by the bag", "row": "charcoal-white-bag", "at_least": [["charcoal-bag", 1]], "why": ""}
+{"rule": "an ox-cart of white charcoal costs at least 20 of its bales", "row": "charcoal-white-cart", "at_least": [["charcoal-white-bale", 20]], "why": ""}
+{"rule": "10 lb of white charcoal costs at least a quarter of its bale", "row": "charcoal-white-10lb", "at_least": [["charcoal-white-bale", 0.25]], "why": ""}

@@ -63,6 +63,7 @@ what is still open.
 | [EliAndrewC/diagram#7](https://github.com/EliAndrewC/diagram/issues/7) | the rest of the shrine builder's options (`requests/0007-...`; 84 `shrine catalog` estimates) | answered 2026-10-19 by 0268-0271: 3 graded, 28 SILENT; lanterns, pavilion, tall lantern and site line re-priced; reference 62.7, budget 80; closed |
 | [EliAndrewC/diagram#8](https://github.com/EliAndrewC/diagram/issues/8) | kitchen knives (E0156-E0158) and the copper-to-silver rate (`requests/0008-...`) | closed 2026-10-19 (0276-0277) |
 | [EliAndrewC/diagram#10](https://github.com/EliAndrewC/diagram/issues/10) | the shrine builder's small lines #6 and #7 never asked (48 estimates; `requests/0009-...`) | closed 2026-10-21 (feature 408; new question 0278) |
+| [EliAndrewC/diagram#11](https://github.com/EliAndrewC/diagram/issues/11) | charcoal, ordinary black and fine white (E0159-E0166; `requests/0010-charcoal.md`) | open 2026-10-21 |
 
 ## Next candidates (not yet asked)
 

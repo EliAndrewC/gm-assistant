@@ -196,3 +196,23 @@ bought it, and a samurai's gift at the scale of *consideration* (bu). An ordinar
 maker (Sakai, Seki, Takefu, Tosa) survives.
 **Recipe** (worked metal): smith-days at the skilled rate + iron and steel + grinding and polish; a maker's name adds a
 premium. **Rules**: a knife >= half a skilled day; fine >= ordinary and >= two skilled days; a set >= its knives.
+
+## Fuel
+
+**Q14. Charcoal, ordinary and shrine-grade** (GM 2026-10-21; estimates E0159-E0166, all guesses, research asked).
+
+| | small bag (~1 kg) | 10 lb | bale (~15 kg) | ox-cart (~500 kg, wholesale) |
+|---|---|---|---|---|
+| ordinary black | 1-3 sen | 5-12 sen | 1-3 zeni (1-2.4 laborer-days) | 3-6.5 bu |
+| shrine-grade white | 3 sen-1 zeni | 1.5-4 zeni | 4.5 zeni-1.2 bu | 1-2.5 koku |
+
+A household brazier burns about a small bag a day or two; a bale lasts it two to four weeks of winter.
+A cartload of white charcoal is paid in gold by a merchant or a great shrine (the Fox Road footpads took one).
+**Canon**: shrine-grade white charcoal is a Fox Clan specialty from sacred oak under the Fox Ministry of Rites (ordinary
+charcoal under Revenue), odorless and nearly smokeless, at a premium throughout the Empire and worth counterfeiting
+(l7r.md, "The Fox Clan's economy"; the Kitsune Denhei bounty). Near Fox kilns, less; far away, add carriage.
+**Recipe** (black): laborer-days for cutting, a 3-5 day burn and baling (~0.6-1.1 a bale, the wood ~5x the charcoal's
+weight) + a day's carriage to town (3-7 sen a bale) + a dealer's 1.2-1.5x. **White**: ~10% yield and a specialist's
+hotter burn, about 3x the labor a kilo, sold at 3-4x. A cartload is 33 bales at the kiln price plus cart hire, no shop
+margin. **Rules**: white >= 2x black by the bale; 10 lb >= a quarter bale; a cartload >= 20 bales; a bale >= 0.6
+laborer-days.
