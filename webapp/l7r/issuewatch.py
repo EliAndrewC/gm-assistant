@@ -370,13 +370,16 @@ def look(gh: Github, key: str, seen: Watched, me: str) -> list[dict[str, str]]:
         url = str(data.get('html_url') or '')
         if seen.state and data.get('state') != seen.state:
             found.append(_item(key, f'issue {data.get("state")}', 'GitHub', url, ''))
+        text = str(data.get('body') or '')
+        mark = MARKER.search(text)
+        author = mark.group('agent') if mark else ''
         if seen.title and _digest(str(data.get('title'))) != seen.title:
             found.append(_item(key, 'title edited', 'someone', url, str(data.get('title'))))
-        if seen.body and _digest(str(data.get('body') or '')) != seen.body:
-            found.append(_item(key, 'description edited', 'someone', url, str(data.get('body'))))
+        if seen.body and _digest(text) != seen.body and author != me:
+            found.append(_item(key, 'description edited', author or 'someone', url, text))
         seen.state = str(data.get('state'))
         seen.title = _digest(str(data.get('title')))
-        seen.body = _digest(str(data.get('body') or ''))
+        seen.body = _digest(text)
     path = f'/repos/{repo}/issues/{number}/comments?per_page=100&since={seen.since}'
     comments = gh.call('GET', path, etag=seen.etags.get('comments', ''))
     if comments.status != 304:
@@ -647,9 +650,9 @@ def close_issue(settings: Settings, key: str, note: str, gh: Github) -> str:
 
 
 def edit_issue(settings: Settings, key: str, args: list[str], body: str, gh: Github) -> str:
-    """Replace the issue's description (and its title, with `--title "..."`), then say so in a
-    comment. The comment is not optional: a watch reports comments, not edits to the description,
-    so without it the other side would never learn the question had changed."""
+    """Replace the issue's description (and its title, with `--title "..."`), then post a comment
+    saying why. The other side's watch reports the edit itself; the comment carries the reason,
+    and a human reading the thread sees when the question changed."""
     repo, number = parse_issue(key)
     title = ''
     if '--title' in args:
@@ -669,6 +672,19 @@ def edit_issue(settings: Settings, key: str, args: list[str], body: str, gh: Git
     said = 'Edited the description' + (' and the title' if title else '') + ' above.'
     post(settings, f'{repo}#{number}', f'{said} {why}'.strip(), gh)
     return f'Edited {repo}#{number}.'
+
+
+def _absorb_own_edit(sid: str, key: str, gh: Github, me: str) -> None:
+    """Record this session's own edit as seen, so its watch does not report it back. A title
+    carries no author marker, so without this the session's own retitle came back as "title
+    edited by someone" (diagram#12, 2026-10-22). Anything else that arrived meanwhile is kept."""
+    if not exists(sid):
+        return
+    with locked(sid) as watch:
+        if watch is None or key not in watch.issues:
+            return
+        found = look(gh, key, watch.issues[key], me)
+        watch.pending.extend(f for f in found if f['kind'] != 'title edited')
 
 
 def open_issue(settings: Settings, repo: str, title: str, body: str, gh: Github) -> str:
@@ -785,7 +801,10 @@ def main(
             repo, number = parse_issue(rest[0])
             return 0, done + ' ' + stop(_session(process), f'{repo}#{number}'), ''
         if command == 'edit' and rest:
-            return 0, edit_issue(settings, rest[0], rest[1:], stdin(), gh), ''
+            done = edit_issue(settings, rest[0], rest[1:], stdin(), gh)
+            repo, number = parse_issue(rest[0])
+            _absorb_own_edit(_session(process), f'{repo}#{number}', gh, settings.agent)
+            return 0, done, ''
         if command == 'open' and len(rest) >= 2:
             made = open_issue(settings, rest[0], rest[1], stdin(), gh)
             key = made.split()[0]

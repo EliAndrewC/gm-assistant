@@ -620,6 +620,36 @@ class TestWorkingAnIssue:
             '**[gm-assistant]** Edited the description above. The GM widened it.'
         )
 
+    def test_own_edit_is_not_reported_back(self, repo: Path, gh: FakeGithub) -> None:
+        run(['start', KEY], gh, repo)
+        other(gh)
+        run(['edit', KEY, '--title', 'Shipping'], gh, repo, stdin='Body.')
+        with iw.locked('sid-1') as watch:
+            assert watch is not None
+            kinds = [p['kind'] for p in watch.pending]
+            iw.check(watch, iw.Github('t', gh), NOW + 100, force=True)
+            later = [p['kind'] for p in watch.pending]
+        assert kinds == ['comment']
+        assert later == ['comment']
+
+    def test_edit_without_a_watch(self, repo: Path, gh: FakeGithub) -> None:
+        assert run(['edit', KEY], gh, repo, stdin='Body.')[1] == f'Edited {KEY}.'
+
+    def test_edit_of_an_issue_this_session_does_not_watch(self, repo: Path, gh: FakeGithub) -> None:
+        gh.add_issue('EliAndrewC/character-sheet#13')
+        run(['start', 'EliAndrewC/character-sheet#13'], gh, repo)
+        assert run(['edit', KEY], gh, repo, stdin='Body.')[1] == f'Edited {KEY}.'
+
+    def test_another_agents_edit_names_it(self, repo: Path, gh: FakeGithub) -> None:
+        run(['start', KEY], gh, repo)
+        gh.issues[KEY]['body'] = iw.sign('diagram', 'New body.')
+        gh.issues[KEY]['title'] = 'Renamed'
+        with iw.locked('sid-1') as watch:
+            assert watch is not None
+            iw.check(watch, iw.Github('t', gh), NOW + 100, force=True)
+            got = {p['kind']: p['who'] for p in watch.pending}
+        assert got == {'title edited': 'someone', 'description edited': 'diagram'}
+
     def test_edit_can_retitle(self, repo: Path, gh: FakeGithub) -> None:
         run(['edit', KEY, '--title', 'Shipping'], gh, repo, stdin='Body.')
         assert gh.issues[KEY]['title'] == 'Shipping'
