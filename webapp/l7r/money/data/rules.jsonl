@@ -31,3 +31,11 @@
 {"rule": "white charcoal costs at least black, by the bag", "row": "charcoal-white-bag", "at_least": [["charcoal-bag", 1]], "why": ""}
 {"rule": "an ox-cart of white charcoal costs at least 20 of its bales", "row": "charcoal-white-cart", "at_least": [["charcoal-white-bale", 20]], "why": ""}
 {"rule": "10 lb of white charcoal costs at least a quarter of its bale", "row": "charcoal-white-10lb", "at_least": [["charcoal-white-bale", 0.25]], "why": ""}
+{"rule": "Fox white charcoal costs at least as much in a neighboring clan's lands as near the kilns (bag)", "row": "charcoal-white-regional-bag", "at_least": [["charcoal-white-bag", 1]], "why": "carriage and tariffs only add"}
+{"rule": "Fox white charcoal costs at least as much in a neighboring clan's lands as near the kilns (10lb)", "row": "charcoal-white-regional-10lb", "at_least": [["charcoal-white-10lb", 1]], "why": "carriage and tariffs only add"}
+{"rule": "Fox white charcoal costs at least as much in a neighboring clan's lands as near the kilns (bale)", "row": "charcoal-white-regional-bale", "at_least": [["charcoal-white-bale", 1]], "why": "carriage and tariffs only add"}
+{"rule": "Fox white charcoal costs at least as much in a neighboring clan's lands as near the kilns (cart)", "row": "charcoal-white-regional-cart", "at_least": [["charcoal-white-cart", 1]], "why": "carriage and tariffs only add"}
+{"rule": "Fox white charcoal costs at least as much in Ryoko Owari as in a neighboring clan's lands (bag)", "row": "charcoal-white-far-bag", "at_least": [["charcoal-white-regional-bag", 1]], "why": "carriage and tariffs only add"}
+{"rule": "Fox white charcoal costs at least as much in Ryoko Owari as in a neighboring clan's lands (10lb)", "row": "charcoal-white-far-10lb", "at_least": [["charcoal-white-regional-10lb", 1]], "why": "carriage and tariffs only add"}
+{"rule": "Fox white charcoal costs at least as much in Ryoko Owari as in a neighboring clan's lands (bale)", "row": "charcoal-white-far-bale", "at_least": [["charcoal-white-regional-bale", 1]], "why": "carriage and tariffs only add"}
+{"rule": "a cartload of Fox white charcoal delivered costs at least 20 of its bales", "row": "charcoal-white-regional-cart", "at_least": [["charcoal-white-regional-bale", 20]], "why": "carriage and tariffs only add"}

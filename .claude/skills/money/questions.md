@@ -204,11 +204,17 @@ premium. **Rules**: a knife >= half a skilled day; fine >= ordinary and >= two s
 | | small bag (~1 kg) | 10 lb | bale (~15 kg) | ox-cart (~500 kg, wholesale) |
 |---|---|---|---|---|
 | ordinary black | 1-2 sen | 5-8 sen | 1.5-2 zeni (1.1-1.6 laborer-days) | 4.5-7 bu |
-| shrine-grade white | 2-5 sen | 1.1-2 zeni | 3.5-6 zeni | 1.1-1.9 koku |
+| Fox white, near the kilns | 2-5 sen | 1.1-2 zeni | 3.5-6 zeni | 1.1-1.9 koku |
+| Fox white, neighboring clans (Kakita, Etsuko) | 5 sen-1 zeni | 2-4 zeni | 6 zeni-1.1 bu | 2-3.5 koku |
+| Fox white, Ryoko Owari (~200 ri overland) | 2-5 zeni | 0.8-2 bu | 2.5-6 bu (12-30x black) | not carried |
 
 Black rests on Edo's 1842 bale prices (342-466 mon by grade) and Beijing's 1736 official list, which agree on a bale at
 1.1-1.6 laborer-days. Shrine-grade is 2-3x black: generic white ran ~2x black (Beijing), a famous white (Kumano, 1716)
 2.2-2.5x a local white; no Japanese black-against-white price survives. First guesses ran high (white 3-4x).
+Fox white is the Kumano of Rokugan (a famous white from a special oak, sold far away): in neighboring clans ~4-6x
+local black, as Kumano in Edo; carriage is ~0.5-1 sen a bale a ri by pack horse, plus a 15% tariff per border and a
+merchant's margin, so at Ryoko Owari (~205 ri overland) a bale is 2.5-6 bu. Ordinary charcoal is burned locally
+everywhere; only a temple's few bales travel that far (GM 2026-10-22; E0167-E0168, asked in diagram#12).
 A household brazier burns about a small bag a day or two; a bale lasts it two to four weeks of winter.
 A cartload of white charcoal is paid in gold by a merchant or a great shrine (the Fox Road footpads took one).
 **Canon**: shrine-grade white charcoal is a Fox Clan specialty from sacred oak under the Fox Ministry of Rites (ordinary
