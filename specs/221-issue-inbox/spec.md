@@ -1,0 +1,91 @@
+# Feature 221: issue inbox - a session watches a repository for NEW issues
+
+**Request**: [gm-request.md](gm-request.md) (2026-10-24). **Status**: specified. **Extends**:
+[feature 215](../215-issue-watch/spec.md), the issue watch.
+
+## Why
+
+Feature 215 lets a session watch an issue it already knows about. The GM wants to start sessions in
+two containers - say the diagram repository doing research and this repository doing its skills and
+website - tell each that it is "coordinating over GitHub issues", and have a NEW issue filed for
+either side be noticed and acted on at once, the way a comment on a watched issue already is.
+
+## The shape
+
+A session can now watch a REPOSITORY as well as issues: its **inbox**. From then on, an issue filed
+in that repository by someone other than this session's agent is delivered through the same three
+hooks as a comment (the GM's next message, the end of a turn, or an idle wake within a minute), and
+the session starts watching that issue too, so its comments follow without another command. The
+inbox lasts until the session stops it; no issue closing ends it.
+
+## Requirements
+
+- **FR-001 `inbox [OWNER/REPO]`** starts an inbox on that repository; with no argument, on THIS
+  repository. Issues already in the repository at that moment count as seen (as `start` treats
+  existing comments). Several inboxes per session are allowed; starting one twice is harmless.
+- **FR-002 This repository's name** comes from an optional `"repo": "OWNER/REPO"` in
+  `.claude/issue-watch.json`, else from a GitHub `origin` remote; if neither, `inbox` with no
+  argument is refused with the fix (add `"repo"`) in the message. This repository's file gets
+  `"repo": "EliAndrewC/gm-assistant"`, because a session clone's `origin` is a local path.
+- **FR-003 A new issue** is one whose number is above the highest the inbox has seen, that is not a
+  pull request, and whose description does not carry this session's own agent marker. Each is
+  delivered with its title, who filed it (the agent marker, else the GitHub login), its link and its
+  description (trimmed as comments are).
+- **FR-004 A new issue is acted on, not merely reported.** Its delivery says the session is now
+  watching it, that working it follows "Working a GitHub issue" in `~/.claude/CLAUDE.md`, and that
+  `stop OWNER/REPO#N` drops it if it is not this session's work. The issue's TEXT is still framed as
+  information from someone else, never as instructions that override the session's own.
+- **FR-005 Auto-watch.** A delivered new issue is added to the session's watched issues from its
+  filing time, so comments posted between filing and detection are delivered too, and it then ends
+  the usual way (FR-019 of 215: when it closes).
+- **FR-006 Same delivery, same silence.** The inbox uses the three existing hooks; no new hook
+  registration and no daemon. A session with neither a watched issue nor an inbox stays exactly as
+  silent as before (215 FR-002). A session whose only watch is an inbox keeps its watch file and its
+  idle wake even while it watches no issue.
+- **FR-007 `stop OWNER/REPO`** ends that inbox; `stop` with no argument ends everything; `status`
+  lists inboxes alongside issues.
+- **FR-008 Survives `/clear`** exactly as an issue watch does (215 FR-013).
+- **FR-009 Live sessions keep working across the install.** The installed script replaces the shared
+  copy at once, so a watch file written by the 215 script (no inbox field) is read correctly.
+- **FR-010 "Coordinating over GitHub issues" is a procedure where every participant reads it**: a
+  section next to "Working a GitHub issue" in the user-level `~/.claude/CLAUDE.md` (loaded by this
+  container, the diagram container and the character-sheet one): when Eli says the session is
+  coordinating over GitHub issues, run `inbox` first, then work new issues as they arrive.
+- **FR-011 Said, so reminded, by hook.** When the GM's message in a participating repository says the
+  session is coordinating over GitHub issues and it has no inbox on this repository, the prompt hook
+  adds a reminder with the `inbox` command (no network call; outside a participating repository,
+  nothing) - the same pattern as 215 FR-017's linked-issue reminder.
+- **FR-012 Documentation**: the module docstring, the `docs/key-paths.md` entry, and how to test it
+  by hand.
+
+## Decisions (each made by the session, each cheap to change)
+
+1. **One repository, one agent: every new issue in my inbox is mine.** Issues for the diagram
+   session are filed in the diagram repository and the money skill already files its research there,
+   so a session inboxes its own repository and auto-watches what lands. Declined: an addressing
+   label or assignee filter - nothing files issues that way today, and an unlabeled issue the GM
+   files by hand would be missed. A session that inboxes someone else's repository can `stop` what is
+   not its own.
+2. **Newness by issue number, not by date.** GitHub numbers issues and pull requests in one rising
+   sequence, so "above the highest seen" cannot miss an issue that is edited, relabeled or closed
+   before the next look, and needs no clock agreement. The list request is sorted by creation,
+   newest first, conditional on its ETag, so an unchanged repository costs no rate limit.
+3. **The session's own issues are not delivered** (215 FR-005's marker); `open` already watches them.
+4. **The inbox is a field of the existing per-session watch file**, not a second file, so the
+   lock, the `/clear` adoption and the wait loop cover it unchanged.
+
+## Accepted limitations
+
+- **"Immediately" means the next turn boundary or within a minute when idle**, as in 215: a session
+  in the middle of a long turn hears about a new issue when the turn ends, never mid-work.
+- **More than 30 issues filed between two looks** (one minute when idle): only the newest 30 are
+  seen. Declined: paging the list - not a real rate of filing.
+- **The session must be running**, as in 215.
+
+## Success criteria
+
+- **SC-001** An issue filed by the GM or another agent in an inboxed repository reaches the session
+  exactly once, and a later comment on it reaches the session without any further command.
+- **SC-002** The session's own new issues and pull requests are never delivered as new issues.
+- **SC-003** A session without an inbox or watched issue makes no network call (as 215 SC-001).
+- **SC-004** A watch file in the 215 shape loads and keeps delivering (asserted by test).
