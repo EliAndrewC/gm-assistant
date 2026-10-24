@@ -28,7 +28,9 @@ follow. It is how two containers coordinate: each session inboxes its own reposi
 issue there is how the other side hands it work. "Coordinating over GitHub issues" in the
 user-level `~/.claude/CLAUDE.md` is the procedure; the GM saying so prompts a reminder. An inbox
 lasts until `stop`. Newness is by issue number (one rising sequence shared with pull requests,
-which are skipped), so an issue edited or closed before the next look is still seen.
+which are skipped), so an issue edited or closed before the next look is still seen. GitHub caches
+the issue list for up to a minute (`max-age=60`, measured 2026-10-24), so a new issue can take
+about two minutes to arrive.
 
 HOW ACTIVITY REACHES A SESSION - four hooks, all registered at user level, so all four run in
 every project and every container; each exits at once unless THIS session has started a watch:

@@ -103,6 +103,11 @@ inbox lasts until the session stops it; no issue closing ends it.
 - **"Immediately" means, for a busy session, a one-line notice within about a minute (FR-014),
   with the full text at the next turn boundary; an idle session is woken within a minute.** The
   session finishes the step it is on before acting, which keeps 215's "at an appropriate time".
+- **GitHub caches the issue list for up to 60 seconds** (`Cache-Control: max-age=60`, measured
+  2026-10-24 in the live check: an issue filed seconds before a look was missing from it, under the
+  same ETag, and present a minute later). So a new issue can take up to about two minutes to be
+  noticed: the cache plus the one-look-a-minute limit. Comments on a watched issue are read from
+  their own endpoint and were delivered at the next look in the 2026-10-24 check.
 - **More than 30 issues filed between two looks** (one minute when idle): only the newest 30 are
   seen. Declined: paging the list - not a real rate of filing.
 - **The session must be running**, as in 215.
