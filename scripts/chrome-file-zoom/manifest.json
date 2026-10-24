@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "File Zoom Memory",
+  "version": "1.0",
+  "description": "Remembers your zoom level for file:// pages, which Chrome otherwise resets on every new page.",
+  "permissions": ["tabs", "storage", "webNavigation"],
+  "background": { "service_worker": "background.js" }
+}
