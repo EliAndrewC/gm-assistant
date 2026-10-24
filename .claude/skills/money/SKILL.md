@@ -89,6 +89,12 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 
 ## Open for the GM
 
+- **Price ranges that show how much a good swung across periods** (GM 2026-10-24): when the ledger becomes a price list
+  on the site's Money section, each good keeps its narrow Rokugani range but also says whether its real-world price
+  was steady or swung across dynasties and periods, why (salt: how far the state monopoly reached and was enforced), and
+  links the research. Waiting on [diagram#15](https://github.com/EliAndrewC/diagram/issues/15) question 2; then a
+  per-row or per-class field for it in the ledger.
+
 - **The koku's rice mass: settled** ([diagram 0248](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0248-how-much-rice-was-a-koku.html)):
   180 L (48 US gallons), ~150 kg as brown rice; `l7r.md` and `budgets.md` now say so (GM, 2026-10-18). The sheet's
   151.5 kg and $552 stand.
