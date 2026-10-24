@@ -66,6 +66,22 @@ inbox lasts until the session stops it; no issue closing ends it.
   Nothing is written into their trees. Their tokens already write issues (diagram#12 and
   character-sheet#2 were worked through them).
 
+### Amendment - messages 2 and 3 (2026-10-24): a notice for a busy session
+
+- **FR-014 A one-line notice after a tool call.** A fourth hook, `hook notice` (PostToolUse), tells
+  a busy session that something arrived: one line per new issue (with its title) and per new
+  comment or other activity on a watched issue, each announced once. It says the items come in
+  full at the end of the turn, and that the session should finish the step it is on or reach a
+  stopping point, optionally acknowledging on the issue with `post` first. It does not deliver the
+  text; the end-of-turn delivery (215 FR-007) still does, so nothing is consumed by the notice.
+- **FR-015 It costs at most one look a minute.** Between looks the hook reads only the local watch
+  file; a look uses the same conditional requests (a 304 costs no rate limit). Like every hook
+  path it is silent unless the session has a watch, and silent on any failure.
+- **FR-016 Every GitHub request has a timeout** (`HTTP_TIMEOUT`, six seconds), so a hung
+  connection cannot stall a tool call or the idle wait. (Found while building FR-014: the constant
+  existed but was never passed to `urlopen`.)
+- **FR-017 Install registers the fourth hook**, idempotently, as FR-009 of 215 does for the others.
+
 ## Decisions (each made by the session, each cheap to change)
 
 1. **One repository, one agent: every new issue in my inbox is mine.** Issues for the diagram
@@ -84,12 +100,14 @@ inbox lasts until the session stops it; no issue closing ends it.
 
 ## Accepted limitations
 
-- **"Immediately" means the next turn boundary, or within a minute when idle.** The GM's 215
-  request asked that the hook "make sure that we are not interrupted ... that we do this at an
-  appropriate time", and this request asks for new issues "in addition to" the existing comment
-  watching, so a session in the middle of a long turn hears about a new issue when the turn ends,
-  never mid-work. An idle session - the coordination scenario's usual state - is woken within a
-  minute.
+- **"Immediately" means, for a busy session, a one-line notice within about a minute (FR-014),
+  with the full text at the next turn boundary; an idle session is woken within a minute.** The
+  session finishes the step it is on before acting, which keeps 215's "at an appropriate time".
+- **GitHub caches the issue list for up to 60 seconds** (`Cache-Control: max-age=60`, measured
+  2026-10-24 in the live check: an issue filed seconds before a look was missing from it, under the
+  same ETag, and present a minute later). So a new issue can take up to about two minutes to be
+  noticed: the cache plus the one-look-a-minute limit. Comments on a watched issue are read from
+  their own endpoint and were delivered at the next look in the 2026-10-24 check.
 - **More than 30 issues filed between two looks** (one minute when idle): only the newest 30 are
   seen. Declined: paging the list - not a real rate of filing.
 - **The session must be running**, as in 215.
@@ -115,3 +133,11 @@ inbox lasts until the session stops it; no issue closing ends it.
 - **Round 2 - FAITHFUL** (2026-10-24). Both changes confirmed, neither adds unrequested scope;
   FR-002's origin-following found to serve FR-013 rather than extend it. Its one nit - FR-013
   listed before FR-012 - is fixed.
+- **Round 3 (amendment, messages 2 and 3) - CHANGES REQUIRED, then fixed** (2026-10-24). FR-014 to
+  FR-017 found faithful: the one-minute limit is the approved proposal's own wording and does not
+  defeat "at least knows"; extending the notice to comments and other activity is inside what
+  message 3 approved; FR-016 (the unused timeout) is a precondition of a hook that runs after every
+  tool call. Two changes, both made: the "Immediately" limitation no longer says a busy session
+  hears nothing mid-turn, and this entry records that messages 2 and 3 REVERSED round 1's "offered,
+  not built (it would interrupt, which 215 ruled out)" - the GM wants the notice, and a notice that
+  forces nothing is not the interruption 215 ruled out.

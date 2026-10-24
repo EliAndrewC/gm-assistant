@@ -5,4 +5,6 @@
 - [x] T003 This repository's `"repo"`; diagram and character-sheet opt-in files confirmed on GitHub.
 - [x] T004 "Coordinating over GitHub issues" in `~/.claude/CLAUDE.md`; docstring; key-paths entry.
 - [x] T005 `make done` green; commit; push; `issue_watch.py install` and `install --check`.
-- [ ] T006 Live check: `inbox` in this session, an issue filed with no marker, the idle wake delivers it.
+- [x] T006 Live check (2026-10-24): `inbox` here; gm-assistant#1 filed by hand with no marker reached the session at turn end and was auto-watched; a plain comment on it then arrived with no command; closed.
+- [x] T007 Amendment (messages 2-3): `hook notice` (PostToolUse), the request timeout, its install; spec round 3.
+- [x] T008 Gate, push, install; live check (2026-10-24): gm-assistant#2, filed by hand, came as a one-line PostToolUse notice mid-turn, about 70 s after filing (GitHub list cache, then the next look); closed.
