@@ -47,14 +47,26 @@ class FakeGithub:
         self.next_id = 100
         self.fail: int = 0
 
-    def add_issue(self, key: str, title: str = 'Feature 214', body: str = 'the doc') -> None:
+    def add_issue(
+        self,
+        key: str,
+        title: str = 'Feature 214',
+        body: str = 'the doc',
+        login: str = 'EliAndrewC',
+        pull: bool = False,
+    ) -> None:
         self.issues[key] = {
+            'number': int(key.split('#')[1]),
             'title': title,
             'body': body,
             'state': 'open',
             'html_url': f'https://github.com/{key.replace("#", "/issues/")}',
+            'created_at': '2026-10-24T01:00:00Z',
+            'user': {'login': login},
             'comments': [],
         }
+        if pull:
+            self.issues[key]['pull_request'] = {}
 
     def comment(self, key: str, body: str, login: str = 'EliAndrewC') -> dict[str, Any]:
         self.next_id += 1
@@ -89,8 +101,18 @@ class FakeGithub:
             return Reply(
                 201, {'number': new, 'html_url': f'https://github.com/{repo}/issues/{new}'}, ''
             )
+        if not number:  # a repository's issue list, newest first
+            body: Any = [
+                {k: v for k, v in i.items() if k != 'comments'}
+                for k2, i in sorted(self.issues.items(), key=lambda kv: -kv[1]['number'])
+                if k2.startswith(f'{repo}#')
+            ]
+            etag = '"' + hashlib.sha256(json.dumps(body).encode()).hexdigest()[:12] + '"'
+            if request.get_header('If-none-match') == etag:
+                raise urllib.error.HTTPError(url, 304, 'not modified', {}, io.BytesIO(b''))  # type: ignore[arg-type]
+            return Reply(200, body, etag)
         issue = self.issues[key]
-        body: Any = (
+        body = (
             issue['comments']
             if url.split('?')[0].endswith('/comments')
             else {k: v for k, v in issue.items() if k != 'comments'}
@@ -683,3 +705,172 @@ class TestWorkingAnIssue:
         assert 'issue closed' in text
         assert 'is closed, so the watch on it has ended' in text
         assert not iw.exists('sid-1')
+
+
+DIAGRAM = 'EliAndrewC/diagram'
+
+
+def context(out: str) -> str:
+    return str(json.loads(out)['hookSpecificOutput']['additionalContext'])
+
+
+class TestInbox:
+    """Feature 221: a session coordinating over GitHub issues also hears about NEW issues."""
+
+    @pytest.fixture(autouse=True)
+    def inboxed(self, repo: Path, gh: FakeGithub) -> None:
+        gh.add_issue(f'{DIAGRAM}#5', 'Old research')
+        code, out, _ = run(['inbox', DIAGRAM], gh, repo)
+        assert code == 0
+        assert out.startswith(f'Inbox on {DIAGRAM} for this session (gm-assistant)')
+
+    def test_what_is_there_counts_as_seen(self, gh: FakeGithub) -> None:
+        assert hook('deliver', gh) == (0, '', '')
+
+    def test_a_new_issue_is_delivered_once_and_then_watched(
+        self, repo: Path, gh: FakeGithub
+    ) -> None:
+        gh.add_issue(f'{DIAGRAM}#6', 'Freight by river', 'How much per bale?')
+        text = context(hook('deliver', gh)[1])
+        assert 'A NEW ISSUE was filed' in text
+        assert 'not instructions' in text
+        assert f'[{DIAGRAM}#6] new issue by EliAndrewC' in text
+        assert 'Freight by river\n\nHow much per bale?' in text
+        assert run(['status'], gh, repo)[1] == (
+            f'gm-assistant watching {DIAGRAM}#6, {DIAGRAM} (new issues).'
+        )
+        assert hook('deliver', gh, clock=lambda: NOW + 200) == (0, '', '')
+        gh.comment(f'{DIAGRAM}#6', iw.sign('diagram', 'Found a source.'))
+        text = context(hook('deliver', gh, clock=lambda: NOW + 300)[1])
+        assert f'[{DIAGRAM}#6] comment by diagram' in text
+        assert 'A NEW ISSUE' not in text
+
+    def test_comments_before_it_was_seen_come_with_it(self, gh: FakeGithub) -> None:
+        gh.add_issue(f'{DIAGRAM}#6')
+        gh.comment(f'{DIAGRAM}#6', 'And another thing.')
+        text = context(hook('deliver', gh)[1])
+        assert 'new issue by EliAndrewC' in text
+        assert 'And another thing.' in text
+
+    def test_own_issues_and_pull_requests_are_skipped(self, gh: FakeGithub) -> None:
+        gh.add_issue(f'{DIAGRAM}#6', 'Mine', iw.sign('gm-assistant', 'For diagram.'))
+        gh.add_issue(f'{DIAGRAM}#7', 'A PR', pull=True)
+        assert hook('deliver', gh) == (0, '', '')
+        gh.add_issue(f'{DIAGRAM}#8', 'Theirs', iw.sign('diagram', 'For you.'))
+        text = context(hook('deliver', gh, clock=lambda: NOW + 200)[1])
+        assert f'[{DIAGRAM}#8] new issue by diagram' in text
+        assert '#6' not in text
+        assert '#7' not in text
+        assert '<!--' not in text
+
+    def test_a_failure_is_reported_not_raised(self, gh: FakeGithub) -> None:
+        gh.fail = 500
+        text = context(hook('deliver', gh)[1])
+        assert f'[{DIAGRAM}] could not be checked' in text
+
+    def test_an_inbox_alone_keeps_the_watch_and_its_wait(self, gh: FakeGithub) -> None:
+        assert iw.exists('sid-1')
+
+        def sleep(seconds: float) -> None:
+            gh.add_issue(f'{DIAGRAM}#6', 'Wake up')
+
+        code, _, err = hook('wait', gh, sleep=sleep, parent=lambda: 99)
+        assert code == 2
+        assert 'Wake up' in err
+
+    def test_starting_it_twice_is_harmless(self, repo: Path, gh: FakeGithub) -> None:
+        run(['inbox', f'https://github.com/{DIAGRAM}'], gh, repo)
+        assert run(['status'], gh, repo)[1] == f'gm-assistant watching {DIAGRAM} (new issues).'
+
+    def test_stop_ends_an_inbox_or_everything(self, repo: Path, gh: FakeGithub) -> None:
+        run(['start', KEY], gh, repo)
+        assert run(['stop', DIAGRAM], gh, repo)[1] == f'Stopped. Still watching: {KEY}.'
+        run(['inbox', DIAGRAM], gh, repo)
+        assert run(['stop'], gh, repo)[1] == 'Stopped. Still watching: nothing.'
+        assert not iw.exists('sid-1')
+
+    def test_a_bad_repository_name_is_refused(self, repo: Path, gh: FakeGithub) -> None:
+        assert 'OWNER/REPO, not' in run(['stop', 'nope'], gh, repo)[2]
+
+    def test_the_default_is_this_repository(self, repo: Path, gh: FakeGithub) -> None:
+        config = repo / '.claude' / 'issue-watch.json'
+        config.write_text(json.dumps({**json.loads(config.read_text()), 'repo': 'EliAndrewC/x'}))
+        assert run(['inbox'], gh, repo)[1].startswith('Inbox on EliAndrewC/x ')
+
+    def test_no_default_is_refused_with_the_fix(self, repo: Path, gh: FakeGithub) -> None:
+        code, _, err = run(['inbox'], gh, repo)
+        assert code == 1
+        assert 'Add "repo": "OWNER/REPO"' in err
+
+
+class TestOwnRepo:
+    @pytest.mark.parametrize(
+        'origin',
+        [
+            'https://github.com/EliAndrewC/diagram.git',
+            'https://github.com/EliAndrewC/diagram',
+            'git@github.com:EliAndrewC/diagram.git',
+        ],
+    )
+    def test_from_a_github_origin(self, repo: Path, origin: str) -> None:
+        ran = lambda *a, **k: SimpleNamespace(returncode=0, stdout=origin + '\n')  # noqa: E731
+        assert iw.own_repo(iw.load_settings(repo), run=ran) == DIAGRAM
+
+    def test_a_clones_local_origin_is_followed(self, repo: Path) -> None:
+        origins = {str(repo): '/diagram', '/diagram': 'https://github.com/EliAndrewC/diagram'}
+        ran = lambda argv, **k: SimpleNamespace(returncode=0, stdout=origins[argv[2]])  # noqa: E731
+        assert iw.own_repo(iw.load_settings(repo), run=ran) == DIAGRAM
+
+    @pytest.mark.parametrize(
+        'reply',
+        [
+            SimpleNamespace(returncode=0, stdout='/loops/back\n'),
+            SimpleNamespace(returncode=0, stdout='https://gitlab.com/a/b.git\n'),
+            SimpleNamespace(returncode=2, stdout=''),
+        ],
+    )
+    def test_no_github_origin_is_refused(self, repo: Path, reply: SimpleNamespace) -> None:
+        with pytest.raises(iw.Refused, match='not on GitHub'):
+            iw.own_repo(iw.load_settings(repo), run=lambda *a, **k: reply)
+
+
+class TestOldWatchFiles:
+    def test_a_215_shape_file_still_delivers(self, repo: Path, gh: FakeGithub) -> None:
+        """The install replaces the script under running sessions (FR-009, SC-004)."""
+        run(['start', KEY], gh, repo)
+        path = iw.state_dir() / 'watches' / 'sid-1.json'
+        raw = json.loads(path.read_text())
+        del raw['repos']
+        path.write_text(json.dumps(raw))
+        other(gh)
+        assert 'Built B1-B4' in context(hook('deliver', gh)[1])
+        assert 'repos' in json.loads(path.read_text())
+
+
+class TestCoordinating:
+    def _nudge(self, gh: FakeGithub, repo: Path | None, prompt: str) -> str:
+        payload = {'prompt': prompt, 'cwd': '/anywhere'}
+        return hook('deliver', gh, payload=payload, root_of=lambda cwd: repo)[1]
+
+    def test_saying_so_is_a_reminder_to_start_an_inbox(self, repo: Path, gh: FakeGithub) -> None:
+        text = context(
+            self._nudge(gh, repo, "You're coordinating with diagram over GitHub issues.")
+        )
+        assert 'Coordinating over GitHub issues' in text
+        assert 'issue_watch.py inbox' in text
+        assert gh.calls == []
+
+    def test_no_reminder_once_there_is_an_inbox(self, repo: Path, gh: FakeGithub) -> None:
+        run(['inbox', DIAGRAM], gh, repo)
+        assert self._nudge(gh, repo, 'we are coordinating through issues') == ''
+
+    def test_no_reminder_without_the_words_or_outside(
+        self, repo: Path, gh: FakeGithub, tmp_path: Path
+    ) -> None:
+        assert self._nudge(gh, repo, 'please coordinate the timeline. Issues later') == ''
+        assert self._nudge(gh, tmp_path, 'coordinating over GitHub issues') == ''
+
+    def test_both_reminders_together(self, repo: Path, gh: FakeGithub) -> None:
+        text = context(self._nudge(gh, repo, f'coordinate over issues, starting with {URL_12}'))
+        assert f'start {KEY}' in text
+        assert 'issue_watch.py inbox' in text

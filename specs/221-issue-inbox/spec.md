@@ -1,6 +1,6 @@
 # Feature 221: issue inbox - a session watches a repository for NEW issues
 
-**Request**: [gm-request.md](gm-request.md) (2026-10-24). **Status**: specified. **Extends**:
+**Request**: [gm-request.md](gm-request.md) (2026-10-24). **Status**: implemented. **Extends**:
 [feature 215](../215-issue-watch/spec.md), the issue watch.
 
 ## Why
@@ -24,9 +24,11 @@ inbox lasts until the session stops it; no issue closing ends it.
   repository. Issues already in the repository at that moment count as seen (as `start` treats
   existing comments). Several inboxes per session are allowed; starting one twice is harmless.
 - **FR-002 This repository's name** comes from an optional `"repo": "OWNER/REPO"` in
-  `.claude/issue-watch.json`, else from a GitHub `origin` remote; if neither, `inbox` with no
-  argument is refused with the fix (add `"repo"`) in the message. This repository's file gets
-  `"repo": "EliAndrewC/gm-assistant"`, because a session clone's `origin` is a local path.
+  `.claude/issue-watch.json`, else from a GitHub `origin` remote. A session clone's `origin` is its
+  main checkout's local path, so a local-path origin is followed to that checkout's origin (a few
+  hops at most). If no GitHub repository is found, `inbox` with no argument is refused with the fix
+  (add `"repo"`, or name the repository) in the message. This repository's file also gets
+  `"repo": "EliAndrewC/gm-assistant"`.
 - **FR-003 A new issue** is one whose number is above the highest the inbox has seen, that is not a
   pull request, and whose description does not carry this session's own agent marker. Each is
   delivered with its title, who filed it (the agent marker, else the GitHub login), its link and its
@@ -57,6 +59,12 @@ inbox lasts until the session stops it; no issue closing ends it.
   nothing) - the same pattern as 215 FR-017's linked-issue reminder.
 - **FR-012 Documentation**: the module docstring, the `docs/key-paths.md` entry, and how to test it
   by hand.
+- **FR-013 All three named projects take part.** The diagram and character-sheet repositories
+  already carry `.claude/issue-watch.json` from feature 215 (read from GitHub 2026-10-24: agents
+  `diagram` and `character-sheet`), so the tooling, the shared hooks and the user-level procedure
+  are all they need; FR-002's origin-following lets their clones `inbox` with no `"repo"` added.
+  Nothing is written into their trees. Their tokens already write issues (diagram#12 and
+  character-sheet#2 were worked through them).
 
 ## Decisions (each made by the session, each cheap to change)
 
@@ -76,8 +84,12 @@ inbox lasts until the session stops it; no issue closing ends it.
 
 ## Accepted limitations
 
-- **"Immediately" means the next turn boundary or within a minute when idle**, as in 215: a session
-  in the middle of a long turn hears about a new issue when the turn ends, never mid-work.
+- **"Immediately" means the next turn boundary, or within a minute when idle.** The GM's 215
+  request asked that the hook "make sure that we are not interrupted ... that we do this at an
+  appropriate time", and this request asks for new issues "in addition to" the existing comment
+  watching, so a session in the middle of a long turn hears about a new issue when the turn ends,
+  never mid-work. An idle session - the coordination scenario's usual state - is woken within a
+  minute.
 - **More than 30 issues filed between two looks** (one minute when idle): only the newest 30 are
   seen. Declined: paging the list - not a real rate of filing.
 - **The session must be running**, as in 215.
@@ -89,3 +101,17 @@ inbox lasts until the session stops it; no issue closing ends it.
 - **SC-002** The session's own new issues and pull requests are never delivered as new issues.
 - **SC-003** A session without an inbox or watched issue makes no network call (as 215 SC-001).
 - **SC-004** A watch file in the 215 shape loads and keeps delivering (asserted by test).
+
+## Review history
+
+- **Round 1 - CHANGES REQUIRED** (2026-10-24). Every clause carried; Decision 1 (auto-watch every
+  new issue, no addressing filter) and the pull-request and own-issue exclusions upheld as the
+  literal reading. Two changes: (1) the diagram project is a named participant and the spec never
+  made it one - now FR-013, after checking that diagram and character-sheet already carry opt-in
+  files, plus FR-002's origin-following so their clones need no `"repo"`; (2) the "immediately"
+  limitation now cites the GM's 215 words. The reviewer's aside - a one-line notice to a busy
+  session after each tool call - is offered to the GM, not built (it would interrupt, which 215
+  ruled out).
+- **Round 2 - FAITHFUL** (2026-10-24). Both changes confirmed, neither adds unrequested scope;
+  FR-002's origin-following found to serve FR-013 rather than extend it. Its one nit - FR-013
+  listed before FR-012 - is fixed.
