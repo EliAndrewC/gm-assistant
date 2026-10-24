@@ -46,6 +46,7 @@ class FakeGithub:
         self.calls: list[tuple[str, str]] = []
         self.next_id = 100
         self.fail: int = 0
+        self.timeouts: list[float | None] = []
 
     def add_issue(
         self,
@@ -81,7 +82,8 @@ class FakeGithub:
         self.issues[key]['comments'].append(made)
         return made
 
-    def __call__(self, request: urllib.request.Request) -> Reply:
+    def __call__(self, request: urllib.request.Request, timeout: float | None = None) -> Reply:
+        self.timeouts.append(timeout)
         url = request.full_url.removeprefix(iw.API)
         self.calls.append((request.get_method(), url))
         if self.fail:
@@ -537,7 +539,11 @@ class TestInstall:
         assert 'Stop wait hook not registered' in out
         code, out, _ = self._main(['install'], home)
         assert code == 0
-        assert 'UserPromptSubmit deliver, Stop stop, Stop wait' in out
+        assert 'UserPromptSubmit deliver, Stop stop, Stop wait, PostToolUse notice' in out
+        hooks = json.loads((home / '.claude' / 'settings.json').read_text())['hooks']
+        notice = hooks['PostToolUse'][-1]['hooks'][0]
+        assert 'issue_watch.py" hook notice' in notice['command']
+        assert 'asyncRewake' not in notice
         settings = json.loads((home / '.claude' / 'settings.json').read_text())
         assert settings['model'] == 'opus'
         assert settings['hooks']['Stop'][0]['hooks'][0]['command'] == 'bash memwatch-hook.sh wait'
@@ -874,3 +880,73 @@ class TestCoordinating:
         text = context(self._nudge(gh, repo, f'coordinate over issues, starting with {URL_12}'))
         assert f'start {KEY}' in text
         assert 'issue_watch.py inbox' in text
+
+
+class TestBusyNotice:
+    """Feature 221, FR-014/015: a busy session hears, in one line, that something arrived."""
+
+    @pytest.fixture(autouse=True)
+    def watching(self, repo: Path, gh: FakeGithub) -> None:
+        gh.add_issue(f'{DIAGRAM}#5')
+        run(['inbox', DIAGRAM], gh, repo)
+        run(['start', KEY], gh, repo)
+
+    def _notice(self, gh: FakeGithub, at: float, **payload: Any) -> str:
+        code, out, err = hook('notice', gh, clock=lambda: at, payload=payload)
+        assert (code, err) == (0, '')
+        return context(out) if out else ''
+
+    def test_one_line_per_item_once_and_the_text_still_comes_at_turn_end(
+        self, gh: FakeGithub
+    ) -> None:
+        gh.add_issue(f'{DIAGRAM}#6', 'Freight by river', 'A long description.')
+        other(gh)
+        text = self._notice(gh, NOW + 100)
+        assert f'- [{DIAGRAM}#6] new issue by EliAndrewC: Freight by river' in text
+        assert f'- [{KEY}] comment by character-sheet' in text
+        assert 'A long description.' not in text
+        assert 'Finish the step you are on' in text
+        assert self._notice(gh, NOW + 300) == ''  # announced once, even after a fresh look
+        full = json.loads(hook('stop', gh, clock=lambda: NOW + 301)[1])['reason']
+        assert 'A long description.' in full
+        assert 'Built B1-B4' in full
+
+    def test_at_most_one_look_a_minute(self, gh: FakeGithub) -> None:
+        assert self._notice(gh, NOW + 100) == ''
+        looked = len(gh.calls)
+        other(gh)
+        assert self._notice(gh, NOW + 100 + iw.NOTICE_SECONDS - 1) == ''
+        assert len(gh.calls) == looked
+        assert 'comment by character-sheet' in self._notice(gh, NOW + 100 + iw.NOTICE_SECONDS)
+
+    def test_after_a_delivery_new_items_are_noticed_again(self, gh: FakeGithub) -> None:
+        other(gh, 'first')
+        assert self._notice(gh, NOW + 100)
+        hook('deliver', gh, clock=lambda: NOW + 200)
+        other(gh, 'second')
+        assert 'comment by character-sheet' in self._notice(gh, NOW + 400)
+
+    def test_failures_are_silent_here(self, repo: Path, gh: FakeGithub) -> None:
+        gh.fail = 500
+        assert self._notice(gh, NOW + 100) == ''
+        (repo / 'secrets.ini').write_text('[github]\n')
+        assert self._notice(gh, NOW + 300) == ''
+        assert 'could not be checked' in json.loads(hook('stop', gh)[1])['reason']
+
+    def test_a_subagents_tool_call_gets_nothing(self, gh: FakeGithub) -> None:
+        other(gh)
+        assert self._notice(gh, NOW + 100, agent_id='a1') == ''
+        assert 'comment by' in self._notice(gh, NOW + 100)
+
+    def test_no_watch_no_output_no_call(self, gh: FakeGithub) -> None:
+        calls = len(gh.calls)
+        assert hook('notice', gh, sid='sid-other') == (0, '', '')
+        assert len(gh.calls) == calls
+
+    def test_a_gone_watch_takes_nothing(self) -> None:
+        assert iw._notice('nobody', FakeGithub(), NOW) == ''
+
+    def test_every_request_has_the_timeout(self, gh: FakeGithub) -> None:
+        other(gh)
+        self._notice(gh, NOW + 100)
+        assert set(gh.timeouts) == {iw.HTTP_TIMEOUT}
