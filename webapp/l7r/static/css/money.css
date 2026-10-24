@@ -1,0 +1,196 @@
+/* =========================================================================
+   Money (/money, /money/koku; feature 221)
+   The koku-worth playground: two readings up top, the basket as a table,
+   goods of the visitor's own below. Tokens come from l7r.css.
+   ========================================================================= */
+
+.money-crumb { margin: 0 0 0.3rem; font-size: 0.95rem; }
+.money-crumb a { color: var(--ink-faded); }
+
+.koku-form { padding-bottom: 0; }
+.koku-notes { padding-bottom: 3rem; }
+
+.koku-readings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin: 0.5rem 0 1.5rem;
+}
+@media (max-width: 700px) { .koku-readings { grid-template-columns: minmax(0, 1fr); } }
+
+.koku-reading {
+  padding: 1.1rem 1.3rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+}
+.koku-reading--goods { border-left: 4px solid var(--vermillion); }
+.koku-reading__label {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+}
+.koku-reading__value {
+  margin: 0.15rem 0 0.4rem;
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.koku-reading__gloss { margin: 0; color: var(--ink-soft); line-height: 1.45; }
+
+.koku-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.koku-control { display: flex; flex-direction: column; gap: 0.25rem; }
+.koku-control__label { font-size: 0.9rem; color: var(--ink-faded); }
+.koku-select, .koku-number, .koku-text {
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.3rem 0.45rem;
+}
+.koku-select:focus-visible, .koku-number:focus-visible, .koku-text:focus-visible,
+.koku-on:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.koku-reset { color: var(--vermillion-deep); padding-bottom: 0.35rem; }
+.koku-button {
+  font: inherit;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--vermillion);
+  background: var(--vermillion);
+  color: var(--paper-raised);
+  border-radius: 3px;
+}
+
+.koku-which { max-width: var(--reading-max); margin: 0 0 1rem; color: var(--ink-soft); }
+.koku-drivers { max-width: var(--reading-max); margin: 0 0 0.75rem; font-weight: 600; }
+.koku-custom__status { grid-column: 1 / -1; margin: 0; font-size: 0.9rem; color: var(--ink-faded); }
+.koku-text::placeholder { color: var(--ink-ghost); opacity: 0.6; font-style: italic; }
+.koku-sticky {
+  display: none;
+  position: sticky;
+  bottom: 0;
+  margin: 0;
+  padding: 0.55rem 1rem;
+  border-radius: 4px 4px 0 0;
+  background: var(--paper-raised);
+  border-top: 2px solid var(--vermillion);
+  box-shadow: 0 -2px 8px var(--shadow-ink);
+  font-size: 1.05rem;
+}
+.koku-sticky--shown { display: block; }
+.koku-sticky strong { font-family: var(--font-display); font-size: 1.3rem; }
+.koku-description, .koku-left-out { max-width: var(--reading-max); color: var(--ink-soft); margin: 0 0 0.75rem; }
+.koku-left-out { color: var(--vermillion-deep); }
+
+.koku-table-wrap { overflow-x: auto; margin: 0.5rem 0 2rem; }
+.koku-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.koku-table__caption {
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  padding-bottom: 0.5rem;
+}
+.koku-table th, .koku-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.6rem 0.75rem 0.6rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.koku-table thead th { font-weight: 600; font-size: 0.92rem; color: var(--ink-faded); }
+.koku-good { font-weight: normal; min-width: 13rem; }
+.koku-good__name { display: flex; gap: 0.45rem; align-items: baseline; font-weight: 600; }
+.koku-good__why { display: block; margin-top: 0.15rem; font-size: 0.9rem; color: var(--ink-faded); padding-left: 1.45rem; }
+.koku-qty { white-space: nowrap; }
+.koku-qty .koku-number { width: 5.5rem; }
+.koku-unit { color: var(--ink-faded); margin-left: 0.25rem; }
+.koku-then, .koku-now { min-width: 11rem; }
+.koku-subs { border: 0; margin: 0; padding: 0; min-width: 0; }
+.koku-sub { display: flex; gap: 0.4rem; align-items: baseline; margin-bottom: 0.35rem; }
+.koku-sub input { flex: none; }
+.koku-priced-as { display: block; font-size: 0.9rem; color: var(--ink-faded); }
+.koku-link { font-size: 0.9rem; }
+.koku-missing { color: var(--ink-ghost); font-style: italic; }
+.koku-share { white-space: nowrap; font-weight: 600; color: var(--ink); }
+.koku-price, .koku-label { white-space: nowrap; }
+.koku-table thead th { white-space: nowrap; }
+.koku-good { width: 24%; }
+.koku-row--off .koku-good__name, .koku-row--off .koku-price, .koku-row--off .koku-share { color: var(--ink-ghost); }
+
+/* Narrower than the five columns need: each good becomes a card, its cells labeled. */
+@media (max-width: 1000px) {
+  .koku-table, .koku-table tbody, .koku-table tr, .koku-table th, .koku-table td { display: block; }
+  .koku-table thead { display: none; }
+  .koku-table tr { padding: 0.75rem 0; border-bottom: 1px solid var(--hairline); }
+  .koku-table th, .koku-table td { border-bottom: 0; padding: 0.3rem 0; min-width: 0; width: auto; }
+  .koku-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.82rem;
+    color: var(--ink-faded);
+  }
+  .koku-good__why { padding-left: 0; }
+  .koku-table__caption { display: block; width: auto; }
+}
+
+.koku-label {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+  border-radius: 2px;
+  text-decoration: none;
+  border: 1px solid var(--hairline);
+  color: var(--ink-soft);
+}
+.koku-label--guess { border-color: var(--vermillion); color: var(--vermillion-deep); background: var(--vermillion-soft); }
+
+.koku-custom {
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 1rem 1.25rem 1.25rem;
+  margin: 0 0 2rem;
+}
+.koku-custom__legend { font-family: var(--font-display); font-size: 1.15rem; padding: 0 0.35rem; }
+.koku-custom__hint { margin: 0 0 0.9rem; color: var(--ink-soft); max-width: var(--reading-max); }
+.koku-custom__row {
+  padding: 0.75rem 0 0.25rem;
+  border-top: 1px solid var(--hairline);
+  display: grid;
+  grid-template-columns: minmax(9rem, 2fr) minmax(5rem, 1fr) repeat(3, minmax(6rem, 1fr));
+  gap: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+@media (max-width: 800px) { .koku-custom__row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.koku-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.koku-field__label { font-size: 0.85rem; color: var(--ink-faded); }
+.koku-field .koku-number, .koku-field .koku-text { width: 100%; box-sizing: border-box; }
+
+.koku-notes { max-width: var(--reading-max); margin-left: 0; }
+
+/* Landing */
+.money-tools { list-style: none; padding: 0 0 4rem; margin: 1rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem; }
+.money-tool {
+  display: block;
+  padding: 1.2rem 1.4rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-left: 4px solid var(--vermillion);
+  border-radius: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+.money-tool:hover, .money-tool:focus-visible { border-color: var(--vermillion); box-shadow: 0 2px 8px var(--shadow-ink); }
+.money-tool__name { margin: 0 0 0.35rem; font-family: var(--font-display); font-size: 1.3rem; }
+.money-tool__blurb { margin: 0 0 0.6rem; color: var(--ink-soft); line-height: 1.45; }
+.money-tool__open { color: var(--vermillion-deep); font-weight: 600; }

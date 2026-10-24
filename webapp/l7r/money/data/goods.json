@@ -1,0 +1,63 @@
+{
+  "_format": "One entry per good a basket may hold. `unit` is what quantities, silver prices and dollar prices are all counted in. `why` says what the good stands for and why a basket carries it (or the reason it was left out, for goods kept only for the playground). Sources and the full reasoning: specs/221-money-basket-and-section/research.md.",
+  "rice": {
+    "name": "Rice",
+    "unit": "kg",
+    "why": "The staple, and the money: a koku is a mass of it."
+  },
+  "soybeans": {
+    "name": "Soybeans",
+    "unit": "kg",
+    "why": "Stands in for the miso, soy sauce, tofu and natto made from them."
+  },
+  "beans": {
+    "name": "Beans",
+    "unit": "liter",
+    "why": "Beans other than soybeans, such as adzuki."
+  },
+  "barley-wheat": {
+    "name": "Barley and wheat",
+    "unit": "kg",
+    "why": "The second grain of a commoner's bowl."
+  },
+  "buckwheat-others": {
+    "name": "Buckwheat and millets",
+    "unit": "kg",
+    "why": "Buckwheat, foxtail, proso and barnyard millet, sorghum: the cheap grains."
+  },
+  "fish": {
+    "name": "Fish",
+    "unit": "kg",
+    "why": "The diet's animal protein."
+  },
+  "edible-oil": {
+    "name": "Cooking oil",
+    "unit": "liter",
+    "why": "Rapeseed oil, for cooking."
+  },
+  "cloth": {
+    "name": "Cloth",
+    "unit": "m",
+    "why": "Cotton cloth for clothing, by the length of a Japanese bolt's width."
+  },
+  "lamp-oil": {
+    "name": "Lamp oil",
+    "unit": "liter",
+    "why": "Rapeseed oil burned for light."
+  },
+  "salt": {
+    "name": "Salt",
+    "unit": "kg",
+    "why": "Needed to live, and to make miso, soy sauce and pickles."
+  },
+  "fuel": {
+    "name": "Fuel",
+    "unit": "million BTU",
+    "why": "Firewood for cooking and heat: 3 million BTU a year, the usual allowance in historians' subsistence baskets."
+  },
+  "housing": {
+    "name": "Housing",
+    "unit": "m² for a year",
+    "why": "A third of a small back-tenement room (about 10 m², 9 by 12 feet): one adult's share of a household's home."
+  }
+}

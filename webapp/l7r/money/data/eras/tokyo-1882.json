@@ -1,0 +1,23 @@
+{
+  "place": "Tokyo",
+  "years": "1882-1886",
+  "confidence": "Bassino & Ma's Table 3 retail prices (LTES) for basket A; no price for salt, fuel or housing, so the conversion uses basket A's goods only.",
+  "note": "Grams are of pure silver, at 25 g a yen as Bassino & Ma (after Allen).",
+  "coins": {
+    "yen": {"silver_g": 25.0, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "sen": {"silver_g": 0.25, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "A hundredth of a yen"},
+    "rin": {"silver_g": 0.025, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "A thousandth of a yen"}
+  },
+  "goods": {
+    "beans": {"silver_g": 1.01, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "soybeans": {"silver_g": 0.97, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "rice": {"silver_g": 1.5, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "barley-wheat": {"silver_g": 0.77, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "fish": {"silver_g": 2.19, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "buckwheat-others": {"silver_g": 0.62, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "edible-oil": {"silver_g": 5.62, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "cloth": {"silver_g": 3.07, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
+    "lamp-oil": {"silver_g": 1.79, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"}
+  },
+  "wage": {"silver_g_per_day": 4.5, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "An unskilled laborer's day, Tokyo 1882-86 (Table 3)"}
+}

@@ -56,6 +56,13 @@ PAGES = [
     # FR-048: a player whose grouped character has Commerce (Marshall / Asako Tadashi) sees the
     # ledger read-only. Needs the live sheet roster, so the local server needs the sheet token.
     ('shrines-commerce', '/shrines?form=himorogi&gm_roll_carpentry=40', COMMERCE_PLAYER),
+    ('money', '/money', False),
+    ('money-koku', '/money/koku', False),
+    (
+        'money-koku-variant',
+        '/money/koku?b=bassino-ma-a&s=2017-04&q_salt=7.3&c1=Sake|liter|20|2|12',
+        False,
+    ),
     ('auth-login', '/auth/login', False),
     ('terms', '/terms', False),
     ('privacy', '/privacy', False),

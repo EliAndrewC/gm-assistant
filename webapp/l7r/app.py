@@ -42,6 +42,14 @@ from l7r.auth_routes import AuthRoot, current_user, install_auth_tool
 from l7r.dreams import DreamScene, find_scene_by_slug, load_dream_scenes, render_markdown
 from l7r.fortunes import FORTUNES
 from l7r.jinja_env import build_environment
+from l7r.money import basket as money_basket
+from l7r.money import web as money_web
+from l7r.money.readings import (
+    LABORER_KOKU_YEAR,
+    load_wages,
+    resolve_koku_kg,
+    wage_dollars_per_koku,
+)
 from l7r.names import (
     GeneratedName,
     find_name_by_slug,
@@ -401,6 +409,37 @@ class Root:
                 and c.key not in design.voided
             ),
             **context,
+        )
+
+    # GET /money - the Money section (feature 221): a landing page listing its tools, and
+    # /money/koku, what a koku is worth by a basket of goods the visitor can change. Public, like
+    # Dreams: nothing on it is GM-only. The whole state is in the link (l7r/money/web.py).
+    @cherrypy.expose
+    def money(self, tool: str | None = None, **params: Any) -> bytes:
+        if tool is None:
+            return self._render('money_index.html', current_section='money')
+        if tool != 'koku':
+            return self._render_404()
+        model = money_basket.load()
+        wage = load_wages()[-1]
+        koku_kg, _ = resolve_koku_kg(None)
+        state = money_web.parse_state(model, params)
+        reading = money_web.state_reading(model, state, koku_kg)
+        return self._render(
+            'money_koku.html',
+            current_section='money',
+            body_class='page-money',
+            model=model,
+            state=state,
+            rows=money_web.rows(model, state),
+            reading=reading,
+            drivers=money_web.drivers(reading),
+            left_out=money_web.left_out(reading),
+            custom_status=money_web.custom_status(state, reading),
+            data_json=money_web.page_json(model, koku_kg, wage),
+            wage=wage,
+            wage_per_koku=wage_dollars_per_koku(wage),
+            laborer_koku_year=LABORER_KOKU_YEAR,
         )
 
     # GET /terms - public (linked from Discord OAuth consent screen)

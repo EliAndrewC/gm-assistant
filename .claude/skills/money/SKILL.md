@@ -1,6 +1,6 @@
 ---
 name: money
-description: What things cost in Rokugan and what a sum of money is worth - prices in the coins a buyer would actually hand over, each with its basis and how solid it is (historical / deliberate deviation / guess), plus two dollar readings of a koku (what it BUYS by purchasing power parity, and how big a DEAL it is). Research questions go to the diagram repository by GitHub issue.
+description: What things cost in Rokugan and what a sum of money is worth - prices in the coins a buyer would actually hand over, each with its basis and how solid it is (historical / deliberate deviation / guess), plus two dollar readings of a koku (goods dollars: what it BUYS, by a basket of goods; wage dollars: how much it MATTERS), and conversions of historical money (mon, monme, yen) into both and into Rokugani coin. Research questions go to the diagram repository by GitHub issue.
 argument-hint: <item or service> | <amount of koku/bu/zeni/sen> | <dollars>
 ---
 
@@ -18,14 +18,18 @@ in your session clone's `webapp/`, then commit and push (`calibration.md`).
 
 ```
 cd /gm-assistant/webapp && python3 -m l7r.money price sword          # ledger rows matching every word
-cd /gm-assistant/webapp && python3 -m l7r.money convert 3 koku 4 bu  # exact coins, koku, both dollar readings
-cd /gm-assistant/webapp && python3 -m l7r.money dollars 500          # dollars -> coin (add --big-deal)
-cd /gm-assistant/webapp && python3 -m l7r.money history              # dollars per koku, every basket snapshot
-cd /gm-assistant/webapp && python3 -m l7r.money check                # validate the ledger
+cd /gm-assistant/webapp && python3 -m l7r.money convert 3 koku 4 bu  # exact coins, koku, goods and wage dollars
+cd /gm-assistant/webapp && python3 -m l7r.money dollars 500          # dollars -> coin (add --wage-dollars)
+cd /gm-assistant/webapp && python3 -m l7r.money era 20 mon --era kyoto-1745  # historical money, three ways
+cd /gm-assistant/webapp && python3 -m l7r.money baskets              # dollars per koku, every basket
+cd /gm-assistant/webapp && python3 -m l7r.money history              # dollars per koku, every price snapshot
+cd /gm-assistant/webapp && python3 -m l7r.money check                # validate the ledger, baskets, snapshots, eras
 ```
 
-Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|<kg>`, `--snapshot YYYY-MM`, `--wage <dollars/hour>`,
-`--wage-date`. Every output prints the basis it used; quote it with the answer.
+Knobs on any command: `--basket standard|standard-no-housing|bassino-ma-a`, `--snapshot YYYY-MM`,
+`--koku-kg sheet-2017|budgets-brown|budgets-polished|<kg>`, `--wage <dollars/hour>`, `--wage-date`. Every output prints
+the basis it used; quote it with the answer. The same basket is a page anyone can play with: the toolkit's Money
+section, `/money/koku`.
 
 ## Coins and who uses them (canon: `setting/l7r.md` "Money")
 
@@ -44,8 +48,12 @@ Knobs on any command: `--koku-kg sheet-2017|budgets-brown|budgets-polished|<kg>`
 
 ## Two dollar readings of a koku - always give both, never mix them
 
-- **PPP dollars** (~$552 on the 2017 snapshot): what a koku BUYS. From a dated re-pricing of Bassino & Ma's Kyoto basket.
-- **"Big deal" dollars** (~$9,400 at $15/hour): how much a windfall, a debt or a loss MATTERS. One koku is 1/3.32 of an
+- **Goods dollars** (~$975 on the standard basket at 2026-10 prices; ~$543 without housing): what a koku BUYS. The
+  standard basket is Bassino & Ma's Kyoto basket plus salt, fuel and a share of a room (feature 221; housing is about
+  half of today's dollars, so name the no-housing figure when a sum is about food and goods). Until 2026-10 this was
+  "PPP dollars", ~$552 in 2017 prices on the food-only basket.
+- **Wage dollars** (~$9,400 at $15/hour; "big deal" dollars until feature 221): how much a windfall, a debt or a loss
+  MATTERS. One koku is 1/3.32 of an
   unskilled laborer's year, applied to a US unskilled full-time year. (The GM's table feel is ~$10,000.)
 - **Laborer-days** is the yardstick for consistency: a new price that takes an implausible number of days of unskilled
   work (about 13.3 sen a day) is wrong, whatever its dollar reading says.

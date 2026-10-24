@@ -1,7 +1,8 @@
 """Command line for the `/money` skill. Run from `webapp/`: `python3 -m l7r.money <command>`.
 
-Every dollar figure names what it rests on (the basket snapshot and koku mass, or the wage), so
-an answer pasted into a conversation carries its own basis.
+Every dollar figure names what it rests on (the basket, its price snapshot and the koku mass, or
+the wage), so an answer pasted into a conversation carries its own basis. The two readings are
+GOODS dollars (what a sum buys) and WAGE dollars (how much it matters; "big deal" until 221).
 """
 
 from __future__ import annotations
@@ -10,20 +11,19 @@ import argparse
 import datetime
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Protocol
 
+from l7r.money import basket as bk
+from l7r.money import bls, coins, conversions, ledger
 from l7r.money import calibration as cal
-from l7r.money import coins, ledger
 from l7r.money.readings import (
     LABORER_KOKU_YEAR,
-    Snapshot,
     Wage,
-    big_deal_per_koku,
     laborer_days,
-    load_snapshots,
     load_wages,
-    ppp_per_koku,
     resolve_koku_kg,
+    wage_dollars_per_koku,
 )
 from l7r.money.rules import load_rules, violations
 
@@ -41,23 +41,27 @@ class _Dated(Protocol):
 
 class _Basis:
     def __init__(self, args: argparse.Namespace) -> None:
-        snapshots = load_snapshots()
-        self.snapshot: Snapshot = _pick(snapshots, args.snapshot, 'snapshot')
+        self.model = bk.load()
+        self.basket = self.model.basket(args.basket)
+        self.snapshot = self.model.snapshot(args.snapshot)
         wage: Wage = _pick(load_wages(), args.wage_date, 'wage')
         if args.wage is not None:
             wage = Wage(wage.date, args.wage, wage.hours_per_year, 'given on the command line', '')
         self.wage = wage
         self.koku_kg, self.koku_label = resolve_koku_kg(args.koku_kg)
-        self.ppp = ppp_per_koku(self.snapshot, self.koku_kg)
-        self.big = big_deal_per_koku(self.wage)
+        self.reading = bk.reading(self.model, self.basket, self.snapshot, self.koku_kg)
+        self.ppp = self.reading.per_koku
+        self.big = wage_dollars_per_koku(self.wage)
 
     def lines(self) -> list[str]:
+        left = self.reading.left_out
+        unpriced = f'; unpriced at this date, so left out: {", ".join(left)}' if left else ''
         return [
-            f'  PPP basis: basket snapshot {self.snapshot.date}, '
-            f'priced by {self.snapshot.priced_by}; '
+            f'  Goods-dollar basis: {self.basket.name} basket at the {self.snapshot.date} '
+            f'snapshot (priced by {self.snapshot.priced_by}){unpriced}; '
             f'koku of rice = {self.koku_kg:.1f} kg [{self.koku_label}] '
             f'-> ${self.ppp:,.0f} per koku',
-            f'  "Big deal" basis: ${self.wage.hourly:.2f}/hour '
+            f'  Wage-dollar basis: ${self.wage.hourly:.2f}/hour '
             f'x {self.wage.hours_per_year:g} hours '
             f'({self.wage.date}) / {LABORER_KOKU_YEAR} koku per unskilled year '
             f'-> ${self.big:,.0f} per koku',
@@ -72,7 +76,7 @@ class _Basis:
 
         days = laborer_days(low), laborer_days(low if high is None else high)
         work = f'{days[0]:,.1f}' if days[0] == days[1] else f'{days[0]:,.1f} to {days[1]:,.1f}'
-        return f'PPP {span(self.ppp, 2)}; "big deal" {span(self.big, 0)}; {work} laborer-days'
+        return f'goods {span(self.ppp, 2)}; wage {span(self.big, 0)}; {work} laborer-days'
 
 
 def _pick[T: _Dated](items: Sequence[T], date: str | None, what: str) -> T:
@@ -98,9 +102,9 @@ def _convert(args: argparse.Namespace, basis: _Basis) -> None:
 
 
 def _dollars(args: argparse.Namespace, basis: _Basis) -> None:
-    per = basis.big if args.big_deal else basis.ppp
+    per = basis.big if args.wage_dollars else basis.ppp
     sen = round(args.dollars / per * 1000)
-    kind = '"big deal"' if args.big_deal else 'PPP'
+    kind = 'wage dollars' if args.wage_dollars else 'goods dollars'
     _say(f'${args.dollars:,.2f} ({kind}) = {coins.fmt(sen)} ({coins.everyday(sen)})')
     _say('\n'.join(basis.lines()))
 
@@ -132,13 +136,75 @@ def _price(args: argparse.Namespace, basis: _Basis) -> None:
 
 
 def _history(args: argparse.Namespace, basis: _Basis) -> None:
-    for snap in load_snapshots():
-        zeni = snap.zeni(basis.koku_kg)
+    for snap in basis.model.snapshots:
+        r = bk.reading(basis.model, basis.basket, snap, basis.koku_kg)
+        zeni = r.silver * 100 / (basis.koku_kg * basis.model.rice_ref)
+        left = f'; left out: {", ".join(r.left_out)}' if r.left_out else ''
         _say(
-            f'{snap.date}: basket ${snap.dollars:,.2f} = {zeni:.2f} zeni -> '
-            f'${ppp_per_koku(snap, basis.koku_kg):,.2f} per koku ({snap.priced_by})'
+            f'{snap.date}: basket ${r.dollars:,.2f} = {zeni:.2f} zeni -> '
+            f'${r.per_koku:,.2f} per koku ({snap.priced_by}){left}'
         )
-    _say(f'  koku of rice = {basis.koku_kg:.1f} kg [{basis.koku_label}]')
+    _say(
+        f'  {basis.basket.name} basket; koku of rice = {basis.koku_kg:.1f} kg [{basis.koku_label}]'
+    )
+
+
+def _baskets(args: argparse.Namespace, basis: _Basis) -> None:
+    for b in basis.model.baskets.values():
+        r = bk.reading(basis.model, b, basis.snapshot, basis.koku_kg)
+        left = f'; left out: {", ".join(r.left_out)}' if r.left_out else ''
+        _say(f'{b.id}: ${r.per_koku:,.2f} per koku ({b.name}){left}')
+    _say(f'  snapshot {basis.snapshot.date}; koku of rice = {basis.koku_kg:.1f} kg')
+
+
+def _reprice(args: argparse.Namespace, basis: _Basis) -> None:
+    series = {}
+    if not args.offline:  # pragma: no cover - the HTTP boundary; tests pass --offline
+        series = {s: bls.latest(bls.fetch(s))[1] for s in bls.SERIES}
+    path = bk.reprice(basis.model, args.date, series)
+    _say(f'wrote {path.name}: fill each blank price and link, then run `check`')
+
+
+def _crosscheck(args: argparse.Namespace, basis: _Basis) -> None:
+    csvs = {s: bls.fetch(s) for s in bls.SERIES}  # pragma: no cover - the HTTP boundary
+    _say('\n'.join(bls.crosscheck(basis.snapshot, csvs)))  # pragma: no cover
+
+
+def _era(args: argparse.Namespace, basis: _Basis) -> None:
+    era = basis.model.era(args.era)
+    c = bk.convert(
+        basis.model,
+        era,
+        args.amount,
+        args.unit,
+        basis.basket,
+        basis.snapshot,
+        basis.koku_kg,
+        basis.wage.day,
+    )
+    _say(f'{args.amount:g} {args.unit} ({era.title}) = {c.silver_g:,.3f} g of silver')
+    _say(
+        f'  goods ${c.goods_dollars:,.2f}; wage ${c.wage_dollars:,.2f}; '
+        f'in Rokugan {conversions.rokugani(c.rokugan_sen)}'
+    )
+    left = f' (left out: {", ".join(c.left_out)})' if c.left_out else ''
+    _say(
+        f'  basket: {basis.basket.name} at {basis.snapshot.date}, priced there on '
+        f'{c.coverage}{left}'
+    )
+    _say(
+        f"  wage: a laborer's {era.wage_g_per_day:g} g of silver a day there, against "
+        f'${basis.wage.day:,.2f} a US day ({basis.wage.date})'
+    )
+    if note := era.coins[args.unit].note:
+        _say(f'  coin: {note}')
+    _say(f'  confidence: {era.confidence}')
+
+
+def _export(args: argparse.Namespace, basis: _Basis) -> None:
+    data = conversions.table(basis.model, basis.basket, basis.snapshot, basis.koku_kg, basis.wage)
+    path = conversions.write(data, Path(args.out) if args.out else conversions.TABLE)
+    _say(f'wrote {path.name}: {len(data["eras"])} eras')
 
 
 def _check(args: argparse.Namespace, basis: _Basis) -> None:
@@ -146,10 +212,14 @@ def _check(args: argparse.Namespace, basis: _Basis) -> None:
     rules = load_rules()
     if broken := violations(rules, rows):
         raise SystemExit('broken consistency rules:\n  ' + '\n  '.join(broken))
+    if bad := bk.problems(basis.model):
+        raise SystemExit('baskets, snapshots and eras:\n  ' + '\n  '.join(bad))
     leads = sum(not r.verified for r in rows)
     _say(
         f'ledger ok: {len(rows)} rows, {len(rules)} consistency rules hold, '
-        f'{leads} rows still resting on leads or derivations'
+        f'{leads} rows still resting on leads or derivations; '
+        f'{len(basis.model.baskets)} baskets, {len(basis.model.snapshots)} snapshots and '
+        f'{len(basis.model.eras)} eras ok'
     )
 
 
@@ -172,6 +242,7 @@ def _estimate(args: argparse.Namespace, basis: _Basis) -> None:
         rows=tuple(r for r in (args.rows or '').split(',') if r),
         model={
             'snapshot': basis.snapshot.date,
+            'basket': basis.basket.id,
             'koku_kg': basis.koku_label,
             'wage': basis.wage.date,
             'laborer_koku_year': f'{LABORER_KOKU_YEAR:g}',
@@ -274,23 +345,42 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         '--koku-kg', help='sheet-2017 (default), budgets-brown, budgets-polished, or a number of kg'
     )
-    parser.add_argument('--snapshot', help='basket snapshot date (default: newest)')
+    parser.add_argument('--snapshot', help='price snapshot date (default: newest)')
+    parser.add_argument('--basket', help='basket id (default: standard); `baskets` lists them')
     parser.add_argument('--wage-date', help='wage reading date (default: newest)')
     parser.add_argument('--wage', type=float, help='override the hourly wage, in dollars')
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser(
-        'convert', help='an amount of coin -> exact coins, koku, both dollar readings'
+        'convert', help='an amount of coin -> exact coins, koku, goods and wage dollars'
     )
     p.add_argument('amount', nargs='+')
     p.set_defaults(run=_convert)
     p = sub.add_parser('dollars', help='dollars -> coin')
     p.add_argument('dollars', type=float)
-    p.add_argument('--big-deal', action='store_true', help='read the dollars as "big deal" dollars')
+    p.add_argument(
+        '--wage-dollars', action='store_true', help='read the dollars as wage dollars, not goods'
+    )
     p.set_defaults(run=_dollars)
     p = sub.add_parser('price', help='ledger rows matching every word')
     p.add_argument('words', nargs='+')
     p.set_defaults(run=_price)
     sub.add_parser('history', help='dollars per koku for every snapshot').set_defaults(run=_history)
+    sub.add_parser('baskets', help='dollars per koku for every basket').set_defaults(run=_baskets)
+    p = sub.add_parser('reprice', help='start the next dated price snapshot')
+    p.add_argument('date', help='YYYY-MM')
+    p.add_argument('--offline', action='store_true', help='leave BLS-tied prices blank too')
+    p.set_defaults(run=_reprice)
+    sub.add_parser(
+        'crosscheck', help="the snapshot's rice and beans against BLS averages"
+    ).set_defaults(run=_crosscheck)
+    p = sub.add_parser('era', help="an era's money -> goods dollars, wage dollars, Rokugani coin")
+    p.add_argument('amount', type=float)
+    p.add_argument('unit', help='a coin of the era, such as mon, monme, ryo or yen')
+    p.add_argument('--era', required=True, help='an era id, such as kyoto-1745')
+    p.set_defaults(run=_era)
+    p = sub.add_parser('export', help='write the conversion table diagram reads')
+    p.add_argument('--out', help='path (default: data/conversions.json)')
+    p.set_defaults(run=_export)
     sub.add_parser('check', help='validate the ledger').set_defaults(run=_check)
     p = sub.add_parser('estimate', help='log a new estimate (feature 220)')
     p.add_argument('--item', required=True)

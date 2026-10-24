@@ -1,0 +1,31 @@
+{% extends "_layout.html" %}
+
+{% block title %}L7R money{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ static_url('css/money.css') }}" />
+{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="masthead">
+    <div class="masthead__copy">
+      <h1 class="masthead__title">Money</h1>
+      <p class="masthead__lede">What things cost in Rokugan, and what a sum of money is worth.</p>
+    </div>
+    <span class="masthead__watermark" lang="ja" aria-hidden="true">金</span>
+  </div>
+</section>
+
+<section class="container">
+  <ul class="money-tools">
+    <li>
+      <a class="money-tool" href="/money/koku">
+        <h2 class="money-tool__name">What's a koku worth?</h2>
+        <p class="money-tool__blurb">The basket of goods behind a koku's dollar value. Switch goods in and out, change quantities and prices, and see what moves it.</p>
+        <span class="money-tool__open">Open the tool &rarr;</span>
+      </a>
+    </li>
+  </ul>
+</section>
+{% endblock %}

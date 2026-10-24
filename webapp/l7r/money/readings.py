@@ -1,21 +1,17 @@
-"""The two dollar readings of a koku: what it BUYS (PPP) and how much it MATTERS ("big deal").
+"""The koku's rice mass, the US wage readings, and the laborer's year (features 219, 221).
 
-PPP: a dated snapshot re-prices a historical basket of goods (Bassino & Ma's Japan Basket A,
-Kyoto 1745-54, in grams of silver) in current dollars. Silver becomes coin through rice: a koku
-is a mass of rice, so `zeni per gram of silver = 100 / (koku_kg x rice silver price per kg)`.
-Dollars per koku = basket dollars / basket zeni x 100.
+GOODS DOLLARS (what a koku BUYS) moved to `basket.py` in feature 221, which splits the basket, its
+dated dollar prices and the eras that price it in silver. This module keeps what both readings
+share.
 
-WHY RE-PRICE, NEVER CPI-SCALE (handoff, 2026-10-18): rice and beans move differently from the
-CPI, so scaling the 2017 figure would carry 2017's relative prices forward under a new date.
-Each re-pricing is a new `data/baskets/YYYY-MM.json`; old snapshots are never edited.
-
-THE KOKU'S RICE MASS IS AN INPUT, not a constant, so a snapshot can be read at other masses.
+THE KOKU'S RICE MASS IS AN INPUT, not a constant, so a reading can be taken at other masses.
 Settled by research (diagram 0248): a koku is 180.39 L and ~150 kg as brown rice; the canon's
 "about 40 gallons" holds in imperial gallons. The 2017 sheet's 151.515 kg (its 2.257575 g silver
 per zeni is 1.49 g/kg x 151.515 kg / 100) therefore stands. Declined: hard-coding 2.257575, which
 would hide the mass inside a constant.
 
-"BIG DEAL": one koku is 1/3.32 of an unskilled laborer's year (the 2017 sheet, from Bassino &
+WAGE DOLLARS (how much a sum MATTERS; "big deal" dollars until feature 221 renamed them, GM
+2026-10-24): one koku is 1/3.32 of an unskilled laborer's year (the 2017 sheet, from Bassino &
 Ma's ~2 kg rice/day), applied to a dated US unskilled full-time year. Declined: asserting the
 GM's table figure of ~$10,000 - derived, it moves with the wage. Updating = re-taking the wage.
 """
@@ -30,15 +26,12 @@ __all__ = [
     'DATA',
     'KOKU_KG',
     'LABORER_KOKU_YEAR',
-    'Good',
-    'Snapshot',
+    'WORKING_DAYS',
     'Wage',
-    'big_deal_per_koku',
     'laborer_days',
-    'load_snapshots',
     'load_wages',
-    'ppp_per_koku',
     'resolve_koku_kg',
+    'wage_dollars_per_koku',
 ]
 
 DATA = Path(__file__).parent / 'data'
@@ -69,36 +62,6 @@ def laborer_days(sen: int) -> float:
 
 
 @dataclass(frozen=True, slots=True)
-class Good:
-    good: str
-    unit: str
-    quantity: float
-    silver_g_per_unit: float
-    dollars_per_unit: float
-    link: str
-
-
-@dataclass(frozen=True, slots=True)
-class Snapshot:
-    date: str
-    priced_by: str
-    source: str
-    rice_silver_g_per_kg: float
-    goods: tuple[Good, ...]
-
-    @property
-    def dollars(self) -> float:
-        return sum(g.quantity * g.dollars_per_unit for g in self.goods)
-
-    @property
-    def silver_g(self) -> float:
-        return sum(g.quantity * g.silver_g_per_unit for g in self.goods)
-
-    def zeni(self, koku_kg: float) -> float:
-        return self.silver_g * 100 / (koku_kg * self.rice_silver_g_per_kg)
-
-
-@dataclass(frozen=True, slots=True)
 class Wage:
     date: str
     hourly: float
@@ -110,31 +73,10 @@ class Wage:
     def year(self) -> float:
         return self.hourly * self.hours_per_year
 
-
-def load_snapshots(directory: Path = DATA / 'baskets') -> list[Snapshot]:
-    """Every snapshot, oldest first; the last is the default."""
-    out = []
-    for path in sorted(directory.glob('*.json')):
-        raw = json.loads(path.read_text())
-        goods = tuple(
-            Good(
-                g['good'],
-                g['unit'],
-                g['quantity'],
-                g['silver_g_per_unit'],
-                g['dollars_per_unit'],
-                g['link'],
-            )
-            for g in raw['goods']
-        )
-        out.append(
-            Snapshot(
-                raw['date'], raw['priced_by'], raw['source'], raw['rice_silver_g_per_kg'], goods
-            )
-        )
-    if not out:
-        raise FileNotFoundError(f'no basket snapshots in {directory}')
-    return out
+    @property
+    def day(self) -> float:
+        """A working day's pay, on the same 250-day year the laborer's koku-year uses."""
+        return self.year / WORKING_DAYS
 
 
 def load_wages(path: Path = DATA / 'wages.json') -> list[Wage]:
@@ -153,9 +95,5 @@ def resolve_koku_kg(value: str | float | None) -> tuple[float, str]:
     return kg, f'{kg:g} kg'
 
 
-def ppp_per_koku(snapshot: Snapshot, koku_kg: float) -> float:
-    return snapshot.dollars / snapshot.zeni(koku_kg) * 100
-
-
-def big_deal_per_koku(wage: Wage, laborer_koku_year: float = LABORER_KOKU_YEAR) -> float:
+def wage_dollars_per_koku(wage: Wage, laborer_koku_year: float = LABORER_KOKU_YEAR) -> float:
     return wage.year / laborer_koku_year

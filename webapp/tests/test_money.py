@@ -7,16 +7,15 @@ from pathlib import Path
 
 import pytest
 
+from l7r.money import basket as bk
 from l7r.money import coins, ledger, rules
 from l7r.money.__main__ import main
 from l7r.money.readings import (
     KOKU_KG,
     Wage,
-    big_deal_per_koku,
-    load_snapshots,
     load_wages,
-    ppp_per_koku,
     resolve_koku_kg,
+    wage_dollars_per_koku,
 )
 
 # --- coins ---------------------------------------------------------------------------------------
@@ -64,16 +63,26 @@ def test_everyday_keeps_copper_exact_and_rounds_larger_sums() -> None:
 # --- readings ------------------------------------------------------------------------------------
 
 
+def _sheet(koku_kg: float) -> bk.Reading:
+    model = bk.load()
+    return bk.reading(model, model.basket('bassino-ma-a'), model.snapshot('2017-04'), koku_kg)
+
+
 def test_2017_snapshot_reproduces_the_spreadsheet() -> None:
-    """SC-001: $797.22 = 144.32 zeni -> $552 per koku, at the sheet's own koku mass."""
-    snap = load_snapshots()[0]
-    assert snap.date == '2017-04'
-    assert round(snap.dollars, 2) == 797.22
-    assert round(snap.silver_g, 3) == 325.816
+    """219 SC-001: $797.22 = 144.32 zeni -> $552 per koku, at the sheet's own koku mass. Feature
+    221 moved the sheet into a basket, a snapshot and the reference era; this pins that the move
+    changed no number (and the standard basket at 2017 reads the same, its new goods unpriced)."""
     kg, label = resolve_koku_kg(None)
     assert label == 'sheet-2017'
-    assert round(snap.zeni(kg), 2) == 144.32
-    assert round(ppp_per_koku(snap, kg)) == 552
+    r = _sheet(kg)
+    assert round(r.dollars, 2) == 797.22
+    assert round(r.silver, 3) == 325.816
+    assert round(r.silver * 100 / (kg * 1.49), 2) == 144.32
+    assert round(r.per_koku, 2) == 552.39
+    model = bk.load()
+    std = bk.reading(model, model.basket(), model.snapshot('2017-04'), kg)
+    assert round(std.per_koku, 2) == 552.39
+    assert std.left_out == ('Salt', 'Fuel', 'Housing')
 
 
 def test_the_withdrawn_forty_us_gallon_koku_is_gone() -> None:
@@ -83,9 +92,8 @@ def test_the_withdrawn_forty_us_gallon_koku_is_gone() -> None:
 
 def test_budgets_koku_sits_beside_the_sheet() -> None:
     """budgets.md's ~150 kg brown koku is within 1% of the sheet's 151.5 kg."""
-    snap = load_snapshots()[0]
-    assert round(ppp_per_koku(snap, KOKU_KG['budgets-brown'])) == 547
-    assert round(ppp_per_koku(snap, KOKU_KG['budgets-polished'])) == 496
+    assert round(_sheet(KOKU_KG['budgets-brown']).per_koku) == 547
+    assert round(_sheet(KOKU_KG['budgets-polished']).per_koku) == 496
 
 
 def test_resolve_koku_kg_takes_a_number() -> None:
@@ -93,26 +101,13 @@ def test_resolve_koku_kg_takes_a_number() -> None:
     assert resolve_koku_kg(180.5) == (180.5, '180.5 kg')
 
 
-def test_big_deal_default_is_the_handoff_derivation() -> None:
-    """SC-002: ~$9,400 at $15/hour full time over 3.32 koku per unskilled year."""
+def test_wage_dollars_default_is_the_handoff_derivation() -> None:
+    """219 SC-002: ~$9,400 at $15/hour full time over 3.32 koku per unskilled year."""
     wage = load_wages()[-1]
     assert wage.hourly == 15.0
-    assert abs(big_deal_per_koku(wage) - 9400) / 9400 < 0.01
-    assert big_deal_per_koku(Wage('x', 10.0, 2000, '', ''), 2.0) == 10_000
-
-
-def test_newest_snapshot_is_last(tmp_path: Path) -> None:
-    raw = json.loads(
-        (Path(__file__).parents[1] / 'l7r/money/data/baskets/2017-04.json').read_text()
-    )
-    (tmp_path / '2017-04.json').write_text(json.dumps(raw))
-    (tmp_path / '2026-10.json').write_text(json.dumps({**raw, 'date': '2026-10'}))
-    assert [s.date for s in load_snapshots(tmp_path)] == ['2017-04', '2026-10']
-
-
-def test_no_snapshots_is_loud(tmp_path: Path) -> None:
-    with pytest.raises(FileNotFoundError):
-        load_snapshots(tmp_path)
+    assert abs(wage_dollars_per_koku(wage) - 9400) / 9400 < 0.01
+    assert wage_dollars_per_koku(Wage('x', 10.0, 2000, '', ''), 2.0) == 10_000
+    assert wage.day == 124.8
 
 
 # --- ledger --------------------------------------------------------------------------------------
@@ -188,11 +183,16 @@ def run(capsys: pytest.CaptureFixture[str], *argv: str) -> str:
 
 
 def test_cli_convert(capsys: pytest.CaptureFixture[str]) -> None:
-    out = run(capsys, 'convert', '1', 'koku')
+    out = run(capsys, '--snapshot', '2017-04', '--basket', 'bassino-ma-a', 'convert', '1', 'koku')
     assert '1 koku = 1.000 koku = 1,000 sen' in out
-    assert 'PPP $552.39; "big deal" $9,398; 75.3 laborer-days' in out
-    assert 'snapshot 2017-04' in out
+    assert 'goods $552.39; wage $9,398; 75.3 laborer-days' in out
+    assert 'Bassino & Ma basket A (the 2017 sheet) basket at the 2017-04 snapshot' in out
     assert '[sheet-2017]' in out
+    out = run(capsys, 'convert', '1', 'koku')
+    assert 'Standard basket at the ' in out
+    assert 'left out' not in out
+    out = run(capsys, '--snapshot', '2017-04', 'convert', '1', 'koku')
+    assert 'unpriced at this date, so left out: Salt, Fuel, Housing' in out
 
 
 def test_cli_knobs(capsys: pytest.CaptureFixture[str]) -> None:
@@ -203,22 +203,27 @@ def test_cli_knobs(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_cli_dated_inputs(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, '--snapshot', '2017-04', '--wage-date', '2026-10-18', 'convert', '1 bu')
-    assert 'PPP $55.24' in out
-    with pytest.raises(SystemExit, match='no snapshot dated 1999-01; have 2017-04'):
+    assert 'goods $55.24' in out
+    with pytest.raises(SystemExit, match='no snapshot dated 1999-01; have 2017-04, '):
         main(['--snapshot', '1999-01', 'convert', '1 bu'])
+    with pytest.raises(SystemExit, match="no basket 'nope'; have bassino-ma-a"):
+        main(['--basket', 'nope', 'convert', '1 bu'])
 
 
 def test_cli_dollars(capsys: pytest.CaptureFixture[str]) -> None:
-    assert '$500.00 (PPP) = 9 bu 5 sen (about 9 bu)' in run(capsys, 'dollars', '500')
-    out = run(capsys, 'dollars', '10000', '--big-deal')
-    assert '("big deal") = 1 koku 6 zeni 4 sen' in out
+    sheet = ('--snapshot', '2017-04', '--basket', 'bassino-ma-a')
+    assert '$500.00 (goods dollars) = 9 bu 5 sen (about 9 bu)' in run(
+        capsys, *sheet, 'dollars', '500'
+    )
+    out = run(capsys, 'dollars', '10000', '--wage-dollars')
+    assert '(wage dollars) = 1 koku 6 zeni 4 sen' in out
 
 
 def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
-    out = run(capsys, 'price', 'sword')
+    out = run(capsys, '--snapshot', '2017-04', '--basket', 'bassino-ma-a', 'price', 'sword')
     assert 'a common sword (medieval Lucca and Marseille): 7 sen to 5 zeni 3 sen per item' in out
     assert '[comparative (unverified lead): a yardstick from another society' in out
-    assert 'PPP $3.87 to $29.28; "big deal" $66 to $498; 0.5 to 4.0 laborer-days' in out
+    assert 'goods $3.87 to $29.28; wage $66 to $498; 0.5 to 4.0 laborer-days' in out
     assert "a samurai's wakizashi: 1 koku 5 bu per item" in out
     out = run(capsys, 'price', 'land', 'tax')
     assert '[guess]' in out
@@ -227,8 +232,11 @@ def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_cli_history_and_check(capsys: pytest.CaptureFixture[str]) -> None:
-    assert '2017-04: basket $797.22 = 144.32 zeni -> $552.39 per koku' in run(capsys, 'history')
-    assert 'ledger ok:' in run(capsys, 'check')
+    out = run(capsys, '--basket', 'bassino-ma-a', 'history')
+    assert '2017-04: basket $797.22 = 144.32 zeni -> $552.39 per koku' in out
+    assert 'left out' not in out
+    assert 'left out: Salt, Fuel, Housing' in run(capsys, 'history')
+    assert 'snapshots and' in run(capsys, 'check')
 
 
 # --- consistency rules ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@ import pytest
 
 from l7r.money import calibration as cal
 from l7r.money.__main__ import main
+from l7r.money.basket import load
 
 ROOT = Path(__file__).parents[1]
 
@@ -250,7 +251,8 @@ def test_cli_estimate_link_finding_calibration(
     assert 'E0003: tsuba 2 = 3 bu to 6 bu per item [weapons] logged' in out
     saved = cal.load_estimates()[0]
     assert saved.model == {
-        'snapshot': '2017-04',
+        'snapshot': load().snapshot().date,
+        'basket': 'standard',
         'koku_kg': 'sheet-2017',
         'wage': '2026-10-18',
         'laborer_koku_year': '3.32',

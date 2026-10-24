@@ -24,6 +24,7 @@ Set L7R_TEST_COOKIE / L7R_BASE_URL env vars to point at non-default targets.
 import asyncio
 import os
 import sys
+from pathlib import Path
 from typing import Any
 
 from playwright.async_api import async_playwright
@@ -52,32 +53,12 @@ VIEWPORTS = [
     ('mobile', 390, 844),
 ]
 
-ELI = '183026066498125825'
-COMMERCE_PLAYER = '316306960855072769'  # Marshall, who plays Asako Tadashi
+# The pages are screenshot.py's, so a page added there is audited too (the two lists used to be
+# kept by hand, and only matched because every author remembered to edit both).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tests.screenshot import ELI, PAGES  # noqa: E402
 
-PAGES = [
-    ('landing', '/', True),
-    ('relics', '/relics', True),
-    ('relic-detail', '/relics/basin-of-the-lapping-wave', True),
-    ('chargen', '/chargen/', True),
-    ('names', '/names', True),
-    ('names-picked', '/names?picked=male-hiroshi', True),
-    ('places', '/places', True),
-    ('place-detail', '/places/owari?via=random', True),
-    ('dreams', '/dreams', True),
-    ('dream-detail', '/dreams/daikoku-masamune-sword-akishi', True),
-    ('shrines', '/shrines', False),
-    ('shrines-step', '/shrines#step-guardians', False),
-    ('shrines-review', '/shrines#step-review', False),
-    ('shrines-remains', '/shrines?kind=memorial#step-sharing', False),
-    ('shrines-kind', '/shrines#step-kind', False),
-    ('shrines-gm', '/shrines?form=himorogi&gm_roll_carpentry=40', True),
-    # FR-048: the read-only ledger of a player whose grouped character has Commerce.
-    ('shrines-commerce', '/shrines?form=himorogi&gm_roll_carpentry=40', COMMERCE_PLAYER),
-    ('auth-login', '/auth/login', False),
-    ('terms', '/terms', False),
-    ('privacy', '/privacy', False),
-]
+__all__ = ['ELI', 'PAGES']
 
 
 AUDIT_SCRIPT = r"""

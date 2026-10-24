@@ -1,0 +1,15 @@
+{
+  "name": "Bassino & Ma basket A (the 2017 sheet)",
+  "description": "The basket as the 2017 spreadsheet priced it: food, cloth and lamp oil only, with no salt, fuel or housing.",
+  "goods": {
+    "beans": 4,
+    "soybeans": 52,
+    "rice": 114,
+    "barley-wheat": 10,
+    "fish": 3.5,
+    "buckwheat-others": 16,
+    "edible-oil": 1,
+    "cloth": 5,
+    "lamp-oil": 2.6
+  }
+}
