@@ -65,6 +65,8 @@ what is still open.
 | [EliAndrewC/diagram#10](https://github.com/EliAndrewC/diagram/issues/10) | the shrine builder's small lines #6 and #7 never asked (48 estimates; `requests/0009-...`) | closed 2026-10-21 (feature 408; new question 0278) |
 | [EliAndrewC/diagram#11](https://github.com/EliAndrewC/diagram/issues/11) | charcoal, ordinary black and fine white (E0159-E0166; `requests/0010-charcoal.md`) | closed 2026-10-22 (feature 410, question 0279) |
 | [EliAndrewC/diagram#12](https://github.com/EliAndrewC/diagram/issues/12) | how far goods traveled and what distance did to price: freight by land and water, haul limits, tea caravans, a famous good far from home (E0167-E0168; `requests/0011-charcoal-far-markets.md`) | closed 2026-10-22 (feature 411, questions 0280-0283; E0167-E0168 SILENT) |
+| [EliAndrewC/diagram#13](https://github.com/EliAndrewC/diagram/issues/13) | the standard basket in every era: salt, fuel and a room in Kyoto 1745-54; basket cost, unskilled wage and coin rates per era and place (feature 222; `requests/0012-standard-basket-eras.md`) | open |
+| [EliAndrewC/diagram#14](https://github.com/EliAndrewC/diagram/issues/14) | the research site's money tooltip, reading gm-assistant's `conversions.json` (feature 222; `requests/0013-money-tooltip.md`) | open |
 
 ## Next candidates (not yet asked)
 

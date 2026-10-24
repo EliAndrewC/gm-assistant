@@ -7,4 +7,4 @@
 - [x] T5 Site: section, routes, templates, money.js, money.css + route tests + node parity test
 - [x] T6 Docs: skill SKILL.md/updating.md/research.md, `l7r/money/CLAUDE.md`, key-paths
 - [x] T7 Verification: gate, screenshots, dom_audit, frontend-review
-- [ ] T8 Diagram issues filed and linked
+- [x] T8 Diagram issues filed and linked (diagram#13 research, diagram#14 tooltip)
