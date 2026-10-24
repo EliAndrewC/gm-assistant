@@ -2,7 +2,7 @@
 
 Every dollar figure names what it rests on (the basket, its price snapshot and the koku mass, or
 the wage), so an answer pasted into a conversation carries its own basis. The two readings are
-GOODS dollars (what a sum buys) and WAGE dollars (how much it matters; "big deal" until 221).
+GOODS dollars (what a sum buys) and WAGE dollars (how much it matters; "big deal" until 222).
 """
 
 from __future__ import annotations

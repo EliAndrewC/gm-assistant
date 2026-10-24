@@ -1,4 +1,4 @@
-"""Route tests for /money and /money/koku (feature 221), and the playground's link state."""
+"""Route tests for /money and /money/koku (feature 222), and the playground's link state."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-# Feature 221 research: the standard basket and its 2026 prices
+# Feature 222 research: the standard basket and its 2026 prices
 
 ## The method the basket follows
 

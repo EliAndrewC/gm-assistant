@@ -1,4 +1,4 @@
-"""money.js's `compute` against basket.reading (feature 221, FR-016): the browser and the server
+"""money.js's `compute` against basket.reading (feature 222, FR-016): the browser and the server
 must give the same koku for the same link. Runs the real script under node."""
 
 from __future__ import annotations

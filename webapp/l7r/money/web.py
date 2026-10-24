@@ -1,4 +1,4 @@
-"""The Money section's koku-worth playground (`/money/koku`, feature 221): its state, data and rows.
+"""The Money section's koku-worth playground (`/money/koku`, feature 222): its state, data and rows.
 
 The whole state lives in the link, so a link reopens the same variant:
 `b=<basket>`, `s=<snapshot date>`, `q_<good>=<quantity>` (0 switches a good off; a good outside the

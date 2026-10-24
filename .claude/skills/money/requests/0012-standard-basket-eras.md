@@ -1,6 +1,6 @@
 **Money research: the standard basket's prices in every era the record draws on**
 
-Questions from gm-assistant feature 221 (`specs/221-money-basket-and-section/`, its `research.md`). The GM wants every
+Questions from gm-assistant feature 222 (`specs/222-money-basket-and-section/`, its `research.md`). The GM wants every
 historical amount of money on the research site to carry a conversion: goods dollars (what it bought), wage dollars
 (what share of a laborer's day it was) and Rokugani coin (sen, zeni, bu, koku). That needs one standard basket priced in
 each era and place the record cites. The engine and the first two eras are built; these questions fill the rest.

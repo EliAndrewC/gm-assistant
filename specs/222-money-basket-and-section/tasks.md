@@ -1,4 +1,4 @@
-# Feature 221 tasks
+# Feature 222 tasks
 
 - [x] T1 Data: goods.json, three baskets, snapshots 2017-04 (moved) and 2026-10, eras kyoto-1745 and tokyo-1882
 - [x] T2 `basket.py` (load, validate, readings, era conversion, playground reading) + tests; `readings.py` rename

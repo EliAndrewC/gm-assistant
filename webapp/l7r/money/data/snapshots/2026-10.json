@@ -1,7 +1,7 @@
 {
   "date": "2026-10",
-  "priced_by": "Claude (feature 221), from retailer listings found by web search on 2026-10-24",
-  "source": "https://github.com/EliAndrewC/gm-assistant/blob/main/specs/221-money-basket-and-section/research.md",
+  "priced_by": "Claude (feature 222), from retailer listings found by web search on 2026-10-24",
+  "source": "https://github.com/EliAndrewC/gm-assistant/blob/main/specs/222-money-basket-and-section/research.md",
   "note": "US retail, the cheapest plain version in an ordinary household bulk pack (about 2-25 lb). The first option for each good is the default; the others are substitutes the playground can swap in. Each link is the listing or listing page the price was read from. An option with a `series` is a BLS average price (via FRED): `reprice` fills it from the newest month, at `factor` units of the series' pound to this good's unit.",
   "goods": {
     "rice": [

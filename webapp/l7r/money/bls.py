@@ -1,4 +1,4 @@
-"""US average retail prices from the Bureau of Labor Statistics, read through FRED (feature 221).
+"""US average retail prices from the Bureau of Labor Statistics, read through FRED (feature 222).
 
 Two jobs: `reprice` fills the snapshot options tied to a series, and `crosscheck` sets each other
 option of the same good beside the national average, so a stale or mistyped price shows.

@@ -411,7 +411,7 @@ class Root:
             **context,
         )
 
-    # GET /money - the Money section (feature 221): a landing page listing its tools, and
+    # GET /money - the Money section (feature 222): a landing page listing its tools, and
     # /money/koku, what a koku is worth by a basket of goods the visitor can change. Public, like
     # Dreams: nothing on it is GM-only. The whole state is in the link (l7r/money/web.py).
     @cherrypy.expose

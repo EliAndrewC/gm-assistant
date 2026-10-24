@@ -1,7 +1,7 @@
-# `l7r.money` - the `/money` skill's arithmetic and data, and the Money section (features 219, 221)
+# `l7r.money` - the `/money` skill's arithmetic and data, and the Money section (features 219, 222)
 
 The skill itself is `.claude/skills/money/SKILL.md`; spec and decisions in `specs/219-money-skill/` and
-`specs/221-money-basket-and-section/` (the standard basket's research and 2026 prices are in its `research.md`). The
+`specs/222-money-basket-and-section/` (the standard basket's research and 2026 prices are in its `research.md`). The
 toolkit's Money section is `/money` (landing) and `/money/koku` (the basket playground).
 
 | file | holds |

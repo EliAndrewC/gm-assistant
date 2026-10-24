@@ -2,7 +2,7 @@
   "date": "2017-04",
   "priced_by": "Chris Larkin (Amazon, April 2017)",
   "source": "https://github.com/EliAndrewC/l7r/blob/master/money/ppp-basket.xlsx",
-  "note": "Exported from the shared Google Sheet 2026-10-18 (feature 219) and moved here unchanged in feature 221, when basket composition and historical silver prices moved to baskets/ and eras/. It prices only Bassino & Ma's basket A, so salt, fuel and housing are unpriced at this date.",
+  "note": "Exported from the shared Google Sheet 2026-10-18 (feature 219) and moved here unchanged in feature 222, when basket composition and historical silver prices moved to baskets/ and eras/. It prices only Bassino & Ma's basket A, so salt, fuel and housing are unpriced at this date.",
   "goods": {
     "beans": [{"priced_as": "Adzuki", "dollars_per_unit": 5.72, "link": "https://www.amazon.com/Food-Live-Organic-Adzuki-Pounds/dp/B00JGX94D6/ref=sr_1_13_a_it?ie=UTF8&qid=1492710226&sr=8-13&keywords=adzuki+bean"}],
     "soybeans": [{"priced_as": "Soy beans", "dollars_per_unit": 3.39, "link": "https://www.amazon.com/Premium-Grade-Non-GMO-Soybeans-Pounds/dp/B01N05JV1E/ref=sr_1_4_a_it?ie=UTF8&qid=1492708599&sr=8-4&keywords=dried%2Bsoybeans%2Bbulk&th=1"}],

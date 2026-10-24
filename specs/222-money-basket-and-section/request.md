@@ -1,4 +1,4 @@
-# Feature 221 - the GM's request, verbatim
+# Feature 222 - the GM's request, verbatim
 
 Dictated 2026-10-24, in three messages. Substitutions read silently per the user-level transcription table: "Haiku" =
 koku (every occurrence), "Rakugani" = Rokugani.

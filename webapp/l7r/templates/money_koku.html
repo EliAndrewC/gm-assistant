@@ -8,7 +8,7 @@
 {% endblock %}
 
 {#
-  The koku-worth playground (feature 221). The server renders the state in the link (l7r/money/web.py
+  The koku-worth playground (feature 222). The server renders the state in the link (l7r/money/web.py
   documents its parameters); money.js recomputes on every change and keeps the link in sync. Without
   JavaScript the form still works: change a quantity, pick a basket, and press Update.
 #}
@@ -159,7 +159,7 @@
     <section class="koku-notes detail-prose">
       <h2>How the koku is reckoned</h2>
       <p>Rokugan's coins are pegged to rice: a koku is about 151.5 kg of it, and in Kyoto in 1745-54 a kilogram of rice cost 1.49 g of silver, so a koku is worth about 226 g. Every good in the basket has a price in that silver and a price in today's dollars. The basket's dollars divided by its silver says what a gram of that silver buys today, and a koku's 226 g of it is the goods-dollar figure.</p>
-      <p>That makes the figure a ratio: a good that is dear today but was cheap in Kyoto (fish, a room) pushes it up, and one that is cheap today pulls it down. The standard basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. The silver prices of those three are still guesses, waiting on research. <a href="https://github.com/EliAndrewC/gm-assistant/blob/main/specs/221-money-basket-and-section/research.md">Sources and reasoning</a>.</p>
+      <p>That makes the figure a ratio: a good that is dear today but was cheap in Kyoto (fish, a room) pushes it up, and one that is cheap today pulls it down. The standard basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. The silver prices of those three are still guesses, waiting on research. <a href="https://github.com/EliAndrewC/gm-assistant/blob/main/specs/222-money-basket-and-section/research.md">Sources and reasoning</a>.</p>
     </section>
     <div class="koku-sticky" aria-hidden="true">A koku buys <strong data-out="per-koku-sticky">{{ dollars(reading.per_koku) }}</strong> of this basket today</div>
   </form>

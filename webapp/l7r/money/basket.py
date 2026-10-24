@@ -1,4 +1,4 @@
-"""Baskets of goods, their dated dollar prices, and the eras that price them in silver (221).
+"""Baskets of goods, their dated dollar prices, and the eras that price them in silver (222).
 
 Three kinds of data, kept apart so each can change alone:
 
@@ -19,7 +19,7 @@ fuel or housing, and Tokyo 1882-86 has no price for them either; such goods are 
 reading and named, never priced at zero (which would silently shrink one side of the ratio).
 
 WHY HOUSING IS A GOOD, NOT ALLEN'S 5% RENT MARKUP: a uniform markup on both sides of a ratio
-cancels, so it would change nothing; the GM approved housing in the standard basket (spec 221,
+cancels, so it would change nothing; the GM approved housing in the standard basket (spec 222,
 FR-008).
 """
 

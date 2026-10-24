@@ -1,6 +1,6 @@
-"""The koku's rice mass, the US wage readings, and the laborer's year (features 219, 221).
+"""The koku's rice mass, the US wage readings, and the laborer's year (features 219, 222).
 
-GOODS DOLLARS (what a koku BUYS) moved to `basket.py` in feature 221, which splits the basket, its
+GOODS DOLLARS (what a koku BUYS) moved to `basket.py` in feature 222, which splits the basket, its
 dated dollar prices and the eras that price it in silver. This module keeps what both readings
 share.
 
@@ -10,7 +10,7 @@ Settled by research (diagram 0248): a koku is 180.39 L and ~150 kg as brown rice
 per zeni is 1.49 g/kg x 151.515 kg / 100) therefore stands. Declined: hard-coding 2.257575, which
 would hide the mass inside a constant.
 
-WAGE DOLLARS (how much a sum MATTERS; "big deal" dollars until feature 221 renamed them, GM
+WAGE DOLLARS (how much a sum MATTERS; "big deal" dollars until feature 222 renamed them, GM
 2026-10-24): one koku is 1/3.32 of an unskilled laborer's year (the 2017 sheet, from Bassino &
 Ma's ~2 kg rice/day), applied to a dated US unskilled full-time year. Declined: asserting the
 GM's table figure of ~$10,000 - derived, it moves with the wage. Updating = re-taking the wage.

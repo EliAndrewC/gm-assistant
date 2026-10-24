@@ -1,4 +1,4 @@
-/* What's a koku worth? (/money/koku, feature 221).
+/* What's a koku worth? (/money/koku, feature 222).
  *
  * `compute` is the browser twin of l7r/money/basket.py `reading`: tests/test_money_js.py runs it
  * under node against the Python on several states, so change the two together. The rest wires the

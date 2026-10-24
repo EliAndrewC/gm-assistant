@@ -1,6 +1,6 @@
 **Money on the research site: a tooltip converting every historical amount**
 
-A feature request for diagram's research site, from gm-assistant feature 221, at the GM's request (2026-10-24):
+A feature request for diagram's research site, from gm-assistant feature 222, at the GM's request (2026-10-24):
 
 > I think that I am going to want a tooltip where we don't just explain that this was the copper coin, but we
 > translate the amount of money based on different ways of understanding it. So, for example, we could say that

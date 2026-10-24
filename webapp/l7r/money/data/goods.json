@@ -1,5 +1,5 @@
 {
-  "_format": "One entry per good a basket may hold. `unit` is what quantities, silver prices and dollar prices are all counted in. `why` says what the good stands for and why a basket carries it (or the reason it was left out, for goods kept only for the playground). Sources and the full reasoning: specs/221-money-basket-and-section/research.md.",
+  "_format": "One entry per good a basket may hold. `unit` is what quantities, silver prices and dollar prices are all counted in. `why` says what the good stands for and why a basket carries it (or the reason it was left out, for goods kept only for the playground). Sources and the full reasoning: specs/222-money-basket-and-section/research.md.",
   "rice": {
     "name": "Rice",
     "unit": "kg",

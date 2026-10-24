@@ -1,4 +1,4 @@
-# Feature 221 plan
+# Feature 222 plan
 
 ## Data (all under `webapp/l7r/money/data/`)
 

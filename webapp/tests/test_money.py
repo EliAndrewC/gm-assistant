@@ -70,7 +70,7 @@ def _sheet(koku_kg: float) -> bk.Reading:
 
 def test_2017_snapshot_reproduces_the_spreadsheet() -> None:
     """219 SC-001: $797.22 = 144.32 zeni -> $552 per koku, at the sheet's own koku mass. Feature
-    221 moved the sheet into a basket, a snapshot and the reference era; this pins that the move
+    222 moved the sheet into a basket, a snapshot and the reference era; this pins that the move
     changed no number (and the standard basket at 2017 reads the same, its new goods unpriced)."""
     kg, label = resolve_koku_kg(None)
     assert label == 'sheet-2017'

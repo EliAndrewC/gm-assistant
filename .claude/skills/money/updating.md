@@ -10,7 +10,7 @@ reading rests on dated inputs, so updating is adding a new dated input - never e
 **Re-price, never scale by the CPI.** Rice and beans move differently from the CPI; scaling 2017's figure would carry
 2017's relative prices forward under a new date (handoff, 2026-10-18).
 
-The data is split three ways (feature 221; `webapp/l7r/money/basket.py` explains why): `data/baskets/` is what is
+The data is split three ways (feature 222; `webapp/l7r/money/basket.py` explains why): `data/baskets/` is what is
 bought, `data/snapshots/YYYY-MM.json` is what each good cost in dollars that month, `data/eras/` is what it cost in
 silver at a place and time. Re-pricing touches only snapshots.
 
@@ -19,7 +19,7 @@ silver at a place and time. Re-pricing touches only snapshots.
    filled from FRED's newest month, the rest blank.
 2. Fill each blank `dollars_per_unit` and `link`, and set `priced_by` and `source`. Same rule as before: the cheapest
    plain version in an ordinary household bulk pack (about 2-25 lb) from a national retailer, per the good's unit (the
-   pricing rule and each good's unit conversions are in `specs/221-money-basket-and-section/research.md`). An option is
+   pricing rule and each good's unit conversions are in `specs/222-money-basket-and-section/research.md`). An option is
    a substitute the playground can swap in; keep the first as the default.
 3. `python3 -m l7r.money crosscheck` sets each priced option beside the BLS average; a line marked "check this price"
    is under half or over twice it (adzuki always is: a specialty bean in the US).

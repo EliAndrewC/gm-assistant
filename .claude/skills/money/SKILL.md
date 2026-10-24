@@ -49,10 +49,10 @@ section, `/money/koku`.
 ## Two dollar readings of a koku - always give both, never mix them
 
 - **Goods dollars** (~$975 on the standard basket at 2026-10 prices; ~$543 without housing): what a koku BUYS. The
-  standard basket is Bassino & Ma's Kyoto basket plus salt, fuel and a share of a room (feature 221; housing is about
+  standard basket is Bassino & Ma's Kyoto basket plus salt, fuel and a share of a room (feature 222; housing is about
   half of today's dollars, so name the no-housing figure when a sum is about food and goods). Until 2026-10 this was
   "PPP dollars", ~$552 in 2017 prices on the food-only basket.
-- **Wage dollars** (~$9,400 at $15/hour; "big deal" dollars until feature 221): how much a windfall, a debt or a loss
+- **Wage dollars** (~$9,400 at $15/hour; "big deal" dollars until feature 222): how much a windfall, a debt or a loss
   MATTERS. One koku is 1/3.32 of an
   unskilled laborer's year, applied to a US unskilled full-time year. (The GM's table feel is ~$10,000.)
 - **Laborer-days** is the yardstick for consistency: a new price that takes an implausible number of days of unskilled
