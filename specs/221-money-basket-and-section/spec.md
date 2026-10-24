@@ -64,7 +64,7 @@ carry a source or are labeled a guess. Alternate baskets (the 2017 one, and vari
 data files that every command and the site can use.
 
 **Acceptance Scenarios**:
-1. **Given** the standard basket, **When** it is listed, **Then** salt and fuel are in it, a luxury such as pepper is
+1. **Given** the standard basket, **When** it is listed, **Then** salt, fuel and housing are in it, a luxury such as pepper is
    not, and each good shows its source or its guess label.
 2. **Given** two baskets, **When** `baskets` runs, **Then** it prints each one's dollars per koku side by side for the
    chosen snapshot.
@@ -76,7 +76,7 @@ The table is a committed, generated file diagram's site can read.
 
 **Acceptance Scenarios**:
 1. **Given** Kyoto 1745-54, **When** 20 mon is converted, **Then** it gives goods dollars, wage dollars and a Rokugani
-   sum in everyday coins, with the era, its coin rate and its confidence named.
+   sum in sen, zeni, bu and/or koku, with the era, its coin rate and its confidence named.
 2. **Given** an era whose basket is only partly priced, **When** it converts, **Then** it says which reading it falls
    back on (rice alone, or the goods it has) rather than presenting it as a full-basket figure.
 3. **Given** the committed table, **When** the gate runs, **Then** it fails if the table differs from what the engine
@@ -91,7 +91,7 @@ dollar value and each good's share change.
 **Acceptance Scenarios**:
 1. **Given** the page, **When** it opens, **Then** it shows the standard basket at the newest snapshot, the koku in goods
    dollars and in wage dollars, and each good's quantity, both prices and share of the cost.
-2. **Given** a change (a good off, a quantity, a basket, a snapshot, a custom good), **When** it is made, **Then** the
+2. **Given** a change (a good off, a quantity, a substitute, a basket, a snapshot, a custom good), **When** it is made, **Then** the
    readings update at once and the link carries the change, so the link reopens the same variant.
 3. **Given** a variant, **When** Reset is pressed, **Then** the standard basket returns.
 
@@ -117,7 +117,7 @@ basket cost, wages and coin rates, and the tooltip.
   with source or guess label) is stored apart from dated DOLLAR SNAPSHOTS (per good: dollars per unit, link, what it
   was priced as).
 - **FR-002**: A standard basket is designed from the welfare-ratio literature (Bassino & Ma 2005; Allen et al. 2011),
-  adding what Rokugan's commoners need to live (salt; fuel) and excluding luxuries, with the reason for each inclusion
+  adding what Rokugan's commoners need to live (salt; fuel; housing) and excluding luxuries, with the reason for each inclusion
   and exclusion recorded with the data. It is the default.
 - **FR-003**: The 2017 basket survives as the named basket `bassino-ma-a`, and the 2017 snapshot read through it
   reproduces $552.39.
@@ -127,35 +127,37 @@ basket cost, wages and coin rates, and the tooltip.
 - **FR-006**: `crosscheck` compares a snapshot's rice and dried beans with BLS average retail prices (tested against a
   saved response).
 - **FR-007**: Alternate baskets are data files; `baskets` compares them; every reading command takes `--basket`.
-- **FR-008**: Housing, the one need whose modern price would dwarf the rest, is a good that a basket may include, and the
-  difference it makes is shown; whether the standard basket counts it is a recorded decision.
+- **FR-008**: The standard basket includes housing, as the GM approved (*"salt, fuel and housing in"*). A named variant
+  without housing ships beside it, and every place that quotes the standard koku can show what housing adds.
 
 **Readings and names**
 - **FR-009**: The second reading is renamed from "big deal" dollars to **wage dollars** everywhere (commands, skill,
   docs), paired with **goods dollars**.
 
 **The conversion table**
-- **FR-010**: An era is a data file: its place and years, its coins in grams of silver (with source), the standard
+- **FR-010**: An era is a data file (a new era is a new file, never a code or spec change): its place and years, its coins in grams of silver (with source), the standard
   basket's cost there (whole, partial with the goods named, or rice only), an unskilled day wage, and a confidence.
-- **FR-011**: An amount of an era's money converts to goods dollars, wage dollars and Rokugani coin (through the ratio of
-  the era's basket cost to Rokugan's), and names what each rests on.
+- **FR-011**: An amount of an era's money converts to goods dollars, wage dollars and a Rokugani sum in sen, zeni, bu
+  and/or koku (through the ratio of the era's basket cost to Rokugan's), and names what each rests on.
 - **FR-012**: The first eras are the ones already sourced: Kyoto 1745-54 and Tokyo 1882-86 (Bassino & Ma).
 - **FR-013**: `export` writes the conversion table as committed JSON; a test fails if it is stale.
 
 **The site**
 - **FR-014**: A Money section in the toolkit's nav and on the landing page, with a landing page that lists its tools
   (one for now) and room for more.
-- **FR-015**: "What's a koku worth?": per good a toggle, an editable quantity, both prices and its share; a basket
-  picker, a snapshot picker, a custom good (name, unit, quantity, silver price, dollar price), both readings live, Reset,
+- **FR-015**: "What's a koku worth?": per good a toggle, an editable quantity, both prices and its share, and a choice
+  among its named substitutes (what today's dollar price is taken from: medium- against long-grain rice, cloth by the
+  running meter against cloth of a Japanese bolt's width); a basket picker, a snapshot picker, a custom good (name, unit, quantity, silver price, dollar price), both readings live, Reset,
   and the whole state in the URL.
 - **FR-016**: The page computes in the browser from data the server embeds; the server renders the same numbers for the
   default state, and a test holds the two to the same arithmetic.
 - **FR-017**: The section is public, like Dreams and Names: nothing on it is GM-only.
 
 **Diagram**
-- **FR-018**: A research issue on diagram (up to four questions): the new goods' Kyoto 1745-54 prices; each era's
-  basket cost; each era's unskilled wage; coin rates per era. A second issue asks for the tooltip, reading the
-  conversion table.
+- **FR-018**: A research issue on diagram (up to four questions): the new goods' Kyoto 1745-54 prices; and, for EVERY era
+  and place its price research draws on (the Edo periods beyond 1745-54, each Chinese dynasty used - Qing at least, and
+  Ming and Song where the record has prices), the standard basket's cost as far as the sources allow, an unskilled
+  wage, and the coin rates. A second issue asks for the tooltip, reading the conversion table.
 
 ## Success Criteria
 
@@ -167,10 +169,17 @@ basket cost, wages and coin rates, and the tooltip.
 ## Assumptions and decisions
 
 - **Basket quantities are per adult per year**, as in both papers; the koku reading is a ratio, so the scale cancels.
-- **Housing is in the playground and in a named variant, not the standard basket** (recorded in research.md with the
-  numbers): Allen's own baskets leave rent out of the goods and add 5%, which cancels in a price ratio; a modern room
-  priced honestly would triple the koku and make the reading about American rents rather than about what rice and cloth
-  cost. Two supportable answers make a knob (Principle XII), so the variant is one click away.
+- **Housing is in the standard basket**, as the GM approved. It nearly doubles the koku (research.md has the numbers),
+  so the no-housing variant is shipped and the size of the difference is reported to the GM; it is his to change.
 - **New goods' historical prices start as labeled guesses** from the nearest sourced figures (diagram's salt and
   charcoal questions, Allen's Beijing fuel), and diagram is asked to replace them.
 - **The section is public** (FR-017); cheap to change.
+
+## Review history
+
+- **Round 1** (spec-fidelity, 2026-10-24): CHANGES REQUIRED. (1) Housing had been moved out of the standard basket the GM
+  approved - reversed: housing is in, the no-housing basket is the variant (FR-008); (2) the approved substitute swap was
+  missing - added to FR-015 and User Story 5; (3) the eras were narrowed to the two already sourced - FR-018 now asks for
+  every era and place diagram's price research uses (later Edo, Qing, Ming, Song where it has prices) and FR-010 takes
+  new eras as data files; (4) the Rokugani sum is named as sen, zeni, bu and/or koku (FR-011, User Story 4).
+- **Round 2** (spec-fidelity, 2026-10-24): **FAITHFUL** - all four carried, nothing else drifted.
