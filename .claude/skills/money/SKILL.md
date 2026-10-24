@@ -89,6 +89,12 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 
 ## Open for the GM
 
+- **Separate metals, not one decimal money?** (GM 2026-10-24) Rokugan's coins are a fixed decimal ladder for simplicity;
+  historically gold, silver and copper were separate monies with a legal rate the market ignored. The GM wants the
+  reality researched ([diagram#16](https://github.com/EliAndrewC/diagram/issues/16)) before deciding how much to
+  import (possibly coin-dependent prices). Meanwhile historical conversions take each coin at its own era's market
+  rate (`data/eras/`).
+
 - **Price ranges that show how much a good swung across periods** (GM 2026-10-24): when the ledger becomes a price list
   on the site's Money section, each good keeps its narrow Rokugani range but also says whether its real-world price
   was steady or swung across dynasties and periods, why (salt: how far the state monopoly reached and was enforced), and
