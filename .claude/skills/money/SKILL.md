@@ -103,9 +103,15 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 
 - **Separate metals, not one decimal money?** (GM 2026-10-24) Rokugan's coins are a fixed decimal ladder for simplicity;
   historically gold, silver and copper were separate monies with a legal rate the market ignored. The GM wants the
-  reality researched ([diagram#16](https://github.com/EliAndrewC/diagram/issues/16)) before deciding how much to
-  import (possibly coin-dependent prices). Meanwhile historical conversions take each coin at its own era's market
-  rate (`data/eras/`).
+  reality researched ([diagram#16](https://github.com/EliAndrewC/diagram/issues/16), answered by diagram's 0295 and
+  0296): in both countries a legal rate between the metals was set and the market ignored it; only Japan's gold count
+  (ryo = 4 bu = 16 shu) was truly fixed; prices hung on the coin only in named episodes (Edo 1842, Tsugaru 1837-38,
+  Xianfeng Beijing); Qing copper prices stuck while silver rose, so copper earners and farmers taxed in silver lost.
+  Rokugan already has one such pattern: the Ministry of Retainers' decreed koku-to-rice rate against a floating market.
+  diagram's options: (a) keep the fixed decimal ladder as a labeled deviation; (b) fix koku and bu by count and let
+  zeni and sen float by era; (c) a premium or discount by coin in particular places or crises. Meanwhile historical
+  conversions take each coin at its own era's market rate (`data/eras/`), and the closeness rule's "a move in China's
+  cash rate" break keeps a Qing cash amount from converting through another decade's silver rate.
 
 - **Price ranges that show how much a good swung across periods** (GM 2026-10-24): the swing notes are in
   (`data/swings.jsonl`, from [diagram#15](https://github.com/EliAndrewC/diagram/issues/15)); the ledger's own page on
