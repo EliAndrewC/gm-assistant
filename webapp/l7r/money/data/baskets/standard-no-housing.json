@@ -1,9 +1,11 @@
 {
   "name": "Standard without housing",
-  "description": "The standard basket without its share of a room. A room was cheap beside rice in old Kyoto and is dear in modern America, so housing nearly doubles the koku; this shows the koku on food, cloth, light and fuel alone.",
+  "description": "The standard basket without its share of a room. A room was cheap beside rice in old Kyoto and is dear in modern America, so housing nearly doubles the koku; this shows the koku on food, cloth, light and fuel alone. Its soybeans are split into miso, soy sauce and whole beans as the standard basket's are.",
   "goods": {
     "rice": 114,
-    "soybeans": 52,
+    "soybeans": 34.4,
+    "miso": 39,
+    "soy-sauce": 13.8,
     "barley-wheat": 10,
     "buckwheat-others": 16,
     "beans": 4,

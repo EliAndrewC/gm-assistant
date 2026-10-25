@@ -23,7 +23,7 @@ The GM opens `/money/koku` and sees Miso and Soy sauce as goods of the standard 
 each with its single-good koku, weight, today's US price and the periods behind its Rokugani price.
 
 **Acceptance**:
-1. The standard basket holds 39 kg of miso, the soy sauce of FR-002 and 34.4 kg of soybeans a year, and nothing else
+1. The standard basket holds 39 kg of miso, 13.8 liters of soy sauce and 34.4 kg of soybeans a year, and nothing else
    in it changes.
 2. Miso's and soy sauce's Rokugani prices rest on the seven Mitsui periods, each footnoted with its research link.
 3. Both readings (averaged over goods, whole basket) move, and the page, the skill and the conversion table quote the
@@ -55,11 +55,14 @@ each with its single-good koku, weight, today's US price and the periods behind 
 - **FR-002**: Quantities, each with its basis recorded where the basket lives:
   - miso: 13 kg of beans (the middle of 9.0 kg, Hirosaki 1816, and 16.8 kg, 家訓全書 1760; diagram 0303) times
     3 kg of miso a kg of dry beans (modern rice-koji home recipes, koji at or below the beans; 0303) = 39 kg;
-  - soy sauce: 4.6 kg of beans (廣益國産考 1844; 0303) times a yield. **PENDING THE GM'S RULING**: no cited
+  - soy sauce: 4.6 kg of beans (廣益國産考 1844; 0303) times 3.0 liters a kg = 13.8 liters. **The GM's ruling
+    (2026-10-25)**, asked because no cited
     food-science or industry source states liters of soy sauce a kg of beans (0303: "no source read states liters a
     kilogram of soybeans"), so the condition he approved ("a modern yield from a cited food-science or industry
     source") is unmet for soy sauce. The candidate put to him: diagram's own upper-bound arithmetic from Oguri 2008's
-    proportions and Noda's press yield, 3.0-3.4 L a kg (13.8-15.6 L a year). (Edo's 1821 soy sauce arrivals are not
+    proportions and Noda's press yield, 3.0-3.4 L a kg (13.8-15.6 L a year). Shown that it barely matters ($453 /
+    $995 at 3.0, $454 / $994 at 3.4), the GM: *"Since it barely matters, I'll defer to you on which yield we pick"*.
+    3.0, the low end, is taken because diagram's figure is a ceiling. (Edo's 1821 soy sauce arrivals are not
     a cross-check: 0303 leaves them out, since no readable page names their document and no 1821 population is
     held.) The 4.6 kg of beans comes out of the soybean line whatever the yield;
   - soybeans: 52 - 13 - 4.6 = 34.4 kg.

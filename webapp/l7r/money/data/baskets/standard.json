@@ -1,10 +1,12 @@
 {
   "name": "Standard",
-  "description": "An ordinary Japanese household's year in the 1740s as economic historians reconstruct it (rice, soybeans, other grains, beans, fish, oil, cloth, lamp oil), plus what a household cannot live without: salt, fuel and a share of a room. Luxuries such as pepper, tea, sake and tobacco are left out.",
+  "description": "An ordinary Japanese household's year in the 1740s as economic historians reconstruct it (rice, soybeans, other grains, beans, fish, oil, cloth, lamp oil), plus what a household cannot live without: salt, fuel and a share of a room. Luxuries such as pepper, tea, sake and tobacco are left out. The soybeans are split as the research records them (feature 224): miso from 13 kg of beans a person a year (39 kg, at 3 kg of miso a kg of beans), soy sauce from 4.6 kg (13.8 liters, at 3.0 liters a kg), and the rest, 34.4 kg, whole.",
   "complete": true,
   "goods": {
     "rice": 114,
-    "soybeans": 52,
+    "soybeans": 34.4,
+    "miso": 39,
+    "soy-sauce": 13.8,
     "barley-wheat": 10,
     "buckwheat-others": 16,
     "beans": 4,

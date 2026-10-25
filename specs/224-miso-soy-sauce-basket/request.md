@@ -27,6 +27,11 @@ The GM:
 
 > That sounds good. I will go with your recommendation. Thank you.
 
+diagram#18 then found no stated soy sauce yield, only its own ceiling of 3.0-3.4 L a kg; shown that the choice moves
+the koku by $1, the GM:
+
+> Since it barely matters, I'll defer to you on which yield we pick, thanks.
+
 Earlier, on the next price snapshot (no objection from the GM): housing keeps $269 a m² a year as its default, with
 the median asking rent and Allen's poverty-line rent as alternatives; flour and sardines go in as alternatives, not
 defaults (diagram#17: the historical grains were unprocessed and the fish salmon and cod, so wheat berries and cod
