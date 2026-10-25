@@ -199,7 +199,7 @@ def test_toggles_move_the_average_not_the_whole_basket(root: Root, model: bk.Mod
     off = root.money('koku', q_housing='0').decode()
     whole = web.whole_reading(model, web.parse_state(model, {}), KG)
     assert _whole(full) == _whole(off) == f'${whole.arithmetic:,.0f}'
-    assert f'cost {whole.koku_cost:.2f} koku in Rokugan' in full
+    assert f'cost {whole.koku_cost:.2f} koku then, ${whole.dollars:,.0f} now' in full
     per = re.compile(r'data-out="per-koku" aria-live="polite">([^<]+)<')
     assert per.search(full).group(1) != per.search(off).group(1)  # type: ignore[union-attr]
     # a substitute price moves both (US2 acceptance 4)
@@ -235,7 +235,7 @@ def test_the_page_names_every_goods_figure(root: Root) -> None:
     """US3: no goods-dollar figure without its reading's name; the eras and the chart are there."""
     page = html.unescape(root.money('koku').decode())
     assert 'Averaged over goods' in page
-    assert 'The whole basket' in page
+    assert 'A year of necessities <span class="koku-range__tag">high</span>' in page
     assert '(geometric mean)' in page
     assert 'Which periods set Rokugan' in page
     assert 'rice alone, so it adds nothing' in page

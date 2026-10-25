@@ -200,6 +200,7 @@
 .koku-range__end .koku-reading__value { margin-bottom: 0.1rem; }
 .koku-range__name { margin: 0; font-weight: 600; }
 .koku-range__how { font-weight: normal; color: var(--ink-faded); white-space: nowrap; }
+.koku-range__sub { display: block; margin: 0.1rem 0 0; font-size: 0.9rem; white-space: normal; }
 .koku-range__to { font-family: var(--font-body); font-size: 1.35rem; color: var(--ink-soft); }
 .koku-range__tag {
   font-size: 0.75rem;

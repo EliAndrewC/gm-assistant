@@ -223,9 +223,7 @@
       out('legend-central').textContent = money(r.per_koku);
       out('legend-high').textContent = money(whole.arithmetic);
       out('mean-name').textContent = '(' + (st.equal ? 'equal weights, ' : '') + st.mean + ' mean)';
-      out('whole-gloss').textContent = "A laborer's year of necessities cost " + whole.koku_cost.toFixed(2) +
-        ' koku in Rokugan and costs ' + money(whole.dollars) + ' today, so a koku is ' + money(whole.arithmetic) +
-        '. Averaging what a koku buys of each good instead, so that no one good can dominate, gives ' + money(r.per_koku) + '.';
+      out('whole-sub').textContent = 'cost ' + whole.koku_cost.toFixed(2) + ' koku then, ' + money(whole.dollars) + ' now';
       out('drivers').textContent = drivers(r);
       out('description').textContent = data.baskets[st.basket].description;
       var left = out('left-out');

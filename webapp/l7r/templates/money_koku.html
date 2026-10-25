@@ -53,10 +53,11 @@
           </div>
           <div class="koku-range__end">
             <p class="koku-reading__value"><span class="koku-range__to">to </span><span data-out="whole">{{ dollars(whole.arithmetic) }}</span></p>
-            <p class="koku-range__name">The whole basket <span class="koku-range__tag">high</span></p>
+            <p class="koku-range__name">A year of necessities <span class="koku-range__tag">high</span></p>
+            <p class="koku-range__how koku-range__sub" data-out="whole-sub">cost {{ '%.2f' % whole.koku_cost }} koku then, {{ dollars(whole.dollars) }} now</p>
           </div>
         </div>
-        <p class="koku-reading__gloss" data-out="whole-gloss">A laborer's year of necessities cost {{ '%.2f' % whole.koku_cost }} koku in Rokugan and costs {{ dollars(whole.dollars) }} today, so a koku is {{ dollars(whole.arithmetic) }}. Averaging what a koku buys of each good instead, so that no one good can dominate, gives {{ dollars(reading.per_koku) }}.</p>
+        <p class="koku-reading__gloss">A laborer's year of necessities priced then and now: goods that grew dear, above all a room, pull it up. The central figure averages what a koku buys of each good so that no one good can dominate. For a sum spent on one kind of good, use that good's row below.</p>
       </div>
       <div class="koku-reading">
         <p class="koku-reading__label">Wage dollars: how much a koku matters</p>
@@ -88,11 +89,11 @@
     <section class="koku-basket" aria-labelledby="koku-basket-title">
       <div class="koku-basket__head">
         <h2 class="koku-basket__title" id="koku-basket-title">Good by good: what a koku buys of each alone</h2>
-        <p class="koku-basket__hint">Uncheck a good to leave it out of the average (the whole basket always counts every good). Click a name for its prices.</p>
+        <p class="koku-basket__hint">Uncheck a good to leave it out of the average (the year of necessities always counts every good). Click a name for its prices.</p>
       </div>
       <p class="koku-legend" aria-hidden="true">
         <span class="koku-legend__item"><span class="koku-legend__swatch koku-legend__swatch--central"></span>Averaged over goods, <strong data-out="legend-central">{{ dollars(reading.per_koku) }}</strong></span>
-        <span class="koku-legend__item"><span class="koku-legend__swatch koku-legend__swatch--high"></span>The whole basket, <strong data-out="legend-high">{{ dollars(whole.arithmetic) }}</strong></span>
+        <span class="koku-legend__item"><span class="koku-legend__swatch koku-legend__swatch--high"></span>A year of necessities, <strong data-out="legend-high">{{ dollars(whole.arithmetic) }}</strong></span>
         <span class="koku-legend__item"><span class="koku-legend__dot"></span>One good alone; larger carries more weight</span>
       </p>
       <div class="koku-table">
@@ -204,7 +205,7 @@
     <section class="koku-notes detail-prose">
       <h2>How the koku is reckoned</h2>
       <p>A koku is about {{ '%.1f' % reading.koku_kg }} kg of rice, and Rokugan's coins count in it: 1,000 sen to the koku. Every other good's Rokugani price is how much rice it cost, averaged over every period the research records it in, {{ model.eras|length }} periods of Japan and China from the 1490s to the 1910s. Counting in rice rather than coin takes out each period's own money, so a debased coin or a dear decade of silver drops out. Open a good above for the periods behind its price and the research each comes from.</p>
-      <p>Take the amount of a good a koku's rice bought, price that amount today, and you have what a koku buys of that good alone: about {{ dollars(rice_alone) }} of rice, but under {{ dollars(50) }} of cloth and thousands of dollars of housing. Those spread over two orders of magnitude, so a koku's worth depends on how they are averaged. The <strong>whole basket</strong> answers the household's question, what a year of necessities cost then and costs now; it is the same as the average weighted by spending, and the high end, because the goods that became dear (above all a room) weigh heavily in it. The <strong>average over goods</strong> takes the geometric mean by default, which no single good can dominate; it is the central figure the money skill quotes. Economic historians use these baskets mainly to compare a laborer's wage with the cost of living across places and centuries, which is what wage dollars do.</p>
+      <p>Take the amount of a good a koku's rice bought, price that amount today, and you have what a koku buys of that good alone: about {{ dollars(rice_alone) }} of rice, but under {{ dollars(50) }} of cloth and thousands of dollars of housing. Those spread over two orders of magnitude, so a koku's worth depends on how they are averaged. The <strong>year of necessities</strong> (the whole basket) answers the household's question, what a year of necessities cost then and costs now; it is the same as the average weighted by spending, and the high end, because the goods that became dear (above all a room) weigh heavily in it. The <strong>average over goods</strong> takes the geometric mean by default, which no single good can dominate; it is the central figure the money skill quotes. Economic historians use these baskets mainly to compare a laborer's wage with the cost of living across places and centuries, which is what wage dollars do.</p>
       <p>The standard basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. Some of Kyoto 1745's prices are Bassino &amp; Ma's reconstructions from Meiji price ratios, so they are not counted again beside Tokyo 1882; the room's price is still a guess.</p>
     </section>
     <div class="koku-sticky" aria-hidden="true">A koku buys <strong data-out="per-koku-sticky">{{ dollars(reading.per_koku) }}</strong> to <strong data-out="whole-sticky">{{ dollars(whole.arithmetic) }}</strong> today</div>
