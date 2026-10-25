@@ -77,6 +77,8 @@ firewood need a note.
   weights, provisional until the GM weighs them; borrowed prices not counted twice). Until 2026-10-25 the single
   figure was the whole basket by Kyoto 1745-54 alone, ~$875; until 2026-10, "PPP dollars", ~$552 in 2017 prices.
   Which modern goods match and which mean historians use is open: [diagram#17](https://github.com/EliAndrewC/diagram/issues/17).
+  Miso and soy sauce for the basket's soybeans (GM 2026-10-25) and which goods the opening changed in Edo 1860 and
+  Beijing 1900: [diagram#18](https://github.com/EliAndrewC/diagram/issues/18).
 - **Wage dollars** (~$9,400 at $15/hour; "big deal" dollars until feature 222): how much a windfall, a debt or a loss
   MATTERS. One koku is 1/3.32 of an
   unskilled laborer's year, applied to a US unskilled full-time year. (The GM's table feel is ~$10,000.)
