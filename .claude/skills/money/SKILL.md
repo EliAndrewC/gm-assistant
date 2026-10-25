@@ -52,6 +52,12 @@ firewood need a note.
 - **Gold koku** belongs to landlords, merchant houses, officials and treasuries. *"Very few people would buy things with
   Koku ... Player characters who do are exceptionally wealthy in a way which is noteworthy."* Any answer of a koku or
   more says who would pay that in gold, and that paying it marks the payer.
+- **The ladder is fixed; a premium by coin is negotiated** (GM 2026-10-25). The decimal ratios never move: a labeled
+  deviation from history, where gold, silver and copper were separate monies whose legal rate the market ignored
+  ([diagram#16](https://github.com/EliAndrewC/diagram/issues/16): 0295 Japan, 0296 China). What does happen is a
+  premium or discount for paying in a particular coin, struck between buyer and seller in a particular place or
+  crisis (a copper shortage, a changer's fee, a merchant who wants gold for a long journey): play, not a rate table.
+  Historical conversions still take each coin at its own era's market rate (`data/eras/`).
 - The **Imperial rate** fixes 1 koku = 48 gallons (180 liters) of rice for taxes, rent and stipends; market rice floats with harvest
   and place, and the Ministry of Retainers' mix of rice and coin is soft power.
 - Canon money rules to apply, not re-derive: stipend = rank squared; gifts by highest rank involved (token = that many
@@ -101,33 +107,10 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
 
 ## Open for the GM
 
-- **Separate metals, not one decimal money?** (GM 2026-10-24) Rokugan's coins are a fixed decimal ladder for simplicity;
-  historically gold, silver and copper were separate monies with a legal rate the market ignored. The GM wants the
-  reality researched ([diagram#16](https://github.com/EliAndrewC/diagram/issues/16), answered by diagram's 0295 and
-  0296): in both countries a legal rate between the metals was set and the market ignored it; only Japan's gold count
-  (ryo = 4 bu = 16 shu) was truly fixed; prices hung on the coin only in named episodes (Edo 1842, Tsugaru 1837-38,
-  Xianfeng Beijing); Qing copper prices stuck while silver rose, so copper earners and farmers taxed in silver lost.
-  Rokugan already has one such pattern: the Ministry of Retainers' decreed koku-to-rice rate against a floating market.
-  diagram's options: (a) keep the fixed decimal ladder as a labeled deviation; (b) fix koku and bu by count and let
-  zeni and sen float by era; (c) a premium or discount by coin in particular places or crises. Meanwhile historical
-  conversions take each coin at its own era's market rate (`data/eras/`), and the closeness rule's "a move in China's
-  cash rate" break keeps a Qing cash amount from converting through another decade's silver rate.
-
 - **Price ranges that show how much a good swung across periods** (GM 2026-10-24): the swing notes are in
   (`data/swings.jsonl`, from [diagram#15](https://github.com/EliAndrewC/diagram/issues/15)); the ledger's own page on
   the Money section, which will show them beside each narrow range, is still to build.
 
-- **England's premodern prices as comparative sources?** diagram asks whether to add the Bank of England's millennium
-  dataset and Clark's series to its record (0291). They show the same split as Edo and the Qing: little drift, a big
-  yearly swing. The GM's call.
-
-- **The koku's rice mass: settled** ([diagram 0248](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0248-how-much-rice-was-a-koku.html)):
-  180 L (48 US gallons), ~150 kg as brown rice; `l7r.md` and `budgets.md` now say so (GM, 2026-10-18). The sheet's
-  151.5 kg and $552 stand.
-- **The 50-koku family farm** (GM 2026-10-18: *"not married to the 50 koku number"*): revisit when research gives a
-  farmland price. So far: no farmland multiple in Japan or China (0251); Qing Fujian rent rights ran ~8 years of rent.
-  Unread leads: Takeyasu 1966 and Uemura 1987 on Japanese land capitalization (diagram's list). When a figure lands,
-  propose a new number to the GM with its basis.
 - **The pound-to-koku rate** for the English comparative rows: 145 sen per pound (the Austen sheet: 1 GBP = $80 at
   $550/koku). Anchoring on wages instead (an English laborer's GBP 15-20 a year = a Rokugani laborer's 3.32 koku) gives
   ~190 sen per pound, about 30% higher.
