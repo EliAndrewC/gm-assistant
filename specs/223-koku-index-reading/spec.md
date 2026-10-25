@@ -222,3 +222,6 @@ never edited.
   always $D/N; (2) the across-era mean was an unstated geometric choice -> recorded with its why, and it is not the
   knob; (3) equal era weights were called neutral though they include Chinese and Meiji eras -> stated as provisional,
   with each good's eras listed, and the headline's fall disclosed in Why.
+- Round 2 (spec-fidelity, 2026-10-25): FAITHFUL. All three fixed; the `equal` weighting option serves the GM's own
+  "possibly a weighted average, possibly not"; showing both readings rather than a switch still delivers the
+  proposal's split. Aside taken: Why now says the whole-basket value is ~$891, not the old $875.
