@@ -24,7 +24,6 @@ STATES: list[dict[str, str]] = [
     {'x_rice': '2', 'x_cloth': '1', 'q_fish': '0'},
     {'b': 'bassino-ma-a'},
     {'b': 'bassino-ma-a', 'q_housing': '3.31', 'q_salt': '10'},
-    {'c1': 'Sake|liter|20|2|12', 'c2': 'Tea|kg|1||9'},
     {'b': 'standard-no-housing', 'q_rice': '0.5'},
     {'m': 'arithmetic'},
     {'eq': '1', 'q_fish': '0'},
@@ -33,17 +32,15 @@ STATES: list[dict[str, str]] = [
 ]
 
 
+SIG3 = [6.6004, 0.041234, 1234.5, 100.2, 99.94, 12345.6, 0.5]
+
+
 def _js_state(state: web.State) -> dict[str, Any]:
     return {
         'basket': state.basket,
         'snapshot': state.snapshot,
         'q': dict(state.quantities),
         'x': dict(state.choices),
-        'custom': [
-            {'name': c.name, 'qty': c.quantity, 'silver': c.silver_g, 'dollars': c.dollars}
-            for c in state.custom
-            if c is not None
-        ],
         'mean': state.mean,
         'equal': state.equal,
         'w': dict(state.weights),
@@ -57,17 +54,19 @@ def test_browser_and_server_agree() -> None:
     data = web.page_data(model, KG, load_wages()[-1])
     states = [web.parse_state(model, params) for params in STATES]
     program = (
-        f'const {{compute, computeWhole, drivers}} = require({json.dumps(str(SCRIPT))});'
+        f'const {{compute, computeWhole, drivers, sig3}} = require({json.dumps(str(SCRIPT))});'
         f'const data = {json.dumps(data)};'
         f'const states = {json.dumps([_js_state(s) for s in states])};'
-        'process.stdout.write(JSON.stringify(states.map(s => {'
+        f'const figures = {json.dumps(SIG3)};'
+        'process.stdout.write(JSON.stringify({sig3: figures.map(sig3), readings: states.map(s => {'
         'const r = compute(data, s); r.drivers = drivers(r); r.whole = computeWhole(data, s);'
-        'return r; })));'
+        'return r; })}));'
     )
     out = json.loads(
         subprocess.run(['node', '-e', program], capture_output=True, check=True, text=True).stdout
     )
-    for state, js in zip(states, out, strict=True):
+    assert out['sig3'] == [web.sig3(x) for x in SIG3]
+    for state, js in zip(states, out['readings'], strict=True):
         py = web.state_reading(model, state, KG)
         assert js['dollars'] == pytest.approx(py.dollars)
         assert js['silver'] == pytest.approx(py.silver)

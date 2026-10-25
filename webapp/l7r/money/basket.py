@@ -52,7 +52,7 @@ from __future__ import annotations
 
 import json
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -63,7 +63,6 @@ __all__ = [
     'MEANS',
     'Basket',
     'Conversion',
-    'Custom',
     'Era',
     'Good',
     'Line',
@@ -358,17 +357,6 @@ def problems(model: Model) -> list[str]:
 
 
 @dataclass(frozen=True, slots=True)
-class Custom:
-    """A good the playground's visitor adds: both prices are theirs."""
-
-    name: str
-    unit: str
-    quantity: float
-    silver_g: float | None
-    dollars: float | None
-
-
-@dataclass(frozen=True, slots=True)
 class Line:
     good: str
     name: str
@@ -464,7 +452,6 @@ def reading(
     *,
     choices: Mapping[str, int] | None = None,
     quantities: Mapping[str, float] | None = None,
-    custom: Sequence[Custom] = (),
     mean: str = 'geometric',
     equal: bool = False,
     weights: Mapping[str, float] | None = None,
@@ -492,8 +479,6 @@ def reading(
                 pick.priced_as if pick else '',
             )
         )
-    for i, c in enumerate(custom):
-        lines.append(Line(f'custom-{i}', c.name, c.unit, c.quantity, c.dollars, c.silver_g, ''))
     return Reading(tuple(lines), koku_kg, model.rice_ref, mean, equal)
 
 

@@ -67,14 +67,14 @@ def test_a_link_reopens_its_variant(root: Root) -> None:
     """User Story 5 scenario 2: the server renders what the link says."""
     page = root.money(
         'koku', b='bassino-ma-a', q_fish='0', x_rice='9', c1='Sake|liter|20|2|12'
-    ).decode()
+    ).decode()  # an old link's own good (c1) is ignored: the visitor's goods are gone
     assert '<option value="bassino-ma-a" selected>' in page
     fish = re.search(r'<input type="checkbox" class="koku-on" name="q_fish"[^>]*>', page)
     assert fish is not None
     assert 'checked' not in fish.group(0)
     assert 'name="x_rice" value="2" checked' in page  # an index past the end is the last option
-    assert 'value="Sake"' in page
-    assert 'name="c1" value="Sake|liter|20|2|12"' in page
+    assert 'Sake' not in page
+    assert 'koku-custom' not in page
 
 
 def test_parse_state_ignores_what_does_not_parse(model: bk.Model) -> None:
@@ -89,17 +89,12 @@ def test_parse_state_ignores_what_does_not_parse(model: bk.Model) -> None:
             'q_soybeans': '40',
             'x_rice': 'two',
             'x_cloth': '1',
-            'c1': 'only|three|parts',
-            'c2': ' |kg|1|1|1',
-            'c3': 'Tea|kg|x|0.5|',
         },
     )
     assert state.basket == 'standard'
     assert state.snapshot == model.snapshots[-1].date
     assert state.quantities == {'soybeans': 40.0}
     assert state.choices == {'cloth': 1}
-    assert state.custom[:2] == (None, None)
-    assert state.custom[2] == bk.Custom('Tea', 'kg', 0.0, 0.5, None)
 
 
 def test_rows_list_every_good_and_bring_new_ones_in_at_the_standard_quantity(
@@ -157,19 +152,9 @@ def test_drivers_name_what_moves_the_koku(model: bk.Model) -> None:
     assert web.drivers(empty) == 'Nothing in the basket is priced on both sides.'
 
 
-def test_custom_status_says_whether_a_good_counts(model: bk.Model) -> None:
-    state = web.parse_state(model, {'c1': 'Sake|liter|20|2|12', 'c3': 'Tea|kg|1||9'})
-    status = web.custom_status(state, web.state_reading(model, state, KG))
-    assert status[0].startswith('Alone, a koku buys $')
-    assert status[0].endswith('of the average.')
-    assert status[1] == ''
-    assert status[2] == 'Not counted until all five are filled in.'
-
-
-def test_page_shows_drivers_and_custom_status(root: Root) -> None:
-    page = html.unescape(root.money('koku', c1='Sake|liter|20|2|12').decode())
+def test_page_shows_drivers(root: Root) -> None:
+    page = html.unescape(root.money('koku').decode())
     assert 'Pulls the average up most: Housing' in page
-    assert 'Alone, a koku buys ' in page
 
 
 def test_the_page_prices_at_the_newest_date_only(root: Root, model: bk.Model) -> None:
@@ -195,11 +180,10 @@ def test_a_ticked_good_reads_the_checkboxs_value(model: bk.Model) -> None:
     assert web.parse_state(model, {'q_housing': ['0']}).quantities == {'housing': 0.0}
 
 
-def test_a_half_filled_custom_good_is_not_called_unpriced(model: bk.Model) -> None:
-    state = web.State(bk.STANDARD, '2017-04', custom=(bk.Custom('Tea', 'kg', 1.0, None, 9.0),))
+def test_goods_the_old_snapshot_cannot_price_are_named(model: bk.Model) -> None:
+    state = web.State(bk.STANDARD, '2017-04')
     reading = web.state_reading(model, state, KG)
     assert web.left_out(reading) == ('Salt', 'Fuel', 'Housing')
-    assert 'left out: no price' not in web.custom_status(state, reading)
 
 
 # --- feature 223: two readings, the mean, era weights ---------------------------------------------
@@ -212,7 +196,7 @@ def _whole(page: str) -> str:
 def test_toggles_move_the_average_not_the_whole_basket(root: Root, model: bk.Model) -> None:
     """US2 acceptance 3: a good switched off or added changes only the average over goods."""
     full = root.money('koku').decode()
-    off = root.money('koku', q_housing='0', c1='Sake|liter|20|2|12').decode()
+    off = root.money('koku', q_housing='0').decode()
     whole = web.whole_reading(model, web.parse_state(model, {}), KG)
     assert _whole(full) == _whole(off) == f'${whole.arithmetic:,.0f}'
     assert f'cost {whole.koku_cost:.2f} koku in Rokugan' in full
@@ -256,25 +240,40 @@ def test_the_page_names_every_goods_figure(root: Root) -> None:
     assert 'Which periods set Rokugan' in page
     assert 'rice alone, so it adds nothing' in page
     assert '; reconstructed, not counted: ' in page
-    # the standard basket's twelve goods, and a hidden row for each custom good
-    assert page.count('class="koku-track__dot"') == 12 + web.MAX_CUSTOM
-    assert page.count('data-custom-row=') == web.MAX_CUSTOM
-    assert page.count('data-custom="2" hidden') == 1  # one blank good shows at a time
+    assert page.count('class="koku-track__dot"') == 12  # the standard basket's twelve goods
     assert web.axis_pct(10) == 0
     assert web.axis_pct(10_000) == 100
     assert web.axis_pct(1e6) == 100  # clamped
     assert web.axis_pct(1_000) == pytest.approx(66.67)
 
 
-def test_a_counted_custom_good_gets_a_row_on_the_track(root: Root, model: bk.Model) -> None:
-    """Design review: the average held a custom good the dot track did not show."""
-    state = web.parse_state(model, {'c1': 'Sake|liter|20|2|12', 'c2': 'Tea|kg|1||9'})
-    rows = web.custom_rows(state, web.state_reading(model, state, KG))
-    assert rows[0] is not None
-    assert rows[0].name == 'Sake'
-    assert rows[1] is None  # half-filled
-    assert rows[2] is None  # blank
-    page = html.unescape(root.money('koku', c1='Sake|liter|20|2|12').decode())
-    assert 'Sake <span class="koku-custom-tag">your good</span>' in page
-    assert 'data-custom-row="1">' in page  # shown
-    assert 'data-custom-row="2" hidden' in page
+def test_each_good_cites_the_periods_its_rokugani_price_rests_on(root: Root) -> None:
+    """GM 2026-10-25: no single period or silver is the peg any more; each good lists the periods
+    behind its price, with a link to the research each price comes from."""
+    page = html.unescape(root.money('koku').decode())
+    assert 'Rokugan: in silver' not in page
+    assert "at Kyoto 1745-54's price" not in page
+    assert 'Add goods of your own' not in page
+    assert 'diagram#17' not in page
+    assert 'Rice is the measure: a koku is' in page
+    fish = page[page.index('data-good="fish"') :]
+    fish = fish[: fish.index('</ol>')]
+    assert 'Canton 1830-1839</span>: ' in fish
+    assert 'diagram research 0288' in fish
+    assert 'Bassino & Ma, Table 3' in fish  # Kyoto 1745's fish, a borrowed price: listed, hidden
+    assert re.search(r'<li data-era="kyoto-1745" hidden>', fish)
+    assert 'data-era="tokyo-1882">' in fish  # counted, so shown
+    cloth = page[page.index('data-good="cloth"') :]
+    assert 'data-era="tokyo-1882"' not in cloth[: cloth.index('</ol>')]  # excluded: never listed
+
+
+def test_rokugani_prices_read_in_sen(model: bk.Model) -> None:
+    assert web.sen(model.rice_ref * KG, model, KG) == pytest.approx(1000)  # a koku of rice
+    assert [web.sig3(x) for x in (6.6004, 0.041234, 1234.5, 100.2, 99.94)] == [
+        '6.6',
+        '0.0412',
+        '1,230',
+        '100',
+        '99.9',
+    ]
+    assert web.source_label('https://example.com/x.pdf') == 'source'

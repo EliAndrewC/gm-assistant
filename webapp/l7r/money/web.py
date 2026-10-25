@@ -2,28 +2,28 @@
 
 TWO READINGS, SHOWN TOGETHER (feature 223; the why is in `basket.py`): the WHOLE BASKET ($D/N over
 a complete basket with every good; only a price source moves it) and the AVERAGE OVER GOODS (the
-single-good kokus by the chosen mean; the goods switched in and out and the visitor's own goods act
-on this one only). Together they are the range.
+single-good kokus by the chosen mean; the goods switched in and out act on this one only). Together
+they are the range. (The visitor's own goods, feature 223, were removed at the GM's word on
+2026-10-25; an old link's `c1`..`c3` is ignored.)
 
 The whole state lives in the link, so a link reopens the same variant:
 `b=<basket the average starts from>`, `wb=<complete basket for the whole-basket reading>`,
 `q_<good>=<quantity>` (0 switches a good out of the average; a good outside the basket switched on
 comes in at the standard basket's quantity), `x_<good>=<substitute index>`, `m=<mean>`
 (geometric, the default, or arithmetic), `eq=1` (weigh the goods equally instead of by spending),
-`w_<era>=<weight>` (an era's weight in Rokugan's prices; default 1), and `c1`..`c3` =
-`<name>|<unit>|<quantity>|<grams of silver a unit>|<dollars a unit>` for a good of the visitor's
-own. A value that does not parse is ignored, never an error: a hand-edited link still opens, and a
-feature-222 link's toggles now act on the average. Today's prices are always the newest snapshot
-(GM 2026-10-24), so an old link's `s=` is ignored. A repeated parameter reads its last value: the
-form sends a hidden `q_<good>=0` before each good's checkbox. `money.js` computes the same readings
-in the browser (`compute`), and `tests/test_money_js.py` runs it under node against
-`basket.reading` so the two cannot drift.
+and `w_<era>=<weight>` (an era's weight in Rokugan's prices; default 1). A value that does not parse
+is ignored, never an error: a hand-edited link still opens, and a feature-222 link's toggles now act
+on the average. Today's prices are always the newest snapshot (GM 2026-10-24), so an old link's `s=`
+is ignored. A repeated parameter reads its last value: the form sends a hidden `q_<good>=0` before
+each good's checkbox. `money.js` computes the same readings in the browser (`compute`), and
+`tests/test_money_js.py` runs it under node against `basket.reading` so the two cannot drift.
 """
 
 from __future__ import annotations
 
 import json
 import math
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -33,23 +33,22 @@ from l7r.money.readings import LABORER_KOKU_YEAR, Wage, wage_dollars_per_koku
 
 __all__ = [
     'AXIS',
-    'MAX_CUSTOM',
     'Row',
     'alone_of',
     'State',
     'axis_pct',
-    'custom_rows',
-    'custom_status',
     'drivers',
     'left_out',
     'page_data',
     'parse_state',
     'rows',
+    'sen',
+    'sig3',
+    'source_label',
     'state_reading',
     'whole_reading',
 ]
 
-MAX_CUSTOM = 3
 AXIS = (
     10.0,
     10_000.0,
@@ -62,7 +61,6 @@ class State:
     snapshot: str
     quantities: Mapping[str, float] = field(default_factory=dict)
     choices: Mapping[str, int] = field(default_factory=dict)
-    custom: tuple[bk.Custom | None, ...] = ()
     mean: str = 'geometric'
     equal: bool = False
     weights: Mapping[str, float] = field(default_factory=dict)  # era overrides only
@@ -75,14 +73,6 @@ def _number(text: str) -> float | None:
     except ValueError:
         return None
     return value if math.isfinite(value) and value >= 0 else None
-
-
-def _custom(text: str) -> bk.Custom | None:
-    parts = text.split('|')
-    if len(parts) != 5 or not parts[0].strip():
-        return None
-    name, unit, qty, silver, dollars = (p.strip() for p in parts)
-    return bk.Custom(name, unit, _number(qty) or 0.0, _number(silver), _number(dollars))
 
 
 def parse_state(model: bk.Model, params: Mapping[str, Any]) -> State:
@@ -103,13 +93,11 @@ def parse_state(model: bk.Model, params: Mapping[str, Any]) -> State:
         if (w := _number(str(params.get(f'w_{era}', '')))) is not None:
             weights[era] = w
     mean = params.get('m', 'geometric')
-    custom = tuple(_custom(str(params.get(f'c{i}', ''))) for i in range(1, MAX_CUSTOM + 1))
     return State(
         basket,
         snapshot,
         quantities,
         choices,
-        custom,
         mean if mean in bk.MEANS else 'geometric',
         params.get('eq') == '1',
         weights,
@@ -118,7 +106,7 @@ def parse_state(model: bk.Model, params: Mapping[str, Any]) -> State:
 
 
 def state_reading(model: bk.Model, state: State, koku_kg: float) -> bk.Reading:
-    """The average over goods: toggles, custom goods, the mean and the weighting act here."""
+    """The average over goods: toggles, the mean and the weighting act here."""
     return bk.reading(
         model,
         model.basket(state.basket),
@@ -126,7 +114,6 @@ def state_reading(model: bk.Model, state: State, koku_kg: float) -> bk.Reading:
         koku_kg,
         choices=state.choices,
         quantities=state.quantities,
-        custom=[c for c in state.custom if c is not None],
         mean=state.mean,
         equal=state.equal,
         weights=state.weights,
@@ -174,32 +161,8 @@ def drivers(reading: bk.Reading) -> str:
 
 
 def left_out(reading: bk.Reading) -> tuple[str, ...]:
-    """Basket goods with no price on one side; a custom good has its own status line instead."""
-    return tuple(
-        ln.name
-        for ln in reading.lines
-        if ln.quantity > 0 and not ln.counted and not ln.good.startswith('custom-')
-    )
-
-
-def custom_status(state: State, reading: bk.Reading) -> list[str]:
-    """One line under each custom row: whether it counts, and for how much."""
-    weight = {ln.good: w for ln, w in reading.weighted}
-    lines = iter(ln for ln in reading.lines if ln.good.startswith('custom-'))
-    out = []
-    for c in state.custom:
-        if c is None:
-            out.append('')
-            continue
-        ln = next(lines)
-        if not ln.counted:
-            out.append('Not counted until all five are filled in.')
-        else:
-            out.append(
-                f'Alone, a koku buys {_money(reading.alone(ln))} of it; it carries '
-                f'{_pct(weight[ln.good])} of the average.'
-            )
-    return out
+    """Basket goods with no price on one side."""
+    return reading.left_out
 
 
 def alone_of(reading: bk.Reading, good: str) -> float:
@@ -207,35 +170,33 @@ def alone_of(reading: bk.Reading, good: str) -> float:
     return next((reading.alone(ln) for ln in reading.lines if ln.good == good and ln.counted), 0.0)
 
 
-@dataclass(frozen=True, slots=True)
-class CustomRow:
-    name: str
-    unit: str
-    quantity: float
-    weight: float
-    alone: float
-
-
-def custom_rows(state: State, reading: bk.Reading) -> list[CustomRow | None]:
-    """A table row for each counted custom good (None where it is blank or not counted), so the
-    dot track explains every good the average holds."""
-    weight = {ln.good: w for ln, w in reading.weighted}
-    lines = iter(ln for ln in reading.lines if ln.good.startswith('custom-'))
-    out: list[CustomRow | None] = []
-    for c in state.custom:
-        ln = next(lines) if c is not None else None
-        if c is None or ln is None or not ln.counted:
-            out.append(None)
-            continue
-        out.append(CustomRow(c.name, c.unit, c.quantity, weight[ln.good], reading.alone(ln)))
-    return out
-
-
 def axis_pct(dollars: float) -> float:
     """Where a dollar figure sits on the dot track, 0-100, clamped to the axis."""
     lo, hi = AXIS
     x = (math.log10(max(dollars, lo)) - math.log10(lo)) / (math.log10(hi) - math.log10(lo))
     return round(min(max(x, 0.0), 1.0) * 100, 2)
+
+
+def sen(silver: float, model: bk.Model, koku_kg: float) -> float:
+    """Rokugan's grams of silver as sen: a koku (1,000 sen) is `koku_kg` of rice."""
+    return silver / (model.rice_ref * koku_kg) * 1000
+
+
+def sig3(x: float) -> str:
+    """Three significant figures, whole numbers with commas from 100: '6.6', '0.0412', '1,230'.
+    `money.js` `sig3` is its twin."""
+    v = float(f'{x:.3g}')
+    return f'{v:,.0f}' if v >= 100 else f'{v:g}'
+
+
+def source_label(url: str) -> str:
+    """A footnote's link text: the diagram research question's number, else the source's name."""
+    m = re.search(r'/research/questions/(\d{4})-', url)
+    if m:
+        return f'diagram research {m.group(1)}'
+    if 'bassino_and_ma' in url:
+        return 'Bassino & Ma, Table 3'
+    return 'source'
 
 
 @dataclass(frozen=True, slots=True)
@@ -251,6 +212,7 @@ class Row:
     weight: float | None  # share of the average; None when not counted
     alone: float | None  # the single-good koku
     eras: tuple[bk.Era, ...]  # what Rokugan's price rests on
+    candidates: tuple[bk.Era, ...]  # every era that could: prices it beside rice, not excluded
 
 
 def rows(model: bk.Model, state: State, reading: bk.Reading) -> list[Row]:
@@ -277,6 +239,11 @@ def rows(model: bk.Model, state: State, reading: bk.Reading) -> list[Row]:
                 weight.get(gid),
                 reading.alone(line[gid]) if counted else None,
                 tuple(model.eras[e] for e in model.rests_on(gid, state.weights)),
+                tuple(
+                    e
+                    for e in sorted(model.eras.values(), key=lambda e: e.years)
+                    if gid in e.goods and 'rice' in e.goods and not e.goods[gid].excluded
+                ),
             )
         )
     return out

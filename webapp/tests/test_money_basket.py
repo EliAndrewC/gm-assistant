@@ -81,7 +81,7 @@ def test_housing_is_the_largest_lever(model: bk.Model) -> None:
 # --- readings ------------------------------------------------------------------------------------
 
 
-def test_reading_takes_substitutes_quantities_and_custom_goods(model: bk.Model) -> None:
+def test_reading_takes_substitutes_and_quantities(model: bk.Model) -> None:
     snap, std = model.snapshot('2026-10'), model.basket()
     base = bk.reading(model, std, snap, KG)
     calrose = bk.reading(model, std, snap, KG, choices={'rice': 1})
@@ -91,12 +91,6 @@ def test_reading_takes_substitutes_quantities_and_custom_goods(model: bk.Model) 
     off = bk.reading(model, std, snap, KG, quantities={'fish': 0})
     assert off.dollars == pytest.approx(base.dollars - 3.5 * 19.45)
     assert off.left_out == ()
-    sake = bk.Custom('Sake', 'liter', 10, 2.0, 12.0)
-    plus = bk.reading(model, std, snap, KG, custom=[sake])
-    assert plus.dollars == pytest.approx(base.dollars + 120)
-    assert plus.silver == pytest.approx(base.silver + 20)
-    half = bk.reading(model, std, snap, KG, custom=[bk.Custom('Tea', 'kg', 1, None, 9.0)])
-    assert half.left_out == ('Tea',)
     assert bk.reading(model, bk.Basket('x', 'x', '', {}), snap, KG).per_koku == 0.0
 
 

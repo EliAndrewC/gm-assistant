@@ -9,8 +9,8 @@
 
 {#
   The koku-worth playground (features 222, 223). Two readings shown together: the whole basket ($D/N,
-  every good; only a price source or an era weight moves it) and the average over goods (toggles,
-  custom goods, the mean). The server renders the state in the link (l7r/money/web.py documents its
+  every good; only a price source or an era weight moves it) and the average over goods (toggles and
+  the mean). The server renders the state in the link (l7r/money/web.py documents its
   parameters); money.js recomputes on every change and keeps the link in sync. Without JavaScript the
   form still works: change anything and press Update (each good's hidden q_<good>=0 precedes its
   checkbox, so an unticked good reads 0 and a ticked one its quantity).
@@ -31,7 +31,7 @@
     <div class="masthead__copy">
       <p class="money-crumb"><a href="/money">Money</a></p>
       <h1 class="masthead__title">What's a koku worth?</h1>
-      <p class="masthead__lede">A koku is a mass of rice. What it buys today depends on the good: a koku's silver buys far more cloth than housing, now that cloth is cheap and rooms are dear. So there is no single answer, only a range.</p>
+      <p class="masthead__lede">A koku is a mass of rice. What it buys today depends on the good: a koku's rice buys far more cloth than housing, now that cloth is cheap and rooms are dear. So there is no single answer, only a range.</p>
     </div>
     <span class="masthead__watermark" lang="ja" aria-hidden="true">石</span>
   </div>
@@ -144,33 +144,26 @@
                   {% endif %}
                 </div>
                 <div class="koku-detail__side">
-                  <p class="koku-detail__label">Rokugan: in silver, and in rice</p>
+                  <p class="koku-detail__label">Rokugan: priced in rice</p>
                   {% if row.silver %}
-                    <p><span class="koku-price">{{ '%.3g' % row.silver }} g of silver a {{ row.good.unit }}</span>, the price of {{ '%.2f' % (row.silver / model.rice_ref) }} kg of rice.
-                    <span class="koku-priced-as" data-out="rests-on">{% if row.good.id == 'rice' %}Rice is the anchor: Rokugan's coins are pegged to it, at Kyoto 1745-54's price.{% else %}The weighted mean of its price in rice in {{ row.eras|length }} period{{ 's' if row.eras|length != 1 }}: {% for e in row.eras %}{{ e.title }} ({{ '%.2f' % (e.goods[row.good.id].silver_g / e.goods['rice'].silver_g) }}, <a class="koku-link" href="{{ e.goods[row.good.id].source }}">source</a>){{ '; ' if not loop.last else '.' }}{% endfor %}{% endif %}</span></p>
+                    <p data-out="rok-price"><span class="koku-price">{{ sig3(sen(row.silver)) }} sen a {{ row.good.unit }}</span>, the price of {{ '%.2f' % (row.silver / model.rice_ref) }} kg of rice.</p>
+                    {% if row.good.id == 'rice' %}
+                      <p class="koku-priced-as">Rice is the measure: a koku is {{ '%.1f' % reading.koku_kg }} kg of it, and every other good is priced by how much rice it cost.</p>
+                    {% else %}
+                      <p class="koku-priced-as">Its price in rice, averaged over the periods that record it (their weights are under "Which periods set Rokugan's prices"):</p>
+                      <ol class="koku-cites">
+                        {% for e in row.candidates %}
+                          {% set p = e.goods[row.good.id] %}
+                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}{% if p.note %} ({{ p.note }}){% endif %}. <a class="koku-link" href="{{ p.source }}">{{ source_label(p.source) }}</a></li>
+                        {% endfor %}
+                      </ol>
+                    {% endif %}
                   {% else %}
-                    <p class="koku-missing">no period prices it</p>
+                    <p class="koku-missing" data-out="rok-price">no period prices it</p>
                   {% endif %}
                 </div>
               </div>
             </details>
-          </li>
-        {% endfor %}
-        {% for c in state.custom %}
-          {% set crow = custom_rows[loop.index0] %}
-          <li class="koku-good koku-good--custom" data-custom-row="{{ loop.index }}"{% if not crow %} hidden{% endif %}>
-            <span class="koku-good__mark" aria-hidden="true">+</span>
-            <div class="koku-sum koku-sum--static">
-              <span class="koku-sum__name" data-out="name">{{ crow.name if crow }} <span class="koku-custom-tag">your good</span></span>
-              <span class="koku-sum__qty" data-out="qty">{{ amount(crow.quantity, crow.unit) if crow }}</span>
-              <span class="koku-sum__weight" data-out="weight">{{ pct(crow.weight) if crow }}</span>
-              <span class="koku-sum__alone" data-out="alone">{{ dollars(crow.alone) if crow }}</span>
-              <span class="koku-track">
-                <span class="koku-track__mark koku-track__mark--central" style="--at: {{ axis_pct(reading.per_koku) }}%"></span>
-                <span class="koku-track__mark koku-track__mark--high" style="--at: {{ axis_pct(whole.arithmetic) }}%"></span>
-                <span class="koku-track__dot" style="--at: {{ axis_pct(crow.alone if crow else 10) }}%; --size: {{ (8 + 12 * (crow.weight if crow else 0) ** 0.5)|round(1) }}px"></span>
-              </span>
-            </div>
           </li>
         {% endfor %}
       </ul>
@@ -182,7 +175,7 @@
 
     <details class="koku-eras">
       <summary class="koku-eras__sum">Which periods set Rokugan's prices</summary>
-      <p class="koku-eras__hint">Each good's Rokugani price is the weighted mean of its price in rice in every period that records both, so a debased coin or a dear decade of silver drops out. Every period weighs 1 for now, the Chinese and Meiji ones included; set a period to 0 to leave it out, or higher to count it more. Rice itself is the anchor and does not move.</p>
+      <p class="koku-eras__hint">Each good's Rokugani price is the weighted mean of its price in rice in every period that records both, so a debased coin or a dear decade of silver drops out. Every period weighs 1: China counts as much as Japan, since Rokugan's lands are more like China's, and Meiji Tokyo counts for its food, though not for the kerosene and linen foreign trade brought. Set a period to 0 to leave it out, or higher to count it more.</p>
       <table class="koku-eras__table">
         <thead><tr><th scope="col">Period</th><th scope="col">Weight</th><th scope="col">Prices beside rice</th></tr></thead>
         <tbody>
@@ -208,28 +201,11 @@
       </table>
     </details>
 
-    <fieldset class="koku-custom">
-      <legend class="koku-custom__legend">Add goods of your own to the average</legend>
-      <p class="koku-custom__hint">Give a name, a unit, a year's quantity, and both prices: what a unit cost in Rokugan's silver (rice was {{ '%.2f' % model.rice_ref }} g a kg) and what it costs today. A good counts once all five are filled in; it joins the average, not the whole basket.</p>
-      {% for c in state.custom %}
-        {% set i = loop.index %}
-        <div class="koku-custom__row" data-custom="{{ i }}"{% if not c and i > first_blank %} hidden{% endif %}>
-          <input type="hidden" name="c{{ i }}" value="{% if c %}{{ c.name }}|{{ c.unit }}|{{ '%g' % c.quantity }}|{{ '%g' % c.silver_g if c.silver_g is not none else '' }}|{{ '%g' % c.dollars if c.dollars is not none else '' }}{% endif %}" />
-          <label class="koku-field"><span class="koku-field__label">Good</span><input class="koku-text" type="text" data-part="name" value="{{ c.name if c else '' }}"{% if i == 1 %} placeholder="e.g. sake"{% endif %} /></label>
-          <label class="koku-field"><span class="koku-field__label">Unit</span><input class="koku-text koku-text--short" type="text" data-part="unit" value="{{ c.unit if c else '' }}"{% if i == 1 %} placeholder="e.g. liter"{% endif %} /></label>
-          <label class="koku-field"><span class="koku-field__label">A year's worth</span><input class="koku-number" type="number" min="0" step="any" data-part="qty" value="{{ '%g' % c.quantity if c else '' }}" /></label>
-          <label class="koku-field"><span class="koku-field__label">Grams of silver a unit</span><input class="koku-number" type="number" min="0" step="any" data-part="silver" value="{{ '%g' % c.silver_g if c and c.silver_g is not none else '' }}" /></label>
-          <label class="koku-field"><span class="koku-field__label">Dollars a unit</span><input class="koku-number" type="number" min="0" step="any" data-part="dollars" value="{{ '%g' % c.dollars if c and c.dollars is not none else '' }}" /></label>
-          <p class="koku-custom__status" data-out="custom-status">{{ custom_status[loop.index0] }}</p>
-        </div>
-      {% endfor %}
-    </fieldset>
-
     <section class="koku-notes detail-prose">
       <h2>How the koku is reckoned</h2>
-      <p>Rokugan's coins are pegged to rice: a koku is about {{ '%.1f' % reading.koku_kg }} kg of it, and in Kyoto in 1745-54 a kilogram of rice cost {{ '%.2f' % model.rice_ref }} g of pure silver (the Genbun silver of the day), so a koku is about {{ (model.rice_ref * reading.koku_kg)|round|int }} g. Every other good's Rokugani price is its price in rice, averaged over the periods the research records, times that anchor.</p>
-      <p>Divide a good's price today by its price in Rokugan and multiply by a koku's silver, and you have what a koku buys of that good alone: about {{ dollars(rice_alone) }} of rice, but under {{ dollars(50) }} of cloth and thousands of dollars of housing. Those spread over two orders of magnitude, so a koku's worth depends on how they are averaged. The <strong>whole basket</strong> answers the household's question, what a year of necessities cost then and costs now; it is the same as the average weighted by spending, and the high end, because the goods that became dear (above all a room) weigh heavily in it. The <strong>average over goods</strong> takes the geometric mean by default, which no single good can dominate; it is the central figure the money skill quotes. Economic historians use these baskets mainly to compare a laborer's wage with the cost of living across places and centuries, which is what wage dollars do.</p>
-      <p>The standard basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. Some of Kyoto 1745's prices are Bassino &amp; Ma's reconstructions from Meiji price ratios, so they are not counted again beside Tokyo 1882; the room's price is still a guess. Which modern goods match the historical ones, and how historians average them, is being researched (<a href="https://github.com/EliAndrewC/diagram/issues/17">diagram#17</a>). <a href="https://github.com/EliAndrewC/gm-assistant/blob/main/specs/223-koku-index-reading/spec.md">Sources and reasoning</a>.</p>
+      <p>A koku is about {{ '%.1f' % reading.koku_kg }} kg of rice, and Rokugan's coins count in it: 1,000 sen to the koku. Every other good's Rokugani price is how much rice it cost, averaged over every period the research records it in, {{ model.eras|length }} periods of Japan and China from the 1490s to the 1910s. Counting in rice rather than coin takes out each period's own money, so a debased coin or a dear decade of silver drops out. Open a good above for the periods behind its price and the research each comes from.</p>
+      <p>Take the amount of a good a koku's rice bought, price that amount today, and you have what a koku buys of that good alone: about {{ dollars(rice_alone) }} of rice, but under {{ dollars(50) }} of cloth and thousands of dollars of housing. Those spread over two orders of magnitude, so a koku's worth depends on how they are averaged. The <strong>whole basket</strong> answers the household's question, what a year of necessities cost then and costs now; it is the same as the average weighted by spending, and the high end, because the goods that became dear (above all a room) weigh heavily in it. The <strong>average over goods</strong> takes the geometric mean by default, which no single good can dominate; it is the central figure the money skill quotes. Economic historians use these baskets mainly to compare a laborer's wage with the cost of living across places and centuries, which is what wage dollars do.</p>
+      <p>The standard basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. Some of Kyoto 1745's prices are Bassino &amp; Ma's reconstructions from Meiji price ratios, so they are not counted again beside Tokyo 1882; the room's price is still a guess.</p>
     </section>
     <div class="koku-sticky" aria-hidden="true">A koku buys <strong data-out="per-koku-sticky">{{ dollars(reading.per_koku) }}</strong> to <strong data-out="whole-sticky">{{ dollars(whole.arithmetic) }}</strong> today</div>
   </form>

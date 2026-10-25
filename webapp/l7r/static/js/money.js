@@ -61,9 +61,6 @@
       var pick = opts.length ? opts[Math.min(Math.max((state.x || {})[good] || 0, 0), opts.length - 1)] : null;
       lines.push(line(good, data.goods[good].name, qty[good], pick ? pick.dollars : null, rok[good] || null));
     });
-    (state.custom || []).forEach(function (c, i) {
-      lines.push(line('custom-' + i, c.name, c.qty, c.dollars, c.silver));
-    });
     var dollars = 0;
     var silver = 0;
     lines.forEach(function (ln) {
@@ -114,6 +111,12 @@
     };
   }
 
+  // The twin of web.py `sig3`: three significant figures, whole numbers with commas from 100.
+  function sig3(x) {
+    var v = parseFloat(x.toPrecision(3));
+    return v >= 100 ? v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : String(v);
+  }
+
   function pct(w) {
     return w < 0.005 ? '<1%' : Math.round(w * 100) + '%';
   }
@@ -144,7 +147,7 @@
 
   root.kokuCompute = compute;
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { compute: compute, computeWhole: computeWhole, drivers: drivers, prices: prices, restsOn: restsOn, weights: weights, axisPct: axisPct };
+    module.exports = { sig3: sig3, compute: compute, computeWhole: computeWhole, drivers: drivers, prices: prices, restsOn: restsOn, weights: weights, axisPct: axisPct };
   }
   if (typeof document === 'undefined') return;
 
@@ -165,7 +168,6 @@
     var data = JSON.parse(document.getElementById('koku-data').textContent);
     var basketSel = form.querySelector('[data-in="basket"]');
     var rows = Array.prototype.slice.call(form.querySelectorAll('li[data-good]'));
-    var customs = Array.prototype.slice.call(form.querySelectorAll('[data-custom]'));
     var eraInputs = Array.prototype.slice.call(form.querySelectorAll('[data-in="weight"]'));
     var out = function (name) { return form.querySelector('[data-out="' + name + '"]'); };
 
@@ -178,7 +180,7 @@
       var basket = data.baskets[basketSel.value];
       var mean = form.querySelector('[data-in="mean"]:checked');
       var st = {
-        basket: basketSel.value, snapshot: data.newest, q: {}, x: {}, w: {}, custom: [], c: [],
+        basket: basketSel.value, snapshot: data.newest, q: {}, x: {}, w: {},
         mean: mean ? mean.value : 'geometric', equal: form.querySelector('[data-in="equal"]').checked,
       };
       rows.forEach(function (row) {
@@ -193,16 +195,6 @@
         var v = number(input);
         if (v !== null && v !== data.eras[id].weight) st.w[id] = v;
       });
-      customs.forEach(function (div, i) {
-        var get = function (part) { return div.querySelector('[data-part="' + part + '"]'); };
-        var name = get('name').value.trim();
-        var raw = [name, get('unit').value.trim(), get('qty').value, get('silver').value, get('dollars').value];
-        div.querySelector('input[type="hidden"]').value = name ? raw.join('|') : '';
-        st.c[i] = name ? raw.join('|') : '';
-        if (name) {
-          st.custom.push({ name: name, qty: number(get('qty')) || 0, silver: number(get('silver')), dollars: number(get('dollars')) });
-        }
-      });
       return st;
     }
 
@@ -214,7 +206,6 @@
       Object.keys(st.q).forEach(function (g) { p.set('q_' + g, String(st.q[g])); });
       Object.keys(st.x).forEach(function (g) { p.set('x_' + g, String(st.x[g])); });
       Object.keys(st.w).forEach(function (e) { p.set('w_' + e, String(st.w[e])); });
-      st.c.forEach(function (c, i) { if (c) p.set('c' + (i + 1), c); });
       var qs = p.toString();
       return location.pathname + (qs ? '?' + qs : '');
     }
@@ -236,44 +227,15 @@
         ' koku in Rokugan and costs ' + money(whole.dollars) + ' today, so a koku is ' + money(whole.arithmetic) +
         '. Averaging what a koku buys of each good instead, so that no one good can dominate, gives ' + money(r.per_koku) + '.';
       out('drivers').textContent = drivers(r);
-      var customLines = r.lines.filter(function (ln) { return ln.good.indexOf('custom-') === 0; });
-      var next = 0;
-      var blankShown = false;
-      customs.forEach(function (div, i) {
-        var status = div.querySelector('[data-out="custom-status"]');
-        var crow = form.querySelector('[data-custom-row="' + (i + 1) + '"]');
-        crow.hidden = true;
-        // One blank good at a time: the filled ones and the first empty one show.
-        var empty = !st.c[i] && !div.querySelector('[data-part="name"]').value.trim();
-        div.hidden = empty && blankShown && !div.contains(document.activeElement);
-        if (empty) blankShown = true;
-        if (!st.c[i]) { status.textContent = ''; return; }
-        var ln = customLines[next++];
-        if (ln.counted) {
-          crow.hidden = false;
-          crow.querySelector('[data-out="name"]').firstChild.textContent = ln.name + ' ';
-          crow.querySelector('[data-out="qty"]').textContent = amount(ln.quantity, div.querySelector('[data-part="unit"]').value.trim());
-          crow.querySelector('[data-out="weight"]').textContent = pct(ln.weight);
-          crow.querySelector('[data-out="alone"]').textContent = money(ln.alone);
-          place(crow.querySelector('.koku-track__mark--central'), r.per_koku);
-          place(crow.querySelector('.koku-track__mark--high'), whole.arithmetic);
-          var cdot = crow.querySelector('.koku-track__dot');
-          place(cdot, ln.alone);
-          cdot.style.setProperty('--size', (8 + 12 * Math.sqrt(ln.weight)).toFixed(1) + 'px');
-        }
-        status.textContent = ln.counted
-          ? 'Alone, a koku buys ' + money(ln.alone) + ' of it; it carries ' + pct(ln.weight) + ' of the average.'
-          : 'Not counted until all five are filled in.';
-      });
       out('description').textContent = data.baskets[st.basket].description;
       var left = out('left-out');
-      var missing = r.lines.filter(function (ln) {
-        return ln.quantity > 0 && !ln.counted && ln.good.indexOf('custom-') !== 0;
-      }).map(function (ln) { return ln.name; });
+      var missing = r.left_out;
       left.hidden = !missing.length;
       left.textContent = 'Not priced, so left out: ' + missing.join(', ') + '.';
       var byGood = {};
       r.lines.forEach(function (ln) { byGood[ln.good] = ln; });
+      var w = weights(data, st.w);
+      var rok = prices(data, st.w);
       rows.forEach(function (row) {
         var ln = byGood[row.dataset.good];
         var on = !!(ln && ln.counted);
@@ -283,6 +245,17 @@
         row.querySelector('[data-out="alone"]').textContent = on ? money(ln.alone) : (quantity(row) > 0 ? 'no price' : 'left out');
         place(row.querySelector('.koku-track__mark--central'), r.per_koku);
         place(row.querySelector('.koku-track__mark--high'), whole.arithmetic);
+        // Rokugan's side: the price under these weights, and which periods it rests on.
+        var good = row.dataset.good;
+        var price = row.querySelector('[data-out="rok-price"]');
+        if (price && rok[good]) {
+          price.firstElementChild.textContent = sig3(rok[good] / (data.rice_ref * data.koku_kg) * 1000) + ' sen a ' + data.goods[good].unit;
+          price.lastChild.textContent = ', the price of ' + (rok[good] / data.rice_ref).toFixed(2) + ' kg of rice.';
+        }
+        var on_ = restsOn(data, w, good);
+        Array.prototype.forEach.call(row.querySelectorAll('.koku-cites [data-era]'), function (li) {
+          li.hidden = on_.indexOf(li.dataset.era) < 0;
+        });
         var dot = row.querySelector('.koku-track__dot');
         dot.hidden = !on;
         if (on) {

@@ -443,11 +443,9 @@ class Root:
             rice_alone=money_web.alone_of(whole, 'rice'),
             drivers=money_web.drivers(reading),
             left_out=money_web.left_out(reading),
-            custom_status=money_web.custom_status(state, reading),
-            custom_rows=money_web.custom_rows(state, reading),
-            first_blank=next(
-                (i + 1 for i, c in enumerate(state.custom) if c is None), len(state.custom) + 1
-            ),
+            sen=lambda silver: money_web.sen(silver, model, koku_kg),
+            sig3=money_web.sig3,
+            source_label=money_web.source_label,
             data_json=money_web.page_json(model, koku_kg, wage),
             wage=wage,
             wage_per_koku=wage_dollars_per_koku(wage),
