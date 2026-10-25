@@ -55,7 +55,7 @@ def test_default_page_shows_the_standard_koku(root: Root, model: bk.Model) -> No
         assert f'data-good="{good.id}"' in page
     data = json.loads(re.search(r'id="koku-data">(.*?)</script>', page, re.S).group(1))  # type: ignore[union-attr]
     assert data['newest'] == model.snapshots[-1].date
-    assert data['goods']['rice']['silver'] == 1.49
+    assert data['goods']['rice']['silver'] == model.rice_ref
 
 
 def test_a_link_reopens_its_variant(root: Root) -> None:

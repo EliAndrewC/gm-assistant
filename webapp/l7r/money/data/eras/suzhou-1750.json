@@ -1,0 +1,30 @@
+{
+  "place": "Suzhou",
+  "years": "1750-1799",
+  "confidence": "Rice alone, from Qian Yong's Lower Yangzi in normal years of the mid-Qianlong. After 1785 rice and the cash rate both rose (rice 1.9-2.7 taels a shi at 1,300-1,400 cash a tael), so a later amount reads high.",
+  "coins": {
+    "tael": {
+      "silver_g": 37.0,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "37 g (the standard is not stated)"
+    },
+    "cash": {
+      "silver_g": 0.04625,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "About 800 cash to the tael (Jiangnan, 760-840 in the mid-Qianlong; 1,300-1,400 by 1796)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.795,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "14-15 cash a sheng at 760-840 cash a tael: 1.7-2.0 taels a shi"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 2.627,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+    "note": "Lower Yangzi, 0.071 tael a day (Liu); Allen et al.'s are about 30% higher"
+  }
+}

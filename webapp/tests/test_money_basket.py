@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import shutil
 from pathlib import Path
@@ -57,12 +58,15 @@ def test_real_data_has_no_problems(model: bk.Model) -> None:
     assert bk.problems(model) == []
 
 
-def test_every_new_good_price_is_a_labeled_guess(model: bk.Model) -> None:
+def test_the_reference_eras_new_goods_say_what_is_guessed(model: bk.Model) -> None:
+    """diagram#13: Kyoto's salt and firewood are attested (only a koku of salt's weight is guessed);
+    no Kyoto or Osaka rent was found, so housing stays a borrowed guess."""
     ref = model.reference
     assert ref.id == 'kyoto-1745'
-    assert model.rice_ref == 1.49
-    for good in ('salt', 'fuel', 'housing'):
-        assert ref.goods[good].label == 'guess'
+    assert model.rice_ref == pytest.approx(1.49 * 1.725 / 3.11, abs=1e-4)
+    assert ref.coins['monme'].silver_g == 1.725
+    for good, label in (('salt', 'guess'), ('fuel', 'historical'), ('housing', 'guess')):
+        assert ref.goods[good].label == label
         assert ref.goods[good].note
 
 
@@ -105,7 +109,7 @@ def test_snapshot_price_and_lookups(model: bk.Model) -> None:
     assert snap.price('rice') == 2.09
     assert snap.price('salt') is None
     assert snap.price('rice', -3) == 2.09
-    with pytest.raises(SystemExit, match="no era 'nope'; have kyoto-1745, tokyo-1882"):
+    with pytest.raises(SystemExit, match="no era 'nope'; have beijing-1500, beijing-1615,"):
         model.era('nope')
 
 
@@ -125,9 +129,9 @@ def test_twenty_mon_in_kyoto(model: bk.Model) -> None:
         KG,
         day,
     )
-    assert c.silver_g == pytest.approx(20 * 3.11 / 66, rel=1e-3)
-    assert c.rokugan_sen == pytest.approx(c.silver_g * 1000 / (KG * 1.49))
-    assert c.wage_dollars == pytest.approx(c.silver_g / 2.82 * day)
+    assert c.silver_g == pytest.approx(20 * 1.725 / 72.6, rel=1e-3)
+    assert c.rokugan_sen == pytest.approx(c.silver_g * 1000 / (KG * model.rice_ref))
+    assert c.wage_dollars == pytest.approx(c.silver_g / model.reference.wage_g_per_day * day)
     reading = bk.reading(model, model.basket(), model.snapshot('2026-10'), KG)
     assert c.goods_dollars == pytest.approx(c.silver_g * reading.dollars / reading.silver)
     assert c.coverage == 'the whole basket'
@@ -173,8 +177,30 @@ def test_committed_table_is_current(model: bk.Model) -> None:
     )
     kyoto = fresh['eras']['kyoto-1745']
     assert kyoto['basket_coverage'] == 'the whole basket'
-    assert set(kyoto['units']) == {'monme', 'mon', 'kanmon', 'ryo'}
+    assert set(kyoto['units']) == {'monme', 'mon', 'kanmon', 'ryo', 'bu', 'shu'}
     assert fresh['eras']['tokyo-1882']['goods_left_out'] == ['Salt', 'Fuel', 'Housing']
+
+
+def test_every_era_carries_the_coins_diagram_marks(model: bk.Model) -> None:
+    """diagram marks amounts by `data-coin`; a coin its era lacks is an error on diagram's side."""
+    for era in model.eras.values():
+        if 'monme' in era.coins:
+            assert {'monme', 'mon', 'kanmon', 'ryo', 'bu', 'shu'} <= set(era.coins), era.id
+        elif 'tael' in era.coins:
+            assert {'tael', 'cash'} <= set(era.coins), era.id
+    for era_id in ('canton-1835', 'beijing-1900'):
+        assert 'dollar' in model.era(era_id).coins
+
+
+def test_goods_dollars_agree_with_the_rokugani_coin_in_every_era(model: bk.Model) -> None:
+    """An era's grams are valued at Rokugan's whole-basket rate, so a partly priced era's dollars
+    are the koku's headline dollars at its Rokugani sum, never rice dollars alone."""
+    snap, day = model.snapshot('2026-10'), load_wages()[-1].day
+    per_koku = bk.reading(model, model.basket(), snap, KG).per_koku
+    for era in model.eras.values():
+        for unit in era.coins:
+            c = bk.convert(model, era, 1, unit, model.basket(), snap, KG, day)
+            assert c.goods_dollars == pytest.approx(c.rokugan_sen / 1000 * per_koku), (era.id, unit)
 
 
 @pytest.mark.parametrize(
@@ -307,14 +333,14 @@ def test_cli_baskets_era_and_export(capsys: pytest.CaptureFixture[str], tmp_path
     assert 'standard: $' in out
     assert 'standard-no-housing: $' in out
     out = run(capsys, 'era', '20', 'mon', '--era', 'kyoto-1745')
-    assert '20 mon (Kyoto 1745-1754) = 0.942 g of silver' in out
-    assert 'in Rokugan 4.2 sen' in out
-    assert 'coin: About 66 mon to the monme' in out
+    assert '20 mon (Kyoto 1745-1754) = 0.475 g of silver' in out
+    assert 'goods $3.61; wage $37.92; in Rokugan 3.8 sen' in out
+    assert 'coin: 72.6 mon to the monme' in out
     out = run(capsys, 'era', '1', 'yen', '--era', 'tokyo-1882')
     assert 'priced there on 9 of 12 goods (left out: Salt, Fuel, Housing)' in out
     assert 'coin:' not in out
     out = run(capsys, 'export', '--out', str(tmp_path / 'c.json'))
-    assert 'wrote c.json: 2 eras' in out
+    assert f'wrote c.json: {len(bk.load().eras)} eras' in out
     assert json.loads((tmp_path / 'c.json').read_text()) == json.loads(
         conversions.TABLE.read_text()
     )
@@ -334,3 +360,26 @@ def test_cli_check_fails_on_basket_problems(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setattr(bk, 'problems', lambda m: ['snapshot 2027-10: salt unpriced'])
     with pytest.raises(SystemExit, match='baskets, snapshots and eras:\n  snapshot 2027-10'):
         main(['check'])
+
+
+def test_era_files_are_what_the_build_script_writes() -> None:
+    """The eras are written by specs/222-money-basket-and-section/measure/eras.py, where each
+    figure's arithmetic and why live; a hand edit to a file would leave the script stale."""
+    script = (
+        Path(__file__).resolve().parents[2] / 'specs/222-money-basket-and-section/measure/eras.py'
+    )
+    spec = importlib.util.spec_from_file_location('money_eras_build', script)
+    assert spec
+    assert spec.loader
+    build = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(build)
+    eras = bk.DATA / 'eras'
+    on_disk = {p.stem for p in eras.glob('*.json')}
+    assert on_disk - set(build.ERAS) == build.HAND, (
+        'an era file the script does not write: add it to measure/eras.py (or to HAND)'
+    )
+    for era_id, era in build.ERAS.items():
+        assert (eras / f'{era_id}.json').read_text() == build.text(era), (
+            f'{era_id}.json differs from measure/eras.py: edit the script and run it, from the '
+            'clone root: python3 specs/222-money-basket-and-section/measure/eras.py'
+        )

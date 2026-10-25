@@ -1,0 +1,54 @@
+{
+  "place": "Beijing",
+  "years": "1736-1760",
+  "confidence": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael (rice, millet, oils, fuel). Beans, cloth and flour are left out: priced a kg, a square meter and as flour, not as the basket's liter, length of bolt and grain.",
+  "coins": {
+    "tael": {
+      "silver_g": 37.0,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "Allen et al.'s 37 g (the standard is not named)"
+    },
+    "cash": {
+      "silver_g": 0.04625,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "800 standard cash to the tael (1737). Beijing's capital cash passed two for one: a sum in capital cash is worth about half"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 1.322,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael, grams a kg (1738-1760)"
+    },
+    "buckwheat-others": {
+      "silver_g": 1.044,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Millet, Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    },
+    "edible-oil": {
+      "silver_g": 4.082,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    },
+    "lamp-oil": {
+      "silver_g": 3.368,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    },
+    "fuel": {
+      "silver_g": 11.2,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 3.255,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+    "note": "Allen et al.'s Beijing day, 1738-1760 (the official 75 cash of 1736 is 3.47 g)"
+  }
+}

@@ -68,6 +68,10 @@ def _sheet(koku_kg: float) -> bk.Reading:
     return bk.reading(model, model.basket('bassino-ma-a'), model.snapshot('2017-04'), koku_kg)
 
 
+def model_rice_ref() -> float:
+    return bk.load().rice_ref
+
+
 def test_2017_snapshot_reproduces_the_spreadsheet() -> None:
     """219 SC-001: $797.22 = 144.32 zeni -> $552 per koku, at the sheet's own koku mass. Feature
     222 moved the sheet into a basket, a snapshot and the reference era; this pins that the move
@@ -76,8 +80,10 @@ def test_2017_snapshot_reproduces_the_spreadsheet() -> None:
     assert label == 'sheet-2017'
     r = _sheet(kg)
     assert round(r.dollars, 2) == 797.22
-    assert round(r.silver, 3) == 325.816
-    assert round(r.silver * 100 / (kg * 1.49), 2) == 144.32
+    # the sheet's grams are Bassino & Ma's, at 3.11 g a monme; the reference era now holds them at
+    # the Genbun monme's 1.725 g (diagram#13), a uniform rescale that moves no ratio
+    assert round(r.silver * 3.11 / 1.725, 3) == 325.816
+    assert round(r.silver * 100 / (kg * model_rice_ref()), 2) == 144.32
     assert round(r.per_koku, 2) == 552.39
     model = bk.load()
     std = bk.reading(model, model.basket(), model.snapshot('2017-04'), kg)

@@ -1,0 +1,92 @@
+{
+  "place": "Edo",
+  "years": "1850-1859",
+  "confidence": "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth, each chained to its own 1745-1754 level.",
+  "coins": {
+    "monme": {
+      "silver_g": 0.975,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "Tenpo silver, 0.975 g pure; Osaka market rates 1850-1854 and 1855-1859, averaged"
+    },
+    "mon": {
+      "silver_g": 0.009786,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "99.6 mon to the monme"
+    },
+    "kanmon": {
+      "silver_g": 9.786,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "1,000 mon"
+    },
+    "ryo": {
+      "silver_g": 65.81,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "67.5 monme to the ryo"
+    },
+    "bu": {
+      "silver_g": 16.453,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A quarter of a ryo (the gold count: 4 bu a ryo)"
+    },
+    "shu": {
+      "silver_g": 4.1133,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A sixteenth of a ryo (16 shu a ryo)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.7621,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "117.22 monme a koku"
+    },
+    "salt": {
+      "silver_g": 0.1753,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "35.67 monme a koku"
+    },
+    "lamp-oil": {
+      "silver_g": 2.4999,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "461.38 monme a koku"
+    },
+    "fuel": {
+      "silver_g": 3.6811,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "firewood, 2.08 monme for 10 kan"
+    },
+    "soybeans": {
+      "silver_g": 0.789,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 0.674 a kg"
+    },
+    "barley-wheat": {
+      "silver_g": 0.3756,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 0.475 a kg (5 years)"
+    },
+    "edible-oil": {
+      "silver_g": 2.3131,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 2.36 a liter"
+    },
+    "cloth": {
+      "silver_g": 2.5819,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 7.85 a tan (2 years)"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 0.897,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0250-what-did-an-unskilled-laborer-earn.html",
+    "note": "Mitsui, Edo 1850s: 0.92 monme a day"
+  }
+}

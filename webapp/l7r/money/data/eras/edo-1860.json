@@ -1,0 +1,86 @@
+{
+  "place": "Edo",
+  "years": "1860-1867",
+  "confidence": "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth, each chained to its own 1745-1754 level. The era's mean hides a several-fold rise in prices; cloth is left out (one year, 133 a tan).",
+  "coins": {
+    "monme": {
+      "silver_g": 0.4875,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "Ansei silver (from 1859), 0.4875 g pure as prescribed (0.525 by a 14% assay); market rates 1860-1867"
+    },
+    "mon": {
+      "silver_g": 0.005824,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "83.7 mon to the monme"
+    },
+    "kanmon": {
+      "silver_g": 5.824,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "1,000 mon"
+    },
+    "ryo": {
+      "silver_g": 40.75,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "83.6 monme to the ryo"
+    },
+    "bu": {
+      "silver_g": 10.189,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A quarter of a ryo (the gold count: 4 bu a ryo)"
+    },
+    "shu": {
+      "silver_g": 2.5472,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A sixteenth of a ryo (16 shu a ryo)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.9205,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "283.17 monme a koku"
+    },
+    "salt": {
+      "silver_g": 0.2018,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "82.15 monme a koku"
+    },
+    "lamp-oil": {
+      "silver_g": 2.3665,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "873.52 monme a koku"
+    },
+    "fuel": {
+      "silver_g": 3.398,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "firewood, 3.84 monme for 10 kan"
+    },
+    "soybeans": {
+      "silver_g": 1.3193,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 2.25 a kg"
+    },
+    "barley-wheat": {
+      "silver_g": 0.3866,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 0.977 a kg (2 years)"
+    },
+    "edible-oil": {
+      "silver_g": 3.1115,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 6.35 a liter"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 0.5752,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0250-what-did-an-unskilled-laborer-earn.html",
+    "note": "Mitsui, Edo 1860-1867: 1.18 monme a day"
+  }
+}

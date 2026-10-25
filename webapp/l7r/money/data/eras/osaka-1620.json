@@ -1,0 +1,74 @@
+{
+  "place": "Osaka and Kyoto",
+  "years": "1620-1650",
+  "confidence": "Kimura's 1620-1650 file (Jacks, GPIH): named Osaka, but only some years are Osaka's and the rest chiefly Kyoto's. Cloth is left out (white cloth and bleached cotton differ by three times). The wage is the Osaka castle rebuilding of 1620-1628. Coins at the Keicho monme and the law of 1609.",
+  "coins": {
+    "monme": {
+      "silver_g": 3.0,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "Keicho silver, 3.00 g pure; 50 monme a ryo and 80 mon a monme by the law of 1609 (an early market rate was about 43 monme a ryo; a copper market rate is SILENT)"
+    },
+    "mon": {
+      "silver_g": 0.0375,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "80.0 mon to the monme"
+    },
+    "kanmon": {
+      "silver_g": 37.5,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "1,000 mon"
+    },
+    "ryo": {
+      "silver_g": 150.0,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "50.0 monme to the ryo"
+    },
+    "bu": {
+      "silver_g": 37.5,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A quarter of a ryo (the gold count: 4 bu a ryo)"
+    },
+    "shu": {
+      "silver_g": 9.375,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A sixteenth of a ryo (16 shu a ryo)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.6703,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "33.51 monme a koku, mean of 31 years"
+    },
+    "soybeans": {
+      "silver_g": 0.6207,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "31.03 monme a koku (17 years), at rice's weight a koku"
+    },
+    "salt": {
+      "silver_g": 0.1633,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "1.08 monme a to (5 years)"
+    },
+    "lamp-oil": {
+      "silver_g": 4.0179,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "2.41 monme a sho (14 years); lamp or edible not said"
+    },
+    "edible-oil": {
+      "silver_g": 4.0179,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "2.41 monme a sho (14 years); lamp or edible not said"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 3.0,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0257-what-did-a-laborer-earn-in-osaka-in-the-1620s.html",
+    "note": "Osaka castle rebuilding, 1620-1628: 0.8-1.2 monme a day; the midpoint"
+  }
+}

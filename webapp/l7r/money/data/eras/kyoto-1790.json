@@ -1,0 +1,74 @@
+{
+  "place": "Kyoto",
+  "years": "1790-1799",
+  "confidence": "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth, each chained to its own 1745-1754 level. Salt is left out: Kyoto's salt from 1791 reads two-fifths to a sixth of Edo's and Osaka's (a unit or grade change, DOUBTFUL), and no Edo or Osaka salt was recorded in these years.",
+  "coins": {
+    "monme": {
+      "silver_g": 1.725,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "Genbun silver, 1.725 g pure; Osaka market rates of the 1790s"
+    },
+    "mon": {
+      "silver_g": 0.016152,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "106.8 mon to the monme"
+    },
+    "kanmon": {
+      "silver_g": 16.152,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "1,000 mon"
+    },
+    "ryo": {
+      "silver_g": 104.54,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "60.6 monme to the ryo"
+    },
+    "bu": {
+      "silver_g": 26.134,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A quarter of a ryo (the gold count: 4 bu a ryo)"
+    },
+    "shu": {
+      "silver_g": 6.5334,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A sixteenth of a ryo (16 shu a ryo)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.9544,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "82.97 monme a koku"
+    },
+    "lamp-oil": {
+      "silver_g": 2.9931,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "312.23 monme a koku"
+    },
+    "fuel": {
+      "silver_g": 8.7359,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "firewood, 2.79 monme for 10 kan"
+    },
+    "soybeans": {
+      "silver_g": 0.9342,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon 1790-1799, 0.451 a kg"
+    },
+    "barley-wheat": {
+      "silver_g": 0.4487,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon 1790-1799, 0.321 a kg"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 1.4663,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0250-what-did-an-unskilled-laborer-earn.html",
+    "note": "Mitsui, Kyoto 1790s: 0.85 monme a day"
+  }
+}

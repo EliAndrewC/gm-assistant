@@ -46,9 +46,9 @@ share each good takes.
 
 | good | silver g per unit | derivation |
 |---|---|---|
-| salt | 0.44 per kg | Kashimo (Mino) 1763-72, 17-20 mon a sho (diagram 0273); ~66 mon to the monme in Osaka 1766 (diagram 0277); 3.11 g of silver to the monme (Bassino & Ma); a sho of coarse salt ~1.98 kg (1.804 L at ~1.1 kg/L, an assumption). 18.5 / 66 x 3.11 / 1.98 |
-| fuel | 11.2 per million BTU | Allen et al. 2011 Table 5, Beijing c. 1750 (no Kyoto fuel price is in hand; Beijing is the nearest dated East Asian figure) |
-| housing | 13.8 per m²-year | Edo back tenement, 300-500 mon a month in 1804-1830 (diagram 0265); ~109 mon to the monme in the 1800s-1820s (diagram 0277). 400 x 12 / 109 x 3.11 / 9.93. A later city and decades later: a guess |
+| salt | 0.44 per kg (SUPERSEDED by diagram#13: Mitsui's Kyoto 17.77 monme a koku; see `measure/eras.py`) | Kashimo (Mino) 1763-72, 17-20 mon a sho (diagram 0273); ~66 mon to the monme in Osaka 1766 (diagram 0277); 3.11 g of silver to the monme (Bassino & Ma); a sho of coarse salt ~1.98 kg (1.804 L at ~1.1 kg/L, an assumption). 18.5 / 66 x 3.11 / 1.98 |
+| fuel | 11.2 per million BTU (SUPERSEDED by diagram#13: Mitsui's Kyoto firewood, 2.64 monme for 10 kan; see `measure/eras.py`) | Allen et al. 2011 Table 5, Beijing c. 1750 (no Kyoto fuel price is in hand; Beijing is the nearest dated East Asian figure) |
+| housing | 13.8 per m²-year (still a guess after diagram#13, which found no Kyoto or Osaka rent; rescaled to the Genbun monme in `measure/eras.py`) | Edo back tenement, 300-500 mon a month in 1804-1830 (diagram 0265); ~109 mon to the monme in the 1800s-1820s (diagram 0277). 400 x 12 / 109 x 3.11 / 9.93. A later city and decades later: a guess |
 
 ## 2026-10 prices (US retail, the cheapest plain version in a household bulk pack)
 

@@ -1,0 +1,98 @@
+{
+  "place": "Edo",
+  "years": "1818-1829",
+  "confidence": "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth, each chained to its own 1745-1754 level. Housing is the guess the reference era borrows (Edo 1804-1830, an unsourced page). Priced at the Bunsei monme; 1818-1819 were Genbun.",
+  "coins": {
+    "monme": {
+      "silver_g": 1.35,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "Bunsei silver (from 1820), 1.35 g pure; 63.4 monme a ryo (Osaka, 1820s), 6,610 mon a ryo (Edo, 1820s)"
+    },
+    "mon": {
+      "silver_g": 0.012949,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "104.3 mon to the monme"
+    },
+    "kanmon": {
+      "silver_g": 12.949,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "1,000 mon"
+    },
+    "ryo": {
+      "silver_g": 85.59,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "63.4 monme to the ryo"
+    },
+    "bu": {
+      "silver_g": 21.398,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A quarter of a ryo (the gold count: 4 bu a ryo)"
+    },
+    "shu": {
+      "silver_g": 5.3494,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A sixteenth of a ryo (16 shu a ryo)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.6363,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "70.69 monme a koku"
+    },
+    "salt": {
+      "silver_g": 0.1037,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "15.24 monme a koku"
+    },
+    "lamp-oil": {
+      "silver_g": 2.1291,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "283.79 monme a koku"
+    },
+    "fuel": {
+      "silver_g": 4.8029,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "firewood, 1.96 monme for 10 kan"
+    },
+    "soybeans": {
+      "silver_g": 0.6646,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 0.410 a kg"
+    },
+    "barley-wheat": {
+      "silver_g": 0.3112,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 0.284 a kg"
+    },
+    "edible-oil": {
+      "silver_g": 1.9606,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 1.445 a liter"
+    },
+    "cloth": {
+      "silver_g": 2.7362,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "Kumon, 6.01 a tan"
+    },
+    "housing": {
+      "silver_g": 6.2591,
+      "label": "guess",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0265-what-did-it-cost-to-rent-a-room-or-a-house.html",
+      "note": "Edo back tenement, 300-500 mon a month in 1804-1830 (an unsourced popular page), over a 9.93 m2 room"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 1.215,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0250-what-did-an-unskilled-laborer-earn.html",
+    "note": "Mitsui, Edo 1818-1829: 0.90 monme a day"
+  }
+}

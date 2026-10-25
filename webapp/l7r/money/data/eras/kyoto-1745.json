@@ -2,27 +2,117 @@
   "place": "Kyoto",
   "years": "1745-1754",
   "reference": true,
-  "confidence": "The basket's food, cloth and lamp oil are Bassino & Ma's Table 3 (rice and lamp oil recorded in Kyoto; the rest reconstructed by the paper from price ratios). Salt, fuel and housing are guesses awaiting diagram.",
-  "note": "THE REFERENCE ERA: Rokugan's prices are this era's prices, through the rice anchor (1.49 g of silver a kg; the 2017 sheet's 2.257575 g a zeni). Grams are of pure silver.",
+  "confidence": "The basket's food, cloth and lamp oil are Bassino & Ma's Table 3 (rice and lamp oil recorded in Kyoto; the rest reconstructed by the paper from price ratios), at the Genbun monme. Salt and firewood are Mitsui's Kyoto books (diagram 0273, 0279); only the weight of a koku of salt is guessed. Housing is a guess: no Kyoto or Osaka rent was found, so it borrows Edo 1804-1830.",
+  "note": "THE REFERENCE ERA: Rokugan's prices are this era's prices, through the rice anchor. Grams are of pure silver at the Genbun monme (1.725 g); Bassino & Ma priced at 3.11 g a monme, a figure whose basis their paper does not give (diagram 0287), so their grams are rescaled by 1.725 / 3.11.",
   "coins": {
-    "monme": {"silver_g": 3.11, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "Bassino & Ma's conversion: 3.11 g of pure silver a monme"},
-    "mon": {"silver_g": 0.04712, "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0277-what-was-copper-coin-worth-in-silver.html", "note": "About 66 mon to the monme on the Osaka market in 1766 (the law of 1700 set about 67)"},
-    "kanmon": {"silver_g": 47.12, "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0277-what-was-copper-coin-worth-in-silver.html", "note": "1,000 mon"},
-    "ryo": {"silver_g": 186.6, "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0277-what-was-copper-coin-worth-in-silver.html", "note": "60 monme by the law of 1700 (63.82 on one Osaka day in 1766)"}
+    "monme": {
+      "silver_g": 1.725,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "Genbun silver: 3.75 g at 46% fine, 1.725 g pure"
+    },
+    "mon": {
+      "silver_g": 0.02376,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "72.6 mon to the monme"
+    },
+    "kanmon": {
+      "silver_g": 23.76,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "1,000 mon"
+    },
+    "ryo": {
+      "silver_g": 105.74,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "61.3 monme to the ryo"
+    },
+    "bu": {
+      "silver_g": 26.436,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A quarter of a ryo (the gold count: 4 bu a ryo)"
+    },
+    "shu": {
+      "silver_g": 6.6089,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A sixteenth of a ryo (16 shu a ryo)"
+    }
   },
   "goods": {
-    "beans": {"silver_g": 0.99, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "soybeans": {"silver_g": 1.49, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "rice": {"silver_g": 1.49, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "barley-wheat": {"silver_g": 0.76, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "fish": {"silver_g": 2.18, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "buckwheat-others": {"silver_g": 0.61, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "edible-oil": {"silver_g": 5.66, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "cloth": {"silver_g": 5.83, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "lamp-oil": {"silver_g": 5.66, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "salt": {"silver_g": 0.44, "label": "guess", "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0273-what-did-salt-cost.html", "note": "Kashimo (Mino) 1763-72 at 17-20 mon a sho, 66 mon to the monme (0277), about 1.98 kg a sho of coarse salt"},
-    "fuel": {"silver_g": 11.2, "label": "guess", "source": "https://eprints.lse.ac.uk/32403/1/Ma_Wages-prices-living-standards-China-1738-1925_2011.pdf", "note": "Allen et al. 2011, Table 5: Beijing about 1750, the nearest dated East Asian price"},
-    "housing": {"silver_g": 13.8, "label": "guess", "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0265-what-did-it-cost-to-rent-a-room-or-a-house.html", "note": "Edo back tenement, 300-500 mon a month in 1804-1830, 109 mon to the monme (0277), over 9.93 m²"}
+    "beans": {
+      "silver_g": 0.549116,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "0.99 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "soybeans": {
+      "silver_g": 0.826447,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "1.49 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "rice": {
+      "silver_g": 0.826447,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "1.49 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "barley-wheat": {
+      "silver_g": 0.421543,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "0.76 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "fish": {
+      "silver_g": 1.209164,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "2.18 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "buckwheat-others": {
+      "silver_g": 0.338344,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "0.61 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "edible-oil": {
+      "silver_g": 3.139389,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "5.66 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "cloth": {
+      "silver_g": 3.233682,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "5.83 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "lamp-oil": {
+      "silver_g": 3.139389,
+      "label": "historical",
+      "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+      "note": "5.66 g at 3.11 g a monme, rescaled to 1.725"
+    },
+    "salt": {
+      "silver_g": 0.1545,
+      "label": "guess",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0273-what-did-salt-cost.html",
+      "note": "17.77 monme a koku (Mitsui, Kyoto, mean of 20 seasons); the price is attested, only a koku's weight is guessed (1.1 kg a liter, of diagram's 1.0-1.2)"
+    },
+    "fuel": {
+      "silver_g": 8.2662,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0279-what-did-charcoal-cost.html",
+      "note": "Firewood, 2.64 monme for 10 kan (37.5 kg) (Mitsui, Kyoto); a million BTU is 68 kg of air-dry wood at FAO's 15.5 MJ a kg"
+    },
+    "housing": {
+      "silver_g": 7.6858,
+      "label": "guess",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0265-what-did-it-cost-to-rent-a-room-or-a-house.html",
+      "note": "No Kyoto or Osaka rent was found. Edo back tenement, 300-500 mon a month in 1804-1830 (an unsourced popular page), at 15.9 g a kanmon, over a 9.93 m2 room"
+    }
   },
-  "wage": {"silver_g_per_day": 2.82, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "An unskilled laborer's day, Kyoto 1745-54 (Table 3)"}
+  "wage": {
+    "silver_g_per_day": 1.5641,
+    "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
+    "note": "An unskilled laborer's day, Kyoto 1745-54 (Table 3): 0.907 monme; Mitsui's 0.91 agrees"
+  }
 }

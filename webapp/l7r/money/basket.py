@@ -9,10 +9,12 @@ Three kinds of data, kept apart so each can change alone:
   and time (`data/eras/<id>.json`; a new era is a new file).
 
 THE REFERENCE ERA IS ROKUGAN. The 2017 sheet anchored the zeni on Kyoto 1745-54's rice price (1.49 g
-of silver a kg, so 2.257575 g a zeni at a 151.5 kg koku), so Rokugan's price of every good is Kyoto
-1745-54's. A koku's goods-dollar value is then the basket's dollars over its reference silver, times
-the silver in a koku of rice; an era's money converts by the ratio of that era's basket cost to the
-reference's, over the goods priced in both.
+of silver a kg at Bassino & Ma's 3.11 g a monme; 0.826 g at the Genbun monme's 1.725 g of pure
+silver, which the reference era uses since diagram#13), so Rokugan's price of every good is Kyoto
+1745-54's. Rescaling every reference gram alike moves no reading: each is a ratio of grams. A koku's
+goods-dollar value is then the basket's dollars over its reference silver, times the silver in a
+koku of rice; an era's money converts by the ratio of that era's basket cost to the reference's,
+over the goods priced in both.
 
 A GOOD COUNTS ONLY WHERE IT IS PRICED ON EVERY SIDE IN USE. The 2017 snapshot never priced salt,
 fuel or housing, and Tokyo 1882-86 has no price for them either; such goods are left out of that
@@ -391,25 +393,31 @@ def convert(
 ) -> Conversion:
     """An amount of an era's money -> goods dollars, wage dollars and Rokugani sen.
 
-    Over the goods G priced in this era, the reference era and the snapshot: r = era silver(G) /
-    reference silver(G) is how much dearer the era was; the amount buys what S / r grams bought in
-    Rokugan, which is goods dollars at the snapshot's dollars-per-reference-gram over G, and sen at
-    Rokugan's rice anchor. Wage dollars go by the era's own laborer's day."""
+    Over the goods G priced in this era and the reference era: r = era silver(G) / reference
+    silver(G) is how much dearer the era was, and the amount buys what S / r grams bought in
+    Rokugan. Those grams are valued at Rokugan's own rate, the WHOLE basket's dollars over its
+    reference silver (the goods priced in the reference and the snapshot), in goods dollars and in
+    sen at the rice anchor, so the two always agree with the koku's headline dollars. Valuing them
+    over G alone, as before diagram#13, made an era's dollars depend on which goods it happened to
+    price: a rice-only era read in rice dollars, less than half the basket's. Wage dollars go by the
+    era's own laborer's day."""
     if unit not in era.coins:
         raise SystemExit(f'{era.title} has no coin {unit!r}; have {", ".join(era.coins)}')
     ref = model.reference.goods
     used, left = [], []
-    era_silver = ref_silver = dollars = 0.0
+    era_silver = ref_silver = basket_silver = dollars = 0.0
     for good, q in basket.quantities.items():
         if q <= 0:
             continue
         price = snapshot.price(good)
+        if good in ref and price:
+            basket_silver += q * ref[good].silver_g
+            dollars += q * price
         name = model.goods[good].name
-        if good in era.goods and good in ref and price:
+        if good in era.goods and good in ref:
             used.append(name)
             era_silver += q * era.goods[good].silver_g
             ref_silver += q * ref[good].silver_g
-            dollars += q * price
         else:
             left.append(name)
     if not used:
@@ -421,7 +429,7 @@ def convert(
         unit,
         amount,
         silver,
-        in_ref * dollars / ref_silver,
+        in_ref * dollars / basket_silver,
         silver / era.wage_g_per_day * modern_day_wage,
         in_ref * 1000 / (koku_kg * model.rice_ref),
         tuple(used),

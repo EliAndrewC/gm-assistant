@@ -1,0 +1,54 @@
+{
+  "place": "Beijing",
+  "years": "1820-1830",
+  "confidence": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael (rice, millet, oils, fuel), with the rural Beijing fuel store's cash rate.",
+  "coins": {
+    "tael": {
+      "silver_g": 37.0,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "Allen et al.'s 37 g"
+    },
+    "cash": {
+      "silver_g": 0.029767,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "1,243 cash to the tael (rural Beijing 1820-1830, 1,159-1,329, at face count: the store's 95-99 cash a day then match Allen's 2.8 g). Beijing's capital cash passed two for one"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 1.781,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    },
+    "buckwheat-others": {
+      "silver_g": 1.477,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Millet, Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    },
+    "edible-oil": {
+      "silver_g": 5.684,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    },
+    "lamp-oil": {
+      "silver_g": 4.689,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    },
+    "fuel": {
+      "silver_g": 9.499,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 2.805,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+    "note": "Allen et al.'s Beijing day, 1820-1830"
+  }
+}

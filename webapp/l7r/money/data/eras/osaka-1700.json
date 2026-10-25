@@ -1,0 +1,56 @@
+{
+  "place": "Osaka",
+  "years": "1690-1739",
+  "confidence": "Priced at the Kyoho coinage of 1722-1735, the era's longest single coinage: Kumon's rice and barley for those years. The era spans five recoinages; an amount of 1695-1721 was paid in baser silver, so this conversion overstates it. The wage is borrowed: none was found for these years, so it is the reference day chained back by Kumon's farm-servant wage.",
+  "coins": {
+    "monme": {
+      "silver_g": 3.0,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "Kyoho silver (1722-1735), 3.00 g pure; market rates of 1722-1735"
+    },
+    "mon": {
+      "silver_g": 0.036232,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "82.8 mon to the monme"
+    },
+    "kanmon": {
+      "silver_g": 36.232,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "1,000 mon"
+    },
+    "ryo": {
+      "silver_g": 173.1,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "57.7 monme to the ryo"
+    },
+    "bu": {
+      "silver_g": 43.275,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A quarter of a ryo (the gold count: 4 bu a ryo)"
+    },
+    "shu": {
+      "silver_g": 10.8188,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A sixteenth of a ryo (16 shu a ryo)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 1.0662,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "0.296 monme a kg, Kumon's observed 1722-1735"
+    },
+    "barley-wheat": {
+      "silver_g": 0.5766,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "0.237 monme a kg, Kumon's observed 1722-1735 (8 years)"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 1.2221,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0250-what-did-an-unskilled-laborer-earn.html",
+    "note": "BORROWED: none found for these years; the reference day (0.907 monme) chained by Kumon's farm-servant year, 51.2 monme in 1722-1735 and 113.9 in 1745-1754, in grams of silver"
+  }
+}

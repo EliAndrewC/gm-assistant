@@ -1,0 +1,30 @@
+{
+  "place": "Beijing",
+  "years": "1490-1520",
+  "confidence": "Rice alone, from the official table of 1497 (an official price). The wage is borrowed: none was found, so it is the Lower Yangzi's of 1573-1620.",
+  "coins": {
+    "tael": {
+      "silver_g": 36.9,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "The Ming treasury tael of the 1500s, 36.9 g"
+    },
+    "cash": {
+      "silver_g": 0.052714,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "700 cash to the tael (Hongzhi; 1508)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.1292,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "25 guan of paper notes a shi at 80 guan a tael (1497, official); a Ming shi of 107.4 L"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 1.5313,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+    "note": "BORROWED: the Lower Yangzi's 0.040-0.043 tael a day of 1573-1620"
+  }
+}

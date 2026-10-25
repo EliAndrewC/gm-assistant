@@ -1,0 +1,42 @@
+{
+  "place": "Songjiang",
+  "years": "1670-1690",
+  "confidence": "Ye Mengzhu's Songjiang: rice and soybeans by the shi, salt by the jin, at the Qing treasury tael. The wage is borrowed: SILENT for Songjiang, so the Lower Yangzi's.",
+  "coins": {
+    "tael": {
+      "silver_g": 37.3,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "The Qing treasury tael, 37.3 g (the tael these prices were counted in is not stated)"
+    },
+    "cash": {
+      "silver_g": 0.03422,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "About 1,090 cash to the tael (Songjiang 1671-1690, 971-1,182)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.379,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "0.85-0.9 tael a shi (1682-1684); 0.63 in 1672 and 2.0 in 1680 are the ends of the range"
+    },
+    "soybeans": {
+      "silver_g": 0.3466,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "0.6-1.0 tael a shi, at rice's weight a shi"
+    },
+    "salt": {
+      "silver_g": 1.1875,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "0.006-0.032 tael a jin, the midpoint"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 2.0515,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+    "note": "BORROWED: the Lower Yangzi, 0.055 tael a day"
+  }
+}

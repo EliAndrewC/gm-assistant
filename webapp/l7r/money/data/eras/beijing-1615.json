@@ -1,0 +1,48 @@
+{
+  "place": "Beijing",
+  "years": "1573-1627",
+  "confidence": "Empire-wide rice by reign (a modern silver conversion) with Beijing's official prices of 1615 for salt, sesame oil and firewood. The wage is the Lower Yangzi market wage.",
+  "coins": {
+    "tael": {
+      "silver_g": 36.9,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "The Ming treasury tael of the 1500s, 36.9 g"
+    },
+    "cash": {
+      "silver_g": 0.046125,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html",
+      "note": "About 800 standard cash to the tael in Beijing (the late 1500s' official rate)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 0.2789,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "0.638 tael a shi (1573-1620) and 0.927 (1621-1627), year-weighted"
+    },
+    "salt": {
+      "silver_g": 0.4019,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "0.006-0.007 tael a jin (Beijing official, 1615)"
+    },
+    "edible-oil": {
+      "silver_g": 1.5927,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Sesame oil, 0.028 tael a jin (Beijing official, 1615), at 0.92 kg a liter"
+    },
+    "fuel": {
+      "silver_g": 9.9955,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+      "note": "Firewood, 0.125-0.35 tael a 100 jin (Beijing official, 1615), the midpoint"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 1.5313,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
+    "note": "Lower Yangzi, 0.040-0.043 tael a day"
+  }
+}

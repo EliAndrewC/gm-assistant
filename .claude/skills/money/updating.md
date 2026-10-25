@@ -32,7 +32,9 @@ silver at a place and time. Re-pricing touches only snapshots.
 - A basket is `data/baskets/<id>.json`; a new one is a new file and shows up in `baskets`, `--basket` and the site.
   Changing `standard` changes every default reading: record the reason in the file's description and in the spec.
 - An era is `data/eras/<id>.json` (place, years, coins in grams of pure silver, each good's silver price with label and
-  source, an unskilled day wage). Diagram's research answers arrive this way; then `export`. Exactly one era is the
+  source, an unskilled day wage). They are WRITTEN by `specs/222-money-basket-and-section/measure/eras.py` from
+  diagram's answers, with the arithmetic and its why: edit the script, run it, then `export` (a test fails when a file
+  and the script disagree). Exactly one era is the
   `reference` (Kyoto 1745-54): Rokugan's prices are its prices.
 
 ## Re-taking the wage (wage dollars)

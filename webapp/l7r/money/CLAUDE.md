@@ -19,7 +19,7 @@ toolkit's Money section is `/money` (landing) and `/money/koku` (the basket play
 | `data/goods.json` | Every good a basket may hold: name, unit, why. |
 | `data/baskets/<id>.json` | What a basket holds, per adult per year. `standard` is the default. |
 | `data/snapshots/YYYY-MM.json` | One dated dollar pricing each; the first option per good is the default. **Never edit an old one**; `reprice` starts the next. |
-| `data/eras/<id>.json` | Coins, goods and a day's wage in grams of pure silver at one place and time; `kyoto-1745` is the reference (Rokugan). |
+| `data/eras/<id>.json` | Coins, goods and a day's wage in grams of pure silver at one place and time; `kyoto-1745` is the reference (Rokugan), at the Genbun monme. WRITTEN by `specs/222-money-basket-and-section/measure/eras.py` from diagram#13's figures: edit the script, run it, then `export`. |
 | `data/conversions.json` | Generated; regenerate with `export` after any change to the above. |
 | `data/wages.json` | Dated US unskilled wages for the wage-dollar reading; newest is the default. |
 | `data/ledger.jsonl` | The price ledger, one row per line, figures in sen. Rows with an `id` are synthesis rows; `shrine/...` rows price the shrine builder (feature 216). |
