@@ -104,7 +104,7 @@ ignore_missing_imports = true
 # CherryPy handlers can still be typed strictly. Same module also touches
 # cherrypy.config, which is partially typed.
 [[tool.mypy.overrides]]
-module = ["l7r.app", "l7r.auth_routes"]
+module = ["l7r.app", "l7r.auth_routes", "l7r.research"]
 disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]

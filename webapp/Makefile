@@ -127,6 +127,8 @@ prepare-deploy:
 	@cp "$${L7R_SETTING_DIR:-/host-l7r-repo/setting}/l7r.md" setting/l7r.md
 	@cp "$${L7R_SETTING_DIR:-/host-l7r-repo/setting}/budgets.md" setting/budgets.md
 	@echo "[deploy] corpus ready: $$(find setting -type f | wc -l) files"
+	@# GUARD_EDIT_OK: bundling the diagram repository's built research record (/research/).
+	@python3 -m l7r.research bundle "$${L7R_RESEARCH_SITE:-/host-l7r-repo/diagram/research/site}" research
 	@echo "[deploy] refreshing campaign-character cache into webapp/opcache/"
 	@python3 -c "import l7r.app; from chargen import opcache; opcache.refresh_cache_file()"
 	@echo "[deploy] opcache ready: $$(find opcache -type f | wc -l) files"
@@ -142,5 +144,5 @@ deploy: done prepare-deploy
 
 clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache __pycache__ \
-	       .coverage htmlcov skills
+	       .coverage htmlcov skills research
 	find . -type d -name __pycache__ -exec rm -rf {} +

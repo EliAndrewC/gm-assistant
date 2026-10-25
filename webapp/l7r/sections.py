@@ -27,6 +27,8 @@ SECTIONS: tuple[Section, ...] = (
     Section(slug='dreams', label='Dreams', path='/dreams', enabled=True),
     Section(slug='shrines', label='Shrines', path='/shrines', enabled=True),
     Section(slug='money', label='Money', path='/money', enabled=True),
+    # The diagram repository's research record, bundled at deploy (l7r/research.py).
+    Section(slug='research', label='Research', path='/research/', enabled=True),
 )
 
 

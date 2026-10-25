@@ -68,6 +68,7 @@ from l7r.places import (
     random_place,
 )
 from l7r.pool import Relic, load_relics
+from l7r.research import ResearchSite
 from l7r.sections import SECTIONS
 from l7r.shrines import (
     TEXT_FIELDS,
@@ -788,6 +789,12 @@ def mount_application() -> None:
     root = make_app()
     shared_env = build_environment()
     auth_root = AuthRoot(config=auth_config, env=shared_env)
+    # The research record: public static pages with no shared shell, so no auth tool.
+    cherrypy.tree.mount(
+        ResearchSite(),
+        '/research',
+        config={'/': {'error_page.404': _error_page_handler}},
+    )
     cherrypy.tree.mount(
         auth_root,
         '/auth',

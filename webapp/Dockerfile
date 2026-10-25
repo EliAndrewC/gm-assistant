@@ -17,6 +17,10 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+# The research record (/research/), bundled gzipped by `make prepare-deploy` from the diagram
+# repository's built site. Its own layer, before the app code, so a code-only deploy reuses it.
+COPY research ./research
+
 # App code.
 COPY chargen ./chargen
 COPY l7r ./l7r
