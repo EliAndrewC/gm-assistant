@@ -1,5 +1,5 @@
-"""money.js's `compute` against basket.reading (feature 222, FR-016): the browser and the server
-must give the same koku for the same link. Runs the real script under node."""
+"""money.js's `compute` against basket.reading (features 222 FR-016, 223 FR-006): the browser and
+the server must give the same koku for the same link. Runs the real script under node."""
 
 from __future__ import annotations
 
@@ -26,6 +26,10 @@ STATES: list[dict[str, str]] = [
     {'b': 'bassino-ma-a', 'q_housing': '3.31', 'q_salt': '10'},
     {'c1': 'Sake|liter|20|2|12', 'c2': 'Tea|kg|1||9'},
     {'b': 'standard-no-housing', 'q_rice': '0.5'},
+    {'m': 'arithmetic'},
+    {'eq': '1', 'q_fish': '0'},
+    {'w_kyoto-1745': '0', 'w_canton-1835': '3', 'x_rice': '1'},
+    {**{f'w_{e}': '0' for e in bk.load().eras}},
 ]
 
 
@@ -40,6 +44,10 @@ def _js_state(state: web.State) -> dict[str, Any]:
             for c in state.custom
             if c is not None
         ],
+        'mean': state.mean,
+        'equal': state.equal,
+        'w': dict(state.weights),
+        'whole': state.whole,
     }
 
 
@@ -49,11 +57,12 @@ def test_browser_and_server_agree() -> None:
     data = web.page_data(model, KG, load_wages()[-1])
     states = [web.parse_state(model, params) for params in STATES]
     program = (
-        f'const {{compute, drivers}} = require({json.dumps(str(SCRIPT))});'
+        f'const {{compute, computeWhole, drivers}} = require({json.dumps(str(SCRIPT))});'
         f'const data = {json.dumps(data)};'
         f'const states = {json.dumps([_js_state(s) for s in states])};'
         'process.stdout.write(JSON.stringify(states.map(s => {'
-        'const r = compute(data, s); r.drivers = drivers(r); return r; })));'
+        'const r = compute(data, s); r.drivers = drivers(r); r.whole = computeWhole(data, s);'
+        'return r; })));'
     )
     out = json.loads(
         subprocess.run(['node', '-e', program], capture_output=True, check=True, text=True).stdout
@@ -63,5 +72,11 @@ def test_browser_and_server_agree() -> None:
         assert js['dollars'] == pytest.approx(py.dollars)
         assert js['silver'] == pytest.approx(py.silver)
         assert js['per_koku'] == pytest.approx(py.per_koku)
+        assert js['arithmetic'] == pytest.approx(py.arithmetic)
+        assert js['geometric'] == pytest.approx(py.geometric)
+        assert js['koku_cost'] == pytest.approx(py.koku_cost)
+        whole = web.whole_reading(model, state, KG)
+        assert js['whole']['arithmetic'] == pytest.approx(whole.arithmetic)
+        assert js['whole']['dollars'] == pytest.approx(whole.dollars)
         assert js['left_out'] == list(py.left_out)
         assert js['drivers'] == web.drivers(py)

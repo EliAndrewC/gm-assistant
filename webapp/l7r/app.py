@@ -413,7 +413,8 @@ class Root:
         )
 
     # GET /money - the Money section (feature 222): a landing page listing its tools, and
-    # /money/koku, what a koku is worth by a basket of goods the visitor can change. Public, like
+    # /money/koku, what a koku is worth: the whole basket and the average over goods (feature 223),
+    # good by good. Public, like
     # Dreams: nothing on it is GM-only. The whole state is in the link (l7r/money/web.py).
     @cherrypy.expose
     def money(self, tool: str | None = None, **params: Any) -> bytes:
@@ -426,17 +427,27 @@ class Root:
         koku_kg, _ = resolve_koku_kg(None)
         state = money_web.parse_state(model, params)
         reading = money_web.state_reading(model, state, koku_kg)
+        whole = money_web.whole_reading(model, state, koku_kg)
         return self._render(
             'money_koku.html',
             current_section='money',
             body_class='page-money',
             model=model,
             state=state,
-            rows=money_web.rows(model, state),
+            rows=money_web.rows(model, state, reading),
             reading=reading,
+            whole=whole,
+            weights=model.weights(state.weights),
+            axis_pct=money_web.axis_pct,
+            model_means=money_basket.MEANS,
+            rice_alone=money_web.alone_of(whole, 'rice'),
             drivers=money_web.drivers(reading),
             left_out=money_web.left_out(reading),
             custom_status=money_web.custom_status(state, reading),
+            custom_rows=money_web.custom_rows(state, reading),
+            first_blank=next(
+                (i + 1 for i, c in enumerate(state.custom) if c is None), len(state.custom) + 1
+            ),
             data_json=money_web.page_json(model, koku_kg, wage),
             wage=wage,
             wage_per_koku=wage_dollars_per_koku(wage),

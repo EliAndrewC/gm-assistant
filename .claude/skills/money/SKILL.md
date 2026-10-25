@@ -21,14 +21,15 @@ cd /gm-assistant/webapp && python3 -m l7r.money price sword          # ledger ro
 cd /gm-assistant/webapp && python3 -m l7r.money convert 3 koku 4 bu  # exact coins, koku, goods and wage dollars
 cd /gm-assistant/webapp && python3 -m l7r.money dollars 500          # dollars -> coin (add --wage-dollars)
 cd /gm-assistant/webapp && python3 -m l7r.money era 20 mon --era kyoto-1745  # historical money, three ways
-cd /gm-assistant/webapp && python3 -m l7r.money baskets              # dollars per koku, every basket
+cd /gm-assistant/webapp && python3 -m l7r.money baskets              # both readings, every basket
 cd /gm-assistant/webapp && python3 -m l7r.money history              # dollars per koku, every price snapshot
 cd /gm-assistant/webapp && python3 -m l7r.money check                # validate the ledger, baskets, snapshots, eras
 ```
 
 Knobs on any command: `--basket standard|standard-no-housing|bassino-ma-a`, `--snapshot YYYY-MM`,
-`--koku-kg sheet-2017|budgets-brown|budgets-polished|<kg>`, `--wage <dollars/hour>`, `--wage-date`. Every output prints
-the basis it used; quote it with the answer. The same basket is a page anyone can play with: the toolkit's Money
+`--koku-kg sheet-2017|budgets-brown|budgets-polished|<kg>`, `--wage <dollars/hour>`, `--wage-date`, `--mean
+geometric|arithmetic`, `--equal-weights`, `--reference-only` (Kyoto 1745-54's prices alone, feature 222's basis; the
+2017 sheet's $552 needs it with `--mean arithmetic`). Every output prints the basis it used; quote it with the answer. The same basket is a page anyone can play with: the toolkit's Money
 section, `/money/koku`.
 
 `price` ends with each matched good's **swing note** (`data/swings.jsonl`): whether its real-world price was steady or
@@ -66,10 +67,16 @@ firewood need a note.
 
 ## Two dollar readings of a koku - always give both, never mix them
 
-- **Goods dollars** (~$875 on the standard basket at 2026-10 prices; ~$443 without housing): what a koku BUYS. The
-  standard basket is Bassino & Ma's Kyoto basket plus salt, fuel and a share of a room (feature 222; housing is about
-  half of today's dollars, so name the no-housing figure when a sum is about food and goods). Until 2026-10 this was
-  "PPP dollars", ~$552 in 2017 prices on the food-only basket.
+- **Goods dollars**: what a koku BUYS, and it is a RANGE (feature 223): **~$406 averaged over goods** (the central
+  figure; quote it) **to ~$891 for the whole basket** (2026-10 prices). What a koku buys of one good alone spans about a
+  hundredfold (cloth ~$36, rice ~$191, housing ~$4,300), so the figure depends on the mean. The whole basket is the
+  household's question, *a year of necessities cost N koku then and $D today*, which is the spending-weighted
+  arithmetic mean and the high end (housing alone is over half of it); the average is the spending-weighted geometric
+  mean, which no single good dominates. When a sum is about one kind of good, its own single-good koku beats either
+  (`/money/koku` lists them). Rokugan's price of each good is its price in rice averaged over every era held (equal
+  weights, provisional until the GM weighs them; borrowed prices not counted twice). Until 2026-10-25 the single
+  figure was the whole basket by Kyoto 1745-54 alone, ~$875; until 2026-10, "PPP dollars", ~$552 in 2017 prices.
+  Which modern goods match and which mean historians use is open: [diagram#17](https://github.com/EliAndrewC/diagram/issues/17).
 - **Wage dollars** (~$9,400 at $15/hour; "big deal" dollars until feature 222): how much a windfall, a debt or a loss
   MATTERS. One koku is 1/3.32 of an
   unskilled laborer's year, applied to a US unskilled full-time year. (The GM's table feel is ~$10,000.)

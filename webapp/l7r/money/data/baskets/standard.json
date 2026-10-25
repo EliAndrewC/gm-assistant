@@ -1,6 +1,7 @@
 {
   "name": "Standard",
   "description": "An ordinary Japanese household's year in the 1740s as economic historians reconstruct it (rice, soybeans, other grains, beans, fish, oil, cloth, lamp oil), plus what a household cannot live without: salt, fuel and a share of a room. Luxuries such as pepper, tea, sake and tobacco are left out.",
+  "complete": true,
   "goods": {
     "rice": 114,
     "soybeans": 52,

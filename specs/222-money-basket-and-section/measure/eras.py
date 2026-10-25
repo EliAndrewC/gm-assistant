@@ -69,6 +69,19 @@ BM_GRAMS = {
     'lamp-oil': 5.66,
 }
 REF = {k: v * F for k, v in BM_GRAMS.items()}
+# Not independent observations of a price in rice (diagram 0249, confirmed on diagram#17): feature
+# 223 averages each good's price in rice over the eras, and these would count one observation twice
+# (the Meiji ratios beside tokyo-1882) or count an assumption as one. `basket.py` leaves a borrowed
+# price out of that mean unless no other era prices the good.
+MEIJI = "Bassino & Ma price it from its ratio to rice in the early Meiji period, after 1868"
+BORROWED = {
+    'beans': MEIJI,
+    'barley-wheat': MEIJI,
+    'buckwheat-others': MEIJI,
+    'fish': MEIJI,
+    'soybeans': 'Bassino & Ma set it equal to rice a kg',
+    'edible-oil': 'Bassino & Ma set it equal to lamp oil a liter',
+}
 REF['salt'] = 17.77 / (KOKU_L * SALT_KG_L) * GENBUN
 REF['fuel'] = 2.64 / (10 * KAN_KG) * MBTU_KG * GENBUN
 # Edo's 300-500 mon a month in 1804-1830 (0265, an unsourced popular page; Kyoto and Osaka SILENT),
@@ -155,6 +168,7 @@ ERAS['kyoto-1745'] = {
     'goods': {
         **{
             k: {'silver_g': round(v, 6), 'label': 'historical', 'source': BM, 'note': f'{BM_GRAMS[k]} g at 3.11 g a monme, rescaled to 1.725'}
+            | ({'borrowed': BORROWED[k]} if k in BORROWED else {})
             for k, v in REF.items()
             if k in BM_GRAMS
         },

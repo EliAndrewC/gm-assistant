@@ -8,13 +8,36 @@ Three kinds of data, kept apart so each can change alone:
 - an ERA is what the goods, the coins and an unskilled day cost in grams of pure silver at one place
   and time (`data/eras/<id>.json`; a new era is a new file).
 
-THE REFERENCE ERA IS ROKUGAN. The 2017 sheet anchored the zeni on Kyoto 1745-54's rice price (1.49 g
-of silver a kg at Bassino & Ma's 3.11 g a monme; 0.826 g at the Genbun monme's 1.725 g of pure
-silver, which the reference era uses since diagram#13), so Rokugan's price of every good is Kyoto
-1745-54's. Rescaling every reference gram alike moves no reading: each is a ratio of grams. A koku's
-goods-dollar value is then the basket's dollars over its reference silver, times the silver in a
-koku of rice; an era's money converts by the ratio of that era's basket cost to the reference's,
-over the goods priced in both.
+THE REFERENCE ERA ANCHORS THE COIN; ALL THE ERAS PRICE THE GOODS (feature 223). The 2017 sheet
+anchored the zeni on Kyoto 1745-54's rice price (1.49 g of silver a kg at Bassino & Ma's 3.11 g a
+monme; 0.826 g at the Genbun monme's 1.725 g of pure silver, which the reference era uses since
+diagram#13), and a koku is that rice's silver. Every other good's Rokugani price is the weighted
+geometric mean, over the eras that price it beside rice, of its price IN RICE (kg of rice a unit),
+times the rice anchor: each era's silver was its own coinage, debased or not, and Rokugan's coin is
+pegged to rice, so rice is the numeraire. The mean across eras is geometric because a price in rice
+is a ratio (fish at twice rice and fish at half rice average to rice, whichever good is the
+numeraire). Era weights are the GM's (`data/era-weights.json`, default 1 each, provisional: the GM,
+2026-10-25, *"how representative we think they are of our setting"*); only Kyoto 1745-54 at 1
+reproduces feature 222's prices exactly.
+
+A KOKU'S GOODS-DOLLAR VALUE IS AN INDEX OVER GOODS, AND IT HAS NO SINGLE ANSWER (feature 223). Each
+good's single-good koku is what a koku's silver bought of that good alone, at today's dollars (rice:
+151.5 kg times today's rice price). They span about a hundredfold (cloth ~$36, housing ~$4,400), so
+the figure depends on the mean. Two readings, shown together as the range:
+
+- the WHOLE BASKET: a year's necessities cost N koku in Rokugan and $D today, so a koku is $D/N.
+  That is, identically, the spending-weighted ARITHMETIC mean of the single-good kokus (a Laspeyres
+  index), and it is the high reading: base-period weights over prices that moved a hundredfold are
+  dominated by the goods that became dear (housing alone is over half of it).
+- the AVERAGE OVER GOODS: the single-good kokus averaged by the chosen mean, by default the
+  spending-weighted GEOMETRIC mean, the central reading (the mean statistical agencies use where
+  buyers substitute, and the one an outlier cannot dominate). Fisher (the geometric mean of
+  Laspeyres and Paasche) replaces it as central once modern quantities exist (diagram#17
+  question 6).
+  Goods switched off or added by a visitor change this reading only.
+
+An era's money converts by that era's price level against Rokugan's over the goods priced in both,
+by the same mean, valued at the reading's dollars a Rokugani gram.
 
 A GOOD COUNTS ONLY WHERE IT IS PRICED ON EVERY SIDE IN USE. The 2017 snapshot never priced salt,
 fuel or housing, and Tokyo 1882-86 has no price for them either; such goods are left out of that
@@ -28,14 +51,16 @@ FR-008).
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 __all__ = [
     'DATA',
     'STANDARD',
+    'MEANS',
     'Basket',
     'Conversion',
     'Custom',
@@ -56,6 +81,7 @@ __all__ = [
 DATA = Path(__file__).parent / 'data'
 STANDARD = 'standard'
 LABELS = ('historical', 'guess')
+MEANS = ('geometric', 'arithmetic')
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +98,7 @@ class Basket:
     name: str
     description: str
     quantities: Mapping[str, float]
+    complete: bool = False  # a whole household year: only these feed the whole-basket reading
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +131,9 @@ class Price:
     label: str
     source: str
     note: str
+    borrowed: str = (
+        ''  # not an independent price in rice (from another era, or set equal to a good)
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,6 +166,7 @@ class Model:
     baskets: Mapping[str, Basket]
     snapshots: tuple[Snapshot, ...]
     eras: Mapping[str, Era]
+    era_weights: Mapping[str, float] = field(default_factory=dict)  # an era not named weighs 1
 
     @property
     def reference(self) -> Era:
@@ -166,6 +197,44 @@ class Model:
             raise SystemExit(f'no era {name!r}; have {", ".join(self.eras)}')
         return self.eras[name]
 
+    def weights(self, overrides: Mapping[str, float] | None = None) -> dict[str, float]:
+        """Every era's weight: the override, else the data file's, else 1. If no era that prices
+        rice keeps a weight, the reference era alone stands (never a division by zero)."""
+        overrides = overrides or {}
+        w = {e: max(overrides.get(e, self.era_weights.get(e, 1.0)), 0.0) for e in self.eras}
+        if not any(w[e.id] and 'rice' in e.goods for e in self.eras.values()):
+            w = {e: float(e == self.reference.id) for e in self.eras}
+        return w
+
+    def reference_only(self) -> dict[str, float]:
+        """Kyoto 1745-54 alone: feature 222's prices, which the calibration tests pin."""
+        return {e: float(e == self.reference.id) for e in self.eras}
+
+    def rests_on(self, good: str, weights: Mapping[str, float] | None = None) -> tuple[str, ...]:
+        """The eras whose prices make up this good's Rokugani price under these weights. A
+        borrowed price (another era's ratio, or a good set equal to another) is left out unless no
+        weighted era observes the good, so one observation never counts twice."""
+        w = self.weights(weights)
+        eras = [e for e in self.eras.values() if w[e.id] and good in e.goods and 'rice' in e.goods]
+        observed = [e for e in eras if not e.goods[good].borrowed]
+        return tuple(e.id for e in (observed or eras))
+
+    def prices(self, weights: Mapping[str, float] | None = None) -> dict[str, float]:
+        """Rokugan's grams of silver a unit of each good: the weighted geometric mean over the
+        eras of its price in rice, times the rice anchor. A good no weighted era prices is
+        absent."""
+        w = self.weights(weights)
+        out = {}
+        for good in self.goods:
+            num = den = 0.0
+            for era_id in self.rests_on(good, w):
+                g = self.eras[era_id].goods
+                num += w[era_id] * math.log(g[good].silver_g / g['rice'].silver_g)
+                den += w[era_id]
+            if den:
+                out[good] = self.rice_ref * math.exp(num / den)
+        return out
+
 
 def _read(path: Path) -> dict[str, Any]:
     raw: dict[str, Any] = json.loads(path.read_text())
@@ -182,7 +251,9 @@ def load(data: Path = DATA) -> Model:
     baskets = {}
     for path in sorted((data / 'baskets').glob('*.json')):
         raw = _read(path)
-        baskets[path.stem] = Basket(path.stem, raw['name'], raw['description'], raw['goods'])
+        baskets[path.stem] = Basket(
+            path.stem, raw['name'], raw['description'], raw['goods'], raw.get('complete', False)
+        )
     snapshots = []
     for path in sorted((data / 'snapshots').glob('*.json')):
         raw = _read(path)
@@ -216,13 +287,17 @@ def load(data: Path = DATA) -> Model:
                 for k, v in raw['coins'].items()
             },
             {
-                k: Price(v['silver_g'], v['label'], v['source'], v.get('note', ''))
+                k: Price(
+                    v['silver_g'], v['label'], v['source'], v.get('note', ''), v.get('borrowed', '')
+                )
                 for k, v in raw['goods'].items()
             },
             raw['wage']['silver_g_per_day'],
             raw['wage']['source'],
         )
-    return Model(goods, baskets, tuple(snapshots), eras)
+    weights_path = data / 'era-weights.json'
+    weights = _read(weights_path)['weights'] if weights_path.exists() else {}
+    return Model(goods, baskets, tuple(snapshots), eras, weights)
 
 
 def problems(model: Model) -> list[str]:
@@ -250,6 +325,13 @@ def problems(model: Model) -> list[str]:
                     out.append(f'snapshot {snap.date}: {good} ({opt.priced_as or "?"}) unpriced')
                 if not opt.link:
                     out.append(f'snapshot {snap.date}: {good} ({opt.priced_as or "?"}) has no link')
+    for era_id, weight in model.era_weights.items():
+        if era_id not in model.eras:
+            out.append(f'era-weights: unknown era {era_id!r}')
+        elif weight < 0:
+            out.append(f'era-weights: negative weight for {era_id}')
+    if not any(b.complete for b in model.baskets.values()):
+        out.append('no basket is marked complete (the whole-basket reading needs one)')
     for era in model.eras.values():
         for good, price in era.goods.items():
             if good not in model.goods:
@@ -302,6 +384,8 @@ class Reading:
     lines: tuple[Line, ...]
     koku_kg: float
     rice_ref: float
+    mean: str = 'geometric'
+    equal: bool = False  # weigh every counted good alike instead of by its share of spending
 
     @property
     def dollars(self) -> float:
@@ -312,11 +396,47 @@ class Reading:
         return sum(line.silver for line in self.lines)
 
     @property
-    def per_koku(self) -> float:
-        """Goods dollars a koku: the basket's dollars per reference gram, times a koku's grams."""
-        if not self.silver:
+    def koku_silver(self) -> float:
+        return self.koku_kg * self.rice_ref
+
+    @property
+    def koku_cost(self) -> float:
+        """N: what the counted goods cost in Rokugan, in koku."""
+        return self.silver / self.koku_silver
+
+    def alone(self, line: Line) -> float:
+        """The single-good koku: what a koku's silver bought of this good, at today's dollars."""
+        return (line.dollars_per_unit or 0) / (line.silver_per_unit or 1) * self.koku_silver
+
+    @property
+    def weighted(self) -> tuple[tuple[Line, float], ...]:
+        """Each counted good with its weight in the average (summing to 1)."""
+        counted = [ln for ln in self.lines if ln.counted]
+        if self.equal:
+            return tuple((ln, 1 / len(counted)) for ln in counted)
+        return tuple((ln, ln.silver / self.silver) for ln in counted)
+
+    @property
+    def arithmetic(self) -> float:
+        """With spending weights, identically $D/N: the whole-basket reading."""
+        return sum(w * self.alone(ln) for ln, w in self.weighted)
+
+    @property
+    def geometric(self) -> float:
+        if not self.weighted:
             return 0.0
-        return self.dollars / self.silver * self.koku_kg * self.rice_ref
+        return math.exp(sum(w * math.log(self.alone(ln)) for ln, w in self.weighted))
+
+    @property
+    def whole(self) -> float:
+        """$D/N over the counted goods: the basket's dollars over its koku. Equal to `arithmetic`
+        under spending weights."""
+        return self.dollars / self.silver * self.koku_silver if self.silver else 0.0
+
+    @property
+    def per_koku(self) -> float:
+        """Goods dollars a koku by the chosen mean."""
+        return self.geometric if self.mean == 'geometric' else self.arithmetic
 
     @property
     def left_out(self) -> tuple[str, ...]:
@@ -333,12 +453,17 @@ def reading(
     choices: Mapping[str, int] | None = None,
     quantities: Mapping[str, float] | None = None,
     custom: Sequence[Custom] = (),
+    mean: str = 'geometric',
+    equal: bool = False,
+    weights: Mapping[str, float] | None = None,
 ) -> Reading:
-    """The basket priced at the snapshot against the reference era. `quantities` overrides the
-    basket's (0 switches a good off); `choices` picks a substitute per good."""
+    """The basket priced at the snapshot against Rokugan's prices under these era weights.
+    `quantities` overrides the basket's (0 switches a good off); `choices` picks a substitute."""
+    if mean not in MEANS:
+        raise SystemExit(f'no mean {mean!r}; have {", ".join(MEANS)}')
     choices = choices or {}
     qty = {**basket.quantities, **(quantities or {})}
-    ref = model.reference.goods
+    ref = model.prices(weights)
     lines = []
     for good, q in qty.items():
         g = model.goods[good]
@@ -351,13 +476,13 @@ def reading(
                 g.unit,
                 q,
                 pick.dollars_per_unit if pick else None,
-                ref[good].silver_g if good in ref else None,
+                ref.get(good),
                 pick.priced_as if pick else '',
             )
         )
     for i, c in enumerate(custom):
         lines.append(Line(f'custom-{i}', c.name, c.unit, c.quantity, c.dollars, c.silver_g, ''))
-    return Reading(tuple(lines), koku_kg, model.rice_ref)
+    return Reading(tuple(lines), koku_kg, model.rice_ref, mean, equal)
 
 
 @dataclass(frozen=True, slots=True)
@@ -367,6 +492,7 @@ class Conversion:
     amount: float
     silver_g: float
     goods_dollars: float
+    goods_dollars_high: float
     wage_dollars: float
     rokugan_sen: float
     used: tuple[str, ...]
@@ -390,48 +516,53 @@ def convert(
     snapshot: Snapshot,
     koku_kg: float,
     modern_day_wage: float,
+    *,
+    mean: str = 'geometric',
+    weights: Mapping[str, float] | None = None,
 ) -> Conversion:
     """An amount of an era's money -> goods dollars, wage dollars and Rokugani sen.
 
-    Over the goods G priced in this era and the reference era: r = era silver(G) / reference
-    silver(G) is how much dearer the era was, and the amount buys what S / r grams bought in
-    Rokugan. Those grams are valued at Rokugan's own rate, the WHOLE basket's dollars over its
-    reference silver (the goods priced in the reference and the snapshot), in goods dollars and in
-    sen at the rice anchor, so the two always agree with the koku's headline dollars. Valuing them
-    over G alone, as before diagram#13, made an era's dollars depend on which goods it happened to
-    price: a rice-only era read in rice dollars, less than half the basket's. Wage dollars go by the
-    era's own laborer's day."""
+    Over the goods G priced in this era and in Rokugan, the era's price level against Rokugan's is
+    the mean of era price / Rokugani price, weighted by Rokugan's spending on G (by `mean`; the
+    arithmetic form is the basket ratio sum(q x era) / sum(q x Rokugan)); the amount buys what S /
+    level grams bought in Rokugan. Those grams are valued at the whole basket's reading by the same
+    mean, in goods dollars and in sen at the rice anchor, so the two always agree with the koku's
+    headline. Valuing them over G alone, as before diagram#13, made an era's dollars depend on which
+    goods it happened to price. `goods_dollars_high` is the same by the arithmetic mean throughout
+    (the whole-basket, high reading). Wage dollars go by the era's own laborer's day."""
     if unit not in era.coins:
         raise SystemExit(f'{era.title} has no coin {unit!r}; have {", ".join(era.coins)}')
-    ref = model.reference.goods
+    rok = model.prices(weights)
+    full = reading(model, basket, snapshot, koku_kg, mean=mean, weights=weights)
     used, left = [], []
-    era_silver = ref_silver = basket_silver = dollars = 0.0
+    shared: list[tuple[float, float]] = []  # (Rokugan spending, era price / Rokugani price)
     for good, q in basket.quantities.items():
         if q <= 0:
             continue
-        price = snapshot.price(good)
-        if good in ref and price:
-            basket_silver += q * ref[good].silver_g
-            dollars += q * price
         name = model.goods[good].name
-        if good in era.goods and good in ref:
+        if good in era.goods and good in rok:
             used.append(name)
-            era_silver += q * era.goods[good].silver_g
-            ref_silver += q * ref[good].silver_g
+            shared.append((q * rok[good], era.goods[good].silver_g / rok[good]))
         else:
             left.append(name)
     if not used:
         raise SystemExit(f'{era.title} prices none of basket {basket.id!r}')
+    total = sum(s for s, _ in shared)
+    arith = sum(s * r for s, r in shared) / total
+    level = (
+        math.exp(sum(s * math.log(r) for s, r in shared) / total) if mean == 'geometric' else arith
+    )
     silver = amount * era.coins[unit].silver_g
-    in_ref = silver * ref_silver / era_silver
+    in_rok = silver / level
     return Conversion(
         era,
         unit,
         amount,
         silver,
-        in_ref * dollars / basket_silver,
+        in_rok / full.koku_silver * full.per_koku,
+        silver / arith / full.koku_silver * full.arithmetic,
         silver / era.wage_g_per_day * modern_day_wage,
-        in_ref * 1000 / (koku_kg * model.rice_ref),
+        in_rok * 1000 / full.koku_silver,
         tuple(used),
         tuple(left),
     )

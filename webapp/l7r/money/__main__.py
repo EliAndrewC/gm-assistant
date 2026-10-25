@@ -49,18 +49,40 @@ class _Basis:
             wage = Wage(wage.date, args.wage, wage.hours_per_year, 'given on the command line', '')
         self.wage = wage
         self.koku_kg, self.koku_label = resolve_koku_kg(args.koku_kg)
-        self.reading = bk.reading(self.model, self.basket, self.snapshot, self.koku_kg)
+        self.mean, self.equal = args.mean, args.equal_weights
+        self.weights = self.model.reference_only() if args.reference_only else None
+        self.reading = bk.reading(
+            self.model,
+            self.basket,
+            self.snapshot,
+            self.koku_kg,
+            mean=self.mean,
+            equal=self.equal,
+            weights=self.weights,
+        )
+        self.whole = bk.reading(
+            self.model,
+            self.basket,
+            self.snapshot,
+            self.koku_kg,
+            mean='arithmetic',
+            weights=self.weights,
+        )
         self.ppp = self.reading.per_koku
         self.big = wage_dollars_per_koku(self.wage)
 
     def lines(self) -> list[str]:
         left = self.reading.left_out
         unpriced = f'; unpriced at this date, so left out: {", ".join(left)}' if left else ''
+        how = f'{"equal-weighted " if self.equal else ""}{self.mean} mean over goods'
+        eras = 'Kyoto 1745-54 alone' if self.weights else 'the eras at their weights'
         return [
             f'  Goods-dollar basis: {self.basket.name} basket at the {self.snapshot.date} '
-            f'snapshot (priced by {self.snapshot.priced_by}){unpriced}; '
-            f'koku of rice = {self.koku_kg:.1f} kg [{self.koku_label}] '
-            f'-> ${self.ppp:,.0f} per koku',
+            f'snapshot (priced by {self.snapshot.priced_by}){unpriced}; Rokugan priced by '
+            f'{eras}; koku of rice = {self.koku_kg:.1f} kg [{self.koku_label}] '
+            f'-> ${self.ppp:,.0f} per koku ({how}), up to ${self.whole.arithmetic:,.0f} for '
+            f'the whole basket ({self.whole.koku_cost:.2f} koku then, '
+            f'${self.whole.dollars:,.0f} today)',
             f'  Wage-dollar basis: ${self.wage.hourly:.2f}/hour '
             f'x {self.wage.hours_per_year:g} hours '
             f'({self.wage.date}) / {LABORER_KOKU_YEAR} koku per unskilled year '
@@ -69,6 +91,7 @@ class _Basis:
 
     def dollars(self, low: int, high: int | None = None) -> str:
         lo, hi = coins.koku(low), coins.koku(low if high is None else high)
+        whole = self.whole.arithmetic
 
         def span(per: float, places: int) -> str:
             a, b = f'${lo * per:,.{places}f}', f'${hi * per:,.{places}f}'
@@ -76,7 +99,10 @@ class _Basis:
 
         days = laborer_days(low), laborer_days(low if high is None else high)
         work = f'{days[0]:,.1f}' if days[0] == days[1] else f'{days[0]:,.1f} to {days[1]:,.1f}'
-        return f'goods {span(self.ppp, 2)}; wage {span(self.big, 0)}; {work} laborer-days'
+        return (
+            f'goods {span(self.ppp, 2)} (whole basket {span(whole, 2)}); wage {span(self.big, 0)}; '
+            f'{work} laborer-days'
+        )
 
 
 def _pick[T: _Dated](items: Sequence[T], date: str | None, what: str) -> T:
@@ -141,12 +167,14 @@ def _price(args: argparse.Namespace, basis: _Basis) -> None:
 
 def _history(args: argparse.Namespace, basis: _Basis) -> None:
     for snap in basis.model.snapshots:
-        r = bk.reading(basis.model, basis.basket, snap, basis.koku_kg)
+        r = bk.reading(
+            basis.model, basis.basket, snap, basis.koku_kg, mean='arithmetic', weights=basis.weights
+        )
         zeni = r.silver * 100 / (basis.koku_kg * basis.model.rice_ref)
         left = f'; left out: {", ".join(r.left_out)}' if r.left_out else ''
         _say(
             f'{snap.date}: basket ${r.dollars:,.2f} = {zeni:.2f} zeni -> '
-            f'${r.per_koku:,.2f} per koku ({snap.priced_by}){left}'
+            f'${r.per_koku:,.2f} per koku, whole basket ({snap.priced_by}){left}'
         )
     _say(
         f'  {basis.basket.name} basket; koku of rice = {basis.koku_kg:.1f} kg [{basis.koku_label}]'
@@ -155,9 +183,20 @@ def _history(args: argparse.Namespace, basis: _Basis) -> None:
 
 def _baskets(args: argparse.Namespace, basis: _Basis) -> None:
     for b in basis.model.baskets.values():
-        r = bk.reading(basis.model, b, basis.snapshot, basis.koku_kg)
+        r = bk.reading(
+            basis.model,
+            b,
+            basis.snapshot,
+            basis.koku_kg,
+            mean=basis.mean,
+            equal=basis.equal,
+            weights=basis.weights,
+        )
         left = f'; left out: {", ".join(r.left_out)}' if r.left_out else ''
-        _say(f'{b.id}: ${r.per_koku:,.2f} per koku ({b.name}){left}')
+        _say(
+            f'{b.id}: ${r.per_koku:,.2f} per koku averaged over goods, ${r.whole:,.2f} for the '
+            f'whole basket ({b.name}){left}'
+        )
     _say(f'  snapshot {basis.snapshot.date}; koku of rice = {basis.koku_kg:.1f} kg')
 
 
@@ -185,10 +224,13 @@ def _era(args: argparse.Namespace, basis: _Basis) -> None:
         basis.snapshot,
         basis.koku_kg,
         basis.wage.day,
+        mean=basis.mean,
+        weights=basis.weights,
     )
     _say(f'{args.amount:g} {args.unit} ({era.title}) = {c.silver_g:,.3f} g of silver')
     _say(
-        f'  goods ${c.goods_dollars:,.2f}; wage ${c.wage_dollars:,.2f}; '
+        f'  goods ${c.goods_dollars:,.2f} (whole basket ${c.goods_dollars_high:,.2f}); '
+        f'wage ${c.wage_dollars:,.2f}; '
         f'in Rokugan {conversions.rokugani(c.rokugan_sen)}'
     )
     left = f' (left out: {", ".join(c.left_out)})' if c.left_out else ''
@@ -354,6 +396,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument('--basket', help='basket id (default: standard); `baskets` lists them')
     parser.add_argument('--wage-date', help='wage reading date (default: newest)')
     parser.add_argument('--wage', type=float, help='override the hourly wage, in dollars')
+    parser.add_argument(
+        '--mean',
+        choices=bk.MEANS,
+        default='geometric',
+        help='the mean over goods for goods dollars (default geometric, the central reading)',
+    )
+    parser.add_argument(
+        '--equal-weights', action='store_true', help='weigh goods alike, not by their spending'
+    )
+    parser.add_argument(
+        '--reference-only',
+        action='store_true',
+        help="price Rokugan by Kyoto 1745-54 alone (feature 222's prices) instead of every era",
+    )
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser(
         'convert', help='an amount of coin -> exact coins, koku, goods and wage dollars'

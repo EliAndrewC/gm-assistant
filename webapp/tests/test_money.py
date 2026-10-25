@@ -64,8 +64,16 @@ def test_everyday_keeps_copper_exact_and_rounds_larger_sums() -> None:
 
 
 def _sheet(koku_kg: float) -> bk.Reading:
+    """The 2017 sheet: Kyoto 1745-54's prices alone and the whole basket (feature 223 keeps it)."""
     model = bk.load()
-    return bk.reading(model, model.basket('bassino-ma-a'), model.snapshot('2017-04'), koku_kg)
+    return bk.reading(
+        model,
+        model.basket('bassino-ma-a'),
+        model.snapshot('2017-04'),
+        koku_kg,
+        mean='arithmetic',
+        weights=model.reference_only(),
+    )
 
 
 def model_rice_ref() -> float:
@@ -86,7 +94,14 @@ def test_2017_snapshot_reproduces_the_spreadsheet() -> None:
     assert round(r.silver * 100 / (kg * model_rice_ref()), 2) == 144.32
     assert round(r.per_koku, 2) == 552.39
     model = bk.load()
-    std = bk.reading(model, model.basket(), model.snapshot('2017-04'), kg)
+    std = bk.reading(
+        model,
+        model.basket(),
+        model.snapshot('2017-04'),
+        kg,
+        mean='arithmetic',
+        weights=model.reference_only(),
+    )
     assert round(std.per_koku, 2) == 552.39
     assert std.left_out == ('Salt', 'Fuel', 'Housing')
 
@@ -188,14 +203,21 @@ def run(capsys: pytest.CaptureFixture[str], *argv: str) -> str:
     return capsys.readouterr().out
 
 
+# The 2017 sheet's basis: Kyoto 1745-54 alone, the whole basket's (arithmetic) reading.
+SHEET = ('--reference-only', '--mean', 'arithmetic', '--snapshot', '2017-04')
+
+
 def test_cli_convert(capsys: pytest.CaptureFixture[str]) -> None:
-    out = run(capsys, '--snapshot', '2017-04', '--basket', 'bassino-ma-a', 'convert', '1', 'koku')
+    out = run(capsys, *SHEET, '--basket', 'bassino-ma-a', 'convert', '1', 'koku')
     assert '1 koku = 1.000 koku = 1,000 sen' in out
-    assert 'goods $552.39; wage $9,398; 75.3 laborer-days' in out
+    assert 'goods $552.39 (whole basket $552.39); wage $9,398; 75.3 laborer-days' in out
+    assert 'Rokugan priced by Kyoto 1745-54 alone' in out
     assert 'Bassino & Ma basket A (the 2017 sheet) basket at the 2017-04 snapshot' in out
     assert '[sheet-2017]' in out
     out = run(capsys, 'convert', '1', 'koku')
     assert 'Standard basket at the ' in out
+    assert '(geometric mean over goods), up to $' in out
+    assert 'Rokugan priced by the eras at their weights' in out
     assert 'left out' not in out
     out = run(capsys, '--snapshot', '2017-04', 'convert', '1', 'koku')
     assert 'unpriced at this date, so left out: Salt, Fuel, Housing' in out
@@ -208,7 +230,7 @@ def test_cli_knobs(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_cli_dated_inputs(capsys: pytest.CaptureFixture[str]) -> None:
-    out = run(capsys, '--snapshot', '2017-04', '--wage-date', '2026-10-18', 'convert', '1 bu')
+    out = run(capsys, *SHEET, '--wage-date', '2026-10-18', 'convert', '1 bu')
     assert 'goods $55.24' in out
     with pytest.raises(SystemExit, match='no snapshot dated 1999-01; have 2017-04, '):
         main(['--snapshot', '1999-01', 'convert', '1 bu'])
@@ -217,7 +239,7 @@ def test_cli_dated_inputs(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_cli_dollars(capsys: pytest.CaptureFixture[str]) -> None:
-    sheet = ('--snapshot', '2017-04', '--basket', 'bassino-ma-a')
+    sheet = (*SHEET, '--basket', 'bassino-ma-a')
     assert '$500.00 (goods dollars) = 9 bu 5 sen (about 9 bu)' in run(
         capsys, *sheet, 'dollars', '500'
     )
@@ -226,10 +248,10 @@ def test_cli_dollars(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
-    out = run(capsys, '--snapshot', '2017-04', '--basket', 'bassino-ma-a', 'price', 'sword')
+    out = run(capsys, *SHEET, '--basket', 'bassino-ma-a', 'price', 'sword')
     assert 'a common sword (medieval Lucca and Marseille): 7 sen to 5 zeni 3 sen per item' in out
     assert '[comparative (unverified lead): a yardstick from another society' in out
-    assert 'goods $3.87 to $29.28; wage $66 to $498; 0.5 to 4.0 laborer-days' in out
+    assert 'goods $3.87 to $29.28 (whole basket $3.87 to $29.28); wage $66 to $498;' in out
     assert "a samurai's wakizashi: 1 koku 5 bu per item" in out
     out = run(capsys, 'price', 'land', 'tax')
     assert '[guess]' in out
@@ -238,8 +260,8 @@ def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_cli_history_and_check(capsys: pytest.CaptureFixture[str]) -> None:
-    out = run(capsys, '--basket', 'bassino-ma-a', 'history')
-    assert '2017-04: basket $797.22 = 144.32 zeni -> $552.39 per koku' in out
+    out = run(capsys, '--reference-only', '--basket', 'bassino-ma-a', 'history')
+    assert '2017-04: basket $797.22 = 144.32 zeni -> $552.39 per koku, whole basket' in out
     assert 'left out' not in out
     assert 'left out: Salt, Fuel, Housing' in run(capsys, 'history')
     assert 'snapshots and' in run(capsys, 'check')
