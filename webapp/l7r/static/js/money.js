@@ -290,6 +290,14 @@
       history.replaceState(null, '', link(st));
     }
 
+    // The goods table's axis header sticks just under the app nav, whose height varies by width.
+    var nav = document.querySelector('.app-nav');
+    function navHeight() {
+      document.documentElement.style.setProperty('--koku-nav-h', (nav ? nav.offsetHeight : 0) + 'px');
+    }
+    navHeight();
+    window.addEventListener('resize', navHeight);
+
     // The bar repeats the goods figures, so it shows only once the goods card is out of view.
     var bar = form.querySelector('.koku-sticky');
     var card = form.querySelector('.koku-reading--goods');

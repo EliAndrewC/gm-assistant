@@ -248,7 +248,7 @@ def test_the_page_names_every_goods_figure(root: Root) -> None:
     assert '(geometric mean)' in page
     assert 'Which periods set Rokugan' in page
     assert 'rice alone, so it adds nothing' in page
-    assert '(borrowed, not counted)' in page
+    assert '; reconstructed, not counted: ' in page
     # the standard basket's twelve goods, and a hidden row for each custom good
     assert page.count('class="koku-track__dot"') == 12 + web.MAX_CUSTOM
     assert page.count('data-custom-row=') == web.MAX_CUSTOM

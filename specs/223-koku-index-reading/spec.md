@@ -178,7 +178,13 @@ never edited.
   contributes $482 of $875) and is the textbook upper bound (Laspeyres overstates against a substitution-aware
   index); the geometric mean is what statistical agencies use for elementary aggregates with substitution, and
   Fisher is the standard "ideal" index when both periods' quantities are known. Diagram#17 question 5 asks what
-  economic historians actually do; if it answers differently the default moves.
+  economic historians actually do; if it answers differently the default moves. Early answer (diagram#17,
+  2026-10-25, leads from diagram feature 420's search passes): none of the works takes one basket index as "the"
+  modern value; where consumption differs they compute Laspeyres and Paasche, take the Fisher, and read the
+  Laspeyres/Paasche spread as the uncertainty (Allen et al. 2011; Deaton & Heston); published modern-money figures
+  are given side by side, each labeled by what it measures (MeasuringWorth; the Bank of Japan's ryo by rice and by a
+  carpenter's wage). So the geometric mean over goods is an interim stand-in for Fisher, which question 6's modern
+  quantities will allow; the page's two labeled readings follow the side-by-side practice.
 - **Era weights default to equal across all 23 eras held, PROVISIONALLY.** The GM: *"how representative we think they
   are of our setting"* - a judgment that is his, so the default is reported to him as awaiting his weights, not
   presented as neutral. It includes 8 Chinese eras (Beijing x5, Canton 1835, Songjiang 1680, Suzhou 1750) and Meiji

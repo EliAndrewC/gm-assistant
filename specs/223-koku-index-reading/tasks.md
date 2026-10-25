@@ -12,6 +12,6 @@
 - [x] T010 Template, `money.js`, CSS: two readings, dot track, controls, periods panel
 - [x] T011 Tests: old pins moved to `--reference-only --mean arithmetic`; new tests for every acceptance; node twin extended
 - [x] T012 Docs: SKILL.md, module CLAUDE.md
-- [ ] T013 Screenshots at four viewports; dom_audit zero; frontend-review
-- [ ] T014 `make done`; commit; sync-with-main done; post on diagram#17 that conversions.json moved
+- [x] T013 Screenshots at four viewports; dom_audit zero; frontend-review (round 1 needs-work, round 2 pass; its remaining polish applied)
+- [x] T014 `make done`; commit; sync-with-main done; post on diagram#17 that conversions.json moved
 - [ ] T015 (waits on diagram#17) Paasche/Fisher with modern quantities; re-priced snapshot; other eras' borrowed marks

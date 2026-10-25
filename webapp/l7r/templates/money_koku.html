@@ -95,6 +95,7 @@
         <span class="koku-legend__item"><span class="koku-legend__swatch koku-legend__swatch--high"></span>The whole basket, <strong data-out="legend-high">{{ dollars(whole.arithmetic) }}</strong></span>
         <span class="koku-legend__item"><span class="koku-legend__dot"></span>One good alone; larger carries more weight</span>
       </p>
+      <div class="koku-table">
       <div class="koku-goods__cols" aria-hidden="true">
         <span></span><span>Good</span><span>A year's worth</span><span>Weight</span><span>Alone</span>
         <span class="koku-axis">{% for t, label in [(10, '$10'), (100, '$100'), (1000, '$1k'), (10000, '$10k')] %}<span class="koku-axis__tick" style="--at: {{ axis_pct(t) }}%">{{ label }}</span>{% endfor %}</span>
@@ -173,6 +174,7 @@
           </li>
         {% endfor %}
       </ul>
+      </div>
       <p class="koku-drivers" data-out="drivers">{{ drivers }}</p>
       <p class="koku-left-out" data-out="left-out"{% if not left_out %} hidden{% endif %}>Not priced, so left out: {{ left_out|join(', ') }}.</p>
       <p class="koku-description" data-out="description">{{ model.baskets[state.basket].description }}</p>
@@ -188,10 +190,15 @@
             {% set own = e.goods.keys()|reject('equalto', 'rice')|list if 'rice' in e.goods else [] %}
             <tr data-era="{{ e.id }}">
               <th scope="row">{{ e.title }}</th>
-              <td><input class="koku-number koku-number--weight" type="number" min="0" step="0.5" name="w_{{ e.id }}" value="{{ '%g' % weights[e.id] }}" aria-label="Weight of {{ e.title }}" data-in="weight" /></td>
+              <td class="koku-eras__weight"><span class="koku-eras__wlabel" aria-hidden="true">Weight</span><input class="koku-number koku-number--weight" type="number" min="0" step="0.5" name="w_{{ e.id }}" value="{{ '%g' % weights[e.id] }}" aria-label="Weight of {{ e.title }}" data-in="weight" /></td>
               <td class="koku-eras__goods">
                 {%- if not own -%}<span class="koku-missing">rice alone, so it adds nothing</span>
-                {%- else -%}{% for g in own %}{{ model.goods[g].name }}{% if e.goods[g].borrowed %} <span class="koku-borrowed" title="{{ e.goods[g].borrowed }}">(borrowed, not counted)</span>{% endif %}{{ ', ' if not loop.last }}{% endfor %}{%- endif -%}
+                {%- else -%}
+                  {%- set counted = own|reject('in', e.goods|dictsort|selectattr('1.borrowed')|map(attribute='0')|list)|list -%}
+                  {%- set borrowed = own|reject('in', counted)|list -%}
+                  {%- for g in counted %}{{ model.goods[g].name }}{{ ', ' if not loop.last }}{% endfor -%}
+                  {%- if borrowed %}<span class="koku-borrowed">{{ '; ' if counted }}reconstructed, not counted: {% for g in borrowed %}<span title="{{ e.goods[g].borrowed }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
+                {%- endif -%}
               </td>
             </tr>
           {% endfor %}
