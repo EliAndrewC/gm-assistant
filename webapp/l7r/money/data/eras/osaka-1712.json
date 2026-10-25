@@ -1,0 +1,50 @@
+{
+  "place": "Osaka",
+  "years": "1712-1718",
+  "confidence": "Kumon's observed rice in nominal monme, 1712-1718, nearly three times Kyoho's, in the \"current silver\" of Kusama's entries: the Hoei, Eiji, Mitsuho and Yotsuho silvers, dealt in as one with no rate of their own. Its grams are the 1714 law's (2 of current for 1 of Keicho); they cancel in a conversion. The ryo and mon rates are Kusama's (1815), and 1715-1716 are SILENT. The wage is borrowed.",
+  "coins": {
+    "monme": {
+      "silver_g": 1.5,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "Current silver (1712-1718), 1.50 g pure by the 1714 law's 2 for 1 of Keicho; Kusama's market rates of 1712-1714 and 1717 (about 65-93 monme a ryo, 40-59 mon a monme), the mean of the rows' midpoints"
+    },
+    "mon": {
+      "silver_g": 0.034014,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "44.1 mon to the monme"
+    },
+    "kanmon": {
+      "silver_g": 34.014,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "1,000 mon"
+    },
+    "ryo": {
+      "silver_g": 116.4,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "77.6 monme to the ryo"
+    },
+    "bu": {
+      "silver_g": 29.1,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A quarter of a ryo (the gold count: 4 bu a ryo)"
+    },
+    "shu": {
+      "silver_g": 7.275,
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
+      "note": "A sixteenth of a ryo (16 shu a ryo)"
+    }
+  },
+  "goods": {
+    "rice": {
+      "silver_g": 1.5126,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "0.840 monme a kg, Kumon's observed 1712-1718 (7 years)"
+    }
+  },
+  "wage": {
+    "silver_g_per_day": 1.3128,
+    "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0250-what-did-an-unskilled-laborer-earn.html",
+    "note": "BORROWED: none found for these years; the reference day (0.907 monme) chained by Kumon's farm-servant year, 109.9 monme in 1712-1718 and 113.9 in 1745-1754, in grams of silver"
+  }
+}

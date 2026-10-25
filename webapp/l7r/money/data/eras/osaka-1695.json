@@ -1,12 +1,12 @@
 {
   "place": "Osaka",
-  "years": "1695-1711",
-  "confidence": "Kumon's observed rice in nominal monme, 1695-1711, half again Kyoho's. Priced at the Genroku silver of 1695-1705 (64%, 2.40 g a monme); the Hoei silvers of 1706-1711 were baser, but rice in them stood where it had under Genroku. The ryo and mon rates are 1700's, and BORROWED for 1706-1711, which no source in hand rates. The wage is borrowed.",
+  "years": "1695-1705",
+  "confidence": "Kumon's observed rice in nominal monme, 1695-1705, half again Kyoho's, in the Genroku silver (64%, 2.40 g a monme), at the market rates of 1700. The wage is borrowed.",
   "coins": {
     "monme": {
       "silver_g": 2.4,
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html",
-      "note": "Genroku silver (1695-1705), 2.40 g pure; market rates of 1700 (47-48 monme a ryo, 3.71 kanmon a ryo), borrowed for 1706-1711"
+      "note": "Genroku silver (1695-1705), 2.40 g pure; market rates of 1700 (47-48 monme a ryo, 3.71 kanmon a ryo)"
     },
     "mon": {
       "silver_g": 0.030769,
@@ -36,15 +36,15 @@
   },
   "goods": {
     "rice": {
-      "silver_g": 1.3032,
+      "silver_g": 1.2706,
       "label": "historical",
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
-      "note": "0.452 monme a kg, Kumon's observed 1695-1711 (17 years)"
+      "note": "0.441 monme a kg, Kumon's observed 1695-1705 (11 years)"
     }
   },
   "wage": {
-    "silver_g_per_day": 1.7639,
+    "silver_g_per_day": 1.6221,
     "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0250-what-did-an-unskilled-laborer-earn.html",
-    "note": "BORROWED: none found for these years; the reference day (0.907 monme) chained by Kumon's farm-servant year, 92.3 monme in 1695-1711 and 113.9 in 1745-1754, in grams of silver"
+    "note": "BORROWED: none found for these years; the reference day (0.907 monme) chained by Kumon's farm-servant year, 84.9 monme in 1695-1705 and 113.9 in 1745-1754, in grams of silver"
   }
 }

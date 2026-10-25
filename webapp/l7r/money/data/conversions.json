@@ -746,8 +746,8 @@
     },
     "osaka-1695": {
       "place": "Osaka",
-      "years": "1695-1711",
-      "confidence": "Kumon's observed rice in nominal monme, 1695-1711, half again Kyoho's. Priced at the Genroku silver of 1695-1705 (64%, 2.40 g a monme); the Hoei silvers of 1706-1711 were baser, but rice in them stood where it had under Genroku. The ryo and mon rates are 1700's, and BORROWED for 1706-1711, which no source in hand rates. The wage is borrowed.",
+      "years": "1695-1705",
+      "confidence": "Kumon's observed rice in nominal monme, 1695-1705, half again Kyoho's, in the Genroku silver (64%, 2.40 g a monme), at the market rates of 1700. The wage is borrowed.",
       "basket_coverage": "rice alone",
       "goods_left_out": [
         "Soybeans",
@@ -762,53 +762,53 @@
         "Fuel",
         "Housing"
       ],
-      "wage_silver_g_per_day": 1.7639,
+      "wage_silver_g_per_day": 1.6221,
       "units": {
         "monme": {
           "silver_g": 2.4,
-          "goods_dollars": 10.633806,
-          "wage_dollars": 169.805545,
-          "rokugan_sen": 12.154696,
-          "note": "Genroku silver (1695-1705), 2.40 g pure; market rates of 1700 (47-48 monme a ryo, 3.71 kanmon a ryo), borrowed for 1706-1711",
+          "goods_dollars": 10.906639,
+          "wage_dollars": 184.649528,
+          "rokugan_sen": 12.466551,
+          "note": "Genroku silver (1695-1705), 2.40 g pure; market rates of 1700 (47-48 monme a ryo, 3.71 kanmon a ryo)",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
         },
         "mon": {
           "silver_g": 0.030769,
-          "goods_dollars": 0.13633,
-          "wage_dollars": 2.176978,
-          "rokugan_sen": 0.155828,
+          "goods_dollars": 0.139828,
+          "wage_dollars": 2.367284,
+          "rokugan_sen": 0.159826,
           "note": "78.0 mon to the monme",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
         },
         "kanmon": {
           "silver_g": 30.769,
-          "goods_dollars": 136.329819,
-          "wage_dollars": 2176.977833,
-          "rokugan_sen": 155.828269,
+          "goods_dollars": 139.827656,
+          "wage_dollars": 2367.283891,
+          "rokugan_sen": 159.826381,
           "note": "1,000 mon",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
         },
         "ryo": {
           "silver_g": 114.0,
-          "goods_dollars": 505.105768,
-          "wage_dollars": 8065.763365,
-          "rokugan_sen": 577.348066,
+          "goods_dollars": 518.065353,
+          "wage_dollars": 8770.852598,
+          "rokugan_sen": 592.161184,
           "note": "47.5 monme to the ryo",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
         },
         "bu": {
           "silver_g": 28.5,
-          "goods_dollars": 126.276442,
-          "wage_dollars": 2016.440841,
-          "rokugan_sen": 144.337017,
+          "goods_dollars": 129.516338,
+          "wage_dollars": 2192.71315,
+          "rokugan_sen": 148.040296,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
         },
         "shu": {
           "silver_g": 7.125,
-          "goods_dollars": 31.569111,
-          "wage_dollars": 504.11021,
-          "rokugan_sen": 36.084254,
+          "goods_dollars": 32.379085,
+          "wage_dollars": 548.178287,
+          "rokugan_sen": 37.010074,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
         }
@@ -817,7 +817,7 @@
     "osaka-1700": {
       "place": "Osaka",
       "years": "1690-1735",
-      "confidence": "Priced at the Kyoho coinage of 1722-1735, the era's longest single coinage: Kumon's rice and barley for those years. It is for the years of good silver, 1690-1694 and 1719-1735, whose rice stood within a fifth of Kyoho's (Iwahashi); 1695-1711 and 1736-1739 have eras of their own, at the baser coinages of those years. The wage is borrowed: none was found for these years, so it is the reference day chained back by Kumon's farm-servant wage.",
+      "confidence": "Priced at the Kyoho coinage of 1722-1735, the era's longest single coinage: Kumon's rice and barley for those years. It is for the years of good silver, 1690-1694 and 1719-1735, whose rice stood within a fifth of Kyoho's (Iwahashi); 1695-1718 and 1736-1739 have eras of their own, at the baser coinages of those years. The wage is borrowed: none was found for these years, so it is the reference day chained back by Kumon's farm-servant wage.",
       "basket_coverage": "2 of 12 goods",
       "goods_left_out": [
         "Soybeans",
@@ -878,6 +878,146 @@
           "goods_dollars": 58.43994,
           "wage_dollars": 1104.808314,
           "rokugan_sen": 66.79826,
+          "note": "A sixteenth of a ryo (16 shu a ryo)",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        }
+      }
+    },
+    "osaka-1706": {
+      "place": "Osaka",
+      "years": "1706-1711",
+      "confidence": "Kumon's observed rice in nominal monme, 1706-1711, in the Hoei silver (50%, 1.875 g a monme). The ryo and mon rates are one Osaka money-changer's, compiled a century later (Kusama, 1815), and name no city. The wage is borrowed.",
+      "basket_coverage": "rice alone",
+      "goods_left_out": [
+        "Soybeans",
+        "Barley and wheat",
+        "Buckwheat and millets",
+        "Beans",
+        "Fish",
+        "Cooking oil",
+        "Cloth",
+        "Lamp oil",
+        "Salt",
+        "Fuel",
+        "Housing"
+      ],
+      "wage_silver_g_per_day": 1.5811,
+      "units": {
+        "monme": {
+          "silver_g": 1.875,
+          "goods_dollars": 10.16386,
+          "wage_dollars": 147.998229,
+          "rokugan_sen": 11.617537,
+          "note": "Hoei silver (1706-1711), 1.875 g pure; Kusama's market rates in Hoei silver, late 1706-1710 (about 62-83 monme a ryo, 40-66 mon a monme), the mean of the rows' midpoints",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "mon": {
+          "silver_g": 0.034851,
+          "goods_dollars": 0.188918,
+          "wage_dollars": 2.750873,
+          "rokugan_sen": 0.215937,
+          "note": "53.8 mon to the monme",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "kanmon": {
+          "silver_g": 34.851,
+          "goods_dollars": 188.917693,
+          "wage_dollars": 2750.872684,
+          "rokugan_sen": 215.937477,
+          "note": "1,000 mon",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "ryo": {
+          "silver_g": 134.06,
+          "goods_dollars": 726.702418,
+          "wage_dollars": 10581.676048,
+          "rokugan_sen": 830.638378,
+          "note": "71.5 monme to the ryo",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "bu": {
+          "silver_g": 33.516,
+          "goods_dollars": 181.681025,
+          "wage_dollars": 2645.497944,
+          "rokugan_sen": 207.66579,
+          "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "shu": {
+          "silver_g": 8.3789,
+          "goods_dollars": 45.419714,
+          "wage_dollars": 661.366593,
+          "rokugan_sen": 51.915828,
+          "note": "A sixteenth of a ryo (16 shu a ryo)",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        }
+      }
+    },
+    "osaka-1712": {
+      "place": "Osaka",
+      "years": "1712-1718",
+      "confidence": "Kumon's observed rice in nominal monme, 1712-1718, nearly three times Kyoho's, in the \"current silver\" of Kusama's entries: the Hoei, Eiji, Mitsuho and Yotsuho silvers, dealt in as one with no rate of their own. Its grams are the 1714 law's (2 of current for 1 of Keicho); they cancel in a conversion. The ryo and mon rates are Kusama's (1815), and 1715-1716 are SILENT. The wage is borrowed.",
+      "basket_coverage": "rice alone",
+      "goods_left_out": [
+        "Soybeans",
+        "Barley and wheat",
+        "Buckwheat and millets",
+        "Beans",
+        "Fish",
+        "Cooking oil",
+        "Cloth",
+        "Lamp oil",
+        "Salt",
+        "Fuel",
+        "Housing"
+      ],
+      "wage_silver_g_per_day": 1.3128,
+      "units": {
+        "monme": {
+          "silver_g": 1.5,
+          "goods_dollars": 5.726058,
+          "wage_dollars": 142.595978,
+          "rokugan_sen": 6.545022,
+          "note": "Current silver (1712-1718), 1.50 g pure by the 1714 law's 2 for 1 of Keicho; Kusama's market rates of 1712-1714 and 1717 (about 65-93 monme a ryo, 40-59 mon a monme), the mean of the rows' midpoints",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "mon": {
+          "silver_g": 0.034014,
+          "goods_dollars": 0.129844,
+          "wage_dollars": 3.233506,
+          "rokugan_sen": 0.148415,
+          "note": "44.1 mon to the monme",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "kanmon": {
+          "silver_g": 34.014,
+          "goods_dollars": 129.844082,
+          "wage_dollars": 3233.506399,
+          "rokugan_sen": 148.414915,
+          "note": "1,000 mon",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "ryo": {
+          "silver_g": 116.4,
+          "goods_dollars": 444.342068,
+          "wage_dollars": 11065.447898,
+          "rokugan_sen": 507.893693,
+          "note": "77.6 monme to the ryo",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "bu": {
+          "silver_g": 29.1,
+          "goods_dollars": 111.085517,
+          "wage_dollars": 2766.361974,
+          "rokugan_sen": 126.973423,
+          "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "shu": {
+          "silver_g": 7.275,
+          "goods_dollars": 27.771379,
+          "wage_dollars": 691.590494,
+          "rokugan_sen": 31.743356,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
         }

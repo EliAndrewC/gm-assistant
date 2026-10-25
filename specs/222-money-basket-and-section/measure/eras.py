@@ -205,7 +205,7 @@ ERAS['osaka-1700'] = {
     'confidence': (
         "Priced at the Kyoho coinage of 1722-1735, the era's longest single coinage: Kumon's rice and "
         'barley for those years. It is for the years of good silver, 1690-1694 and 1719-1735, whose '
-        "rice stood within a fifth of Kyoho's (Iwahashi); 1695-1711 and 1736-1739 have eras of their "
+        "rice stood within a fifth of Kyoho's (Iwahashi); 1695-1718 and 1736-1739 have eras of their "
         'own, at the baser coinages of those years. The wage is borrowed: none was found for these '
         "years, so it is the reference day chained back by Kumon's farm-servant wage."
     ),
@@ -221,8 +221,9 @@ ERAS['osaka-1700'] = {
 
 # The split by coinage (GM 2026-10-24). Iwahashi's Osaka rice in nominal monme, against Kyoho's
 # 1722-1735: 0.93x in 1690-1694, 1.37x in 1695-1705, 1.36x in 1706-1711, 2.75x in 1712-1718, 1.21x
-# in 1719-1721, 1.48x in 1736-1739. An amount of 1712-1718 waits for an era of its own until diagram
-# gives that span's ryo and mon rates (its coin page has none: "mixed coins, not converted").
+# in 1719-1721, 1.48x in 1736-1739. The ryo and mon rates of 1706-1718 are Kusama Naokata's (三貨図彙,
+# 1815), from diagram's 0287 "The market rates of 1705-1719" (its feature 418): each row's midpoint,
+# averaged over the rows quoted in that era's silver.
 def kumon_wage(farm_year: float, grams_monme: float, years: str) -> dict:
     """The reference day chained back by Kumon's farm-servant year, in grams of silver."""
     return wage(
@@ -235,18 +236,51 @@ def kumon_wage(farm_year: float, grams_monme: float, years: str) -> dict:
 
 ERAS['osaka-1695'] = {
     'place': 'Osaka',
-    'years': '1695-1711',
+    'years': '1695-1705',
     'confidence': (
-        "Kumon's observed rice in nominal monme, 1695-1711, half again Kyoho's. Priced at the Genroku "
-        'silver of 1695-1705 (64%, 2.40 g a monme); the Hoei silvers of 1706-1711 were baser, but rice '
-        "in them stood where it had under Genroku. The ryo and mon rates are 1700's, and BORROWED for "
-        '1706-1711, which no source in hand rates. The wage is borrowed.'
+        "Kumon's observed rice in nominal monme, 1695-1705, half again Kyoho's, in the Genroku silver "
+        '(64%, 2.40 g a monme), at the market rates of 1700. The wage is borrowed.'
     ),
-    'coins': jcoins(2.40, 47.5, 78.0, 'Genroku silver (1695-1705), 2.40 g pure; market rates of 1700 (47-48 monme a ryo, 3.71 kanmon a ryo), borrowed for 1706-1711'),
+    'coins': jcoins(2.40, 47.5, 78.0, 'Genroku silver (1695-1705), 2.40 g pure; market rates of 1700 (47-48 monme a ryo, 3.71 kanmon a ryo)'),
     'goods': jgoods(2.40, {
-        'rice': ('kumon', 0.4521, "0.452 monme a kg, Kumon's observed 1695-1711 (17 years)"),
+        'rice': ('kumon', 0.4408, "0.441 monme a kg, Kumon's observed 1695-1705 (11 years)"),
     }),
-    'wage': kumon_wage(92.319, 2.40, '1695-1711'),
+    'wage': kumon_wage(84.899, 2.40, '1695-1705'),
+}
+
+# Rice in nominal monme stood where it had under Genroku (Iwahashi 1.36x Kyoho's, against 1.37x), but a
+# ryo cost half again as many monme of the baser silver, so these years take an era of their own.
+ERAS['osaka-1706'] = {
+    'place': 'Osaka',
+    'years': '1706-1711',
+    'confidence': (
+        "Kumon's observed rice in nominal monme, 1706-1711, in the Hoei silver (50%, 1.875 g a monme). "
+        "The ryo and mon rates are one Osaka money-changer's, compiled a century later (Kusama, 1815), "
+        'and name no city. The wage is borrowed.'
+    ),
+    'coins': jcoins(1.875, 71.5, 53.8, "Hoei silver (1706-1711), 1.875 g pure; Kusama's market rates in Hoei silver, late 1706-1710 (about 62-83 monme a ryo, 40-66 mon a monme), the mean of the rows' midpoints"),
+    'goods': jgoods(1.875, {
+        'rice': ('kumon', 0.473, "0.473 monme a kg, Kumon's observed 1706-1711 (6 years)"),
+    }),
+    'wage': kumon_wage(105.922, 1.875, '1706-1711'),
+}
+
+# The worst-overstated span at osaka-1700's prices: rice at 2.75x Kyoho's.
+ERAS['osaka-1712'] = {
+    'place': 'Osaka',
+    'years': '1712-1718',
+    'confidence': (
+        "Kumon's observed rice in nominal monme, 1712-1718, nearly three times Kyoho's, in the "
+        "\"current silver\" of Kusama's entries: the Hoei, Eiji, Mitsuho and Yotsuho silvers, dealt in "
+        'as one with no rate of their own. Its grams are the 1714 law\'s (2 of current for 1 of Keicho); '
+        "they cancel in a conversion. The ryo and mon rates are Kusama's (1815), and 1715-1716 are "
+        'SILENT. The wage is borrowed.'
+    ),
+    'coins': jcoins(1.5, 77.6, 44.1, "Current silver (1712-1718), 1.50 g pure by the 1714 law's 2 for 1 of Keicho; Kusama's market rates of 1712-1714 and 1717 (about 65-93 monme a ryo, 40-59 mon a monme), the mean of the rows' midpoints"),
+    'goods': jgoods(1.5, {
+        'rice': ('kumon', 0.8396, "0.840 monme a kg, Kumon's observed 1712-1718 (7 years)"),
+    }),
+    'wage': kumon_wage(109.935, 1.5, '1712-1718'),
 }
 
 ERAS['osaka-1736'] = {
