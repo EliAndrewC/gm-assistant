@@ -73,8 +73,8 @@ def test_the_reference_eras_new_goods_say_what_is_guessed(model: bk.Model) -> No
 def test_housing_is_the_largest_lever(model: bk.Model) -> None:
     """research.md: housing nearly doubles the 2026 koku; the variant shows it without."""
     snap = model.snapshot('2026-10')
-    with_h = bk.reading(model, model.basket(), snap, KG).per_koku
-    without = bk.reading(model, model.basket('standard-no-housing'), snap, KG).per_koku
+    with_h = bk.reading(model, model.basket(), snap, KG).whole
+    without = bk.reading(model, model.basket('standard-no-housing'), snap, KG).whole
     assert 1.6 < with_h / without < 2.0
 
 
@@ -131,24 +131,57 @@ def test_twenty_mon_in_kyoto(model: bk.Model) -> None:
         day,
     )
     assert c.silver_g == pytest.approx(20 * 1.725 / 72.6, rel=1e-3)
-    assert c.rokugan_sen == pytest.approx(c.silver_g * 1000 / (KG * model.rice_ref))
     assert c.wage_dollars == pytest.approx(c.silver_g / model.reference.wage_g_per_day * day)
-    reading = bk.reading(model, model.basket(), model.snapshot('2026-10'), KG)
-    assert c.goods_dollars == pytest.approx(c.silver_g * reading.dollars / reading.silver)
     assert c.coverage == 'the whole basket'
+    # With Kyoto 1745-54 alone, Kyoto is Rokugan: its price level is 1 by either mean.
+    ref = model.reference_only()
+    snap = model.snapshot('2026-10')
+    k = bk.convert(
+        model,
+        model.era('kyoto-1745'),
+        20,
+        'mon',
+        model.basket(),
+        snap,
+        KG,
+        day,
+        weights=ref,
+    )
+    whole = bk.reading(model, model.basket(), snap, KG, weights=ref)
+    assert k.rokugan_sen == pytest.approx(k.silver_g * 1000 / (KG * model.rice_ref))
+    assert k.goods_dollars == pytest.approx(k.silver_g / whole.koku_silver * whole.geometric)
+    assert k.goods_dollars_high == pytest.approx(k.silver_g * whole.dollars / whole.silver)
 
 
 def test_a_partly_priced_era_says_so(model: bk.Model) -> None:
     """User Story 4 scenario 2: Tokyo 1882-86 has no salt, fuel or housing price."""
     day = load_wages()[-1].day
     c = bk.convert(
-        model, model.era('tokyo-1882'), 1, 'yen', model.basket(), model.snapshot('2026-10'), KG, day
+        model,
+        model.era('tokyo-1882'),
+        1,
+        'yen',
+        model.basket(),
+        model.snapshot('2026-10'),
+        KG,
+        day,
     )
     assert c.coverage == '9 of 12 goods'
     assert c.left_out == ('Salt', 'Fuel', 'Housing')
     # dearer than Kyoto by Bassino & Ma's own basket ratio (277 against 326 g: cheaper, in fact)
     a = model.basket('bassino-ma-a')
-    t = bk.convert(model, model.era('tokyo-1882'), 1, 'yen', a, model.snapshot('2026-10'), KG, day)
+    t = bk.convert(
+        model,
+        model.era('tokyo-1882'),
+        1,
+        'yen',
+        a,
+        model.snapshot('2026-10'),
+        KG,
+        day,
+        mean='arithmetic',
+        weights=model.reference_only(),
+    )
     assert t.rokugan_sen == pytest.approx(25 * 325.816 / 277.4 * 1000 / (KG * 1.49), rel=0.01)
 
 
@@ -335,7 +368,7 @@ def test_cli_baskets_era_and_export(capsys: pytest.CaptureFixture[str], tmp_path
     assert 'standard-no-housing: $' in out
     out = run(capsys, 'era', '20', 'mon', '--era', 'kyoto-1745')
     assert '20 mon (Kyoto 1745-1754) = 0.475 g of silver' in out
-    assert 'goods $3.32; wage $37.92; in Rokugan 3.8 sen' in out
+    assert '(whole basket $3.32); wage $37.92; in Rokugan 3.8 sen' in out
     assert 'coin: 72.6 mon to the monme' in out
     out = run(capsys, 'era', '1', 'yen', '--era', 'tokyo-1882')
     assert 'priced there on 9 of 12 goods (left out: Salt, Fuel, Housing)' in out
@@ -384,3 +417,80 @@ def test_era_files_are_what_the_build_script_writes() -> None:
             f'{era_id}.json differs from measure/eras.py: edit the script and run it, from the '
             'clone root: python3 specs/222-money-basket-and-section/measure/eras.py'
         )
+
+
+# --- feature 223: the index over goods, two readings, eras averaged in rice ----------------------
+
+
+def test_reference_only_weights_reproduce_feature_222s_prices(model: bk.Model) -> None:
+    """US4 acceptance 1: Kyoto 1745-54 alone at 1 gives back its own prices."""
+    prices = model.prices(model.reference_only())
+    for good, price in model.reference.goods.items():
+        assert prices[good] == pytest.approx(price.silver_g), good
+    assert model.prices()['rice'] == pytest.approx(model.rice_ref)  # rice is the anchor, always
+
+
+def test_a_borrowed_price_is_not_counted_twice(model: bk.Model) -> None:
+    """diagram#17 / 0249: Kyoto 1745's fish is a Meiji ratio, so beside Tokyo 1882 it drops out;
+    it stands only when nothing else prices fish."""
+    assert model.rests_on('fish') == ('canton-1835', 'tokyo-1882')
+    assert model.rests_on('fish', model.reference_only()) == ('kyoto-1745',)
+    assert model.rests_on('housing') == ('edo-1818', 'kyoto-1745')
+
+
+def test_era_weights_fall_back_to_the_reference(model: bk.Model) -> None:
+    zero = {e: 0.0 for e in model.eras}
+    assert model.weights(zero) == model.reference_only()
+    assert model.weights({'kyoto-1745': -2})['kyoto-1745'] == 0.0
+    assert model.weights()['osaka-1700'] == 1.0
+
+
+def test_the_whole_basket_is_the_spending_weighted_arithmetic_mean(
+    model: bk.Model,
+) -> None:
+    """The GM's household approach ($D/N) and the spending-weighted average are one number."""
+    snap = model.snapshot('2026-10')
+    r = bk.reading(model, model.basket(), snap, KG)
+    assert r.whole == pytest.approx(r.arithmetic)
+    assert r.whole == pytest.approx(r.dollars / r.koku_cost)
+    assert sum(w for _, w in r.weighted) == pytest.approx(1)
+    rice = next(ln for ln in r.lines if ln.good == 'rice')
+    assert r.alone(rice) == pytest.approx(KG * 1.26)  # 151.5 kg at today's default rice price
+    assert r.per_koku == r.geometric < r.arithmetic  # the central reading sits below the whole
+    eq = bk.reading(model, model.basket(), snap, KG, equal=True)
+    assert all(w == pytest.approx(1 / 12) for _, w in eq.weighted)
+    assert eq.whole == pytest.approx(r.whole)  # equal weights move the average, not $D/N
+    assert bk.reading(model, model.basket(), snap, KG, mean='arithmetic').per_koku == r.arithmetic
+    assert bk.reading(model, bk.Basket('x', 'x', '', {}), snap, KG).whole == 0.0
+    with pytest.raises(SystemExit, match="no mean 'median'; have geometric, arithmetic"):
+        bk.reading(model, model.basket(), snap, KG, mean='median')
+
+
+def test_era_conversion_follows_the_mean(model: bk.Model) -> None:
+    """FR-007: goods_dollars is the central reading, goods_dollars_high the whole basket's."""
+    snap, day = model.snapshot('2026-10'), load_wages()[-1].day
+    era = model.era('edo-1830')
+    geo = bk.convert(model, era, 1, 'monme', model.basket(), snap, KG, day)
+    ari = bk.convert(model, era, 1, 'monme', model.basket(), snap, KG, day, mean='arithmetic')
+    assert ari.goods_dollars == pytest.approx(ari.goods_dollars_high)
+    assert geo.goods_dollars_high == pytest.approx(ari.goods_dollars_high)
+    assert geo.goods_dollars < geo.goods_dollars_high
+
+
+def test_problems_catch_bad_era_weights_and_no_complete_basket(data: Path) -> None:
+    (data / 'era-weights.json').write_text(json.dumps({'weights': {'nope': 1, 'osaka-1700': -1}}))
+    raw = json.loads((data / 'baskets' / 'standard.json').read_text())
+    (data / 'baskets' / 'standard.json').write_text(json.dumps({**raw, 'complete': False}))
+    found = bk.problems(bk.load(data))
+    assert "era-weights: unknown era 'nope'" in found
+    assert 'era-weights: negative weight for osaka-1700' in found
+    assert 'no basket is marked complete (the whole-basket reading needs one)' in found
+    (data / 'era-weights.json').unlink()
+    assert bk.load(data).era_weights == {}
+
+
+def test_cli_mean_and_weights(capsys: pytest.CaptureFixture[str]) -> None:
+    out = run(capsys, '--mean', 'arithmetic', '--equal-weights', 'convert', '1 koku')
+    assert '(equal-weighted arithmetic mean over goods)' in out
+    out = run(capsys, '--reference-only', 'baskets')
+    assert '$874.87 for the whole basket (Standard)' in out

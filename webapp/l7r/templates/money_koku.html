@@ -8,10 +8,12 @@
 {% endblock %}
 
 {#
-  The koku-worth playground (feature 222). The server renders the state in the link (l7r/money/web.py
-  documents its parameters); money.js recomputes on every change and keeps the link in sync. Without
-  JavaScript the form still works: tick goods, pick a basket, and press Update (each good's hidden
-  q_<good>=0 precedes its checkbox, so an unticked good reads 0 and a ticked one its quantity).
+  The koku-worth playground (features 222, 223). Two readings shown together: the whole basket ($D/N,
+  every good; only a price source or an era weight moves it) and the average over goods (toggles,
+  custom goods, the mean). The server renders the state in the link (l7r/money/web.py documents its
+  parameters); money.js recomputes on every change and keeps the link in sync. Without JavaScript the
+  form still works: change anything and press Update (each good's hidden q_<good>=0 precedes its
+  checkbox, so an unticked good reads 0 and a ticked one its quantity).
 #}
 
 {% macro dollars(x, places=0) -%}${{ ('{:,.%df}' % places).format(x) }}{%- endmacro %}
@@ -20,9 +22,8 @@
   {%- set u = unit|replace(' for a year', '') -%}
   {{ '%g' % q }} {{ u ~ 's' if u == 'liter' and q != 1 else u }}
 {%- endmacro %}
-{% macro share(part, whole) -%}
-  {%- if not whole or not part -%}-{%- elif part / whole < 0.005 -%}&lt;1%{%- else -%}{{ (part / whole * 100)|round|int }}%{%- endif -%}
-{%- endmacro %}
+{% macro pct(w) -%}{%- if w is none -%}-{%- elif w < 0.005 -%}&lt;1%{%- else -%}{{ (w * 100)|round|int }}%{%- endif -%}{%- endmacro %}
+{% set mean_name = {'geometric': 'geometric mean', 'arithmetic': 'arithmetic mean'} %}
 
 {% block content %}
 <section class="container">
@@ -30,7 +31,7 @@
     <div class="masthead__copy">
       <p class="money-crumb"><a href="/money">Money</a></p>
       <h1 class="masthead__title">What's a koku worth?</h1>
-      <p class="masthead__lede">A koku is a mass of rice, and what it buys depends on what else a household needs. Switch goods in and out, and pick where today's price of each comes from.</p>
+      <p class="masthead__lede">A koku is a mass of rice. What it buys today depends on the good: a koku's silver buys far more cloth than housing, now that cloth is cheap and rooms are dear. So there is no single answer, only a range.</p>
     </div>
     <span class="masthead__watermark" lang="ja" aria-hidden="true">石</span>
   </div>
@@ -40,59 +41,85 @@
   <form class="koku-form" id="koku-form" method="get" action="/money/koku">
     <script type="application/json" id="koku-data">{{ data_json|safe }}</script>
 
-    <p class="koku-which">Price a thing in <strong>goods dollars</strong>; judge how much a sum means to the person holding it in <strong>wage dollars</strong>. They differ about tenfold because rice, cloth and fuel were cheap beside a day's labor.</p>
+    <p class="koku-which">Price a thing in <strong>goods dollars</strong>; judge how much a sum means to the person holding it in <strong>wage dollars</strong>.</p>
 
     <div class="koku-readings">
       <div class="koku-reading koku-reading--goods">
-        <p class="koku-reading__label">Goods dollars</p>
-        <p class="koku-reading__value" data-out="per-koku" aria-live="polite">{{ dollars(reading.per_koku) }}</p>
-        <p class="koku-reading__gloss">What a koku <strong>buys</strong>: this basket at today's prices, against what it cost in the silver that Rokugan's coins are pegged to.</p>
+        <p class="koku-reading__label">Goods dollars: what a koku buys</p>
+        <div class="koku-range">
+          <div class="koku-range__end">
+            <p class="koku-reading__value" data-out="per-koku" aria-live="polite">{{ dollars(reading.per_koku) }}</p>
+            <p class="koku-range__name">Averaged over goods <span class="koku-range__tag">central</span> <span class="koku-range__how" data-out="mean-name">({{ 'equal weights, ' if state.equal }}{{ mean_name[state.mean] }})</span></p>
+          </div>
+          <div class="koku-range__end">
+            <p class="koku-reading__value"><span class="koku-range__to">to </span><span data-out="whole">{{ dollars(whole.arithmetic) }}</span></p>
+            <p class="koku-range__name">The whole basket <span class="koku-range__tag">high</span></p>
+          </div>
+        </div>
+        <p class="koku-reading__gloss" data-out="whole-gloss">A laborer's year of necessities cost {{ '%.2f' % whole.koku_cost }} koku in Rokugan and costs {{ dollars(whole.dollars) }} today, so a koku is {{ dollars(whole.arithmetic) }}. Averaging what a koku buys of each good instead, so that no one good can dominate, gives {{ dollars(reading.per_koku) }}.</p>
       </div>
       <div class="koku-reading">
-        <p class="koku-reading__label">Wage dollars</p>
+        <p class="koku-reading__label">Wage dollars: how much a koku matters</p>
         <p class="koku-reading__value">{{ dollars(wage_per_koku) }}</p>
-        <p class="koku-reading__gloss">How much a koku <strong>matters</strong>: an unskilled laborer earns {{ laborer_koku_year }} koku a year, set against a US full-time year at ${{ '%.2f' % wage.hourly }} an hour (the {{ wage.date[:7] }} wage, whatever the price date). The basket does not move it.</p>
+        <p class="koku-reading__gloss">An unskilled laborer earns {{ laborer_koku_year }} koku a year, set against a US full-time year at ${{ '%.2f' % wage.hourly }} an hour (the {{ wage.date[:7] }} wage). The goods do not move it.</p>
       </div>
     </div>
 
     <div class="koku-controls">
+      <fieldset class="koku-control koku-choice">
+        <legend class="koku-control__label">Average by</legend>
+        {% for m in model_means %}
+          <label class="koku-chip"><input type="radio" name="m" value="{{ m }}" data-in="mean"{% if m == state.mean %} checked{% endif %} /> {{ mean_name[m]|capitalize }}</label>
+        {% endfor %}
+        <label class="koku-chip"><input type="checkbox" name="eq" value="1" data-in="equal"{% if state.equal %} checked{% endif %} /> Weigh goods equally</label>
+      </fieldset>
       <label class="koku-control">
-        <span class="koku-control__label">Basket</span>
+        <span class="koku-control__label">Starting basket for the average</span>
         <select name="b" class="koku-select" data-in="basket">
           {% for b in model.baskets.values()|sort(attribute='id', reverse=True) %}
             <option value="{{ b.id }}"{% if b.id == state.basket %} selected{% endif %}>{{ b.name }}</option>
           {% endfor %}
         </select>
       </label>
-      <a class="koku-reset" href="/money/koku">Reset to the standard basket</a>
+      <a class="koku-reset" href="/money/koku">Reset</a>
       <noscript><button class="koku-button" type="submit">Update</button></noscript>
     </div>
 
     <section class="koku-basket" aria-labelledby="koku-basket-title">
       <div class="koku-basket__head">
-        <h2 class="koku-basket__title" id="koku-basket-title">The basket: one adult's year</h2>
-        <p class="koku-basket__hint">Tick a good to count it; click its name for its prices today and in the 1740s.</p>
+        <h2 class="koku-basket__title" id="koku-basket-title">Good by good: what a koku buys of each alone</h2>
+        <p class="koku-basket__hint">Uncheck a good to leave it out of the average (the whole basket always counts every good). Click a name for its prices.</p>
       </div>
+      <p class="koku-legend" aria-hidden="true">
+        <span class="koku-legend__item"><span class="koku-legend__swatch koku-legend__swatch--central"></span>Averaged over goods, <strong data-out="legend-central">{{ dollars(reading.per_koku) }}</strong></span>
+        <span class="koku-legend__item"><span class="koku-legend__swatch koku-legend__swatch--high"></span>The whole basket, <strong data-out="legend-high">{{ dollars(whole.arithmetic) }}</strong></span>
+        <span class="koku-legend__item"><span class="koku-legend__dot"></span>One good alone; larger carries more weight</span>
+      </p>
       <div class="koku-goods__cols" aria-hidden="true">
-        <span></span><span>Good</span><span>A year's worth</span><span>Share of the cost: today / 1740s</span>
+        <span></span><span>Good</span><span>A year's worth</span><span>Weight</span><span>Alone</span>
+        <span class="koku-axis">{% for t, label in [(10, '$10'), (100, '$100'), (1000, '$1k'), (10000, '$10k')] %}<span class="koku-axis__tick" style="--at: {{ axis_pct(t) }}%">{{ label }}</span>{% endfor %}</span>
       </div>
       <ul class="koku-goods">
         {% for row in rows %}
-          {% set line_on = row.quantity > 0 and row.options and row.price %}
           {% set dpu = row.options[row.choice].dollars_per_unit if row.options else None %}
           {% set shown = row.quantity if row.quantity > 0 else row.default %}
-          <li class="koku-good{% if not line_on %} koku-good--off{% endif %}" data-good="{{ row.good.id }}" data-default="{{ '%g' % row.default }}">
+          <li class="koku-good{% if row.weight is none %} koku-good--off{% endif %}" data-good="{{ row.good.id }}" data-default="{{ '%g' % row.default }}">
             <input type="hidden" name="q_{{ row.good.id }}" value="0" />
-            <input type="checkbox" class="koku-on" name="q_{{ row.good.id }}" value="{{ '%g' % shown }}" aria-label="Count {{ row.good.name|lower }}"{% if row.quantity > 0 %} checked{% endif %} />
+            <input type="checkbox" class="koku-on" name="q_{{ row.good.id }}" value="{{ '%g' % shown }}" aria-label="Count {{ row.good.name|lower }} in the average"{% if row.quantity > 0 %} checked{% endif %} />
             <details class="koku-detail">
               <summary class="koku-sum">
                 <span class="koku-sum__name">{{ row.good.name }}</span>
                 <span class="koku-sum__qty" data-out="qty">{{ amount(shown, row.good.unit) }}</span>
-                <span class="koku-sum__share" data-out="share">
-                  {%- if line_on -%}
-                    {{ share(row.quantity * dpu, reading.dollars) }} / {{ share(row.quantity * row.price.silver_g, reading.silver) }}
-                  {%- elif row.quantity > 0 -%}left out: no price
-                  {%- else -%}not counted{%- endif -%}
+                <span class="koku-sum__weight" data-out="weight">{{ pct(row.weight) }}</span>
+                <span class="koku-sum__alone" data-out="alone">
+                  {%- if row.alone is not none -%}{{ dollars(row.alone) }}
+                  {%- elif row.quantity > 0 -%}no price
+                  {%- else -%}left out{%- endif -%}
+                </span>
+                <span class="koku-track" data-out="track">
+                  <span class="koku-track__mark koku-track__mark--central" style="--at: {{ axis_pct(reading.per_koku) }}%"></span>
+                  <span class="koku-track__mark koku-track__mark--high" style="--at: {{ axis_pct(whole.arithmetic) }}%"></span>
+                  <span class="koku-track__dot"{% if row.alone is none %} hidden{% endif %} style="--at: {{ axis_pct(row.alone or 10) }}%; --size: {{ (8 + 12 * (row.weight or 0) ** 0.5)|round(1) }}px" title="{{ row.good.name }}: {{ dollars(row.alone or 0) }} alone, {{ pct(row.weight) }} of the weight"></span>
                 </span>
               </summary>
               <div class="koku-detail__body">
@@ -116,30 +143,68 @@
                   {% endif %}
                 </div>
                 <div class="koku-detail__side">
-                  <p class="koku-detail__label">1740s: Kyoto, in silver</p>
-                  {% if row.price %}
-                    <p><span class="koku-price">{{ '%.3g' % row.price.silver_g }} g of silver a {{ row.good.unit }}</span>
-                    <span class="koku-priced-as"><span class="koku-conf koku-conf--{{ row.price.label }}">{{ {'guess': 'a guess', 'historical': 'a historical price'}.get(row.price.label, row.price.label) }}</span>{% if row.price.note %}: {{ row.price.note }}{% endif %} <a class="koku-link" href="{{ row.price.source }}">source</a></span></p>
+                  <p class="koku-detail__label">Rokugan: in silver, and in rice</p>
+                  {% if row.silver %}
+                    <p><span class="koku-price">{{ '%.3g' % row.silver }} g of silver a {{ row.good.unit }}</span>, the price of {{ '%.2f' % (row.silver / model.rice_ref) }} kg of rice.
+                    <span class="koku-priced-as" data-out="rests-on">{% if row.good.id == 'rice' %}Rice is the anchor: Rokugan's coins are pegged to it, at Kyoto 1745-54's price.{% else %}The weighted mean of its price in rice in {{ row.eras|length }} period{{ 's' if row.eras|length != 1 }}: {% for e in row.eras %}{{ e.title }} ({{ '%.2f' % (e.goods[row.good.id].silver_g / e.goods['rice'].silver_g) }}, <a class="koku-link" href="{{ e.goods[row.good.id].source }}">source</a>){{ '; ' if not loop.last else '.' }}{% endfor %}{% endif %}</span></p>
                   {% else %}
-                    <p class="koku-missing">no price</p>
+                    <p class="koku-missing">no period prices it</p>
                   {% endif %}
                 </div>
               </div>
             </details>
           </li>
         {% endfor %}
+        {% for c in state.custom %}
+          {% set crow = custom_rows[loop.index0] %}
+          <li class="koku-good koku-good--custom" data-custom-row="{{ loop.index }}"{% if not crow %} hidden{% endif %}>
+            <span class="koku-good__mark" aria-hidden="true">+</span>
+            <div class="koku-sum koku-sum--static">
+              <span class="koku-sum__name" data-out="name">{{ crow.name if crow }} <span class="koku-custom-tag">your good</span></span>
+              <span class="koku-sum__qty" data-out="qty">{{ amount(crow.quantity, crow.unit) if crow }}</span>
+              <span class="koku-sum__weight" data-out="weight">{{ pct(crow.weight) if crow }}</span>
+              <span class="koku-sum__alone" data-out="alone">{{ dollars(crow.alone) if crow }}</span>
+              <span class="koku-track">
+                <span class="koku-track__mark koku-track__mark--central" style="--at: {{ axis_pct(reading.per_koku) }}%"></span>
+                <span class="koku-track__mark koku-track__mark--high" style="--at: {{ axis_pct(whole.arithmetic) }}%"></span>
+                <span class="koku-track__dot" style="--at: {{ axis_pct(crow.alone if crow else 10) }}%; --size: {{ (8 + 12 * (crow.weight if crow else 0) ** 0.5)|round(1) }}px"></span>
+              </span>
+            </div>
+          </li>
+        {% endfor %}
       </ul>
       <p class="koku-drivers" data-out="drivers">{{ drivers }}</p>
-      <p class="koku-left-out" data-out="left-out"{% if not left_out %} hidden{% endif %}>Not priced today, so left out: {{ left_out|join(', ') }}.</p>
+      <p class="koku-left-out" data-out="left-out"{% if not left_out %} hidden{% endif %}>Not priced, so left out: {{ left_out|join(', ') }}.</p>
       <p class="koku-description" data-out="description">{{ model.baskets[state.basket].description }}</p>
     </section>
 
+    <details class="koku-eras">
+      <summary class="koku-eras__sum">Which periods set Rokugan's prices</summary>
+      <p class="koku-eras__hint">Each good's Rokugani price is the weighted mean of its price in rice in every period that records both, so a debased coin or a dear decade of silver drops out. Every period weighs 1 for now, the Chinese and Meiji ones included; set a period to 0 to leave it out, or higher to count it more. Rice itself is the anchor and does not move.</p>
+      <table class="koku-eras__table">
+        <thead><tr><th scope="col">Period</th><th scope="col">Weight</th><th scope="col">Prices beside rice</th></tr></thead>
+        <tbody>
+          {% for e in model.eras.values()|sort(attribute='years') %}
+            {% set own = e.goods.keys()|reject('equalto', 'rice')|list if 'rice' in e.goods else [] %}
+            <tr data-era="{{ e.id }}">
+              <th scope="row">{{ e.title }}</th>
+              <td><input class="koku-number koku-number--weight" type="number" min="0" step="0.5" name="w_{{ e.id }}" value="{{ '%g' % weights[e.id] }}" aria-label="Weight of {{ e.title }}" data-in="weight" /></td>
+              <td class="koku-eras__goods">
+                {%- if not own -%}<span class="koku-missing">rice alone, so it adds nothing</span>
+                {%- else -%}{% for g in own %}{{ model.goods[g].name }}{% if e.goods[g].borrowed %} <span class="koku-borrowed" title="{{ e.goods[g].borrowed }}">(borrowed, not counted)</span>{% endif %}{{ ', ' if not loop.last }}{% endfor %}{%- endif -%}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+
     <fieldset class="koku-custom">
-      <legend class="koku-custom__legend">Add goods of your own</legend>
-      <p class="koku-custom__hint">Give a name, a unit, a year's quantity, and both prices: what a unit cost in Kyoto silver (rice was {{ '%.2f' % model.rice_ref }} g a kg) and what it costs today. A good counts once all five are filled in.</p>
+      <legend class="koku-custom__legend">Add goods of your own to the average</legend>
+      <p class="koku-custom__hint">Give a name, a unit, a year's quantity, and both prices: what a unit cost in Rokugan's silver (rice was {{ '%.2f' % model.rice_ref }} g a kg) and what it costs today. A good counts once all five are filled in; it joins the average, not the whole basket.</p>
       {% for c in state.custom %}
         {% set i = loop.index %}
-        <div class="koku-custom__row" data-custom="{{ i }}">
+        <div class="koku-custom__row" data-custom="{{ i }}"{% if not c and i > first_blank %} hidden{% endif %}>
           <input type="hidden" name="c{{ i }}" value="{% if c %}{{ c.name }}|{{ c.unit }}|{{ '%g' % c.quantity }}|{{ '%g' % c.silver_g if c.silver_g is not none else '' }}|{{ '%g' % c.dollars if c.dollars is not none else '' }}{% endif %}" />
           <label class="koku-field"><span class="koku-field__label">Good</span><input class="koku-text" type="text" data-part="name" value="{{ c.name if c else '' }}"{% if i == 1 %} placeholder="e.g. sake"{% endif %} /></label>
           <label class="koku-field"><span class="koku-field__label">Unit</span><input class="koku-text koku-text--short" type="text" data-part="unit" value="{{ c.unit if c else '' }}"{% if i == 1 %} placeholder="e.g. liter"{% endif %} /></label>
@@ -153,10 +218,11 @@
 
     <section class="koku-notes detail-prose">
       <h2>How the koku is reckoned</h2>
-      <p>Rokugan's coins are pegged to rice: a koku is about {{ '%.1f' % reading.koku_kg }} kg of it, and in Kyoto in 1745-54 a kilogram of rice cost {{ '%.2f' % model.rice_ref }} g of pure silver (in the Genbun silver of the day, 1.725 g to the monme), so a koku is worth about {{ (model.rice_ref * reading.koku_kg)|round|int }} g. Every good in the basket has a price in that silver and a price in today's dollars. The basket's dollars divided by its silver says what a gram of that silver buys today, and a koku's worth of it is the goods-dollar figure.</p>
-      <p>That makes the figure a ratio: a good that is dear today but was cheap in Kyoto (fish, a room) pushes it up, and one that is cheap today pulls it down. The standard basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. Kyoto's own books price the salt and the firewood; no Kyoto or Osaka rent was found, so the room's price is still a guess, borrowed from Edo decades later. <a href="https://github.com/EliAndrewC/gm-assistant/blob/main/specs/222-money-basket-and-section/research.md">Sources and reasoning</a>.</p>
+      <p>Rokugan's coins are pegged to rice: a koku is about {{ '%.1f' % reading.koku_kg }} kg of it, and in Kyoto in 1745-54 a kilogram of rice cost {{ '%.2f' % model.rice_ref }} g of pure silver (the Genbun silver of the day), so a koku is about {{ (model.rice_ref * reading.koku_kg)|round|int }} g. Every other good's Rokugani price is its price in rice, averaged over the periods the research records, times that anchor.</p>
+      <p>Divide a good's price today by its price in Rokugan and multiply by a koku's silver, and you have what a koku buys of that good alone: about {{ dollars(rice_alone) }} of rice, but under {{ dollars(50) }} of cloth and thousands of dollars of housing. Those spread over two orders of magnitude, so a koku's worth depends on how they are averaged. The <strong>whole basket</strong> answers the household's question, what a year of necessities cost then and costs now; it is the same as the average weighted by spending, and the high end, because the goods that became dear (above all a room) weigh heavily in it. The <strong>average over goods</strong> takes the geometric mean by default, which no single good can dominate; it is the central figure the money skill quotes. Economic historians use these baskets mainly to compare a laborer's wage with the cost of living across places and centuries, which is what wage dollars do.</p>
+      <p>The standard basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. Some of Kyoto 1745's prices are Bassino &amp; Ma's reconstructions from Meiji price ratios, so they are not counted again beside Tokyo 1882; the room's price is still a guess. Which modern goods match the historical ones, and how historians average them, is being researched (<a href="https://github.com/EliAndrewC/diagram/issues/17">diagram#17</a>). <a href="https://github.com/EliAndrewC/gm-assistant/blob/main/specs/223-koku-index-reading/spec.md">Sources and reasoning</a>.</p>
     </section>
-    <div class="koku-sticky" aria-hidden="true">A koku buys <strong data-out="per-koku-sticky">{{ dollars(reading.per_koku) }}</strong> of this basket today</div>
+    <div class="koku-sticky" aria-hidden="true">A koku buys <strong data-out="per-koku-sticky">{{ dollars(reading.per_koku) }}</strong> to <strong data-out="whole-sticky">{{ dollars(whole.arithmetic) }}</strong> today</div>
   </form>
 </section>
 {% endblock %}

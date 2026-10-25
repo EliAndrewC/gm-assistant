@@ -55,7 +55,10 @@ def test_default_page_shows_the_standard_koku(root: Root, model: bk.Model) -> No
         assert f'data-good="{good.id}"' in page
     data = json.loads(re.search(r'id="koku-data">(.*?)</script>', page, re.S).group(1))  # type: ignore[union-attr]
     assert data['newest'] == model.snapshots[-1].date
-    assert data['goods']['rice']['silver'] == model.rice_ref
+    assert data['rice_ref'] == model.rice_ref
+    assert data['eras']['kyoto-1745']['goods']['rice']['ratio'] == 1
+    assert data['eras']['kyoto-1745']['goods']['fish']['borrowed']
+    assert data['eras']['suzhou-1750']['goods'] == {'rice': {'ratio': 1.0, 'borrowed': False}}
 
 
 def test_a_link_reopens_its_variant(root: Root) -> None:
@@ -101,12 +104,16 @@ def test_rows_list_every_good_and_bring_new_ones_in_at_the_standard_quantity(
     model: bk.Model,
 ) -> None:
     state = web.State('bassino-ma-a', '2017-04')
-    rows = {r.good.id: r for r in web.rows(model, state)}
+    rows = {r.good.id: r for r in web.rows(model, state, web.state_reading(model, state, KG))}
     assert set(rows) == set(model.goods)
     assert rows['housing'].quantity == 0
     assert rows['housing'].default == 3.31  # switched on, it comes in at the standard quantity
     assert rows['housing'].options == ()
     assert rows['rice'].quantity == 114
+    assert rows['housing'].weight is None
+    assert rows['housing'].alone is None
+    assert sum(r.weight or 0 for r in rows.values()) == pytest.approx(1)
+    assert [e.id for e in rows['fish'].eras] == ['canton-1835', 'tokyo-1882']
 
 
 def test_page_json_cannot_close_its_script_block(model: bk.Model) -> None:
@@ -117,17 +124,23 @@ def test_page_json_cannot_close_its_script_block(model: bk.Model) -> None:
 def test_drivers_name_what_moves_the_koku(model: bk.Model) -> None:
     """Design review: housing's weight today was visible only in a faint column."""
     std = web.state_reading(model, web.parse_state(model, {}), KG)
-    assert web.drivers(std).startswith("Largest share of today's cost: Housing (")
-    assert 'Largest share of the 1740s cost: Rice (' in web.drivers(std)
+    assert web.drivers(std).startswith('Pulls the average up most: Housing ($')
+    assert 'Pulls it down most: Rice ($' in web.drivers(std)  # cheap alone, and 41% of the weight
+    arith = web.state_reading(model, web.parse_state(model, {'m': 'arithmetic'}), KG)
+    assert web.drivers(arith).startswith('Pulls the average up most: Housing ($')
     rice_only = web.state_reading(
         model,
         web.parse_state(
-            model, {'b': 'bassino-ma-a', **{f'q_{g}': '0' for g in model.goods if g != 'rice'}}
+            model,
+            {
+                'b': 'bassino-ma-a',
+                **{f'q_{g}': '0' for g in model.goods if g != 'rice'},
+            },
         ),
         KG,
     )
     assert web.drivers(rice_only) == (
-        "Largest share of today's cost: Rice (100%). Largest share of the 1740s cost: Rice (100%)."
+        f'Every good reads the same: Rice (${KG * 1.26:,.0f} alone, 100% of the weight).'
     )
     empty = web.state_reading(
         model,
@@ -140,15 +153,16 @@ def test_drivers_name_what_moves_the_koku(model: bk.Model) -> None:
 def test_custom_status_says_whether_a_good_counts(model: bk.Model) -> None:
     state = web.parse_state(model, {'c1': 'Sake|liter|20|2|12', 'c3': 'Tea|kg|1||9'})
     status = web.custom_status(state, web.state_reading(model, state, KG))
-    assert status[0].startswith('Counts for ')
+    assert status[0].startswith('Alone, a koku buys $')
+    assert status[0].endswith('of the average.')
     assert status[1] == ''
     assert status[2] == 'Not counted until all five are filled in.'
 
 
 def test_page_shows_drivers_and_custom_status(root: Root) -> None:
     page = html.unescape(root.money('koku', c1='Sake|liter|20|2|12').decode())
-    assert "Largest share of today's cost: Housing" in page
-    assert 'Counts for ' in page
+    assert 'Pulls the average up most: Housing' in page
+    assert 'Alone, a koku buys ' in page
 
 
 def test_the_page_prices_at_the_newest_date_only(root: Root, model: bk.Model) -> None:
@@ -179,3 +193,81 @@ def test_a_half_filled_custom_good_is_not_called_unpriced(model: bk.Model) -> No
     reading = web.state_reading(model, state, KG)
     assert web.left_out(reading) == ('Salt', 'Fuel', 'Housing')
     assert 'left out: no price' not in web.custom_status(state, reading)
+
+
+# --- feature 223: two readings, the mean, era weights ---------------------------------------------
+
+
+def _whole(page: str) -> str:
+    return re.search(r'data-out="whole">([^<]+)<', page).group(1)  # type: ignore[union-attr]
+
+
+def test_toggles_move_the_average_not_the_whole_basket(root: Root, model: bk.Model) -> None:
+    """US2 acceptance 3: a good switched off or added changes only the average over goods."""
+    full = root.money('koku').decode()
+    off = root.money('koku', q_housing='0', c1='Sake|liter|20|2|12').decode()
+    whole = web.whole_reading(model, web.parse_state(model, {}), KG)
+    assert _whole(full) == _whole(off) == f'${whole.arithmetic:,.0f}'
+    assert f'cost {whole.koku_cost:.2f} koku in Rokugan' in full
+    per = re.compile(r'data-out="per-koku" aria-live="polite">([^<]+)<')
+    assert per.search(full).group(1) != per.search(off).group(1)  # type: ignore[union-attr]
+    # a substitute price moves both (US2 acceptance 4)
+    assert _whole(root.money('koku', x_rice='1').decode()) != _whole(full)
+
+
+def test_the_link_carries_the_mean_weighting_and_era_weights(root: Root, model: bk.Model) -> None:
+    state = web.parse_state(
+        model,
+        {
+            'm': 'arithmetic',
+            'eq': '1',
+            'w_kyoto-1745': '2',
+            'w_nope': '3',
+            'wb': 'bassino-ma-a',
+        },
+    )
+    assert (state.mean, state.equal, dict(state.weights)) == (
+        'arithmetic',
+        True,
+        {'kyoto-1745': 2.0},
+    )
+    assert state.whole == bk.STANDARD  # not a complete basket
+    assert web.parse_state(model, {'m': 'median'}).mean == 'geometric'
+    page = root.money('koku', m='arithmetic', eq='1', **{'w_osaka-1700': '0'}).decode()
+    assert 'name="m" value="arithmetic" data-in="mean" checked' in page
+    assert 'name="eq" value="1" data-in="equal" checked' in page
+    assert 'name="w_osaka-1700" value="0"' in page
+    assert '(equal weights, arithmetic mean)' in page
+
+
+def test_the_page_names_every_goods_figure(root: Root) -> None:
+    """US3: no goods-dollar figure without its reading's name; the eras and the chart are there."""
+    page = html.unescape(root.money('koku').decode())
+    assert 'Averaged over goods' in page
+    assert 'The whole basket' in page
+    assert '(geometric mean)' in page
+    assert 'Which periods set Rokugan' in page
+    assert 'rice alone, so it adds nothing' in page
+    assert '(borrowed, not counted)' in page
+    # the standard basket's twelve goods, and a hidden row for each custom good
+    assert page.count('class="koku-track__dot"') == 12 + web.MAX_CUSTOM
+    assert page.count('data-custom-row=') == web.MAX_CUSTOM
+    assert page.count('data-custom="2" hidden') == 1  # one blank good shows at a time
+    assert web.axis_pct(10) == 0
+    assert web.axis_pct(10_000) == 100
+    assert web.axis_pct(1e6) == 100  # clamped
+    assert web.axis_pct(1_000) == pytest.approx(66.67)
+
+
+def test_a_counted_custom_good_gets_a_row_on_the_track(root: Root, model: bk.Model) -> None:
+    """Design review: the average held a custom good the dot track did not show."""
+    state = web.parse_state(model, {'c1': 'Sake|liter|20|2|12', 'c2': 'Tea|kg|1||9'})
+    rows = web.custom_rows(state, web.state_reading(model, state, KG))
+    assert rows[0] is not None
+    assert rows[0].name == 'Sake'
+    assert rows[1] is None  # half-filled
+    assert rows[2] is None  # blank
+    page = html.unescape(root.money('koku', c1='Sake|liter|20|2|12').decode())
+    assert 'Sake <span class="koku-custom-tag">your good</span>' in page
+    assert 'data-custom-row="1">' in page  # shown
+    assert 'data-custom-row="2" hidden' in page
