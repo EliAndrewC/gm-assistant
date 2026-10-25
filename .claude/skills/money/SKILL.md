@@ -31,6 +31,18 @@ Knobs on any command: `--basket standard|standard-no-housing|bassino-ma-a`, `--s
 the basis it used; quote it with the answer. The same basket is a page anyone can play with: the toolkit's Money
 section, `/money/koku`.
 
+`price` ends with each matched good's **swing note** (`data/swings.jsonl`): whether its real-world price was steady or
+swung across periods, and why. Quote it with a price whose spread matters to the answer.
+
+**Which era to convert a historical amount in** ([diagram 0294](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0294-when-does-a-price-borrowed-from-another-year-or-place-need-a-note.html),
+this project's derivation; no source states a rule). An amount within a good's no-note span of an era's years converts
+plainly: Kyoto rice ~25 years, miso and the day wage 15, sake 50, firewood, soy sauce and lamp oil 5, Edo goods 20,
+Osaka rice 10, the Qing baskets 5. Past that span it still converts, with a note naming the borrowed era (on
+diagram's site, `data-paid`): no further limit is measured. It never converts across a break: the 1859 opening, a
+recoinage that changed the coin's silver, a change of money system (the yen, China's tael, cash and dollar), a domain's
+own notes, or a move in China's cash rate. Between cities, rice and lamp oil borrow freely; miso, soy sauce and
+firewood need a note.
+
 ## Coins and who uses them (canon: `setting/l7r.md` "Money")
 
 1 koku (gold) = 10 bu (silver) = 100 zeni (copper) = 1,000 sen (small copper, minted as strings of 10 to cut apart).
@@ -95,11 +107,13 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
   import (possibly coin-dependent prices). Meanwhile historical conversions take each coin at its own era's market
   rate (`data/eras/`).
 
-- **Price ranges that show how much a good swung across periods** (GM 2026-10-24): when the ledger becomes a price list
-  on the site's Money section, each good keeps its narrow Rokugani range but also says whether its real-world price
-  was steady or swung across dynasties and periods, why (salt: how far the state monopoly reached and was enforced), and
-  links the research. Waiting on [diagram#15](https://github.com/EliAndrewC/diagram/issues/15) question 2; then a
-  per-row or per-class field for it in the ledger.
+- **Price ranges that show how much a good swung across periods** (GM 2026-10-24): the swing notes are in
+  (`data/swings.jsonl`, from [diagram#15](https://github.com/EliAndrewC/diagram/issues/15)); the ledger's own page on
+  the Money section, which will show them beside each narrow range, is still to build.
+
+- **England's premodern prices as comparative sources?** diagram asks whether to add the Bank of England's millennium
+  dataset and Clark's series to its record (0291). They show the same split as Edo and the Qing: little drift, a big
+  yearly swing. The GM's call.
 
 - **The koku's rice mass: settled** ([diagram 0248](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0248-how-much-rice-was-a-koku.html)):
   180 L (48 US gallons), ~150 kg as brown rice; `l7r.md` and `budgets.md` now say so (GM, 2026-10-18). The sheet's

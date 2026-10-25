@@ -22,7 +22,13 @@ One JSON object per line of `data/ledger.jsonl`:
 - `id` marks a SYNTHESIS row: what the skill answers with, bound by every consistency rule
   (`rules.py`) that names it. A row without an `id` is a SOURCE row: what one source says, as
   found; source rows may disagree with each other (place, period, debased coin, unit) and no rule
-  binds them. An answer never comes straight from a source row (spec 219 FR-011)."""
+  binds them. An answer never comes straight from a source row (spec 219 FR-011).
+
+SWINGS (`data/swings.jsonl`, GM 2026-10-24, from diagram#15): one line a class of good, saying
+whether its real-world price was steady, swung or (a wage) sticky across days, years, places and
+periods, and why (salt: the state monopoly). A row takes the FIRST class sharing one of its tags,
+so a specific class (salt, rice) is listed before the general one (food) its rows also carry. The
+Rokugani range stays narrow on purpose; the note says how far history strayed from one number."""
 
 from __future__ import annotations
 
@@ -32,10 +38,23 @@ from pathlib import Path
 
 from l7r.money.readings import DATA
 
-__all__ = ['LABELS', 'LEDGER', 'Row', 'load', 'problems', 'search']
+__all__ = [
+    'LABELS',
+    'LEDGER',
+    'SWINGS',
+    'Row',
+    'Swing',
+    'load',
+    'load_swings',
+    'problems',
+    'search',
+    'swing_for',
+]
 
 LABELS = ('historical', 'deviation', 'guess', 'comparative')
 LEDGER = DATA / 'ledger.jsonl'
+SWINGS = DATA / 'swings.jsonl'
+VERDICTS = ('steady', 'swung', 'sticky')
 DIAGRAM = 'https://github.com/EliAndrewC/diagram/'
 _SOURCE_PREFIXES = ('https://', 'canon:', 'lead:', 'derived:')
 _FIELDS = {'id', 'item', 'low', 'high', 'per', 'label', 'source', 'notes', 'tags'}
@@ -107,3 +126,42 @@ def search(rows: list[Row], words: list[str]) -> list[Row]:
         for r in rows
         if all(w in f'{r.item} {r.notes} {" ".join(r.tags)}'.lower() for w in wanted)
     ]
+
+
+@dataclass(frozen=True, slots=True)
+class Swing:
+    """How steady one class of good's real-world price was, and why (see the module docstring)."""
+
+    cls: str
+    tags: tuple[str, ...]
+    verdict: str
+    note: str
+    source: str
+
+
+def load_swings(path: Path = SWINGS) -> list[Swing]:
+    swings: list[Swing] = []
+    for number, line in enumerate(path.read_text().splitlines(), 1):
+        if not line.strip():
+            continue
+        raw = json.loads(line)
+        if raw.keys() != {'class', 'tags', 'verdict', 'note', 'source'}:
+            raise ValueError(f'{path.name} line {number}: needs class, tags, verdict, note, source')
+        if (
+            raw['verdict'] not in VERDICTS
+            or not raw['tags']
+            or not raw['source'].startswith(DIAGRAM)
+        ):
+            raise ValueError(
+                f'{path.name} line {number}: verdict one of {", ".join(VERDICTS)}, '
+                'at least one tag, and a diagram question as its source'
+            )
+        swings.append(
+            Swing(raw['class'], tuple(raw['tags']), raw['verdict'], raw['note'], raw['source'])
+        )
+    return swings
+
+
+def swing_for(row: Row, swings: list[Swing]) -> Swing | None:
+    """The first class sharing one of the row's tags, or None (no class: nothing is claimed)."""
+    return next((s for s in swings if set(s.tags) & set(row.tags)), None)

@@ -298,3 +298,39 @@ def test_parse_names_the_missing_coin() -> None:
     # A SILENT finding typed as "--low 0" failed with no hint that a coin was missing.
     with pytest.raises(ValueError, match='nothing found is "0 sen"'):
         coins.parse('0')
+
+
+def test_swing_notes_load_and_the_specific_class_wins() -> None:
+    """GM 2026-10-24 (diagram#15): a price says how far its good swung across periods, and why."""
+    swings = ledger.load_swings()
+    salt = ledger.Row('salt', 1, 1, 'sho', 'guess', 'lead:x', tags=('food', 'salt'))
+    assert (found := ledger.swing_for(salt, swings)) is not None
+    assert found.cls == 'salt'
+    assert 'monopoly' in found.note
+    assert ledger.swing_for(ledger.Row('a sword', 1, 1, 'item', 'guess', 'lead:x'), swings) is None
+
+
+@pytest.mark.parametrize(
+    'line',
+    [
+        '{"class": "x", "tags": ["a"], "verdict": "wild", "note": "n", "source": "'
+        + ledger.DIAGRAM
+        + '"}',
+        '{"class": "x", "tags": [], "verdict": "steady", "note": "n", "source": "'
+        + ledger.DIAGRAM
+        + '"}',
+        '{"class": "x", "tags": ["a"], "verdict": "steady", "note": "n", "source": "lead:x"}',
+        '{"class": "x", "tags": ["a"], "verdict": "steady", "note": "n"}',
+    ],
+)
+def test_a_bad_swing_note_is_refused(tmp_path: Path, line: str) -> None:
+    path = tmp_path / 'swings.jsonl'
+    path.write_text('\n' + line + '\n')  # a blank line is skipped, and counted
+    with pytest.raises(ValueError, match='swings.jsonl line 2'):
+        ledger.load_swings(path)
+
+
+def test_price_prints_the_swing_note_once(capsys: pytest.CaptureFixture[str]) -> None:
+    out = run(capsys, 'price', 'salt')
+    assert out.count('across periods (salt: swung)') == 1
+    assert 'across periods' not in run(capsys, 'price', 'sword')

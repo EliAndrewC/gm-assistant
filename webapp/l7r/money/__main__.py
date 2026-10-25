@@ -132,6 +132,10 @@ def _price(args: argparse.Namespace, basis: _Basis) -> None:
         _say(f'  source: {row.source}')
         if row.notes:
             _say(f'  notes: {row.notes}')
+    swings = ledger.load_swings()
+    for swing in dict.fromkeys(s for r in found if (s := ledger.swing_for(r, swings))):
+        _say(f'across periods ({swing.cls}: {swing.verdict}): {swing.note}')
+        _say(f'  source: {swing.source}')
     _say('\n'.join(basis.lines()))
 
 
@@ -209,6 +213,7 @@ def _export(args: argparse.Namespace, basis: _Basis) -> None:
 
 def _check(args: argparse.Namespace, basis: _Basis) -> None:
     rows = ledger.load()
+    swings = ledger.load_swings()
     rules = load_rules()
     if broken := violations(rules, rows):
         raise SystemExit('broken consistency rules:\n  ' + '\n  '.join(broken))
@@ -217,7 +222,7 @@ def _check(args: argparse.Namespace, basis: _Basis) -> None:
     leads = sum(not r.verified for r in rows)
     _say(
         f'ledger ok: {len(rows)} rows, {len(rules)} consistency rules hold, '
-        f'{leads} rows still resting on leads or derivations; '
+        f'{leads} rows still resting on leads or derivations; {len(swings)} swing notes; '
         f'{len(basis.model.baskets)} baskets, {len(basis.model.snapshots)} snapshots and '
         f'{len(basis.model.eras)} eras ok'
     )

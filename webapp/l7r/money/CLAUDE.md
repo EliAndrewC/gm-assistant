@@ -24,6 +24,7 @@ toolkit's Money section is `/money` (landing) and `/money/koku` (the basket play
 | `data/wages.json` | Dated US unskilled wages for the wage-dollar reading; newest is the default. |
 | `data/ledger.jsonl` | The price ledger, one row per line, figures in sen. Rows with an `id` are synthesis rows; `shrine/...` rows price the shrine builder (feature 216). |
 | `data/rules.jsonl` | Consistency rules. |
+| `data/swings.jsonl` | One note per class of good: steady, swung or sticky across periods, and why (diagram#15). `price` prints the first class sharing a row's tag, so a specific class precedes `food`. |
 | `data/estimates.jsonl` | Logged guesses. **Append only**: a test fails if a committed line changes. |
 | `data/requests.jsonl`, `data/findings.jsonl` | Estimate -> diagram issue; what the research showed. |
 
