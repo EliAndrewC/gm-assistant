@@ -154,7 +154,7 @@
                       <ol class="koku-cites">
                         {% for e in row.candidates %}
                           {% set p = e.goods[row.good.id] %}
-                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}.{% if p.note %} {{ p.note[:1]|upper ~ p.note[1:] }}.{% endif %}{% if p.borrowed %} <em>Reconstructed, so counted only when no other weighted period records it.</em>{% endif %} <a class="koku-link" href="{{ p.source }}">{{ source_label(p.source) }}</a></li>
+                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}.{% if p.borrowed %} <em>{{ p.borrowed }}, so it repeats another period's figure and counts only when no other weighted period records it.</em>{% elif p.note %} {{ p.note[:1]|upper ~ p.note[1:] }}.{% endif %} <a class="koku-link" href="{{ p.source }}">{{ source_label(p.source) }}</a></li>
                         {% endfor %}
                       </ol>
                     {% endif %}
@@ -191,7 +191,7 @@
                   {%- set counted = own|reject('in', e.goods|dictsort|selectattr('1.borrowed')|map(attribute='0')|list)|reject('in', excluded)|list -%}
                   {%- set borrowed = own|reject('in', counted)|reject('in', excluded)|list -%}
                   {%- for g in counted %}{{ model.goods[g].name }}{{ ', ' if not loop.last }}{% endfor -%}
-                  {%- if borrowed %}<span class="koku-borrowed">{{ '; ' if counted }}reconstructed, counted only if no other period is: {% for g in borrowed %}<span title="{{ e.goods[g].borrowed }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
+                  {%- if borrowed %}<span class="koku-borrowed">{{ '; ' if counted }}borrowed, counted only if no other period is: {% for g in borrowed %}<span title="{{ e.goods[g].borrowed }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
                   {%- if excluded %}<span class="koku-borrowed">{{ '; ' if counted or borrowed }}changed by foreign trade, not counted: {% for g in excluded %}<span title="{{ e.goods[g].excluded }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
                 {%- endif -%}
               </td>
