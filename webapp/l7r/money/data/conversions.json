@@ -198,7 +198,7 @@
     "canton-1835": {
       "place": "Canton",
       "years": "1830-1839",
-      "confidence": "The Chinese Repository's Canton of 1835. Rice is the top of its range. The cash rate is BORROWED from rural Beijing's 1835 (no Canton rate was found).",
+      "confidence": "The Chinese Repository's Canton of 1835. Rice is the top of its range. No source gives Canton's cash a tael; its cash is by the dollar, about 1,000 cash (a Canton letter of 1837, and a voyager's round figure for the Guangdong coast in 1832), at 0.72 tael a dollar.",
       "basket_coverage": "4 of 12 goods",
       "goods_left_out": [
         "Soybeans",
@@ -221,11 +221,11 @@
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html"
         },
         "cash": {
-          "silver_g": 0.029576,
-          "goods_dollars": 0.097871,
-          "wage_dollars": 0.99759,
-          "rokugan_sen": 0.111869,
-          "note": "BORROWED: 1,251 cash to the tael, rural Beijing 1835",
+          "silver_g": 0.02664,
+          "goods_dollars": 0.088156,
+          "wage_dollars": 0.89856,
+          "rokugan_sen": 0.100764,
+          "note": "About 1,000 cash to the dollar at Canton (Chinese Repository, 1837), so about 1,390 cash to the tael at 0.72 tael a dollar; empire-wide, 1,200-1,500 in 1836-1837",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html"
         },
         "dollar": {

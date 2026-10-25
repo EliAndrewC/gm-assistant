@@ -491,10 +491,11 @@ ERAS['canton-1835'] = {
     'place': 'Canton',
     'years': '1830-1839',
     'confidence': (
-        "The Chinese Repository's Canton of 1835. Rice is the top of its range. The cash rate is "
-        "BORROWED from rural Beijing's 1835 (no Canton rate was found)."
+        "The Chinese Repository's Canton of 1835. Rice is the top of its range. No source gives Canton's "
+        'cash a tael; its cash is by the dollar, about 1,000 cash (a Canton letter of 1837, and a '
+        "voyager's round figure for the Guangdong coast in 1832), at 0.72 tael a dollar."
     ),
-    'coins': ccoins(37.0, '37 g (the standard is not stated)', 1251, 'BORROWED: 1,251 cash to the tael, rural Beijing 1835', dollar=True),
+    'coins': ccoins(37.0, '37 g (the standard is not stated)', 1000 / 0.72, "About 1,000 cash to the dollar at Canton (Chinese Repository, 1837), so about 1,390 cash to the tael at 0.72 tael a dollar; empire-wide, 1,200-1,500 in 1836-1837", dollar=True),
     'goods': {
         'rice': cgood(3 * 37.0 / (100 * UNITS['catty_kg']), CHINA, 'Up to 3 taels a picul (100 catties of 0.6048 kg)'),
         'fish': cgood(0.105 * 37.0 / UNITS['catty_kg'], CHINA, 'Salted fish, 0.05-0.16 tael a catty, the midpoint'),
