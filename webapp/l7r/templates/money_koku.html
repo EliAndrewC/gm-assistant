@@ -194,10 +194,12 @@
               <td class="koku-eras__goods">
                 {%- if not own -%}<span class="koku-missing">rice alone, so it adds nothing</span>
                 {%- else -%}
-                  {%- set counted = own|reject('in', e.goods|dictsort|selectattr('1.borrowed')|map(attribute='0')|list)|list -%}
-                  {%- set borrowed = own|reject('in', counted)|list -%}
+                  {%- set excluded = e.goods|dictsort|selectattr('1.excluded')|map(attribute='0')|list -%}
+                  {%- set counted = own|reject('in', e.goods|dictsort|selectattr('1.borrowed')|map(attribute='0')|list)|reject('in', excluded)|list -%}
+                  {%- set borrowed = own|reject('in', counted)|reject('in', excluded)|list -%}
                   {%- for g in counted %}{{ model.goods[g].name }}{{ ', ' if not loop.last }}{% endfor -%}
                   {%- if borrowed %}<span class="koku-borrowed">{{ '; ' if counted }}reconstructed, not counted: {% for g in borrowed %}<span title="{{ e.goods[g].borrowed }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
+                  {%- if excluded %}<span class="koku-borrowed">{{ '; ' if counted or borrowed }}changed by foreign trade, not counted: {% for g in excluded %}<span title="{{ e.goods[g].excluded }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
                 {%- endif -%}
               </td>
             </tr>

@@ -305,6 +305,7 @@ def page_data(model: bk.Model, koku_kg: float, wage: Wage) -> dict[str, Any]:
                     gid: {
                         'ratio': p.silver_g / e.goods['rice'].silver_g,
                         'borrowed': bool(p.borrowed),
+                        'excluded': bool(p.excluded),
                     }
                     for gid, p in e.goods.items()
                 }

@@ -24,9 +24,13 @@
     return w;
   }
 
-  // The eras a good's price rests on: borrowed prices only when no weighted era observes it.
+  // The eras a good's price rests on: borrowed prices only when no weighted era observes it;
+  // excluded ones (not pre-modern prices) never.
   function restsOn(data, w, good) {
-    var eras = Object.keys(data.eras).filter(function (id) { return w[id] && data.eras[id].goods[good]; });
+    var eras = Object.keys(data.eras).filter(function (id) {
+      var g = data.eras[id].goods[good];
+      return w[id] && g && !g.excluded;
+    });
     var observed = eras.filter(function (id) { return !data.eras[id].goods[good].borrowed; });
     return observed.length ? observed : eras;
   }

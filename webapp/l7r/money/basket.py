@@ -134,6 +134,7 @@ class Price:
     borrowed: str = (
         ''  # not an independent price in rice (from another era, or set equal to a good)
     )
+    excluded: str = ''  # not a pre-modern price (the GM's ruling): never in the cross-era mean
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,9 +214,15 @@ class Model:
     def rests_on(self, good: str, weights: Mapping[str, float] | None = None) -> tuple[str, ...]:
         """The eras whose prices make up this good's Rokugani price under these weights. A
         borrowed price (another era's ratio, or a good set equal to another) is left out unless no
-        weighted era observes the good, so one observation never counts twice."""
+        weighted era observes the good, so one observation never counts twice. An excluded price
+        (one the opening to foreign trade changed, such as Tokyo 1882's kerosene) is left out even
+        then: it is not a pre-modern price at all, so it may not stand in for one."""
         w = self.weights(weights)
-        eras = [e for e in self.eras.values() if w[e.id] and good in e.goods and 'rice' in e.goods]
+        eras = [
+            e
+            for e in self.eras.values()
+            if w[e.id] and good in e.goods and 'rice' in e.goods and not e.goods[good].excluded
+        ]
         observed = [e for e in eras if not e.goods[good].borrowed]
         return tuple(e.id for e in (observed or eras))
 
@@ -288,7 +295,12 @@ def load(data: Path = DATA) -> Model:
             },
             {
                 k: Price(
-                    v['silver_g'], v['label'], v['source'], v.get('note', ''), v.get('borrowed', '')
+                    v['silver_g'],
+                    v['label'],
+                    v['source'],
+                    v.get('note', ''),
+                    v.get('borrowed', ''),
+                    v.get('excluded', ''),
                 )
                 for k, v in raw['goods'].items()
             },

@@ -438,6 +438,20 @@ def test_a_borrowed_price_is_not_counted_twice(model: bk.Model) -> None:
     assert model.rests_on('housing') == ('edo-1818', 'kyoto-1745')
 
 
+def test_an_excluded_price_never_counts(model: bk.Model) -> None:
+    """GM 2026-10-25: Tokyo 1882's linen and kerosene are not pre-modern prices. They drop out of
+    the cross-era mean, and unlike a borrowed price they do not stand in when nothing else is
+    weighted; the era's own conversion still uses them."""
+    tokyo = model.eras['tokyo-1882']
+    assert tokyo.goods['cloth'].excluded
+    assert tokyo.goods['lamp-oil'].excluded
+    assert 'tokyo-1882' not in model.rests_on('cloth')
+    assert 'tokyo-1882' in model.rests_on('soybeans')
+    only = {e: float(e == 'tokyo-1882') for e in model.eras}
+    assert model.rests_on('cloth', only) == ()
+    assert 'cloth' not in model.prices(only)
+
+
 def test_era_weights_fall_back_to_the_reference(model: bk.Model) -> None:
     zero = {e: 0.0 for e in model.eras}
     assert model.weights(zero) == model.reference_only()

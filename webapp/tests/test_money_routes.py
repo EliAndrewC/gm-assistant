@@ -58,7 +58,9 @@ def test_default_page_shows_the_standard_koku(root: Root, model: bk.Model) -> No
     assert data['rice_ref'] == model.rice_ref
     assert data['eras']['kyoto-1745']['goods']['rice']['ratio'] == 1
     assert data['eras']['kyoto-1745']['goods']['fish']['borrowed']
-    assert data['eras']['suzhou-1750']['goods'] == {'rice': {'ratio': 1.0, 'borrowed': False}}
+    assert data['eras']['tokyo-1882']['goods']['cloth']['excluded']
+    suzhou = data['eras']['suzhou-1750']['goods']
+    assert suzhou == {'rice': {'ratio': 1.0, 'borrowed': False, 'excluded': False}}
 
 
 def test_a_link_reopens_its_variant(root: Root) -> None:
