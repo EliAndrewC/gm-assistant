@@ -103,6 +103,18 @@
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0273-what-did-salt-cost.html",
       "note": "17.77 monme a koku (Mitsui, Kyoto, mean of 20 seasons); the price is attested, only a koku's weight is guessed (1.1 kg a liter, of diagram's 1.0-1.2)"
     },
+    "miso": {
+      "silver_g": 0.7098,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0303-how-much-miso-and-soy-sauce-did-a-household-use-and-what-did-they-cost-era-by-era.html",
+      "note": "15.43 monme for 10 kan (37.5 kg), the Mitsui house's Kyoto books (20 figures)"
+    },
+    "soy-sauce": {
+      "silver_g": 0.8708,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0303-how-much-miso-and-soy-sauce-did-a-household-use-and-what-did-they-cost-era-by-era.html",
+      "note": "91.06 monme a koku (180 liters), the Mitsui house's Kyoto books (20 figures)"
+    },
     "fuel": {
       "silver_g": 8.2662,
       "label": "historical",

@@ -279,6 +279,8 @@ def load(data: Path = DATA) -> Model:
         snapshots.append(Snapshot(raw['date'], raw['priced_by'], raw['source'], options))
     if not snapshots:
         raise FileNotFoundError(f'no snapshots in {data / "snapshots"}')
+    # By date, not file name: '2026-10-25.json' sorts before '2026-10.json', but its date after.
+    snapshots.sort(key=lambda snap: snap.date)
     eras = {}
     for path in sorted((data / 'eras').glob('*.json')):
         raw = _read(path)

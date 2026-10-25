@@ -31,6 +31,7 @@ JAPAN = Q + '0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html'
 CHINA = Q + '0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html'
 WAGES = Q + '0250-what-did-an-unskilled-laborer-earn.html'
 OSAKA_WAGE = Q + '0257-what-did-a-laborer-earn-in-osaka-in-the-1620s.html'
+MISO = Q + '0303-how-much-miso-and-soy-sauce-did-a-household-use-and-what-did-they-cost-era-by-era.html'
 JCOINS = Q + '0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html'
 CCOINS = Q + '0289-what-was-a-tael-a-string-of-cash-and-a-chinese-dollar-worth-in-silver.html'
 BM = 'https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf'
@@ -88,6 +89,9 @@ BORROWED = {
     'edible-oil': 'Bassino & Ma set it equal to lamp oil a liter',
 }
 REF['salt'] = 17.77 / (KOKU_L * SALT_KG_L) * GENBUN
+# Miso and soy sauce, the Mitsui house's Kyoto books (diagram 0303): miso by 10 kan, soy sauce by the koku.
+REF['miso'] = 15.43 / (10 * KAN_KG) * GENBUN
+REF['soy-sauce'] = 91.06 / KOKU_L * GENBUN
 REF['fuel'] = 2.64 / (10 * KAN_KG) * MBTU_KG * GENBUN
 # Edo's 300-500 mon a month in 1804-1830 (0265, an unsourced popular page; Kyoto and Osaka SILENT),
 # at Edo's 15.9 g a kanmon of the 1820s in Genbun silver (0287), over a 9.93 m2 room.
@@ -99,7 +103,7 @@ REF['housing'] = 400 * 12 * 0.0159 / ROOM_M2
 # from: soybeans off rice (the reference prices them alike a kg), edible oil off lamp oil (alike a
 # liter), cloth off its imputation (13.93 x rice a kg, 5.557 a tan in 1745-1754).
 BASE = {
-    'mitsui': {'rice': 71.85, 'salt': 17.77, 'fuel': 2.64, 'lamp-oil': 327.49},
+    'mitsui': {'rice': 71.85, 'salt': 17.77, 'fuel': 2.64, 'lamp-oil': 327.49, 'miso': 15.43, 'soy-sauce': 91.06},
     'kumon': {
         'rice': 0.3989,
         'soybeans': 0.3989,
@@ -112,6 +116,8 @@ BASE = {
     'kimura': {'rice': 71.85, 'salt': 17.77, 'lamp-oil': 327.49, 'edible-oil': 327.49},
 }
 SOURCE = {'mitsui': JAPAN, 'kumon': JAPAN, 'kimura': JAPAN}
+# Goods a series prices on a page of its own.
+GOOD_SOURCE = {'miso': MISO, 'soy-sauce': MISO}
 
 
 def chain(series: str, good: str, value: float, grams_monme: float) -> float:
@@ -126,7 +132,8 @@ def jgoods(grams_monme: float, figures: dict[str, tuple[str, float, str]]) -> di
             g = chain('kimura', 'rice', value, grams_monme)
         else:
             g = chain(series, good, value, grams_monme)
-        out[good] = {'silver_g': round(g, 4), 'label': 'historical', 'source': SOURCE[series], 'note': note}
+        source = GOOD_SOURCE.get(good, SOURCE[series])
+        out[good] = {'silver_g': round(g, 4), 'label': 'historical', 'source': source, 'note': note}
     return out
 
 
@@ -182,6 +189,18 @@ ERAS['kyoto-1745'] = {
             'label': 'guess',
             'source': SALT,
             'note': "17.77 monme a koku (Mitsui, Kyoto, mean of 20 seasons); the price is attested, only a koku's weight is guessed (1.1 kg a liter, of diagram's 1.0-1.2)",
+        },
+        'miso': {
+            'silver_g': round(REF['miso'], 4),
+            'label': 'historical',
+            'source': MISO,
+            'note': "15.43 monme for 10 kan (37.5 kg), the Mitsui house's Kyoto books (20 figures)",
+        },
+        'soy-sauce': {
+            'silver_g': round(REF['soy-sauce'], 4),
+            'label': 'historical',
+            'source': MISO,
+            'note': "91.06 monme a koku (180 liters), the Mitsui house's Kyoto books (20 figures)",
         },
         'fuel': {
             'silver_g': round(REF['fuel'], 4),
@@ -352,7 +371,10 @@ def mitsui_era(place, years, grams, coins, mitsui, kumon, day, conf, extra=None)
     }
 
 
-MIX = "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth; both series, Mitsui's and Kumon's alike, are chained to their own 1745-1754 level"
+# Declined for miso and soy sauce (0303), each too thin to stand for its era: osaka-1712's single Osaka soy sauce
+# cell (autumn 1713), osaka-1706's Edo cells of 1710-1711 (another city), osaka-1620's "Soya" (soy sauce only by
+# reading) and tokyo-1882's 1887 "Soy" (outside its years).
+MIX = "Mitsui's books (rice, salt, lamp oil, firewood, miso, soy sauce) with Kumon's soybeans, barley, edible oil and cloth; both series, Mitsui's and Kumon's alike, are chained to their own 1745-1754 level"
 # Kyoto's Mitsui salt is priced by the bale from 1791 (diagram 0286, 0301, after Kusano 1996): a bale
 # of 32-35 sho, the midpoint 33.5, turns it into a koku before it is chained.
 BALE_KOKU = 0.335
@@ -360,7 +382,7 @@ BALE_KOKU = 0.335
 ERAS['kyoto-1790'] = mitsui_era(
     'Kyoto', '1790-1799', GENBUN,
     jcoins(GENBUN, 60.6, 106.8, 'Genbun silver, 1.725 g pure; Osaka market rates of the 1790s'),
-    {'rice': (82.97, '82.97 monme a koku'), 'salt': (6.1 / BALE_KOKU, '6.1 monme a bale of 32-35 sho, about 18.2 a koku'), 'lamp-oil': (312.23, '312.23 monme a koku'), 'fuel': (2.79, 'firewood, 2.79 monme for 10 kan')},
+    {'rice': (82.97, '82.97 monme a koku'), 'salt': (6.1 / BALE_KOKU, '6.1 monme a bale of 32-35 sho, about 18.2 a koku'), 'lamp-oil': (312.23, '312.23 monme a koku'), 'fuel': (2.79, 'firewood, 2.79 monme for 10 kan'), 'miso': (18.34, '18.34 monme for 10 kan (18 figures)'), 'soy-sauce': (76.77, '76.77 monme a koku (18 figures)')},
     {'soybeans': (0.4509, "Kumon 1790-1799, 0.451 a kg"), 'barley-wheat': (0.3205, 'Kumon 1790-1799, 0.321 a kg')},
     (0.85, "Mitsui, Kyoto 1790s: 0.85 monme a day"),
     MIX + ". Salt is priced by the bale from 1791 (32-35 sho, taken at 33.5).",
@@ -368,7 +390,7 @@ ERAS['kyoto-1790'] = mitsui_era(
 ERAS['kyoto-1800'] = mitsui_era(
     'Kyoto', '1800-1817', GENBUN,
     jcoins(GENBUN, 64.4, 109.0, 'Genbun silver, 1.725 g pure; Osaka market rates of the 1800s and 1810s'),
-    {'rice': (74.47, '74.47 monme a koku'), 'salt': (6.5 / BALE_KOKU, '6.5 monme a bale of 32-35 sho, about 19.4 a koku'), 'lamp-oil': (270.52, '270.52 monme a koku'), 'fuel': (2.81, 'firewood, 2.81 monme for 10 kan')},
+    {'rice': (74.47, '74.47 monme a koku'), 'salt': (6.5 / BALE_KOKU, '6.5 monme a bale of 32-35 sho, about 19.4 a koku'), 'lamp-oil': (270.52, '270.52 monme a koku'), 'fuel': (2.81, 'firewood, 2.81 monme for 10 kan'), 'miso': (17.11, '17.11 monme for 10 kan (36 figures)'), 'soy-sauce': (68.94, '68.94 monme a koku (36 figures)')},
     {'soybeans': (0.3680, 'Kumon, 0.368 a kg'), 'barley-wheat': (0.2945, 'Kumon, 0.295 a kg'), 'edible-oil': (1.4850, 'Kumon, 1.485 a liter'), 'cloth': (6.2062, 'Kumon, 6.21 a tan')},
     (0.86, 'Mitsui, Kyoto 1800-1817: 0.86 monme a day'),
     MIX + '. Salt is priced by the bale (32-35 sho, taken at 33.5).',
@@ -376,7 +398,7 @@ ERAS['kyoto-1800'] = mitsui_era(
 ERAS['edo-1818'] = mitsui_era(
     'Edo', '1818-1829', 1.35,
     jcoins(1.35, 63.4, 6610 / 63.4, 'Bunsei silver (from 1820), 1.35 g pure; 63.4 monme a ryo (Osaka, 1820s), 6,610 mon a ryo (Edo, 1820s)'),
-    {'rice': (70.69, '70.69 monme a koku'), 'salt': (15.24, '15.24 monme a koku'), 'lamp-oil': (283.79, '283.79 monme a koku'), 'fuel': (1.96, 'firewood, 1.96 monme for 10 kan')},
+    {'rice': (70.69, '70.69 monme a koku'), 'salt': (15.24, '15.24 monme a koku'), 'lamp-oil': (283.79, '283.79 monme a koku'), 'fuel': (1.96, 'firewood, 1.96 monme for 10 kan'), 'miso': (12.86, '12.86 monme for 10 kan (22 figures)'), 'soy-sauce': (68.89, '68.89 monme a koku (22 figures)')},
     {'soybeans': (0.4099, 'Kumon, 0.410 a kg'), 'barley-wheat': (0.2840, 'Kumon, 0.284 a kg'), 'edible-oil': (1.4447, 'Kumon, 1.445 a liter'), 'cloth': (6.0083, 'Kumon, 6.01 a tan')},
     (0.90, 'Mitsui, Edo 1818-1829: 0.90 monme a day'),
     MIX + '. Housing is the guess the reference era borrows (Edo 1804-1830, an unsourced page). Priced at the Bunsei monme; 1818-1819 were Genbun.',
@@ -390,7 +412,7 @@ ERAS['edo-1818'] = mitsui_era(
 ERAS['edo-1830'] = mitsui_era(
     'Edo', '1830-1844', 0.975,
     jcoins(0.975, 62.8, 108.1, 'Tenpo silver (from 1837), 0.975 g pure; Osaka market rates 1840-1843'),
-    {'rice': (111.46, '111.46 monme a koku'), 'salt': (23.90, '23.90 monme a koku'), 'lamp-oil': (404.56, '404.56 monme a koku'), 'fuel': (1.99, 'firewood, 1.99 monme for 10 kan')},
+    {'rice': (111.46, '111.46 monme a koku'), 'salt': (23.90, '23.90 monme a koku'), 'lamp-oil': (404.56, '404.56 monme a koku'), 'fuel': (1.99, 'firewood, 1.99 monme for 10 kan'), 'miso': (17.7, '17.7 monme for 10 kan (30 figures)'), 'soy-sauce': (87.03, '87.03 monme a koku (30 figures)')},
     {'soybeans': (0.5623, 'Kumon, 0.562 a kg'), 'barley-wheat': (0.4189, 'Kumon, 0.419 a kg'), 'edible-oil': (1.8497, 'Kumon, 1.850 a liter'), 'cloth': (7.1667, 'Kumon, 7.17 a tan')},
     (0.91, 'Mitsui, Edo 1830-1844: 0.91 monme a day'),
     MIX + '. Priced at the Tenpo monme of 1837-1844; 1830-1836 were Bunsei (1.35 g).',
@@ -398,7 +420,7 @@ ERAS['edo-1830'] = mitsui_era(
 ERAS['edo-1850'] = mitsui_era(
     'Edo', '1850-1859', 0.975,
     jcoins(0.975, 67.5, 6725 / 67.5, 'Tenpo silver, 0.975 g pure; Osaka market rates 1850-1854 and 1855-1859, averaged'),
-    {'rice': (117.22, '117.22 monme a koku'), 'salt': (35.67, '35.67 monme a koku'), 'lamp-oil': (461.38, '461.38 monme a koku'), 'fuel': (2.08, 'firewood, 2.08 monme for 10 kan')},
+    {'rice': (117.22, '117.22 monme a koku'), 'salt': (35.67, '35.67 monme a koku'), 'lamp-oil': (461.38, '461.38 monme a koku'), 'fuel': (2.08, 'firewood, 2.08 monme for 10 kan'), 'miso': (21.0, '21.0 monme for 10 kan (20 figures)'), 'soy-sauce': (105.7, '105.7 monme a koku (20 figures)')},
     {'soybeans': (0.6738, 'Kumon, 0.674 a kg'), 'barley-wheat': (0.4746, 'Kumon, 0.475 a kg (5 years)'), 'edible-oil': (2.36, 'Kumon, 2.36 a liter'), 'cloth': (7.85, 'Kumon, 7.85 a tan (2 years)')},
     (0.92, 'Mitsui, Edo 1850s: 0.92 monme a day'),
     MIX + ".",
@@ -406,7 +428,7 @@ ERAS['edo-1850'] = mitsui_era(
 ERAS['edo-1860'] = mitsui_era(
     'Edo', '1860-1867', 0.4875,
     jcoins(0.4875, 83.6, 83.7, 'Ansei silver (from 1859), 0.4875 g pure as prescribed (0.525 by a 14% assay); market rates 1860-1867'),
-    {'rice': (283.17, '283.17 monme a koku'), 'salt': (82.15, '82.15 monme a koku'), 'lamp-oil': (873.52, '873.52 monme a koku'), 'fuel': (3.84, 'firewood, 3.84 monme for 10 kan')},
+    {'rice': (283.17, '283.17 monme a koku'), 'salt': (82.15, '82.15 monme a koku'), 'lamp-oil': (873.52, '873.52 monme a koku'), 'fuel': (3.84, 'firewood, 3.84 monme for 10 kan'), 'miso': (47.15, '47.15 monme for 10 kan (13 figures)'), 'soy-sauce': (213.64, '213.64 monme a koku (13 figures)')},
     {'soybeans': (2.2533, 'Kumon, 2.25 a kg'), 'barley-wheat': (0.9771, 'Kumon, 0.977 a kg (2 years)'), 'edible-oil': (6.3491, 'Kumon, 6.35 a liter')},
     (1.18, 'Mitsui, Edo 1860-1867: 1.18 monme a day'),
     MIX + ". The era's mean hides a several-fold rise in prices; cloth is left out (one year, 133 a tan).",

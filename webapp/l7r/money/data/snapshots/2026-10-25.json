@@ -1,0 +1,170 @@
+{
+  "date": "2026-10-25",
+  "priced_by": "Claude (feature 224): the 2026-10 snapshot's prices unchanged, plus miso, soy sauce and the alternatives from diagram 0298, 0299 and 0300 (listings seen 2026-10-25)",
+  "source": "https://github.com/EliAndrewC/gm-assistant/blob/main/specs/224-miso-soy-sauce-basket/spec.md",
+  "note": "US retail, the cheapest plain version in an ordinary household bulk pack (about 2-25 lb). The first option for each good is the default; the others are substitutes the playground can swap in. Each link is the listing or listing page the price was read from. An option with a `series` is a BLS average price (via FRED): `reprice` fills it from the newest month, at `factor` units of the series' pound to this good's unit. Feature 224 adds miso and soy sauce, and alternatives that never change a default: flour, canned sardines, and three other rents.",
+  "goods": {
+    "rice": [
+      {
+        "priced_as": "Great Value long grain enriched, 20 lb at $11.46",
+        "dollars_per_unit": 1.26,
+        "link": "https://www.walmart.com/ip/10315883"
+      },
+      {
+        "priced_as": "Hinode medium-grain Calrose, 20 lb at $22.68: a japonica, the kind of rice Japan grew",
+        "dollars_per_unit": 2.5,
+        "link": "https://www.walmart.com/c/kp/rice-bag"
+      },
+      {
+        "priced_as": "US city average long-grain white rice, September 2026 (BLS, via FRED)",
+        "dollars_per_unit": 2.465,
+        "link": "https://fred.stlouisfed.org/series/APU0000701312",
+        "series": "APU0000701312",
+        "factor": 2.20462
+      }
+    ],
+    "soybeans": [
+      {
+        "priced_as": "Dried yellow soybeans, 25 lb at $73.90 (organic: no conventional retail pack found)",
+        "dollars_per_unit": 6.52,
+        "link": "https://www.walmart.com/c/kp/bagged-soybeans"
+      }
+    ],
+    "miso": [
+      {
+        "priced_as": "Shirakiku Shiro (white) miso, two 2.2 lb bags at $21.28",
+        "dollars_per_unit": 10.64,
+        "link": "https://www.amazon.com/s?k=miso+paste+2.2+lb"
+      },
+      {
+        "priced_as": "Shirakiku red miso, 2.2 lb",
+        "dollars_per_unit": 11.83,
+        "link": "https://www.amazon.com/s?k=miso+paste+2.2+lb"
+      },
+      {
+        "priced_as": "Hikari aged red miso, 10.5 oz at $4.98 (Walmart's cheapest)",
+        "dollars_per_unit": 16.73,
+        "link": "https://www.walmart.com/search?q=miso+paste"
+      }
+    ],
+    "soy-sauce": [
+      {
+        "priced_as": "Great Value Naturally Brewed Soy Sauce, 15 fl oz at $1.73",
+        "dollars_per_unit": 3.9,
+        "link": "https://www.walmart.com/search?q=great+value+soy+sauce"
+      },
+      {
+        "priced_as": "Kikkoman Soy Sauce, 40 fl oz at $8.12",
+        "dollars_per_unit": 6.86,
+        "link": "https://www.walmart.com/search?q=soy+sauce+naturally+brewed"
+      }
+    ],
+    "beans": [
+      {
+        "priced_as": "US city average dried beans, September 2026 (BLS, via FRED), at about 0.8 kg a liter",
+        "dollars_per_unit": 2.944,
+        "link": "https://fred.stlouisfed.org/series/APU0000714233",
+        "series": "APU0000714233",
+        "factor": 1.7637
+      },
+      {
+        "priced_as": "Adzuki, 5 lb at $22.95 ($10.12/kg at about 0.8 kg a liter): the Japanese bean, a specialty item in the US",
+        "dollars_per_unit": 8.1,
+        "link": "https://countrylifefoods.com/collections/over-25lbs/products/organic-adzuki-beans"
+      }
+    ],
+    "barley-wheat": [
+      {
+        "priced_as": "Hard red wheat berries, 25 lb at $49.99",
+        "dollars_per_unit": 4.41,
+        "link": "https://www.lehmans.com/products/bronze-chief-hard-red-wheat-berries-25-lb"
+      },
+      {
+        "priced_as": "All-purpose wheat flour, Great Value, 25 lb (flour, not the unprocessed grain the 1745 basket priced)",
+        "dollars_per_unit": 0.95,
+        "link": "https://www.walmart.com/search?q=great+value+flour"
+      }
+    ],
+    "buckwheat-others": [
+      {
+        "priced_as": "Hulled millet, 50 lb at $78.40",
+        "dollars_per_unit": 3.46,
+        "link": "https://bakersauthority.com/products/millet-seeds"
+      }
+    ],
+    "fish": [
+      {
+        "priced_as": "Great Value wild-caught cod fillets, 2 lb at $17.64",
+        "dollars_per_unit": 19.45,
+        "link": "https://www.walmart.com/c/kp/fish-fillet"
+      },
+      {
+        "priced_as": "Canned sardines, Great Value in water, 3.75 oz at $1.42, by net weight (not the salmon and cod the 1882 ratio priced)",
+        "dollars_per_unit": 13.36,
+        "link": "https://www.walmart.com/search?q=great+value+sardines"
+      }
+    ],
+    "edible-oil": [
+      {
+        "priced_as": "Great Value canola oil, 1 gallon at $9.47",
+        "dollars_per_unit": 2.5,
+        "link": "https://www.walmart.com/ip/13281828"
+      }
+    ],
+    "cloth": [
+      {
+        "priced_as": "Cotton muslin, 63 in wide, 10 yd at $37.95, by the area of a 36 cm bolt",
+        "dollars_per_unit": 0.93,
+        "link": "https://www.walmart.com/browse/arts-crafts-sewing/utility-fabric/1334134_4232946_3934882_9270165"
+      },
+      {
+        "priced_as": "The same muslin by the running meter, ignoring its extra width (how the 2017 spreadsheet priced cloth)",
+        "dollars_per_unit": 4.15,
+        "link": "https://www.walmart.com/browse/arts-crafts-sewing/utility-fabric/1334134_4232946_3934882_9270165"
+      }
+    ],
+    "lamp-oil": [
+      {
+        "priced_as": "Great Value canola oil, 1 gallon at $9.47",
+        "dollars_per_unit": 2.5,
+        "link": "https://www.walmart.com/ip/13281828"
+      }
+    ],
+    "salt": [
+      {
+        "priced_as": "Morton canning and pickling salt, 4 lb at $2.52",
+        "dollars_per_unit": 1.39,
+        "link": "https://www.walmart.com/ip/seort/10318924"
+      }
+    ],
+    "fuel": [
+      {
+        "priced_as": "A cord of seasoned hardwood at about $300 and 20 million BTU (MSU Extension)",
+        "dollars_per_unit": 15.0,
+        "link": "https://www.supermoney.com/cost-of-a-cord-of-wood"
+      }
+    ],
+    "housing": [
+      {
+        "priced_as": "US average asking rent, $1,740 a month for 835 sq ft (RentCafe, March 2026): $25 a square foot a year",
+        "dollars_per_unit": 269.1,
+        "link": "https://www.credaily.com/briefs/how-far-1-500-in-rent-goes-for-apartment-size-nationwide/"
+      },
+      {
+        "priced_as": "Allen's basic-needs housing line: rents 'on the order of' $25 a square meter a month (US, UK and France, 2011)",
+        "dollars_per_unit": 300.0,
+        "link": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0298-how-do-economic-historians-carry-a-basket-of-goods-into-another-times-money.html"
+      },
+      {
+        "priced_as": "US median asking rent, $1,531 a month (Census, Q2 2026), over the mean rented home (RECS)",
+        "dollars_per_unit": 182.0,
+        "link": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0300-what-does-a-square-meter-of-housing-cost-a-year-in-the-us-today.html"
+      },
+      {
+        "priced_as": "US median asking rent, $1,531 a month (Census, Q2 2026), over the median home (AHS)",
+        "dollars_per_unit": 132.0,
+        "link": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0300-what-does-a-square-meter-of-housing-cost-a-year-in-the-us-today.html"
+      }
+    ]
+  }
+}

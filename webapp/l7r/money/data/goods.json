@@ -8,7 +8,17 @@
   "soybeans": {
     "name": "Soybeans",
     "unit": "kg",
-    "why": "Stands in for the miso, soy sauce, tofu and natto made from them."
+    "why": "Whole beans: the tofu, natto and beans eaten as they are. The beans that went into miso and soy sauce are counted as those goods (feature 224)."
+  },
+  "miso": {
+    "name": "Miso",
+    "unit": "kg",
+    "why": "Rice-koji miso, priced as the Mitsui house's account books record it (diagram 0303). The basket's 39 kg is 13 kg of beans a person a year (the middle of 9.0 kg, Hirosaki 1816, and 16.8 kg, a Shinano farm manual of 1760) at 3 kg of miso a kg of dry beans (modern rice-koji recipes)."
+  },
+  "soy-sauce": {
+    "name": "Soy sauce",
+    "unit": "liter",
+    "why": "Brewed soy sauce, priced as the Mitsui house's account books record it (diagram 0303), from 4.6 kg of beans a person a year (a farm manual of 1844)."
   },
   "beans": {
     "name": "Beans",

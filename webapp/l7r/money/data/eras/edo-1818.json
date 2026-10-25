@@ -1,7 +1,7 @@
 {
   "place": "Edo",
   "years": "1818-1829",
-  "confidence": "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth; both series, Mitsui's and Kumon's alike, are chained to their own 1745-1754 level. Housing is the guess the reference era borrows (Edo 1804-1830, an unsourced page). Priced at the Bunsei monme; 1818-1819 were Genbun.",
+  "confidence": "Mitsui's books (rice, salt, lamp oil, firewood, miso, soy sauce) with Kumon's soybeans, barley, edible oil and cloth; both series, Mitsui's and Kumon's alike, are chained to their own 1745-1754 level. Housing is the guess the reference era borrows (Edo 1804-1830, an unsourced page). Priced at the Bunsei monme; 1818-1819 were Genbun.",
   "coins": {
     "monme": {
       "silver_g": 1.35,
@@ -58,6 +58,18 @@
       "label": "historical",
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
       "note": "firewood, 1.96 monme for 10 kan"
+    },
+    "miso": {
+      "silver_g": 0.463,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0303-how-much-miso-and-soy-sauce-did-a-household-use-and-what-did-they-cost-era-by-era.html",
+      "note": "12.86 monme for 10 kan (22 figures)"
+    },
+    "soy-sauce": {
+      "silver_g": 0.5156,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0303-how-much-miso-and-soy-sauce-did-a-household-use-and-what-did-they-cost-era-by-era.html",
+      "note": "68.89 monme a koku (22 figures)"
     },
     "soybeans": {
       "silver_g": 0.6646,

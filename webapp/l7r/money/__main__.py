@@ -428,7 +428,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     sub.add_parser('history', help='dollars per koku for every snapshot').set_defaults(run=_history)
     sub.add_parser('baskets', help='dollars per koku for every basket').set_defaults(run=_baskets)
     p = sub.add_parser('reprice', help='start the next dated price snapshot')
-    p.add_argument('date', help='YYYY-MM')
+    p.add_argument('date', help='YYYY-MM, or YYYY-MM-DD for a second snapshot in a month')
     p.add_argument('--offline', action='store_true', help='leave BLS-tied prices blank too')
     p.set_defaults(run=_reprice)
     sub.add_parser(
