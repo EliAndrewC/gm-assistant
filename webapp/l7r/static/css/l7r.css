@@ -978,7 +978,7 @@ a { color: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem 1.5rem;
+  gap: 1rem;
   /* Keep the .container horizontal gutter - a bare "0.7rem 0" shorthand
      would zero it and pin the brand/user pill to the viewport edge on any
      viewport narrower than the container max-width. */
@@ -1004,7 +1004,7 @@ a { color: inherit; }
 
 .app-nav__sections {
   display: flex;
-  gap: 0.4rem 1.6rem;
+  gap: 0.4rem 0.9rem;
   align-items: center;
   flex-wrap: wrap;
   list-style: none;
@@ -1015,7 +1015,7 @@ a { color: inherit; }
 .app-nav__link {
   font-family: var(--font-body);
   font-variant-caps: all-small-caps;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.1em;
   font-size: 0.82rem;
   color: var(--ink-faded);
   text-decoration: none;
@@ -1090,12 +1090,13 @@ a { color: inherit; }
   transform: translateY(-6px) rotate(-45deg);
 }
 
-/* Collapsed nav. The breakpoint is measured, not guessed: with all five
-   sections enabled plus the GM user pill, the one-row nav needs ~722px of
-   content width (measured 2026-07), so ~778px of viewport with the 28px
-   page gutters. 840px adds headroom for longer user names while keeping
-   the full nav visible at the GM-200 viewport (925px). */
-@media (max-width: 840px) {
+/* Collapsed nav. The breakpoint is measured, not guessed: with eight sections
+   and the GM's user pill (name, badge, sign out), the one-row nav fits down to
+   a 900px viewport at these gaps and letter-spacing (measured 2026-10-25, when
+   Research made eight; at the old 1.6rem gaps and 0.18em it needed 1,060px and
+   wrapped at the GM-200 viewport, 925px). Between the breakpoint and the fit
+   width the header wraps to a second row, so move them together. */
+@media (max-width: 900px) {
   .app-nav__toggle {
     display: inline-flex;
   }
@@ -2338,7 +2339,7 @@ a { color: inherit; }
 
 /* Inside the collapsed menu the pill stacks under the section links,
    left-aligned with their text column (0.6rem padding + 2px accent border). */
-@media (max-width: 840px) {
+@media (max-width: 900px) {
   .app-nav__user {
     margin-left: 0;
     padding: 0.35rem 0 0 calc(0.6rem + 2px);
