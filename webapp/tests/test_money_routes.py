@@ -113,7 +113,12 @@ def test_rows_list_every_good_and_bring_new_ones_in_at_the_standard_quantity(
     assert rows['housing'].weight is None
     assert rows['housing'].alone is None
     assert sum(r.weight or 0 for r in rows.values()) == pytest.approx(1)
-    assert [e.id for e in rows['fish'].eras] == ['canton-1835', 'tokyo-1882']
+    assert [e.id for e in rows['fish'].eras] == [
+        'beijing-1615',
+        'beijing-1820',
+        'canton-1835',
+        'tokyo-1882',
+    ]
 
 
 def test_page_json_cannot_close_its_script_block(model: bk.Model) -> None:

@@ -46,7 +46,7 @@ is stale (run `export`). `test_browser_and_server_agree` runs `money.js` under n
 The page by hand: `PORT=8097 cherryd --import l7r.app` from the clone's `webapp/`, open `/money/koku`. Switch Housing
 off: the averaged figure moves and the whole-basket figure does not. Pick Calrose rice: both move. Choose the
 arithmetic mean with every good on: the two figures match. Open "Which periods set Rokugan's prices", set Kyoto
-1745-54's weight to 0: fish's detail now rests on Canton and Tokyo only. The address bar carries each change and
+1745-54's weight to 0: fish's detail now rests on Beijing 1615, Beijing 1820, Canton and Tokyo only. The address bar carries each change and
 reloading it reproduces the figures. Screenshots: the `money*` entries in `tests/screenshot.py`.
 
 `test_every_ledger_row_carries_label_and_source` loads the real ledger, so a row without a label or source fails the

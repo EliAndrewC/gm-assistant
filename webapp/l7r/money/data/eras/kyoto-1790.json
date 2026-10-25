@@ -1,7 +1,7 @@
 {
   "place": "Kyoto",
   "years": "1790-1799",
-  "confidence": "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth, each chained to its own 1745-1754 level. Salt is left out: Kyoto's salt from 1791 reads two-fifths to a sixth of Edo's and Osaka's (a unit or grade change, DOUBTFUL), and no Edo or Osaka salt was recorded in these years.",
+  "confidence": "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth; both series, Mitsui's and Kumon's alike, are chained to their own 1745-1754 level. Salt is priced by the bale from 1791 (32-35 sho, taken at 33.5).",
   "coins": {
     "monme": {
       "silver_g": 1.725,
@@ -40,6 +40,12 @@
       "label": "historical",
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
       "note": "82.97 monme a koku"
+    },
+    "salt": {
+      "silver_g": 0.1583,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0286-what-did-a-years-necessities-cost-in-japan-era-by-era.html",
+      "note": "6.1 monme a bale of 32-35 sho, about 18.2 a koku"
     },
     "lamp-oil": {
       "silver_g": 2.9931,

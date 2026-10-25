@@ -1,7 +1,7 @@
 {
   "place": "Tokyo",
   "years": "1882-1886",
-  "confidence": "Bassino & Ma's Table 3 retail prices (LTES) for basket A; no price for salt, fuel or housing, so the conversion uses basket A's goods only.",
+  "confidence": "Bassino & Ma's Table 3 retail prices (LTES) for basket A; no price for salt, fuel or housing, so the conversion uses basket A's goods only. Its lamp oil is kerosene and its cloth linen (diagram 0301); its grains are farm-gate ratios to paddy and its fish a wholesale ratio, each times retail rice.",
   "note": "Grams are of pure silver, at 25 g a yen as Bassino & Ma (after Allen).",
   "coins": {
     "yen": {"silver_g": 25.0, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},

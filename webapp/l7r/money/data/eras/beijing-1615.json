@@ -1,7 +1,7 @@
 {
   "place": "Beijing",
   "years": "1573-1627",
-  "confidence": "Empire-wide rice by reign (a modern silver conversion) with Beijing's official prices of 1615 for salt, sesame oil and firewood. The wage is the Lower Yangzi market wage.",
+  "confidence": "Empire-wide rice by reign (a modern silver conversion) with Beijing's official prices of 1615 for salt, sesame oil and firewood, and fish from one secondary report of 1602. The wage is the Lower Yangzi market wage.",
   "coins": {
     "tael": {
       "silver_g": 36.9,
@@ -38,6 +38,12 @@
       "label": "historical",
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
       "note": "Firewood, 0.125-0.35 tael a 100 jin (Beijing official, 1615), the midpoint"
+    },
+    "fish": {
+      "silver_g": 0.6183,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0302-which-of-a-years-necessities-were-observed-and-which-reconstructed-in-china-era-by-era.html",
+      "note": "Trout, 1 fen (0.01 tael) a jin in Beijing, from a Jesuit's letter of 1602 that one historian of Ming prices reports: a single secondary report"
     }
   },
   "wage": {

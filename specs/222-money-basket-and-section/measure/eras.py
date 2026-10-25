@@ -347,23 +347,26 @@ def mitsui_era(place, years, grams, coins, mitsui, kumon, day, conf, extra=None)
     }
 
 
-MIX = "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth, each chained to its own 1745-1754 level"
+MIX = "Mitsui's books (rice, salt, lamp oil, firewood) with Kumon's soybeans, barley, edible oil and cloth; both series, Mitsui's and Kumon's alike, are chained to their own 1745-1754 level"
+# Kyoto's Mitsui salt is priced by the bale from 1791 (diagram 0286, 0301, after Kusano 1996): a bale
+# of 32-35 sho, the midpoint 33.5, turns it into a koku before it is chained.
+BALE_KOKU = 0.335
 
 ERAS['kyoto-1790'] = mitsui_era(
     'Kyoto', '1790-1799', GENBUN,
     jcoins(GENBUN, 60.6, 106.8, 'Genbun silver, 1.725 g pure; Osaka market rates of the 1790s'),
-    {'rice': (82.97, '82.97 monme a koku'), 'lamp-oil': (312.23, '312.23 monme a koku'), 'fuel': (2.79, 'firewood, 2.79 monme for 10 kan')},
+    {'rice': (82.97, '82.97 monme a koku'), 'salt': (6.1 / BALE_KOKU, '6.1 monme a bale of 32-35 sho, about 18.2 a koku'), 'lamp-oil': (312.23, '312.23 monme a koku'), 'fuel': (2.79, 'firewood, 2.79 monme for 10 kan')},
     {'soybeans': (0.4509, "Kumon 1790-1799, 0.451 a kg"), 'barley-wheat': (0.3205, 'Kumon 1790-1799, 0.321 a kg')},
     (0.85, "Mitsui, Kyoto 1790s: 0.85 monme a day"),
-    MIX + ". Salt is left out: Kyoto's salt from 1791 reads two-fifths to a sixth of Edo's and Osaka's (a unit or grade change, DOUBTFUL), and no Edo or Osaka salt was recorded in these years.",
+    MIX + ". Salt is priced by the bale from 1791 (32-35 sho, taken at 33.5).",
 )
 ERAS['kyoto-1800'] = mitsui_era(
     'Kyoto', '1800-1817', GENBUN,
     jcoins(GENBUN, 64.4, 109.0, 'Genbun silver, 1.725 g pure; Osaka market rates of the 1800s and 1810s'),
-    {'rice': (74.47, '74.47 monme a koku'), 'lamp-oil': (270.52, '270.52 monme a koku'), 'fuel': (2.81, 'firewood, 2.81 monme for 10 kan')},
+    {'rice': (74.47, '74.47 monme a koku'), 'salt': (6.5 / BALE_KOKU, '6.5 monme a bale of 32-35 sho, about 19.4 a koku'), 'lamp-oil': (270.52, '270.52 monme a koku'), 'fuel': (2.81, 'firewood, 2.81 monme for 10 kan')},
     {'soybeans': (0.3680, 'Kumon, 0.368 a kg'), 'barley-wheat': (0.2945, 'Kumon, 0.295 a kg'), 'edible-oil': (1.4850, 'Kumon, 1.485 a liter'), 'cloth': (6.2062, 'Kumon, 6.21 a tan')},
     (0.86, 'Mitsui, Kyoto 1800-1817: 0.86 monme a day'),
-    MIX + '. Salt is left out (DOUBTFUL in Kyoto after 1790; no Edo or Osaka salt in these years).',
+    MIX + '. Salt is priced by the bale (32-35 sho, taken at 33.5).',
 )
 ERAS['edo-1818'] = mitsui_era(
     'Edo', '1818-1829', 1.35,
@@ -422,6 +425,8 @@ def ccoins(tael_g: float, tael_note: str, cash_a_tael: float | None, cash_note: 
     return out
 
 
+CHINA_OBS = Q + '0302-which-of-a-years-necessities-were-observed-and-which-reconstructed-in-china-era-by-era.html'
+TIMKOVSKI_CASH = 1100  # Timkovski's own reckoning of the tael in 1821 (diagram 0302)
 ALLEN = 'Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael'
 ERAS['beijing-1500'] = {
     'place': 'Beijing',
@@ -439,7 +444,8 @@ ERAS['beijing-1615'] = {
     'years': '1573-1627',
     'confidence': (
         "Empire-wide rice by reign (a modern silver conversion) with Beijing's official prices of 1615 "
-        'for salt, sesame oil and firewood. The wage is the Lower Yangzi market wage.'
+        'for salt, sesame oil and firewood, and fish from one secondary report of 1602. The wage is the '
+        'Lower Yangzi market wage.'
     ),
     'coins': ccoins(36.9, 'The Ming treasury tael of the 1500s, 36.9 g', 800, "About 800 standard cash to the tael in Beijing (the late 1500s' official rate)"),
     'goods': {
@@ -447,6 +453,7 @@ ERAS['beijing-1615'] = {
         'salt': cgood(0.0065 * 36.9 / UNITS['jin_kg'], CHINA, '0.006-0.007 tael a jin (Beijing official, 1615)'),
         'edible-oil': cgood(0.028 * 36.9 / UNITS['jin_kg'] * UNITS['sesame_oil_kg_l'], CHINA, 'Sesame oil, 0.028 tael a jin (Beijing official, 1615), at 0.92 kg a liter'),
         'fuel': cgood(0.2375 * 36.9 / (100 * UNITS['jin_kg']) * MBTU_KG, CHINA, 'Firewood, 0.125-0.35 tael a 100 jin (Beijing official, 1615), the midpoint'),
+        'fish': cgood(0.01 * 36.9 / UNITS['jin_kg'], CHINA_OBS, "Trout, 1 fen (0.01 tael) a jin in Beijing, from a Jesuit's letter of 1602 that one historian of Ming prices reports: a single secondary report"),
     },
     'wage': wage(0.0415 * 36.9, CHINA, 'Lower Yangzi, 0.040-0.043 tael a day'),
 }
@@ -490,7 +497,12 @@ ERAS['suzhou-1750'] = {
 ERAS['beijing-1820'] = {
     'place': 'Beijing',
     'years': '1820-1830',
-    'confidence': ALLEN + ' (rice, millet, oils, fuel), with the rural Beijing fuel store\'s cash rate.',
+    'confidence': (
+        ALLEN + " (rice, millet, oils, fuel), with the rural Beijing fuel store's cash rate. Salt and fish "
+        "are Timkovski's Peking market list of 1821, in cash at his own 1,100 a tael; he does not say "
+        'whether he counts the little string of 500 or the great string of 1,000. His cloth is by the '
+        "piece of no stated size and is left out; his wood (6 cash a jin) is held, not used, beside Allen's fuel."
+    ),
     'coins': ccoins(37.0, "Allen et al.'s 37 g", 1243, "1,243 cash to the tael (rural Beijing 1820-1830, 1,159-1,329, at face count: the store's 95-99 cash a day then match Allen's 2.8 g). Beijing's capital cash passed two for one"),
     'goods': {
         'rice': cgood(1.781, CHINA, ALLEN),
@@ -498,6 +510,8 @@ ERAS['beijing-1820'] = {
         'edible-oil': cgood(5.684, CHINA, ALLEN),
         'lamp-oil': cgood(4.689, CHINA, ALLEN),
         'fuel': cgood(9.499, CHINA, ALLEN),
+        'salt': cgood(20 / TIMKOVSKI_CASH * 37.0 / UNITS['jin_kg'], CHINA_OBS, "20 cash a jin (Timkovski, Peking 1821), at his 1,100 cash a tael"),
+        'fish': cgood(55 / TIMKOVSKI_CASH * 37.0 / UNITS['jin_kg'], CHINA_OBS, "Carp and other white fish, 50-60 cash a jin, the midpoint (Timkovski, Peking 1821), at his 1,100 cash a tael"),
     },
     'wage': wage(2.805, CHINA, "Allen et al.'s Beijing day, 1820-1830"),
 }

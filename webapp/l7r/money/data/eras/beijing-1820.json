@@ -1,7 +1,7 @@
 {
   "place": "Beijing",
   "years": "1820-1830",
-  "confidence": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael (rice, millet, oils, fuel), with the rural Beijing fuel store's cash rate.",
+  "confidence": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael (rice, millet, oils, fuel), with the rural Beijing fuel store's cash rate. Salt and fish are Timkovski's Peking market list of 1821, in cash at his own 1,100 a tael; he does not say whether he counts the little string of 500 or the great string of 1,000. His cloth is by the piece of no stated size and is left out; his wood (6 cash a jin) is held, not used, beside Allen's fuel.",
   "coins": {
     "tael": {
       "silver_g": 37.0,
@@ -44,6 +44,18 @@
       "label": "historical",
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0288-what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era.html",
       "note": "Allen et al. 2011 (GPIH), a modern reconstruction, at 37 g a tael"
+    },
+    "salt": {
+      "silver_g": 1.1272,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0302-which-of-a-years-necessities-were-observed-and-which-reconstructed-in-china-era-by-era.html",
+      "note": "20 cash a jin (Timkovski, Peking 1821), at his 1,100 cash a tael"
+    },
+    "fish": {
+      "silver_g": 3.0999,
+      "label": "historical",
+      "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0302-which-of-a-years-necessities-were-observed-and-which-reconstructed-in-china-era-by-era.html",
+      "note": "Carp and other white fish, 50-60 cash a jin, the midpoint (Timkovski, Peking 1821), at his 1,100 cash a tael"
     }
   },
   "wage": {

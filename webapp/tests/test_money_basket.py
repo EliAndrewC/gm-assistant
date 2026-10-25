@@ -433,7 +433,7 @@ def test_reference_only_weights_reproduce_feature_222s_prices(model: bk.Model) -
 def test_a_borrowed_price_is_not_counted_twice(model: bk.Model) -> None:
     """diagram#17 / 0249: Kyoto 1745's fish is a Meiji ratio, so beside Tokyo 1882 it drops out;
     it stands only when nothing else prices fish."""
-    assert model.rests_on('fish') == ('canton-1835', 'tokyo-1882')
+    assert model.rests_on('fish') == ('beijing-1615', 'beijing-1820', 'canton-1835', 'tokyo-1882')
     assert model.rests_on('fish', model.reference_only()) == ('kyoto-1745',)
     assert model.rests_on('housing') == ('edo-1818', 'kyoto-1745')
 
