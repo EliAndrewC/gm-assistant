@@ -84,9 +84,10 @@ def test_housing_is_the_largest_lever(model: bk.Model) -> None:
 def test_reading_takes_substitutes_quantities_and_custom_goods(model: bk.Model) -> None:
     snap, std = model.snapshot('2026-10'), model.basket()
     base = bk.reading(model, std, snap, KG)
-    long_grain = bk.reading(model, std, snap, KG, choices={'rice': 2})
-    assert long_grain.dollars < base.dollars
-    assert bk.reading(model, std, snap, KG, choices={'rice': 99}).dollars == long_grain.dollars
+    calrose = bk.reading(model, std, snap, KG, choices={'rice': 1})
+    assert calrose.dollars > base.dollars  # the default is the cheapest pack (GM 2026-10-24)
+    bls = bk.reading(model, std, snap, KG, choices={'rice': 2})
+    assert bk.reading(model, std, snap, KG, choices={'rice': 99}).dollars == bls.dollars
     off = bk.reading(model, std, snap, KG, quantities={'fish': 0})
     assert off.dollars == pytest.approx(base.dollars - 3.5 * 19.45)
     assert off.left_out == ()
@@ -282,8 +283,8 @@ def test_reprice_starts_a_blank_snapshot(data: Path) -> None:
     raw = json.loads(path.read_text())
     assert set(raw['goods']) == {g for b in model.baskets.values() for g in b.quantities}
     rice = raw['goods']['rice']
-    assert [o['dollars_per_unit'] for o in rice] == [None, round(1.2 * 2.20462, 3), None]
-    assert rice[1]['link'] == 'https://fred.stlouisfed.org/series/APU0000701312'
+    assert [o['dollars_per_unit'] for o in rice] == [None, None, round(1.2 * 2.20462, 3)]
+    assert rice[2]['link'] == 'https://fred.stlouisfed.org/series/APU0000701312'
     assert raw['goods']['beans'][0]['dollars_per_unit'] is None  # its series was not fetched
     assert raw['goods']['beans'][0]['link'] == ''
     assert any('2027-10: salt' in p and 'unpriced' in p for p in bk.problems(bk.load(data)))
@@ -334,7 +335,7 @@ def test_cli_baskets_era_and_export(capsys: pytest.CaptureFixture[str], tmp_path
     assert 'standard-no-housing: $' in out
     out = run(capsys, 'era', '20', 'mon', '--era', 'kyoto-1745')
     assert '20 mon (Kyoto 1745-1754) = 0.475 g of silver' in out
-    assert 'goods $3.61; wage $37.92; in Rokugan 3.8 sen' in out
+    assert 'goods $3.32; wage $37.92; in Rokugan 3.8 sen' in out
     assert 'coin: 72.6 mon to the monme' in out
     out = run(capsys, 'era', '1', 'yen', '--era', 'tokyo-1882')
     assert 'priced there on 9 of 12 goods (left out: Salt, Fuel, Housing)' in out

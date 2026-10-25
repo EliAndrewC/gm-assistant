@@ -59,8 +59,11 @@ the listing (or listing page) the price was read from.
 
 | good | priced as | price | per unit |
 |---|---|---|---|
-| rice | Hinode medium-grain Calrose, 20 lb | $22.68 | $2.50/kg |
-| rice (substitute) | Great Value long grain enriched, 20 lb | $11.46 | $1.26/kg |
+| rice | Great Value long grain enriched, 20 lb | $11.46 | $1.26/kg |
+| rice (substitute) | Hinode medium-grain Calrose, 20 lb: a japonica, the kind of rice Japan grew | $22.68 | $2.50/kg |
+
+The rice default was Calrose until 2026-10-24, when the GM had it follow the pricing rule above (the cheapest plain
+pack): the koku went from $951 to $875 ($528 to $443 without housing). Calrose stays a substitute on the playground.
 | soybeans | dried yellow soybeans, 25 lb (organic; no conventional retail pack found) | $73.90 | $6.52/kg |
 | beans | adzuki, 5 lb (organic, the cheapest found) | $22.95 | $10.12/kg = $8.10/L at ~0.8 kg/L |
 | barley and wheat | hard red wheat berries, 25 lb | $49.99 | $4.41/kg |

@@ -48,7 +48,7 @@ section, `/money/koku`.
 
 ## Two dollar readings of a koku - always give both, never mix them
 
-- **Goods dollars** (~$951 on the standard basket at 2026-10 prices; ~$528 without housing): what a koku BUYS. The
+- **Goods dollars** (~$875 on the standard basket at 2026-10 prices; ~$443 without housing): what a koku BUYS. The
   standard basket is Bassino & Ma's Kyoto basket plus salt, fuel and a share of a room (feature 222; housing is about
   half of today's dollars, so name the no-housing figure when a sum is about food and goods). Until 2026-10 this was
   "PPP dollars", ~$552 in 2017 prices on the food-only basket.

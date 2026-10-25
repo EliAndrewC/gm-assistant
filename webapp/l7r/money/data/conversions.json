@@ -31,7 +31,7 @@
       "units": {
         "tael": {
           "silver_g": 36.9,
-          "goods_dollars": 1792.887659,
+          "goods_dollars": 1649.120539,
           "wage_dollars": 3007.327108,
           "rokugan_sen": 1884.98452,
           "note": "The Ming treasury tael of the 1500s, 36.9 g",
@@ -39,7 +39,7 @@
         },
         "cash": {
           "silver_g": 0.052714,
-          "goods_dollars": 2.561254,
+          "goods_dollars": 2.355874,
           "wage_dollars": 4.296158,
           "rokugan_sen": 2.69282,
           "note": "700 cash to the tael (Hongzhi; 1508)",
@@ -66,7 +66,7 @@
       "units": {
         "tael": {
           "silver_g": 36.9,
-          "goods_dollars": 521.113411,
+          "goods_dollars": 479.326646,
           "wage_dollars": 3007.327108,
           "rokugan_sen": 547.881909,
           "note": "The Ming treasury tael of the 1500s, 36.9 g",
@@ -74,7 +74,7 @@
         },
         "cash": {
           "silver_g": 0.046125,
-          "goods_dollars": 0.651392,
+          "goods_dollars": 0.599158,
           "wage_dollars": 3.759159,
           "rokugan_sen": 0.684852,
           "note": "About 800 standard cash to the tael in Beijing (the late 1500s' official rate)",
@@ -100,7 +100,7 @@
       "units": {
         "tael": {
           "silver_g": 37.0,
-          "goods_dollars": 178.376349,
+          "goods_dollars": 164.072802,
           "wage_dollars": 1418.617512,
           "rokugan_sen": 187.539167,
           "note": "Allen et al.'s 37 g (the standard is not named)",
@@ -108,7 +108,7 @@
         },
         "cash": {
           "silver_g": 0.04625,
-          "goods_dollars": 0.22297,
+          "goods_dollars": 0.205091,
           "wage_dollars": 1.773272,
           "rokugan_sen": 0.234424,
           "note": "800 standard cash to the tael (1737). Beijing's capital cash passed two for one: a sum in capital cash is worth about half",
@@ -134,7 +134,7 @@
       "units": {
         "tael": {
           "silver_g": 37.0,
-          "goods_dollars": 139.709012,
+          "goods_dollars": 128.5061,
           "wage_dollars": 1646.203209,
           "rokugan_sen": 146.885569,
           "note": "Allen et al.'s 37 g",
@@ -142,7 +142,7 @@
         },
         "cash": {
           "silver_g": 0.029767,
-          "goods_dollars": 0.112398,
+          "goods_dollars": 0.103385,
           "wage_dollars": 1.324393,
           "rokugan_sen": 0.118171,
           "note": "1,243 cash to the tael (rural Beijing 1820-1830, 1,159-1,329, at face count: the store's 95-99 cash a day then match Allen's 2.8 g). Beijing's capital cash passed two for one",
@@ -171,7 +171,7 @@
       "units": {
         "tael": {
           "silver_g": 37.0,
-          "goods_dollars": 86.832904,
+          "goods_dollars": 79.869993,
           "wage_dollars": 759.898628,
           "rokugan_sen": 91.293327,
           "note": "37 g (a dollar at 0.72 tael)",
@@ -179,7 +179,7 @@
         },
         "cash": {
           "silver_g": 0.019304,
-          "goods_dollars": 0.045303,
+          "goods_dollars": 0.041671,
           "wage_dollars": 0.396462,
           "rokugan_sen": 0.04763,
           "note": "136-140 coppers of 10 cash to the dollar (1918-1919, the end of the era)",
@@ -187,7 +187,7 @@
         },
         "dollar": {
           "silver_g": 26.64,
-          "goods_dollars": 62.519691,
+          "goods_dollars": 57.506395,
           "wage_dollars": 547.127012,
           "rokugan_sen": 65.731196,
           "note": "0.72 tael (the GPIH files' rate, a later Beijing one); Canton's own 1835 figures bracket it at 0.71 and 0.75. Cents are hundredths",
@@ -214,7 +214,7 @@
       "units": {
         "tael": {
           "silver_g": 37.0,
-          "goods_dollars": 133.112433,
+          "goods_dollars": 122.438484,
           "wage_dollars": 1248.0,
           "rokugan_sen": 139.950138,
           "note": "37 g (the standard is not stated)",
@@ -222,7 +222,7 @@
         },
         "cash": {
           "silver_g": 0.029576,
-          "goods_dollars": 0.106404,
+          "goods_dollars": 0.097871,
           "wage_dollars": 0.99759,
           "rokugan_sen": 0.111869,
           "note": "BORROWED: 1,251 cash to the tael, rural Beijing 1835",
@@ -230,7 +230,7 @@
         },
         "dollar": {
           "silver_g": 26.64,
-          "goods_dollars": 95.840952,
+          "goods_dollars": 88.155709,
           "wage_dollars": 898.56,
           "rokugan_sen": 100.7641,
           "note": "0.72 tael (the GPIH files' rate, a later Beijing one); Canton's own 1835 figures bracket it at 0.71 and 0.75. Cents are hundredths",
@@ -252,7 +252,7 @@
       "units": {
         "monme": {
           "silver_g": 1.35,
-          "goods_dollars": 13.501769,
+          "goods_dollars": 12.419096,
           "wage_dollars": 138.666667,
           "rokugan_sen": 14.195326,
           "note": "Bunsei silver (from 1820), 1.35 g pure; 63.4 monme a ryo (Osaka, 1820s), 6,610 mon a ryo (Edo, 1820s)",
@@ -260,7 +260,7 @@
         },
         "mon": {
           "silver_g": 0.012949,
-          "goods_dollars": 0.129507,
+          "goods_dollars": 0.119122,
           "wage_dollars": 1.33007,
           "rokugan_sen": 0.136159,
           "note": "104.3 mon to the monme",
@@ -268,7 +268,7 @@
         },
         "kanmon": {
           "silver_g": 12.949,
-          "goods_dollars": 129.506966,
+          "goods_dollars": 119.122131,
           "wage_dollars": 1330.070123,
           "rokugan_sen": 136.159466,
           "note": "1,000 mon",
@@ -276,7 +276,7 @@
         },
         "ryo": {
           "silver_g": 85.59,
-          "goods_dollars": 856.012143,
+          "goods_dollars": 787.370697,
           "wage_dollars": 8791.466667,
           "rokugan_sen": 899.983683,
           "note": "63.4 monme to the ryo",
@@ -284,7 +284,7 @@
         },
         "bu": {
           "silver_g": 21.398,
-          "goods_dollars": 214.008036,
+          "goods_dollars": 196.847274,
           "wage_dollars": 2197.918025,
           "rokugan_sen": 225.001178,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -292,7 +292,7 @@
         },
         "shu": {
           "silver_g": 5.3494,
-          "goods_dollars": 53.501009,
+          "goods_dollars": 49.210899,
           "wage_dollars": 549.469235,
           "rokugan_sen": 56.249243,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -315,7 +315,7 @@
       "units": {
         "monme": {
           "silver_g": 0.975,
-          "goods_dollars": 9.561687,
+          "goods_dollars": 8.79496,
           "wage_dollars": 137.150586,
           "rokugan_sen": 10.052851,
           "note": "Tenpo silver (from 1837), 0.975 g pure; Osaka market rates 1840-1843",
@@ -323,7 +323,7 @@
         },
         "mon": {
           "silver_g": 0.009019,
-          "goods_dollars": 0.088448,
+          "goods_dollars": 0.081356,
           "wage_dollars": 1.268678,
           "rokugan_sen": 0.092991,
           "note": "108.1 mon to the monme",
@@ -331,7 +331,7 @@
         },
         "kanmon": {
           "silver_g": 9.019,
-          "goods_dollars": 88.448061,
+          "goods_dollars": 81.355635,
           "wage_dollars": 1268.678088,
           "rokugan_sen": 92.991451,
           "note": "1,000 mon",
@@ -339,7 +339,7 @@
         },
         "ryo": {
           "silver_g": 61.23,
-          "goods_dollars": 600.473972,
+          "goods_dollars": 552.323485,
           "wage_dollars": 8613.056808,
           "rokugan_sen": 631.319055,
           "note": "62.8 monme to the ryo",
@@ -347,7 +347,7 @@
         },
         "bu": {
           "silver_g": 15.307,
-          "goods_dollars": 150.11359,
+          "goods_dollars": 138.076361,
           "wage_dollars": 2153.193868,
           "rokugan_sen": 157.824608,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -355,7 +355,7 @@
         },
         "shu": {
           "silver_g": 3.8269,
-          "goods_dollars": 37.529868,
+          "goods_dollars": 34.520443,
           "wage_dollars": 538.319567,
           "rokugan_sen": 39.457699,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -378,7 +378,7 @@
       "units": {
         "monme": {
           "silver_g": 0.975,
-          "goods_dollars": 8.706177,
+          "goods_dollars": 8.008051,
           "wage_dollars": 135.652174,
           "rokugan_sen": 9.153395,
           "note": "Tenpo silver, 0.975 g pure; Osaka market rates 1850-1854 and 1855-1859, averaged",
@@ -386,7 +386,7 @@
         },
         "mon": {
           "silver_g": 0.009786,
-          "goods_dollars": 0.087383,
+          "goods_dollars": 0.080376,
           "wage_dollars": 1.36153,
           "rokugan_sen": 0.091872,
           "note": "99.6 mon to the monme",
@@ -394,7 +394,7 @@
         },
         "kanmon": {
           "silver_g": 9.786,
-          "goods_dollars": 87.383232,
+          "goods_dollars": 80.376192,
           "wage_dollars": 1361.530435,
           "rokugan_sen": 91.871924,
           "note": "1,000 mon",
@@ -402,7 +402,7 @@
         },
         "ryo": {
           "silver_g": 65.81,
-          "goods_dollars": 587.644645,
+          "goods_dollars": 540.522909,
           "wage_dollars": 9156.173913,
           "rokugan_sen": 617.830712,
           "note": "67.5 monme to the ryo",
@@ -410,7 +410,7 @@
         },
         "bu": {
           "silver_g": 16.453,
-          "goods_dollars": 146.915626,
+          "goods_dollars": 135.134834,
           "wage_dollars": 2289.113043,
           "rokugan_sen": 154.462372,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -418,7 +418,7 @@
         },
         "shu": {
           "silver_g": 4.1133,
-          "goods_dollars": 36.729353,
+          "goods_dollars": 33.784119,
           "wage_dollars": 572.285217,
           "rokugan_sen": 38.616062,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -442,7 +442,7 @@
       "units": {
         "monme": {
           "silver_g": 0.4875,
-          "goods_dollars": 3.335081,
+          "goods_dollars": 3.06765,
           "wage_dollars": 105.771905,
           "rokugan_sen": 3.506398,
           "note": "Ansei silver (from 1859), 0.4875 g pure as prescribed (0.525 by a 14% assay); market rates 1860-1867",
@@ -450,7 +450,7 @@
         },
         "mon": {
           "silver_g": 0.005824,
-          "goods_dollars": 0.039843,
+          "goods_dollars": 0.036648,
           "wage_dollars": 1.263622,
           "rokugan_sen": 0.04189,
           "note": "83.7 mon to the monme",
@@ -458,7 +458,7 @@
         },
         "kanmon": {
           "silver_g": 5.824,
-          "goods_dollars": 39.843106,
+          "goods_dollars": 36.648188,
           "wage_dollars": 1263.621697,
           "rokugan_sen": 41.889762,
           "note": "1,000 mon",
@@ -466,7 +466,7 @@
         },
         "ryo": {
           "silver_g": 40.75,
-          "goods_dollars": 278.778599,
+          "goods_dollars": 256.42405,
           "wage_dollars": 8841.446453,
           "rokugan_sen": 293.098869,
           "note": "83.6 monme to the ryo",
@@ -474,7 +474,7 @@
         },
         "bu": {
           "silver_g": 10.189,
-          "goods_dollars": 69.704912,
+          "goods_dollars": 64.115451,
           "wage_dollars": 2210.687065,
           "rokugan_sen": 73.285506,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -482,7 +482,7 @@
         },
         "shu": {
           "silver_g": 2.5472,
-          "goods_dollars": 17.425886,
+          "goods_dollars": 16.028548,
           "wage_dollars": 552.660918,
           "rokugan_sen": 18.321017,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -500,7 +500,7 @@
       "units": {
         "monme": {
           "silver_g": 1.725,
-          "goods_dollars": 13.102776,
+          "goods_dollars": 12.052098,
           "wage_dollars": 137.638258,
           "rokugan_sen": 13.775838,
           "note": "Genbun silver: 3.75 g at 46% fine, 1.725 g pure",
@@ -508,7 +508,7 @@
         },
         "mon": {
           "silver_g": 0.02376,
-          "goods_dollars": 0.180476,
+          "goods_dollars": 0.166005,
           "wage_dollars": 1.895817,
           "rokugan_sen": 0.189747,
           "note": "72.6 mon to the monme",
@@ -516,7 +516,7 @@
         },
         "kanmon": {
           "silver_g": 23.76,
-          "goods_dollars": 180.476498,
+          "goods_dollars": 166.004544,
           "wage_dollars": 1895.817403,
           "rokugan_sen": 189.747195,
           "note": "1,000 mon",
@@ -524,7 +524,7 @@
         },
         "ryo": {
           "silver_g": 105.74,
-          "goods_dollars": 803.18118,
+          "goods_dollars": 738.776116,
           "wage_dollars": 8437.025766,
           "rokugan_sen": 844.438905,
           "note": "61.3 monme to the ryo",
@@ -532,7 +532,7 @@
         },
         "bu": {
           "silver_g": 26.436,
-          "goods_dollars": 200.802891,
+          "goods_dollars": 184.701016,
           "wage_dollars": 2109.336232,
           "rokugan_sen": 211.117712,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -540,7 +540,7 @@
         },
         "shu": {
           "silver_g": 6.6089,
-          "goods_dollars": 50.199963,
+          "goods_dollars": 46.174555,
           "wage_dollars": 527.326079,
           "rokugan_sen": 52.778629,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -566,7 +566,7 @@
       "units": {
         "monme": {
           "silver_g": 1.725,
-          "goods_dollars": 11.665092,
+          "goods_dollars": 10.729698,
           "wage_dollars": 146.818523,
           "rokugan_sen": 12.264303,
           "note": "Genbun silver, 1.725 g pure; Osaka market rates of the 1790s",
@@ -574,7 +574,7 @@
         },
         "mon": {
           "silver_g": 0.016152,
-          "goods_dollars": 0.109226,
+          "goods_dollars": 0.100467,
           "wage_dollars": 1.374732,
           "rokugan_sen": 0.114837,
           "note": "106.8 mon to the monme",
@@ -582,7 +582,7 @@
         },
         "kanmon": {
           "silver_g": 16.152,
-          "goods_dollars": 109.225833,
+          "goods_dollars": 100.46729,
           "wage_dollars": 1374.732047,
           "rokugan_sen": 114.836534,
           "note": "1,000 mon",
@@ -590,7 +590,7 @@
         },
         "ryo": {
           "silver_g": 104.54,
-          "goods_dollars": 706.938371,
+          "goods_dollars": 650.250774,
           "wage_dollars": 8897.628043,
           "rokugan_sen": 743.252306,
           "note": "60.6 monme to the ryo",
@@ -598,7 +598,7 @@
         },
         "bu": {
           "silver_g": 26.134,
-          "goods_dollars": 176.72783,
+          "goods_dollars": 162.556473,
           "wage_dollars": 2224.321899,
           "rokugan_sen": 185.805967,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -606,7 +606,7 @@
         },
         "shu": {
           "silver_g": 6.5334,
-          "goods_dollars": 44.181281,
+          "goods_dollars": 40.638496,
           "wage_dollars": 556.071963,
           "rokugan_sen": 46.450781,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -630,7 +630,7 @@
       "units": {
         "monme": {
           "silver_g": 1.725,
-          "goods_dollars": 13.000981,
+          "goods_dollars": 11.958465,
           "wage_dollars": 145.116279,
           "rokugan_sen": 13.668814,
           "note": "Genbun silver, 1.725 g pure; Osaka market rates of the 1800s and 1810s",
@@ -638,7 +638,7 @@
         },
         "mon": {
           "silver_g": 0.015826,
-          "goods_dollars": 0.119277,
+          "goods_dollars": 0.109713,
           "wage_dollars": 1.331368,
           "rokugan_sen": 0.125404,
           "note": "109.0 mon to the monme",
@@ -646,7 +646,7 @@
         },
         "kanmon": {
           "silver_g": 15.826,
-          "goods_dollars": 119.277402,
+          "goods_dollars": 109.712849,
           "wage_dollars": 1331.368251,
           "rokugan_sen": 125.404431,
           "note": "1,000 mon",
@@ -654,7 +654,7 @@
         },
         "ryo": {
           "silver_g": 111.09,
-          "goods_dollars": 837.263149,
+          "goods_dollars": 770.125138,
           "wage_dollars": 9345.488372,
           "rokugan_sen": 880.271593,
           "note": "64.4 monme to the ryo",
@@ -662,7 +662,7 @@
         },
         "bu": {
           "silver_g": 27.773,
-          "goods_dollars": 209.319556,
+          "goods_dollars": 192.534751,
           "wage_dollars": 2336.414156,
           "rokugan_sen": 220.07186,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -670,7 +670,7 @@
         },
         "shu": {
           "silver_g": 6.9431,
-          "goods_dollars": 52.328758,
+          "goods_dollars": 48.132648,
           "wage_dollars": 584.09092,
           "rokugan_sen": 55.016776,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -696,7 +696,7 @@
       "units": {
         "monme": {
           "silver_g": 3.0,
-          "goods_dollars": 27.418831,
+          "goods_dollars": 25.220184,
           "wage_dollars": 124.8,
           "rokugan_sen": 28.827278,
           "note": "Keicho silver, 3.00 g pure; 50 monme a ryo and 80 mon a monme by the law of 1609 (an early market rate was about 43 monme a ryo; a copper market rate is SILENT)",
@@ -704,7 +704,7 @@
         },
         "mon": {
           "silver_g": 0.0375,
-          "goods_dollars": 0.342735,
+          "goods_dollars": 0.315252,
           "wage_dollars": 1.56,
           "rokugan_sen": 0.360341,
           "note": "80.0 mon to the monme",
@@ -712,7 +712,7 @@
         },
         "kanmon": {
           "silver_g": 37.5,
-          "goods_dollars": 342.735383,
+          "goods_dollars": 315.2523,
           "wage_dollars": 1560.0,
           "rokugan_sen": 360.340977,
           "note": "1,000 mon",
@@ -720,7 +720,7 @@
         },
         "ryo": {
           "silver_g": 150.0,
-          "goods_dollars": 1370.94153,
+          "goods_dollars": 1261.009201,
           "wage_dollars": 6240.0,
           "rokugan_sen": 1441.363908,
           "note": "50.0 monme to the ryo",
@@ -728,7 +728,7 @@
         },
         "bu": {
           "silver_g": 37.5,
-          "goods_dollars": 342.735383,
+          "goods_dollars": 315.2523,
           "wage_dollars": 1560.0,
           "rokugan_sen": 360.340977,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -736,7 +736,7 @@
         },
         "shu": {
           "silver_g": 9.375,
-          "goods_dollars": 85.683846,
+          "goods_dollars": 78.813075,
           "wage_dollars": 390.0,
           "rokugan_sen": 90.085244,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -744,10 +744,80 @@
         }
       }
     },
+    "osaka-1695": {
+      "place": "Osaka",
+      "years": "1695-1711",
+      "confidence": "Kumon's observed rice in nominal monme, 1695-1711, half again Kyoho's. Priced at the Genroku silver of 1695-1705 (64%, 2.40 g a monme); the Hoei silvers of 1706-1711 were baser, but rice in them stood where it had under Genroku. The ryo and mon rates are 1700's, and BORROWED for 1706-1711, which no source in hand rates. The wage is borrowed.",
+      "basket_coverage": "rice alone",
+      "goods_left_out": [
+        "Soybeans",
+        "Barley and wheat",
+        "Buckwheat and millets",
+        "Beans",
+        "Fish",
+        "Cooking oil",
+        "Cloth",
+        "Lamp oil",
+        "Salt",
+        "Fuel",
+        "Housing"
+      ],
+      "wage_silver_g_per_day": 1.7639,
+      "units": {
+        "monme": {
+          "silver_g": 2.4,
+          "goods_dollars": 10.633806,
+          "wage_dollars": 169.805545,
+          "rokugan_sen": 12.154696,
+          "note": "Genroku silver (1695-1705), 2.40 g pure; market rates of 1700 (47-48 monme a ryo, 3.71 kanmon a ryo), borrowed for 1706-1711",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "mon": {
+          "silver_g": 0.030769,
+          "goods_dollars": 0.13633,
+          "wage_dollars": 2.176978,
+          "rokugan_sen": 0.155828,
+          "note": "78.0 mon to the monme",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "kanmon": {
+          "silver_g": 30.769,
+          "goods_dollars": 136.329819,
+          "wage_dollars": 2176.977833,
+          "rokugan_sen": 155.828269,
+          "note": "1,000 mon",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "ryo": {
+          "silver_g": 114.0,
+          "goods_dollars": 505.105768,
+          "wage_dollars": 8065.763365,
+          "rokugan_sen": 577.348066,
+          "note": "47.5 monme to the ryo",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "bu": {
+          "silver_g": 28.5,
+          "goods_dollars": 126.276442,
+          "wage_dollars": 2016.440841,
+          "rokugan_sen": 144.337017,
+          "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "shu": {
+          "silver_g": 7.125,
+          "goods_dollars": 31.569111,
+          "wage_dollars": 504.11021,
+          "rokugan_sen": 36.084254,
+          "note": "A sixteenth of a ryo (16 shu a ryo)",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        }
+      }
+    },
     "osaka-1700": {
       "place": "Osaka",
-      "years": "1690-1739",
-      "confidence": "Priced at the Kyoho coinage of 1722-1735, the era's longest single coinage: Kumon's rice and barley for those years. The era spans five recoinages; an amount of 1695-1721 was paid in baser silver, so this conversion overstates it. The wage is borrowed: none was found for these years, so it is the reference day chained back by Kumon's farm-servant wage.",
+      "years": "1690-1735",
+      "confidence": "Priced at the Kyoho coinage of 1722-1735, the era's longest single coinage: Kumon's rice and barley for those years. It is for the years of good silver, 1690-1694 and 1719-1735, whose rice stood within a fifth of Kyoho's (Iwahashi); 1695-1711 and 1736-1739 have eras of their own, at the baser coinages of those years. The wage is borrowed: none was found for these years, so it is the reference day chained back by Kumon's farm-servant wage.",
       "basket_coverage": "2 of 12 goods",
       "goods_left_out": [
         "Soybeans",
@@ -765,7 +835,7 @@
       "units": {
         "monme": {
           "silver_g": 3.0,
-          "goods_dollars": 17.617837,
+          "goods_dollars": 16.205108,
           "wage_dollars": 306.357909,
           "rokugan_sen": 18.522829,
           "note": "Kyoho silver (1722-1735), 3.00 g pure; market rates of 1722-1735",
@@ -773,7 +843,7 @@
         },
         "mon": {
           "silver_g": 0.036232,
-          "goods_dollars": 0.212776,
+          "goods_dollars": 0.195714,
           "wage_dollars": 3.699987,
           "rokugan_sen": 0.223706,
           "note": "82.8 mon to the monme",
@@ -781,7 +851,7 @@
         },
         "kanmon": {
           "silver_g": 36.232,
-          "goods_dollars": 212.776496,
+          "goods_dollars": 195.714488,
           "wage_dollars": 3699.98658,
           "rokugan_sen": 223.706376,
           "note": "1,000 mon",
@@ -789,7 +859,7 @@
         },
         "ryo": {
           "silver_g": 173.1,
-          "goods_dollars": 1016.549224,
+          "goods_dollars": 935.034716,
           "wage_dollars": 17676.851321,
           "rokugan_sen": 1068.767215,
           "note": "57.7 monme to the ryo",
@@ -797,7 +867,7 @@
         },
         "bu": {
           "silver_g": 43.275,
-          "goods_dollars": 254.137306,
+          "goods_dollars": 233.758679,
           "wage_dollars": 4419.21283,
           "rokugan_sen": 267.191804,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -805,9 +875,78 @@
         },
         "shu": {
           "silver_g": 10.8188,
-          "goods_dollars": 63.53462,
+          "goods_dollars": 58.43994,
           "wage_dollars": 1104.808314,
           "rokugan_sen": 66.79826,
+          "note": "A sixteenth of a ryo (16 shu a ryo)",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        }
+      }
+    },
+    "osaka-1736": {
+      "place": "Osaka",
+      "years": "1736-1739",
+      "confidence": "Kumon's observed rice and barley in the new Genbun silver, 1736-1739: the reference era's coinage, at the market rates of its first years, which differ from 1745-1754's. The wage is borrowed.",
+      "basket_coverage": "2 of 12 goods",
+      "goods_left_out": [
+        "Soybeans",
+        "Buckwheat and millets",
+        "Beans",
+        "Fish",
+        "Cooking oil",
+        "Cloth",
+        "Lamp oil",
+        "Salt",
+        "Fuel",
+        "Housing"
+      ],
+      "wage_silver_g_per_day": 1.2682,
+      "units": {
+        "monme": {
+          "silver_g": 1.725,
+          "goods_dollars": 10.978641,
+          "wage_dollars": 169.752405,
+          "rokugan_sen": 12.548851,
+          "note": "Genbun silver, 1.725 g pure; market rates of 1736-1739",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "mon": {
+          "silver_g": 0.032547,
+          "goods_dollars": 0.207143,
+          "wage_dollars": 3.202859,
+          "rokugan_sen": 0.23677,
+          "note": "53.0 mon to the monme",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "kanmon": {
+          "silver_g": 32.547,
+          "goods_dollars": 207.143086,
+          "wage_dollars": 3202.858855,
+          "rokugan_sen": 236.769539,
+          "note": "1,000 mon",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "ryo": {
+          "silver_g": 95.05,
+          "goods_dollars": 604.93902,
+          "wage_dollars": 9353.603533,
+          "rokugan_sen": 691.45988,
+          "note": "55.1 monme to the ryo",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "bu": {
+          "silver_g": 23.762,
+          "goods_dollars": 151.231573,
+          "wage_dollars": 2338.35168,
+          "rokugan_sen": 172.861333,
+          "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
+          "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
+        },
+        "shu": {
+          "silver_g": 5.9405,
+          "goods_dollars": 37.807893,
+          "wage_dollars": 584.58792,
+          "rokugan_sen": 43.215333,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
           "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0287-how-much-silver-was-a-monme-a-ryo-and-a-bu-coinage-by-coinage.html"
         }
@@ -832,7 +971,7 @@
       "units": {
         "monme": {
           "silver_g": 1.725,
-          "goods_dollars": 11.427527,
+          "goods_dollars": 10.511182,
           "wage_dollars": 146.818523,
           "rokugan_sen": 12.014534,
           "note": "Genbun silver, 1.725 g pure; market rates 1780-1786 (coin-walk) and 1787-1789 (Osaka), year-weighted",
@@ -840,7 +979,7 @@
         },
         "mon": {
           "silver_g": 0.016618,
-          "goods_dollars": 0.110088,
+          "goods_dollars": 0.101261,
           "wage_dollars": 1.414394,
           "rokugan_sen": 0.115743,
           "note": "103.8 mon to the monme",
@@ -848,7 +987,7 @@
         },
         "kanmon": {
           "silver_g": 16.618,
-          "goods_dollars": 110.088484,
+          "goods_dollars": 101.260768,
           "wage_dollars": 1414.394326,
           "rokugan_sen": 115.743498,
           "note": "1,000 mon",
@@ -856,7 +995,7 @@
         },
         "ryo": {
           "silver_g": 99.29,
-          "goods_dollars": 657.761801,
+          "goods_dollars": 605.017548,
           "wage_dollars": 8450.789061,
           "rokugan_sen": 691.549639,
           "note": "57.6 monme to the ryo",
@@ -864,7 +1003,7 @@
         },
         "bu": {
           "silver_g": 24.823,
-          "goods_dollars": 164.443763,
+          "goods_dollars": 151.257434,
           "wage_dollars": 2112.739821,
           "rokugan_sen": 172.890892,
           "note": "A quarter of a ryo (the gold count: 4 bu a ryo)",
@@ -872,7 +1011,7 @@
         },
         "shu": {
           "silver_g": 6.2057,
-          "goods_dollars": 41.110609,
+          "goods_dollars": 37.814054,
           "wage_dollars": 528.1807,
           "rokugan_sen": 43.222375,
           "note": "A sixteenth of a ryo (16 shu a ryo)",
@@ -900,7 +1039,7 @@
       "units": {
         "tael": {
           "silver_g": 37.3,
-          "goods_dollars": 560.657292,
+          "goods_dollars": 515.699604,
           "wage_dollars": 2269.090909,
           "rokugan_sen": 589.457075,
           "note": "The Qing treasury tael, 37.3 g (the tael these prices were counted in is not stated)",
@@ -908,7 +1047,7 @@
         },
         "cash": {
           "silver_g": 0.03422,
-          "goods_dollars": 0.514362,
+          "goods_dollars": 0.473116,
           "wage_dollars": 2.081724,
           "rokugan_sen": 0.540783,
           "note": "About 1,090 cash to the tael (Songjiang 1671-1690, 971-1,182)",
@@ -938,7 +1077,7 @@
       "units": {
         "tael": {
           "silver_g": 37.0,
-          "goods_dollars": 292.162062,
+          "goods_dollars": 268.734326,
           "wage_dollars": 1757.746479,
           "rokugan_sen": 307.169811,
           "note": "37 g (the standard is not stated)",
@@ -946,7 +1085,7 @@
         },
         "cash": {
           "silver_g": 0.04625,
-          "goods_dollars": 0.365203,
+          "goods_dollars": 0.335918,
           "wage_dollars": 2.197183,
           "rokugan_sen": 0.383962,
           "note": "About 800 cash to the tael (Jiangnan, 760-840 in the mid-Qianlong; 1,300-1,400 by 1796)",
@@ -968,7 +1107,7 @@
       "units": {
         "yen": {
           "silver_g": 25.0,
-          "goods_dollars": 124.163689,
+          "goods_dollars": 114.207317,
           "wage_dollars": 693.333333,
           "rokugan_sen": 130.541716,
           "note": "",
@@ -976,7 +1115,7 @@
         },
         "sen": {
           "silver_g": 0.25,
-          "goods_dollars": 1.241637,
+          "goods_dollars": 1.142073,
           "wage_dollars": 6.933333,
           "rokugan_sen": 1.305417,
           "note": "A hundredth of a yen",
@@ -984,7 +1123,7 @@
         },
         "rin": {
           "silver_g": 0.025,
-          "goods_dollars": 0.124164,
+          "goods_dollars": 0.114207,
           "wage_dollars": 0.693333,
           "rokugan_sen": 0.130542,
           "note": "A thousandth of a yen",
