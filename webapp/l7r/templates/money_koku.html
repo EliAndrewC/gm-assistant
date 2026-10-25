@@ -148,13 +148,13 @@
                   {% if row.silver %}
                     <p data-out="rok-price"><span class="koku-price">{{ sig3(sen(row.silver)) }} sen a {{ row.good.unit }}</span>, the price of {{ '%.2f' % (row.silver / model.rice_ref) }} kg of rice.</p>
                     {% if row.good.id == 'rice' %}
-                      <p class="koku-priced-as">Rice is the measure: a koku is {{ '%.1f' % reading.koku_kg }} kg of it, and every other good is priced by how much rice it cost.</p>
+                      <p class="koku-priced-as">Rice is the measure: a koku is {{ '%.1f' % reading.koku_kg }} kg of it, and every other good is priced by how much rice it cost. Rice itself is recorded in every period; they are listed under <a class="koku-link" href="#koku-eras" data-open="koku-eras">which periods set Rokugan's prices</a>.</p>
                     {% else %}
-                      <p class="koku-priced-as">Its price in rice, averaged over the periods that record it (their weights are under "Which periods set Rokugan's prices"):</p>
+                      <p class="koku-priced-as">Its price in rice, averaged over the periods that record it (set their weights under <a class="koku-link" href="#koku-eras" data-open="koku-eras">which periods set Rokugan's prices</a>):</p>
                       <ol class="koku-cites">
                         {% for e in row.candidates %}
                           {% set p = e.goods[row.good.id] %}
-                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}{% if p.note %} ({{ p.note }}){% endif %}. <a class="koku-link" href="{{ p.source }}">{{ source_label(p.source) }}</a></li>
+                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}.{% if p.note %} {{ p.note[:1]|upper ~ p.note[1:] }}.{% endif %}{% if p.borrowed %} <em>Reconstructed, so counted only when no other weighted period records it.</em>{% endif %} <a class="koku-link" href="{{ p.source }}">{{ source_label(p.source) }}</a></li>
                         {% endfor %}
                       </ol>
                     {% endif %}
@@ -173,9 +173,9 @@
       <p class="koku-description" data-out="description">{{ model.baskets[state.basket].description }}</p>
     </section>
 
-    <details class="koku-eras">
+    <details class="koku-eras" id="koku-eras">
       <summary class="koku-eras__sum">Which periods set Rokugan's prices</summary>
-      <p class="koku-eras__hint">Each good's Rokugani price is the weighted mean of its price in rice in every period that records both, so a debased coin or a dear decade of silver drops out. Every period weighs 1: China counts as much as Japan, since Rokugan's lands are more like China's, and Meiji Tokyo counts for its food, though not for the kerosene and linen foreign trade brought. Set a period to 0 to leave it out, or higher to count it more.</p>
+      <p class="koku-eras__hint">Each good's Rokugani price is the weighted mean of its price in rice in every period that records both. Every period weighs 1: China counts as much as Japan, since Rokugan's lands are more like China's, and Meiji Tokyo counts for its food, though not for the kerosene and linen foreign trade brought. Set a period to 0 to leave it out, or higher to count it more.</p>
       <table class="koku-eras__table">
         <thead><tr><th scope="col">Period</th><th scope="col">Weight</th><th scope="col">Prices beside rice</th></tr></thead>
         <tbody>
@@ -191,7 +191,7 @@
                   {%- set counted = own|reject('in', e.goods|dictsort|selectattr('1.borrowed')|map(attribute='0')|list)|reject('in', excluded)|list -%}
                   {%- set borrowed = own|reject('in', counted)|reject('in', excluded)|list -%}
                   {%- for g in counted %}{{ model.goods[g].name }}{{ ', ' if not loop.last }}{% endfor -%}
-                  {%- if borrowed %}<span class="koku-borrowed">{{ '; ' if counted }}reconstructed, not counted: {% for g in borrowed %}<span title="{{ e.goods[g].borrowed }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
+                  {%- if borrowed %}<span class="koku-borrowed">{{ '; ' if counted }}reconstructed, counted only if no other period is: {% for g in borrowed %}<span title="{{ e.goods[g].borrowed }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
                   {%- if excluded %}<span class="koku-borrowed">{{ '; ' if counted or borrowed }}changed by foreign trade, not counted: {% for g in excluded %}<span title="{{ e.goods[g].excluded }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
                 {%- endif -%}
               </td>

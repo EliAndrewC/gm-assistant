@@ -9,15 +9,15 @@
     "rin": {"silver_g": 0.025, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "A thousandth of a yen"}
   },
   "goods": {
-    "beans": {"silver_g": 1.01, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "soybeans": {"silver_g": 0.97, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "rice": {"silver_g": 1.5, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "barley-wheat": {"silver_g": 0.77, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "fish": {"silver_g": 2.19, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "buckwheat-others": {"silver_g": 0.62, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "edible-oil": {"silver_g": 5.62, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf"},
-    "cloth": {"silver_g": 3.07, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "excluded": "EXCLUDED by the GM's ruling (2026-10-25): linen, not cotton, after machine-made imported cotton reached Japan; its price in rice (2.05) is below every Tokugawa era's (3.25-4.3)"},
-    "lamp-oil": {"silver_g": 1.79, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "excluded": "EXCLUDED by the GM's ruling (2026-10-25): kerosene, imported after the opening, not rapeseed oil; its price in rice (1.19) is below every Tokugawa era's (2.57-5.99)"}
+    "beans": {"silver_g": 1.01, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "Tokyo retail price (LTES)"},
+    "soybeans": {"silver_g": 0.97, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "Tokyo retail price (LTES)"},
+    "rice": {"silver_g": 1.5, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "Tokyo retail price (LTES)"},
+    "barley-wheat": {"silver_g": 0.77, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "its ratio to paddy at the farm gate, 1874-1901, times retail rice"},
+    "fish": {"silver_g": 2.19, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "its wholesale ratio to rice, 1882-1886, times retail rice"},
+    "buckwheat-others": {"silver_g": 0.62, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "its ratio to paddy at the farm gate, 1874-1901, times retail rice"},
+    "edible-oil": {"silver_g": 5.62, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "Tokyo retail price (LTES)"},
+    "cloth": {"silver_g": 3.07, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "excluded": "EXCLUDED by the GM's ruling (2026-10-25): linen, not cotton, after machine-made imported cotton reached Japan; its price in rice (2.05) is below every Tokugawa era's (3.25-4.3)", "note": "Tokyo retail price (LTES)"},
+    "lamp-oil": {"silver_g": 1.79, "label": "historical", "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "excluded": "EXCLUDED by the GM's ruling (2026-10-25): kerosene, imported after the opening, not rapeseed oil; its price in rice (1.19) is below every Tokugawa era's (2.57-5.99)", "note": "Tokyo retail price (LTES)"}
   },
   "wage": {"silver_g_per_day": 4.5, "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf", "note": "An unskilled laborer's day, Tokyo 1882-86 (Table 3)"}
 }

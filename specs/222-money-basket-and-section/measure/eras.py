@@ -69,6 +69,11 @@ BM_GRAMS = {
     'lamp-oil': 5.66,
 }
 REF = {k: v * F for k, v in BM_GRAMS.items()}
+# The page's footnote for each (the grams are Bassino & Ma's at 3.11 g a monme, rescaled to 1.725).
+KYOTO_NOTE = {
+    'rice': "recorded in the Mitsui house's Kyoto account books",
+    'lamp-oil': "recorded in the Mitsui house's Kyoto account books",
+}
 # Not independent observations of a price in rice (diagram 0249, confirmed on diagram#17): feature
 # 223 averages each good's price in rice over the eras, and these would count one observation twice
 # (the Meiji ratios beside tokyo-1882) or count an assumption as one. `basket.py` leaves a borrowed
@@ -167,7 +172,7 @@ ERAS['kyoto-1745'] = {
     'coins': jcoins(GENBUN, 61.3, 72.6, 'Genbun silver: 3.75 g at 46% fine, 1.725 g pure'),
     'goods': {
         **{
-            k: {'silver_g': round(v, 6), 'label': 'historical', 'source': BM, 'note': f'{BM_GRAMS[k]} g at 3.11 g a monme, rescaled to 1.725'}
+            k: {'silver_g': round(v, 6), 'label': 'historical', 'source': BM, 'note': KYOTO_NOTE.get(k, "reconstructed by Bassino & Ma from its price relative to rice")}
             | ({'borrowed': BORROWED[k]} if k in BORROWED else {})
             for k, v in REF.items()
             if k in BM_GRAMS

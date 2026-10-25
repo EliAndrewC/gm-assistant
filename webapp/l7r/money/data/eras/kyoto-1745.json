@@ -41,61 +41,61 @@
       "silver_g": 0.549116,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "0.99 g at 3.11 g a monme, rescaled to 1.725",
+      "note": "reconstructed by Bassino & Ma from its price relative to rice",
       "borrowed": "Bassino & Ma price it from its ratio to rice in the early Meiji period, after 1868"
     },
     "soybeans": {
       "silver_g": 0.826447,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "1.49 g at 3.11 g a monme, rescaled to 1.725",
+      "note": "reconstructed by Bassino & Ma from its price relative to rice",
       "borrowed": "Bassino & Ma set it equal to rice a kg"
     },
     "rice": {
       "silver_g": 0.826447,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "1.49 g at 3.11 g a monme, rescaled to 1.725"
+      "note": "recorded in the Mitsui house's Kyoto account books"
     },
     "barley-wheat": {
       "silver_g": 0.421543,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "0.76 g at 3.11 g a monme, rescaled to 1.725",
+      "note": "reconstructed by Bassino & Ma from its price relative to rice",
       "borrowed": "Bassino & Ma price it from its ratio to rice in the early Meiji period, after 1868"
     },
     "fish": {
       "silver_g": 1.209164,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "2.18 g at 3.11 g a monme, rescaled to 1.725",
+      "note": "reconstructed by Bassino & Ma from its price relative to rice",
       "borrowed": "Bassino & Ma price it from its ratio to rice in the early Meiji period, after 1868"
     },
     "buckwheat-others": {
       "silver_g": 0.338344,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "0.61 g at 3.11 g a monme, rescaled to 1.725",
+      "note": "reconstructed by Bassino & Ma from its price relative to rice",
       "borrowed": "Bassino & Ma price it from its ratio to rice in the early Meiji period, after 1868"
     },
     "edible-oil": {
       "silver_g": 3.139389,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "5.66 g at 3.11 g a monme, rescaled to 1.725",
+      "note": "reconstructed by Bassino & Ma from its price relative to rice",
       "borrowed": "Bassino & Ma set it equal to lamp oil a liter"
     },
     "cloth": {
       "silver_g": 3.233682,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "5.83 g at 3.11 g a monme, rescaled to 1.725"
+      "note": "reconstructed by Bassino & Ma from its price relative to rice"
     },
     "lamp-oil": {
       "silver_g": 3.139389,
       "label": "historical",
       "source": "https://www.econhistdbm.com/uploads/8/1/9/7/81977286/reh_japanese_wages_bassino_and_ma.pdf",
-      "note": "5.66 g at 3.11 g a monme, rescaled to 1.725"
+      "note": "recorded in the Mitsui house's Kyoto account books"
     },
     "salt": {
       "silver_g": 0.1545,

@@ -193,7 +193,7 @@ def source_label(url: str) -> str:
     """A footnote's link text: the diagram research question's number, else the source's name."""
     m = re.search(r'/research/questions/(\d{4})-', url)
     if m:
-        return f'diagram research {m.group(1)}'
+        return f'research, question {int(m.group(1))}'
     if 'bassino_and_ma' in url:
         return 'Bassino & Ma, Table 3'
     return 'source'

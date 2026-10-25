@@ -239,7 +239,7 @@ def test_the_page_names_every_goods_figure(root: Root) -> None:
     assert '(geometric mean)' in page
     assert 'Which periods set Rokugan' in page
     assert 'rice alone, so it adds nothing' in page
-    assert '; reconstructed, not counted: ' in page
+    assert '; reconstructed, counted only if no other period is: ' in page
     assert page.count('class="koku-track__dot"') == 12  # the standard basket's twelve goods
     assert web.axis_pct(10) == 0
     assert web.axis_pct(10_000) == 100
@@ -259,7 +259,8 @@ def test_each_good_cites_the_periods_its_rokugani_price_rests_on(root: Root) -> 
     fish = page[page.index('data-good="fish"') :]
     fish = fish[: fish.index('</ol>')]
     assert 'Canton 1830-1839</span>: ' in fish
-    assert 'diagram research 0288' in fish
+    assert 'research, question 288' in fish
+    assert 'counted only when no other weighted period records it' in fish
     assert 'Bassino & Ma, Table 3' in fish  # Kyoto 1745's fish, a borrowed price: listed, hidden
     assert re.search(r'<li data-era="kyoto-1745" hidden>', fish)
     assert 'data-era="tokyo-1882">' in fish  # counted, so shown

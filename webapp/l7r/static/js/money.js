@@ -284,6 +284,12 @@
       }).observe(card);
     }
 
+    // A link to the collapsed periods panel opens it before the jump.
+    form.addEventListener('click', function (e) {
+      var to = e.target.closest('[data-open]');
+      if (to) document.getElementById(to.dataset.open).open = true;
+    });
+
     form.addEventListener('submit', function (e) { e.preventDefault(); render(); });
     form.addEventListener('input', function (e) {
       if (e.target.matches('input[type="number"], input[type="text"]')) render();
