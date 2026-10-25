@@ -149,6 +149,9 @@ basket cost, wages and coin rates, and the tooltip.
   among its named substitutes (what today's dollar price is taken from: medium- against long-grain rice, cloth by the
   running meter against cloth of a Japanese bolt's width); a basket picker, a snapshot picker, a custom good (name, unit, quantity, silver price, dollar price), both readings live, Reset,
   and the whole state in the URL.
+  *Amended 2026-10-24 (GM): no editable quantity and no snapshot picker (the 2017 prices are not shown; today's are
+  the newest snapshot). The basket is one checklist, a line a good (toggle, name, a year's quantity, share today /
+  1740s); clicking a good opens its prices both ways and its substitutes.*
 - **FR-016**: The page computes in the browser from data the server embeds; the server renders the same numbers for the
   default state, and a test holds the two to the same arithmetic.
 - **FR-017**: The section is public, like Dreams and Names: nothing on it is GM-only.

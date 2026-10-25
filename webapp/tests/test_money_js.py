@@ -22,9 +22,9 @@ STATES: list[dict[str, str]] = [
     {},
     {'q_housing': '0'},
     {'x_rice': '2', 'x_cloth': '1', 'q_fish': '0'},
-    {'b': 'bassino-ma-a', 's': '2017-04'},
+    {'b': 'bassino-ma-a'},
     {'b': 'bassino-ma-a', 'q_housing': '3.31', 'q_salt': '10'},
-    {'s': '2017-04', 'c1': 'Sake|liter|20|2|12', 'c2': 'Tea|kg|1||9'},
+    {'c1': 'Sake|liter|20|2|12', 'c2': 'Tea|kg|1||9'},
     {'b': 'standard-no-housing', 'q_rice': '0.5'},
 ]
 

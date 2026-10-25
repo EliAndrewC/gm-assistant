@@ -1,6 +1,6 @@
 /* =========================================================================
    Money (/money, /money/koku; feature 222)
-   The koku-worth playground: two readings up top, the basket as a table,
+   The koku-worth playground: two readings up top, the basket as a checklist,
    goods of the visitor's own below. Tokens come from l7r.css.
    ========================================================================= */
 
@@ -93,67 +93,84 @@
 .koku-description, .koku-left-out { max-width: var(--reading-max); color: var(--ink-soft); margin: 0 0 0.75rem; }
 .koku-left-out { color: var(--vermillion-deep); }
 
-.koku-table-wrap { overflow-x: auto; margin: 0.5rem 0 2rem; }
-.koku-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.koku-table__caption {
-  text-align: left;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  padding-bottom: 0.5rem;
+/* The basket: one line a good (tick, name, quantity, shares), its prices opening beneath it. */
+.koku-basket { margin: 0.5rem 0 2rem; }
+.koku-basket__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; margin-bottom: 0.4rem; }
+.koku-basket__title { margin: 0; font-family: var(--font-display); font-size: 1.15rem; }
+.koku-basket__hint { margin: 0; font-size: 0.92rem; color: var(--ink-faded); }
+.koku-basket .koku-drivers { margin-top: 0.9rem; }
+.koku-goods__cols, .koku-sum {
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr) 10rem 14rem;
+  gap: 0 0.6rem;
+  align-items: baseline;
 }
-.koku-table th, .koku-table td {
-  text-align: left;
-  vertical-align: top;
-  padding: 0.6rem 0.75rem 0.6rem 0;
+.koku-goods__cols {
+  padding: 0 0 0.3rem 2rem;
+  font-size: 0.85rem;
+  color: var(--ink-faded);
   border-bottom: 1px solid var(--hairline);
 }
-.koku-table thead th { font-weight: 600; font-size: 0.92rem; color: var(--ink-faded); }
-.koku-good { font-weight: normal; min-width: 13rem; }
-.koku-good__name { display: flex; gap: 0.45rem; align-items: baseline; font-weight: 600; }
-.koku-good__why { display: block; margin-top: 0.15rem; font-size: 0.9rem; color: var(--ink-faded); padding-left: 1.45rem; }
-.koku-qty { white-space: nowrap; }
-.koku-qty .koku-number { width: 5.5rem; }
-.koku-unit { color: var(--ink-faded); margin-left: 0.25rem; }
-.koku-then, .koku-now { min-width: 11rem; }
+.koku-goods { list-style: none; margin: 0; padding: 0; font-variant-numeric: tabular-nums; }
+.koku-good {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: start;
+  border-bottom: 1px solid var(--hairline);
+}
+.koku-on { margin: 0.55rem 0 0 0.15rem; width: 1.05rem; height: 1.05rem; accent-color: var(--vermillion); }
+.koku-detail { min-width: 0; }
+.koku-sum { padding: 0.35rem 0.4rem 0.35rem 0; cursor: pointer; list-style: none; border-radius: 3px; }
+.koku-sum::-webkit-details-marker { display: none; }
+/* The chevron sits before the name, where the eye already is: the only sign a line opens. */
+.koku-sum::before {
+  content: '\25B6';
+  font-size: 0.8rem;
+  color: var(--vermillion-deep);
+  transition: transform 0.15s;
+}
+.koku-detail[open] > .koku-sum::before { transform: rotate(90deg); }
+.koku-sum:hover, .koku-sum:focus-visible { background: var(--paper-raised); }
+.koku-sum:hover .koku-sum__name { color: var(--vermillion-deep); text-decoration: underline; }
+.koku-sum:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.koku-sum__name { font-weight: 600; }
+.koku-sum__qty { color: var(--ink-soft); }
+.koku-sum__share { font-weight: 600; white-space: nowrap; }
+/* Off: the empty box and "not counted" say so; the name keeps its contrast. */
+.koku-good--off .koku-sum__qty, .koku-good--off .koku-sum__share { color: var(--ink-faded); font-weight: normal; }
+/* Stacked, not side by side: the 1740s price is one line and today's up to three options, so two
+   columns left dead space beside the short one (dom_audit layout-imbalance). */
+.koku-detail__body {
+  margin: 0 0 0.75rem 1.1rem;
+  padding: 0.6rem 1rem 0.5rem;
+  max-width: 44rem;
+  background: var(--paper-raised);
+  border-left: 3px solid var(--vermillion);
+  border-radius: 0 3px 3px 0;
+}
+.koku-detail__body p { margin: 0 0 0.3rem; }
+.koku-detail__side { margin-top: 0.6rem; }
+.koku-detail__why { color: var(--ink-soft); font-size: 0.95rem; }
+.koku-detail__label { font-size: 0.85rem; color: var(--ink-faded); }
 .koku-subs { border: 0; margin: 0; padding: 0; min-width: 0; }
 .koku-sub { display: flex; gap: 0.4rem; align-items: baseline; margin-bottom: 0.35rem; }
-.koku-sub input { flex: none; }
+.koku-sub input { flex: none; accent-color: var(--vermillion); }
+.koku-sub input:checked + span .koku-price { font-weight: 700; color: var(--vermillion-deep); }
 .koku-priced-as { display: block; font-size: 0.9rem; color: var(--ink-faded); }
 .koku-link { font-size: 0.9rem; }
 .koku-missing { color: var(--ink-ghost); font-style: italic; }
-.koku-share { white-space: nowrap; font-weight: 600; color: var(--ink); }
-.koku-price, .koku-label { white-space: nowrap; }
-.koku-table thead th { white-space: nowrap; }
-.koku-good { width: 24%; }
-.koku-row--off .koku-good__name, .koku-row--off .koku-price, .koku-row--off .koku-share { color: var(--ink-ghost); }
+.koku-price { white-space: nowrap; }
+.koku-conf--guess { color: var(--vermillion-deep); font-weight: 600; }
 
-/* Narrower than the five columns need: each good becomes a card, its cells labeled. */
-@media (max-width: 1000px) {
-  .koku-table, .koku-table tbody, .koku-table tr, .koku-table th, .koku-table td { display: block; }
-  .koku-table thead { display: none; }
-  .koku-table tr { padding: 0.75rem 0; border-bottom: 1px solid var(--hairline); }
-  .koku-table th, .koku-table td { border-bottom: 0; padding: 0.3rem 0; min-width: 0; width: auto; }
-  .koku-table td::before {
-    content: attr(data-label);
-    display: block;
-    font-size: 0.82rem;
-    color: var(--ink-faded);
-  }
-  .koku-good__why { padding-left: 0; }
-  .koku-table__caption { display: block; width: auto; }
+@media (max-width: 640px) {
+  .koku-goods__cols { grid-template-columns: minmax(0, 1fr) auto; padding-left: 0; }
+  .koku-goods__cols span:nth-child(-n+3) { display: none; }
+  .koku-sum { grid-template-columns: 1.1rem minmax(0, 1fr) auto; row-gap: 0.1rem; }
+  .koku-sum::before { grid-row: 1 / 3; }
+  .koku-sum__qty { grid-column: 2; grid-row: 2; font-size: 0.9rem; }
+  .koku-sum__share { grid-column: 3; grid-row: 1 / 3; align-self: center; }
+  .koku-detail__body { margin-left: 0; }
 }
-
-.koku-label {
-  display: inline-block;
-  margin-left: 0.35rem;
-  padding: 0 0.4rem;
-  font-size: 0.8rem;
-  border-radius: 2px;
-  text-decoration: none;
-  border: 1px solid var(--hairline);
-  color: var(--ink-soft);
-}
-.koku-label--guess { border-color: var(--vermillion); color: var(--vermillion-deep); background: var(--vermillion-soft); }
 
 .koku-custom {
   border: 1px solid var(--hairline);

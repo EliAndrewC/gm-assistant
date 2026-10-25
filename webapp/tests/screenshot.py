@@ -60,7 +60,7 @@ PAGES = [
     ('money-koku', '/money/koku', False),
     (
         'money-koku-variant',
-        '/money/koku?b=bassino-ma-a&s=2017-04&q_salt=7.3&c1=Sake|liter|20|2|12',
+        '/money/koku?b=bassino-ma-a&q_fish=0&x_rice=2&c1=Sake|liter|20|2|12',
         False,
     ),
     ('auth-login', '/auth/login', False),

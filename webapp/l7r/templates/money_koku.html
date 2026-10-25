@@ -10,10 +10,16 @@
 {#
   The koku-worth playground (feature 222). The server renders the state in the link (l7r/money/web.py
   documents its parameters); money.js recomputes on every change and keeps the link in sync. Without
-  JavaScript the form still works: change a quantity, pick a basket, and press Update.
+  JavaScript the form still works: tick goods, pick a basket, and press Update (each good's hidden
+  q_<good>=0 precedes its checkbox, so an unticked good reads 0 and a ticked one its quantity).
 #}
 
 {% macro dollars(x, places=0) -%}${{ ('{:,.%df}' % places).format(x) }}{%- endmacro %}
+{# A year's quantity: "2.6 liters", "3.31 m²" (the column already says "a year"). money.js `amount` is its twin. #}
+{% macro amount(q, unit) -%}
+  {%- set u = unit|replace(' for a year', '') -%}
+  {{ '%g' % q }} {{ u ~ 's' if u == 'liter' and q != 1 else u }}
+{%- endmacro %}
 {% macro share(part, whole) -%}
   {%- if not whole or not part -%}-{%- elif part / whole < 0.005 -%}&lt;1%{%- else -%}{{ (part / whole * 100)|round|int }}%{%- endif -%}
 {%- endmacro %}
@@ -24,7 +30,7 @@
     <div class="masthead__copy">
       <p class="money-crumb"><a href="/money">Money</a></p>
       <h1 class="masthead__title">What's a koku worth?</h1>
-      <p class="masthead__lede">A koku is a mass of rice, and what it buys depends on what else a household needs. Switch goods in and out, change how much of each, and pick where today's price comes from.</p>
+      <p class="masthead__lede">A koku is a mass of rice, and what it buys depends on what else a household needs. Switch goods in and out, and pick where today's price of each comes from.</p>
     </div>
     <span class="masthead__watermark" lang="ja" aria-hidden="true">石</span>
   </div>
@@ -58,86 +64,75 @@
           {% endfor %}
         </select>
       </label>
-      <label class="koku-control">
-        <span class="koku-control__label">Today's prices from</span>
-        <select name="s" class="koku-select" data-in="snapshot">
-          {% for s in model.snapshots|reverse %}
-            <option value="{{ s.date }}"{% if s.date == state.snapshot %} selected{% endif %}>{{ s.date }}</option>
-          {% endfor %}
-        </select>
-      </label>
       <a class="koku-reset" href="/money/koku">Reset to the standard basket</a>
       <noscript><button class="koku-button" type="submit">Update</button></noscript>
     </div>
 
-    <p class="koku-description" data-out="description">{{ model.baskets[state.basket].description }}</p>
-    <p class="koku-left-out" data-out="left-out"{% if not left_out %} hidden{% endif %}>Not priced at this date, so left out: {{ left_out|join(', ') }}.</p>
-    <p class="koku-drivers" data-out="drivers">{{ drivers }}</p>
-
-    <div class="koku-table-wrap">
-      <table class="koku-table">
-        <caption class="koku-table__caption">The basket: one adult's year</caption>
-        <thead>
-          <tr>
-            <th scope="col">Good</th>
-            <th scope="col">A year's worth</th>
-            <th scope="col">Then: Kyoto, 1740s</th>
-            <th scope="col">Today: US</th>
-            <th scope="col">Share: today / then</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-            {% set line_on = row.quantity > 0 and row.options and row.price %}
-            {% set dpu = row.options[row.choice].dollars_per_unit if row.options else None %}
-            <tr class="koku-row{% if not line_on %} koku-row--off{% endif %}" data-good="{{ row.good.id }}" data-default="{{ row.default }}">
-              <th scope="row" class="koku-good">
-                <label class="koku-good__name">
-                  <input type="checkbox" class="koku-on" data-good="{{ row.good.id }}"{% if row.quantity > 0 %} checked{% endif %} />
-                  {{ row.good.name }}
-                </label>
-                <span class="koku-good__why">{{ row.good.why }}</span>
-              </th>
-              <td class="koku-qty" data-label="A year's worth">
-                <input class="koku-number" type="number" name="q_{{ row.good.id }}" value="{{ '%g' % row.quantity }}" min="0" step="any" aria-label="{{ row.good.name }}, {{ row.good.unit }} a year" />
-                <span class="koku-unit">{{ row.good.unit }}</span>
-              </td>
-              <td class="koku-then" data-label="Then: Kyoto, 1740s (Rokugan's prices)">
-                {% if row.price %}
-                  <span class="koku-price">{{ '%g' % row.price.silver_g }} g of silver a {{ row.good.unit }}</span>
-                  <a class="koku-label koku-label--{{ row.price.label }}" href="{{ row.price.source }}"{% if row.price.note %} title="{{ row.price.note }}"{% endif %}>{{ row.price.label }}</a>
-                {% else %}
-                  <span class="koku-missing">no price</span>
-                {% endif %}
-              </td>
-              <td class="koku-now" data-out="now" data-label="Today: US dollars">
-                {% if row.options|length > 1 %}
-                  <fieldset class="koku-subs" aria-label="Where today's price of {{ row.good.name|lower }} comes from">
-                    {% for opt in row.options %}
-                      <label class="koku-sub">
-                        <input type="radio" name="x_{{ row.good.id }}" value="{{ loop.index0 }}"{% if loop.index0 == row.choice %} checked{% endif %} />
-                        <span><span class="koku-price">{{ dollars(opt.dollars_per_unit, 2) }} a {{ row.good.unit }}</span> <span class="koku-priced-as">{{ opt.priced_as }} <a class="koku-link" href="{{ opt.link }}">source</a></span></span>
-                      </label>
-                    {% endfor %}
-                  </fieldset>
-                {% elif row.options %}
-                  <span class="koku-price">{{ dollars(dpu, 2) }} a {{ row.good.unit }}</span>
-                  <span class="koku-priced-as">{{ row.options[0].priced_as }} <a class="koku-link" href="{{ row.options[0].link }}">source</a></span>
-                {% else %}
-                  <span class="koku-missing">not priced at this date</span>
-                {% endif %}
-              </td>
-              <td class="koku-share" data-out="share" data-label="Share of the cost, today / then">
-                {%- if line_on -%}
-                  {{ share(row.quantity * dpu, reading.dollars) }} / {{ share(row.quantity * row.price.silver_g, reading.silver) }}
-                {%- elif row.quantity > 0 -%}left out: no price
-                {%- else -%}not counted{%- endif -%}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+    <section class="koku-basket" aria-labelledby="koku-basket-title">
+      <div class="koku-basket__head">
+        <h2 class="koku-basket__title" id="koku-basket-title">The basket: one adult's year</h2>
+        <p class="koku-basket__hint">Tick a good to count it; click its name for its prices today and in the 1740s.</p>
+      </div>
+      <div class="koku-goods__cols" aria-hidden="true">
+        <span></span><span>Good</span><span>A year's worth</span><span>Share of the cost: today / 1740s</span>
+      </div>
+      <ul class="koku-goods">
+        {% for row in rows %}
+          {% set line_on = row.quantity > 0 and row.options and row.price %}
+          {% set dpu = row.options[row.choice].dollars_per_unit if row.options else None %}
+          {% set shown = row.quantity if row.quantity > 0 else row.default %}
+          <li class="koku-good{% if not line_on %} koku-good--off{% endif %}" data-good="{{ row.good.id }}" data-default="{{ '%g' % row.default }}">
+            <input type="hidden" name="q_{{ row.good.id }}" value="0" />
+            <input type="checkbox" class="koku-on" name="q_{{ row.good.id }}" value="{{ '%g' % shown }}" aria-label="Count {{ row.good.name|lower }}"{% if row.quantity > 0 %} checked{% endif %} />
+            <details class="koku-detail">
+              <summary class="koku-sum">
+                <span class="koku-sum__name">{{ row.good.name }}</span>
+                <span class="koku-sum__qty" data-out="qty">{{ amount(shown, row.good.unit) }}</span>
+                <span class="koku-sum__share" data-out="share">
+                  {%- if line_on -%}
+                    {{ share(row.quantity * dpu, reading.dollars) }} / {{ share(row.quantity * row.price.silver_g, reading.silver) }}
+                  {%- elif row.quantity > 0 -%}left out: no price
+                  {%- else -%}not counted{%- endif -%}
+                </span>
+              </summary>
+              <div class="koku-detail__body">
+                <p class="koku-detail__why">{{ row.good.why }}</p>
+                <div class="koku-detail__side">
+                  <p class="koku-detail__label">Today: US prices</p>
+                  {% if row.options|length > 1 %}
+                    <fieldset class="koku-subs" aria-label="Where today's price of {{ row.good.name|lower }} comes from">
+                      {% for opt in row.options %}
+                        <label class="koku-sub">
+                          <input type="radio" name="x_{{ row.good.id }}" value="{{ loop.index0 }}"{% if loop.index0 == row.choice %} checked{% endif %} />
+                          <span><span class="koku-price">{{ dollars(opt.dollars_per_unit, 2) }} a {{ row.good.unit }}</span> <span class="koku-priced-as">{{ opt.priced_as }} <a class="koku-link" href="{{ opt.link }}">source</a></span></span>
+                        </label>
+                      {% endfor %}
+                    </fieldset>
+                  {% elif row.options %}
+                    <p><span class="koku-price">{{ dollars(dpu, 2) }} a {{ row.good.unit }}</span>
+                    <span class="koku-priced-as">{{ row.options[0].priced_as }} <a class="koku-link" href="{{ row.options[0].link }}">source</a></span></p>
+                  {% else %}
+                    <p class="koku-missing">not priced today</p>
+                  {% endif %}
+                </div>
+                <div class="koku-detail__side">
+                  <p class="koku-detail__label">1740s: Kyoto, in silver</p>
+                  {% if row.price %}
+                    <p><span class="koku-price">{{ '%.3g' % row.price.silver_g }} g of silver a {{ row.good.unit }}</span>
+                    <span class="koku-priced-as"><span class="koku-conf koku-conf--{{ row.price.label }}">{{ {'guess': 'a guess', 'historical': 'a historical price'}.get(row.price.label, row.price.label) }}</span>{% if row.price.note %}: {{ row.price.note }}{% endif %} <a class="koku-link" href="{{ row.price.source }}">source</a></span></p>
+                  {% else %}
+                    <p class="koku-missing">no price</p>
+                  {% endif %}
+                </div>
+              </div>
+            </details>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="koku-drivers" data-out="drivers">{{ drivers }}</p>
+      <p class="koku-left-out" data-out="left-out"{% if not left_out %} hidden{% endif %}>Not priced today, so left out: {{ left_out|join(', ') }}.</p>
+      <p class="koku-description" data-out="description">{{ model.baskets[state.basket].description }}</p>
+    </section>
 
     <fieldset class="koku-custom">
       <legend class="koku-custom__legend">Add goods of your own</legend>

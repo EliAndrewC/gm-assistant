@@ -61,11 +61,13 @@ def test_default_page_shows_the_standard_koku(root: Root, model: bk.Model) -> No
 def test_a_link_reopens_its_variant(root: Root) -> None:
     """User Story 5 scenario 2: the server renders what the link says."""
     page = root.money(
-        'koku', b='bassino-ma-a', s='2017-04', q_fish='0', x_rice='9', c1='Sake|liter|20|2|12'
+        'koku', b='bassino-ma-a', q_fish='0', x_rice='9', c1='Sake|liter|20|2|12'
     ).decode()
     assert '<option value="bassino-ma-a" selected>' in page
-    assert '<option value="2017-04" selected>' in page
-    assert 'name="q_fish" value="0"' in page
+    fish = re.search(r'<input type="checkbox" class="koku-on" name="q_fish"[^>]*>', page)
+    assert fish is not None
+    assert 'checked' not in fish.group(0)
+    assert 'name="x_rice" value="2" checked' in page  # an index past the end is the last option
     assert 'value="Sake"' in page
     assert 'name="c1" value="Sake|liter|20|2|12"' in page
 
@@ -98,7 +100,7 @@ def test_parse_state_ignores_what_does_not_parse(model: bk.Model) -> None:
 def test_rows_list_every_good_and_bring_new_ones_in_at_the_standard_quantity(
     model: bk.Model,
 ) -> None:
-    state = web.parse_state(model, {'b': 'bassino-ma-a', 's': '2017-04'})
+    state = web.State('bassino-ma-a', '2017-04')
     rows = {r.good.id: r for r in web.rows(model, state)}
     assert set(rows) == set(model.goods)
     assert rows['housing'].quantity == 0
@@ -129,15 +131,7 @@ def test_drivers_name_what_moves_the_koku(model: bk.Model) -> None:
     )
     empty = web.state_reading(
         model,
-        web.parse_state(
-            model,
-            {
-                'q_rice': '0',
-                'b': 'bassino-ma-a',
-                's': '2017-04',
-                **{f'q_{g}': '0' for g in model.goods},
-            },
-        ),
+        web.parse_state(model, {'b': 'bassino-ma-a', **{f'q_{g}': '0' for g in model.goods}}),
         KG,
     )
     assert web.drivers(empty) == 'Nothing in the basket is priced on both sides.'
@@ -155,9 +149,33 @@ def test_page_shows_drivers_and_custom_status(root: Root) -> None:
     page = html.unescape(root.money('koku', c1='Sake|liter|20|2|12').decode())
     assert "Largest share of today's cost: Housing" in page
     assert 'Counts for ' in page
-    assert 'left out: no price' in root.money('koku', s='2017-04').decode()
+
+
+def test_the_page_prices_at_the_newest_date_only(root: Root, model: bk.Model) -> None:
+    """GM 2026-10-24: the 2017 prices are not shown, and an old link's `s=` is ignored."""
+    page = root.money('koku', s='2017-04').decode()
+    assert 'data-in="snapshot"' not in page
+    assert '2017-04' not in page
+    assert web.parse_state(model, {'s': '2017-04'}).snapshot == model.snapshots[-1].date
+
+
+def test_the_checklist_replaces_the_quantity_boxes(root: Root, model: bk.Model) -> None:
+    """GM 2026-10-24: goods are ticked on and off (no quantity to type); each opens for prices."""
+    page = root.money('koku').decode()
+    assert 'type="number" name="q_' not in page
+    assert page.count('<details class="koku-detail">') == len(model.goods)
+    assert 'name="q_rice" value="0"' in page  # the hidden 0 an unticked box falls back to
+    assert '<input type="checkbox" class="koku-on" name="q_rice" value="114"' in page
+
+
+def test_a_ticked_good_reads_the_checkboxs_value(model: bk.Model) -> None:
+    """Without JavaScript the form sends `q_rice=0&q_rice=114` for a ticked good: the last wins."""
+    assert web.parse_state(model, {'q_rice': ['0', '114']}).quantities == {'rice': 114.0}
+    assert web.parse_state(model, {'q_housing': ['0']}).quantities == {'housing': 0.0}
 
 
 def test_a_half_filled_custom_good_is_not_called_unpriced(model: bk.Model) -> None:
-    state = web.parse_state(model, {'s': '2017-04', 'c1': 'Tea|kg|1||9'})
-    assert web.left_out(web.state_reading(model, state, KG)) == ('Salt', 'Fuel', 'Housing')
+    state = web.State(bk.STANDARD, '2017-04', custom=(bk.Custom('Tea', 'kg', 1.0, None, 9.0),))
+    reading = web.state_reading(model, state, KG)
+    assert web.left_out(reading) == ('Salt', 'Fuel', 'Housing')
+    assert 'left out: no price' not in web.custom_status(state, reading)

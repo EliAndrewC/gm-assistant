@@ -83,6 +83,12 @@
     return pct < 0.5 ? '<1%' : Math.round(pct) + '%';
   }
 
+  // The twin of the template's `amount` macro: "2.6 liters", "3.31 m²".
+  function amount(q, unit) {
+    var u = unit.replace(' for a year', '');
+    return q + ' ' + (u === 'liter' && q !== 1 ? 'liters' : u);
+  }
+
   function number(input) {
     var v = parseFloat(input.value);
     return isFinite(v) && v >= 0 ? v : null;
@@ -93,20 +99,21 @@
     if (!form) return;
     var data = JSON.parse(document.getElementById('koku-data').textContent);
     var basketSel = form.querySelector('[data-in="basket"]');
-    var snapSel = form.querySelector('[data-in="snapshot"]');
-    var rows = Array.prototype.slice.call(form.querySelectorAll('tr[data-good]'));
+    var rows = Array.prototype.slice.call(form.querySelectorAll('li[data-good]'));
     var customs = Array.prototype.slice.call(form.querySelectorAll('[data-custom]'));
 
-    function qtyInput(row) { return row.querySelector('input[type="number"]'); }
+    function box(row) { return row.querySelector('.koku-on'); }
+
+    // A ticked good counts at its checkbox's quantity; an unticked one at 0.
+    function quantity(row) { return box(row).checked ? parseFloat(box(row).value) || 0 : 0; }
 
     function state() {
       var basket = data.baskets[basketSel.value];
-      var st = { basket: basketSel.value, snapshot: snapSel.value, q: {}, x: {}, custom: [], c: [] };
+      var st = { basket: basketSel.value, snapshot: data.newest, q: {}, x: {}, custom: [], c: [] };
       rows.forEach(function (row) {
         var good = row.dataset.good;
-        var q = number(qtyInput(row));
-        var dflt = basket.goods[good] || 0;
-        if (q !== null && q !== dflt) st.q[good] = q;
+        var q = quantity(row);
+        if (q !== (basket.goods[good] || 0)) st.q[good] = q;
         var sub = row.querySelector('input[type="radio"]:checked');
         if (sub && sub.value !== '0') st.x[good] = parseInt(sub.value, 10);
       });
@@ -126,7 +133,6 @@
     function link(st) {
       var p = new URLSearchParams();
       if (st.basket !== data.standard) p.set('b', st.basket);
-      if (st.snapshot !== data.newest) p.set('s', st.snapshot);
       Object.keys(st.q).forEach(function (g) { p.set('q_' + g, String(st.q[g])); });
       Object.keys(st.x).forEach(function (g) { p.set('x_' + g, String(st.x[g])); });
       st.c.forEach(function (c, i) { if (c) p.set('c' + (i + 1), c); });
@@ -156,18 +162,17 @@
         return ln.quantity > 0 && !ln.counted && ln.good.indexOf('custom-') !== 0;
       }).map(function (ln) { return ln.name; });
       left.hidden = !missing.length;
-      left.textContent = 'Not priced at this date, so left out: ' + missing.join(', ') + '.';
+      left.textContent = 'Not priced today, so left out: ' + missing.join(', ') + '.';
       var byGood = {};
       r.lines.forEach(function (ln) { byGood[ln.good] = ln; });
       rows.forEach(function (row) {
         var ln = byGood[row.dataset.good];
         var on = !!(ln && ln.counted);
-        row.classList.toggle('koku-row--off', !on);
-        row.querySelector('.koku-on').checked = (number(qtyInput(row)) || 0) > 0;
-        var q = number(qtyInput(row)) || 0;
+        row.classList.toggle('koku-good--off', !on);
+        row.querySelector('[data-out="qty"]').textContent = amount(parseFloat(box(row).value), data.goods[row.dataset.good].unit);
         row.querySelector('[data-out="share"]').textContent = on
           ? share(ln.dollars, r.dollars) + ' / ' + share(ln.silver, r.silver)
-          : (q > 0 ? 'left out: no price' : 'not counted');
+          : (quantity(row) > 0 ? 'left out: no price' : 'not counted');
       });
       history.replaceState(null, '', link(st));
     }
@@ -181,91 +186,18 @@
       }).observe(card);
     }
 
-    function sourceLink(href) {
-      var a = document.createElement('a');
-      a.className = 'koku-link';
-      a.textContent = 'source';
-      a.href = href;
-      return a;
-    }
-
-    function rebuildPrices() {
-      var snap = data.snapshots[snapSel.value];
-      rows.forEach(function (row) {
-        var good = row.dataset.good;
-        var opts = snap.goods[good] || [];
-        var cell = row.querySelector('[data-out="now"]');
-        var prev = row.querySelector('input[type="radio"]:checked');
-        var keep = prev ? parseInt(prev.value, 10) : 0;
-        var unit = data.goods[good].unit;
-        cell.textContent = '';
-        keep = Math.min(keep, opts.length - 1);
-        if (opts.length > 1) {
-          var set = document.createElement('fieldset');
-          set.className = 'koku-subs';
-          set.setAttribute('aria-label', "Where today's price of " + data.goods[good].name.toLowerCase() + ' comes from');
-          opts.forEach(function (o, i) {
-            var label = document.createElement('label');
-            label.className = 'koku-sub';
-            var radio = document.createElement('input');
-            radio.type = 'radio';
-            radio.name = 'x_' + good;
-            radio.value = String(i);
-            radio.checked = i === keep;
-            var text = document.createElement('span');
-            var price = document.createElement('span');
-            price.className = 'koku-price';
-            price.textContent = money(o.dollars, 2) + ' a ' + unit;
-            var as = document.createElement('span');
-            as.className = 'koku-priced-as';
-            as.textContent = o.priced_as + ' ';
-            as.appendChild(sourceLink(o.link));
-            text.appendChild(price);
-            text.appendChild(document.createTextNode(' '));
-            text.appendChild(as);
-            label.appendChild(radio);
-            label.appendChild(text);
-            set.appendChild(label);
-          });
-          cell.appendChild(set);
-        } else if (opts.length) {
-          var price = document.createElement('span');
-          price.className = 'koku-price';
-          price.textContent = money(opts[0].dollars, 2) + ' a ' + unit;
-          var as = document.createElement('span');
-          as.className = 'koku-priced-as';
-          as.textContent = opts[0].priced_as + ' ';
-          as.appendChild(sourceLink(opts[0].link));
-          cell.appendChild(price);
-          cell.appendChild(document.createTextNode(' '));
-          cell.appendChild(as);
-        } else {
-          var none = document.createElement('span');
-          none.className = 'koku-missing';
-          none.textContent = 'not priced at this date';
-          cell.appendChild(none);
-        }
-      });
-    }
-
     form.addEventListener('submit', function (e) { e.preventDefault(); render(); });
     form.addEventListener('input', function (e) {
       if (e.target.matches('input[type="number"], input[type="text"]')) render();
     });
     form.addEventListener('change', function (e) {
-      var t = e.target;
-      if (t === basketSel) {
+      if (e.target === basketSel) {
         var goods = data.baskets[basketSel.value].goods;
         rows.forEach(function (row) {
           var q = goods[row.dataset.good] || 0;
-          qtyInput(row).value = String(q);
-          if (q) row.dataset.default = String(q);
+          box(row).checked = q > 0;
+          box(row).value = String(q || row.dataset.default);
         });
-      } else if (t === snapSel) {
-        rebuildPrices();
-      } else if (t.classList.contains('koku-on')) {
-        var row = t.closest('tr');
-        qtyInput(row).value = t.checked ? row.dataset.default : '0';
       }
       render();
     });

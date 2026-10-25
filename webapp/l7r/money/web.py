@@ -1,11 +1,15 @@
 """The Money section's koku-worth playground (`/money/koku`, feature 222): its state, data and rows.
 
 The whole state lives in the link, so a link reopens the same variant:
-`b=<basket>`, `s=<snapshot date>`, `q_<good>=<quantity>` (0 switches a good off; a good outside the
-basket switched on comes in at the standard basket's quantity), `x_<good>=<substitute index>`, and
+`b=<basket>`, `q_<good>=<quantity>` (0 switches a good off; a good outside the basket switched on
+comes in at the standard basket's quantity; the page only switches goods on and off, but a link
+may still carry any quantity), `x_<good>=<substitute index>`, and
 `c1`..`c3` = `<name>|<unit>|<quantity>|<grams of silver a unit>|<dollars a unit>` for a good of the
 visitor's own. A value that does not parse is ignored, never an error: a hand-edited link still
-opens. `money.js` computes the same reading in the browser (`compute`), and
+opens. Today's prices are always the newest snapshot (GM 2026-10-24: the 2017 prices are not shown;
+they stay in the data for the calibration tests), so an old link's `s=` is ignored. A repeated
+parameter reads its last value: the form sends a hidden `q_<good>=0` before each good's checkbox.
+`money.js` computes the same reading in the browser (`compute`), and
 `tests/test_money_js.py` runs it under node against `basket.reading` so the two cannot drift.
 """
 
@@ -62,11 +66,10 @@ def _custom(text: str) -> bk.Custom | None:
 
 
 def parse_state(model: bk.Model, params: Mapping[str, Any]) -> State:
+    params = {k: v[-1] if isinstance(v, list) and v else v for k, v in params.items()}
     basket = params.get('b', bk.STANDARD)
     basket = basket if basket in model.baskets else bk.STANDARD
-    dates = [s.date for s in model.snapshots]
-    snapshot = params.get('s', dates[-1])
-    snapshot = snapshot if snapshot in dates else dates[-1]
+    snapshot = model.snapshots[-1].date
     quantities, choices = {}, {}
     for good in model.goods:
         if (q := _number(str(params.get(f'q_{good}', '')))) is not None:
@@ -207,7 +210,7 @@ def page_data(model: bk.Model, koku_kg: float, wage: Wage) -> dict[str, Any]:
                     for gid, opts in s.options.items()
                 },
             }
-            for s in model.snapshots
+            for s in model.snapshots[-1:]
         },
     }
 
