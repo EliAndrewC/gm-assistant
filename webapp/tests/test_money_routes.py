@@ -183,7 +183,7 @@ def test_a_ticked_good_reads_the_checkboxs_value(model: bk.Model) -> None:
 def test_goods_the_old_snapshot_cannot_price_are_named(model: bk.Model) -> None:
     state = web.State(bk.STANDARD, '2017-04')
     reading = web.state_reading(model, state, KG)
-    assert web.left_out(reading) == ('Salt', 'Fuel', 'Housing')
+    assert web.left_out(reading) == ('Miso', 'Soy sauce', 'Salt', 'Fuel', 'Housing')
 
 
 # --- feature 223: two readings, the mean, era weights ---------------------------------------------
@@ -240,7 +240,7 @@ def test_the_page_names_every_goods_figure(root: Root) -> None:
     assert 'Which periods set Rokugan' in page
     assert 'rice alone, so it adds nothing' in page
     assert '; borrowed, counted only if no other period is: ' in page
-    assert page.count('class="koku-track__dot"') == 12  # the standard basket's twelve goods
+    assert page.count('class="koku-track__dot"') == 14  # the standard basket's fourteen goods
     assert web.axis_pct(10) == 0
     assert web.axis_pct(10_000) == 100
     assert web.axis_pct(1e6) == 100  # clamped

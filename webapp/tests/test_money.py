@@ -83,7 +83,8 @@ def model_rice_ref() -> float:
 def test_2017_snapshot_reproduces_the_spreadsheet() -> None:
     """219 SC-001: $797.22 = 144.32 zeni -> $552 per koku, at the sheet's own koku mass. Feature
     222 moved the sheet into a basket, a snapshot and the reference era; this pins that the move
-    changed no number (and the standard basket at 2017 reads the same, its new goods unpriced)."""
+    changed no number. (The standard basket at 2017 read the same until feature 224 split its
+    soybeans into miso and soy sauce, which the 2017 prices cannot price.)"""
     kg, label = resolve_koku_kg(None)
     assert label == 'sheet-2017'
     r = _sheet(kg)
@@ -102,8 +103,7 @@ def test_2017_snapshot_reproduces_the_spreadsheet() -> None:
         mean='arithmetic',
         weights=model.reference_only(),
     )
-    assert round(std.per_koku, 2) == 552.39
-    assert std.left_out == ('Salt', 'Fuel', 'Housing')
+    assert std.left_out == ('Miso', 'Soy sauce', 'Salt', 'Fuel', 'Housing')
 
 
 def test_the_withdrawn_forty_us_gallon_koku_is_gone() -> None:
@@ -220,7 +220,7 @@ def test_cli_convert(capsys: pytest.CaptureFixture[str]) -> None:
     assert 'Rokugan priced by the eras at their weights' in out
     assert 'left out' not in out
     out = run(capsys, '--snapshot', '2017-04', 'convert', '1', 'koku')
-    assert 'unpriced at this date, so left out: Salt, Fuel, Housing' in out
+    assert 'unpriced at this date, so left out: Miso, Soy sauce, Salt, Fuel, Housing' in out
 
 
 def test_cli_knobs(capsys: pytest.CaptureFixture[str]) -> None:
@@ -231,7 +231,7 @@ def test_cli_knobs(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_cli_dated_inputs(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, *SHEET, '--wage-date', '2026-10-18', 'convert', '1 bu')
-    assert 'goods $55.24' in out
+    assert 'goods $55.58' in out  # the standard basket at 2017: miso and soy sauce unpriced
     with pytest.raises(SystemExit, match='no snapshot dated 1999-01; have 2017-04, '):
         main(['--snapshot', '1999-01', 'convert', '1 bu'])
     with pytest.raises(SystemExit, match="no basket 'nope'; have bassino-ma-a"):
@@ -263,7 +263,7 @@ def test_cli_history_and_check(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, '--reference-only', '--basket', 'bassino-ma-a', 'history')
     assert '2017-04: basket $797.22 = 144.32 zeni -> $552.39 per koku, whole basket' in out
     assert 'left out' not in out
-    assert 'left out: Salt, Fuel, Housing' in run(capsys, 'history')
+    assert 'left out: Miso, Soy sauce, Salt, Fuel, Housing' in run(capsys, 'history')
     assert 'snapshots and' in run(capsys, 'check')
 
 

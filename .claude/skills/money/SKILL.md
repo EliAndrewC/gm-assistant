@@ -67,8 +67,8 @@ firewood need a note.
 
 ## Two dollar readings of a koku - always give both, never mix them
 
-- **Goods dollars**: what a koku BUYS, and it is a RANGE (feature 223): **~$396 averaged over goods** (the central
-  figure; quote it) **to ~$886 for the whole basket** (2026-10 prices). What a koku buys of one good alone spans about a
+- **Goods dollars**: what a koku BUYS, and it is a RANGE (feature 223): **~$453 averaged over goods** (the central
+  figure; quote it) **to ~$995 for the whole basket** (2026-10-25 prices). What a koku buys of one good alone spans about a
   hundredfold (cloth ~$36, rice ~$191, housing ~$4,300), so the figure depends on the mean. The whole basket is the
   household's question, *a year of necessities cost N koku then and $D today*, which is the spending-weighted
   arithmetic mean and the high end (housing alone is over half of it); the average is the spending-weighted geometric

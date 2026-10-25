@@ -91,6 +91,8 @@ each with its single-good koku, weight, today's US price and the periods behind 
 ## Review history
 
 - 2026-10-25, spec-fidelity round 1: CHANGES REQUIRED. (1) The soy sauce yield of 3.0 L a kg was the session's own
-  choice on diagram's arithmetic, where the GM approved only a cited modern yield: now pending his ruling. (2) The
+  choice on diagram's arithmetic, where the GM approved only a cited modern yield: put to him. (2) The
   kept `standard-soybeans` basket was unrequested (Bassino & Ma's basket survives as `bassino-ma-a`): removed. Ruled
   in scope: the snapshot's alternatives, and the same split for "Standard, no housing".
+- 2026-10-25, spec-fidelity round 2: FAITHFUL. The GM deferred the yield to the session (3.0 L a kg, inside the range
+  he was shown); the soybean copy is gone; nothing unrequested added.

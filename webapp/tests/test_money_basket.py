@@ -49,7 +49,36 @@ def test_standard_basket_is_the_default_and_carries_the_needs(model: bk.Model) -
         'salt',
         'fuel',
         'housing',
+        'miso',
+        'soy-sauce',
     }
+
+
+def test_the_soybeans_are_split_as_the_research_records_them(model: bk.Model) -> None:
+    """Feature 224 (GM 2026-10-25): 13 kg of beans as miso at 3 kg a kg, 4.6 kg as soy sauce at
+    3.0 L a kg, the rest whole; Bassino & Ma's 52 kg in all."""
+    for basket in ('standard', 'standard-no-housing'):
+        q = model.basket(basket).quantities
+        assert (q['miso'], q['soy-sauce'], q['soybeans']) == (39, 13.8, 34.4)
+        assert q['miso'] / 3 + q['soy-sauce'] / 3.0 + q['soybeans'] == pytest.approx(52)
+    mitsui = (
+        'edo-1818',
+        'edo-1830',
+        'edo-1850',
+        'edo-1860',
+        'kyoto-1745',
+        'kyoto-1790',
+        'kyoto-1800',
+    )
+    assert model.rests_on('miso') == mitsui
+    assert model.rests_on('soy-sauce') == mitsui
+    assert model.reference.goods['miso'].silver_g == pytest.approx(15.43 / 37.5 * 1.725, abs=1e-4)
+
+
+def test_snapshots_sort_by_date_not_file_name(model: bk.Model) -> None:
+    """'2026-10-25.json' sorts before '2026-10.json' by name but after it by date."""
+    assert [s.date for s in model.snapshots] == ['2017-04', '2026-10', '2026-10-25']
+    assert model.snapshot().date == '2026-10-25'
 
 
 def test_real_data_has_no_problems(model: bk.Model) -> None:
@@ -72,7 +101,7 @@ def test_the_reference_eras_new_goods_say_what_is_guessed(model: bk.Model) -> No
 
 def test_housing_is_the_largest_lever(model: bk.Model) -> None:
     """research.md: housing nearly doubles the 2026 koku; the variant shows it without."""
-    snap = model.snapshot('2026-10')
+    snap = model.snapshot()
     with_h = bk.reading(model, model.basket(), snap, KG).whole
     without = bk.reading(model, model.basket('standard-no-housing'), snap, KG).whole
     assert 1.6 < with_h / without < 2.0
@@ -90,7 +119,7 @@ def test_reading_takes_substitutes_and_quantities(model: bk.Model) -> None:
     assert bk.reading(model, std, snap, KG, choices={'rice': 99}).dollars == bls.dollars
     off = bk.reading(model, std, snap, KG, quantities={'fish': 0})
     assert off.dollars == pytest.approx(base.dollars - 3.5 * 19.45)
-    assert off.left_out == ()
+    assert off.left_out == ('Miso', 'Soy sauce')  # the 2026-10 prices predate them
     assert bk.reading(model, bk.Basket('x', 'x', '', {}), snap, KG).per_koku == 0.0
 
 
@@ -156,12 +185,12 @@ def test_a_partly_priced_era_says_so(model: bk.Model) -> None:
         1,
         'yen',
         model.basket(),
-        model.snapshot('2026-10'),
+        model.snapshot(),
         KG,
         day,
     )
-    assert c.coverage == '9 of 12 goods'
-    assert c.left_out == ('Salt', 'Fuel', 'Housing')
+    assert c.coverage == '9 of 14 goods'
+    assert c.left_out == ('Miso', 'Soy sauce', 'Salt', 'Fuel', 'Housing')
     # dearer than Kyoto by Bassino & Ma's own basket ratio (277 against 326 g: cheaper, in fact)
     a = model.basket('bassino-ma-a')
     t = bk.convert(
@@ -206,7 +235,13 @@ def test_committed_table_is_current(model: bk.Model) -> None:
     kyoto = fresh['eras']['kyoto-1745']
     assert kyoto['basket_coverage'] == 'the whole basket'
     assert set(kyoto['units']) == {'monme', 'mon', 'kanmon', 'ryo', 'bu', 'shu'}
-    assert fresh['eras']['tokyo-1882']['goods_left_out'] == ['Salt', 'Fuel', 'Housing']
+    assert fresh['eras']['tokyo-1882']['goods_left_out'] == [
+        'Miso',
+        'Soy sauce',
+        'Salt',
+        'Fuel',
+        'Housing',
+    ]
 
 
 def test_every_era_carries_the_coins_diagram_marks(model: bk.Model) -> None:
@@ -320,9 +355,9 @@ def test_reprice_starts_a_blank_snapshot(data: Path) -> None:
 
 
 def test_reprice_adds_a_good_the_newest_snapshot_lacks(data: Path) -> None:
-    raw = json.loads((data / 'snapshots' / '2026-10.json').read_text())
+    raw = json.loads((data / 'snapshots' / '2026-10-25.json').read_text())
     del raw['goods']['salt']
-    (data / 'snapshots' / '2026-10.json').write_text(json.dumps(raw))
+    (data / 'snapshots' / '2026-10-25.json').write_text(json.dumps(raw))
     path = bk.reprice(bk.load(data), '2027-01', data=data)
     assert json.loads(path.read_text())['goods']['salt'] == [
         {'priced_as': '', 'dollars_per_unit': None, 'link': ''}
@@ -362,10 +397,10 @@ def test_cli_baskets_era_and_export(capsys: pytest.CaptureFixture[str], tmp_path
     assert 'standard-no-housing: $' in out
     out = run(capsys, 'era', '20', 'mon', '--era', 'kyoto-1745')
     assert '20 mon (Kyoto 1745-1754) = 0.475 g of silver' in out
-    assert '(whole basket $3.32); wage $37.92; in Rokugan 3.8 sen' in out
+    assert '(whole basket $3.65); wage $37.92; in Rokugan 3.7 sen' in out
     assert 'coin: 72.6 mon to the monme' in out
     out = run(capsys, 'era', '1', 'yen', '--era', 'tokyo-1882')
-    assert 'priced there on 9 of 12 goods (left out: Salt, Fuel, Housing)' in out
+    assert 'priced there on 9 of 14 goods (left out: Miso, Soy sauce, Salt, Fuel, Housing)' in out
     assert 'coin:' not in out
     out = run(capsys, 'export', '--out', str(tmp_path / 'c.json'))
     assert f'wrote c.json: {len(bk.load().eras)} eras' in out
@@ -501,4 +536,4 @@ def test_cli_mean_and_weights(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, '--mean', 'arithmetic', '--equal-weights', 'convert', '1 koku')
     assert '(equal-weighted arithmetic mean over goods)' in out
     out = run(capsys, '--reference-only', 'baskets')
-    assert '$874.87 for the whole basket (Standard)' in out
+    assert '$961.66 for the whole basket (Standard)' in out

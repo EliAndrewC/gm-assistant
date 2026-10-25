@@ -18,9 +18,9 @@ toolkit's Money section is `/money` (landing) and `/money/koku` (the playground)
 | `calibration.py` | The estimate log, request links and findings (feature 220), and the calibration measures. |
 | `__main__.py` | The command line the skill runs (`convert`, `dollars`, `price`, `history`, `baskets`, `era`, `reprice`, `crosscheck`, `export`, `check`, and the estimate log's commands). |
 | `data/goods.json` | Every good a basket may hold: name, unit, why. |
-| `data/baskets/<id>.json` | What a basket holds, per adult per year. `standard` is the default; `complete: true` marks a whole household year, the only kind the whole-basket reading uses. |
+| `data/baskets/<id>.json` | What a basket holds, per adult per year. `standard` is the default; `complete: true` marks a whole household year, the only kind the whole-basket reading uses. Since feature 224 its soybeans are split into miso (39 kg), soy sauce (13.8 L) and whole beans (34.4 kg), the basis in `goods.json` and the basket's description. |
 | `data/era-weights.json` | Each era's weight in Rokugan's prices; an era not named weighs 1 (provisional until the GM weighs them). |
-| `data/snapshots/YYYY-MM.json` | One dated dollar pricing each; the first option per good is the default. **Never edit an old one**; `reprice` starts the next. |
+| `data/snapshots/YYYY-MM[-DD].json` | One dated dollar pricing each, ordered by `date` (not file name); the first option per good is the default. **Never edit an old one**; `reprice` starts the next. |
 | `data/eras/<id>.json` | Coins, goods and a day's wage in grams of pure silver at one place and time; `kyoto-1745` is the reference (its rice anchors Rokugan's coin), at the Genbun monme. A price with `borrowed` (another era's ratio, or set equal to a good) is left out of the cross-era mean unless nothing else prices the good. A price with `excluded` (the GM's ruling that it is not pre-modern: Tokyo 1882's linen and kerosene) is left out always. WRITTEN by `specs/222-money-basket-and-section/measure/eras.py` from diagram#13's figures: edit the script, run it, then `export`. |
 | `data/conversions.json` | Generated; regenerate with `export` after any change to the above. |
 | `data/wages.json` | Dated US unskilled wages for the wage-dollar reading; newest is the default. |
