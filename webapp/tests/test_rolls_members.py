@@ -816,3 +816,33 @@ class TestCoverageEdges:
         stale = gmrolls.record((5,), 1, 5)
         stale.npc = 'from-another-conversation'
         assert c.owner(stale) is c.primary
+
+
+class TestAdvisorFixes:
+    def test_abandoning_takes_the_link_entries_back_off(self, portal: Portal) -> None:
+        two(portal)
+        assert 'Stolen sheets' in portal.bodies['s']['bio']
+        conv.abandon_conversation(
+            get_body=portal.get_body,
+            update=portal.update,
+            get_conversation=lambda g: sheet.ConversationResult(),
+            close_sheet=lambda i: sheet.ConversationResult(),
+        )
+        bio = portal.bodies['s']['bio']
+        assert 'Stolen sheets' not in bio
+        assert 'Rolls for this conversation' not in bio
+        # `bio.insert` spliced a blank line ABOVE the block too; one blank line under the
+        # portrait is what remains, and Textile renders it as nothing.
+        assert bio.strip() == '[[File:1 | x.png]]'
+
+    def test_an_unreadable_record_on_abandon_is_reported(
+        self, portal: Portal, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        two(portal)
+        conv.abandon_conversation(
+            get_body=lambda cid: None,
+            update=portal.update,
+            get_conversation=lambda g: sheet.ConversationResult(),
+            close_sheet=lambda i: sheet.ConversationResult(),
+        )
+        assert "could not take the link off Tsuruchi Souma's page" in capsys.readouterr().out

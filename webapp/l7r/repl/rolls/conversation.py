@@ -405,6 +405,26 @@ def link_entry(
         print(f"  {member.name}: linked to {conv.primary.name}'s page for this conversation")
 
 
+def unlink(
+    conv: Conversation,
+    member: Member,
+    get_body: Callable[[str], Mapping[str, object] | None],
+    update: Callable[..., object],
+) -> None:
+    """Take the link entry back off `member`'s bio - `abandon_conversation()`, the
+    wrong-NPC exit, undoes what the open wrote (as `discern.roll_back` does)."""
+    try:
+        body = get_body(member.id)
+        if body is None:
+            raise RuntimeError('could not read the record')
+        bio = str(body.get('bio') or '')
+        cleaned = biomod.remove_lines(bio, link_entry_lines(conv))
+        if cleaned != bio:
+            update(member.id, bio=cleaned)
+    except Exception as exc:  # noqa: BLE001 - reported; abandoning carries on
+        print(f"  ! could not take the link off {member.name}'s page: {exc}")
+
+
 def add_to_conversation(
     *names: str,
     characters: Callable[[], Sequence[Mapping[str, object]]] = op.existing_characters,
@@ -1218,6 +1238,8 @@ def abandon_conversation(
         update=update or op.update_character,
     )
     discern.close(conv, delete=close_sheet)
+    for member in conv.members[1:]:
+        unlink(conv, member, get_body or op.get_character_body, update or op.update_character)
     _remove_handles(conv)
     npcskills.forget_pending()
     with _lock:

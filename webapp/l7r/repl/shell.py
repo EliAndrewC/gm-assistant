@@ -145,7 +145,13 @@ def install_prompt_hooks() -> None:
         return
 
     def settle_then_echo(value: object) -> None:
-        npcskills.settle_pending()
+        try:
+            npcskills.settle_pending()
+        except Exception:
+            # Echo anyway: `_` must be THIS roll, or the `_ - souma` the error tells the
+            # GM to type would mark the previous statement's value instead.
+            previous(value)
+            raise
         if isinstance(value, DiceTotal) and int(value) != value.entry.total:
             value = DiceTotal(value.entry.total, value.entry)
         previous(value)
