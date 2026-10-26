@@ -350,3 +350,107 @@ details[open] > .prices__row::before { transform: rotate(90deg); }
   .prices__days, .prices__dollars { text-align: left; font-size: 0.9rem; }
   .prices__cell-label { display: inline; color: var(--ink-faded); font-weight: normal; font-size: 0.85rem; }
 }
+
+/* Explainers (GM 2026-10-26): a term or a "?" that opens a write-up in a native popover, so it
+   works without JavaScript and Esc closes it. Markup in templates/_money_terms.html. */
+.money-term, .money-why {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.money-term {
+  font-weight: 600;
+  text-decoration: underline dotted var(--vermillion);
+  text-underline-offset: 0.2em;
+}
+.money-why {
+  margin-left: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--vermillion-deep);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.money-term__mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.15em;
+  height: 1.15em;
+  margin: 0 0.15em 0 0.2em;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: 0.15em;
+  border-radius: 50%;
+  color: var(--paper-raised);
+  background: var(--vermillion);
+}
+.money-why .money-term__mark { margin-left: 0; margin-right: 0.3em; }
+.money-term:hover, .money-why:hover { color: var(--vermillion-deep); }
+.money-term:focus-visible, .money-why:focus-visible,
+.money-pop__close:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+.money-pop {
+  width: min(40rem, calc(100vw - 2rem));
+  max-height: min(calc(100dvh - 2rem), 46rem);
+  overflow: auto;
+  margin: auto;
+  padding: 0;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-top: 4px solid var(--vermillion);
+  border-radius: 4px;
+  box-shadow: 0 12px 40px var(--shadow-ink);
+}
+.money-pop::backdrop { background: rgba(20, 17, 14, 0.35); }
+.money-pop__head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.3rem 0.5rem;
+  background: var(--paper-raised);
+}
+.money-pop__title { margin: 0; font-family: var(--font-display); font-size: 1.35rem; }
+.money-pop__close {
+  font: inherit;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--ink-faded);
+  background: none;
+  border: 0;
+  padding: 0 0.2rem;
+  cursor: pointer;
+}
+.money-pop__body { padding: 0 1.3rem 0.4rem; line-height: 1.5; }
+/* A fade pinned to the bottom edge says there is more below; at the end it sits over the padding. */
+.money-pop__body::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  display: block;
+  height: 2.5rem;
+  margin: 0 -1.3rem;
+  background: linear-gradient(to bottom, transparent, var(--paper-raised));
+  pointer-events: none;
+}
+.money-nowrap, .money-term { white-space: nowrap; }
+.money-pop__body h3 { margin: 1rem 0 0.3rem; font-size: 1.05rem; }
+.money-pop__list dt { margin-top: 0.7rem; font-weight: 600; }
+.money-pop__list dd { margin: 0.15rem 0 0 1rem; }
+
+.koku-control--basket { max-width: var(--reading-max); }
+.koku-control--basket .koku-description { margin: 0.2rem 0 0; font-size: 0.92rem; }
+.money-pop__body p, .money-pop__body ul { margin: 0 0 0.7rem; }
+.money-pop__body ul { padding-left: 1.2rem; }
+.prices__filter-label { white-space: nowrap; }

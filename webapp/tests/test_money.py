@@ -221,10 +221,10 @@ def test_cli_convert(capsys: pytest.CaptureFixture[str]) -> None:
     assert '1 koku = 1.000 koku = 1,000 sen' in out
     assert 'goods $552.39 (whole basket $552.39); wage $9,398; 75.3 laborer-days' in out
     assert 'Rokugan priced by Kyoto 1745-54 alone' in out
-    assert 'Bassino & Ma basket A (the 2017 sheet) basket at the 2017-04 snapshot' in out
+    assert 'Bassino & Ma basket A, as published basket at the 2017-04 snapshot' in out
     assert '[sheet-2017]' in out
     out = run(capsys, 'convert', '1', 'koku')
-    assert 'Standard basket at the ' in out
+    assert "Kyoto laborer's year, with a room basket at the " in out
     assert '(geometric mean over goods), up to $' in out
     assert 'Rokugan priced by the eras at their weights' in out
     assert 'left out' not in out

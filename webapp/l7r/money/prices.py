@@ -261,14 +261,18 @@ def research_title(url: str) -> str:
     return m.group(1).replace('-', ' ').capitalize() + '?'
 
 
+# Sources and research open in a new tab, so the reader keeps their place (GM 2026-10-26).
+NEW_TAB = 'class="koku-link" target="_blank" rel="noopener"'
+
+
 def source_link(source: str) -> str:
     """An item's source as HTML: a link for research, the canon's section, or the estimate it was
     derived from (on GitHub); a lead names its file."""
     if source.startswith('https://'):
         if QUESTION.search(source):
             label = f'research: {research_title(source)}'
-            return f'<a class="koku-link" href="{escape(research_url(source))}">{escape(label)}</a>'
-        return f'<a class="koku-link" href="{escape(source)}">source</a>'
+            return f'<a {NEW_TAB} href="{escape(research_url(source))}">{escape(label)}</a>'
+        return f'<a {NEW_TAB} href="{escape(source)}">source</a>'
     kind, _, rest = source.partition(':')
     if kind == 'derived':
         path, _, anchor = rest.partition('#')
@@ -278,10 +282,10 @@ def source_link(source: str) -> str:
             if anchor.startswith('E0')
             else 'derived in the money skill'
         )
-        return f'<a class="koku-link" href="{escape(url)}">{escape(text)}</a>'
+        return f'<a {NEW_TAB} href="{escape(url)}">{escape(text)}</a>'
     if kind == 'canon':
         url = canon_url(rest)
-        return f'<a class="koku-link" href="{escape(url)}">the setting notes</a>'
+        return f'<a {NEW_TAB} href="{escape(url)}">the setting notes</a>'
     return "the GM's earlier notes, not yet checked against research"
 
 

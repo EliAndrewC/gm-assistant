@@ -1,4 +1,5 @@
 {% extends "_layout.html" %}
+{% from '_money_terms.html' import term, explainers with context %}
 
 {% block title %}Price sheets - L7R money{% endblock %}
 
@@ -31,7 +32,7 @@
     <li><span class="prices__badge prices__badge--extrapolated">Extrapolated</span> carried over from a researched price for a close relative (another size, place or country)</li>
     <li><span class="prices__badge prices__badge--estimated">Estimated</span> reasoned from materials, labor and neighboring prices, with no research of its own kind yet</li>
     <li><strong>Days</strong>: an unskilled laborer's days of pay, at 13 sen a day</li>
-    <li><strong>Goods</strong> dollars: what it buys today; <strong>wage</strong> dollars: how much it matters (<a href="/money/koku">why they differ</a>)</li>
+    <li><span class="money-nowrap">{{ term('goods', 'Goods dollars') }}:</span> what it buys today; <span class="money-nowrap">{{ term('wage', 'wage dollars') }}:</span> how much it matters (<a href="/money/koku">the koku playground</a>)</li>
   </ul>
 
   <nav class="prices__nav" aria-label="Price sheets">
@@ -66,9 +67,10 @@
         {% endfor %}
       </ul>
       {% for name, s in v.swings %}
-        <p class="prices__swing"><strong>Across periods ({{ name }}: {{ s.verdict }}).</strong> {{ plain(s.note) }} <a class="koku-link" href="{{ research_url(s.source) }}">research</a></p>
+        <p class="prices__swing"><strong>Across periods ({{ name }}: {{ s.verdict }}).</strong> {{ plain(s.note) }} <a class="koku-link" href="{{ research_url(s.source) }}" target="_blank" rel="noopener">research</a></p>
       {% endfor %}
     </section>
   {% endfor %}
+  {{ explainers(['goods', 'wage']) }}
 </section>
 {% endblock %}

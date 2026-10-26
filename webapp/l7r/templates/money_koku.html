@@ -24,6 +24,7 @@
 {%- endmacro %}
 {% macro pct(w) -%}{%- if w is none -%}-{%- elif w < 0.005 -%}&lt;1%{%- else -%}{{ (w * 100)|round|int }}%{%- endif -%}{%- endmacro %}
 {% set mean_name = {'geometric': 'geometric mean', 'arithmetic': 'arithmetic mean'} %}
+{% from '_money_terms.html' import term, why, explainers with context %}
 
 {% block content %}
 <section class="container">
@@ -41,11 +42,11 @@
   <form class="koku-form" id="koku-form" method="get" action="/money/koku">
     <script type="application/json" id="koku-data">{{ data_json|safe }}</script>
 
-    <p class="koku-which">Price a thing in <strong>goods dollars</strong>; judge how much a sum means to the person holding it in <strong>wage dollars</strong>.</p>
+    <p class="koku-which">Price a thing in {{ term('goods', 'goods dollars') }}; judge how much a sum means to the person holding it in {{ term('wage', 'wage dollars') }}. Click either for what it measures.</p>
 
     <div class="koku-readings">
       <div class="koku-reading koku-reading--goods">
-        <p class="koku-reading__label">Goods dollars: what a koku buys</p>
+        <p class="koku-reading__label">{{ term('goods', 'Goods dollars') }}: what a koku buys</p>
         <div class="koku-range">
           <div class="koku-range__end">
             <p class="koku-reading__value" data-out="per-koku" aria-live="polite">{{ dollars(reading.per_koku) }}</p>
@@ -60,7 +61,7 @@
         <p class="koku-reading__gloss">A laborer's year of necessities priced then and now: goods that grew dear, above all a room, pull it up. The central figure averages what a koku buys of each good so that no one good can dominate. For a sum spent on one kind of good, use that good's row below.</p>
       </div>
       <div class="koku-reading">
-        <p class="koku-reading__label">Wage dollars: how much a koku matters</p>
+        <p class="koku-reading__label">{{ term('wage', 'Wage dollars') }}: how much a koku matters</p>
         <p class="koku-reading__value">{{ dollars(wage_per_koku) }}</p>
         <p class="koku-reading__gloss">An unskilled laborer earns {{ laborer_koku_year }} koku a year, set against a US full-time year at ${{ '%.2f' % wage.hourly }} an hour (the {{ wage.date[:7] }} wage). The goods do not move it.</p>
       </div>
@@ -68,20 +69,24 @@
 
     <div class="koku-controls">
       <fieldset class="koku-control koku-choice">
-        <legend class="koku-control__label">Average by</legend>
+        <legend class="koku-control__label">Average by {{ why('means', 'Which should I pick?') }}</legend>
         {% for m in model_means %}
           <label class="koku-chip"><input type="radio" name="m" value="{{ m }}" data-in="mean"{% if m == state.mean %} checked{% endif %} /> {{ mean_name[m]|capitalize }}</label>
         {% endfor %}
+      </fieldset>
+      <fieldset class="koku-control koku-choice">
+        <legend class="koku-control__label">Weights</legend>
         <label class="koku-chip"><input type="checkbox" name="eq" value="1" data-in="equal"{% if state.equal %} checked{% endif %} /> Weigh goods equally</label>
       </fieldset>
-      <label class="koku-control">
-        <span class="koku-control__label">Starting basket for the average</span>
-        <select name="b" class="koku-select" data-in="basket">
+      <div class="koku-control koku-control--basket">
+        <span class="koku-control__label"><label for="koku-basket">Basket of goods for the average</label> {{ why('basket', 'What are these?') }}</span>
+        <select name="b" id="koku-basket" class="koku-select" data-in="basket">
           {% for b in model.baskets.values()|sort(attribute='id', reverse=True) %}
             <option value="{{ b.id }}"{% if b.id == state.basket %} selected{% endif %}>{{ b.name }}</option>
           {% endfor %}
         </select>
-      </label>
+        <p class="koku-description" data-out="description">{{ model.baskets[state.basket].description }}</p>
+      </div>
       <a class="koku-reset" href="/money/koku">Reset</a>
       <noscript><button class="koku-button" type="submit">Update</button></noscript>
     </div>
@@ -133,13 +138,13 @@
                       {% for opt in row.options %}
                         <label class="koku-sub">
                           <input type="radio" name="x_{{ row.good.id }}" value="{{ loop.index0 }}"{% if loop.index0 == row.choice %} checked{% endif %} />
-                          <span><span class="koku-price">{{ dollars(opt.dollars_per_unit, 2) }} a {{ row.good.unit }}</span> <span class="koku-priced-as">{{ opt.priced_as }} <a class="koku-link" href="{{ research_url(opt.link) }}">source</a></span></span>
+                          <span><span class="koku-price">{{ dollars(opt.dollars_per_unit, 2) }} a {{ row.good.unit }}</span> <span class="koku-priced-as">{{ opt.priced_as }} <a class="koku-link" href="{{ research_url(opt.link) }}" target="_blank" rel="noopener">source</a></span></span>
                         </label>
                       {% endfor %}
                     </fieldset>
                   {% elif row.options %}
                     <p><span class="koku-price">{{ dollars(dpu, 2) }} a {{ row.good.unit }}</span>
-                    <span class="koku-priced-as">{{ row.options[0].priced_as }} <a class="koku-link" href="{{ research_url(row.options[0].link) }}">source</a></span></p>
+                    <span class="koku-priced-as">{{ row.options[0].priced_as }} <a class="koku-link" href="{{ research_url(row.options[0].link) }}" target="_blank" rel="noopener">source</a></span></p>
                   {% else %}
                     <p class="koku-missing">not priced today</p>
                   {% endif %}
@@ -155,7 +160,7 @@
                       <ol class="koku-cites">
                         {% for e in row.candidates %}
                           {% set p = e.goods[row.good.id] %}
-                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}.{% if p.borrowed %} <em>{{ p.borrowed }}, so it repeats another period's figure and counts only when no other weighted period records it.</em>{% elif p.note %} {{ plain(p.note) }}.{% endif %} <a class="koku-link" href="{{ research_url(p.source) }}">{{ source_label(p.source) }}</a></li>
+                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}.{% if p.borrowed %} <em>{{ p.borrowed }}, so it repeats another period's figure and counts only when no other weighted period records it.</em>{% elif p.note %} {{ plain(p.note) }}.{% endif %} <a class="koku-link" href="{{ research_url(p.source) }}" target="_blank" rel="noopener">{{ source_label(p.source) }}</a></li>
                         {% endfor %}
                       </ol>
                     {% endif %}
@@ -171,43 +176,43 @@
       </div>
       <p class="koku-drivers" data-out="drivers">{{ drivers }}</p>
       <p class="koku-left-out" data-out="left-out"{% if not left_out %} hidden{% endif %}>Not priced, so left out: {{ left_out|join(', ') }}.</p>
-      <p class="koku-description" data-out="description">{{ model.baskets[state.basket].description }}</p>
     </section>
 
     <details class="koku-eras" id="koku-eras">
       <summary class="koku-eras__sum">Which periods set Rokugan's prices</summary>
-      <p class="koku-eras__hint">Each good's Rokugani price is the weighted mean of its price in rice in every period that records both. Every period weighs 1: China counts as much as Japan, since Rokugan's lands are more like China's, and Meiji Tokyo counts for its food, though not for the kerosene and linen foreign trade brought. Set a period to 0 to leave it out, or higher to count it more.</p>
+      <p class="koku-eras__hint">Each good's Rokugani price is the weighted mean of its price in rice in every period that records both. Every period weighs 1: China counts as much as Japan, since Rokugan's lands are more like China's, and Meiji Tokyo counts for its food, though not for the kerosene and linen foreign trade brought. Set a period to 0 to leave it out, or higher to count it more. A period counts only for the goods it records beside rice, since rice is the yardstick every other price is measured in.</p>
       <table class="koku-eras__table">
-        <thead><tr><th scope="col">Period</th><th scope="col">Weight</th><th scope="col">Prices beside rice</th></tr></thead>
+        <thead><tr><th scope="col">Period</th><th scope="col">Weight</th><th scope="col">Goods it prices</th></tr></thead>
         <tbody>
-          {% for e in model.eras.values()|sort(attribute='years') %}
-            {% set own = e.goods.keys()|reject('equalto', 'rice')|list if 'rice' in e.goods else [] %}
+          {% for e in model.eras.values()|sort(attribute='years') if 'rice' in e.goods and e.goods|length > 1 %}
+            {% set own = e.goods.keys()|reject('equalto', 'rice')|list %}
             <tr data-era="{{ e.id }}">
               <th scope="row">{{ e.title }}</th>
               <td class="koku-eras__weight"><span class="koku-eras__wlabel" aria-hidden="true">Weight</span><input class="koku-number koku-number--weight" type="number" min="0" step="0.5" name="w_{{ e.id }}" value="{{ '%g' % weights[e.id] }}" aria-label="Weight of {{ e.title }}" data-in="weight" /></td>
               <td class="koku-eras__goods">
-                {%- if not own -%}<span class="koku-missing">rice alone, so it adds nothing</span>
-                {%- else -%}
                   {%- set excluded = e.goods|dictsort|selectattr('1.excluded')|map(attribute='0')|list -%}
                   {%- set counted = own|reject('in', e.goods|dictsort|selectattr('1.borrowed')|map(attribute='0')|list)|reject('in', excluded)|list -%}
                   {%- set borrowed = own|reject('in', counted)|reject('in', excluded)|list -%}
                   {%- for g in counted %}{{ model.goods[g].name }}{{ ', ' if not loop.last }}{% endfor -%}
-                  {%- if borrowed %}<span class="koku-borrowed">{{ '; ' if counted }}borrowed, counted only if no other period is: {% for g in borrowed %}<span title="{{ e.goods[g].borrowed }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
+                  {%- if borrowed %}<span class="koku-borrowed">{{ '; ' if counted }}used only when no other period prices: {% for g in borrowed %}<span title="{{ e.goods[g].borrowed }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
                   {%- if excluded %}<span class="koku-borrowed">{{ '; ' if counted or borrowed }}changed by foreign trade, not counted: {% for g in excluded %}<span title="{{ e.goods[g].excluded }}">{{ model.goods[g].name }}</span>{{ ', ' if not loop.last }}{% endfor %}</span>{% endif -%}
-                {%- endif -%}
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
+      {% set rice_only = [] %}
+      {% for e in model.eras.values()|sort(attribute='years') if e.goods|length == 1 and 'rice' in e.goods %}{% set _ = rice_only.append(e.title) %}{% endfor %}
+      {% if rice_only %}<p class="koku-eras__hint">Not listed: {{ rice_only|join('; ') }}. The research for these periods prices rice and nothing beside it, so they cannot say what any other good cost in rice and have no say in Rokugan's prices. They are kept to convert those periods' own coins (mon, monme, ryo) into koku and dollars.</p>{% endif %}
     </details>
 
     <section class="koku-notes detail-prose">
       <h2>How the koku is reckoned</h2>
       <p>A koku is about {{ '%.1f' % reading.koku_kg }} kg of rice, and Rokugan's coins count in it: 1,000 sen to the koku. Every other good's Rokugani price is how much rice it cost, averaged over every period the research records it in, {{ model.eras|length }} periods of Japan and China from the 1490s to the 1910s. Counting in rice rather than coin takes out each period's own money, so a debased coin or a dear decade of silver drops out. Open a good above for the periods behind its price and the research each comes from.</p>
       <p>Take the amount of a good a koku's rice bought, price that amount today, and you have what a koku buys of that good alone: about {{ dollars(rice_alone) }} of rice, but under {{ dollars(50) }} of cloth and thousands of dollars of housing. Those spread over two orders of magnitude, so a koku's worth depends on how they are averaged. The <strong>year of necessities</strong> (the whole basket) answers the household's question, what a year of necessities cost then and costs now; it is the same as the average weighted by spending, and the high end, because the goods that became dear (above all a room) weigh heavily in it. The <strong>average over goods</strong> takes the geometric mean by default, which no single good can dominate; it is the central figure the money skill quotes. Economic historians use these baskets mainly to compare a laborer's wage with the cost of living across places and centuries, which is what wage dollars do.</p>
-      <p>The standard basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. Some of Kyoto 1745's prices are Bassino &amp; Ma's reconstructions from Meiji price ratios, so they are not counted again beside Tokyo 1882; the room's price is still a guess.</p>
+      <p>The default basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. Some of Kyoto 1745's prices are Bassino &amp; Ma's reconstructions from Meiji price ratios, so they are not counted again beside Tokyo 1882; the room's price is still a guess.</p>
     </section>
+    {{ explainers(['goods', 'wage', 'means', 'basket']) }}
     <div class="koku-sticky" aria-hidden="true">A koku buys <strong data-out="per-koku-sticky">{{ dollars(reading.per_koku) }}</strong> to <strong data-out="whole-sticky">{{ dollars(whole.arithmetic) }}</strong> today</div>
   </form>
 </section>

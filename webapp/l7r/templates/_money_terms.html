@@ -1,0 +1,72 @@
+{#
+  The Money section's explainers (GM 2026-10-26: the terms and the controls need a write-up a click
+  away, not a hover hint). `term(id, text)` is the clickable word; `explainers(ids)` renders the
+  write-ups as native popovers, so they open and close without JavaScript and Esc dismisses them.
+  The figures each one quotes come from the page's own context when the page has them.
+#}
+
+{% macro term(id, text) -%}
+<button type="button" class="money-term" popovertarget="explain-{{ id }}">{{ text }}<span class="money-term__mark" aria-hidden="true">?</span></button>
+{%- endmacro %}
+
+{% macro why(id, text) -%}
+<button type="button" class="money-why" popovertarget="explain-{{ id }}"><span class="money-term__mark" aria-hidden="true">?</span>{{ text }}</button>
+{%- endmacro %}
+
+{% macro _pop(id, title) -%}
+<div class="money-pop" id="explain-{{ id }}" popover role="dialog" aria-labelledby="explain-{{ id }}-title">
+  <div class="money-pop__head">
+    <h2 class="money-pop__title" id="explain-{{ id }}-title">{{ title }}</h2>
+    <button type="button" class="money-pop__close" popovertarget="explain-{{ id }}" popovertargetaction="hide" aria-label="Close">&times;</button>
+  </div>
+  <div class="money-pop__body">{{ caller() }}</div>
+</div>
+{%- endmacro %}
+
+{% macro explainers(ids) %}
+{% if 'goods' in ids %}{% call _pop('goods', 'Goods dollars') %}
+  <p><strong>The question it answers:</strong> if you took a koku's worth of rice to market in old Rokugan and spent it, what would the things you came home with cost in an American store today?</p>
+  <p>This is what economic historians call a <em>real price</em> or a purchasing-power comparison: the same goods priced in two times, so that the money of each drops out. It is the right reading for pricing a thing, a meal, a bolt of cloth, a sword, in dollars a player can feel.</p>
+  <p><strong>Why it is a range, not one number.</strong> Prices did not all move together over three centuries. Cloth, made by machine, is now very cheap; a room in a city is now very dear. So a koku buys a different number of dollars depending on which good you ask about: {% if rice_alone is defined %}about ${{ '{:,.0f}'.format(rice_alone) }} of rice, but{% endif %} under $50 of cloth and thousands of dollars of housing. Every honest answer is an average of those, and the average depends on how you weigh them:</p>
+  <ul>
+    <li><strong>The central figure</strong> averages what a koku buys of each good so that no single good can dominate. Use it for a sum spent on a mix of things.</li>
+    <li><strong>The high figure</strong>, a year of necessities, is what a laborer's whole year of food, cloth, light, fuel and a room cost then in koku and costs now in dollars. The things that grew dear, above all the room, pull it up. Use it for a household's living costs.</li>
+    <li><strong>For a sum spent on one kind of thing</strong>, skip both and use that good's own row in the table.</li>
+  </ul>
+{% endcall %}{% endif %}
+{% if 'wage' in ids %}{% call _pop('wage', 'Wage dollars') %}
+  <p><strong>The question it answers:</strong> how big a deal is this sum to the person holding it? Not what it buys, but how long they would have to work for it.</p>
+  <p>A koku is set against an unskilled laborer's year: in Rokugan a laborer earns about {{ laborer_koku_year if laborer_koku_year is defined else '3.3' }} koku a year, so a koku is that share of a year's work. The same share of a full-time US year at today's unskilled wage is the koku's wage-dollar value. Economic historians call this a <em>labor value</em>: a sum measured in the hours of common work it stands for. The goods and their prices do not enter it.</p>
+  <p><strong>Why it is so much larger than goods dollars.</strong> A modern worker produces and earns far more than a Tokugawa laborer did, while the necessities they buy have grown comparatively cheap. So a koku that buys a few hundred dollars of goods today was still a third of a year of a poor laborer's life. Both are true at once: goods dollars tell you what it buys, wage dollars tell you what it means.</p>
+  <p><strong>When to use it.</strong> A bribe, a fine, a debt, a reward, a dowry: anywhere the weight of the sum on a person matters more than the shopping it would do. "Ten koku" to a farmer is several years of their life, and wage dollars say so.</p>
+{% endcall %}{% endif %}
+{% if 'means' in ids %}{% call _pop('means', 'Which average, and why there is a choice') %}
+  <p><strong>In short:</strong></p>
+  <ul>
+    <li>A sum spent on a mix of things: the default, geometric mean with spending weights.</li>
+    <li>A household's cost of living: the arithmetic mean, or simply the high figure.</li>
+    <li>One kind of good: neither; read that good's own row.</li>
+  </ul>
+  <h3>Why there is a choice</h3>
+  <p>Each good in the table gives its own answer to "what is a koku worth" (the <em>Alone</em> column), and those answers spread over a hundredfold, from a few tens of dollars for cloth to thousands for housing. The figure at the top is an average of them, and statisticians have more than one defensible way to average prices that moved this far apart. The choice changes the answer a great deal, so the page lets you see each.</p>
+  <h3>Geometric mean (the default)</h3>
+  <p>Averages by ratios rather than by sums: a good that became ten times dearer and one that became ten times cheaper cancel out. No single good can drag the result far, however extreme it is. The US Bureau of Labor Statistics uses this kind of mean inside most categories of its consumer price index, because when one thing grows dear people buy less of it and more of something else.</p>
+  <h3>Arithmetic mean</h3>
+  <p>The ordinary average, weighted by what the laborer spent on each good. With every good of the full basket switched on, it is exactly the year-of-necessities figure: what that same year of goods would cost today. It assumes nobody changes what they buy, so the goods that grew dear (a room above all) weigh heavily, and it is the high end. Pick it to ask "what would living exactly as they lived cost now?"</p>
+  <h3>Weigh goods equally</h3>
+  <p>Changes the weights, not the kind of average. Normally each good counts by how much of the laborer's money went to it, so rice, the largest expense, counts most. Ticked, every good counts the same: lamp oil as much as rice. It answers "what is a koku worth across goods in general?" rather than "across this laborer's spending", and is mostly useful as a check on how much the answer leans on rice.</p>
+{% endcall %}{% endif %}
+{% if 'basket' in ids %}{% call _pop('basket', 'Which basket of goods') %}
+  <p>A <em>basket</em> is a list of goods and how much of each one person consumes in a year. Economic historians build them to compare what a laborer's wage could buy across countries and centuries; the method is Robert Allen's, and the Japanese basket here is from Jean-Pascal Bassino and Debin Ma, "Japanese unskilled wages in international perspective, 1741-1913" (2005), reconstructed for Kyoto in the 1740s.</p>
+  <p>None of these is a government price index. Their goods and quantities are what the Rokugani side is priced in; today's side is always today's prices, whichever basket you choose.</p>
+  <dl class="money-pop__list">
+    <dt>Kyoto laborer's year, with a room (the default)</dt>
+    <dd>Bassino &amp; Ma's published basket (rice, soybeans, other grains, beans, fish, oil, cloth, lamp oil), plus three things we added because a household cannot live without them: salt, fuel (Allen and colleagues' 2011 basket carries it) and a third of a back-tenement room. The fullest picture of a year of necessities, and the only basket the high figure uses.</dd>
+    <dt>Kyoto laborer's year, without a room</dt>
+    <dd>The same, less the room. A room was cheap beside rice in old Kyoto and is dear in modern America, so housing pulls the average up more than any other good. Use it for someone who does not pay for shelter (a retainer lodged by their lord, a monk, a traveler), or to see how much the room alone moves the answer.</dd>
+    <dt>Bassino &amp; Ma basket A, as published</dt>
+    <dd>The scholars' basket exactly as they published it: food, cloth and lamp oil, with none of our additions. Useful for comparing with their work. Like the others, it is priced at today's prices.</dd>
+  </dl>
+  <p>The choice moves only the central figure; the high figure always counts the full year with a room.</p>
+{% endcall %}{% endif %}
+{% endmacro %}

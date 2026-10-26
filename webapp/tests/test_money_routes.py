@@ -238,8 +238,12 @@ def test_the_page_names_every_goods_figure(root: Root) -> None:
     assert 'A year of necessities <span class="koku-range__tag">high</span>' in page
     assert '(geometric mean)' in page
     assert 'Which periods set Rokugan' in page
-    assert 'rice alone, so it adds nothing' in page
-    assert '; borrowed, counted only if no other period is: ' in page
+    # A period that prices only rice cannot move any price in rice, so it gets no weight to set
+    # (GM 2026-10-26: a weight on a period that adds nothing read as a bug); it is named below.
+    assert 'name="w_osaka-1695"' not in page
+    assert 'name="w_suzhou-1750"' not in page
+    assert 'prices rice and nothing beside it' in page
+    assert '; used only when no other period prices: ' in page
     assert page.count('class="koku-track__dot"') == 14  # the standard basket's fourteen goods
     assert web.axis_pct(10) == 0
     assert web.axis_pct(10_000) == 100
@@ -282,3 +286,28 @@ def test_rokugani_prices_read_in_sen(model: bk.Model) -> None:
         '99.9',
     ]
     assert web.source_label('https://example.com/x.pdf') == 'source'
+
+
+def test_terms_and_controls_open_a_write_up(root: Root) -> None:
+    """GM 2026-10-26: goods and wage dollars, the means and the baskets each open a write-up."""
+    page = html.unescape(root.money('koku').decode())
+    for what in ('goods', 'wage', 'means', 'basket'):
+        assert f'popovertarget="explain-{what}"' in page
+        assert f'id="explain-{what}" popover' in page
+    assert "Kyoto laborer's year, with a room" in page
+    assert '2017 sheet' not in page
+    prices = html.unescape(root.money('prices').decode())
+    assert 'id="explain-goods" popover' in prices
+    assert 'id="explain-wage" popover' in prices
+
+
+@pytest.mark.parametrize('tool', ['koku', 'prices'])
+def test_research_links_open_in_a_new_tab(root: Root, tool: str) -> None:
+    """GM 2026-10-26: every source and research link opens in a new tab."""
+    page = root.money(tool).decode()
+    links = re.findall(r'<a class="koku-link"[^>]*>', page)
+    sources = [a for a in links if 'data-open' not in a]
+    assert sources
+    assert all('target="_blank" rel="noopener"' in a for a in sources), [
+        a for a in sources if '_blank' not in a
+    ][:3]
