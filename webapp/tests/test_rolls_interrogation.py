@@ -39,7 +39,11 @@ def roll(
     note: str = '',
     line: int | None = None,
     grilling: bool = False,
+    settled: bool = True,
 ) -> Roll:
+    """`settled`: the roll's outcome is decided - its line of questioning has ENDED, which is
+    how the written lines below read. Since 2026-10-26 a roll on a line still in progress
+    is written with no outcome until the GM says (`rules.outcome_open`); `settled=False`."""
     return Roll(
         character=name,
         skill=skill,
@@ -51,6 +55,7 @@ def roll(
         note=note,
         line=line,
         grilling=grilling,
+        outcome_settled=settled and line is not None,
     )
 
 
@@ -257,19 +262,20 @@ class TestTheMenu:
     def test_the_kind_prompt_never_appears_for_interrogation(self) -> None:
         c = conversation(roll('Jimen', rank=2))
         declared(c, ESCORTS)
-        script = Script('1')
+        script = Script('1', '')
         ann.annotate(c, ask=script)
         assert not script.was_asked(KIND_PROMPT)
 
     def test_a_roll_on_no_line_joins_a_declared_one_by_number(self, capsys: Any) -> None:
         c = conversation(roll('Tsuruchi Jimen', rank=2))
         declared(c, ESCORTS, OPINION, grilling=True)
-        ann.annotate(c, ask=Script('2'))
+        ann.annotate(c, ask=Script('2', ''))
         out = capsys.readouterr().out
         assert f'1. (grilling) {ESCORTS}' in out
         assert f'2. (grilling) {OPINION}' in out
         assert (c.rolls[0].line, c.rolls[0].note, c.rolls[0].grilling) == (2, OPINION, True)
-        assert f'staged: interrogation (grilling): 37@2 Jimen - {OPINION}{DEFAULT}' in out
+        # Line 2 is the line in progress, so the outcome stays open (2026-10-26): no default.
+        assert f'staged: interrogation (grilling): 37@2 Jimen - {OPINION}\n' in out
 
     def test_it_is_never_attached_without_being_asked(self) -> None:
         c = conversation(roll('Jimen', rank=2))
@@ -289,7 +295,7 @@ class TestTheMenu:
     def test_a_bad_answer_is_re_asked(self, capsys: Any) -> None:
         c = conversation(roll('Jimen', rank=2))
         declared(c, ESCORTS)
-        ann.annotate(c, ask=Script('7', 'n', '1'))
+        ann.annotate(c, ask=Script('7', 'n', '1', ''))
         assert 'a line number, d to discard' in capsys.readouterr().out
         assert c.rolls[0].line == 1
 
@@ -305,7 +311,7 @@ class TestTheMenu:
         c = conversation(roll('Jimen', rank=2), roll('Moriko', rank=1, minute=1))
         c.lines.append(Line(id=1, description=ESCORTS, at=W, sincerity=30))
         c.lines.append(Line(id=2, description=OPINION, at=W))
-        ann.annotate(c, ask=Script('1', '1', '2'))
+        ann.annotate(c, ask=Script('1', '1', '2', ''))
         out = capsys.readouterr().out
         assert '= Jimen 37 vs sincerity 30 (+10 not grilling): not detected' in out
         assert out.count('  = ') == 1
@@ -344,13 +350,13 @@ class TestRank:
     def test_joining_asks_when_the_rank_is_missing(self) -> None:
         c = conversation(roll('Jimen'))
         declared(c, ESCORTS)
-        ann.annotate(c, ask=Script('1', 'two', '3'))
+        ann.annotate(c, ask=Script('1', 'two', '3', ''))
         assert c.rolls[0].rank == 3
 
     def test_a_recorded_rank_is_not_asked_for(self) -> None:
         c = conversation(roll('Jimen', rank=2))
         declared(c, ESCORTS)
-        script = Script('1')
+        script = Script('1', '')
         ann.annotate(c, ask=script)
         assert not script.was_asked('rank?')
 
@@ -413,7 +419,7 @@ class TestEverythingElseStillHolds:
         gmrolls.record((10, 9, 8, 1), 3, 20, asked=(4, 3))
         c = conversation(roll('Jimen', rank=2))
         declared(c, ESCORTS)
-        script = Script('1')
+        script = Script('1', '')
         ann.annotate(c, ask=script, mine=gmrolls.recent)
         assert not script.was_asked('Which of yours?')
         assert 'Your recent rolls' not in capsys.readouterr().out

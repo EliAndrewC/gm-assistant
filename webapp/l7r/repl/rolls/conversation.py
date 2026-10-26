@@ -38,6 +38,7 @@ from l7r.repl.rolls import (
     discord,
     hidden,
     members,
+    modes,
     npcnumbers,
     npcskills,
     oppose,
@@ -945,7 +946,10 @@ def end_conversation(
     waiting = [
         roll
         for roll in conv.rolls
-        if roll.attributed and (rules.needs_annotation(roll) or hidden.awaiting_outcome(conv, roll))
+        # An interrogation outcome no longer holds the conversation open (2026-10-26): ending
+        # the conversation ends its lines, and `end_lines` writes the default, naming any roll
+        # the tool reckoned had won.
+        if roll.attributed and rules.needs_annotation(roll)
     ]
     held = boostmod.held(conv)
     if held and not force:
@@ -970,16 +974,12 @@ def end_conversation(
                 if any(rules.is_interrogation(r) and r.line is None for r in waiting)
                 else ''
             )
-            + (
-                '\nAn interrogation roll that beat the Sincerity roll needs what they '
-                'detected (Enter keeps "nothing hidden detected").'
-                if any(r.line is not None for r in waiting if rules.is_interrogation(r))
-                else ''
-            )
         )
     if waiting and force:
         say(f'Saving {len(waiting)} unannotated roll(s) - better recorded bare than lost.')
     _settle_before_closing(force)
+    # The conversation ends every line still in progress (feature: open outcomes, 2026-10-26).
+    end_lines(conv, [line.id for line in conv.lines], report=say)
     stop_watching()
     gmrolls.stop()
     # debounce=0: the final write always happens, however recently the watcher wrote.
@@ -1079,6 +1079,25 @@ def close_open_conversation(**kwargs: Any) -> str:
     except Exception as exc:  # noqa: BLE001 - exiting must not fail
         print(f'  ! could not write the last rolls for {name}: {exc}')
         return ''
+
+
+def end_lines(conv: Conversation, lines: Sequence[int], *, report: Callable[[str], None]) -> None:
+    """Lines of questioning ENDED: a roll whose outcome is still open is written as the
+    default from here on (GM 2026-10-26: *"an unannotated roll when the line of
+    conversation ends should indeed be recorded as nothing hidden detected"*). One the
+    tool reckoned had beaten the Sincerity roll is named, so that default is never silent."""
+    ending = set(lines)
+    for index, roll in enumerate(conv.rolls):
+        if roll.line not in ending or not rules.outcome_open(roll):
+            continue
+        if hidden.awaiting_outcome(conv, roll):
+            who = rules.personal_name(roll.character)
+            report(
+                f'  ! {who} beat the sincerity roll on that line and was never annotated - '
+                f'written as "{modes.default_outcome(roll.skill)}". '
+                f'detected("{who}", "...") still changes it.'
+            )
+        conv.rolls[index] = replace(roll, outcome_settled=True)
 
 
 def _settle_before_closing(force: bool) -> None:

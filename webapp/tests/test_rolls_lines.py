@@ -12,7 +12,7 @@ import pytest
 
 from l7r.repl import dice, gmrolls
 from l7r.repl.rolls import conversation as conv
-from l7r.repl.rolls import hidden, lines, npcskills, rules
+from l7r.repl.rolls import hidden, lines, npcskills, rules, sheet
 from l7r.repl.rolls.models import Conversation, Roll
 
 ann = importlib.import_module('l7r.repl.rolls.annotate')
@@ -333,7 +333,7 @@ class TestDetected:
         lines.detected('jimen', 'he is lying about the amount')
         assert rules.render_lines(c.rolls, 'Fumitake') == [
             'interrogation: 37@2 Jimen - the treasury: he is lying about the amount',
-            'interrogation: 24@1 Moriko - the treasury: nothing hidden detected',
+            'interrogation: 24@1 Moriko - the treasury',  # open: the line is in progress
         ]
         assert 'he is lying about the amount' in capsys.readouterr().out
 
@@ -382,9 +382,15 @@ class TestLooseEnds:
         assert lines.candidates(c) == []
 
 
+ASKED = (
+    '  What did Jimen detect? [blank: decide later - "nothing hidden detected" if the line ends] > '
+)
+
+
 class TestAWinIsAsked:
     """GM 2026-09-29: lines said "nothing hidden detected" even when the PC won, with
-    no chance to say what they detected. A win now waits for the GM's answer."""
+    no chance to say what they detected. GM 2026-10-26: EVERY roll on a line in progress is
+    open until the GM says, or the line ends - a win and a loss alike."""
 
     def on_line(self, total: int, *, rank: int | None = 2) -> Conversation:
         c = talking()
@@ -408,28 +414,39 @@ class TestAWinIsAsked:
         assert hidden.awaiting_outcome(c, c.rolls[0])
         ask = self.script('he is lying about the hour')
         ann.annotate(c, ask=ask)
-        assert ask.asked == ['  What did Jimen detect? [nothing hidden detected] > ']
+        assert ask.asked == [ASKED]
         assert 'Jimen 20 vs sincerity 18: DETECTED - annotate()' in capsys.readouterr().out
         assert c.rolls[0].outcome == 'he is lying about the hour'
         assert rules.render_lines(c.rolls) == [
             'interrogation (grilling): 20@2 Jimen - the treasury: he is lying about the hour'
         ]
 
-    def test_enter_keeps_the_default_and_is_not_asked_again(
+    def test_enter_decides_later_and_the_line_ending_writes_the_default(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
         c = self.on_line(20)
         ann.annotate(c, ask=self.script(''))
-        assert (c.rolls[0].outcome, c.rolls[0].outcome_settled) == ('', True)
-        assert not hidden.awaiting_outcome(c, c.rolls[0])
-        ann.annotate(c, ask=self.script())
-        assert 'Nothing waiting' in capsys.readouterr().out
+        assert (c.rolls[0].outcome, c.rolls[0].outcome_settled) == ('', False)
+        assert rules.render_lines(c.rolls) == [
+            'interrogation (grilling): 20@2 Jimen - the treasury'
+        ]
+        ann.annotate(c, ask=self.script(''))  # asked again: still open
+        declare('the escorts', minute=5)
+        assert 'Jimen beat the sincerity roll on that line' in capsys.readouterr().out
+        assert c.rolls[0].outcome_settled
+        assert rules.render_lines(c.rolls) == [
+            'interrogation (grilling): 20@2 Jimen - the treasury: nothing hidden detected'
+        ]
 
-    def test_a_loss_is_not_asked_about(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_a_loss_is_asked_about_too(self, capsys: pytest.CaptureFixture[str]) -> None:
         c = self.on_line(17)
         assert not hidden.awaiting_outcome(c, c.rolls[0])
-        ann.annotate(c, ask=self.script())
-        assert 'Nothing waiting' in capsys.readouterr().out
+        ask = self.script('a nervous glance at the ledger')
+        ann.annotate(c, ask=ask)
+        assert ask.asked == [ASKED]
+        assert c.rolls[0].outcome == 'a nervous glance at the ledger'
+        declare('the escorts', minute=5)
+        assert 'beat the sincerity roll' not in capsys.readouterr().out
 
     def test_the_rank_is_asked_first_when_missing(self) -> None:
         c = self.on_line(20, rank=None)
@@ -444,7 +461,7 @@ class TestAWinIsAsked:
         c.rolls[0] = replace(c.rolls[0], discarded=False, line=None)
         ask = self.script('1', 'the hour')
         ann.annotate(c, ask=ask)
-        assert ask.asked[-1] == '  What did Jimen detect? [nothing hidden detected] > '
+        assert ask.asked[-1] == ASKED
         assert (c.rolls[0].line, c.rolls[0].outcome) == (c.lines[0].id, 'the hour')
 
     def test_detected_settles_it(self) -> None:
@@ -455,13 +472,83 @@ class TestAWinIsAsked:
         assert found is not None
         assert found.describe() == 'Jimen 20 vs sincerity 18: DETECTED'
 
-    def test_the_conversation_does_not_close_over_it(self) -> None:
-        self.on_line(20)
-        with pytest.raises(conv.NotAnnotated, match='needs what they detected'):
-            conv.end_conversation()
+    def test_closing_the_conversation_ends_the_line(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """It used to refuse to close over an unanswered win (2026-09-29). Ending the
+        conversation now ends the line, and the default is written with the win named."""
+        c = self.on_line(20)
+        conv.end_conversation(
+            get_body=lambda cid: {'bio': '', 'game_master_info': ''},
+            update=lambda cid, **f: None,
+            collector=lambda x: x,
+            get_conversation=lambda g: sheet.ConversationResult(),
+            close_sheet=lambda i: sheet.ConversationResult(),
+        )
+        assert c.rolls[0].outcome_settled
+        assert 'Jimen beat the sincerity roll' in capsys.readouterr().out
 
     def test_only_an_interrogation_roll_on_a_known_line(self) -> None:
         c = self.on_line(20)
         assert not hidden.awaiting_outcome(c, roll('Jimen', 40, skill='law'))
         assert not hidden.awaiting_outcome(c, replace(c.rolls[0], line=99))
         assert not hidden.awaiting_outcome(c, replace(c.rolls[0], discarded=True))
+
+
+class TestOpenOutcomes:
+    """GM 2026-10-26: what the PCs discern *"is sometimes something that comes out over the
+    course of a conversation rather than when the roll is initially made"* - so an
+    interrogation roll's outcome is open while its line is current, `annotate()` offers it,
+    and only the line ending writes "nothing hidden detected"."""
+
+    def test_the_whole_course_of_a_line(self, capsys: pytest.CaptureFixture[str]) -> None:
+        c = talking()
+        declare('the treasury', minute=0)  # no sincerity roll at all: the NPC told the truth
+        c.rolls.append(conv.attach(c, roll('Tsuruchi Jimen', 37, minute=1)))
+        c.rolls.append(conv.attach(c, roll('Moriko', 24, rank=1, minute=2)))
+        assert rules.render_lines(c.rolls) == [
+            'interrogation: 37@2 Jimen / 24@1 Moriko - the treasury'
+        ]
+        assert [i for i, _ in ann.pending(c)] == [0, 1]
+        replies = iter(['1', 'he keeps glancing at the ledger', ''])
+        ann.annotate(c, ask=lambda q: next(replies))
+        assert rules.render_lines(c.rolls) == [
+            'interrogation: 37@2 Jimen - the treasury: he keeps glancing at the ledger',
+            'interrogation: 24@1 Moriko - the treasury',
+        ]
+        declare('the escorts', minute=5)
+        assert rules.render_lines(c.rolls) == [
+            'interrogation: 37@2 Jimen - the treasury: he keeps glancing at the ledger',
+            'interrogation: 24@1 Moriko - the treasury: nothing hidden detected',
+        ]
+        assert 'beat the sincerity roll' not in capsys.readouterr().out
+        assert ann.pending(c) == []
+
+    def test_joining_an_ended_line_settles_on_enter(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        c = talking(roll('Tsuruchi Jimen', 20))
+        declare('the treasury', 18, grilling=True, replies=('d',))
+        declare('the escorts', minute=5)
+        c.rolls[0] = replace(c.rolls[0], discarded=False, line=None)
+        asked: list[str] = []
+        replies = iter(['1', ''])
+
+        def ask(question: str) -> str:
+            asked.append(question)
+            return next(replies)
+
+        ann.annotate(c, ask=ask)
+        assert asked[-1] == '  What did Jimen detect? [nothing hidden detected] > '
+        assert c.rolls[0].outcome_settled
+        assert capsys.readouterr().out.count('Jimen 20 vs sincerity 18') == 1
+
+    def test_decide_later_prints_the_comparison_once(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        c = talking(roll('Tsuruchi Jimen', 20))
+        declare('the treasury', 18, grilling=True, replies=('d',))
+        c.rolls[0] = replace(c.rolls[0], discarded=False, line=None)
+        replies = iter(['1', ''])
+        ann.annotate(c, ask=lambda q: next(replies))
+        assert capsys.readouterr().out.count('Jimen 20 vs sincerity 18') == 1

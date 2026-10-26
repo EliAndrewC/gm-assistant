@@ -10,6 +10,7 @@ import sys
 import termios
 import tty
 from collections.abc import Callable, Iterator
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -338,9 +339,14 @@ class TestAWholeRunWithTheArrowKeys:
             now=lambda: W + timedelta(minutes=5),
         )
         assert c.rolls[0].line == 1  # Enter alone = today's [P/d] default: it joins
+        # Its outcome decided, so the run below is about Moriko's roll alone (an open outcome
+        # is offered by annotate() too, since 2026-10-26).
+        c.rolls[0] = replace(c.rolls[0], outcome_settled=True)
         c.rolls.append(roll('Moriko', 'interrogation', 24, rank=None, minute=1))
         titles = self.drive(monkeypatch, ENTER)
-        ann.annotate(c, ask=self.typed(''))
+        ann.annotate(
+            c, ask=self.typed('', '')
+        )  # the rank, then "decide later" on what was detected
         assert titles == ['Which line of questioning?']
         assert c.rolls[1].line == 1
 

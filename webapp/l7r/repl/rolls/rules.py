@@ -520,10 +520,30 @@ def by_outcome(rolls: Sequence[Roll]) -> list[list[Roll]]:
     detect something hidden, but the others do not, then we would need to split them
     out to a separate line."* Groups come in the order their first roll was made.
     """
-    groups: dict[str, list[Roll]] = {}
+    # An OPEN outcome (`outcome_open`) is its own group: those rollers are written with no
+    # outcome yet, apart from rollers already settled on the default.
+    groups: dict[tuple[str, bool], list[Roll]] = {}
     for roll in rolls:
-        groups.setdefault(roll.outcome.strip(), []).append(roll)
+        groups.setdefault((roll.outcome.strip(), outcome_open(roll)), []).append(roll)
     return list(groups.values())
+
+
+def outcome_open(roll: Roll) -> bool:
+    """An interrogation roll on a line still in progress, its outcome not yet said.
+
+    The GM (2026-10-26): what the PCs discern *"is sometimes something that comes out over
+    the course of a conversation rather than when the roll is initially made"*, so nothing
+    is written one way or the other while the line is current - `annotate()` asks, any
+    time - and only when the line ENDS (the next line is declared, or the conversation
+    ends: `conversation.end_lines`) is a roll still open written as the default.
+    """
+    return (
+        is_interrogation(roll)
+        and roll.line is not None
+        and not roll.outcome_settled
+        and not roll.outcome.strip()
+        and not roll.discarded
+    )
 
 
 def outcome_text(roll: Roll) -> str:
@@ -557,7 +577,11 @@ def render_interrogation(rolls: Sequence[Roll]) -> str:
     )
     # The outcome follows the topic (feature 207) and is the same words whether the
     # NPC was truthful, lied well, or was never rolled for - see `modes.DEFAULT_OUTCOME`.
-    tail = f' - {first.note}: {outcome_text(first)}' if first.annotated else ''
+    tail = ''
+    if first.annotated:
+        tail = (
+            f' - {first.note}' if outcome_open(first) else f' - {first.note}: {outcome_text(first)}'
+        )
     return f'{head}: {entries}{tail}'
 
 

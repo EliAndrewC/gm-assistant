@@ -202,7 +202,10 @@ def pending(conv: Conversation) -> list[tuple[int, Roll]]:
         for index, roll in enumerate(conv.rolls)
         if roll.attributed
         and (
-            rules.needs_annotation(roll) or _needs_rank(roll) or hidden.awaiting_outcome(conv, roll)
+            rules.needs_annotation(roll)
+            or _needs_rank(roll)
+            or hidden.awaiting_outcome(conv, roll)
+            or rules.outcome_open(roll)
         )
     ]
 
@@ -385,15 +388,19 @@ def _interrogate(ask: Ask, roll: Roll, conv: Conversation) -> Decision | None:
 
 
 def _ask_detected(ask: Ask, conv: Conversation, staged: Roll, decision: Decision) -> Decision:
-    """When the staged roll beats its line's Sincerity roll, ask what it detected.
+    """Ask what an interrogation roll on a line in progress detected (`rules.outcome_open`).
 
     The GM (2026-09-29): interrogation lines *"always say 'nothing hidden detected'
     even when the PC won the roll and I wasn't given a chance to say what was
     detected"*. The comparison is still advisory - Enter keeps the default, and
     `detected()` still changes an outcome at any time - but a win no longer passes
     without a question. The comparison is printed first so the answer is informed.
+
+    Since 2026-10-26 it asks for EVERY open roll, not only one the tool reckons won: the GM
+    *"would expect to be able to annotate what is discovered prior to the line of
+    conversation ending"*, and the raises handed out as a line goes on are not known here.
     """
-    if not hidden.awaiting_outcome(conv, staged):
+    if not (hidden.awaiting_outcome(conv, staged) or rules.outcome_open(staged)):
         return decision
     for line in conv.lines:
         if line.id == staged.line:
@@ -402,7 +409,19 @@ def _ask_detected(ask: Ask, conv: Conversation, staged: Roll, decision: Decision
                 print(f'  = {found.describe()}')
     default = modes.default_outcome(staged.skill)
     who = rules.personal_name(staged.character)
-    outcome = _prompt(ask, f'  What did {who} detect? [{default}] > ')
+    # Blank DECIDES LATER (2026-10-26): what a PC discerns often comes out as the line goes
+    # on, so Enter leaves the outcome open - asked again at the next annotate() - and only
+    # the line ENDING writes the default. It used to settle the default on Enter.
+    if conv.lines and staged.line != conv.lines[-1].id:
+        # A roll joining a line that has already ENDED: there is no later to decide in, so
+        # Enter keeps the default and settles it, as it always did.
+        outcome = _prompt(ask, f'  What did {who} detect? [{default}] > ')
+        return replace(decision, outcome=outcome, outcome_asked=True)
+    outcome = _prompt(
+        ask, f'  What did {who} detect? [blank: decide later - "{default}" if the line ends] > '
+    )
+    if not outcome.strip():
+        return decision
     return replace(decision, outcome=outcome, outcome_asked=True)
 
 
@@ -950,7 +969,6 @@ def annotate(
             decision = _with_npc(menu, decision)
             staged[index] = decision
             print(f'  staged: {_staged_text(conv, roll, decision)}')
-            _compare_privately(conv, roll, decision)
     except Abandoned:
         # "discarded" would read as the roll-discard feature, which this is not:
         # the rolls are all still there, unannotated, and annotate() can be re-run.
@@ -1030,15 +1048,3 @@ def _aim(ask: Ask, conv: Conversation, held: Boost, *, taken: set[int]) -> int |
             if count
             else '  ? only d: nothing to boost'
         )
-
-
-def _compare_privately(conv: Conversation, roll: Roll, decision: Decision) -> None:
-    """A roll joining a line here gets the same private comparison the watcher gives
-    one that lands on a line by itself (`conversation.announce_comparison`)."""
-    if decision.line is None or decision.discard or decision.outcome_asked:
-        return  # `_ask_detected` already printed it, before its question
-    for line in conv.lines:
-        if line.id == decision.line:
-            found = hidden.compare(conv, line, _apply(roll, decision))
-            if found is not None:
-                print(f'  = {found.describe()}')

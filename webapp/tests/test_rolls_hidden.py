@@ -119,7 +119,8 @@ class TestNothingHiddenReachesTheBio:
         c = scene()
         public = '\n'.join(rules.render_lines(c.rolls, 'Fumitake'))
         assert public == (
-            "interrogation: 37@2 Jimen / 24@1 Moriko - Chizuru's death: nothing hidden detected\n"
+            # The line is still in progress, so its outcome is open: nothing either way.
+            "interrogation: 37@2 Jimen / 24@1 Moriko - Chizuru's death\n"
             'acting: 32@1 Jimen - posing as a rice factor: '
             'no signs of the persona being seen through'
         )

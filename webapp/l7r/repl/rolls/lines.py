@@ -157,6 +157,10 @@ def new_line_of_questioning(
         grilling=grilling,
         sincerity=secret,
     )
+    if conv.lines:
+        # Declaring a line ENDS the one in progress: its rolls still open are written as
+        # the default from now on (GM 2026-10-26).
+        conversation.end_lines(conv, [conv.lines[-1].id], report=print)
     conv.lines.append(line)
     if isinstance(secret, GmRoll):
         # Noted on the conversation when it was rolled - while the PREVIOUS line was
@@ -281,8 +285,11 @@ def _set_outcome(pc: str, outcome: str, line: int | None) -> None:
         raise ValueError(
             f'{pc} has no interrogation roll on "{target.description}". Rolls there: {who}.'
         )
+    # Canceling on a line still in progress puts the outcome back OPEN - the state before the
+    # mistake (every cancel_* returns to exactly that) - and on an ended line, the default.
+    settled = bool(outcome) or target is not conv.lines[-1]
     for index in hits:
-        conv.rolls[index] = replace(conv.rolls[index], outcome=outcome, outcome_settled=True)
+        conv.rolls[index] = replace(conv.rolls[index], outcome=outcome, outcome_settled=settled)
     group = [conv.rolls[index] for index, _ in on_line]
     for rolls in rules.by_outcome(group):
         print(f'  {rules.render_interrogation(rolls)}')

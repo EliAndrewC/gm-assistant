@@ -205,14 +205,20 @@ is the point and `test_the_line_reads_the_same_with_and_without_a_sincerity_roll
 GM hands out as a line of questioning goes on are not known to the tool. `detected()` is how the
 public outcome changes.
 
-**A DETECTED verdict now waits for the GM** (2026-09-29). The GM reported that lines kept saying
-"nothing hidden detected" even when the PC won, with no chance to say otherwise. Rolls that land on a
-declared line never reach `annotate()`, so nothing ever asked. Now a roll the tool reckons DETECTED
-is pending, like an unannotated roll: the watcher's line ends `- annotate() to say what they got`,
-`annotate()` asks `What did Jimen detect? [nothing hidden detected]`, and `end_conversation()`
-refuses to close until it is answered (`force=True` still overrides). Enter keeps the default and
-marks it answered (`Roll.outcome_settled`), as `detected()` does. The verdict is still only
-advisory: it decides whether to ASK, never what is written.
+**An interrogation roll's outcome is OPEN while its line is in progress** (GM 2026-10-26,
+superseding 2026-09-29's "a DETECTED verdict waits"). What the PCs discern *"is sometimes something
+that comes out over the course of a conversation rather than when the roll is initially made"*, so a
+roll on the current line is written with NO outcome (`interrogation: 37@2 Jimen - the treasury`),
+`annotate()` offers it whether the tool reckons it won or lost, and asks `What did Jimen detect?`
+- Enter means DECIDE LATER and it is asked again at the next `annotate()`. When the line ENDS (the
+next `new_line_of_questioning`, or the conversation ending) a roll still open is written *"nothing
+hidden detected"* (`conversation.end_lines`, which names any roll the tool reckoned had beaten the
+Sincerity roll, so that default is never silent). `rules.outcome_open` is the one test, and an open
+roll is its own group in `rules.by_outcome`. What changed from 2026-09-29: Enter no longer settles the
+default, a loss is asked about too, and `end_conversation()` no longer refuses over an unanswered
+win - ending it ends the line. `detected()` still settles any roll at any time, and
+`cancel_detected()` puts a roll back exactly as it was: open on a line in progress, the default on an
+ended one. The who-won is still only advisory.
 
 **EVERY Sincerity roll made in a conversation is kept** (2026-10-04). The GM: *"sincerity rolls
 made by NPCs in contested interrogation should be saved to the GM-only section for my own later
