@@ -386,3 +386,18 @@ def test_stating_the_recorded_rank_just_rolls() -> None:
     total = tact(2)
     assert total is not None
     assert total.entry.asked == (5, 3)
+
+
+def test_a_void_answer_says_when_it_records_a_new_rank(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Found 2026-10-26: `xky(4, 4) - sincerity` with Air 3 on record and no sincerity, answered
+    [v], recorded sincerity 0 while printing "the record is unchanged". 4k4 is Air 3 plus a void
+    point and no rank, so 0 is what the dice say - but the GM must be told it was recorded."""
+    c = talking(air=3)
+    answers(monkeypatch, 'v')
+    dice.xky(4, 4) - sincerity
+    assert c.numbers == {'air': 3, 'sincerity': 0}
+    out = capsys.readouterr().out
+    assert 'recorded for Fumitake: sincerity 0' in out
+    assert 'unchanged' not in out

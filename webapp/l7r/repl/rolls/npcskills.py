@@ -296,8 +296,14 @@ def resolve(
     elif found.void_points > 0:
         entry.void_points = found.void_points
         voidspent.note(conv, entry, found.void_points)
-        npcnumbers.fill(who.numbers, reading_without(reading, found.void_points))
-        print('  noted - the record is unchanged.')
+        added = npcnumbers.fill(who.numbers, reading_without(reading, found.void_points))
+        # It said "the record is unchanged" even when this filled a rank the record lacked
+        # (found 2026-10-26: `xky(4, 4) - sincerity` with Air 3 on record and [v] wrote
+        # sincerity 0 while saying nothing had changed). Say what was added.
+        if added:
+            print(f'  noted - and recorded for {who.name}: {", ".join(added)}.')
+        else:
+            print('  noted - the record is unchanged.')
     else:
         # The roll the record came from spent them; logged as an earlier roll (217).
         voidspent.note(conv, entry, found.void_points)
