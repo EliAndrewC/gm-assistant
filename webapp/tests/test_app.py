@@ -430,17 +430,27 @@ def test_load_secrets_strips_quotes_like_configobj(
     from l7r import app as app_module
 
     (tmp_path / 'development-secrets.ini').write_text(
-        '[gemini]\napi_key = "AIza-1"\nsingle = \'two\'\nmixed = "three\'\nbare = four\nlone = "\n',
+        '[gemini]\napi_key = "AIza-1"\nsingle = \'two\'\nbare = four\nlisted = "a, b"\n',
         encoding='utf-8',
     )
     monkeypatch.setattr(app_module, '_HERE', tmp_path / 'l7r')
     assert app_module._load_secrets()['gemini'] == {
         'api_key': 'AIza-1',
         'single': 'two',
-        'mixed': '"three\'',
         'bare': 'four',
-        'lone': '"',
+        'listed': 'a, b',
     }
+
+
+def test_load_secrets_refuses_an_unquoted_comma(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from l7r import app as app_module
+
+    (tmp_path / 'development-secrets.ini').write_text('[x]\ncookie = a, b\n', encoding='utf-8')
+    monkeypatch.setattr(app_module, '_HERE', tmp_path / 'l7r')
+    with pytest.raises(ValueError, match='written in quotes, e.g. cookie = "a, b"'):
+        app_module._load_secrets()
 
 
 def test_resolve_default_pool_dir_uses_env_override(monkeypatch: pytest.MonkeyPatch) -> None:

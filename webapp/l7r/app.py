@@ -864,29 +864,30 @@ def _forbidden_handler(status: int, message: str, traceback: str, version: str) 
 def _load_secrets() -> dict[str, Any]:
     """Load development-secrets.ini as a plain dict; returns empty dict if missing.
 
-    Interpolation is disabled so values containing literal `%` (e.g. cookie
-    values with percent-encoding) don't trip the parser.
+    Read with ConfigObj, the same reader chargen uses for this same file, so both halves of the app
+    see the same values. Until 2026-10-26 this used configparser, which keeps surrounding quotes:
+    `api_key = "AIza..."` reached Google with its quotes and was rejected, while chargen's art,
+    reading the same line, worked. Interpolation is off so a literal `%` (percent-encoded cookies)
+    is just a character.
     """
-    import configparser
+    from configobj import ConfigObj
 
     path = _HERE.parent / 'development-secrets.ini'
     if not path.exists():
         return {}
-    parser = configparser.ConfigParser(interpolation=None)
-    parser.read(path, encoding='utf-8')
+    config = ConfigObj(str(path), encoding='utf-8', interpolation=False)
     result: dict[str, dict[str, str]] = {}
-    for section in parser.sections():
-        result[section] = {k: _unquote(v) for k, v in parser.items(section)}
+    for section, values in config.items():
+        result[section] = {}
+        for key, value in values.items():
+            if not isinstance(value, str):
+                # ConfigObj reads an unquoted comma as a list; so would chargen's reader.
+                raise ValueError(
+                    f'development-secrets.ini [{section}] {key}: a value with a comma must be '
+                    f'written in quotes, e.g. {key} = "a, b"'
+                )
+            result[section][key] = value
     return result
-
-
-def _unquote(value: str) -> str:
-    """Drop one pair of matching surrounding quotes, as ConfigObj (chargen's reader of this same
-    file) does. configparser keeps them, so `api_key = "AIza..."` reached Google with its quotes
-    and was rejected as invalid (2026-10-26), while chargen's art, reading the same line, worked."""
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in '"\'':
-        return value[1:-1]
-    return value
 
 
 def _auth_config() -> AuthConfig:
