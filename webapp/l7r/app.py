@@ -294,7 +294,8 @@ class NamesApi:
             answer = npcbackport.backport(name, stats, **self._portal_calls())
         except ValueError as e:
             return _json_error(400, str(e))
-        logger.info('npc-numbers: sheet %s %s: %s', sheet_id, answer['status'], answer['message'])
+        # cherrypy.log, not `logger`: the deployed app prints only CherryPy's own log (feature 226).
+        cherrypy.log(f'npc-numbers: sheet {sheet_id} {answer["status"]}: {answer["message"]}')
         return json.dumps(answer).encode('utf-8')
 
     def _portal_calls(self) -> dict[str, Callable[..., Any]]:

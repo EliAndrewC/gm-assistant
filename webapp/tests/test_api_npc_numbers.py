@@ -63,7 +63,11 @@ def _post(
     return int(str(cherrypy.response.status).split()[0]), json.loads(out)
 
 
-def test_a_build_is_written_and_the_answer_says_what_changed(portal: Portal) -> None:
+def test_a_build_is_written_and_the_answer_says_what_changed(
+    portal: Portal, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    logged: list[str] = []
+    monkeypatch.setattr(cherrypy, 'log', lambda msg, *a, **k: logged.append(msg))
     status, answer = _post(
         portal, {'name': 'Kyoma', 'stats': {'Air': 4, 'Earth': 3, 'sincerity': 3}, 'sheet_id': 41}
     )
@@ -71,6 +75,7 @@ def test_a_build_is_written_and_the_answer_says_what_changed(portal: Portal) -> 
     assert answer['status'] == 'written'
     assert answer['message'] == 'Tsuruchi Kyoma: added Earth 3; 2 unchanged'
     assert portal.notes == 'NPC numbers:\n- Air 4\n- Earth 3\n- sincerity 3'
+    assert logged == ['npc-numbers: sheet 41 written: Tsuruchi Kyoma: added Earth 3; 2 unchanged']
 
 
 def test_401_and_503_come_before_the_body_or_obsidian_portal(portal: Portal) -> None:
