@@ -10,5 +10,5 @@
       opened survives a tick.
 - [x] T006 Docs: `docs/key-paths.md` route list, `l7r/repl/rolls/CLAUDE.md` (render keeps unparsed lines), the app
       docstring.
-- [ ] T007 Gate (`make done`), commit, `sync-with-main.sh done`, `make deploy`, live check (`no_record` probe).
-- [ ] T008 GitHub issue to EliAndrewC/character-sheet for the caller (FR-011, FR-012), watched.
+- [x] T007 Gate (`make done`), commit, `sync-with-main.sh done`, `make deploy`, live check (`no_record` probe).
+- [x] T008 GitHub issue to EliAndrewC/character-sheet for the caller (FR-011, FR-012), watched.
