@@ -582,6 +582,9 @@ def render_annotated(roll: Roll, npc: str, rule: RecordingRule = DEFAULT_RULE) -
     close on interpreter exit, which writes bare rolls rather than losing them.
     """
     who = personal_name(roll.character)
+    # Feature 230: the member whose roll was paired with this one, when it was not the
+    # primary's. Every roll from before the feature carries none and means the primary.
+    npc = roll.npc or npc
     if roll.skill.lower() == ACTING:
         # Feature 207: acting is written like interrogation - alone, exact, ranked,
         # with what the players got - because its opposing investigation roll is

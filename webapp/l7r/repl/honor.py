@@ -381,9 +381,10 @@ def _resolve(
     before = records.get(pc_name.lower())
     reads = perceived(gm_info)
     conv = conversation()
-    talking = conv is not None and conv.npc_id == str(char['id'])
+    # Feature 230: any member of the conversation, not only the primary.
+    talking = conv is not None and any(m.id == str(char['id']) for m in conv.members)
     marker = conv.conversation_id if conv is not None and talking else ''
-    planned = conv.planned(pc_name) if conv is not None and talking else None
+    planned = conv.planned(pc_name, str(char['id'])) if conv is not None and talking else None
     if planned is not None and not (before is not None and before.last == marker):
         # Decided at begin_conversation, and possibly already shown to the player:
         # the GM's screen and the player's reply must never disagree.

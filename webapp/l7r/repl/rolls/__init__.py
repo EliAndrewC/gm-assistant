@@ -10,6 +10,7 @@ from __future__ import annotations
 from l7r.repl.rolls.annotate import annotate
 from l7r.repl.rolls.conversation import (
     abandon_conversation,
+    add_to_conversation,
     begin_conversation,
     cancel_boost,
     cancel_oppose,
@@ -17,6 +18,8 @@ from l7r.repl.rolls.conversation import (
     collect,
     conversation_status,
     end_conversation,
+    move_oppose,
+    remove_from_conversation,
 )
 from l7r.repl.rolls.lines import (
     cancel_detected,
@@ -35,6 +38,7 @@ __all__ = [
     'RecordingRule',
     'Roll',
     'abandon_conversation',
+    'add_to_conversation',
     'annotate',
     'begin_conversation',
     'build_tags',
@@ -49,9 +53,11 @@ __all__ = [
     'detected',
     'end_conversation',
     'grilling',
+    'move_oppose',
     'new_line_of_questioning',
     'record',
     'render_contest',
+    'remove_from_conversation',
     'render_open',
     'round_down',
     'vp',

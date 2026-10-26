@@ -49,7 +49,7 @@ from dataclasses import dataclass
 
 from l7r.repl.gmrolls import GmRoll
 from l7r.repl.rolls import npcnumbers, npcskills, oppose, rules
-from l7r.repl.rolls.models import Conversation, Line, Roll
+from l7r.repl.rolls.models import Conversation, Line, Member, Roll
 
 HEADING = 'Hidden rolls:'
 
@@ -176,17 +176,24 @@ def describe_extra(conv: Conversation, entry: GmRoll, on: int | None) -> str:
     return f'{where}: after {rules.personal_name(after.character)} {after.total}{rank}'
 
 
+def owner(conv: Conversation, sincerity: GmRoll | int | None) -> Member:
+    """Whose Sincerity roll it is (feature 230): the member it was rolled for. A bare
+    number has no roll behind it and is the primary's, as every roll was before."""
+    return conv.owner(sincerity) if isinstance(sincerity, GmRoll) else conv.primary
+
+
 def sincerity_rank(conv: Conversation, sincerity: GmRoll | int | None) -> int | None:
     """The NPC's Sincerity rank: recorded if known, else read off the dice.
 
     A bare number has no dice to read, so no free raises are inferred - a guess
     would be worse than nothing, since the GM would have to notice it to fix it.
     """
-    if 'sincerity' in conv.numbers:
-        return conv.numbers['sincerity']
+    who = owner(conv, sincerity)
+    if 'sincerity' in who.numbers:
+        return who.numbers['sincerity']
     if not isinstance(sincerity, GmRoll):
         return None
-    extra, _ = npcskills.extra_dice('sincerity', conv.schools)
+    extra, _ = npcskills.extra_dice('sincerity', who.schools)
     return npcnumbers.infer(sincerity.asked, 'sincerity', 'air', extra_dice=extra).rank
 
 
@@ -198,7 +205,7 @@ def compare(conv: Conversation, line: Line, roll: Roll) -> Comparison | None:
     total = _sincerity_total(sincerity)
     bonus, npc_bonus = rules.free_raises(roll.rank, sincerity_rank(conv, sincerity))
     casual = 0 if line.grilling else CASUAL_RAISES
-    taxed = oppose.for_line(conv, line)
+    taxed = oppose.for_line(conv, line, owner(conv, sincerity).id)
     if taxed is None:
         return Comparison(roll, bonus, total, casual, npc_bonus)
     return Comparison(roll, bonus, total, casual, npc_bonus, taxed.amount, taxed.knack)
@@ -225,17 +232,21 @@ def _on_line(conv: Conversation, line: Line) -> list[Roll]:
     ]
 
 
-def entries(conv: Conversation) -> tuple[str, ...]:
-    """This conversation's hidden-roll entries, in the order things happened."""
+def entries(conv: Conversation, member: Member | None = None) -> tuple[str, ...]:
+    """This conversation's hidden-roll entries about one member (the primary by
+    default), in the order things happened. Feature 230: each goes to the notes of
+    the NPC whose roll it was - a line's to its Sincerity roll's owner, an acting
+    roll's to the member whose investigation opposed it."""
+    about = member or conv.primary
     day = f'{conv.opened_at:%Y-%m-%d}'
     out: list[str] = []
     for line in conv.lines:
         sincerity = line_roll(conv, line)
-        if sincerity is None:
+        if sincerity is None or owner(conv, sincerity) is not about:
             continue
         total = _sincerity_total(sincerity)
         extras = [] if line.grilling else [f'+{CASUAL_RAISES} not grilling']
-        taxed = oppose.for_line(conv, line)
+        taxed = oppose.for_line(conv, line, about.id)
         if taxed is not None:
             extras.append(f'-{taxed.amount} {taxed.knack}')
         casual = f' ({", ".join(extras)})' if extras else ''
@@ -251,11 +262,13 @@ def entries(conv: Conversation) -> tuple[str, ...]:
         tail = f': {", ".join(results)}' if results else ''
         out.append(f'- {day} sincerity {total}{casual} - {line.description}{tail}')
     for entry, on in extra_rolls(conv):
+        if conv.owner(entry) is not about:
+            continue
         out.append(f'- {day} sincerity {entry.total} - {describe_extra(conv, entry, on)}')
     for roll in conv.rolls:
         if roll.skill.lower() != 'acting' or roll.opposed_total is None:
             continue
-        if roll.discarded or not roll.attributed:
+        if roll.discarded or not roll.attributed or (roll.npc or conv.primary.name) != about.name:
             continue
         rank = '' if roll.rank is None else f'@{roll.rank}'
         mine, theirs = roll.final_total, roll.final_opposed or 0

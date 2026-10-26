@@ -130,9 +130,30 @@ def is_oppose(roll: Roll) -> bool:
     return roll.skill.lower() in TARGET_RINGS
 
 
-def live(rolls: Iterable[Roll]) -> list[Penalty]:
-    """Every oppose roll that counts: attributed and not discarded."""
-    return [Penalty(r) for r in rolls if is_oppose(r) and r.attributed and not r.discarded]
+#: Feature 230. `Roll.against` for an oppose roll that taxes NOBODY: it was seen while
+#: the primary was away, and waits for `move_oppose`. An EMPTY `against` is the
+#: primary, which is what every oppose roll from before the feature meant.
+NOBODY = '-'
+
+
+def target(conv: Conversation, roll: Roll) -> str:
+    """The id of the member an oppose roll taxes; '' for nobody."""
+    if roll.against == NOBODY:
+        return ''
+    return roll.against or conv.primary.id
+
+
+def live(rolls: Iterable[Roll], conv: Conversation | None = None, npc: str = '') -> list[Penalty]:
+    """Every oppose roll that counts: attributed and not discarded - and, given a
+    conversation and a member id, aimed at that member (feature 230)."""
+    return [
+        Penalty(r)
+        for r in rolls
+        if is_oppose(r)
+        and r.attributed
+        and not r.discarded
+        and (conv is None or target(conv, r) == npc)
+    ]
 
 
 def _highest(found: Sequence[Penalty]) -> Penalty | None:
@@ -148,12 +169,14 @@ def in_effect(rolls: Iterable[Roll], ring: str, when: datetime) -> Penalty | Non
     return _highest([p for p in live(rolls) if p.ring == ring and p.roll.at <= when])
 
 
-def for_skill(conv: Conversation, skill: str, when: datetime) -> Penalty | None:
-    """`in_effect`, from the NPC's SKILL rather than its ring."""
-    return in_effect(conv.rolls, ring_of(skill), when)
+def for_skill(conv: Conversation, skill: str, when: datetime, npc: str = '') -> Penalty | None:
+    """`in_effect`, from the NPC's SKILL rather than its ring, for one member (the
+    primary when `npc` is not given)."""
+    aimed = live(conv.rolls, conv, npc or conv.primary.id)
+    return in_effect([p.roll for p in aimed], ring_of(skill), when)
 
 
-def for_line(conv: Conversation, line: Line) -> Penalty | None:
+def for_line(conv: Conversation, line: Line, npc: str = '') -> Penalty | None:
     """The penalty on `line`'s hidden Sincerity roll - the one RETROACTIVE case.
 
     The Sincerity roll opposes every interrogation roll on the line until the next
@@ -164,7 +187,8 @@ def for_line(conv: Conversation, line: Line) -> Penalty | None:
     later = [other.at for other in conv.lines if other.at > line.at]
     ended = min(later) if later else None
     ring = ring_of(rules.OPPOSING_SKILL[rules.INTERROGATION])
-    found = [p for p in live(conv.rolls) if p.ring == ring and (ended is None or p.roll.at < ended)]
+    aimed = live(conv.rolls, conv, npc or conv.primary.id)
+    found = [p for p in aimed if p.ring == ring and (ended is None or p.roll.at < ended)]
     return _highest(found)
 
 
@@ -179,14 +203,21 @@ def effect(conv: Conversation, roll: Roll) -> str:
     """
     mine = Penalty(roll)
     ring = mine.ring.capitalize()
-    others = [r for r in conv.rolls if r != roll]
+    aimed = target(conv, roll)
+    if not aimed:
+        return (
+            f'{mine.describe()} taxes nobody yet - {conv.primary.name} has left. '
+            'move_oppose(souma) says whose rolls it taxes.'
+        )
+    npc = conv.member(aimed).name
+    others = [p.roll for p in live(conv.rolls, conv, aimed) if p.roll != roll]
     standing = in_effect(others, mine.ring, roll.at)
     if standing is not None and standing.amount >= mine.amount:
         who = rules.personal_name(standing.roll.character)
         return f"{mine.describe()} changes nothing - {who}'s -{standing.amount} stands"
     if mine.amount == 0:
-        return f'{mine.describe()} is too low to cost {conv.npc_name} anything'
-    text = f'{conv.npc_name} takes {mine.describe()} on every {ring} roll from here on'
+        return f'{mine.describe()} is too low to cost {npc} anything'
+    text = f'{npc} takes {mine.describe()} on every {ring} roll from here on'
     if standing is not None:
         text += f", replacing {rules.personal_name(standing.roll.character)}'s -{standing.amount}"
     return text
@@ -214,7 +245,7 @@ def penalize(conv: Conversation, entry: GmRoll, skill: str) -> Penalty | None:
     Set, never added: calling this twice, or again after a higher oppose roll turns
     up, leaves the roll paying exactly one penalty. A roll marked a mistake pays none.
     """
-    found = None if entry.mistake else for_skill(conv, skill, entry.at)
+    found = None if entry.mistake else for_skill(conv, skill, entry.at, conv.owner(entry).id)
     entry.penalty = 0 if found is None else found.amount
     entry.penalty_source = '' if found is None else found.knack
     return found

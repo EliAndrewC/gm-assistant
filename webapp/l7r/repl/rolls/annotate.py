@@ -43,9 +43,9 @@ from datetime import datetime
 
 from l7r.repl import gmrolls
 from l7r.repl.rolls import boost as boostmod
-from l7r.repl.rolls import console, hidden, keys, menu, modes, oppose, rules
+from l7r.repl.rolls import console, hidden, keys, menu, modes, npcskills, oppose, rules
 from l7r.repl.rolls.menu import Option
-from l7r.repl.rolls.models import Boost, Conversation, Roll
+from l7r.repl.rolls.models import Boost, Conversation, Member, Roll
 
 Ask = Callable[[str], str]
 #: `(question, ask) -> (undone, answer)` - `keys.ask_with_undo`, or a test's script.
@@ -128,6 +128,9 @@ class Decision:
     #: The GM was asked what an interrogation roll detected; `outcome` is the answer
     #: ('' keeps the default). Only then is the roll's outcome touched.
     outcome_asked: bool = False
+    #: Feature 230. The member on the other side (by name) when it is not the
+    #: primary: the owner of the paired GM roll, or the member the GM picked.
+    npc: str = ''
 
 
 def _outcome(roll: Roll, decision: Decision) -> Roll:
@@ -138,6 +141,13 @@ def _outcome(roll: Roll, decision: Decision) -> Roll:
 
 def _apply(roll: Roll, decision: Decision) -> Roll:
     """Turn a staged decision into the roll it produces."""
+    applied = _apply_choice(roll, decision)
+    if decision.npc and not decision.discard:
+        return replace(applied, npc=decision.npc)
+    return applied
+
+
+def _apply_choice(roll: Roll, decision: Decision) -> Roll:
     if decision.discard:
         return replace(roll, discarded=True)
     if decision.rank_only:
@@ -396,12 +406,16 @@ def _ask_detected(ask: Ask, conv: Conversation, staged: Roll, decision: Decision
     return replace(decision, outcome=outcome, outcome_asked=True)
 
 
-def _their_rank(conv: Conversation, skill: str, entry: gmrolls.GmRoll | None) -> int | None:
+def _their_rank(
+    conv: Conversation, skill: str, entry: gmrolls.GmRoll | None, member: Member | None = None
+) -> int | None:
     """The NPC's rank in `skill`: EXACT when it is on record (feature 207), else read
     off the chosen roll's pool - which the GM warned is *"not completely reliable"*,
-    and is why both bonuses can still be overridden."""
-    if skill in conv.numbers:
-        return conv.numbers[skill]
+    and is why both bonuses can still be overridden. The record is the roll's
+    member's, or `member`'s for a typed total (feature 230)."""
+    who = member or (conv.owner(entry) if entry is not None else conv.primary)
+    if skill in who.numbers:
+        return who.numbers[skill]
     return None if entry is None else entry.skill
 
 
@@ -435,6 +449,7 @@ def _taxed(
     total: int,
     when: datetime,
     entry: gmrolls.GmRoll | None = None,
+    member: Member | None = None,
 ) -> int:
     """The NPC's opposing total after a player's oppose penalty (feature 208).
 
@@ -450,7 +465,8 @@ def _taxed(
     """
     if entry is not None and entry.tagged:
         return total
-    found = oppose.for_skill(conv, their_skill, when)
+    who = member or (conv.owner(entry) if entry is not None else conv.primary)
+    found = oppose.for_skill(conv, their_skill, when, who.id)
     if found is None:
         return total
     print(f'  {found.describe()}: {total} -> {total - found.amount}')
@@ -498,6 +514,9 @@ class _Menu:
     mine: list[gmrolls.GmRoll]
     #: GM rolls already used as an opposing side in THIS run (by `seq`).
     used: set[int]
+    #: Feature 230. The member the GM picked for the roll being decided, when no GM
+    #: roll says whose side it was (a typed total, the manipulation default of 15).
+    picked: Member | None = None
 
     def ask_undoable(self, question: str) -> tuple[bool, str]:
         try:
@@ -511,6 +530,26 @@ class _Menu:
 #: the GM's undo; these are what a pipe or a test has instead, and they work at a
 #: terminal too. No real note is one of these tokens.
 _TYPED_KINDS = {'c': 'c', 'ob': 'ob', 'b': 'ob', 'd': 'd', 'f': 'f', 'n': 'n', 't': 't'}
+
+
+def _which_member(menu: _Menu) -> Member:
+    """The NPC on the other side when no roll says so (feature 230): the PRIMARY while
+    they are here, with no question - and once they have left, ALWAYS asked, even with
+    one member left, because nothing goes to another NPC unless the GM says so."""
+    conv = menu.conv
+    if conv.primary.present:
+        return conv.primary
+    here = conv.present
+    if not here:
+        raise ValueError('nobody is left in the conversation to have been on the other side.')
+    rows = [Option(str(n), m.name) for n, m in enumerate(here, start=1)]
+    listed = ' / '.join(f'{n}. {m.name}' for n, m in enumerate(here, start=1))
+    while True:
+        answer = _select(menu.ask, f'  Which NPC? ({listed}) > ', '  Which NPC?', rows)
+        if answer.isdigit() and 1 <= int(answer) <= len(here):
+            menu.picked = here[int(answer) - 1]
+            return menu.picked
+        print(f'  ? a number from 1 to {len(here)}')
 
 
 def _note_or_kind(
@@ -674,11 +713,13 @@ def _pick(
             total = _taxed(menu.conv, their_skill, chosen.total, chosen.at, chosen)
             their_rank = _their_rank(menu.conv, their_skill, chosen)
         elif fifteen and answer[:1] == 'f':
+            _which_member(menu)
             total, their_rank = modes.UNROLLED_TOTAL, 0
         elif answer[:1] == 't':
+            member = _which_member(menu)
             total = _number(menu.ask, f'  Their {their_skill} total? > ', 0)
-            total = _taxed(menu.conv, their_skill, total, roll.at)
-            their_rank = _their_rank(menu.conv, their_skill, None)
+            total = _taxed(menu.conv, their_skill, total, roll.at, member=member)
+            their_rank = _their_rank(menu.conv, their_skill, None, member)
         else:
             print('  ? ' + ', '.join(options))
             continue
@@ -796,7 +837,8 @@ def _decide(menu: _Menu, roll: Roll) -> Decision | None:
     if roll.skill.lower() == rules.INTIMIDATION and decision is not None and not decision.discard:
         # Feature 209, asked LAST so it follows whichever way the roll was recorded -
         # open, open with a bonus, or the rare contest.
-        decision = replace(decision, outcome=_appearance(menu.ask, menu.conv.npc_name))
+        who = _which_member(menu)
+        decision = replace(decision, outcome=_appearance(menu.ask, who.name))
     return decision
 
 
@@ -854,6 +896,7 @@ def annotate(
     from l7r.repl.rolls.conversation import after_boost, require_open
 
     conv = conversation if conversation is not None else require_open()
+    npcskills.settle_pending()  # a bare tag from the statement before (feature 230)
     waiting = pending(conv)
     if not waiting and not boostmod.held(conv):
         print('Nothing waiting to be annotated.')
@@ -900,9 +943,11 @@ def annotate(
                 continue
             index, roll = waiting[choice]
             print(f'  {_describe(roll)}')
+            menu.picked = None
             decision = _decide(menu, roll)
             if decision is None:
                 break
+            decision = _with_npc(menu, decision)
             staged[index] = decision
             print(f'  staged: {_staged_text(conv, roll, decision)}')
             _compare_privately(conv, roll, decision)
@@ -942,6 +987,19 @@ def annotate(
     kept = len(staged) - discarded
     tail = f', {discarded} discarded' if discarded else ''
     print(f'Annotated {kept} roll(s){tail}.')
+
+
+def _with_npc(menu: _Menu, decision: Decision) -> Decision:
+    """Name the other side's member on the decision when it is not the primary
+    (feature 230): the paired GM roll's owner, else the member the GM picked."""
+    conv = menu.conv
+    who = menu.picked
+    if decision.opponent is not None:
+        paired = [e for e in menu.mine if e.seq == decision.opponent]
+        who = conv.owner(paired[0]) if paired else who
+    if who is None or who is conv.primary:
+        return decision
+    return replace(decision, npc=who.name)
 
 
 def _aim(ask: Ask, conv: Conversation, held: Boost, *, taken: set[int]) -> int | None:

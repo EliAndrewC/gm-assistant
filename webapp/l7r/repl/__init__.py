@@ -25,6 +25,7 @@ from l7r.repl.names import (
 )
 from l7r.repl.rolls import (
     abandon_conversation,
+    add_to_conversation,
     annotate,
     begin_conversation,
     build_tags,
@@ -36,7 +37,9 @@ from l7r.repl.rolls import (
     detected,
     end_conversation,
     grilling,
+    move_oppose,
     new_line_of_questioning,
+    remove_from_conversation,
     vp,
 )
 from l7r.repl.sheets import PC, PCS, knack_rank
@@ -47,6 +50,7 @@ __all__ = [
     'Dist',
     'Pick',
     'abandon_conversation',
+    'add_to_conversation',
     'annotate',
     'actual_xky',
     'bank',
@@ -66,6 +70,7 @@ __all__ = [
     'hamlet_name',
     'initiative',
     'knack_rank',
+    'move_oppose',
     'name',
     'names',
     'new_line_of_questioning',
@@ -73,6 +78,7 @@ __all__ = [
     'place',
     'province_name',
     'prob',
+    'remove_from_conversation',
     'town_name',
     'village_name',
     'vp',
@@ -115,6 +121,16 @@ COMMANDS: tuple[tuple[str, str], ...] = (
         'watch every channel for rolls and record them against that NPC; a second argument '
         'titles the section ("confrontation on the Imperial road")',
     ),
+    (
+        'begin_conversation("Hideki", "Souma", "topic")',
+        'several NPCs: the FIRST is primary (the rolls go on their bio); the one argument '
+        'naming nobody is the topic. souma.tact(), xky(5, 3) - tact - souma',
+    ),
+    (
+        'add_to_conversation("Kenji")',
+        'NPCs join or leave mid-conversation: also remove_from_conversation("Souma")',
+    ),
+    ('move_oppose(souma)', "a player's oppose roll taxes the primary; this aims it elsewhere"),
     ('annotate()', 'say what each roll was for; only Etiquette is saved without it'),
     (
         'xky(5, 3) - tact',

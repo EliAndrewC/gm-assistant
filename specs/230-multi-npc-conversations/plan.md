@@ -55,8 +55,10 @@ bound tag for any skill name in `build_tags()` (`souma.tact`, `souma.tact()`, `x
 and a one-line repr. A bound tag is a `SkillTag` with `member` set; every SkillTag code path takes
 the member from there, else the primary. The REPL namespace is registered with
 `rolls.conversation.use_namespace(ns)` by `shell.main`; begin/add put handles in it and
-end/abandon take them out. `npc('Souma')` resolves a member by whole name tokens. Without a
-registered namespace (tests, scripts) there are no globals, only `npc()`.
+end/abandon take them out. `conversation.handle(name)` (internal, not at the prompt - review
+round 1 struck a public `npc()`) resolves a member by whole name tokens, for tests and scripts.
+A departed member's handle raises `MemberLeft` for every roll except marking a roll whose
+`GmRoll.at` is before the member's last `left` event.
 
 ## Decision 4 - membership and the bio
 
@@ -67,9 +69,10 @@ under the portrait). Re-adding a departed member flips `present` and records an 
 `remove_from_conversation(*names)` flips `present` and records `Event('left', at)`.
 
 `written_lines` splits the rolls into SEGMENTS at membership events by message time (`Roll.at`),
-renders each segment with `rules.render_lines`, and puts the marker line between segments. A
-roll on a line of questioning is placed in the segment of that line's first roll, so a line of
-questioning is never split. Join and leave are measured against `datetime.now(UTC)` (the
+renders each segment with `rules.render_lines`, and puts the marker line between segments, so
+every grouped line (Etiquette, a line of questioning) is split at a marker (review round 1).
+`add_to_conversation` on an UNTITLED conversation is an error until the GM answers the spec's
+open question (review round 2). Join and leave are measured against `datetime.now(UTC)` (the
 injected clock), the same clock `Roll.at` comes from (Discord message time).
 
 ## Decision 5 - per-member effects
@@ -85,18 +88,20 @@ injected clock), the same clock `Roll.at` comes from (Discord message time).
   line's entry follows its Sincerity roll's owner; a bare-number Sincerity (no roll) belongs to
   the primary.
 - `_tick` writes each member's notes when that member's numbers / hidden / void lines changed.
-- `annotate`: a contested line names the paired roll's member (`Roll.npc_name`, rendered in place
-  of the conversation's NPC when set); a typed total and an intimidation appearance ask which
-  present member when more than one is present.
+- `annotate`: a contested line names the paired roll's member (`Roll.npc`, the member's name,
+  rendered in place of the conversation's NPC when set); a typed total and an intimidation
+  appearance go to the primary while it is present and ALWAYS ask which present member once it
+  has left (review round 1).
 
 ## Decision 6 - Discern Honor (character-sheet#6)
 
-`discern.MULTI_NPC` (False until the sheet posts that the new shape is live). Off: exactly
-today's behavior, primary only. On: `plan` per member (each with its own `Honor:`), `payloads`
-builds `npcs: [...]` in membership order with `present`, `poll` reads `asked_at` per (NPC,
-character), `commit` / `roll_back` work per member, `discern_honor(npc, pc)` returns the planned
-value for whichever member it names. Two present members whose personal names collide are sent
-by full name (the sheet refuses case-insensitive duplicates).
+The sheet shipped the multi-NPC shape (with the old one alongside) before this side's code was
+written, so there is no switch: the new code sends and reads only `npcs`. `plan` runs per member
+(each with its own `Honor:`), `payloads` builds `npcs: [...]` in membership order with `present`,
+`poll` reads `asked_at` per (NPC, character), `commit` / `roll_back` work per member, `add` /
+`leave` re-PUT when membership changes, and `discern_honor(npc, pc)` returns the planned value for
+whichever member it names. Two present members whose personal names collide are sent by full name
+(the sheet refuses case-insensitive duplicates).
 
 ## Verification
 

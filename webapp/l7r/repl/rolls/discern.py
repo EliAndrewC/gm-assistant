@@ -48,7 +48,7 @@ from typing import Any
 
 from l7r.repl import honor as honormod
 from l7r.repl.rolls import rules, sheet
-from l7r.repl.rolls.models import Conversation, DiscernEntry
+from l7r.repl.rolls.models import Conversation, DiscernEntry, Member
 from l7r.repl.sheets import resolve_pc
 
 _GROUP_SUFFIX = re.compile(r'-g\d+$')
@@ -111,30 +111,60 @@ def plan(
     return out
 
 
+def _names(conv: Conversation) -> dict[str, str]:
+    """Member id -> the name the sheet shows: the personal name, or the full one when
+    two PRESENT members share it (the sheet refuses a case-insensitive duplicate,
+    because `npc:` and its autocomplete pick by name)."""
+    short = {m.id: rules.personal_name(m.name) for m in conv.members}
+    out = {}
+    for m in conv.members:
+        twins = [o for o in conv.present if short[o.id].lower() == short[m.id].lower()]
+        out[m.id] = m.name if len(twins) > 1 else short[m.id]
+    return out
+
+
 def payloads(conv: Conversation) -> list[dict[str, Any]]:
     """One `PUT` body per gaming group. THIS IS EVERYTHING THAT LEAVES (FR-003): the
-    id, the group, an opaque NPC reference (the Obsidian Portal id - not a name),
-    when it opened, and per character the told value. No true Honor, no die, no
-    conversation count, no locked flag, no NPC name."""
-    groups = sorted({entry.group for entry in conv.discern.values()})
+    id, the group, when it opened, and per NPC an opaque reference (the Obsidian Portal
+    id), the name the players call them by, whether they are still there, and per
+    character the told value. No true Honor, no die, no conversation count, no locked
+    flag. Feature 230 added the NPC's NAME, on purpose: `/discern-honor npc:` picks by
+    it, and the names are only of the NPCs the players are talking to right now
+    (character-sheet#6) - 212's rule existed so autocomplete could not leak the roster.
+    Every member who was ever planned is sent, in membership order, the primary first;
+    the sheet keeps a departed one's asks (`present: false`) and stops answering them."""
+    planned = [m for m in conv.members if m.honor is not None]
+    groups = sorted({e.group for m in planned for e in m.discern.values()})
+    names = _names(conv)
     return [
         {
             'conversation_id': sheet_id(conv.conversation_id, group),
             'group': group,
-            'npc_ref': conv.npc_id,
             'opened_at': conv.opened_at.isoformat(),
-            'discern_honor': [
-                {'character_id': entry.character_id, 'told': entry.record.told}
-                for entry in conv.discern.values()
-                if entry.group == group
+            'npcs': [
+                {
+                    'npc_ref': m.id,
+                    'name': names[m.id],
+                    'present': m.present,
+                    'discern_honor': [
+                        {'character_id': e.character_id, 'told': e.record.told}
+                        for e in m.discern.values()
+                        if e.group == group
+                    ],
+                }
+                for m in planned
             ],
         }
         for group in groups
     ]
 
 
-def _asked(existing: Mapping[str, Any]) -> list[Mapping[str, Any]]:
-    return [e for e in existing.get('discern_honor') or () if e.get('asked_at')]
+def _asked(npc: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    return [e for e in npc.get('discern_honor') or () if e.get('asked_at')]
+
+
+def _npcs(existing: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    return list(existing.get('npcs') or ())
 
 
 def open_(
@@ -148,18 +178,10 @@ def open_(
     roll: Callable[[], int] = honormod.d10_flat,
     mint: Callable[[datetime], str] = mint_id,
 ) -> None:
-    """Decide the answers and hand them to the sheet app. NEVER raises and never
-    stops the conversation opening (FR-010): roll capture and the manual
-    `discern_honor()` must work whatever happens here, so every failure is a line
-    of output and a return."""
-    body = get_body(conv.npc_id)
-    if body is None:
-        return
-    gm_info = str(body.get('game_master_info') or '')
-    honor = honormod.parse_honor(gm_info)
-    if honor is None:
-        print(f'  Discern Honor: {conv.npc_name} has no "Honor: X.Y" line, so it cannot answer.')
-        return
+    """Decide the answers about every member and hand them to the sheet app. NEVER
+    raises and never stops the conversation opening (FR-010): roll capture and the
+    manual `discern_honor()` must work whatever happens here, so every failure is a
+    line of output and a return."""
     found = holders()
     if found.reason:
         print(f'  Discern Honor: {found.reason} - /discern-honor will not answer.')
@@ -171,7 +193,7 @@ def open_(
         )
     if not found.holders:
         return
-    served: dict[int, float] = {}
+    served: dict[tuple[str, int], float] = {}
     resumed = ''
     for group in sorted({h.group for h in found.holders}):
         result = get_conversation(group)
@@ -181,26 +203,52 @@ def open_(
         existing = result.conversation
         if existing is None:
             continue
-        if str(existing.get('npc_ref') or '') == conv.npc_id and not new:
-            # FR-011. Same NPC, never closed: the REPL died, or a close failed.
+        refs = [str(n.get('npc_ref') or '') for n in _npcs(existing)]
+        if refs[:1] == [conv.primary.id] and not new:
+            # FR-011. Same primary, never closed: the REPL died, or a close failed.
             resumed = resumed or base_id(str(existing.get('conversation_id') or ''))
-            for entry in existing.get('discern_honor') or ():
-                served[int(entry['character_id'])] = float(entry['told'])
+            for npc in _npcs(existing):
+                for entry in npc.get('discern_honor') or ():
+                    key = (str(npc.get('npc_ref') or ''), int(entry['character_id']))
+                    served[key] = float(entry['told'])
             print(
                 f'  Discern Honor: RESUMING the conversation opened at '
                 f'{str(existing.get("opened_at") or "")[11:16]} UTC - PCs who asked keep their '
                 f'answer. begin_conversation(..., new=True) starts a fresh one instead.'
             )
-        elif _asked(existing):
-            who = ', '.join(str(e.get('character_id')) for e in _asked(existing))
+        elif any(_asked(n) for n in _npcs(existing)):
+            who = ', '.join(str(e.get('character_id')) for n in _npcs(existing) for e in _asked(n))
             print(
                 f'  Discern Honor: replacing an unclosed conversation in which sheet '
                 f'character(s) {who} had asked. Anything not yet recorded from it is lost.'
             )
     conv.conversation_id = resumed or mint(conv.opened_at)
-    conv.honor = honor
-    conv.discern = plan(
-        found.holders,
+    conv.discern_holders = found.holders
+    conv.discern_served = served
+    for member in conv.members:
+        _plan_member(conv, member, get_body, roll)
+    _push(conv, put)
+
+
+def _plan_member(
+    conv: Conversation,
+    member: Member,
+    get_body: Callable[[str], Mapping[str, object] | None],
+    roll: Callable[[], int],
+) -> None:
+    """Decide what each knack-holder is told about ONE member, and say so."""
+    body = get_body(member.id)
+    if body is None:
+        return
+    gm_info = str(body.get('game_master_info') or '')
+    honor = honormod.parse_honor(gm_info)
+    if honor is None:
+        print(f'  Discern Honor: {member.name} has no "Honor: X.Y" line, so it cannot answer.')
+        return
+    served = {cid: told for (ref, cid), told in conv.discern_served.items() if ref == member.id}
+    member.honor = honor
+    member.discern = plan(
+        conv.discern_holders,
         honormod.parse_records(gm_info),
         honor,
         honormod.perceived(gm_info),
@@ -208,6 +256,12 @@ def open_(
         roll,
         served,
     )
+    told = ', '.join(f'{e.pc} {e.record.told:.1f}' for e in member.discern.values())
+    about = f' {member.name}' if conv.ever_multi else ''
+    print(f'  Discern Honor{about} ({honor:.1f}): would tell {told}')
+
+
+def _push(conv: Conversation, put: Callable[[Mapping[str, Any]], sheet.ConversationResult]) -> None:
     pushed = []
     for payload in payloads(conv):
         result = put(payload)
@@ -216,8 +270,35 @@ def open_(
         else:
             pushed.append(int(payload['group']))
     conv.discern_groups = tuple(pushed)
-    told = ', '.join(f'{e.pc} {e.record.told:.1f}' for e in conv.discern.values())
-    print(f'  Discern Honor ({honor:.1f}): would tell {told}')
+
+
+def add(
+    conv: Conversation,
+    *,
+    get_body: Callable[[str], Mapping[str, object] | None],
+    put: Callable[[Mapping[str, Any]], sheet.ConversationResult] = sheet.open_conversation,
+    roll: Callable[[], int] = honormod.d10_flat,
+) -> None:
+    """Members joined (feature 230): plan for any not yet planned, and re-`PUT` the
+    open id, which keeps every entry the sheet already holds. A conversation whose
+    open found no knack-holders has nothing to add to."""
+    if not conv.conversation_id or not conv.discern_holders:
+        return
+    for member in conv.members:
+        if member.honor is None:
+            _plan_member(conv, member, get_body, roll)
+    _push(conv, put)
+
+
+def leave(
+    conv: Conversation,
+    *,
+    put: Callable[[Mapping[str, Any]], sheet.ConversationResult] = sheet.open_conversation,
+) -> None:
+    """Members left: tell the sheet (`present: false`), so it stops answering about
+    them. An ask already made is kept there and is still recorded here."""
+    if conv.conversation_id and conv.discern_groups:
+        _push(conv, put)
 
 
 def poll(
@@ -226,7 +307,7 @@ def poll(
     get_conversation: Callable[[int], sheet.ConversationResult] = sheet.get_conversation,
     say: Callable[[str], None] = print,
 ) -> None:
-    """Learn which PCs have asked. An unreachable app complains ONCE."""
+    """Learn which PCs have asked about which member. An unreachable app complains ONCE."""
     for group in conv.discern_groups:
         result = get_conversation(group)
         if result.reason:
@@ -238,10 +319,15 @@ def poll(
         existing = result.conversation or {}
         if existing.get('conversation_id') != sheet_id(conv.conversation_id, group):
             continue
-        for row in _asked(existing):
-            entry = conv.discern.get(int(row['character_id']))
-            if entry is not None:
-                entry.asked = True
+        for npc in _npcs(existing):
+            try:
+                member = conv.member(str(npc.get('npc_ref') or ''))
+            except KeyError:
+                continue
+            for row in _asked(npc):
+                entry = member.discern.get(int(row['character_id']))
+                if entry is not None:
+                    entry.asked = True
 
 
 def commit(
@@ -256,14 +342,28 @@ def commit(
     RE-READS the notes rather than trusting the copy from `open_`: the watcher's own
     debounced write and the GM's manual `discern_honor()` both rewrite this field,
     and a block rendered from a stale copy would drop their lines. Idempotent on the
-    marker (FR-005): a record this conversation already advanced is left alone."""
-    waiting = [e for e in conv.discern.values() if e.asked and not e.committed]
+    marker (FR-005): a record this conversation already advanced is left alone. Each
+    member's asks go to that member's own notes (feature 230)."""
+    wrote = False
+    for member in conv.members:
+        wrote = _commit_member(conv, member, get_body, update, say) or wrote
+    return wrote
+
+
+def _commit_member(
+    conv: Conversation,
+    member: Member,
+    get_body: Callable[[str], Mapping[str, object] | None],
+    update: Callable[..., object],
+    say: Callable[[str], None],
+) -> bool:
+    waiting = [e for e in member.discern.values() if e.asked and not e.committed]
     if not waiting:
         return False
     with honormod.NOTES_LOCK:
-        body = get_body(conv.npc_id)
+        body = get_body(member.id)
         if body is None:
-            say(f'  ! Discern Honor: could not read {conv.npc_name} to record who asked')
+            say(f'  ! Discern Honor: could not read {member.name} to record who asked')
             return False
         gm_info = str(body.get('game_master_info') or '')
         records = honormod.parse_records(gm_info)
@@ -274,11 +374,12 @@ def commit(
                 records[entry.pc.lower()] = entry.record
                 fresh.append(entry)
         if fresh:
-            update(conv.npc_id, game_master_info=honormod.render(gm_info, records))
+            update(member.id, game_master_info=honormod.render(gm_info, records))
     for entry in waiting:
         entry.committed = True
+    about = f' on {member.name}' if conv.ever_multi else ''
     for entry in fresh:
-        say(f'  + {entry.pc} used Discern Honor: told {entry.record.told:.1f}')
+        say(f'  + {entry.pc} used Discern Honor{about}: told {entry.record.told:.1f}')
     return bool(fresh)
 
 
@@ -288,28 +389,33 @@ def roll_back(
     get_body: Callable[[str], Mapping[str, object] | None],
     update: Callable[..., object],
 ) -> None:
-    """`abandon_conversation()`: leave the NPC's block as it was before this
+    """`abandon_conversation()`: leave every member's block as it was before this
     conversation (FR-009), and SAY who had already been given a number - which
     character that ask should count against instead is the GM's call, not ours."""
-    if not conv.conversation_id or conv.honor is None:
+    if not conv.conversation_id:
         return
-    told = [e for e in conv.discern.values() if e.asked]
-    with honormod.NOTES_LOCK:
-        body = get_body(conv.npc_id)
-        if body is not None:
-            gm_info = str(body.get('game_master_info') or '')
-            records = honormod.parse_records(gm_info)
-            before = honormod.rollback(records, conv.conversation_id, conv.honor)
-            if before != records:
-                update(conv.npc_id, game_master_info=honormod.render(gm_info, before))
-                print(f"Took this conversation's Discern Honor back off {conv.npc_name}'s record.")
-        elif told:
-            print(f'  ! could not read {conv.npc_name} to take Discern Honor back off the record')
-    for entry in told:
-        print(
-            f'  {entry.pc} had already been told {entry.record.told:.1f} - '
-            'credit it to the right character by hand.'
-        )
+    for member in conv.members:
+        if member.honor is None:
+            continue
+        told = [e for e in member.discern.values() if e.asked]
+        with honormod.NOTES_LOCK:
+            body = get_body(member.id)
+            if body is not None:
+                gm_info = str(body.get('game_master_info') or '')
+                records = honormod.parse_records(gm_info)
+                before = honormod.rollback(records, conv.conversation_id, member.honor)
+                if before != records:
+                    update(member.id, game_master_info=honormod.render(gm_info, before))
+                    print(
+                        f"Took this conversation's Discern Honor back off {member.name}'s record."
+                    )
+            elif told:
+                print(f'  ! could not read {member.name} to take Discern Honor back off the record')
+        for entry in told:
+            print(
+                f'  {entry.pc} had already been told {entry.record.told:.1f} about {member.name} - '
+                'credit it to the right character by hand.'
+            )
 
 
 def close(

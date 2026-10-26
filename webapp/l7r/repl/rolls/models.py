@@ -19,7 +19,7 @@ from l7r.repl.gmrolls import GmRoll
 
 if TYPE_CHECKING:
     from l7r.repl.honor import Record
-    from l7r.repl.rolls.sheet import Ceilings
+    from l7r.repl.rolls.sheet import Ceilings, KnackHolder
 
 #: Where a roll came from. `recorded` means it was joined to a row in the
 #: character-sheet app's roll history and is therefore exact; `typed` means a
@@ -100,6 +100,14 @@ class Roll:
     #: GM's own example). Kept beside it for once-per-roll and `cancel_boost()`.
     boost: int = 0
     boosted_by: str = ''
+    #: Feature 230. An OPPOSE roll's target: the id of the member whose Air / Water
+    #: rolls it taxes. The primary when it is seen (GM 2026-10-26: *"default it to
+    #: the primary with a way for me to move it"* - `move_oppose`), '' for none.
+    against: str = ''
+    #: Feature 230. A CONTESTED roll's opposing NPC, by name: the member whose roll
+    #: `annotate()` paired with it. Empty means the conversation's primary, which is
+    #: what every roll before this feature meant.
+    npc: str = ''
 
     @property
     def annotated(self) -> bool:
@@ -236,6 +244,45 @@ class DiscernEntry:
     committed: bool = False
 
 
+@dataclass(slots=True)
+class Member:
+    """One NPC in a conversation (feature 230), and what is about THAT NPC alone.
+
+    The first member is the PRIMARY: the conversation's public lines go to their bio for
+    the whole conversation, whoever joins or leaves (GM 2026-10-26). Everything here is
+    written to this member's own GM-only notes. `handle` is the name the member answers
+    to at the prompt (`souma`); `present` turns False when they leave.
+    """
+
+    npc: Mapping[str, object]
+    handle: str = ''
+    present: bool = True
+    numbers: dict[str, int] = field(default_factory=dict)
+    schools: tuple[str, ...] = ()
+    numbers_written: dict[str, int] = field(default_factory=dict)
+    hidden_written: tuple[str, ...] = ()
+    void_written: tuple[str, ...] = ()
+    discern: dict[int, DiscernEntry] = field(default_factory=dict)
+    honor: float | None = None
+
+    @property
+    def name(self) -> str:
+        return str(self.npc.get('name') or '')
+
+    @property
+    def id(self) -> str:
+        return str(self.npc.get('id') or '')
+
+
+@dataclass(frozen=True, slots=True)
+class Event:
+    """A member joined or left the conversation, at `at` (feature 230)."""
+
+    member: str
+    kind: Literal['joined', 'left']
+    at: datetime
+
+
 @dataclass(slots=True, repr=False)
 class Conversation:
     """The one piece of mutable state in the feature. At most one is open.
@@ -258,31 +305,24 @@ class Conversation:
     written: tuple[str, ...] = ()
     #: Monotonic timestamp of that write, for the debounce.
     written_at: float = 0.0
-    #: Feature 207. The NPC's rings and skill ranks - the LOCAL copy, loaded from the
-    #: GM-only notes when the conversation begins and checked against at once,
-    #: whether or not it has been persisted yet (the GM: *"we will have updated our
-    #: local cache even if we have not yet persisted it to Obsidian Portal"*).
-    numbers: dict[str, int] = field(default_factory=dict)
-    #: The schools the NPC's record names that roll an extra die on something.
-    schools: tuple[str, ...] = ()
     #: The lines of questioning the GM has declared, in order.
     lines: list[Line] = field(default_factory=list)
-    #: What was last persisted to the GM-only notes, so an unchanged tick writes
-    #: nothing: the numbers, and this conversation's hidden-roll entries.
-    numbers_written: dict[str, int] = field(default_factory=dict)
-    hidden_written: tuple[str, ...] = ()
     #: Feature 212. The id minted when the conversation opens - the marker a Discern
     #: Honor record carries so this conversation can advance it only once - and what
-    #: each PC with the knack will be told, decided at open and never recomputed.
+    #: each PC with the knack will be told, decided at open and never recomputed
+    #: (`Member.discern`; feature 230 made it per NPC).
     conversation_id: str = ''
-    discern: dict[int, DiscernEntry] = field(default_factory=dict)
-    #: The NPC's true Honor as read at open. Never leaves this process.
-    honor: float | None = None
     #: The gaming groups whose sheet-side conversation was opened successfully -
     #: the only ones worth polling or closing - and whether a failed poll has been
     #: reported yet, so an unreachable app complains once and not every 20 seconds.
     discern_groups: tuple[int, ...] = ()
     discern_complained: bool = False
+    #: Feature 230. The knack-holders found at the open, and what a RESUMED sheet
+    #: conversation had already served, by (member id, sheet character id) - so a
+    #: member who joins later is planned against the same people, and nobody's first
+    #: read is re-rolled.
+    discern_holders: tuple[KnackHolder, ...] = ()
+    discern_served: dict[tuple[str, int], float] = field(default_factory=dict)
     #: Recorded rolls (character, skill, total, time) already joined to a Discord
     #: image. A recorded roll backs AT MOST ONE message: measured 2026-09-29, a player
     #: posted a paw-print picture 90 s after their `/etiquette` card, the join's 300 s
@@ -310,11 +350,104 @@ class Conversation:
     #: written for them. The GM (2026-10-17): before a fight they need *"all of the
     #: conversations in which the NPC has spent void points"*.
     void_spends: list[VoidSpend] = field(default_factory=list)
-    void_written: tuple[str, ...] = ()
+    #: Feature 230. Every NPC in the conversation, PRIMARY FIRST, present or departed.
+    #: The per-NPC state lives on each `Member`; the properties below hand the
+    #: primary's to every caller that predates the feature, which is what keeps a
+    #: one-NPC conversation unchanged (FR-012).
+    members: list[Member] = field(default_factory=list)
+    #: Feature 230. Who joined or left, and when - written into the bio as markers.
+    events: list[Event] = field(default_factory=list)
+    #: Feature 230. The conversation has had more than one member, at some point. A
+    #: bare tag then waits for its NPC to be settled (`npcskills.settle_pending`).
+    ever_multi: bool = False
 
-    def planned(self, pc: str) -> Record | None:
-        """What `pc` (a given name, any case) is told in this conversation, if decided."""
-        for entry in self.discern.values():
+    def __post_init__(self) -> None:
+        if not self.members:
+            self.members.append(Member(self.npc))
+
+    @property
+    def primary(self) -> Member:
+        return self.members[0]
+
+    def member(self, member_id: str) -> Member:
+        """The member with this Obsidian Portal id; KeyError when there is none."""
+        for found in self.members:
+            if found.id == member_id:
+                return found
+        raise KeyError(member_id)
+
+    def owner(self, entry: GmRoll) -> Member:
+        """The member a GM roll was made for; an unsettled one reads as the primary's."""
+        try:
+            return self.member(entry.npc) if entry.npc else self.primary
+        except KeyError:  # an older conversation's NPC: reads as before the feature
+            return self.primary
+
+    @property
+    def present(self) -> list[Member]:
+        return [m for m in self.members if m.present]
+
+    @property
+    def numbers(self) -> dict[str, int]:
+        return self.primary.numbers
+
+    @numbers.setter
+    def numbers(self, value: dict[str, int]) -> None:
+        self.primary.numbers = value
+
+    @property
+    def schools(self) -> tuple[str, ...]:
+        return self.primary.schools
+
+    @schools.setter
+    def schools(self, value: tuple[str, ...]) -> None:
+        self.primary.schools = value
+
+    @property
+    def numbers_written(self) -> dict[str, int]:
+        return self.primary.numbers_written
+
+    @numbers_written.setter
+    def numbers_written(self, value: dict[str, int]) -> None:
+        self.primary.numbers_written = value
+
+    @property
+    def hidden_written(self) -> tuple[str, ...]:
+        return self.primary.hidden_written
+
+    @hidden_written.setter
+    def hidden_written(self, value: tuple[str, ...]) -> None:
+        self.primary.hidden_written = value
+
+    @property
+    def void_written(self) -> tuple[str, ...]:
+        return self.primary.void_written
+
+    @void_written.setter
+    def void_written(self, value: tuple[str, ...]) -> None:
+        self.primary.void_written = value
+
+    @property
+    def discern(self) -> dict[int, DiscernEntry]:
+        return self.primary.discern
+
+    @discern.setter
+    def discern(self, value: dict[int, DiscernEntry]) -> None:
+        self.primary.discern = value
+
+    @property
+    def honor(self) -> float | None:
+        return self.primary.honor
+
+    @honor.setter
+    def honor(self, value: float | None) -> None:
+        self.primary.honor = value
+
+    def planned(self, pc: str, member: str = '') -> Record | None:
+        """What `pc` (a given name, any case) is told about a member (the primary by
+        default) in this conversation, if decided."""
+        who = self.member(member) if member else self.primary
+        for entry in who.discern.values():
             if entry.pc.lower() == pc.lower():
                 return entry.record
         return None

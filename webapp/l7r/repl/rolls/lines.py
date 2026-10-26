@@ -121,6 +121,7 @@ def new_line_of_questioning(
     than arriving late. Ctrl-C at the questions abandons the declaration whole.
     """
     conv = conversation.require_open()
+    npcskills.settle_pending()  # a bare tag from the statement before (feature 230)
     topic = description.strip()
     if not topic:
         raise ValueError('say what the line of questioning is about')

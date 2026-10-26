@@ -75,16 +75,24 @@ class FakeSheet:
         return sheet.ConversationResult(conversation=self.open.get(group))
 
     def put(self, body: Mapping[str, Any]) -> sheet.ConversationResult:
+        """character-sheet#6's re-PUT: NPCs matched by `npc_ref`, entries frozen."""
         self.puts.append(json.loads(json.dumps(body)))
         if self.fail_put:
             return sheet.ConversationResult(reason=self.fail_put)
         group = int(body['group'])
         old = self.open.get(group)
-        entries = [dict(e, asked_at=None) for e in body['discern_honor']]
-        if old is not None and old['conversation_id'] == body['conversation_id']:
-            kept = {e['character_id']: e for e in old['discern_honor']}
+        same = old is not None and old['conversation_id'] == body['conversation_id']
+        before = {n['npc_ref']: n for n in old['npcs']} if same and old else {}
+        npcs = []
+        for npc in body['npcs']:
+            entries = [dict(e, asked_at=None) for e in npc['discern_honor']]
+            kept = {
+                e['character_id']: e
+                for e in before.get(npc['npc_ref'], {}).get('discern_honor', [])
+            }
             entries = [kept.get(e['character_id'], e) for e in entries]
-        self.open[group] = {**body, 'discern_honor': entries}
+            npcs.append({**npc, 'discern_honor': entries})
+        self.open[group] = {**body, 'npcs': npcs}
         return sheet.ConversationResult(conversation=self.open[group])
 
     def delete(self, conversation_id: str) -> sheet.ConversationResult:
@@ -94,13 +102,16 @@ class FakeSheet:
         self.open = {g: c for g, c in self.open.items() if c['conversation_id'] != conversation_id}
         return sheet.ConversationResult()
 
-    def ask(self, character_id: int) -> float:
+    def ask(self, character_id: int, npc_ref: str | None = None) -> float:
         """What `/discern-honor` does: a lookup that stamps `asked_at` ONCE."""
         for body in self.open.values():
-            for entry in body['discern_honor']:
-                if entry['character_id'] == character_id:
-                    entry['asked_at'] = entry['asked_at'] or '2026-09-21T23:20:00Z'
-                    return float(entry['told'])
+            for npc in body['npcs']:
+                if npc_ref is not None and npc['npc_ref'] != npc_ref:
+                    continue
+                for entry in npc['discern_honor']:
+                    if entry['character_id'] == character_id:
+                        entry['asked_at'] = entry['asked_at'] or '2026-09-21T23:20:00Z'
+                        return float(entry['told'])
         raise AssertionError('no conversation serves that character')
 
 
@@ -242,29 +253,34 @@ class TestOpen:
 
     def test_only_told_values_leave(self) -> None:
         """SC-003 / FR-003, over the SERIALIZED payload: nothing that could be a true
-        Honor, a die, a count, a lock or a name crosses to the sheet app."""
+        Honor, a die, a count or a lock crosses to the sheet app. Feature 230 added the
+        NPC's personal name, and only that (character-sheet#6: `npc:` picks by it)."""
         op, app = FakeOP('Honor: 3.7\n'), FakeSheet()
         begin(op, app, dice=(8, 3, 9))  # nobody's die is the 5 that reads true
         assert len(app.puts) == 2
         for body in app.puts:
-            assert sorted(body) == [
-                'conversation_id',
-                'discern_honor',
-                'group',
-                'npc_ref',
-                'opened_at',
-            ]
-            for entry in body['discern_honor']:
-                assert sorted(entry) == ['character_id', 'told']
+            assert sorted(body) == ['conversation_id', 'group', 'npcs', 'opened_at']
+            for npc in body['npcs']:
+                assert sorted(npc) == ['discern_honor', 'name', 'npc_ref', 'present']
+                for entry in npc['discern_honor']:
+                    assert sorted(entry) == ['character_id', 'told']
             wire = json.dumps(body)
             assert '3.7' not in wire
-            assert 'Otsuki' not in wire
         assert app.puts[1] == {
             'conversation_id': 'c-20260921-7f3a-g2',
             'group': 2,
-            'npc_ref': 'otsuki-id',
             'opened_at': '2026-09-21T23:10:00+00:00',
-            'discern_honor': [{'character_id': 3, 'told': 5.0}, {'character_id': 18, 'told': 2.7}],
+            'npcs': [
+                {
+                    'npc_ref': 'otsuki-id',
+                    'name': 'Otsuki',
+                    'present': True,
+                    'discern_honor': [
+                        {'character_id': 3, 'told': 5.0},
+                        {'character_id': 18, 'told': 2.7},
+                    ],
+                }
+            ],
         }
 
     def test_a_later_conversation_refines_and_needs_no_die(self) -> None:
@@ -410,9 +426,15 @@ class TestAskingTwice:
         opened = begin(op, app)
         app.open[2] = {
             'conversation_id': 'c-other-g2',
-            'discern_honor': [
-                {'character_id': 3, 'told': 1.0, 'asked_at': 'x'},
-                {'character_id': 99, 'told': 1.0, 'asked_at': 'x'},
+            'npcs': [
+                {
+                    'npc_ref': 'otsuki-id',
+                    'discern_honor': [
+                        {'character_id': 3, 'told': 1.0, 'asked_at': 'x'},
+                        {'character_id': 99, 'told': 1.0, 'asked_at': 'x'},
+                    ],
+                },
+                {'npc_ref': 'nobody-here', 'discern_honor': [{'character_id': 3, 'asked_at': 'x'}]},
             ],
         }
         tick(opened, op, app)
@@ -574,7 +596,10 @@ class TestResume:
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
         op, app = FakeOP(), FakeSheet()
-        app.open[2] = {'conversation_id': 'c-old-g2', 'npc_ref': 'sakura-id', 'discern_honor': []}
+        app.open[2] = {
+            'conversation_id': 'c-old-g2',
+            'npcs': [{'npc_ref': 'sakura-id', 'discern_honor': []}],
+        }
         again = begin(op, app)
         assert again.conversation_id == 'c-20260921-7f3a'
         assert 'Discern Honor: re' not in capsys.readouterr().out.replace('RESUMING', '')

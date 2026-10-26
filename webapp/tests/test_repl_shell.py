@@ -11,8 +11,10 @@ from typing import Any
 
 import pytest
 
-from l7r.repl import BANNER, COMMANDS, help_text, namespace, undocumented
+from l7r.repl import BANNER, COMMANDS, gmrolls, help_text, namespace, undocumented
 from l7r.repl import shell as mod
+from l7r.repl.dice import DiceTotal
+from l7r.repl.rolls import npcskills
 from l7r.repl.shell import (
     TITLE,
     build_namespace,
@@ -438,3 +440,60 @@ class TestFullListing:
         assert 'dist' in undocumented()
         for covered in ('bank', 'PCS', 'province_name', 'abandon_conversation'):
             assert covered not in undocumented(), f'{covered} is named in a row'
+
+
+class TestSettlingHooks:
+    """Feature 230: a bare tag is settled at the end of the GM's statement."""
+
+    @pytest.fixture
+    def hooks(self, monkeypatch: pytest.MonkeyPatch) -> tuple[list[object], list[int]]:
+        echoed: list[object] = []
+        calls: list[int] = []
+        monkeypatch.setattr(sys, 'displayhook', echoed.append)
+        monkeypatch.setattr(sys, 'ps1', '>>> ', raising=False)
+        monkeypatch.setattr(npcskills, 'settle_pending', lambda ask=None: calls.append(1))
+        mod.install_prompt_hooks()
+        mod.install_prompt_hooks()  # a second install must not wrap twice
+        return echoed, calls
+
+    def test_the_echo_settles_first(self, hooks: tuple[list[object], list[int]]) -> None:
+        echoed, calls = hooks
+        sys.displayhook(5)
+        assert echoed == [5]
+        assert calls == [1]
+
+    def test_the_prompt_settles_an_assignment(self, hooks: tuple[list[object], list[int]]) -> None:
+        _, calls = hooks
+        assert str(sys.ps1) == '>>> '
+        assert calls == [1]
+
+    def test_the_echo_shows_the_recorded_total(self, hooks: tuple[list[object], list[int]]) -> None:
+        echoed, _ = hooks
+        entry = gmrolls.record((5, 5, 5), 3, 15)
+        total = DiceTotal(15, entry)
+        entry.penalty = 6  # an oppose penalty the settling took off
+        sys.displayhook(total)
+        assert int(echoed[0]) == 9  # type: ignore[call-overload]
+        assert int(DiceTotal(15, entry)) == 15
+
+    def test_the_prompt_reports_a_failure_rather_than_raising(
+        self,
+        hooks: tuple[list[object], list[int]],
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        def fail(ask: object = None) -> None:
+            raise npcskills.PrimaryLeft('Hideki has left')
+
+        monkeypatch.setattr(npcskills, 'settle_pending', fail)
+        assert str(sys.ps1) == '>>> '
+        assert '! Hideki has left' in capsys.readouterr().out
+
+    def test_the_watcher_thread_never_settles(self, hooks: tuple[list[object], list[int]]) -> None:
+        _, calls = hooks
+        drawn: list[str] = []
+        worker = threading.Thread(target=lambda: drawn.append(str(sys.ps1)))
+        worker.start()
+        worker.join()
+        assert drawn == ['>>> ']
+        assert calls == []

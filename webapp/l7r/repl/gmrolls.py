@@ -75,6 +75,11 @@ class GmRoll:
     penalty: int = 0
     #: One line saying where `penalty` came from, for the menus.
     penalty_source: str = ''
+    #: Feature 230. The Obsidian Portal id of the NPC this roll was made FOR, once
+    #: that is settled: `souma.tact()`, `xky(5, 3) - souma`, or the primary when a
+    #: bare tag's statement ends. '' until then - and on every roll made with no
+    #: conversation open, or before the feature (read as the primary's).
+    npc: str = ''
 
     @property
     def total(self) -> int:

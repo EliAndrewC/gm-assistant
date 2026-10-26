@@ -44,7 +44,7 @@ from l7r.repl.rolls import (
     sheet,
     voidspent,
 )
-from l7r.repl.rolls.models import Conversation, RecordingRule, Roll
+from l7r.repl.rolls.models import Conversation, Event, Member, RecordingRule, Roll
 from l7r.repl.rolls.parse import parse_message
 from l7r.repl.rolls.skills import load_skills
 
@@ -147,37 +147,93 @@ def _no_match(npc: str, match: MatchResult) -> str:
     return f'no character called {npc!r}' + (f'. Nearest: {nearest}' if nearest else '')
 
 
+def _classify(
+    args: Sequence[str], roster: Sequence[Mapping[str, object]]
+) -> tuple[list[Mapping[str, object]], str]:
+    """`(npcs, title)` from `begin_conversation`'s arguments - the GM's rule (2026-10-26).
+
+    *"if there is only one string argument, then that is the name of the character,
+    and if there are two or more, then exactly one of those arguments should be not
+    the name of an NPC. And that argument is the name of the conversation."* So with
+    one argument it must be a character; with more, every argument is matched and
+    exactly one may match nobody. An ambiguous name is never a title: it names
+    someone, and which record gets written to is not a guess (`_no_match`).
+    """
+    if not args:
+        raise TypeError('begin_conversation("Name") - say who the players are talking to')
+    if any(not str(arg).strip() for arg in args):
+        raise ValueError('say what the conversation is about, or leave the title out')
+    if len(args) == 1:
+        match = match_character(args[0], roster)
+        if match.kind != 'unique':
+            raise ValueError(_no_match(args[0], match))
+        return [match.character], ''
+    npcs: list[Mapping[str, object]] = []
+    titles: list[str] = []
+    for arg in args:
+        match = match_character(arg, roster)
+        if match.kind == 'ambiguous':
+            raise ValueError(_no_match(arg, match))
+        if match.kind == 'unique':
+            npcs.append(match.character)
+        else:
+            titles.append(arg)
+    if len(titles) != 1:
+        which = (
+            f'naming no character: {", ".join(repr(t) for t in titles)}'
+            if titles
+            else 'every one names a character'
+        )
+        raise ValueError(
+            f'with {len(args)} arguments, exactly one argument must name no character - it is '
+            f"the conversation's topic ({which})."
+        )
+    _no_repeats(npcs)
+    return npcs, ' '.join(titles[0].split())
+
+
+def _no_repeats(npcs: Sequence[Mapping[str, object]]) -> None:
+    seen: set[str] = set()
+    for npc in npcs:
+        if str(npc.get('id')) in seen:
+            raise ValueError(f'{npc.get("name")} is named twice')
+        seen.add(str(npc.get('id')))
+
+
 def begin_conversation(
-    npc: str,
-    title: str | None = None,
-    *,
+    *args: str | None,
     channel: str | None = None,
     characters: Callable[[], Sequence[Mapping[str, object]]] = op.existing_characters,
     now: Callable[[], datetime] | None = None,
     watch: bool = True,
     get_body: Callable[[str], Mapping[str, object] | None] | None = None,
+    update: Callable[..., object] | None = None,
     new: bool = False,
     discern_open: Callable[..., None] = discern.open_,
 ) -> Conversation:
-    """Open a conversation with `npc`. Prints what it opened; returns it.
+    """Open a conversation with one NPC or several. Prints what it opened; returns it.
 
-    The name resolves through `match_character`, exactly as `discern_honor` does:
-    whole name tokens only, and an ambiguous name raises listing the candidates
-    rather than picking one. Which record gets written to is not a guess we make.
+    `begin_conversation("Otsuki")`, `begin_conversation("Otsuki", "confrontation on the
+    Imperial road")` and, since feature 230, `begin_conversation("Hideki", "Souma",
+    "stolen sheets")`: the arguments are read by the GM's rule (`_classify`). The FIRST
+    NPC named is the PRIMARY - the public record of the conversation goes to their bio -
+    and every other NPC's bio gets a link to it (`link_entry`).
 
-    `title` is what the conversation is about - `begin_conversation("Otsuki",
-    "confrontation on the Imperial road")` - and is written as an `h4.` heading over
-    this conversation's lines, so the record shows where one conversation ended and
-    the next began (GM 2026-09-29). Optional; with none, no heading is written.
+    Names resolve through `match_character`, exactly as `discern_honor` does: whole
+    name tokens only, and an ambiguous name raises listing the candidates rather than
+    picking one. Which record gets written to is not a guess we make.
 
-    `channel` is OPTIONAL, KEYWORD-ONLY, and normally omitted. It was the second
-    positional argument until 2026-09-29, when the GM gave that place to the title.
-    With no channel, the conversation
-    watches EVERY monitored channel, which is what the GM asked for: one argument,
-    and a roll posted anywhere lands. Naming a channel narrows it to that one -
-    useful for the scratch server, rarely otherwise. The two live game channels
-    belong to groups that play on different nights, so watching both at once
-    cannot mix two sessions' rolls in practice.
+    The title is what the conversation is about, and is written as an `h4.` heading over
+    this conversation's lines, so the record shows where one conversation ended and the
+    next began (GM 2026-09-29). Optional with one NPC; with several it is required by the
+    rule itself.
+
+    `channel` is OPTIONAL, KEYWORD-ONLY, and normally omitted. With no channel, the
+    conversation watches EVERY monitored channel, which is what the GM asked for: one
+    argument, and a roll posted anywhere lands. Naming a channel narrows it to that one -
+    useful for the scratch server, rarely otherwise. The two live game channels belong
+    to groups that play on different nights, so watching both at once cannot mix two
+    sessions' rolls in practice.
 
     `new=True` matters only after a crash or a failed close (feature 212): when the
     character-sheet app still holds an unclosed conversation with this NPC, the
@@ -185,29 +241,28 @@ def begin_conversation(
     twice - and this says "no, that one is over; this is another conversation".
     """
     global _open
+    reader = get_body or op.get_character_body
+    writer = update or op.update_character
     with _lock:
         if _open is not None:
             raise AlreadyOpen(
                 f'already talking to {_open.npc_name}. end_conversation() to write it, '
                 'or abandon_conversation() to throw it away.'
             )
-        if title is not None and not title.strip():
-            raise ValueError('say what the conversation is about, or leave the title out')
-        match = match_character(npc, characters())
-        if match.kind != 'unique':
-            raise ValueError(_no_match(npc, match))
+        # None is "no title", as the second positional argument always allowed.
+        npcs, title = _classify([a for a in args if a is not None], characters())
         channels = resolve_channels(channel)
         clock = now or (lambda: datetime.now(UTC))
-        _open = Conversation(
-            npc=match.character,
-            opened_at=clock(),
-            channels=channels,
-            title=' '.join((title or '').split()),
-        )
+        _open = Conversation(npc=npcs[0], opened_at=clock(), channels=channels, title=title)
+        _open.members.extend(Member(npc) for npc in npcs[1:])
+        _open.ever_multi = len(npcs) > 1
         where = 'every monitored channel' if channel is None else _label(channels[0])
         about = f' - {_open.title}' if _open.title else ''
+        others = [m.name for m in _open.members[1:]]
+        also = f' (with {", ".join(others)})' if others else ''
         print(
-            f'Talking to {_open.npc_name}{about}, watching {where}. Rolls until end_conversation().'
+            f'Talking to {_open.npc_name}{also}{about}, watching {where}. '
+            'Rolls until end_conversation().'
         )
         # Feature 208: a CHECK of the oppose knacks against the rules text. Whatever
         # it says, the penalties apply as the GM stated them - this only makes a
@@ -217,37 +272,218 @@ def begin_conversation(
             print(f'  ! {disagreement}')
         gmrolls.start()
         opened = _open
-    # Feature 207: the NPC's remembered rings and ranks, read ONCE here. The GM: *"we
-    # do not need to check every time, we can assume that nothing will update this in
-    # Obsidian portal besides our own repl, and I have only one repl going at a time."*
-    # `get_body` resolves at CALL time, not as a default bound at import, so the test
-    # suite's offline patch reaches it (research R16 is the day the other shape bit).
-    load_numbers(opened, get_body or op.get_character_body)
+    _install_handles(opened)
+    for member in opened.members:
+        # Feature 207: the NPC's remembered rings and ranks, read ONCE here. The GM: *"we
+        # do not need to check every time, we can assume that nothing will update this in
+        # Obsidian portal besides our own repl, and I have only one repl going at a time."*
+        # `get_body` resolves at CALL time, not as a default bound at import, so the test
+        # suite's offline patch reaches it (research R16 is the day the other shape bit).
+        load_numbers(opened, reader, member)
+    for member in opened.members[1:]:
+        link_entry(opened, member, reader, writer)
     # Feature 212: decide what each PC with Discern Honor is told, and hand ONLY
     # those told values to the sheet app. After `load_numbers` and outside the lock
     # because it is network; never raises, and never stops the conversation opening.
-    discern_open(opened, new=new, get_body=get_body or op.get_character_body)
+    discern_open(opened, new=new, get_body=reader)
     if watch:
         start_watching(opened)
     return opened
 
 
 def load_numbers(
-    conv: Conversation, get_body: Callable[[str], Mapping[str, object] | None]
+    conv: Conversation,
+    get_body: Callable[[str], Mapping[str, object] | None],
+    member: Member | None = None,
 ) -> None:
-    """Read the NPC's numbers and school off their record. Fail-soft: an unreachable
-    Obsidian Portal means an empty record, and the first tagged roll fills it."""
-    body = get_body(conv.npc_id) or {}
-    conv.numbers = npcnumbers.parse(str(body.get('game_master_info') or ''))
-    conv.numbers_written = dict(conv.numbers)
-    record = {**conv.npc, **body}
-    conv.schools = npcnumbers.find_schools(record, tuple(npcskills.extra_dice_table()))
-    if conv.numbers:
+    """Read an NPC's numbers and school off their record - the primary's unless
+    `member` says whose. Fail-soft: an unreachable Obsidian Portal means an empty
+    record, and the first tagged roll fills it."""
+    who = member or conv.primary
+    body = get_body(who.id) or {}
+    who.numbers = npcnumbers.parse(str(body.get('game_master_info') or ''))
+    who.numbers_written = dict(who.numbers)
+    record = {**who.npc, **body}
+    who.schools = npcnumbers.find_schools(record, tuple(npcskills.extra_dice_table()))
+    if who.numbers:
         known = ', '.join(
             f'{name.capitalize() if name in npcnumbers.RINGS else name} {value}'
-            for name, value in conv.numbers.items()
+            for name, value in who.numbers.items()
         )
-        print(f'  on record for {conv.npc_name}: {known}')
+        print(f'  on record for {who.name}: {known}')
+
+
+# ---------------------------------------------------------------------------
+# Feature 230: several NPCs in one conversation
+# ---------------------------------------------------------------------------
+
+#: The REPL's namespace, so a member's handle (`souma`) can be put at the prompt.
+#: `shell.main` registers it; with none (tests, scripts) there are no handles there,
+#: and `handle("Souma")` finds a member instead.
+_namespace: dict[str, Any] | None = None
+
+
+def use_namespace(ns: dict[str, Any] | None) -> None:
+    global _namespace
+    _namespace = ns
+
+
+def _handle_name(member: Member, conv: Conversation) -> str:
+    """`souma`, or `tsuruchi_souma` when `souma` is taken (feature 230, Story 3).
+
+    Taken means: something at the prompt that is not one of this conversation's own
+    handles, or another member with the same personal name. Never shadow the GM's
+    names - a skill tag, a PC constant, a variable they set.
+    """
+    short = rules.personal_name(member.name).lower()
+    full = re.sub(r'\W+', '_', ' '.join(t for t in member.name.split() if t.isascii()).lower())
+    twins = [m for m in conv.members if rules.personal_name(m.name).lower() == short]
+    mine = {m.handle for m in conv.members if m.handle}
+    taken = _namespace is not None and short in _namespace and short not in mine
+    return full if len(twins) > 1 or taken or not short.isidentifier() else short
+
+
+def _install_handles(conv: Conversation) -> None:
+    for member in conv.members:
+        if member.handle:
+            continue
+        member.handle = _handle_name(member, conv)
+        if _namespace is not None:
+            _namespace[member.handle] = npcskills.MemberHandle(
+                member.id, member.name, member.handle
+            )
+        short = rules.personal_name(member.name).lower()
+        if member.handle != short:
+            print(f'  {member.name} is `{member.handle}` at the prompt (`{short}` was taken).')
+
+
+def _remove_handles(conv: Conversation) -> None:
+    if _namespace is None:
+        return
+    for member in conv.members:
+        found = _namespace.get(member.handle)
+        if isinstance(found, npcskills.MemberHandle) and found.member_id == member.id:
+            del _namespace[member.handle]
+
+
+def handle(name: str) -> npcskills.MemberHandle:
+    """The open conversation's member called `name` (whole name tokens), as a handle."""
+    conv = _require()
+    match = match_character(name, [m.npc for m in conv.members])
+    if match.kind != 'unique':
+        listed = ', '.join(m.name for m in conv.members)
+        raise ValueError(f'{name!r} is not in this conversation ({listed}).')
+    member = conv.member(str(match.character.get('id')))
+    return npcskills.MemberHandle(member.id, member.name, member.handle)
+
+
+def link_entry_lines(conv: Conversation) -> tuple[str, str]:
+    """What a member other than the primary has written on their bio (Story 2)."""
+    primary = conv.primary
+    slug = str(primary.npc.get('slug') or '')
+    link = f'[[:{slug}|{primary.name}]]' if slug else primary.name
+    return (rules.render_heading(conv.title), f"Rolls for this conversation are on {link}'s page.")
+
+
+def link_entry(
+    conv: Conversation,
+    member: Member,
+    get_body: Callable[[str], Mapping[str, object] | None],
+    update: Callable[..., object],
+) -> None:
+    """Write the link entry on `member`'s bio, once, when they join. Reported, never
+    fatal: the conversation goes on whether or not Obsidian Portal took it."""
+    try:
+        body = get_body(member.id)
+        if body is None:
+            raise RuntimeError('could not read the record')
+        bio = biomod.rewrite(str(body.get('bio') or ''), (), link_entry_lines(conv))
+        update(member.id, bio=bio)
+    except Exception as exc:  # noqa: BLE001 - reported; the conversation carries on
+        print(f"  ! could not write the link on {member.name}'s page: {exc}")
+    else:
+        print(f"  {member.name}: linked to {conv.primary.name}'s page for this conversation")
+
+
+def add_to_conversation(
+    *names: str,
+    characters: Callable[[], Sequence[Mapping[str, object]]] = op.existing_characters,
+    now: Callable[[], datetime] | None = None,
+    get_body: Callable[[str], Mapping[str, object] | None] | None = None,
+    update: Callable[..., object] | None = None,
+    discern_open: Callable[..., None] | None = None,
+) -> None:
+    """NPCs join the open conversation - any number (GM 2026-10-26). All-or-nothing:
+    every name is resolved before anyone is added. A departed member named again comes
+    back. The join is marked in the primary's bio where it happened."""
+    conv = _require()
+    npcskills.settle_pending()
+    if not names:
+        raise TypeError('add_to_conversation("Souma") - say who joins')
+    if not conv.title:
+        # The link entry names the conversation's topic, and this one has none. What to
+        # do here is an open question to the GM (spec 230, round 2 of review).
+        raise ValueError(
+            "this conversation has no title, so there is no topic for the new member's link "
+            'entry. For now: end_conversation(), then begin_conversation(...) again with every '
+            'NPC and a title.'
+        )
+    roster = characters()
+    found: list[Mapping[str, object]] = []
+    for name in names:
+        match = match_character(name, roster)
+        if match.kind != 'unique':
+            raise ValueError(_no_match(name, match))
+        found.append(match.character)
+    _no_repeats(found)
+    clock = now or (lambda: datetime.now(UTC))
+    reader = get_body or op.get_character_body
+    writer = update or op.update_character
+    joined: list[Member] = []
+    for npc in found:
+        try:
+            member = conv.member(str(npc.get('id')))
+        except KeyError:
+            member = Member(npc)
+            conv.members.append(member)
+            joined.append(member)
+        else:
+            if member.present:
+                print(f'  {member.name} is already in the conversation.')
+                continue
+            member.present = True
+        conv.events.append(Event(member.id, 'joined', clock()))
+        print(f'{member.name} joined the conversation.')
+    conv.ever_multi = True
+    _install_handles(conv)
+    for member in joined:
+        load_numbers(conv, reader, member)
+        link_entry(conv, member, reader, writer)
+    (discern_open or discern.add)(conv, get_body=reader)
+
+
+def remove_from_conversation(
+    *names: str,
+    now: Callable[[], datetime] | None = None,
+    discern_leave: Callable[[Conversation], None] | None = None,
+) -> None:
+    """NPCs leave the open conversation - any number. Their records stay; rolling for
+    them stops (`MemberLeft`). The primary leaving makes NOBODY primary: the public
+    lines still go to their bio, and a roll that names no NPC raises (`PrimaryLeft`)."""
+    conv = _require()
+    npcskills.settle_pending()
+    if not names:
+        raise TypeError('remove_from_conversation("Souma") - say who leaves')
+    leaving = [handle(name).member for name in names]
+    clock = now or (lambda: datetime.now(UTC))
+    for member in leaving:
+        if not member.present:
+            print(f'  {member.name} has already left.')
+            continue
+        member.present = False
+        conv.events.append(Event(member.id, 'left', clock()))
+        print(f'{member.name} left the conversation.')
+    (discern_leave or discern.leave)(conv)
 
 
 def collect(
@@ -350,6 +586,10 @@ def collect(
                 )
                 continue
             sheet_id = sheet_ids.get(roll.character.strip().lower(), 0)
+            if oppose.is_oppose(roll) and (conv.ever_multi or not conv.primary.present):
+                # Feature 230: the primary's by default; nobody's while they are away.
+                aimed = conv.primary.id if conv.primary.present else oppose.NOBODY
+                roll = replace(roll, against=aimed)
             conv.rolls.append(attach(conv, _held(conv, roll, sheet_id, ceilings)))
             if oppose.is_oppose(roll):
                 # Feature 208. HERE rather than in `_tick`, because
@@ -358,7 +598,7 @@ def collect(
                 # message by up to a poll, so the NPC may already have rolled under
                 # this penalty without the tool knowing - `settle` prices those now.
                 for change in oppose.settle(conv, gmrolls.recent()):
-                    say(f'  = {change.describe(conv.npc_name)}')
+                    say(f'  = {change.describe(conv.owner(change.entry).name)}')
         if boosted is not None:
             say(boostmod.place(conv, boosted))
             if boosted.applied_to is not None:
@@ -386,7 +626,7 @@ def after_boost(conv: Conversation, index: int) -> None:
     if oppose.is_oppose(roll):
         announce_oppose(conv, roll)
         for change in oppose.settle(conv, gmrolls.recent()):
-            say(f'  = {change.describe(conv.npc_name)}')
+            say(f'  = {change.describe(conv.owner(change.entry).name)}')
     announce_comparison(conv, roll)
 
 
@@ -437,11 +677,43 @@ def attach(conv: Conversation, roll: Roll) -> Roll:
 
 def written_lines(conv: Conversation, *, include_unannotated: bool = False) -> tuple[str, ...]:
     """Everything this conversation writes to the bio: its title's heading, then its
-    lines. No lines, no heading - a conversation with nothing recorded writes nothing."""
-    lines = rules.render_lines(conv.rolls, conv.npc_name, include_unannotated=include_unannotated)
-    if lines and conv.title:
+    lines. No lines, no heading - a conversation with nothing recorded writes nothing.
+
+    Feature 230: a member joining or leaving is marked AT THE POINT IT HAPPENED (GM
+    2026-10-26: *"that is important context for looking back at rolls that happened
+    later"*). The rolls are cut into segments at each membership event by message
+    time and each segment is rendered on its own, so a grouped line - the Etiquette
+    round, a line of questioning - is split by the marker rather than drawn across it.
+    """
+    events = sorted(conv.events, key=lambda e: e.at)
+    lines: list[str] = []
+    start: datetime | None = None
+    for event in [*events, None]:
+        end = None if event is None else event.at
+        segment = [
+            r
+            for r in conv.rolls
+            if (start is None or r.at >= start) and (end is None or r.at < end)
+        ]
+        lines += rules.render_lines(segment, conv.npc_name, include_unannotated=include_unannotated)
+        if event is not None:
+            lines.append(membership_line(conv, event))
+            start = event.at
+    if not any(line for line in lines if not _is_marker(conv, line)):
+        return ()
+    if conv.title:
         lines.insert(0, rules.render_heading(conv.title))
     return tuple(lines)
+
+
+def membership_line(conv: Conversation, event: Event) -> str:
+    """`Souma joined the conversation` / `Hideki left the conversation`."""
+    who = rules.personal_name(conv.member(event.member).name)
+    return f'{who} {event.kind} the conversation'
+
+
+def _is_marker(conv: Conversation, line: str) -> bool:
+    return any(line == membership_line(conv, e) for e in conv.events)
 
 
 def _held(
@@ -579,14 +851,17 @@ def _tick(
     lines = written_lines(conv, include_unannotated=include_unannotated)
     # Feature 207: the GM-only half. It can change with no player roll at all - a
     # tagged `xky` records a rank - so it is weighed beside the bio, not under it.
-    secret = hidden.entries(conv)
-    spends = voidspent.entries(conv)
+    # Feature 230: every member's own notes, each weighed on its own.
+    notes = {m.id: (hidden.entries(conv, m), voidspent.entries(conv, m)) for m in conv.members}
+    stale = [
+        m
+        for m in conv.members
+        if m.numbers != m.numbers_written
+        or notes[m.id][0] != m.hidden_written
+        or notes[m.id][1] != m.void_written
+    ]
     bio_changed = bool(lines) and lines != conv.written
-    notes_changed = (
-        conv.numbers != conv.numbers_written
-        or secret != conv.hidden_written
-        or spends != conv.void_written
-    )
+    notes_changed = bool(stale)
     if not bio_changed and not notes_changed:
         return False
     # `debounce > 0` guards the guard: end_conversation and the exit hook pass 0.0
@@ -602,8 +877,8 @@ def _tick(
         body = str(record.get('bio') or '')
         update(conv.npc_id, bio=biomod.rewrite(body, conv.written, lines))
         conv.written = lines
-    if notes_changed:
-        _write_notes(conv, update, get_body, secret, spends)
+    for member in stale:
+        _write_notes(conv, update, get_body, *notes[member.id], member)
     conv.written_at = clock()
     if announce and bio_changed:
         for line in lines:
@@ -617,31 +892,33 @@ def _write_notes(
     get_body: Callable[[str], Mapping[str, object] | None],
     secret: tuple[str, ...],
     spends: tuple[str, ...] = (),
+    member: Member | None = None,
 ) -> None:
     """The GM-only half of a tick's write, under the notes lock and from a FRESH read:
     the GM's thread may have recorded a Discern Honor answer in these same notes
     since the tick began (feature 212), and rendering over the older copy would
     silently delete it."""
+    who = member or conv.primary
     with honormod.NOTES_LOCK:
-        record = get_body(conv.npc_id) or {}
+        record = get_body(who.id) or {}
         # AFTER the bio and on its own call: a GM-only write that fails must never
         # cost the players' record (spec 207, Story 10). The numbers are snapshotted
         # first because the GM's thread can tag a roll while this one is writing.
-        numbers = dict(conv.numbers)
+        numbers = dict(who.numbers)
         notes = str(record.get('game_master_info') or '')
         # Merged over the FRESH block, not written over it: the character-sheet
         # backport (feature 226) can add numbers while this conversation is open.
         notes = npcnumbers.render(notes, {**npcnumbers.parse(notes), **numbers})
-        notes = hidden.rewrite(notes, conv.hidden_written, secret)
-        notes = hidden.rewrite(notes, conv.void_written, spends, voidspent.HEADING)
+        notes = hidden.rewrite(notes, who.hidden_written, secret)
+        notes = hidden.rewrite(notes, who.void_written, spends, voidspent.HEADING)
         try:
-            update(conv.npc_id, game_master_info=notes)
+            update(who.id, game_master_info=notes)
         except Exception as exc:  # noqa: BLE001 - reported, never fatal to the bio write
-            say(f"  ! could not update {conv.npc_name}'s GM-only notes: {exc}")
+            say(f"  ! could not update {who.name}'s GM-only notes: {exc}")
         else:
-            conv.numbers_written = numbers
-            conv.hidden_written = secret
-            conv.void_written = spends
+            who.numbers_written = numbers
+            who.hidden_written = secret
+            who.void_written = spends
 
 
 def announce_comparison(conv: Conversation, roll: Roll) -> None:
@@ -704,25 +981,10 @@ def announce_oppose(conv: Conversation, roll: Roll) -> None:
                 say(f'  = {compared.describe()}')
 
 
-def cancel_oppose(pc: str | None = None, knack: str | None = None) -> None:
-    """A player's oppose roll was a MISTAKE - a typo, a roll meant for someone else.
-
-    Every other player roll is discarded from the `annotate()` menu, and an oppose
-    roll never reaches that menu, so a mistyped `52 oppose social` would tax every
-    Air roll for the rest of the scene. The GM, shown that gap (2026-09-19): *"if we
-    had some kind of cancel_* functions for stuff like that it would be good."*
-
-    NEVER A GUESS about which roll: with no name it cancels the one PC who has any,
-    and with no knack it cancels the one knack that PC has rolled; otherwise it
-    lists what is standing. A PC may hold a good Oppose Knowledge beside a mistyped
-    Oppose Social, and a canceled roll cannot be put back - it came from a Discord
-    post, not from this prompt. (The first version canceled everything the PC had;
-    the fidelity review caught that it would destroy the good roll with the bad.)
-    REPEAT rolls of the SAME knack do all go: highest-wins makes the second the
-    correction of the first. The roll is not written, the GM's tagged rolls are
-    re-priced, and the current line is re-run.
-    """
-    conv = _require()
+def _oppose_rolls(conv: Conversation, pc: str | None, knack: str | None) -> list[int]:
+    """The indexes of the oppose rolls `pc`'s `knack` names - NEVER A GUESS: with no
+    name, the one PC who has any; with no knack, the one knack that PC has rolled;
+    otherwise an error listing what is standing. Repeats of one knack all count."""
     standing = [(i, r) for i, r in enumerate(conv.rolls) if oppose.is_oppose(r) and not r.discarded]
     names = sorted({rules.personal_name(r.character) for _, r in standing})
     if pc is None:
@@ -744,18 +1006,64 @@ def cancel_oppose(pc: str | None = None, knack: str | None = None) -> None:
     if len(knacks) != 1:
         have = ', '.join(sorted({roll.skill.lower() for _, roll in theirs}))
         raise ValueError(f"which of {pc}'s oppose rolls? They have: {have}.")
-    for index, gone in theirs:
-        if gone.skill.lower() == knacks[0]:
-            conv.rolls[index] = replace(gone, discarded=True)
-            print(f'Canceled {rules.personal_name(gone.character)} {gone.skill} {gone.total}.')
+    return [index for index, roll in theirs if roll.skill.lower() == knacks[0]]
+
+
+def cancel_oppose(pc: str | None = None, knack: str | None = None) -> None:
+    """A player's oppose roll was a MISTAKE - a typo, a roll meant for someone else.
+
+    Every other player roll is discarded from the `annotate()` menu, and an oppose
+    roll never reaches that menu, so a mistyped `52 oppose social` would tax every
+    Air roll for the rest of the scene. The GM, shown that gap (2026-09-19): *"if we
+    had some kind of cancel_* functions for stuff like that it would be good."*
+
+    NEVER A GUESS about which roll: with no name it cancels the one PC who has any,
+    and with no knack it cancels the one knack that PC has rolled; otherwise it
+    lists what is standing. A PC may hold a good Oppose Knowledge beside a mistyped
+    Oppose Social, and a canceled roll cannot be put back - it came from a Discord
+    post, not from this prompt. (The first version canceled everything the PC had;
+    the fidelity review caught that it would destroy the good roll with the bad.)
+    REPEAT rolls of the SAME knack do all go: highest-wins makes the second the
+    correction of the first. The roll is not written, the GM's tagged rolls are
+    re-priced, and the current line is re-run.
+    """
+    conv = _require()
+    for index in _oppose_rolls(conv, pc, knack):
+        gone = conv.rolls[index]
+        conv.rolls[index] = replace(gone, discarded=True)
+        print(f'Canceled {rules.personal_name(gone.character)} {gone.skill} {gone.total}.')
     for change in oppose.settle(conv, gmrolls.recent()):
-        print(f'  = {change.describe(conv.npc_name)}')
+        print(f'  = {change.describe(conv.owner(change.entry).name)}')
     for line in conv.lines[-1:]:
         for other in conv.rolls:
             if other.line == line.id and rules.is_interrogation(other) and not other.discarded:
                 compared = hidden.compare(conv, line, other)
                 if compared is not None:
                     print(f'  = {compared.describe()}')
+
+
+def move_oppose(
+    to: npcskills.MemberHandle | str, pc: str | None = None, knack: str | None = None
+) -> None:
+    """Aim a player's Oppose Social / Oppose Knowledge at another member (feature 230).
+
+    It taxes the PRIMARY by default; the GM (2026-10-26): *"default it to the primary
+    with a way for me to move it to another NPC"*. Which roll follows `cancel_oppose`'s
+    rule - the PC and the knack are needed only when more than one could be meant -
+    and every tagged roll already made is re-priced: the old target's get the penalty
+    back, the new target's pay it.
+    """
+    conv = _require()
+    member = (to if isinstance(to, npcskills.MemberHandle) else handle(to)).member
+    for index in _oppose_rolls(conv, pc, knack):
+        moved = conv.rolls[index]
+        conv.rolls[index] = replace(moved, against=member.id)
+        print(
+            f'{rules.personal_name(moved.character)} {moved.skill} {moved.total} now taxes '
+            f'{member.name}.'
+        )
+    for change in oppose.settle(conv, gmrolls.recent()):
+        print(f'  = {change.describe(conv.owner(change.entry).name)}')
 
 
 def start_watching(conv: Conversation, *, interval: float = POLL_SECONDS, **kwargs: Any) -> None:
@@ -853,6 +1161,7 @@ def end_conversation(
         )
     if waiting and force:
         say(f'Saving {len(waiting)} unannotated roll(s) - better recorded bare than lost.')
+    _settle_before_closing(force)
     stop_watching()
     gmrolls.stop()
     # debounce=0: the final write always happens, however recently the watcher wrote.
@@ -869,6 +1178,7 @@ def end_conversation(
     # Feature 212: that tick made the last poll and recorded whoever asked; what is
     # left is to stop the sheet app answering. Unasked values are simply dropped.
     discern.close(conv, delete=close_sheet)
+    _remove_handles(conv)
     with _lock:
         _open = None
     if not conv.rolls:
@@ -908,6 +1218,8 @@ def abandon_conversation(
         update=update or op.update_character,
     )
     discern.close(conv, delete=close_sheet)
+    _remove_handles(conv)
+    npcskills.forget_pending()
     with _lock:
         _open = None
     print(f'Threw away {len(conv.rolls)} roll(s) for {conv.npc_name}. Nothing written.')
@@ -945,6 +1257,19 @@ def close_open_conversation(**kwargs: Any) -> str:
     except Exception as exc:  # noqa: BLE001 - exiting must not fail
         print(f'  ! could not write the last rolls for {name}: {exc}')
         return ''
+
+
+def _settle_before_closing(force: bool) -> None:
+    """A bare tag from the GM's last statement is settled before the final write. On
+    the exit path a primary who has left must not stop the write: the rolls stay
+    unowned and are said so, rather than the whole conversation being lost."""
+    try:
+        npcskills.settle_pending()
+    except npcskills.PrimaryLeft as exc:
+        if not force:
+            raise
+        say(f'  ! {exc}')
+    npcskills.forget_pending()
 
 
 def current() -> Conversation | None:

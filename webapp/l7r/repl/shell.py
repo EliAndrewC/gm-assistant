@@ -21,9 +21,10 @@ from pathlib import Path
 from typing import Any
 
 from l7r.repl import help_text, namespace
+from l7r.repl.dice import DiceTotal
 from l7r.repl.names import warm_caches
-from l7r.repl.rolls import console
-from l7r.repl.rolls.conversation import close_open_conversation
+from l7r.repl.rolls import console, npcskills
+from l7r.repl.rolls.conversation import close_open_conversation, use_namespace
 
 HISTORY = Path(os.environ.get('L7R_REPL_HISTORY', Path.home() / '.l7r_repl_history'))
 TITLE = 'L7R repl >>>'
@@ -110,6 +111,50 @@ def _write_history(history: Path) -> None:
         readline.write_history_file(history)
 
 
+class SettlingPrompt(str):
+    """`sys.ps1` that settles the GM's last statement before the prompt is drawn.
+
+    Feature 230: in a conversation with several NPCs, `xky(5, 3) - tact` waits until
+    the END of the statement for its NPC (`npcskills.settle_pending`), because `- souma`
+    may still follow. An expression statement ends at the displayhook; an assignment
+    (`r = xky(5, 3) - tact`) never reaches it, and the next prompt is the first moment
+    that is certainly after it. A `str` subclass, so everything that reads the prompt
+    as text still can - but only the MAIN thread settles: the watcher redraws the
+    prompt too (`console.print_above`), and settling can ask the GM a question.
+    """
+
+    def __str__(self) -> str:
+        if threading.current_thread() is threading.main_thread():
+            try:
+                npcskills.settle_pending()
+            except Exception as exc:  # noqa: BLE001 - the prompt must still be drawn
+                print(f'  ! {exc}')
+        return str.__str__(self)
+
+
+def install_prompt_hooks() -> None:
+    """Settle bare tags at the end of each statement (feature 230). Idempotent.
+
+    The displayhook settles BEFORE the value is echoed, so a raise (`PrimaryLeft`) is
+    a traceback the GM sees, and the echo is rebuilt from the recorded roll so it shows
+    the total after any oppose penalty the settling took off. It chains to the
+    displayhook it replaced, which is what keeps `_` - and `_ + 15` - working.
+    """
+    previous = sys.displayhook
+    if getattr(previous, 'l7r_settles', False):
+        return
+
+    def settle_then_echo(value: object) -> None:
+        npcskills.settle_pending()
+        if isinstance(value, DiceTotal) and int(value) != value.entry.total:
+            value = DiceTotal(value.entry.total, value.entry)
+        previous(value)
+
+    settle_then_echo.l7r_settles = True  # type: ignore[attr-defined]
+    sys.displayhook = settle_then_echo
+    sys.ps1 = SettlingPrompt(str(getattr(sys, 'ps1', '>>> ')))
+
+
 def run_snippet(source: str, ns: dict[str, Any]) -> None:
     """Run ``source`` in ``ns``. A lone expression echoes its value the way
     the prompt would; anything longer (several statements, a whole script
@@ -131,8 +176,13 @@ def main(
     stay = '-i' in args
     args = [a for a in args if a != '-i']
     ns = build_namespace()
+    # Feature 230: a conversation member's handle (`souma`) goes into THIS namespace,
+    # and a bare tag is settled at the end of each statement, one-shot or at the prompt.
+    use_namespace(ns)
+    install_prompt_hooks()
     if args:
         run_snippet(' '.join(args), ns)
+        npcskills.settle_pending()  # an assignment statement never reaches the displayhook
         if not stay:
             return 0
     readline_setup(HISTORY, ns)

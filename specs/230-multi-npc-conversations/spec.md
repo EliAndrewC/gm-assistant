@@ -1,6 +1,6 @@
 # Feature 230: conversations with several NPCs
 
-**Request**: [gm-request.md](gm-request.md) (2026-10-26, two messages). **Status**: specified.
+**Request**: [gm-request.md](gm-request.md) (2026-10-26, two messages). **Status**: implemented 2026-10-26; one open question to the GM (an untitled conversation gaining a member).
 **Cross-repository half**: <https://github.com/EliAndrewC/character-sheet/issues/6> (`/discern-honor`
 across several NPCs; contract agreed there 2026-10-26).
 
@@ -51,7 +51,14 @@ conversation block goes:
     Rolls for this conversation are on [[:tsuruchi-hideki|Tsuruchi Hideki]]'s page.
 
 It is written once, when the NPC becomes a member (at open, or at `add_to_conversation`), so it
-exists even if no roll is ever made, and it is never rewritten. It is the only thing a
+exists even if no roll is ever made, and it is never rewritten. The entry names the conversation's
+topic, and an UNTITLED conversation has none. **OPEN QUESTION FOR THE GM** (round 2 of review): what
+should happen when a member is added to a conversation with no title? Options: (a) give the title
+at add time (`add_to_conversation('Souma', 'stolen sheets')`); (b) adding to an untitled
+conversation is an error; (c) write the entry without a topic (e.g. by date); (d) require a title
+once a second NPC joins, by any means. **Until the GM answers, `add_to_conversation` on an untitled
+conversation is an error** that says why and how to work around it (end it and begin a titled
+one); every other case is unaffected. All of `add_to_conversation`'s arguments are NPCs. It is the only thing a
 conversation writes to a non-primary member's bio.
 
 **Each member's GM-only notes** carry that member's own NPC-specific records, each in the existing
@@ -98,9 +105,14 @@ error, as tagging twice is today). A one-member conversation keeps today's immed
 `souma`). If that name is already taken at the prompt by anything that is not a handle of this
 conversation, or two members share a personal name, those members' handles are their full names in
 snake case (`tsuruchi_souma`) instead, and the open message says so. Handles are removed when the
-conversation ends or is abandoned, and a member's handle stays usable after they leave (so the GM
-can still mark an earlier roll as theirs or read it) - but rolling for a departed member raises.
-`npc('Souma')` returns the same handle, for scripts and for the collision case.
+conversation ends or is abandoned.
+
+**A departed member's rolls stop working.** After `remove_from_conversation('Hideki')`, every roll
+FOR Hideki raises the departed-member error: `hideki.tact()`, `xky(5, 3) - hideki.tact`, and
+marking a roll made after he left (`xky(5, 3) - hideki`, `xky(5, 3) - tact - hideki`). The one
+thing the handle still does is mark a roll made while he was present (by its roll time) as his - a
+roll he really made, settled late. A member who left and was added again can mark rolls from
+either stretch of presence, never one made while away.
 
 ### Story 4 - joining and leaving (P1)
 
@@ -119,9 +131,10 @@ form to use (`souma.sincerity()`); nothing is dispatched to another member.
 
 **The join or leave is marked in the primary's bio at the point it happened**: a line
 `Souma joined the conversation` / `Hideki left the conversation` between the lines from rolls made
-before it and the lines from rolls made after it. A grouped line (the Etiquette line that collects
-every roller) is split at a membership change so each part sits on its own side of the marker; an
-interrogation line of questioning stays one line, placed where its first roll was.
+before it and the lines from rolls made after it. Every grouped line is split at a membership change so each part sits on its own side of the
+marker: the Etiquette line that collects every roller, and an interrogation line of questioning
+(already split by outcome today), whose rolls after the marker are written as a second line with
+the same topic below it.
 
 **Acceptance**: rolls A and B, then `add_to_conversation('Kenji')`, then roll C writes A, B, the
 `Kenji joined` line, C, in that order. Removing and re-adding writes both markers.
@@ -148,15 +161,22 @@ sheet they left (they are no longer answered), but an ask made before they left 
 `discern_honor('Souma', Jimen)` inside the conversation returns Souma's planned value.
 `abandon_conversation()` rolls every member's Discern Honor block back.
 
-The REPL sends the new multi-NPC shape only once the sheet app says it is live; until then it
-sends the one-NPC shape for the primary, which is what is deployed today.
+The REPL sends the new multi-NPC shape only once the sheet app posts on character-sheet#6 that
+the new shape is live (that comment is the signal; the switch is `discern.MULTI_NPC`). Until then it
+sends the one-NPC shape for the primary, which is what is deployed today, so nothing breaks in
+between. **The feature is not complete until the multi-NPC shape is switched on** and checked
+against the live app. *(2026-10-26: the sheet posted that the shape is live, before this
+side's code was written, so the REPL's new code sends only the multi-NPC shape and needs no
+switch; the REPL still deployed from main keeps sending the old shape, which the sheet accepts
+until this side says it has switched.)*
 
 ### Story 7 - the annotate menu with several members (P2)
 
 - A contested line names the member whose roll was paired: `Jimen vs Souma tact: ...`.
-- A typed opposing total, and an intimidation roll's "How did X appear?", ask which member when
-  more than one is present (a menu, the primary highlighted first if present); with one present
-  member there is no question.
+- A typed opposing total, and an intimidation roll's "How did X appear?", go to the PRIMARY with
+  no question while the primary is present (the default-to-primary rule). Once the primary has
+  left, they always ask which member (a menu of the present members), even when only one is
+  present: nothing is dispatched to another member without the GM saying so.
 - A line of questioning's hidden entry goes to the notes of the member whose Sincerity roll opposes
   it.
 
@@ -181,14 +201,17 @@ sends the one-NPC shape for the primary, which is what is deployed today.
   and written to that member's GM-only notes.
 - **FR-005** Every form in Story 3's table; the NPC-specific effects of a tag run once, against the
   settled member, never provisionally against another; `- tact - souma` == `- souma - tact`.
-- **FR-006** Handles as Story 3, never shadowing an existing prompt name; removed at close.
+- **FR-006** Handles as Story 3, never shadowing an existing prompt name; removed at close; a
+  departed member's handle raises for every roll except marking one made before they left.
 - **FR-007** `add_to_conversation(*names)` and `remove_from_conversation(*names)` as Story 4.
 - **FR-008** After the primary leaves, every default-to-primary form raises; public lines still
   go to the primary's bio.
-- **FR-009** Join and leave markers in the primary's bio at their point in the sequence.
+- **FR-009** Join and leave markers in the primary's bio at their point in the sequence; every
+  grouped line (Etiquette, a line of questioning) is split at a marker.
 - **FR-010** Oppose rolls target the primary by default; `move_oppose` moves one (Story 5).
 - **FR-011** Discern Honor plans, serves and records per member (Story 6), against the
-  character-sheet#6 contract, switched on only once that app says it is live.
+  character-sheet#6 contract, switched on when that app posts that the shape is live; not done
+  until it is on.
 - **FR-012** A one-member conversation is unchanged in every observable way; the existing rolls
   test suite passes unmodified except where a test asserts the one-NPC ceiling itself.
 - **FR-013** `COMMANDS` / `help_l7r()` document the new functions and the handle forms.
@@ -198,3 +221,22 @@ sends the one-NPC shape for the primary, which is what is deployed today.
 - Making a member other than the first the primary, or changing the primary mid-conversation (the
   GM ruled it out: the original primary stays where the record goes).
 - Several conversations open at once.
+
+## Review history
+
+- **Round 1 (spec-fidelity, 2026-10-26): CHANGES REQUIRED, six, all applied.** (1) `npc('Souma')`
+  removed - not asked for, and the collision case is covered by the full-name handle. (2) A
+  departed member's handle raises for every roll FOR them, except marking a roll made before they
+  left - the first draft let it mark new rolls, which is a roll made by them. (3) The annotate menu
+  no longer asks which member while the primary is present (default to primary, the rule the GM
+  accepted), and always asks once the primary has left (the first draft's "one present member,
+  no question" was the dispatch the GM ruled out). (4) A line of questioning is split at a marker
+  like Etiquette, instead of being kept whole above it - kept whole, a roll made after Kenji
+  joined would sit above "Kenji joined". (5) Adding to an untitled conversation takes a title by
+  begin's own rule, since the link entry names the topic. (6) The Discern Honor switch names its
+  signal (character-sheet#6) and the feature is not done until it is on.
+- **Round 2 (spec-fidelity, 2026-10-26): one change, applied.** Change 5 above was the spec
+  completing the GM's thought: `add_to_conversation`'s strings are NPCs, by his words. Replaced by
+  an open question to the GM, with that one case an error until answered. **Verdict: FAITHFUL**
+  once that change was made (the reviewer: "Once that change is made, I consider the spec
+  faithful, and another round is not needed for it").

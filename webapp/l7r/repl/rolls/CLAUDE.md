@@ -51,7 +51,7 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
 | `discern.py` | Feature 212: `/discern-honor`. Decides at open what each PC with the knack is told (`plan`), hands the sheet app ONLY those told values (`payloads`), learns who asked (`poll`), records only them (`commit`), and undoes it on abandon (`roll_back`). Section below. |
 | `boost.py` | Feature 214: the Isawa Ishi 3rd Dan boost. Recognizes one (the sheet bot's two commands, a pasted card whose row is `spend_vp_xk1:isawa_ishi`, or typed `8 ishi`), aims it (the message command's jump link or row, else the Discord reply), and folds it into the target's RAW total or holds it. Section below. |
-| `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
+| `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. Feature 230: the members (`add_to_conversation` / `remove_from_conversation`, handles, link entries, segmented `written_lines`, `move_oppose`). `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
 ## What a written line looks like, and the two orders that must stay different
 
@@ -239,8 +239,7 @@ acting bonus, so the tag adding it again would count it twice.
 the roll. The fidelity review struck a draft that recorded such rolls when the next conversation
 began: the numbers could land on the wrong NPC's permanent record.
 
-**One NPC at a time**, by the GM's ruling for now. A later feature will track several, which is why
-a tag holds no NPC and the numbers live on the `Conversation`.
+**Several NPCs** since feature 230 - see its section below.
 
 Reasoning, declined alternatives and one recorded dead end (the pty test that hung) are in
 `specs/207-roll-modes/research.md`.
@@ -466,6 +465,74 @@ as for the other GM-only blocks.
 used a set, which deleted every identical copy - an older conversation's same-day untitled line
 included. Spec: `specs/217-void-spent-log/`.
 
+## Feature 230: a conversation with several NPCs
+
+```python
+>>> begin_conversation('Hideki', 'Souma', 'stolen sheets')   # Hideki is PRIMARY: named first
+>>> tact()                      # Hideki's
+>>> souma.tact()                # Souma's; every called form works on a handle
+>>> xky(5, 3) - tact - souma    # Souma's - and `- souma - tact` is the same in every effect
+>>> add_to_conversation('Kenji', 'Aiko')      # any number; marked in the bio where it happened
+>>> remove_from_conversation('Hideki')        # nobody becomes primary; tact() now raises
+>>> move_oppose(souma)                        # Jimen's oppose social taxes Souma, not Hideki
+```
+
+**The argument rule is the GM's** (`_classify`): one argument is the NPC; with two or more, exactly
+one must match no character, and it is the title. **The primary's bio gets the heading and every
+player roll line for the whole conversation**, whoever joins or leaves; every other member's bio
+gets one link entry under its portrait (`h4. Stolen sheets` / `Rolls for this conversation are on
+[[:tsuruchi-hideki|Tsuruchi Hideki]]'s page.`), written when they join. **Each member's GM-only
+notes get that member's own** numbers, hidden Sincerity rolls, void points and Discern Honor
+records. Joins and leaves are lines in the primary's bio (`Souma joined the conversation`) at the
+point they happened: `written_lines` renders the rolls in segments cut at each membership event, so
+a grouped line (Etiquette, a line of questioning) is split by a marker rather than drawn across it.
+
+**Per-NPC state lives on `models.Member`**; `Conversation.numbers` / `schools` / `discern` / `honor`
+/ the `*_written` fields are properties that hand back the PRIMARY's, which is why every one-NPC
+caller and test is unchanged. A GM roll knows its NPC by `GmRoll.npc` (the member's OP id, '' =
+unsettled or pre-feature, read as the primary's via `Conversation.owner`). An oppose roll knows its
+target by `Roll.against` ('' = the primary, `oppose.NOBODY` = nobody while the primary is away);
+a contested roll knows the paired member by `Roll.npc` (a name, '' = the primary).
+
+**A bare tag waits for its NPC.** In a conversation that has EVER had a second member,
+`xky(5, 3) - tact` only marks the roll and puts it on `npcskills._pending`, because `- souma` may
+still follow, and what a tag does (record the ring and rank, ask on a disagreement, take an oppose
+penalty off, note a Sincerity roll) depends on whose roll it is. Applying it to the primary and
+moving it later was declined: the disagreement prompt would already have asked about the wrong
+record. It settles in `SkillTag._settle` - the ONE place, whichever order the GM typed - either when
+`- souma` arrives or at the END OF THE STATEMENT (`npcskills.settle_pending`), on the primary.
+"End of the statement" is two hooks `shell.install_prompt_hooks` puts in: the displayhook (before
+the echo, which is rebuilt from the recorded roll so it shows the taxed total, and chained so `_`
+still works) and `sys.ps1` as a `SettlingPrompt` (an assignment never reaches the displayhook).
+Every function the GM calls next also settles first. **The watcher thread never settles**:
+settling can prompt, and `console.print_above` redraws `sys.ps1` from that thread. A one-member
+conversation settles at once, exactly as before.
+
+**Once the primary has left, nothing defaults to anyone** (GM: *"I must always call e.g.
+`souma.sincerity()` rather than expecting that `sincerity()` calls will dispatch to Souma"*): a
+bare called form or an unsettled tag raises `PrimaryLeft` naming the handle forms; `annotate()`
+asks which member for a typed total, the manipulation 15 and an intimidation appearance (while the
+primary is present it never asks). A departed member's handle raises `MemberLeft` for every roll
+except marking one made while they were there (`npcskills.present_at`).
+
+**Handles** are the personal name in lower case, put into the prompt's namespace
+(`conversation.use_namespace`, registered by `shell.main`) and taken out at close. A name already
+at the prompt, or two members with one personal name, get the full name in snake case
+(`tsuruchi_souma`) - never shadow the GM's own names. `conversation.handle("Souma")` is the
+internal lookup for tests and scripts; a public `npc()` was struck by the fidelity review.
+
+**Discern Honor covers every member** (GM ruling; character-sheet#6). The sheet's
+`/api/conversation` takes `npcs: [{npc_ref, name, present, discern_honor}]`, primary first; the
+NPC's NAME now leaves on purpose (`/discern-honor npc:` picks by it, and only the NPCs the players
+are talking to are sent). Two present members with one personal name are sent by full name - the
+sheet refuses case-insensitive duplicates. A member who joins is planned and re-PUT (`discern.add`);
+one who leaves is re-PUT `present: false` (`discern.leave`) and an ask made before is still
+recorded.
+
+**Open question to the GM**: adding a member to an UNTITLED conversation is an error for now, since
+the link entry names the topic. Spec: `specs/230-multi-npc-conversations/`. Tests:
+`tests/test_rolls_members.py`, and `TestSettlingHooks` in `tests/test_repl_shell.py`.
+
 ## A title divides one conversation from the next
 
 `begin_conversation("Otsuki", "confrontation on the Imperial road")` (GM 2026-09-29) writes
@@ -538,7 +605,7 @@ deleted rather than left to drift.
     tests/test_rolls_npcskills.py tests/test_rolls_lines.py tests/test_rolls_hidden.py \
     tests/test_rolls_keys.py tests/test_rolls_annotate_modes.py tests/test_rolls_oppose.py \
     tests/test_rolls_menu.py tests/test_rolls_discern.py tests/test_rolls_boost.py \
-    tests/test_rolls_sincerity_kept.py tests/test_rolls_voidspent.py )
+    tests/test_rolls_sincerity_kept.py tests/test_rolls_voidspent.py tests/test_rolls_members.py )
 ```
 
 `test_rolls_keys.py` drives a REAL pseudo-terminal. The undo keys must be written to it AFTER it is

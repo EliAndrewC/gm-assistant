@@ -29,7 +29,7 @@ may have been this conversation's or an older one's, and only the GM knows which
 from __future__ import annotations
 
 from l7r.repl.gmrolls import GmRoll
-from l7r.repl.rolls.models import Conversation, VoidSpend
+from l7r.repl.rolls.models import Conversation, Member, VoidSpend
 
 HEADING = 'Void points spent:'
 
@@ -48,16 +48,21 @@ def note(conv: Conversation, entry: GmRoll, count: int) -> None:
     conv.void_spends.append(VoidSpend(entry, abs(count), earlier=earlier))
 
 
-def _counted(conv: Conversation) -> list[VoidSpend]:
-    return [s for s in conv.void_spends if s.earlier or not s.entry.mistake]
+def _counted(conv: Conversation, member: Member) -> list[VoidSpend]:
+    return [
+        s
+        for s in conv.void_spends
+        if (s.earlier or not s.entry.mistake) and conv.owner(s.entry) is member
+    ]
 
 
-def entries(conv: Conversation) -> tuple[str, ...]:
-    """This conversation's `Void points spent:` lines, in the order they were spent."""
+def entries(conv: Conversation, member: Member | None = None) -> tuple[str, ...]:
+    """This conversation's `Void points spent:` lines for one member (the primary by
+    default; feature 230), in the order they were spent."""
     day = f'{conv.opened_at:%Y-%m-%d}'
     about = f' - {conv.title}' if conv.title else ''
     out = []
-    for s in _counted(conv):
+    for s in _counted(conv, member or conv.primary):
         points = 'void point' if s.count == 1 else 'void points'
         on = f'an earlier {s.entry.tagged} roll' if s.earlier else s.entry.tagged
         out.append(f'- {day} {s.count} {points} on {on}{about}')
